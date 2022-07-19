@@ -1,6 +1,7 @@
 <template>
   <img alt="Vue logo" src="./assets/logo.png">
   <HelloWorld msg="Welcome to Yourdddd Vue.js App"/>
+  <i class="fa-solid fa-table-columns"></i>
 </template>
 
 <script>
