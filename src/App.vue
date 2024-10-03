@@ -2,25 +2,37 @@
   <v-app>
     <v-main>
 <!--      <HelloWorld/>-->
-      <MyMap/>
+<!--      <MyMap/>-->
+<!--      <Dialog/>-->
+      <div id="left-top-div">
+        <v-btn @click="btnClick">ボタン</v-btn>
+      </div>
+      <DialogMenu/>
     </v-main>
   </v-app>
 </template>
 
 <script>
-// import HelloWorld from './components/HelloWorld.vue'
-import MyMap from "@/components/MyMap";
+import DialogMenu from '@/components/Dialog-menu'
 
 export default {
   name: 'App',
-
   components: {
-    // HelloWorld,
-    MyMap
+    DialogMenu,
   },
-
   data: () => ({
-    //
   }),
+  methods: {
+    btnClick () {
+      this.$store.state.dialogs.menuDialog.style.display = 'block'
+    }
+  }
 }
 </script>
+<style>
+#left-top-div {
+  position:absolute;
+  top:10px;
+  left:10px;
+}
+</style>

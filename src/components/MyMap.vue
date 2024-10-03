@@ -1,8 +1,7 @@
 <template>
-  <v-container>
-   aaaああ
-    <v-btn @click="btnClick">Button</v-btn>
-  </v-container>
+  <div id="left-top-div">
+    <v-btn @click="btnClick">ボタン</v-btn>
+  </div>
 </template>
 
 <script>
@@ -20,3 +19,10 @@ export default {
   }
 }
 </script>
+<style scoped>
+#left-top-div {
+  position:absolute;
+  top:10px;
+  left:10px;
+}
+</style>
