@@ -24,6 +24,8 @@ export default {
     closeBtn () {
       // this.dialog.style.display = 'none'
       // this.$refs.div.style.display = 'none'
+      this.$store.state.dialogs.menuDialog.style.top = this.$refs.div.style.top
+      this.$store.state.dialogs.menuDialog.style.left = this.$refs.div.style.left
       this.$store.state.dialogs.menuDialog.style.display = 'none'
     },
     dialogMouseDown () {

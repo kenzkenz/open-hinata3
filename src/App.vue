@@ -1,9 +1,6 @@
 <template>
   <v-app>
     <v-main>
-<!--      <HelloWorld/>-->
-<!--      <MyMap/>-->
-<!--      <Dialog/>-->
       <div id="left-top-div">
         <v-btn @click="btnClick">ボタン</v-btn>
       </div>
