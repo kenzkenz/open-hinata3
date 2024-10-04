@@ -24,9 +24,12 @@ export default {
     closeBtn () {
       // this.dialog.style.display = 'none'
       // this.$refs.div.style.display = 'none'
-      this.$store.state.dialogs.menuDialog.style.top = this.$refs.div.style.top
-      this.$store.state.dialogs.menuDialog.style.left = this.$refs.div.style.left
-      this.$store.state.dialogs.menuDialog.style.display = 'none'
+
+      console.log(this.dialog.name)
+
+      this.$store.state.dialogs[this.dialog.name].style.top = this.$refs.div.style.top
+      this.$store.state.dialogs[this.dialog.name].style.left = this.$refs.div.style.left
+      this.$store.state.dialogs[this.dialog.name].style.display = 'none'
     },
     dialogMouseDown () {
       // store.commit('base/incrDialogMaxZindex')
