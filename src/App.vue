@@ -2,8 +2,8 @@
   <v-app>
     <v-main>
       <div id="left-top-div">
-        <v-btn @click="btnClickMenu">メニュー</v-btn>
-        <v-btn @click="btnClickLayer">レイヤー</v-btn>
+        <v-btn @click="btnClickMenu"><i class="fa-solid fa-bars"></i></v-btn>
+        <v-btn style="margin-left:10px;" @click="btnClickLayer"><i class="fa-solid fa-layer-group"></i></v-btn>
       </div>
       <DialogMenu/>
       <DialogLayer/>

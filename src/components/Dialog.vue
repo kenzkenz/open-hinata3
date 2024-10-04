@@ -1,7 +1,6 @@
 <template>
-  <div v-drag="{handle:'#drag-handle'}" class="dialog-div" ref="div" @mousedown="dialogMouseDown" :style="this.dialog.style">
-    <div class="drag-handle" id="drag-handle">
-      ハンドル
+  <div v-drag="{handle:'#' + id}" class="dialog-div" ref="dragDiv" @mousedown="dialogMouseDown" :style="this.dialog.style">
+    <div class="drag-handle" :id="id">
     </div>
     <div>
       <div class="close-btn-div" @click="closeBtn"><i class="fa-solid fa-xmark hover close-btn"></i></div>
@@ -22,23 +21,21 @@ export default {
   },
   methods: {
     closeBtn () {
-      // this.dialog.style.display = 'none'
-      // this.$refs.div.style.display = 'none'
-
-      console.log(this.dialog.name)
-
-      this.$store.state.dialogs[this.dialog.name].style.top = this.$refs.div.style.top
-      this.$store.state.dialogs[this.dialog.name].style.left = this.$refs.div.style.left
+      this.$store.state.dialogs[this.dialog.name].style.top = this.$refs.dragDiv.style.top
+      this.$store.state.dialogs[this.dialog.name].style.left = this.$refs.dragDiv.style.left
       this.$store.state.dialogs[this.dialog.name].style.display = 'none'
     },
     dialogMouseDown () {
-      // store.commit('base/incrDialogMaxZindex')
-      // this.dialog.style.top = this.$refs.div.style.top
-      // this.dialog.style.left = this.$refs.div.style.left
-      // this.dialog.style["z-index"] = store.state.base.dialogMaxZindex
+      this.$store.commit('incrDialogMaxZindex')
+      this.$store.state.dialogs[this.dialog.name].style.top = this.$refs.dragDiv.style.top
+      this.$store.state.dialogs[this.dialog.name].style.left = this.$refs.dragDiv.style.left
+      this.$store.state.dialogs[this.dialog.name].style['z-index'] = this.$store.state.dialogMaxZindex
     }
   },
   computed: {
+    id () {
+      return 'drag-handle-' + this.dialog.name
+    }
   },
   mounted() {
     console.log(this.dialog.style)
@@ -64,7 +61,8 @@ export default {
 .drag-handle{
   height: 30px;
   padding: 5px;
-  background-color: rgba(0,60,136,0.5);
+  /*background-color: rgba(0,60,136,0.5);*/
+  background-color: rgba(60,60,136,0.5);
   border-top-left-radius: 4px;
   border-top-right-radius: 4px;
   cursor: grab;
@@ -85,14 +83,5 @@ export default {
 }
 .hover-white:hover{
   color: white;
-}
-
-/* 1秒かけて透明度を遷移 */
-.v-enter-active, .v-leave-active {
-  transition: opacity 1s;
-}
-/* 見えなくなるときの透明度 */
-.v-enter, .v-leave-to {
-  opacity: 0;
 }
 </style>
