@@ -86,7 +86,23 @@ export default {
     }
     syncMaps(this.$store.state.map01, this.$store.state.map02)
     // -----------------------------------------------------------------------------------------------------------------
-
+    this.$store.state.map01.on('load', () => {
+      this.$store.state.map01.addSource('gsi', {
+        type: 'raster',
+        tiles: [
+          'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png' // 標準地図
+        ],
+        tileSize: 256
+      });
+      this.$store.state.map01.addLayer({
+        'id': 'gsi-layer',
+        'type': 'raster',
+        'source': 'gsi',
+        'minzoom': 0,
+        'maxzoom': 18
+      });
+    })
+    // -----------------------------------------------------------------------------------------------------------------
   }
 }
 </script>
