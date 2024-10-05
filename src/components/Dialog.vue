@@ -12,7 +12,7 @@
 <script>
 export default {
   name: 'dialog-0',
-  props: ['dialog'],
+  props: ['dialog','mapName'],
   components: {
   },
   data () {
@@ -21,24 +21,25 @@ export default {
   },
   methods: {
     closeBtn () {
-      this.$store.state.dialogs[this.dialog.name].style.top = this.$refs.dragDiv.style.top
-      this.$store.state.dialogs[this.dialog.name].style.left = this.$refs.dragDiv.style.left
-      this.$store.state.dialogs[this.dialog.name].style.display = 'none'
+      console.log(this.dialog.name,this.mapName)
+      this.$store.state.dialogs[this.dialog.name][this.mapName].style.top = this.$refs.dragDiv.style.top
+      this.$store.state.dialogs[this.dialog.name][this.mapName].style.left = this.$refs.dragDiv.style.left
+      this.$store.state.dialogs[this.dialog.name][this.mapName].style.display = 'none'
     },
     dialogMouseDown () {
       this.$store.commit('incrDialogMaxZindex')
-      this.$store.state.dialogs[this.dialog.name].style.top = this.$refs.dragDiv.style.top
-      this.$store.state.dialogs[this.dialog.name].style.left = this.$refs.dragDiv.style.left
-      this.$store.state.dialogs[this.dialog.name].style['z-index'] = this.$store.state.dialogMaxZindex
+      this.$store.state.dialogs[this.dialog.name][this.mapName].style.top = this.$refs.dragDiv.style.top
+      this.$store.state.dialogs[this.dialog.name][this.mapName].style.left = this.$refs.dragDiv.style.left
+      this.$store.state.dialogs[this.dialog.name][this.mapName].style['z-index'] = this.$store.state.dialogMaxZindex
     }
   },
   computed: {
     id () {
-      return 'drag-handle-' + this.dialog.name
+      return 'drag-handle-' + this.dialog.name + '-' + this.mapName
     }
   },
   mounted() {
-    console.log(this.dialog.style)
+    console.log(this.dialog)
   }
 }
 </script>

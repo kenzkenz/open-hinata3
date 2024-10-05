@@ -5,11 +5,11 @@
         <div v-for="mapName in mapNames" :key="mapName">
           <div :id=mapName :style="mapSize[mapName]" v-show="mapFlg[mapName]">
             <div id="left-top-div">
-              <v-btn @click="btnClickMenu"><i class="fa-solid fa-bars"></i></v-btn>
-              <v-btn style="margin-left:10px;" @click="btnClickLayer"><i class="fa-solid fa-layer-group"></i></v-btn>
+              <v-btn @click="btnClickMenu(mapName)"><i class="fa-solid fa-bars"></i></v-btn>
+              <v-btn style="margin-left:10px;" @click="btnClickLayer(mapName)"><i class="fa-solid fa-layer-group"></i></v-btn>
             </div>
-            <DialogMenu/>
-            <DialogLayer/>
+            <DialogMenu :mapName=mapName />
+            <DialogLayer :mapName=mapName />
           </div>
         </div>
       </div>
@@ -36,11 +36,11 @@ export default {
     },
   }),
   methods: {
-    btnClickMenu () {
-      this.$store.state.dialogs.menuDialog.style.display = 'block'
+    btnClickMenu (mapName) {
+      this.$store.state.dialogs.menuDialog[mapName].style.display = 'block'
     },
-    btnClickLayer () {
-      this.$store.state.dialogs.layerDialog.style.display = 'block'
+    btnClickLayer (mapName) {
+      this.$store.state.dialogs.layerDialog[mapName].style.display = 'block'
     }
   }
 }
