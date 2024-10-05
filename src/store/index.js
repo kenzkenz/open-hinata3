@@ -2,6 +2,8 @@ import { createStore } from 'vuex'
 
 export default createStore({
   state: {
+    map01:null,
+    map02:null,
     storeTest: 'storeTest',
     dialogs: {
       menuDialog: {
