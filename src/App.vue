@@ -71,68 +71,60 @@ export default {
     let protocol = new Protocol();
     maplibregl.addProtocol("pmtiles",protocol.tile)
     this.mapNames.forEach(mapName => {
-      // const map = new maplibregl.Map({
-      //   container: mapName,
-      //   style: 'https://tile.openstreetmap.jp/styles/osm-bright-ja/style.json',
-      //   center: [139.7024, 35.6598],
-      //   zoom: 16,
-      // })
-      // this.$store.state[mapName] = map
       const map = new maplibregl.Map({
         container: mapName,
         center: [139.7024, 35.6598],
         zoom: 16,
         maxPitch: 85, // 最大の傾き、デフォルトは60
-        style: {
-          version: 8,
-          sources: {
-            "background-osm-raster": {
-              type: "raster",
-              tiles: ["https://tile.openstreetmap.jp/styles/osm-bright-ja/{z}/{x}/{y}.png"],
-              tileSize: 256,
-              attribution: "<a href='https://www.openstreetmap.org/copyright' target='_blank'>© OpenStreetMap contributors</a>",
-            },
-            // 地形データ
-            "aws-terrain": {
-              type: "raster-dem",
-              minzoom: 1,
-              maxzoom: 15,
-              // このソースが使用するエンコーディング。terrarium（Terrarium形式のPNGタイル）、mapbox（Mapbox Terrain RGBタイル）、custom のいずれか
-              encoding: "terrarium",
-              tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
-            },
-          },
-          layers: [
-            {
-              id: "background-osm-raster",
-              type: "raster",
-              source: "background-osm-raster",
-            },
-          ],
-          // 地形
-          terrain: {
-            // 地形データのソース
-            source: "aws-terrain",
-            // 標高の誇張度
-            exaggeration: 1,
-          },
-          sky: {
-            // 空のベースカラー
-            "sky-color": "#199EF3",
-            // 空の色と水平線の色の混ぜ合わせ。1は空の真ん中の色を、0は空の色を使用する
-            "sky-horizon-blend": 0.5,
-            // 地平線のベースカラー
-            "horizon-color": "#ffffff",
-            // 霧の色と水平線の色の混ぜ合わせ。0は水平線の色、1は霧の色を使用する
-            "horizon-fog-blend": 0.5,
-            // 霧のベースカラー。 3D地形が必要
-            "fog-color": "#0000ff",
-            // 3D地形に霧を混ぜ合わせる。 0はマップの中心、1は地平線
-            "fog-ground-blend": 0.5,
-            // 大気の混ぜ合わせ。 1が可視大気、0が非表示大気
-            "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 10, 1, 12, 0],
-          },
-        },
+        // style: 'https://raw.githubusercontent.com/gsi-cyberjapan/optimal_bvmap/52ba56f645334c979998b730477b2072c7418b94/style/std.json',
+        style:require('@/assets/json/std.json')
+        // style: {
+        //   version: 8,
+        //   sources: {
+        //     "background-osm-raster": {
+        //       type: "raster",
+        //       tiles: ["https://tile.openstreetmap.jp/styles/osm-bright-ja/{z}/{x}/{y}.png"],
+        //       tileSize: 256,
+        //       attribution: "<a href='https://www.openstreetmap.org/copyright' target='_blank'>© OpenStreetMap contributors</a>",
+        //     },
+        //   },
+        //   layers: [
+        //     {
+        //       id: "background-osm-raster",
+        //       type: "raster",
+        //       source: "background-osm-raster",
+        //     },
+        //     // // 陰影起伏
+        //     // {
+        //     //   id: "hills",
+        //     //   type: "hillshade",
+        //     //   source: "aws-terrain",
+        //     // },
+        //   ],
+        //   // 地形
+        //   terrain: {
+        //     // 地形データのソース
+        //     source: "aws-terrain",
+        //     // 標高の誇張度
+        //     exaggeration: 1,
+        //   },
+        //   sky: {
+        //     // 空のベースカラー
+        //     "sky-color": "#199EF3",
+        //     // 空の色と水平線の色の混ぜ合わせ。1は空の真ん中の色を、0は空の色を使用する
+        //     "sky-horizon-blend": 0.5,
+        //     // 地平線のベースカラー
+        //     "horizon-color": "#ffffff",
+        //     // 霧の色と水平線の色の混ぜ合わせ。0は水平線の色、1は霧の色を使用する
+        //     "horizon-fog-blend": 0.5,
+        //     // 霧のベースカラー。 3D地形が必要
+        //     "fog-color": "#0000ff",
+        //     // 3D地形に霧を混ぜ合わせる。 0はマップの中心、1は地平線
+        //     "fog-ground-blend": 0.5,
+        //     // 大気の混ぜ合わせ。 1が可視大気、0が非表示大気
+        //     "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 10, 1, 12, 0],
+        //   },
+        // },
       })
       this.$store.state[mapName] = map
     })
@@ -162,6 +154,38 @@ export default {
     this.mapNames.forEach(mapName => {
       const map = this.$store.state[mapName]
       map.on('load', () => {
+
+        // 標高タイルソース---------------------------------------------------
+        map.addSource("gsidem-terrain-rgb", {
+          type: 'raster-dem',
+          tiles: ['https://xs489works.xsrv.jp/raster-tiles/gsi/gsi-dem-terrain-rgb/{z}/{x}/{y}.png'],
+          attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html#dem" target="_blank">地理院タイル(標高タイル)</a>',
+          tileSize: 256
+        })
+        // 標高タイルセット
+        map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
+        // 標高タイルソース---------------------------------------------------
+
+        // Skyレイヤ
+        map.setSky({
+          "sky-color": "#199EF3",
+          "sky-horizon-blend": 0.7,
+          "horizon-color": "#f0f8ff",
+          "horizon-fog-blend": 0.8,
+          "fog-color": "#2c7fb8",
+          "fog-ground-blend": 0.9,
+          "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 12, 0]
+        });
+
+        map.addSource("aws-terrain", {
+          type: "raster-dem",
+              minzoom: 1,
+              maxzoom: 15,
+              // このソースが使用するエンコーディング。terrarium（Terrarium形式のPNGタイル）、mapbox（Mapbox Terrain RGBタイル）、custom のいずれか
+              encoding: "terrarium",
+              tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
+        })
+
         map.addSource('gsi', {
           type: 'raster',
           tiles: [
