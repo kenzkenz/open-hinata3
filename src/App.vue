@@ -39,14 +39,22 @@ export default {
   }),
   methods: {
     btnClickMenu (mapName) {
-      this.$store.commit('incrDialogMaxZindex')
-      this.$store.state.dialogs.menuDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
-      this.$store.state.dialogs.menuDialog[mapName].style.display = 'block'
+      if (this.$store.state.dialogs.menuDialog[mapName].style.display === 'none') {
+        this.$store.commit('incrDialogMaxZindex')
+        this.$store.state.dialogs.menuDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
+        this.$store.state.dialogs.menuDialog[mapName].style.display = 'block'
+      } else {
+        this.$store.state.dialogs.menuDialog[mapName].style.display = 'none'
+      }
     },
     btnClickLayer (mapName) {
-      this.$store.commit('incrDialogMaxZindex')
-      this.$store.state.dialogs.menuDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
-      this.$store.state.dialogs.layerDialog[mapName].style.display = 'block'
+      if (this.$store.state.dialogs.layerDialog[mapName].style.display === 'none') {
+        this.$store.commit('incrDialogMaxZindex')
+        this.$store.state.dialogs.layerDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
+        this.$store.state.dialogs.layerDialog[mapName].style.display = 'block'
+      } else {
+        this.$store.state.dialogs.layerDialog[mapName].style.display = 'none'
+      }
     },
     btnClickSplit () {
       if (this.mapFlg.map02) {

@@ -1,5 +1,5 @@
 <template>
-  <div v-drag="{handle:'#' + id}" class="dialog-div" ref="dragDiv" @mousedown="dialogMouseDown" :style="this.dialog.style">
+  <div v-drag="{handle:'#' + id}" @v-drag-end="dragEnd" class="dialog-div" ref="dragDiv" @mousedown="dialogMouseDown" :style="this.dialog.style">
     <div class="drag-handle" :id="id">
     </div>
     <div>
@@ -20,9 +20,11 @@ export default {
     }
   },
   methods: {
-    closeBtn () {
+    dragEnd () {
       this.$store.state.dialogs[this.dialog.name][this.mapName].style.top = this.$refs.dragDiv.style.top
       this.$store.state.dialogs[this.dialog.name][this.mapName].style.left = this.$refs.dragDiv.style.left
+    },
+    closeBtn () {
       this.$store.state.dialogs[this.dialog.name][this.mapName].style.display = 'none'
     },
     dialogMouseDown () {
