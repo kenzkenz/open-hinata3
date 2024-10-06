@@ -85,9 +85,6 @@ export default {
       return {lng,lat,zoom}
     },
   },
-  created() {
-    // this.parseUrlParams();
-  },
   mounted() {
     let protocol = new Protocol();
     maplibregl.addProtocol("pmtiles",protocol.tile)
@@ -157,26 +154,26 @@ export default {
       this.$store.state[mapName] = map
     })
     // 画面同期----------------------------------------------------------------------------------------------------------
-    let syncing = false
-    function syncMaps(mapA, mapB) {
-      mapA.on('move', () => {
-        if (!syncing) {
-          syncing = true
-          mapB.setCenter(mapA.getCenter())
-          mapB.setZoom(mapA.getZoom())
-          syncing = false
-        }
-      })
-      mapB.on('move', () => {
-        if (!syncing) {
-          syncing = true
-          mapA.setCenter(mapB.getCenter())
-          mapA.setZoom(mapB.getZoom())
-          syncing = false
-        }
-      })
-    }
-    syncMaps(this.$store.state.map01, this.$store.state.map02)
+    // let syncing = false
+    // function syncMaps(mapA, mapB) {
+    //   mapA.on('move', () => {
+    //     if (!syncing) {
+    //       syncing = true
+    //       mapB.setCenter(mapA.getCenter())
+    //       mapB.setZoom(mapA.getZoom())
+    //       syncing = false
+    //     }
+    //   })
+    //   mapB.on('move', () => {
+    //     if (!syncing) {
+    //       syncing = true
+    //       mapA.setCenter(mapB.getCenter())
+    //       mapA.setZoom(mapB.getZoom())
+    //       syncing = false
+    //     }
+    //   })
+    // }
+    // syncMaps(this.$store.state.map01, this.$store.state.map02)
     // -----------------------------------------------------------------------------------------------------------------
     // on load
     this.mapNames.forEach(mapName => {
