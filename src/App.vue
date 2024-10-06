@@ -286,7 +286,7 @@ export default {
 }
 .center-target{
   position: absolute;
-  background-image:url('https://kenzkenz.xsrv.jp/open-hinata/img/target0.gif');
+  background-image:url('@/assets/images/target.gif');
   background-repeat:  no-repeat;
   width:24px;
   height:24pX;
