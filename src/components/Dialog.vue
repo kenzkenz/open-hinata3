@@ -78,7 +78,7 @@ export default {
   cursor: pointer;
   color: #fff;
   z-index: 2;
-  font-size:1.5em;
+  font-size:2.5em;
 }
 .hover:hover{
   color: blue;

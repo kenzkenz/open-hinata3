@@ -55,9 +55,6 @@ export default {
     },
   },
   watch: {
-    layers(){
-      alert()
-    }
   }
 }
 </script>
