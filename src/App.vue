@@ -67,12 +67,38 @@ export default {
     }
   },
   mounted() {
+    // let protocol = new pmtiles.Protocol();
+    // maplibregl.addProtocol('pmtiles', protocol.tile);
     this.mapNames.forEach(mapName => {
+      // const map = new maplibregl.Map({
+      //   container: mapName,
+      //   style: 'https://tile.openstreetmap.jp/styles/osm-bright-ja/style.json',
+      //   center: [139.7024, 35.6598],
+      //   zoom: 16,
+      // })
+      // this.$store.state[mapName] = map
       const map = new maplibregl.Map({
         container: mapName,
-        style: 'https://tile.openstreetmap.jp/styles/osm-bright-ja/style.json',
         center: [139.7024, 35.6598],
         zoom: 16,
+        style: {
+          version: 8,
+          sources: {
+            "background-osm-raster": {
+              type: "raster",
+              tiles: ["https://tile.openstreetmap.jp/styles/osm-bright-ja/{z}/{x}/{y}.png"],
+              tileSize: 256,
+              attribution: "<a href='https://www.openstreetmap.org/copyright' target='_blank'>© OpenStreetMap contributors</a>",
+            },
+          },
+          layers: [
+            {
+              id: "background-osm-raster",
+              type: "raster",
+              source: "background-osm-raster",
+            },
+          ],
+        },
       })
       this.$store.state[mapName] = map
     })
