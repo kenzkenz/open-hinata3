@@ -1,8 +1,28 @@
 <template>
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div :style="menuContentSize">
-      <v-btn @click="click(mapName)">地理院地図</v-btn>
-      <v-btn @click="click2(mapName)">法務省登記所備付地図</v-btn>
+      <v-switch
+          v-model="switchFlg.gsiLayer"
+          label="地理院地図"
+          hide-details
+          inset
+          @change="changeSwitch(mapName)"
+      ></v-switch>
+      <v-switch
+          v-model="switchFlg.amx"
+          label="法務省登記所備付地図"
+          hide-details
+          inset
+          @change="changeSwitch(mapName)"
+      ></v-switch>
+      <v-switch
+          v-model="switchFlg.bldg"
+          label="東京都23区建物データ"
+          hide-details
+          inset
+          @change="changeSwitch(mapName)"
+      ></v-switch>
+
     </div>
   </Dialog>
 </template>
@@ -14,6 +34,7 @@ export default {
   props: ['mapName'],
   data: () => ({
     test: 'test',
+    switchFlg:{gsiLayer:false, bldg:false, amx:false},
     menuContentSize: {'height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'}
   }),
   computed: {
@@ -22,17 +43,31 @@ export default {
     }
   },
   methods: {
-    click (mapName) {
+    changeSwitch(mapName){
+      const vm = this
       const map = this.$store.state[mapName]
-      const visibility = map.getLayoutProperty('gsi-layer', 'visibility')
-      map.setLayoutProperty('gsi-layer', 'visibility', visibility === 'visible' ? 'none' : 'visible')
+      Object.keys(vm.switchFlg).forEach(function(key) {
+        if (key === 'amx') {
+          if (vm.switchFlg[key]) {
+            map.setLayoutProperty('amx-a-fude', 'visibility', 'visible')
+            map.setLayoutProperty('amx-a-daihyo', 'visibility', 'visible')
+          } else {
+            map.setLayoutProperty('amx-a-fude', 'visibility', 'none')
+            map.setLayoutProperty('amx-a-daihyo', 'visibility', 'none')
+          }
+        } else {
+          if (vm.switchFlg[key]) {
+            map.setLayoutProperty(key, 'visibility', 'visible')
+          } else {
+            map.setLayoutProperty(key, 'visibility', 'none')
+          }
+        }
+      })
     },
-    click2 (mapName) {
-      const map = this.$store.state[mapName]
-      const visibility = map.getLayoutProperty('amx-a-fude', 'visibility')
-      map.setLayoutProperty('amx-a-fude', 'visibility', visibility === 'visible' ? 'none' : 'visible')
-      const visibility2 = map.getLayoutProperty('amx-a-daihyo', 'visibility')
-      map.setLayoutProperty('amx-a-daihyo', 'visibility', visibility2 === 'visible' ? 'none' : 'visible')
+  },
+  watch: {
+    switchFlg(){
+      alert()
     }
   }
 }
