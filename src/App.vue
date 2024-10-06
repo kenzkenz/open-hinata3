@@ -37,6 +37,7 @@ export default {
       map01: {top: 0, left: 0, width: '100%', height: window.innerHeight + 'px'},
       map02: {top: 0, right: 0, width: '50%', height: window.innerHeight + 'px'},
     },
+    permalink: '',
   }),
   methods: {
     btnClickMenu (mapName) {
@@ -65,16 +66,43 @@ export default {
         this.mapSize.map01.width = '50%'
         this.mapFlg.map02 = true
       }
-    }
+    },
+    updatePermalink() {
+      const map = this.$store.state.map01
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+      const { lng, lat } = center;
+      // パーマリンクの生成
+      this.permalink = `${window.location.origin}${window.location.pathname}?lng=${lng}&lat=${lat}&zoom=${zoom}`;
+      // URLを更新
+      window.history.pushState({ lng, lat, zoom }, '', this.permalink);
+    },
+    parseUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      const lng = parseFloat(params.get('lng'));
+      const lat = parseFloat(params.get('lat'));
+      const zoom = parseFloat(params.get('zoom'));
+      return {lng,lat,zoom}
+    },
+  },
+  created() {
+    // this.parseUrlParams();
   },
   mounted() {
     let protocol = new Protocol();
     maplibregl.addProtocol("pmtiles",protocol.tile)
     this.mapNames.forEach(mapName => {
+      const params = this.parseUrlParams()
+      let center = [139.7024, 35.6598]
+      let zoom = 16
+      if (params.lng) {
+        center = [params.lng,params.lat]
+        zoom = params.zoom
+      }
       const map = new maplibregl.Map({
         container: mapName,
-        center: [139.7024, 35.6598],
-        zoom: 16,
+        center: center,
+        zoom: zoom,
         maxPitch: 85, // 最大の傾き、デフォルトは60
         // style: 'https://raw.githubusercontent.com/gsi-cyberjapan/optimal_bvmap/52ba56f645334c979998b730477b2072c7418b94/style/std.json',
         style:require('@/assets/json/std.json')
@@ -154,7 +182,7 @@ export default {
     this.mapNames.forEach(mapName => {
       const map = this.$store.state[mapName]
       map.on('load', () => {
-
+        // console.log(this.parseUrlParams())
         // 標高タイルソース---------------------------------------------------
         map.addSource("gsidem-terrain-rgb", {
           type: 'raster-dem',
@@ -314,7 +342,12 @@ export default {
           }
         });
         map.setLayoutProperty('plateauPmtiles', 'visibility', 'none')
+        // -------------------------------------------------------------------------------------------------------------
+        map.on('moveend', this.updatePermalink)
+        // this.parseUrlParams()
       })
+      // on load
+      //----------------------------------------------------------------------------------------------------------------
     })
     // -----------------------------------------------------------------------------------------------------------------
   }
