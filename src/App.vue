@@ -289,6 +289,31 @@ export default {
           },
         })
         map.setLayoutProperty('bldg', 'visibility', 'none')
+        // -------------------------------------------------------------------------------------------------------------
+        // PLATEAU建物（PMTiles）ソース
+        map.addSource("plateauPmtiles", {
+          type: "vector",
+          url: "pmtiles://https://shiworks.xsrv.jp/pmtiles-data/plateau/PLATEAU_2022_LOD1.pmtiles",
+          minzoom: 16,
+          maxzoom: 16,
+          attribution: '<a href="https://www.geospatial.jp/ckan/dataset/plateau">3D都市モデルPLATEAU建築物データ（国土交通省）</a>'
+        });
+
+        // PLATEAU建物（PMTiles）レイヤ
+        map.addLayer({
+          'id': 'plateauPmtiles',
+          'source': 'plateauPmtiles',
+          'source-layer': "PLATEAU",
+          "minzoom": 16,
+          "maxzoom": 23,
+          'type': 'fill-extrusion',
+          'paint': {
+            "fill-extrusion-color": '#797979',
+            "fill-extrusion-opacity": 0.7,
+            "fill-extrusion-height": ["get", "measuredHeight"]
+          }
+        });
+        map.setLayoutProperty('plateauPmtiles', 'visibility', 'none')
       })
     })
     // -----------------------------------------------------------------------------------------------------------------

@@ -18,11 +18,9 @@ export default {
   name: 'Dialog-layer',
   props: ['mapName'],
   data: () => ({
-    test: 'test',
-    // layers:{gsiLayer:false, bldg:false, amx:false},
     layers:[
       {name:'gsiLayer',label:'地理院地図',value:false},
-      {name:'bldg',label:'東京都23区建物データ',value:false},
+      {name:'plateauPmtiles',label:'PLATEAU建物',value:false},
       {name:'amx',label:'法務省登記所備付地図',value:false}
     ],
     menuContentSize: {'height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'}
