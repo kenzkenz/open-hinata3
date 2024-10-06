@@ -130,10 +130,12 @@ export default {
 }
 #map01 {
   background-color: #fff;
+  border: #000 1px solid;
 }
 #map02 {
   background-color: #787878;
-  position:absolute;;
+  border: #000 1px solid;
+  position:absolute;
 }
 
 #left-top-div {
