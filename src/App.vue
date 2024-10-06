@@ -2,17 +2,15 @@
   <v-app>
     <v-main>
       <div id="map00">
-        <div v-for="mapName in mapNames" :key="mapName">
-          <div :id=mapName :style="mapSize[mapName]" v-show="mapFlg[mapName]">
-            <div class="center-target"></div>
-            <div id="left-top-div">
-              <v-btn @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><i class="fa-solid fa-bars"></i></v-btn>
-              <v-btn style="margin-left:10px;" @click="btnClickSplit" v-if="mapName === 'map01'"><i class="fa-solid fa-table-columns"></i></v-btn>
-              <v-btn style="margin-left:10px;" @click="btnClickLayer(mapName)"><i class="fa-solid fa-layer-group"></i></v-btn>
-            </div>
-            <DialogMenu :mapName=mapName />
-            <DialogLayer :mapName=mapName />
+        <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="mapFlg[mapName]">
+          <div class="center-target"></div>
+          <div id="left-top-div">
+            <v-btn @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><i class="fa-solid fa-bars"></i></v-btn>
+            <v-btn style="margin-left:10px;" @click="btnClickSplit" v-if="mapName === 'map01'"><i class="fa-solid fa-table-columns"></i></v-btn>
+            <v-btn style="margin-left:10px;" @click="btnClickLayer(mapName)"><i class="fa-solid fa-layer-group"></i></v-btn>
           </div>
+          <DialogMenu :mapName=mapName />
+          <DialogLayer :mapName=mapName />
         </div>
       </div>
     </v-main>
