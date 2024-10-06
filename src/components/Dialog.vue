@@ -21,7 +21,6 @@ export default {
   },
   methods: {
     closeBtn () {
-      console.log(this.dialog.name,this.mapName)
       this.$store.state.dialogs[this.dialog.name][this.mapName].style.top = this.$refs.dragDiv.style.top
       this.$store.state.dialogs[this.dialog.name][this.mapName].style.left = this.$refs.dragDiv.style.left
       this.$store.state.dialogs[this.dialog.name][this.mapName].style.display = 'none'

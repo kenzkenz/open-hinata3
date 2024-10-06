@@ -1,7 +1,7 @@
 <template>
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div :style="menuContentSize">
-      ダイアログメニュー
+      メニュー まだなにもない
     </div>
   </Dialog>
 </template>

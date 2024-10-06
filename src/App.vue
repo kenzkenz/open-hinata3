@@ -39,9 +39,13 @@ export default {
   }),
   methods: {
     btnClickMenu (mapName) {
+      this.$store.commit('incrDialogMaxZindex')
+      this.$store.state.dialogs.menuDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
       this.$store.state.dialogs.menuDialog[mapName].style.display = 'block'
     },
     btnClickLayer (mapName) {
+      this.$store.commit('incrDialogMaxZindex')
+      this.$store.state.dialogs.menuDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
       this.$store.state.dialogs.layerDialog[mapName].style.display = 'block'
     },
     btnClickSplit () {
@@ -87,35 +91,28 @@ export default {
     syncMaps(this.$store.state.map01, this.$store.state.map02)
     // -----------------------------------------------------------------------------------------------------------------
     // on load
-    this.$store.state.map01.on('load', () => {
-      this.$store.state.map01.addSource('gsi', {
-        type: 'raster',
-        tiles: [
-          'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png' // 標準地図
-        ],
-        tileSize: 256
-      });
-      this.$store.state.map01.addLayer({
-        'id': 'gsi-layer',
-        'type': 'raster',
-        'source': 'gsi',
-        'minzoom': 0,
-        'maxzoom': 18
-      });
-      const map = this.$store.state.map01
-      map.setLayoutProperty('gsi-layer', 'visibility', 'none');
-      
-      // // ボタンのイベントリスナーを設定
-      // document.querySelector('.testBtn').onclick = () => {
-      //   const visibility = map.getLayoutProperty('gsi-layer', 'visibility');
-      //   map.setLayoutProperty('gsi-layer', 'visibility', visibility === 'visible' ? 'none' : 'visible');
-      // };
-
-
+    this.mapNames.forEach(mapName => {
+      const map = this.$store.state[mapName]
+      map.on('load', () => {
+        map.addSource('gsi', {
+          type: 'raster',
+          tiles: [
+            'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png' // 標準地図
+          ],
+          tileSize: 256
+        });
+        map.addLayer({
+          'id': 'gsi-layer',
+          'type': 'raster',
+          'source': 'gsi',
+          'minzoom': 0,
+          'maxzoom': 18
+        });
+        // レイヤーの初期状態を非表示にする
+        map.setLayoutProperty('gsi-layer', 'visibility', 'none');
+      })
     })
     // -----------------------------------------------------------------------------------------------------------------
-    // レイヤーの初期状態を非表示にする
-
   }
 }
 </script>
