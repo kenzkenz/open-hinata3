@@ -163,26 +163,34 @@ export default {
     const vm = this
     function syncMaps(mapA, mapB) {
       console.log(vm.mapName)
-      if (vm.mapName === 'map01') {
+      // if (vm.mapName === 'map01') {
         console.log(888)
         mapA.on('move', () => {
-          if (!syncing) {
-            syncing = true
-            mapB.setCenter(mapA.getCenter())
-            mapB.setZoom(mapA.getZoom())
-            syncing = false
+          if (vm.mapName === 'map01') {
+            console.log(vm.mapName)
+            if (!syncing) {
+              syncing = true
+              mapB.setCenter(mapA.getCenter())
+              mapB.setZoom(mapA.getZoom())
+              syncing = false
+            }
           }
+
         })
-      } else {
+      // } else {
         mapB.on('move', () => {
           if (!syncing) {
-            syncing = true
-            mapA.setCenter(mapB.getCenter())
-            mapA.setZoom(mapB.getZoom())
-            syncing = false
+            if (vm.mapName === 'map02') {
+              console.log(vm.mapName)
+              syncing = true
+              mapA.setCenter(mapB.getCenter())
+              mapA.setZoom(mapB.getZoom())
+              syncing = false
+            }
+
           }
         })
-      }
+      // }
     }
     syncMaps(this.$store.state.map01, this.$store.state.map02)
     // -----------------------------------------------------------------------------------------------------------------
