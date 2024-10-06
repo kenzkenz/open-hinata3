@@ -1,28 +1,13 @@
 <template>
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div :style="menuContentSize">
-      <v-switch
-          v-model="switchFlg.gsiLayer"
-          label="地理院地図"
-          hide-details
-          inset
-          @change="changeSwitch(mapName)"
+      <v-switch v-for="layer in layers" :key="layer"
+        v-model="layer.value"
+        :label="layer.label"
+        hide-details
+        inset
+        @change="changeSwitch(mapName)"
       ></v-switch>
-      <v-switch
-          v-model="switchFlg.amx"
-          label="法務省登記所備付地図"
-          hide-details
-          inset
-          @change="changeSwitch(mapName)"
-      ></v-switch>
-      <v-switch
-          v-model="switchFlg.bldg"
-          label="東京都23区建物データ"
-          hide-details
-          inset
-          @change="changeSwitch(mapName)"
-      ></v-switch>
-
     </div>
   </Dialog>
 </template>
@@ -34,7 +19,12 @@ export default {
   props: ['mapName'],
   data: () => ({
     test: 'test',
-    switchFlg:{gsiLayer:false, bldg:false, amx:false},
+    // layers:{gsiLayer:false, bldg:false, amx:false},
+    layers:[
+      {name:'gsiLayer',label:'地理院地図',value:false},
+      {name:'bldg',label:'東京都23区建物データ',value:false},
+      {name:'amx',label:'法務省登記所備付地図',value:false}
+    ],
     menuContentSize: {'height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'}
   }),
   computed: {
@@ -46,27 +36,28 @@ export default {
     changeSwitch(mapName){
       const vm = this
       const map = this.$store.state[mapName]
-      Object.keys(vm.switchFlg).forEach(function(key) {
-        if (key === 'amx') {
-          if (vm.switchFlg[key]) {
-            map.setLayoutProperty('amx-a-fude', 'visibility', 'visible')
-            map.setLayoutProperty('amx-a-daihyo', 'visibility', 'visible')
+      vm.layers.forEach(layer => {
+        console.log(layer)
+          if (layer.name === 'amx') {
+            if (layer.value) {
+              map.setLayoutProperty('amx-a-fude', 'visibility', 'visible')
+              map.setLayoutProperty('amx-a-daihyo', 'visibility', 'visible')
+            } else {
+              map.setLayoutProperty('amx-a-fude', 'visibility', 'none')
+              map.setLayoutProperty('amx-a-daihyo', 'visibility', 'none')
+            }
           } else {
-            map.setLayoutProperty('amx-a-fude', 'visibility', 'none')
-            map.setLayoutProperty('amx-a-daihyo', 'visibility', 'none')
+            if (layer.value) {
+              map.setLayoutProperty(layer.name, 'visibility', 'visible')
+            } else {
+              map.setLayoutProperty(layer.name, 'visibility', 'none')
+            }
           }
-        } else {
-          if (vm.switchFlg[key]) {
-            map.setLayoutProperty(key, 'visibility', 'visible')
-          } else {
-            map.setLayoutProperty(key, 'visibility', 'none')
-          }
-        }
       })
     },
   },
   watch: {
-    switchFlg(){
+    layers(){
       alert()
     }
   }
