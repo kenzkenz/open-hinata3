@@ -70,7 +70,7 @@ export default {
     this.mapNames.forEach(mapName => {
       const map = new maplibregl.Map({
         container: mapName,
-        style: 'https://tile.openstreetmap.jp/styles/osm-bright-ja/style.json', // 地図のスタイル
+        style: 'https://tile.openstreetmap.jp/styles/osm-bright-ja/style.json',
         center: [139.7024, 35.6598],
         zoom: 16,
       })
