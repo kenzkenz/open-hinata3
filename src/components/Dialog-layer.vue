@@ -1,7 +1,7 @@
 <template>
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div :style="menuContentSize">
-      ダイアログレイヤー
+      <v-btn class="testBtn" @click="click(mapName)">地理院地図</v-btn>
     </div>
   </Dialog>
 </template>
@@ -21,6 +21,11 @@ export default {
     }
   },
   methods: {
+    click (mapName) {
+      const map = this.$store.state[mapName]
+      const visibility = map.getLayoutProperty('gsi-layer', 'visibility');
+      map.setLayoutProperty('gsi-layer', 'visibility', visibility === 'visible' ? 'none' : 'visible');
+    }
   }
 }
 </script>

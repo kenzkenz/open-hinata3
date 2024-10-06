@@ -86,6 +86,7 @@ export default {
     }
     syncMaps(this.$store.state.map01, this.$store.state.map02)
     // -----------------------------------------------------------------------------------------------------------------
+    // on load
     this.$store.state.map01.on('load', () => {
       this.$store.state.map01.addSource('gsi', {
         type: 'raster',
@@ -101,8 +102,20 @@ export default {
         'minzoom': 0,
         'maxzoom': 18
       });
+      const map = this.$store.state.map01
+      map.setLayoutProperty('gsi-layer', 'visibility', 'none');
+      
+      // // ボタンのイベントリスナーを設定
+      // document.querySelector('.testBtn').onclick = () => {
+      //   const visibility = map.getLayoutProperty('gsi-layer', 'visibility');
+      //   map.setLayoutProperty('gsi-layer', 'visibility', visibility === 'visible' ? 'none' : 'visible');
+      // };
+
+
     })
     // -----------------------------------------------------------------------------------------------------------------
+    // レイヤーの初期状態を非表示にする
+
   }
 }
 </script>
