@@ -2,7 +2,7 @@
   <v-app>
     <v-main>
       <div id="map00">
-        <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="mapFlg[mapName]">
+        <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="mapFlg[mapName]" @mousedown="mapMouseDown(mapName)">
           <div class="center-target"></div>
           <div id="left-top-div">
             <v-btn @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><i class="fa-solid fa-bars"></i></v-btn>
@@ -38,8 +38,13 @@ export default {
       map02: {top: 0, right: 0, width: '50%', height: window.innerHeight + 'px'},
     },
     permalink: '',
+    mapName: '',
   }),
   methods: {
+    mapMouseDown (mapName) {
+      console.log(777)
+      this.mapName = mapName
+    },
     btnClickMenu (mapName) {
       if (this.$store.state.dialogs.menuDialog[mapName].style.display === 'none') {
         this.$store.commit('incrDialogMaxZindex')
@@ -155,23 +160,29 @@ export default {
     })
     // 画面同期----------------------------------------------------------------------------------------------------------
     let syncing = false
+    const vm = this
     function syncMaps(mapA, mapB) {
-      mapA.on('move', () => {
-        if (!syncing) {
-          syncing = true
-          mapB.setCenter(mapA.getCenter())
-          mapB.setZoom(mapA.getZoom())
-          syncing = false
-        }
-      })
-      mapB.on('move', () => {
-        if (!syncing) {
-          syncing = true
-          mapA.setCenter(mapB.getCenter())
-          mapA.setZoom(mapB.getZoom())
-          syncing = false
-        }
-      })
+      console.log(vm.mapName)
+      if (vm.mapName === 'map01') {
+        console.log(888)
+        mapA.on('move', () => {
+          if (!syncing) {
+            syncing = true
+            mapB.setCenter(mapA.getCenter())
+            mapB.setZoom(mapA.getZoom())
+            syncing = false
+          }
+        })
+      } else {
+        mapB.on('move', () => {
+          if (!syncing) {
+            syncing = true
+            mapA.setCenter(mapB.getCenter())
+            mapA.setZoom(mapB.getZoom())
+            syncing = false
+          }
+        })
+      }
     }
     syncMaps(this.$store.state.map01, this.$store.state.map02)
     // -----------------------------------------------------------------------------------------------------------------
