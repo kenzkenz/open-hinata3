@@ -4,6 +4,7 @@
       <div id="map00">
         <div v-for="mapName in mapNames" :key="mapName">
           <div :id=mapName :style="mapSize[mapName]" v-show="mapFlg[mapName]">
+            <div class="center-target"></div>
             <div id="left-top-div">
               <v-btn @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><i class="fa-solid fa-bars"></i></v-btn>
               <v-btn style="margin-left:10px;" @click="btnClickSplit" v-if="mapName === 'map01'"><i class="fa-solid fa-table-columns"></i></v-btn>
@@ -21,6 +22,7 @@
 <script>
 import DialogMenu from '@/components/Dialog-menu'
 import DialogLayer from '@/components/Dialog-layer'
+import 'maplibre-gl/dist/maplibre-gl.css'
 import maplibregl from 'maplibre-gl'
 import { Protocol } from "pmtiles";
 
@@ -280,14 +282,29 @@ export default {
   border: #000 1px solid;
 }
 #map02 {
-  background-color: #787878;
+  background-color: #fff;
   border: #000 1px solid;
   position:absolute;
 }
-
+.center-target{
+  position: absolute;
+  background-image:url('https://kenzkenz.xsrv.jp/open-hinata/img/target0.gif');
+  background-repeat:  no-repeat;
+  width:24px;
+  height:24pX;
+  pointer-events: none;
+  top: calc(50% - 12px);
+  left: calc(50% - 12px);
+  z-index: 1;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
 #left-top-div {
   position:absolute;
   top:10px;
   left:10px;
+  z-index:1;
 }
 </style>
