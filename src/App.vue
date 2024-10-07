@@ -329,6 +329,7 @@ export default {
           'minzoom': 0,
           'maxzoom': 18
         })
+        map.setLayoutProperty('gsiLayer', 'visibility', 'none')
         // 最新写真------------------------------------------------------------------------------------------------------
         map.addSource('seamlessphoto', {
           type: 'raster',
