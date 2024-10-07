@@ -160,12 +160,13 @@ export default {
     })
     // 画面同期----------------------------------------------------------------------------------------------------------
     let syncing = false
-    const vm = this
     function syncMaps(mapA, mapB) {
-      console.log(vm.mapName)
-      console.log(888)
-      mapA.on('moveend', () => {
-        console.log(vm.mapName)
+      // iphoneのtきmoveではフリーズする。moveendではフリーズしない。
+      let m = 'move'
+      if (window.innerWidth < 1000) {
+        m = 'moveend'
+      }
+      mapA.on(m, () => {
         if (!syncing) {
           syncing = true
           mapB.setCenter(mapA.getCenter())
@@ -173,9 +174,8 @@ export default {
           syncing = false
         }
       })
-      mapB.on('moveend', () => {
+      mapB.on(m, () => {
         if (!syncing) {
-          console.log(vm.mapName)
           syncing = true
           mapA.setCenter(mapB.getCenter())
           mapA.setZoom(mapB.getZoom())
@@ -186,27 +186,9 @@ export default {
     syncMaps(this.$store.state.map01, this.$store.state.map02)
     // -----------------------------------------------------------------------------------------------------------------
     // on load
-    // let syncing = false
     this.mapNames.forEach(mapName => {
       const map = this.$store.state[mapName]
       map.on('load', () => {
-        // syncMaps(this.$store.state.map01, this.$store.state.map02)
-
-        // if (mapName === 'map01'){
-        //   this.$store.state.map01.on('moveend', () => {
-        //     if (!syncing) {
-        //       syncing = true
-        //       console.log(this.$store.state.map01.getCenter())
-        //       this.$store.state.map02.setCenter([this.$store.state.map01.getCenter().lng, this.$store.state.map01.getCenter().lat])
-        //       this.$store.state.map02.setZoom(this.$store.state.map01.getZoom())
-        //       syncing = false
-        //     }
-        //   })
-        // }
-
-
-
-        // console.log(this.parseUrlParams())
         // 標高タイルソース---------------------------------------------------
         map.addSource("gsidem-terrain-rgb", {
           type: 'raster-dem',
