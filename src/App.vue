@@ -159,40 +159,40 @@ export default {
       this.$store.state[mapName] = map
     })
     // 画面同期----------------------------------------------------------------------------------------------------------
-    let syncing = false
-    const vm = this
-    function syncMaps(mapA, mapB) {
-      console.log(vm.mapName)
-      // if (vm.mapName === 'map01') {
-        console.log(888)
-        mapA.on('move', () => {
-          if (vm.mapName === 'map01') {
-            console.log(vm.mapName)
-            if (!syncing) {
-              syncing = true
-              mapB.setCenter(mapA.getCenter())
-              mapB.setZoom(mapA.getZoom())
-              syncing = false
-            }
-          }
-
-        })
-      // } else {
-        mapB.on('move', () => {
-          if (!syncing) {
-            if (vm.mapName === 'map02') {
-              console.log(vm.mapName)
-              syncing = true
-              mapA.setCenter(mapB.getCenter())
-              mapA.setZoom(mapB.getZoom())
-              syncing = false
-            }
-
-          }
-        })
-      // }
-    }
-    syncMaps(this.$store.state.map01, this.$store.state.map02)
+    // let syncing = false
+    // const vm = this
+    // function syncMaps(mapA, mapB) {
+    //   console.log(vm.mapName)
+    //   // if (vm.mapName === 'map01') {
+    //     console.log(888)
+    //     mapA.on('move', () => {
+    //       if (vm.mapName === 'map01') {
+    //         console.log(vm.mapName)
+    //         if (!syncing) {
+    //           syncing = true
+    //           mapB.setCenter(mapA.getCenter())
+    //           mapB.setZoom(mapA.getZoom())
+    //           syncing = false
+    //         }
+    //       }
+    //
+    //     })
+    //   // } else {
+    //     mapB.on('move', () => {
+    //       if (!syncing) {
+    //         if (vm.mapName === 'map02') {
+    //           console.log(vm.mapName)
+    //           syncing = true
+    //           mapA.setCenter(mapB.getCenter())
+    //           mapA.setZoom(mapB.getZoom())
+    //           syncing = false
+    //         }
+    //
+    //       }
+    //     })
+    //   // }
+    // }
+    // syncMaps(this.$store.state.map01, this.$store.state.map02)
     // -----------------------------------------------------------------------------------------------------------------
     // on load
     this.mapNames.forEach(mapName => {
