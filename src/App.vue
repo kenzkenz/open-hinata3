@@ -5,9 +5,9 @@
         <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="mapFlg[mapName]">
           <div class="center-target"></div>
           <div id="left-top-div">
-            <v-btn @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><i class="fa-solid fa-bars"></i></v-btn>
-            <v-btn style="margin-left:10px;" @click="btnClickSplit" v-if="mapName === 'map01'"><i class="fa-solid fa-table-columns"></i></v-btn>
-            <v-btn style="margin-left:10px;" @click="btnClickLayer(mapName)"><i class="fa-solid fa-layer-group"></i></v-btn>
+            <v-btn @click="btnClickMenu(mapName)" v-if="mapName === 'map01'" size="small"><i class="fa-solid fa-bars"></i></v-btn>
+            <v-btn style="margin-left:10px;" @click="btnClickSplit" v-if="mapName === 'map01'" size="small"><i class="fa-solid fa-table-columns"></i></v-btn>
+            <v-btn style="margin-left:10px;" @click="btnClickLayer(mapName)" size="small"><i class="fa-solid fa-layer-group"></i></v-btn>
           </div>
           <DialogMenu :mapName=mapName />
           <DialogLayer :mapName=mapName />
@@ -173,11 +173,13 @@ export default {
     },
   },
   mounted() {
+    //------------------------------------------------------------------------------------------------------------------
     document.addEventListener('touchmove', function (event) {
       if (event.scale !== 1) {
         event.preventDefault();
       }
     }, { passive: false });
+    //------------------------------------------------------------------------------------------------------------------
 
 
     let protocol = new Protocol();
@@ -391,7 +393,8 @@ export default {
         // 3D都市モデル（Project PLATEAU）東京都23区（2020年度）建物データ
         map.addSource("plateau-bldg", {
           type: "vector",
-          tiles: ["https://indigo-lab.github.io/plateau-lod2-mvt/{z}/{x}/{y}.pbf"],
+          // tiles: ["https://indigo-lab.github.io/plateau-lod2-mvt/{z}/{x}/{y}.pbf"],
+          tiles: ['https://shiworks.xsrv.jp/pmtiles-data/plateau/PLATEAU_2023_LOD0.pmtiles'],
           minzoom: 10,
           maxzoom: 16,
           attribution: "<a href='https://github.com/indigo-lab/plateau-lod2-mvt'>plateau-lod2-mvt by indigo-lab</a> (<a href='https://www.mlit.go.jp/plateau/'>国土交通省 Project PLATEAU</a> のデータを加工して作成)",
