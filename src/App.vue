@@ -201,6 +201,7 @@ export default {
         center: center,
         zoom: zoom,
         maxPitch: 85, // 最大の傾き、デフォルトは60
+        // maxZoom: 17.9,
         // style: 'https://raw.githubusercontent.com/gsi-cyberjapan/optimal_bvmap/52ba56f645334c979998b730477b2072c7418b94/style/std.json',
         style:require('@/assets/json/std.json')
         // style: {
@@ -343,7 +344,7 @@ export default {
           'type': 'raster',
           'source': 'seamlessphoto',
           'minzoom': 2,
-          'maxzoom': 18
+          'maxzoom': 23
         })
         // レイヤーの初期状態を非表示にする
         map.setLayoutProperty('seamlessphoto', 'visibility', 'none')
