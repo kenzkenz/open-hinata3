@@ -492,9 +492,9 @@ export default {
   margin-top:20px;
   background:rgba(0,0,0,0.1);
   border-radius:145px 0 0 145px;
-  /*-moz-user-select:none;*/
-  /*-webkit-user-select:none;*/
-  /*-ms-user-select:none;*/
+  -moz-user-select:none;
+  -webkit-user-select:none;
+  -ms-user-select:none;
   /*cursor:move;*/
 }
 @media screen and (max-width:480px) {
