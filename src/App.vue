@@ -195,23 +195,23 @@ export default {
     // syncMaps(this.$store.state.map01, this.$store.state.map02)
     // -----------------------------------------------------------------------------------------------------------------
     // on load
-    // let syncing = false
+    let syncing = false
     this.mapNames.forEach(mapName => {
       const map = this.$store.state[mapName]
       map.on('load', () => {
         // syncMaps(this.$store.state.map01, this.$store.state.map02)
 
-        // if (mapName === 'map01'){
-        //   this.$store.state.map01.on('move', () => {
-        //     if (!syncing) {
-        //       syncing = true
-        //       console.log(this.$store.state.map01.getCenter())
-        //       this.$store.state.map02.setCenter([this.$store.state.map01.getCenter().lng, this.$store.state.map01.getCenter().lat])
-        //       this.$store.state.map02.setZoom(this.$store.state.map01.getZoom())
-        //       syncing = false
-        //     }
-        //   })
-        // }
+        if (mapName === 'map01'){
+          this.$store.state.map01.on('moveend', () => {
+            if (!syncing) {
+              syncing = true
+              console.log(this.$store.state.map01.getCenter())
+              this.$store.state.map02.setCenter([this.$store.state.map01.getCenter().lng, this.$store.state.map01.getCenter().lat])
+              this.$store.state.map02.setZoom(this.$store.state.map01.getZoom())
+              syncing = false
+            }
+          })
+        }
 
 
 
