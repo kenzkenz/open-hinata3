@@ -201,14 +201,16 @@ export default {
       map.on('load', () => {
         // syncMaps(this.$store.state.map01, this.$store.state.map02)
 
-        this.$store.state.map01.on('move', () => {
-          if (!syncing) {
-            syncing = true
-            this.$store.state.map02.setCenter(this.$store.state.map01.getCenter())
-            this.$store.state.map02.setZoom(this.$store.state.map01.getZoom())
-            syncing = false
-          }
-        })
+        if (mapName === 'map01'){
+          this.$store.state.map01.on('move', () => {
+            if (!syncing) {
+              syncing = true
+              this.$store.state.map02.setCenter(this.$store.state.map01.getCenter())
+              this.$store.state.map02.setZoom(this.$store.state.map01.getZoom())
+              syncing = false
+            }
+          })
+        }
 
 
 
