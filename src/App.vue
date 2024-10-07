@@ -66,9 +66,19 @@ export default {
     btnClickSplit () {
       if (this.mapFlg.map02) {
         this.mapSize.map01.width = '100%'
+        this.mapSize.map01.height = window.innerHeight + 'px'
         this.mapFlg.map02 = false
       } else {
-        this.mapSize.map01.width = '50%'
+        if (window.innerWidth > 1000) {
+          this.mapSize.map01.width = '50%'
+          this.mapSize.map01.height = window.innerHeight + 'px'
+        } else {
+          this.mapSize.map01.width = '100%'
+          this.mapSize.map01.height = (window.innerHeight / 2) + 'px'
+          this.mapSize.map02.width = '100%'
+          this.mapSize.map02.height = (window.innerHeight / 2) + 'px'
+          this.mapSize.map02.top = (window.innerHeight / 2) + 'px'
+        }
         this.mapFlg.map02 = true
       }
     },
