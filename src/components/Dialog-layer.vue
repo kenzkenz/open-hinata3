@@ -42,6 +42,10 @@ export default {
             label: "標準地図",
           },
           {
+            id: 'seamlessphoto',
+            label: "最新写真",
+          },
+          {
             id: 'plateauPmtiles',
             label: "PLATEAU建物",
           },

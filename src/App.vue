@@ -186,7 +186,6 @@ export default {
     }, { passive: false });
     //------------------------------------------------------------------------------------------------------------------
 
-
     let protocol = new Protocol();
     maplibregl.addProtocol("pmtiles",protocol.tile)
     this.mapNames.forEach(mapName => {
@@ -315,23 +314,38 @@ export default {
               encoding: "terrarium",
               tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
         })
-
+        // 標準地図------------------------------------------------------------------------------------------------------
         map.addSource('gsi', {
           type: 'raster',
           tiles: [
             'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png' // 標準地図
           ],
           tileSize: 256
-        });
+        })
         map.addLayer({
           'id': 'gsiLayer',
           'type': 'raster',
           'source': 'gsi',
           'minzoom': 0,
           'maxzoom': 18
-        });
+        })
+        // 最新写真------------------------------------------------------------------------------------------------------
+        map.addSource('seamlessphoto', {
+          type: 'raster',
+          tiles: [
+            'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'
+          ],
+          tileSize: 256
+        })
+        map.addLayer({
+          'id': 'seamlessphoto',
+          'type': 'raster',
+          'source': 'seamlessphoto',
+          'minzoom': 2,
+          'maxzoom': 18
+        })
         // レイヤーの初期状態を非表示にする
-        map.setLayoutProperty('gsiLayer', 'visibility', 'none')
+        map.setLayoutProperty('seamlessphoto', 'visibility', 'none')
         // 登記所備付地図データ --------------------------------------------------------------------------------------------
         map.addSource("amx-a-pmtiles",{
             type: "vector",
