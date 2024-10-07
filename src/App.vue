@@ -195,9 +195,23 @@ export default {
     // syncMaps(this.$store.state.map01, this.$store.state.map02)
     // -----------------------------------------------------------------------------------------------------------------
     // on load
+    let syncing = false
     this.mapNames.forEach(mapName => {
       const map = this.$store.state[mapName]
       map.on('load', () => {
+        // syncMaps(this.$store.state.map01, this.$store.state.map02)
+
+        this.$store.state.map01.on('move', () => {
+          if (!syncing) {
+            syncing = true
+            this.$store.state.map02.setCenter(this.$store.state.map01.getCenter())
+            this.$store.state.map02.setZoom(this.$store.state.map01.getZoom())
+            syncing = false
+          }
+        })
+
+
+
         // console.log(this.parseUrlParams())
         // 標高タイルソース---------------------------------------------------
         map.addSource("gsidem-terrain-rgb", {
