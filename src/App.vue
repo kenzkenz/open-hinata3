@@ -56,7 +56,8 @@ export default {
     terrainReset (mapName) {
       const map = this.$store.state[mapName]
       map.setPitch(0)
-      map.setBearing(0)
+      this.$store.state.map01.setBearing(0)
+      this.$store.state.map02.setBearing(0)
     },
     mouseup () {
       this.mouseDown = false
@@ -67,7 +68,9 @@ export default {
       vm.mouseDown = true
       function bearing () {
         if (vm.mouseDown) {
-          map.setBearing(map.getBearing() + 5)
+          // map.setBearing(map.getBearing() + 5)
+          vm.$store.state.map01.setBearing(map.getBearing() + 5)
+          vm.$store.state.map02.setBearing(map.getBearing() + 5)
           setTimeout(function () {bearing()}, 50)
         } else {
           clearTimeout(bearing)
@@ -81,7 +84,9 @@ export default {
       vm.mouseDown = true
       function bearing () {
         if (vm.mouseDown) {
-          map.setBearing(map.getBearing() - 5)
+          // map.setBearing(map.getBearing() - 5)
+          vm.$store.state.map01.setBearing(map.getBearing() - 5)
+          vm.$store.state.map02.setBearing(map.getBearing() - 5)
           setTimeout(function () {bearing()}, 50)
         } else {
           clearTimeout(bearing)
