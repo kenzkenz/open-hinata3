@@ -173,6 +173,13 @@ export default {
     },
   },
   mounted() {
+    document.addEventListener('touchmove', function (event) {
+      if (event.scale !== 1) {
+        event.preventDefault();
+      }
+    }, { passive: false });
+
+
     let protocol = new Protocol();
     maplibregl.addProtocol("pmtiles",protocol.tile)
     this.mapNames.forEach(mapName => {
