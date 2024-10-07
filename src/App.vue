@@ -205,13 +205,9 @@ export default {
           this.$store.state.map01.on('move', () => {
             if (!syncing) {
               syncing = true
-              try {
-                console.log(this.$store.state.map01.getCenter())
-                this.$store.state.map02.setCenter([this.$store.state.map01.getCenter().lng, this.$store.state.map01.getCenter().lat])
-                this.$store.state.map02.setZoom(this.$store.state.map01.getZoom())
-              } catch(e) {
-                console.log(e)
-              }
+              console.log(this.$store.state.map01.getCenter())
+              // this.$store.state.map02.setCenter([this.$store.state.map01.getCenter().lng, this.$store.state.map01.getCenter().lat])
+              this.$store.state.map02.setZoom(this.$store.state.map01.getZoom())
               syncing = false
             }
           })
