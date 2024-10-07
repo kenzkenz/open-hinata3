@@ -2,7 +2,7 @@
   <v-app>
     <v-main>
       <div id="map00">
-        <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="mapFlg[mapName]" @mousedown="mapMouseDown(mapName)">
+        <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="mapFlg[mapName]">
           <div class="center-target"></div>
           <div id="left-top-div">
             <v-btn @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><i class="fa-solid fa-bars"></i></v-btn>
@@ -11,6 +11,17 @@
           </div>
           <DialogMenu :mapName=mapName />
           <DialogLayer :mapName=mapName />
+          <div class="cesium-btn-div">
+            <div class="cesiun-btn-container">
+              <button type="button" class="cesium-btn-up terrain-btn" @pointerdown.stop="upMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-up fa-lg hover'></i></button>
+              <button type="button" class="cesium-btn-down terrain-btn" @pointerdown.stop="downMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-down fa-lg'></i></button>
+              <button type="button" class="cesium-btn-left terrain-btn" @pointerdown="leftMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-left fa-lg'></i></button>
+              <button type="button" class="cesium-btn-right terrain-btn" @pointerdown="rightMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-right fa-lg'></i></button>
+              <div class="elevMag">
+                <button type="button" @click="terrainReset(mapName)">戻す</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </v-main>
@@ -39,11 +50,72 @@ export default {
     },
     permalink: '',
     mapName: '',
+    mouseDown: false,
   }),
   methods: {
-    mapMouseDown (mapName) {
-      console.log(777)
-      this.mapName = mapName
+    terrainReset (mapName) {
+      const map = this.$store.state[mapName]
+      map.setPitch(0)
+      map.setBearing(0)
+    },
+    mouseup () {
+      this.mouseDown = false
+    },
+    leftMousedown(mapName) {
+      const vm = this
+      const map = this.$store.state[mapName]
+      vm.mouseDown = true
+      function bearing () {
+        if (vm.mouseDown) {
+          map.setBearing(map.getBearing() + 5)
+          setTimeout(function () {bearing()}, 50)
+        } else {
+          clearTimeout(bearing)
+        }
+      }
+      bearing()
+    },
+    rightMousedown(mapName) {
+      const vm = this
+      const map = this.$store.state[mapName]
+      vm.mouseDown = true
+      function bearing () {
+        if (vm.mouseDown) {
+          map.setBearing(map.getBearing() - 5)
+          setTimeout(function () {bearing()}, 50)
+        } else {
+          clearTimeout(bearing)
+        }
+      }
+      bearing()
+    },
+    upMousedown(mapName) {
+      const vm = this
+      const map = this.$store.state[mapName]
+      vm.mouseDown = true
+      function pitch () {
+        if (vm.mouseDown) {
+          map.setPitch(map.getPitch() + 5)
+          setTimeout(function () {pitch()}, 50)
+        } else {
+          clearTimeout(pitch)
+        }
+      }
+      pitch()
+    },
+    downMousedown(mapName) {
+      const vm = this
+      const map = this.$store.state[mapName]
+      vm.mouseDown = true
+      function pitch () {
+        if (vm.mouseDown) {
+          map.setPitch(map.getPitch() - 5)
+          setTimeout(function () {pitch()}, 50)
+        } else {
+          clearTimeout(pitch)
+        }
+      }
+      pitch()
     },
     btnClickMenu (mapName) {
       if (this.$store.state.dialogs.menuDialog[mapName].style.display === 'none') {
@@ -402,5 +474,96 @@ export default {
   top:10px;
   left:10px;
   z-index:1;
+}
+/*セシウムのボタン-------------------------------------------------------------*/
+.terrain-btn {
+  background-color: rgba(60,60,136,0.5);
+}
+.cesium-btn-div{
+  position:absolute;
+  top:60%;
+  right:0px;
+  z-index:2;
+  /*display:none;*/
+  height:145px;
+  width:145px;
+  margin-left:-72px;
+  /*margin-top:-72px;*/
+  margin-top:20px;
+  background:rgba(0,0,0,0.1);
+  border-radius:145px 0 0 145px;
+  /*-moz-user-select:none;*/
+  /*-webkit-user-select:none;*/
+  /*-ms-user-select:none;*/
+  /*cursor:move;*/
+}
+@media screen and (max-width:480px) {
+  .cesium-btn-div {
+    top:calc(50% - 73px);
+  }
+}
+.cesiun-btn-container{
+  position:relative;
+  height:100%;
+}
+.cesium-btn-up{
+  position:absolute;
+  top:10px;
+  left:50%;
+  padding:0;
+  width:40px;
+  height:40px;
+  margin-left:-20px;
+  color: white;
+  /*display:none;*/
+}
+.cesium-btn-down{
+  position:absolute;
+  bottom:10px;
+  left:50%;
+  padding:0;
+  width:40px;
+  height:40px;
+  margin-left:-20px;
+  color: white;
+  /*display:none;*/
+}
+.cesium-btn-left{
+  position:absolute;
+  top:50%;
+  left:10px;
+  padding:0;
+  width:40px;
+  height:40px;
+  margin-top:-20px;
+  color: white;
+}
+.cesium-btn-right{
+  position:absolute;
+  top:50%;
+  right:10px;
+  padding:0;
+  width:40px;
+  height:40px;
+  margin-top:-20px;
+  color: white;
+}
+.elevMag{
+  position:absolute;
+  top:60px;
+  left:50%;
+  padding:0;
+  width:40px;
+  height:20px;
+  margin-left:-20px;
+  text-align:center;
+  /*display:none;*/
+}
+
+.cesium-btn-div .ui-spinner{
+  font-size:10px;
+  width:30px;
+  background:rgba(0,0,0,0);
+  border:none;
 }
 </style>
