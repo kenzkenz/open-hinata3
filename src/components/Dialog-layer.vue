@@ -52,19 +52,19 @@ export default {
         label: "基本地図",
         nodes: [
           {
-            id: 'stdLayer',
+            id: 'ohStdLayer',
             label: "標準地図",
             source: Layers.stdSource,
             layer: Layers.stdLayer
           },
           {
-            id: 'seamlessphoto',
+            id: 'ohSeamlessphoto',
             label: "最新写真",
             source: Layers.seamlessphotoSource,
             layer: Layers.seamlessphotoLayer
           },
           {
-            id: 'plateauPmtiles',
+            id: 'ohPlateauPmtiles',
             label: "PLATEAU建物",
             source: Layers.plateauPmtilesSource,
             layer: Layers.plateauPmtilesLayer
@@ -132,14 +132,15 @@ export default {
     changeFlg(){
       const map = this.$store.state[this.mapName]
       // まずレイヤーを全削除-------------------------
-      // const layers = map.getStyle().layers
-      // if (layers) {
-      //   for (let i = layers.length - 1; i >= 0; i--) {
-      //     const layerId = layers[i].id
-      //     console.log(layerId)
-      //     map.removeLayer(layerId)
-      //   }
-      // }
+      const layers = map.getStyle().layers
+      if (layers) {
+        for (let i = layers.length - 1; i >= 0; i--) {
+          const layerId = layers[i].id
+          if (layerId.slice(0,2) === 'oh' ) {
+            map.removeLayer(layerId)
+          }
+        }
+      }
       // -----------------------------------------
       for (let i = this.selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
         const layer = this.selectedLayers[this.mapName][i]

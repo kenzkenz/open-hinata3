@@ -9,7 +9,7 @@ export const stdSource = {
     }
 }
 export const stdLayer = {
-    'id': 'stdLayer',
+    'id': 'ohStdLayer',
     'type': 'raster',
     'source': 'stdSource',
     'minzoom': 0,
@@ -26,7 +26,7 @@ export const seamlessphotoSource = {
     }
 }
 export const seamlessphotoLayer = {
-    'id': seamlessphotoSource.id,
+    'id': 'ohSeamlessphoto',
     'source': seamlessphotoSource.id,
     'type': 'raster',
     'minzoom': 2,
@@ -45,7 +45,7 @@ export const plateauPmtilesSource = {
     }
 }
 export const plateauPmtilesLayer = {
-    'id': 'plateauPmtiles',
+    'id': 'ohPlateauPmtiles',
     'source': 'plateauPmtiles',
     'source-layer': "PLATEAU",
     "minzoom": 16,
