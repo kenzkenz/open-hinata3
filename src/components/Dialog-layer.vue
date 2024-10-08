@@ -26,8 +26,9 @@
 
 <script>
 
-import Tree from "vue3-tree";
-import "vue3-tree/dist/style.css";
+import Tree from "vue3-tree"
+import "vue3-tree/dist/style.css"
+import * as Layers from '@/js/layers'
 
 export default {
   name: 'Dialog-layer',
@@ -45,19 +46,25 @@ export default {
           {
             id: 'gsiLayer',
             label: "標準地図",
+            source: Layers.stdSource,
+            layer: Layers.stdLayer
           },
           {
             id: 'seamlessphoto',
             label: "最新写真",
+            source: Layers.seamlessphotoSource,
+            layer: Layers.seamlessphotoLayer
           },
           {
             id: 'plateauPmtiles',
             label: "PLATEAU建物",
+            source: Layers.plateauPmtilesSource,
+            layer: Layers.plateauPmtilesLayer
           },
-          {
-            id: 'amx-a-fude',
-            label: "法務省登記所備付地図",
-          },
+          // {
+          //   id: 'amx-a-fude',
+          //   label: "法務省登記所備付地図",
+          // },
         ]
       }
     ],
@@ -75,23 +82,15 @@ export default {
   methods: {
     mouseDown (mapName) {
       this.mapName0 = mapName
-    } ,
+    },
     onNodeClick (node) {
       const map = this.$store.state[this.mapName0]
-      if (node.id === 'amx-a-fude') {
-        if (map.getLayoutProperty(node.id, 'visibility') === 'none') {
-          map.setLayoutProperty('amx-a-fude', 'visibility', 'visible')
-          map.setLayoutProperty('amx-a-daihyo', 'visibility', 'visible')
-        } else {
-          map.setLayoutProperty('amx-a-fude', 'visibility', 'none')
-          map.setLayoutProperty('amx-a-daihyo', 'visibility', 'none')
-        }
-      } else {
-        if(map.getLayoutProperty(node.id, 'visibility') === 'none') {
-          map.setLayoutProperty(node.id, 'visibility', 'visible')
-        } else {
-          map.setLayoutProperty(node.id, 'visibility', 'none')
-        }
+      if (node.source) {
+        if (map.getLayer(node.layer.id)) map.removeLayer(node.layer.id)
+        if (map.getSource(node.source.id)) map.removeSource(node.source.id)
+
+        map.addSource(node.source.id, node.source.obj)
+        map.addLayer(node.layer)
       }
     },
     changeSwitch(mapName){

@@ -315,40 +315,40 @@ export default {
               encoding: "terrarium",
               tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
         })
-        // 標準地図------------------------------------------------------------------------------------------------------
-        map.addSource('gsi', {
-          type: 'raster',
-          tiles: [
-            'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png' // 標準地図
-          ],
-          tileSize: 256
-        })
-        map.addLayer({
-          'id': 'gsiLayer',
-          'type': 'raster',
-          'source': 'gsi',
-          'minzoom': 0,
-          'maxzoom': 18
-        })
-        map.setLayoutProperty('gsiLayer', 'visibility', 'none')
+        // // 標準地図------------------------------------------------------------------------------------------------------
+        // map.addSource('gsi', {
+        //   type: 'raster',
+        //   tiles: [
+        //     'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png' // 標準地図
+        //   ],
+        //   tileSize: 256
+        // })
+        // map.addLayer({
+        //   'id': 'gsiLayer',
+        //   'type': 'raster',
+        //   'source': 'gsi',
+        //   'minzoom': 0,
+        //   'maxzoom': 18
+        // })
+        // map.setLayoutProperty('gsiLayer', 'visibility', 'none')
         // 最新写真------------------------------------------------------------------------------------------------------
-        const seamlessphotoSource = {
-          id:'seamlessphoto',obj:{
-            type: 'raster',
-            tiles: [
-              'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'
-            ],
-            tileSize: 256
-          }}
-        const seamlessphotoLayer = {
-          'id': seamlessphotoSource.id,
-          'source': seamlessphotoSource.id,
-          'type': 'raster',
-          'minzoom': 2,
-          'maxzoom': 23
-        }
-        map.addSource(seamlessphotoSource.id,seamlessphotoSource.obj)
-        map.addLayer(seamlessphotoLayer)
+        // const seamlessphotoSource = {
+        //   id:'seamlessphoto',obj:{
+        //     type: 'raster',
+        //     tiles: [
+        //       'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'
+        //     ],
+        //     tileSize: 256
+        //   }}
+        // const seamlessphotoLayer = {
+        //   'id': seamlessphotoSource.id,
+        //   'source': seamlessphotoSource.id,
+        //   'type': 'raster',
+        //   'minzoom': 2,
+        //   'maxzoom': 23
+        // }
+        // map.addSource(seamlessphotoSource.id,seamlessphotoSource.obj)
+        // map.addLayer(seamlessphotoLayer)
 
 
         // map.addSource('seamlessphoto', {
@@ -366,7 +366,7 @@ export default {
         //   'maxzoom': 23
         // })
         // レイヤーの初期状態を非表示にする
-        map.setLayoutProperty('seamlessphoto', 'visibility', 'none')
+        // map.setLayoutProperty('seamlessphoto', 'visibility', 'none')
 
 
 
@@ -437,55 +437,55 @@ export default {
         map.setLayoutProperty('amx-a-daihyo', 'visibility', 'none')
         // ------------------------------------------------------------------------------------------------------------
         // 3D都市モデル（Project PLATEAU）東京都23区（2020年度）建物データ
-        map.addSource("plateau-bldg", {
-          type: "vector",
-          // tiles: ["https://indigo-lab.github.io/plateau-lod2-mvt/{z}/{x}/{y}.pbf"],
-          tiles: ['https://shiworks.xsrv.jp/pmtiles-data/plateau/PLATEAU_2023_LOD0.pmtiles'],
-          minzoom: 10,
-          maxzoom: 16,
-          attribution: "<a href='https://github.com/indigo-lab/plateau-lod2-mvt'>plateau-lod2-mvt by indigo-lab</a> (<a href='https://www.mlit.go.jp/plateau/'>国土交通省 Project PLATEAU</a> のデータを加工して作成)",
-        })
-        map.addLayer({
-          id: "bldg",
-          type: "fill-extrusion",
-          source: "plateau-bldg",
-          // ベクタタイルソースから使用するレイヤ
-          "source-layer": "bldg",
-          paint: {
-            // 高さ
-            "fill-extrusion-height": ["*", ["get", "z"], 1],
-            // 塗りつぶしの色
-            "fill-extrusion-color": "#797979",
-            // 透明度
-            "fill-extrusion-opacity": 0.7,
-          },
-        })
-        map.setLayoutProperty('bldg', 'visibility', 'none')
+        // map.addSource("plateau-bldg", {
+        //   type: "vector",
+        //   // tiles: ["https://indigo-lab.github.io/plateau-lod2-mvt/{z}/{x}/{y}.pbf"],
+        //   tiles: ['https://shiworks.xsrv.jp/pmtiles-data/plateau/PLATEAU_2023_LOD0.pmtiles'],
+        //   minzoom: 10,
+        //   maxzoom: 16,
+        //   attribution: "<a href='https://github.com/indigo-lab/plateau-lod2-mvt'>plateau-lod2-mvt by indigo-lab</a> (<a href='https://www.mlit.go.jp/plateau/'>国土交通省 Project PLATEAU</a> のデータを加工して作成)",
+        // })
+        // map.addLayer({
+        //   id: "bldg",
+        //   type: "fill-extrusion",
+        //   source: "plateau-bldg",
+        //   // ベクタタイルソースから使用するレイヤ
+        //   "source-layer": "bldg",
+        //   paint: {
+        //     // 高さ
+        //     "fill-extrusion-height": ["*", ["get", "z"], 1],
+        //     // 塗りつぶしの色
+        //     "fill-extrusion-color": "#797979",
+        //     // 透明度
+        //     "fill-extrusion-opacity": 0.7,
+        //   },
+        // })
+        // map.setLayoutProperty('bldg', 'visibility', 'none')
         // -------------------------------------------------------------------------------------------------------------
         // PLATEAU建物（PMTiles）ソース
-        map.addSource("plateauPmtiles", {
-          type: "vector",
-          url: "pmtiles://https://shiworks.xsrv.jp/pmtiles-data/plateau/PLATEAU_2022_LOD1.pmtiles",
-          minzoom: 16,
-          maxzoom: 16,
-          attribution: '<a href="https://www.geospatial.jp/ckan/dataset/plateau">3D都市モデルPLATEAU建築物データ（国土交通省）</a>'
-        });
-
-        // PLATEAU建物（PMTiles）レイヤ
-        map.addLayer({
-          'id': 'plateauPmtiles',
-          'source': 'plateauPmtiles',
-          'source-layer': "PLATEAU",
-          "minzoom": 16,
-          "maxzoom": 23,
-          'type': 'fill-extrusion',
-          'paint': {
-            "fill-extrusion-color": '#797979',
-            "fill-extrusion-opacity": 0.7,
-            "fill-extrusion-height": ["get", "measuredHeight"]
-          }
-        });
-        map.setLayoutProperty('plateauPmtiles', 'visibility', 'none')
+        // map.addSource("plateauPmtiles", {
+        //   type: "vector",
+        //   url: "pmtiles://https://shiworks.xsrv.jp/pmtiles-data/plateau/PLATEAU_2022_LOD1.pmtiles",
+        //   minzoom: 16,
+        //   maxzoom: 16,
+        //   attribution: '<a href="https://www.geospatial.jp/ckan/dataset/plateau">3D都市モデルPLATEAU建築物データ（国土交通省）</a>'
+        // });
+        //
+        // // PLATEAU建物（PMTiles）レイヤ
+        // map.addLayer({
+        //   'id': 'plateauPmtiles',
+        //   'source': 'plateauPmtiles',
+        //   'source-layer': "PLATEAU",
+        //   "minzoom": 16,
+        //   "maxzoom": 23,
+        //   'type': 'fill-extrusion',
+        //   'paint': {
+        //     "fill-extrusion-color": '#797979',
+        //     "fill-extrusion-opacity": 0.7,
+        //     "fill-extrusion-height": ["get", "measuredHeight"]
+        //   }
+        // });
+        // map.setLayoutProperty('plateauPmtiles', 'visibility', 'none')
         // -------------------------------------------------------------------------------------------------------------
         map.on('moveend', this.updatePermalink)
         // this.parseUrlParams()

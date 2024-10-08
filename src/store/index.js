@@ -1,9 +1,7 @@
 import { createStore } from 'vuex'
-import layers from './layers'
 
 export default createStore({
   state: {
-    layers: layers,
     map01:null,
     map02:null,
     storeTest: 'storeTest',
