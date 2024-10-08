@@ -148,6 +148,11 @@ export default {
         if (map.getSource(layer.source.id)) map.removeSource(layer.source.id)
         map.addSource(layer.source.id, layer.source.obj)
         map.addLayer(layer.layer)
+        map.setLayoutProperty(layer.layer.id, 'visibility', 'none')
+      }
+      for (let i = this.selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
+        const layer = this.selectedLayers[this.mapName][i]
+        map.setLayoutProperty(layer.layer.id, 'visibility', 'visible')
       }
     }
   },
