@@ -295,7 +295,14 @@ export default {
         // 標高タイルセット
         map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
         // 標高タイルソース---------------------------------------------------
-
+        map.addSource("aws-terrain", {
+          type: "raster-dem",
+              minzoom: 1,
+              maxzoom: 15,
+              // このソースが使用するエンコーディング。terrarium（Terrarium形式のPNGタイル）、mapbox（Mapbox Terrain RGBタイル）、custom のいずれか
+              encoding: "terrarium",
+              tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
+        })
         // Skyレイヤ
         map.setSky({
           "sky-color": "#199EF3",
@@ -306,73 +313,6 @@ export default {
           "fog-ground-blend": 0.9,
           "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 12, 0]
         });
-
-        map.addSource("aws-terrain", {
-          type: "raster-dem",
-              minzoom: 1,
-              maxzoom: 15,
-              // このソースが使用するエンコーディング。terrarium（Terrarium形式のPNGタイル）、mapbox（Mapbox Terrain RGBタイル）、custom のいずれか
-              encoding: "terrarium",
-              tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
-        })
-        // // 標準地図------------------------------------------------------------------------------------------------------
-        // map.addSource('gsi', {
-        //   type: 'raster',
-        //   tiles: [
-        //     'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png' // 標準地図
-        //   ],
-        //   tileSize: 256
-        // })
-        // map.addLayer({
-        //   'id': 'gsiLayer',
-        //   'type': 'raster',
-        //   'source': 'gsi',
-        //   'minzoom': 0,
-        //   'maxzoom': 18
-        // })
-        // map.setLayoutProperty('gsiLayer', 'visibility', 'none')
-        // 最新写真------------------------------------------------------------------------------------------------------
-        // const seamlessphotoSource = {
-        //   id:'seamlessphoto',obj:{
-        //     type: 'raster',
-        //     tiles: [
-        //       'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'
-        //     ],
-        //     tileSize: 256
-        //   }}
-        // const seamlessphotoLayer = {
-        //   'id': seamlessphotoSource.id,
-        //   'source': seamlessphotoSource.id,
-        //   'type': 'raster',
-        //   'minzoom': 2,
-        //   'maxzoom': 23
-        // }
-        // map.addSource(seamlessphotoSource.id,seamlessphotoSource.obj)
-        // map.addLayer(seamlessphotoLayer)
-
-
-        // map.addSource('seamlessphoto', {
-        //   type: 'raster',
-        //   tiles: [
-        //     'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'
-        //   ],
-        //   tileSize: 256
-        // })
-        // map.addLayer({
-        //   'id': 'seamlessphoto',
-        //   'type': 'raster',
-        //   'source': 'seamlessphoto',
-        //   'minzoom': 2,
-        //   'maxzoom': 23
-        // })
-        // レイヤーの初期状態を非表示にする
-        // map.setLayoutProperty('seamlessphoto', 'visibility', 'none')
-
-
-
-
-
-
         // 登記所備付地図データ --------------------------------------------------------------------------------------------
         map.addSource("amx-a-pmtiles",{
             type: "vector",

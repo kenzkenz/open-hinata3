@@ -1,16 +1,17 @@
 <template>
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
-    <div :style="menuContentSize" @mousedown="mouseDown(mapName)">
-<!--      <v-switch v-for="layer in s_layers" :key="layer"-->
-<!--        v-model="layer.value"-->
-<!--        :label="layer.text"-->
-<!--        hide-details-->
-<!--        inset-->
-<!--        @change="changeSwitch(mapName)"-->
-<!--      ></v-switch>-->
-
+    <div :style="menuContentSize">
       <div class="first-div">
+        <draggable v-model="selectedLayers[mapName]" item-key="id" handle=".handle" @sort="onsort">
+          <template #item="{element}">
+            <div class="drag-item handle">
+              <span class="">{{element.label}}</span>
+              <div class="close-div" @click="removeLayer(element.id)"><i class="fa-sharp fa-solid fa-trash-arrow-up hover"></i></div>
+            </div>
+          </template>
+        </draggable>
       </div>
+
       <div class="second-div">
         <Tree
             :nodes="layers"
@@ -29,14 +30,21 @@
 import Tree from "vue3-tree"
 import "vue3-tree/dist/style.css"
 import * as Layers from '@/js/layers'
+import draggable from "vuedraggable"
 
 export default {
   name: 'Dialog-layer',
   props: ['mapName'],
   components: {
-    Tree
+    Tree,
+    draggable
   },
   data: () => ({
+    changeFlg: false,
+    selectedLayers: {
+      map01:[],
+      map02:[]
+    },
     mapName0: '',
     layers: [
       {
@@ -44,7 +52,7 @@ export default {
         label: "基本地図",
         nodes: [
           {
-            id: 'gsiLayer',
+            id: 'stdLayer',
             label: "標準地図",
             source: Layers.stdSource,
             layer: Layers.stdLayer
@@ -80,43 +88,51 @@ export default {
     }
   },
   methods: {
-    mouseDown (mapName) {
-      this.mapName0 = mapName
+    removeLayer(id){
+      const map = this.$store.state[this.mapName]
+      this.selectedLayers[this.mapName] = this.selectedLayers[this.mapName].filter(layer => layer.id !== id)
+      map.removeLayer(id)
+    },
+    onsort(){
+      this.changeFlg = !this.changeFlg
     },
     onNodeClick (node) {
-      const map = this.$store.state[this.mapName0]
       if (node.source) {
-        if (map.getLayer(node.layer.id)) map.removeLayer(node.layer.id)
-        if (map.getSource(node.source.id)) map.removeSource(node.source.id)
-
-        map.addSource(node.source.id, node.source.obj)
-        map.addLayer(node.layer)
+        if(!this.selectedLayers[this.mapName].find(layers => layers.id === node.id)) {
+          this.changeFlg = !this.changeFlg
+          this.selectedLayers[this.mapName].unshift(
+              {
+                id: node.id,
+                label: node.label,
+                source: node.source,
+                layer: node.layer
+              }
+          )
+        }
       }
-    },
-    changeSwitch(mapName){
-      const vm = this
-      const map = this.$store.state[mapName]
-      vm.s_layers.forEach(layer => {
-        console.log(layer)
-          if (layer.id === 'amx') {
-            if (layer.value) {
-              map.setLayoutProperty('amx-a-fude', 'visibility', 'visible')
-              map.setLayoutProperty('amx-a-daihyo', 'visibility', 'visible')
-            } else {
-              map.setLayoutProperty('amx-a-fude', 'visibility', 'none')
-              map.setLayoutProperty('amx-a-daihyo', 'visibility', 'none')
-            }
-          } else {
-            if (layer.value) {
-              map.setLayoutProperty(layer.id, 'visibility', 'visible')
-            } else {
-              map.setLayoutProperty(layer.id, 'visibility', 'none')
-            }
-          }
-      })
     },
   },
   watch: {
+    changeFlg(){
+      const map = this.$store.state[this.mapName]
+      // まずレイヤーを全削除-------------------------
+      // const layers = map.getStyle().layers
+      // if (layers) {
+      //   for (let i = layers.length - 1; i >= 0; i--) {
+      //     const layerId = layers[i].id
+      //     console.log(layerId)
+      //     map.removeLayer(layerId)
+      //   }
+      // }
+      // -----------------------------------------
+      for (let i = this.selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
+        const layer = this.selectedLayers[this.mapName][i]
+        if (map.getLayer(layer.layer.id)) map.removeLayer(layer.layer.id)
+        if (map.getSource(layer.source.id)) map.removeSource(layer.source.id)
+        map.addSource(layer.source.id, layer.source.obj)
+        map.addLayer(layer.layer)
+      }
+    }
   },
 }
 </script>
@@ -125,9 +141,31 @@ export default {
   height: 200px;
   min-width: 300px;
   background-color:gray;
+  border: #000 1px solid;
+  overflow: scroll;
 }
 .second-div {
   min-height: 200px;
+}
+.drag-item {
+  position:relative;
+  height:40px;
+  font-size:larger;
+  color:white;
+  background-color: rgba(157,157,193,1);
+  border-bottom: #fff 1px solid;
+}
+.close-div{
+  font-size: large;
+  position: absolute;
+  top:9px;
+  right:3px;
+  width:15px;
+  color:rgba(0,60,136,0.5);
+  cursor: pointer;
+}
+.hover:hover{
+  color: blue;
 }
 
 </style>

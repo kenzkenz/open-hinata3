@@ -38,6 +38,7 @@ export const plateauPmtilesSource = {
     id: "plateauPmtiles", obj:{
         type: "vector",
         url: "pmtiles://https://shiworks.xsrv.jp/pmtiles-data/plateau/PLATEAU_2022_LOD1.pmtiles",
+        // url: 'pmtiles://https://shiworks.xsrv.jp/pmtiles-data/plateau/PLATEAU_2023_LOD0.pmtiles',
         minzoom: 16,
         maxzoom: 16,
         attribution: '<a href="https://www.geospatial.jp/ckan/dataset/plateau">3D都市モデルPLATEAU建築物データ（国土交通省）</a>'
