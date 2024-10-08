@@ -8,13 +8,18 @@
 <!--        inset-->
 <!--        @change="changeSwitch(mapName)"-->
 <!--      ></v-switch>-->
-      <Tree
-          :nodes="layers"
-          :use-checkbox="false"
-          :use-icon="true"
-          show-child-count
-          @nodeClick="onNodeClick"
-      />
+
+      <div class="first-div">
+      </div>
+      <div class="second-div">
+        <Tree
+            :nodes="layers"
+            :use-checkbox="false"
+            :use-icon="true"
+            show-child-count
+            @nodeClick="onNodeClick"
+        />
+      </div>
     </div>
   </Dialog>
 </template>
@@ -116,6 +121,17 @@ export default {
   },
 }
 </script>
+<style scoped>
+.first-div {
+  height: 200px;
+  min-width: 300px;
+  background-color:gray;
+}
+.second-div {
+  min-height: 200px;
+}
+
+</style>
 <style>
 .tree-row-item {
   font-size:medium;
@@ -124,6 +140,5 @@ export default {
 .tree-list, .tree-row {
   gap:0px!important;
 }
-
 </style>
 

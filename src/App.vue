@@ -332,22 +332,47 @@ export default {
         })
         map.setLayoutProperty('gsiLayer', 'visibility', 'none')
         // 最新写真------------------------------------------------------------------------------------------------------
-        map.addSource('seamlessphoto', {
-          type: 'raster',
-          tiles: [
-            'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'
-          ],
-          tileSize: 256
-        })
-        map.addLayer({
-          'id': 'seamlessphoto',
+        const seamlessphotoSource = {
+          id:'seamlessphoto',obj:{
+            type: 'raster',
+            tiles: [
+              'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'
+            ],
+            tileSize: 256
+          }}
+        const seamlessphotoLayer = {
+          'id': seamlessphotoSource.id,
+          'source': seamlessphotoSource.id,
           'type': 'raster',
-          'source': 'seamlessphoto',
           'minzoom': 2,
           'maxzoom': 23
-        })
+        }
+        map.addSource(seamlessphotoSource.id,seamlessphotoSource.obj)
+        map.addLayer(seamlessphotoLayer)
+
+
+        // map.addSource('seamlessphoto', {
+        //   type: 'raster',
+        //   tiles: [
+        //     'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'
+        //   ],
+        //   tileSize: 256
+        // })
+        // map.addLayer({
+        //   'id': 'seamlessphoto',
+        //   'type': 'raster',
+        //   'source': 'seamlessphoto',
+        //   'minzoom': 2,
+        //   'maxzoom': 23
+        // })
         // レイヤーの初期状態を非表示にする
         map.setLayoutProperty('seamlessphoto', 'visibility', 'none')
+
+
+
+
+
+
         // 登記所備付地図データ --------------------------------------------------------------------------------------------
         map.addSource("amx-a-pmtiles",{
             type: "vector",
