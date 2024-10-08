@@ -74,6 +74,18 @@ export default {
           //   label: "法務省登記所備付地図",
           // },
         ]
+      },
+      {
+        id: 2,
+        label: "テスト",
+        nodes: [
+          {
+            id: 'stdLayer',
+            label: "標準地図",
+            source: Layers.stdSource,
+            layer: Layers.stdLayer
+          },
+        ]
       }
     ],
     selected: null,
@@ -108,6 +120,10 @@ export default {
                 layer: node.layer
               }
           )
+        } else {
+          const map = this.$store.state[this.mapName]
+          this.selectedLayers[this.mapName] = this.selectedLayers[this.mapName].filter(layer => layer.id !== node.id)
+          map.removeLayer(node.id)
         }
       }
     },
@@ -156,10 +172,10 @@ export default {
   border-bottom: #fff 1px solid;
 }
 .close-div{
-  font-size: large;
+  font-size: x-large;
   position: absolute;
   top:9px;
-  right:3px;
+  right:10px;
   width:15px;
   color:rgba(0,60,136,0.5);
   cursor: pointer;
