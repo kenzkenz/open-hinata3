@@ -73,10 +73,6 @@ export default {
             source: Layers.plateauPmtilesSource,
             layer: Layers.plateauPmtilesLayer
           },
-          // {
-          //   id: 'amx-a-fude',
-          //   label: "法務省登記所備付地図",
-          // },
         ]
       },
       {
@@ -92,7 +88,6 @@ export default {
         ]
       }
     ],
-    selected: null,
     menuContentSize: {'height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'},
   }),
   computed: {

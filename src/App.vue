@@ -478,7 +478,7 @@ export default {
 .terrain-btn-div{
   position:absolute;
   top:60%;
-  right:0px;
+  right:10px;
   z-index:2;
   /*display:none;*/
   height:180px;
@@ -487,7 +487,8 @@ export default {
   /*margin-top:-72px;*/
   margin-top:20px;
   background:rgba(0,0,0,0.1);
-  border-radius:180px 0 0 180px;
+  /*border-radius:180px 0 0 180px;*/
+  border-radius:180px;
   -moz-user-select:none;
   -webkit-user-select:none;
   -ms-user-select:none;
