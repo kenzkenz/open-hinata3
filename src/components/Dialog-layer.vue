@@ -4,8 +4,18 @@
       <div class="first-div">
         <draggable v-model="selectedLayers[mapName]" item-key="id" handle=".handle" @sort="onsort">
           <template #item="{element}">
-            <div class="drag-item handle">
-              <span class="">{{element.label}}</span>
+            <div class="drag-item">
+              <span class="handle">{{element.label}}</span>
+              <div class="range-div">
+                <input type="range" min="0" max="1" step="0.01" class="range" v-model.number="element.opacity" @input="changeSlider(element)" />
+              </div>
+
+<!--                            <v-slider-->
+<!--                  v-model="element.opacity"-->
+<!--                  max:100-->
+<!--                  min:0-->
+<!--                  @input="changeSlider(element)"-->
+<!--              ></v-slider>-->
               <div class="close-div" @click="removeLayer(element.id)"><i class="fa-sharp fa-solid fa-trash-arrow-up hover"></i></div>
             </div>
           </template>
@@ -40,6 +50,7 @@ export default {
     draggable
   },
   data: () => ({
+    slider: 50,
     changeFlg: false,
     selectedLayers: {
       map01:[],
@@ -100,6 +111,9 @@ export default {
     }
   },
   methods: {
+    changeSlider (element){
+      console.log(element.opacity)
+    },
     removeLayer(id){
       const map = this.$store.state[this.mapName]
       this.selectedLayers[this.mapName] = this.selectedLayers[this.mapName].filter(layer => layer.id !== id)
@@ -117,7 +131,8 @@ export default {
                 id: node.id,
                 label: node.label,
                 source: node.source,
-                layer: node.layer
+                layer: node.layer,
+                opacity:100
               }
           )
         } else {
