@@ -38,7 +38,7 @@ export const plateauPmtilesSource = {
     id: "plateauPmtiles", obj:{
         type: "vector",
         url: "pmtiles://https://shiworks.xsrv.jp/pmtiles-data/plateau/PLATEAU_2022_LOD1.pmtiles",
-        // url: 'pmtiles://https://shiworks.xsrv.jp/pmtiles-data/plateau/PLATEAU_2023_LOD0.pmtiles',
+        // url: "pmtiles://https://shiworks.xsrv.jp/pmtiles-data/plateau/PLATEAU_2023_LOD0.pmtiles",
         minzoom: 16,
         maxzoom: 16,
         attribution: '<a href=""></a>'
