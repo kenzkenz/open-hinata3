@@ -49,7 +49,49 @@ export default {
       map02:[]
     },
     mapName0: '',
-    layers: Layers.layers,
+    // layers: Layers.layers,
+    layers: [
+      {
+        id: 1,
+        label: "基本地図",
+        nodes: [
+          {
+            id: 'oh-stdLayer',
+            label: "標準地図",
+            source: Layers.stdSource,
+            layer: Layers.stdLayer
+          },
+          {
+            id: 'oh-seamlessphoto',
+            label: "最新写真",
+            source: Layers.seamlessphotoSource,
+            layer: Layers.seamlessphotoLayer
+          },
+          {
+            id: 'oh-plateauPmtiles',
+            label: "PLATEAU建物",
+            source: Layers.plateauPmtilesSource,
+            layer: Layers.plateauPmtilesLayer
+          },
+          // {
+          //   id: 'amx-a-fude',
+          //   label: "法務省登記所備付地図",
+          // },
+        ]
+      },
+      {
+        id: 2,
+        label: "テスト",
+        nodes: [
+          {
+            id: 'stdLayer',
+            label: "標準地図",
+            source: Layers.stdSource,
+            layer: Layers.stdLayer
+          },
+        ]
+      }
+    ],
     selected: null,
     menuContentSize: {'height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'},
   }),
