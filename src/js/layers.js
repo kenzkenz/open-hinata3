@@ -48,6 +48,7 @@ export const plateauPmtilesLayer = {
     'id': 'oh-plateauPmtiles',
     'source': 'plateauPmtiles',
     'source-layer': "PLATEAU",
+    // 'source-layer': "PLATEAU_2023_LOD0",
     "minzoom": 16,
     "maxzoom": 23,
     'type': 'fill-extrusion',
@@ -57,3 +58,60 @@ export const plateauPmtilesLayer = {
         "fill-extrusion-height": ["get", "measuredHeight"]
     }
 }
+// 岐阜県CS立体図------------------------------------------------------------------------------------------------------
+export const csGifuSource = {
+    id: 'csGifu', obj: {
+        type: 'raster',
+        tiles: [
+            'https://kenzkenz2.xsrv.jp/gihucs/{z}/{x}/{y}.png'
+        ],
+        tileSize: 256,
+        scheme: 'tms'
+    }
+}
+export const csGifuLayer = {
+    'id': 'oh-csGifuLayer',
+    'type': 'raster',
+    'source': 'csGifu',
+    'minzoom': 0,
+    'maxzoom': 23
+}
+// ---------------------------------------------------------------------------------------------------------------------
+export const layers =[
+    {
+        id: 1,
+        label: "基本地図",
+        nodes: [
+            {
+                id: 'oh-stdLayer',
+                label: "標準地図",
+                source: stdSource,
+                layer: stdLayer
+            },
+            {
+                id: 'oh-seamlessphoto',
+                label: "最新写真",
+                source: seamlessphotoSource,
+                layer: seamlessphotoLayer
+            },
+            {
+                id: 'oh-plateauPmtiles',
+                label: "PLATEAU建物",
+                source: plateauPmtilesSource,
+                layer: plateauPmtilesLayer
+            },
+        ]
+    },
+    {
+        id: 2,
+        label: "立体図等",
+        nodes: [
+            {
+                id: 'oh-csGifuLayer',
+                label: "岐阜県CS立体図",
+                source: csGifuSource,
+                layer: csGifuLayer
+            },
+        ]
+    }
+]
