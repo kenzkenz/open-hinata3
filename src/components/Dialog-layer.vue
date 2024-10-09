@@ -81,13 +81,13 @@ export default {
       },
       {
         id: 2,
-        label: "テスト",
+        label: "立体図等",
         nodes: [
           {
-            id: 'stdLayer',
-            label: "標準地図",
-            source: Layers.stdSource,
-            layer: Layers.stdLayer
+            id: 'oh-csGifuLayer',
+            label: "岐阜県CS立体図",
+            source: Layers.csGifuSource,
+            layer: Layers.csGifuLayer
           },
         ]
       }
