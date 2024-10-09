@@ -71,9 +71,9 @@ export default {
           // map.setBearing(map.getBearing() + 5)
           vm.$store.state.map01.setBearing(map.getBearing() + 5)
           vm.$store.state.map02.setBearing(map.getBearing() + 5)
-          setTimeout(function () {bearing()}, 50)
+          requestAnimationFrame(bearing)
         } else {
-          clearTimeout(bearing)
+          cancelAnimationFrame(bearing)
         }
       }
       bearing()
@@ -87,9 +87,9 @@ export default {
           // map.setBearing(map.getBearing() - 5)
           vm.$store.state.map01.setBearing(map.getBearing() - 5)
           vm.$store.state.map02.setBearing(map.getBearing() - 5)
-          setTimeout(function () {bearing()}, 50)
+          requestAnimationFrame(bearing)
         } else {
-          clearTimeout(bearing)
+          cancelAnimationFrame(bearing)
         }
       }
       bearing()
@@ -101,9 +101,9 @@ export default {
       function pitch () {
         if (vm.mouseDown) {
           map.setPitch(map.getPitch() + 5)
-          setTimeout(function () {pitch()}, 50)
+          requestAnimationFrame(pitch)
         } else {
-          clearTimeout(pitch)
+          cancelAnimationFrame(pitch)
         }
       }
       pitch()
@@ -115,9 +115,9 @@ export default {
       function pitch () {
         if (vm.mouseDown) {
           map.setPitch(map.getPitch() - 5)
-          setTimeout(function () {pitch()}, 50)
+          requestAnimationFrame(pitch)
         } else {
-          clearTimeout(pitch)
+          cancelAnimationFrame(pitch)
         }
       }
       pitch()
