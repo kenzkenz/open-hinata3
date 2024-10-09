@@ -14,11 +14,16 @@
             </div>
           </template>
         </draggable>
+        <div style="color: white;font-size: larger;text-align: center">
+          下のリストから選んでください。
+        </div>
       </div>
 
       <div class="second-div">
+        <v-text-field label="地図抽出" v-model="searchText" style="margin-top: 10px"></v-text-field>
         <Tree
             :nodes="layers"
+            :search-text="searchText"
             :use-checkbox="false"
             :use-icon="true"
             @nodeClick="onNodeClick"
@@ -42,7 +47,7 @@ export default {
     draggable
   },
   data: () => ({
-    count:0,
+    searchText: '',
     changeFlg: false,
     selectedLayers: {
       map01:[],

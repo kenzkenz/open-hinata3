@@ -45,8 +45,8 @@ export default {
     mapNames: ['map01','map02'],
     mapFlg: {map01:true, map02:false},
     mapSize: {
-      map01: {top: 0, left: 0, width: '100%', height: window.innerHeight + 'px'},
-      map02: {top: 0, right: 0, width: '50%', height: window.innerHeight + 'px'},
+      map01: {top: 0, left: 0, width: '100%', height: '100%'},
+      map02: {top: 0, right: 0, width: '50%', height: '100%'},
     },
     permalink: '',
     mapName: '',
@@ -141,24 +141,42 @@ export default {
       }
     },
     btnClickSplit () {
+      // if (this.mapFlg.map02) {
+      //   this.mapSize.map01.width = '100%'
+      //   this.mapSize.map01.height = window.innerHeight + 'px'
+      //   this.mapFlg.map02 = false
+      // } else {
+      //   if (window.innerWidth > 1000) {
+      //     this.mapSize.map01.width = '50%'
+      //     this.mapSize.map01.height = window.innerHeight + 'px'
+      //   } else {
+      //     this.mapSize.map01.width = '100%'
+      //     this.mapSize.map01.height = (window.innerHeight / 2) + 'px'
+      //     this.mapSize.map02.width = '100%'
+      //     this.mapSize.map02.height = (window.innerHeight / 2) + 'px'
+      //     this.mapSize.map02.top = (window.innerHeight / 2) + 'px'
+      //   }
+      //   this.mapFlg.map02 = true
+      // }
       if (this.mapFlg.map02) {
         this.mapSize.map01.width = '100%'
-        this.mapSize.map01.height = window.innerHeight + 'px'
+        this.mapSize.map01.height = '100%'
         this.mapFlg.map02 = false
       } else {
         if (window.innerWidth > 1000) {
           this.mapSize.map01.width = '50%'
-          this.mapSize.map01.height = window.innerHeight + 'px'
+          this.mapSize.map01.height = '100%'
         } else {
           this.mapSize.map01.width = '100%'
-          this.mapSize.map01.height = (window.innerHeight / 2) + 'px'
+          this.mapSize.map01.height = '50%'
           this.mapSize.map02.width = '100%'
-          this.mapSize.map02.height = (window.innerHeight / 2) + 'px'
-          this.mapSize.map02.top = (window.innerHeight / 2) + 'px'
+          this.mapSize.map02.height = '50%'
+          this.mapSize.map02.top = '50%'
         }
         this.mapFlg.map02 = true
       }
     },
+
     updatePermalink() {
       const map = this.$store.state.map01
       const center = map.getCenter();
@@ -280,6 +298,10 @@ export default {
       })
     }
     syncMaps(this.$store.state.map01, this.$store.state.map02)
+
+
+
+
     // -----------------------------------------------------------------------------------------------------------------
     // on load
     this.mapNames.forEach(mapName => {
@@ -440,10 +462,12 @@ export default {
 <style scoped>
 #map00 {
   background-color: #000;
+  height: 100%;
 }
 #map01 {
   background-color: #fff;
   border: #000 1px solid;
+  height: 100%;
 }
 #map02 {
   background-color: #fff;

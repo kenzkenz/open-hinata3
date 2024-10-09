@@ -49,7 +49,7 @@ export const plateauPmtilesLayer = {
     'source': 'plateauPmtiles',
     'source-layer': "PLATEAU",
     // 'source-layer': "PLATEAU_2023_LOD0",
-    "minzoom": 16,
+    "minzoom": 14,
     "maxzoom": 23,
     'type': 'fill-extrusion',
     'paint': {
