@@ -14,7 +14,7 @@
 <!--                  v-model="element.opacity"-->
 <!--                  max:100-->
 <!--                  min:0-->
-<!--                  @input="changeSlider(element)"-->
+<!--                  @end="changeSlider(element)"-->
 <!--              ></v-slider>-->
               <div class="close-div" @click="removeLayer(element.id)"><i class="fa-sharp fa-solid fa-trash-arrow-up hover"></i></div>
             </div>
@@ -106,13 +106,14 @@ export default {
     s_dialogs () {
       return this.$store.state.dialogs.layerDialog
     },
-    s_layers () {
-      return this.$store.state.layers
-    }
+    // s_layers () {
+    //   return this.$store.state.layers
+    // }
   },
   methods: {
     changeSlider (element){
-      console.log(element.opacity)
+      const map = this.$store.state[this.mapName]
+      map.setPaintProperty(element.id, 'raster-opacity', element.opacity)
     },
     removeLayer(id){
       const map = this.$store.state[this.mapName]
@@ -203,6 +204,14 @@ export default {
 }
 .hover:hover{
   color: blue;
+}
+.range-div {
+  position:absolute;
+  top:20px;
+  width:100%;
+}
+.range{
+  width:calc(100% - 30px);
 }
 
 </style>
