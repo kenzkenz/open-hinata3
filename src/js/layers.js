@@ -74,11 +74,31 @@ export const csGifuLayer = {
     'minzoom': 0,
     'maxzoom': 23
 }
+// 多摩地域赤色立体地図------------------------------------------------------------------------------------------------------
+export const tamaSekisyokuSource = {
+    id: 'tamaSekisyokuSource', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz2.xsrv.jp/tokyo/tamasekisyoku/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        scheme: 'tms',
+        crossOrigin: 'anonymous',
+        paint: {
+            'raster-resampling': 'nearest'
+        }
+    }
+}
+export const tamaSekisyokuLayer = {
+    'id': 'oh-tamaSekisyokuLayer',
+    'type': 'raster',
+    'source': 'tamaSekisyokuSource',
+    'minzoom': 1,
+    'maxzoom': 23
+}
 // ---------------------------------------------------------------------------------------------------------------------
-export const layers =[
+const layers01 = [
     {
         id: 1,
-        label: "基本地図",
+        label: "基本地図テスト",
         nodes: [
             {
                 id: 'oh-stdLayer',
@@ -110,6 +130,17 @@ export const layers =[
                 source: csGifuSource,
                 layer: csGifuLayer
             },
+            {
+                id: 'oh-tamaSekisyokuLayer',
+                label: "東京都多摩地域赤色立体地図",
+                source: tamaSekisyokuSource,
+                layer: tamaSekisyokuLayer
+            },
         ]
     }
 ]
+const layers02 = JSON.parse(JSON.stringify(layers01))
+export const layers = {
+    map01: layers01,
+    map02: layers02
+}

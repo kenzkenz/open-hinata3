@@ -29,10 +29,9 @@
 </template>
 
 <script>
-
+import * as Layers from '@/js/layers'
 import Tree from "vue3-tree"
 import "vue3-tree/dist/style.css"
-import * as Layers from '@/js/layers'
 import draggable from "vuedraggable"
 
 export default {
@@ -43,51 +42,13 @@ export default {
     draggable
   },
   data: () => ({
+    count:0,
     changeFlg: false,
     selectedLayers: {
       map01:[],
       map02:[]
     },
-    mapName0: '',
-    // layers: Layers.layers,
-    layers: [
-      {
-        id: 1,
-        label: "基本地図",
-        nodes: [
-          {
-            id: 'oh-stdLayer',
-            label: "標準地図",
-            source: Layers.stdSource,
-            layer: Layers.stdLayer
-          },
-          {
-            id: 'oh-seamlessphoto',
-            label: "最新写真",
-            source: Layers.seamlessphotoSource,
-            layer: Layers.seamlessphotoLayer
-          },
-          {
-            id: 'oh-plateauPmtiles',
-            label: "PLATEAU建物",
-            source: Layers.plateauPmtilesSource,
-            layer: Layers.plateauPmtilesLayer
-          },
-        ]
-      },
-      {
-        id: 2,
-        label: "立体図等",
-        nodes: [
-          {
-            id: 'oh-csGifuLayer',
-            label: "岐阜県CS立体図",
-            source: Layers.csGifuSource,
-            layer: Layers.csGifuLayer
-          },
-        ]
-      }
-    ],
+    layers:[],
     menuContentSize: {'height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'},
   }),
   computed: {
@@ -133,6 +94,9 @@ export default {
         }
       }
     },
+  },
+  mounted() {
+    this.layers = Layers.layers[this.mapName]
   },
   watch: {
     // selectedLayers: {
