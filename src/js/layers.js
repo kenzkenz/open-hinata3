@@ -53,7 +53,7 @@ export const plateauPmtilesLayer = {
     'type': 'fill-extrusion',
     'paint': {
         "fill-extrusion-color": '#797979',
-        "fill-extrusion-opacity": 0.7,
+        "fill-extrusion-opacity": 1.0,
         "fill-extrusion-height": ["get", "measuredHeight"]
     }
 }

@@ -2,14 +2,15 @@
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div :style="menuContentSize">
       <div class="first-div">
-        <draggable v-model="selectedLayers[mapName]" item-key="id" handle=".handle" @sort="onsort">
+        <draggable v-model="selectedLayers[mapName]" item-key="id" handle=".handle-div" @sort="onsort">
           <template #item="{element}">
             <div class="drag-item">
-              <span class="handle">{{element.label}}</span>
+              <div class="handle-div"><i class="fa-solid fa-up-down fa-lg handle-icon hover"></i></div>
+              <div class="label-div">{{element.label}}</div>
               <div class="range-div">
                 <input type="range" min="0" max="1" step="0.01" class="range" v-model.number="element.opacity" @input="changeSlider(element)" />
               </div>
-              <div class="close-div" @click="removeLayer(element.id)"><i class="fa-sharp fa-solid fa-trash-arrow-up hover"></i></div>
+              <div class="trash-div" @click="removeLayer(element.id)"><i class="fa-sharp fa-solid fa-trash-arrow-up hover"></i></div>
             </div>
           </template>
         </draggable>
@@ -43,7 +44,6 @@ export default {
     draggable
   },
   data: () => ({
-    slider: 50,
     changeFlg: false,
     selectedLayers: {
       map01:[],
@@ -103,7 +103,12 @@ export default {
   methods: {
     changeSlider (element){
       const map = this.$store.state[this.mapName]
-      map.setPaintProperty(element.id, 'raster-opacity', element.opacity)
+      // console.log(element.source.obj.type,element.opacity)
+      if (element.source.obj.type === 'raster') {
+        map.setPaintProperty(element.id, 'raster-opacity', element.opacity)
+      } else {
+        map.setPaintProperty(element.id, 'fill-extrusion-opacity', element.opacity)
+      }
     },
     removeLayer(id){
       const map = this.$store.state[this.mapName]
@@ -135,6 +140,12 @@ export default {
     },
   },
   watch: {
+    // selectedLayers: {
+    //   handler: function(){
+    //     alert('変更を検出しました');
+    //   },
+    //   deep: true
+    // },
     changeFlg(){
       const map = this.$store.state[this.mapName]
       // まずレイヤーを全削除-------------------------
@@ -183,7 +194,7 @@ export default {
   background-color: rgba(157,157,193,1);
   border-bottom: #fff 1px solid;
 }
-.close-div{
+.trash-div{
   font-size: x-large;
   position: absolute;
   top:9px;
@@ -197,15 +208,34 @@ export default {
 }
 .range-div {
   position:absolute;
-  top:20px;
-  left:20px;
-  width:calc(100% - 20px);
+  top:10px;
+  left:30px;
+  width:calc(100% - 30px);
 }
 .range{
   width:calc(100% - 30px);
 }
-
+.handle-div {
+  width:30px;
+  height:100%;
+  background-color:rgba(0,60,136,0.5);
+  font-size: x-large;
+  padding-left: 6px;
+  padding-top: 6px;
+  cursor: grab;
+}
+.label-div{
+  position:absolute;
+  top:0;
+  left:30px;
+  width:calc(100% - 30px);
+  padding-left: 5px;
+}
 </style>
+
+
+
+
 <style>
 .tree-row-item {
   font-size:medium;
@@ -214,5 +244,109 @@ export default {
 .tree-list, .tree-row {
   gap:0!important;
 }
+/*スライダー*/
+input[type=range] {
+  height: 26px;
+  -webkit-appearance: none;
+  margin: 0 0;/*修正*/
+  width: 100%;
+  background-color: rgba(0,0,0,0);/*修正*/
+}
+input[type=range]:focus {
+  outline: none;
+}
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 5px;
+  cursor: pointer;
+  animate: 0.2s;
+  box-shadow: 0 0 0 #000000;
+  background: #B6B6B6;
+  border-radius: 6px;
+  border: 1px solid #8A8A8A;
+}
+input[type=range]::-webkit-slider-thumb {
+  box-shadow: 1px 1px 1px #828282;
+  border: 1px solid #8A8A8A;
+  height: 18px;
+  width: 18px;
+  border-radius: 18px;
+  background: #DADADA;
+  cursor: grab;
+  -webkit-appearance: none;
+  margin-top: -7.5px;
+}
+@media screen and (max-width:480px) {
+  input[type=range]::-webkit-slider-thumb {
+    height: 23px;
+    width: 30px;
+    border-radius: 0;
+    margin-top: -12.5px;
+  }
+  .vue-slider-dot-handle{
+    width: 150%!important;
+    border-radius:0!important;
+  }
+}
+input[type=range]:focus::-webkit-slider-runnable-track {
+  background: #B6B6B6;
+}
+input[type=range]::-moz-range-track {
+  width: 100%;
+  height: 5px;
+  cursor: pointer;
+  animate: 0.2s;
+  box-shadow: 0 0 0 #000000;
+  background: #B6B6B6;
+  border-radius: 6px;
+  border: 1px solid #8A8A8A;
+}
+input[type=range]::-moz-range-thumb {
+  box-shadow: 1px 1px 1px #828282;
+  border: 1px solid #8A8A8A;
+  height: 18px;
+  width: 18px;
+  border-radius: 18px;
+  background: #DADADA;
+  cursor: grab;
+}
+input[type=range]::-ms-track {
+  width: 100%;
+  height: 5px;
+  cursor: pointer;
+  animate: 0.2s;
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+}
+input[type=range]::-ms-fill-lower {
+  background: #B6B6B6;
+  border: 1px solid #8A8A8A;
+  border-radius: 12px;
+  box-shadow: 0 0 0 #000000;
+}
+input[type=range]::-ms-fill-upper {
+  background: #B6B6B6;
+  border: 1px solid #8A8A8A;
+  border-radius: 12px;
+  box-shadow: 0 0 0 #000000;
+}
+input[type=range]::-ms-thumb {
+  margin-top: 1px;
+  box-shadow: 1px 1px 1px #828282;
+  border: 1px solid #8A8A8A;
+  height: 18px;
+  width: 18px;
+  border-radius: 18px;
+  background: #DADADA;
+  cursor: grab;
+}
+input[type=range]:focus::-ms-fill-lower {
+  background: #B6B6B6;
+}
+input[type=range]:focus::-ms-fill-upper {
+  background: #B6B6B6;
+}
+/*スライダーここまで*/
 </style>
 
