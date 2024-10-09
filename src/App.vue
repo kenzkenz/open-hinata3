@@ -11,12 +11,12 @@
           </div>
           <DialogMenu :mapName=mapName />
           <DialogLayer :mapName=mapName />
-          <div class="cesium-btn-div">
+          <div class="terrain-btn-div">
             <div class="cesiun-btn-container">
-              <button type="button" class="cesium-btn-up terrain-btn" @pointerdown.stop="upMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-up fa-lg hover'></i></button>
-              <button type="button" class="cesium-btn-down terrain-btn" @pointerdown.stop="downMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-down fa-lg'></i></button>
-              <button type="button" class="cesium-btn-left terrain-btn" @pointerdown="leftMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-left fa-lg'></i></button>
-              <button type="button" class="cesium-btn-right terrain-btn" @pointerdown="rightMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-right fa-lg'></i></button>
+              <button type="button" class="terrain-btn-up terrain-btn" @pointerdown.stop="upMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-up fa-lg hover'></i></button>
+              <button type="button" class="terrain-btn-down terrain-btn" @pointerdown.stop="downMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-down fa-lg'></i></button>
+              <button type="button" class="terrain-btn-left terrain-btn" @pointerdown="leftMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-left fa-lg'></i></button>
+              <button type="button" class="terrain-btn-right terrain-btn" @pointerdown="rightMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-right fa-lg'></i></button>
               <div class="elevMag">
                 <button type="button" @click="terrainReset(mapName)">戻す</button>
               </div>
@@ -475,7 +475,7 @@ export default {
 .terrain-btn {
   background-color: rgba(60,60,136,0.5);
 }
-.cesium-btn-div{
+.terrain-btn-div{
   position:absolute;
   top:60%;
   right:0px;
@@ -494,7 +494,7 @@ export default {
   /*cursor:move;*/
 }
 @media screen and (max-width:480px) {
-  .cesium-btn-div {
+  .terrain-btn-div {
     top:calc(50% - 73px);
   }
 }
@@ -502,7 +502,7 @@ export default {
   position:relative;
   height:100%;
 }
-.cesium-btn-up{
+.terrain-btn-up{
   position:absolute;
   top:10px;
   left:50%;
@@ -513,7 +513,7 @@ export default {
   color: white;
   /*display:none;*/
 }
-.cesium-btn-down{
+.terrain-btn-down{
   position:absolute;
   bottom:10px;
   left:50%;
@@ -524,7 +524,7 @@ export default {
   color: white;
   /*display:none;*/
 }
-.cesium-btn-left{
+.terrain-btn-left{
   position:absolute;
   top:50%;
   left:10px;
@@ -534,7 +534,7 @@ export default {
   margin-top:-20px;
   color: white;
 }
-.cesium-btn-right{
+.terrain-btn-right{
   position:absolute;
   top:50%;
   right:10px;
@@ -556,7 +556,7 @@ export default {
   /*display:none;*/
 }
 
-.cesium-btn-div .ui-spinner{
+.terrain-btn-div .ui-spinner{
   font-size:10px;
   width:30px;
   background:rgba(0,0,0,0);

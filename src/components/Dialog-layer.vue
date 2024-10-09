@@ -9,13 +9,6 @@
               <div class="range-div">
                 <input type="range" min="0" max="1" step="0.01" class="range" v-model.number="element.opacity" @input="changeSlider(element)" />
               </div>
-
-<!--                            <v-slider-->
-<!--                  v-model="element.opacity"-->
-<!--                  max:100-->
-<!--                  min:0-->
-<!--                  @end="changeSlider(element)"-->
-<!--              ></v-slider>-->
               <div class="close-div" @click="removeLayer(element.id)"><i class="fa-sharp fa-solid fa-trash-arrow-up hover"></i></div>
             </div>
           </template>
@@ -63,19 +56,19 @@ export default {
         label: "基本地図",
         nodes: [
           {
-            id: 'ohStdLayer',
+            id: 'oh-stdLayer',
             label: "標準地図",
             source: Layers.stdSource,
             layer: Layers.stdLayer
           },
           {
-            id: 'ohSeamlessphoto',
+            id: 'oh-seamlessphoto',
             label: "最新写真",
             source: Layers.seamlessphotoSource,
             layer: Layers.seamlessphotoLayer
           },
           {
-            id: 'ohPlateauPmtiles',
+            id: 'oh-plateauPmtiles',
             label: "PLATEAU建物",
             source: Layers.plateauPmtilesSource,
             layer: Layers.plateauPmtilesLayer
@@ -106,9 +99,6 @@ export default {
     s_dialogs () {
       return this.$store.state.dialogs.layerDialog
     },
-    // s_layers () {
-    //   return this.$store.state.layers
-    // }
   },
   methods: {
     changeSlider (element){
@@ -208,7 +198,8 @@ export default {
 .range-div {
   position:absolute;
   top:20px;
-  width:100%;
+  left:20px;
+  width:calc(100% - 20px);
 }
 .range{
   width:calc(100% - 30px);
@@ -221,7 +212,7 @@ export default {
   color:dimgray;
 }
 .tree-list, .tree-row {
-  gap:0px!important;
+  gap:0!important;
 }
 </style>
 
