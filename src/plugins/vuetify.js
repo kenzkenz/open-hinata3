@@ -9,8 +9,8 @@ export default createVuetify({
     defaults: {
         VBtn: {
             color: 'primary',
-            variant: 'outlined',
-            rounded: false,
+            // variant: 'outlined',
+            // rounded: false,
         },
     },
 })

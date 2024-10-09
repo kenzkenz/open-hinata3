@@ -62,9 +62,7 @@ export const plateauPmtilesLayer = {
 export const csGifuSource = {
     id: 'csGifu', obj: {
         type: 'raster',
-        tiles: [
-            'https://kenzkenz2.xsrv.jp/gihucs/{z}/{x}/{y}.png'
-        ],
+        tiles: ['https://kenzkenz2.xsrv.jp/gihucs/{z}/{x}/{y}.png'],
         tileSize: 256,
         scheme: 'tms'
     }

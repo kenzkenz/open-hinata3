@@ -5,9 +5,9 @@
         <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="mapFlg[mapName]">
           <div class="center-target"></div>
           <div id="left-top-div">
-            <v-btn @click="btnClickMenu(mapName)" v-if="mapName === 'map01'" size="small"><i class="fa-solid fa-bars"></i></v-btn>
-            <v-btn style="margin-left:10px;" @click="btnClickSplit" v-if="mapName === 'map01'" size="small"><i class="fa-solid fa-table-columns"></i></v-btn>
-            <v-btn style="margin-left:10px;" @click="btnClickLayer(mapName)" size="small"><i class="fa-solid fa-layer-group"></i></v-btn>
+            <v-btn @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><i class="fa-solid fa-bars"></i></v-btn>
+            <v-btn style="margin-left:10px;" @click="btnClickSplit" v-if="mapName === 'map01'"><i class="fa-solid fa-table-columns"></i></v-btn>
+            <v-btn style="margin-left:10px;" @click="btnClickLayer(mapName)"><i class="fa-solid fa-layer-group"></i></v-btn>
           </div>
           <DialogMenu :mapName=mapName />
           <DialogLayer :mapName=mapName />
@@ -17,7 +17,7 @@
               <button type="button" class="terrain-btn-down terrain-btn" @pointerdown.stop="downMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-down fa-lg'></i></button>
               <button type="button" class="terrain-btn-left terrain-btn" @pointerdown="leftMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-left fa-lg'></i></button>
               <button type="button" class="terrain-btn-right terrain-btn" @pointerdown="rightMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-right fa-lg'></i></button>
-              <div class="elevMag">
+              <div class="terrain-reset">
                 <button type="button" @click="terrainReset(mapName)">戻す</button>
               </div>
             </div>
@@ -473,7 +473,7 @@ export default {
 }
 /*セシウムのボタン-------------------------------------------------------------*/
 .terrain-btn {
-  background-color: rgba(60,60,136,0.5);
+  background-color: rgb(50,101,186);
 }
 .terrain-btn-div{
   position:absolute;
@@ -481,13 +481,13 @@ export default {
   right:0px;
   z-index:2;
   /*display:none;*/
-  height:145px;
-  width:145px;
-  margin-left:-72px;
+  height:180px;
+  width:180px;
+  margin-left:-90px;
   /*margin-top:-72px;*/
   margin-top:20px;
   background:rgba(0,0,0,0.1);
-  border-radius:145px 0 0 145px;
+  border-radius:180px 0 0 180px;
   -moz-user-select:none;
   -webkit-user-select:none;
   -ms-user-select:none;
@@ -507,53 +507,58 @@ export default {
   top:10px;
   left:50%;
   padding:0;
-  width:40px;
-  height:40px;
-  margin-left:-20px;
+  width:50px;
+  height:50px;
+  margin-left:-25px;
   color: white;
-  /*display:none;*/
+  border-radius:8px;
 }
 .terrain-btn-down{
   position:absolute;
   bottom:10px;
   left:50%;
   padding:0;
-  width:40px;
-  height:40px;
-  margin-left:-20px;
+  width:50px;
+  height:50px;
+  margin-left:-25px;
   color: white;
-  /*display:none;*/
+  border-radius:8px;
 }
 .terrain-btn-left{
   position:absolute;
   top:50%;
   left:10px;
   padding:0;
-  width:40px;
-  height:40px;
-  margin-top:-20px;
+  width:50px;
+  height:50px;
+  margin-top:-25px;
   color: white;
+  border-radius:8px;
 }
 .terrain-btn-right{
   position:absolute;
   top:50%;
   right:10px;
   padding:0;
-  width:40px;
-  height:40px;
-  margin-top:-20px;
+  width:50px;
+  height:50px;
+  margin-top:-25px;
   color: white;
+  border-radius:8px;
 }
-.elevMag{
+.terrain-reset{
   position:absolute;
-  top:60px;
+  top:80px;
   left:50%;
   padding:0;
   width:40px;
   height:20px;
   margin-left:-20px;
   text-align:center;
-  /*display:none;*/
+  font-size: larger;
+  color: white;
+  /*-webkit-text-stroke: 1px #FFF;*/
+  /*text-stroke: 1px #FFF;*/
 }
 
 .terrain-btn-div .ui-spinner{

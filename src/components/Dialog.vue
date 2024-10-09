@@ -63,7 +63,7 @@ export default {
   height: 30px;
   padding: 5px;
   /*background-color: rgba(0,60,136,0.5);*/
-  background-color: rgba(60,60,136,0.5);
+  background-color: rgb(50,101,186);
   border-top-left-radius: 4px;
   border-top-right-radius: 4px;
   cursor: grab;
