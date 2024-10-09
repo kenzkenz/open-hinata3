@@ -11,7 +11,7 @@
           </div>
           <DialogMenu :mapName=mapName />
           <DialogLayer :mapName=mapName />
-          <div class="terrain-btn-div">
+          <div class="terrain-btn-div" v-drag>
             <div class="cesiun-btn-container">
               <button type="button" class="terrain-btn-up terrain-btn" @pointerdown.stop="upMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-up fa-lg hover'></i></button>
               <button type="button" class="terrain-btn-down terrain-btn" @pointerdown.stop="downMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-down fa-lg'></i></button>

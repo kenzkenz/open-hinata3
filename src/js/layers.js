@@ -94,6 +94,25 @@ export const tamaSekisyokuLayer = {
     'minzoom': 1,
     'maxzoom': 23
 }
+// 多摩地域赤色立体地図------------------------------------------------------------------------------------------------------
+export const csOsakaSource = {
+    id: 'csOsakaSource', obj: {
+        type: 'raster',
+        tiles: ['https://xs489works.xsrv.jp/raster-tiles/pref-osaka/osaka-cs-tiles/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        crossOrigin: 'anonymous',
+        paint: {
+            'raster-resampling': 'nearest'
+        }
+    }
+}
+export const csOsakaLayer = {
+    'id': 'oh-csOsakaLayer',
+    'type': 'raster',
+    'source': 'csOsakaSource',
+    'minzoom': 1,
+    'maxzoom': 23
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -129,6 +148,12 @@ const layers01 = [
                 label: "岐阜県CS立体図",
                 source: csGifuSource,
                 layer: csGifuLayer
+            },
+            {
+                id: 'oh-csOsakaLayer',
+                label: "大阪府CS立体図",
+                source: csOsakaSource,
+                layer: csOsakaLayer
             },
             {
                 id: 'oh-tamaSekisyokuLayer',
