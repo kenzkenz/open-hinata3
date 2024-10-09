@@ -13,8 +13,8 @@
           <DialogLayer :mapName=mapName />
           <div class="terrain-btn-div" v-drag>
             <div class="cesiun-btn-container">
-              <button type="button" class="terrain-btn-up terrain-btn" @pointerdown.stop="upMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-up fa-lg hover'></i></button>
-              <button type="button" class="terrain-btn-down terrain-btn" @pointerdown.stop="downMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-down fa-lg'></i></button>
+              <button type="button" class="terrain-btn-up terrain-btn" @pointerdown="upMousedown(mapName)" @touchstart="upMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-up fa-lg hover'></i></button>
+              <button type="button" class="terrain-btn-down terrain-btn" @pointerdown="downMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-down fa-lg'></i></button>
               <button type="button" class="terrain-btn-left terrain-btn" @pointerdown="leftMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-left fa-lg'></i></button>
               <button type="button" class="terrain-btn-right terrain-btn" @pointerdown="rightMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-right fa-lg'></i></button>
               <div class="terrain-reset">
