@@ -59,14 +59,6 @@ export default {
     zoom:0,
   }),
   computed: {
-    // s_changeFlg :{
-    //   get() {
-    //     return this.$store.state.changeFlg
-    //   },
-    //   set(value) {
-    //     this.$store.state.changeFlg = value
-    //   }
-    // },
     s_selectedLayers: {
       get() {
         return this.$store.state.selectedLayers
@@ -222,7 +214,6 @@ export default {
         this.mapFlg.map02 = true
       }
     },
-
     updatePermalink() {
       const map = this.$store.state.map01
       const center = map.getCenter()
@@ -238,9 +229,7 @@ export default {
       // URLを更新
       // window.history.pushState({ lng, lat, zoom }, '', this.permalink)
       this.createShortUrl()
-
       this.zoom = zoom
-
     },
     createShortUrl() {
       let params = new URLSearchParams()
@@ -269,7 +258,7 @@ export default {
       const pitch = parseFloat(params.get('pitch'))
       const bearing = parseFloat(params.get('bearing'))
       const slj = JSON.parse(params.get('slj'))
-      this.pitch =pitch
+      this.pitch =　pitch
       this.bearing = bearing
       return {lng,lat,zoom,pitch,bearing,slj}
     },
