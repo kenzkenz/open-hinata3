@@ -22,6 +22,7 @@
               </div>
             </div>
           </div>
+          <div class="zoom-div">zoom={{zoom.toFixed(2)}}</div>
         </div>
       </div>
     </v-main>
@@ -55,6 +56,7 @@ export default {
     mapName: '',
     pitch:0,
     bearing:0,
+    zoom:0,
   }),
   computed: {
     // s_changeFlg :{
@@ -232,10 +234,13 @@ export default {
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&pitch=${pitch}&bearing=${bearing}&slj=${selectedLayersJson}`
       // console.log(this.param)
-      this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
+      // this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
       // window.history.pushState({ lng, lat, zoom }, '', this.permalink)
       this.createShortUrl()
+
+      this.zoom = zoom
+
     },
     createShortUrl() {
       let params = new URLSearchParams()
@@ -551,7 +556,14 @@ export default {
   left:10px;
   z-index:1;
 }
-/*セシウムのボタン-------------------------------------------------------------*/
+.zoom-div {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  font-size: x-large;
+  z-index: 2;
+}
+/*3Dのボタン-------------------------------------------------------------*/
 .terrain-btn {
   background-color: rgb(50,101,186);
 }

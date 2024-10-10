@@ -95,7 +95,7 @@ export default {
                 label: node.label,
                 source: node.source,
                 layer: node.layer,
-                opacity:100
+                opacity: 1
               }
           )
         } else {
