@@ -89,7 +89,6 @@ export default {
           vm.updatePermalink()
         }
       }
-      pitch ()
       function bearing () {
         vm.bearing = map.getBearing()
         let step = -5
@@ -104,10 +103,14 @@ export default {
           vm.updatePermalink()
         }
       }
-      bearing ()
-      // map.setPitch(0)
-      // this.$store.state.map01.setBearing(0)
-      // this.$store.state.map02.setBearing(0)
+      if (window.innerWidth < 1000) {
+        map.setPitch(0)
+        this.$store.state.map01.setBearing(0)
+        this.$store.state.map02.setBearing(0)
+      } else {
+        pitch ()
+        bearing ()
+      }
     },
     mouseup () {
       this.mouseDown = false
@@ -223,8 +226,6 @@ export default {
       const center = map.getCenter()
       const zoom = map.getZoom()
       const { lng, lat } = center
-      const selectedLayers = this.$store.state.selectedLayers
-      console.log(JSON.stringify(selectedLayers))
       const pitch = this.pitch
       const bearing = this.bearing
       const selectedLayersJson = JSON.stringify(this.$store.state.selectedLayers)
@@ -376,17 +377,13 @@ export default {
       this.mapNames.forEach(mapName => {
         const map = this.$store.state[mapName]
         map.on('load', () => {
-
-          this.mapNames.forEach(mapName => {
+          // ----------------------------------------------------------------
+          this.mapNames.forEach(() => {
             const params = this.parseUrlParams()
-            console.log(params.slj)
-            console.log(mapName)
             if (params.slj) this.s_selectedLayers = params.slj
             this.$store.state.changeFlg = !this.$store.state.changeFlg
           })
-
-
-
+          // ----------------------------------------------------------------
           // 標高タイルソース---------------------------------------------------
           map.addSource("gsidem-terrain-rgb", {
             type: 'raster-dem',

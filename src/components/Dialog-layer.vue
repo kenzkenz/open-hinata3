@@ -48,7 +48,6 @@ export default {
   },
   data: () => ({
     searchText: '',
-    // changeFlg: false,
     watchFlg: true,
     selectedLayers: {
       map01:[],
@@ -58,14 +57,6 @@ export default {
     menuContentSize: {'height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'},
   }),
   computed: {
-    s_changeFlg :{
-      get() {
-        return this.$store.state.changeFlg
-      },
-      set(value) {
-        this.$store.state.changeFlg = value
-      }
-    },
     s_dialogs () {
       return this.$store.state.dialogs.layerDialog
     },
@@ -83,9 +74,7 @@ export default {
       this.watchFlg = bool
     },
     changeSlider (element){
-      // this.watchFlg = false
       const map = this.$store.state[this.mapName]
-      // console.log(element.source.obj.type,element.opacity)
       if (element.source.obj.type === 'raster') {
         map.setPaintProperty(element.id, 'raster-opacity', element.opacity)
       } else {
@@ -97,13 +86,9 @@ export default {
       this.s_selectedLayers[this.mapName] = this.s_selectedLayers[this.mapName].filter(layer => layer.id !== id)
       map.removeLayer(id)
     },
-    onsort(){
-      this.s_changeFlg = !this.s_changeFlg
-    },
     onNodeClick (node) {
       if (node.source) {
         if(!this.s_selectedLayers[this.mapName].find(layers => layers.id === node.id)) {
-          this.s_changeFlg = !this.s_changeFlg
           this.s_selectedLayers[this.mapName].unshift(
               {
                 id: node.id,
@@ -128,10 +113,8 @@ export default {
     s_selectedLayers: {
       handler: function(){
         console.log('変更を検出しました')
-        console.log(99999999999)
         if(!this.watchFlg) return
         const map = this.$store.state[this.mapName]
-        console.log(map)
         // まずレイヤーを全削除-------------------------
         const layers = map.getStyle().layers
         if (layers) {
@@ -154,37 +137,16 @@ export default {
         for (let i = this.s_selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
           const layer = this.s_selectedLayers[this.mapName][i]
           map.setLayoutProperty(layer.layer.id, 'visibility', 'visible')
+          console.log(layer)
+          if (layer.source.obj.type === 'raster') {
+            map.setPaintProperty(layer.layer.id, 'raster-opacity', layer.opacity)
+          } else {
+            map.setPaintProperty(layer.layer.id, 'fill-extrusion-opacity', layer.opacity)
+          }
         }
       },
       deep: true
     },
-    s_changeFlg(){
-      // console.log(99999999999)
-      // const map = this.$store.state[this.mapName]
-      // // まずレイヤーを全削除-------------------------
-      // const layers = map.getStyle().layers
-      // if (layers) {
-      //   for (let i = layers.length - 1; i >= 0; i--) {
-      //     const layerId = layers[i].id
-      //     if (layerId.slice(0,2) === 'oh' ) {
-      //       map.removeLayer(layerId)
-      //     }
-      //   }
-      // }
-      // // -----------------------------------------
-      // for (let i = this.s_selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
-      //   const layer = this.s_selectedLayers[this.mapName][i]
-      //   if (map.getLayer(layer.layer.id)) map.removeLayer(layer.layer.id)
-      //   if (map.getSource(layer.source.id)) map.removeSource(layer.source.id)
-      //   map.addSource(layer.source.id, layer.source.obj)
-      //   map.addLayer(layer.layer)
-      //   map.setLayoutProperty(layer.layer.id, 'visibility', 'none')
-      // }
-      // for (let i = this.s_selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
-      //   const layer = this.s_selectedLayers[this.mapName][i]
-      //   map.setLayoutProperty(layer.layer.id, 'visibility', 'visible')
-      // }
-    }
   },
 }
 </script>
