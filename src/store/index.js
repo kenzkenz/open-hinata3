@@ -4,6 +4,7 @@ export default createStore({
   state: {
     map01:null,
     map02:null,
+    changeFlg: false,
     storeTest: 'storeTest',
     dialogs: {
       menuDialog: {

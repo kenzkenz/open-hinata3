@@ -56,6 +56,24 @@ export default {
     pitch:0,
     bearing:0,
   }),
+  computed: {
+    // s_changeFlg :{
+    //   get() {
+    //     return this.$store.state.changeFlg
+    //   },
+    //   set(value) {
+    //     this.$store.state.changeFlg = value
+    //   }
+    // },
+    s_selectedLayers: {
+      get() {
+        return this.$store.state.selectedLayers
+      },
+      set(value) {
+        this.$store.state.selectedLayers = value
+      }
+    },
+  },
   methods: {
     terrainReset (mapName) {
       const vm = this
@@ -205,12 +223,13 @@ export default {
       const center = map.getCenter()
       const zoom = map.getZoom()
       const { lng, lat } = center
-      // const selectedLayers = this.$store.state.selectedLayers
-      // console.log(selectedLayers)
+      const selectedLayers = this.$store.state.selectedLayers
+      console.log(JSON.stringify(selectedLayers))
       const pitch = this.pitch
       const bearing = this.bearing
+      const selectedLayersJson = JSON.stringify(this.$store.state.selectedLayers)
       // パーマリンクの生成
-      this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&pitch=${pitch}&bearing=${bearing}`
+      this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&pitch=${pitch}&bearing=${bearing}&slj=${selectedLayersJson}`
       // console.log(this.param)
       this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
@@ -218,15 +237,16 @@ export default {
       this.createShortUrl()
     },
     createShortUrl() {
-      let params = new URLSearchParams();
-      params.append('parameters', this.param);
+      let params = new URLSearchParams()
+      params.append('parameters', this.param)
       axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrl.php', params)
           .then(response => {
             // console.log(response.data)
-            window.history.pushState(null, 'map', "?s=" + response.data.urlid);
+            window.history.pushState(null, 'map', "?s=" + response.data.urlid)
+            console.log('保存成功')
           })
           .catch(error => {
-            console.log(error);
+            console.log(error)
           })
     },
     parseUrlParams() {
@@ -242,14 +262,19 @@ export default {
       const zoom = parseFloat(params.get('zoom'))
       const pitch = parseFloat(params.get('pitch'))
       const bearing = parseFloat(params.get('bearing'))
-      return {lng,lat,zoom,pitch,bearing}
+      const slj = JSON.parse(params.get('slj'))
+      return {lng,lat,zoom,pitch,bearing,slj}
     },
     init() {
       let protocol = new Protocol();
       maplibregl.addProtocol("pmtiles",protocol.tile)
       this.mapNames.forEach(mapName => {
         const params = this.parseUrlParams()
-        console.log(params)
+        // console.log(params.slj)
+        // if (params.slj) this.s_selectedLayers = params.slj
+
+
+
         let center = [139.7024, 35.6598]
         let zoom = 16
         let pitch = 0
@@ -351,6 +376,17 @@ export default {
       this.mapNames.forEach(mapName => {
         const map = this.$store.state[mapName]
         map.on('load', () => {
+
+          this.mapNames.forEach(mapName => {
+            const params = this.parseUrlParams()
+            console.log(params.slj)
+            console.log(mapName)
+            if (params.slj) this.s_selectedLayers = params.slj
+            this.$store.state.changeFlg = !this.$store.state.changeFlg
+          })
+
+
+
           // 標高タイルソース---------------------------------------------------
           map.addSource("gsidem-terrain-rgb", {
             type: 'raster-dem',
@@ -470,6 +506,15 @@ export default {
       vm.init()
     })
     // -----------------------------------------------------------------------------------------------------------------
+  },
+  watch: {
+    s_selectedLayers: {
+      handler: function () {
+        console.log('変更を検出しました')
+        this.updatePermalink()
+      },
+      deep: true
+    },
   }
 }
 </script>
