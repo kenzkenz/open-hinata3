@@ -74,6 +74,21 @@ export const csGifuLayer = {
     'minzoom': 0,
     'maxzoom': 23
 }
+// 静岡県県CS立体図------------------------------------------------------------------------------------------------------
+export const csShizuokaSource = {
+    id: 'csShizuokaSource', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz3.xsrv.jp/cs/shizuoka/{z}/{x}/{y}.png'],
+        tileSize: 256,
+    }
+}
+export const csShizuokaLayer = {
+    'id': 'oh-csShizuokaLayer',
+    'type': 'raster',
+    'source': 'csShizuokaSource',
+    'minzoom': 0,
+    'maxzoom': 23
+}
 // 多摩地域赤色立体地図------------------------------------------------------------------------------------------------------
 export const tamaSekisyokuSource = {
     id: 'tamaSekisyokuSource', obj: {
@@ -222,6 +237,12 @@ const layers01 = [
                 label: "大阪府CS立体図",
                 source: csOsakaSource,
                 layers: [csOsakaLayer]
+            },
+            {
+                id: 'oh-csShizuokaLayer',
+                label: "静岡県CS立体図",
+                source: csShizuokaSource,
+                layers: [csShizuokaLayer]
             },
             {
                 id: 'oh-tamaSekisyokuLayer',
