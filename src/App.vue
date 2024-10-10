@@ -430,7 +430,9 @@ export default {
       }
     }, { passive: false });
     //------------------------------------------------------------------------------------------------------------------
-    const urlid = window.location.search.replace('?s=','')
+
+    const params = new URLSearchParams(window.location.search)
+    const urlid = params.get('s')
     axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrlSelect.php',{
       params: {
         urlid: urlid
@@ -439,6 +441,8 @@ export default {
       // console.log(response.data)
       vm.dbparams = response.data
       vm.init()
+      const url = new URL(window.location.href) // URLを取得
+      window.history.replaceState(null, '', url.pathname + window.location.hash) //パラメータを削除 FB対策
     })
     // -----------------------------------------------------------------------------------------------------------------
   },
