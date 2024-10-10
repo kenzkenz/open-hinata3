@@ -60,6 +60,14 @@ export default {
     s_dialogs () {
       return this.$store.state.dialogs.layerDialog
     },
+    s_selectedLayers: {
+      get() {
+        return this.$store.state.selectedLayers
+      },
+      set(value) {
+        this.$store.state.selectedLayers = value
+      }
+    },
   },
   methods: {
     changeSlider (element){

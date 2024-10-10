@@ -15,6 +15,10 @@ export default createStore({
         map02:{name:'layerDialog',style: {top: '56px', left: '10px', 'z-index': 1, height: 'auto', 'min-width': '150px', display: 'none'}},
       },
     },
+    selectedLayers: {
+      map01:[],
+      map02:[]
+    },
     dialogMaxZindex: 0,
   },
   getters: {
