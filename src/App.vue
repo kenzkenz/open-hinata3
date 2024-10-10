@@ -68,6 +68,7 @@ export default {
         } else {
           vm.pitch = map.getPitch()
           cancelAnimationFrame(pitch)
+          vm.updatePermalink()
         }
       }
       pitch ()
@@ -82,6 +83,7 @@ export default {
         } else {
           vm.bearing = map.getBearing()
           cancelAnimationFrame(bearing)
+          vm.updatePermalink()
         }
       }
       bearing ()
@@ -104,6 +106,7 @@ export default {
           vm.$store.state.map02.setBearing(map.getBearing() + 5)
           requestAnimationFrame(bearing)
         } else {
+          vm.bearing = map.getBearing()
           cancelAnimationFrame(bearing)
         }
       }
@@ -121,6 +124,7 @@ export default {
           vm.$store.state.map02.setBearing(map.getBearing() - 5)
           requestAnimationFrame(bearing)
         } else {
+          vm.bearing = map.getBearing()
           cancelAnimationFrame(bearing)
         }
       }
@@ -136,6 +140,7 @@ export default {
           map.setPitch(map.getPitch() + 5)
           requestAnimationFrame(pitch)
         } else {
+          vm.pitch = map.getPitch()
           cancelAnimationFrame(pitch)
         }
       }
@@ -151,6 +156,7 @@ export default {
           map.setPitch(map.getPitch() - 5)
           requestAnimationFrame(pitch)
         } else {
+          vm.pitch = map.getPitch()
           cancelAnimationFrame(pitch)
         }
       }
@@ -243,10 +249,11 @@ export default {
       maplibregl.addProtocol("pmtiles",protocol.tile)
       this.mapNames.forEach(mapName => {
         const params = this.parseUrlParams()
+        console.log(params)
         let center = [139.7024, 35.6598]
         let zoom = 16
         let pitch = 0
-        let bearing = params.bearing
+        let bearing = 0
         if (params.lng) {
           center = [params.lng,params.lat]
           zoom = params.zoom
