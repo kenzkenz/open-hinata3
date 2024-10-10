@@ -560,7 +560,7 @@ export default {
   position: absolute;
   left: 10px;
   bottom: 10px;
-  font-size: x-large;
+  font-size: large;
   z-index: 2;
 }
 /*3Dのボタン-------------------------------------------------------------*/
