@@ -54,13 +54,40 @@ export default {
     dbparams:'',
     mapName: '',
     pitch:0,
+    bearing:0,
   }),
   methods: {
     terrainReset (mapName) {
+      const vm = this
       const map = this.$store.state[mapName]
-      map.setPitch(0)
-      this.$store.state.map01.setBearing(0)
-      this.$store.state.map02.setBearing(0)
+      function pitch () {
+        vm.pitch = map.getPitch()
+        if (vm.pitch !==0) {
+          map.setPitch(map.getPitch() - 5)
+          requestAnimationFrame(pitch)
+        } else {
+          vm.pitch = map.getPitch()
+          cancelAnimationFrame(pitch)
+        }
+      }
+      pitch ()
+      function bearing () {
+        vm.bearing = map.getBearing()
+        let step = -5
+        if(vm.bearing < 0) step = 5
+        if (vm.bearing !==0) {
+          vm.$store.state.map01.setBearing(map.getBearing() + step)
+          vm.$store.state.map02.setBearing(map.getBearing() + step)
+          requestAnimationFrame(bearing)
+        } else {
+          vm.bearing = map.getBearing()
+          cancelAnimationFrame(bearing)
+        }
+      }
+      bearing ()
+      // map.setPitch(0)
+      // this.$store.state.map01.setBearing(0)
+      // this.$store.state.map02.setBearing(0)
     },
     mouseup () {
       this.mouseDown = false
@@ -70,6 +97,7 @@ export default {
       const map = this.$store.state[mapName]
       vm.mouseDown = true
       function bearing () {
+        vm.bearing = map.getBearing()
         if (vm.mouseDown) {
           // map.setBearing(map.getBearing() + 5)
           vm.$store.state.map01.setBearing(map.getBearing() + 5)
@@ -86,6 +114,7 @@ export default {
       const map = this.$store.state[mapName]
       vm.mouseDown = true
       function bearing () {
+        vm.bearing = map.getBearing()
         if (vm.mouseDown) {
           // map.setBearing(map.getBearing() - 5)
           vm.$store.state.map01.setBearing(map.getBearing() - 5)
@@ -102,12 +131,12 @@ export default {
       const map = this.$store.state[mapName]
       vm.mouseDown = true
       function pitch () {
+        vm.pitch = map.getPitch()
         if (vm.mouseDown) {
           map.setPitch(map.getPitch() + 5)
           requestAnimationFrame(pitch)
         } else {
           cancelAnimationFrame(pitch)
-          this.pitch = map.getPitch()
         }
       }
       pitch()
@@ -117,6 +146,7 @@ export default {
       const map = this.$store.state[mapName]
       vm.mouseDown = true
       function pitch () {
+        vm.pitch = map.getPitch()
         if (vm.mouseDown) {
           map.setPitch(map.getPitch() - 5)
           requestAnimationFrame(pitch)
@@ -169,8 +199,13 @@ export default {
       const center = map.getCenter()
       const zoom = map.getZoom()
       const { lng, lat } = center
+      // const selectedLayers = this.$store.state.selectedLayers
+      // console.log(selectedLayers)
+      const pitch = this.pitch
+      const bearing = this.bearing
       // パーマリンクの生成
-      this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}`
+      this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&pitch=${pitch}&bearing=${bearing}`
+      // console.log(this.param)
       this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
       // window.history.pushState({ lng, lat, zoom }, '', this.permalink)
@@ -195,11 +230,13 @@ export default {
       } else {
         params = new URLSearchParams(window.location.search)
       }
-      console.log(params)
+      // console.log(params)
       const lng = parseFloat(params.get('lng'))
       const lat = parseFloat(params.get('lat'))
       const zoom = parseFloat(params.get('zoom'))
-      return {lng,lat,zoom}
+      const pitch = parseFloat(params.get('pitch'))
+      const bearing = parseFloat(params.get('bearing'))
+      return {lng,lat,zoom,pitch,bearing}
     },
     init() {
       let protocol = new Protocol();
@@ -208,14 +245,20 @@ export default {
         const params = this.parseUrlParams()
         let center = [139.7024, 35.6598]
         let zoom = 16
+        let pitch = 0
+        let bearing = params.bearing
         if (params.lng) {
           center = [params.lng,params.lat]
           zoom = params.zoom
+          pitch = params.pitch
+          bearing = params.bearing
         }
         const map = new maplibregl.Map({
           container: mapName,
           center: center,
           zoom: zoom,
+          pitch: pitch,
+          bearing:bearing,
           maxPitch: 85, // 最大の傾き、デフォルトは60
           // maxZoom: 17.9,
           // style: 'https://raw.githubusercontent.com/gsi-cyberjapan/optimal_bvmap/52ba56f645334c979998b730477b2072c7418b94/style/std.json',
@@ -415,7 +458,7 @@ export default {
         urlid: urlid
       }
     }).then(function (response) {
-      console.log(response.data)
+      // console.log(response.data)
       vm.dbparams = response.data
       vm.init()
     })

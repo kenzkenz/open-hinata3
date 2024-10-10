@@ -2,7 +2,7 @@
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div :style="menuContentSize">
       <div class="first-div">
-        <draggable v-model="selectedLayers[mapName]" item-key="id" handle=".handle-div" @sort="onsort">
+        <draggable v-model="s_selectedLayers[mapName]" item-key="id" handle=".handle-div" @sort="onsort">
           <template #item="{element}">
             <div class="drag-item">
               <div class="handle-div"><i class="fa-solid fa-up-down fa-lg handle-icon hover"></i></div>
@@ -81,7 +81,7 @@ export default {
     },
     removeLayer(id){
       const map = this.$store.state[this.mapName]
-      this.selectedLayers[this.mapName] = this.selectedLayers[this.mapName].filter(layer => layer.id !== id)
+      this.s_selectedLayers[this.mapName] = this.s_selectedLayers[this.mapName].filter(layer => layer.id !== id)
       map.removeLayer(id)
     },
     onsort(){
@@ -89,9 +89,9 @@ export default {
     },
     onNodeClick (node) {
       if (node.source) {
-        if(!this.selectedLayers[this.mapName].find(layers => layers.id === node.id)) {
+        if(!this.s_selectedLayers[this.mapName].find(layers => layers.id === node.id)) {
           this.changeFlg = !this.changeFlg
-          this.selectedLayers[this.mapName].unshift(
+          this.s_selectedLayers[this.mapName].unshift(
               {
                 id: node.id,
                 label: node.label,
@@ -102,7 +102,7 @@ export default {
           )
         } else {
           const map = this.$store.state[this.mapName]
-          this.selectedLayers[this.mapName] = this.selectedLayers[this.mapName].filter(layer => layer.id !== node.id)
+          this.s_selectedLayers[this.mapName] = this.s_selectedLayers[this.mapName].filter(layer => layer.id !== node.id)
           map.removeLayer(node.id)
         }
       }
@@ -131,16 +131,16 @@ export default {
         }
       }
       // -----------------------------------------
-      for (let i = this.selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
-        const layer = this.selectedLayers[this.mapName][i]
+      for (let i = this.s_selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
+        const layer = this.s_selectedLayers[this.mapName][i]
         if (map.getLayer(layer.layer.id)) map.removeLayer(layer.layer.id)
         if (map.getSource(layer.source.id)) map.removeSource(layer.source.id)
         map.addSource(layer.source.id, layer.source.obj)
         map.addLayer(layer.layer)
         map.setLayoutProperty(layer.layer.id, 'visibility', 'none')
       }
-      for (let i = this.selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
-        const layer = this.selectedLayers[this.mapName][i]
+      for (let i = this.s_selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
+        const layer = this.s_selectedLayers[this.mapName][i]
         map.setLayoutProperty(layer.layer.id, 'visibility', 'visible')
       }
     }
