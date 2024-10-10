@@ -113,6 +113,68 @@ export const csOsakaLayer = {
     'minzoom': 1,
     'maxzoom': 23
 }
+// 登記所備付地図データ --------------------------------------------------------------------------------------------
+export const amxSource = {
+    id: "amx-a-pmtiles", obj: {
+        type: "vector",
+        minzoom: 2,
+        maxzoom: 16,
+        url: "pmtiles://https://habs.rad.naro.go.jp/spatial_data/amx/a.pmtiles",
+        attribution:
+            "<a href='https://www.moj.go.jp/MINJI/minji05_00494.html' target='_blank'>登記所備付地図データ（法務省）</a>",
+    }
+}
+// 登記所備付地図データ 間引きなし
+export const amxLayer = {
+    id: "oh-amx-a-fude",
+    type: "fill",
+    source: "amx-a-pmtiles", "source-layer": "fude",
+    paint: {
+        "fill-color": "rgba(254, 217, 192, 1)",
+        "fill-outline-color": "rgba(255, 0, 0, 1)",
+        "fill-opacity": 0.4,
+    },
+}
+// 登記所備付地図データ 代表点レイヤ
+export const amxLayerDaihyou = {
+    id: "oh-amx-a-daihyo",
+    // ヒートマップ
+    type: "heatmap",
+    source: "amx-a-pmtiles",
+    // ベクトルタイルソースから使用するレイヤ
+    "source-layer": "daihyo",
+    paint: {
+        // ヒートマップの密度に基づいて各ピクセルの色を定義
+        "heatmap-color": [
+            // 入力値と出力値のペア（"stop"）の間を補間することにより、連続的で滑らかな結果を生成する
+            "interpolate",
+            // 入力より小さいストップと大きいストップのペアを直線的に補間
+            ["linear"],
+            // ヒートマップレイヤーの密度推定値を取得
+            ["heatmap-density"],
+            0,
+            "rgba(255, 255, 255, 0)",
+            0.5,
+            "rgba(255, 255, 0, 0.5)",
+            // 1に近づくほど密度が高い
+            1,
+            "rgba(255, 0, 0, 0.5)",
+        ],
+        // ヒートマップ1点の半径（ピクセル単位）
+        "heatmap-radius": [
+            // 入力値と出力値のペア（"stop"）の間を補間することにより、連続的で滑らかな結果を生成する
+            "interpolate",
+            // 出力が増加する割合を制御する、1に近づくほど出力が増加する
+            ["exponential", 10],
+            // ズームレベルに応じて半径を調整する
+            ["zoom"],
+            2,
+            5,
+            14,
+            50,
+        ],
+    }
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -136,6 +198,13 @@ const layers01 = [
                 label: "PLATEAU建物",
                 source: plateauPmtilesSource,
                 layer: plateauPmtilesLayer
+            },
+            {
+                id: 'oh-amx-a-fude',
+                label: "登記所備付地図データ",
+                source: amxSource,
+                layer: amxLayerDaihyou,
+                layers:[amxLayer,amxLayerDaihyou]
             },
         ]
     },

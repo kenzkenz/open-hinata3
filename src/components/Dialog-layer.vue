@@ -2,7 +2,7 @@
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div :style="menuContentSize">
       <div class="first-div">
-        <draggable v-model="s_selectedLayers[mapName]" item-key="id" handle=".handle-div" @sort="onsort">
+        <draggable v-model="s_selectedLayers[mapName]" item-key="id" handle=".handle-div">
           <template #item="{element}">
             <div class="drag-item">
               <div class="handle-div"><i class="fa-solid fa-up-down fa-lg handle-icon hover"></i></div>
@@ -75,10 +75,32 @@ export default {
     },
     changeSlider (element){
       const map = this.$store.state[this.mapName]
-      if (element.source.obj.type === 'raster') {
-        map.setPaintProperty(element.id, 'raster-opacity', element.opacity)
+      if (element.layers) {
+        element.layers.forEach(layer0 => {
+          if (element.source.obj.type === 'raster') {
+            map.setPaintProperty(layer0.id, 'raster-opacity', element.opacity)
+          } else {
+            if (layer0.type === 'fill') {
+              map.setPaintProperty(layer0.id, 'fill-opacity', element.opacity)
+            } else if (layer0.type === 'fill-extrusion') {
+              map.setPaintProperty(layer0.id, 'fill-extrusion-opacity', element.opacity)
+            } else if (layer0.type === 'heatmap') {
+              map.setPaintProperty(layer0.id, 'heatmap-opacity', element.opacity)
+            }
+          }
+        })
       } else {
-        map.setPaintProperty(element.id, 'fill-extrusion-opacity', element.opacity)
+        if (element.source.obj.type === 'raster') {
+          map.setPaintProperty(element.id, 'raster-opacity', element.opacity)
+        } else {
+          if (element.layer.type === 'fill') {
+            map.setPaintProperty(element.layer.id, 'fill-opacity', element.opacity)
+          } else if (element.layer.type === 'fill-extrusion') {
+            map.setPaintProperty(element.layer.id, 'fill-extrusion-opacity', element.opacity)
+          } else if (element.layer.type === 'heatmap') {
+            map.setPaintProperty(element.layer.id, 'heatmap-opacity', element.opacity)
+          }
+        }
       }
     },
     removeLayer(id){
@@ -95,6 +117,7 @@ export default {
                 label: node.label,
                 source: node.source,
                 layer: node.layer,
+                layers: node.layers,
                 opacity: 1
               }
           )
@@ -128,20 +151,41 @@ export default {
         // -----------------------------------------
         for (let i = this.s_selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
           const layer = this.s_selectedLayers[this.mapName][i]
-          if (map.getLayer(layer.layer.id)) map.removeLayer(layer.layer.id)
-          if (map.getSource(layer.source.id)) map.removeSource(layer.source.id)
-          map.addSource(layer.source.id, layer.source.obj)
-          map.addLayer(layer.layer)
-          map.setLayoutProperty(layer.layer.id, 'visibility', 'none')
-        }
-        for (let i = this.s_selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
-          const layer = this.s_selectedLayers[this.mapName][i]
-          map.setLayoutProperty(layer.layer.id, 'visibility', 'visible')
-          console.log(layer)
-          if (layer.source.obj.type === 'raster') {
-            map.setPaintProperty(layer.layer.id, 'raster-opacity', layer.opacity)
+          if (layer.layers) {
+            layer.layers.forEach(layer0 => {
+              // if (map.getLayer(layer0.id)) map.removeLayer(layer0.id)
+              // if (map.getSource(layer.source.id)) map.removeSource(layer.source.id)
+              if (!map.getSource(layer.source.id)) map.addSource(layer.source.id, layer.source.obj)
+              map.addLayer(layer0)
+              if (layer.source.obj.type === 'raster') {
+                map.setPaintProperty(layer0.id, 'raster-opacity', layer.opacity)
+              } else {
+                if (layer0.type === 'fill') {
+                  map.setPaintProperty(layer0.id, 'fill-opacity', layer.opacity)
+                } else if (layer0.type === 'fill-extrusion') {
+                  map.setPaintProperty(layer0.id, 'fill-extrusion-opacity', layer.opacity)
+                } else if (layer0.type === 'heatmap') {
+                  map.setPaintProperty(layer0.id, 'heatmap-opacity', layer.opacity)
+                }
+              }
+            })
+
           } else {
-            map.setPaintProperty(layer.layer.id, 'fill-extrusion-opacity', layer.opacity)
+            if (map.getLayer(layer.layer.id)) map.removeLayer(layer.layer.id)
+            if (map.getSource(layer.source.id)) map.removeSource(layer.source.id)
+            map.addSource(layer.source.id, layer.source.obj)
+            map.addLayer(layer.layer)
+            if (layer.source.obj.type === 'raster') {
+              map.setPaintProperty(layer.layer.id, 'raster-opacity', layer.opacity)
+            } else {
+              if (layer.layer.type === 'fill') {
+                map.setPaintProperty(layer.layer.id, 'fill-opacity', layer.opacity)
+              } else if (layer.layer.type === 'fill-extrusion') {
+                map.setPaintProperty(layer.layer.id, 'fill-extrusion-opacity', layer.opacity)
+              } else if (layer.layer.type === 'heatmap') {
+                map.setPaintProperty(layer.layer.id, 'heatmap-opacity', layer.opacity)
+              }
+            }
           }
         }
       },
