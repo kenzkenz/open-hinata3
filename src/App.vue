@@ -29,6 +29,7 @@
 </template>
 
 <script>
+import axios from "axios";
 import DialogMenu from '@/components/Dialog-menu'
 import DialogLayer from '@/components/Dialog-layer'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -49,8 +50,10 @@ export default {
       map02: {top: 0, right: 0, width: '50%', height: '100%'},
     },
     permalink: '',
+    param:'',
+    dbparams:'',
     mapName: '',
-    mouseDown: false,
+    pitch:0,
   }),
   methods: {
     terrainReset (mapName) {
@@ -104,6 +107,7 @@ export default {
           requestAnimationFrame(pitch)
         } else {
           cancelAnimationFrame(pitch)
+          this.pitch = map.getPitch()
         }
       }
       pitch()
@@ -141,23 +145,6 @@ export default {
       }
     },
     btnClickSplit () {
-      // if (this.mapFlg.map02) {
-      //   this.mapSize.map01.width = '100%'
-      //   this.mapSize.map01.height = window.innerHeight + 'px'
-      //   this.mapFlg.map02 = false
-      // } else {
-      //   if (window.innerWidth > 1000) {
-      //     this.mapSize.map01.width = '50%'
-      //     this.mapSize.map01.height = window.innerHeight + 'px'
-      //   } else {
-      //     this.mapSize.map01.width = '100%'
-      //     this.mapSize.map01.height = (window.innerHeight / 2) + 'px'
-      //     this.mapSize.map02.width = '100%'
-      //     this.mapSize.map02.height = (window.innerHeight / 2) + 'px'
-      //     this.mapSize.map02.top = (window.innerHeight / 2) + 'px'
-      //   }
-      //   this.mapFlg.map02 = true
-      // }
       if (this.mapFlg.map02) {
         this.mapSize.map01.width = '100%'
         this.mapSize.map01.height = '100%'
@@ -179,184 +166,191 @@ export default {
 
     updatePermalink() {
       const map = this.$store.state.map01
-      const center = map.getCenter();
-      const zoom = map.getZoom();
-      const { lng, lat } = center;
+      const center = map.getCenter()
+      const zoom = map.getZoom()
+      const { lng, lat } = center
       // パーマリンクの生成
-      this.permalink = `${window.location.origin}${window.location.pathname}?lng=${lng}&lat=${lat}&zoom=${zoom}`;
+      this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}`
+      this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
-      window.history.pushState({ lng, lat, zoom }, '', this.permalink);
+      // window.history.pushState({ lng, lat, zoom }, '', this.permalink)
+      this.createShortUrl()
+    },
+    createShortUrl() {
+      let params = new URLSearchParams();
+      params.append('parameters', this.param);
+      axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrl.php', params)
+          .then(response => {
+            // console.log(response.data)
+            window.history.pushState(null, 'map', "?s=" + response.data.urlid);
+          })
+          .catch(error => {
+            console.log(error);
+          })
     },
     parseUrlParams() {
-      const params = new URLSearchParams(window.location.search);
-      const lng = parseFloat(params.get('lng'));
-      const lat = parseFloat(params.get('lat'));
-      const zoom = parseFloat(params.get('zoom'));
+      let params
+      if (this.dbparams) {
+        params = new URLSearchParams(this.dbparams)
+      } else {
+        params = new URLSearchParams(window.location.search)
+      }
+      console.log(params)
+      const lng = parseFloat(params.get('lng'))
+      const lat = parseFloat(params.get('lat'))
+      const zoom = parseFloat(params.get('zoom'))
       return {lng,lat,zoom}
     },
-  },
-  mounted() {
-    //------------------------------------------------------------------------------------------------------------------
-    document.addEventListener('touchmove', function (event) {
-      if (event.scale !== 1) {
-        event.preventDefault();
-      }
-    }, { passive: false });
-    //------------------------------------------------------------------------------------------------------------------
-
-    let protocol = new Protocol();
-    maplibregl.addProtocol("pmtiles",protocol.tile)
-    this.mapNames.forEach(mapName => {
-      const params = this.parseUrlParams()
-      let center = [139.7024, 35.6598]
-      let zoom = 16
-      if (params.lng) {
-        center = [params.lng,params.lat]
-        zoom = params.zoom
-      }
-      const map = new maplibregl.Map({
-        container: mapName,
-        center: center,
-        zoom: zoom,
-        maxPitch: 85, // 最大の傾き、デフォルトは60
-        // maxZoom: 17.9,
-        // style: 'https://raw.githubusercontent.com/gsi-cyberjapan/optimal_bvmap/52ba56f645334c979998b730477b2072c7418b94/style/std.json',
-        style:require('@/assets/json/std.json')
-        // style: {
-        //   version: 8,
-        //   sources: {
-        //     "background-osm-raster": {
-        //       type: "raster",
-        //       tiles: ["https://tile.openstreetmap.jp/styles/osm-bright-ja/{z}/{x}/{y}.png"],
-        //       tileSize: 256,
-        //       attribution: "<a href='https://www.openstreetmap.org/copyright' target='_blank'>© OpenStreetMap contributors</a>",
-        //     },
-        //   },
-        //   layers: [
-        //     {
-        //       id: "background-osm-raster",
-        //       type: "raster",
-        //       source: "background-osm-raster",
-        //     },
-        //     // // 陰影起伏
-        //     // {
-        //     //   id: "hills",
-        //     //   type: "hillshade",
-        //     //   source: "aws-terrain",
-        //     // },
-        //   ],
-        //   // 地形
-        //   terrain: {
-        //     // 地形データのソース
-        //     source: "aws-terrain",
-        //     // 標高の誇張度
-        //     exaggeration: 1,
-        //   },
-        //   sky: {
-        //     // 空のベースカラー
-        //     "sky-color": "#199EF3",
-        //     // 空の色と水平線の色の混ぜ合わせ。1は空の真ん中の色を、0は空の色を使用する
-        //     "sky-horizon-blend": 0.5,
-        //     // 地平線のベースカラー
-        //     "horizon-color": "#ffffff",
-        //     // 霧の色と水平線の色の混ぜ合わせ。0は水平線の色、1は霧の色を使用する
-        //     "horizon-fog-blend": 0.5,
-        //     // 霧のベースカラー。 3D地形が必要
-        //     "fog-color": "#0000ff",
-        //     // 3D地形に霧を混ぜ合わせる。 0はマップの中心、1は地平線
-        //     "fog-ground-blend": 0.5,
-        //     // 大気の混ぜ合わせ。 1が可視大気、0が非表示大気
-        //     "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 10, 1, 12, 0],
-        //   },
-        // },
-      })
-      this.$store.state[mapName] = map
-    })
-    // 画面同期----------------------------------------------------------------------------------------------------------
-    let syncing = false
-    function syncMaps(mapA, mapB) {
-      // iphoneのtきmoveではフリーズする。moveendではフリーズしない。
-      let m = 'move'
-      if (window.innerWidth < 1000) {
-        m = 'moveend'
-      }
-      mapA.on(m, () => {
-        if (!syncing) {
-          syncing = true
-          mapB.setCenter(mapA.getCenter())
-          mapB.setZoom(mapA.getZoom())
-          syncing = false
+    init() {
+      let protocol = new Protocol();
+      maplibregl.addProtocol("pmtiles",protocol.tile)
+      this.mapNames.forEach(mapName => {
+        const params = this.parseUrlParams()
+        let center = [139.7024, 35.6598]
+        let zoom = 16
+        if (params.lng) {
+          center = [params.lng,params.lat]
+          zoom = params.zoom
         }
+        const map = new maplibregl.Map({
+          container: mapName,
+          center: center,
+          zoom: zoom,
+          maxPitch: 85, // 最大の傾き、デフォルトは60
+          // maxZoom: 17.9,
+          // style: 'https://raw.githubusercontent.com/gsi-cyberjapan/optimal_bvmap/52ba56f645334c979998b730477b2072c7418b94/style/std.json',
+          style:require('@/assets/json/std.json')
+          // style: {
+          //   version: 8,
+          //   sources: {
+          //     "background-osm-raster": {
+          //       type: "raster",
+          //       tiles: ["https://tile.openstreetmap.jp/styles/osm-bright-ja/{z}/{x}/{y}.png"],
+          //       tileSize: 256,
+          //       attribution: "<a href='https://www.openstreetmap.org/copyright' target='_blank'>© OpenStreetMap contributors</a>",
+          //     },
+          //   },
+          //   layers: [
+          //     {
+          //       id: "background-osm-raster",
+          //       type: "raster",
+          //       source: "background-osm-raster",
+          //     },
+          //     // // 陰影起伏
+          //     // {
+          //     //   id: "hills",
+          //     //   type: "hillshade",
+          //     //   source: "aws-terrain",
+          //     // },
+          //   ],
+          //   // 地形
+          //   terrain: {
+          //     // 地形データのソース
+          //     source: "aws-terrain",
+          //     // 標高の誇張度
+          //     exaggeration: 1,
+          //   },
+          //   sky: {
+          //     // 空のベースカラー
+          //     "sky-color": "#199EF3",
+          //     // 空の色と水平線の色の混ぜ合わせ。1は空の真ん中の色を、0は空の色を使用する
+          //     "sky-horizon-blend": 0.5,
+          //     // 地平線のベースカラー
+          //     "horizon-color": "#ffffff",
+          //     // 霧の色と水平線の色の混ぜ合わせ。0は水平線の色、1は霧の色を使用する
+          //     "horizon-fog-blend": 0.5,
+          //     // 霧のベースカラー。 3D地形が必要
+          //     "fog-color": "#0000ff",
+          //     // 3D地形に霧を混ぜ合わせる。 0はマップの中心、1は地平線
+          //     "fog-ground-blend": 0.5,
+          //     // 大気の混ぜ合わせ。 1が可視大気、0が非表示大気
+          //     "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 10, 1, 12, 0],
+          //   },
+          // },
+        })
+        this.$store.state[mapName] = map
       })
-      mapB.on(m, () => {
-        if (!syncing) {
-          syncing = true
-          mapA.setCenter(mapB.getCenter())
-          mapA.setZoom(mapB.getZoom())
-          syncing = false
+      // 画面同期----------------------------------------------------------------------------------------------------------
+      let syncing = false
+      function syncMaps(mapA, mapB) {
+        // iphoneのtきmoveではフリーズする。moveendではフリーズしない。
+        let m = 'move'
+        if (window.innerWidth < 1000) {
+          m = 'moveend'
         }
-      })
-    }
-    syncMaps(this.$store.state.map01, this.$store.state.map02)
-
-
-
-
-    // -----------------------------------------------------------------------------------------------------------------
-    // on load
-    this.mapNames.forEach(mapName => {
-      const map = this.$store.state[mapName]
-      map.on('load', () => {
-        // 標高タイルソース---------------------------------------------------
-        map.addSource("gsidem-terrain-rgb", {
-          type: 'raster-dem',
-          tiles: ['https://xs489works.xsrv.jp/raster-tiles/gsi/gsi-dem-terrain-rgb/{z}/{x}/{y}.png'],
-          attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html#dem" target="_blank">地理院タイル(標高タイル)</a>',
-          tileSize: 256
+        mapA.on(m, () => {
+          if (!syncing) {
+            syncing = true
+            mapB.setCenter(mapA.getCenter())
+            mapB.setZoom(mapA.getZoom())
+            syncing = false
+          }
         })
-        // 標高タイルセット
-        map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
-        // 標高タイルソース---------------------------------------------------
-        map.addSource("aws-terrain", {
-          type: "raster-dem",
-              minzoom: 1,
-              maxzoom: 15,
-              // このソースが使用するエンコーディング。terrarium（Terrarium形式のPNGタイル）、mapbox（Mapbox Terrain RGBタイル）、custom のいずれか
-              encoding: "terrarium",
-              tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
+        mapB.on(m, () => {
+          if (!syncing) {
+            syncing = true
+            mapA.setCenter(mapB.getCenter())
+            mapA.setZoom(mapB.getZoom())
+            syncing = false
+          }
         })
-        // Skyレイヤ
-        map.setSky({
-          "sky-color": "#199EF3",
-          "sky-horizon-blend": 0.7,
-          "horizon-color": "#f0f8ff",
-          "horizon-fog-blend": 0.8,
-          "fog-color": "#2c7fb8",
-          "fog-ground-blend": 0.9,
-          "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 12, 0]
-        });
-        // 登記所備付地図データ --------------------------------------------------------------------------------------------
-        map.addSource("amx-a-pmtiles",{
+      }
+      syncMaps(this.$store.state.map01, this.$store.state.map02)
+      // -----------------------------------------------------------------------------------------------------------------
+      // on load
+      this.mapNames.forEach(mapName => {
+        const map = this.$store.state[mapName]
+        map.on('load', () => {
+          // 標高タイルソース---------------------------------------------------
+          map.addSource("gsidem-terrain-rgb", {
+            type: 'raster-dem',
+            tiles: ['https://xs489works.xsrv.jp/raster-tiles/gsi/gsi-dem-terrain-rgb/{z}/{x}/{y}.png'],
+            attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html#dem" target="_blank">地理院タイル(標高タイル)</a>',
+            tileSize: 256
+          })
+          // 標高タイルセット
+          map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
+          // 標高タイルソース---------------------------------------------------
+          map.addSource("aws-terrain", {
+            type: "raster-dem",
+            minzoom: 1,
+            maxzoom: 15,
+            // このソースが使用するエンコーディング。terrarium（Terrarium形式のPNGタイル）、mapbox（Mapbox Terrain RGBタイル）、custom のいずれか
+            encoding: "terrarium",
+            tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
+          })
+          // Skyレイヤ
+          map.setSky({
+            "sky-color": "#199EF3",
+            "sky-horizon-blend": 0.7,
+            "horizon-color": "#f0f8ff",
+            "horizon-fog-blend": 0.8,
+            "fog-color": "#2c7fb8",
+            "fog-ground-blend": 0.9,
+            "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 12, 0]
+          });
+          // 登記所備付地図データ --------------------------------------------------------------------------------------------
+          map.addSource("amx-a-pmtiles",{
             type: "vector",
             minzoom: 2,
             maxzoom: 16,
             url: "pmtiles://https://habs.rad.naro.go.jp/spatial_data/amx/a.pmtiles",
             attribution:
                 "<a href='https://www.moj.go.jp/MINJI/minji05_00494.html' target='_blank'>登記所備付地図データ（法務省）</a>",
-        })
-        // 登記所備付地図データ 間引きなし
-        map.addLayer({
-          id: "amx-a-fude",
-          type: "fill",
-          source: "amx-a-pmtiles", "source-layer": "fude",
-          paint: {
-            "fill-color": "rgba(254, 217, 192, 1)",
-            "fill-outline-color": "rgba(255, 0, 0, 1)",
-            "fill-opacity": 0.4,
-          },
-        })
-        // 登記所備付地図データ 代表点レイヤ
-        map.addLayer({
+          })
+          // 登記所備付地図データ 間引きなし
+          map.addLayer({
+            id: "amx-a-fude",
+            type: "fill",
+            source: "amx-a-pmtiles", "source-layer": "fude",
+            paint: {
+              "fill-color": "rgba(254, 217, 192, 1)",
+              "fill-outline-color": "rgba(255, 0, 0, 1)",
+              "fill-opacity": 0.4,
+            },
+          })
+          // 登記所備付地図データ 代表点レイヤ
+          map.addLayer({
             id: "amx-a-daihyo",
             // ヒートマップ
             type: "heatmap",
@@ -394,66 +388,36 @@ export default {
                 50,
               ],
             }
+          })
+          map.setLayoutProperty('amx-a-fude', 'visibility', 'none')
+          map.setLayoutProperty('amx-a-daihyo', 'visibility', 'none')
+          // -------------------------------------------------------------------------------------------------------------
+          map.on('moveend', this.updatePermalink)
+          // this.parseUrlParams()
         })
-        map.setLayoutProperty('amx-a-fude', 'visibility', 'none')
-        map.setLayoutProperty('amx-a-daihyo', 'visibility', 'none')
-        // ------------------------------------------------------------------------------------------------------------
-        // 3D都市モデル（Project PLATEAU）東京都23区（2020年度）建物データ
-        // map.addSource("plateau-bldg", {
-        //   type: "vector",
-        //   // tiles: ["https://indigo-lab.github.io/plateau-lod2-mvt/{z}/{x}/{y}.pbf"],
-        //   tiles: ['https://shiworks.xsrv.jp/pmtiles-data/plateau/PLATEAU_2023_LOD0.pmtiles'],
-        //   minzoom: 10,
-        //   maxzoom: 16,
-        //   attribution: "<a href='https://github.com/indigo-lab/plateau-lod2-mvt'>plateau-lod2-mvt by indigo-lab</a> (<a href='https://www.mlit.go.jp/plateau/'>国土交通省 Project PLATEAU</a> のデータを加工して作成)",
-        // })
-        // map.addLayer({
-        //   id: "bldg",
-        //   type: "fill-extrusion",
-        //   source: "plateau-bldg",
-        //   // ベクタタイルソースから使用するレイヤ
-        //   "source-layer": "bldg",
-        //   paint: {
-        //     // 高さ
-        //     "fill-extrusion-height": ["*", ["get", "z"], 1],
-        //     // 塗りつぶしの色
-        //     "fill-extrusion-color": "#797979",
-        //     // 透明度
-        //     "fill-extrusion-opacity": 0.7,
-        //   },
-        // })
-        // map.setLayoutProperty('bldg', 'visibility', 'none')
-        // -------------------------------------------------------------------------------------------------------------
-        // PLATEAU建物（PMTiles）ソース
-        // map.addSource("plateauPmtiles", {
-        //   type: "vector",
-        //   url: "pmtiles://https://shiworks.xsrv.jp/pmtiles-data/plateau/PLATEAU_2022_LOD1.pmtiles",
-        //   minzoom: 16,
-        //   maxzoom: 16,
-        //   attribution: '<a href="https://www.geospatial.jp/ckan/dataset/plateau">3D都市モデルPLATEAU建築物データ（国土交通省）</a>'
-        // });
-        //
-        // // PLATEAU建物（PMTiles）レイヤ
-        // map.addLayer({
-        //   'id': 'plateauPmtiles',
-        //   'source': 'plateauPmtiles',
-        //   'source-layer': "PLATEAU",
-        //   "minzoom": 16,
-        //   "maxzoom": 23,
-        //   'type': 'fill-extrusion',
-        //   'paint': {
-        //     "fill-extrusion-color": '#797979',
-        //     "fill-extrusion-opacity": 0.7,
-        //     "fill-extrusion-height": ["get", "measuredHeight"]
-        //   }
-        // });
-        // map.setLayoutProperty('plateauPmtiles', 'visibility', 'none')
-        // -------------------------------------------------------------------------------------------------------------
-        map.on('moveend', this.updatePermalink)
-        // this.parseUrlParams()
+        // on load
+        //----------------------------------------------------------------------------------------------------------------
       })
-      // on load
-      //----------------------------------------------------------------------------------------------------------------
+    }
+  },
+  mounted() {
+    const vm = this
+    //------------------------------------------------------------------------------------------------------------------
+    document.addEventListener('touchmove', function (event) {
+      if (event.scale !== 1) {
+        event.preventDefault();
+      }
+    }, { passive: false });
+    //------------------------------------------------------------------------------------------------------------------
+    const urlid = window.location.search.replace('?s=','')
+    axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrlSelect.php',{
+      params: {
+        urlid: urlid
+      }
+    }).then(function (response) {
+      console.log(response.data)
+      vm.dbparams = response.data
+      vm.init()
     })
     // -----------------------------------------------------------------------------------------------------------------
   }
