@@ -185,25 +185,24 @@ const layers01 = [
                 id: 'oh-stdLayer',
                 label: "標準地図",
                 source: stdSource,
-                layer: stdLayer
+                layers: [stdLayer]
             },
             {
                 id: 'oh-seamlessphoto',
                 label: "最新写真",
                 source: seamlessphotoSource,
-                layer: seamlessphotoLayer
+                layers: [seamlessphotoLayer]
             },
             {
                 id: 'oh-plateauPmtiles',
                 label: "PLATEAU建物",
                 source: plateauPmtilesSource,
-                layer: plateauPmtilesLayer
+                layers: [plateauPmtilesLayer]
             },
             {
                 id: 'oh-amx-a-fude',
                 label: "登記所備付地図データ",
                 source: amxSource,
-                layer: amxLayerDaihyou,
                 layers:[amxLayer,amxLayerDaihyou]
             },
         ]
@@ -216,19 +215,19 @@ const layers01 = [
                 id: 'oh-csGifuLayer',
                 label: "岐阜県CS立体図",
                 source: csGifuSource,
-                layer: csGifuLayer
+                layers: [csGifuLayer]
             },
             {
                 id: 'oh-csOsakaLayer',
                 label: "大阪府CS立体図",
                 source: csOsakaSource,
-                layer: csOsakaLayer
+                layers: [csOsakaLayer]
             },
             {
                 id: 'oh-tamaSekisyokuLayer',
                 label: "東京都多摩地域赤色立体地図",
                 source: tamaSekisyokuSource,
-                layer: tamaSekisyokuLayer
+                layers: [tamaSekisyokuLayer]
             },
         ]
     }
