@@ -269,6 +269,8 @@ export default {
       const pitch = parseFloat(params.get('pitch'))
       const bearing = parseFloat(params.get('bearing'))
       const slj = JSON.parse(params.get('slj'))
+      this.pitch =pitch
+      this.bearing = bearing
       return {lng,lat,zoom,pitch,bearing,slj}
     },
     init() {
@@ -430,7 +432,6 @@ export default {
       }
     }, { passive: false });
     //------------------------------------------------------------------------------------------------------------------
-
     const params = new URLSearchParams(window.location.search)
     const urlid = params.get('s')
     axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrlSelect.php',{
@@ -438,7 +439,6 @@ export default {
         urlid: urlid
       }
     }).then(function (response) {
-      // console.log(response.data)
       vm.dbparams = response.data
       vm.init()
       const url = new URL(window.location.href) // URLを取得
