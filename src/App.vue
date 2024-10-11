@@ -84,9 +84,11 @@ export default {
           map.setPitch(map.getPitch() - 5)
           requestAnimationFrame(pitch)
         } else {
+          map.setPitch(0)
           vm.pitch = map.getPitch()
-          cancelAnimationFrame(pitch)
+          console.log(vm.pitch)
           vm.updatePermalink()
+          cancelAnimationFrame(pitch)
         }
       }
       function bearing () {
@@ -99,8 +101,8 @@ export default {
           requestAnimationFrame(bearing)
         } else {
           vm.bearing = map.getBearing()
-          cancelAnimationFrame(bearing)
           vm.updatePermalink()
+          cancelAnimationFrame(bearing)
         }
       }
       if (window.innerWidth < 1000) {
@@ -408,16 +410,19 @@ export default {
             tileSize: 256
           })
           // 標高タイルセット
-          map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
+          // map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
           // 標高タイルソース---------------------------------------------------
-          map.addSource("aws-terrain", {
-            type: "raster-dem",
-            minzoom: 1,
-            maxzoom: 15,
-            // このソースが使用するエンコーディング。terrarium（Terrarium形式のPNGタイル）、mapbox（Mapbox Terrain RGBタイル）、custom のいずれか
-            encoding: "terrarium",
-            tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
-          })
+          // map.addSource("aws-terrain", {
+          //   type: "raster-dem",
+          //   minzoom: 1,
+          //   maxzoom: 15,
+          //   // このソースが使用するエンコーディング。terrarium（Terrarium形式のPNGタイル）、mapbox（Mapbox Terrain RGBタイル）、custom のいずれか
+          //   encoding: "terrarium",
+          //   tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
+          // })
+          // // 標高タイルセット
+          // map.setTerrain({ 'source': 'aws-terrain', 'exaggeration': 1 });
+
           // Skyレイヤ
           if (mapName === 'map01') {
             map.setSky({
@@ -440,12 +445,9 @@ export default {
               "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 12, 0]
             })
           }
-
           // -------------------------------------------------------------------------------------------------------------
           map.on('moveend', this.updatePermalink)
-          // this.parseUrlParams()
         })
-        // on load
         //----------------------------------------------------------------------------------------------------------------
       })
     }
@@ -474,6 +476,17 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
+    pitch (value) {
+      console.log(value)
+      if (value !== 0 ) {
+        this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+        this.$store.state.map02.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+      } else {
+        this.$store.state.map01.setTerrain(null)
+        this.$store.state.map02.setTerrain(null)
+      }
+
+    },
     s_selectedLayers: {
       handler: function () {
         console.log('変更を検出しました')

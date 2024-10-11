@@ -167,23 +167,6 @@ export default {
                 }
               }
             })
-          //
-          // } else {
-          //   if (map.getLayer(layer.layer.id)) map.removeLayer(layer.layer.id)
-          //   if (map.getSource(layer.source.id)) map.removeSource(layer.source.id)
-          //   map.addSource(layer.source.id, layer.source.obj)
-          //   map.addLayer(layer.layer)
-          //   if (layer.source.obj.type === 'raster') {
-          //     map.setPaintProperty(layer.layer.id, 'raster-opacity', layer.opacity)
-          //   } else {
-          //     if (layer.layer.type === 'fill') {
-          //       map.setPaintProperty(layer.layer.id, 'fill-opacity', layer.opacity)
-          //     } else if (layer.layer.type === 'fill-extrusion') {
-          //       map.setPaintProperty(layer.layer.id, 'fill-extrusion-opacity', layer.opacity)
-          //     } else if (layer.layer.type === 'heatmap') {
-          //       map.setPaintProperty(layer.layer.id, 'heatmap-opacity', layer.opacity)
-          //     }
-          //   }
           }
         }
       },

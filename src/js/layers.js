@@ -74,6 +74,20 @@ export const csGifuLayer = {
     'minzoom': 0,
     'maxzoom': 23
 }
+// 能登CS立体図------------------------------------------------------------------------------------------------------
+export const csNotoSource = {
+    id: 'csNotoSource', obj: {
+        type: 'raster',
+        tiles: ['https://www2.ffpri.go.jp/soilmap/tile/cs_noto/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        maxzoom: 17
+    }
+}
+export const csNotoLayer = {
+    'id': 'oh-csNotoLayer',
+    'type': 'raster',
+    'source': 'csNotoSource',
+}
 // 静岡県県CS立体図------------------------------------------------------------------------------------------------------
 export const csShizuokaSource = {
     id: 'csShizuokaSource', obj: {
@@ -226,6 +240,12 @@ const layers01 = [
         id: 2,
         label: "立体図等",
         nodes: [
+            {
+                id: 'oh-csNotoLayer',
+                label: "能登CS立体図",
+                source: csNotoSource,
+                layers: [csNotoLayer]
+            },
             {
                 id: 'oh-csGifuLayer',
                 label: "岐阜県CS立体図",
