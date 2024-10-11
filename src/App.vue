@@ -219,11 +219,12 @@ export default {
       const center = map.getCenter()
       const zoom = map.getZoom()
       const { lng, lat } = center
-      const pitch = this.pitch
-      const bearing = this.bearing
+      const split = this.mapFlg.map02
+      const pitch = !isNaN(this.pitch) ? this.pitch: 0
+      const bearing = !isNaN(this.bearing) ? this.bearing: 0
       const selectedLayersJson = JSON.stringify(this.$store.state.selectedLayers)
       // パーマリンクの生成
-      this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&pitch=${pitch}&bearing=${bearing}&slj=${selectedLayersJson}`
+      this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch=${pitch}&bearing=${bearing}&slj=${selectedLayersJson}`
       // console.log(this.param)
       // this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
@@ -255,18 +256,19 @@ export default {
       const lng = parseFloat(params.get('lng'))
       const lat = parseFloat(params.get('lat'))
       const zoom = parseFloat(params.get('zoom'))
+      const split = params.get('split')
       const pitch = parseFloat(params.get('pitch'))
       const bearing = parseFloat(params.get('bearing'))
       const slj = JSON.parse(params.get('slj'))
-      this.pitch =　pitch
+      this.pitch = pitch
       this.bearing = bearing
-      return {lng,lat,zoom,pitch,bearing,slj}
+      return {lng,lat,zoom,split,pitch,bearing,slj}
     },
     init() {
       let protocol = new Protocol();
       maplibregl.addProtocol("pmtiles",protocol.tile)
+      const params = this.parseUrlParams()
       this.mapNames.forEach(mapName => {
-        const params = this.parseUrlParams()
         let center = [139.7024, 35.6598]
         let zoom = 16
         let pitch = 0
@@ -277,6 +279,7 @@ export default {
           pitch = params.pitch
           bearing = params.bearing
         }
+        console.log(pitch,bearing)
         const map = new maplibregl.Map({
           container: mapName,
           center: center,
@@ -368,11 +371,17 @@ export default {
       this.mapNames.forEach(mapName => {
         const map = this.$store.state[mapName]
         map.on('load', () => {
+          // 二画面-----------------------------------------------------------
+          if (mapName === 'map02') {
+            if (params.split === 'true') {
+              this.mapFlg.map02 = true
+            }
+          }
           // ----------------------------------------------------------------
           this.mapNames.forEach(() => {
             const params = this.parseUrlParams()
             if (params.slj) this.s_selectedLayers = params.slj
-            this.$store.state.changeFlg = !this.$store.state.changeFlg
+            // this.$store.state.changeFlg = !this.$store.state.changeFlg
           })
           // ----------------------------------------------------------------
           // 標高タイルソース---------------------------------------------------
