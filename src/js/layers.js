@@ -209,8 +209,8 @@ export const amxLayerDaihyou = {
 export const bakumatsuSource = {
     id: "bakumatsu", obj: {
         type: "vector",
-        minzoom: 2,
-        maxzoom: 16,
+        minzoom: 0,
+        maxzoom: 14,
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bakumatsu/b3.pmtiles",
         attribution:
             "<a href='' target='_blank'></a>",
