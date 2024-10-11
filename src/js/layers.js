@@ -222,10 +222,29 @@ export const bakumatsuLayer = {
     type: "fill",
     source: "bakumatsu",
     "source-layer": "b3",
-    paint: {
-        "fill-color": "rgba(254, 217, 192, 0.7)",
-        "fill-outline-color": "rgba(255, 0, 0, 1)",
-    },
+    // paint: {
+    //     "fill-color": "rgba(254, 217, 192, 0.7)",
+    //     "fill-outline-color": "rgba(255, 0, 0, 1)",
+    // },
+    // 'paint': {
+    //     'fill-color': [
+    //         'match',
+    //         ['get', 'PREF'], // Get the 'category' property from the data
+    //         '45', '#f28cb1', // Color for category A
+    //         'B', '#3bb2d0', // Color for category B
+    //         '#ccc' // Default color (if no match)
+    //     ],
+    // },
+    'paint': {
+        'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', '石高計'],
+            0, 'white',   // Color for low values
+            // 1000, '#f1f075', // Intermediate value
+            3000, 'red' // Color for high values
+        ]
+    }
 }
 export const bakumatsuLayerLine = {
     id: "oh-bakumatsuLine",
@@ -234,7 +253,14 @@ export const bakumatsuLayerLine = {
     "source-layer": "b3",
     paint: {
         'line-color': '#000',
-        'line-width': 0.5
+        // 'line-width': 0.5
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            7, 0,
+            11, 0.5
+        ]
     },
 }
 // ---------------------------------------------------------------------------------------------------------------------
