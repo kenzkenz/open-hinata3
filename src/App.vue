@@ -11,14 +11,15 @@
           </div>
           <DialogMenu :mapName=mapName />
           <DialogLayer :mapName=mapName />
+
           <div class="terrain-btn-div" v-drag>
             <div class="terrain-btn-container">
-              <button type="button" class="terrain-btn-up terrain-btn" @pointerdown="upMousedown(mapName)" @touchstart="upMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-up fa-lg hover'></i></button>
+              <button type="button" class="terrain-btn-up terrain-btn" @pointerdown="upMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-up fa-lg hover'></i></button>
               <button type="button" class="terrain-btn-down terrain-btn" @pointerdown="downMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-down fa-lg'></i></button>
               <button type="button" class="terrain-btn-left terrain-btn" @pointerdown="leftMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-left fa-lg'></i></button>
               <button type="button" class="terrain-btn-right terrain-btn" @pointerdown="rightMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-right fa-lg'></i></button>
               <div class="terrain-reset">
-                <button type="button" @click="terrainReset(mapName)">戻す</button>
+                <button type="button" @pointerdown="terrainReset(mapName)">戻す</button>
               </div>
             </div>
           </div>
@@ -105,7 +106,6 @@ export default {
           cancelAnimationFrame(bearing)
         }
       }
-      alert('test')
       if (window.innerWidth < 1000) {
         map.setPitch(0)
         this.$store.state.map01.setBearing(0)
@@ -578,6 +578,18 @@ export default {
   .terrain-btn-div {
     top:calc(50% - 73px);
   }
+}
+.test{
+  position:absolute;
+  top:0px;
+  left:0%;
+  padding:0;
+  width:50px;
+  height:50px;
+  margin-left:-25px;
+  color: white;
+  border-radius:8px;
+  z-index: 999999;
 }
 .terrain-btn-container{
   position:relative;
