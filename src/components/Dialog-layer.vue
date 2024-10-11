@@ -82,6 +82,8 @@ export default {
           } else {
             if (layer0.type === 'fill') {
               map.setPaintProperty(layer0.id, 'fill-opacity', element.opacity)
+            } else if (layer0.type === 'line') {
+              map.setPaintProperty(layer0.id, 'line-opacity', element.opacity)
             } else if (layer0.type === 'fill-extrusion') {
               map.setPaintProperty(layer0.id, 'fill-extrusion-opacity', element.opacity)
             } else if (layer0.type === 'heatmap') {
@@ -89,18 +91,6 @@ export default {
             }
           }
         })
-      // } else {
-      //   if (element.source.obj.type === 'raster') {
-      //     map.setPaintProperty(element.id, 'raster-opacity', element.opacity)
-      //   } else {
-      //     if (element.layer.type === 'fill') {
-      //       map.setPaintProperty(element.layer.id, 'fill-opacity', element.opacity)
-      //     } else if (element.layer.type === 'fill-extrusion') {
-      //       map.setPaintProperty(element.layer.id, 'fill-extrusion-opacity', element.opacity)
-      //     } else if (element.layer.type === 'heatmap') {
-      //       map.setPaintProperty(element.layer.id, 'heatmap-opacity', element.opacity)
-      //     }
-      //   }
       }
     },
     removeLayer(id){
@@ -160,6 +150,8 @@ export default {
               } else {
                 if (layer0.type === 'fill') {
                   map.setPaintProperty(layer0.id, 'fill-opacity', layer.opacity)
+                } else if (layer0.type === 'line') {
+                  map.setPaintProperty(layer0.id, 'line-opacity', layer.opacity)
                 } else if (layer0.type === 'fill-extrusion') {
                   map.setPaintProperty(layer0.id, 'fill-extrusion-opacity', layer.opacity)
                 } else if (layer0.type === 'heatmap') {

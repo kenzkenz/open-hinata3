@@ -223,11 +223,18 @@ export const bakumatsuLayer = {
     source: "bakumatsu",
     "source-layer": "b3",
     paint: {
-        "fill-color": "rgba(254, 217, 192, 1)",
+        "fill-color": "rgba(254, 217, 192, 0.7)",
         "fill-outline-color": "rgba(255, 0, 0, 1)",
-        "fill-opacity": 0.4,
-        // 'line-color': '#000', // Outline color
-        // 'line-width': 2 // Outline thickness
+    },
+}
+export const bakumatsuLayerLine = {
+    id: "oh-bakumatsuLine",
+    type: "line",
+    source: "bakumatsu",
+    "source-layer": "b3",
+    paint: {
+        'line-color': '#000',
+        'line-width': 0.5
     },
 }
 // ---------------------------------------------------------------------------------------------------------------------
@@ -264,7 +271,7 @@ const layers01 = [
                 id: 'oh-bakumatsu',
                 label: "幕末近世の村",
                 source: bakumatsuSource,
-                layers: [bakumatsuLayer]
+                layers: [bakumatsuLayer,bakumatsuLayerLine]
             },
         ]
     },
