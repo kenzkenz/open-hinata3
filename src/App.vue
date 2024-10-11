@@ -202,6 +202,8 @@ export default {
         this.mapFlg.map02 = false
       } else {
         if (window.innerWidth > 1000) {
+          document.querySelector('.terrain-btn-div').style.left = ''
+          document.querySelector('.terrain-btn-div').style.right = '10px'
           this.mapSize.map01.width = '50%'
           this.mapSize.map01.height = '100%'
         } else {
@@ -375,6 +377,16 @@ export default {
           if (mapName === 'map02') {
             if (params.split === 'true') {
               this.mapFlg.map02 = true
+              if (window.innerWidth > 1000) {
+                this.mapSize.map01.width = '50%'
+                this.mapSize.map01.height = '100%'
+              } else {
+                this.mapSize.map01.width = '100%'
+                this.mapSize.map01.height = '50%'
+                this.mapSize.map02.width = '100%'
+                this.mapSize.map02.height = '50%'
+                this.mapSize.map02.top = '50%'
+              }
             }
           }
           // ----------------------------------------------------------------

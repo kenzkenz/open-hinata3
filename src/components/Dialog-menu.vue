@@ -12,7 +12,6 @@ export default {
   name: 'Dialog-menu',
   props: ['mapName'],
   data: () => ({
-    test: 'test',
     menuContentSize: {'height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'}
   }),
   computed: {
