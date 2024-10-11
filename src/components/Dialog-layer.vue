@@ -145,6 +145,7 @@ export default {
             layer.layers.forEach(layer0 => {
               if (!map.getSource(layer.source.id)) map.addSource(layer.source.id, layer.source.obj)
               map.addLayer(layer0)
+              console.log(layer0.type)
               if (layer.source.obj.type === 'raster') {
                 map.setPaintProperty(layer0.id, 'raster-opacity', layer.opacity)
               } else {

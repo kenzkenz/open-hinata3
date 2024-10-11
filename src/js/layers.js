@@ -263,6 +263,26 @@ export const bakumatsuLayerLine = {
         ]
     },
 }
+export const bakumatsuLayerLabel = {
+    id: "oh-bakumatsuLabel",
+    type: "symbol",
+    source: "bakumatsu",
+    "source-layer": "b3",
+    'layout': {
+        'text-field': ['get', '村名0'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-anchor': 'left',
+        'text-offset': [0.5, 0],
+        'visibility': 'visible',
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 10
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -297,7 +317,7 @@ const layers01 = [
                 id: 'oh-bakumatsu',
                 label: "幕末近世の村",
                 source: bakumatsuSource,
-                layers: [bakumatsuLayer,bakumatsuLayerLine]
+                layers: [bakumatsuLayer,bakumatsuLayerLine,bakumatsuLayerLabel]
             },
         ]
     },

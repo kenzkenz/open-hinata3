@@ -292,61 +292,33 @@ export default {
         }
         const map = new maplibregl.Map({
           container: mapName,
+          localIdeographFontFamily: ['sans-serif'], // 日本語を表示するための設定
           center: center,
           zoom: zoom,
           pitch: pitch,
           bearing:bearing,
           maxPitch: 85, // 最大の傾き、デフォルトは60
-          // maxZoom: 17.9,
           // style: 'https://raw.githubusercontent.com/gsi-cyberjapan/optimal_bvmap/52ba56f645334c979998b730477b2072c7418b94/style/std.json',
-          style:require('@/assets/json/std.json')
-          // style: {
-          //   version: 8,
-          //   sources: {
-          //     "background-osm-raster": {
-          //       type: "raster",
-          //       tiles: ["https://tile.openstreetmap.jp/styles/osm-bright-ja/{z}/{x}/{y}.png"],
-          //       tileSize: 256,
-          //       attribution: "<a href='https://www.openstreetmap.org/copyright' target='_blank'>© OpenStreetMap contributors</a>",
-          //     },
-          //   },
-          //   layers: [
-          //     {
-          //       id: "background-osm-raster",
-          //       type: "raster",
-          //       source: "background-osm-raster",
-          //     },
-          //     // // 陰影起伏
-          //     // {
-          //     //   id: "hills",
-          //     //   type: "hillshade",
-          //     //   source: "aws-terrain",
-          //     // },
-          //   ],
-          //   // 地形
-          //   terrain: {
-          //     // 地形データのソース
-          //     source: "aws-terrain",
-          //     // 標高の誇張度
-          //     exaggeration: 1,
-          //   },
-          //   sky: {
-          //     // 空のベースカラー
-          //     "sky-color": "#199EF3",
-          //     // 空の色と水平線の色の混ぜ合わせ。1は空の真ん中の色を、0は空の色を使用する
-          //     "sky-horizon-blend": 0.5,
-          //     // 地平線のベースカラー
-          //     "horizon-color": "#ffffff",
-          //     // 霧の色と水平線の色の混ぜ合わせ。0は水平線の色、1は霧の色を使用する
-          //     "horizon-fog-blend": 0.5,
-          //     // 霧のベースカラー。 3D地形が必要
-          //     "fog-color": "#0000ff",
-          //     // 3D地形に霧を混ぜ合わせる。 0はマップの中心、1は地平線
-          //     "fog-ground-blend": 0.5,
-          //     // 大気の混ぜ合わせ。 1が可視大気、0が非表示大気
-          //     "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 10, 1, 12, 0],
-          //   },
-          // },
+          // style:require('@/assets/json/std.json')
+          style: {
+            version: 8,
+            glyphs: "https://glyphs.geolonia.com/{fontstack}/{range}.pbf",
+            sources: {
+              "background-osm-raster": {
+                type: "raster",
+                tiles: ["https://tile.openstreetmap.jp/styles/osm-bright-ja/{z}/{x}/{y}.png"],
+                tileSize: 256,
+                attribution: "<a href='https://www.openstreetmap.org/copyright' target='_blank'>© OpenStreetMap contributors</a>",
+              },
+            },
+            layers: [
+              {
+                id: "background-osm-raster",
+                type: "raster",
+                source: "background-osm-raster",
+              },
+              ]
+          },
         })
         this.$store.state[mapName] = map
       })
