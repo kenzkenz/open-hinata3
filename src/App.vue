@@ -478,14 +478,13 @@ export default {
   watch: {
     pitch (value) {
       console.log(value)
-      if (value !== 0 ) {
-        this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
-        this.$store.state.map02.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
-      } else {
-        this.$store.state.map01.setTerrain(null)
-        this.$store.state.map02.setTerrain(null)
-      }
-
+      // if (value !== 0 ) {
+      //   this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+      //   this.$store.state.map02.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+      // } else {
+      //   this.$store.state.map01.setTerrain(null)
+      //   this.$store.state.map02.setTerrain(null)
+      // }
     },
     s_selectedLayers: {
       handler: function () {
