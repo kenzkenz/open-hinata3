@@ -105,8 +105,8 @@ export default {
           cancelAnimationFrame(bearing)
         }
       }
+      alert('test')
       if (window.innerWidth < 1000) {
-        alert('test')
         map.setPitch(0)
         this.$store.state.map01.setBearing(0)
         this.$store.state.map02.setBearing(0)
