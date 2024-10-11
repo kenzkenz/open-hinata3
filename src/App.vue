@@ -446,7 +446,12 @@ export default {
             })
           }
           // -----------------------------------------------------------------------------------------------------------
-          map.on('moveend', this.updatePermalink)
+          // map.on('moveend', this.updatePermalink)
+          map.on('click', this.updatePermalink)
+          map.on('dragend', this.updatePermalink)
+          // map.on('zoomend', this.updatePermalink)
+          map.on('idle', this.updatePermalink)
+
           //------------------------------------------------------------------------------------------------------------
           if (this.pitch !== 0) {
             this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
