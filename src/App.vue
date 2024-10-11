@@ -2,7 +2,7 @@
   <v-app>
     <v-main>
       <div id="map00">
-        <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="mapFlg[mapName]">
+        <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="mapFlg[mapName]" @click="btnPosition">
           <div class="center-target"></div>
           <div id="left-top-div">
             <v-btn @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><i class="fa-solid fa-bars"></i></v-btn>
@@ -12,7 +12,7 @@
           <DialogMenu :mapName=mapName />
           <DialogLayer :mapName=mapName />
           <div class="terrain-btn-div" v-drag>
-            <div class="cesiun-btn-container">
+            <div class="terrain-btn-container">
               <button type="button" class="terrain-btn-up terrain-btn" @pointerdown="upMousedown(mapName)" @touchstart="upMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-up fa-lg hover'></i></button>
               <button type="button" class="terrain-btn-down terrain-btn" @pointerdown="downMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-down fa-lg'></i></button>
               <button type="button" class="terrain-btn-left terrain-btn" @pointerdown="leftMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-left fa-lg'></i></button>
@@ -69,6 +69,12 @@ export default {
     },
   },
   methods: {
+    btnPosition() {
+      if (document.querySelector('#map01').clientWidth < Number(document.querySelector('.terrain-btn-div').style.left.replace('px',''))) {
+        document.querySelector('.terrain-btn-div').style.left = ''
+        document.querySelector('.terrain-btn-div').style.right = '10px'
+      }
+    },
     terrainReset (mapName) {
       const vm = this
       const map = this.$store.state[mapName]
@@ -537,7 +543,7 @@ export default {
     top:calc(50% - 73px);
   }
 }
-.cesiun-btn-container{
+.terrain-btn-container{
   position:relative;
   height:100%;
 }
