@@ -445,10 +445,27 @@ export default {
               "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 12, 0]
             })
           }
-          // -------------------------------------------------------------------------------------------------------------
+          // -----------------------------------------------------------------------------------------------------------
           map.on('moveend', this.updatePermalink)
+          //------------------------------------------------------------------------------------------------------------
+          if (this.pitch !== 0) {
+            this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+            this.$store.state.map02.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+          }
+          // ウオッチ
+          this.$watch(function () {
+            return [this.pitch]
+          }, function () {
+            if (this.pitch !== 0 ) {
+              this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+              this.$store.state.map02.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+            } else {
+              this.$store.state.map01.setTerrain(null)
+              this.$store.state.map02.setTerrain(null)
+            }
+          })
         })
-        //----------------------------------------------------------------------------------------------------------------
+        //on load終了----------------------------------------------------------------------------------------------------
       })
     }
   },
@@ -476,16 +493,6 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
-    pitch (value) {
-      console.log(value)
-      // if (value !== 0 ) {
-      //   this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
-      //   this.$store.state.map02.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
-      // } else {
-      //   this.$store.state.map01.setTerrain(null)
-      //   this.$store.state.map02.setTerrain(null)
-      // }
-    },
     s_selectedLayers: {
       handler: function () {
         console.log('変更を検出しました')
