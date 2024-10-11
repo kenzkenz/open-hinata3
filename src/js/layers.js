@@ -157,7 +157,8 @@ export const amxSource = {
 export const amxLayer = {
     id: "oh-amx-a-fude",
     type: "fill",
-    source: "amx-a-pmtiles", "source-layer": "fude",
+    source: "amx-a-pmtiles",
+    "source-layer": "fude",
     paint: {
         "fill-color": "rgba(254, 217, 192, 1)",
         "fill-outline-color": "rgba(255, 0, 0, 1)",
@@ -204,6 +205,31 @@ export const amxLayerDaihyou = {
         ],
     }
 }
+// 幕末近世ソース --------------------------------------------------------------------------------------------
+export const bakumatsuSource = {
+    id: "bakumatsu", obj: {
+        type: "vector",
+        minzoom: 2,
+        maxzoom: 16,
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bakumatsu/b3.pmtiles",
+        attribution:
+            "<a href='' target='_blank'></a>",
+    }
+}
+// 幕末近世レイヤー
+export const bakumatsuLayer = {
+    id: "oh-bakumatsu",
+    type: "fill",
+    source: "bakumatsu",
+    "source-layer": "b3",
+    paint: {
+        "fill-color": "rgba(254, 217, 192, 1)",
+        "fill-outline-color": "rgba(255, 0, 0, 1)",
+        "fill-opacity": 0.4,
+        // 'line-color': '#000', // Outline color
+        // 'line-width': 2 // Outline thickness
+    },
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -233,6 +259,12 @@ const layers01 = [
                 label: "登記所備付地図データ",
                 source: amxSource,
                 layers:[amxLayer,amxLayerDaihyou]
+            },
+            {
+                id: 'oh-bakumatsu',
+                label: "幕末近世の村",
+                source: bakumatsuSource,
+                layers: [bakumatsuLayer]
             },
         ]
     },
