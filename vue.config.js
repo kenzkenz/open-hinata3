@@ -1,5 +1,10 @@
 const { defineConfig } = require('@vue/cli-service')
 module.exports = defineConfig({
+    pwa: {
+        iconPaths: {
+            favicon32: 'favicon.ico',
+        }
+    },
     publicPath: process.env.NODE_ENV === 'production' ? '' : '',
     outputDir:'./docs', // ファイルの出力先ルート
     chainWebpack: config => {

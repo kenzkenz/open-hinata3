@@ -287,7 +287,6 @@ export default {
           pitch = params.pitch
           bearing = params.bearing
         }
-        console.log(pitch,bearing)
         const map = new maplibregl.Map({
           container: mapName,
           center: center,
@@ -421,15 +420,18 @@ export default {
             tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
           })
           // Skyレイヤ
-          map.setSky({
-            "sky-color": "#199EF3",
-            "sky-horizon-blend": 0.7,
-            "horizon-color": "#f0f8ff",
-            "horizon-fog-blend": 0.8,
-            "fog-color": "#2c7fb8",
-            "fog-ground-blend": 0.9,
-            "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 12, 0]
-          })
+          if (mapName === 'map01') {
+            map.setSky({
+              "sky-color": "#199EF3",
+              "sky-horizon-blend": 0.7,
+              "horizon-color": "#f0f8ff",
+              "horizon-fog-blend": 0.8,
+              "fog-color": "#2c7fb8",
+              "fog-ground-blend": 0.9,
+              "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 12, 0]
+            })
+          }
+
           // -------------------------------------------------------------------------------------------------------------
           map.on('moveend', this.updatePermalink)
           // this.parseUrlParams()
