@@ -398,7 +398,6 @@ export default {
           this.mapNames.forEach(() => {
             const params = this.parseUrlParams()
             if (params.slj) this.s_selectedLayers = params.slj
-            // this.$store.state.changeFlg = !this.$store.state.changeFlg
           })
           // ----------------------------------------------------------------
           // 標高タイルソース---------------------------------------------------
