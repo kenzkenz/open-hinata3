@@ -1,5 +1,15 @@
 const { defineConfig } = require('@vue/cli-service')
 module.exports = defineConfig({
+    configureWebpack: {
+        module: {
+            rules: [
+                {
+                    test: /\.geojson$/,
+                    loader: 'json-loader'
+                }
+            ]
+        }
+    },
     pwa: {
         iconPaths: {
             favicon32: 'favicon.ico',

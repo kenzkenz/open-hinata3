@@ -12,6 +12,11 @@
           <DialogMenu :mapName=mapName />
           <DialogLayer :mapName=mapName />
 
+          <div class="highway-div">
+            <input class="highway-range" type="range" v-model="highwayYear" @input="highwayYearInput(mapName)" min="1958" max="2024" step="1"/><br>
+            <span class="highway-text">{{highwayYear}}年</span>
+          </div>
+
           <div class="terrain-btn-div" v-drag>
             <div class="terrain-btn-container">
               <button type="button" class="terrain-btn-up terrain-btn" @pointerdown="upMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-up fa-lg hover'></i></button>
@@ -58,6 +63,7 @@ export default {
     pitch:0,
     bearing:0,
     zoom:0,
+    highwayYear:2024
   }),
   computed: {
     s_selectedLayers: {
@@ -70,6 +76,17 @@ export default {
     },
   },
   methods: {
+    highwayYearInput (mapName) {
+      console.log(mapName)
+      const map = this.$store.state[mapName]
+      function filterBy(year) {
+        const eqFilter = ['all', ['==', 'N06_002', year]]
+        const ltFilter = ['all', ['<', 'N06_002', year]]
+        map.setFilter('oh-highwayLayer-green-lines', ltFilter)
+        map.setFilter('oh-highwayLayer-red-lines', eqFilter)
+      }
+      filterBy(Number(this.highwayYear))
+    },
     btnPosition() {
       if (document.querySelector('#map01').clientWidth < Number(document.querySelector('.terrain-btn-div').style.left.replace('px',''))) {
         document.querySelector('.terrain-btn-div').style.left = ''
@@ -322,6 +339,7 @@ export default {
         })
         this.$store.state[mapName] = map
       })
+
       // 画面同期----------------------------------------------------------------------------------------------------------
       let syncing = false
       function syncMaps(mapA, mapB) {
@@ -545,7 +563,18 @@ export default {
   font-size: large;
   z-index: 2;
 }
-
+.highway-div {
+  position:absolute;
+  top:10px;
+  right:10px;
+  z-index:1;
+}
+.highway-range {
+  width: 200px;
+}
+.highway-text {
+  font-size: large;
+}
 /*3Dのボタン-------------------------------------------------------------*/
 .terrain-btn {
   background-color: rgb(50,101,186);

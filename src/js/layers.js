@@ -1,3 +1,61 @@
+// function filterBy(year) {
+//     const eqFilter = ['all', ['==', 'N06_002', year]];
+//     const ltFilter = ['all', ['<', 'N06_002', year]];
+//     const le1Filter = ['all', ['<=', 'N06_013', year],['>=', 'N06_014', year], ['==', 'N06_019', '1']];
+//     const le2Filter = ['all', ['<=', 'N06_013', year],['>=', 'N06_014', year], ['==', 'N06_019', '2']];
+//     const le3Filter = ['all', ['<=', 'N06_013', year],['>=', 'N06_014', year], ['==', 'N06_019', '3']];
+//     const le4Filter = ['all', ['<=', 'N06_013', year],['>=', 'N06_014', year], ['==', 'N06_019', '4']];
+//
+//     map.setFilter('green-lines', ltFilter);
+//     map.setFilter('red-lines', eqFilter);
+//
+//     map.setFilter('interchange-IC', le1Filter);
+//     map.setFilter('interchange-SIC', le2Filter);
+//     map.setFilter('interchange-JCT', le3Filter);
+//     map.setFilter('interchange-other', le4Filter);
+//
+//     document.getElementById('year_label').textContent = year.toString() + '年';
+// }
+
+export const highwaySource = {
+    id: 'highwaySource', obj: {
+        'type': 'geojson',
+        'data': require('@/assets/json/highway_sections_2024.geojson')
+    }
+}
+export const highwayLayerGreen = {
+    'id': 'oh-highwayLayer-green-lines',
+    'type': 'line',
+    'source': 'highwaySource',
+    'layout': {
+        'line-join': 'round',
+        'line-cap': 'round'
+    },
+    'paint': {
+        'line-color': '#007356',
+        'line-width': 5,
+        'line-blur': 0.8,
+        'line-opacity':1
+    },
+    'filter': ['<', 'N06_002', 2000]
+}
+
+export const highwayLayerRed = {
+    'id': 'oh-highwayLayer-red-lines',
+    'type': 'line',
+    'source': 'highwaySource',
+    'layout': {
+        'line-join': 'round',
+        'line-cap': 'round'
+    },
+    'paint': {
+        'line-color': '#FF0000',
+        'line-width': 5,
+        'line-blur': 0.8,
+        'line-opacity':1
+    },
+    'filter': ['==', 'N06_002', 2000]
+}
 // 標準地図------------------------------------------------------------------------------------------------------
 export const stdSource = {
     id: 'stdSource', obj: {
@@ -313,6 +371,12 @@ const layers01 = [
                 label: "登記所備付地図データ",
                 source: amxSource,
                 layers:[amxLayer,amxLayerDaihyou]
+            },
+            {
+                id: 'oh-highway',
+                label: "高速道路時系列",
+                source: highwaySource,
+                layers: [highwayLayerGreen,highwayLayerRed]
             },
             {
                 id: 'oh-bakumatsu',
