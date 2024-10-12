@@ -209,8 +209,8 @@ export const amxLayerDaihyou = {
 export const bakumatsuSource = {
     id: "bakumatsu", obj: {
         type: "vector",
-        minzoom: 0,
-        maxzoom: 15,
+        // minzoom: 0,
+        // maxzoom: 15,
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bakumatsu/b3.pmtiles",
         attribution:
             "<a href='' target='_blank'></a>",
@@ -271,7 +271,7 @@ export const bakumatsuLayerLabel = {
     'layout': {
         'text-field': ['get', '村名0'],
         'text-font': ['Noto Sans CJK JP Bold'],
-        'text-anchor': 'left',
+        // 'text-anchor': 'left',
         'text-offset': [0.5, 0],
         'visibility': 'visible',
     },
