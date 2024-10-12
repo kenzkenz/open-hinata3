@@ -41,7 +41,7 @@ export const plateauPmtilesSource = {
         url: "pmtiles://https://shiworks.xsrv.jp/pmtiles-data/plateau/PLATEAU_2023_LOD0.pmtiles",
         minzoom: 16,
         maxzoom: 16,
-        attribution: '<a href=""></a>'
+        attribution: '<a href="https://github.com/shiwaku/mlit-plateau-bldg-pmtiles">mlit-plateau-bldg-pmtiles</a>'
     }
 }
 export const plateauPmtilesLayer = {
@@ -55,6 +55,7 @@ export const plateauPmtilesLayer = {
     'paint': {
         "fill-extrusion-color": '#797979',
         "fill-extrusion-opacity": 1.0,
+        // "fill-extrusion-height": ["get", "measuredHeight"]
         "fill-extrusion-height": ["get", "measured_height"]
     }
 }
