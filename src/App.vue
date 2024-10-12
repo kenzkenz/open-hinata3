@@ -442,6 +442,27 @@ export default {
               this.$store.state.map02.setTerrain(null)
             }
           })
+          // 地物クリック時にポップアップを表示する
+          map.on('click', 'oh-bakumatsu', (e) => {
+            const coordinates = e.lngLat
+            const name = e.features[0].properties.村名
+            const kokudaka = Math.floor(Number(e.features[0].properties.石高計))
+            // while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+            //   coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+            // }
+            // ポップアップを表示する
+            new maplibregl.Popup({
+              offset: 10,
+              closeButton: true,
+            })
+                .setLngLat(coordinates)
+                .setHTML(`
+                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+                   村名=${name}<br>石高=${kokudaka}
+                  </div>
+                `)
+                .addTo(map)
+          })
         })
         //on load終了----------------------------------------------------------------------------------------------------
       })
@@ -524,6 +545,7 @@ export default {
   font-size: large;
   z-index: 2;
 }
+
 /*3Dのボタン-------------------------------------------------------------*/
 .terrain-btn {
   background-color: rgb(50,101,186);
@@ -550,18 +572,6 @@ export default {
   .terrain-btn-div {
     top:calc(50% - 73px);
   }
-}
-.test{
-  position:absolute;
-  top:0px;
-  left:0%;
-  padding:0;
-  width:50px;
-  height:50px;
-  margin-left:-25px;
-  color: white;
-  border-radius:8px;
-  z-index: 999999;
 }
 .terrain-btn-container{
   position:relative;
@@ -631,5 +641,14 @@ export default {
   width:30px;
   background:rgba(0,0,0,0);
   border:none;
+}
+</style>
+
+<style>
+.maplibregl-popup-content {
+  padding: 30px 20px 10px 20px;
+}
+.maplibregl-popup-close-button{
+  font-size: 40px;
 }
 </style>
