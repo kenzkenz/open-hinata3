@@ -37,8 +37,8 @@ export const seamlessphotoLayer = {
 export const plateauPmtilesSource = {
     id: "plateauPmtiles", obj:{
         type: "vector",
-        url: "pmtiles://https://shiworks.xsrv.jp/pmtiles-data/plateau/PLATEAU_2022_LOD1.pmtiles",
-        // url: "pmtiles://https://shiworks.xsrv.jp/pmtiles-data/plateau/PLATEAU_2023_LOD0.pmtiles",
+        // url: "pmtiles://https://shiworks.xsrv.jp/pmtiles-data/plateau/PLATEAU_2022_LOD1.pmtiles",
+        url: "pmtiles://https://shiworks.xsrv.jp/pmtiles-data/plateau/PLATEAU_2023_LOD0.pmtiles",
         minzoom: 16,
         maxzoom: 16,
         attribution: '<a href=""></a>'
@@ -47,15 +47,15 @@ export const plateauPmtilesSource = {
 export const plateauPmtilesLayer = {
     'id': 'oh-plateauPmtiles',
     'source': 'plateauPmtiles',
-    'source-layer': "PLATEAU",
-    // 'source-layer': "PLATEAU_2023_LOD0",
+    // 'source-layer': "PLATEAU",
+    'source-layer': "PLATEAU_2023_LOD0",
     "minzoom": 14,
     "maxzoom": 23,
     'type': 'fill-extrusion',
     'paint': {
         "fill-extrusion-color": '#797979',
         "fill-extrusion-opacity": 1.0,
-        "fill-extrusion-height": ["get", "measuredHeight"]
+        "fill-extrusion-height": ["get", "measured_height"]
     }
 }
 // 岐阜県CS立体図------------------------------------------------------------------------------------------------------
