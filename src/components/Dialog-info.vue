@@ -16,7 +16,7 @@
 
 <script>
   export default {
-    name: "v-dialog-info",
+    name: "dialog-info",
     components: {
     },
     props: ['mapName'],

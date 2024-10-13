@@ -85,6 +85,7 @@ export default {
       } else {
         left = '10px'
       }
+      console.log(top,left)
       if (element.ext) {
         this.$store.state.dialogs[element.ext.name][this.mapName].style.display = 'block'
         this.$store.state.dialogs[element.ext.name][this.mapName].style['z-index'] = this.$store.state.dialogMaxZindex
@@ -211,9 +212,19 @@ export default {
             if (layer.ext) {
               console.log('extあり',layer.id,this.mapName)
               console.log(layer.ext)
+              const dialogEl = document.querySelector('#dialog-div-layerDialog-' + this.mapName)
+              const top = dialogEl.offsetTop + 'px';
+              let left
+              if (window.innerWidth > 1000) {
+                left = (dialogEl.offsetLeft + dialogEl.offsetWidth + 5) + 'px';
+              } else {
+                left = '10px'
+              }
               this.$store.state.dialogs[layer.ext.name][this.mapName].style.display = 'block'
               this.$store.commit('incrDialogMaxZindex')
               this.$store.state.dialogs[layer.ext.name][this.mapName].style['z-index'] = this.$store.state.dialogMaxZindex
+              this.$store.state.dialogs[layer.ext.name][this.mapName].style.top = top
+              this.$store.state.dialogs[layer.ext.name][this.mapName].style.left = left
             }
           }
         }
