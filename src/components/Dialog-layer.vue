@@ -108,7 +108,8 @@ export default {
                 source: node.source,
                 layer: node.layer,
                 layers: node.layers,
-                opacity: 1
+                opacity: 1,
+                ext: node.ext,
               }
           )
         } else {
@@ -124,8 +125,9 @@ export default {
   },
   watch: {
     s_selectedLayers: {
-      handler: function(){
-        console.log('変更を検出しました')
+      handler: function(value){
+        console.log(value)
+        console.log('変更を検出しました',this.mapName)
         if(!this.watchFlg) return
         const map = this.$store.state[this.mapName]
         // まずレイヤーを全削除-------------------------
@@ -145,7 +147,6 @@ export default {
             layer.layers.forEach(layer0 => {
               if (!map.getSource(layer.source.id)) map.addSource(layer.source.id, layer.source.obj)
               map.addLayer(layer0)
-              console.log(layer0.type)
               if (layer.source.obj.type === 'raster') {
                 map.setPaintProperty(layer0.id, 'raster-opacity', layer.opacity)
               } else {
@@ -160,6 +161,27 @@ export default {
                 }
               }
             })
+            // -------------------------------------------------
+
+            if (layer.ext) {
+              console.log('extあり',layer.id,this.mapName)
+              console.log(layer.ext)
+
+              this.$store.state.dialogs[layer.ext.name][this.mapName].style.display = 'block'
+
+              // this.$store.state.ext[this.mapName].push({
+              //   ld: layer.id,
+              //   style: {
+              //     display: 'block',
+              //     top: '100px',
+              //     left: '100px',
+              //     'z-index': 20
+              //   }
+              // })
+              // console.log(this.$store.state.ext[this.mapName])
+            }
+
+
           }
         }
       },
@@ -225,9 +247,6 @@ export default {
   padding-left: 5px;
 }
 </style>
-
-
-
 
 <style>
 .tree-row-item {

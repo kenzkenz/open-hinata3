@@ -376,7 +376,8 @@ const layers01 = [
                 id: 'oh-highway',
                 label: "高速道路時系列",
                 source: highwaySource,
-                layers: [highwayLayerGreen,highwayLayerRed]
+                layers: [highwayLayerGreen,highwayLayerRed],
+                ext: {name:'extHighway',parameters:[]}
             },
             {
                 id: 'oh-bakumatsu',

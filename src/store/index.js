@@ -15,6 +15,14 @@ export default createStore({
         map01:{name:'layerDialog',style: {top: '56px', left: '10px', 'z-index': 1, height: 'auto', 'min-width': '150px', display: 'none'}},
         map02:{name:'layerDialog',style: {top: '56px', left: '10px', 'z-index': 1, height: 'auto', 'min-width': '150px', display: 'none'}},
       },
+      extHighway: {
+        map01:{name:'extHighway',style: {top: '56px', left: '10px', 'z-index': 1, height: 'auto', 'min-width': '150px', display: 'none'}},
+        map02:{name:'extHighway',style: {top: '56px', left: '10px', 'z-index': 1, height: 'auto', 'min-width': '150px', display: 'none'}},
+      },
+    },
+    ext: {
+      map01:[],
+      map02:[]
     },
     selectedLayers: {
       map01:[],

@@ -11,11 +11,7 @@
           </div>
           <DialogMenu :mapName=mapName />
           <DialogLayer :mapName=mapName />
-
-          <div class="highway-div">
-            <input class="highway-range" type="range" v-model="highwayYear" @input="highwayYearInput(mapName)" min="1958" max="2024" step="1"/><br>
-            <span class="highway-text">{{highwayYear}}年</span>
-          </div>
+          <ExtHighway :mapName=mapName />
 
           <div class="terrain-btn-div" v-drag>
             <div class="terrain-btn-container">
@@ -39,6 +35,7 @@
 import axios from "axios";
 import DialogMenu from '@/components/Dialog-menu'
 import DialogLayer from '@/components/Dialog-layer'
+import ExtHighway from '@/components/ext-highway'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import maplibregl from 'maplibre-gl'
 import { Protocol } from "pmtiles";
@@ -48,6 +45,7 @@ export default {
   components: {
     DialogLayer,
     DialogMenu,
+    ExtHighway,
   },
   data: () => ({
     mapNames: ['map01','map02'],
@@ -63,7 +61,6 @@ export default {
     pitch:0,
     bearing:0,
     zoom:0,
-    highwayYear:2024
   }),
   computed: {
     s_selectedLayers: {
@@ -76,17 +73,6 @@ export default {
     },
   },
   methods: {
-    highwayYearInput (mapName) {
-      console.log(mapName)
-      const map = this.$store.state[mapName]
-      function filterBy(year) {
-        const eqFilter = ['all', ['==', 'N06_002', year]]
-        const ltFilter = ['all', ['<', 'N06_002', year]]
-        map.setFilter('oh-highwayLayer-green-lines', ltFilter)
-        map.setFilter('oh-highwayLayer-red-lines', eqFilter)
-      }
-      filterBy(Number(this.highwayYear))
-    },
     btnPosition() {
       if (document.querySelector('#map01').clientWidth < Number(document.querySelector('.terrain-btn-div').style.left.replace('px',''))) {
         document.querySelector('.terrain-btn-div').style.left = ''
@@ -388,10 +374,10 @@ export default {
             }
           }
           // ----------------------------------------------------------------
-          this.mapNames.forEach(() => {
+          // this.mapNames.forEach(() => {
             const params = this.parseUrlParams()
             if (params.slj) this.s_selectedLayers = params.slj
-          })
+          // })
           // ----------------------------------------------------------------
           // 標高タイルソース---------------------------------------------------
           map.addSource("gsidem-terrain-rgb", {
@@ -528,6 +514,7 @@ export default {
       }
     }).then(function (response) {
       vm.dbparams = response.data
+      console.log(111)
       vm.init()
       const url = new URL(window.location.href) // URLを取得
       window.history.replaceState(null, '', url.pathname + window.location.hash) //パラメータを削除 FB対策
@@ -537,7 +524,7 @@ export default {
   watch: {
     s_selectedLayers: {
       handler: function () {
-        console.log('変更を検出しました')
+        // console.log('変更を検出しました')
         this.updatePermalink()
       },
       deep: true
@@ -588,18 +575,7 @@ export default {
   font-size: large;
   z-index: 2;
 }
-.highway-div {
-  position:absolute;
-  top:10px;
-  right:10px;
-  z-index:1;
-}
-.highway-range {
-  width: 200px;
-}
-.highway-text {
-  font-size: large;
-}
+
 /*3Dのボタン-------------------------------------------------------------*/
 .terrain-btn {
   background-color: rgb(50,101,186);
