@@ -460,14 +460,15 @@ export default {
               this.$store.state.map02.setTerrain(null)
             }
           })
-          // 地物クリック時にポップアップを表示する
+          // 地物クリック時にポップアップを表示する----------------------------------------------------------------------------
           map.on('click', 'oh-bakumatsu', (e) => {
-            const coordinates = e.lngLat
+            let coordinates = e.lngLat
             const name = e.features[0].properties.村名
-            const kokudaka = Math.floor(Number(e.features[0].properties.石高計))
-            // while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-            //   coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-            // }
+            const props = e.features[0].properties
+            const kokudaka = Math.floor(Number(props.石高計))
+            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+            }
             // ポップアップを表示する
             new maplibregl.Popup({
               offset: 10,
@@ -481,6 +482,30 @@ export default {
                 `)
                 .addTo(map)
           })
+          // ------------------------------------------
+          map.on('click', 'oh-highwayLayer-green-lines', (e) => {
+            let coordinates = e.lngLat
+            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+            }
+            const props = e.features[0].properties
+            console.log(props)
+            const name = props.N06_007
+            console.log(name)
+            // ポップアップを表示する
+            new maplibregl.Popup({
+              offset: 10,
+              closeButton: true,
+            })
+                .setLngLat(coordinates)
+                .setHTML(`
+                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+                   ${name}
+                  </div>
+                `)
+                .addTo(map)
+          })
+
         })
         //on load終了----------------------------------------------------------------------------------------------------
       })
