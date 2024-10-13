@@ -166,22 +166,10 @@ export default {
             if (layer.ext) {
               console.log('extあり',layer.id,this.mapName)
               console.log(layer.ext)
-
               this.$store.state.dialogs[layer.ext.name][this.mapName].style.display = 'block'
-
-              // this.$store.state.ext[this.mapName].push({
-              //   ld: layer.id,
-              //   style: {
-              //     display: 'block',
-              //     top: '100px',
-              //     left: '100px',
-              //     'z-index': 20
-              //   }
-              // })
-              // console.log(this.$store.state.ext[this.mapName])
+              this.$store.commit('incrDialogMaxZindex')
+              this.$store.state.dialogs[layer.ext.name][this.mapName].style['z-index'] = this.$store.state.dialogMaxZindex
             }
-
-
           }
         }
       },
