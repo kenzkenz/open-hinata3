@@ -20,6 +20,10 @@ export default createStore({
         map02:{name:'extHighway',style: {top: '56px', left: '10px', 'z-index': 1, height: 'auto', 'min-width': '150px', display: 'none'}},
       },
     },
+    dialogsInfo: {
+      map01: [],
+      map02: [],
+    },
     ext: {
       map01:[],
       map02:[]
@@ -35,6 +39,12 @@ export default createStore({
   mutations: {
     incrDialogMaxZindex (state) {
       state.dialogMaxZindex++
+    },
+    // インフォ用ダイアログの追加------------------------------------------------------------------
+    pushDialogsInfo (state,payload) {
+      const dialogs = state.dialogsInfo[payload.mapName];
+      dialogs.push(payload.dialog)
+      // console.log(payload.dialog)
     },
   },
   actions: {

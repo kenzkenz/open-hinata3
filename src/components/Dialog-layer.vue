@@ -6,6 +6,7 @@
           <template #item="{element}">
             <div class="drag-item">
               <div class="handle-div"><i class="fa-solid fa-up-down fa-lg handle-icon hover"></i></div>
+              <div class="info-div" @click="infoOpen(element)"><i class="fa-solid fa-gear hover"></i></div>
               <div class="label-div">{{element.label}}</div>
               <div class="range-div">
                 <input type="range" min="0" max="1" step="0.01" class="range" v-model.number="element.opacity" @input="changeSlider(element)" @mouseover="changeWatchFlg(false)" @mouseleave="changeWatchFlg(true)"/>
@@ -57,6 +58,9 @@ export default {
     menuContentSize: {'height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'},
   }),
   computed: {
+    s_dialogsINfo () {
+      return this.$store.state.dialogsInfo
+    },
     s_dialogs () {
       return this.$store.state.dialogs.layerDialog
     },
@@ -70,6 +74,48 @@ export default {
     },
   },
   methods: {
+    infoOpen (element) {
+      this.$store.commit('incrDialogMaxZindex')
+      const result = this.s_dialogsINfo[this.mapName].find(el => el.id === element.id)
+      const dialogEl = document.querySelector('#dialog-div-layerDialog-' + this.mapName)
+      const top = dialogEl.offsetTop + 'px';
+      let left
+      if (window.innerWidth > 1000) {
+        left = (dialogEl.offsetLeft + dialogEl.offsetWidth + 5) + 'px';
+      } else {
+        left = '10px'
+      }
+      if (element.ext) {
+        this.$store.state.dialogs[element.ext.name][this.mapName].style.display = 'block'
+        this.$store.state.dialogs[element.ext.name][this.mapName].style['z-index'] = this.$store.state.dialogMaxZindex
+        if(this.$store.state.dialogs[element.ext.name][this.mapName].style.top === '56px') {
+          this.$store.state.dialogs[element.ext.name][this.mapName].style.top = top
+          this.$store.state.dialogs[element.ext.name][this.mapName].style.left = left
+        }
+        return
+      }
+
+      if (!result) {
+        const infoDialog =
+            {
+              id: element.id,
+              title: element.label,
+              // summary: element.summary,
+              style: {
+                width: '200px',
+                display: 'block',
+                top: top,
+                left: left,
+                'z-index': this.$store.state.dialogMaxZindex
+              }
+            }
+        this.$store.commit('pushDialogsInfo', {mapName: this.mapName, dialog: infoDialog})
+      } else {
+        result.style.display = 'block';
+        result.style["z-index"] = this.$store.state.dialogMaxZindex
+      }
+
+    },
     changeWatchFlg (bool) {
       this.watchFlg = bool
     },
@@ -162,7 +208,6 @@ export default {
               }
             })
             // -------------------------------------------------
-
             if (layer.ext) {
               console.log('extあり',layer.id,this.mapName)
               console.log(layer.ext)
@@ -212,8 +257,8 @@ export default {
 .range-div {
   position:absolute;
   top:10px;
-  left:30px;
-  width:calc(100% - 30px);
+  left:50px;
+  width:calc(100% - 50px);
 }
 .range{
   width:calc(100% - 30px);
@@ -230,8 +275,15 @@ export default {
 .label-div{
   position:absolute;
   top:0;
+  left:50px;
+  width:calc(100% - 50px);
+  padding-left: 5px;
+}
+.info-div{
+  position:absolute;
+  top:0;
   left:30px;
-  width:calc(100% - 30px);
+  /*width:calc(100% - 50px);*/
   padding-left: 5px;
 }
 </style>

@@ -26,7 +26,6 @@ export default {
   },
   methods: {
     highwayYearInput (mapName) {
-      console.log(mapName)
       const map = this.$store.state[mapName]
       function filterBy(year) {
         const eqFilter = ['all', ['==', 'N06_002', year]]

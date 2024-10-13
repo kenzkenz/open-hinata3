@@ -9,8 +9,10 @@
             <v-btn style="margin-left:10px;" @click="btnClickSplit" v-if="mapName === 'map01'"><i class="fa-solid fa-table-columns"></i></v-btn>
             <v-btn style="margin-left:10px;" @click="btnClickLayer(mapName)"><i class="fa-solid fa-layer-group"></i></v-btn>
           </div>
+
           <DialogMenu :mapName=mapName />
           <DialogLayer :mapName=mapName />
+          <dialog-info :mapName=mapName />
           <ExtHighway :mapName=mapName />
 
           <div class="terrain-btn-div" v-drag>
@@ -35,6 +37,7 @@
 import axios from "axios";
 import DialogMenu from '@/components/Dialog-menu'
 import DialogLayer from '@/components/Dialog-layer'
+import DialogInfo from '@/components/Dialog-info'
 import ExtHighway from '@/components/ext-highway'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import maplibregl from 'maplibre-gl'
@@ -45,6 +48,7 @@ export default {
   components: {
     DialogLayer,
     DialogMenu,
+    DialogInfo,
     ExtHighway,
   },
   data: () => ({
@@ -514,7 +518,6 @@ export default {
       }
     }).then(function (response) {
       vm.dbparams = response.data
-      console.log(111)
       vm.init()
       const url = new URL(window.location.href) // URLを取得
       window.history.replaceState(null, '', url.pathname + window.location.hash) //パラメータを削除 FB対策
@@ -665,7 +668,6 @@ export default {
   /*-webkit-text-stroke: 1px #FFF;*/
   /*text-stroke: 1px #FFF;*/
 }
-
 .terrain-btn-div .ui-spinner{
   font-size:10px;
   width:30px;

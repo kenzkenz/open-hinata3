@@ -1,5 +1,5 @@
 <template>
-  <div v-drag="{handle:'#' + id}" @v-drag-end="dragEnd" class="dialog-div" ref="dragDiv" @mousedown="dialogMouseDown" :style="this.dialog.style">
+  <div v-drag="{handle:'#' + id}" @v-drag-end="dragEnd" :id="'dialog-div-' + dialog.name + '-' + mapName" class="dialog-div" ref="dragDiv" @mousedown="dialogMouseDown" :style="this.dialog.style">
     <div class="drag-handle" :id="id">
     </div>
     <div>
