@@ -37,7 +37,7 @@ export const highwayLayerGreen = {
         'line-blur': 0.8,
         'line-opacity':1
     },
-    'filter': ['<', 'N06_002', 2000]
+    'filter': ['<', 'N06_002', 2024]
 }
 
 export const highwayLayerRed = {
@@ -54,7 +54,7 @@ export const highwayLayerRed = {
         'line-blur': 0.8,
         'line-opacity':1
     },
-    'filter': ['==', 'N06_002', 2000]
+    'filter': ['==', 'N06_002', 2024]
 }
 // 標準地図------------------------------------------------------------------------------------------------------
 export const stdSource = {
