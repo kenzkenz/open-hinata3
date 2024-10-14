@@ -1,22 +1,31 @@
-// function filterBy(year) {
-//     const eqFilter = ['all', ['==', 'N06_002', year]];
-//     const ltFilter = ['all', ['<', 'N06_002', year]];
-//     const le1Filter = ['all', ['<=', 'N06_013', year],['>=', 'N06_014', year], ['==', 'N06_019', '1']];
-//     const le2Filter = ['all', ['<=', 'N06_013', year],['>=', 'N06_014', year], ['==', 'N06_019', '2']];
-//     const le3Filter = ['all', ['<=', 'N06_013', year],['>=', 'N06_014', year], ['==', 'N06_019', '3']];
-//     const le4Filter = ['all', ['<=', 'N06_013', year],['>=', 'N06_014', year], ['==', 'N06_019', '4']];
-//
-//     map.setFilter('green-lines', ltFilter);
-//     map.setFilter('red-lines', eqFilter);
-//
-//     map.setFilter('interchange-IC', le1Filter);
-//     map.setFilter('interchange-SIC', le2Filter);
-//     map.setFilter('interchange-JCT', le3Filter);
-//     map.setFilter('interchange-other', le4Filter);
-//
-//     document.getElementById('year_label').textContent = year.toString() + '年';
-// }
 
+
+// ---------------------------------------------------------------------------------------------------------------------
+// syochiikiソース
+export const syochiikiSource = {
+    id: "syochiikiSource", obj:{
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/syochiiki/zenkoku.pmtiles",
+        // url: "https://kenzkenz3.xsrv.jp/mvt/syochiiki/2020/{z}/{x}/{y}.mvt",
+        // minzoom: 16,
+        // maxzoom: 16,
+        attribution: '<a href="https://github.com/shiwaku/mlit-plateau-bldg-pmtiles">mlit-plateau-bldg-pmtiles</a>'
+    }
+}
+export const syochiikiLayer = {
+    'id': 'oh-syochiikiLayer',
+    'source': 'syochiikiSource',
+    'source-layer': "zenkoku",
+    // 'source-layer': "PLATEAU_2023_LOD0",
+    // "minzoom": 0,
+    // "maxzoom": 23,
+    'type': 'fill',
+    paint: {
+        "fill-color": "rgba(254, 217, 192, 1)",
+        "fill-outline-color": "rgba(255, 0, 0, 1)",
+        "fill-opacity": 0.4,
+    },
+}
 export const highwaySource = {
     id: 'highwaySource', obj: {
         'type': 'geojson',
@@ -415,6 +424,12 @@ const layers01 = [
                 label: "幕末近世の村（藩）",
                 source: bakumatsuSource,
                 layers: [bakumatsuLayerHan,bakumatsuLayerLine,bakumatsuLayerLabel]
+            },
+            {
+                id: 'oh-syochiiki',
+                label: "国勢調査小地域",
+                source: syochiikiSource,
+                layers: [syochiikiLayer]
             }
         ]
     },
