@@ -406,7 +406,7 @@ export default {
           })
           // 標高タイルセット
           // map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
-          document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('click', function() {
+          document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('mouseover', function() {
             map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
           }, false);
 
