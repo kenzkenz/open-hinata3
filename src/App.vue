@@ -409,6 +409,9 @@ export default {
           document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('mouseover', function() {
             map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
           }, false);
+          document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('click', function() {
+            map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
+          }, false);
 
           // 標高タイルソース---------------------------------------------------
           // map.addSource("aws-terrain", {
