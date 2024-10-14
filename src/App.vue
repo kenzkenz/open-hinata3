@@ -94,7 +94,7 @@ export default {
         } else {
           map.setPitch(0)
           vm.pitch = map.getPitch()
-          console.log(vm.pitch)
+          // console.log(vm.pitch)
           vm.updatePermalink()
           cancelAnimationFrame(pitch)
         }
@@ -103,14 +103,27 @@ export default {
         vm.bearing = map.getBearing()
         let step = -5
         if(vm.bearing < 0) step = 5
-        if (vm.bearing !==0) {
-          vm.$store.state.map01.setBearing(map.getBearing() + step)
-          vm.$store.state.map02.setBearing(map.getBearing() + step)
-          requestAnimationFrame(bearing)
+
+        if (step !== 5) {
+          if (vm.bearing >= 5) {
+            vm.$store.state.map01.setBearing(map.getBearing() + step)
+            vm.$store.state.map02.setBearing(map.getBearing() + step)
+            requestAnimationFrame(bearing)
+          } else {
+            vm.bearing = map.getBearing()
+            vm.updatePermalink()
+            cancelAnimationFrame(bearing)
+          }
         } else {
-          vm.bearing = map.getBearing()
-          vm.updatePermalink()
-          cancelAnimationFrame(bearing)
+          if (vm.bearing <= -5) {
+            vm.$store.state.map01.setBearing(map.getBearing() + step)
+            vm.$store.state.map02.setBearing(map.getBearing() + step)
+            requestAnimationFrame(bearing)
+          } else {
+            vm.bearing = map.getBearing()
+            vm.updatePermalink()
+            cancelAnimationFrame(bearing)
+          }
         }
       }
       if (window.innerWidth < 1000) {
@@ -133,8 +146,8 @@ export default {
         vm.bearing = map.getBearing()
         if (vm.mouseDown) {
           // map.setBearing(map.getBearing() + 5)
-          vm.$store.state.map01.setBearing(map.getBearing() + 5)
-          vm.$store.state.map02.setBearing(map.getBearing() + 5)
+          vm.$store.state.map01.setBearing(map.getBearing() + 2)
+          vm.$store.state.map02.setBearing(map.getBearing() + 2)
           requestAnimationFrame(bearing)
         } else {
           vm.bearing = map.getBearing()
@@ -151,8 +164,8 @@ export default {
         vm.bearing = map.getBearing()
         if (vm.mouseDown) {
           // map.setBearing(map.getBearing() - 5)
-          vm.$store.state.map01.setBearing(map.getBearing() - 5)
-          vm.$store.state.map02.setBearing(map.getBearing() - 5)
+          vm.$store.state.map01.setBearing(map.getBearing() - 2)
+          vm.$store.state.map02.setBearing(map.getBearing() - 2)
           requestAnimationFrame(bearing)
         } else {
           vm.bearing = map.getBearing()
@@ -162,13 +175,14 @@ export default {
       bearing()
     },
     upMousedown(mapName) {
+
       const vm = this
       const map = this.$store.state[mapName]
       vm.mouseDown = true
       function pitch () {
         vm.pitch = map.getPitch()
         if (vm.mouseDown) {
-          map.setPitch(map.getPitch() + 5)
+          map.setPitch(map.getPitch() + 2)
           requestAnimationFrame(pitch)
         } else {
           vm.pitch = map.getPitch()
@@ -184,7 +198,7 @@ export default {
       function pitch () {
         vm.pitch = map.getPitch()
         if (vm.mouseDown) {
-          map.setPitch(map.getPitch() - 5)
+          map.setPitch(map.getPitch() - 2)
           requestAnimationFrame(pitch)
         } else {
           vm.pitch = map.getPitch()
@@ -392,6 +406,10 @@ export default {
           })
           // 標高タイルセット
           // map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
+          document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('click', function() {
+            map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
+          }, false);
+
           // 標高タイルソース---------------------------------------------------
           // map.addSource("aws-terrain", {
           //   type: "raster-dem",
@@ -439,25 +457,29 @@ export default {
             this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
             this.$store.state.map02.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
           }
-          // ウオッチ
-          this.$watch(function () {
-            return [this.pitch]
-          }, function () {
-            console.log(this.pitch)
-            if (this.pitch !== 0 ) {
-              this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
-              this.$store.state.map02.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
-            } else {
-              this.$store.state.map01.setTerrain(null)
-              this.$store.state.map02.setTerrain(null)
-            }
-          })
+          // ウオッチ 効いたり効かなかったりで安定しない。
+          // this.$watch(function () {
+          //   return [this.pitch]
+          // }, function () {
+          //   console.log(this.pitch)
+          //   // if (this.pitch !== 0 ) {
+          //   //   this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+          //   //   this.$store.state.map02.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+          //   // } else {
+          //   //   this.$store.state.map01.setTerrain(null)
+          //   //   this.$store.state.map02.setTerrain(null)
+          //   // }
+          // })
+
           // 地物クリック時にポップアップを表示する----------------------------------------------------------------------------
           map.on('click', 'oh-bakumatsu', (e) => {
             let coordinates = e.lngLat
-            const name = e.features[0].properties.村名
             const props = e.features[0].properties
+            // console.log(props)
+            const name = props.村名
             const kokudaka = Math.floor(Number(props.石高計))
+            const ryobun = props.領分１
+
             while (Math.abs(e.lngLat.lng - coordinates) > 180) {
               coordinates += e.lngLat.lng > coordinates ? 360 : -360;
             }
@@ -469,7 +491,31 @@ export default {
                 .setLngLat(coordinates)
                 .setHTML(`
                   <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
-                   村名=${name}<br>石高=${kokudaka}
+                   村名=${name}<br>石高=${kokudaka}<br>領分=${ryobun}
+                  </div>
+                `)
+                .addTo(map)
+          })
+          map.on('click', 'oh-bakumatsu-han', (e) => {
+            let coordinates = e.lngLat
+            const props = e.features[0].properties
+            // console.log(props)
+            const name = props.村名
+            const kokudaka = Math.floor(Number(props.石高計))
+            const ryobun = props.領分１
+
+            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+            }
+            // ポップアップを表示する
+            new maplibregl.Popup({
+              offset: 10,
+              closeButton: true,
+            })
+                .setLngLat(coordinates)
+                .setHTML(`
+                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+                   村名=${name}<br>石高=${kokudaka}<br>領分=${ryobun}
                   </div>
                 `)
                 .addTo(map)
@@ -534,6 +580,14 @@ export default {
       },
       deep: true
     },
+    pitch () {
+      // document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('click', function() {
+      // 上とセットで動く。
+      if (this.pitch === 0 ) {
+        this.$store.state.map01.setTerrain(null)
+        this.$store.state.map02.setTerrain(null)
+      }
+    }
   }
 }
 </script>
@@ -681,6 +735,7 @@ export default {
 <style>
 .maplibregl-popup-content {
   padding: 30px 20px 10px 20px;
+  width: 300px;
 }
 .maplibregl-popup-close-button{
   font-size: 40px;
