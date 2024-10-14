@@ -279,7 +279,8 @@ export const bakumatsuSource = {
         type: "vector",
         // minzoom: 0,
         // maxzoom: 15,
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bakumatsu/b3.pmtiles",
+        // url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bakumatsu/b3.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bakumatsu/b41.pmtiles",
         attribution:
             "<a href='' target='_blank'></a>",
     }
@@ -289,7 +290,7 @@ export const bakumatsuLayer = {
     id: "oh-bakumatsu",
     type: "fill",
     source: "bakumatsu",
-    "source-layer": "b3",
+    "source-layer": "b41",
     // paint: {
     //     "fill-color": "rgba(254, 217, 192, 0.7)",
     //     "fill-outline-color": "rgba(255, 0, 0, 1)",
@@ -318,7 +319,7 @@ export const bakumatsuLayerHan = {
     id: "oh-bakumatsu-han",
     type: "fill",
     source: "bakumatsu",
-    "source-layer": "b3",
+    "source-layer": "b41",
     'paint': {
         'fill-color': [
             // 'match',
@@ -343,7 +344,7 @@ export const bakumatsuLayerLine = {
     id: "oh-bakumatsuLine",
     type: "line",
     source: "bakumatsu",
-    "source-layer": "b3",
+    "source-layer": "b41",
     paint: {
         'line-color': '#000',
         // 'line-width': 0.5
@@ -360,7 +361,7 @@ export const bakumatsuLayerLabel = {
     id: "oh-bakumatsuLabel",
     type: "symbol",
     source: "bakumatsu",
-    "source-layer": "b3",
+    "source-layer": "b41",
     'layout': {
         'text-field': ['get', '村名0'],
         'text-font': ['Noto Sans CJK JP Bold'],

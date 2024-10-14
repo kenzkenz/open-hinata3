@@ -478,7 +478,7 @@ export default {
           map.on('click', 'oh-bakumatsu', (e) => {
             let coordinates = e.lngLat
             const props = e.features[0].properties
-            // console.log(props)
+            console.log(props)
             const name = props.村名
             const kokudaka = Math.floor(Number(props.石高計))
             const ryobun = props.領分１
@@ -502,7 +502,7 @@ export default {
           map.on('click', 'oh-bakumatsu-han', (e) => {
             let coordinates = e.lngLat
             const props = e.features[0].properties
-            // console.log(props)
+            console.log(props)
             const name = props.村名
             const kokudaka = Math.floor(Number(props.石高計))
             const ryobun = props.領分１
