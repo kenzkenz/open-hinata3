@@ -310,35 +310,17 @@ export const bakumatsuLayerHan = {
     type: "fill",
     source: "bakumatsu",
     "source-layer": "b3",
-    // paint: {
-    //     "fill-color": "rgba(254, 217, 192, 0.7)",
-    //     "fill-outline-color": "rgba(255, 0, 0, 1)",
-    // },
-    // 'paint': {
-    //     'fill-color': [
-    //         'match',
-    //         ['get', 'PREF'], // Get the 'category' property from the data
-    //         '45', '#f28cb1', // Color for category A
-    //         'B', '#3bb2d0', // Color for category B
-    //         '#ccc' // Default color (if no match)
-    //     ],
-    // },
-    // 'paint': {
-    //     'fill-color': [
-    //         'interpolate',
-    //         ['linear'],
-    //         ['get', '石高計'],
-    //         0, 'white',   // Color for low values
-    //         // 1000, '#f1f075', // Intermediate value
-    //         3000, 'red' // Color for high values
-    //     ]
-    // }
     'paint': {
         'fill-color': [
+            // 'match',
+            // ['get', '領分１'], '幕領', 'rgba(255,0,0,0.7)',
+            // '#ccc' // Default color (if no match)
             'case',
-            ['>', ['index-of', '藩', ['get', '領分１']], -1],  // 'name'に'Park'が含まれているか
-            '#00ff00',  // 'Park'が含まれている場合は緑
-            '#ff0000'   // それ以外は赤
+            ['>', ['index-of', '藩', ['get', '領分１']], -1], 'rgba(104,52,154,0.7)',
+            ['>', ['index-of', '幕領', ['get', '領分１']], -1], 'rgba(255,0,0,0.7)',
+            ['>', ['index-of', '皇室領', ['get', '領分１']], -1], 'rgba(255,215,0,0.7)',
+            ['>', ['index-of', '社寺領', ['get', '領分１']], -1], 'rgba(0,0,0,0.7)',
+            'rgba(0,0,255,0.7)'
         ]
     }
     // paint: {

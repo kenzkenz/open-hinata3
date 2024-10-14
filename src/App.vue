@@ -434,7 +434,8 @@ export default {
           map.on('idle', this.updatePermalink)
 
           //------------------------------------------------------------------------------------------------------------
-          if (this.pitch !== 0) {
+          const pitch = !isNaN(this.pitch) ? this.pitch: 0
+          if (pitch !== 0) {
             this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
             this.$store.state.map02.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
           }
@@ -442,6 +443,7 @@ export default {
           this.$watch(function () {
             return [this.pitch]
           }, function () {
+            console.log(this.pitch)
             if (this.pitch !== 0 ) {
               this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
               this.$store.state.map02.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
