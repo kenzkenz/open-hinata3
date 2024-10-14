@@ -291,6 +291,17 @@ export const bakumatsuLayer = {
     type: "fill",
     source: "bakumatsu",
     "source-layer": "b41",
+    paint: {
+        'fill-color': ['get', 'random_color'],  // フィーチャのプロパティ 'color' から色を取得
+        'fill-opacity': 0.8  // 透明度を設定
+    }
+
+}
+export const bakumatsuLayerKokudaka = {
+    id: "oh-bakumatsu-kokudaka",
+    type: "fill",
+    source: "bakumatsu",
+    "source-layer": "b41",
     // paint: {
     //     "fill-color": "rgba(254, 217, 192, 0.7)",
     //     "fill-outline-color": "rgba(255, 0, 0, 1)",
@@ -416,9 +427,15 @@ const layers01 = [
             },
             {
                 id: 'oh-bakumatsu',
+                label: "幕末近世の村",
+                source: bakumatsuSource,
+                layers: [bakumatsuLayer, bakumatsuLayerLine, bakumatsuLayerLabel]
+            },
+            {
+                id: 'oh-bakumatsu-kokudaka',
                 label: "幕末近世の村（石高）",
                 source: bakumatsuSource,
-                layers: [bakumatsuLayer,bakumatsuLayerLine,bakumatsuLayerLabel]
+                layers: [bakumatsuLayerKokudaka,bakumatsuLayerLine,bakumatsuLayerLabel]
             },
             {
                 id: 'oh-bakumatsu',

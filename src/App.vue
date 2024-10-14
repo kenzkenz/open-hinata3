@@ -499,6 +499,30 @@ export default {
                 `)
                 .addTo(map)
           })
+          map.on('click', 'oh-bakumatsu-kokudaka', (e) => {
+            let coordinates = e.lngLat
+            const props = e.features[0].properties
+            console.log(props)
+            const name = props.村名
+            const kokudaka = Math.floor(Number(props.石高計))
+            const ryobun = props.領分１
+
+            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+            }
+            // ポップアップを表示する
+            new maplibregl.Popup({
+              offset: 10,
+              closeButton: true,
+            })
+                .setLngLat(coordinates)
+                .setHTML(`
+                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+                   村名=${name}<br>石高=${kokudaka}<br>領分=${ryobun}
+                  </div>
+                `)
+                .addTo(map)
+          })
           map.on('click', 'oh-bakumatsu-han', (e) => {
             let coordinates = e.lngLat
             const props = e.features[0].properties
