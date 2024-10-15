@@ -20,7 +20,7 @@
         </div>
       </div>
 
-      <div class="second-div">
+      <div :style="secondDivStyle" class="second-div">
         <v-text-field label="地図抽出" v-model="searchText" style="margin-top: 10px"></v-text-field>
         <Tree
             :nodes="layers"
@@ -55,7 +55,8 @@ export default {
       map02:[]
     },
     layers:[],
-    menuContentSize: {'height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'},
+    menuContentSize: {'height': '600px','margin': '10px', 'overflow': 'auto', 'user-select': 'text'},
+    secondDivStyle: {'height': '390px', 'overflow': 'auto', 'user-select': 'text'},
   }),
   computed: {
     s_dialogsINfo () {
@@ -168,6 +169,7 @@ export default {
     },
   },
   mounted() {
+    // ----------------------------------------------------------------------------------------------------------------
     this.layers = Layers.layers[this.mapName]
   },
   watch: {
@@ -243,7 +245,7 @@ export default {
   overflow: scroll;
 }
 .second-div {
-  min-height: 200px;
+  /*min-height: 200px;*/
 }
 .drag-item {
   position:relative;

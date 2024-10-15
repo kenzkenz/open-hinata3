@@ -584,7 +584,7 @@ export const chikeibunruiLayer = {
 const layers01 = [
     {
         id: 1,
-        label: "基本地図テスト",
+        label: "基本地図",
         nodes: [
             {
                 id: 'oh-stdLayer',
@@ -593,23 +593,29 @@ const layers01 = [
                 layers: [stdLayer]
             },
             {
-                id: 'oh-seamlessphoto',
-                label: "最新写真",
-                source: seamlessphotoSource,
-                layers: [seamlessphotoLayer]
-            },
-            {
                 id: 'oh-plateauPmtiles',
                 label: "PLATEAU建物",
                 source: plateauPmtilesSource,
                 layers: [plateauPmtilesLayer]
             },
+        ]
+    },
+    {
+        id: 'syashin',
+        label: "航空写真",
+        nodes: [
             {
-                id: 'oh-amx-a-fude',
-                label: "登記所備付地図データ",
-                source: amxSource,
-                layers:[amxLayer,amxLayerDaihyou]
+                id: 'oh-seamlessphoto',
+                label: "最新写真",
+                source: seamlessphotoSource,
+                layers: [seamlessphotoLayer]
             },
+        ]
+    },
+    {
+        id: 'doro',
+        label: "道路等",
+        nodes: [
             {
                 id: 'oh-highway',
                 label: "高速道路時系列",
@@ -617,30 +623,12 @@ const layers01 = [
                 layers: [highwayLayerGreen,highwayLayerRed],
                 ext: {name:'extHighway',parameters:[]}
             },
-            {
-                id: 'oh-bakumatsu',
-                label: "幕末近世の村",
-                source: bakumatsuSource,
-                layers: [bakumatsuLayer, bakumatsuLayerLine, bakumatsuLayerLabel]
-            },
-            {
-                id: 'oh-bakumatsu-kokudaka',
-                label: "幕末近世の村（石高）",
-                source: bakumatsuSource,
-                layers: [bakumatsuLayerKokudaka,bakumatsuLayerLine,bakumatsuLayerLabel]
-            },
-            {
-                id: 'oh-bakumatsu',
-                label: "幕末近世の村（藩）",
-                source: bakumatsuSource,
-                layers: [bakumatsuLayerHan,bakumatsuLayerLine,bakumatsuLayerLabel]
-            },
-            {
-                id: 'oh-syochiiki',
-                label: "国勢調査小地域",
-                source: syochiikiSource,
-                layers: [syochiikiLayer]
-            },
+        ]
+    },
+    {
+        id: 'skosodate',
+        label: "子育て",
+        nodes: [
             {
                 id: 'oh-syogakkoR05',
                 label: "小学校（R05）",
@@ -653,6 +641,30 @@ const layers01 = [
                 source: cyugakuR05Source,
                 layers: [cyugakuR05Layer,cyugakuR05LayerLine,cyugakuR05LayerLabel,cyugakuR05LayerPoint]
             }
+        ]
+    },
+    {
+        id: 'bakumatsu',
+        label: "幕末期近世の村",
+        nodes: [
+            {
+                id: 'oh-bakumatsu',
+                label: "幕末期近世の村",
+                source: bakumatsuSource,
+                layers: [bakumatsuLayer, bakumatsuLayerLine, bakumatsuLayerLabel]
+            },
+            {
+                id: 'oh-bakumatsu-kokudaka',
+                label: "幕末期近世の村（石高）",
+                source: bakumatsuSource,
+                layers: [bakumatsuLayerKokudaka,bakumatsuLayerLine,bakumatsuLayerLabel]
+            },
+            {
+                id: 'oh-bakumatsu',
+                label: "幕末期近世の村（藩）",
+                source: bakumatsuSource,
+                layers: [bakumatsuLayerHan,bakumatsuLayerLine,bakumatsuLayerLabel]
+            },
         ]
     },
     {
@@ -696,7 +708,25 @@ const layers01 = [
                 layers: [tamaSekisyokuLayer]
             },
         ]
-    }
+    },
+    {
+        id: 'sonohoka',
+        label: "その他",
+        nodes: [
+            {
+                id: 'oh-amx-a-fude',
+                label: "登記所備付地図データ",
+                source: amxSource,
+                layers:[amxLayer,amxLayerDaihyou]
+            },
+            {
+                id: 'oh-syochiiki',
+                label: "国勢調査小地域",
+                source: syochiikiSource,
+                layers: [syochiikiLayer]
+            },
+        ]
+    },
 ]
 const layers02 = JSON.parse(JSON.stringify(layers01))
 export const layers = {
