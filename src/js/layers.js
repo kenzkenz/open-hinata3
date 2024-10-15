@@ -293,9 +293,8 @@ export const bakumatsuLayer = {
     "source-layer": "b41",
     paint: {
         'fill-color': ['get', 'random_color'],  // フィーチャのプロパティ 'color' から色を取得
-        'fill-opacity': 0.8  // 透明度を設定
+        'fill-opacity': 1  // 透明度を設定
     }
-
 }
 export const bakumatsuLayerKokudaka = {
     id: "oh-bakumatsu-kokudaka",
@@ -416,7 +415,6 @@ export const syogakkoR05LayerLine = {
     "source-layer": "s4polygon",
     paint: {
         'line-color': '#000',
-        // 'line-width': 0.5
         'line-width': [
             'interpolate', // Zoom-based interpolation
             ['linear'],
@@ -435,7 +433,7 @@ export const syogakkoR05LayerLabel = {
         'text-field': ['get', 'P29_004'],
         'text-font': ['Noto Sans CJK JP Bold'],
         // 'text-anchor': 'left',
-        'text-offset': [0.5, 0],
+        'text-offset': [0, 1],
         'visibility': 'visible',
     },
     'paint': {
@@ -451,6 +449,73 @@ export const syogakkoR05LayerPoint = {
     type: "circle",
     source: "syogakkoR05Source",
     "source-layer": "s4point",
+    'paint': {
+        'circle-color': '#000',  // 固定の赤色
+        'circle-radius': 6  // 半径を設定
+    }
+}
+// 中学校ソース --------------------------------------------------------------------------------------------
+export const cyugakuR05Source = {
+    id: "cyugakuR05Source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/cyugakko/r05/t4joint.pmtiles",
+        attribution:
+            "<a href='' target='_blank'></a>",
+    }
+}
+// 中学校レイヤー
+export const cyugakuR05Layer = {
+    id: "oh-cyugakuR05",
+    type: "fill",
+    source: "cyugakuR05Source",
+    "source-layer": "t4polygon",
+    paint: {
+        'fill-color': ['get', 'random_color'],  // フィーチャのプロパティ 'color' から色を取得
+        'fill-opacity': 0.8  // 透明度を設定
+    }
+
+}
+export const cyugakuR05LayerLine = {
+    id: "oh-cyugakuR05_line",
+    type: "line",
+    source: "cyugakuR05Source",
+    "source-layer": "t4polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            7, 0,
+            11, 0.5
+        ]
+    },
+}
+export const cyugakuR05LayerLabel = {
+    id: "oh-cyugakuR05-label",
+    type: "symbol",
+    source: "cyugakuR05Source",
+    "source-layer": "t4point",
+    'layout': {
+        'text-field': ['get', 'P29_004'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+        // 'text-anchor': 'left',
+        'text-offset': [0, 1],
+        'visibility': 'visible',
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 10
+}
+export const cyugakuR05LayerPoint = {
+    id: "oh-cyugakuR05_point",
+    type: "circle",
+    source: "cyugakuR05Source",
+    "source-layer": "t4point",
     'paint': {
         'circle-color': '#000',  // 固定の赤色
         'circle-radius': 6  // 半径を設定
@@ -522,6 +587,12 @@ const layers01 = [
                 label: "小学校（R05）",
                 source: syogakkoR05Source,
                 layers: [syogakkoR05Layer,syogakkoR05LayerLine,syogakkoR05LayerLabel,syogakkoR05LayerPoint]
+            },
+            {
+                id: 'oh-cyugakuR05',
+                label: "中学校（R05）",
+                source: cyugakuR05Source,
+                layers: [cyugakuR05Layer,cyugakuR05LayerLine,cyugakuR05LayerLabel,cyugakuR05LayerPoint]
             }
         ]
     },
