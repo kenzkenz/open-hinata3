@@ -5,8 +5,8 @@
 export const syochiikiSource = {
     id: "syochiikiSource", obj:{
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/syochiiki/zenkoku.pmtiles",
-        // url: "https://kenzkenz3.xsrv.jp/mvt/syochiiki/2020/{z}/{x}/{y}.mvt",
+        // url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/syochiiki/zenkoku.pmtiles",
+        tiles: ["https://kenzkenz3.xsrv.jp/mvt/syochiiki/2020/{z}/{x}/{y}.mvt"],
         // minzoom: 16,
         // maxzoom: 16,
         attribution: '<a href="https://github.com/shiwaku/mlit-plateau-bldg-pmtiles">mlit-plateau-bldg-pmtiles</a>'
