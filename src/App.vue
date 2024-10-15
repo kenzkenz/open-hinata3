@@ -175,7 +175,6 @@ export default {
       bearing()
     },
     upMousedown(mapName) {
-
       const vm = this
       const map = this.$store.state[mapName]
       vm.mouseDown = true
@@ -343,7 +342,6 @@ export default {
         })
         this.$store.state[mapName] = map
       })
-
       // 画面同期----------------------------------------------------------------------------------------------------------
       let syncing = false
       function syncMaps(mapA, mapB) {
@@ -374,6 +372,7 @@ export default {
       // on load
       this.mapNames.forEach(mapName => {
         const map = this.$store.state[mapName]
+        const params = this.parseUrlParams()
         map.on('load', () => {
           // 二画面-----------------------------------------------------------
           if (mapName === 'map02') {
@@ -392,10 +391,9 @@ export default {
             }
           }
           // ----------------------------------------------------------------
-          // this.mapNames.forEach(() => {
-            const params = this.parseUrlParams()
-            if (params.slj) this.s_selectedLayers = params.slj
-          // })
+          // ここを改善する必要あり
+          if (params.slj) this.s_selectedLayers = params.slj
+
           // ----------------------------------------------------------------
           // 標高タイルソース---------------------------------------------------
           map.addSource("gsidem-terrain-rgb", {
@@ -475,12 +473,32 @@ export default {
           // })
 
           // 地物クリック時にポップアップを表示する----------------------------------------------------------------------------
+          map.on('click', 'oh-cyugakuR05', (e) => {
+            let coordinates = e.lngLat
+            const props = e.features[0].properties
+            console.log(props)
+            const name = props.A32_004
+            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+            }
+            // ポップアップを表示する
+            new maplibregl.Popup({
+              offset: 10,
+              closeButton: true,
+            })
+                .setLngLat(coordinates)
+                .setHTML(`
+                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+                   ${name}
+                  </div>
+                `)
+                .addTo(map)
+          })
           map.on('click', 'oh-syogakkoR05', (e) => {
             let coordinates = e.lngLat
             const props = e.features[0].properties
             console.log(props)
             const name = props.A27_004
-
             while (Math.abs(e.lngLat.lng - coordinates) > 180) {
               coordinates += e.lngLat.lng > coordinates ? 360 : -360;
             }
