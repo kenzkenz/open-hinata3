@@ -587,7 +587,6 @@ export const nihonrekishiSource = {
         // minzoom: 0,
         // maxzoom: 15,
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/chimei/c.pmtiles",
-        // tiles: ["https://kenzkenz.github.io/chimei/{z}/{x}/{y}.mvt"],
         attribution: "<a href='' target='_blank'></a>",
     }
 }
@@ -606,7 +605,7 @@ export const nihonrekishiLayerLabel = {
     id: "oh-nihonrekishi-label",
     type: "symbol",
     source: "nihonrekishiSouce",
-    "source-layer": "t4point",
+    "source-layer": "point",
     'layout': {
         'text-field': ['get', '名称'],
         'text-font': ['Noto Sans CJK JP Bold'],
