@@ -459,8 +459,7 @@ export const cyugakuR05Source = {
     id: "cyugakuR05Source", obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/cyugakko/r05/t4joint.pmtiles",
-        attribution:
-            "<a href='' target='_blank'></a>",
+        attribution: "<a href='' target='_blank'></a>",
     }
 }
 // 中学校レイヤー
@@ -517,9 +516,69 @@ export const cyugakuR05LayerPoint = {
     source: "cyugakuR05Source",
     "source-layer": "t4point",
     'paint': {
-        'circle-color': '#000',  // 固定の赤色
-        'circle-radius': 6  // 半径を設定
+        'circle-color': '#000',
+        'circle-radius': 6
     }
+}
+// 地形分類タイルソース --------------------------------------------------------------------------------------------
+export const chikeibunruiSource = {
+    id: "chikeibunruiSource", obj: {
+        type: "vector",
+        tiles: ["https://optgeo.github.io/unite-one/zxy/{z}/{x}/{y}.pbf"],
+        attribution: "国土地理院ベクトルタイル提供実験",
+        minzoom: 10,
+        maxzoom: 12
+    }
+}
+export const chikeibunruiLayer = {
+    id: "oh-chikeibunrui",
+    type: "fill",
+    source: "chikeibunruiSource",
+    "source-layer": "one",
+    "paint": {
+        "fill-color": [
+            "match",
+            [
+                "get",
+                "code"
+            ],
+            "山地",
+            "#d9cbae",
+            "崖・段丘崖",
+            "#9466ab",
+            "地すべり地形",
+            "#cc99ff",
+            "台地・段丘",
+            "#ffaa00",
+            "山麓堆積地形",
+            "#99804d",
+            "扇状地",
+            "#cacc60",
+            "自然堤防",
+            "#ffff33",
+            "天井川",
+            "#fbe09d",
+            "砂州・砂丘",
+            "#ffff99",
+            "凹地・浅い谷",
+            "#a3cc7e",
+            "氾濫平野",
+            "#bbff99",
+            "後背低地・湿地",
+            "#00d1a4",
+            "旧河道",
+            "#6699ff",
+            "落堀",
+            "#1f9999",
+            "河川敷・浜",
+            "#9f9fc4",
+            "水部",
+            "#e5ffff",
+            "旧水部",
+            "#779999",
+            "#f00"
+        ]
+    },
 }
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
@@ -600,6 +659,12 @@ const layers01 = [
         id: 2,
         label: "立体図等",
         nodes: [
+            {
+                id: 'oh-chikeibunruiLayer',
+                label: "地形分類",
+                source: chikeibunruiSource,
+                layers: [chikeibunruiLayer]
+            },
             {
                 id: 'oh-csNotoLayer',
                 label: "能登CS立体図",
