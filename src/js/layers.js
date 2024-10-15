@@ -388,6 +388,74 @@ export const bakumatsuLayerLabel = {
     'maxzoom': 24,
     'minzoom': 10
 }
+// 小学校ソース --------------------------------------------------------------------------------------------
+export const syogakkoR05Source = {
+    id: "syogakkoR05Source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/syogakko/r05/s41.pmtiles",
+        attribution:
+            "<a href='' target='_blank'></a>",
+    }
+}
+// 小学校レイヤー
+export const syogakkoR05Layer = {
+    id: "oh-syogakkoR05",
+    type: "fill",
+    source: "syogakkoR05Source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-color': ['get', 'random_color'],  // フィーチャのプロパティ 'color' から色を取得
+        'fill-opacity': 0.8  // 透明度を設定
+    }
+
+}
+export const syogakkoR05LayerLine = {
+    id: "oh-syogakkoR05_line",
+    type: "line",
+    source: "syogakkoR05Source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        // 'line-width': 0.5
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            7, 0,
+            11, 0.5
+        ]
+    },
+}
+export const syogakkoR05LayerLabel = {
+    id: "oh-syogakkoR05-label",
+    type: "symbol",
+    source: "syogakkoR05Source",
+    "source-layer": "polygon",
+    'layout': {
+        'text-field': ['get', 'P29_004'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+        // 'text-anchor': 'left',
+        'text-offset': [0.5, 0],
+        'visibility': 'visible',
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 10
+}
+export const syogakkoR05LayerPoint = {
+    id: "oh-syogakkoR05_point",
+    type: "circle",
+    source: "syogakkoR05Source",
+    "source-layer": "polygon",
+    'paint': {
+        'circle-color': '#000',  // 固定の赤色
+        'circle-radius': 6  // 半径を設定
+    }
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -448,6 +516,12 @@ const layers01 = [
                 label: "国勢調査小地域",
                 source: syochiikiSource,
                 layers: [syochiikiLayer]
+            },
+            {
+                id: 'oh-syogakkoR05',
+                label: "小学校（R05）",
+                source: syogakkoR05Source,
+                layers: [syogakkoR05Layer,syogakkoR05LayerLine,syogakkoR05LayerLabel]
             }
         ]
     },
