@@ -672,7 +672,7 @@ const layers01 = [
         label: "立体図等",
         nodes: [
             {
-                id: 'oh-chikeibunruiLayer',
+                id: 'oh-chikeibunrui',
                 label: "地形分類",
                 source: chikeibunruiSource,
                 layers: [chikeibunruiLayer]
