@@ -411,6 +411,12 @@ export default {
           document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('pointerdown', function() {
             map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
           }, false);
+          addEventListener('keydown', function () {
+            map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
+          })
+
+
+
 
           // 標高タイルソース---------------------------------------------------
           // map.addSource("aws-terrain", {
@@ -474,6 +480,28 @@ export default {
           // })
 
           // 地物クリック時にポップアップを表示する----------------------------------------------------------------------------
+          map.on('click', 'oh-nihonrekishi', (e) => {
+            let coordinates = e.lngLat
+            const props = e.features[0].properties
+            console.log(props)
+            const name = props.名称
+
+            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+            }
+            // ポップアップを表示する
+            new maplibregl.Popup({
+              offset: 10,
+              closeButton: true,
+            })
+                .setLngLat(coordinates)
+                .setHTML(`
+                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+                   ${name}
+                  </div>
+                `)
+                .addTo(map)
+          })
           map.on('click', 'oh-chikeibunrui', (e) => {
             let coordinates = e.lngLat
             const props = e.features[0].properties

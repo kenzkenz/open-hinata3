@@ -580,6 +580,48 @@ export const chikeibunruiLayer = {
         ]
     },
 }
+// 日本歴史地名大系ソース --------------------------------------------------------------------------------------------
+export const nihonrekishiSource = {
+    id: "nihonrekishiSouce", obj: {
+        type: "vector",
+        // minzoom: 0,
+        // maxzoom: 15,
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/chimei/c.pmtiles",
+        // tiles: ["https://kenzkenz.github.io/chimei/{z}/{x}/{y}.mvt"],
+        attribution: "<a href='' target='_blank'></a>",
+    }
+}
+// 日本歴史地名大系レイヤー
+export const nihonrekishiLayer = {
+    id: "oh-nihonrekishi",
+    type: "circle",
+    source: "nihonrekishiSouce",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': 'red',
+        'circle-radius': 6
+    }
+}
+export const nihonrekishiLayerLabel = {
+    id: "oh-nihonrekishi-label",
+    type: "symbol",
+    source: "nihonrekishiSouce",
+    "source-layer": "t4point",
+    'layout': {
+        'text-field': ['get', '名称'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+        // 'text-anchor': 'left',
+        'text-offset': [0, 1],
+        'visibility': 'visible',
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 10
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -713,6 +755,12 @@ const layers01 = [
         id: 'sonohoka',
         label: "その他",
         nodes: [
+            {
+                id: 'oh-nihonrekishi',
+                label: "日本歴史地名大系",
+                source: nihonrekishiSource,
+                layers:[nihonrekishiLayer,nihonrekishiLayerLabel]
+            },
             {
                 id: 'oh-amx-a-fude',
                 label: "登記所備付地図データ",
