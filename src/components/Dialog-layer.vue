@@ -136,6 +136,10 @@ export default {
               map.setPaintProperty(layer0.id, 'fill-extrusion-opacity', element.opacity)
             } else if (layer0.type === 'heatmap') {
               map.setPaintProperty(layer0.id, 'heatmap-opacity', element.opacity)
+            } else if (layer0.type === 'circle') {
+              map.setPaintProperty(layer0.id, 'circle-opacity', element.opacity)
+            } else if (layer0.type === 'symbol') {
+              map.setPaintProperty(layer0.id, 'text-opacity', element.opacity)
             }
           }
         })
@@ -207,6 +211,10 @@ export default {
                   map.setPaintProperty(layer0.id, 'fill-extrusion-opacity', layer.opacity)
                 } else if (layer0.type === 'heatmap') {
                   map.setPaintProperty(layer0.id, 'heatmap-opacity', layer.opacity)
+                } else if (layer0.type === 'circle') {
+                  map.setPaintProperty(layer0.id, 'circle-opacity', layer.opacity)
+                } else if (layer0.type === 'symbol') {
+                  map.setPaintProperty(layer0.id, 'text-opacity', layer.opacity)
                 }
               }
             })
