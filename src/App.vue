@@ -324,6 +324,7 @@ export default {
           style: {
             version: 8,
             glyphs: "https://glyphs.geolonia.com/{fontstack}/{range}.pbf",
+            // "glyphs": "https://gsi-cyberjapan.github.io/optimal_bvmap/glyphs/{fontstack}/{range}.pbf",
             sources: {
               "background-osm-raster": {
                 type: "raster",
