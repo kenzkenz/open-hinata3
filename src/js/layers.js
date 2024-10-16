@@ -706,8 +706,8 @@ export const m100mLayerLine = {
             'interpolate', // Zoom-based interpolation
             ['linear'],
             ['zoom'], // Use the zoom level as the input
-            7, 0,
-            11, 0.5
+            11, 0,
+            12, 0.5
         ]
     },
 }
