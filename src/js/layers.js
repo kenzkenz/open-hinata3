@@ -730,6 +730,73 @@ export const m100mLayerLabel = {
     'maxzoom': 24,
     'minzoom': 15
 }
+// 250mメッシュソース --------------------------------------------------------------------------------------------
+export const m250mSource = {
+    id: "m250mSource", obj: {
+        type: "vector",
+        // minzoom: 0,
+        // maxzoom: 15,
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/mesh/250m/250m.pmtiles",
+        attribution:
+            "<a href='' target='_blank'></a>",
+    }
+}
+export const m250mLayer = {
+    id: "oh-m250m",
+    type: "fill",
+    source: "m250mSource",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': [
+            'interpolate',
+            ['linear'],
+            ["to-number",['get', 'jinko']],
+            0, 'white',   // Color for low values
+            1000, 'red', // Intermediate value
+            3000, 'black' // Color for high values
+        ]
+    }
+    // paint: {
+    //     "fill-color": "rgba(254, 217, 192, 1)",
+    //     "fill-outline-color": "rgba(255, 0, 0, 1)",
+    //     "fill-opacity": 0.4,
+    // },
+}
+export const m250mLayerLine = {
+    id: "oh-m250m_line",
+    type: "line",
+    source: "m250mSource",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
+export const m250mLayerLabel = {
+    id: "oh-m250m-label",
+    type: "symbol",
+    source: "m250mSource",
+    "source-layer": "polygon",
+    'layout': {
+        'text-field': ['get', 'jinko'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+        // 'text-anchor': 'left',
+        'text-offset': [0, 0],
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 13
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -771,6 +838,12 @@ const layers01 = [
                 label: "100mメッシュ人口",
                 source: m100mSource,
                 layers: [m100mLayer,m100mLayerLine,m100mLayerLabel]
+            },
+            {
+                id: 'oh-m250m',
+                label: "250mメッシュ人口",
+                source: m250mSource,
+                layers: [m250mLayer,m250mLayerLine,m250mLayerLabel]
             },
         ]
     },

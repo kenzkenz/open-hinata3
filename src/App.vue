@@ -481,6 +481,28 @@ export default {
           // })
 
           // 地物クリック時にポップアップを表示する----------------------------------------------------------------------------
+          map.on('click', 'oh-m250m', (e) => {
+            let coordinates = e.lngLat
+            const props = e.features[0].properties
+            console.log(props)
+            let name = props.jinko
+            name = '人口' + Math.floor(Number(name)) + '人'
+            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+            }
+            // ポップアップを表示する
+            new maplibregl.Popup({
+              offset: 10,
+              closeButton: true,
+            })
+                .setLngLat(coordinates)
+                .setHTML(
+                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                    '<span style="font-size: 20px;">' + name + '</span>' +
+                    '</div>'
+                )
+                .addTo(map)
+          })
           map.on('click', 'oh-m100m', (e) => {
             let coordinates = e.lngLat
             const props = e.features[0].properties
