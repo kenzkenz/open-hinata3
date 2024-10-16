@@ -690,7 +690,7 @@ export const m100mLayer = {
             ['linear'],
             ['get', 'PopT'],
             0, 'white',   // Color for low values
-            1000, 'red', // Intermediate value
+            500, 'red', // Intermediate value
             1400, 'black' // Color for high values
         ]
     }
