@@ -481,6 +481,32 @@ export default {
           // })
 
           // 地物クリック時にポップアップを表示する----------------------------------------------------------------------------
+          map.on('click', 'oh-iryokikan', (e) => {
+            let coordinates = e.lngLat
+            const props = e.features[0].properties
+            console.log(props)
+            const name = props.P04_002
+            const address = props.P04_003
+            const kamoku = props.P04_004
+            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+            }
+
+            // ポップアップを表示する
+            new maplibregl.Popup({
+              offset: 10,
+              closeButton: true,
+            })
+                .setLngLat(coordinates)
+                .setHTML(
+                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                    '<span style="font-size: 20px;">' + name + '</span><hr>' +
+                    '<span style="font-size: 12px;">' + address + '</span><hr>' +
+                    '<span style="font-size: 12px;">' + kamoku + '</span>' +
+                    '</div>'
+                )
+                .addTo(map)
+          })
           map.on('click', 'oh-nihonrekishi', (e) => {
             let coordinates = e.lngLat
             const props = e.features[0].properties

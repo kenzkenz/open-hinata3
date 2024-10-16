@@ -675,11 +675,11 @@ export const nihonrekishiLayerLabel = {
 
 
 export const iryokikanSource = {
-    id: "iryokikanSouce", obj: {
+    id: "iryokikanSource", obj: {
         type: "vector",
         // minzoom: 0,
         // maxzoom: 15,
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/chimei/c.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/iryo/i.pmtiles",
         attribution: "<a href='' target='_blank'></a>",
     }
 }
@@ -687,17 +687,39 @@ export const iryokikanSource = {
 export const iryokikanLayer = {
     id: "oh-iryokikan",
     type: "circle",
-    source: "iryokikanSouce",
-    "source-layer": "point",
+    source: "iryokikanSource",
+    "source-layer": "i",
     'paint': {
-        'circle-color': 'red',
+        'circle-color': [
+            'match',
+            ['get', 'P04_001'], // Get the 'category' property from the data
+            1, 'red', // Color for category A
+            2, 'green', // Color for category B
+            3, 'blue',
+            'black' // Default color (if no match)
+        ],
         'circle-radius': 6
     }
 }
-
-
-
-
+export const iryokikanLayerLabel = {
+    id: "oh-iryokikanLayer-label",
+    type: "symbol",
+    source: "iryokikanSource",
+    "source-layer": "i",
+    'layout': {
+        'text-field': ['get', 'P04_002'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+        // 'text-anchor': 'left',
+        'text-offset': [0, 2],
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 12
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -763,7 +785,7 @@ const layers01 = [
                 id: 'oh-iryokikan',
                 label: "医療機関（R02）",
                 source: iryokikanSource,
-                layers: [iryokikanLayer]
+                layers: [iryokikanLayer,iryokikanLayerLabel]
             }
         ]
     },
