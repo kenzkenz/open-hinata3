@@ -622,58 +622,6 @@ export const nihonrekishiLayerLabel = {
     'minzoom': 10
 }
 // ---------------------------------------------------------------------------------------------------------------------
-// 医療機関ソース
-// export const iryokikanSource = {
-//     id: "iryokikanSource", obj:{
-//         type: "vector",
-//         // tiles: ["https://kenzkenz3.xsrv.jp/mvt/iryo2/{z}/{x}/{y}.mvt"],
-//         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/chimei/c.pmtiles",
-//         // minzoom: 14,
-//         // maxzoom: 23,
-//         attribution: '<a href=""></a>'
-//     }
-// }
-// export const iryokikanLayer = {
-//     'id': 'oh-iryokikanLayer',
-//     'source': 'iryokikanSource',
-//     'source-layer': "i",
-//     // "minzoom": 0,
-//     // "maxzoom": 23,
-//     'type': 'circle',
-//     'paint': {
-//         'circle-color': [
-//             'match',
-//             ['get', 'P04_001'], // Get the 'category' property from the data
-//             1, '#f28cb1', // Color for category A
-//             2, '#3bb2d0', // Color for category B
-//             3, 'red',
-//             'black' // Default color (if no match)
-//         ],
-//         'circle-radius': 6
-//     }
-// }
-// export const iryokikanLayerLabel = {
-//     id: "oh-iryokikanLayer-label",
-//     type: "symbol",
-//     source: "iryokikanSource",
-//     "source-layer": "point",
-//     'layout': {
-//         'text-field': ['get', 'P04_002'],
-//         'text-font': ['Noto Sans CJK JP Bold'],
-//         // 'text-anchor': 'left',
-//         'text-offset': [0, 1],
-//         'visibility': 'visible',
-//     },
-//     'paint': {
-//         'text-color': 'rgba(255, 255, 255, 0.7)',
-//         'text-halo-color': 'rgba(0,0,0,0.7)',
-//         'text-halo-width': 1.0,
-//     },
-//     'maxzoom': 24,
-//     'minzoom': 10
-// }
-
-
 export const iryokikanSource = {
     id: "iryokikanSource", obj: {
         type: "vector",
@@ -720,6 +668,49 @@ export const iryokikanLayerLabel = {
     'maxzoom': 24,
     'minzoom': 12
 }
+// 100mメッシュソース --------------------------------------------------------------------------------------------
+export const m100mSource = {
+    id: "m100mSource", obj: {
+        type: "vector",
+        // minzoom: 0,
+        // maxzoom: 15,
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/mesh/100m/100m.pmtiles",
+        attribution:
+            "<a href='' target='_blank'></a>",
+    }
+}
+export const m100mLayer = {
+    id: "oh-m100m",
+    type: "fill",
+    source: "m100mSource",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'PopT'],
+            0, 'white',   // Color for low values
+            1000, 'red', // Intermediate value
+            1400, 'black' // Color for high values
+        ]
+    }
+}
+export const m100mLayerLine = {
+    id: "oh-m100m_line",
+    type: "line",
+    source: "m100mSource",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            7, 0,
+            11, 0.5
+        ]
+    },
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -737,6 +728,12 @@ const layers01 = [
                 label: "PLATEAU建物",
                 source: plateauPmtilesSource,
                 layers: [plateauPmtilesLayer]
+            },
+            {
+                id: 'oh-m100m',
+                label: "100mメッシュ人口",
+                source: m100mSource,
+                layers: [m100mLayer,m100mLayerLine]
             },
         ]
     },
