@@ -711,28 +711,25 @@ export const m100mLayerLine = {
         ]
     },
 }
-// export const m100mLayerLabel = {
-//     id: "oh-m100m-label",
-//     type: "symbol",
-//     source: "m100mSource",
-//     "source-layer": "polygon",
-//     'layout': {
-//         'text-field': [
-//             ['to-string', ['floor', ['get', 'PopT']]]  // 'value' の切り捨てた値を文字列にして表示
-//         ],
-//         // 'text-field': ['get', 'PopT'],
-//         // 'text-font': ['Noto Sans CJK JP Bold'],
-//         // // 'text-anchor': 'left',
-//         // 'text-offset': [0, 0],
-//     },
-//     'paint': {
-//         'text-color': 'rgba(255, 255, 255, 0.7)',
-//         'text-halo-color': 'rgba(0,0,0,0.7)',
-//         'text-halo-width': 1.0,
-//     },
-//     'maxzoom': 24,
-//     'minzoom': 15
-// }
+export const m100mLayerLabel = {
+    id: "oh-m100m-label",
+    type: "symbol",
+    source: "m100mSource",
+    "source-layer": "polygon",
+    'layout': {
+        'text-field': ['get', 'jinko'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+        // 'text-anchor': 'left',
+        'text-offset': [0, 0],
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 15
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -773,7 +770,7 @@ const layers01 = [
                 id: 'oh-m100m',
                 label: "100mメッシュ人口",
                 source: m100mSource,
-                layers: [m100mLayer,m100mLayerLine]
+                layers: [m100mLayer,m100mLayerLine,m100mLayerLabel]
             },
         ]
     },
