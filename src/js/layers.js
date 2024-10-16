@@ -751,12 +751,6 @@ const layers01 = [
                 source: plateauPmtilesSource,
                 layers: [plateauPmtilesLayer]
             },
-            {
-                id: 'oh-m100m',
-                label: "100mメッシュ人口",
-                source: m100mSource,
-                layers: [m100mLayer,m100mLayerLine]
-            },
         ]
     },
     {
@@ -768,6 +762,18 @@ const layers01 = [
                 label: "最新写真",
                 source: seamlessphotoSource,
                 layers: [seamlessphotoLayer]
+            },
+        ]
+    },
+    {
+        id: 'tokei',
+        label: "統計",
+        nodes: [
+            {
+                id: 'oh-m100m',
+                label: "100mメッシュ人口",
+                source: m100mSource,
+                layers: [m100mLayer,m100mLayerLine]
             },
         ]
     },
