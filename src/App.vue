@@ -481,6 +481,30 @@ export default {
           // })
 
           // 地物クリック時にポップアップを表示する----------------------------------------------------------------------------
+          map.on('click', 'oh-m100m', (e) => {
+            let coordinates = e.lngLat
+            const props = e.features[0].properties
+            console.log(props)
+            let name = props.PopT
+            name = '人口' + Math.floor(Number(name)) + '人'
+            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+            }
+            // ポップアップを表示する
+            new maplibregl.Popup({
+              offset: 10,
+              closeButton: true,
+            })
+                .setLngLat(coordinates)
+                .setHTML(
+                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                    '<span style="font-size: 20px;">' + name + '</span>' +
+                    '</div>'
+                )
+                .addTo(map)
+          })
+          // -----------------------------------------------------------------------------------------------------------
+
           map.on('mouseenter', 'oh-iryokikan', function () {
             map.getCanvas().style.cursor = 'pointer';
           });
@@ -512,6 +536,7 @@ export default {
                 )
                 .addTo(map)
           })
+          // -----------------------------------------------------------------------------------------------------------
           map.on('mouseenter', 'oh-iryokikanLayer-label', function () {
             map.getCanvas().style.cursor = 'pointer';
           });
@@ -926,7 +951,7 @@ export default {
 <style>
 .maplibregl-popup-content {
   padding: 30px 20px 10px 20px;
-  width: 300px;
+  max-width: 300px;
 }
 .maplibregl-popup-close-button{
   font-size: 40px;
