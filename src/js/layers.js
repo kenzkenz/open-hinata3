@@ -862,7 +862,7 @@ export const m1kmSource = {
         type: "vector",
         // minzoom: 0,
         // maxzoom: 15,
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/mesh/1km/1km.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/mesh/1km/1km2.pmtiles",
         attribution:
             "<a href='' target='_blank'></a>",
     }
