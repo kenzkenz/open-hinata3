@@ -1046,6 +1046,28 @@ export const kasenLayerLabel = {
     'minzoom': 12
 }
 // ---------------------------------------------------------------------------------------------------------------------
+// 災害伝承碑
+export const densyohiSource = {
+    id: "densyohiSource", obj: {
+        type: "vector",
+        // minzoom: 0,
+        // maxzoom: 15,
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/densyohi/densyohi.pmtiles",
+        attribution: "<a href='' target='_blank'></a>",
+    }
+}
+//
+export const densyohiLayer = {
+    id: "oh-densyohi",
+    type: "circle",
+    source: "densyohiSource",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': '#3cb371',
+        'circle-radius': 8,
+    }
+}
+// ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
         id: 'test',
@@ -1249,6 +1271,18 @@ const layers01 = [
                 label: "全国旧石器遺跡",
                 source: kyusekkiSource,
                 layers: [kyusekkiLayer,kyusekkiLayerHeatmap],
+            },
+        ]
+    },
+    {
+        id: 'hazard',
+        label: "ハザードマップ等",
+        nodes: [
+            {
+                id: 'oh-densyohi',
+                label: "災害伝承碑",
+                source: densyohiSource,
+                layers: [densyohiLayer],
             },
         ]
     },
