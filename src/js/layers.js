@@ -987,6 +987,64 @@ export const kyusekkiLayerHeatmap = {
         ],
     }
 }
+// 河川ソース --------------------------------------------------------------------------------------------
+export const kasenSource = {
+    id: "kasenSource", obj: {
+        type: "vector",
+        // minzoom: 0,
+        // maxzoom: 15,
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/kasen/kasen.pmtiles",
+        attribution:
+            "<a href='' target='_blank'></a>",
+    }
+}
+export const kasenLayer = {
+    id: "oh-kasen",
+    type: "line",
+    source: "kasenSource",
+    "source-layer": "line",
+    paint: {
+        'line-color': 'blue',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            1, 0.1,
+            4, 0.2,
+            6, 0.5,
+            8, 0.7,
+            11, 1.0,
+            12, 1.5,
+            14, 2,
+            16, 3,
+            18, 6,
+            30, 10,
+        ]
+    },
+}
+export const kasenLayerLabel = {
+    id: "oh-kasen-label",
+    type: "symbol",
+    source: "kasenSource",
+    "source-layer": "line",
+    'layout': {
+        'text-field': ['get', 'W05_004'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+        // 'text-anchor': 'left',
+        'text-offset': [0, 0],
+        'text-anchor': 'center',
+        'text-allow-overlap': false, // 重複を許可しない
+        'text-ignore-placement': false, // 配置を尊重
+        'symbol-placement': 'point', // ポイントごとに1つのラベルを表示
+        'text-padding': 10 // ラベル同士の間隔を調整
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'minzoom': 12
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -1136,8 +1194,14 @@ const layers01 = [
     },
     {
         id: 2,
-        label: "立体図等",
+        label: "自然、立体図等",
         nodes: [
+            {
+                id: 'oh-kasen',
+                label: "河川",
+                source: kasenSource,
+                layers: [kasenLayer,kasenLayerLabel]
+            },
             {
                 id: 'oh-chikeibunrui',
                 label: "地形分類",
