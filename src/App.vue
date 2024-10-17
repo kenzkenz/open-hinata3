@@ -395,30 +395,18 @@ export default {
           }
           // ----------------------------------------------------------------
           // ここを改善する必要あり
-
-          console.log(params.slj)
-
           params.slj[mapName].forEach(slg => {
-            console.log(slg.id)
-
             let cnt = 0
             function aaa () {
               Layers.layers[mapName].forEach(value => {
-                // console.log(value)
                 if (!value.nodes) cnt++
                 function bbb (v1) {
                   if (v1.nodes) {
                     v1.nodes.forEach(v2 => {
-                      // console.log(v2)
                       if (!v2.nodes) {
-                        // console.log(v2.id,slg.id)
                         if (v2.id === slg.id) {
-                          console.log('hit',slg.id,slg.source,slg.layers)
-                          console.log(JSON.parse(JSON.stringify(v2.layers)))
-                          console.log(slg.layers)
-                          slg.source = JSON.parse(JSON.stringify(v2.source))
-                          slg.layers = JSON.parse(JSON.stringify(v2.layers))
-                          console.log(slg.layers)
+                          slg.source = v2.source
+                          slg.layers = v2.layers
                         }
                         cnt++
                       } else {
@@ -426,9 +414,7 @@ export default {
                       }
                     })
                   } else {
-                    console.log(value.id,slg.id)
                     if (value.id === slg.id) {
-                      console.log('hit',slg.id)
                       slg.source = value.source
                       slg.layers = value.layers
                     }
@@ -439,12 +425,7 @@ export default {
             }
             aaa()
             console.log('背景' + cnt + '件')
-
-
-
           })
-          console.log(params.slj)
-
           if (params.slj) this.s_selectedLayers = params.slj
 
           // ----------------------------------------------------------------
@@ -466,10 +447,6 @@ export default {
           addEventListener('keydown', function () {
             map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
           })
-
-
-
-
           // 標高タイルソース---------------------------------------------------
           // map.addSource("aws-terrain", {
           //   type: "raster-dem",

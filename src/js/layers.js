@@ -640,11 +640,11 @@ export const iryokikanLayer = {
     'paint': {
         'circle-color': [
             'match',
-            ['get', 'P04_001'], // Get the 'category' property from the data
-            1, 'red', // Color for category A
-            2, 'green', // Color for category B
+            ['get', 'P04_001'],
+            1, 'red',
+            2, 'green',
             3, 'blue',
-            'black' // Default color (if no match)
+            'black'
         ],
         'circle-radius': 6
     }
