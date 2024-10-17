@@ -1,5 +1,3 @@
-
-
 // ---------------------------------------------------------------------------------------------------------------------
 // syochiikiソース
 export const syochiikiSource = {
@@ -925,6 +923,71 @@ export const m1kmLayerLabel = {
     'minzoom': 12
 }
 // ---------------------------------------------------------------------------------------------------------------------
+// 全国旧石器
+export const kyusekkiSource = {
+    id: "kyusekkiSource", obj: {
+        type: "vector",
+        // minzoom: 0,
+        // maxzoom: 15,
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/kyusekki/kyusekki.pmtiles",
+        attribution: "<a href='' target='_blank'></a>",
+    }
+}
+//
+export const kyusekkiLayer = {
+    id: "oh-kyusekki",
+    type: "circle",
+    source: "kyusekkiSource",
+    "source-layer": "point",
+    "minzoom":12,
+    'paint': {
+        'circle-color': '#3cb371',
+        'circle-radius': 8,
+    }
+}
+export const kyusekkiLayerHeatmap = {
+    id: "oh-kyusekki-heatmap",
+    type: "heatmap",
+    source: "kyusekkiSource",
+    "source-layer": "point",
+    "maxzoom":12,
+    paint: {
+        // ヒートマップの密度に基づいて各ピクセルの色を定義
+        "heatmap-color": [
+            // 入力値と出力値のペア（"stop"）の間を補間することにより、連続的で滑らかな結果を生成する
+            "interpolate",
+            // 入力より小さいストップと大きいストップのペアを直線的に補間
+            ["linear"],
+            // ヒートマップレイヤーの密度推定値を取得
+            ["heatmap-density"],
+            0,
+            "rgba(255, 255, 255, 0)",
+            0.5,
+            "rgba(60, 179, 113, 0.6)",
+            // 1に近づくほど密度が高い
+            1,
+            "rgba(255, 215, 0, 0.8)",
+        ],
+        // ヒートマップ1点の半径（ピクセル単位）
+        "heatmap-radius": [
+            // 入力値と出力値のペア（"stop"）の間を補間することにより、連続的で滑らかな結果を生成する
+            "interpolate",
+            // 出力が増加する割合を制御する、1に近づくほど出力が増加する
+            ["exponential", 10],
+            // ズームレベルに応じて半径を調整する
+            ["zoom"],
+            2,
+            20,
+            5,
+            20,
+            14,
+            20,
+            50,
+            20
+        ],
+    }
+}
+// ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
         id: 'test',
@@ -1110,6 +1173,18 @@ const layers01 = [
                 label: "東京都多摩地域赤色立体地図",
                 source: tamaSekisyokuSource,
                 layers: [tamaSekisyokuLayer]
+            },
+        ]
+    },
+    {
+        id: 'iseki',
+        label: "遺跡等",
+        nodes: [
+            {
+                id: 'oh-kyusekki',
+                label: "全国旧石器遺跡",
+                source: kyusekkiSource,
+                layers: [kyusekkiLayer,kyusekkiLayerHeatmap],
             },
         ]
     },
