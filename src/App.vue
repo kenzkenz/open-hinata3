@@ -40,6 +40,7 @@ import DialogLayer from '@/components/Dialog-layer'
 import DialogInfo from '@/components/Dialog-info'
 import ExtHighway from '@/components/ext-highway'
 import codeShizen from '@/js/codeShizen'
+import * as Layers from '@/js/layers'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import maplibregl from 'maplibre-gl'
 import { Protocol } from "pmtiles";
@@ -394,6 +395,56 @@ export default {
           }
           // ----------------------------------------------------------------
           // ここを改善する必要あり
+
+          console.log(params.slj)
+
+          params.slj[mapName].forEach(slg => {
+            console.log(slg.id)
+
+            let cnt = 0
+            function aaa () {
+              Layers.layers[mapName].forEach(value => {
+                // console.log(value)
+                if (!value.nodes) cnt++
+                function bbb (v1) {
+                  if (v1.nodes) {
+                    v1.nodes.forEach(v2 => {
+                      // console.log(v2)
+                      if (!v2.nodes) {
+                        // console.log(v2.id,slg.id)
+                        if (v2.id === slg.id) {
+                          console.log('hit',slg.id,slg.source,slg.layers)
+                          console.log(JSON.parse(JSON.stringify(v2.layers)))
+                          console.log(slg.layers)
+                          slg.source = JSON.parse(JSON.stringify(v2.source))
+                          slg.layers = JSON.parse(JSON.stringify(v2.layers))
+                          console.log(slg.layers)
+                        }
+                        cnt++
+                      } else {
+                        bbb(v2)
+                      }
+                    })
+                  } else {
+                    console.log(value.id,slg.id)
+                    if (value.id === slg.id) {
+                      console.log('hit',slg.id)
+                      slg.source = value.source
+                      slg.layers = value.layers
+                    }
+                  }
+                }
+                bbb(value)
+              })
+            }
+            aaa()
+            console.log('背景' + cnt + '件')
+
+
+
+          })
+          console.log(params.slj)
+
           if (params.slj) this.s_selectedLayers = params.slj
 
           // ----------------------------------------------------------------
