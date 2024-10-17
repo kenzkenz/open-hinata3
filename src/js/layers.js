@@ -792,6 +792,72 @@ export const m250mLayerLabel = {
     'maxzoom': 24,
     'minzoom': 13
 }
+// 500mメッシュソース --------------------------------------------------------------------------------------------
+export const m500mSource = {
+    id: "m500mSource", obj: {
+        type: "vector",
+        // minzoom: 0,
+        // maxzoom: 15,
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/mesh/500m/500m.pmtiles",
+        attribution:
+            "<a href='' target='_blank'></a>",
+    }
+}
+export const m500mLayer = {
+    id: "oh-m500m",
+    type: "fill",
+    source: "m500mSource",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': [
+            'interpolate',
+            ['linear'],
+            ["to-number",['get', 'jinko']],
+            0, 'white',   // Color for low values
+            10000, 'red', // Intermediate value
+            35000, 'black' // Color for high values
+        ]
+    }
+}
+export const m500mLayerLine = {
+    id: "oh-m500m_line",
+    type: "line",
+    source: "m500mSource",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
+export const m500mLayerLabel = {
+    id: "oh-m500m-label",
+    type: "symbol",
+    source: "m500mSource",
+    "source-layer": "polygon",
+    'layout': {
+        'text-field': ['get', 'jinko'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+        // 'text-anchor': 'left',
+        'text-offset': [0, 0],
+        'text-anchor': 'center',
+        'text-allow-overlap': false, // 重複を許可しない
+        'text-ignore-placement': false, // 配置を尊重
+        'symbol-placement': 'point', // ポイントごとに1つのラベルを表示
+        'text-padding': 10 // ラベル同士の間隔を調整
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'minzoom': 12
+}
 // 1kmメッシュソース --------------------------------------------------------------------------------------------
 export const m1kmSource = {
     id: "m1kmSource", obj: {
@@ -929,6 +995,12 @@ const layers01 = [
                 label: "250mメッシュ人口",
                 source: m250mSource,
                 layers: [m250mLayer,m250mLayerLine,m250mLayerLabel]
+            },
+            {
+                id: 'oh-m500m',
+                label: "500mメッシュ人口",
+                source: m500mSource,
+                layers: [m500mLayer,m500mLayerLine,m500mLayerLabel]
             },
             {
                 id: 'oh-m1km',
