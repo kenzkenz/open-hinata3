@@ -756,11 +756,6 @@ export const m250mLayer = {
             3000, 'black' // Color for high values
         ]
     }
-    // paint: {
-    //     "fill-color": "rgba(254, 217, 192, 1)",
-    //     "fill-outline-color": "rgba(255, 0, 0, 1)",
-    //     "fill-opacity": 0.4,
-    // },
 }
 export const m250mLayerLine = {
     id: "oh-m250m_line",
@@ -796,6 +791,72 @@ export const m250mLayerLabel = {
     },
     'maxzoom': 24,
     'minzoom': 13
+}
+// 1kmメッシュソース --------------------------------------------------------------------------------------------
+export const m1kmSource = {
+    id: "m1kmSource", obj: {
+        type: "vector",
+        // minzoom: 0,
+        // maxzoom: 15,
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/mesh/1km/1km.pmtiles",
+        attribution:
+            "<a href='' target='_blank'></a>",
+    }
+}
+export const m1kmLayer = {
+    id: "oh-m1km",
+    type: "fill",
+    source: "m1kmSource",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': [
+            'interpolate',
+            ['linear'],
+            ["to-number",['get', 'jinko']],
+            0, 'white',   // Color for low values
+            10000, 'red', // Intermediate value
+            35000, 'black' // Color for high values
+        ]
+    }
+}
+export const m1kmLayerLine = {
+    id: "oh-m1km_line",
+    type: "line",
+    source: "m1kmSource",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
+export const m1kmLayerLabel = {
+    id: "oh-m1km-label",
+    type: "symbol",
+    source: "m1kmSource",
+    "source-layer": "polygon",
+    'layout': {
+        'text-field': ['get', 'jinko'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+        // 'text-anchor': 'left',
+        'text-offset': [0, 0],
+        'text-anchor': 'center',
+        'text-allow-overlap': false, // 重複を許可しない
+        'text-ignore-placement': false, // 配置を尊重
+        'symbol-placement': 'point', // ポイントごとに1つのラベルを表示
+        'text-padding': 10 // ラベル同士の間隔を調整
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'minzoom': 12
 }
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
@@ -868,6 +929,12 @@ const layers01 = [
                 label: "250mメッシュ人口",
                 source: m250mSource,
                 layers: [m250mLayer,m250mLayerLine,m250mLayerLabel]
+            },
+            {
+                id: 'oh-m1km',
+                label: "1kmメッシュ人口",
+                source: m1kmSource,
+                layers: [m1kmLayer,m1kmLayerLine,m1kmLayerLabel]
             },
         ]
     },

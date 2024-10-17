@@ -509,7 +509,7 @@ export default {
           // })
 
           // 地物クリック時にポップアップを表示する----------------------------------------------------------------------------
-          map.on('click', 'oh-m250m', (e) => {
+          map.on('click', 'oh-m1km', (e) => {
             let coordinates = e.lngLat
             const props = e.features[0].properties
             console.log(props)
