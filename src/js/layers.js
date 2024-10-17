@@ -796,7 +796,7 @@ export const m500mSource = {
         type: "vector",
         // minzoom: 0,
         // maxzoom: 15,
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/mesh/500m/500m.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/mesh/500m/500m2.pmtiles",
         attribution:
             "<a href='' target='_blank'></a>",
     }
