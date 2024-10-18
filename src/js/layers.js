@@ -58,9 +58,6 @@ export const syochiikiLayerLabel = {
             '\n', {},
             ['get', 'JINKO'], { 'font-scale': 1.2 },
             '人', {},
-            ['get', 'AREA'],{}
-                // ['/', ['get', 'JINKO'], ['get', 'AREA']],{}
-                // ['/', ["to-number",['get', 'JINKO']], ["to-number",['get', 'AREA']]],{}
         ],
         'text-font': ['Noto Sans CJK JP Bold'],
         // 'text-anchor': 'left',
@@ -85,7 +82,7 @@ export const syochiikiLayerHeight = {
             'interpolate',
             ['linear'],
             ['/', ['get', 'JINKO'], ['get', 'AREA']],
-            0, 0,
+            0, 100,
             0.5, 10000
         ],
         'fill-extrusion-color': 'gray',
