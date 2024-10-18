@@ -1,5 +1,5 @@
 <template>
-  <div ref="dragDiv" :id="'dialog2-' + item.id" v-for="item in s_dialog2" :key="item.id" :style="item.style" v-drag="{handle:'#dialog-handle2' + item.id}" @v-drag-end="dragEnd(item)" class="dialog2-div" @mousedown="dialogMouseDown(item)" @mouseup="dialogMouseDown(item)">
+  <div ref="dragDiv" :id="'dialog2-' + item.id" v-for="item in s_dialog2" :key="item.id" :style="item.style" v-drag="{handle:'#dialog-handle2' + item.id}" @v-drag-end="dragEnd(item)" class="dialog2-div" @pointerdown="dialogMouseDown(item)" @mousedown="dialogMouseDown(item)" @mouseup="dialogMouseDown(item)">
     <div class="drag-handle" :id="'dialog-handle2-' + item.id">
     </div>
     <div>
