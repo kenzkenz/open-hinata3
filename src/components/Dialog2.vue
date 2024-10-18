@@ -32,6 +32,7 @@ export default {
         const result = this.$store.state.dialogs2[this.mapName] .find(el => el.id === item.id)
         result.style.top = document.querySelector( '#dialog2-' + item.id).style.top
         result.style.left = document.querySelector('#dialog2-' + item.id).style.left
+        result.style["z-index"] = this.$store.state.dialogMaxZindex
       } catch (e) {
         console.log(e)
       }
@@ -40,11 +41,7 @@ export default {
       this.$store.state.dialogs2[this.mapName] = this.$store.state.dialogs2[this.mapName].filter(v => v.id !== item.id);
     },
     dialogMouseDown (item) {
-      this.$store.commit('/incrDialogMaxZindex')
-      const result = this.$store.state.dialogs2[this.mapName] .find(el => el.id === item.id)
-      result.style["z-index"] = this.$store.state.dialogMaxZindex
-      result.style.top = document.querySelector( '#dialog2-' + item.id).style.top
-      result.style.left = document.querySelector('#dialog2-' + item.id).style.left
+      this.$store.commit('incrDialogMaxZindex')
       document.querySelector( '#dialog2-' + item.id).style["z-index"] = this.$store.state.dialogMaxZindex
     }
   },
