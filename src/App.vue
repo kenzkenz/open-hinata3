@@ -269,6 +269,7 @@ export default {
         if (this.bearing > -5 && this.bearing < 5 ) {
           console.log('0に修正')
           bearing = 0
+          this.bearing = 0
         } else {
           bearing = this.bearing
         }
