@@ -3,7 +3,7 @@
     <div class="drag-handle" :id="'dialog-handle2-' + item.id">
     </div>
     <div>
-      <div class="close-btn-div" @click="closeBtn(item)"><i class="fa-solid fa-xmark hover close-btn"></i></div>
+      <div class="close-btn-div" @click="closeBtn(item)" @pointerdown="closeBtn(item)"><i class="fa-solid fa-xmark hover close-btn"></i></div>
       <DialogPyramid :item="item" :mapName="mapName" v-if="item.name === 'pyramid'" />
     </div>
   </div>
