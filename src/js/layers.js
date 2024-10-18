@@ -85,7 +85,13 @@ export const syochiikiLayerHeight = {
             0, 100,
             0.2, 10000
         ],
-        'fill-extrusion-color': 'gray',
+        'fill-extrusion-color': [
+            'interpolate',
+            ['linear'],
+            ['/', ['get', 'JINKO'], ['get', 'AREA']],
+            0, 'silver',
+            0.1, 'black'
+        ]
     }
 }
 // 高速道路--------------------------------------
@@ -401,7 +407,6 @@ export const bakumatsuLayerHeight = {
             0, 100,
             50000000, 10000
         ],
-        // 'fill-extrusion-color': 'gray',
         'fill-extrusion-color': [
             'interpolate',
             ['linear'],
@@ -1119,7 +1124,6 @@ export const kasenLayerLabel = {
     'layout': {
         'text-field': ['get', 'W05_004'],
         'text-font': ['Noto Sans CJK JP Bold'],
-        // 'text-anchor': 'left',
         'text-offset': [0, 0],
         'text-anchor': 'center',
         'text-allow-overlap': false, // 重複を許可しない
