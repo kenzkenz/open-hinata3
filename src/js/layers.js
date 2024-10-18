@@ -1177,6 +1177,12 @@ const layers01 = [
         label: "統計",
         nodes: [
             {
+                id: 'oh-syochiiki',
+                label: "国勢調査小地域人口ピラミッド",
+                source: syochiikiSource,
+                layers: [syochiikiLayer,syochiikLayerLine,syochiikiLayerLabel]
+            },
+            {
                 id: 'oh-m100m',
                 label: "100mメッシュ人口",
                 source: m100mSource,
@@ -1350,12 +1356,6 @@ const layers01 = [
                 label: "登記所備付地図データ",
                 source: amxSource,
                 layers:[amxLayer,amxLayerDaihyou]
-            },
-            {
-                id: 'oh-syochiiki',
-                label: "国勢調査小地域",
-                source: syochiikiSource,
-                layers: [syochiikiLayer,syochiikLayerLine,syochiikiLayerLabel]
             },
         ]
     },
