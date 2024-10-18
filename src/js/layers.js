@@ -19,7 +19,7 @@ export const syochiikiLayer = {
     // "maxzoom": 23,
     'type': 'fill',
     paint: {
-        "fill-color": "rgba(254, 217, 192, 1)",
+        "fill-color": "rgba(0, 0, 0, 0)",
     },
 }
 export const syochiikLayerLine = {
@@ -28,9 +28,49 @@ export const syochiikLayerLine = {
     source: "syochiikiSource",
     "source-layer": "polygon",
     paint: {
-        'line-color': '#000',
-        'line-width': 0.5
+        'line-color': 'red',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            1, 0.1,
+            4, 0.2,
+            6, 0.5,
+            8, 0.7,
+            11, 1.0,
+            12, 1.5,
+            14, 2,
+            16, 3,
+            18, 6,
+            30, 10,
+        ]
     },
+}
+export const syochiikiLayerLabel = {
+    id: "oh-syochiiki-Label",
+    type: "symbol",
+    source: "syochiikiSource",
+    "source-layer": "polygon",
+    'layout': {
+        'text-field': [
+            'format',
+            ['get', 'S_NAME'],{},
+            '\n', {},
+            ['get', 'JINKO'], { 'font-scale': 1.2 },
+            '人', {},
+        ],
+        'text-font': ['Noto Sans CJK JP Bold'],
+        // 'text-anchor': 'left',
+        'text-offset': [0.5, 0],
+        'visibility': 'visible',
+    },
+    'paint': {
+        'text-color': 'rgba(255, 0, 0, 1)',
+        'text-halo-color': 'rgba(255,255,255,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 10
 }
 // 高速道路--------------------------------------
 export const highwaySource = {
@@ -1315,7 +1355,7 @@ const layers01 = [
                 id: 'oh-syochiiki',
                 label: "国勢調査小地域",
                 source: syochiikiSource,
-                layers: [syochiikiLayer,syochiikLayerLine]
+                layers: [syochiikiLayer,syochiikLayerLine,syochiikiLayerLabel]
             },
         ]
     },

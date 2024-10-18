@@ -526,8 +526,7 @@ export default {
           //   }
           // })
 
-          let sPopup
-          console.log(sPopup)
+
           map.on('click', 'oh-syochiikiLayer', (e) => {
             let coordinates = e.lngLat
             const props = e.features[0].properties
@@ -538,27 +537,21 @@ export default {
             }
 
             // ポップアップを表示する
-            sPopup = new maplibregl.Popup({
+            new maplibregl.Popup({
               offset: 10,
               closeButton: true,
             })
                 .setLngLat(coordinates)
                 .setHTML(
                     '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 20px;">' + name + '</span>' +
+                    '<span style="font-size: 20px;">' + name + '</span><br>' +
+                    '<span style="font-size: 20px;">' + props.JINKO + '人</span>' +
                     '<button class="pyramid-syochiiki-r02 pyramid-btn" year=2020 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2020（R02）人口ピラミッド</button><br>' +
                     '</div>'
                 )
                 .addTo(map)
           })
-          sPopup.on('open', function () {
-            // DOMが生成された後にボタンのイベントリスナーを追加
-            alert()
-            document.querySelector('.pyramid-syochiiki-r02').addEventListener('click', function (event) {
-              event.stopPropagation();
-              alert(9)
-            });
-          });
+
 
           map.on('click', 'oh-kyusekki', (e) => {
             let coordinates = e.lngLat
@@ -1105,6 +1098,8 @@ font {
   pointer-events: none;
 }
 .pyramid-btn {
+  margin-top: 10px;
+  height: 40px;
   width: 100%;
   background-color: rgb(50,101,186);
   color: white;
