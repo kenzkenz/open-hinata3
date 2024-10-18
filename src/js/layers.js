@@ -83,7 +83,7 @@ export const syochiikiLayerHeight = {
             ['linear'],
             ['/', ['get', 'JINKO'], ['get', 'AREA']],
             0, 100,
-            0.5, 10000
+            0.2, 10000
         ],
         'fill-extrusion-color': 'gray',
     }
