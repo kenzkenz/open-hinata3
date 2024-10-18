@@ -508,11 +508,11 @@ export default {
           map.on('idle', this.updatePermalink)
 
           //------------------------------------------------------------------------------------------------------------
-          const pitch = !isNaN(this.pitch) ? this.pitch: 0
-          if (pitch !== 0) {
-            this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
-            this.$store.state.map02.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
-          }
+          // const pitch = !isNaN(this.pitch) ? this.pitch: 0
+          // if (pitch !== 0) {
+          //   this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+          //   this.$store.state.map02.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+          // }
           // ウオッチ 効いたり効かなかったりで安定しない。
           // this.$watch(function () {
           //   return [this.pitch]
@@ -861,6 +861,30 @@ export default {
                 `)
                 .addTo(map)
           })
+          map.on('click', 'oh-bakumatsu-kokudaka-height', (e) => {
+            let coordinates = e.lngLat
+            const props = e.features[0].properties
+            console.log(props)
+            const name = props.村名
+            const kokudaka = Math.floor(Number(props.石高計))
+            const ryobun = props.領分１
+
+            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+            }
+            // ポップアップを表示する
+            new maplibregl.Popup({
+              offset: 10,
+              closeButton: true,
+            })
+                .setLngLat(coordinates)
+                .setHTML(`
+                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+                   村名=${name}<br>石高=${kokudaka}<br>領分=${ryobun}
+                  </div>
+                `)
+                .addTo(map)
+          })
           map.on('click', 'oh-bakumatsu-han', (e) => {
             let coordinates = e.lngLat
             const props = e.features[0].properties
@@ -908,8 +932,13 @@ export default {
                 `)
                 .addTo(map)
           })
-
+          const pitch = !isNaN(this.pitch) ? this.pitch: 0
+          if (pitch !== 0) {
+            this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+            this.$store.state.map02.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+          }
         })
+
         //on load終了----------------------------------------------------------------------------------------------------
       })
     }
