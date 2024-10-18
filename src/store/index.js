@@ -33,6 +33,12 @@ export default createStore({
       map02:[]
     },
     dialogMaxZindex: 0,
+    cdArea: '',
+    syochiikiName: '',
+    koureikaritu: '',
+    heikinnenrei: '',
+    kokuchoYear: '',
+    estatDataset: null,
   },
   getters: {
   },

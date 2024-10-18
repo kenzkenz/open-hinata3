@@ -34,16 +34,17 @@
 </template>
 
 <script>
-import axios from "axios";
+import axios from "axios"
 import DialogMenu from '@/components/Dialog-menu'
 import DialogLayer from '@/components/Dialog-layer'
 import DialogInfo from '@/components/Dialog-info'
 import ExtHighway from '@/components/ext-highway'
 import codeShizen from '@/js/codeShizen'
+import pyramid from '@/js/pyramid'
 import * as Layers from '@/js/layers'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import maplibregl from 'maplibre-gl'
-import { Protocol } from "pmtiles";
+import { Protocol } from "pmtiles"
 
 export default {
   name: 'App',
@@ -509,15 +510,15 @@ export default {
           // })
 
           // 地物クリック時にポップアップを表示する----------------------------------------------------------------------------
-          const mapElm = document.querySelector('#' + mapName)
-          console.log(mapElm)
-          mapElm.addEventListener('click', (e) => {
-            e.stopPropagation();
-            console.log(e.target.classList)
-            if (e.target && e.target.classList.contains("pyramid-syochiiki-r02")) {
-              alert(1)
-            }
-          })
+          // const mapElm = document.querySelector('#' + mapName)
+          // console.log(mapElm)
+          // mapElm.addEventListener('click', (e) => {
+          //   e.stopPropagation();
+          //   console.log(e.target.classList)
+          //   if (e.target && e.target.classList.contains("pyramid-syochiiki-r02")) {
+          //     alert(1)
+          //   }
+          // })
 
           let sPopup
           console.log(sPopup)
@@ -567,7 +568,7 @@ export default {
               closeButton: true,
             })
                 .setLngLat(coordinates)
-                .setDOMContent(
+                .setHTML(
                     '<div font-weight: normal; color: #333;line-height: 25px;">' +
                     '<span style="font-size: 20px;">' + name + '</span>' +
                     '</div>'
@@ -904,6 +905,7 @@ export default {
   },
   mounted() {
     const vm = this
+    pyramid()
     //------------------------------------------------------------------------------------------------------------------
     document.addEventListener('touchmove', function (event) {
       if (event.scale !== 1) {
