@@ -381,10 +381,34 @@ export const bakumatsuLayerKokudaka = {
         'fill-color': [
             'interpolate',
             ['linear'],
-            ['get', '石高計'],
+            ['/', ['get', '石高計'], ['get', 'area']],
             0, 'white',   // Color for low values
-            // 1000, '#f1f075', // Intermediate value
-            3000, 'red' // Color for high values
+            10000000, 'red', // Intermediate value
+            50000000, 'black' // Color for high values
+        ]
+    }
+}
+export const bakumatsuLayerHeight = {
+    id: 'oh-bakumatsu-height',
+    type: 'fill-extrusion',
+    source: "bakumatsu",
+    "source-layer": "b41",
+    paint: {
+        'fill-extrusion-height': [
+            'interpolate',
+            ['linear'],
+            ['/', ['get', '石高計'], ['get', 'area']],
+            0, 100,
+            50000000, 10000
+        ],
+        // 'fill-extrusion-color': 'gray',
+        'fill-extrusion-color': [
+            'interpolate',
+            ['linear'],
+            ['/', ['get', '石高計'], ['get', 'area']],
+            0, 'white',   // Color for low values
+            10000000, 'red', // Intermediate value
+            50000000, 'black' // Color for high values
         ]
     }
 }
@@ -1279,9 +1303,15 @@ const layers01 = [
             },
             {
                 id: 'oh-bakumatsu-kokudaka',
-                label: "幕末期近世の村（石高）",
+                label: "幕末期近世の村（石高/面積）",
                 source: bakumatsuSource,
                 layers: [bakumatsuLayerKokudaka,bakumatsuLayerLine,bakumatsuLayerLabel]
+            },
+            {
+                id: 'oh-bakumatsu-kokudaka-height',
+                label: "幕末期近世の村（石高/面積）3D",
+                source: bakumatsuSource,
+                layers: [bakumatsuLayerKokudaka,bakumatsuLayerLine,bakumatsuLayerLabel,bakumatsuLayerHeight]
             },
             {
                 id: 'oh-bakumatsu',
