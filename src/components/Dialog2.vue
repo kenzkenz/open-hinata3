@@ -1,6 +1,6 @@
 <template>
-  <div ref="dragDiv" :id="'dialog2-' + item.id" v-for="item in s_dialog2" :key="item.id" :style="item.style" v-drag="{handle:'#' + id}" @v-drag-end="dragEnd(item)" class="dialog2-div" @mousedown="dialogMouseDown(item)" @mouseup="dialogMouseDown(item)">
-    <div class="drag-handle" :id="id">
+  <div ref="dragDiv" :id="'dialog2-' + item.id" v-for="item in s_dialog2" :key="item.id" :style="item.style" v-drag="{handle:'#dialog-handle2' + item.id}" @v-drag-end="dragEnd(item)" class="dialog2-div" @mousedown="dialogMouseDown(item)" @mouseup="dialogMouseDown(item)">
+    <div class="drag-handle" :id="'dialog-handle2-' + item.id">
     </div>
     <div>
       <div class="close-btn-div" @click="closeBtn(item)"><i class="fa-solid fa-xmark hover close-btn"></i></div>
@@ -25,10 +25,6 @@ export default {
     s_dialog2 () {
       return this.$store.state.dialogs2[this.mapName]
     },
-    id () {
-      // return 'drag-handle-' + this.dialog.name + '-' + this.mapName
-      return 'drag-handle2-' + this.mapName
-    }
   },
   methods: {
     dragEnd (item) {
@@ -47,6 +43,8 @@ export default {
       this.$store.commit('/incrDialogMaxZindex')
       const result = this.$store.state.dialogs2[this.mapName] .find(el => el.id === item.id)
       result.style["z-index"] = this.$store.state.dialogMaxZindex
+      result.style.top = document.querySelector( '#dialog2-' + item.id).style.top
+      result.style.left = document.querySelector('#dialog2-' + item.id).style.left
       document.querySelector( '#dialog2-' + item.id).style["z-index"] = this.$store.state.dialogMaxZindex
     }
   },

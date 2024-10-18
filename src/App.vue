@@ -1023,11 +1023,11 @@ export default {
   -ms-user-select:none;
   /*cursor:move;*/
 }
-@media screen and (max-width:480px) {
-  .terrain-btn-div {
-    top:calc(50% - 73px);
-  }
-}
+/*@media screen and (max-width:480px) {*/
+/*  .terrain-btn-div {*/
+/*    top:calc(50% - 73px);*/
+/*  }*/
+/*}*/
 .terrain-btn-container{
   position:relative;
   height:100%;
