@@ -261,7 +261,17 @@ export default {
       const { lng, lat } = center
       const split = this.mapFlg.map02
       const pitch = !isNaN(this.pitch) ? this.pitch: 0
-      const bearing = !isNaN(this.bearing) ? this.bearing: 0
+      console.log(this.bearing)
+      let bearing = 0
+      if (isNaN(this.bearing)) {
+        bearing = 0
+      } else {
+        if (this.bearing > -5 && this.bearing < 5 ) {
+          bearing = 0
+        } else {
+          bearing = this.bearing
+        }
+      }
       const selectedLayersJson = JSON.stringify(this.$store.state.selectedLayers)
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch=${pitch}&bearing=${bearing}&slj=${selectedLayersJson}`
