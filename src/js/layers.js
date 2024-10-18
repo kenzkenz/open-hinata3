@@ -1228,7 +1228,7 @@ const layers01 = [
             },
             {
                 id: 'oh-syochiiki-2',
-                label: "国勢調査小地域人口密度",
+                label: "国勢調査小地域人口密度3D",
                 source: syochiikiSource,
                 layers: [syochiikiLayer,syochiikiLayerHeight]
             },
