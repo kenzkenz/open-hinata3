@@ -4,7 +4,8 @@ export const syochiikiSource = {
     id: "syochiikiSource", obj:{
         type: "vector",
         // url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/syochiiki/zenkoku.pmtiles",
-        tiles: ["https://kenzkenz3.xsrv.jp/mvt/syochiiki/2020/{z}/{x}/{y}.mvt"],
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/syochiiki/syochiiki.pmtiles",
+        // tiles: ["https://kenzkenz3.xsrv.jp/mvt/syochiiki/2020/{z}/{x}/{y}.mvt"],
         // minzoom: 16,
         // maxzoom: 16,
         attribution: '<a href="https://github.com/shiwaku/mlit-plateau-bldg-pmtiles">mlit-plateau-bldg-pmtiles</a>'
@@ -13,17 +14,25 @@ export const syochiikiSource = {
 export const syochiikiLayer = {
     'id': 'oh-syochiikiLayer',
     'source': 'syochiikiSource',
-    'source-layer': "zenkoku",
-    // 'source-layer': "PLATEAU_2023_LOD0",
+    'source-layer': "polygon",
     // "minzoom": 0,
     // "maxzoom": 23,
     'type': 'fill',
     paint: {
         "fill-color": "rgba(254, 217, 192, 1)",
-        "fill-outline-color": "rgba(255, 0, 0, 1)",
-        "fill-opacity": 0.4,
     },
 }
+export const syochiikLayerLine = {
+    id: "oh-syochiik-Line",
+    type: "line",
+    source: "syochiikiSource",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': 0.5
+    },
+}
+// 高速道路--------------------------------------
 export const highwaySource = {
     id: 'highwaySource', obj: {
         'type': 'geojson',
@@ -1306,7 +1315,7 @@ const layers01 = [
                 id: 'oh-syochiiki',
                 label: "国勢調査小地域",
                 source: syochiikiSource,
-                layers: [syochiikiLayer]
+                layers: [syochiikiLayer,syochiikLayerLine]
             },
         ]
     },

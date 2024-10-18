@@ -509,6 +509,50 @@ export default {
           // })
 
           // 地物クリック時にポップアップを表示する----------------------------------------------------------------------------
+          const mapElm = document.querySelector('#' + mapName)
+          console.log(mapElm)
+          mapElm.addEventListener('click', (e) => {
+            e.stopPropagation();
+            console.log(e.target.classList)
+            if (e.target && e.target.classList.contains("pyramid-syochiiki-r02")) {
+              alert(1)
+            }
+          })
+
+          let sPopup
+          console.log(sPopup)
+          map.on('click', 'oh-syochiikiLayer', (e) => {
+            let coordinates = e.lngLat
+            const props = e.features[0].properties
+            console.log(props)
+            let name = props.S_NAME
+            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+            }
+
+            // ポップアップを表示する
+            sPopup = new maplibregl.Popup({
+              offset: 10,
+              closeButton: true,
+            })
+                .setLngLat(coordinates)
+                .setHTML(
+                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                    '<span style="font-size: 20px;">' + name + '</span>' +
+                    '<button class="pyramid-syochiiki-r02 pyramid-btn" year=2020 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2020（R02）人口ピラミッド</button><br>' +
+                    '</div>'
+                )
+                .addTo(map)
+          })
+          sPopup.on('open', function () {
+            // DOMが生成された後にボタンのイベントリスナーを追加
+            alert()
+            document.querySelector('.pyramid-syochiiki-r02').addEventListener('click', function (event) {
+              event.stopPropagation();
+              alert(9)
+            });
+          });
+
           map.on('click', 'oh-kyusekki', (e) => {
             let coordinates = e.lngLat
             const props = e.features[0].properties
@@ -523,7 +567,7 @@ export default {
               closeButton: true,
             })
                 .setLngLat(coordinates)
-                .setHTML(
+                .setDOMContent(
                     '<div font-weight: normal; color: #333;line-height: 25px;">' +
                     '<span style="font-size: 20px;">' + name + '</span>' +
                     '</div>'
@@ -1048,5 +1092,14 @@ export default {
 }
 .maplibregl-popup-close-button{
   font-size: 40px;
+}
+font {
+  pointer-events: none;
+}
+.pyramid-btn {
+  width: 100%;
+  background-color: rgb(50,101,186);
+  color: white;
+  border-radius:8px;
 }
 </style>
