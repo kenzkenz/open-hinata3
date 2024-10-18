@@ -15,6 +15,10 @@ export default createStore({
         map01:{name:'layerDialog',style: {top: '56px', left: '10px', 'z-index': 1, height: 'auto', 'min-width': '150px', display: 'none'}},
         map02:{name:'layerDialog',style: {top: '56px', left: '10px', 'z-index': 1, height: 'auto', 'min-width': '150px', display: 'none'}},
       },
+      pyramidDialog: {
+        map01:{name:'pyramidDialog',style: {top: '56px', left: '10px', 'z-index': 1, height: 'auto', 'min-width': '150px', display: 'none'}},
+        map02:{name:'pyramidDialog',style: {top: '56px', left: '10px', 'z-index': 1, height: 'auto', 'min-width': '150px', display: 'none'}},
+      },
       extHighway: {
         map01:{name:'extHighway',style: {top: '56px', left: '10px', 'z-index': 1, height: 'auto', 'min-width': '150px', display: 'none'}},
         map02:{name:'extHighway',style: {top: '56px', left: '10px', 'z-index': 1, height: 'auto', 'min-width': '150px', display: 'none'}},
@@ -32,6 +36,11 @@ export default createStore({
       map01:[],
       map02:[]
     },
+    dialogs2: {
+      map01: [],
+      map02: [],
+    },
+    dialog2Id:1,
     dialogMaxZindex: 0,
     cdArea: '',
     syochiikiName: '',
@@ -46,11 +55,19 @@ export default createStore({
     incrDialogMaxZindex (state) {
       state.dialogMaxZindex++
     },
+    incrDialog2Id (state) {
+      state.dialog2Id++
+    },
     // インフォ用ダイアログの追加------------------------------------------------------------------
     pushDialogsInfo (state,payload) {
       const dialogs = state.dialogsInfo[payload.mapName];
       dialogs.push(payload.dialog)
       // console.log(payload.dialog)
+    },
+    pushDialogs2 (state,payload) {
+      const dialogs = state.dialogs2[payload.mapName];
+      dialogs.push(payload.dialog)
+      console.log(payload.dialog)
     },
   },
   actions: {

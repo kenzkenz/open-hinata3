@@ -13,7 +13,9 @@
           <DialogMenu :mapName=mapName />
           <DialogLayer :mapName=mapName />
           <dialog-info :mapName=mapName />
+          <dialog2 :mapName=mapName />
           <ExtHighway :mapName=mapName />
+<!--          <DialogPyramid :mapName=mapName />-->
 
           <div class="terrain-btn-div" v-drag>
             <div class="terrain-btn-container">
@@ -38,6 +40,8 @@ import axios from "axios"
 import DialogMenu from '@/components/Dialog-menu'
 import DialogLayer from '@/components/Dialog-layer'
 import DialogInfo from '@/components/Dialog-info'
+import Dialog2 from '@/components/Dialog2'
+// import DialogPyramid from "@/components/Dialog-pyramid"
 import ExtHighway from '@/components/ext-highway'
 import codeShizen from '@/js/codeShizen'
 import pyramid from '@/js/pyramid'
@@ -52,7 +56,9 @@ export default {
     DialogLayer,
     DialogMenu,
     DialogInfo,
+    Dialog2,
     ExtHighway,
+    // DialogPyramid,
   },
   data: () => ({
     mapNames: ['map01','map02'],

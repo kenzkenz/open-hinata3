@@ -103,32 +103,35 @@ export default function pyramid () {
                     console.log(data)
                     store.state.estatDataset = data
 
-                    
-                    //
-                    // vm.$store.commit('base/incrDialog2Id');
-                    // vm.$store.commit('base/incrDialogMaxZindex');
-                    // let left
-                    // if (window.innerWidth < 600) {
-                    //     left = (window.innerWidth / 2 - 175) + 'px'
-                    // } else {
-                    //     left = (document.querySelector('#map01').clientWidth - 560) + 'px'
-                    // }
-                    // console.log(left)
-                    // // left = 0
-                    // const diialog =
-                    //     {
-                    //         id: vm.s_dialo2Id,
-                    //         name:'pyramid-estat',
-                    //         style: {
-                    //             display: 'block',
-                    //             top: '60px',
-                    //             left:left,
-                    //             // right: '10px',
-                    //             'z-index': vm.s_dialogMaxZindex
-                    //         }
-                    //     }
-                    // console.log(diialog)
-                    // vm.$store.commit('base/pushDialogs2',{mapName: mapName, dialog: diialog})
+                    store.commit('incrDialog2Id');
+                    store.commit('incrDialogMaxZindex');
+
+                    console.log(store.state.dialog2Id)
+                    console.log(store.state.dialogMaxZindex)
+
+
+                    let left
+                    if (window.innerWidth < 600) {
+                        left = (window.innerWidth / 2 - 175) + 'px'
+                    } else {
+                        left = (document.querySelector('#map01').clientWidth - 560) + 'px'
+                    }
+                    console.log(left)
+                    // left = 0
+                    const dialog =
+                        {
+                            id: store.state.dialog2Id,
+                            name:'pyramid',
+                            style: {
+                                display: 'block',
+                                top: '60px',
+                                left:left,
+                                // right: '10px',
+                                'z-index': store.state.dialogMaxZindex
+                            }
+                        }
+                    console.log(JSON.stringify(dialog))
+                    store.commit('pushDialogs2',{mapName: mapName, dialog: dialog})
                 })
 
             }
