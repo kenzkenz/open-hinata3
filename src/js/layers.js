@@ -58,6 +58,9 @@ export const syochiikiLayerLabel = {
             '\n', {},
             ['get', 'JINKO'], { 'font-scale': 1.2 },
             '人', {},
+            ['get', 'AREA'],{}
+                // ['/', ['get', 'JINKO'], ['get', 'AREA']],{}
+                // ['/', ["to-number",['get', 'JINKO']], ["to-number",['get', 'AREA']]],{}
         ],
         'text-font': ['Noto Sans CJK JP Bold'],
         // 'text-anchor': 'left',
@@ -71,6 +74,22 @@ export const syochiikiLayerLabel = {
     },
     'maxzoom': 24,
     'minzoom': 10
+}
+export const syochiikiLayerHeight = {
+    id: 'oh-syochiiki-height',
+    type: 'fill-extrusion',
+    source: "syochiikiSource",
+    "source-layer": "polygon",
+    paint: {
+        'fill-extrusion-height': [
+            'interpolate',
+            ['linear'],
+            ['/', ['get', 'JINKO'], ['get', 'AREA']],
+            0, 0,
+            0.5, 10000
+        ],
+        'fill-extrusion-color': 'gray',
+    }
 }
 // 高速道路--------------------------------------
 export const highwaySource = {
@@ -1181,6 +1200,12 @@ const layers01 = [
                 label: "国勢調査小地域人口ピラミッド",
                 source: syochiikiSource,
                 layers: [syochiikiLayer,syochiikLayerLine,syochiikiLayerLabel]
+            },
+            {
+                id: 'oh-syochiiki-2',
+                label: "国勢調査小地域人口密度",
+                source: syochiikiSource,
+                layers: [syochiikiLayer,syochiikiLayerHeight]
             },
             {
                 id: 'oh-m100m',

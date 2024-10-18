@@ -41,8 +41,12 @@ export default {
       this.$store.state.dialogs2[this.mapName] = this.$store.state.dialogs2[this.mapName].filter(v => v.id !== item.id);
     },
     dialogMouseDown (item) {
-      this.$store.commit('incrDialogMaxZindex')
-      document.querySelector( '#dialog2-' + item.id).style["z-index"] = this.$store.state.dialogMaxZindex
+      try {
+        this.$store.commit('incrDialogMaxZindex')
+        document.querySelector( '#dialog2-' + item.id).style["z-index"] = this.$store.state.dialogMaxZindex
+      } catch (e) {
+        console.log(e)
+      }
     }
   },
   mounted() {
