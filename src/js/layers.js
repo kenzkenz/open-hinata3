@@ -822,6 +822,29 @@ export const m100mLayerLabel = {
     'maxzoom': 24,
     'minzoom': 15
 }
+export const m100mLayerHeight = {
+    id: 'oh-m100mLayer-height',
+    type: 'fill-extrusion',
+    source: "m100mSource",
+    "source-layer": "polygon",
+    paint: {
+        'fill-extrusion-height': [
+            'interpolate',
+            ['linear'],
+            ["to-number",['get', 'jinko']],
+            0, 100,
+            1400, 10000
+        ],
+        'fill-extrusion-color': [
+            'interpolate',
+            ['linear'],
+            ["to-number",['get', 'jinko']],
+            0, 'white',
+            500, 'red',
+            1400, 'black'
+        ]
+    }
+}
 // 250mメッシュソース --------------------------------------------------------------------------------------------
 export const m250mSource = {
     id: "m250mSource", obj: {
@@ -884,6 +907,29 @@ export const m250mLayerLabel = {
     'maxzoom': 24,
     'minzoom': 13
 }
+export const m250mLayerHeight = {
+    id: 'oh-m250mLayer-height',
+    type: 'fill-extrusion',
+    source: "m250mSource",
+    "source-layer": "polygon",
+    paint: {
+        'fill-extrusion-height': [
+            'interpolate',
+            ['linear'],
+            ["to-number",['get', 'jinko']],
+            0, 100,
+            3000, 10000
+        ],
+        'fill-extrusion-color': [
+            'interpolate',
+            ['linear'],
+            ["to-number",['get', 'jinko']],
+            0, 'white',
+            1000, 'red',
+            3000, 'black'
+        ]
+    }
+}
 // 500mメッシュソース --------------------------------------------------------------------------------------------
 export const m500mSource = {
     id: "m500mSource", obj: {
@@ -905,9 +951,9 @@ export const m500mLayer = {
             'interpolate',
             ['linear'],
             ["to-number",['get', 'jinko']],
-            0, 'white',   // Color for low values
-            10000, 'red', // Intermediate value
-            35000, 'black' // Color for high values
+            0, 'white',
+            5000, 'red',
+            17500, 'black'
         ]
     }
 }
@@ -935,7 +981,6 @@ export const m500mLayerLabel = {
     'layout': {
         'text-field': ['get', 'jinko'],
         'text-font': ['Noto Sans CJK JP Bold'],
-        // 'text-anchor': 'left',
         'text-offset': [0, 0],
         'text-anchor': 'center',
         'text-allow-overlap': false, // 重複を許可しない
@@ -949,6 +994,29 @@ export const m500mLayerLabel = {
         'text-halo-width': 1.0,
     },
     'minzoom': 12
+}
+export const m500mLayerHeight = {
+    id: 'oh-m500mLayer-height',
+    type: 'fill-extrusion',
+    source: "m500mSource",
+    "source-layer": "polygon",
+    paint: {
+        'fill-extrusion-height': [
+            'interpolate',
+            ['linear'],
+            ["to-number",['get', 'jinko']],
+            0, 100,
+            17500, 10000
+        ],
+        'fill-extrusion-color': [
+            'interpolate',
+            ['linear'],
+            ["to-number",['get', 'jinko']],
+            0, 'white',
+            5000, 'red',
+            17500, 'black'
+        ]
+    }
 }
 // 1kmメッシュソース --------------------------------------------------------------------------------------------
 export const m1kmSource = {
@@ -971,9 +1039,9 @@ export const m1kmLayer = {
             'interpolate',
             ['linear'],
             ["to-number",['get', 'jinko']],
-            0, 'white',   // Color for low values
-            10000, 'red', // Intermediate value
-            35000, 'black' // Color for high values
+            0, 'white',
+            10000, 'red',
+            35000, 'black'
         ]
     }
 }
@@ -1001,7 +1069,6 @@ export const m1kmLayerLabel = {
     'layout': {
         'text-field': ['get', 'jinko'],
         'text-font': ['Noto Sans CJK JP Bold'],
-        // 'text-anchor': 'left',
         'text-offset': [0, 0],
         'text-anchor': 'center',
         'text-allow-overlap': false, // 重複を許可しない
@@ -1015,6 +1082,29 @@ export const m1kmLayerLabel = {
         'text-halo-width': 1.0,
     },
     'minzoom': 12
+}
+export const m1kmLayerHeight = {
+    id: 'oh-m1kmLayer-height',
+    type: 'fill-extrusion',
+    source: "m1kmSource",
+    "source-layer": "polygon",
+    paint: {
+        'fill-extrusion-height': [
+            'interpolate',
+            ['linear'],
+            ['get', 'jinko'],
+            0, 100,
+            35000, 10000
+        ],
+        'fill-extrusion-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'jinko'],
+            0, 'white',
+            10000, 'red',
+            35000, 'black'
+        ]
+    }
 }
 // ---------------------------------------------------------------------------------------------------------------------
 // 全国旧石器
@@ -1228,7 +1318,7 @@ const layers01 = [
             },
             {
                 id: 'oh-syochiiki-2',
-                label: "国勢調査小地域人口密度",
+                label: "国勢調査小地域人口密度3D",
                 source: syochiikiSource,
                 layers: [syochiikiLayer,syochiikiLayerHeight]
             },
@@ -1239,10 +1329,22 @@ const layers01 = [
                 layers: [m100mLayer,m100mLayerLine,m100mLayerLabel]
             },
             {
+                id: 'oh-m100m-3d',
+                label: "100mメッシュ人口3D",
+                source: m100mSource,
+                layers: [m100mLayer,m100mLayerLine,m100mLayerLabel,m100mLayerHeight]
+            },
+            {
                 id: 'oh-m250m',
                 label: "250mメッシュ人口",
                 source: m250mSource,
                 layers: [m250mLayer,m250mLayerLine,m250mLayerLabel]
+            },
+            {
+                id: 'oh-m250m-3d',
+                label: "250mメッシュ人口3D",
+                source: m250mSource,
+                layers: [m250mLayer,m250mLayerLine,m250mLayerLabel,m250mLayerHeight]
             },
             {
                 id: 'oh-m500m',
@@ -1251,10 +1353,22 @@ const layers01 = [
                 layers: [m500mLayer,m500mLayerLine,m500mLayerLabel]
             },
             {
+                id: 'oh-m500m-3d',
+                label: "500mメッシュ人口3D",
+                source: m500mSource,
+                layers: [m500mLayer,m500mLayerLine,m500mLayerLabel,m500mLayerHeight]
+            },
+            {
                 id: 'oh-m1km',
                 label: "1kmメッシュ人口",
                 source: m1kmSource,
                 layers: [m1kmLayer,m1kmLayerLine,m1kmLayerLabel]
+            },
+            {
+                id: 'oh-m1km-3d',
+                label: "1kmメッシュ人口3D",
+                source: m1kmSource,
+                layers: [m1kmLayer,m1kmLayerLine,m1kmLayerLabel,m1kmLayerHeight]
             },
         ]
     },
