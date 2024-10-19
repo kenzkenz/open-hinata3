@@ -38,12 +38,6 @@ export default {
           result.style.top = document.querySelector( '#dialog2-' + vm.item.id).style.top
           result.style.left = document.querySelector('#dialog2-' + vm.item.id).style.left
         }
-        // if (elements[len-2].style.top === '60px') {
-        //   elements[len-1].style.top = '100px'
-        //   if (window.innerWidth > 600) {
-        //     elements[len-1].style.left = (window.innerWidth - 600) + 'px'
-        //   }
-        // }
       }
       // elements[len-1].style.width = '550px'
       // ---------------------------------------------------------------------------

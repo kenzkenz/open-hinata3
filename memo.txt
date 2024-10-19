@@ -1,0 +1,185 @@
+
+tippecanoe -rg -Z11 -z13 -pk -f -e tile3 chimei.geojson
+tippecanoe -rg -Z11 -z11 -pk -f -e tile11 chimei20231124.geojson
+tippecanoe -rg -Z11 -z13 -pk -pf -f -e tile13 chimei20231124.geojson
+tippecanoe -r1 -Z11 -z13 -pk -pf -f -e tile13 chimei20231124.geojson
+tippecanoe -r1 -Z14 -z14 -pk -pf -f -e tile14 chimei20231124.geojson
+
+tippecanoe -r1 -Z1 -z13 -pk -pf -f -e tile1 syougakkoukumini.geojson
+
+tippecanoe -r1 -Z1 -z14 -pk -pf -f -e tile15 chimei20231124-2.geojson
+
+tippecanoe -S25 -pk -pf -f -e tile1 kasenline.geojson
+tippecanoe -S25 -pk -pf -f -e tile2 kasenline2.geojson
+tippecanoe -S20 -pk -pf -f -e tile3 kasenline3.geojson
+tippecanoe -pk -pf -f -e tile4 kasenline3.geojson
+
+tippecanoe -pk -pf -f -e tile gun.geojson
+
+tippecanoe -pk -pf -f -e tile 45miyazaki.geojson
+
+tippecanoe -pk -pf -f -e tile miyazakisi.geojson
+tippecanoe -pk -pf -f -e tile zenkoku.geojson
+
+tippecanoe -pk -pf -f -e tile 1kmesh.geojson
+tippecanoe -pk -pf -f -e tile marged.geojson
+tippecanoe -pk -pf -f -e tile re.geojson
+tippecanoe -pk -pf -f -e tile 47.geojson
+tippecanoe -pk -pf -f -e tile 100mmesh.geojson
+tippecanoe -pk -rg -pf -f -e tile y.geojson
+tippecanoe -pk -rg -pf -f -e tile i.geojson
+tippecanoe -pk -pf -f -e tile z.geojson
+tippecanoe -pk -pf -f -e tile 9.geojson
+tippecanoe -pk -pf -f -e tile 500m.geojson
+tippecanoe -pk -pf -f -e tile t.geojson
+tippecanoe -pk -rg -pf -f -e ekitile e.geojson
+tippecanoe -pk -pf -f -e tile 9syu.geojson
+tippecanoe -pk -pf -f -e marged2tile marged2.geojson
+tippecanoe -pk -pf -f -e marged3tile marged3.geojson
+tippecanoe -pk -pf -f -e marged4tile marged4.geojson
+tippecanoe -pk -pf -f -e marged5tile marged5.geojson
+tippecanoe -pk -pf -f -e tile t.geojson
+tippecanoe -Z13 -z13 -pk -pf -f -e tile13 t.geojson
+tippecanoe -pk -pf -f -e tile n.geojson
+tippecanoe -Z15 -z15 -pk -pf -f -e tile15 n.geojson
+tippecanoe -Z16 -z16 -pk -pf -f -e tile16 n.geojson
+tippecanoe -pk -pf -f -e tile -rg t.geojson
+tippecanoe -pk -pf -f -e tile s.geojson
+tippecanoe -pk -pf -f -e tile e.geojson
+tippecanoe -pk -pf -f -e tile hs.geojson
+tippecanoe -pk -pf -f -e tile houmusyo2024.geojson
+tippecanoe -Z15 -z16 -pk -pf -f -e tile15 houmusyo2024.geojson
+tippecanoe -Z0 -z16 -pk -pf -f -e tile ht.geojson
+tippecanoe-decode 1 -z 15 -Z 15 -c > 1.geojson
+tippecanoe-decode 2 -z 15 -Z 15 -c > 2.geojson
+tippecanoe -rg -pk -pf -f -e tile s.geojson
+tippecanoe -rg -pk -pf -f -e tile t.geojson
+tippecanoe -rg -pk -pf -f -e tile2 s2.geojson
+tippecanoe -rg -pk -pf -f -e tile2 t2.geojson
+tippecanoe -rg -pk -pf -f -e tile3 t3.geojson
+tippecanoe -rg -pk -pf -f -e tile3 s3.geojson
+tippecanoe -Z15 -z16 -pk -pf -f -e tile h.geojson
+tippecanoe -rg -pk -pf -f -e tile k.geojson
+tippecanoe -pk -pf -f -e tile n.geojson
+tippecanoe -pk -pf -f -e tile y.geojson
+tippecanoe -rg -pk -pf -f -e tile3 t2c.geojson
+tippecanoe -rg -pk -pf -f -e tile2 n2.geojson
+tippecanoe -rg -pk -pf -f -e tile2 i.geojson
+tippecanoe -rg -pk -pf -f -e tile b.geojson
+tippecanoe -rg -pk -pf -f -e tile3 b3.geojson
+tippecanoe -rg -pk -pf -f -e tile4 b4.geojson
+tippecanoe -rg -pk -pf -f -e tile bp.geojson
+tippecanoe -S10 -rg -pk -pf -f -e tile2 t.geojson
+tippecanoe -zg --drop-densest-as-needed -S10 -f -e test2 t.geojson
+
+tippecanoe -o output.pmtiles k.geojson
+tippecanoe -pk -pf -f -o output2.pmtiles t.geojson
+tippecanoe  --drop-densest-as-needed -f -o output0.pmtiles t.geojson
+
+gdal_merge.py -o OUTPUT.tif -ot Float32 -co COMPRESS=LZW -co BIGTIFF=YES INPUT1.tif INPUT2.tif INPUT3.tif
+
+rio mbtiles shizuokacs.vrt outpuy.mbtiles --format PNG --zoom-levels 0..18 --tile-size 512 --resampling bilinear
+
+tippecanoe -z10 -f -o s31.pmtiles s3.geojson
+tippecanoe -Z11 -rg -pk -f -o s32.pmtiles s3.geojson
+tile-join -f -o s30.pmtiles s31.pmtiles s32.pmtiles
+
+tippecanoe -z10 -f -o t31.pmtiles t3.geojson
+tippecanoe -Z11 -rg -pk -f -o t32.pmtiles t3.geojson
+tile-join -f -o t30.pmtiles t31.pmtiles t32.pmtiles
+
+// ↓間引きすぎて使えない。
+tippecanoe --drop-densest-as-needed -f -o zenkoku2.pmtiles zenkoku.geojson
+
+tippecanoe -S10 -f -o zenkoku2.pmtiles zenkoku.geojson
+
+tippecanoe -z7 -f -o b31.pmtiles b3.geojson
+tippecanoe -Z8 -rg -pk -f -o b32.pmtiles b3.geojson
+tile-join -f -o b30.pmtiles b31.pmtiles b32.pmtiles
+
+tippecanoe -rg -pk -f -o b3.pmtiles b3.geojson
+
+tippecanoe -f -o y.pmtiles y.geojson
+
+tippecanoe -z10 -S5 -f -o y1.pmtiles y.geojson
+tippecanoe -Z11 -f -o y2.pmtiles y.geojson
+tile-join -f -o y0.pmtiles y1.pmtiles y2.pmtiles
+
+tippecanoe --coalesce-densest-as-needed -f -o y.pmtiles y.geojson
+
+tippecanoe -x path -x Shape_Area -x Shape_Le_1 -x Shape_Leng -x CODE2 -x CODE3 -x CODE4 -x CODE5 -x LU_3 -x LU_4 -x LU_5 -f -o t.pmtiles t.geojson
+
+tippecanoe -f -o k.pmtiles kouzi.geojson
+tippecanoe -rg -pk -y L01_024 -y L01_100 -f -o k2.pmtiles kouzi.geojson
+
+tippecanoe -f -o z.pmtiles z.geojson
+tippecanoe -f -o k.pmtiles k.geojson
+tippecanoe -f -o ti.pmtiles ti.geojson
+tippecanoe -f -o t.pmtiles t.geojson
+tippecanoe -f -o i.pmtiles i.geojson
+tippecanoe -pk -pf -M 100000 -f -o t3.pmtiles t.geojson
+tippecanoe -f -o t.pmtiles t.geojson
+tippecanoe -f -o s.pmtiles s.geojson
+tippecanoe -f -o z.pmtiles z.geojson
+tippecanoe -l n -f -o n.pmtiles nogyosyurakukyokai.geojson
+tippecanoe -l g -f -o g.pmtiles g.geojson
+tippecanoe -l f -f -o f.pmtiles hude201.geojson hude202.geojson hude203.geojson hude204.geojson hude205.geojson hude206.geojson hude207.geojson hude208.geojson hude209.geojson hude210.geojson
+
+tippecanoe -pk -pf -l b41 -f -o b41.pmtiles b4.geojson
+
+
+参考
+tippecanoe -z10 -f -o s31.pmtiles s3.geojson
+tippecanoe -Z11 -rg -pk -f -o s32.pmtiles s3.geojson
+tile-join -f -o s30.pmtiles s31.pmtiles s32.pmtiles
+
+tippecanoe -l polygon -rg -pk -f -o s41.pmtiles s3.geojson
+
+tippecanoe -l s4polygon -f -o s4polygon.pmtiles s4polygon.geojson
+tippecanoe -Z11 -l s4point -rg -pk -f -o s4point.pmtiles s4point.geojson
+tile-join -f -o s4joint.pmtiles s4point.pmtiles s4polygon.pmtiles
+
+tippecanoe -l t4polygon -f -o t4polygon.pmtiles t4polygon.geojson
+tippecanoe -Z11 -l t4point -rg -pk -f -o t4point.pmtiles t4point.geojson
+tile-join -f -o t4joint.pmtiles t4point.pmtiles t4polygon.pmtiles
+
+tippecanoe -l point -rg -pk -f -o c.pmtiles chimei20231124.geojson
+
+tippecanoe -l i -rg -pk -f -o i.pmtiles i.geojson
+
+tippecanoe --minimum-zoom=10 -l polygon -rg -pk -f -o 100m.pmtiles 100mmesh.geojson
+tippecanoe --minimum-zoom=8 -l polygon -rg -pk -f -o 250m.pmtiles m.geojson
+tippecanoe --minimum-zoom=6 -l polygon -rg -pk -pf -f -o 1km.pmtiles re.geojson
+tippecanoe -l polygon -rg -pk -pf -f -o 1km2.pmtiles re.geojson
+tippecanoe --minimum-zoom=6 -l polygon -rg -pk -f -o 500m.pmtiles 500m.geojson
+tippecanoe -l polygon -rg -pk -pf -f -o 500m2.pmtiles 500m.geojson
+
+
+tippecanoe -l point -rg -pk -f -o kyusekki.pmtiles zenkokuiseki2.geojson
+
+tippecanoe -l line -rg -pk -f -o kasen.pmtiles kasenline3.geojson
+
+
+tippecanoe -l point -rg -pk -pf -f -o densyohi.pmtiles 20240926.geojson
+
+tippecanoe -l polygon -rg -pk -pf -f -o syochiiki.pmtiles zenkoku.geojson
+
+tippecanoe -l polygon -f -o did.pmtiles did.geojson
+
+tippecanoe -l point -rg -pk -pf -f -o kojikakaku.pmtiles kojikakaku.geojson
+tippecanoe -l polygon -rg -pk -pf -f -o kojikakakupolygon.pmtiles kojikakakupolygon.geojson
+
+tile-join -rg -pk -f -o kojikakaku2.pmtiles kojikakaku.pmtiles kojikakakupolygon.pmtiles
+
+
+tippecanoe -x land_type -x layer --drop-fraction-as-needed -l f -f -o f2.pmtiles f.geojson
+tippecanoe -l k -f -o k.pmtiles k.geojson
+
+tippecanoe-decode 15sekai-light -z 14 -Z 14 -c > 2.geojson
+tippecanoe -l h -f -o h.pmtiles hokai.geojson
+
+npx spritesmith --src "images/*.png" --target "output/spritesheet.png"
+
+./node_modules/.bin/spritesmith --src "images/*.png" --target "output/spritesheet.png"
+
+

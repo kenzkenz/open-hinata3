@@ -1242,12 +1242,16 @@ export const densyohiSource = {
 //
 export const densyohiLayer = {
     id: "oh-densyohi",
-    type: "circle",
+    type: "symbol",
     source: "densyohiSource",
     "source-layer": "point",
-    'paint': {
-        'circle-color': '#3cb371',
-        'circle-radius': 8,
+    // 'paint': {
+    //     'circle-color': '#3cb371',
+    //     'circle-radius': 8,
+    // }
+    "layout": {
+        "icon-image": "densyouhi",  // JSONに記述されたアイコン名を指定
+        "icon-size": 1.0
     }
 }
 // did------------------------------------------------------------------------------------------------------------------

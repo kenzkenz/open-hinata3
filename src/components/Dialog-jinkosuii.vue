@@ -29,7 +29,7 @@ export default {
     const vm = this
     resasD3()
     function resasD3 () {
-      const elements = document.querySelectorAll('.v-dialog2-div')
+      const elements = document.querySelectorAll('#' + vm.mapName + ' .dialog2-div')
       const len = elements.length
       if (len>1) {
         elements[len-1].style.top = Number(elements[len-2].style.top.replace('px','')) + 40 + 'px'

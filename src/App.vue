@@ -343,6 +343,7 @@ export default {
           // style:require('@/assets/json/std.json')
           style: {
             version: 8,
+            sprite: 'https://kenzkenz.xsrv.jp/open-hinata3/json/spritesheet',
             glyphs: "https://glyphs.geolonia.com/{fontstack}/{range}.pbf",
             // "glyphs": "https://gsi-cyberjapan.github.io/optimal_bvmap/glyphs/{fontstack}/{range}.pbf",
             sources: {
