@@ -1250,6 +1250,42 @@ export const densyohiLayer = {
         'circle-radius': 8,
     }
 }
+// didiレイヤー
+export const didSource = {
+    id: "did-source", obj: {
+        type: "vector",
+        // minzoom: 0,
+        // maxzoom: 15,
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/did/did.pmtiles",
+        attribution:
+            "<a href='' target='_blank'></a>",
+    }
+}
+export const didLayer = {
+    id: "oh-did",
+    type: "fill",
+    source: "did-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-color': 'gray'
+    }
+}
+export const didLayerLine = {
+    id: "oh-did_line",
+    type: "line",
+    source: "did-source",
+    "source-layer": "4polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            7, 0,
+            11, 0.5
+        ]
+    },
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -1345,6 +1381,12 @@ const layers01 = [
                 label: "1kmメッシュ人口3D",
                 source: m1kmSource,
                 layers: [m1kmLayer,m1kmLayerLine,m1kmLayerLabel,m1kmLayerHeight]
+            },
+            {
+                id: 'oh-did',
+                label: "人口集中地区",
+                source: didSource,
+                layers: [didLayer,didLayerLine]
             },
         ]
     },

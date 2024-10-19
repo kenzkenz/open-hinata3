@@ -528,17 +528,29 @@ export default {
           // })
 
           // 地物クリック時にポップアップを表示する----------------------------------------------------------------------------
-          // const mapElm = document.querySelector('#' + mapName)
-          // console.log(mapElm)
-          // mapElm.addEventListener('click', (e) => {
-          //   e.stopPropagation();
-          //   console.log(e.target.classList)
-          //   if (e.target && e.target.classList.contains("pyramid-syochiiki-r02")) {
-          //     alert(1)
-          //   }
-          // })
-
-
+          map.on('click', 'oh-did', (e) => {
+            let coordinates = e.lngLat
+            const props = e.features[0].properties
+            console.log(props)
+            const name = props.A16_003
+            const jinko = props.A16_005.toLocaleString() + '人'
+            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+            }
+            // ポップアップを表示する
+            new maplibregl.Popup({
+              offset: 10,
+              closeButton: true,
+            })
+                .setLngLat(coordinates)
+                .setHTML(
+                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                    '<span style="font-size: 20px;">' + name + '</span><br>' +
+                    '<span style="font-size: 20px;">' + jinko + '</span>' +
+                    '</div>'
+                )
+                .addTo(map)
+          })
           map.on('click', 'oh-syochiikiLayer', (e) => {
             let coordinates = e.lngLat
             const props = e.features[0].properties
@@ -547,7 +559,6 @@ export default {
             while (Math.abs(e.lngLat.lng - coordinates) > 180) {
               coordinates += e.lngLat.lng > coordinates ? 360 : -360;
             }
-
             // ポップアップを表示する
             new maplibregl.Popup({
               offset: 10,
@@ -563,8 +574,6 @@ export default {
                 )
                 .addTo(map)
           })
-
-
           map.on('click', 'oh-kyusekki', (e) => {
             let coordinates = e.lngLat
             const props = e.features[0].properties
