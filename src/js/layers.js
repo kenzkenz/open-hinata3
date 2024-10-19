@@ -465,9 +465,18 @@ export const bakumatsuLayerLabel = {
     source: "bakumatsu",
     "source-layer": "b41",
     'layout': {
-        'text-field': ['get', '村名0'],
+        // 'text-field': ['get', '村名0'],
+        // 'text-field': ['slice', ['get', '村名'], 0, 5],
+        'text-field': [
+            'let', 'splitIndex', ['index-of', '・', ['get', '村名']],
+            [
+                'case',
+                ['>=', ['var', 'splitIndex'], 0],
+                ['slice', ['get', '村名'], 0, ['var', 'splitIndex']],
+                ['get', '村名']
+            ]
+        ],
         'text-font': ['Noto Sans CJK JP Bold'],
-        // 'text-anchor': 'left',
         'text-offset': [0.5, 0],
         'visibility': 'visible',
     },
