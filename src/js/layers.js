@@ -1290,7 +1290,7 @@ export const didLayerLine = {
 export const kojiSource = {
     id: "koji-source", obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/kojikakaku/kojikakaku.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/kojikakaku/kojikakaku2.pmtiles",
         attribution:
             "<a href='' target='_blank'></a>",
     }
@@ -1331,6 +1331,29 @@ export const kojiLayerPoint = {
         'circle-stroke-color': 'black',
         'circle-stroke-width': 1,
         'circle-radius': 8  // 半径を設定
+    }
+}
+export const kojilayerheight = {
+    id: 'oh-koji-height',
+    type: 'fill-extrusion',
+    source: "koji-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-extrusion-height': [
+            'interpolate',
+            ['linear'],
+            ["to-number",['get', 'L01_008']],
+            0, 100,
+            50000000, 100000
+        ],
+        'fill-extrusion-color': [
+            'interpolate',
+            ['linear'],
+            ["to-number",['get', 'L01_008']],
+            0, 'white',
+            500000, 'red',
+            50000000, 'black'
+        ]
     }
 }
 // ---------------------------------------------------------------------------------------------------------------------
@@ -1581,10 +1604,16 @@ const layers01 = [
         label: "その他",
         nodes: [
             {
-                id: 'oh-kakaku',
+                id: 'oh-koji',
                 label: "公示価格（R06）",
                 source: kojiSource,
                 layers:[kojiLayerPoint,kojiLayerLabel]
+            },
+            {
+                id: 'oh-koji-3d',
+                label: "公示価格（R06）3D",
+                source: kojiSource,
+                layers:[kojilayerheight]
             },
             {
                 id: 'oh-nihonrekishi',
