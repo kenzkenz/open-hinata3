@@ -237,6 +237,220 @@ export default function pyramid () {
                 h27syochiiki(e,mapName,2005)
             }
         })
+        // 小地域人口推移--------------------------------------------------------------------------------------------------
+        function r2jinkosuii(e){
+            return new Promise(resolve => {
+                store.state.cdArea = e.target.getAttribute("cdArea")
+                store.state.syochiikiName = e.target.getAttribute("syochiikiname")
+                const cityCode = store.state.cdArea.slice(0,5)
+                const azaCode = store.state.cdArea.slice(5)
+                axios
+                    .get('https://kenzkenz.xsrv.jp/open-hinata/php/pyramid.php',{
+                        params: {
+                            cityCode: cityCode,
+                            azaCode: azaCode
+                        }
+                    }).then(function (response) {
+                    const dataMan = []
+                    const dataWoman = []
+                    const dataSousu = []
+                    response.data.forEach((v) => {
+                        if(v.男女 === '総数') {
+                            dataSousu.push({class: '総数', 総数: Number(v['総数'])})
+                            dataSousu.push({class: '総数', over65: Number(v['65歳以上'])})
+                            dataSousu.push({class: '総数', 平均年齢: Number(v['平均年齢'])})
+                            dataSousu.push({class: '総数', 秘匿処理: v['秘匿処理']})
+                            dataSousu.push({class: '総数', under15: Number(v['15歳未満'])})
+                            dataSousu.push({class: '総数', seisan: Number(v['15～64歳'])})
+                        }
+                    })
+                    const data = dataMan.map((v,i) =>{
+                        return Object.assign(v, dataWoman[i]);
+                    })
+                    const sousu = dataSousu[0]['総数']
+                    const over65 = dataSousu[1].over65
+                    const heikinnenrei = dataSousu[2]['平均年齢'].toFixed(2) + '歳'
+                    let koureikaritu
+                    if (isNaN(over65)) {
+                        koureikaritu = '0%'
+                    } else {
+                        koureikaritu = ((over65 / sousu) * 100).toFixed(2) + '%'
+                    }
+                    const ronenRate = over65 / sousu * 100
+                    const hitokuSyori = dataSousu[3]['秘匿処理']
+                    if (hitokuSyori === '秘匿地域') {
+                        alert('秘匿地域です。人口ピラミッドは作成されません。r2jinkosuii')
+                        return
+                    }
+                    const under15 = dataSousu[4].under15
+                    const nensyoRate = under15 / sousu * 100
+                    const seisan = dataSousu[5].seisan
+                    const seisanRate = seisan / sousu * 100
+                    resolve(
+                        {year:2020,
+                            value:sousu,
+                            ronenRate:ronenRate,
+                            nensyoRate:nensyoRate,
+                            seisanRate:seisanRate}
+                    )
+                    store.state.koureikaritu = koureikaritu
+                    store.state.heikinnenrei = heikinnenrei
+                    store.state.kokuchoYear = e.target.getAttribute("year")
+
+                    store.state.estatDataset = data
+
+                    store.commit('incrDialog2Id');
+                    store.commit('incrDialogMaxZindex');
+                })
+            })
+        }
+        // ----------------------------------------------
+        function h27jinkosuii(e,mapName,year){
+            return new Promise(resolve => {
+                store.state.cdArea = e.target.getAttribute("cdArea")
+                store.state.syochiikiName = e.target.getAttribute("syochiikiname")
+                const cityCode = store.state.cdArea.slice(0, 5)
+                const azaCode = store.state.cdArea.slice(5)
+                axios
+                    .get('https://kenzkenz.xsrv.jp/open-hinata/php/pyramid2015.php', {
+                        params: {
+                            cityCode: cityCode,
+                            azaCode: azaCode,
+                            year: year
+                        }
+                    }).then(function (response) {
+                    if (response.data.error) {
+                        alert('地区変更等があったかもしれません。線グラフが０からスタートします。注意してください。')
+                        resolve(
+                            {
+                                year:year,
+                                value:0,
+                                ronenRate:0,
+                                nensyoRate:0,
+                                seisanRate:0
+                            }
+                        )
+                        return
+                    }
+                    console.log(response.data)
+                    const dataSet = []
+                    const dataSousu = []
+                    response.data.forEach((v) => {
+                        dataSousu.push({class: '総数', 総数: Number(v['総数'])})
+                        dataSousu.push({class: '総数', 総数65歳以上: Number(v['65歳以上'])})
+                        dataSousu.push({class: '総数', 平均年齢: Number(v['平均年齢'])})
+                        dataSousu.push({class: '総数', 秘匿処理: v['秘匿処理']})
+                        dataSousu.push({class: '総数', 総数15歳未満: Number(v['15歳未満'])})
+                        dataSousu.push({class: '総数', 総数1564歳: Number(v['15～64歳'])})
+                    })
+                    const sousu = dataSousu[0]['総数']
+                    const over65 = dataSousu[1]['総数65歳以上']
+                    const heikinnenrei = dataSousu[2]['平均年齢'].toFixed(2) + '歳'
+                    let koureikaritu
+                    if (isNaN(over65)) {
+                        koureikaritu = '0%'
+                    } else {
+                        koureikaritu = ((over65 / sousu) * 100).toFixed(2) + '%'
+                    }
+                    const ronenRate = over65 / sousu * 100
+                    const hitokuSyori = dataSousu[3]['秘匿処理']
+                    const under15 = dataSousu[4]['総数15歳未満']
+                    const nensyoRate = under15 / sousu * 100
+                    const seisan = dataSousu[5]['総数1564歳']
+                    const seisanRate = seisan / sousu * 100
+
+                    if (hitokuSyori === '秘匿地域') {
+                        alert('過去に秘匿地域でした。線グラフが０からスタートします。注意してください。')
+                        resolve(
+                            {
+                                year:year,
+                                value:0,
+                                ronenRate:0,
+                                nensyoRate:0,
+                                seisanRate:0
+                            }
+                        )
+                        return;
+                    }
+
+                    store.state.koureikaritu = koureikaritu
+                    store.state.heikinnenrei = heikinnenrei
+                    store.state.kokuchoYear = year
+                    store.state.estatDataset = dataSet
+                    resolve(
+                        {
+                            year:year,
+                            value:sousu,
+                            ronenRate:ronenRate,
+                            nensyoRate:nensyoRate,
+                            seisanRate:seisanRate,
+                            seisan:seisan
+                        }
+                    )
+                    store.commit('incrDialog2Id');
+                    store.commit('incrDialogMaxZindex');
+                })
+            })
+        }
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && e.target.classList.contains("jinkosuii") ) {
+                async function sample() {
+                    const arr = []
+                    const a2005 = await h27jinkosuii(e,mapName,2005)
+                    arr.push(a2005)
+                    const a2010 = await h27jinkosuii(e,mapName,2010)
+                    arr.push(a2010)
+                    const a2015 = await h27jinkosuii(e,mapName,2015)
+                    arr.push(a2015)
+                    const a2020 = await r2jinkosuii(e,mapName)
+                    arr.push(a2020)
+                    return arr
+                }
+                sample().then((response) => {
+                    store.state.jinkosuiiDatasetEstat['datasetAll'] = response
+                    const ronen = response.map((value) =>{
+                        if (isNaN(value.ronenRate)) value.ronenRate = 0
+                        return {year:value.year,rate:value.ronenRate}
+                    })
+                    store.state.jinkosuiiDatasetEstat['datasetRonen'] = ronen
+                    const nensyo = response.map((value) =>{
+                        if (isNaN(value.nensyoRate)) value.nensyoRate = 0
+                        return {year:value.year,rate:value.nensyoRate}
+                    })
+                    store.state.jinkosuiiDatasetEstat['datasetNensyo'] = nensyo
+                    const seisan = response.map((value) =>{
+                        if (isNaN(value.seisanRate)) value.seisanRate = 0
+                        return {year:value.year,rate:value.seisanRate,sousu:value.value,seisan:value.seisan}
+                    })
+                    store.state.jinkosuiiDatasetEstat['datasetSeisan'] = seisan
+                    store.commit('incrDialog2Id');
+                    store.commit('incrDialogMaxZindex');
+                    let width
+                    let left
+                    if (window.innerWidth > 600) {
+                        width = '550px'
+                        left = (window.innerWidth - 560) + 'px'
+                    } else {
+                        width = '350px'
+                        left = (window.innerWidth / 2 - 175) + 'px'
+                    }
+                    const diialog =
+                        {
+                            id: store.state.dialog2Id,
+                            name:'jinkosuii',
+                            style: {
+                                display: 'block',
+                                width: width,
+                                top: '60px',
+                                left: left,
+                                'z-index': store.state.dialogMaxZindex
+                            }
+                        }
+                    // store.state.resasOrEstat = 'eStat'
+                    store.commit('pushDialogs2',{mapName: mapName, dialog: diialog})
+                });
+            }
+        })
     })
 }
 
