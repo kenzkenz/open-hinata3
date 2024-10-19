@@ -1342,17 +1342,17 @@ export const kojilayerheight = {
         'fill-extrusion-height': [
             'interpolate',
             ['linear'],
-            ["to-number",['get', 'L01_008']],
+            ['^', ["to-number",['get', 'L01_008']],0.8],
             0, 100,
-            50000000, 100000
+            4000000, 100000
         ],
         'fill-extrusion-color': [
             'interpolate',
             ['linear'],
-            ["to-number",['get', 'L01_008']],
+            ['^', ["to-number",['get', 'L01_008']],0.8],
             0, 'white',
-            500000, 'red',
-            50000000, 'black'
+            50000, 'red',
+            4000000, 'black'
         ]
     }
 }

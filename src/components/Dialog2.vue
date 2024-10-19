@@ -5,17 +5,21 @@
     <div>
       <div class="close-btn-div" @click="closeBtn(item)" @pointerdown="closeBtn(item)"><i class="fa-solid fa-xmark hover close-btn"></i></div>
       <DialogPyramid :item="item" :mapName="mapName" v-if="item.name === 'pyramid'" />
+      <DialogJinkosuii :item="item" :mapName="mapName" v-if="item.name === 'jinkosuii'" />
     </div>
   </div>
 </template>
 
 <script>
 import DialogPyramid from "@/components/Dialog-pyramid"
+import DialogJinkosuii from "@/components/Dialog-jinkosuii"
+
 export default {
   name: 'dialog-2',
   props: ['mapName'],
   components: {
-    DialogPyramid
+    DialogPyramid,
+    DialogJinkosuii
   },
   data () {
     return {
