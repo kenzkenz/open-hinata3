@@ -336,8 +336,12 @@ export default {
           bearing = params.bearing
         }
         // 以前のリンクをいかすため---------------------------------
-        if (params.pitch) {
-          pitch = {map01:params.pitch,map02:params.pitch}
+        if (params.pitch || params.pitch === 0) {
+          if (isNaN(params.pitch)) {
+            pitch = {map01:0,map02:0}
+          } else {
+            pitch = {map01:params.pitch,map02:params.pitch}
+          }
         }
         // 以前のリンクをいかすため---------------------------------
 
