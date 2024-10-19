@@ -465,18 +465,9 @@ export const bakumatsuLayerLabel = {
     source: "bakumatsu",
     "source-layer": "b41",
     'layout': {
-        // 'text-field': ['get', '村名0'],
-        // 'text-field': ['slice', ['get', '村名'], 0, 5],
-        'text-field': [
-            'let', 'splitIndex', ['index-of', '・', ['get', '村名']],
-            [
-                'case',
-                ['>=', ['var', 'splitIndex'], 0],
-                ['slice', ['get', '村名'], 0, ['var', 'splitIndex']],
-                ['get', '村名']
-            ]
-        ],
+        'text-field': ['get', '村名0'],
         'text-font': ['Noto Sans CJK JP Bold'],
+        // 'text-anchor': 'left',
         'text-offset': [0.5, 0],
         'visibility': 'visible',
     },
@@ -1251,16 +1242,12 @@ export const densyohiSource = {
 //
 export const densyohiLayer = {
     id: "oh-densyohi",
-    type: "symbol",
+    type: "circle",
     source: "densyohiSource",
     "source-layer": "point",
-    // 'paint': {
-    //     'circle-color': '#3cb371',
-    //     'circle-radius': 8,
-    // }
-    "layout": {
-        "icon-image": "densyouhi",  // JSONに記述されたアイコン名を指定
-        "icon-size": 1.0
+    'paint': {
+        'circle-color': '#3cb371',
+        'circle-radius': 8,
     }
 }
 // did------------------------------------------------------------------------------------------------------------------
@@ -1355,17 +1342,17 @@ export const kojilayerheight = {
         'fill-extrusion-height': [
             'interpolate',
             ['linear'],
-            ['^', ["to-number",['get', 'L01_008']],0.8],
+            ["to-number",['get', 'L01_008']],
             0, 100,
-            4000000, 100000
+            50000000, 100000
         ],
         'fill-extrusion-color': [
             'interpolate',
             ['linear'],
-            ['^', ["to-number",['get', 'L01_008']],0.8],
+            ["to-number",['get', 'L01_008']],
             0, 'white',
-            50000, 'red',
-            4000000, 'black'
+            500000, 'red',
+            50000000, 'black'
         ]
     }
 }

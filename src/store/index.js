@@ -48,8 +48,6 @@ export default createStore({
     heikinnenrei: '',
     kokuchoYear: '',
     estatDataset: null,
-    jinkosuiiDataset:[],
-    jinkosuiiDatasetEstat:[],
   },
   getters: {
   },
