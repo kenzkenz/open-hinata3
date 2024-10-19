@@ -1253,30 +1253,6 @@ export const densyohiLayer = {
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
-        id: 'test',
-        label: "テスト",
-        nodes: [
-            {
-                id: 'test2',
-                label: "標準地図",
-                nodes: [
-                    {
-                        id: 'test3',
-                        label: "標準地図",
-                        nodes: [
-                            {
-                                id: 'oh-stdLayer',
-                                label: "テスト標準地図",
-                                source: stdSource,
-                                layers: [stdLayer]
-                            },
-                            ]
-                    },
-                    ]
-            },
-        ]
-    },
-    {
         id: 1,
         label: "基本地図",
         nodes: [
@@ -1526,6 +1502,30 @@ const layers01 = [
                 label: "登記所備付地図データ",
                 source: amxSource,
                 layers:[amxLayer,amxLayerDaihyou]
+            },
+        ]
+    },
+    {
+        id: 'test',
+        label: "テスト",
+        nodes: [
+            {
+                id: 'test2',
+                label: "標準地図",
+                nodes: [
+                    {
+                        id: 'test3',
+                        label: "標準地図",
+                        nodes: [
+                            {
+                                id: 'oh-stdLayer',
+                                label: "テスト標準地図",
+                                source: stdSource,
+                                layers: [stdLayer]
+                            },
+                        ]
+                    },
+                ]
             },
         ]
     },
