@@ -1250,7 +1250,7 @@ export const densyohiLayer = {
         'circle-radius': 8,
     }
 }
-// didiレイヤー
+// did------------------------------------------------------------------------------------------------------------------
 export const didSource = {
     id: "did-source", obj: {
         type: "vector",
@@ -1285,6 +1285,53 @@ export const didLayerLine = {
             11, 0.5
         ]
     },
+}
+// 公示価格--------------------------------------------------------------------------------------------------------------
+export const kojiSource = {
+    id: "koji-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/kojikakaku/kojikakaku.pmtiles",
+        attribution:
+            "<a href='' target='_blank'></a>",
+    }
+}
+export const kojiLayerLabel = {
+    id: "oh-koji-label",
+    type: "symbol",
+    source: "koji-source",
+    "source-layer": "point",
+    'layout': {
+        'text-field': ['get', 'L01_025'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-offset': [0, 2],
+        'visibility': 'visible',
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 12
+}
+export const kojiLayerPoint = {
+    id: "oh-koji_point",
+    type: "circle",
+    source: "koji-source",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': [
+            'interpolate',
+            ['linear'],
+            ["to-number",['get', 'L01_008']],
+            0, 'white',
+            500000, 'red',
+            50000000, 'black'
+        ],
+        'circle-stroke-color': 'black',
+        'circle-stroke-width': 1,
+        'circle-radius': 8  // 半径を設定
+    }
 }
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
@@ -1533,6 +1580,12 @@ const layers01 = [
         id: 'sonohoka',
         label: "その他",
         nodes: [
+            {
+                id: 'oh-kakaku',
+                label: "公示価格（R06）",
+                source: kojiSource,
+                layers:[kojiLayerPoint,kojiLayerLabel]
+            },
             {
                 id: 'oh-nihonrekishi',
                 label: "日本歴史地名大系",
