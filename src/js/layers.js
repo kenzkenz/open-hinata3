@@ -1459,6 +1459,84 @@ export const michinoekiLayerLabel = {
     'maxzoom': 24,
     'minzoom': 9
 }
+// 東京地震----------------------------------------------------------------------------------------------------------------
+export const tokyojishinSource = {
+    id: "tokyojishin-source", obj: {
+        type: "vector",
+        // minzoom: 0,
+        // maxzoom: 15,
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/tokyojishin/tokyojishin.pmtiles",
+        attribution:
+            "<a href='' target='_blank'></a>",
+    }
+}
+export const tokyojishinLayer = {
+    id: "oh-tokyojishin",
+    type: "fill",
+    source: "tokyojishin-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-color': 'gray'
+    }
+}
+export const tokyojishinLayerLine = {
+    id: "oh-tokyojishin_line",
+    type: "line",
+    source: "tokyojishin-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            7, 0.5,
+            11, 1
+        ]
+    },
+}
+export const tokyojishinLayerLabel = {
+    id: "oh-tokyojishin-label",
+    type: "symbol",
+    source: "tokyojishin-source",
+    "source-layer": "polygon",
+    'layout': {
+        'text-field': ['get', '町丁目名'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-offset': [0, 2],
+        'visibility': 'visible',
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 10
+}
+export const tokyojishinheight = {
+    id: 'oh-tokyojishin-height',
+    type: 'fill-extrusion',
+    source: "tokyojishin-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-extrusion-height': [
+            'interpolate',
+            ['linear'],
+            ["to-number",['get', '総合_順']],
+            0, 10,
+            6000, 3000
+        ],
+        'fill-extrusion-color': [
+            'interpolate',
+            ['linear'],
+            ["to-number",['get', '総合_順']],
+            0, 'white',
+            4000, 'red',
+            6000, 'black'
+        ]
+    }
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -1700,6 +1778,12 @@ const layers01 = [
         id: 'hazard',
         label: "ハザードマップ等",
         nodes: [
+            {
+                id: 'oh-tokyojishin',
+                label: "地震に関する危険度一覧(東京都)",
+                source: tokyojishinSource,
+                layers: [tokyojishinLayer,tokyojishinLayerLine,tokyojishinLayerLabel,tokyojishinheight],
+            },
             {
                 id: 'oh-densyohi',
                 label: "災害伝承碑",

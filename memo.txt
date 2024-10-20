@@ -172,7 +172,7 @@ tile-join -rg -pk -f -o kojikakaku2.pmtiles kojikakaku.pmtiles kojikakakupolygon
 
 tippecanoe -l polygon -f -o senkyoku2022.pmtiles senkyoku2022.geojson
 
-
+tippecanoe -l polygon -f -o tokyojishin.pmtiles tokyojishin.geojson
 
 
 
