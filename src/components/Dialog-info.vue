@@ -4,47 +4,56 @@
             <div class="drag-handle" :id="'drag-handle-' + item.id"></div>
             <div class="close-btn-div" @click="close(item)"><i style="" class="fa-solid fa-xmark hover close-btn"></i></div>
             <!--なにもないとき。普通のラスターのとき-->
-            <div>
+
+
+            <div v-if="!item.ext">
                 <div class="info-content-div">
                     <p v-html="item.title"></p><hr>
                     <p v-html="item.summary"></p>
                 </div>
             </div>
+
+            <extHighway :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extHighway'"/>
+
+
         </div>
     </div>
 </template>
 
 <script>
-  export default {
-    name: "dialog-info",
-    components: {
+import extHighway from "@/components/ext-highway"
+
+export default {
+  name: "dialog-info",
+  components: {
+    extHighway
+  },
+  props: ['mapName'],
+  computed: {
+    info () {
+      return this.$store.state.dialogsInfo[this.mapName]
+    }
+  },
+  methods: {
+    close (item) {
+      const result = this.$store.state.dialogsInfo[this.mapName] .find(el => el.id === item.id)
+      result.style.display = 'none'
+      // document.querySelector('.v-dialog-info-div-' + item.id).style.display = 'none'
     },
-    props: ['mapName'],
-    computed: {
-      info () {
-        return this.$store.state.dialogsInfo[this.mapName]
-      }
-    },
-    methods: {
-      close (item) {
-        const result = this.$store.state.dialogsInfo[this.mapName] .find(el => el.id === item.id)
-        result.style.display = 'none'
-        // document.querySelector('.v-dialog-info-div-' + item.id).style.display = 'none'
-      },
-      dialogMouseDown (item) {
-        console.log(item)
+    dialogMouseDown (item) {
+      console.log(item)
 
 
-        // store.commit('base/incrDialogMaxZindex')
-        // const result = this.$store.state.base.dialogsInfo[this.mapName] .find(el => el.id === item.id)
-        // document.querySelector('.v-dialog-info-div-' + item.id).style["z-index"] = this.$store.state.base.dialogMaxZindex
-        // result.style["z-index"] = this.$store.state.base.dialogMaxZindex
-        // result.style.top = document.querySelector('.v-dialog-info-div-' + item.id).style.top
-        // result.style.left = document.querySelector('.v-dialog-info-div-' + item.id).style.left
-        // result.style.display = 'block'
-      }
+      // store.commit('base/incrDialogMaxZindex')
+      // const result = this.$store.state.base.dialogsInfo[this.mapName] .find(el => el.id === item.id)
+      // document.querySelector('.v-dialog-info-div-' + item.id).style["z-index"] = this.$store.state.base.dialogMaxZindex
+      // result.style["z-index"] = this.$store.state.base.dialogMaxZindex
+      // result.style.top = document.querySelector('.v-dialog-info-div-' + item.id).style.top
+      // result.style.left = document.querySelector('.v-dialog-info-div-' + item.id).style.left
+      // result.style.display = 'block'
     }
   }
+}
 </script>
 
 <style>

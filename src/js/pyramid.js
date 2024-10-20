@@ -6,7 +6,7 @@ export default function pyramid () {
         const mapElm = document.querySelector('#' + mapName)
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
-            e.stopPropagation();
+            // e.stopPropagation()
             console.log(e.target.classList)
             if (e.target && e.target.classList.contains('pyramid-syochiiki-r02')) {
                 console.log(e.target.getAttribute("cdArea"))

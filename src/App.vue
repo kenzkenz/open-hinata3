@@ -14,7 +14,7 @@
           <DialogLayer :mapName=mapName />
           <dialog-info :mapName=mapName />
           <dialog2 :mapName=mapName />
-          <ExtHighway :mapName=mapName />
+<!--          <ExtHighway :mapName=mapName />-->
 <!--          <DialogPyramid :mapName=mapName />-->
 
           <div class="terrain-btn-div" v-drag>
@@ -41,8 +41,7 @@ import DialogMenu from '@/components/Dialog-menu'
 import DialogLayer from '@/components/Dialog-layer'
 import DialogInfo from '@/components/Dialog-info'
 import Dialog2 from '@/components/Dialog2'
-// import DialogPyramid from "@/components/Dialog-pyramid"
-import ExtHighway from '@/components/ext-highway'
+// import ExtHighway from '@/components/ext-highway'
 import codeShizen from '@/js/codeShizen'
 import pyramid from '@/js/pyramid'
 import * as Layers from '@/js/layers'
@@ -57,7 +56,7 @@ export default {
     DialogMenu,
     DialogInfo,
     Dialog2,
-    ExtHighway,
+    // ExtHighway,
     // DialogPyramid,
   },
   data: () => ({
@@ -306,6 +305,7 @@ export default {
       } else {
         params = new URLSearchParams(window.location.search)
       }
+      console.log(params.get('pitch'))
       const lng = parseFloat(params.get('lng'))
       const lat = parseFloat(params.get('lat'))
       const zoom = parseFloat(params.get('zoom'))
@@ -336,6 +336,7 @@ export default {
           bearing = params.bearing
         }
         // 以前のリンクをいかすため---------------------------------
+        console.log(params.pitch)
         if (params.pitch || params.pitch === 0) {
           if (isNaN(params.pitch)) {
             pitch = {map01:0,map02:0}

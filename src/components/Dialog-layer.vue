@@ -49,7 +49,7 @@ export default {
   },
   data: () => ({
     searchText: '',
-    watchFlg: true,
+    // watchFlg: true,
     selectedLayers: {
       map01:[],
       map02:[]
@@ -59,6 +59,9 @@ export default {
     secondDivStyle: {'height': '390px', 'overflow': 'auto', 'user-select': 'text'},
   }),
   computed: {
+    // s_watchFlg () {
+    //   return this.$store.state.watchFlg
+    // },
     s_dialogsINfo () {
       return this.$store.state.dialogsInfo
     },
@@ -79,23 +82,29 @@ export default {
       this.$store.commit('incrDialogMaxZindex')
       const result = this.s_dialogsINfo[this.mapName].find(el => el.id === element.id)
       const dialogEl = document.querySelector('#dialog-div-layerDialog-' + this.mapName)
-      const top = dialogEl.offsetTop + 'px';
+      let top = dialogEl.offsetTop + 'px';
       let left
       if (window.innerWidth > 1000) {
         left = (dialogEl.offsetLeft + dialogEl.offsetWidth + 5) + 'px';
       } else {
         left = '10px'
       }
-      console.log(top,left)
-      if (element.ext) {
-        this.$store.state.dialogs[element.ext.name][this.mapName].style.display = 'block'
-        this.$store.state.dialogs[element.ext.name][this.mapName].style['z-index'] = this.$store.state.dialogMaxZindex
-        if(this.$store.state.dialogs[element.ext.name][this.mapName].style.top === '56px') {
-          this.$store.state.dialogs[element.ext.name][this.mapName].style.top = top
-          this.$store.state.dialogs[element.ext.name][this.mapName].style.left = left
-        }
-        return
+
+      if (top === '0px') {
+        top = '100px'
+        left = '10px'
       }
+
+      console.log(top,left)
+      // if (element.ext) {
+      //   this.$store.state.dialogs[element.ext.name][this.mapName].style.display = 'block'
+      //   this.$store.state.dialogs[element.ext.name][this.mapName].style['z-index'] = this.$store.state.dialogMaxZindex
+      //   if(this.$store.state.dialogs[element.ext.name][this.mapName].style.top === '56px') {
+      //     this.$store.state.dialogs[element.ext.name][this.mapName].style.top = top
+      //     this.$store.state.dialogs[element.ext.name][this.mapName].style.left = left
+      //   }
+      //   return
+      // }
 
       if (!result) {
         const infoDialog =
@@ -103,6 +112,7 @@ export default {
               id: element.id,
               title: element.label,
               // summary: element.summary,
+              ext: element.ext,
               style: {
                 width: '200px',
                 display: 'block',
@@ -116,10 +126,9 @@ export default {
         result.style.display = 'block';
         result.style["z-index"] = this.$store.state.dialogMaxZindex
       }
-
     },
     changeWatchFlg (bool) {
-      this.watchFlg = bool
+      this.$store.state.watchFlg = bool
     },
     changeSlider (element){
       const map = this.$store.state[this.mapName]
@@ -178,28 +187,42 @@ export default {
   },
   watch: {
     s_selectedLayers: {
-      handler: function(value){
-        console.log(value)
-        console.log('変更を検出しました',this.mapName)
-        if(!this.watchFlg) return
-        const map = this.$store.state[this.mapName]
-        // まずレイヤーを全削除-------------------------
-        const layers = map.getStyle().layers
-        if (layers) {
-          for (let i = layers.length - 1; i >= 0; i--) {
-            const layerId = layers[i].id
-            if (layerId.slice(0,2) === 'oh' ) {
-              map.removeLayer(layerId)
-            }
-          }
+      handler: function(){
+        console.log('変更を検出しました',this.$store.state.watchFlg)
+        if(!this.$store.state.watchFlg){
+          return
         }
+        const map = this.$store.state[this.mapName]
+        // まずレイヤーを削除-------------------------
+        const layers = map.getStyle().layers
+        const selectedLayersIds = []
+        this.s_selectedLayers[this.mapName].forEach(layer => {
+          layer.layers.forEach(layer0 => {
+            selectedLayersIds.push(layer0.id)
+          })
+        })
+        layers.forEach(layer => {
+          if (layer.id.slice(0,2) === 'oh' ){
+            if(selectedLayersIds.indexOf(layer.id) === -1) map.removeLayer(layer.id)
+          }
+        })
+        // if (layers) {
+        //   for (let i = layers.length - 1; i >= 0; i--) {
+        //     const layerId = layers[i].id
+        //     if (layerId.slice(0,2) === 'oh' ) {
+        //       console.log(layerId)
+        //       map.removeLayer(layerId)
+        //     }
+        //   }
+        // }
         // -----------------------------------------
         for (let i = this.s_selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
           const layer = this.s_selectedLayers[this.mapName][i]
           if (layer.layers) {
             layer.layers.forEach(layer0 => {
               if (!map.getSource(layer.source.id)) map.addSource(layer.source.id, layer.source.obj)
-              map.addLayer(layer0)
+              // console.log(map.getSource(layer0.id))
+              if (!map.getLayer(layer0.id)) map.addLayer(layer0)
               if (layer.source.obj.type === 'raster') {
                 map.setPaintProperty(layer0.id, 'raster-opacity', layer.opacity)
               } else {
@@ -220,22 +243,36 @@ export default {
             })
             // -------------------------------------------------
             if (layer.ext) {
-              console.log('extあり',layer.id,this.mapName)
-              console.log(layer.ext)
-              const dialogEl = document.querySelector('#dialog-div-layerDialog-' + this.mapName)
-              const top = dialogEl.offsetTop + 'px';
-              let left
-              if (window.innerWidth > 1000) {
-                left = (dialogEl.offsetLeft + dialogEl.offsetWidth + 5) + 'px';
-              } else {
-                left = '10px'
+              if (layer.ext.values) {
+                layer.ext.values.forEach((value,i) => {
+                  this.$store.commit('updateParam', {
+                    name: layer.ext.name,
+                    mapName: this.mapName,
+                    value: value,
+                    order: i
+                  })
+                })
               }
-              this.$store.state.dialogs[layer.ext.name][this.mapName].style.display = 'block'
-              this.$store.commit('incrDialogMaxZindex')
-              this.$store.state.dialogs[layer.ext.name][this.mapName].style['z-index'] = this.$store.state.dialogMaxZindex
-              this.$store.state.dialogs[layer.ext.name][this.mapName].style.top = top
-              this.$store.state.dialogs[layer.ext.name][this.mapName].style.left = left
+              // ここを改修する。
+              this.infoOpen(layer)
             }
+            // if (layer.ext) {
+            //   console.log('extあり',layer.id,this.mapName)
+            //   console.log(layer.ext)
+            //   const dialogEl = document.querySelector('#dialog-div-layerDialog-' + this.mapName)
+            //   const top = dialogEl.offsetTop + 'px';
+            //   let left
+            //   if (window.innerWidth > 1000) {
+            //     left = (dialogEl.offsetLeft + dialogEl.offsetWidth + 5) + 'px';
+            //   } else {
+            //     left = '10px'
+            //   }
+            //   this.$store.state.dialogs[layer.ext.name][this.mapName].style.display = 'block'
+            //   this.$store.commit('incrDialogMaxZindex')
+            //   this.$store.state.dialogs[layer.ext.name][this.mapName].style['z-index'] = this.$store.state.dialogMaxZindex
+            //   this.$store.state.dialogs[layer.ext.name][this.mapName].style.top = top
+            //   this.$store.state.dialogs[layer.ext.name][this.mapName].style.left = left
+            // }
           }
         }
       },

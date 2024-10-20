@@ -50,10 +50,32 @@ export default createStore({
     estatDataset: null,
     jinkosuiiDataset:[],
     jinkosuiiDatasetEstat:[],
+    watchFlg: true,
+    //------------------------
+    highwayYear:{
+      map01: '2024',
+      map02: '2024'
+    }
+    //------------------------
   },
   getters: {
   },
   mutations: {
+    updateParam (state,payload) {
+      let variable;
+      switch (payload.name) {
+        case 'extHighway':
+          variable = 'highwayYear'
+          break
+      }
+      console.log(payload.mapName,payload.name,payload.value)
+      state[variable][payload.mapName] = payload.value
+    },
+    updateSelectedLayers (state, payload) {
+      const result = state.selectedLayers[payload.mapName].find(el => el.id === payload.id);
+      console.log(result,payload.values)
+      result.ext.values = payload.values
+    },
     incrDialogMaxZindex (state) {
       state.dialogMaxZindex++
     },
