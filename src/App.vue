@@ -261,7 +261,7 @@ export default {
       const split = this.mapFlg.map02
       const pitch01 = !isNaN(this.pitch.map01) ? this.pitch.map01: 0
       const pitch02 = !isNaN(this.pitch.map02) ? this.pitch.map02: 0
-      console.log(this.bearing)
+      // console.log(this.bearing)
       let bearing = 0
       if (isNaN(this.bearing)) {
         bearing = 0
@@ -290,7 +290,6 @@ export default {
       params.append('parameters', this.param)
       axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrl.php', params)
           .then(response => {
-            // console.log(response.data)
             window.history.pushState(null, 'map', "?s=" + response.data.urlid)
             console.log('保存成功')
           })
