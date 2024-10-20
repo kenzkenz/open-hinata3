@@ -353,6 +353,7 @@ export default {
           pitch: pitch[mapName],
           bearing:bearing,
           maxPitch: 85, // 最大の傾き、デフォルトは60
+          attributionControl: false, // デフォルトのアトリビューションコントロールを無効化
           // style: 'https://raw.githubusercontent.com/gsi-cyberjapan/optimal_bvmap/52ba56f645334c979998b730477b2072c7418b94/style/std.json',
           // style:require('@/assets/json/std.json')
           style: {
@@ -377,6 +378,12 @@ export default {
           },
         })
         this.$store.state[mapName] = map
+
+        map.addControl(
+            new maplibregl.AttributionControl({
+              compact: true, // アトリビューションを小さくする
+            })
+        )
       })
       // 画面同期----------------------------------------------------------------------------------------------------------
       let syncing = false
@@ -407,9 +414,16 @@ export default {
       // -----------------------------------------------------------------------------------------------------------------
       // on load
       this.mapNames.forEach(mapName => {
+
         const map = this.$store.state[mapName]
         const params = this.parseUrlParams()
         map.on('load', () => {
+
+          const attributionButton = document.querySelector('#' + mapName +' .maplibregl-ctrl-attrib-button');
+          if (attributionButton) {
+            attributionButton.click(); // 初期状態で折りたたむ
+          }
+
           // 二画面-----------------------------------------------------------
           if (mapName === 'map02') {
             if (params.split === 'true') {
