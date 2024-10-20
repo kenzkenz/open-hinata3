@@ -206,7 +206,7 @@ export default function pyramid () {
                 if (window.innerWidth < 600) {
                     left = (window.innerWidth / 2 - 175) + 'px'
                 } else {
-                    left = (window.innerWidth - 560) + 'px'
+                    left = (document.querySelector('#map01').clientWidth - 560) + 'px'
                 }
                 const diialog =
                     {
@@ -427,12 +427,10 @@ export default function pyramid () {
                     store.commit('incrDialogMaxZindex');
                     let width
                     let left
-                    if (window.innerWidth > 600) {
-                        width = '550px'
-                        left = (window.innerWidth - 560) + 'px'
-                    } else {
-                        width = '350px'
+                    if (window.innerWidth < 600) {
                         left = (window.innerWidth / 2 - 175) + 'px'
+                    } else {
+                        left = (document.querySelector('#map01').clientWidth - 560) + 'px'
                     }
                     const diialog =
                         {
