@@ -1411,6 +1411,46 @@ export const kojilayerheight = {
         ]
     }
 }
+// 道の駅 --------------------------------------------------------------------------------------------
+export const michinoekiSource = {
+    id: "michinoeki-source", obj: {
+        type: "vector",
+        // minzoom: 0,
+        // maxzoom: 15,
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/michinoeki/michinoeki.pmtiles",
+        attribution: "<a href='' target='_blank'></a>",
+    }
+}
+export const michinoekiLayer = {
+    id: "oh-michinoeki",
+    type: "circle",
+    source: "michinoeki-source",
+    "source-layer": "michinoeki",
+    'paint': {
+        'circle-color': 'navy',
+        'circle-radius': 6
+    }
+}
+export const michinoekiLayerLabel = {
+    id: "oh-michinoeki-label",
+    type: "symbol",
+    source: "michinoeki-source",
+    "source-layer": "michinoeki",
+    'layout': {
+        'text-field': ['get', 'P35_006'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+        // 'text-anchor': 'left',
+        'text-offset': [0, 1],
+        'visibility': 'visible',
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 9
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -1525,6 +1565,12 @@ const layers01 = [
                 source: highwaySource,
                 layers: [highwayLayerGreen,highwayLayerRed],
                 ext: {name:'extHighway',parameters:[]}
+            },
+            {
+                id: 'oh-michinoeki',
+                label: "道の駅",
+                source: michinoekiSource,
+                layers: [michinoekiLayer,michinoekiLayerLabel],
             },
         ]
     },

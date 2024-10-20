@@ -556,6 +556,29 @@ export default {
           // })
 
           // 地物クリック時にポップアップを表示する----------------------------------------------------------------------------
+          map.on('click', 'oh-michinoeki', (e) => {
+            let coordinates = e.lngLat
+            const props = e.features[0].properties
+            console.log(props)
+            const name = props.P35_006
+            const link = '<a href="' + props.P35_007 + '" target="_blank">道の駅ページへ</a>'
+            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+            }
+            // ポップアップを表示する
+            new maplibregl.Popup({
+              offset: 10,
+              closeButton: true,
+            })
+                .setLngLat(coordinates)
+                .setHTML(
+                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                    '<span style="font-size: 20px;">' + name + '</span><br>' +
+                    '<div style="font-size: 20px;margin-top: 10px;">' + link + '</div>' +
+                    '</div>'
+                )
+                .addTo(map)
+          })
           map.on('click', 'oh-koji-height', (e) => {
             let coordinates = e.lngLat
             const props = e.features[0].properties
