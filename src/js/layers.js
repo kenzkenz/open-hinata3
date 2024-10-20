@@ -1428,7 +1428,15 @@ export const michinoekiLayer = {
     "source-layer": "michinoeki",
     'paint': {
         'circle-color': 'navy',
-        'circle-radius': 6
+        'circle-radius':[
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            2, 1,
+            4, 3,
+            7, 6,
+            11, 10
+            ]
     }
 }
 export const michinoekiLayerLabel = {
