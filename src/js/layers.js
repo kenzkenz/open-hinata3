@@ -1286,6 +1286,61 @@ export const didLayerLine = {
         ]
     },
 }
+// 選挙区----------------------------------------------------------------------------------------------------------------
+export const senkyokuSource = {
+    id: "senkyoku-source", obj: {
+        type: "vector",
+        // minzoom: 0,
+        // maxzoom: 15,
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/senkyoku/senkyoku2022.pmtiles",
+        attribution:
+            "<a href='' target='_blank'></a>",
+    }
+}
+export const senkyokuLayer = {
+    id: "oh-senkyoku",
+    type: "fill",
+    source: "senkyoku-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-color': 'gray'
+    }
+}
+export const senkyokuLayerLine = {
+    id: "oh-senkyoku_line",
+    type: "line",
+    source: "senkyoku-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            7, 0.5,
+            11, 1
+        ]
+    },
+}
+export const senkyokuLayerLabel = {
+    id: "oh-senkyoku-label",
+    type: "symbol",
+    source: "senkyoku-source",
+    "source-layer": "polygon",
+    'layout': {
+        'text-field': ['get', 'kuname'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-offset': [0, 2],
+        'visibility': 'visible',
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 10
+}
 // 公示価格--------------------------------------------------------------------------------------------------------------
 export const kojiSource = {
     id: "koji-source", obj: {
@@ -1603,6 +1658,12 @@ const layers01 = [
         id: 'sonohoka',
         label: "その他",
         nodes: [
+            {
+                id: 'oh-senkyoku',
+                label: "選挙区（2022）",
+                source: senkyokuSource,
+                layers:[senkyokuLayer,senkyokuLayerLine,senkyokuLayerLabel]
+            },
             {
                 id: 'oh-koji',
                 label: "公示価格（R06）",
