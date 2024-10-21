@@ -44,7 +44,7 @@ import Dialog2 from '@/components/Dialog2'
 // import ExtHighway from '@/components/ext-highway'
 import codeShizen from '@/js/codeShizen'
 import pyramid from '@/js/pyramid'
-import * as Layers from '@/js/layers'
+// import * as Layers from '@/js/layers'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import maplibregl from 'maplibre-gl'
 import { Protocol } from "pmtiles"
@@ -335,13 +335,13 @@ export default {
           bearing = params.bearing
         }
         // 以前のリンクをいかすため---------------------------------
-        if (params.pitch || params.pitch === 0) {
-          if (isNaN(params.pitch)) {
-            pitch = {map01:0,map02:0}
-          } else {
-            pitch = {map01:params.pitch,map02:params.pitch}
-          }
-        }
+        // if (params.pitch || params.pitch === 0) {
+        //   if (isNaN(params.pitch)) {
+        //     pitch = {map01:0,map02:0}
+        //   } else {
+        //     pitch = {map01:params.pitch,map02:params.pitch}
+        //   }
+        // }
         // 以前のリンクをいかすため---------------------------------
 
         const map = new maplibregl.Map({
@@ -415,7 +415,6 @@ export default {
       // -----------------------------------------------------------------------------------------------------------------
       // on load
       this.mapNames.forEach(mapName => {
-
         const map = this.$store.state[mapName]
         const params = this.parseUrlParams()
         map.on('load', () => {
@@ -443,37 +442,37 @@ export default {
           }
           // ----------------------------------------------------------------
           // ここを改善する必要あり
-          params.slj[mapName].forEach(slg => {
-            let cnt = 0
-            function aaa () {
-              Layers.layers[mapName].forEach(value => {
-                if (!value.nodes) cnt++
-                function bbb (v1) {
-                  if (v1.nodes) {
-                    v1.nodes.forEach(v2 => {
-                      if (!v2.nodes) {
-                        if (v2.id === slg.id) {
-                          slg.source = v2.source
-                          slg.layers = v2.layers
-                        }
-                        cnt++
-                      } else {
-                        bbb(v2)
-                      }
-                    })
-                  } else {
-                    if (value.id === slg.id) {
-                      slg.source = value.source
-                      slg.layers = value.layers
-                    }
-                  }
-                }
-                bbb(value)
-              })
-            }
-            aaa()
-            console.log('背景' + cnt + '件')
-          })
+          // params.slj[mapName].forEach(slg => {
+          //   let cnt = 0
+          //   function aaa () {
+          //     Layers.layers[mapName].forEach(value => {
+          //       if (!value.nodes) cnt++
+          //       function bbb (v1) {
+          //         if (v1.nodes) {
+          //           v1.nodes.forEach(v2 => {
+          //             if (!v2.nodes) {
+          //               if (v2.id === slg.id) {
+          //                 slg.source = v2.source
+          //                 slg.layers = v2.layers
+          //               }
+          //               cnt++
+          //             } else {
+          //               bbb(v2)
+          //             }
+          //           })
+          //         } else {
+          //           if (value.id === slg.id) {
+          //             slg.source = value.source
+          //             slg.layers = value.layers
+          //           }
+          //         }
+          //       }
+          //       bbb(value)
+          //     })
+          //   }
+          //   aaa()
+          //   console.log('背景' + cnt + '件')
+          // })
           if (params.slj) this.s_selectedLayers = params.slj
 
           // ----------------------------------------------------------------
@@ -486,6 +485,7 @@ export default {
           })
           // 標高タイルセット
           // map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
+          // alert()
           document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('mouseover', function() {
             map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
           }, false);
@@ -1085,14 +1085,30 @@ export default {
       },
       deep: true
     },
-    pitch () {
-      // document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('click', function() {
-      // 上とセットで動く。
-      if (this.pitch === 0 ) {
-        this.$store.state.map01.setTerrain(null)
-        this.$store.state.map02.setTerrain(null)
-      }
-    }
+    pitch: {
+      handler: function () {
+        // console.log('変更を検出しました')
+        // this.updatePermalink()
+          console.log(11111111)
+          // this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+      },
+      deep: true
+    },
+
+
+
+
+    // pitch () {
+    //   console.log(11111111)
+    //   this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+    //
+    //   // document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('click', function() {
+    //   // 上とセットで動く。
+    //   // if (this.pitch === 0 ) {
+    //   //   this.$store.state.map01.setTerrain(null)
+    //   //   this.$store.state.map02.setTerrain(null)
+    //   // }
+    // }
   }
 }
 </script>
