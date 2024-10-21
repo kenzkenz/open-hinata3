@@ -3,11 +3,7 @@
 export const syochiikiSource = {
     id: "syochiikiSource", obj:{
         type: "vector",
-        // url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/syochiiki/zenkoku.pmtiles",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/syochiiki/syochiiki.pmtiles",
-        // tiles: ["https://kenzkenz3.xsrv.jp/mvt/syochiiki/2020/{z}/{x}/{y}.mvt"],
-        // minzoom: 16,
-        // maxzoom: 16,
         attribution: '<a href="https://github.com/shiwaku/mlit-plateau-bldg-pmtiles">mlit-plateau-bldg-pmtiles</a>'
     }
 }
@@ -15,8 +11,6 @@ export const syochiikiLayer = {
     'id': 'oh-syochiikiLayer',
     'source': 'syochiikiSource',
     'source-layer': "polygon",
-    // "minzoom": 0,
-    // "maxzoom": 23,
     'type': 'fill',
     paint: {
         "fill-color": "rgba(0, 0, 0, 0)",

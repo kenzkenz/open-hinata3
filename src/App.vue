@@ -142,6 +142,7 @@ export default {
         pitch ()
         bearing ()
       }
+      this.$store.state[mapName].setTerrain(null)
     },
     mouseup () {
       this.mouseDown = false
