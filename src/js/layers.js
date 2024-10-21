@@ -1449,12 +1449,27 @@ export const michinoekiLayerLabel = {
 export const tokyojishinSource = {
     id: "tokyojishin-source", obj: {
         type: "vector",
-        // minzoom: 0,
-        // maxzoom: 15,
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/tokyojishin/tokyojishin.pmtiles",
-        attribution:
-            "<a href='' target='_blank'></a>",
+        attribution: "<a href='' target='_blank'></a>",
     }
+}
+export const tokyojishinLayerSogo = {
+    id: "oh-tokyojishin",
+    type: "fill",
+    source: "tokyojishin-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': [
+            'match',
+            ['get', '総合_ラ'],
+            1, 'rgb(162,209,229,0.8)',
+            2, 'rgb(125,170,118,0.8)',
+            3, 'rgb(206,135,52,0.8)',
+            4, 'rgb(213,64,43,0.8)',
+            5, 'rgb(79,19,19,0.8)',
+            'red' // Default color (if no match)
+        ],
+    },
 }
 export const tokyojishinLayer = {
     id: "oh-tokyojishin",
@@ -1498,28 +1513,56 @@ export const tokyojishinLayerLabel = {
         'text-halo-width': 1.0,
     },
     'maxzoom': 24,
-    'minzoom': 10
+    'minzoom': 16
 }
-export const tokyojishinheight = {
+// export const tokyojishinheight = {
+//     id: 'oh-tokyojishin-height',
+//     type: 'fill-extrusion',
+//     source: "tokyojishin-source",
+//     "source-layer": "polygon",
+//     paint: {
+//         'fill-extrusion-height': [
+//             'interpolate',
+//             ['linear'],
+//             ["to-number",['get', '総合_順']],
+//             0, 10,
+//             6000, 3000
+//         ],
+//         'fill-extrusion-color': [
+//             'interpolate',
+//             ['linear'],
+//             ["to-number",['get', '総合_順']],
+//             0, 'white',
+//             4000, 'red',
+//             6000, 'black'
+//         ]
+//     }
+// }
+export const tokyojishinheightSogo = {
     id: 'oh-tokyojishin-height',
     type: 'fill-extrusion',
     source: "tokyojishin-source",
     "source-layer": "polygon",
     paint: {
         'fill-extrusion-height': [
-            'interpolate',
-            ['linear'],
-            ["to-number",['get', '総合_順']],
-            0, 10,
-            6000, 3000
+            'match',
+            ['get', '総合_ラ'],
+            1, 100,
+            2, 500,
+            3, 1500,
+            4, 2000,
+            5, 2500,
+            0 // Default color (if no match)
         ],
         'fill-extrusion-color': [
-            'interpolate',
-            ['linear'],
-            ["to-number",['get', '総合_順']],
-            0, 'white',
-            4000, 'red',
-            6000, 'black'
+            'match',
+            ['get', '総合_ラ'],
+            1, 'rgb(162,209,229,0.8)',
+            2, 'rgb(125,170,118,0.8)',
+            3, 'rgb(206,135,52,0.8)',
+            4, 'rgb(213,64,43,0.8)',
+            5, 'rgb(79,19,19,0.8)',
+            'red' // Default color (if no match)
         ]
     }
 }
@@ -1764,11 +1807,23 @@ const layers01 = [
         id: 'hazard',
         label: "ハザードマップ等",
         nodes: [
+            // {
+            //     id: 'oh-tokyojishin',
+            //     label: "地震に関する危険度一覧(東京都)",
+            //     source: tokyojishinSource,
+            //     layers: [tokyojishinLayer,tokyojishinLayerLine,tokyojishinLayerLabel,tokyojishinheight],
+            // },
             {
                 id: 'oh-tokyojishin',
                 label: "地震に関する危険度一覧(東京都)",
                 source: tokyojishinSource,
-                layers: [tokyojishinLayer,tokyojishinLayerLine,tokyojishinLayerLabel,tokyojishinheight],
+                layers: [tokyojishinLayerSogo,tokyojishinLayerLine,tokyojishinLayerLabel],
+            },
+            {
+                id: 'oh-tokyojishin3d',
+                label: "地震に関する危険度一覧(東京都)3D",
+                source: tokyojishinSource,
+                layers: [tokyojishinLayerSogo,tokyojishinLayerLine,tokyojishinLayerLabel,tokyojishinheightSogo],
             },
             {
                 id: 'oh-densyohi',
