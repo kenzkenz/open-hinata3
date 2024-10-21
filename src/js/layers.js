@@ -97,14 +97,18 @@ export const syochiikiLayerHeight = {
 // 高速道路--------------------------------------
 export const highwaySource = {
     id: 'highwaySource', obj: {
-        'type': 'geojson',
-        'data': require('@/assets/json/highway_sections_2024.geojson')
+        // 'type': 'geojson',
+        // 'data': require('@/assets/json/highway_sections_2024.geojson'),
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/kosoku/kosoku.pmtiles",
+
     }
 }
 export const highwayLayerGreen = {
     'id': 'oh-highwayLayer-green-lines',
     'type': 'line',
     'source': 'highwaySource',
+    "source-layer": "line",
     'layout': {
         'line-join': 'round',
         'line-cap': 'round'
@@ -122,6 +126,7 @@ export const highwayLayerRed = {
     'id': 'oh-highwayLayer-red-lines',
     'type': 'line',
     'source': 'highwaySource',
+    "source-layer": "line",
     'layout': {
         'line-join': 'round',
         'line-cap': 'round'

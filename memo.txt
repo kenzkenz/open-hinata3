@@ -182,3 +182,5 @@ tippecanoe -l k -f -o k.pmtiles k.geojson
 tippecanoe-decode 15sekai-light -z 14 -Z 14 -c > 2.geojson
 tippecanoe -l h -f -o h.pmtiles hokai.geojson
 
+tippecanoe -l line -f -o kosoku.pmtiles highway_sections_2024.geojson
+
