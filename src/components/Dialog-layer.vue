@@ -49,7 +49,7 @@ export default {
   },
   data: () => ({
     searchText: '',
-    // watchFlg: true,
+    cnt: 0,
     selectedLayers: {
       map01:[],
       map02:[]
@@ -243,36 +243,22 @@ export default {
             })
             // -------------------------------------------------
             if (layer.ext) {
-              if (layer.ext.values) {
-                layer.ext.values.forEach((value,i) => {
-                  this.$store.commit('updateParam', {
-                    name: layer.ext.name,
-                    mapName: this.mapName,
-                    value: value,
-                    order: i
+              if (this.cnt < 2){
+                if (layer.ext.values) {
+                  layer.ext.values.forEach((value,i) => {
+                    this.$store.commit('updateParam', {
+                      name: layer.ext.name,
+                      mapName: this.mapName,
+                      value: value,
+                      order: i
+                    })
                   })
-                })
+                }
+                // ここを改修する。
+                this.infoOpen(layer)
               }
-              // ここを改修する。
-              this.infoOpen(layer)
+              this.cnt++
             }
-            // if (layer.ext) {
-            //   console.log('extあり',layer.id,this.mapName)
-            //   console.log(layer.ext)
-            //   const dialogEl = document.querySelector('#dialog-div-layerDialog-' + this.mapName)
-            //   const top = dialogEl.offsetTop + 'px';
-            //   let left
-            //   if (window.innerWidth > 1000) {
-            //     left = (dialogEl.offsetLeft + dialogEl.offsetWidth + 5) + 'px';
-            //   } else {
-            //     left = '10px'
-            //   }
-            //   this.$store.state.dialogs[layer.ext.name][this.mapName].style.display = 'block'
-            //   this.$store.commit('incrDialogMaxZindex')
-            //   this.$store.state.dialogs[layer.ext.name][this.mapName].style['z-index'] = this.$store.state.dialogMaxZindex
-            //   this.$store.state.dialogs[layer.ext.name][this.mapName].style.top = top
-            //   this.$store.state.dialogs[layer.ext.name][this.mapName].style.left = left
-            // }
           }
         }
       },

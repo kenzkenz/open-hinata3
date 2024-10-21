@@ -1,11 +1,9 @@
 <template>
-    <div style="position: relative">
-        <div v-drag="{handle:'#drag-handle-' + item.id}" ref="div" :class="'v-dialog-info-div v-dialog-info-div-' + item.id" v-for="item in info" :key="item.id" :style="item.style" @mousedown="dialogMouseDown(item)" @mouseup="dialogMouseDown(item)">
+<!--    <div style="position: relative">-->
+        <div v-drag="{handle:'#drag-handle-' + item.id}" :ref="'dragDiv-' + item.id" :class="'v-dialog-info-div v-dialog-info-div-' + item.id" v-for="item in info" :key="item.id" :style="item.style" @mousedown="dialogMouseDown(item)" @mouseup="dialogMouseDown(item)">
             <div class="drag-handle" :id="'drag-handle-' + item.id"></div>
             <div class="close-btn-div" @click="close(item)"><i style="" class="fa-solid fa-xmark hover close-btn"></i></div>
             <!--なにもないとき。普通のラスターのとき-->
-
-
             <div v-if="!item.ext">
                 <div class="info-content-div">
                     <p v-html="item.title"></p><hr>
@@ -15,9 +13,8 @@
 
             <extHighway :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extHighway'"/>
 
-
         </div>
-    </div>
+<!--    </div>-->
 </template>
 
 <script>
@@ -36,12 +33,23 @@ export default {
   },
   methods: {
     close (item) {
-      const result = this.$store.state.dialogsInfo[this.mapName] .find(el => el.id === item.id)
+      const result = this.$store.state.dialogsInfo[this.mapName].find(el => el.id === item.id)
       result.style.display = 'none'
       // document.querySelector('.v-dialog-info-div-' + item.id).style.display = 'none'
     },
     dialogMouseDown (item) {
-      console.log(item)
+      //改修中
+      const result = this.$store.state.dialogsInfo[this.mapName].find(el => el.id === item.id)
+
+      this.$store.commit('incrDialogMaxZindex')
+
+      console.log(this.$refs['dragDiv-' + item.id].style)
+      console.log(result.style['z-index'])
+
+      // this.$store.state.dialogsInfo[this.mapName].style.top = this.$refs.dragDiv.style.top
+      // this.$store.state.dialogsInfo[this.mapName].style.left = this.$refs.dragDiv.style.left
+      result.style['z-index'] = this.$store.state.dialogMaxZindex
+
 
 
       // store.commit('base/incrDialogMaxZindex')
