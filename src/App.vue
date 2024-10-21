@@ -385,6 +385,7 @@ export default {
               compact: true, // アトリビューションを小さくする
             })
         )
+
       })
       // 画面同期----------------------------------------------------------------------------------------------------------
       let syncing = false
@@ -1044,13 +1045,11 @@ export default {
                 `)
                 .addTo(map)
           })
-          const pitch = !isNaN(this.pitch) ? this.pitch: 0
+          const pitch = !isNaN(this.pitch[mapName]) ? this.pitch[mapName]: 0
           if (pitch !== 0) {
-            this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
-            this.$store.state.map02.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+            this.$store.state[mapName].setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
           }
         })
-
         //on load終了----------------------------------------------------------------------------------------------------
       })
     }
