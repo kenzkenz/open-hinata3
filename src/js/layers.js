@@ -160,9 +160,7 @@ export const stdLayer = {
 export const seamlessphotoSource = {
     id:'seamlessphoto',obj:{
         type: 'raster',
-        tiles: [
-            'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'
-        ],
+        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'],
         tileSize: 256
     }
 }
@@ -170,8 +168,6 @@ export const seamlessphotoLayer = {
     'id': 'oh-seamlessphoto',
     'source': seamlessphotoSource.id,
     'type': 'raster',
-    'minzoom': 2,
-    'maxzoom': 23
 }
 // ---------------------------------------------------------------------------------------------------------------------
 // PLATEAU建物（PMTiles）ソース
@@ -212,9 +208,7 @@ export const csGifuSource = {
 export const csGifuLayer = {
     'id': 'oh-csGifuLayer',
     'type': 'raster',
-    'source': 'csGifu',
-    'minzoom': 0,
-    'maxzoom': 23
+    'source': 'csGifu'
 }
 // 能登CS立体図------------------------------------------------------------------------------------------------------
 export const csNotoSource = {
@@ -222,13 +216,15 @@ export const csNotoSource = {
         type: 'raster',
         tiles: ['https://www2.ffpri.go.jp/soilmap/tile/cs_noto/{z}/{x}/{y}.png'],
         tileSize: 256,
-        maxzoom: 17
     }
 }
 export const csNotoLayer = {
     'id': 'oh-csNotoLayer',
     'type': 'raster',
     'source': 'csNotoSource',
+    // paint: {
+    //     "raster-resampling": "nearest" // ぼやけを防ぐために「nearest」を使用
+    // }
 }
 // 静岡県県CS立体図------------------------------------------------------------------------------------------------------
 export const csShizuokaSource = {
@@ -242,8 +238,6 @@ export const csShizuokaLayer = {
     'id': 'oh-csShizuokaLayer',
     'type': 'raster',
     'source': 'csShizuokaSource',
-    'minzoom': 0,
-    'maxzoom': 23
 }
 // 多摩地域赤色立体地図------------------------------------------------------------------------------------------------------
 export const tamaSekisyokuSource = {
@@ -252,37 +246,26 @@ export const tamaSekisyokuSource = {
         tiles: ['https://kenzkenz2.xsrv.jp/tokyo/tamasekisyoku/{z}/{x}/{y}.png'],
         tileSize: 256,
         scheme: 'tms',
-        crossOrigin: 'anonymous',
-        paint: {
-            'raster-resampling': 'nearest'
-        }
     }
 }
 export const tamaSekisyokuLayer = {
     'id': 'oh-tamaSekisyokuLayer',
     'type': 'raster',
     'source': 'tamaSekisyokuSource',
-    'minzoom': 1,
-    'maxzoom': 23
 }
-// 多摩地域赤色立体地図------------------------------------------------------------------------------------------------------
+// 大阪府CS立体地図------------------------------------------------------------------------------------------------------
 export const csOsakaSource = {
     id: 'csOsakaSource', obj: {
         type: 'raster',
         tiles: ['https://xs489works.xsrv.jp/raster-tiles/pref-osaka/osaka-cs-tiles/{z}/{x}/{y}.png'],
         tileSize: 256,
         crossOrigin: 'anonymous',
-        paint: {
-            'raster-resampling': 'nearest'
-        }
     }
 }
 export const csOsakaLayer = {
     'id': 'oh-csOsakaLayer',
     'type': 'raster',
     'source': 'csOsakaSource',
-    'minzoom': 1,
-    'maxzoom': 23
 }
 // 登記所備付地図データ --------------------------------------------------------------------------------------------
 export const amxSource = {
@@ -351,8 +334,6 @@ export const amxLayerDaihyou = {
 export const bakumatsuSource = {
     id: "bakumatsu", obj: {
         type: "vector",
-        // minzoom: 0,
-        // maxzoom: 15,
         // url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bakumatsu/b3.pmtiles",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bakumatsu/b41.pmtiles",
         attribution:
@@ -1709,7 +1690,7 @@ const layers01 = [
                 id: 'oh-bakumatsu-kokudaka-height',
                 label: "幕末期近世の村（石高/面積）3D",
                 source: bakumatsuSource,
-                layers: [bakumatsuLayerKokudaka,bakumatsuLayerLine,bakumatsuLayerLabel,bakumatsuLayerHeight]
+                layers: [bakumatsuLayerKokudaka,bakumatsuLayerHeight]
             },
             {
                 id: 'oh-bakumatsu',
