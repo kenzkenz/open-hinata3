@@ -233,6 +233,20 @@ export const csShizuokaLayer = {
     'type': 'raster',
     'source': 'csShizuokaSource',
 }
+// 愛知県赤色立体図------------------------------------------------------------------------------------------------------
+export const aichiSekisyokuSource = {
+    id: 'aichiSekisyokuSource', obj: {
+        type: 'raster',
+        tiles: ['https://bg.maps.pref.aichi.jp/tiles/w213665/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        crossOrigin: 'anonymous',
+    }
+}
+export const aichiSekisyokuLayer = {
+    'id': 'oh-aichiSekisyokuLayer',
+    'type': 'raster',
+    'source': 'aichiSekisyokuSource',
+}
 // 多摩地域赤色立体地図------------------------------------------------------------------------------------------------------
 export const tamaSekisyokuSource = {
     id: 'tamaSekisyokuSource', obj: {
@@ -1232,6 +1246,16 @@ export const densyohiLayer = {
         'circle-radius': 8,
     }
 }
+export const densyohiLayer2 = {
+    id: "oh-densyohi",
+    type: "symbol",
+    source: "densyohiSource",
+    "source-layer": "point",
+    "layout": {
+        "icon-image": "densyouhi",  // JSONに記述されたアイコン名を指定
+        "icon-size": 1.0
+    }
+}
 // did------------------------------------------------------------------------------------------------------------------
 export const didSource = {
     id: "did-source", obj: {
@@ -1785,6 +1809,12 @@ const layers01 = [
                 source: tamaSekisyokuSource,
                 layers: [tamaSekisyokuLayer]
             },
+            // {
+            //     id: 'oh-aichiSekisyokuLayer',
+            //     label: "愛知県赤色立体地図",
+            //     source: aichiSekisyokuSource,
+            //     layers: [aichiSekisyokuLayer]
+            // },
         ]
     },
     {

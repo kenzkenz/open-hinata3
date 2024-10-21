@@ -305,7 +305,6 @@ export default {
       } else {
         params = new URLSearchParams(window.location.search)
       }
-      console.log(params.get('pitch'))
       const lng = parseFloat(params.get('lng'))
       const lat = parseFloat(params.get('lat'))
       const zoom = parseFloat(params.get('zoom'))
@@ -336,7 +335,6 @@ export default {
           bearing = params.bearing
         }
         // 以前のリンクをいかすため---------------------------------
-        console.log(params.pitch)
         if (params.pitch || params.pitch === 0) {
           if (isNaN(params.pitch)) {
             pitch = {map01:0,map02:0}
@@ -359,6 +357,7 @@ export default {
           // style:require('@/assets/json/std.json')
           style: {
             version: 8,
+            // sprite: 'https://kenzkenz.xsrv.jp/open-hinata3/json/spritesheet',
             glyphs: "https://glyphs.geolonia.com/{fontstack}/{range}.pbf",
             // "glyphs": "https://gsi-cyberjapan.github.io/optimal_bvmap/glyphs/{fontstack}/{range}.pbf",
             sources: {
