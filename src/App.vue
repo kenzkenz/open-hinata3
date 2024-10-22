@@ -1034,6 +1034,8 @@ export default {
             console.log(props)
             const name = props.N06_007
             const id = props.N06_004
+            const kyouyounen = props.N06_001
+            const kaishinen = props.N06_002
             // ポップアップを表示する
             new maplibregl.Popup({
               offset: 10,
@@ -1043,7 +1045,9 @@ export default {
                 .setHTML(
                     '<div font-weight: normal; color: #333;line-height: 25px;">' +
                     '<span style="font-size: 20px;">' + name + '</span><br>' +
-                    '<span style="font-size: 12px;">id=' + id + '</span>' +
+                    '<span style="font-size: 12px;">id=' + id + '</span><br>' +
+                    '<span style="font-size: 12px;">供用開始年=' + kyouyounen + '</span><br>' +
+                    '<span style="font-size: 12px;">設置期間（開始年）=' + kaishinen + '</span><br>' +
                     '</div>'
                 )
                 .addTo(map)
@@ -1057,6 +1061,8 @@ export default {
             console.log(props)
             const name = props.N06_007
             const id = props.N06_004
+            const kyouyounen = props.N06_001
+            const kaishinen = props.N06_002
             // ポップアップを表示する
             new maplibregl.Popup({
               offset: 10,
@@ -1066,7 +1072,9 @@ export default {
                 .setHTML(
                     '<div font-weight: normal; color: #333;line-height: 25px;">' +
                     '<span style="font-size: 20px;">' + name + '</span><br>' +
-                    '<span style="font-size: 12px;">id=' + id + '</span>' +
+                    '<span style="font-size: 12px;">id=' + id + '</span><br>' +
+                    '<span style="font-size: 12px;">供用開始年=' + kyouyounen + '</span><br>' +
+                    '<span style="font-size: 12px;">設置期間（開始年）=' + kaishinen + '</span><br>' +
                     '</div>'
                 )
                 .addTo(map)
