@@ -71,6 +71,10 @@ export default createStore({
         case 'extHighway':
           variable = 'highwayYear'
           break
+        case 'extTetsudojikeiretsu':
+          variable = 'tetsudojikeiretsuYear'
+          break
+
       }
       console.log(payload.mapName,payload.name,payload.value)
       state[variable][payload.mapName] = payload.value
