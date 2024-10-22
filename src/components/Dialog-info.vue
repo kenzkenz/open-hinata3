@@ -62,7 +62,7 @@ export default {
       handler: function(){
         this.$nextTick(() => {
           // const draggable = this.$refs.dragDiv[0]
-          // const handle =  this.$refs.dragHandle[0]
+          // const handle =  this.$refs.dragDiv[0]
           const draggable = document.querySelector("#dialog-info-" + this.item.id)
           const handle =  document.querySelector("#handle-" + this.item.id)
 
