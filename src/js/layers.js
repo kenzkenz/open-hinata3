@@ -181,9 +181,15 @@ export const tetsudojikeiretsuLayerBlue = {
     },
     'paint': {
         'line-color': 'dodgerblue',
-        'line-width': 5,
         'line-blur': 0.8,
-        'line-opacity':1
+        // 'line-width': 5,
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            7, 3,
+            11, 5
+        ]
     },
     'filter':
         ['all',
