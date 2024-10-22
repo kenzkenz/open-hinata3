@@ -118,7 +118,6 @@ export const highwayLayerGreen = {
     },
     'filter': ['<', 'N06_002', 2024]
 }
-
 export const highwayLayerRed = {
     'id': 'oh-highwayLayer-red-lines',
     'type': 'line',
@@ -136,6 +135,78 @@ export const highwayLayerRed = {
     },
     'filter': ['==', 'N06_002', 2024]
 }
+// 鉄道時系列--------------------------------------
+export const tetsudojikeiretsuSource = {
+    id: 'tetsudojikeiretsu-source', obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/tetsudo/tetsudojikeiretsu2.pmtiles",
+
+    }
+}
+export const tetsudojikeiretsuLayerPoint = {
+    id: "oh-tetsudojikeiretsu-points",
+    type: "circle",
+    source: "tetsudojikeiretsu-source",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': 'white',  // 固定の赤色
+        'circle-radius': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            12, 0,
+            13, 6
+        ],
+        'circle-stroke-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            12, 0,
+            13, 1
+        ],
+    },
+    'filter':
+        ['all',
+            ['<=', ['number', ['to-number', ['get', 'N05_005b']]], 2024],
+            ['>=', ['number', ['to-number', ['get', 'N05_005e']]], 2024]]
+}
+export const tetsudojikeiretsuLayerBlue = {
+    'id': 'oh-tetsudojikeiretsu-blue-lines',
+    'type': 'line',
+    'source': 'tetsudojikeiretsu-source',
+    "source-layer": "line",
+    'layout': {
+        'line-join': 'round',
+        'line-cap': 'round'
+    },
+    'paint': {
+        'line-color': 'dodgerblue',
+        'line-width': 5,
+        'line-blur': 0.8,
+        'line-opacity':1
+    },
+    'filter':
+        ['all',
+            ['<=', ['number', ['to-number', ['get', 'N05_005b']]], 2024],
+            ['>=', ['number', ['to-number', ['get', 'N05_005e']]], 2024]]
+}
+// export const tetsudojikeiretsuLayerRed = {
+//     'id': 'oh-tetsudojikeiretsu-red-lines',
+//     'type': 'line',
+//     'source': 'tetsudojikeiretsu-source',
+//     "source-layer": "line",
+//     'layout': {
+//         'line-join': 'round',
+//         'line-cap': 'round'
+//     },
+//     'paint': {
+//         'line-color': '#FF0000',
+//         'line-width': 5,
+//         'line-blur': 0.8,
+//         'line-opacity':1
+//     },
+//     'filter': ['==', 'N06_002', 2024]
+// }
 // 標準地図--------------------------------------------------------------------------------------------------------------
 export const stdSource = {
     id: 'stdSource', obj: {
@@ -1697,6 +1768,13 @@ const layers01 = [
         id: 'doro',
         label: "道路等",
         nodes: [
+            {
+                id: 'oh-tetsudojikeiretsu',
+                label: "鉄道時系列",
+                source: tetsudojikeiretsuSource,
+                layers: [tetsudojikeiretsuLayerBlue,tetsudojikeiretsuLayerPoint],
+                ext: {name:'extTetsudojikeiretsu',parameters:[]}
+            },
             {
                 id: 'oh-highway',
                 label: "高速道路時系列",

@@ -184,3 +184,8 @@ tippecanoe -l h -f -o h.pmtiles hokai.geojson
 
 tippecanoe -l line -f -o kosoku.pmtiles highway_sections_2024.geojson
 
+tippecanoe -l line -rg -pk -pf -f -o tetsudojikeiretsu.pmtiles t2c.geojson
+
+tippecanoe -l line -f -o lines.pmtiles t2cLines.geojson
+tippecanoe -l point -rg -pk -pf -f -o points.pmtiles t2cPoints.geojson
+tile-join -rg -pk -f -o tetsudojikeiretsu2.pmtiles points.pmtiles tetsudojikeiretsu.pmtiles

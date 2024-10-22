@@ -245,14 +245,19 @@ export default {
             if (layer.ext) {
               if (this.cnt < 2){
                 if (layer.ext.values) {
-                  layer.ext.values.forEach((value,i) => {
-                    this.$store.commit('updateParam', {
-                      name: layer.ext.name,
-                      mapName: this.mapName,
-                      value: value,
-                      order: i
+                  console.log(77777,this.cnt)
+                  try {
+                    layer.ext.values.forEach((value,i) => {
+                      this.$store.commit('updateParam', {
+                        name: layer.ext.name,
+                        mapName: this.mapName,
+                        value: value,
+                        order: i
+                      })
                     })
-                  })
+                  } catch (e) {
+                    console.log(e)
+                  }
                 }
                 // ここを改修する。
                 this.infoOpen(layer)

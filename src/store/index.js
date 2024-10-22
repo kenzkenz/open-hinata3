@@ -55,7 +55,11 @@ export default createStore({
     highwayYear:{
       map01: '2024',
       map02: '2024'
-    }
+    },
+    tetsudojikeiretsuYear:{
+      map01: '2024',
+      map02: '2024'
+    },
     //------------------------
   },
   getters: {

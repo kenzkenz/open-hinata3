@@ -11,16 +11,20 @@
     </div>
     <!--コンポーネントをここに書き連ねる -->
     <extHighway :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extHighway'"/>
+    <extTetsudojikeiretsu :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extTetsudojikeiretsu'"/>
+
   </div>
 </template>
 
 <script>
 import extHighway from "@/components/ext-highway"
+import extTetsudojikeiretsu from "@/components/ext-tetsudojikeiretsu"
 
 export default {
   name: "dialog-info",
   components: {
-    extHighway
+    extHighway,
+    extTetsudojikeiretsu
   },
   props: ['mapName'],
   computed: {
