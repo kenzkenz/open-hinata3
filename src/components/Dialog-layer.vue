@@ -49,7 +49,7 @@ export default {
   },
   data: () => ({
     searchText: '',
-    cnt: 0,
+    // cnt: 0,
     selectedLayers: {
       map01:[],
       map02:[]
@@ -82,10 +82,10 @@ export default {
       this.$store.commit('incrDialogMaxZindex')
       const result = this.s_dialogsINfo[this.mapName].find(el => el.id === element.id)
       const dialogEl = document.querySelector('#dialog-div-layerDialog-' + this.mapName)
-      let top = dialogEl.offsetTop + 'px';
+      let top = dialogEl.offsetTop + 'px'
       let left
       if (window.innerWidth > 1000) {
-        left = (dialogEl.offsetLeft + dialogEl.offsetWidth + 5) + 'px';
+        left = (dialogEl.offsetLeft + dialogEl.offsetWidth + 5) + 'px'
       } else {
         left = '10px'
       }
@@ -94,17 +94,6 @@ export default {
         top = '100px'
         left = '10px'
       }
-
-      console.log(top,left)
-      // if (element.ext) {
-      //   this.$store.state.dialogs[element.ext.name][this.mapName].style.display = 'block'
-      //   this.$store.state.dialogs[element.ext.name][this.mapName].style['z-index'] = this.$store.state.dialogMaxZindex
-      //   if(this.$store.state.dialogs[element.ext.name][this.mapName].style.top === '56px') {
-      //     this.$store.state.dialogs[element.ext.name][this.mapName].style.top = top
-      //     this.$store.state.dialogs[element.ext.name][this.mapName].style.left = left
-      //   }
-      //   return
-      // }
 
       if (!result) {
         const infoDialog =
@@ -123,8 +112,14 @@ export default {
             }
         this.$store.commit('pushDialogsInfo', {mapName: this.mapName, dialog: infoDialog})
       } else {
-        result.style.display = 'block';
+        result.style.display = 'block'
         result.style["z-index"] = this.$store.state.dialogMaxZindex
+
+
+        // const elm = document.querySelector('#dialog-info-' + element.id)
+        // console.log('#dialog-info-' + element.id)
+        // console.log(elm)
+
       }
     },
     changeWatchFlg (bool) {
@@ -243,9 +238,8 @@ export default {
             })
             // -------------------------------------------------
             if (layer.ext) {
-              if (this.cnt < 2){
+              // if (this.cnt < 2){
                 if (layer.ext.values) {
-                  console.log(77777,this.cnt)
                   try {
                     layer.ext.values.forEach((value,i) => {
                       this.$store.commit('updateParam', {
@@ -261,8 +255,8 @@ export default {
                 }
                 // ここを改修する。
                 this.infoOpen(layer)
-              }
-              this.cnt++
+              // }
+              // this.cnt++
             }
           }
         }

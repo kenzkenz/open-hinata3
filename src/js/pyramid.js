@@ -7,7 +7,7 @@ export default function pyramid () {
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
             // e.stopPropagation()
-            console.log(e.target.classList)
+            // console.log(e.target.classList)
             if (e.target && e.target.classList.contains('pyramid-syochiiki-r02')) {
                 console.log(e.target.getAttribute("cdArea"))
                 store.state.cdArea = e.target.getAttribute("cdArea")

@@ -1,6 +1,6 @@
 <template>
-  <div :id="'dialog-info-' + item.id" v-drag="{handle:'#drag-handle-' + item.id}" class="dialog-info-div" v-for="item in info" :key="item.id" :style="item.style" @mousedown="dialogMouseDown(item)" @mouseup="dialogMouseDown(item)">
-    <div class="drag-handle" :id="'drag-handle-' + item.id"></div>
+  <div :id="'dialog-info-'+ item.id" class="dialog-info-div" v-for="item in info" :key="item.id" :style="item.style"  @mouseover="aaa(item)" @mousedown="dialogMouseDown(item)" @mouseup="dialogMouseDown(item)">
+    <div class="drag-handle" :id="'handle-'+ item.id"></div>
     <div class="close-btn-div" @click="close(item)"><i style="" class="fa-solid fa-xmark hover close-btn"></i></div>
     <!--なにもないとき。普通のラスターのとき-->
     <div v-if="!item.ext">
@@ -12,7 +12,6 @@
     <!--コンポーネントをここに書き連ねる -->
     <extHighway :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extHighway'"/>
     <extTetsudojikeiretsu :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extTetsudojikeiretsu'"/>
-
   </div>
 </template>
 
@@ -27,12 +26,24 @@ export default {
     extTetsudojikeiretsu
   },
   props: ['mapName'],
+  data: () => ({
+    item:''
+  }),
   computed: {
     info () {
       return this.$store.state.dialogsInfo[this.mapName]
     }
   },
   methods: {
+    aaa(item) {
+      this.item = item
+    },
+    dragEnd (item) {
+      const result = this.$store.state.dialogsInfo[this.mapName].find(el => el.id === item.id)
+      const elm = document.querySelector('#dialog-info-' + item.id)
+      result.style.top = elm.style.top
+      result.style.left = elm.style.left
+    },
     close (item) {
       const result = this.$store.state.dialogsInfo[this.mapName].find(el => el.id === item.id)
       result.style.display = 'none'
@@ -45,7 +56,53 @@ export default {
       result.style.left = elm.style.left
       result.style['z-index'] = this.$store.state.dialogMaxZindex
     }
-  }
+  },
+  watch: {
+    item: {
+      handler: function(){
+        this.$nextTick(() => {
+          // const draggable = this.$refs.dragDiv[0]
+          // const handle =  this.$refs.dragHandle[0]
+          const draggable = document.querySelector("#dialog-info-" + this.item.id)
+          const handle =  document.querySelector("#handle-" + this.item.id)
+
+          let isDragging = false;
+          let offsetX = 0;
+          let offsetY = 0;
+
+          handle.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            offsetX = e.clientX - draggable.offsetLeft;
+            offsetY = e.clientY - draggable.offsetTop;
+            document.addEventListener('mousemove', doDrag);
+            document.addEventListener('mouseup', stopDrag);
+          });
+
+          const doDrag = (e) => {
+            if (isDragging) {
+              const x = e.clientX - offsetX;
+              const y = e.clientY - offsetY;
+              draggable.style.left = `${x}px`;
+              draggable.style.top = `${y}px`;
+            }
+          };
+
+          const stopDrag = () => {
+            isDragging = false;
+            document.removeEventListener('mousemove', doDrag);
+            document.removeEventListener('mouseup', stopDrag);
+          };
+        })
+
+      },
+      deep: true
+    }
+  },
+  mounted() {
+    this.$nextTick(() => {
+
+    });
+  },
 }
 </script>
 

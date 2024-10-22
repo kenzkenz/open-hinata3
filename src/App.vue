@@ -41,7 +41,6 @@ import DialogMenu from '@/components/Dialog-menu'
 import DialogLayer from '@/components/Dialog-layer'
 import DialogInfo from '@/components/Dialog-info'
 import Dialog2 from '@/components/Dialog2'
-// import ExtHighway from '@/components/ext-highway'
 import codeShizen from '@/js/codeShizen'
 import pyramid from '@/js/pyramid'
 import * as Layers from '@/js/layers'
@@ -56,8 +55,6 @@ export default {
     DialogMenu,
     DialogInfo,
     Dialog2,
-    // ExtHighway,
-    // DialogPyramid,
   },
   data: () => ({
     mapNames: ['map01','map02'],
@@ -442,9 +439,9 @@ export default {
           }
           // ----------------------------------------------------------------
           // ここを改善する必要あり ここでプログラムがエラーなしでとまる。
-
-          console.log(mapName)
-          console.log(params.slj)
+          //
+          // console.log(mapName)
+          // console.log(params.slj)
           if (params.slj) {
             params.slj[mapName].forEach(slg => {
               let cnt = 0

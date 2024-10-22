@@ -1,77 +1,78 @@
-
 const drag = {
-  install (Vue) {
-    var store = new Vue({
-      // data: {
-      //   dragTarget: '9999',
-      //   dragging: false,
-      //   yDifference:  0,
-      //   xDifference: 0
-      // }
-      data() {
-        return {
-          dragTarget: '9999',
-          dragging: false,
-          yDifference:  0,
-          xDifference: 0
-        }
-      }
-    });
-    const startDrag = (el) => {
-      const e = window.event;
+  install(app) {
+    const store = {
+      dragging: false,
+      dragTarget: null,
+      yDifference: 0,
+      xDifference: 0
+    };
+
+    const startDrag = (el, event) => {
+      alert()
+      const e = event.type.includes('touch') ? event.touches[0] : event;
       store.dragging = true;
       store.dragTarget = el;
-      if (e.changedTouches) {
-        const touchObject = e.changedTouches[0];
-        store.yDifference = touchObject.pageY - store.dragTarget.offsetTop;
-        store.xDifference = touchObject.pageX - store.dragTarget.offsetLeft
-      } else {
-        store.yDifference = e.clientY - store.dragTarget.offsetTop;
-        store.xDifference = e.clientX - store.dragTarget.offsetLeft
-      }
+      store.yDifference = e.clientY - store.dragTarget.offsetTop;
+      store.xDifference = e.clientX - store.dragTarget.offsetLeft;
     };
-    const doDrag = () => {
-      if (store.dragging) {
-        const e = window.event;
-        let x = 0;
-        let y = 0;
-        if (e.changedTouches) {
-          const touchObject = e.changedTouches[0];
-          y = touchObject.pageY - store.yDifference;
-          x = touchObject.pageX - store.xDifference
-        } else {
-          y = e.clientY - store.yDifference;
-          x = e.clientX - store.xDifference
-        }
-        if (y < 10) y = 0;
+
+    const doDrag = (event) => {
+      if (store.dragging && store.dragTarget) {
+        const e = event.type.includes('touch') ? event.touches[0] : event;
+        let x = e.clientX - store.xDifference;
+        let y = e.clientY - store.yDifference;
+
+        // 画面の上部や左端に到達した場合の制約
+        if (y < 0) y = 0;
+        if (x < 0) x = 0;
+
         store.dragTarget.style.top = y + 'px';
         store.dragTarget.style.left = x + 'px';
       }
     };
+
     const stopDrag = () => {
       store.dragging = false;
+      store.dragTarget = null;
     };
-    Vue.directive('my-drag-handle', {
-      bind: (el) => {
-        el.addEventListener("mousedown", function() {
-          startDrag(el.parentNode);
-        }, false);
-        el.addEventListener("touchstart", function() {
-          startDrag(el.parentNode);
-        }, false);
+
+    app.directive('my-drag-handle', {
+      beforeMount(el) {
+        el.addEventListener('mousedown', (e) => startDrag(el.parentNode, e), false);
+        el.addEventListener('touchstart', (e) => startDrag(el.parentNode, e), false);
       }
     });
-    Vue.directive('my-drag', {
-      bind: (el) => {
-        el.addEventListener("mousedown", function() {
-          startDrag(el);
-        }, false);
+
+    app.directive('my-drag', {
+      beforeMount(el) {
+        el.addEventListener('mousedown', (e) => startDrag(el, e), false);
+        el.addEventListener('touchstart', (e) => startDrag(el, e), false);
       }
     });
-    window.addEventListener('mousemove', doDrag);
-    window.addEventListener('mouseup', stopDrag);
-    window.addEventListener('touchmove', doDrag);
-    window.addEventListener('touchend', stopDrag);
+
+    const addListeners = () => {
+      window.addEventListener('mousemove', doDrag);
+      window.addEventListener('mouseup', stopDrag);
+      window.addEventListener('touchmove', doDrag);
+      window.addEventListener('touchend', stopDrag);
+    };
+
+    const removeListeners = () => {
+      window.removeEventListener('mousemove', doDrag);
+      window.removeEventListener('mouseup', stopDrag);
+      window.removeEventListener('touchmove', doDrag);
+      window.removeEventListener('touchend', stopDrag);
+    };
+
+    addListeners();
+
+    // コンポーネントが破棄される前にリスナーを削除
+    app.mixin({
+      beforeUnmount() {
+        removeListeners();
+      }
+    });
   }
 };
-export default drag
+
+export default drag;
