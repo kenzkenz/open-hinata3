@@ -1,5 +1,5 @@
 <template>
-  <div :id="'dialog-info-'+ item.id" class="dialog-info-div" v-for="item in info" :key="item.id" :style="item.style"  @mouseover="aaa(item)" @mousedown="dialogMouseDown(item)" @mouseup="dialogMouseDown(item)">
+  <div :id="'dialog-info-'+ item.id" class="dialog-info-div" v-for="item in info" :key="item.id" :style="item.style"  @mouseover="aaa(item)" @pointerdown="dialogMouseDown(item)" @mousedown="dialogMouseDown(item)" @mouseup="dialogMouseDown(item)">
     <div class="drag-handle" :id="'handle-'+ item.id"></div>
     <div class="close-btn-div" @click="close(item)"><i style="" class="fa-solid fa-xmark hover close-btn"></i></div>
     <!--なにもないとき。普通のラスターのとき-->
