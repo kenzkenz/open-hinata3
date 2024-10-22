@@ -443,7 +443,7 @@ export default {
           // ----------------------------------------------------------------
           // ここを改善する必要あり
 
-          console.log(params.slj[mapName])
+          // console.log(params.slj[mapName])
 
           // params.slj[mapName].forEach(slg => {
           //   let cnt = 0
@@ -477,7 +477,6 @@ export default {
           //   console.log('背景' + cnt + '件')
           // })
           if (params.slj) this.s_selectedLayers = params.slj
-
           // ----------------------------------------------------------------
           // 標高タイルソース---------------------------------------------------
           map.addSource("gsidem-terrain-rgb", {
