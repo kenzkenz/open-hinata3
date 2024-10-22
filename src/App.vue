@@ -1033,18 +1033,19 @@ export default {
             const props = e.features[0].properties
             console.log(props)
             const name = props.N06_007
-            console.log(name)
+            const id = props.N06_004
             // ポップアップを表示する
             new maplibregl.Popup({
               offset: 10,
               closeButton: true,
             })
                 .setLngLat(coordinates)
-                .setHTML(`
-                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
-                   ${name}
-                  </div>
-                `)
+                .setHTML(
+                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                    '<span style="font-size: 20px;">' + name + '</span><br>' +
+                    '<span style="font-size: 12px;">id=' + id + '</span>' +
+                    '</div>'
+                )
                 .addTo(map)
           })
           map.on('click', 'oh-highwayLayer-green-lines', (e) => {
@@ -1055,18 +1056,19 @@ export default {
             const props = e.features[0].properties
             console.log(props)
             const name = props.N06_007
-            console.log(name)
+            const id = props.N06_004
             // ポップアップを表示する
             new maplibregl.Popup({
               offset: 10,
               closeButton: true,
             })
                 .setLngLat(coordinates)
-                .setHTML(`
-                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
-                   ${name}
-                  </div>
-                `)
+                .setHTML(
+                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                    '<span style="font-size: 20px;">' + name + '</span><br>' +
+                    '<span style="font-size: 12px;">id=' + id + '</span>' +
+                    '</div>'
+                )
                 .addTo(map)
           })
           const pitch = !isNaN(this.pitch[mapName]) ? this.pitch[mapName]: 0
