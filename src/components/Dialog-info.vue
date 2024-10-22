@@ -67,31 +67,52 @@ export default {
           const handle =  document.querySelector("#handle-" + this.item.id)
 
           let isDragging = false;
-          let offsetX = 0;
-          let offsetY = 0;
+          let startX, startY, offsetX, offsetY;
 
           handle.addEventListener('mousedown', (e) => {
             isDragging = true;
-            offsetX = e.clientX - draggable.offsetLeft;
-            offsetY = e.clientY - draggable.offsetTop;
-            document.addEventListener('mousemove', doDrag);
-            document.addEventListener('mouseup', stopDrag);
+            startX = e.clientX;
+            startY = e.clientY;
+            const rect = draggable.getBoundingClientRect();
+            offsetX = startX - rect.left;
+            offsetY = startY - rect.top;
           });
 
-          const doDrag = (e) => {
+          document.addEventListener('mousemove', (e) => {
             if (isDragging) {
-              const x = e.clientX - offsetX;
-              const y = e.clientY - offsetY;
-              draggable.style.left = `${x}px`;
-              draggable.style.top = `${y}px`;
-            }
-          };
+              // const x = e.clientX - offsetX;
+              // const y = e.clientY - offsetY;
+              //
+              // // ウィンドウの範囲内に限定するための計算
+              // // const maxX = window.innerWidth - draggable.offsetWidth;
+              // const maxX = window.innerWidth - draggable.offsetWidth;
+              // const maxY = window.innerHeight - handle.offsetHeight;
+              //
+              // // 新しい位置がウィンドウの範囲を超えないように制限
+              // const limitedX = Math.max(0, Math.min(x, maxX));
+              // const limitedY = Math.max(0, Math.min(y, maxY));
+              //
+              // draggable.style.left = `${limitedX}px`;
+              // draggable.style.top = `${limitedY}px`;
 
-          const stopDrag = () => {
+                const x = e.clientX - offsetX;
+                const y = e.clientY - offsetY;
+
+                // 縦方向（Y座標）のみウィンドウの範囲内に制限
+                const maxY = window.innerHeight - handle.offsetHeight;
+                const limitedY = Math.max(0, Math.min(y, maxY));
+
+                // 横方向（X座標）は制限しない
+                draggable.style.left = `${x}px`;
+                draggable.style.top = `${limitedY}px`;
+
+
+            }
+          });
+
+          document.addEventListener('mouseup', () => {
             isDragging = false;
-            document.removeEventListener('mousemove', doDrag);
-            document.removeEventListener('mouseup', stopDrag);
-          };
+          });
         })
 
       },
