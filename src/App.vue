@@ -442,6 +442,9 @@ export default {
           }
           // ----------------------------------------------------------------
           // ここを改善する必要あり
+
+          console.log(params.slj[mapName])
+
           // params.slj[mapName].forEach(slg => {
           //   let cnt = 0
           //   function aaa () {
@@ -1022,6 +1025,28 @@ export default {
                 .addTo(map)
           })
           // ------------------------------------------
+          map.on('click', 'oh-highwayLayer-red-lines', (e) => {
+            let coordinates = e.lngLat
+            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+            }
+            const props = e.features[0].properties
+            console.log(props)
+            const name = props.N06_007
+            console.log(name)
+            // ポップアップを表示する
+            new maplibregl.Popup({
+              offset: 10,
+              closeButton: true,
+            })
+                .setLngLat(coordinates)
+                .setHTML(`
+                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+                   ${name}
+                  </div>
+                `)
+                .addTo(map)
+          })
           map.on('click', 'oh-highwayLayer-green-lines', (e) => {
             let coordinates = e.lngLat
             while (Math.abs(e.lngLat.lng - coordinates) > 180) {
@@ -1049,6 +1074,7 @@ export default {
             this.$store.state[mapName].setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
           }
         })
+
         //on load終了----------------------------------------------------------------------------------------------------
       })
     }
