@@ -374,7 +374,7 @@ export const plateauPmtilesLayer = {
 export const csGifuSource = {
     id: 'csGifu', obj: {
         type: 'raster',
-        tiles: ['https://kenzkenz2.xsrv.jp/gihucs/{z}/{x}/{y}.png'],
+        tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://kenzkenz2.xsrv.jp/gihucs/{z}/{x}/{y}.png'],
         tileSize: 256,
         scheme: 'tms'
     }
@@ -388,7 +388,7 @@ export const csGifuLayer = {
 export const csNotoSource = {
     id: 'csNotoSource', obj: {
         type: 'raster',
-        tiles: ['https://www2.ffpri.go.jp/soilmap/tile/cs_noto/{z}/{x}/{y}.png'],
+        tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://www2.ffpri.go.jp/soilmap/tile/cs_noto/{z}/{x}/{y}.png'],
         tileSize: 256,
     }
 }
@@ -417,7 +417,7 @@ export const csShizuokaLayer = {
 export const aichiSekisyokuSource = {
     id: 'aichiSekisyokuSource', obj: {
         type: 'raster',
-        tiles: ['https://bg.maps.pref.aichi.jp/tiles/w213665/{z}/{x}/{y}.png'],
+        tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://bg.maps.pref.aichi.jp/tiles/w213665/{z}/{x}/{y}.png'],
         tileSize: 256,
         crossOrigin: 'anonymous',
     }
@@ -456,6 +456,20 @@ export const csOsakaLayer = {
     'id': 'oh-csOsakaLayer',
     'type': 'raster',
     'source': 'csOsakaSource',
+}
+// 川と流域地図------------------------------------------------------------------------------------------------------
+export const ryuikiSource = {
+    id: 'ryuiki-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://tiles.dammaps.jp/ryuiki_t/1/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        crossOrigin: 'anonymous',
+    }
+}
+export const ryuikiLayer = {
+    'id': 'oh-ryuikiLayer',
+    'type': 'raster',
+    'source': 'ryuiki-source',
 }
 // 登記所備付地図データ --------------------------------------------------------------------------------------------
 export const amxSource = {
@@ -1961,6 +1975,12 @@ const layers01 = [
         label: "自然、立体図等",
         nodes: [
             {
+                id: 'oh-ryuiki',
+                label: "川と流域地図",
+                source: ryuikiSource,
+                layers: [ryuikiLayer]
+            },
+            {
                 id: 'oh-kasen',
                 label: "河川",
                 source: kasenSource,
@@ -2002,12 +2022,12 @@ const layers01 = [
                 source: tamaSekisyokuSource,
                 layers: [tamaSekisyokuLayer]
             },
-            // {
-            //     id: 'oh-aichiSekisyokuLayer',
-            //     label: "愛知県赤色立体地図",
-            //     source: aichiSekisyokuSource,
-            //     layers: [aichiSekisyokuLayer]
-            // },
+            {
+                id: 'oh-aichiSekisyokuLayer',
+                label: "愛知県赤色立体地図",
+                source: aichiSekisyokuSource,
+                layers: [aichiSekisyokuLayer]
+            },
         ]
     },
     {
