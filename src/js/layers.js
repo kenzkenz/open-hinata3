@@ -587,9 +587,9 @@ export const bakumatsuLayerHeight = {
             'interpolate',
             ['linear'],
             ['/', ['get', '石高計'], ['get', 'area']],
-            0, 'white',   // Color for low values
-            10000000, 'red', // Intermediate value
-            50000000, 'black' // Color for high values
+            0, 'white',
+            10000000, 'red',
+            50000000, 'black'
         ]
     }
 }
@@ -1946,7 +1946,7 @@ const layers01 = [
                 id: 'oh-bakumatsu-kokudaka-height',
                 label: "幕末期近世の村（石高/面積）3D",
                 source: bakumatsuSource,
-                layers: [bakumatsuLayerKokudaka,bakumatsuLayerHeight]
+                layers: [bakumatsuLayerHeight]
             },
             {
                 id: 'oh-bakumatsu',

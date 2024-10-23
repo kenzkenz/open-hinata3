@@ -455,6 +455,8 @@ export default {
                           if (v2.id === slg.id) {
                             slg.source = v2.source
                             slg.layers = v2.layers
+                            console.log(slg.layers)
+                            console.log(v2.layers)
                           }
                           cnt++
                         } else {
@@ -1108,7 +1110,7 @@ export default {
                 `)
                 .addTo(map)
           })
-          map.on('click', 'oh-bakumatsu-kokudaka-height', (e) => {
+          map.on('click', 'oh-bakumatsu-height', (e) => {
             let coordinates = e.lngLat
             const props = e.features[0].properties
             console.log(props)
