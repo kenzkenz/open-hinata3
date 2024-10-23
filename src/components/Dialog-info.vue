@@ -111,8 +111,9 @@ alert()
           });
           document.addEventListener('touchmove', (e) => {
             e.preventDefault()
+            alert(isDragging)
             if (isDragging) {
-              alert()
+              alert(isDragging)
               const x = e.clientX - offsetX;
               const y = e.clientY - offsetY;
               // 縦方向（Y座標）のみウィンドウの範囲内に制限
