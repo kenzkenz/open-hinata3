@@ -1,5 +1,5 @@
 <template>
-  <div ref="dragDiv" :id="'dialog-info-'+ item.id" class="dialog-info-div" v-for="item in info" :key="item.id" :style="item.style"  @mouseover="aaa(item)" @touchstart="aaa(item)" @mousedown="dialogMouseDown(item)" @mouseup="dialogMouseDown(item)">
+  <div ref="dragDiv" :id="'dialog-info-'+ item.id" class="dialog-info-div" v-for="item in info" :key="item.id" :style="item.style" @touchstart="aaa(item)" @mousedown="dialogMouseDown(item)" @mouseup="dialogMouseDown(item)">
     <div ref="dragHandle" class="drag-handle" :id="'handle-'+ item.id"></div>
     <div class="close-btn-div" @click="close(item)"><i style="" class="fa-solid fa-xmark hover close-btn"></i></div>
     <!--なにもないとき。普通のラスターのとき-->
@@ -27,7 +27,6 @@ export default {
   },
   props: ['mapName'],
   data: () => ({
-    item:''
   }),
   computed: {
     info () {
@@ -35,12 +34,6 @@ export default {
     }
   },
   methods: {
-    bbb(){
-alert()
-    },
-    aaa(item) {
-      this.item = item
-    },
     dragEnd (item) {
       const result = this.$store.state.dialogsInfo[this.mapName].find(el => el.id === item.id)
       const elm = document.querySelector('#dialog-info-' + item.id)
@@ -119,69 +112,7 @@ alert()
           handle.addEventListener('mousedown', startDrag);
           handle.addEventListener('touchstart', startDrag);
 
-
-          // let isDragging = false;
-          // let startX, startY, offsetX, offsetY;
-          //
-          // handle.addEventListener('mousedown', (e) => {
-          //   isDragging = true;
-          //   startX = e.clientX;
-          //   startY = e.clientY;
-          //   const rect = draggable.getBoundingClientRect();
-          //   offsetX = startX - rect.left;
-          //   offsetY = startY - rect.top;
-          // });
-          //
-          // document.addEventListener('mousemove', (e) => {
-          //   if (isDragging) {
-          //       const x = e.clientX - offsetX;
-          //       const y = e.clientY - offsetY;
-          //       // 縦方向（Y座標）のみウィンドウの範囲内に制限
-          //       const maxY = window.innerHeight - handle.offsetHeight;
-          //       const limitedY = Math.max(0, Math.min(y, maxY));
-          //       // 横方向（X座標）は制限しない
-          //       draggable.style.left = `${x}px`;
-          //       draggable.style.top = `${limitedY}px`;
-          //   }
-          // });
-          // document.addEventListener('mouseup', () => {
-          //   isDragging = false;
-          // })
-          // // -----------------------------------------------------------
-          // handle.addEventListener('touchstart', (e) => {
-          //   e.preventDefault()
-          //   // alert()
-          //   isDragging = true;
-          //   startX = e.clientX;
-          //   startY = e.clientY;
-          //   const rect = draggable.getBoundingClientRect();
-          //   offsetX = startX - rect.left;
-          //   offsetY = startY - rect.top;
-          // });
-          // document.addEventListener('touchmove', (e) => {
-          //   e.preventDefault()
-          //   if (isDragging) {
-          //     alert(isDragging)
-          //     const x = e.clientX - offsetX;
-          //     const y = e.clientY - offsetY;
-          //     alert(x)
-          //     // 縦方向（Y座標）のみウィンドウの範囲内に制限
-          //     const maxY = window.innerHeight - handle.offsetHeight;
-          //     const limitedY = Math.max(0, Math.min(y, maxY));
-          //     // 横方向（X座標）は制限しない
-          //     draggable.style.left = `${x}px`;
-          //     draggable.style.top = `${limitedY}px`;
-          //   }
-          // });
-          // document.addEventListener('touchend', () => {
-          //   isDragging = false;
-          // })
-
-
-
-
         })
-
       },
       deep: true
     }
