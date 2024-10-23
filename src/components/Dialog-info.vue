@@ -74,6 +74,7 @@ alert()
           let offsetX, offsetY;
 
           const startDrag = (event) => {
+            event.preventDefault()
             const clientX = event.type === 'touchstart' ? event.touches[0].clientX : event.clientX;
             const clientY = event.type === 'touchstart' ? event.touches[0].clientY : event.clientY;
 
@@ -117,6 +118,7 @@ alert()
           };
 
           const endDrag = () => {
+            event.preventDefault();
             document.removeEventListener('mousemove', drag);
             document.removeEventListener('mouseup', endDrag);
             document.removeEventListener('touchmove', drag);
