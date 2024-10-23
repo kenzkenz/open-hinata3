@@ -66,15 +66,11 @@ alert()
         this.$nextTick(() => {
           const container = this.$refs.dragDiv[this.$refs.dragDiv.length -1]
           const handle =  this.$refs.dragHandle[this.$refs.dragHandle.length -1]
-          // console.log(draggable1)
-          // console.log(handle1)
           // const container = document.querySelector("#dialog-info-" + this.item.id)
           // const handle =  document.querySelector("#handle-" + this.item.id)
-
           let offsetX, offsetY;
 
           const startDrag = (event) => {
-            event.preventDefault()
             const clientX = event.type === 'touchstart' ? event.touches[0].clientX : event.clientX;
             const clientY = event.type === 'touchstart' ? event.touches[0].clientY : event.clientY;
 
@@ -88,11 +84,6 @@ alert()
           };
 
           const drag = (event) => {
-            // event.preventDefault(); // スクロールを防ぐ
-            // const clientX = event.type === 'touchmove' ? event.touches[0].clientX : event.clientX;
-            // const clientY = event.type === 'touchmove' ? event.touches[0].clientY : event.clientY;
-            // container.style.left = `${clientX - offsetX}px`;
-            // container.style.top = `${clientY - offsetY}px`;
             event.preventDefault(); // スクロールを防ぐ
 
             const clientX = event.type === 'touchmove' ? event.touches[0].clientX : event.clientX;
@@ -118,7 +109,6 @@ alert()
           };
 
           const endDrag = () => {
-            event.preventDefault();
             document.removeEventListener('mousemove', drag);
             document.removeEventListener('mouseup', endDrag);
             document.removeEventListener('touchmove', drag);
