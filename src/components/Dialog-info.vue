@@ -221,7 +221,7 @@ alert()
       border-top-right-radius: 4px;
       cursor: grab;
       color: white;
-      /*width: 50px;*/
+      touch-action: none;
     }
     .close-btn-div{
       position: absolute;
