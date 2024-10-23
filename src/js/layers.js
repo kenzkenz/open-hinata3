@@ -135,6 +135,106 @@ export const highwayLayerRed = {
     },
     'filter': ['==', 'N06_002', 2024]
 }
+// 鉄道--------------------------------------
+export const tetsudoSource = {
+    id: 'tetsudo-source', obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/tetsudo/tetsudojikeiretsu2.pmtiles",
+
+    }
+}
+export const tetsudoLayerRed = {
+    'id': 'oh-tetsudo-red-lines',
+    'type': 'line',
+    'source': 'tetsudo-source',
+    "source-layer": "line",
+    'layout': {
+        'line-join': 'round',
+        'line-cap': 'round'
+    },
+    'paint': {
+        'line-color': 'orangered',
+        'line-blur': 0.8,
+        // 'line-width': 5,
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            7, 3,
+            11, 5
+        ]
+    }
+}
+export const tetsudoLayerBlue = {
+    'id': 'oh-tetsudo-blue-lines',
+    'type': 'line',
+    'source': 'tetsudo-source',
+    "source-layer": "line",
+    'layout': {
+        'line-join': 'round',
+        'line-cap': 'round'
+    },
+    'paint': {
+        'line-color': 'dodgerblue',
+        'line-blur': 0.8,
+        // 'line-width': 5,
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            7, 3,
+            11, 5
+        ]
+    },
+    'filter': ['==', 'N05_005e', '9999']
+}
+export const tetsudoLayerPointRed = {
+    id: "oh-tetsudo-points-red",
+    type: "circle",
+    source: "tetsudo-source",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': 'orangered',
+        'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            12, 0,
+            13, 6
+        ],
+        'circle-stroke-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            12, 0,
+            13, 1
+        ],
+    },
+}
+export const tetsudoLayerPointBlue = {
+    id: "oh-tetsudo-points-blue",
+    type: "circle",
+    source: "tetsudo-source",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': 'dodgerblue',
+        'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            12, 0,
+            13, 6
+        ],
+        'circle-stroke-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            12, 0,
+            13, 1
+        ],
+    },
+    'filter': ['==', 'N05_005e', '9999']
+}
 // 鉄道時系列--------------------------------------
 export const tetsudojikeiretsuSource = {
     id: 'tetsudojikeiretsu-source', obj: {
@@ -1772,8 +1872,14 @@ const layers01 = [
     },
     {
         id: 'doro',
-        label: "道路等",
+        label: "鉄道、道路等",
         nodes: [
+            {
+                id: 'oh-tetsudo',
+                label: "鉄道（廃線は赤色）",
+                source: tetsudoSource,
+                layers: [tetsudoLayerRed,tetsudoLayerBlue,tetsudoLayerPointRed,tetsudoLayerPointBlue],
+            },
             {
                 id: 'oh-tetsudojikeiretsu',
                 label: "鉄道時系列",

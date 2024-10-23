@@ -540,6 +540,102 @@ export default {
           //------------------------------------------------------------------------------------------------------------
 
           // 地物クリック時にポップアップを表示する----------------------------------------------------------------------------
+          map.on('click', 'oh-tetsudo-red-lines', (e) => {
+            let coordinates = e.lngLat
+            const props = e.features[0].properties
+            console.log(props)
+            const name = props.N05_002
+            const kaisya = props.N05_003
+            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+            }
+            // ポップアップを表示する
+            new maplibregl.Popup({
+              offset: 10,
+              closeButton: true,
+            })
+                .setLngLat(coordinates)
+                .setHTML(
+                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                    '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
+                    '<span style="font-size: 20px;">' + name + '</span><br>' +
+                    '</div>'
+                )
+                .addTo(map)
+          })
+          map.on('click', 'oh-tetsudo-blue-lines', (e) => {
+            let coordinates = e.lngLat
+            const props = e.features[0].properties
+            console.log(props)
+            const name = props.N05_002
+            const kaisya = props.N05_003
+            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+            }
+            // ポップアップを表示する
+            new maplibregl.Popup({
+              offset: 10,
+              closeButton: true,
+            })
+                .setLngLat(coordinates)
+                .setHTML(
+                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                    '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
+                    '<span style="font-size: 20px;">' + name + '</span><br>' +
+                    '</div>'
+                )
+                .addTo(map)
+          })
+          map.on('click', 'oh-tetsudo-points-red', (e) => {
+            let coordinates = e.lngLat
+            const props = e.features[0].properties
+            console.log(props)
+            const name = props.N05_002
+            const kaisya = props.N05_003
+            const eki = props.N05_011
+            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+            }
+            // ポップアップを表示する
+            new maplibregl.Popup({
+              offset: 10,
+              closeButton: true,
+            })
+                .setLngLat(coordinates)
+                .setHTML(
+                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                    '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
+                    '<span style="font-size: 16px;">' + name + '</span><br>' +
+                    '<span style="font-size: 20px;">' + eki + '</span><br>' +
+                    '</div>'
+                )
+                .addTo(map)
+          })
+          map.on('click', 'oh-tetsudo-points-blue', (e) => {
+            let coordinates = e.lngLat
+            const props = e.features[0].properties
+            console.log(props)
+            const name = props.N05_002
+            const kaisya = props.N05_003
+            const eki = props.N05_011
+            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+            }
+            // ポップアップを表示する
+            new maplibregl.Popup({
+              offset: 10,
+              closeButton: true,
+            })
+                .setLngLat(coordinates)
+                .setHTML(
+                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                    '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
+                    '<span style="font-size: 16px;">' + name + '</span><br>' +
+                    '<span style="font-size: 20px;">' + eki + '</span><br>' +
+                    '</div>'
+                )
+                .addTo(map)
+          })
           map.on('click', 'oh-tetsudojikeiretsu-blue-lines', (e) => {
             let coordinates = e.lngLat
             const props = e.features[0].properties
