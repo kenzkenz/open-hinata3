@@ -64,69 +64,106 @@ alert()
     item: {
       handler: function(){
         this.$nextTick(() => {
-          const draggable = this.$refs.dragDiv[this.$refs.dragDiv.length -1]
+          const container = this.$refs.dragDiv[this.$refs.dragDiv.length -1]
           const handle =  this.$refs.dragHandle[this.$refs.dragHandle.length -1]
           // console.log(draggable1)
           // console.log(handle1)
           // const draggable = document.querySelector("#dialog-info-" + this.item.id)
           // const handle =  document.querySelector("#handle-" + this.item.id)
 
-          let isDragging = false;
-          let startX, startY, offsetX, offsetY;
+          let offsetX, offsetY;
 
-          handle.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            startX = e.clientX;
-            startY = e.clientY;
-            const rect = draggable.getBoundingClientRect();
-            offsetX = startX - rect.left;
-            offsetY = startY - rect.top;
-          });
+          const startDrag = (event) => {
+            const clientX = event.type === 'touchstart' ? event.touches[0].clientX : event.clientX;
+            const clientY = event.type === 'touchstart' ? event.touches[0].clientY : event.clientY;
 
-          document.addEventListener('mousemove', (e) => {
-            if (isDragging) {
-                const x = e.clientX - offsetX;
-                const y = e.clientY - offsetY;
-                // 縦方向（Y座標）のみウィンドウの範囲内に制限
-                const maxY = window.innerHeight - handle.offsetHeight;
-                const limitedY = Math.max(0, Math.min(y, maxY));
-                // 横方向（X座標）は制限しない
-                draggable.style.left = `${x}px`;
-                draggable.style.top = `${limitedY}px`;
-            }
-          });
-          document.addEventListener('mouseup', () => {
-            isDragging = false;
-          })
-          // -----------------------------------------------------------
-          handle.addEventListener('touchstart', (e) => {
-            e.preventDefault()
-            // alert()
-            isDragging = true;
-            startX = e.clientX;
-            startY = e.clientY;
-            const rect = draggable.getBoundingClientRect();
-            offsetX = startX - rect.left;
-            offsetY = startY - rect.top;
-          });
-          document.addEventListener('touchmove', (e) => {
-            e.preventDefault()
-            if (isDragging) {
-              alert(isDragging)
-              const x = e.clientX - offsetX;
-              const y = e.clientY - offsetY;
-              alert(x)
-              // 縦方向（Y座標）のみウィンドウの範囲内に制限
-              const maxY = window.innerHeight - handle.offsetHeight;
-              const limitedY = Math.max(0, Math.min(y, maxY));
-              // 横方向（X座標）は制限しない
-              draggable.style.left = `${x}px`;
-              draggable.style.top = `${limitedY}px`;
-            }
-          });
-          document.addEventListener('touchend', () => {
-            isDragging = false;
-          })
+            offsetX = clientX - container.offsetLeft;
+            offsetY = clientY - container.offsetTop;
+
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchmove', drag);
+            document.addEventListener('touchend', endDrag);
+          };
+
+          const drag = (event) => {
+            event.preventDefault(); // スクロールを防ぐ
+
+            const clientX = event.type === 'touchmove' ? event.touches[0].clientX : event.clientX;
+            const clientY = event.type === 'touchmove' ? event.touches[0].clientY : event.clientY;
+
+            container.style.left = `${clientX - offsetX}px`;
+            container.style.top = `${clientY - offsetY}px`;
+          };
+
+          const endDrag = () => {
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', endDrag);
+            document.removeEventListener('touchmove', drag);
+            document.removeEventListener('touchend', endDrag);
+          };
+
+          // ハンドルにイベントリスナーを追加
+          handle.addEventListener('mousedown', startDrag);
+          handle.addEventListener('touchstart', startDrag);
+
+
+          // let isDragging = false;
+          // let startX, startY, offsetX, offsetY;
+          //
+          // handle.addEventListener('mousedown', (e) => {
+          //   isDragging = true;
+          //   startX = e.clientX;
+          //   startY = e.clientY;
+          //   const rect = draggable.getBoundingClientRect();
+          //   offsetX = startX - rect.left;
+          //   offsetY = startY - rect.top;
+          // });
+          //
+          // document.addEventListener('mousemove', (e) => {
+          //   if (isDragging) {
+          //       const x = e.clientX - offsetX;
+          //       const y = e.clientY - offsetY;
+          //       // 縦方向（Y座標）のみウィンドウの範囲内に制限
+          //       const maxY = window.innerHeight - handle.offsetHeight;
+          //       const limitedY = Math.max(0, Math.min(y, maxY));
+          //       // 横方向（X座標）は制限しない
+          //       draggable.style.left = `${x}px`;
+          //       draggable.style.top = `${limitedY}px`;
+          //   }
+          // });
+          // document.addEventListener('mouseup', () => {
+          //   isDragging = false;
+          // })
+          // // -----------------------------------------------------------
+          // handle.addEventListener('touchstart', (e) => {
+          //   e.preventDefault()
+          //   // alert()
+          //   isDragging = true;
+          //   startX = e.clientX;
+          //   startY = e.clientY;
+          //   const rect = draggable.getBoundingClientRect();
+          //   offsetX = startX - rect.left;
+          //   offsetY = startY - rect.top;
+          // });
+          // document.addEventListener('touchmove', (e) => {
+          //   e.preventDefault()
+          //   if (isDragging) {
+          //     alert(isDragging)
+          //     const x = e.clientX - offsetX;
+          //     const y = e.clientY - offsetY;
+          //     alert(x)
+          //     // 縦方向（Y座標）のみウィンドウの範囲内に制限
+          //     const maxY = window.innerHeight - handle.offsetHeight;
+          //     const limitedY = Math.max(0, Math.min(y, maxY));
+          //     // 横方向（X座標）は制限しない
+          //     draggable.style.left = `${x}px`;
+          //     draggable.style.top = `${limitedY}px`;
+          //   }
+          // });
+          // document.addEventListener('touchend', () => {
+          //   isDragging = false;
+          // })
 
 
 
