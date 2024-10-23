@@ -1318,6 +1318,9 @@ export default {
 </style>
 
 <style>
+html, body {
+  overscroll-behavior: none;
+}
 .maplibregl-popup-content {
   padding: 30px 20px 10px 20px;
   max-width: 300px;
