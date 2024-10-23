@@ -100,6 +100,7 @@ alert()
           })
           // -----------------------------------------------------------
           handle.addEventListener('touchstart', (e) => {
+            e.preventDefault()
             alert()
             isDragging = true;
             startX = e.clientX;
@@ -109,6 +110,7 @@ alert()
             offsetY = startY - rect.top;
           });
           document.addEventListener('touchmove', (e) => {
+            e.preventDefault()
             if (isDragging) {
               const x = e.clientX - offsetX;
               const y = e.clientY - offsetY;
