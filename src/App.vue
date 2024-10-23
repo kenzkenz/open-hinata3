@@ -538,7 +538,15 @@ export default {
           map.on('idle', this.updatePermalink)
 
           //------------------------------------------------------------------------------------------------------------
-
+          map.on('mousemove', (e) => {
+            // クリック可能なすべてのレイヤーからフィーチャーを取得
+            const features = map.queryRenderedFeatures(e.point);
+            if (features.length) {
+              map.getCanvas().style.cursor = 'pointer';
+            } else {
+              map.getCanvas().style.cursor = '';
+            }
+          });
           // 地物クリック時にポップアップを表示する----------------------------------------------------------------------------
           map.on('click', 'oh-tetsudo-red-lines', (e) => {
             let coordinates = e.lngLat
