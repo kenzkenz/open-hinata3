@@ -1226,7 +1226,8 @@ export default {
 }
 .terrain-btn-div{
   position:absolute;
-  top:60%;
+  /*top:60%;*/
+  bottom: 20px;
   right:10px;
   z-index:2;
   /*display:none;*/
