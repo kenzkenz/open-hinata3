@@ -64,12 +64,12 @@ alert()
     item: {
       handler: function(){
         this.$nextTick(() => {
-          const container = this.$refs.dragDiv[this.$refs.dragDiv.length -1]
-          const handle =  this.$refs.dragHandle[this.$refs.dragHandle.length -1]
+          // const container = this.$refs.dragDiv[this.$refs.dragDiv.length -1]
+          // const handle =  this.$refs.dragHandle[this.$refs.dragHandle.length -1]
           // console.log(draggable1)
           // console.log(handle1)
-          // const draggable = document.querySelector("#dialog-info-" + this.item.id)
-          // const handle =  document.querySelector("#handle-" + this.item.id)
+          const container = document.querySelector("#dialog-info-" + this.item.id)
+          const handle =  document.querySelector("#handle-" + this.item.id)
 
           let offsetX, offsetY;
 
@@ -87,13 +87,33 @@ alert()
           };
 
           const drag = (event) => {
+            // event.preventDefault(); // スクロールを防ぐ
+            // const clientX = event.type === 'touchmove' ? event.touches[0].clientX : event.clientX;
+            // const clientY = event.type === 'touchmove' ? event.touches[0].clientY : event.clientY;
+            // container.style.left = `${clientX - offsetX}px`;
+            // container.style.top = `${clientY - offsetY}px`;
             event.preventDefault(); // スクロールを防ぐ
 
             const clientX = event.type === 'touchmove' ? event.touches[0].clientX : event.clientX;
             const clientY = event.type === 'touchmove' ? event.touches[0].clientY : event.clientY;
 
-            container.style.left = `${clientX - offsetX}px`;
-            container.style.top = `${clientY - offsetY}px`;
+            // 新しいX座標とY座標を計算
+            const newX = clientX - offsetX;
+            let newY = clientY - offsetY;
+
+            // ウィンドウの高さ内にY座標を制限
+            const windowHeight = window.innerHeight;
+            const handleHeight = handle.offsetHeight;
+
+            if (newY < 0) {
+              newY = 0; // 上限
+            } else if (newY > windowHeight - handleHeight) {
+              newY = windowHeight - handleHeight; // 下限
+            }
+
+            // 新しい位置を設定
+            container.style.left = `${newX}px`;
+            container.style.top = `${newY}px`;
           };
 
           const endDrag = () => {
