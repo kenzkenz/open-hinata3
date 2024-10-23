@@ -61,15 +61,15 @@ alert()
     }
   },
   watch: {
-    item: {
+    info: {
       handler: function(){
         this.$nextTick(() => {
-          // const container = this.$refs.dragDiv[this.$refs.dragDiv.length -1]
-          // const handle =  this.$refs.dragHandle[this.$refs.dragHandle.length -1]
+          const container = this.$refs.dragDiv[this.$refs.dragDiv.length -1]
+          const handle =  this.$refs.dragHandle[this.$refs.dragHandle.length -1]
           // console.log(draggable1)
           // console.log(handle1)
-          const container = document.querySelector("#dialog-info-" + this.item.id)
-          const handle =  document.querySelector("#handle-" + this.item.id)
+          // const container = document.querySelector("#dialog-info-" + this.item.id)
+          // const handle =  document.querySelector("#handle-" + this.item.id)
 
           let offsetX, offsetY;
 
