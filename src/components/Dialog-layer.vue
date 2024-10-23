@@ -190,26 +190,26 @@ export default {
         const map = this.$store.state[this.mapName]
         // まずレイヤーを削除-------------------------
         const layers = map.getStyle().layers
-        const selectedLayersIds = []
-        this.s_selectedLayers[this.mapName].forEach(layer => {
-          layer.layers.forEach(layer0 => {
-            selectedLayersIds.push(layer0.id)
-          })
-        })
-        layers.forEach(layer => {
-          if (layer.id.slice(0,2) === 'oh' ){
-            if(selectedLayersIds.indexOf(layer.id) === -1) map.removeLayer(layer.id)
-          }
-        })
-        // if (layers) {
-        //   for (let i = layers.length - 1; i >= 0; i--) {
-        //     const layerId = layers[i].id
-        //     if (layerId.slice(0,2) === 'oh' ) {
-        //       console.log(layerId)
-        //       map.removeLayer(layerId)
-        //     }
+        // const selectedLayersIds = []
+        // this.s_selectedLayers[this.mapName].forEach(layer => {
+        //   layer.layers.forEach(layer0 => {
+        //     selectedLayersIds.push(layer0.id)
+        //   })
+        // })
+        // layers.forEach(layer => {
+        //   if (layer.id.slice(0,2) === 'oh' ){
+        //     if(selectedLayersIds.indexOf(layer.id) === -1) map.removeLayer(layer.id)
         //   }
-        // }
+        // })
+        if (layers) {
+          for (let i = layers.length - 1; i >= 0; i--) {
+            const layerId = layers[i].id
+            if (layerId.slice(0,2) === 'oh' ) {
+              console.log(layerId)
+              map.removeLayer(layerId)
+            }
+          }
+        }
         // -----------------------------------------
         for (let i = this.s_selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
           const layer = this.s_selectedLayers[this.mapName][i]
