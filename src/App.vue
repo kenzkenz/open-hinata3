@@ -546,7 +546,7 @@ export default {
             if (features.length) {
               map.getCanvas().style.cursor = 'pointer';
             } else {
-              map.getCanvas().style.cursor = '';
+              map.getCanvas().style.cursor = 'default';
             }
           });
           // 地物クリック時にポップアップを表示する----------------------------------------------------------------------------
