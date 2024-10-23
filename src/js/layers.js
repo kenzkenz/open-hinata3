@@ -200,7 +200,7 @@ export const tetsudoLayerPointRed = {
             ['linear'],
             ['zoom'],
             12, 0,
-            13, 6
+            13, 10
         ],
         'circle-stroke-width': [
             'interpolate',
@@ -223,7 +223,7 @@ export const tetsudoLayerPointBlue = {
             ['linear'],
             ['zoom'],
             12, 0,
-            13, 6
+            13, 10
         ],
         'circle-stroke-width': [
             'interpolate',
