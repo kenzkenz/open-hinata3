@@ -101,7 +101,7 @@ alert()
           // -----------------------------------------------------------
           handle.addEventListener('touchstart', (e) => {
             e.preventDefault()
-            alert()
+            // alert()
             isDragging = true;
             startX = e.clientX;
             startY = e.clientY;
