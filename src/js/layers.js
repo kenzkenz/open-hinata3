@@ -457,6 +457,23 @@ export const csOsakaLayer = {
     'type': 'raster',
     'source': 'csOsakaSource',
 }
+// 川だけ地形地図------------------------------------------------------------------------------------------------------
+export const kawadakeSource = {
+    id: 'kawadake-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://www.gridscapes.net/AllRivers/1.0.0/t/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        scheme: 'tms',
+        // crossOrigin: 'anonymous',
+        minzoom: 5,
+        maxzoom: 14
+    }
+}
+export const kawddakeLayer = {
+    'id': 'oh-kawadakeLayer',
+    'type': 'raster',
+    'source': 'kawadake-source',
+}
 // 川と流域地図------------------------------------------------------------------------------------------------------
 export const ryuikiSource = {
     id: 'ryuiki-source', obj: {
@@ -464,6 +481,8 @@ export const ryuikiSource = {
         tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://tiles.dammaps.jp/ryuiki_t/1/{z}/{x}/{y}.png'],
         tileSize: 256,
         crossOrigin: 'anonymous',
+        minzoom: 5,
+        maxzoom: 14
     }
 }
 export const ryuikiLayer = {
@@ -1974,6 +1993,12 @@ const layers01 = [
         id: 2,
         label: "自然、立体図等",
         nodes: [
+            {
+                id: 'oh-kawadak',
+                label: "川だけ地形地図",
+                source: kawadakeSource,
+                layers: [kawddakeLayer]
+            },
             {
                 id: 'oh-ryuiki',
                 label: "川と流域地図",

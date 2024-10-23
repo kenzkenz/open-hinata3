@@ -72,6 +72,9 @@ export default {
     zoom:0,
   }),
   computed: {
+    s_terrainLevel () {
+      return this.$store.state.terrainLevel
+    },
     s_selectedLayers: {
       get() {
         return this.$store.state.selectedLayers
@@ -490,13 +493,13 @@ export default {
           // map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
           // alert()
           document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('mouseover', function() {
-            map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
+            map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
           }, false);
           document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('pointerdown', function() {
-            map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
+            map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
           }, false);
           addEventListener('keydown', function () {
-            map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
+            map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
           })
           // 標高タイルソース---------------------------------------------------
           // map.addSource("aws-terrain", {
