@@ -64,8 +64,10 @@ alert()
     item: {
       handler: function(){
         this.$nextTick(() => {
-          // const draggable = this.$refs.dragDiv[0]
-          // const handle =  this.$refs.dragDiv[0]
+          const draggable1 = this.$refs.dragDiv[0]
+          const handle1 =  this.$refs.dragDiv[0]
+          console.log(draggable1)
+          console.log(handle1)
           const draggable = document.querySelector("#dialog-info-" + this.item.id)
           const handle =  document.querySelector("#handle-" + this.item.id)
 
@@ -97,6 +99,14 @@ alert()
             isDragging = false;
           })
           // -----------------------------------------------------------
+          handle.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            const rect = draggable.getBoundingClientRect();
+            offsetX = startX - rect.left;
+            offsetY = startY - rect.top;
+          });
           document.addEventListener('touchmove', (e) => {
             if (isDragging) {
               const x = e.clientX - offsetX;
