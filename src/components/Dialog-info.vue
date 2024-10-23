@@ -1,6 +1,6 @@
 <template>
-  <div :id="'dialog-info-'+ item.id" class="dialog-info-div" v-for="item in info" :key="item.id" :style="item.style"  @mouseover="aaa(item)" @touchstart="dialogMouseDown(item)" @mousedown="dialogMouseDown(item)" @mouseup="dialogMouseDown(item)">
-    <div class="drag-handle" :id="'handle-'+ item.id"></div>
+  <div ref="dragDiv" :id="'dialog-info-'+ item.id" class="dialog-info-div" v-for="item in info" :key="item.id" :style="item.style"  @mouseover="aaa(item)" @touchstart="dialogMouseDown(item)" @mousedown="dialogMouseDown(item)" @mouseup="dialogMouseDown(item)">
+    <div ref="dragHandle" class="drag-handle" :id="'handle-'+ item.id"></div>
     <div class="close-btn-div" @click="close(item)"><i style="" class="fa-solid fa-xmark hover close-btn"></i></div>
     <!--なにもないとき。普通のラスターのとき-->
     <div v-if="!item.ext">
@@ -64,12 +64,12 @@ alert()
     item: {
       handler: function(){
         this.$nextTick(() => {
-          const draggable1 = this.$refs.dragDiv[0]
-          const handle1 =  this.$refs.dragDiv[0]
-          console.log(draggable1)
-          console.log(handle1)
-          const draggable = document.querySelector("#dialog-info-" + this.item.id)
-          const handle =  document.querySelector("#handle-" + this.item.id)
+          const draggable = this.$refs.dragDiv[this.$refs.dragDiv.length -1]
+          const handle =  this.$refs.dragHandle[this.$refs.dragHandle.length -1]
+          // console.log(draggable1)
+          // console.log(handle1)
+          // const draggable = document.querySelector("#dialog-info-" + this.item.id)
+          // const handle =  document.querySelector("#handle-" + this.item.id)
 
           let isDragging = false;
           let startX, startY, offsetX, offsetY;
@@ -100,6 +100,7 @@ alert()
           })
           // -----------------------------------------------------------
           handle.addEventListener('touchstart', (e) => {
+            alert()
             isDragging = true;
             startX = e.clientX;
             startY = e.clientY;
