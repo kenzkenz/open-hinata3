@@ -272,7 +272,7 @@ export default {
   min-width: 300px;
   background-color:gray;
   border: #000 1px solid;
-  overflow: scroll;
+  overflow: auto;
 }
 .second-div {
   /*min-height: 200px;*/
