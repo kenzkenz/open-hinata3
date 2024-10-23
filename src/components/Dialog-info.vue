@@ -35,6 +35,9 @@ export default {
     }
   },
   methods: {
+    bbb(){
+alert()
+    },
     aaa(item) {
       this.item = item
     },
@@ -80,39 +83,39 @@ export default {
 
           document.addEventListener('mousemove', (e) => {
             if (isDragging) {
-              // const x = e.clientX - offsetX;
-              // const y = e.clientY - offsetY;
-              //
-              // // ウィンドウの範囲内に限定するための計算
-              // // const maxX = window.innerWidth - draggable.offsetWidth;
-              // const maxX = window.innerWidth - draggable.offsetWidth;
-              // const maxY = window.innerHeight - handle.offsetHeight;
-              //
-              // // 新しい位置がウィンドウの範囲を超えないように制限
-              // const limitedX = Math.max(0, Math.min(x, maxX));
-              // const limitedY = Math.max(0, Math.min(y, maxY));
-              //
-              // draggable.style.left = `${limitedX}px`;
-              // draggable.style.top = `${limitedY}px`;
-
                 const x = e.clientX - offsetX;
                 const y = e.clientY - offsetY;
-
                 // 縦方向（Y座標）のみウィンドウの範囲内に制限
                 const maxY = window.innerHeight - handle.offsetHeight;
                 const limitedY = Math.max(0, Math.min(y, maxY));
-
                 // 横方向（X座標）は制限しない
                 draggable.style.left = `${x}px`;
                 draggable.style.top = `${limitedY}px`;
-
-
             }
           });
-
           document.addEventListener('mouseup', () => {
             isDragging = false;
+          })
+          // -----------------------------------------------------------
+          document.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+              const x = e.clientX - offsetX;
+              const y = e.clientY - offsetY;
+              // 縦方向（Y座標）のみウィンドウの範囲内に制限
+              const maxY = window.innerHeight - handle.offsetHeight;
+              const limitedY = Math.max(0, Math.min(y, maxY));
+              // 横方向（X座標）は制限しない
+              draggable.style.left = `${x}px`;
+              draggable.style.top = `${limitedY}px`;
+            }
           });
+          document.addEventListener('touchend', () => {
+            isDragging = false;
+          })
+
+
+
+
         })
 
       },
