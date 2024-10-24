@@ -72,8 +72,17 @@ export default {
     zoom:0,
   }),
   computed: {
-    s_terrainLevel () {
-      return this.$store.state.terrainLevel
+    // s_terrainLevel () {
+    //   return this.$store.state.terrainLevel
+    // },
+
+    s_terrainLevel: {
+      get() {
+        return this.$store.state.terrainLevel
+      },
+      set(value) {
+        this.$store.state.terrainLevel = value
+      }
     },
     s_selectedLayers: {
       get() {
@@ -490,16 +499,17 @@ export default {
             tileSize: 256
           })
           // 標高タイルセット
-          // map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 });
+          // map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': this.s_terrainLevel });
           // alert()
+          const vm = this
           document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('mouseover', function() {
-            map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+            map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': vm.s_terrainLevel })
           }, false);
           document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('pointerdown', function() {
-            map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+            map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': vm.s_terrainLevel })
           }, false);
           addEventListener('keydown', function () {
-            map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+            map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': vm.s_terrainLevel })
           })
           // 標高タイルソース---------------------------------------------------
           // map.addSource("aws-terrain", {
@@ -511,7 +521,7 @@ export default {
           //   tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
           // })
           // // 標高タイルセット
-          // map.setTerrain({ 'source': 'aws-terrain', 'exaggeration': 1 });
+          // map.setTerrain({ 'source': 'aws-terrain', 'exaggeration': this.s_terrainLevel });
 
           // Skyレイヤ
           if (mapName === 'map01') {
@@ -1218,7 +1228,7 @@ export default {
           })
           const pitch = !isNaN(this.pitch[mapName]) ? this.pitch[mapName]: 0
           if (pitch !== 0) {
-            this.$store.state[mapName].setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+            this.$store.state[mapName].setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': this.s_terrainLevel })
           }
         })
 
@@ -1263,7 +1273,7 @@ export default {
         // console.log('変更を検出しました')
         // this.updatePermalink()
           console.log(11111111)
-          // this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+          // this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': this.s_terrainLevel })
       },
       deep: true
     },
@@ -1273,7 +1283,7 @@ export default {
 
     // pitch () {
     //   console.log(11111111)
-    //   this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': 1 })
+    //   this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': this.s_terrainLevel })
     //
     //   // document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('click', function() {
     //   // 上とセットで動く。
