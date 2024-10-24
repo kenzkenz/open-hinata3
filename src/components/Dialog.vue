@@ -46,9 +46,6 @@ export default {
       const container = this.$refs.dragDiv
       const handle =  this.$refs.dragHandle
 
-      console.log(container)
-      console.log(handle)
-
       // const container = document.querySelector("#dialog-info-" + this.item.id)
       // const handle =  document.querySelector("#handle-" + this.item.id)
       let offsetX, offsetY;

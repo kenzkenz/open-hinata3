@@ -25,9 +25,9 @@ if (!$targetUrl) {
 }
 
 // HTTPをHTTPSに変換
-if (strpos($targetUrl, 'http://') === 0) {
-    $targetUrl = preg_replace('/^http:/i', 'https:', $targetUrl);
-}
+//if (strpos($targetUrl, 'http://') === 0) {
+//    $targetUrl = preg_replace('/^http:/i', 'https:', $targetUrl);
+//}
 
 // cURLの初期化
 $ch = curl_init();

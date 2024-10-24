@@ -433,6 +433,7 @@ export const aichiSekisyokuSource = {
         tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://bg.maps.pref.aichi.jp/tiles/w213665/{z}/{x}/{y}.png'],
         tileSize: 256,
         crossOrigin: 'anonymous',
+        preload: 1 // 現在の範囲に隣接するタイルも事前に読み込む
     }
 }
 export const aichiSekisyokuLayer = {
@@ -447,14 +448,98 @@ export const tamaSekisyokuSource = {
         tiles: ['https://kenzkenz2.xsrv.jp/tokyo/tamasekisyoku/{z}/{x}/{y}.png'],
         tileSize: 256,
         scheme: 'tms',
-        minzoom: 0, // 低ズーム時でも正しいタイルが表示されるように設定
-        maxzoom: 13 // 必要に応じて調整
     }
 }
 export const tamaSekisyokuLayer = {
     'id': 'oh-tamaSekisyokuLayer',
     'type': 'raster',
     'source': 'tamaSekisyokuSource',
+}
+// -------------------------------------
+export const tousyoSekisyoku01Source = {
+    id: 'tousyo-sekisyoku01-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz2.xsrv.jp/tokyo/tousyosekisyoku01/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        scheme: 'tms',
+        // minzoom: 14,
+        // maxzoom: 18,
+    }
+}
+export const tousyoSekisyoku01Layer = {
+    'id': 'oh-tousyoSekisyoku01Layer',
+    'type': 'raster',
+    'source': 'tousyo-sekisyoku01-source',
+}
+// -------------------------------------
+export const tousyoSekisyoku02Source = {
+    id: 'tousyo-sekisyoku02-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz2.xsrv.jp/tokyo/tousyosekisyoku02/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        scheme: 'tms',
+    }
+}
+export const tousyoSekisyoku02Layer = {
+    'id': 'oh-tousyoSekisyoku02Layer',
+    'type': 'raster',
+    'source': 'tousyo-sekisyoku02-source',
+}
+// -------------------------------------
+export const tousyoSekisyoku03Source = {
+    id: 'tousyo-sekisyoku03-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz2.xsrv.jp/tokyo/tousyosekisyoku03/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        scheme: 'tms',
+    }
+}
+export const tousyoSekisyoku03Layer = {
+    'id': 'oh-tousyoSekisyoku03Layer',
+    'type': 'raster',
+    'source': 'tousyo-sekisyoku03-source',
+}
+// -------------------------------------
+export const tousyoSekisyoku04Source = {
+    id: 'tousyo-sekisyoku04-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz2.xsrv.jp/tokyo/tousyosekisyoku04/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        scheme: 'tms',
+    }
+}
+export const tousyoSekisyoku04Layer = {
+    'id': 'oh-tousyoSekisyoku04Layer',
+    'type': 'raster',
+    'source': 'tousyo-sekisyoku04-source',
+}
+// -------------------------------------
+export const tousyoSekisyoku05Source = {
+    id: 'tousyo-sekisyoku05-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz2.xsrv.jp/tokyo/tousyosekisyoku05/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        scheme: 'tms',
+    }
+}
+export const tousyoSekisyoku05Layer = {
+    'id': 'oh-tousyoSekisyoku05Layer',
+    'type': 'raster',
+    'source': 'tousyo-sekisyoku05-source',
+}
+// -------------------------------------
+export const tousyoSekisyoku06Source = {
+    id: 'tousyo-sekisyoku06-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz2.xsrv.jp/tokyo/tousyosekisyoku06/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        scheme: 'tms',
+    }
+}
+export const tousyoSekisyoku06Layer = {
+    'id': 'oh-tousyoSekisyoku06Layer',
+    'type': 'raster',
+    'source': 'tousyo-sekisyoku06-source',
 }
 // 大阪府CS立体地図------------------------------------------------------------------------------------------------------
 export const csOsakaSource = {
@@ -2061,10 +2146,22 @@ const layers01 = [
                 layers: [csShizuokaLayer]
             },
             {
-                id: 'oh-tamaSekisyokuLayer',
-                label: "東京都多摩地域赤色立体地図",
-                source: tamaSekisyokuSource,
-                layers: [tamaSekisyokuLayer]
+                id: 'oh-tokyoSekisyokuLayer',
+                label: "東京都赤色立体地図",
+                sources: [tamaSekisyokuSource,
+                    tousyoSekisyoku01Source,
+                    tousyoSekisyoku02Source,
+                    tousyoSekisyoku03Source,
+                    tousyoSekisyoku04Source,
+                    tousyoSekisyoku05Source,
+                    tousyoSekisyoku06Source],
+                layers: [tamaSekisyokuLayer,
+                    tousyoSekisyoku01Layer,
+                    tousyoSekisyoku02Layer,
+                    tousyoSekisyoku03Layer,
+                    tousyoSekisyoku04Layer,
+                    tousyoSekisyoku05Layer,
+                    tousyoSekisyoku06Layer]
             },
             {
                 id: 'oh-aichiSekisyokuLayer',

@@ -129,10 +129,13 @@ export default {
       const map = this.$store.state[this.mapName]
       if (element.layers) {
         element.layers.forEach(layer0 => {
-          if (element.source.obj.type === 'raster') {
-            map.setPaintProperty(layer0.id, 'raster-opacity', element.opacity)
-          } else {
-            if (layer0.type === 'fill') {
+          // if (element.source.obj.type === 'raster') {
+          //   map.setPaintProperty(layer0.id, 'raster-opacity', element.opacity)
+          // } else {
+
+            if (layer0.type === 'raster') {
+              map.setPaintProperty(layer0.id, 'raster-opacity', element.opacity)
+            } else if (layer0.type === 'fill') {
               map.setPaintProperty(layer0.id, 'fill-opacity', element.opacity)
             } else if (layer0.type === 'line') {
               map.setPaintProperty(layer0.id, 'line-opacity', element.opacity)
@@ -145,7 +148,7 @@ export default {
             } else if (layer0.type === 'symbol') {
               map.setPaintProperty(layer0.id, 'text-opacity', element.opacity)
             }
-          }
+          // }
         })
       }
     },
@@ -155,13 +158,14 @@ export default {
       map.removeLayer(id)
     },
     onNodeClick (node) {
-      if (node.source) {
+      if (node.layers) {
         if(!this.s_selectedLayers[this.mapName].find(layers => layers.id === node.id)) {
           this.s_selectedLayers[this.mapName].unshift(
               {
                 id: node.id,
                 label: node.label,
                 source: node.source,
+                sources: node.sources,
                 layer: node.layer,
                 layers: node.layers,
                 opacity: 1,
@@ -214,14 +218,33 @@ export default {
         for (let i = this.s_selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
           const layer = this.s_selectedLayers[this.mapName][i]
           if (layer.layers) {
-            layer.layers.forEach(layer0 => {
+            console.log(layer)
+
+            if (layer.sources) {
+              layer.sources.forEach(source => {
+                console.log(source)
+                if (!map.getSource(source.id)) map.addSource(source.id, source.obj)
+                console.log(source.id)
+              })
+            }
+            if (layer.source) {
               if (!map.getSource(layer.source.id)) map.addSource(layer.source.id, layer.source.obj)
-              // console.log(map.getSource(layer0.id))
+            }
+
+
+
+            layer.layers.forEach(layer0 => {
+              console.log(layer.source)
+
               if (!map.getLayer(layer0.id)) map.addLayer(layer0)
-              if (layer.source.obj.type === 'raster') {
-                map.setPaintProperty(layer0.id, 'raster-opacity', layer.opacity)
-              } else {
-                if (layer0.type === 'fill') {
+              // if (layer.source.obj.type === 'raster') {
+              //   map.setPaintProperty(layer0.id, 'raster-opacity', layer.opacity)
+              // } else {
+
+
+                if (layer0.type === 'raster') {
+                  map.setPaintProperty(layer0.id, 'raster-opacity', layer.opacity)
+                } else if (layer0.type === 'fill') {
                   map.setPaintProperty(layer0.id, 'fill-opacity', layer.opacity)
                 } else if (layer0.type === 'line') {
                   map.setPaintProperty(layer0.id, 'line-opacity', layer.opacity)
@@ -234,7 +257,7 @@ export default {
                 } else if (layer0.type === 'symbol') {
                   map.setPaintProperty(layer0.id, 'text-opacity', layer.opacity)
                 }
-              }
+              // }
             })
             // -------------------------------------------------
             if (layer.ext) {
