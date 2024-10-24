@@ -404,7 +404,7 @@ export const csNotoLayer = {
 export const csShizuokaSource = {
     id: 'csShizuokaSource', obj: {
         type: 'raster',
-        tiles: ['https://kenzkenz3.xsrv.jp/cs/shizuoka/{z}/{x}/{y}.png'],
+        tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://kenzkenz3.xsrv.jp/cs/shizuoka/{z}/{x}/{y}.png'],
         tileSize: 256,
     }
 }
@@ -412,6 +412,19 @@ export const csShizuokaLayer = {
     'id': 'oh-csShizuokaLayer',
     'type': 'raster',
     'source': 'csShizuokaSource',
+}
+// 兵庫県CS立体図------------------------------------------------------------------------------------------------------
+export const csHyogoSource = {
+    id: 'cs-hiyogo-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://rinya-hyogo.geospatial.jp/2023/rinya/tile/csmap/{z}/{x}/{y}.png'],
+        tileSize: 256,
+    }
+}
+export const csHyogoLayer = {
+    'id': 'oh-csHyogoLayer',
+    'type': 'raster',
+    'source': 'cs-hiyogo-source',
 }
 // 愛知県赤色立体図------------------------------------------------------------------------------------------------------
 export const aichiSekisyokuSource = {
@@ -2034,6 +2047,12 @@ const layers01 = [
                 label: "大阪府CS立体図",
                 source: csOsakaSource,
                 layers: [csOsakaLayer]
+            },
+            {
+                id: 'oh-csHyogoLayer',
+                label: "兵庫県CS立体図",
+                source: csHyogoSource,
+                layers: [csHyogoLayer]
             },
             {
                 id: 'oh-csShizuokaLayer',

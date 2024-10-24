@@ -3,7 +3,8 @@
     <div :style="menuContentSize">
       標高強調
       <div class="range-div">
-        <input type="range" min="1" max="10" step="0.5" class="range" v-model.number="s_terrainLevel" @input="terrainLevelInput"/>
+        {{s_terrainLevel}}倍<br>
+        <input type="range" min="1" max="10" step="0.1" class="range" v-model.number="s_terrainLevel" @input="terrainLevelInput"/>
       </div>
     </div>
   </Dialog>
