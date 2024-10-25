@@ -194,7 +194,7 @@ export default {
         }
       }
     },
-    yyy() {
+    addLayers() {
       if(!this.$store.state.watchFlg){
         return
       }
@@ -227,10 +227,11 @@ export default {
           layer.layers.forEach(layer0 => {
 
             if (layer0.id === 'oh-mw-3543') {
-              this.zzz()
+              this.mw5AddLayers()
+            } else {
+              if (!map.getLayer(layer0.id)) map.addLayer(layer0)
             }
 
-            if (!map.getLayer(layer0.id)) map.addLayer(layer0)
 
             if (layer0.type === 'raster') {
               map.setPaintProperty(layer0.id, 'raster-opacity', layer.opacity)
@@ -273,7 +274,7 @@ export default {
         }
       }
     },
-    zzz() {
+    mw5AddLayers() {
       if (!this.s_selectedLayers.map01.find(v => v.id === 'oh-mw5')) return
       const map = this.$store.state.map01
       // まずレイヤーを削除-------------------------
@@ -286,14 +287,6 @@ export default {
           }
         }
       }
-      //----------------------------------------
-      // const map01 = this.$store.state.map01
-      // const bounds = map01.getBounds()
-      // // 南西端と北東端の座標を取得
-      // const sw = bounds.getSouthWest()
-      // const ne = bounds.getNorthEast()
-      // this.$store.state.lngRange = [sw.lng,ne.lng]
-      // this.$store.state.latRange = [sw.lat,ne.lat]
 
       if (map.getZoom() <= 8) return;
 
@@ -321,12 +314,15 @@ export default {
             type: 'raster',
             tiles: ['https://mapwarper.h-gis.jp/maps/tile/' + value.id + '/{z}/{x}/{y}.png'],
             bounds: [value.extent[0], value.extent[3], value.extent[2], value.extent[1]],
-            // minzoom: 10
           })
           if (!map.getLayer(value.id)) map.addLayer({
             id: 'oh-mw-' + value.id,
             source: value.id,
             type: 'raster',
+            paint: {
+              'raster-fade-duration': 0, // フェードイン効果を無効または短くする
+              // 'raster-resampling': 'nearest' // リサンプリングを nearest に設定
+            }
           })
         }
       })
@@ -339,54 +335,7 @@ export default {
   watch: {
     s_lngRange: {
       handler: function(){
-        this.yyy()
-        // if (!this.s_selectedLayers.map01.find(v => v.id === 'oh-mw5')) return
-        //
-        // const map = this.$store.state.map01
-        // // まずレイヤーを削除-------------------------
-        // const layers = map.getStyle().layers
-        // if (layers) {
-        //   for (let i = layers.length - 1; i >= 0; i--) {
-        //     const layerId = layers[i].id
-        //     if (layerId.slice(0,5) === 'oh-mw' ) {
-        //       map.removeLayer(layerId)
-        //     }
-        //   }
-        // }
-        // //----------------------------------------
-        // mw5.forEach((value) => {
-        //   const poly1 = turf.polygon([
-        //     [
-        //       [this.s_lngRange[0], this.s_latRange[0]],
-        //       [this.s_lngRange[0], this.s_latRange[1]],
-        //       [this.s_lngRange[1], this.s_latRange[1]],
-        //       [this.s_lngRange[1], this.s_latRange[0]],
-        //       [this.s_lngRange[0], this.s_latRange[0]],
-        //     ],
-        //   ])
-        //   const poly2 = turf.polygon([
-        //     [
-        //       [value.extent[0], value.extent[3]],
-        //       [value.extent[0], value.extent[1]],
-        //       [value.extent[2], value.extent[1]],
-        //       [value.extent[2], value.extent[3]],
-        //       [value.extent[0], value.extent[3]],
-        //     ],
-        //   ])
-        //   if (turf.booleanIntersects(poly1, poly2)) {
-        //     if (!map.getSource(value.id)) map.addSource(value.id,{
-        //       type: 'raster',
-        //       tiles: ['https://mapwarper.h-gis.jp/maps/tile/' + value.id + '/{z}/{x}/{y}.png'],
-        //       bounds: [value.extent[0], value.extent[3], value.extent[2], value.extent[1]],
-        //     })
-        //     if (!map.getLayer(value.id)) map.addLayer({
-        //       id: 'oh-mw-' + value.id,
-        //       source: value.id,
-        //       type: 'raster',
-        //     })
-        //   }
-        // })
-        // alert(0)
+        this.addLayers()
       },
       deep: true
     },
@@ -402,7 +351,8 @@ export default {
         const ne = bounds.getNorthEast()
         this.$store.state.lngRange = [sw.lng,ne.lng]
         this.$store.state.latRange = [sw.lat,ne.lat]
-        this.yyy()
+        // ------------------------------------------------------------------
+        this.addLayers()
       },
       deep: true
     },

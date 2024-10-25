@@ -24,6 +24,17 @@ mw5.forEach((value,) => {
     })
 })
 
+export const mw5DummySource = {
+    id:'mw5DummySource',obj:{
+        type: 'raster',
+        tileSize: 256
+    }
+}
+export const mw5DummyLayer = {
+    'id': 'oh-mw-3543',
+    'source': mw5DummySource,
+    'type': 'raster',
+}
 
 
 
@@ -2186,8 +2197,8 @@ const layers01 = [
             {
                 id: 'oh-mw5',
                 label: "戦前の旧版地形図（５万分の1）",
-                sources: [mw5Sources[0]],
-                layers: [mw5Layers[0]]
+                sources: [mw5DummySource],
+                layers: [mw5DummyLayer]
             },
             {
                 id: 'test2',
