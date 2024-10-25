@@ -43,7 +43,7 @@ import DialogInfo from '@/components/Dialog-info'
 import Dialog2 from '@/components/Dialog2'
 import codeShizen from '@/js/codeShizen'
 import pyramid from '@/js/pyramid'
-import * as Layers from '@/js/layers'
+// import * as Layers from '@/js/layers'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import maplibregl from 'maplibre-gl'
 import { Protocol } from "pmtiles"
@@ -395,6 +395,16 @@ export default {
         )
 
       })
+      // -----------------------
+      const map = this.$store.state.map01
+      map.on('moveend', () => {
+        const bounds = map.getBounds()
+        // 南西端と北東端の座標を取得
+        const sw = bounds.getSouthWest()
+        const ne = bounds.getNorthEast()
+        this.$store.state.lngRange = [sw.lng,ne.lng]
+        this.$store.state.latRange = [sw.lat,ne.lat]
+      })
       // 画面同期----------------------------------------------------------------------------------------------------------
       let syncing = false
       function syncMaps(mapA, mapB) {
@@ -454,41 +464,41 @@ export default {
           //
           // console.log(mapName)
           // console.log(params.slj)
-          if (params.slj) {
-            params.slj[mapName].forEach(slg => {
-              let cnt = 0
-              function aaa () {
-                Layers.layers[mapName].forEach(value => {
-                  if (!value.nodes) cnt++
-                  function bbb (v1) {
-                    if (v1.nodes) {
-                      v1.nodes.forEach(v2 => {
-                        if (!v2.nodes) {
-                          if (v2.id === slg.id) {
-                            slg.source = v2.source
-                            slg.layers = v2.layers
-                            console.log(slg.layers)
-                            console.log(v2.layers)
-                          }
-                          cnt++
-                        } else {
-                          bbb(v2)
-                        }
-                      })
-                    } else {
-                      if (value.id === slg.id) {
-                        slg.source = value.source
-                        slg.layers = value.layers
-                      }
-                    }
-                  }
-                  bbb(value)
-                })
-              }
-              aaa()
-              console.log('背景' + cnt + '件')
-            })
-          }
+          // if (params.slj) {
+          //   params.slj[mapName].forEach(slg => {
+          //     let cnt = 0
+          //     function aaa () {
+          //       Layers.layers[mapName].forEach(value => {
+          //         if (!value.nodes) cnt++
+          //         function bbb (v1) {
+          //           if (v1.nodes) {
+          //             v1.nodes.forEach(v2 => {
+          //               if (!v2.nodes) {
+          //                 if (v2.id === slg.id) {
+          //                   slg.source = v2.source
+          //                   slg.layers = v2.layers
+          //                   // console.log(slg.layers)
+          //                   // console.log(v2.layers)
+          //                 }
+          //                 cnt++
+          //               } else {
+          //                 bbb(v2)
+          //               }
+          //             })
+          //           } else {
+          //             if (value.id === slg.id) {
+          //               slg.source = value.source
+          //               slg.layers = value.layers
+          //             }
+          //           }
+          //         }
+          //         bbb(value)
+          //       })
+          //     }
+          //     aaa()
+          //     console.log('背景' + cnt + '件')
+          //   })
+          // }
           if (params.slj) this.s_selectedLayers = params.slj
           // ----------------------------------------------------------------
           // 標高タイルソース---------------------------------------------------

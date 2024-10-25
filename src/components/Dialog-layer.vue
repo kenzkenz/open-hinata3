@@ -39,6 +39,8 @@ import * as Layers from '@/js/layers'
 import Tree from "vue3-tree"
 import "vue3-tree/dist/style.css"
 import draggable from "vuedraggable"
+import mw5 from '@/js/mw5'
+import * as turf from '@turf/turf'
 
 export default {
   name: 'Dialog-layer',
@@ -62,6 +64,12 @@ export default {
     // s_watchFlg () {
     //   return this.$store.state.watchFlg
     // },
+    s_lngRange () {
+      return this.$store.state.lngRange
+    },
+    s_latRange () {
+      return this.$store.state.latRange
+    },
     s_dialogsINfo () {
       return this.$store.state.dialogsInfo
     },
@@ -129,23 +137,33 @@ export default {
       const map = this.$store.state[this.mapName]
       if (element.layers) {
         element.layers.forEach(layer0 => {
-          if (element.source.obj.type === 'raster') {
-            map.setPaintProperty(layer0.id, 'raster-opacity', element.opacity)
-          } else {
-            if (layer0.type === 'fill') {
-              map.setPaintProperty(layer0.id, 'fill-opacity', element.opacity)
-            } else if (layer0.type === 'line') {
-              map.setPaintProperty(layer0.id, 'line-opacity', element.opacity)
-            } else if (layer0.type === 'fill-extrusion') {
-              map.setPaintProperty(layer0.id, 'fill-extrusion-opacity', element.opacity)
-            } else if (layer0.type === 'heatmap') {
-              map.setPaintProperty(layer0.id, 'heatmap-opacity', element.opacity)
-            } else if (layer0.type === 'circle') {
-              map.setPaintProperty(layer0.id, 'circle-opacity', element.opacity)
-            } else if (layer0.type === 'symbol') {
-              map.setPaintProperty(layer0.id, 'text-opacity', element.opacity)
-            }
+
+          if (layer0.id === 'oh-mw-3543') {
+            const layers = map.getStyle().layers
+            layers.forEach(layer => {
+              console.log(layer)
+              if (layer.id.slice(0,5) === 'oh-mw') {
+                map.setPaintProperty(layer.id, 'raster-opacity', element.opacity)
+              }
+            })
           }
+
+          if (layer0.type === 'raster') {
+            map.setPaintProperty(layer0.id, 'raster-opacity', element.opacity)
+          } else if (layer0.type === 'fill') {
+            map.setPaintProperty(layer0.id, 'fill-opacity', element.opacity)
+          } else if (layer0.type === 'line') {
+            map.setPaintProperty(layer0.id, 'line-opacity', element.opacity)
+          } else if (layer0.type === 'fill-extrusion') {
+            map.setPaintProperty(layer0.id, 'fill-extrusion-opacity', element.opacity)
+          } else if (layer0.type === 'heatmap') {
+            map.setPaintProperty(layer0.id, 'heatmap-opacity', element.opacity)
+          } else if (layer0.type === 'circle') {
+            map.setPaintProperty(layer0.id, 'circle-opacity', element.opacity)
+          } else if (layer0.type === 'symbol') {
+            map.setPaintProperty(layer0.id, 'text-opacity', element.opacity)
+          }
+
         })
       }
     },
@@ -155,13 +173,14 @@ export default {
       map.removeLayer(id)
     },
     onNodeClick (node) {
-      if (node.source) {
+      if (node.layers) {
         if(!this.s_selectedLayers[this.mapName].find(layers => layers.id === node.id)) {
           this.s_selectedLayers[this.mapName].unshift(
               {
                 id: node.id,
                 label: node.label,
                 source: node.source,
+                sources: node.sources,
                 layer: node.layer,
                 layers: node.layers,
                 opacity: 1,
@@ -175,91 +194,215 @@ export default {
         }
       }
     },
+    yyy() {
+      if(!this.$store.state.watchFlg){
+        return
+      }
+      // ------------------------------------------------------------------
+      const map = this.$store.state[this.mapName]
+      // まずレイヤーを削除-------------------------
+      const layers = map.getStyle().layers
+      if (layers) {
+        for (let i = layers.length - 1; i >= 0; i--) {
+          const layerId = layers[i].id
+          if (layerId.slice(0,2) === 'oh' ) {
+            map.removeLayer(layerId)
+          }
+        }
+      }
+      // -----------------------------------------
+      for (let i = this.s_selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
+        const layer = this.s_selectedLayers[this.mapName][i]
+        if (layer.layers) {
+
+          if (layer.sources) {
+            layer.sources.forEach(source => {
+              if (!map.getSource(source.id)) map.addSource(source.id, source.obj)
+            })
+          }
+          if (layer.source) {
+            if (!map.getSource(layer.source.id)) map.addSource(layer.source.id, layer.source.obj)
+          }
+
+          layer.layers.forEach(layer0 => {
+
+            if (layer0.id === 'oh-mw-3543') {
+              this.zzz()
+            }
+
+            if (!map.getLayer(layer0.id)) map.addLayer(layer0)
+
+            if (layer0.type === 'raster') {
+              map.setPaintProperty(layer0.id, 'raster-opacity', layer.opacity)
+            } else if (layer0.type === 'fill') {
+              map.setPaintProperty(layer0.id, 'fill-opacity', layer.opacity)
+            } else if (layer0.type === 'line') {
+              map.setPaintProperty(layer0.id, 'line-opacity', layer.opacity)
+            } else if (layer0.type === 'fill-extrusion') {
+              map.setPaintProperty(layer0.id, 'fill-extrusion-opacity', layer.opacity)
+            } else if (layer0.type === 'heatmap') {
+              map.setPaintProperty(layer0.id, 'heatmap-opacity', layer.opacity)
+            } else if (layer0.type === 'circle') {
+              map.setPaintProperty(layer0.id, 'circle-opacity', layer.opacity)
+            } else if (layer0.type === 'symbol') {
+              map.setPaintProperty(layer0.id, 'text-opacity', layer.opacity)
+            }
+          })
+          // -------------------------------------------------
+          if (layer.ext) {
+            // if (this.cnt < 2){
+            if (layer.ext.values) {
+              try {
+                layer.ext.values.forEach((value,i) => {
+                  this.$store.commit('updateParam', {
+                    name: layer.ext.name,
+                    mapName: this.mapName,
+                    value: value,
+                    order: i
+                  })
+                })
+              } catch (e) {
+                console.log(e)
+              }
+            }
+            // ここを改修する。
+            this.infoOpen(layer)
+            // }
+            // this.cnt++
+          }
+        }
+      }
+    },
+    zzz() {
+      if (!this.s_selectedLayers.map01.find(v => v.id === 'oh-mw5')) return
+      const map = this.$store.state.map01
+      // まずレイヤーを削除-------------------------
+      const layers = map.getStyle().layers
+      if (layers) {
+        for (let i = layers.length - 1; i >= 0; i--) {
+          const layerId = layers[i].id
+          if (layerId.slice(0,5) === 'oh-mw' ) {
+            map.removeLayer(layerId)
+          }
+        }
+      }
+      //----------------------------------------
+      // const map01 = this.$store.state.map01
+      // const bounds = map01.getBounds()
+      // // 南西端と北東端の座標を取得
+      // const sw = bounds.getSouthWest()
+      // const ne = bounds.getNorthEast()
+      // this.$store.state.lngRange = [sw.lng,ne.lng]
+      // this.$store.state.latRange = [sw.lat,ne.lat]
+
+      if (map.getZoom() <= 8) return;
+
+      mw5.forEach((value) => {
+        const poly1 = turf.polygon([
+          [
+            [this.s_lngRange[0], this.s_latRange[0]],
+            [this.s_lngRange[0], this.s_latRange[1]],
+            [this.s_lngRange[1], this.s_latRange[1]],
+            [this.s_lngRange[1], this.s_latRange[0]],
+            [this.s_lngRange[0], this.s_latRange[0]],
+          ],
+        ])
+        const poly2 = turf.polygon([
+          [
+            [value.extent[0], value.extent[3]],
+            [value.extent[0], value.extent[1]],
+            [value.extent[2], value.extent[1]],
+            [value.extent[2], value.extent[3]],
+            [value.extent[0], value.extent[3]],
+          ],
+        ])
+        if (turf.booleanIntersects(poly1, poly2)) {
+          if (!map.getSource(value.id)) map.addSource(value.id,{
+            type: 'raster',
+            tiles: ['https://mapwarper.h-gis.jp/maps/tile/' + value.id + '/{z}/{x}/{y}.png'],
+            bounds: [value.extent[0], value.extent[3], value.extent[2], value.extent[1]],
+            // minzoom: 10
+          })
+          if (!map.getLayer(value.id)) map.addLayer({
+            id: 'oh-mw-' + value.id,
+            source: value.id,
+            type: 'raster',
+          })
+        }
+      })
+    }
   },
   mounted() {
     // ----------------------------------------------------------------------------------------------------------------
     this.layers = Layers.layers[this.mapName]
   },
   watch: {
+    s_lngRange: {
+      handler: function(){
+        this.yyy()
+        // if (!this.s_selectedLayers.map01.find(v => v.id === 'oh-mw5')) return
+        //
+        // const map = this.$store.state.map01
+        // // まずレイヤーを削除-------------------------
+        // const layers = map.getStyle().layers
+        // if (layers) {
+        //   for (let i = layers.length - 1; i >= 0; i--) {
+        //     const layerId = layers[i].id
+        //     if (layerId.slice(0,5) === 'oh-mw' ) {
+        //       map.removeLayer(layerId)
+        //     }
+        //   }
+        // }
+        // //----------------------------------------
+        // mw5.forEach((value) => {
+        //   const poly1 = turf.polygon([
+        //     [
+        //       [this.s_lngRange[0], this.s_latRange[0]],
+        //       [this.s_lngRange[0], this.s_latRange[1]],
+        //       [this.s_lngRange[1], this.s_latRange[1]],
+        //       [this.s_lngRange[1], this.s_latRange[0]],
+        //       [this.s_lngRange[0], this.s_latRange[0]],
+        //     ],
+        //   ])
+        //   const poly2 = turf.polygon([
+        //     [
+        //       [value.extent[0], value.extent[3]],
+        //       [value.extent[0], value.extent[1]],
+        //       [value.extent[2], value.extent[1]],
+        //       [value.extent[2], value.extent[3]],
+        //       [value.extent[0], value.extent[3]],
+        //     ],
+        //   ])
+        //   if (turf.booleanIntersects(poly1, poly2)) {
+        //     if (!map.getSource(value.id)) map.addSource(value.id,{
+        //       type: 'raster',
+        //       tiles: ['https://mapwarper.h-gis.jp/maps/tile/' + value.id + '/{z}/{x}/{y}.png'],
+        //       bounds: [value.extent[0], value.extent[3], value.extent[2], value.extent[1]],
+        //     })
+        //     if (!map.getLayer(value.id)) map.addLayer({
+        //       id: 'oh-mw-' + value.id,
+        //       source: value.id,
+        //       type: 'raster',
+        //     })
+        //   }
+        // })
+        // alert(0)
+      },
+      deep: true
+    },
+
     s_selectedLayers: {
       handler: function(){
         console.log('変更を検出しました',this.$store.state.watchFlg)
-        if(!this.$store.state.watchFlg){
-          return
-        }
-        const map = this.$store.state[this.mapName]
-        // まずレイヤーを削除-------------------------
-        const layers = map.getStyle().layers
-        // const selectedLayersIds = []
-        // this.s_selectedLayers[this.mapName].forEach(layer => {
-        //   layer.layers.forEach(layer0 => {
-        //     selectedLayersIds.push(layer0.id)
-        //   })
-        // })
-        // layers.forEach(layer => {
-        //   if (layer.id.slice(0,2) === 'oh' ){
-        //     if(selectedLayersIds.indexOf(layer.id) === -1) map.removeLayer(layer.id)
-        //   }
-        // })
-        if (layers) {
-          for (let i = layers.length - 1; i >= 0; i--) {
-            const layerId = layers[i].id
-            if (layerId.slice(0,2) === 'oh' ) {
-              console.log(layerId)
-              map.removeLayer(layerId)
-            }
-          }
-        }
-        // -----------------------------------------
-        for (let i = this.s_selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
-          const layer = this.s_selectedLayers[this.mapName][i]
-          if (layer.layers) {
-            layer.layers.forEach(layer0 => {
-              if (!map.getSource(layer.source.id)) map.addSource(layer.source.id, layer.source.obj)
-              // console.log(map.getSource(layer0.id))
-              if (!map.getLayer(layer0.id)) map.addLayer(layer0)
-              if (layer.source.obj.type === 'raster') {
-                map.setPaintProperty(layer0.id, 'raster-opacity', layer.opacity)
-              } else {
-                if (layer0.type === 'fill') {
-                  map.setPaintProperty(layer0.id, 'fill-opacity', layer.opacity)
-                } else if (layer0.type === 'line') {
-                  map.setPaintProperty(layer0.id, 'line-opacity', layer.opacity)
-                } else if (layer0.type === 'fill-extrusion') {
-                  map.setPaintProperty(layer0.id, 'fill-extrusion-opacity', layer.opacity)
-                } else if (layer0.type === 'heatmap') {
-                  map.setPaintProperty(layer0.id, 'heatmap-opacity', layer.opacity)
-                } else if (layer0.type === 'circle') {
-                  map.setPaintProperty(layer0.id, 'circle-opacity', layer.opacity)
-                } else if (layer0.type === 'symbol') {
-                  map.setPaintProperty(layer0.id, 'text-opacity', layer.opacity)
-                }
-              }
-            })
-            // -------------------------------------------------
-            if (layer.ext) {
-              // if (this.cnt < 2){
-                if (layer.ext.values) {
-                  try {
-                    layer.ext.values.forEach((value,i) => {
-                      this.$store.commit('updateParam', {
-                        name: layer.ext.name,
-                        mapName: this.mapName,
-                        value: value,
-                        order: i
-                      })
-                    })
-                  } catch (e) {
-                    console.log(e)
-                  }
-                }
-                // ここを改修する。
-                this.infoOpen(layer)
-              // }
-              // this.cnt++
-            }
-          }
-        }
+        // ------------------------------------------------------------------
+        const map01 = this.$store.state.map01
+        const bounds = map01.getBounds()
+        // 南西端と北東端の座標を取得
+        const sw = bounds.getSouthWest()
+        const ne = bounds.getNorthEast()
+        this.$store.state.lngRange = [sw.lng,ne.lng]
+        this.$store.state.latRange = [sw.lat,ne.lat]
+        this.yyy()
       },
       deep: true
     },

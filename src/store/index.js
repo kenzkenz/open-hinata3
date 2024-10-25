@@ -52,6 +52,8 @@ export default createStore({
     jinkosuiiDatasetEstat:[],
     watchFlg: true,
     terrainLevel:1,
+    lngRange: [],
+    latRange: [],
     //------------------------
     highwayYear:{
       map01: '2024',

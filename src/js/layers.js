@@ -1,5 +1,32 @@
+import mw5 from '@/js/mw5'
+
 // 地理院グリフを使う時は以下のフォントを使う。
 // "text-font": ["NotoSansJP-Regular"],
+
+// ---------------------------------------------------------------------------------------------------------------------
+// 戦前の旧版地形図
+const mw5Sources = []
+const mw5Layers = []
+mw5.forEach((value,) => {
+    mw5Sources.push({
+        id:value.id,
+        obj:{
+            type: 'raster',
+            // tiles: ['https://mapwarper.h-gis.jp/maps/tile/' + value.id + '/{z}/{x}/{y}.png8888'],
+            bounds: [value.extent[0], value.extent[3], value.extent[2], value.extent[1]],
+            // bounds: [138.0, 34.0, 141.0, 37.0],
+        }
+    })
+    mw5Layers.push({
+        id: 'oh-mw-' + value.id,
+        // source: value.id,
+        type: 'raster',
+    })
+})
+
+
+
+
 
 // ---------------------------------------------------------------------------------------------------------------------
 // syochiikiソース
@@ -2156,6 +2183,12 @@ const layers01 = [
         id: 'test',
         label: "テスト",
         nodes: [
+            {
+                id: 'oh-mw5',
+                label: "戦前の旧版地形図（５万分の1）",
+                sources: [mw5Sources[0]],
+                layers: [mw5Layers[0]]
+            },
             {
                 id: 'test2',
                 label: "標準地図",
