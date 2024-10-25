@@ -29,7 +29,7 @@ export default {
     const vm = this
     resasD3()
     function resasD3 () {
-      const elements = document.querySelectorAll('.v-dialog2-div')
+      const elements = document.querySelectorAll('#' + vm.mapName + ' .dialog2-div')
       const len = elements.length
       if (len>1) {
         elements[len-1].style.top = Number(elements[len-2].style.top.replace('px','')) + 40 + 'px'
@@ -40,8 +40,7 @@ export default {
           result.style.left = document.querySelector('#dialog2-' + vm.item.id).style.left
         }
       }
-      // 1. データの準備
-
+      // データの準備
       const datasetAll = vm.$store.state.jinkosuiiDatasetEstat.datasetAll
       const datasetNensyo = vm.$store.state.jinkosuiiDatasetEstat.datasetNensyo
       const datasetSeisan = vm.$store.state.jinkosuiiDatasetEstat.datasetSeisan

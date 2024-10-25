@@ -40,14 +40,12 @@ export default {
     }
   },
   mounted() {
-    console.log(8888888)
-
     this.$nextTick(() => {
       const container = this.$refs.dragDiv
       const handle =  this.$refs.dragHandle
 
-      console.log(container)
-      console.log(handle)
+      // console.log(container)
+      // console.log(handle)
 
       // const container = document.querySelector("#dialog-info-" + this.item.id)
       // const handle =  document.querySelector("#handle-" + this.item.id)
@@ -101,10 +99,7 @@ export default {
       // ハンドルにイベントリスナーを追加
       handle.addEventListener('mousedown', startDrag);
       handle.addEventListener('touchstart', startDrag);
-
     })
-
-
   }
 }
 </script>

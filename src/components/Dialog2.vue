@@ -1,6 +1,6 @@
 <template>
-  <div ref="dragDiv" :id="'dialog2-' + item.id" v-for="item in s_dialog2" :key="item.id" :style="item.style" v-drag="{handle:'#dialog-handle2' + item.id}" @v-drag-end="dragEnd(item)" class="dialog2-div" @pointerdown="dialogMouseDown(item)" @mousedown="dialogMouseDown(item)" @mouseup="dialogMouseDown(item)">
-    <div class="drag-handle" :id="'dialog-handle2-' + item.id">
+  <div ref="dragDiv" :id="'dialog2-' + item.id" v-for="item in s_dialog2" :key="item.id" :style="item.style" class="dialog2-div" @pointerdown="dialogMouseDown(item)" @mousedown="dialogMouseDown(item)" @mouseup="dialogMouseDown(item)">
+    <div ref="dragHandle" class="drag-handle" :id="'dialog-handle2-' + item.id">
     </div>
     <div>
       <div class="close-btn-div" @click="closeBtn(item)" @pointerdown="closeBtn(item)"><i class="fa-solid fa-xmark hover close-btn"></i></div>
@@ -31,29 +31,92 @@ export default {
     },
   },
   methods: {
-    dragEnd (item) {
-      try {
-        const result = this.$store.state.dialogs2[this.mapName] .find(el => el.id === item.id)
-        result.style.top = document.querySelector( '#dialog2-' + item.id).style.top
-        result.style.left = document.querySelector('#dialog2-' + item.id).style.left
-        result.style["z-index"] = this.$store.state.dialogMaxZindex
-      } catch (e) {
-        console.log(e)
-      }
-    },
     closeBtn (item) {
       this.$store.state.dialogs2[this.mapName] = this.$store.state.dialogs2[this.mapName].filter(v => v.id !== item.id);
     },
     dialogMouseDown (item) {
       try {
         this.$store.commit('incrDialogMaxZindex')
+        const result = this.$store.state.dialogs2[this.mapName] .find(el => el.id === item.id)
+        result.style.top = document.querySelector( '#dialog2-' + item.id).style.top
+        result.style.left = document.querySelector('#dialog2-' + item.id).style.left
         document.querySelector( '#dialog2-' + item.id).style["z-index"] = this.$store.state.dialogMaxZindex
       } catch (e) {
         console.log(e)
       }
     }
   },
+  watch: {
+    s_dialog2: {
+      handler: function(){
+        this.$nextTick(() => {
+          const container = this.$refs.dragDiv[this.$refs.dragDiv.length -1]
+          const handle =  this.$refs.dragHandle[this.$refs.dragHandle.length -1]
+          // const container = document.querySelector("#dialog-info-" + this.item.id)
+          // const handle =  document.querySelector("#handle-" + this.item.id)
+          let offsetX, offsetY;
+
+          const startDrag = (event) => {
+            const clientX = event.type === 'touchstart' ? event.touches[0].clientX : event.clientX;
+            const clientY = event.type === 'touchstart' ? event.touches[0].clientY : event.clientY;
+
+            offsetX = clientX - container.offsetLeft;
+            offsetY = clientY - container.offsetTop;
+
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchmove', drag);
+            document.addEventListener('touchend', endDrag);
+          };
+
+          const drag = (event) => {
+            event.preventDefault(); // スクロールを防ぐ
+
+            const clientX = event.type === 'touchmove' ? event.touches[0].clientX : event.clientX;
+            const clientY = event.type === 'touchmove' ? event.touches[0].clientY : event.clientY;
+
+            // 新しいX座標とY座標を計算
+            const newX = clientX - offsetX;
+            let newY = clientY - offsetY;
+
+            // ウィンドウの高さ内にY座標を制限
+            const windowHeight = window.innerHeight;
+            const handleHeight = handle.offsetHeight;
+
+            if (newY < 0) {
+              newY = 0; // 上限
+            } else if (newY > windowHeight - handleHeight) {
+              newY = windowHeight - handleHeight; // 下限
+            }
+
+            // 新しい位置を設定
+            container.style.left = `${newX}px`;
+            container.style.top = `${newY}px`;
+          };
+
+          const endDrag = () => {
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', endDrag);
+            document.removeEventListener('touchmove', drag);
+            document.removeEventListener('touchend', endDrag);
+          };
+
+          // ハンドルにイベントリスナーを追加
+          try {
+            handle.addEventListener('mousedown', startDrag);
+            handle.addEventListener('touchstart', startDrag);
+          } catch (e) {
+            console.log(e)
+          }
+        })
+      },
+      deep: true
+    }
+  },
   mounted() {
+    console.log(8888888)
+    this.$nextTick(() => {
+    })
   }
 }
 </script>
