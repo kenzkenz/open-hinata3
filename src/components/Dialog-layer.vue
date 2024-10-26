@@ -122,12 +122,6 @@ export default {
       } else {
         result.style.display = 'block'
         result.style["z-index"] = this.$store.state.dialogMaxZindex
-
-
-        // const elm = document.querySelector('#dialog-info-' + element.id)
-        // console.log('#dialog-info-' + element.id)
-        // console.log(elm)
-
       }
     },
     changeWatchFlg (bool) {
@@ -138,10 +132,9 @@ export default {
       if (element.layers) {
         element.layers.forEach(layer0 => {
 
-          if (layer0.id === 'oh-mw-3543') {
+          if (layer0.id === 'oh-mw-dummy') {
             const layers = map.getStyle().layers
             layers.forEach(layer => {
-              console.log(layer)
               if (layer.id.slice(0,5) === 'oh-mw') {
                 map.setPaintProperty(layer.id, 'raster-opacity', element.opacity)
               }
@@ -226,27 +219,25 @@ export default {
 
           layer.layers.forEach(layer0 => {
 
-            if (layer0.id === 'oh-mw-3543') {
-              this.mw5AddLayers()
+            if (layer0.id === 'oh-mw-dummy') {
+              this.mw5AddLayers(map)
             } else {
               if (!map.getLayer(layer0.id)) map.addLayer(layer0)
-            }
-
-
-            if (layer0.type === 'raster') {
-              map.setPaintProperty(layer0.id, 'raster-opacity', layer.opacity)
-            } else if (layer0.type === 'fill') {
-              map.setPaintProperty(layer0.id, 'fill-opacity', layer.opacity)
-            } else if (layer0.type === 'line') {
-              map.setPaintProperty(layer0.id, 'line-opacity', layer.opacity)
-            } else if (layer0.type === 'fill-extrusion') {
-              map.setPaintProperty(layer0.id, 'fill-extrusion-opacity', layer.opacity)
-            } else if (layer0.type === 'heatmap') {
-              map.setPaintProperty(layer0.id, 'heatmap-opacity', layer.opacity)
-            } else if (layer0.type === 'circle') {
-              map.setPaintProperty(layer0.id, 'circle-opacity', layer.opacity)
-            } else if (layer0.type === 'symbol') {
-              map.setPaintProperty(layer0.id, 'text-opacity', layer.opacity)
+              if (layer0.type === 'raster') {
+                map.setPaintProperty(layer0.id, 'raster-opacity', layer.opacity)
+              } else if (layer0.type === 'fill') {
+                map.setPaintProperty(layer0.id, 'fill-opacity', layer.opacity)
+              } else if (layer0.type === 'line') {
+                map.setPaintProperty(layer0.id, 'line-opacity', layer.opacity)
+              } else if (layer0.type === 'fill-extrusion') {
+                map.setPaintProperty(layer0.id, 'fill-extrusion-opacity', layer.opacity)
+              } else if (layer0.type === 'heatmap') {
+                map.setPaintProperty(layer0.id, 'heatmap-opacity', layer.opacity)
+              } else if (layer0.type === 'circle') {
+                map.setPaintProperty(layer0.id, 'circle-opacity', layer.opacity)
+              } else if (layer0.type === 'symbol') {
+                map.setPaintProperty(layer0.id, 'text-opacity', layer.opacity)
+              }
             }
           })
           // -------------------------------------------------
@@ -274,9 +265,11 @@ export default {
         }
       }
     },
-    mw5AddLayers() {
-      if (!this.s_selectedLayers.map01.find(v => v.id === 'oh-mw5')) return
-      const map = this.$store.state.map01
+    mw5AddLayers(map) {
+      if (!this.s_selectedLayers.map01.find(v => v.id === 'oh-mw5')) {
+        return
+      }
+      // const map = this.$store.state.map01
       // まずレイヤーを削除-------------------------
       const layers = map.getStyle().layers
       if (layers) {
