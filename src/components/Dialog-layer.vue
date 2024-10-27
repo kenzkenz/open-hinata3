@@ -268,6 +268,7 @@ export default {
           }
         }
       }
+      console.log(map.getStyle().layers)
     },
     mw5AddLayers(map,mapName) {
       // console.log(map._container)
@@ -340,7 +341,6 @@ export default {
       },
       deep: true
     },
-
     s_selectedLayers: {
       handler: function(){
         console.log('変更を検出しました',this.$store.state.watchFlg)

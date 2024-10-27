@@ -169,12 +169,9 @@ tippecanoe -l polygon -rg -pk -pf -f -o kojikakakupolygon.pmtiles kojikakakupoly
 
 tile-join -rg -pk -f -o kojikakaku2.pmtiles kojikakaku.pmtiles kojikakakupolygon.pmtiles
 
-
 tippecanoe -l polygon -f -o senkyoku2022.pmtiles senkyoku2022.geojson
 
 tippecanoe -l polygon -f -o tokyojishin.pmtiles tokyojishin.geojson
-
-
 
 tippecanoe -x land_type -x layer --drop-fraction-as-needed -l f -f -o f2.pmtiles f.geojson
 tippecanoe -l k -f -o k.pmtiles k.geojson
@@ -189,3 +186,5 @@ tippecanoe -l line -rg -pk -pf -f -o tetsudojikeiretsu.pmtiles t2c.geojson
 tippecanoe -l line -f -o lines.pmtiles t2cLines.geojson
 tippecanoe -l point -rg -pk -pf -f -o points.pmtiles t2cPoints.geojson
 tile-join -rg -pk -f -o tetsudojikeiretsu2.pmtiles points.pmtiles tetsudojikeiretsu.pmtiles
+
+tippecanoe -l polygon -f -o zosei.pmtiles z.geojson

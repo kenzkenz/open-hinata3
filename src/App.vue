@@ -573,6 +573,38 @@ export default {
             }
           });
           // 地物クリック時にポップアップを表示する----------------------------------------------------------------------------
+          map.on('click', 'oh-zosei', (e) => {
+            let coordinates = e.lngLat
+            const props = e.features[0].properties
+            console.log(props)
+            let name
+            if (props.A54_001 === '1') {
+              name = '谷埋め型'
+            } else if (props.A54_001 === '2') {
+              name = '腹付け型'
+            } else if (props.A54_001 === '9') {
+              name = '区分をしていない'
+            }
+            const syozai = props.A54_003 + props.A54_005
+            const bango = props.A54_006
+            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+            }
+            // ポップアップを表示する
+            new maplibregl.Popup({
+              offset: 10,
+              closeButton: true,
+            })
+                .setLngLat(coordinates)
+                .setHTML(
+                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                    '<span style="font-size: 20px;">' + name + '</span><hr>' +
+                    '<span style="font-size: 12px;">' + syozai + '</span><hr>' +
+                    '<span style="font-size: 12px;">' + bango + '</span>' +
+                    '</div>'
+                )
+                .addTo(map)
+          })
           map.on('click', 'oh-mw5-center', (e) => {
             let coordinates = e.lngLat
             const props = e.features[0].properties

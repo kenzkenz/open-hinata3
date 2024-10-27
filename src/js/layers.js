@@ -4,23 +4,33 @@
 
 // 戦後米軍地図-----------------------------------------------------------------------------------------------------------
 const urls =[
-    {name:'宮崎市',url:'https://kenzkenz2.xsrv.jp/usarmy/miyazaki/{z}/{x}/{y}.png',tms:true},
-    {name:'延岡市',url:'https://kenzkenz2.xsrv.jp/usarmy/nobeoka/{z}/{x}/{y}.png',tms:true},
-    {name:'都城市',url:'https://t.tilemap.jp/jcp_maps/miyakonojo/{z}/{x}/{y}.png',tms:true},
-    {name:'鹿児島市',url:'https://kenzkenz2.xsrv.jp/usarmy/kagosima/{z}/{x}/{y}.png',tms:true},
-    {name:'室蘭市',url:'https://t.tilemap.jp/jcp_maps/muroran/{z}/{x}/{y}.png',tms:true},
-    {name:'明石市',url:'https://t.tilemap.jp/jcp_maps/akashi/{z}/{x}/{y}.png',tms:true},
-    {name:'相生市',url:'https://t.tilemap.jp/jcp_maps/harima/{z}/{x}/{y}.png',tms:true},
-    {name:'秋田市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/akita/{z}/{x}/{y}.png',tms:false},
-    {name:'青森市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/aomori/{z}/{x}/{y}.png',tms:false},
-    {name:'旭川市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/asahikawa/{z}/{x}/{y}.png',tms:false},
-
+    {name:'宮崎市',url:'https://kenzkenz2.xsrv.jp/usarmy/miyazaki/{z}/{x}/{y}.png',tms:true,bounds:[131.38730562869546, 31.94874904974968, 131.47186495009896, 31.85909130381588]},
+    {name:'延岡市',url:'https://kenzkenz2.xsrv.jp/usarmy/nobeoka/{z}/{x}/{y}.png',tms:true,bounds: [131.63757572120534, 32.62500535406083, 131.72436281180384, 32.54331840955494]},
+    {name:'都城市',url:'https://t.tilemap.jp/jcp_maps/miyakonojo/{z}/{x}/{y}.png',tms:true,bounds: [131.01477802559293, 31.759362148868007, 131.10179776971427, 31.69135798671786]},
+    // {name:'鹿児島市',url:'https://kenzkenz2.xsrv.jp/usarmy/kagosima/{z}/{x}/{y}.png',tms:true},
+    // {name:'室蘭市',url:'https://t.tilemap.jp/jcp_maps/muroran/{z}/{x}/{y}.png',tms:true},
+    // {name:'明石市',url:'https://t.tilemap.jp/jcp_maps/akashi/{z}/{x}/{y}.png',tms:true},
+    // {name:'相生市',url:'https://t.tilemap.jp/jcp_maps/harima/{z}/{x}/{y}.png',tms:true},
+    // {name:'秋田市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/akita/{z}/{x}/{y}.png',tms:false},
+    // {name:'青森市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/aomori/{z}/{x}/{y}.png',tms:false},
+    // {name:'旭川市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/asahikawa/{z}/{x}/{y}.png',tms:false},
+    // {name:'千葉市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/chiba/{z}/{x}/{y}.png',tms:false},
+    // {name:'富士宮市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/fujinomiya/{z}/{x}/{y}.png',tms:false},
+    // {name:'福井市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/fukui/{z}/{x}/{y}.png',tms:false},
+    // {name:'福島市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/fukushima/{z}/{x}/{y}.png',tms:false},
 
 
 ]
 const amsSources = []
 const amsLayers = []
 urls.forEach(url => {
+    function compareFunc(a, b) {
+        return a - b;
+    }
+    url.bounds.sort(compareFunc);
+    url.bounds = [url.bounds[2],url.bounds[0],url.bounds[3],url.bounds[1]]
+    console.log(url.bounds)
+
     if (!url.tms) {
         amsSources.push({
             id: 'oh-ams-' + url.name,
@@ -28,7 +38,7 @@ urls.forEach(url => {
                 type: 'raster',
                 tiles: [url.url],
                 minzoom: 0,
-                // bounds: [138.0, 34.0, 141.0, 37.0],
+                bounds: url.bounds,
             }
         })
     } else {
@@ -39,6 +49,7 @@ urls.forEach(url => {
                 tiles: [url.url],
                 scheme: 'tms',
                 minzoom: 0,
+                bounds: url.bounds,
                 // bounds: [138.0, 34.0, 141.0, 37.0],
             }
         })
@@ -1921,9 +1932,117 @@ export const tokyojishinheightSogo = {
             3, 'rgb(206,135,52,0.8)',
             4, 'rgb(213,64,43,0.8)',
             5, 'rgb(79,19,19,0.8)',
-            'red' // Default color (if no match)
+            'red'
         ]
     }
+}
+// Q地図橋梁-------------------------------------------------------------------------------------------------------------
+const qKYouryoSource = {
+    id: "qKYouryo-source", obj: {
+        type: 'geojson',
+        data: 'https://mapdata.qchizu.xyz/vector/mlit_road2019/bridge2/{z}/{x}/{y}.geojson',
+        attribution: "<a href='' target='_blank'></a>",
+    }
+}
+const qKYouryoLayer = {
+    id: "oh-qKYouryo",
+    type: "circle",
+    source: "qKYouryo-source",
+    'paint': {
+        'circle-color': 'navy',
+        'circle-radius':[
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            2, 1,
+            4, 3,
+            7, 6,
+            11, 10
+        ]
+    }
+}
+// const qKYouryoLayerLabel = {
+//     id: "oh-qKYouryo-label",
+//     type: "symbol",
+//     source: "qKYouryo-source",
+//     'layout': {
+//         'text-field': ['get', 'P35_006'],
+//         'text-font': ['Noto Sans CJK JP Bold'],
+//         // 'text-anchor': 'left',
+//         'text-offset': [0, 1],
+//         'visibility': 'visible',
+//     },
+//     'paint': {
+//         'text-color': 'rgba(255, 255, 255, 0.7)',
+//         'text-halo-color': 'rgba(0,0,0,0.7)',
+//         'text-halo-width': 1.0,
+//     },
+//     'maxzoom': 24,
+//     'minzoom': 9
+// }
+// R05大規模盛土造成地-----------------------------------------------------------------------------------------------------
+const zoseiSource = {
+    id: "zosei-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/zosei/zosei.pmtiles",
+        attribution: "<a href='' target='_blank'></a>",
+    }
+}
+const zoseiLayer = {
+    id: "oh-zosei",
+    type: "fill",
+    source: "zosei-source",
+    "source-layer": "polygon",
+    paint: {
+        // 'fill-color': 'rgba(179,253,165,0.8)'
+        'fill-color': [
+            'match',
+            ['get', 'A54_001'],
+            '1', 'rgba(179,253,165,0.8)',
+            '2', 'rgba(155,155,248,0.8)',
+            '9', 'rgba(0,255,0,0.8)',
+            'red'
+        ]
+    }
+}
+const zoseiLayerLine = {
+    id: "oh-zosei_line",
+    type: "line",
+    source: "zosei-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            7, 0.5,
+            11, 1
+        ]
+    },
+}
+const zoseiLayerLabel = {
+    id: "oh-zosei-label",
+    type: "symbol",
+    source: "zosei-source",
+    "source-layer": "polygon",
+    'layout': {
+        'text-field': [
+            'match',
+            ['get', 'A54_001'],
+            '1', '谷埋め型',
+            '2', '腹付け型',
+            '9', '区分をしていない',
+            'その他' // デフォルトのテキスト
+        ],
+        'text-font': ['Noto Sans CJK JP Bold'],
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'minzoom': 14
 }
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
@@ -2234,6 +2353,12 @@ const layers01 = [
             //     layers: [tokyojishinLayer,tokyojishinLayerLine,tokyojishinLayerLabel,tokyojishinheight],
             // },
             {
+                id: 'oh-zosei',
+                label: "R05大規模盛土造成地",
+                source: zoseiSource,
+                layers: [zoseiLayer,zoseiLayerLine,zoseiLayerLabel],
+            },
+            {
                 id: 'oh-tokyojishin',
                 label: "地震に関する危険度一覧(東京都)",
                 source: tokyojishinSource,
@@ -2293,7 +2418,12 @@ const layers01 = [
         id: 'test',
         label: "テスト",
         nodes: [
-
+            {
+                id: 'oh-qKYouryo',
+                label: "テスト全国橋梁地図",
+                source: qKYouryoSource,
+                layers: [qKYouryoLayer]
+            },
             {
                 id: 'test2',
                 label: "標準地図",
