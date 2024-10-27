@@ -364,26 +364,46 @@ export default {
           attributionControl: false, // デフォルトのアトリビューションコントロールを無効化
           // style: 'https://raw.githubusercontent.com/gsi-cyberjapan/optimal_bvmap/52ba56f645334c979998b730477b2072c7418b94/style/std.json',
           // style:require('@/assets/json/std.json')
+          // style: {
+          //   version: 8,
+          //   // sprite: 'https://kenzkenz.xsrv.jp/open-hinata3/json/spritesheet',
+          //   glyphs: "https://glyphs.geolonia.com/{fontstack}/{range}.pbf",
+          //   // "glyphs": "https://gsi-cyberjapan.github.io/optimal_bvmap/glyphs/{fontstack}/{range}.pbf",
+          //   sources: {
+          //     "background-osm-raster": {
+          //       type: "raster",
+          //       tiles: ["https://tile.openstreetmap.jp/styles/osm-bright-ja/{z}/{x}/{y}.png"],
+          //       tileSize: 256,
+          //       attribution: "<a href='https://www.openstreetmap.org/copyright' target='_blank'>© OpenStreetMap contributors</a>",
+          //     },
+          //   },
+          //   layers: [
+          //     {
+          //       id: "background-osm-raster",
+          //       type: "raster",
+          //       source: "background-osm-raster",
+          //     },
+          //     ]
+          // },
           style: {
-            version: 8,
-            // sprite: 'https://kenzkenz.xsrv.jp/open-hinata3/json/spritesheet',
-            glyphs: "https://glyphs.geolonia.com/{fontstack}/{range}.pbf",
-            // "glyphs": "https://gsi-cyberjapan.github.io/optimal_bvmap/glyphs/{fontstack}/{range}.pbf",
-            sources: {
-              "background-osm-raster": {
-                type: "raster",
-                tiles: ["https://tile.openstreetmap.jp/styles/osm-bright-ja/{z}/{x}/{y}.png"],
-                tileSize: 256,
-                attribution: "<a href='https://www.openstreetmap.org/copyright' target='_blank'>© OpenStreetMap contributors</a>",
-              },
+            'version': 8,
+            'sources': {
+              'gsi-monochrome': {
+                'type': 'raster',
+                'tiles': [
+                  'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'
+                ],
+                'tileSize': 256,
+                'attribution': '© 国土地理院'
+              }
             },
-            layers: [
+            'layers': [
               {
-                id: "background-osm-raster",
-                type: "raster",
-                source: "background-osm-raster",
-              },
-              ]
+                'id': 'gsi-monochrome-layer',
+                'type': 'raster',
+                'source': 'gsi-monochrome',
+              }
+            ]
           },
         })
         this.$store.state[mapName] = map
@@ -567,12 +587,110 @@ export default {
             // クリック可能なすべてのレイヤーからフィーチャーを取得
             const features = map.queryRenderedFeatures(e.point);
             if (features.length) {
-              map.getCanvas().style.cursor = 'pointer';
+              map.getCanvas().style.cursor = 'pointer'
             } else {
-              map.getCanvas().style.cursor = 'default';
+              map.getCanvas().style.cursor = 'default'
             }
-          });
-          // 地物クリック時にポップアップを表示する----------------------------------------------------------------------------
+          })
+          //------------------------------------------------------------------------------------------------------------
+          function latLngToTile(lat, lng, z) {
+            const
+                w = Math.pow(2, (z === undefined) ? 0 : z) / 2,		// 世界全体のピクセル幅
+                yrad = Math.log(Math.tan(Math.PI * (90 + lat) / 360))
+
+            return { x: (lng / 180 + 1) * w, y: (1 - yrad / Math.PI) * w }
+          }
+          function getLegendItem(legend, url, lat, lng, z) {
+            map.getCanvas().style.cursor = 'progress'
+            return new Promise(function (resolve) {
+              const
+                  p = latLngToTile(lat, lng, z),
+                  x = Math.floor(p.x),			// タイルX座標
+                  y = Math.floor(p.y),			// タイルY座標
+                  i = (p.x - x) * 256,			// タイル内i座標
+                  j = (p.y - y) * 256,			// タイル内j座標
+                  img = new Image();
+
+              img.crossOrigin = 'anonymous';	// 画像ファイルからデータを取り出すために必要です
+              img.onload = function () {
+                const
+                    canvas = document.createElement('canvas'),
+                    context = canvas.getContext('2d');
+                let
+                    v,
+                    d;
+                canvas.width = 1;
+                canvas.height = 1;
+                context.drawImage(img, i, j, 1, 1, 0, 0, 1, 1);
+                d = context.getImageData(0, 0, 1, 1).data;
+                if (d[3] !== 255) {
+                  v = null;
+                } else {
+                  v = legend.find(o => o.r == d[0] && o.g == d[1] && o.b == d[2])
+                }
+                map.getCanvas().style.cursor = 'default'
+                resolve(v)
+              }
+              img.onerror = function () {
+                map.getCanvas().style.cursor = 'default'
+                resolve(null)
+              }
+              img.src = url.replace('{z}', z).replace('{y}', y).replace('{x}', x);
+            });
+          }
+          const legend_shinsuishin = [
+            { r: 247, g: 245, b: 169, title: '0.5m未満' },
+            { r: 255, g: 216, b: 192, title: '0.5～3.0m' },
+            { r: 255, g: 183, b: 183, title: '3.0～5.0m' },
+            { r: 255, g: 145, b: 145, title: '5.0～10.0m' },
+            { r: 242, g: 133, b: 201, title: '10.0～20.0m' },
+            { r: 220, g: 122, b: 220, title: '20.0m以上' }
+          ]
+          map.on('click', function (e) {
+            // 表示されているレイヤーのIDを格納する配列
+            let rasterLayerIds = [];
+            const mapLayers = map.getStyle().layers;
+
+            // 全てのレイヤーを走査して、'type'が'rasterのものをフィルタリング
+            mapLayers.forEach(layer => {
+              // const visibility = map.getLayoutProperty(layer.id, 'visibility');
+              // レイヤーのtypeプロパティを取得
+              const type = layer.type;
+              if (type === 'raster') {
+                rasterLayerIds.push(layer.id);
+              }
+            });
+            // ラスタレイヤのidからポップアップ表示に使用するURLを生成
+            let RasterTileUrl = '';
+            let legend = [];
+            rasterLayerIds.forEach(rasterLayerId => {
+              if (rasterLayerId === 'oh-kozui-saidai-layer') {
+                // 洪水浸水想定区域（想定最大規模）
+                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin/{z}/{x}/{y}.png';
+                legend = legend_shinsuishin;
+              }
+              const lng = e.lngLat.lng;
+              const lat = e.lngLat.lat;
+              const z = 17
+              if (RasterTileUrl) {
+                getLegendItem(legend, RasterTileUrl, lat, lng,z).then(function (v) {
+                  let res = (v ? v.title : '取得できません')
+                  if (res === '取得できません') return
+                  if (rasterLayerId === 'oh-kozui-saidai-layer') {
+                    new maplibregl.Popup()
+                        .setLngLat(e.lngLat)
+                        .setHTML(
+                            '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                            '<span style="font-size: 12px;">洪水によって想定される浸水深</span><br>' +
+                            '<span style="font-size: 24px;">' + res + '</span>' +
+                            '</div>'
+                        )
+                        .addTo(map);
+                  }
+                })
+              }
+            })
+          })
           map.on('click', 'oh-zosei', (e) => {
             let coordinates = e.lngLat
             const props = e.features[0].properties

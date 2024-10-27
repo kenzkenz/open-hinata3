@@ -2044,6 +2044,20 @@ const zoseiLayerLabel = {
     },
     'minzoom': 14
 }
+// 洪水浸水想定------------------------------------------------------------------------------------------------------
+const kozuiSaidaiSource = {
+    id: 'kozui-saidai-source', obj: {
+        type: 'raster',
+        tiles: ['https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        crossOrigin: 'anonymous',
+    }
+}
+const kozuiSaidaiLayer = {
+    'id': 'oh-kozui-saidai-layer',
+    'type': 'raster',
+    'source': 'kozui-saidai-source',
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -2352,6 +2366,12 @@ const layers01 = [
             //     source: tokyojishinSource,
             //     layers: [tokyojishinLayer,tokyojishinLayerLine,tokyojishinLayerLabel,tokyojishinheight],
             // },
+            {
+                id: 'oh-kozui-saidai',
+                label: "洪水浸水想定（想定最大規模）",
+                source: kozuiSaidaiSource,
+                layers: [kozuiSaidaiLayer],
+            },
             {
                 id: 'oh-zosei',
                 label: "R05大規模盛土造成地",
