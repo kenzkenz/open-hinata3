@@ -1195,8 +1195,6 @@ export const m100mLayerHeight = {
 export const m250mSource = {
     id: "m250mSource", obj: {
         type: "vector",
-        // minzoom: 0,
-        // maxzoom: 15,
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/mesh/250m/250m.pmtiles",
         attribution:
             "<a href='' target='_blank'></a>",
@@ -1212,9 +1210,9 @@ export const m250mLayer = {
             'interpolate',
             ['linear'],
             ["to-number",['get', 'jinko']],
-            0, 'white',   // Color for low values
-            1000, 'red', // Intermediate value
-            3000, 'black' // Color for high values
+            0, 'white',
+            1000, 'red',
+            3000, 'black'
         ]
     }
 }

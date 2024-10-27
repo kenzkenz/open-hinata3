@@ -391,6 +391,7 @@ export default {
           // },
           style: {
             'version': 8,
+            glyphs: "https://glyphs.geolonia.com/{fontstack}/{range}.pbf",
             'sources': {
               'gsi-monochrome': {
                 'type': 'raster',
@@ -496,6 +497,28 @@ export default {
         pointer1.style.left = `${projectedPoint.x}px`
         pointer1.style.top = `${projectedPoint.y}px`
         pointer1.style.display = 'block'
+      })
+
+      // map1のクリックイベント
+
+
+      map1.on('click', (e) => {
+        if (syncing) return  // 同期中の場合は再帰呼び出しを防ぐ
+        syncing = true
+        const coordinates = e.lngLat
+        // map2のクリックイベントをプログラムで発生させる
+        map2.fire('click', { lngLat: coordinates })
+        syncing = false
+      })
+
+      // map2のクリックイベント
+      map2.on('click', (e) => {
+        if (syncing) return  // 同期中の場合は再帰呼び出しを防ぐ
+        syncing = true
+        const coordinates = e.lngLat
+        // map1のクリックイベントをプログラムで発生させる
+        map1.fire('click', { lngLat: coordinates })
+        syncing = false
       })
       // -----------------------------------------------------------------------------------------------------------------
       // on load
@@ -739,7 +762,11 @@ export default {
           })
           map.on('click', 'oh-zosei', (e) => {
             let coordinates = e.lngLat
-            const props = e.features[0].properties
+            const features = map.queryRenderedFeatures(
+                map.project(coordinates), { layers: ['oh-zosei'] }
+            )
+            if (features.length === 0) return
+            const props = features[0].properties
             console.log(props)
             let name
             if (props.A54_001 === '1') {
@@ -1031,7 +1058,11 @@ export default {
           })
           map.on('click', 'oh-syochiikiLayer', (e) => {
             let coordinates = e.lngLat
-            const props = e.features[0].properties
+            const features = map.queryRenderedFeatures(
+                map.project(coordinates), { layers: ['oh-syochiikiLayer'] }
+            )
+            if (features.length === 0) return
+            const props = features[0].properties
             console.log(props)
             let name = props.S_NAME
             while (Math.abs(e.lngLat.lng - coordinates) > 180) {
@@ -1078,9 +1109,38 @@ export default {
                 )
                 .addTo(map)
           })
+          map.on('click', 'oh-m250m', (e) => {
+            let coordinates = e.lngLat
+            const features = map.queryRenderedFeatures(
+                map.project(coordinates), { layers: ['oh-m250m'] }
+            )
+            if (features.length === 0) return
+            const props = features[0].properties
+            let name = props.jinko
+            name = '人口' + Math.floor(Number(name)) + '人'
+            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+            }
+            // ポップアップを表示する
+            new maplibregl.Popup({
+              offset: 10,
+              closeButton: true,
+            })
+                .setLngLat(coordinates)
+                .setHTML(
+                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                    '<span style="font-size: 20px;">' + name + '</span>' +
+                    '</div>'
+                )
+                .addTo(map)
+          })
           map.on('click', 'oh-m500m', (e) => {
             let coordinates = e.lngLat
-            const props = e.features[0].properties
+            const features = map.queryRenderedFeatures(
+                map.project(coordinates), { layers: ['oh-m500m'] }
+            )
+            if (features.length === 0) return
+            const props = features[0].properties
             console.log(props)
             let name = props.jinko
             name = '人口' + Math.floor(Number(name)) + '人'
@@ -1102,7 +1162,11 @@ export default {
           })
           map.on('click', 'oh-m1km', (e) => {
             let coordinates = e.lngLat
-            const props = e.features[0].properties
+            const features = map.queryRenderedFeatures(
+                map.project(coordinates), { layers: ['oh-m1km'] }
+            )
+            if (features.length === 0) return
+            const props = features[0].properties
             console.log(props)
             let name = props.jinko
             name = '人口' + Math.floor(Number(name)) + '人'
@@ -1124,7 +1188,11 @@ export default {
           })
           map.on('click', 'oh-m100m', (e) => {
             let coordinates = e.lngLat
-            const props = e.features[0].properties
+            const features = map.queryRenderedFeatures(
+                map.project(coordinates), { layers: ['oh-m100m'] }
+            )
+            if (features.length === 0) return
+            const props = features[0].properties
             console.log(props)
             let name = props.PopT
             name = '人口' + Math.floor(Number(name)) + '人'
