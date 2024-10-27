@@ -431,6 +431,26 @@ export default {
         this.$store.state.latRange = [sw.lat,ne.lat]
       })
       // 画面同期----------------------------------------------------------------------------------------------------------
+      // スロットリング用のヘルパー関数
+      // function throttle(func, limit) {
+      //   let lastFunc;
+      //   let lastRan;
+      //   return function(...args) {
+      //     if (!lastRan) {
+      //       func(...args);
+      //       lastRan = Date.now();
+      //     } else {
+      //       clearTimeout(lastFunc);
+      //       lastFunc = setTimeout(function() {
+      //         if ((Date.now() - lastRan) >= limit) {
+      //           func(...args);
+      //           lastRan = Date.now();
+      //         }
+      //       }, limit - (Date.now() - lastRan));
+      //     }
+      //   };
+      // }
+
       let syncing = false
       function syncMaps(mapA, mapB) {
         // iphoneのtきmoveではフリーズする。moveendではフリーズしない。
@@ -439,20 +459,24 @@ export default {
           m = 'moveend'
         }
         mapA.on(m, () => {
-          if (!syncing) {
-            syncing = true
-            mapB.setCenter(mapA.getCenter())
-            mapB.setZoom(mapA.getZoom())
-            syncing = false
-          }
+          // throttle(() => {
+            if (!syncing) {
+              syncing = true
+              mapB.setCenter(mapA.getCenter())
+              mapB.setZoom(mapA.getZoom())
+              syncing = false
+            }
+          // }, 100); // 100msの間隔で発火
         })
         mapB.on(m, () => {
-          if (!syncing) {
-            syncing = true
-            mapA.setCenter(mapB.getCenter())
-            mapA.setZoom(mapB.getZoom())
-            syncing = false
-          }
+          // throttle(() => {
+            if (!syncing) {
+              syncing = true
+              mapA.setCenter(mapB.getCenter())
+              mapA.setZoom(mapB.getZoom())
+              syncing = false
+            }
+          // }, 100); // 100msの間隔で発火
         })
       }
       syncMaps(this.$store.state.map01, this.$store.state.map02)
