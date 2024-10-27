@@ -674,8 +674,8 @@ export default {
               const z = 17
               if (RasterTileUrl) {
                 getLegendItem(legend, RasterTileUrl, lat, lng,z).then(function (v) {
-                  let res = (v ? v.title : '取得できません')
-                  if (res === '取得できません') return
+                  let res = (v ? v.title : '')
+                  if (res === '') return
                   if (rasterLayerId === 'oh-kozui-saidai-layer') {
                     new maplibregl.Popup()
                         .setLngLat(e.lngLat)
