@@ -3,6 +3,10 @@
     <v-main>
       <div id="map00">
         <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="mapFlg[mapName]" @click="btnPosition">
+
+          <div id="pointer1" class="pointer" v-if="mapName === 'map01'"></div>
+          <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
+
           <div class="center-target"></div>
           <div id="left-top-div">
             <v-btn @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><i class="fa-solid fa-bars"></i></v-btn>
@@ -451,6 +455,48 @@ export default {
         })
       }
       syncMaps(this.$store.state.map01, this.$store.state.map02)
+      // --------------
+      const pointer1 = document.getElementById('pointer1')
+      const pointer2 = document.getElementById('pointer2')
+      // マップ1のマウス移動イベントでポインターを同期
+      const map1 = this.$store.state.map01
+      const map2 = this.$store.state.map02
+      map1.on('mousemove', (e) => {
+        const bounds = map1.getContainer().getBoundingClientRect()
+        const x = e.originalEvent.clientX - bounds.left
+        const y = e.originalEvent.clientY - bounds.top
+
+        // map1のポインター位置を更新
+        pointer1.style.left = `${x}px`
+        pointer1.style.top = `${y}px`
+        pointer1.style.display = 'none'
+
+        // 同じ位置をmap2に変換
+        const lngLat = map1.unproject([x, y])
+        const projectedPoint = map2.project(lngLat)
+        pointer2.style.left = `${projectedPoint.x}px`
+        pointer2.style.top = `${projectedPoint.y}px`
+        pointer2.style.display = 'block'
+      })
+
+      // マップ2のマウス移動イベントでポインターを同期
+      map2.on('mousemove', (e) => {
+        const bounds = map2.getContainer().getBoundingClientRect()
+        const x = e.originalEvent.clientX - bounds.left
+        const y = e.originalEvent.clientY - bounds.top
+
+        // map2のポインター位置を更新
+        pointer2.style.left = `${x}px`
+        pointer2.style.top = `${y}px`
+        pointer2.style.display = 'none'
+
+        // 同じ位置をmap1に変換
+        const lngLat = map2.unproject([x, y])
+        const projectedPoint = map1.project(lngLat)
+        pointer1.style.left = `${projectedPoint.x}px`
+        pointer1.style.top = `${projectedPoint.y}px`
+        pointer1.style.display = 'block'
+      })
       // -----------------------------------------------------------------------------------------------------------------
       // on load
       this.mapNames.forEach(mapName => {
@@ -1493,6 +1539,17 @@ export default {
   background-color: #fff;
   border: #000 1px solid;
   position:absolute;
+}
+.pointer {
+  width: 10px;
+  height: 10px;
+  background-color: red;
+  border-radius: 50%;
+  border: #fff 1px solid;
+  position: absolute;
+  pointer-events: none;
+  z-index: 10;
+  display: none;
 }
 .center-target{
   position: absolute;

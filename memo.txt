@@ -188,3 +188,5 @@ tippecanoe -l point -rg -pk -pf -f -o points.pmtiles t2cPoints.geojson
 tile-join -rg -pk -f -o tetsudojikeiretsu2.pmtiles points.pmtiles tetsudojikeiretsu.pmtiles
 
 tippecanoe -l polygon -f -o zosei.pmtiles z.geojson
+
+tippecanoe -rg -pk -pf -l point -f -o kyoryo.pmtiles kyoryo.geojson
