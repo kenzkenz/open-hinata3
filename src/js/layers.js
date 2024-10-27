@@ -1,30 +1,131 @@
 // 地理院グリフを使う時は以下のフォントを使う。
 // "text-font": ["NotoSansJP-Regular"],
 
-// ---------------------------------------------------------------------------------------------------------------------
+
+// 戦後米軍地図-----------------------------------------------------------------------------------------------------------
+const urls =[
+    {name:'宮崎市',url:'https://kenzkenz2.xsrv.jp/usarmy/miyazaki/{z}/{x}/{y}.png',tms:true},
+    {name:'延岡市',url:'https://kenzkenz2.xsrv.jp/usarmy/nobeoka/{z}/{x}/{y}.png',tms:true},
+    {name:'都城市',url:'https://t.tilemap.jp/jcp_maps/miyakonojo/{z}/{x}/{y}.png',tms:true},
+    {name:'鹿児島市',url:'https://kenzkenz2.xsrv.jp/usarmy/kagosima/{z}/{x}/{y}.png',tms:true},
+    {name:'室蘭市',url:'https://t.tilemap.jp/jcp_maps/muroran/{z}/{x}/{y}.png',tms:true},
+    {name:'明石市',url:'https://t.tilemap.jp/jcp_maps/akashi/{z}/{x}/{y}.png',tms:true},
+    {name:'相生市',url:'https://t.tilemap.jp/jcp_maps/harima/{z}/{x}/{y}.png',tms:true},
+    {name:'秋田市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/akita/{z}/{x}/{y}.png',tms:false},
+    {name:'青森市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/aomori/{z}/{x}/{y}.png',tms:false},
+    {name:'旭川市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/asahikawa/{z}/{x}/{y}.png',tms:false},
+
+
+
+]
+const amsSources = []
+const amsLayers = []
+urls.forEach(url => {
+    if (!url.tms) {
+        amsSources.push({
+            id: 'oh-ams-' + url.name,
+            obj:{
+                type: 'raster',
+                tiles: [url.url],
+                minzoom: 0,
+                // bounds: [138.0, 34.0, 141.0, 37.0],
+            }
+        })
+    } else {
+        amsSources.push({
+            id: 'oh-ams-' + url.name,
+            obj:{
+                type: 'raster',
+                tiles: [url.url],
+                scheme: 'tms',
+                minzoom: 0,
+                // bounds: [138.0, 34.0, 141.0, 37.0],
+            }
+        })
+    }
+    amsLayers.push({
+        id: 'oh-' + url.name,
+        source: 'oh-ams-' + url.name,
+        type: 'raster',
+    })
+})
+console.log(amsSources,amsLayers)
+
+
+
+// 古地図----------------------------------------------------------------------------------------------------------------
 // 戦前の旧版地形図
-export const mw5DummySource = {
+const mw5DummySource = {
     id:'mw5DummySource',obj:{
         type: 'raster',
         tileSize: 256
     }
 }
-export const mw5DummyLayer = {
+const mw5DummyLayer = {
     'id': 'oh-mw-dummy',
     'source': mw5DummySource,
     'type': 'raster',
 }
+const mw5CenterSource = {
+    id: 'mw5CenterSource', obj: {
+        'type': 'geojson',
+        'data': 'https://kenzkenz.xsrv.jp/open-hinata/geojson/mw5centerNew.geojson',
+    }
+}
+const mw5CenterLabel = {
+    id: "oh-mw5-center",
+    type: "symbol",
+    source: "mw5CenterSource",
+    'layout': {
+        'text-field': ['get', 'title'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 7
+}
+// 北海道----------------------------------------------------------------------------------------------------------
+const jissokuSource = {
+    id: 'jissoku-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz3.xsrv.jp/jissoku/{z}/{x}/{y}.png'],
+        tileSize: 256
+    }
+}
+const jissokuLayer = {
+    'id': 'oh-jissoku-layer',
+    'type': 'raster',
+    'source': 'jissoku-source',
+}
+const jissokuMatsumaeSource = {
+    id: 'jissoku-matsumae-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz3.xsrv.jp/jissokumatsumae/{z}/{x}/{y}.png'],
+        tileSize: 256
+    }
+}
+const jissokuMatsumaeLayer = {
+    'id': 'oh-jissoku-matsumae-layer',
+    'type': 'raster',
+    'source': 'jissoku-matsumae-source',
+}
+
+
 
 // ---------------------------------------------------------------------------------------------------------------------
 // syochiikiソース
-export const syochiikiSource = {
+const syochiikiSource = {
     id: "syochiikiSource", obj:{
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/syochiiki/syochiiki.pmtiles",
         attribution: '<a href="https://github.com/shiwaku/mlit-plateau-bldg-pmtiles">mlit-plateau-bldg-pmtiles</a>'
     }
 }
-export const syochiikiLayer = {
+const syochiikiLayer = {
     'id': 'oh-syochiikiLayer',
     'source': 'syochiikiSource',
     'source-layer': "polygon",
@@ -33,7 +134,7 @@ export const syochiikiLayer = {
         "fill-color": "rgba(0, 0, 0, 0)",
     },
 }
-export const syochiikLayerLine = {
+const syochiikLayerLine = {
     id: "oh-syochiik-Line",
     type: "line",
     source: "syochiikiSource",
@@ -57,7 +158,7 @@ export const syochiikLayerLine = {
         ]
     },
 }
-export const syochiikiLayerLabel = {
+const syochiikiLayerLabel = {
     id: "oh-syochiiki-Label",
     type: "symbol",
     source: "syochiikiSource",
@@ -83,7 +184,7 @@ export const syochiikiLayerLabel = {
     'maxzoom': 24,
     'minzoom': 10
 }
-export const syochiikiLayerHeight = {
+const syochiikiLayerHeight = {
     id: 'oh-syochiiki-height',
     type: 'fill-extrusion',
     source: "syochiikiSource",
@@ -331,9 +432,7 @@ export const tetsudojikeiretsuLayerBlue = {
 export const stdSource = {
     id: 'stdSource', obj: {
         type: 'raster',
-        tiles: [
-            'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png' // 標準地図
-        ],
+        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'],
         tileSize: 256
     }
 }
@@ -1859,6 +1958,30 @@ const layers01 = [
         ]
     },
     {
+        id: 'kochizu',
+        label: "古地図等",
+        nodes: [
+            {
+                id: 'oh-mw5',
+                label: "戦前の旧版地形図（５万分の1）",
+                sources: [mw5DummySource,mw5CenterSource],
+                layers: [mw5DummyLayer,mw5CenterLabel]
+            },
+            {
+                id: 'oh-ams',
+                label: "戦後の米軍作成地図",
+                sources: amsSources,
+                layers: amsLayers
+            },
+            {
+                id: 'oh-jissoku',
+                label: "北海道実測切図",
+                sources: [jissokuSource,jissokuMatsumaeSource],
+                layers: [jissokuLayer,jissokuMatsumaeLayer]
+            },
+        ]
+    },
+    {
         id: 'tokei',
         label: "統計",
         nodes: [
@@ -2170,12 +2293,7 @@ const layers01 = [
         id: 'test',
         label: "テスト",
         nodes: [
-            {
-                id: 'oh-mw5',
-                label: "戦前の旧版地形図（５万分の1）",
-                sources: [mw5DummySource],
-                layers: [mw5DummyLayer]
-            },
+
             {
                 id: 'test2',
                 label: "標準地図",

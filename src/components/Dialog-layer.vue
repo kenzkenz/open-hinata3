@@ -136,7 +136,11 @@ export default {
             const layers = map.getStyle().layers
             layers.forEach(layer => {
               if (layer.id.slice(0,5) === 'oh-mw') {
-                map.setPaintProperty(layer.id, 'raster-opacity', element.opacity)
+                if (layer.type === 'raster') {
+                  map.setPaintProperty(layer.id, 'raster-opacity', element.opacity)
+                } else if (layer.type === 'symbol') {
+                  map.setPaintProperty(layer.id, 'text-opacity', element.opacity)
+                }
               }
             })
           }
@@ -220,7 +224,7 @@ export default {
           layer.layers.forEach(layer0 => {
 
             if (layer0.id === 'oh-mw-dummy') {
-              this.mw5AddLayers(map)
+              this.mw5AddLayers(map,this.mapName)
             } else {
               if (!map.getLayer(layer0.id)) map.addLayer(layer0)
               if (layer0.type === 'raster') {
@@ -265,23 +269,23 @@ export default {
         }
       }
     },
-    mw5AddLayers(map) {
-      if (!this.s_selectedLayers.map01.find(v => v.id === 'oh-mw5')) {
+    mw5AddLayers(map,mapName) {
+      // console.log(map._container)
+      if (!this.s_selectedLayers[mapName].find(v => v.id === 'oh-mw5')) {
         return
       }
-      // const map = this.$store.state.map01
       // まずレイヤーを削除-------------------------
       const layers = map.getStyle().layers
       if (layers) {
         for (let i = layers.length - 1; i >= 0; i--) {
           const layerId = layers[i].id
           if (layerId.slice(0,5) === 'oh-mw' ) {
-            map.removeLayer(layerId)
+            if (map.getSource(layerId)) map.removeLayer(layerId)
           }
         }
       }
 
-      if (map.getZoom() <= 8) return;
+      if (map.getZoom() <= 7) return;
 
       mw5.forEach((value) => {
         const poly1 = turf.polygon([
@@ -308,15 +312,19 @@ export default {
             tiles: ['https://mapwarper.h-gis.jp/maps/tile/' + value.id + '/{z}/{x}/{y}.png'],
             bounds: [value.extent[0], value.extent[3], value.extent[2], value.extent[1]],
           })
+
           if (!map.getLayer(value.id)) map.addLayer({
             id: 'oh-mw-' + value.id,
             source: value.id,
             type: 'raster',
             paint: {
-              'raster-fade-duration': 0, // フェードイン効果を無効または短くする
-              // 'raster-resampling': 'nearest' // リサンプリングを nearest に設定
+              'raster-fade-duration': 0
             }
           })
+
+          const opacity = this.s_selectedLayers[mapName].find(v => v.id === 'oh-mw5').opacity
+          map.setPaintProperty('oh-mw-' + value.id, 'raster-opacity', opacity)
+
         }
       })
     }

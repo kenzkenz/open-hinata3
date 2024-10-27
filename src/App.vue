@@ -43,7 +43,7 @@ import DialogInfo from '@/components/Dialog-info'
 import Dialog2 from '@/components/Dialog2'
 import codeShizen from '@/js/codeShizen'
 import pyramid from '@/js/pyramid'
-// import * as Layers from '@/js/layers'
+import * as Layers from '@/js/layers'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import maplibregl from 'maplibre-gl'
 import { Protocol } from "pmtiles"
@@ -284,7 +284,7 @@ export default {
           bearing = this.bearing
         }
       }
-      console.log(pitch01)
+      // console.log(pitch01)
       const selectedLayersJson = JSON.stringify(this.$store.state.selectedLayers)
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=${pitch01}&pitch02=${pitch02}&bearing=${bearing}&slj=${selectedLayersJson}`
@@ -464,41 +464,41 @@ export default {
           //
           // console.log(mapName)
           // console.log(params.slj)
-          // if (params.slj) {
-          //   params.slj[mapName].forEach(slg => {
-          //     let cnt = 0
-          //     function aaa () {
-          //       Layers.layers[mapName].forEach(value => {
-          //         if (!value.nodes) cnt++
-          //         function bbb (v1) {
-          //           if (v1.nodes) {
-          //             v1.nodes.forEach(v2 => {
-          //               if (!v2.nodes) {
-          //                 if (v2.id === slg.id) {
-          //                   slg.source = v2.source
-          //                   slg.layers = v2.layers
-          //                   // console.log(slg.layers)
-          //                   // console.log(v2.layers)
-          //                 }
-          //                 cnt++
-          //               } else {
-          //                 bbb(v2)
-          //               }
-          //             })
-          //           } else {
-          //             if (value.id === slg.id) {
-          //               slg.source = value.source
-          //               slg.layers = value.layers
-          //             }
-          //           }
-          //         }
-          //         bbb(value)
-          //       })
-          //     }
-          //     aaa()
-          //     console.log('背景' + cnt + '件')
-          //   })
-          // }
+          if (params.slj) {
+            params.slj[mapName].forEach(slg => {
+              let cnt = 0
+              function aaa () {
+                Layers.layers[mapName].forEach(value => {
+                  if (!value.nodes) cnt++
+                  function bbb (v1) {
+                    if (v1.nodes) {
+                      v1.nodes.forEach(v2 => {
+                        if (!v2.nodes) {
+                          if (v2.id === slg.id) {
+                            slg.source = v2.source
+                            slg.layers = v2.layers
+                            // console.log(slg.layers)
+                            // console.log(v2.layers)
+                          }
+                          cnt++
+                        } else {
+                          bbb(v2)
+                        }
+                      })
+                    } else {
+                      if (value.id === slg.id) {
+                        slg.source = value.source
+                        slg.layers = value.layers
+                      }
+                    }
+                  }
+                  bbb(value)
+                })
+              }
+              aaa()
+              console.log('背景' + cnt + '件')
+            })
+          }
           if (params.slj) this.s_selectedLayers = params.slj
           // ----------------------------------------------------------------
           // 標高タイルソース---------------------------------------------------
@@ -573,6 +573,30 @@ export default {
             }
           });
           // 地物クリック時にポップアップを表示する----------------------------------------------------------------------------
+          map.on('click', 'oh-mw5-center', (e) => {
+            let coordinates = e.lngLat
+            const props = e.features[0].properties
+            console.log(props)
+            const name = props.title
+            const link = '<a href="https://mapwarper.h-gis.jp/maps/' + props.id + '" target="_blank" >日本版Map Warper</a>'
+            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+            }
+            // ポップアップを表示する
+            new maplibregl.Popup({
+              offset: 10,
+              closeButton: true,
+            })
+                .setLngLat(coordinates)
+                .setHTML(
+                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                    '<span style="font-size: 20px;">' + name + '</span><hr>' +
+                    '<span style="font-size: 12px;">' + link + '</span><br>' +
+                    '</div>'
+                )
+                .addTo(map)
+          })
+
           map.on('click', 'oh-tetsudo-red-lines', (e) => {
             let coordinates = e.lngLat
             const props = e.features[0].properties
