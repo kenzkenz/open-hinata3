@@ -170,7 +170,7 @@ const syochiikLayerLine = {
     },
 }
 const syochiikiLayerLabel = {
-    id: "oh-syochiiki-Label",
+    id: "oh-syochiiki-label",
     type: "symbol",
     source: "syochiikiSource",
     "source-layer": "polygon",
@@ -694,7 +694,6 @@ export const amxLayerDaihyou = {
 export const bakumatsuSource = {
     id: "bakumatsu", obj: {
         type: "vector",
-        // url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bakumatsu/b3.pmtiles",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bakumatsu/b41.pmtiles",
         attribution:
             "<a href='' target='_blank'></a>",
@@ -716,19 +715,6 @@ export const bakumatsuLayerKokudaka = {
     type: "fill",
     source: "bakumatsu",
     "source-layer": "b41",
-    // paint: {
-    //     "fill-color": "rgba(254, 217, 192, 0.7)",
-    //     "fill-outline-color": "rgba(255, 0, 0, 1)",
-    // },
-    // 'paint': {
-    //     'fill-color': [
-    //         'match',
-    //         ['get', 'PREF'], // Get the 'category' property from the data
-    //         '45', '#f28cb1', // Color for category A
-    //         'B', '#3bb2d0', // Color for category B
-    //         '#ccc' // Default color (if no match)
-    //     ],
-    // },
     'paint': {
         'fill-color': [
             'interpolate',
@@ -789,7 +775,24 @@ export const bakumatsuLayerHan = {
     // filter: ['==', ['index-of', '吉村', ['get', '村名']], 0]
 }
 export const bakumatsuLayerLine = {
-    id: "oh-bakumatsuLine",
+    id: "oh-bakumatsu-line",
+    type: "line",
+    source: "bakumatsu",
+    "source-layer": "b41",
+    paint: {
+        'line-color': '#000',
+        // 'line-width': 0.5
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            7, 0,
+            11, 0.5
+        ]
+    },
+}
+export const bakumatsuLayerLine2 = {
+    id: "oh-bakumatsu-line2",
     type: "line",
     source: "bakumatsu",
     "source-layer": "b41",
@@ -806,12 +809,21 @@ export const bakumatsuLayerLine = {
     },
 }
 export const bakumatsuLayerLabel = {
-    id: "oh-bakumatsuLabel",
+    id: "oh-bakumatsu-label",
     type: "symbol",
     source: "bakumatsu",
     "source-layer": "b41",
     'layout': {
-        'text-field': ['get', '村名0'],
+        // 'text-field': ['get', '村名0'],
+        'text-field': [
+            'let', 'splitIndex', ['index-of', '・', ['get', '村名']],
+            [
+                'case',
+                ['>=', ['var', 'splitIndex'], 0],
+                ['slice', ['get', '村名'], 0, ['var', 'splitIndex']],
+                ['get', '村名']
+            ]
+        ],
         'text-font': ['Noto Sans CJK JP Bold'],
         // 'text-anchor': 'left',
         'text-offset': [0.5, 0],
@@ -883,7 +895,7 @@ export const syogakkoR05LayerLabel = {
     'minzoom': 10
 }
 export const syogakkoR05LayerPoint = {
-    id: "oh-syogakkoR05_point",
+    id: "oh-syogakkoR05-point",
     type: "circle",
     source: "syogakkoR05Source",
     "source-layer": "s4point",
@@ -949,7 +961,7 @@ export const cyugakuR05LayerLabel = {
     'minzoom': 10
 }
 export const cyugakuR05LayerPoint = {
-    id: "oh-cyugakuR05_point",
+    id: "oh-cyugakuR05-point",
     type: "circle",
     source: "cyugakuR05Source",
     "source-layer": "t4point",
@@ -1088,7 +1100,7 @@ export const iryokikanLayer = {
     }
 }
 export const iryokikanLayerLabel = {
-    id: "oh-iryokikanLayer-label",
+    id: "oh-iryokikan-label",
     type: "symbol",
     source: "iryokikanSource",
     "source-layer": "i",
@@ -1134,7 +1146,7 @@ export const m100mLayer = {
     }
 }
 export const m100mLayerLine = {
-    id: "oh-m100m_line",
+    id: "oh-m100m-line",
     type: "line",
     source: "m100mSource",
     "source-layer": "polygon",
@@ -1155,7 +1167,7 @@ export const m100mLayerLabel = {
     source: "m100mSource",
     "source-layer": "polygon",
     'layout': {
-        'text-field': ['get', 'jinko'],
+        'text-field': ['get', 'PopT'],
         'text-font': ['Noto Sans CJK JP Bold'],
         // 'text-anchor': 'left',
         'text-offset': [0, 0],
@@ -1217,7 +1229,7 @@ export const m250mLayer = {
     }
 }
 export const m250mLayerLine = {
-    id: "oh-m250m_line",
+    id: "oh-m250m-line",
     type: "line",
     source: "m250mSource",
     "source-layer": "polygon",
@@ -1302,7 +1314,7 @@ export const m500mLayer = {
     }
 }
 export const m500mLayerLine = {
-    id: "oh-m500m_line",
+    id: "oh-m500m-line",
     type: "line",
     source: "m500mSource",
     "source-layer": "polygon",
@@ -1390,7 +1402,7 @@ export const m1kmLayer = {
     }
 }
 export const m1kmLayerLine = {
-    id: "oh-m1km_line",
+    id: "oh-m1km-line",
     type: "line",
     source: "m1kmSource",
     "source-layer": "polygon",
@@ -2266,7 +2278,7 @@ const layers01 = [
                 id: 'oh-bakumatsu',
                 label: "幕末期近世の村（藩）",
                 source: bakumatsuSource,
-                layers: [bakumatsuLayerHan,bakumatsuLayerLine,bakumatsuLayerLabel]
+                layers: [bakumatsuLayerHan,bakumatsuLayerLine2,bakumatsuLayerLabel]
             },
         ]
     },

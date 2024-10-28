@@ -685,6 +685,422 @@ export default {
               map.getCanvas().style.cursor = 'default'
             }
           })
+
+          // レイヤーIDを特定せずに全てのフィーチャーから最初のものだけにポップアップ表示
+          map.on('click', (e) => {
+            let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
+
+            console.log(features[0])
+
+            if (features.length > 0) {
+              const feature = features[0]; // 最初のフィーチャーのみ取得
+              const layerId = feature.layer.id
+              console.log(layerId)
+              let props = feature.properties
+              const coordinates = e.lngLat
+              console.log(props)
+              let html = ''
+              switch (layerId) {
+                case 'oh-zosei-label':
+                case 'oh-zosei': {
+                  if (features.length === 0) return
+                  let name
+                  if (props.A54_001 === '1') {
+                    name = '谷埋め型'
+                  } else if (props.A54_001 === '2') {
+                    name = '腹付け型'
+                  } else if (props.A54_001 === '9') {
+                    name = '区分をしていない'
+                  }
+                  const syozai = props.A54_003 + props.A54_005
+                  const bango = props.A54_006
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 20px;">' + name + '</span><hr>' +
+                      '<span style="font-size: 12px;">' + syozai + '</span><hr>' +
+                      '<span style="font-size: 12px;">' + bango + '</span>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-mw5-center': {
+                  console.log(props)
+                  const name = props.title
+                  const link = '<a href="https://mapwarper.h-gis.jp/maps/' + props.id + '" target="_blank" >日本版Map Warper</a>'
+                  html=
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 20px;">' + name + '</span><hr>' +
+                      '<span style="font-size: 12px;">' + link + '</span><br>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-tetsudo-blue-lines':
+                case 'oh-tetsudo-red-lines':{
+                  const name = props.N05_002
+                  const kaisya = props.N05_003
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
+                      '<span style="font-size: 20px;">' + name + '</span><br>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-tetsudo-points-blue':
+                case 'oh-tetsudo-points-red':{
+                  const name = props.N05_002
+                  const kaisya = props.N05_003
+                  const eki = props.N05_011
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
+                      '<span style="font-size: 20px;">' + name + '</span><br>' +
+                      '<span style="font-size: 20px;">' + eki + '</span><br>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-tetsudojikeiretsu-red-lines':
+                case 'oh-tetsudojikeiretsu-blue-lines':{
+                  const name = props.N05_002
+                  const kaisya = props.N05_003
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
+                      '<span style="font-size: 20px;">' + name + '</span><br>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-tetsudojikeiretsu-points':{
+                  const name = props.N05_002
+                  const kaisya = props.N05_003
+                  const eki = props.N05_011
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
+                      '<span style="font-size: 16px;">' + name + '</span><br>' +
+                      '<span style="font-size: 20px;">' + eki + '</span><br>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-michinoeki-label':
+                case 'oh-michinoeki':{
+                  const name = props.P35_006
+                  const link = '<a href="' + props.P35_007 + '" target="_blank">道の駅ページへ</a>'
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 20px;">' + name + '</span><br>' +
+                      '<div style="font-size: 20px;margin-top: 10px;">' + link + '</div>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-koji-height':
+                case 'oh-koji_point':{
+                  const name = props.L01_025
+                  const kojikakaku = props.L01_008.toLocaleString() + '円'
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 20px;">' + name + '</span><br>' +
+                      '<span style="font-size: 20px;">' + kojikakaku + '</span>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-did':{
+                  const name = props.A16_003
+                  const jinko = props.A16_005.toLocaleString() + '人'
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 20px;">' + name + '</span><br>' +
+                      '<span style="font-size: 20px;">' + jinko + '</span>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-syochiiki-label':
+                case 'oh-syochiikiLayer':{
+                  features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-syochiikiLayer'] }
+                  )
+                  if (features.length === 0) return
+                  props = features[0].properties
+                  const name = props.S_NAME
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 20px;">' + name + '</span><br>' +
+                      '<span style="font-size: 20px;">' + props.JINKO + '人</span>' +
+                      '<button class="pyramid-syochiiki-r02 pyramid-btn" year=2020 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2020（R02）人口ピラミッド</button><br>' +
+                      '<button class="pyramid-syochiiki-h27 pyramid-btn" year=2015 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2015（H27）人口ピラミッド</button><br>' +
+                      '<button class="pyramid-syochiiki-h22 pyramid-btn" year=2010 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2010（H22）人口ピラミッド</button><br>' +
+                      '<button class="pyramid-syochiiki-h17 pyramid-btn" year=2010 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2005（H17）人口ピラミッド</button><br>' +
+                      '<button class="jinkosuii pyramid-btn" mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">人口推移</button>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-kyusekki':{
+                  let name = props.遺跡名
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 20px;">' + name + '</span>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-m250m-label':
+                case 'oh-m250m-line':
+                case 'oh-m250m':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-m250m'] }
+                  )
+                  if (features.length === 0) return
+                  props = features[0].properties
+                  const name = '人口' + Math.floor(Number(props.jinko)) + '人'
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 20px;">' + name + '</span>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-m500m-label':
+                case 'oh-m500m-line':
+                case 'oh-m500m':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-m500m'] }
+                  )
+                  if (features.length === 0) return
+                  props = features[0].properties
+                  const name = '人口' + Math.floor(Number(props.jinko)) + '人'
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 20px;">' + name + '</span>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-m1km-label':
+                case 'oh-m1km-line':
+                case 'oh-m1km':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-m1km'] }
+                  )
+                  if (features.length === 0) return
+                  props = features[0].properties
+                  const name = '人口' + Math.floor(Number(props.jinko)) + '人'
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 20px;">' + name + '</span>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-m100m-label':
+                case 'oh-m100m-line':
+                case 'oh-m100m':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-m100m'] }
+                  )
+                  if (features.length === 0) return
+                  props = features[0].properties
+                  const name = '人口' + Math.floor(Number(props.PopT)) + '人'
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 20px;">' + name + '</span>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-iryokikan-label':
+                case 'oh-iryokikan':{
+                  const name = props.P04_002
+                  const address = props.P04_003
+                  const kamoku = props.P04_004
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 20px;">' + name + '</span><hr>' +
+                      '<span style="font-size: 12px;">' + address + '</span><hr>' +
+                      '<span style="font-size: 12px;">' + kamoku + '</span>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-nihonrekishi-label':
+                case 'oh-nihonrekishi':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-nihonrekishi'] }
+                  )
+                  if (features.length === 0) return
+                  props = features[0].properties
+                  const name = props.名称
+                  html =
+                      `<div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+                       ${name}
+                       </div>`
+                  break
+                }
+                case 'oh-chikeibunrui':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-chikeibunrui'] }
+                  )
+                  if (features.length === 0) return
+                  props = features[0].properties
+                  const name = props.code
+                  let naritachi = "",risk = ""
+                  const list = codeShizen
+                  for(let i=0;i < list.length; i++){
+                    if(list[i][1] === name){//ズーム率によって数値型になったり文字型になったりしている模様
+                      naritachi = list[i][2]
+                      risk = list[i][3]
+                      break;
+                    }
+                  }
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 20px;">' + name + '</span><hr>' +
+                      '<span style="font-size: 12px;">' + naritachi + '</span><hr>' +
+                      '<span style="font-size: 12px;">' + risk + '</span>' +
+                      '</div>'
+                  break
+                }
+                // ここを改善する
+                case 'oh-cyugakuR05-point':
+                case 'oh-cyugakuR05':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-cyugakuR05'] }
+                  )
+                  if (features.length === 0) return
+                  props = features[0].properties
+                  const name = props.A32_004
+                  html =
+                      `
+                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+                   ${name}
+                  </div>
+                `
+                  break
+                }
+                  // ここを改善する
+                case 'oh-syogakkoR05-point':
+                case 'oh-syogakkoR05':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-syogakkoR05'] }
+                  )
+                  if (features.length === 0) return
+                  props = features[0].properties
+                  const name = props.A27_004
+                  html =
+                      `
+                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+                   ${name}
+                  </div>
+                `
+                  break
+                }
+                case 'oh-bakumatsu-line':
+                case 'oh-bakumatsu':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-bakumatsu'] }
+                  )
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  const name = props.村名
+                  const kokudaka = Math.floor(Number(props.石高計))
+                  const ryobun = props.領分１
+                  html =
+                      `
+                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+                   村名=${name}<br>石高=${kokudaka}<br>領分=${ryobun}
+                  </div>
+                `
+                  break
+                }
+                case 'oh-bakumatsu-height':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-bakumatsu-height'] }
+                  )
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  const name = props.村名
+                  const kokudaka = Math.floor(Number(props.石高計))
+                  const ryobun = props.領分１
+                  html =
+                      `
+                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+                   村名=${name}<br>石高=${kokudaka}<br>領分=${ryobun}
+                  </div>
+                `
+                  break
+                }
+                case 'oh-bakumatsu-line2':
+                case 'oh-bakumatsu-han':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-bakumatsu-han'] }
+                  )
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  const name = props.村名
+                  const kokudaka = Math.floor(Number(props.石高計))
+                  const ryobun = props.領分１
+                  html =
+                      `
+                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+                   村名=${name}<br>石高=${kokudaka}<br>領分=${ryobun}
+                  </div>
+                `
+                  break
+                }
+                case 'oh-bakumatsu-label':
+                case 'oh-bakumatsu-kokudaka':{
+                  // ここを参考に
+                  let features
+                  if (map.getSource('oh-bakumatsu-kokudaka')) {
+                    features = map.queryRenderedFeatures(
+                        map.project(coordinates), {layers: ['oh-bakumatsu-kokudaka']}
+                    )
+                  } else {
+                    features = map.queryRenderedFeatures(
+                        map.project(coordinates), {layers: ['oh-bakumatsu']}
+                    )
+                  }
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  const name = props.村名
+                  const kokudaka = Math.floor(Number(props.石高計))
+                  const ryobun = props.領分１
+                  html =
+                      `
+                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+                   村名=${name}<br>石高=${kokudaka}<br>領分=${ryobun}
+                  </div>
+                `
+                  break
+                }
+                case 'oh-highwayLayer-green-lines':
+                case 'oh-highwayLayer-red-lines':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-highwayLayer-green-lines'] }
+                  )
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  const name = props.N06_007
+                  const id = props.N06_004
+                  const kyouyounen = props.N06_001
+                  const kaishinen = props.N06_002
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 20px;">' + name + '</span><br>' +
+                      '<span style="font-size: 12px;">id=' + id + '</span><br>' +
+                      '<span style="font-size: 12px;">供用開始年=' + kyouyounen + '</span><br>' +
+                      '<span style="font-size: 12px;">設置期間（開始年）=' + kaishinen + '</span><br>' +
+                      '</div>'
+                  break
+                }
+              }
+
+              console.log(html)
+
+              // ポップアップ作成
+                new maplibregl.Popup({
+                  offset: 10,
+                  closeButton: true,
+                })
+                    .setLngLat(coordinates)
+                    .setHTML(html)
+                    .addTo(map);
+              }
+          });
+
+
+
           //------------------------------------------------------------------------------------------------------------
           function latLngToTile(lat, lng, z) {
             const
@@ -784,770 +1200,769 @@ export default {
               }
             })
           })
-          map.on('click', 'oh-zosei', (e) => {
-            let coordinates = e.lngLat
-            const features = map.queryRenderedFeatures(
-                map.project(coordinates), { layers: ['oh-zosei'] }
-            )
-            if (features.length === 0) return
-            const props = features[0].properties
-            console.log(props)
-            let name
-            if (props.A54_001 === '1') {
-              name = '谷埋め型'
-            } else if (props.A54_001 === '2') {
-              name = '腹付け型'
-            } else if (props.A54_001 === '9') {
-              name = '区分をしていない'
-            }
-            const syozai = props.A54_003 + props.A54_005
-            const bango = props.A54_006
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 20px;">' + name + '</span><hr>' +
-                    '<span style="font-size: 12px;">' + syozai + '</span><hr>' +
-                    '<span style="font-size: 12px;">' + bango + '</span>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
-          map.on('click', 'oh-mw5-center', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.title
-            const link = '<a href="https://mapwarper.h-gis.jp/maps/' + props.id + '" target="_blank" >日本版Map Warper</a>'
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 20px;">' + name + '</span><hr>' +
-                    '<span style="font-size: 12px;">' + link + '</span><br>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
+          // map.on('click', 'oh-zosei', (e) => {
+          //   let coordinates = e.lngLat
+          //   const features = map.queryRenderedFeatures(
+          //       map.project(coordinates), { layers: ['oh-zosei'] }
+          //   )
+          //   if (features.length === 0) return
+          //   const props = features[0].properties
+          //   console.log(props)
+          //   let name
+          //   if (props.A54_001 === '1') {
+          //     name = '谷埋め型'
+          //   } else if (props.A54_001 === '2') {
+          //     name = '腹付け型'
+          //   } else if (props.A54_001 === '9') {
+          //     name = '区分をしていない'
+          //   }
+          //   const syozai = props.A54_003 + props.A54_005
+          //   const bango = props.A54_006
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 20px;">' + name + '</span><hr>' +
+          //           '<span style="font-size: 12px;">' + syozai + '</span><hr>' +
+          //           '<span style="font-size: 12px;">' + bango + '</span>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-mw5-center', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.title
+          //   const link = '<a href="https://mapwarper.h-gis.jp/maps/' + props.id + '" target="_blank" >日本版Map Warper</a>'
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 20px;">' + name + '</span><hr>' +
+          //           '<span style="font-size: 12px;">' + link + '</span><br>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
 
-          map.on('click', 'oh-tetsudo-red-lines', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.N05_002
-            const kaisya = props.N05_003
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
-                    '<span style="font-size: 20px;">' + name + '</span><br>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
-          map.on('click', 'oh-tetsudo-blue-lines', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.N05_002
-            const kaisya = props.N05_003
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
-                    '<span style="font-size: 20px;">' + name + '</span><br>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
-          map.on('click', 'oh-tetsudo-points-red', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.N05_002
-            const kaisya = props.N05_003
-            const eki = props.N05_011
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
-                    '<span style="font-size: 16px;">' + name + '</span><br>' +
-                    '<span style="font-size: 20px;">' + eki + '</span><br>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
-          map.on('click', 'oh-tetsudo-points-blue', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.N05_002
-            const kaisya = props.N05_003
-            const eki = props.N05_011
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
-                    '<span style="font-size: 16px;">' + name + '</span><br>' +
-                    '<span style="font-size: 20px;">' + eki + '</span><br>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
-          map.on('click', 'oh-tetsudojikeiretsu-blue-lines', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.N05_002
-            const kaisya = props.N05_003
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
-                    '<span style="font-size: 20px;">' + name + '</span><br>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
-          map.on('click', 'oh-tetsudojikeiretsu-points', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.N05_002
-            const kaisya = props.N05_003
-            const eki = props.N05_011
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
-                    '<span style="font-size: 16px;">' + name + '</span><br>' +
-                    '<span style="font-size: 20px;">' + eki + '</span><br>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
-          map.on('click', 'oh-michinoeki', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.P35_006
-            const link = '<a href="' + props.P35_007 + '" target="_blank">道の駅ページへ</a>'
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 20px;">' + name + '</span><br>' +
-                    '<div style="font-size: 20px;margin-top: 10px;">' + link + '</div>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
-          map.on('click', 'oh-koji-height', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.L01_025
-            const kojikakaku = props.L01_008.toLocaleString() + '円'
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 20px;">' + name + '</span><br>' +
-                    '<span style="font-size: 20px;">' + kojikakaku + '</span>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
-          map.on('click', 'oh-koji_point', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.L01_025
-            const kojikakaku = props.L01_008.toLocaleString() + '円'
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 20px;">' + name + '</span><br>' +
-                    '<span style="font-size: 20px;">' + kojikakaku + '</span>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
-          map.on('click', 'oh-did', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.A16_003
-            const jinko = props.A16_005.toLocaleString() + '人'
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 20px;">' + name + '</span><br>' +
-                    '<span style="font-size: 20px;">' + jinko + '</span>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
-          map.on('click', 'oh-syochiikiLayer', (e) => {
-            let coordinates = e.lngLat
-            const features = map.queryRenderedFeatures(
-                map.project(coordinates), { layers: ['oh-syochiikiLayer'] }
-            )
-            if (features.length === 0) return
-            const props = features[0].properties
-            console.log(props)
-            let name = props.S_NAME
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 20px;">' + name + '</span><br>' +
-                    '<span style="font-size: 20px;">' + props.JINKO + '人</span>' +
-                    '<button class="pyramid-syochiiki-r02 pyramid-btn" year=2020 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2020（R02）人口ピラミッド</button><br>' +
-                    '<button class="pyramid-syochiiki-h27 pyramid-btn" year=2015 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2015（H27）人口ピラミッド</button><br>' +
-                    '<button class="pyramid-syochiiki-h22 pyramid-btn" year=2010 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2010（H22）人口ピラミッド</button><br>' +
-                    '<button class="pyramid-syochiiki-h17 pyramid-btn" year=2010 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2005（H17）人口ピラミッド</button><br>' +
-                    '<button class="jinkosuii pyramid-btn" mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">人口推移</button>' +
-
-                    '</div>'
-                )
-                .addTo(map)
-          })
-          map.on('click', 'oh-kyusekki', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            let name = props.遺跡名
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 20px;">' + name + '</span>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
-          map.on('click', 'oh-m250m', (e) => {
-            let coordinates = e.lngLat
-            const features = map.queryRenderedFeatures(
-                map.project(coordinates), { layers: ['oh-m250m'] }
-            )
-            if (features.length === 0) return
-            const props = features[0].properties
-            let name = props.jinko
-            name = '人口' + Math.floor(Number(name)) + '人'
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 20px;">' + name + '</span>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
-          map.on('click', 'oh-m500m', (e) => {
-            let coordinates = e.lngLat
-            const features = map.queryRenderedFeatures(
-                map.project(coordinates), { layers: ['oh-m500m'] }
-            )
-            if (features.length === 0) return
-            const props = features[0].properties
-            console.log(props)
-            let name = props.jinko
-            name = '人口' + Math.floor(Number(name)) + '人'
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 20px;">' + name + '</span>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
-          map.on('click', 'oh-m1km', (e) => {
-            let coordinates = e.lngLat
-            const features = map.queryRenderedFeatures(
-                map.project(coordinates), { layers: ['oh-m1km'] }
-            )
-            if (features.length === 0) return
-            const props = features[0].properties
-            console.log(props)
-            let name = props.jinko
-            name = '人口' + Math.floor(Number(name)) + '人'
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 20px;">' + name + '</span>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
-          map.on('click', 'oh-m100m', (e) => {
-            let coordinates = e.lngLat
-            const features = map.queryRenderedFeatures(
-                map.project(coordinates), { layers: ['oh-m100m'] }
-            )
-            if (features.length === 0) return
-            const props = features[0].properties
-            console.log(props)
-            let name = props.PopT
-            name = '人口' + Math.floor(Number(name)) + '人'
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 20px;">' + name + '</span>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
+          // map.on('click', 'oh-tetsudo-red-lines', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.N05_002
+          //   const kaisya = props.N05_003
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
+          //           '<span style="font-size: 20px;">' + name + '</span><br>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-tetsudo-blue-lines', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.N05_002
+          //   const kaisya = props.N05_003
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
+          //           '<span style="font-size: 20px;">' + name + '</span><br>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-tetsudo-points-red', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.N05_002
+          //   const kaisya = props.N05_003
+          //   const eki = props.N05_011
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
+          //           '<span style="font-size: 16px;">' + name + '</span><br>' +
+          //           '<span style="font-size: 20px;">' + eki + '</span><br>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-tetsudo-points-blue', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.N05_002
+          //   const kaisya = props.N05_003
+          //   const eki = props.N05_011
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
+          //           '<span style="font-size: 16px;">' + name + '</span><br>' +
+          //           '<span style="font-size: 20px;">' + eki + '</span><br>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-tetsudojikeiretsu-blue-lines', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.N05_002
+          //   const kaisya = props.N05_003
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
+          //           '<span style="font-size: 20px;">' + name + '</span><br>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-tetsudojikeiretsu-points', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.N05_002
+          //   const kaisya = props.N05_003
+          //   const eki = props.N05_011
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
+          //           '<span style="font-size: 16px;">' + name + '</span><br>' +
+          //           '<span style="font-size: 20px;">' + eki + '</span><br>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-michinoeki', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.P35_006
+          //   const link = '<a href="' + props.P35_007 + '" target="_blank">道の駅ページへ</a>'
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 20px;">' + name + '</span><br>' +
+          //           '<div style="font-size: 20px;margin-top: 10px;">' + link + '</div>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-koji-height', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.L01_025
+          //   const kojikakaku = props.L01_008.toLocaleString() + '円'
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 20px;">' + name + '</span><br>' +
+          //           '<span style="font-size: 20px;">' + kojikakaku + '</span>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-koji_point', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.L01_025
+          //   const kojikakaku = props.L01_008.toLocaleString() + '円'
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 20px;">' + name + '</span><br>' +
+          //           '<span style="font-size: 20px;">' + kojikakaku + '</span>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-did', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.A16_003
+          //   const jinko = props.A16_005.toLocaleString() + '人'
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 20px;">' + name + '</span><br>' +
+          //           '<span style="font-size: 20px;">' + jinko + '</span>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-syochiikiLayer', (e) => {
+          //   let coordinates = e.lngLat
+          //   const features = map.queryRenderedFeatures(
+          //       map.project(coordinates), { layers: ['oh-syochiikiLayer'] }
+          //   )
+          //   if (features.length === 0) return
+          //   const props = features[0].properties
+          //   console.log(props)
+          //   let name = props.S_NAME
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 20px;">' + name + '</span><br>' +
+          //           '<span style="font-size: 20px;">' + props.JINKO + '人</span>' +
+          //           '<button class="pyramid-syochiiki-r02 pyramid-btn" year=2020 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2020（R02）人口ピラミッド</button><br>' +
+          //           '<button class="pyramid-syochiiki-h27 pyramid-btn" year=2015 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2015（H27）人口ピラミッド</button><br>' +
+          //           '<button class="pyramid-syochiiki-h22 pyramid-btn" year=2010 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2010（H22）人口ピラミッド</button><br>' +
+          //           '<button class="pyramid-syochiiki-h17 pyramid-btn" year=2010 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2005（H17）人口ピラミッド</button><br>' +
+          //           '<button class="jinkosuii pyramid-btn" mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">人口推移</button>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-kyusekki', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   let name = props.遺跡名
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 20px;">' + name + '</span>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-m250m', (e) => {
+          //   let coordinates = e.lngLat
+          //   const features = map.queryRenderedFeatures(
+          //       map.project(coordinates), { layers: ['oh-m250m'] }
+          //   )
+          //   if (features.length === 0) return
+          //   const props = features[0].properties
+          //   let name = props.jinko
+          //   name = '人口' + Math.floor(Number(name)) + '人'
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 20px;">' + name + '</span>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-m500m', (e) => {
+          //   let coordinates = e.lngLat
+          //   const features = map.queryRenderedFeatures(
+          //       map.project(coordinates), { layers: ['oh-m500m'] }
+          //   )
+          //   if (features.length === 0) return
+          //   const props = features[0].properties
+          //   console.log(props)
+          //   let name = props.jinko
+          //   name = '人口' + Math.floor(Number(name)) + '人'
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 20px;">' + name + '</span>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-m1km', (e) => {
+          //   let coordinates = e.lngLat
+          //   const features = map.queryRenderedFeatures(
+          //       map.project(coordinates), { layers: ['oh-m1km'] }
+          //   )
+          //   if (features.length === 0) return
+          //   const props = features[0].properties
+          //   console.log(props)
+          //   let name = props.jinko
+          //   name = '人口' + Math.floor(Number(name)) + '人'
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 20px;">' + name + '</span>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-m100m', (e) => {
+          //   let coordinates = e.lngLat
+          //   const features = map.queryRenderedFeatures(
+          //       map.project(coordinates), { layers: ['oh-m100m'] }
+          //   )
+          //   if (features.length === 0) return
+          //   const props = features[0].properties
+          //   console.log(props)
+          //   let name = props.PopT
+          //   name = '人口' + Math.floor(Number(name)) + '人'
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 20px;">' + name + '</span>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
           // -----------------------------------------------------------------------------------------------------------
-
-          map.on('mouseenter', 'oh-iryokikan', function () {
-            map.getCanvas().style.cursor = 'pointer';
-          });
-          map.on('mouseleave', 'oh-iryokikan', function () {
-            map.getCanvas().style.cursor = '';
-          });
-          map.on('click', 'oh-iryokikan', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.P04_002
-            const address = props.P04_003
-            const kamoku = props.P04_004
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 20px;">' + name + '</span><hr>' +
-                    '<span style="font-size: 12px;">' + address + '</span><hr>' +
-                    '<span style="font-size: 12px;">' + kamoku + '</span>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
+          //
+          // map.on('mouseenter', 'oh-iryokikan', function () {
+          //   map.getCanvas().style.cursor = 'pointer';
+          // });
+          // map.on('mouseleave', 'oh-iryokikan', function () {
+          //   map.getCanvas().style.cursor = '';
+          // });
+          // map.on('click', 'oh-iryokikan', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.P04_002
+          //   const address = props.P04_003
+          //   const kamoku = props.P04_004
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 20px;">' + name + '</span><hr>' +
+          //           '<span style="font-size: 12px;">' + address + '</span><hr>' +
+          //           '<span style="font-size: 12px;">' + kamoku + '</span>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
           // -----------------------------------------------------------------------------------------------------------
-          map.on('mouseenter', 'oh-iryokikanLayer-label', function () {
-            map.getCanvas().style.cursor = 'pointer';
-          });
-          map.on('mouseleave', 'oh-iryokikanLayer-label', function () {
-            map.getCanvas().style.cursor = '';
-          });
-          map.on('click', 'oh-iryokikanLayer-label', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.P04_002
-            const address = props.P04_003
-            const kamoku = props.P04_004
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 20px;">' + name + '</span><hr>' +
-                    '<span style="font-size: 12px;">' + address + '</span><hr>' +
-                    '<span style="font-size: 12px;">' + kamoku + '</span>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
-          map.on('click', 'oh-nihonrekishi', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.名称
-
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(`
-                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
-                   ${name}
-                  </div>
-                `)
-                .addTo(map)
-          })
-          map.on('click', 'oh-chikeibunrui', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.code
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            let naritachi = "",risk = ""
-            const list = codeShizen
-            for(var i=0;i < list.length; i++){
-              if(list[i][1] === name){//ズーム率によって数値型になったり文字型になったりしている模様
-                naritachi = list[i][2]
-                risk = list[i][3]
-                break;
-              }
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 20px;">' + name + '</span><hr>' +
-                    '<span style="font-size: 12px;">' + naritachi + '</span><hr>' +
-                    '<span style="font-size: 12px;">' + risk + '</span>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
-          map.on('click', 'oh-cyugakuR05', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.A32_004
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(`
-                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
-                   ${name}
-                  </div>
-                `)
-                .addTo(map)
-          })
-          map.on('click', 'oh-syogakkoR05', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.A27_004
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(`
-                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
-                   ${name}
-                  </div>
-                `)
-                .addTo(map)
-          })
-          map.on('click', 'oh-bakumatsu', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.村名
-            const kokudaka = Math.floor(Number(props.石高計))
-            const ryobun = props.領分１
-
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(`
-                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
-                   村名=${name}<br>石高=${kokudaka}<br>領分=${ryobun}
-                  </div>
-                `)
-                .addTo(map)
-          })
-          map.on('click', 'oh-bakumatsu-kokudaka', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.村名
-            const kokudaka = Math.floor(Number(props.石高計))
-            const ryobun = props.領分１
-
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(`
-                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
-                   村名=${name}<br>石高=${kokudaka}<br>領分=${ryobun}
-                  </div>
-                `)
-                .addTo(map)
-          })
-          map.on('click', 'oh-bakumatsu-height', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.村名
-            const kokudaka = Math.floor(Number(props.石高計))
-            const ryobun = props.領分１
-
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(`
-                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
-                   村名=${name}<br>石高=${kokudaka}<br>領分=${ryobun}
-                  </div>
-                `)
-                .addTo(map)
-          })
-          map.on('click', 'oh-bakumatsu-han', (e) => {
-            let coordinates = e.lngLat
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.村名
-            const kokudaka = Math.floor(Number(props.石高計))
-            const ryobun = props.領分１
-
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(`
-                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
-                   村名=${name}<br>石高=${kokudaka}<br>領分=${ryobun}
-                  </div>
-                `)
-                .addTo(map)
-          })
+          // map.on('mouseenter', 'oh-iryokikanLayer-label', function () {
+          //   map.getCanvas().style.cursor = 'pointer';
+          // });
+          // map.on('mouseleave', 'oh-iryokikanLayer-label', function () {
+          //   map.getCanvas().style.cursor = '';
+          // });
+          // map.on('click', 'oh-iryokikanLayer-label', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.P04_002
+          //   const address = props.P04_003
+          //   const kamoku = props.P04_004
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 20px;">' + name + '</span><hr>' +
+          //           '<span style="font-size: 12px;">' + address + '</span><hr>' +
+          //           '<span style="font-size: 12px;">' + kamoku + '</span>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-nihonrekishi', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.名称
+          //
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(`
+          //         <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+          //          ${name}
+          //         </div>
+          //       `)
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-chikeibunrui', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.code
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   let naritachi = "",risk = ""
+          //   const list = codeShizen
+          //   for(var i=0;i < list.length; i++){
+          //     if(list[i][1] === name){//ズーム率によって数値型になったり文字型になったりしている模様
+          //       naritachi = list[i][2]
+          //       risk = list[i][3]
+          //       break;
+          //     }
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 20px;">' + name + '</span><hr>' +
+          //           '<span style="font-size: 12px;">' + naritachi + '</span><hr>' +
+          //           '<span style="font-size: 12px;">' + risk + '</span>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-cyugakuR05', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.A32_004
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(`
+          //         <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+          //          ${name}
+          //         </div>
+          //       `)
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-syogakkoR05', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.A27_004
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(`
+          //         <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+          //          ${name}
+          //         </div>
+          //       `)
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-bakumatsu', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.村名
+          //   const kokudaka = Math.floor(Number(props.石高計))
+          //   const ryobun = props.領分１
+          //
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(`
+          //         <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+          //          村名=${name}<br>石高=${kokudaka}<br>領分=${ryobun}
+          //         </div>
+          //       `)
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-bakumatsu-kokudaka', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.村名
+          //   const kokudaka = Math.floor(Number(props.石高計))
+          //   const ryobun = props.領分１
+          //
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(`
+          //         <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+          //          村名=${name}<br>石高=${kokudaka}<br>領分=${ryobun}
+          //         </div>
+          //       `)
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-bakumatsu-height', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.村名
+          //   const kokudaka = Math.floor(Number(props.石高計))
+          //   const ryobun = props.領分１
+          //
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(`
+          //         <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+          //          村名=${name}<br>石高=${kokudaka}<br>領分=${ryobun}
+          //         </div>
+          //       `)
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-bakumatsu-han', (e) => {
+          //   let coordinates = e.lngLat
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.村名
+          //   const kokudaka = Math.floor(Number(props.石高計))
+          //   const ryobun = props.領分１
+          //
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(`
+          //         <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+          //          村名=${name}<br>石高=${kokudaka}<br>領分=${ryobun}
+          //         </div>
+          //       `)
+          //       .addTo(map)
+          // })
           // ------------------------------------------
-          map.on('click', 'oh-highwayLayer-red-lines', (e) => {
-            let coordinates = e.lngLat
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.N06_007
-            const id = props.N06_004
-            const kyouyounen = props.N06_001
-            const kaishinen = props.N06_002
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 20px;">' + name + '</span><br>' +
-                    '<span style="font-size: 12px;">id=' + id + '</span><br>' +
-                    '<span style="font-size: 12px;">供用開始年=' + kyouyounen + '</span><br>' +
-                    '<span style="font-size: 12px;">設置期間（開始年）=' + kaishinen + '</span><br>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
-          map.on('click', 'oh-highwayLayer-green-lines', (e) => {
-            let coordinates = e.lngLat
-            while (Math.abs(e.lngLat.lng - coordinates) > 180) {
-              coordinates += e.lngLat.lng > coordinates ? 360 : -360;
-            }
-            const props = e.features[0].properties
-            console.log(props)
-            const name = props.N06_007
-            const id = props.N06_004
-            const kyouyounen = props.N06_001
-            const kaishinen = props.N06_002
-            // ポップアップを表示する
-            new maplibregl.Popup({
-              offset: 10,
-              closeButton: true,
-            })
-                .setLngLat(coordinates)
-                .setHTML(
-                    '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size: 20px;">' + name + '</span><br>' +
-                    '<span style="font-size: 12px;">id=' + id + '</span><br>' +
-                    '<span style="font-size: 12px;">供用開始年=' + kyouyounen + '</span><br>' +
-                    '<span style="font-size: 12px;">設置期間（開始年）=' + kaishinen + '</span><br>' +
-                    '</div>'
-                )
-                .addTo(map)
-          })
+          // map.on('click', 'oh-highwayLayer-red-lines', (e) => {
+          //   let coordinates = e.lngLat
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.N06_007
+          //   const id = props.N06_004
+          //   const kyouyounen = props.N06_001
+          //   const kaishinen = props.N06_002
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 20px;">' + name + '</span><br>' +
+          //           '<span style="font-size: 12px;">id=' + id + '</span><br>' +
+          //           '<span style="font-size: 12px;">供用開始年=' + kyouyounen + '</span><br>' +
+          //           '<span style="font-size: 12px;">設置期間（開始年）=' + kaishinen + '</span><br>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
+          // map.on('click', 'oh-highwayLayer-green-lines', (e) => {
+          //   let coordinates = e.lngLat
+          //   while (Math.abs(e.lngLat.lng - coordinates) > 180) {
+          //     coordinates += e.lngLat.lng > coordinates ? 360 : -360;
+          //   }
+          //   const props = e.features[0].properties
+          //   console.log(props)
+          //   const name = props.N06_007
+          //   const id = props.N06_004
+          //   const kyouyounen = props.N06_001
+          //   const kaishinen = props.N06_002
+          //   // ポップアップを表示する
+          //   new maplibregl.Popup({
+          //     offset: 10,
+          //     closeButton: true,
+          //   })
+          //       .setLngLat(coordinates)
+          //       .setHTML(
+          //           '<div font-weight: normal; color: #333;line-height: 25px;">' +
+          //           '<span style="font-size: 20px;">' + name + '</span><br>' +
+          //           '<span style="font-size: 12px;">id=' + id + '</span><br>' +
+          //           '<span style="font-size: 12px;">供用開始年=' + kyouyounen + '</span><br>' +
+          //           '<span style="font-size: 12px;">設置期間（開始年）=' + kaishinen + '</span><br>' +
+          //           '</div>'
+          //       )
+          //       .addTo(map)
+          // })
           const pitch = !isNaN(this.pitch[mapName]) ? this.pitch[mapName]: 0
           if (pitch !== 0) {
             this.$store.state[mapName].setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': this.s_terrainLevel })
