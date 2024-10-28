@@ -1,9 +1,9 @@
 <template>
-  <div ref="dragDiv" :id="'dialog2-' + item.id" v-for="item in s_dialog2" :key="item.id" :style="item.style" class="dialog2-div" @pointerdown="dialogMouseDown(item)" @mousedown="dialogMouseDown(item)" @mouseup="dialogMouseDown(item)">
+  <div ref="dragDiv" :id="'dialog2-' + item.id" v-for="item in s_dialog2" :key="item.id" :style="item.style" class="dialog2-div" @pointerdown.stop="dialogMouseDown(item)" @mousedown.stop="dialogMouseDown(item)" @mouseup.stop="dialogMouseDown(item)">
     <div ref="dragHandle" class="drag-handle" :id="'dialog-handle2-' + item.id">
     </div>
     <div>
-      <div class="close-btn-div" @click="closeBtn(item)" @pointerdown="closeBtn(item)"><i class="fa-solid fa-xmark hover close-btn"></i></div>
+      <div class="close-btn-div" @clic.stop="closeBtn(item)" @pointerdown.stop="closeBtn(item)"><i class="fa-solid fa-xmark hover close-btn"></i></div>
       <DialogPyramid :item="item" :mapName="mapName" v-if="item.name === 'pyramid'" />
       <DialogJinkosuii :item="item" :mapName="mapName" v-if="item.name === 'jinkosuii'" />
     </div>
@@ -32,7 +32,9 @@ export default {
   },
   methods: {
     closeBtn (item) {
-      this.$store.state.dialogs2[this.mapName] = this.$store.state.dialogs2[this.mapName].filter(v => v.id !== item.id);
+      setTimeout(() => {
+        this.$store.state.dialogs2[this.mapName] = this.$store.state.dialogs2[this.mapName].filter(v => v.id !== item.id)
+      }, 500)
     },
     dialogMouseDown (item) {
       try {

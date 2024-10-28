@@ -530,6 +530,7 @@ export default {
         if (syncing) return  // 同期中の場合は再帰呼び出しを防ぐ
         syncing = true
         const coordinates = e.lngLat
+        console.log(coordinates)
         // map2のクリックイベントをプログラムで発生させる
         map2.fire('click', { lngLat: coordinates })
         syncing = false
@@ -623,7 +624,6 @@ export default {
           })
           // 標高タイルセット
           // map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': this.s_terrainLevel });
-          // alert()
           const vm = this
           document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('mouseover', function() {
             map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': vm.s_terrainLevel })
@@ -701,9 +701,14 @@ export default {
               console.log(props)
               let html = ''
               switch (layerId) {
+                case 'oh-zosei-line':
                 case 'oh-zosei-label':
                 case 'oh-zosei': {
+                  features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-zosei'] }
+                  )
                   if (features.length === 0) return
+                  props = features[0].properties
                   let name
                   if (props.A54_001 === '1') {
                     name = '谷埋め型'
@@ -812,6 +817,7 @@ export default {
                       '</div>'
                   break
                 }
+                case 'oh-syochiiki-height':
                 case 'oh-syochiiki-label':
                 case 'oh-syochiikiLayer':{
                   features = map.queryRenderedFeatures(
@@ -916,15 +922,16 @@ export default {
                 case 'oh-nihonrekishi-label':
                 case 'oh-nihonrekishi':{
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-nihonrekishi'] }
+                      map.project(coordinates), { layers: [layerId] }
                   )
+
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = props.名称
                   html =
-                      `<div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
-                       ${name}
-                       </div>`
+                      '<div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">' +
+                       name +
+                       '</div>'
                   break
                 }
                 case 'oh-chikeibunrui':{
@@ -952,24 +959,43 @@ export default {
                   break
                 }
                 // ここを改善する
-                case 'oh-cyugakuR05-point':
                 case 'oh-cyugakuR05':{
                   const features = map.queryRenderedFeatures(
                       map.project(coordinates), { layers: ['oh-cyugakuR05'] }
                   )
+                  console.log(features)
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = props.A32_004
                   html =
-                      `
-                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
-                   ${name}
-                  </div>
-                `
+                      '<div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">' +
+                       name +
+                      '</div>'
+                  break
+                }
+                case 'oh-cyugakuR05-line':
+                case 'oh-cyugakuR05-label':
+                case 'oh-cyugakuR05-point':{
+                  features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: [layerId] }
+                  )
+                  let objName = 'P29_004'
+                  if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(coordinates), { layers: ['oh-cyugakuR05'] }
+                    )
+                    objName = 'A32_004'
+                  }
+                  if (features.length === 0) return
+                  props = features[0].properties
+                  const name = props[objName]
+                  html =
+                      '<div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">' +
+                      name +
+                      '</div>'
                   break
                 }
                   // ここを改善する
-                case 'oh-syogakkoR05-point':
                 case 'oh-syogakkoR05':{
                   const features = map.queryRenderedFeatures(
                       map.project(coordinates), { layers: ['oh-syogakkoR05'] }
@@ -978,11 +1004,31 @@ export default {
                   props = features[0].properties
                   const name = props.A27_004
                   html =
-                      `
-                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
-                   ${name}
-                  </div>
-                `
+                      '<div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">' +
+                      name +
+                      '</div>'
+                  break
+                }
+                case 'oh-syogakkoR05-line':
+                case 'oh-syogakkoR05-label':
+                case 'oh-syogakkoR05-point':{
+                  features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: [layerId] }
+                  )
+                  let objName = 'P29_004'
+                  if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(coordinates), { layers: ['oh-syogakkoR05'] }
+                    )
+                    objName = 'A27_004'
+                  }
+                  if (features.length === 0) return
+                  props = features[0].properties
+                  const name = props[objName]
+                  html =
+                      '<div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">' +
+                      name +
+                      '</div>'
                   break
                 }
                 case 'oh-bakumatsu-line':
@@ -1042,7 +1088,8 @@ export default {
                 case 'oh-bakumatsu-kokudaka':{
                   // ここを参考に
                   let features
-                  if (map.getSource('oh-bakumatsu-kokudaka')) {
+                  console.log(map.getLayer('oh-bakumatsu-kokudaka'))
+                  if (map.getLayer('oh-bakumatsu-kokudaka')) {
                     features = map.queryRenderedFeatures(
                         map.project(coordinates), {layers: ['oh-bakumatsu-kokudaka']}
                     )
@@ -1090,14 +1137,14 @@ export default {
 
               // ポップアップ作成
                 new maplibregl.Popup({
-                  offset: 10,
+                  // offset: 10,
                   closeButton: true,
                 })
                     .setLngLat(coordinates)
                     .setHTML(html)
-                    .addTo(map);
+                    .addTo(map)
               }
-          });
+          })
 
 
 
@@ -1124,16 +1171,16 @@ export default {
               img.onload = function () {
                 const
                     canvas = document.createElement('canvas'),
-                    context = canvas.getContext('2d');
+                    context = canvas.getContext('2d')
                 let
                     v,
                     d;
-                canvas.width = 1;
-                canvas.height = 1;
-                context.drawImage(img, i, j, 1, 1, 0, 0, 1, 1);
-                d = context.getImageData(0, 0, 1, 1).data;
+                canvas.width = 1
+                canvas.height = 1
+                context.drawImage(img, i, j, 1, 1, 0, 0, 1, 1)
+                d = context.getImageData(0, 0, 1, 1).data
                 if (d[3] !== 255) {
-                  v = null;
+                  v = null
                 } else {
                   v = legend.find(o => o.r == d[0] && o.g == d[1] && o.b == d[2])
                 }

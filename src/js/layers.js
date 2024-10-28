@@ -1,7 +1,21 @@
 // 地理院グリフを使う時は以下のフォントを使う。
 // "text-font": ["NotoSansJP-Regular"],
 
-
+const testSource = {
+    id: 'test-source', obj: {
+        type: 'geojson',
+        data: "https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://mapdata.qchizu.xyz/vector/mlit_road2019/bridge2/{z}/{x}/{y}.geojson",
+    }
+}
+const testLayer = {
+    id: 'test-layer',
+    type: 'circle', // シンボルの種類（ポイントデータならcircleやsymbol、ラインならline、エリアならfillなど）
+    source: 'test-source',
+    paint: {
+        'circle-radius': 5,
+        'circle-color': '#007cbf'
+    }
+}
 // 戦後米軍地図-----------------------------------------------------------------------------------------------------------
 const urls =[
     {name:'宮崎市',url:'https://kenzkenz2.xsrv.jp/usarmy/miyazaki/{z}/{x}/{y}.png',tms:true,bounds:[131.38730562869546, 31.94874904974968, 131.47186495009896, 31.85909130381588]},
@@ -61,9 +75,6 @@ urls.forEach(url => {
     })
 })
 console.log(amsSources,amsLayers)
-
-
-
 // 古地図----------------------------------------------------------------------------------------------------------------
 // 戦前の旧版地形図
 const mw5DummySource = {
@@ -124,9 +135,6 @@ const jissokuMatsumaeLayer = {
     'type': 'raster',
     'source': 'jissoku-matsumae-source',
 }
-
-
-
 // ---------------------------------------------------------------------------------------------------------------------
 // syochiikiソース
 const syochiikiSource = {
@@ -262,14 +270,14 @@ export const highwayLayerRed = {
     'filter': ['==', 'N06_002', 2024]
 }
 // 鉄道--------------------------------------
-export const tetsudoSource = {
+const tetsudoSource = {
     id: 'tetsudo-source', obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/tetsudo/tetsudojikeiretsu2.pmtiles",
 
     }
 }
-export const tetsudoLayerRed = {
+const tetsudoLayerRed = {
     'id': 'oh-tetsudo-red-lines',
     'type': 'line',
     'source': 'tetsudo-source',
@@ -291,7 +299,7 @@ export const tetsudoLayerRed = {
         ]
     }
 }
-export const tetsudoLayerBlue = {
+const tetsudoLayerBlue = {
     'id': 'oh-tetsudo-blue-lines',
     'type': 'line',
     'source': 'tetsudo-source',
@@ -314,7 +322,7 @@ export const tetsudoLayerBlue = {
     },
     'filter': ['==', 'N05_005e', '9999']
 }
-export const tetsudoLayerPointRed = {
+const tetsudoLayerPointRed = {
     id: "oh-tetsudo-points-red",
     type: "circle",
     source: "tetsudo-source",
@@ -337,7 +345,7 @@ export const tetsudoLayerPointRed = {
         ],
     },
 }
-export const tetsudoLayerPointBlue = {
+const tetsudoLayerPointBlue = {
     id: "oh-tetsudo-points-blue",
     type: "circle",
     source: "tetsudo-source",
@@ -362,14 +370,14 @@ export const tetsudoLayerPointBlue = {
     'filter': ['==', 'N05_005e', '9999']
 }
 // 鉄道時系列--------------------------------------
-export const tetsudojikeiretsuSource = {
+const tetsudojikeiretsuSource = {
     id: 'tetsudojikeiretsu-source', obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/tetsudo/tetsudojikeiretsu2.pmtiles",
 
     }
 }
-export const tetsudojikeiretsuLayerPoint = {
+const tetsudojikeiretsuLayerPoint = {
     id: "oh-tetsudojikeiretsu-points",
     type: "circle",
     source: "tetsudojikeiretsu-source",
@@ -396,7 +404,7 @@ export const tetsudojikeiretsuLayerPoint = {
             ['<=', ['number', ['to-number', ['get', 'N05_005b']]], 2024],
             ['>=', ['number', ['to-number', ['get', 'N05_005e']]], 2024]]
 }
-export const tetsudojikeiretsuLayerBlue = {
+const tetsudojikeiretsuLayerBlue = {
     'id': 'oh-tetsudojikeiretsu-blue-lines',
     'type': 'line',
     'source': 'tetsudojikeiretsu-source',
@@ -440,14 +448,14 @@ export const tetsudojikeiretsuLayerBlue = {
 //     'filter': ['==', 'N06_002', 2024]
 // }
 // 標準地図--------------------------------------------------------------------------------------------------------------
-export const stdSource = {
+const stdSource = {
     id: 'stdSource', obj: {
         type: 'raster',
         tiles: ['https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'],
         tileSize: 256
     }
 }
-export const stdLayer = {
+const stdLayer = {
     'id': 'oh-stdLayer',
     'type': 'raster',
     'source': 'stdSource',
@@ -455,21 +463,21 @@ export const stdLayer = {
     'maxzoom': 18
 }
 // 最新写真--------------------------------------------------------------------------------------------------------------
-export const seamlessphotoSource = {
+const seamlessphotoSource = {
     id:'seamlessphoto',obj:{
         type: 'raster',
         tiles: ['https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'],
         tileSize: 256
     }
 }
-export const seamlessphotoLayer = {
+const seamlessphotoLayer = {
     'id': 'oh-seamlessphoto',
     'source': seamlessphotoSource.id,
     'type': 'raster',
 }
 // ---------------------------------------------------------------------------------------------------------------------
 // PLATEAU建物（PMTiles）ソース
-export const plateauPmtilesSource = {
+const plateauPmtilesSource = {
     id: "plateauPmtiles", obj:{
         type: "vector",
         // url: "pmtiles://https://shiworks.xsrv.jp/pmtiles-data/plateau/PLATEAU_2022_LOD1.pmtiles",
@@ -479,7 +487,7 @@ export const plateauPmtilesSource = {
         attribution: '<a href="https://github.com/shiwaku/mlit-plateau-bldg-pmtiles">mlit-plateau-bldg-pmtiles</a>'
     }
 }
-export const plateauPmtilesLayer = {
+const plateauPmtilesLayer = {
     'id': 'oh-plateauPmtiles',
     'source': 'plateauPmtiles',
     // 'source-layer': "PLATEAU",
@@ -494,8 +502,24 @@ export const plateauPmtilesLayer = {
         "fill-extrusion-height": ["get", "measured_height"]
     }
 }
+// 神奈川県CS立体図---------------------------------------------------------------------------------------------------------
+const csKanagawaSource = {
+    id: 'cs-kanagawa-source', obj: {
+        type: 'raster',
+        tiles: ['https://shiworks.xsrv.jp/raster-tiles/pref-kanagawa/kanagawapc-cs-tiles/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        maxzoom: 22
+    }
+}
+const csKanagawaLayer = {
+    'id': 'oh-cs-kanagawa-layer',
+    'type': 'raster',
+    'source': 'cs-kanagawa-source',
+    'minzoom': 0,
+    'maxzoom': 22
+}
 // 岐阜県CS立体図---------------------------------------------------------------------------------------------------------
-export const csGifuSource = {
+const csGifuSource = {
     id: 'csGifu', obj: {
         type: 'raster',
         tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://kenzkenz2.xsrv.jp/gihucs/{z}/{x}/{y}.png'],
@@ -503,20 +527,20 @@ export const csGifuSource = {
         scheme: 'tms'
     }
 }
-export const csGifuLayer = {
+const csGifuLayer = {
     'id': 'oh-csGifuLayer',
     'type': 'raster',
     'source': 'csGifu'
 }
 // 能登CS立体図------------------------------------------------------------------------------------------------------
-export const csNotoSource = {
+const csNotoSource = {
     id: 'csNotoSource', obj: {
         type: 'raster',
         tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://www2.ffpri.go.jp/soilmap/tile/cs_noto/{z}/{x}/{y}.png'],
         tileSize: 256,
     }
 }
-export const csNotoLayer = {
+const csNotoLayer = {
     'id': 'oh-csNotoLayer',
     'type': 'raster',
     'source': 'csNotoSource',
@@ -525,33 +549,33 @@ export const csNotoLayer = {
     // }
 }
 // 静岡県県CS立体図------------------------------------------------------------------------------------------------------
-export const csShizuokaSource = {
+const csShizuokaSource = {
     id: 'csShizuokaSource', obj: {
         type: 'raster',
         tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://kenzkenz3.xsrv.jp/cs/shizuoka/{z}/{x}/{y}.png'],
         tileSize: 256,
     }
 }
-export const csShizuokaLayer = {
+const csShizuokaLayer = {
     'id': 'oh-csShizuokaLayer',
     'type': 'raster',
     'source': 'csShizuokaSource',
 }
 // 兵庫県CS立体図------------------------------------------------------------------------------------------------------
-export const csHyogoSource = {
+const csHyogoSource = {
     id: 'cs-hiyogo-source', obj: {
         type: 'raster',
         tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://rinya-hyogo.geospatial.jp/2023/rinya/tile/csmap/{z}/{x}/{y}.png'],
         tileSize: 256,
     }
 }
-export const csHyogoLayer = {
+const csHyogoLayer = {
     'id': 'oh-csHyogoLayer',
     'type': 'raster',
     'source': 'cs-hiyogo-source',
 }
 // 愛知県赤色立体図------------------------------------------------------------------------------------------------------
-export const aichiSekisyokuSource = {
+const aichiSekisyokuSource = {
     id: 'aichiSekisyokuSource', obj: {
         type: 'raster',
         tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://bg.maps.pref.aichi.jp/tiles/w213665/{z}/{x}/{y}.png'],
@@ -559,13 +583,13 @@ export const aichiSekisyokuSource = {
         crossOrigin: 'anonymous',
     }
 }
-export const aichiSekisyokuLayer = {
+const aichiSekisyokuLayer = {
     'id': 'oh-aichiSekisyokuLayer',
     'type': 'raster',
     'source': 'aichiSekisyokuSource',
 }
 // 多摩地域赤色立体地図------------------------------------------------------------------------------------------------------
-export const tamaSekisyokuSource = {
+const tamaSekisyokuSource = {
     id: 'tamaSekisyokuSource', obj: {
         type: 'raster',
         tiles: ['https://kenzkenz2.xsrv.jp/tokyo/tamasekisyoku/{z}/{x}/{y}.png'],
@@ -575,13 +599,13 @@ export const tamaSekisyokuSource = {
         maxzoom: 13 // 必要に応じて調整
     }
 }
-export const tamaSekisyokuLayer = {
+const tamaSekisyokuLayer = {
     'id': 'oh-tamaSekisyokuLayer',
     'type': 'raster',
     'source': 'tamaSekisyokuSource',
 }
 // 大阪府CS立体地図------------------------------------------------------------------------------------------------------
-export const csOsakaSource = {
+const csOsakaSource = {
     id: 'csOsakaSource', obj: {
         type: 'raster',
         tiles: ['https://xs489works.xsrv.jp/raster-tiles/pref-osaka/osaka-cs-tiles/{z}/{x}/{y}.png'],
@@ -589,7 +613,7 @@ export const csOsakaSource = {
         crossOrigin: 'anonymous',
     }
 }
-export const csOsakaLayer = {
+const csOsakaLayer = {
     'id': 'oh-csOsakaLayer',
     'type': 'raster',
     'source': 'csOsakaSource',
@@ -691,7 +715,7 @@ export const amxLayerDaihyou = {
     }
 }
 // 幕末近世ソース --------------------------------------------------------------------------------------------
-export const bakumatsuSource = {
+const bakumatsuSource = {
     id: "bakumatsu", obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bakumatsu/b41.pmtiles",
@@ -699,8 +723,7 @@ export const bakumatsuSource = {
             "<a href='' target='_blank'></a>",
     }
 }
-// 幕末近世レイヤー
-export const bakumatsuLayer = {
+const bakumatsuLayer = {
     id: "oh-bakumatsu",
     type: "fill",
     source: "bakumatsu",
@@ -710,7 +733,7 @@ export const bakumatsuLayer = {
         'fill-opacity': 1  // 透明度を設定
     }
 }
-export const bakumatsuLayerKokudaka = {
+const bakumatsuLayerKokudaka = {
     id: "oh-bakumatsu-kokudaka",
     type: "fill",
     source: "bakumatsu",
@@ -726,7 +749,7 @@ export const bakumatsuLayerKokudaka = {
         ]
     }
 }
-export const bakumatsuLayerHeight = {
+const bakumatsuLayerHeight = {
     id: 'oh-bakumatsu-height',
     type: 'fill-extrusion',
     source: "bakumatsu",
@@ -749,7 +772,7 @@ export const bakumatsuLayerHeight = {
         ]
     }
 }
-export const bakumatsuLayerHan = {
+const bakumatsuLayerHan = {
     id: "oh-bakumatsu-han",
     type: "fill",
     source: "bakumatsu",
@@ -774,7 +797,7 @@ export const bakumatsuLayerHan = {
     // //別海町のジオコード（01691）で始まる町丁目のみ表示されるようにフィルターをセット
     // filter: ['==', ['index-of', '吉村', ['get', '村名']], 0]
 }
-export const bakumatsuLayerLine = {
+const bakumatsuLayerLine = {
     id: "oh-bakumatsu-line",
     type: "line",
     source: "bakumatsu",
@@ -791,7 +814,7 @@ export const bakumatsuLayerLine = {
         ]
     },
 }
-export const bakumatsuLayerLine2 = {
+const bakumatsuLayerLine2 = {
     id: "oh-bakumatsu-line2",
     type: "line",
     source: "bakumatsu",
@@ -808,7 +831,7 @@ export const bakumatsuLayerLine2 = {
         ]
     },
 }
-export const bakumatsuLayerLabel = {
+const bakumatsuLayerLabel = {
     id: "oh-bakumatsu-label",
     type: "symbol",
     source: "bakumatsu",
@@ -859,7 +882,7 @@ export const syogakkoR05Layer = {
 
 }
 export const syogakkoR05LayerLine = {
-    id: "oh-syogakkoR05_line",
+    id: "oh-syogakkoR05-line",
     type: "line",
     source: "syogakkoR05Source",
     "source-layer": "s4polygon",
@@ -925,7 +948,7 @@ export const cyugakuR05Layer = {
 
 }
 export const cyugakuR05LayerLine = {
-    id: "oh-cyugakuR05_line",
+    id: "oh-cyugakuR05-line",
     type: "line",
     source: "cyugakuR05Source",
     "source-layer": "t4polygon",
@@ -1119,17 +1142,15 @@ export const iryokikanLayerLabel = {
     'minzoom': 12
 }
 // 100mメッシュソース --------------------------------------------------------------------------------------------
-export const m100mSource = {
+const m100mSource = {
     id: "m100mSource", obj: {
         type: "vector",
-        // minzoom: 0,
-        // maxzoom: 15,
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/mesh/100m/100m.pmtiles",
         attribution:
             "<a href='' target='_blank'></a>",
     }
 }
-export const m100mLayer = {
+const m100mLayer = {
     id: "oh-m100m",
     type: "fill",
     source: "m100mSource",
@@ -1145,7 +1166,7 @@ export const m100mLayer = {
         ]
     }
 }
-export const m100mLayerLine = {
+const m100mLayerLine = {
     id: "oh-m100m-line",
     type: "line",
     source: "m100mSource",
@@ -1161,15 +1182,16 @@ export const m100mLayerLine = {
         ]
     },
 }
-export const m100mLayerLabel = {
+const m100mLayerLabel = {
     id: "oh-m100m-label",
     type: "symbol",
     source: "m100mSource",
     "source-layer": "polygon",
     'layout': {
-        'text-field': ['get', 'PopT'],
+        "text-field": [
+            "to-string", ["round", ["get", "PopT"]]
+        ],
         'text-font': ['Noto Sans CJK JP Bold'],
-        // 'text-anchor': 'left',
         'text-offset': [0, 0],
     },
     'paint': {
@@ -1180,7 +1202,7 @@ export const m100mLayerLabel = {
     'maxzoom': 24,
     'minzoom': 15
 }
-export const m100mLayerHeight = {
+const m100mLayerHeight = {
     id: 'oh-m100mLayer-height',
     type: 'fill-extrusion',
     source: "m100mSource",
@@ -1947,30 +1969,30 @@ export const tokyojishinheightSogo = {
     }
 }
 // Q地図橋梁-------------------------------------------------------------------------------------------------------------
-const qKYouryoSource = {
-    id: "qKYouryo-source", obj: {
-        type: 'geojson',
-        data: 'https://mapdata.qchizu.xyz/vector/mlit_road2019/bridge2/{z}/{x}/{y}.geojson',
-        attribution: "<a href='' target='_blank'></a>",
-    }
-}
-const qKYouryoLayer = {
-    id: "oh-qKYouryo",
-    type: "circle",
-    source: "qKYouryo-source",
-    'paint': {
-        'circle-color': 'navy',
-        'circle-radius':[
-            'interpolate', // Zoom-based interpolation
-            ['linear'],
-            ['zoom'], // Use the zoom level as the input
-            2, 1,
-            4, 3,
-            7, 6,
-            11, 10
-        ]
-    }
-}
+// const qKYouryoSource = {
+//     id: "qKYouryo-source", obj: {
+//         type: 'geojson',
+//         data: 'https://mapdata.qchizu.xyz/vector/mlit_road2019/bridge2/{z}/{x}/{y}.geojson',
+//         attribution: "<a href='' target='_blank'></a>",
+//     }
+// }
+// const qKYouryoLayer = {
+//     id: "oh-qKYouryo",
+//     type: "circle",
+//     source: "qKYouryo-source",
+//     'paint': {
+//         'circle-color': 'navy',
+//         'circle-radius':[
+//             'interpolate', // Zoom-based interpolation
+//             ['linear'],
+//             ['zoom'], // Use the zoom level as the input
+//             2, 1,
+//             4, 3,
+//             7, 6,
+//             11, 10
+//         ]
+//     }
+// }
 // const qKYouryoLayerLabel = {
 //     id: "oh-qKYouryo-label",
 //     type: "symbol",
@@ -2016,7 +2038,7 @@ const zoseiLayer = {
     }
 }
 const zoseiLayerLine = {
-    id: "oh-zosei_line",
+    id: "oh-zosei-line",
     type: "line",
     source: "zosei-source",
     "source-layer": "polygon",
@@ -2341,6 +2363,12 @@ const layers01 = [
                 layers: [csShizuokaLayer]
             },
             {
+                id: 'oh-cs-kanagawa-layer',
+                label: "神奈川県CS立体図",
+                source: csKanagawaSource,
+                layers: [csKanagawaLayer]
+            },
+            {
                 id: 'oh-tamaSekisyokuLayer',
                 label: "東京都多摩地域赤色立体地図",
                 source: tamaSekisyokuSource,
@@ -2451,8 +2479,8 @@ const layers01 = [
             {
                 id: 'oh-qKYouryo',
                 label: "テスト全国橋梁地図",
-                source: qKYouryoSource,
-                layers: [qKYouryoLayer]
+                source: testSource,
+                layers: [testLayer]
             },
             {
                 id: 'test2',
