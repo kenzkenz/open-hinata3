@@ -13,6 +13,9 @@
             <v-btn style="margin-left:10px;" @click="btnClickSplit" v-if="mapName === 'map01'"><i class="fa-solid fa-table-columns"></i></v-btn>
             <v-btn style="margin-left:10px;" @click="btnClickLayer(mapName)"><i class="fa-solid fa-layer-group"></i></v-btn>
           </div>
+          <div id="right-top-div">
+            <v-btn icon @click="goToCurrentLocation" v-if="mapName === 'map01'"><v-icon>mdi-crosshairs-gps</v-icon></v-btn>
+          </div>
 
           <DialogMenu :mapName=mapName />
           <DialogLayer :mapName=mapName />
@@ -116,6 +119,33 @@ export default {
     },
   },
   methods: {
+    goToCurrentLocation () {
+      const map = this.$store.state.map01
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const userLongitude = position.coords.longitude;
+              const userLatitude = position.coords.latitude;
+              // 現在位置にマップを移動
+              map.flyTo({
+                center: [userLongitude, userLatitude],
+                zoom: 14,
+                essential: true // アニメーションを有効にする
+              });
+              // 現在位置にマーカーを追加
+              // new maplibregl.Marker()
+              //     .setLngLat([userLongitude, userLatitude])
+              //     // .setPopup(new maplibregl.Popup().setHTML("<strong>現在位置</strong>"))
+              //     .addTo(map);
+            },
+            (error) => {
+              console.error("現在位置の取得に失敗しました:", error);
+            }
+        );
+      } else {
+        console.error("Geolocationはこのブラウザでサポートされていません。");
+      }
+    },
     btnPosition() {
       if (document.querySelector('#map01').clientWidth < Number(document.querySelector('.terrain-btn-div').style.left.replace('px',''))) {
         document.querySelector('.terrain-btn-div').style.left = ''
@@ -2175,6 +2205,12 @@ export default {
   position:absolute;
   top:10px;
   left:10px;
+  z-index:1;
+}
+#right-top-div {
+  position:absolute;
+  top:10px;
+  right:10px;
   z-index:1;
 }
 .zoom-div {
