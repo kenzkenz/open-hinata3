@@ -133,10 +133,14 @@ export default {
                 essential: true // アニメーションを有効にする
               });
               // 現在位置にマーカーを追加
-              // new maplibregl.Marker()
-              //     .setLngLat([userLongitude, userLatitude])
-              //     // .setPopup(new maplibregl.Popup().setHTML("<strong>現在位置</strong>"))
-              //     .addTo(map);
+              const marker = new maplibregl.Marker()
+                  .setLngLat([userLongitude, userLatitude])
+                  // .setPopup(new maplibregl.Popup().setHTML("<strong>現在位置</strong>"))
+                  .addTo(map);
+              // マーカーをクリックしたときにマーカーを削除
+              marker.getElement().addEventListener('click', () => {
+                marker.remove(); // マーカーをマップから削除
+              });
             },
             (error) => {
               console.error("現在位置の取得に失敗しました:", error);
