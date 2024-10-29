@@ -865,6 +865,7 @@ export default {
                       '</div>'
                   break
                 }
+                case 'oh-koji-label':
                 case 'oh-koji-height':
                 case 'oh-koji_point':{
                   const name = props.L01_025

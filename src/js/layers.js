@@ -1470,14 +1470,14 @@ export const m1kmLayerHeight = {
         'fill-extrusion-height': [
             'interpolate',
             ['linear'],
-            ['get', 'jinko'],
+            ["to-number",['get', 'jinko']],
             0, 100,
             35000, 10000
         ],
         'fill-extrusion-color': [
             'interpolate',
             ['linear'],
-            ['get', 'jinko'],
+            ["to-number",['get', 'jinko']],
             0, 'white',
             10000, 'red',
             35000, 'black'
@@ -1772,8 +1772,22 @@ export const kojiLayerPoint = {
             50000000, 'black'
         ],
         'circle-stroke-color': 'black',
-        'circle-stroke-width': 1,
-        'circle-radius': 8  // 半径を設定
+        'circle-stroke-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            8, 0,
+            10, 1
+        ],
+        'circle-radius':[
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            2, 0.1,
+            4, 0.5,
+            7, 2,
+            11, 8
+        ]
     }
 }
 export const kojilayerheight = {
