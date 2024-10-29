@@ -316,6 +316,8 @@ export default {
       // window.history.pushState({ lng, lat, zoom }, '', this.permalink)
       this.createShortUrl()
       this.zoom = zoom
+      history('selectedLayers',window.location.href)
+
     },
     createShortUrl() {
       let params = new URLSearchParams()
