@@ -1,21 +1,21 @@
 // 地理院グリフを使う時は以下のフォントを使う。
 // "text-font": ["NotoSansJP-Regular"],
 
-const testSource = {
-    id: 'test-source', obj: {
-        type: 'geojson',
-        data: "https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://mapdata.qchizu.xyz/vector/mlit_road2019/bridge2/{z}/{x}/{y}.geojson",
-    }
-}
-const testLayer = {
-    id: 'test-layer',
-    type: 'circle', // シンボルの種類（ポイントデータならcircleやsymbol、ラインならline、エリアならfillなど）
-    source: 'test-source',
-    paint: {
-        'circle-radius': 5,
-        'circle-color': '#007cbf'
-    }
-}
+// const testSource = {
+//     id: 'test-source', obj: {
+//         type: 'geojson',
+//         data: "https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://mapdata.qchizu.xyz/vector/mlit_road2019/bridge2/{z}/{x}/{y}.geojson",
+//     }
+// }
+// const testLayer = {
+//     id: 'test-layer',
+//     type: 'circle', // シンボルの種類（ポイントデータならcircleやsymbol、ラインならline、エリアならfillなど）
+//     source: 'test-source',
+//     paint: {
+//         'circle-radius': 5,
+//         'circle-color': '#007cbf'
+//     }
+// }
 // 戦後米軍地図-----------------------------------------------------------------------------------------------------------
 const urls =[
     {name:'宮崎市',url:'https://kenzkenz2.xsrv.jp/usarmy/miyazaki/{z}/{x}/{y}.png',tms:true,bounds:[131.38730562869546, 31.94874904974968, 131.47186495009896, 31.85909130381588]},
@@ -2177,6 +2177,73 @@ const qTunnelLayerLabel = {
     'maxzoom': 24,
     'minzoom': 10
 }
+// R05用途地域-----------------------------------------------------------------------------------------------------
+const yotochiikiSource = {
+    id: "yotochiiki-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/yotochiiki/r05/y.pmtiles",
+        attribution: "<a href='' target='_blank'></a>",
+    }
+}
+const yotochiikiLayer = {
+    id: "oh-yotochiiki",
+    type: "fill",
+    source: "yotochiiki-source",
+    "source-layer": "y",
+    paint: {
+        'fill-color': [
+            'match',
+            ['get', 'YoutoID'],
+            1, 'rgba(92,201,59,0.8)',
+            2, 'rgba(92,201,59,0.8)',
+            3, 'rgba(214,254,81,0.8)',
+            4, 'rgba(255,255,209,0.8)',
+            5, 'rgba(255,255,84,0.8)',
+            6, 'rgba(247,206,160,0.8)',
+            7, 'rgba(247,206,85,0.8)',
+            8, 'rgba(247,206,85,0.8)',
+            9, 'rgba(247,206,252,0.8)',
+            10, 'rgba(241,158,202,0.8)',
+            11, 'rgba(196,155,249,0.8)',
+            12, 'rgba(214,254,254,0.8)',
+            13, 'rgba(164,203,203,0.8)',
+            99, 'rgba(200,200,200,0.8)',
+            'red'
+        ]
+    }
+}
+const yotochiikiLayerLine = {
+    id: "oh-yotochiiki-line",
+    type: "line",
+    source: "yotochiiki-source",
+    "source-layer": "y",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            9, 0,
+            11, 1
+        ]
+    },
+}
+const yotochiikiLayerLabel = {
+    id: "oh-yotochiiki-label",
+    type: "symbol",
+    source: "yotochiiki-source",
+    "source-layer": "y",
+    'layout': {
+        'text-field': ['get', '用途地域'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'minzoom': 14
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -2577,10 +2644,10 @@ const layers01 = [
         label: "テスト",
         nodes: [
             {
-                id: 'oh-qKYouryo',
-                label: "テスト全国橋梁地図",
-                source: testSource,
-                layers: [testLayer]
+                id: 'oh-yotochiiki',
+                label: "用途地域",
+                source: yotochiikiSource,
+                layers: [yotochiikiLayer,yotochiikiLayerLine,yotochiikiLayerLabel]
             },
             {
                 id: 'test2',

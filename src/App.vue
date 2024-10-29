@@ -1254,6 +1254,21 @@ export default {
                       '</div>'
                   break
                 }
+                case 'oh-yotochiiki-line':
+                case 'oh-yotochiiki':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-yotochiiki'] }
+                  )
+                  console.log(features)
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  const name = props.用途地域
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 20px;">' + name + '</span><br>' +
+                      '</div>'
+                  break
+                }
               }
 
               // ポップアップ作成
