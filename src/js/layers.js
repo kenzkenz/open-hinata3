@@ -1203,7 +1203,7 @@ const m100mLayerLabel = {
     'minzoom': 15
 }
 const m100mLayerHeight = {
-    id: 'oh-m100mLayer-height',
+    id: 'oh-m100m-height',
     type: 'fill-extrusion',
     source: "m100mSource",
     "source-layer": "polygon",
@@ -1286,7 +1286,7 @@ export const m250mLayerLabel = {
     'minzoom': 13
 }
 export const m250mLayerHeight = {
-    id: 'oh-m250mLayer-height',
+    id: 'oh-m250m-height',
     type: 'fill-extrusion',
     source: "m250mSource",
     "source-layer": "polygon",
@@ -1374,7 +1374,7 @@ export const m500mLayerLabel = {
     'minzoom': 12
 }
 export const m500mLayerHeight = {
-    id: 'oh-m500mLayer-height',
+    id: 'oh-m500m-height',
     type: 'fill-extrusion',
     source: "m500mSource",
     "source-layer": "polygon",
@@ -1462,7 +1462,7 @@ export const m1kmLayerLabel = {
     'minzoom': 12
 }
 export const m1kmLayerHeight = {
-    id: 'oh-m1kmLayer-height',
+    id: 'oh-m1km-height',
     type: 'fill-extrusion',
     source: "m1kmSource",
     "source-layer": "polygon",

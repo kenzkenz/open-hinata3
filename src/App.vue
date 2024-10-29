@@ -864,6 +864,7 @@ export default {
                       '</div>'
                   break
                 }
+                case 'oh-m250m-height':
                 case 'oh-m250m-label':
                 case 'oh-m250m-line':
                 case 'oh-m250m':{
@@ -879,6 +880,7 @@ export default {
                       '</div>'
                   break
                 }
+                case 'oh-m500m-height':
                 case 'oh-m500m-label':
                 case 'oh-m500m-line':
                 case 'oh-m500m':{
@@ -894,6 +896,7 @@ export default {
                       '</div>'
                   break
                 }
+                case 'oh-m1km-height':
                 case 'oh-m1km-label':
                 case 'oh-m1km-line':
                 case 'oh-m1km':{
@@ -909,6 +912,7 @@ export default {
                       '</div>'
                   break
                 }
+                case 'oh-m100m-height':
                 case 'oh-m100m-label':
                 case 'oh-m100m-line':
                 case 'oh-m100m':{
