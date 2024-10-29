@@ -2226,6 +2226,50 @@ const yotochiikiLayer = {
         ]
     }
 }
+const yotochiikiLayerHeight = {
+    id: "oh-yotochiiki-height",
+    type: "fill-extrusion",
+    source: "yotochiiki-source",
+    "source-layer": "y",
+    paint: {
+        'fill-extrusion-color': [
+            'match',
+            ['get', 'YoutoID'],
+            1, 'rgba(92,201,59,0.8)',
+            2, 'rgba(92,201,59,0.8)',
+            3, 'rgba(214,254,81,0.8)',
+            4, 'rgba(255,255,209,0.8)',
+            5, 'rgba(255,255,84,0.8)',
+            6, 'rgba(247,206,160,0.8)',
+            7, 'rgba(247,206,85,0.8)',
+            8, 'rgba(247,206,85,0.8)',
+            9, 'rgba(247,206,252,0.8)',
+            10, 'rgba(241,158,202,0.8)',
+            11, 'rgba(196,155,249,0.8)',
+            12, 'rgba(214,254,254,0.8)',
+            13, 'rgba(164,203,203,0.8)',
+            99, 'rgba(200,200,200,0.8)',
+            'red'
+        ],
+        'fill-extrusion-height': [
+            'match',
+            ['get', 'YoutoID'],
+            1, 20, // 住宅用: 高さ20メートル
+            2, 20,
+            3, 30,
+            4, 30,
+            5, 20,
+            6, 20,
+            7, 20,
+            9, 50, // 商業用: 高さ40メートル
+            10, 60,
+            11, 40, // 工業用: 高さ30メートル
+            12, 40,
+            13, 40,
+            10 // その他: 高さ10メートル
+        ],
+    }
+}
 const yotochiikiLayerLine = {
     id: "oh-yotochiiki-line",
     type: "line",
@@ -2662,6 +2706,12 @@ const layers01 = [
                 label: "用途地域",
                 source: yotochiikiSource,
                 layers: [yotochiikiLayer,yotochiikiLayerLine,yotochiikiLayerLabel]
+            },
+            {
+                id: 'oh-yotochiiki-3d',
+                label: "用途地域3D",
+                source: yotochiikiSource,
+                layers: [yotochiikiLayer,yotochiikiLayerLine,yotochiikiLayerLabel,yotochiikiLayerHeight]
             },
             {
                 id: 'test2',

@@ -1255,6 +1255,7 @@ export default {
                       '</div>'
                   break
                 }
+                case 'oh-yotochiiki-height':
                 case 'oh-yotochiiki-line':
                 case 'oh-yotochiiki':{
                   const features = map.queryRenderedFeatures(
