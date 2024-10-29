@@ -1156,7 +1156,7 @@ export default {
                 case 'oh-q-kyoryo-label':
                 case 'oh-q-kyoryo':{
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-q-kyoryo'] }
+                      map.project(coordinates), { layers: [layerId] }
                   )
                   if (features.length === 0) return;
                   props = features[0].properties

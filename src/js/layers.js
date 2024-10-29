@@ -2101,11 +2101,11 @@ const qKyoryoLayer = {
     source: "q-kyoryo-source",
     "source-layer": "point",
     'paint': {
-        'circle-color': 'navy',
+        'circle-color': 'steelblue',
         'circle-radius':[
-            'interpolate', // Zoom-based interpolation
+            'interpolate',
             ['linear'],
-            ['zoom'], // Use the zoom level as the input
+            ['zoom'],
             2, 0.1,
             4, 0.5,
             7, 2,
