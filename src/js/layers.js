@@ -2132,6 +2132,51 @@ const qKyoryoLayerLabel = {
     'maxzoom': 24,
     'minzoom': 13
 }
+// Q地図トンネル --------------------------------------------------------------------------------------------
+const qTunnelSource = {
+    id: "q-tunnel-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/q/tunnel/tunnel.pmtiles",
+        attribution: "<a href='' target='_blank'></a>",
+    }
+}
+const qTunnelLayer = {
+    id: "oh-q-tunnel",
+    type: "circle",
+    source: "q-tunnel-source",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': 'peru',
+        'circle-radius':[
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            2, 0.1,
+            4, 0.5,
+            7, 2,
+            11, 10
+        ]
+    }
+}
+const qTunnelLayerLabel = {
+    id: "oh-q-tunnel-label",
+    type: "symbol",
+    source: "q-tunnel-source",
+    "source-layer": "point",
+    'layout': {
+        'text-field': ['get', '_html'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-offset': [0, 1],
+        'visibility': 'visible',
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 13
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -2269,6 +2314,12 @@ const layers01 = [
                 label: "全国橋梁地図",
                 source: qKyouryoSource,
                 layers: [qKyoryoLayer,qKyoryoLayerLabel],
+            },
+            {
+                id: 'oh-q-tunnel',
+                label: "全国トンネル地図",
+                source: qTunnelSource,
+                layers: [qTunnelLayer,qTunnelLayerLabel],
             },
             {
                 id: 'oh-tetsudo',

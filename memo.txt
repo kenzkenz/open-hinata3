@@ -190,3 +190,4 @@ tile-join -rg -pk -f -o tetsudojikeiretsu2.pmtiles points.pmtiles tetsudojikeire
 tippecanoe -l polygon -f -o zosei.pmtiles z.geojson
 
 tippecanoe -rg -pk -pf -l point -f -o kyoryo.pmtiles kyoryo.geojson
+tippecanoe -rg -pk -pf -l point -f -o tunnel.pmtiles tunnel.geojson

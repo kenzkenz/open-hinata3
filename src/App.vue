@@ -1229,9 +1229,32 @@ export default {
                       '</div>'
                   break
                 }
+                case 'oh-q-tunnel-label':
+                case 'oh-q-tunnel':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-q-tunnel'] }
+                  )
+                  console.log(features)
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  const name = props._html
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 20px;">' + name + '</span><br>' +
+                      '<span style="font-size: 12px;">よみ=' + props.No1 + '</span><br>' +
+                      '<span style="font-size: 12px;">路線名=' + props.No2 + '</span><br>' +
+                      '<span style="font-size: 12px;">完成年（度）=' + props.No3 + '</span><br>' +
+                      '<span style="font-size: 12px;">延長=' + props.No4 + '</span><br>' +
+                      '<span style="font-size: 12px;">幅員=' + props.No5 + '</span><br>' +
+                      '<span style="font-size: 12px;">管理者名=' + props.No6 + '</span><br>' +
+                      '<span style="font-size: 12px;">所在市区町村=' + props.No7 + props.No8 + '</span><br>' +
+                      '<span style="font-size: 12px;">点検実施年度=' + props.No9 + '</span><br>' +
+                      '<span style="font-size: 12px;">判定区分=' + props.No10 + '</span><br>' +
+                      '<span style="font-size: 12px;">Ｑ地図管理ID=' + props.No14 + '</span><br>' +
+                      '</div>'
+                  break
+                }
               }
-
-              console.log(html)
 
               // ポップアップ作成
                 new maplibregl.Popup({
