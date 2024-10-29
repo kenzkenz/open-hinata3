@@ -40,6 +40,24 @@
 </template>
 
 <script>
+
+export function history (event,url) {
+  const ua = navigator.userAgent
+  const width = window.screen.width;
+  const height = window.screen.height;
+  const referrer = document.referrer
+  axios
+      .get('https://kenzkenz.xsrv.jp/open-hinata3/php/history.php',{
+        params: {
+          event: event,
+          screen: width + ' x ' + height,
+          ua: ua,
+          referrer:referrer,
+          url: url
+        }
+      })
+}
+
 import axios from "axios"
 import DialogMenu from '@/components/Dialog-menu'
 import DialogLayer from '@/components/Dialog-layer'
@@ -2049,6 +2067,7 @@ export default {
       handler: function () {
         // console.log('変更を検出しました')
         this.updatePermalink()
+        history('selectedLayers',window.location.href)
       },
       deep: true
     },
@@ -2056,7 +2075,6 @@ export default {
       handler: function () {
         // console.log('変更を検出しました')
         // this.updatePermalink()
-          console.log(11111111)
           // this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': this.s_terrainLevel })
       },
       deep: true
