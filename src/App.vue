@@ -763,9 +763,9 @@ export default {
               const layerId = feature.layer.id
               console.log(layerId)
               let props = feature.properties
-              // const coordinates = e.lngLat
-              let coordinates = feature.geometry.coordinates.slice()
-              if (coordinates.length !== 2) coordinates = e.lngLat
+              const coordinates = e.lngLat
+              // let coordinates = feature.geometry.coordinates.slice()
+              // if (coordinates.length !== 2) coordinates = e.lngLat
               console.log(coordinates)
               console.log(props)
               let html = ''
