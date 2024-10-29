@@ -5,8 +5,8 @@
     <!--なにもないとき。普通のラスターのとき-->
     <div v-if="!item.ext">
       <div class="info-content-div">
-        <p v-html="item.title"></p><hr>
-        <p v-html="item.summary"></p>
+        <p v-html="item.label"></p><hr>
+        <p v-html="item.attribution"></p>
       </div>
     </div>
     <!--コンポーネントをここに書き連ねる -->

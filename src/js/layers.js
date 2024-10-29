@@ -2415,6 +2415,7 @@ const layers01 = [
                 label: "R05大規模盛土造成地",
                 source: zoseiSource,
                 layers: [zoseiLayer,zoseiLayerLine,zoseiLayerLabel],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A54-2023.html" target="_blank">国土数値情報</a>'
             },
             {
                 id: 'oh-tokyojishin',

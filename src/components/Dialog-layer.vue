@@ -107,8 +107,8 @@ export default {
         const infoDialog =
             {
               id: element.id,
-              title: element.label,
-              // summary: element.summary,
+              label: element.label,
+              attribution: element.attribution,
               ext: element.ext,
               style: {
                 width: '200px',
@@ -119,6 +119,7 @@ export default {
               }
             }
         this.$store.commit('pushDialogsInfo', {mapName: this.mapName, dialog: infoDialog})
+        console.log(infoDialog)
       } else {
         result.style.display = 'block'
         result.style["z-index"] = this.$store.state.dialogMaxZindex
@@ -171,6 +172,7 @@ export default {
     },
     onNodeClick (node) {
       if (node.layers) {
+        console.log(node)
         if(!this.s_selectedLayers[this.mapName].find(layers => layers.id === node.id)) {
           this.s_selectedLayers[this.mapName].unshift(
               {
@@ -180,6 +182,7 @@ export default {
                 sources: node.sources,
                 layer: node.layer,
                 layers: node.layers,
+                attribution: node.attribution,
                 opacity: 1,
                 ext: node.ext,
               }
