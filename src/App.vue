@@ -126,11 +126,23 @@ export default {
             (position) => {
               const userLongitude = position.coords.longitude;
               const userLatitude = position.coords.latitude;
+              // ユーザーの操作を一時的に無効化
+              map.scrollZoom.disable();
+              map.dragPan.disable();
+              map.keyboard.disable();
+              map.doubleClickZoom.disable();
               // 現在位置にマップを移動
               map.flyTo({
                 center: [userLongitude, userLatitude],
                 zoom: 14,
                 essential: true // アニメーションを有効にする
+              });
+              // flyToアニメーション完了後にユーザー操作を再度有効化
+              map.once('moveend', () => {
+                map.scrollZoom.enable();
+                map.dragPan.enable();
+                map.keyboard.enable();
+                map.doubleClickZoom.enable();
               });
               // 現在位置にマーカーを追加
               const marker = new maplibregl.Marker()
