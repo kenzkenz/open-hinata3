@@ -161,6 +161,7 @@ export default {
       } else {
         console.error("Geolocationはこのブラウザでサポートされていません。");
       }
+      history('現在位置取得',window.location.href)
     },
     btnPosition() {
       if (document.querySelector('#map01').clientWidth < Number(document.querySelector('.terrain-btn-div').style.left.replace('px',''))) {
