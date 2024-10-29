@@ -1803,8 +1803,6 @@ export const kojilayerheight = {
 export const michinoekiSource = {
     id: "michinoeki-source", obj: {
         type: "vector",
-        // minzoom: 0,
-        // maxzoom: 15,
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/michinoeki/michinoeki.pmtiles",
         attribution: "<a href='' target='_blank'></a>",
     }
@@ -1835,7 +1833,6 @@ export const michinoekiLayerLabel = {
     'layout': {
         'text-field': ['get', 'P35_006'],
         'text-font': ['Noto Sans CJK JP Bold'],
-        // 'text-anchor': 'left',
         'text-offset': [0, 1],
         'visibility': 'visible',
     },
@@ -2090,6 +2087,51 @@ const kozuiSaidaiLayer = {
     'type': 'raster',
     'source': 'kozui-saidai-source',
 }
+// Q地図橋梁 --------------------------------------------------------------------------------------------
+const qKyouryoSource = {
+    id: "q-kyoryo-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/q/kyoryo/kyoryo.pmtiles",
+        attribution: "<a href='' target='_blank'></a>",
+    }
+}
+const qKyoryoLayer = {
+    id: "oh-q-kyoryo",
+    type: "circle",
+    source: "q-kyoryo-source",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': 'navy',
+        'circle-radius':[
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            2, 0.1,
+            4, 0.5,
+            7, 2,
+            11, 10
+        ]
+    }
+}
+const qKyoryoLayerLabel = {
+    id: "oh-q-kyoryo-label",
+    type: "symbol",
+    source: "q-kyoryo-source",
+    "source-layer": "point",
+    'layout': {
+        'text-field': ['get', '_html'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-offset': [0, 1],
+        'visibility': 'visible',
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 9
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -2222,6 +2264,12 @@ const layers01 = [
         id: 'doro',
         label: "鉄道、道路等",
         nodes: [
+            {
+                id: 'oh-q-kyoryo',
+                label: "全国橋梁地図",
+                source: qKyouryoSource,
+                layers: [qKyoryoLayer,qKyoryoLayerLabel],
+            },
             {
                 id: 'oh-tetsudo',
                 label: "鉄道（廃線は赤色）",
