@@ -715,7 +715,10 @@ export default {
               const layerId = feature.layer.id
               console.log(layerId)
               let props = feature.properties
-              const coordinates = e.lngLat
+              // const coordinates = e.lngLat
+              let coordinates = feature.geometry.coordinates.slice()
+              if (coordinates.length !== 2) coordinates = e.lngLat
+              console.log(coordinates)
               console.log(props)
               let html = ''
               switch (layerId) {
@@ -1156,8 +1159,9 @@ export default {
                 case 'oh-q-kyoryo-label':
                 case 'oh-q-kyoryo':{
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: [layerId] }
+                      map.project(coordinates), { layers: ['oh-q-kyoryo'] }
                   )
+                  console.log(features)
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props._html
