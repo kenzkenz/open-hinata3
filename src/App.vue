@@ -24,11 +24,11 @@
 
           <div class="terrain-btn-div" v-drag>
             <div class="terrain-btn-container">
-              <button type="button" class="terrain-btn-up terrain-btn" @pointerdown="upMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-up fa-lg hover'></i></button>
-              <button type="button" class="terrain-btn-down terrain-btn" @pointerdown="downMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-down fa-lg'></i></button>
-              <button type="button" class="terrain-btn-left terrain-btn" @pointerdown="leftMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-left fa-lg'></i></button>
-              <button type="button" class="terrain-btn-right terrain-btn" @pointerdown="rightMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-right fa-lg'></i></button>
-              <button type="button" class="terrain-btn-center terrain-btn" @pointerdown="terrainReset(mapName)"><v-icon>mdi-undo</v-icon></button>
+              <v-btn type="button" class="terrain-btn-up terrain-btn" @pointerdown="upMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-up fa-lg hover'></i></v-btn>
+              <v-btn type="button" class="terrain-btn-down terrain-btn" @pointerdown="downMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-down fa-lg'></i></v-btn>
+              <v-btn type="button" class="terrain-btn-left terrain-btn" @pointerdown="leftMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-left fa-lg'></i></v-btn>
+              <v-btn type="button" class="terrain-btn-right terrain-btn" @pointerdown="rightMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-right fa-lg'></i></v-btn>
+              <v-btn icon type="button" class="terrain-btn-center terrain-btn" @pointerdown="terrainReset(mapName)"><v-icon>mdi-undo</v-icon></v-btn>
             </div>
           </div>
           <div class="zoom-div">zoom={{zoom.toFixed(2)}}</div>
@@ -2341,7 +2341,8 @@ export default {
   top:10px;
   left:50%;
   padding:0;
-  width:50px;
+  width: 50px;
+  min-width: 50px;
   height:50px;
   margin-left:-25px;
   color: white;
@@ -2352,7 +2353,8 @@ export default {
   bottom:10px;
   left:50%;
   padding:0;
-  width:50px;
+  width: 50px;
+  min-width: 50px;
   height:50px;
   margin-left:-25px;
   color: white;
@@ -2363,7 +2365,8 @@ export default {
   top:50%;
   left:10px;
   padding:0;
-  width:50px;
+  width: 50px;
+  min-width: 50px;
   height:50px;
   margin-top:-25px;
   color: white;
@@ -2374,7 +2377,8 @@ export default {
   top:50%;
   right:10px;
   padding:0;
-  width:50px;
+  width: 50px;
+  min-width: 50px;
   height:50px;
   margin-top:-25px;
   color: white;
