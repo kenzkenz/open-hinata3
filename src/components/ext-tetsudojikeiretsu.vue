@@ -2,7 +2,7 @@
     <div :style="menuContentSize">
       鉄道時系列
       <div class="highway-div">
-        <input class="highway-range" type="range" v-model="s_tetsudojikeiretsuYear" @change="update" @input="highwayYearInput(mapName)" min="1950" max="2024" step="1"/><br>
+        <input class="highway-range" type="range" v-model.number="s_tetsudojikeiretsuYear" @change="update" @input="highwayYearInput(mapName)" min="1950" max="2024" step="1"/><br>
         <span class="highway-text">{{s_tetsudojikeiretsuYear}}年</span>
       </div>
     </div>

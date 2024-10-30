@@ -56,12 +56,12 @@ export default createStore({
     latRange: [],
     //------------------------
     highwayYear:{
-      map01: '2024',
-      map02: '2024'
+      map01: 2024,
+      map02: 2024
     },
     tetsudojikeiretsuYear:{
-      map01: '2024',
-      map02: '2024'
+      map01: 2024,
+      map02: 2024
     },
     //------------------------
   },

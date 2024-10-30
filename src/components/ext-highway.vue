@@ -1,13 +1,11 @@
 <template>
-<!--  <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">-->
-    <div :style="menuContentSize">
-      高速道路
-      <div class="highway-div">
-        <input class="highway-range" type="range" v-model="s_highwayYear" @change="update" @input="highwayYearInput(mapName)" min="1958" max="2024" step="1"/><br>
-        <span class="highway-text">{{s_highwayYear}}年</span>
-      </div>
+  <div :style="menuContentSize">
+    高速道路
+    <div class="highway-div">
+      <input class="highway-range" type="range" v-model.number="s_highwayYear" @change="update" @input="highwayYearInput(mapName)" min="1958" max="2024" step="1"/><br>
+      <span class="highway-text">{{s_highwayYear}}年</span>
     </div>
-<!--  </Dialog>-->
+  </div>
 </template>
 
 <script>
