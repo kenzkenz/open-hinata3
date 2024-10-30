@@ -191,3 +191,6 @@ tippecanoe -l polygon -f -o zosei.pmtiles z.geojson
 
 tippecanoe -rg -pk -pf -l point -f -o kyoryo.pmtiles kyoryo.geojson
 tippecanoe -rg -pk -pf -l point -f -o tunnel.pmtiles tunnel.geojson
+
+tippecanoe -rg -pk -pf -l line -f -o bus.pmtiles bus.geojson
+tippecanoe -rg -pk -pf -l point -f -o bustei.pmtiles bustei.geojson

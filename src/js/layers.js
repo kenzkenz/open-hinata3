@@ -269,6 +269,84 @@ export const highwayLayerRed = {
     },
     'filter': ['==', 'N06_002', 2024]
 }
+// バス--------------------------------------
+const busSource = {
+    id: 'bus-source', obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bus/bus.pmtiles",
+
+    }
+}
+const busteiSource = {
+    id: 'bustei-source', obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bus/bustei.pmtiles",
+    }
+}
+const busLayer = {
+    'id': 'oh-bus-lines',
+    'type': 'line',
+    'source': 'bus-source',
+    "source-layer": "line",
+    'layout': {
+        'line-join': 'round',
+        'line-cap': 'round'
+    },
+    'paint': {
+        // 'line-color': 'dodgerblue',
+        'line-color': 'blue',
+        'line-blur': 0.8,
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            7, 1,
+            11, 5
+        ]
+    }
+}
+const busteiLayer = {
+    id: "oh-bus-points",
+    type: "circle",
+    source: "bustei-source",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': 'dodgerblue',
+        'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            12, 0,
+            13, 10
+        ],
+        'circle-stroke-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            12, 0,
+            13, 1
+        ],
+    },
+}
+const busteiLayerLabel = {
+    id: "oh-bus-label",
+    type: "symbol",
+    source: "bustei-source",
+    "source-layer": "point",
+    'layout': {
+        'text-field': ['get', 'P11_001'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-offset': [0, 1],
+        'visibility': 'visible',
+    },
+    'paint': {
+        'text-color': 'rgba(0, 0, 0, 1)',
+        'text-halo-color': 'rgba(255,255,255,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 13
+}
 // 鉄道--------------------------------------
 const tetsudoSource = {
     id: 'tetsudo-source', obj: {
@@ -2445,6 +2523,13 @@ const layers01 = [
                 label: "全国トンネル地図",
                 source: qTunnelSource,
                 layers: [qTunnelLayer,qTunnelLayerLabel],
+            },
+            {
+                id: 'oh-bus',
+                label: "バスルートと停留所",
+                sources: [busSource,busteiSource],
+                layers: [busLayer,busteiLayer,busteiLayerLabel],
+                attribution: "<a href='https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N07-v2_0.html' target='_blank'>国土数値情報</a>"
             },
             {
                 id: 'oh-tetsudo',

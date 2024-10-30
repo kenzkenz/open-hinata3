@@ -1267,6 +1267,36 @@ export default {
                       '</div>'
                   break
                 }
+                case 'oh-bus-lines':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-bus-lines'] }
+                  )
+                  console.log(features)
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  const name = props.N07_001
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 16px;">' + name + '</span><br>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-bus-label':
+                case 'oh-bus-points':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: [layerId] }
+                  )
+                  console.log(features)
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  const name = props.P11_001
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 16px;">' + name + '</span><br>' +
+                      '<span style="font-size: 12px;">' + props.P11_002 + '</span><br>' +
+                      '</div>'
+                  break
+                }
               }
 
               // ポップアップ作成
