@@ -199,6 +199,7 @@ export default {
       if(!this.$store.state.watchFlg) return
       if (!this.s_selectedLayers[this.mapName].length) return
       // ------------------------------------------------------------------
+      console.log(this.s_selectedLayers[this.mapName].length)
       const map = this.$store.state[this.mapName]
       // まずレイヤーを削除-------------------------
       const layers = map.getStyle().layers
@@ -217,7 +218,6 @@ export default {
         console.log(888)
         const layer = this.s_selectedLayers[this.mapName][i]
         if (layer.layers) {
-
           if (layer.sources) {
             layer.sources.forEach(source => {
               if (!map.getSource(source.id)) map.addSource(source.id, source.obj)
@@ -255,6 +255,8 @@ export default {
             // if (this.cnt < 2){
             if (layer.ext.values) {
               layer.ext.values.forEach((v,i) => {
+                alert(v)
+                console.log(layer.ext.name,this.mapName)
                 this.$store.commit('updateParam', {
                   name: layer.ext.name,
                   mapName: this.mapName,
