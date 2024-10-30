@@ -9,9 +9,9 @@
 
           <div class="center-target"></div>
           <div id="left-top-div">
-            <v-btn @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><i class="fa-solid fa-bars"></i></v-btn>
-            <v-btn style="margin-left:10px;" @click="btnClickSplit" v-if="mapName === 'map01'"><i class="fa-solid fa-table-columns"></i></v-btn>
-            <v-btn style="margin-left:10px;" @click="btnClickLayer(mapName)"><i class="fa-solid fa-layer-group"></i></v-btn>
+            <v-btn @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-menu</v-icon></v-btn>
+            <v-btn style="margin-left:10px;" @click="btnClickSplit" v-if="mapName === 'map01'"><v-icon>mdi-monitor-multiple</v-icon></v-btn>
+            <v-btn style="margin-left:10px;" @click="btnClickLayer(mapName)"><v-icon>mdi-layers</v-icon></v-btn>
           </div>
           <div id="right-top-div">
             <v-btn icon @click="goToCurrentLocation" v-if="mapName === 'map01'"><v-icon>mdi-crosshairs-gps</v-icon></v-btn>
@@ -21,8 +21,6 @@
           <DialogLayer :mapName=mapName />
           <dialog-info :mapName=mapName />
           <dialog2 :mapName=mapName />
-<!--          <ExtHighway :mapName=mapName />-->
-<!--          <DialogPyramid :mapName=mapName />-->
 
           <div class="terrain-btn-div" v-drag>
             <div class="terrain-btn-container">
@@ -30,9 +28,7 @@
               <button type="button" class="terrain-btn-down terrain-btn" @pointerdown="downMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-down fa-lg'></i></button>
               <button type="button" class="terrain-btn-left terrain-btn" @pointerdown="leftMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-left fa-lg'></i></button>
               <button type="button" class="terrain-btn-right terrain-btn" @pointerdown="rightMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-right fa-lg'></i></button>
-              <div class="terrain-reset">
-                <button type="button" @pointerdown="terrainReset(mapName)">戻す</button>
-              </div>
+              <button type="button" class="terrain-btn-center terrain-btn" @pointerdown="terrainReset(mapName)"><v-icon>mdi-undo</v-icon></button>
             </div>
           </div>
           <div class="zoom-div">zoom={{zoom.toFixed(2)}}</div>
@@ -2353,6 +2349,17 @@ export default {
   margin-top:-25px;
   color: white;
   border-radius:8px;
+}
+.terrain-btn-center{
+  position:absolute;
+  top:50%;
+  right:calc(50% - 25px);
+  padding:0;
+  width:50px;
+  height:50px;
+  margin-top:-25px;
+  color: white;
+  border-radius:50px;
 }
 .terrain-reset{
   position:absolute;
