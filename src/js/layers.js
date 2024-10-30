@@ -341,8 +341,8 @@ const busteiLayerLabel = {
     },
     'paint': {
         'text-color': 'rgba(0, 0, 0, 1)',
-        'text-halo-color': 'rgba(255,255,255,0.7)',
-        'text-halo-width': 1.0,
+        'text-halo-color': 'rgba(255,255,255,1)',
+        'text-halo-width': 1.5,
     },
     'maxzoom': 24,
     'minzoom': 13
@@ -1224,8 +1224,7 @@ const m100mSource = {
     id: "m100mSource", obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/mesh/100m/100m.pmtiles",
-        attribution:
-            "<a href='' target='_blank'></a>",
+        attribution: "<a href='' target='_blank'></a>",
     }
 }
 const m100mLayer = {
@@ -1238,10 +1237,11 @@ const m100mLayer = {
             'interpolate',
             ['linear'],
             ['get', 'PopT'],
-            0, 'white',   // Color for low values
-            500, 'red', // Intermediate value
-            1400, 'black' // Color for high values
-        ]
+            0, 'rgba(255,255,255,0.8)',   // Color for low values
+            500, 'rgba(255,0,0,0.8)', // Intermediate value
+            1400, 'rgba(0,0,0,0.8)' // Color for high values
+        ],
+        'fill-opacity': 1
     }
 }
 const m100mLayerLine = {
@@ -2526,7 +2526,7 @@ const layers01 = [
             },
             {
                 id: 'oh-bus',
-                label: "バスルートと停留所",
+                label: "R04バスルートと停留所",
                 sources: [busSource,busteiSource],
                 layers: [busLayer,busteiLayer,busteiLayerLabel],
                 attribution: "<a href='https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N07-v2_0.html' target='_blank'>国土数値情報</a>"

@@ -492,6 +492,7 @@ export default {
         this.$store.state.lngRange = [sw.lng,ne.lng]
         this.$store.state.latRange = [sw.lat,ne.lat]
       })
+
       // 画面同期----------------------------------------------------------------------------------------------------------
       // スロットリング用のヘルパー関数
       // function throttle(func, limit) {
@@ -2211,7 +2212,7 @@ export default {
   watch: {
     s_selectedLayers: {
       handler: function () {
-        // console.log('変更を検出しました')
+        console.log('変更を検出しました2')
         this.updatePermalink()
         history('selectedLayers',window.location.href)
       },

@@ -224,7 +224,6 @@ export default {
           }
 
           layer.layers.forEach(layer0 => {
-
             if (layer0.id === 'oh-mw-dummy') {
               this.mw5AddLayers(map,this.mapName)
             } else {
@@ -339,7 +338,9 @@ export default {
   watch: {
     s_lngRange: {
       handler: function(){
-        this.addLayers()
+        if (this.s_selectedLayers.map01.find(v => v.id === 'oh-mw5') || this.s_selectedLayers.map02.find(v => v.id === 'oh-mw5')) {
+          this.addLayers()
+        }
       },
       deep: true
     },
