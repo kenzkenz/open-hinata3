@@ -51,7 +51,6 @@ export default {
   },
   data: () => ({
     searchText: '',
-    // cnt: 0,
     selectedLayers: {
       map01:[],
       map02:[]

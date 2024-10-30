@@ -1,6 +1,7 @@
 <template>
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div :style="menuContentSize">
+      <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
       標高強調
       <div class="range-div">
         {{s_terrainLevel}}倍<br>
@@ -12,11 +13,13 @@
 </template>
 
 <script>
-
+import axios from "axios"
+import maplibregl from 'maplibre-gl'
 export default {
   name: 'Dialog-menu',
   props: ['mapName'],
   data: () => ({
+    address: '',
     menuContentSize: {'height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'}
   }),
   computed: {
@@ -26,7 +29,6 @@ export default {
       },
       set(value) {
         this.$store.state.terrainLevel = value
-
       }
     },
     s_dialogs () {
@@ -34,52 +36,42 @@ export default {
     }
   },
   methods: {
-    aaa () {
-      async function mergeGeoJSONTiles(z, xRange, yRange) {
-        let mergedFeatures = [];
+    sercheAdress () {
+      console.log(this.address)
 
-        // 日本全域をカバーするタイル範囲を取得
-        for (let x = xRange[0]; x <= xRange[1]; x++) {
-          for (let y = yRange[0]; y <= yRange[1]; y++) {
-            const url = `https://mapdata.qchizu.xyz/vector/mlit_road2019/bridge2/${z}/${x}/${y}.geojson`;
-
-            try {
-              const response = await fetch(url);
-              if (!response.ok) {
-                console.warn(`Failed to fetch tile ${z}/${x}/${y}`);
-                continue;
-              }
-
-              const tileGeoJSON = await response.json();
-              if (tileGeoJSON.features) {
-                mergedFeatures = mergedFeatures.concat(tileGeoJSON.features);
-              }
-            } catch (error) {
-              console.error(`Error fetching tile ${z}/${x}/${y}:`, error);
-            }
-          }
-        }
-
-        // マージしたGeoJSONデータ
-        const mergedGeoJSON = {
-          type: "FeatureCollection",
-          features: mergedFeatures
-        };
-
-        // ダウンロード用にJSONファイルを生成
-        const blob = new Blob([JSON.stringify(mergedGeoJSON)], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `merged-geojson-${z}.geojson`;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
-      // 宮崎市全域をカバーするズームレベル14の範囲で実行
-      // mergeGeoJSONTiles(14, [14160, 14190], [6630, 6650]);
-      mergeGeoJSONTiles(14, [13500, 14500], [6200, 6700]);
-
-
+      const map = this.$store.state.map01
+      // const vm = this
+      axios
+          .get('https://msearch.gsi.go.jp/address-search/AddressSearch?q=' + this.address)
+          .then(function (response) {
+            const coordinates = response.data[0].geometry.coordinates
+            // ユーザーの操作を一時的に無効化
+            map.scrollZoom.disable();
+            map.dragPan.disable();
+            map.keyboard.disable();
+            map.doubleClickZoom.disable();
+            map.flyTo({
+              center: [parseFloat(coordinates[0]), parseFloat(coordinates[1])],
+              zoom: 14,
+              essential: true
+            })
+            // flyToアニメーション完了後にユーザー操作を再度有効化
+            map.once('moveend', () => {
+              map.scrollZoom.enable();
+              map.dragPan.enable();
+              map.keyboard.enable();
+              map.doubleClickZoom.enable();
+            });
+            // 検索結果の位置にマーカーを追加
+            const marker = new maplibregl.Marker()
+                .setLngLat([parseFloat(coordinates[0]), parseFloat(coordinates[1])])
+                // .setPopup(new maplibregl.Popup().setHTML(`<strong>${vm.address}</strong>`)) // ポップアップに住所を表示
+                .addTo(map);
+            // マーカーをクリックしたときにマーカーを削除
+            marker.getElement().addEventListener('click', () => {
+              marker.remove(); // マーカーをマップから削除
+            });
+          })
     },
     terrainLevelInput () {
       this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': this.s_terrainLevel })
