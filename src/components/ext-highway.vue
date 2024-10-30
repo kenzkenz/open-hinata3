@@ -33,7 +33,7 @@ export default {
   methods: {
     update () {
       const highwayYear = this.s_highwayYear
-      this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [highwayYear]});
+      this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [highwayYear]})
     },
     highwayYearInput (mapName) {
       const map = this.$store.state[mapName]
@@ -44,14 +44,15 @@ export default {
         map.setFilter('oh-highwayLayer-red-lines', eqFilter)
       }
       filterBy(Number(this.s_highwayYear))
-      // this.update()
     }
   },
   mounted() {
+    console.log(this.$store.state.highwayYear[this.mapName])
     this.highwayYearInput (this.mapName)
   },
   watch: {
     s_highwayYear () {
+      this.highwayYearInput (this.mapName)
     }
   }
 }

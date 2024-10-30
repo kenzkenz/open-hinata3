@@ -50,6 +50,7 @@ export default {
     draggable
   },
   data: () => ({
+    cnt: 0,
     searchText: '',
     selectedLayers: {
       map01:[],
@@ -194,23 +195,26 @@ export default {
       }
     },
     addLayers() {
-      if(!this.$store.state.watchFlg){
-        return
-      }
+      this.cnt++
+      if(!this.$store.state.watchFlg) return
+      if (!this.s_selectedLayers[this.mapName].length) return
       // ------------------------------------------------------------------
       const map = this.$store.state[this.mapName]
       // まずレイヤーを削除-------------------------
       const layers = map.getStyle().layers
-      if (layers) {
-        for (let i = layers.length - 1; i >= 0; i--) {
-          const layerId = layers[i].id
-          if (layerId.slice(0,2) === 'oh' ) {
-            map.removeLayer(layerId)
+      if (this.cnt > 2) {
+        if (layers) {
+          for (let i = layers.length - 1; i >= 0; i--) {
+            const layerId = layers[i].id
+            if (layerId.slice(0,2) === 'oh' ) {
+              map.removeLayer(layerId)
+            }
           }
         }
       }
       // -----------------------------------------
       for (let i = this.s_selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
+        console.log(888)
         const layer = this.s_selectedLayers[this.mapName][i]
         if (layer.layers) {
 
@@ -246,21 +250,18 @@ export default {
             }
           })
           // -------------------------------------------------
+          console.log(layer.ext)
           if (layer.ext) {
             // if (this.cnt < 2){
             if (layer.ext.values) {
-              try {
-                layer.ext.values.forEach((value,i) => {
-                  this.$store.commit('updateParam', {
-                    name: layer.ext.name,
-                    mapName: this.mapName,
-                    value: value,
-                    order: i
-                  })
+              layer.ext.values.forEach((v,i) => {
+                this.$store.commit('updateParam', {
+                  name: layer.ext.name,
+                  mapName: this.mapName,
+                  value: String(v),
+                  order: i
                 })
-              } catch (e) {
-                console.log(e)
-              }
+              })
             }
             // ここを改修する。
             this.infoOpen(layer)
@@ -347,6 +348,7 @@ export default {
     s_selectedLayers: {
       handler: function(){
         console.log('変更を検出しました',this.$store.state.watchFlg)
+        console.log(this.$store.state.highwayYear)
         // ------------------------------------------------------------------
         const map01 = this.$store.state.map01
         const bounds = map01.getBounds()
@@ -356,6 +358,7 @@ export default {
         this.$store.state.lngRange = [sw.lng,ne.lng]
         this.$store.state.latRange = [sw.lat,ne.lat]
         // ------------------------------------------------------------------
+        console.log(9999)
         this.addLayers()
       },
       deep: true

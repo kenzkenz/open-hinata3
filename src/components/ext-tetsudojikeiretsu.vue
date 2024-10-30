@@ -49,6 +49,7 @@ export default {
   },
   watch: {
     s_tetsudojikeiretsuYear () {
+      this.highwayYearInput (this.mapName)
     }
   }
 }
