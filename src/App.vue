@@ -1294,7 +1294,7 @@ export default {
                   html =
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 16px;">' + name + '</span><br>' +
-                      '<span style="font-size: 12px;">' + props.P11_002 + '</span><br>' +
+                      '<span style="font-size: 12px;">事業者名=' + props.P11_002 + '</span><br>' +
                       '</div>'
                   break
                 }
