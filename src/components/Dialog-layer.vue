@@ -166,9 +166,9 @@ export default {
       }
     },
     removeLayer(id){
-      const map = this.$store.state[this.mapName]
+      // const map = this.$store.state[this.mapName]
       this.s_selectedLayers[this.mapName] = this.s_selectedLayers[this.mapName].filter(layer => layer.id !== id)
-      map.removeLayer(id)
+      // map.removeLayer(id)
     },
     onNodeClick (node) {
       if (node.layers) {
@@ -195,24 +195,21 @@ export default {
       }
     },
     addLayers() {
-      // this.cnt++
       if(!this.$store.state.watchFlg) return
-      if (!this.s_selectedLayers[this.mapName].length) return
+      // if (!this.s_selectedLayers[this.mapName].length) return
       // ------------------------------------------------------------------
       console.log(this.s_selectedLayers[this.mapName].length)
       const map = this.$store.state[this.mapName]
       // まずレイヤーを削除-------------------------
       const layers = map.getStyle().layers
-      // if (this.cnt > 2) {
-        if (layers) {
-          for (let i = layers.length - 1; i >= 0; i--) {
-            const layerId = layers[i].id
-            if (layerId.slice(0,2) === 'oh' ) {
-              map.removeLayer(layerId)
-            }
+      if (layers) {
+        for (let i = layers.length - 1; i >= 0; i--) {
+          const layerId = layers[i].id
+          if (layerId.slice(0,2) === 'oh' ) {
+            map.removeLayer(layerId)
           }
         }
-      // }
+      }
       // -----------------------------------------
       for (let i = this.s_selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
         console.log(888)
@@ -252,7 +249,6 @@ export default {
           // -------------------------------------------------
           console.log(layer.ext)
           if (layer.ext) {
-            // if (this.cnt < 2){
             if (layer.ext.values) {
               layer.ext.values.forEach((v,i) => {
                 this.$store.commit('updateParam', {
@@ -266,8 +262,6 @@ export default {
             this.$store.state.watchFlg = ! this.$store.state.watchFlg // ここを改善
             // ここを改修する。
             this.infoOpen(layer)
-            // }
-            // this.cnt++
           }
         }
       }
