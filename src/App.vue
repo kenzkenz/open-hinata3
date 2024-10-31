@@ -342,6 +342,8 @@ export default {
       const split = this.mapFlg.map02
       const pitch01 = !isNaN(this.pitch.map01) ? this.pitch.map01: 0
       const pitch02 = !isNaN(this.pitch.map02) ? this.pitch.map02: 0
+      let terrainLevel = this.s_terrainLevel
+      if (isNaN(terrainLevel)) terrainLevel = 1
       // console.log(this.bearing)
       let bearing = 0
       if (isNaN(this.bearing)) {
@@ -358,7 +360,7 @@ export default {
       // console.log(pitch01)
       const selectedLayersJson = JSON.stringify(this.$store.state.selectedLayers)
       // パーマリンクの生成
-      this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=${pitch01}&pitch02=${pitch02}&bearing=${bearing}&slj=${selectedLayersJson}`
+      this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}&slj=${selectedLayersJson}`
       // console.log(this.param)
       // this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
@@ -394,11 +396,14 @@ export default {
       const pitch01 = parseFloat(params.get('pitch01'))
       const pitch02 = parseFloat(params.get('pitch02'))
       const bearing = parseFloat(params.get('bearing'))
+      const terrainLevel = parseFloat(params.get('terrainLevel'))
       const slj = JSON.parse(params.get('slj'))
       this.pitch.map01 = pitch01
       this.pitch.map02 = pitch02
       this.bearing = bearing
-      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,slj}// 以前のリンクをいかすためpitchを入れている。
+      this.s_terrainLevel = terrainLevel
+      console.log(this.s_terrainLevel)
+      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj}// 以前のリンクをいかすためpitchを入れている。
     },
     init() {
       let protocol = new Protocol();
@@ -701,6 +706,8 @@ export default {
           // 標高タイルセット
           // map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': this.s_terrainLevel });
           const vm = this
+          if (isNaN(vm.s_terrainLevel)) vm.s_terrainLevel = 1
+          console.log(vm.s_terrainLevel)
           document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('mouseover', function() {
             map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': vm.s_terrainLevel })
           }, false);
@@ -2205,6 +2212,8 @@ export default {
           // })
           const pitch = !isNaN(this.pitch[mapName]) ? this.pitch[mapName]: 0
           if (pitch !== 0) {
+            console.log(this.s_terrainLevel)
+
             this.$store.state[mapName].setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': this.s_terrainLevel })
           }
         })

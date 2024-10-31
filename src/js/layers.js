@@ -807,8 +807,8 @@ const bakumatsuLayer = {
     source: "bakumatsu",
     "source-layer": "b41",
     paint: {
-        'fill-color': ['get', 'random_color'],  // フィーチャのプロパティ 'color' から色を取得
-        'fill-opacity': 1  // 透明度を設定
+        'fill-color': ['get', 'random_color'],
+        'fill-opacity': 1
     }
 }
 const bakumatsuLayerKokudaka = {
@@ -2381,6 +2381,7 @@ const yotochiikiLayerLabel = {
     'minzoom': 14
 }
 // 関東小字地図-----------------------------------------------------------------------------------------------------
+// mura.pmtiles
 const koazaSource = {
     id: "koaza-source", obj: {
         type: "vector",
@@ -2659,7 +2660,7 @@ const layers01 = [
                 layers: [bakumatsuLayerHeight]
             },
             {
-                id: 'oh-bakumatsu',
+                id: 'oh-bakumatsu-han',
                 label: "幕末期近世の村（藩）",
                 source: bakumatsuSource,
                 layers: [bakumatsuLayerHan,bakumatsuLayerLine2,bakumatsuLayerLabel]

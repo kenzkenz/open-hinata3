@@ -195,3 +195,43 @@ tippecanoe -rg -pk -pf -l point -f -o tunnel.pmtiles tunnel.geojson
 tippecanoe -rg -pk -pf -l line -f -o bus.pmtiles bus.geojson
 tippecanoe -rg -pk -pf -l point -f -o bustei.pmtiles bustei.geojson
 
+tippecanoe -pk -pf -l b41 -f -o b41.pmtiles b4.geojson
+
+import random
+from qgis.core import QgsField, QgsExpression, QgsExpressionContext, QgsExpressionContextUtils
+from qgis.PyQt.QtCore import QVariant
+
+//-----------------------------------
+# アクティブなレイヤーを取得
+layer = iface.activeLayer()
+
+# "random_color" フィールドが存在するか確認し、なければ追加
+if layer.fields().indexFromName("random_color") == -1:
+    layer.dataProvider().addAttributes([QgsField("random_color", QVariant.String)])
+    layer.updateFields()
+
+# ランダムな色を生成する関数（透明度を0.8に固定）
+def random_color():
+    r = random.randint(0, 255)
+    g = random.randint(0, 255)
+    b = random.randint(0, 255)
+    a = 0.8  # 透明度を0.8に固定
+    return f'rgba({r}, {g}, {b}, {a})'
+
+# 編集モードを開始
+layer.startEditing()
+
+# 各フィーチャにランダムな色を設定
+for feature in layer.getFeatures():
+    # ランダムな色を生成
+    color = random_color()
+
+    # "random_color" フィールドに値を設定
+    layer.changeAttributeValue(feature.id(), layer.fields().indexFromName("random_color"), color)
+
+# 変更を保存
+layer.commitChanges()
+
+print("ランダムな色が 'random_color' フィールドに設定されました。")
+//-----------------------------------
+
