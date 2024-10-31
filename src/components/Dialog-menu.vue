@@ -1,13 +1,12 @@
 <template>
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
-    <div :style="menuContentSize">
+    <div class="menu-div">
+      <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
-      標高強調
+      標高を強調します。{{s_terrainLevel}}倍
       <div class="range-div">
-        {{s_terrainLevel}}倍<br>
         <input type="range" min="1" max="10" step="0.1" class="range" v-model.number="s_terrainLevel" @input="terrainLevelInput"/>
       </div>
-<!--      <button @click="aaa">aaa</button>-->
     </div>
   </Dialog>
 </template>
@@ -20,7 +19,6 @@ export default {
   props: ['mapName'],
   data: () => ({
     address: '',
-    menuContentSize: {'height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'}
   }),
   computed: {
     s_terrainLevel: {
@@ -36,9 +34,11 @@ export default {
     }
   },
   methods: {
+    reset () {
+      const baseUrl = `${window.location.origin}${window.location.pathname}`
+      location.href = baseUrl
+    },
     sercheAdress () {
-      console.log(this.address)
-
       const map = this.$store.state.map01
       // const vm = this
       axios
@@ -77,11 +77,26 @@ export default {
     terrainLevelInput () {
       this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': this.s_terrainLevel })
       this.$store.state.map02.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': this.s_terrainLevel })
+      localStorage.setItem('terrainLevel',this.s_terrainLevel)
+    }
+  },
+  mounted() {
+    if (localStorage.getItem('terrainLevel')) {
+      this.s_terrainLevel = Number(localStorage.getItem('terrainLevel'))
+    } else {
+      this.s_terrainLevel = 1
     }
   }
 }
 </script>
 <style scoped>
-
+.menu-div {
+  height: auto;
+  margin: 10px;
+  overflow: auto;
+  user-select: text;
+  font-size: larger;
+  color: gray;
+}
 </style>
 

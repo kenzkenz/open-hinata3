@@ -405,8 +405,8 @@ export default {
       maplibregl.addProtocol("pmtiles",protocol.tile)
       const params = this.parseUrlParams()
       this.mapNames.forEach(mapName => {
-        let center = [139.7024, 35.6598]
-        let zoom = 16
+        let center = [139.84267451046338,38.36453863570733]
+        let zoom = 5
         let pitch= {map01:0,map02:0}
         let bearing = 0
         if (params.lng) {
@@ -490,6 +490,13 @@ export default {
       })
       // -----------------------
       const map = this.$store.state.map01
+
+      map.on('click', (e) => {
+        const latitude = e.lngLat.lat
+        const longitude = e.lngLat.lng
+        console.log(longitude, latitude)
+      })
+
       map.on('moveend', () => {
         const bounds = map.getBounds()
         // 南西端と北東端の座標を取得
@@ -2436,6 +2443,7 @@ export default {
 <style>
 html, body {
   overscroll-behavior: none;
+  touch-action: manipulation;
 }
 .maplibregl-popup-content {
   padding: 30px 20px 10px 20px;
