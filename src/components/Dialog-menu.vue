@@ -14,6 +14,7 @@
 <script>
 import axios from "axios"
 import maplibregl from 'maplibre-gl'
+import {history} from "@/App";
 export default {
   name: 'Dialog-menu',
   props: ['mapName'],
@@ -78,6 +79,7 @@ export default {
       this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': this.s_terrainLevel })
       this.$store.state.map02.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': this.s_terrainLevel })
       localStorage.setItem('terrainLevel',this.s_terrainLevel)
+      history('terrainLevelInput',window.location.href)
     }
   },
   mounted() {

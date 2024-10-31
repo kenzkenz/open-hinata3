@@ -1311,6 +1311,21 @@ export default {
                       '</div>'
                   break
                 }
+                case 'oh-koaza-label':
+                case 'oh-koaza':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-koaza'] }
+                  )
+                  console.log(features)
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  const name = props.MURA_NAME
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size: 20px;">' + name + '</span><br>' +
+                      '</div>'
+                  break
+                }
               }
 
               // ポップアップ作成

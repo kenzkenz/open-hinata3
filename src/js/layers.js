@@ -2380,6 +2380,59 @@ const yotochiikiLayerLabel = {
     },
     'minzoom': 14
 }
+// 関東小字地図-----------------------------------------------------------------------------------------------------
+const koazaSource = {
+    id: "koaza-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://osaru-san1.github.io/border/koaza.pmtiles",
+        attribution: '<a href="https://koaza.net/">関東小字地図</a>',
+        // minzoom: 10,
+        // maxzoom: 10,
+    }
+}
+const koazaLayer = {
+    id: "oh-koaza",
+    type: "fill",
+    source: "koaza-source",
+    "source-layer": "koaza",
+    paint: {
+        'fill-color': 'rgba(255,255,255,0.1)'
+    },
+    // minzoom: 0,
+    // maxzoom: 10,
+}
+const koazaLayerLine = {
+    id: "oh-koaza-line",
+    type: "line",
+    source: "koaza-source",
+    "source-layer": "koaza",
+    paint: {
+        'line-color': 'red',
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10, 1,
+            14, 4
+        ]
+    },
+}
+const koazaLayerLabel = {
+    id: "oh-koaza-label",
+    type: "symbol",
+    source: "koaza-source",
+    "source-layer": "koaza",
+    'layout': {
+        'text-field': ['get', 'MURA_NAME'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+    },
+    'paint': {
+        'text-color': 'red',
+        'text-halo-color': 'white',
+        'text-halo-width': 1.0,
+    },
+    'minzoom': 10
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -2786,6 +2839,13 @@ const layers01 = [
         id: 'test',
         label: "テスト",
         nodes: [
+            {
+                id: 'oh-koaza',
+                label: "関東小字地図テスト",
+                source: koazaSource,
+                layers: [koazaLayer,koazaLayerLine,koazaLayerLabel],
+                attribution: '<a href="https://koaza.net/">関東小字地図</a>'
+            },
             {
                 id: 'oh-yotochiiki',
                 label: "用途地域",
