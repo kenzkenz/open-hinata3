@@ -44,6 +44,7 @@ export default {
       axios
           .get('https://msearch.gsi.go.jp/address-search/AddressSearch?q=' + this.address)
           .then(function (response) {
+            console.log(response)
             const coordinates = response.data[0].geometry.coordinates
             // ユーザーの操作を一時的に無効化
             map.scrollZoom.disable();

@@ -50,7 +50,7 @@ export default {
     draggable
   },
   data: () => ({
-    cnt: 0,
+    // cnt: 0,
     searchText: '',
     selectedLayers: {
       map01:[],
@@ -195,7 +195,7 @@ export default {
       }
     },
     addLayers() {
-      this.cnt++
+      // this.cnt++
       if(!this.$store.state.watchFlg) return
       if (!this.s_selectedLayers[this.mapName].length) return
       // ------------------------------------------------------------------
@@ -203,7 +203,7 @@ export default {
       const map = this.$store.state[this.mapName]
       // まずレイヤーを削除-------------------------
       const layers = map.getStyle().layers
-      if (this.cnt > 2) {
+      // if (this.cnt > 2) {
         if (layers) {
           for (let i = layers.length - 1; i >= 0; i--) {
             const layerId = layers[i].id
@@ -212,7 +212,7 @@ export default {
             }
           }
         }
-      }
+      // }
       // -----------------------------------------
       for (let i = this.s_selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
         console.log(888)
@@ -255,8 +255,6 @@ export default {
             // if (this.cnt < 2){
             if (layer.ext.values) {
               layer.ext.values.forEach((v,i) => {
-                alert(v)
-                console.log(layer.ext.name,this.mapName)
                 this.$store.commit('updateParam', {
                   name: layer.ext.name,
                   mapName: this.mapName,
@@ -265,6 +263,7 @@ export default {
                 })
               })
             }
+            this.$store.state.watchFlg = ! this.$store.state.watchFlg // ここを改善
             // ここを改修する。
             this.infoOpen(layer)
             // }

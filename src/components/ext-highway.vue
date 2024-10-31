@@ -14,10 +14,12 @@ export default {
   name: 'ext-highway',
   props: ['mapName','item'],
   data: () => ({
-    // highwayYear:2024,
     menuContentSize: {'height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'}
   }),
   computed: {
+    s_watchFlg () {
+      return this.$store.state.watchFlg
+    },
     s_dialogs () {
       return this.$store.state.dialogs.extHighway
     },
@@ -47,13 +49,12 @@ export default {
     }
   },
   mounted() {
-    console.log(this.$store.state.highwayYear[this.mapName])
     this.highwayYearInput (this.mapName)
   },
   watch: {
-    s_highwayYear () {
+    s_watchFlg () {
       this.highwayYearInput (this.mapName)
-    }
+    },
   }
 }
 </script>

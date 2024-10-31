@@ -17,6 +17,9 @@ export default {
     menuContentSize: {'height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'}
   }),
   computed: {
+    s_watchFlg () {
+      return this.$store.state.watchFlg
+    },
     s_tetsudojikeiretsuYear: {
       get() {
         return this.$store.state.tetsudojikeiretsuYear[this.mapName]
@@ -48,9 +51,9 @@ export default {
     this.highwayYearInput (this.mapName)
   },
   watch: {
-    s_tetsudojikeiretsuYear () {
+    s_watchFlg () {
       this.highwayYearInput (this.mapName)
-    }
+    },
   }
 }
 </script>

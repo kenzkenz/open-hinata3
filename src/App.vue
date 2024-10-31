@@ -2440,4 +2440,7 @@ font {
   color: white;
   border-radius:8px;
 }
+.maplibregl-popup {
+  z-index: 1;
+}
 </style>
