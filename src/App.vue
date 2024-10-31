@@ -15,6 +15,8 @@
           </div>
           <div id="right-top-div">
             <v-btn icon @click="goToCurrentLocation" v-if="mapName === 'map01'"><v-icon>mdi-crosshairs-gps</v-icon></v-btn>
+            <v-btn class="zoom-in" icon @click="zoomIn" v-if="mapName === 'map01'"><v-icon>mdi-plus</v-icon></v-btn>
+            <v-btn class="zoom-out" icon @click="zoomOut" v-if="mapName === 'map01'"><v-icon>mdi-minus</v-icon></v-btn>
           </div>
 
           <DialogMenu :mapName=mapName />
@@ -93,10 +95,6 @@ export default {
     zoom:0,
   }),
   computed: {
-    // s_terrainLevel () {
-    //   return this.$store.state.terrainLevel
-    // },
-
     s_terrainLevel: {
       get() {
         return this.$store.state.terrainLevel
@@ -115,6 +113,14 @@ export default {
     },
   },
   methods: {
+    zoomIn () {
+      const map = this.$store.state.map01
+      map.zoomIn({ duration: 500 })
+    },
+    zoomOut () {
+      const map = this.$store.state.map01
+      map.zoomOut({ duration: 500 })
+    },
     goToCurrentLocation () {
       const map = this.$store.state.map01
       if ('geolocation' in navigator) {
@@ -2304,7 +2310,16 @@ export default {
   font-size: large;
   z-index: 2;
 }
-
+.zoom-in {
+  position: absolute;
+  top: 60px;
+  left: 0;
+}
+.zoom-out {
+  position: absolute;
+  top: 120px;
+  left: 0;
+}
 /*3Dのボタン-------------------------------------------------------------*/
 .terrain-btn {
   background-color: rgb(50,101,186);
