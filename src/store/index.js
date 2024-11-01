@@ -52,6 +52,7 @@ export default createStore({
     jinkosuiiDatasetEstat:[],
     watchFlg: true,
     terrainLevel:1,
+    isPitch: false,
     lngRange: [],
     latRange: [],
     //------------------------

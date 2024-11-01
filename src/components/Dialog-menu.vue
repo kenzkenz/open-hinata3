@@ -3,6 +3,7 @@
     <div class="menu-div">
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
+      <v-switch v-model="s_isPitch" @change="changePitch" label="２画面時に傾きを同期" color="primary" />
       標高を強調します。{{s_terrainLevel}}倍
       <div class="range-div">
         <input type="range" min="1" max="10" step="0.1" class="range" v-model.number="s_terrainLevel" @input="terrainLevelInput"/>
@@ -32,9 +33,20 @@ export default {
     },
     s_dialogs () {
       return this.$store.state.dialogs.menuDialog
-    }
+    },
+    s_isPitch: {
+      get() {
+        return this.$store.state.isPitch
+      },
+      set(value) {
+        this.$store.state.isPitch = value
+      }
+    },
   },
   methods: {
+    changePitch () {
+      localStorage.setItem('isPitch',this.s_isPitch)
+    },
     reset () {
       const baseUrl = `${window.location.origin}${window.location.pathname}`
       location.href = baseUrl
@@ -88,6 +100,7 @@ export default {
     } else {
       this.s_terrainLevel = 1
     }
+    this.s_isPitch = JSON.parse(localStorage.getItem('isPitch'))
   }
 }
 </script>

@@ -234,9 +234,9 @@ export default {
       function bearing () {
         vm.bearing = map.getBearing()
         if (vm.mouseDown) {
-          // map.setBearing(map.getBearing() + 5)
-          vm.$store.state.map01.setBearing(map.getBearing() + 2)
-          vm.$store.state.map02.setBearing(map.getBearing() + 2)
+          map.setBearing(map.getBearing() + 2)
+          // vm.$store.state.map01.setBearing(map.getBearing() + 2)
+          // vm.$store.state.map02.setBearing(map.getBearing() + 2)
           requestAnimationFrame(bearing)
         } else {
           vm.bearing = map.getBearing()
@@ -252,9 +252,9 @@ export default {
       function bearing () {
         vm.bearing = map.getBearing()
         if (vm.mouseDown) {
-          // map.setBearing(map.getBearing() - 5)
-          vm.$store.state.map01.setBearing(map.getBearing() - 2)
-          vm.$store.state.map02.setBearing(map.getBearing() - 2)
+          map.setBearing(map.getBearing() - 2)
+          // vm.$store.state.map01.setBearing(map.getBearing() - 2)
+          // vm.$store.state.map02.setBearing(map.getBearing() - 2)
           requestAnimationFrame(bearing)
         } else {
           vm.bearing = map.getBearing()
@@ -499,8 +499,10 @@ export default {
         )
 
       })
-      // -----------------------
+      // --------------------------------
       const map = this.$store.state.map01
+      const vm = this
+      //----------------------------------
 
       map.on('click', (e) => {
         const latitude = e.lngLat.lat
@@ -551,6 +553,8 @@ export default {
               syncing = true
               mapB.setCenter(mapA.getCenter())
               mapB.setZoom(mapA.getZoom())
+              mapB.setBearing(mapA.getBearing())
+              if (vm.$store.state.isPitch) mapB.setPitch(mapA.getPitch())
               syncing = false
             }
           // }, 100); // 100msの間隔で発火
@@ -561,6 +565,8 @@ export default {
               syncing = true
               mapA.setCenter(mapB.getCenter())
               mapA.setZoom(mapB.getZoom())
+              mapA.setBearing(mapB.getBearing())
+              if (vm.$store.state.isPitch) mapA.setPitch(mapB.getPitch())
               syncing = false
             }
           // }, 100); // 100msの間隔で発火
