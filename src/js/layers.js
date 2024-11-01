@@ -2386,6 +2386,7 @@ const koazaSource = {
     id: "koaza-source", obj: {
         type: "vector",
         url: "pmtiles://https://osaru-san1.github.io/border/koaza.pmtiles",
+        // url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/koaza/koaza.pmtiles",
         attribution: '<a href="https://koaza.net/">関東小字地図</a>',
         // minzoom: 10,
         // maxzoom: 10,
@@ -2433,6 +2434,43 @@ const koazaLayerLabel = {
         'text-halo-width': 1.0,
     },
     'minzoom': 10
+}
+const muraSource = {
+    id: "mura-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://osaru-san1.github.io/border/mura.pmtiles",
+        // url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/koaza/koaza.pmtiles",
+        attribution: '<a href="https://koaza.net/">関東小字地図</a>',
+        // minzoom: 10,
+        // maxzoom: 10,
+    }
+}
+const muraLayer = {
+    id: "oh-mura",
+    type: "fill",
+    source: "koaza-source",
+    "source-layer": "mura",
+    paint: {
+        'fill-color': 'rgba(0,0,0,0)'
+    },
+    // minzoom: 0,
+    // maxzoom: 10,
+}
+const muraLayerLine = {
+    id: "oh-mura-line",
+    type: "line",
+    source: "mura-source",
+    "source-layer": "mura",
+    paint: {
+        'line-color': 'blue',
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10, 1,
+            14, 4
+        ]
+    },
 }
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
@@ -2843,8 +2881,8 @@ const layers01 = [
             {
                 id: 'oh-koaza',
                 label: "関東小字地図テスト",
-                source: koazaSource,
-                layers: [koazaLayer,koazaLayerLine,koazaLayerLabel],
+                sources: [koazaSource,muraSource],
+                layers: [koazaLayer,koazaLayerLine,koazaLayerLabel,muraLayer,muraLayerLine],
                 attribution: '<a href="https://koaza.net/">関東小字地図</a>'
             },
             {

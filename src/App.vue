@@ -429,7 +429,7 @@ export default {
           }
         }
         // 以前のリンクをいかすため---------------------------------
-
+        // const maptilerApiKey = 'CDedb3rcFcdaYuHkD9zR'
         const map = new maplibregl.Map({
           container: mapName,
           localIdeographFontFamily: ['sans-serif'], // 日本語を表示するための設定
@@ -462,6 +462,12 @@ export default {
           //     },
           //     ]
           // },
+
+          // style: `https://api.maptiler.com/maps/streets/style.json?key=${maptilerApiKey}`, // MapTilerのスタイルURL
+
+          // style:require('@/assets/json/mono.json')
+
+
           style: {
             'version': 8,
             glyphs: "https://glyphs.geolonia.com/{fontstack}/{range}.pbf",
