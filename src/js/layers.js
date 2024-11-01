@@ -553,6 +553,102 @@ const seamlessphotoLayer = {
     'source': seamlessphotoSource.id,
     'type': 'raster',
 }
+// 87写真--------------------------------------------------------------------------------------------------------------
+const sp87Source = {
+    id:'sp87-source',obj:{
+        type: 'raster',
+        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/gazo4/{z}/{x}/{y}.jpg'],
+    }
+}
+const sp87Layer = {
+    'id': 'oh-sp87',
+    'source': 'sp87-source',
+    'type': 'raster',
+}
+// 84写真--------------------------------------------------------------------------------------------------------------
+const sp84Source = {
+    id:'sp84-source',obj:{
+        type: 'raster',
+        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/gazo3/{z}/{x}/{y}.jpg'],
+    }
+}
+const sp84Layer = {
+    'id': 'oh-sp84',
+    'source': 'sp84-source',
+    'type': 'raster',
+}
+// 79写真--------------------------------------------------------------------------------------------------------------
+const sp79Source = {
+    id:'sp79-source',obj:{
+        type: 'raster',
+        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/gazo2/{z}/{x}/{y}.jpg'],
+    }
+}
+const sp79Layer = {
+    'id': 'oh-sp79',
+    'source': 'sp79-source',
+    'type': 'raster',
+}
+// 74写真--------------------------------------------------------------------------------------------------------------
+const sp74Source = {
+    id:'sp74-source',obj:{
+        type: 'raster',
+        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/gazo1/{z}/{x}/{y}.jpg'],
+    }
+}
+const sp74Layer = {
+    'id': 'oh-sp74',
+    'source': 'sp74-source',
+    'type': 'raster',
+}
+// 61写真--------------------------------------------------------------------------------------------------------------
+const sp61Source = {
+    id:'sp61-source',obj:{
+        type: 'raster',
+        tiles: ['https://maps.gsi.go.jp/xyz/ort_old10/{z}/{x}/{y}.png'],
+    }
+}
+const sp61Layer = {
+    'id': 'oh-sp61',
+    'source': 'sp61-source',
+    'type': 'raster',
+}
+// 45写真--------------------------------------------------------------------------------------------------------------
+const sp45Source = {
+    id:'sp45-source',obj:{
+        type: 'raster',
+        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/ort_USA10/{z}/{x}/{y}.png'],
+    }
+}
+const sp45Layer = {
+    'id': 'oh-sp45',
+    'source': 'sp45-source',
+    'type': 'raster',
+}
+// 36写真--------------------------------------------------------------------------------------------------------------
+const sp36Source = {
+    id:'sp36-source',obj:{
+        type: 'raster',
+        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/ort_riku10/{z}/{x}/{y}.png'],
+    }
+}
+const sp36Layer = {
+    'id': 'oh-sp36',
+    'source': 'sp36-source',
+    'type': 'raster',
+}
+// 28写真--------------------------------------------------------------------------------------------------------------
+const sp28Source = {
+    id:'sp28-source',obj:{
+        type: 'raster',
+        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/ort_1928/{z}/{x}/{y}.png'],
+    }
+}
+const sp28Layer = {
+    'id': 'oh-sp28',
+    'source': 'sp28-source',
+    'type': 'raster',
+}
 // ---------------------------------------------------------------------------------------------------------------------
 // PLATEAU建物（PMTiles）ソース
 const plateauPmtilesSource = {
@@ -681,6 +777,18 @@ const tamaSekisyokuLayer = {
     'id': 'oh-tamaSekisyokuLayer',
     'type': 'raster',
     'source': 'tamaSekisyokuSource',
+}
+// 東京都23区赤色立体地図------------------------------------------------------------------------------------------------------
+const tokyo23SekisyokuSource = {
+    id: 'tokyo23-sekisyoku-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz3.xsrv.jp/sekisyoku/tokyo/{z}/{x}/{y}.png'],
+    }
+}
+const tokyo23SekisyokuLayer = {
+    'id': 'oh-tokyo23-sekisyoku-layer',
+    'type': 'raster',
+    'source': 'tokyo23-sekisyoku-source',
 }
 // 大阪府CS立体地図------------------------------------------------------------------------------------------------------
 const csOsakaSource = {
@@ -2502,6 +2610,54 @@ const layers01 = [
                 source: seamlessphotoSource,
                 layers: [seamlessphotoLayer]
             },
+            {
+                id: 'oh-sp87',
+                label: "1987~90年航空写真(一部)",
+                source: sp87Source,
+                layers: [sp87Layer]
+            },
+            {
+                id: 'oh-sp84',
+                label: "1984~86年航空写真(一部)",
+                source: sp84Source,
+                layers: [sp84Layer]
+            },
+            {
+                id: 'oh-sp79',
+                label: "1979~83年航空写真(一部)",
+                source: sp79Source,
+                layers: [sp79Layer]
+            },
+            {
+                id: 'oh-sp74',
+                label: "1974~78年航空写真(全国)",
+                source: sp74Source,
+                layers: [sp74Layer]
+            },
+            {
+                id: 'oh-sp61',
+                label: "1961~64年航空写真(一部)",
+                source: sp61Source,
+                layers: [sp61Layer]
+            },
+            {
+                id: 'oh-sp45',
+                label: "1945~50年航空写真(一部)",
+                source: sp45Source,
+                layers: [sp45Layer]
+            },
+            {
+                id: 'oh-sp36',
+                label: "1936~42年航空写真(一部)",
+                source: sp36Source,
+                layers: [sp36Layer]
+            },
+            {
+                id: 'oh-sp28',
+                label: "1928年航空写真(大阪府)",
+                source: sp28Source,
+                layers: [sp28Layer]
+            },
         ]
     },
     {
@@ -2774,6 +2930,12 @@ const layers01 = [
                 label: "東京都多摩地域赤色立体地図",
                 source: tamaSekisyokuSource,
                 layers: [tamaSekisyokuLayer]
+            },
+            {
+                id: 'oh-tokyo23-sekisyoku-layer',
+                label: "東京都23区赤色立体地図",
+                source: tokyo23SekisyokuSource,
+                layers: [tokyo23SekisyokuLayer]
             },
             {
                 id: 'oh-aichiSekisyokuLayer',
