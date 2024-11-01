@@ -197,6 +197,8 @@ tippecanoe -rg -pk -pf -l point -f -o bustei.pmtiles bustei.geojson
 
 tippecanoe -pk -pf -l b41 -f -o b41.pmtiles b4.geojson
 
+tippecanoe z0 -pk -pf -l koaza -f -o koaza.pmtiles output.geojson
+
 import random
 from qgis.core import QgsField, QgsExpression, QgsExpressionContext, QgsExpressionContextUtils
 from qgis.PyQt.QtCore import QVariant
