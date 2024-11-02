@@ -259,7 +259,7 @@ export default {
                 })
               })
             }
-            this.$store.state.watchFlg = ! this.$store.state.watchFlg // ここを改善
+            this.$store.state.watchFlg = ! this.$store.state.watchFlg
             // ここを改修する。
             this.infoOpen(layer)
           }
@@ -353,7 +353,6 @@ export default {
         this.$store.state.lngRange = [sw.lng,ne.lng]
         this.$store.state.latRange = [sw.lat,ne.lat]
         // ------------------------------------------------------------------
-        console.log(9999)
         this.addLayers()
       },
       deep: true
