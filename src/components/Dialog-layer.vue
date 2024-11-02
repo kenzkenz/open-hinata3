@@ -1,7 +1,7 @@
 <template>
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
-    <div :style="menuContentSize">
-      <div class="first-div">
+    <div :id="'container-div-' + mapName" :style="menuContentSize">
+      <div :id="'first-div-' + mapName" class="first-div">
         <draggable v-model="s_selectedLayers[mapName]" item-key="id" handle=".handle-div">
           <template #item="{element}">
             <div class="drag-item">
@@ -20,7 +20,9 @@
         </div>
       </div>
 
-      <div :style="secondDivStyle" class="second-div">
+      <div :id="'center-div-' + mapName" class="center-div"></div>
+
+      <div :id="'second-div-' + mapName" :style="secondDivStyle" class="second-div">
         <v-text-field label="地図抽出" v-model="searchText" style="margin-top: 10px"></v-text-field>
         <Tree
             :nodes="layers"
@@ -221,6 +223,7 @@ export default {
             })
           }
           if (layer.source) {
+            console.log(layer)
             if (!map.getSource(layer.source.id)) map.addSource(layer.source.id, layer.source.obj)
           }
 
@@ -330,6 +333,36 @@ export default {
   mounted() {
     // ----------------------------------------------------------------------------------------------------------------
     this.layers = Layers.layers[this.mapName]
+    // ----------------------------------------------------
+    const handle = document.getElementById('center-div-' + this.mapName);
+    const topDiv = document.getElementById('first-div-' + this.mapName);
+    // const bottomDiv = document.getElementById('second-div-' + this.mapName);
+    const container = document.getElementById('container-div-' + this.mapName);
+
+    let isDragging = false;
+
+    handle.addEventListener('mousedown', () => {
+      isDragging = true;
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+      }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const containerRect = container.getBoundingClientRect();
+      const topHeight = e.clientY - containerRect.top;
+      const bottomHeight = containerRect.height - topHeight - handle.offsetHeight;
+      console.log(bottomHeight)
+      if (topHeight > 0 && bottomHeight > 0) {
+        topDiv.style.height = `${topHeight-8}px`;
+        // bottomDiv.style.height = `${bottomHeight-8}px`;
+        this.secondDivStyle.height = `${bottomHeight-8}px`
+      }
+    });
   },
   watch: {
     s_lngRange: {
@@ -367,6 +400,12 @@ export default {
   background-color:gray;
   border: #000 1px solid;
   overflow: auto;
+  margin-bottom: 5px;
+}
+.center-div {
+  height: 8px;
+  background-color:rgba(0,60,136,0.5);
+  cursor: grab;
 }
 .second-div {
   /*min-height: 200px;*/

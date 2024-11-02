@@ -21,17 +21,17 @@ const urls =[
     {name:'宮崎市',url:'https://kenzkenz2.xsrv.jp/usarmy/miyazaki/{z}/{x}/{y}.png',tms:true,bounds:[131.38730562869546, 31.94874904974968, 131.47186495009896, 31.85909130381588]},
     {name:'延岡市',url:'https://kenzkenz2.xsrv.jp/usarmy/nobeoka/{z}/{x}/{y}.png',tms:true,bounds: [131.63757572120534, 32.62500535406083, 131.72436281180384, 32.54331840955494]},
     {name:'都城市',url:'https://t.tilemap.jp/jcp_maps/miyakonojo/{z}/{x}/{y}.png',tms:true,bounds: [131.01477802559293, 31.759362148868007, 131.10179776971427, 31.69135798671786]},
-    // {name:'鹿児島市',url:'https://kenzkenz2.xsrv.jp/usarmy/kagosima/{z}/{x}/{y}.png',tms:true},
-    // {name:'室蘭市',url:'https://t.tilemap.jp/jcp_maps/muroran/{z}/{x}/{y}.png',tms:true},
-    // {name:'明石市',url:'https://t.tilemap.jp/jcp_maps/akashi/{z}/{x}/{y}.png',tms:true},
-    // {name:'相生市',url:'https://t.tilemap.jp/jcp_maps/harima/{z}/{x}/{y}.png',tms:true},
-    // {name:'秋田市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/akita/{z}/{x}/{y}.png',tms:false},
-    // {name:'青森市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/aomori/{z}/{x}/{y}.png',tms:false},
-    // {name:'旭川市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/asahikawa/{z}/{x}/{y}.png',tms:false},
-    // {name:'千葉市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/chiba/{z}/{x}/{y}.png',tms:false},
-    // {name:'富士宮市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/fujinomiya/{z}/{x}/{y}.png',tms:false},
-    // {name:'福井市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/fukui/{z}/{x}/{y}.png',tms:false},
-    // {name:'福島市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/fukushima/{z}/{x}/{y}.png',tms:false},
+    {name:'鹿児島市',url:'https://kenzkenz2.xsrv.jp/usarmy/kagosima/{z}/{x}/{y}.png',tms:true,bounds: [130.5199329928549, 31.625904260596627, 130.60040625640664, 31.53839471681782]},
+    {name:'室蘭市',url:'https://t.tilemap.jp/jcp_maps/muroran/{z}/{x}/{y}.png',tms:true,bounds: [140.90440038348575, 42.38405121586513, 141.05923356332505, 42.29059914480226]},
+    {name:'明石市',url:'https://t.tilemap.jp/jcp_maps/akashi/{z}/{x}/{y}.png',tms:true,bounds: [134.9178464474012, 34.710923217623645, 135.04999909886737, 34.6239626197396]},
+    {name:'相生市',url:'https://t.tilemap.jp/jcp_maps/harima/{z}/{x}/{y}.png',tms:true,bounds: [134.40899456747056, 34.827906424389056, 134.51680327661515, 34.734588690535986]},
+    {name:'秋田市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/akita/{z}/{x}/{y}.png',tms:false,bounds:[140.0717562014137, 39.73918236291928, 140.14706081310268, 39.6820763867207]},
+    {name:'青森市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/aomori/{z}/{x}/{y}.png',tms:false,bounds: [140.70599744657008, 40.85260097581303, 140.79743395188777, 40.7935556203787]},
+    {name:'旭川市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/asahikawa/{z}/{x}/{y}.png',tms:false,bounds: [142.30618215432563, 43.8296431351975, 142.425113984255, 43.7268853650624]},
+    {name:'千葉市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/chiba/{z}/{x}/{y}.png',tms:false,bounds: [140.08764378681573,35.62917380173154, 140.15972144856843,35.554932756846156]},
+    {name:'富士宮市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/fujinomiya/{z}/{x}/{y}.png',tms:false,bounds: [138.5809732397614,35.25121212484136, 138.6515394767342,35.18069262503313]},
+    {name:'福井市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/fukui/{z}/{x}/{y}.png',tms:false,bounds: [136.16942055402976,36.0976050324894, 136.25602908312064,36.01592560352381]},
+    {name:'福島市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/fukushima/{z}/{x}/{y}.png',tms:false,bounds: [140.44319076482216,37.78090343507313, 140.5007616991178,37.72953717372495]},
 
 
 ]
@@ -64,7 +64,6 @@ urls.forEach(url => {
                 scheme: 'tms',
                 minzoom: 0,
                 bounds: url.bounds,
-                // bounds: [138.0, 34.0, 141.0, 37.0],
             }
         })
     }
@@ -75,6 +74,17 @@ urls.forEach(url => {
     })
 })
 console.log(amsSources,amsLayers)
+
+const amsLayers2 = amsLayers.map((layer,i) => {
+    return {
+        id: layer.id,
+        label: layer.id.replace('oh-','') + '戦後米軍地図',
+        source: amsSources[i],
+        layers:[layer]
+    }
+})
+
+console.log(amsLayers2)
 // 古地図----------------------------------------------------------------------------------------------------------------
 // 戦前の旧版地形図
 const mw5DummySource = {
@@ -2700,10 +2710,17 @@ const layers01 = [
                 layers: [mw5DummyLayer,mw5CenterLabel]
             },
             {
-                id: 'oh-ams',
-                label: "戦後の米軍作成地図",
-                sources: amsSources,
-                layers: amsLayers
+                id: 'ams',
+                label: "戦後の米軍地図",
+                nodes: [
+                    {
+                        id: 'oh-ams',
+                        label: "戦後の米軍作成地図全て",
+                        sources: amsSources,
+                        layers: amsLayers
+                    },
+                    ...amsLayers2,
+                ]
             },
             {
                 id: 'oh-jissoku',
