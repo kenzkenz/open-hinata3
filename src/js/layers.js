@@ -769,8 +769,6 @@ const tamaSekisyokuSource = {
         tiles: ['https://kenzkenz2.xsrv.jp/tokyo/tamasekisyoku/{z}/{x}/{y}.png'],
         tileSize: 256,
         scheme: 'tms',
-        minzoom: 0, // 低ズーム時でも正しいタイルが表示されるように設定
-        maxzoom: 13 // 必要に応じて調整
     }
 }
 const tamaSekisyokuLayer = {
