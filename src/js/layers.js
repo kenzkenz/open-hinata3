@@ -842,24 +842,38 @@ export const amxSource = {
         minzoom: 2,
         maxzoom: 16,
         url: "pmtiles://https://habs.rad.naro.go.jp/spatial_data/amx/a.pmtiles",
-        attribution:
-            "<a href='https://www.moj.go.jp/MINJI/minji05_00494.html' target='_blank'>登記所備付地図データ（法務省）</a>",
+        attribution: "<a href='https://www.moj.go.jp/MINJI/minji05_00494.html' target='_blank'>登記所備付地図データ（法務省）</a>",
     }
 }
 // 登記所備付地図データ 間引きなし
-export const amxLayer = {
+const amxLayer = {
     id: "oh-amx-a-fude",
     type: "fill",
     source: "amx-a-pmtiles",
     "source-layer": "fude",
     paint: {
-        "fill-color": "rgba(254, 217, 192, 1)",
+        "fill-color": "rgba(254, 217, 192, 0)",
         "fill-outline-color": "rgba(255, 0, 0, 1)",
-        "fill-opacity": 0.4,
+    },
+}
+const amxLayerLine = {
+    id: "oh-amx-a-fude-line",
+    type: "line",
+    source: "amx-a-pmtiles",
+    "source-layer": "fude",
+    paint: {
+        "line-color": "red",
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            14, 0.5,
+            20, 6
+        ]
     },
 }
 // 登記所備付地図データ 代表点レイヤ
-export const amxLayerDaihyou = {
+const amxLayerDaihyou = {
     id: "oh-amx-a-daihyo",
     // ヒートマップ
     type: "heatmap",
@@ -897,6 +911,23 @@ export const amxLayerDaihyou = {
             50,
         ],
     }
+}
+const amxLayerLabel = {
+    id: "oh-amx-label",
+    type: "symbol",
+    source: "amx-a-pmtiles",
+    "source-layer": "fude",
+    'layout': {
+        'text-field': ['get', '地番'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+    },
+    'paint': {
+        'text-color': 'rgba(255, 0, 0, 1)',
+        'text-halo-color': 'rgba(255,255,255,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 17
 }
 // 幕末近世ソース --------------------------------------------------------------------------------------------
 const bakumatsuSource = {
@@ -3030,7 +3061,7 @@ const layers01 = [
                 id: 'oh-amx-a-fude',
                 label: "登記所備付地図データ",
                 source: amxSource,
-                layers:[amxLayer,amxLayerDaihyou]
+                layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel]
             },
         ]
     },

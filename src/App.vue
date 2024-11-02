@@ -1345,6 +1345,24 @@ export default {
                       '</div>'
                   break
                 }
+                case 'oh-amx-label':
+                case 'oh-amx-a-fude-line':
+                case 'oh-amx-a-fude':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-amx-a-fude'] }
+                  )
+                  console.log(features)
+                  if (features.length === 0) return
+                  props = features[0].properties
+                  let html0 = ''
+                  html0 += '<div font-weight: normal; color: #333;line-height: 25px;">'
+                  Object.keys(props).forEach(function(key) {
+                    html0 += key + '=' + props[key] + '<br>'
+                  })
+                  html0 += '<div>'
+                  html = html0
+                  break
+                }
               }
 
               // ポップアップ作成
