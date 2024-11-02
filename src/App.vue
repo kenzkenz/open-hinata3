@@ -719,16 +719,15 @@ export default {
           // map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': this.s_terrainLevel });
           const vm = this
           if (isNaN(vm.s_terrainLevel)) vm.s_terrainLevel = 1
-          console.log(vm.s_terrainLevel)
           document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('mouseover', function() {
             map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': vm.s_terrainLevel })
           }, false);
           document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('pointerdown', function() {
             map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': vm.s_terrainLevel })
           }, false);
-          addEventListener('keydown', function () {
-            map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': vm.s_terrainLevel })
-          })
+          // addEventListener('keydown', function () {
+          //   map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': vm.s_terrainLevel })
+          // })
           // 標高タイルソース---------------------------------------------------
           // map.addSource("aws-terrain", {
           //   type: "raster-dem",
@@ -764,6 +763,7 @@ export default {
             })
           }
           // -----------------------------------------------------------------------------------------------------------
+          // ここを改善
           // map.on('moveend', this.updatePermalink)
           map.on('click', this.updatePermalink)
           map.on('dragend', this.updatePermalink)

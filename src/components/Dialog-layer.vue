@@ -59,7 +59,7 @@ export default {
       map02:[]
     },
     layers:[],
-    menuContentSize: {'height': '600px','margin': '10px', 'overflow': 'auto', 'user-select': 'text'},
+    menuContentSize: {'height': '600px','margin': '10px', 'user-select': 'text'},
     secondDivStyle: {'height': '390px', 'overflow': 'auto', 'user-select': 'text'},
   }),
   computed: {

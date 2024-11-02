@@ -32,8 +32,72 @@ const urls =[
     {name:'富士宮市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/fujinomiya/{z}/{x}/{y}.png',tms:false,bounds: [138.5809732397614,35.25121212484136, 138.6515394767342,35.18069262503313]},
     {name:'福井市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/fukui/{z}/{x}/{y}.png',tms:false,bounds: [136.16942055402976,36.0976050324894, 136.25602908312064,36.01592560352381]},
     {name:'福島市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/fukushima/{z}/{x}/{y}.png',tms:false,bounds: [140.44319076482216,37.78090343507313, 140.5007616991178,37.72953717372495]},
-
-
+    {name:'伏木',url:'https://kenzkenz3.xsrv.jp/jcp_maps/fushiki/{z}/{x}/{y}.png',tms:false,bounds: [137.02508679699687,36.8245491449906, 137.1126408047655,36.7604369200003]},
+    {name:'岐阜市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/gifu/{z}/{x}/{y}.png',tms:false,bounds: [136.70751515094838,35.470986568936624, 136.82609225873549,35.37258621685527]},
+    {name:'habu',url:'https://kenzkenz3.xsrv.jp/jcp_maps/habu/{z}/{x}/{y}.png',tms:false,bounds: [133.1350108897345,34.32262791592599, 133.2262140428679,34.24586042631]},
+    {name:'八戸市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/hachinohe/{z}/{x}/{y}.png',tms:false,bounds: [141.4589812322207,40.56255590542611, 141.57631044226363,40.48799652674896]},
+    {name:'萩市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/hagi/{z}/{x}/{y}.png',tms:false,bounds:[131.3620548860769,34.4605107256224, 131.43111774489685,34.38617650807586] },
+    {name:'函館市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/hakodate/{z}/{x}/{y}.png',tms:false,bounds: [140.68097748426095,41.82926676413055, 140.7901943531384,41.73143517073271] },
+    {name:'半田市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/handa/{z}/{x}/{y}.png',tms:false,bounds: [136.89242595186886,34.945077593842996, 137.00722449770626,34.85734903493045]},
+    {name:'東岩瀬',url:'https://kenzkenz3.xsrv.jp/jcp_maps/higashiiwase/{z}/{x}/{y}.png',tms:false,bounds: [137.16815167238158,36.78583199289653, 137.25717016627235,36.71700039282162]},
+    {name:'彦根市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/hikone/{z}/{x}/{y}.png',tms:false,bounds: [136.1900204514088,35.32992409688262, 136.30520216294815,35.224721393195296]},
+    {name:'姫路市',url:'https://t.tilemap.jp/jcp_maps/himeji/{z}/{x}/{-y}.png',tms:false,bounds: [134.64098624425583, 34.8708631072014, 134.7378282897613, 34.80268817759354]},
+    {name:'枚方市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/hirakata/{z}/{x}/{y}.png',tms:false,bounds:[135.57194920276365,34.87011100775344, 135.68724932168683,34.800562973217296]},
+    {name:'平塚市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/hiratsuka/{z}/{x}/{y}.png',tms:false,bounds: [139.31229120023235,35.35904999646574, 139.3878805441378,35.28874804475291]},
+    {name:'広町',url:'https://kenzkenz3.xsrv.jp/jcp_maps/hiromachi/{z}/{x}/{y}.png',tms:false,bounds: [132.5731525471544,34.26760068261592, 132.67292535809037,34.1905277967504]},
+    {name:'弘前市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/hirosaki/{z}/{x}/{y}.png',tms:false,bounds: [140.4235199121323,40.631355509931836, 140.5010183369034,40.56109320751867]},
+    {name:'広島市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/hiroshima/{z}/{x}/{y}.png',tms:false,bounds: [132.3884909359741,34.431458513241665, 132.52820720355984,34.330487127792665]},
+    {name:'日立市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/hitachi/{z}/{x}/{y}.png',tms:false,bounds: [140.57999833282472,36.64482954491233, 140.6999440377617,36.53230602703728]},
+    {name:'人吉市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/hitoyoshi/{z}/{x}/{y}.png',tms:false,bounds: [130.73763423508643,32.2355050464609, 130.79378929829835,32.1887013821016]},
+    {name:'一宮市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/ichinomiya/{z}/{x}/{y}.png',tms:false,bounds: [136.73726867270835,35.34563130774367, 136.8879913849867,35.19549105733337]},
+    {name:'諫早市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/isahaya/{z}/{x}/{y}.png',tms:false,bounds: [130.02394444628715,32.86659294976408, 130.108573505125,32.81428582145436]},
+    {name:'飯塚市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/iizuka/{z}/{x}/{y}.png',tms:false,bounds: [130.65216494469635,33.671544924421084, 130.71290557949533,33.589367508699866]},
+    {name:'加治木',url:'https://kenzkenz3.xsrv.jp/jcp_maps/kajiki/{z}/{x}/{y}.png',tms:false,bounds: [130.6334297037225,31.757366116931934, 130.6942427581649,31.706007526498084]},
+    {name:'釜石市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/kamaishi/{z}/{x}/{y}.png',tms:false,bounds: [141.83555625727507,39.29839433432599, 141.9190507416997,39.24137226047998]},
+    {name:'金沢市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/kanazawa/{z}/{x}/{y}.png',tms:false,bounds: [136.57678119459374,36.616141434534484, 136.70692666986213,36.51525054188362]},
+    {name:'苅田町',url:'https://kenzkenz3.xsrv.jp/jcp_maps/kanda/{z}/{x}/{y}.png',tms:false,bounds: [130.94005143590758,33.81584169930497, 131.02026222594566,33.747149681232116]},
+    {name:'唐津市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/karatsu/{z}/{x}/{y}.png',tms:false,bounds: [129.921021511898,33.50559209417867, 130.005309930191,33.43203779434077]},
+    {name:'刈谷市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/kariya/{z}/{x}/{y}.png',tms:false,bounds: [136.94200877634015,35.03318584159486, 137.0601647773119,34.959046536665284]},
+    {name:'柏崎市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/kashiwazaki/{z}/{x}/{y}.png',tms:false,bounds: [138.50568101943807,37.40203383548953, 138.59532647968607,37.342488307171394]},
+    {name:'川越市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/kawagoe/{z}/{x}/{y}.png',tms:false,bounds: [139.4570958921943,35.942500179173905, 139.52681723332742,35.87309357493287]},
+    {name:'豊田市（挙母）',url:'https://kenzkenz3.xsrv.jp/jcp_maps/koromo/{z}/{x}/{y}.png',tms:false,bounds: [137.08772963931085,35.13859479723625, 137.1960466270638,35.027068132737384]},
+    {name:'下松市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/kudamatsu/{z}/{x}/{y}.png',tms:false,bounds: [131.8186521172428,34.038862259919966, 131.89699206649303,33.96796119128024]},
+    {name:'桑名市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/kuwana/{z}/{x}/{y}.png',tms:false,bounds: [136.61704718511825,35.13788876963871, 136.77256971042877,34.97847375883852]},
+    {name:'高知市',url:'https://t.tilemap.jp/jcp_maps/kochi/{z}/{x}/{y}.png',tms:true,bounds: [133.4697604427741, 33.593332069856146, 133.58746118164257, 33.48248877930844]},
+    {name:'甲府市',url:'https://t.tilemap.jp/jcp_maps/kofu/{z}/{x}/{y}.png',tms:true,bounds: [138.5192430532455, 35.713904772878024, 138.61371447806357, 35.62085584514263]},
+    {name:'小倉',url:'https://t.tilemap.jp/jcp_maps/kokura/{z}/{x}/{y}.png',tms:true,bounds: [130.83351113737584, 33.92073003726122, 130.95307633268283, 33.83365615261114]},
+    {name:'郡山市',url:'https://t.tilemap.jp/jcp_maps/koriyama/{z}/{x}/{y}.png',tms:true,bounds: [140.33108953120356, 37.43688472335944, 140.4249240446428, 37.367662796402]},
+    {name:'熊本市',url:'https://t.tilemap.jp/jcp_maps/kumamoto/{z}/{x}/{y}.png',tms:true,bounds: [130.6754534531498, 32.83726270469704, 130.77889418491364, 32.75070766375866]},
+    {name:'久留米市',url:'https://t.tilemap.jp/jcp_maps/kurume/{z}/{x}/{y}.png',tms:true,bounds: [130.4842734730671, 33.33550789416525, 130.58554027442437, 33.26640037986165]},
+    {name:'釧路市',url:'https://t.tilemap.jp/jcp_maps/kushiro/{z}/{x}/{y}.png',tms:true,bounds: [144.34146030236244, 43.03742598091131, 144.44208605576515, 42.94577285147719]},
+    {name:'京都市(北)',url:'https://t.tilemap.jp/jcp_maps/kyoto_north/{z}/{x}/{y}.png',tms:true,bounds: [135.69243533265592, 35.07483494738305, 135.80488895726202, 34.98779081635700]},
+    {name:'京都市(南)',url:'https://t.tilemap.jp/jcp_maps/kyoto_south/{z}/{x}/{y}.png',tms:true,bounds: [135.6943010138845, 34.996985089808334, 135.80539677017686, 34.916474628902776]},
+    {name:'前橋市',url:'https://t.tilemap.jp/jcp_maps/maebashi/{z}/{x}/{y}.png',tms:true,bounds: [139.03692848520149, 36.42476537937992, 139.10921177449703, 36.36642121340162]},
+    {name:'枕崎市',url:'https://t.tilemap.jp/jcp_maps/makurazaki/{z}/{x}/{y}.png',tms:true,bounds: [130.27057404867296, 31.293447219997688, 130.3296372970093, 31.248059353360432]},
+    {name:'松江市',url:'https://t.tilemap.jp/jcp_maps/matsue/{z}/{x}/{y}.png',tms:true,bounds: [132.99721215263972, 35.49991858248744, 133.10912531212935, 35.42483380090842]},
+    {name:'三原市',url:'https://t.tilemap.jp/jcp_maps/mihara_itozaki/{z}/{x}/{y}.png',tms:true,bounds: [133.02333144783972, 34.425199058736396, 133.13130511283873, 34.356677113032205]},
+    {name:'水戸市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/mito/{z}/{x}/{y}.png',tms:false,bounds: [140.4179578231387, 36.413769771836456, 140.545391585093, 36.350511004933594]},
+    {name:'長野市',url:'https://t.tilemap.jp/jcp_maps/nagano/{z}/{x}/{y}.png',tms:true,bounds: [138.14073032198428, 36.69619682804296, 138.2340108459997, 36.615546045100615]},
+    {name:'長岡市',url:'https://t.tilemap.jp/jcp_maps/nagaoka/{z}/{x}/{y}.png',tms:true,bounds: [138.81563140898004, 37.48632713465814, 138.87307359724298, 37.41690979613216]},
+    {name:'長崎市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/nagasaki/{z}/{x}/{y}.png',tms:false,bounds: [129.82426933289048, 32.80116245898009, 129.92143838942525, 32.69767898831918]},
+    {name:'名古屋市(北東)',url:'https://t.tilemap.jp/jcp_maps/nagoya_ne/{z}/{x}/{y}.png',tms:true,bounds: [136.8897098705461, 35.22421193160979, 136.98818271993733, 35.13233810303973]},
+    {name:'名古屋市(北西)',url:'https://t.tilemap.jp/jcp_maps/nagoya_nw/{z}/{x}/{y}.png',tms:true,bounds: [136.80611080422372, 35.225824131738065, 136.90547197474476, 35.13243456671647]},
+    {name:'名古屋市(南東)',url:'https://t.tilemap.jp/jcp_maps/nagoya_se/{z}/{x}/{y}.png',tms:true,bounds: [136.88919877397763, 35.14167895962797, 136.98842441427456, 35.04951319684166]},
+    {name:'名古屋市(南西)',url:'https://t.tilemap.jp/jcp_maps/nagoya_sw/{z}/{x}/{y}.png',tms:true,bounds: [136.80523113396558, 35.141184354273065, 136.90487806511402, 35.048543288426316]},
+    {name:'七尾市',url:'https://t.tilemap.jp/jcp_maps/nanao/{z}/{x}/{y}.png',tms:true,bounds: [136.90164078074454, 37.09788232838679, 137.0370105286217, 37.0228343649801]},
+    {name:'直江津',url:'https://kenzkenz3.xsrv.jp/jcp_maps/naoetsu/{z}/{x}/{y}.png',tms:false,bounds: [138.20747979491517,37.20133085529935, 138.27912193297908,37.1554182778262]},
+    {name:'新潟市',url:'https://t.tilemap.jp/jcp_maps/niigata/{z}/{x}/{y}.png',tms:true,bounds: [138.99186708819562, 37.96788748388437, 139.0933551717966, 37.8983254944878]},
+    {name:'新居浜市',url:'https://t.tilemap.jp/jcp_maps/niihama/{z}/{x}/{y}.png',tms:true,bounds: [133.22255519907048, 34.00367828974015, 133.31210141758493, 33.92086221440381]},
+    {name:'日光市',url:'https://t.tilemap.jp/jcp_maps/nikko/{z}/{x}/{y}.png',tms:true,bounds: [139.48407988645982, 36.78855612641945, 139.64399721124124, 36.71216243946745]},
+    {name:'直方市',url:'https://t.tilemap.jp/jcp_maps/nogata/{z}/{x}/{y}.png',tms:true,bounds: [130.69598996782418, 33.77216740394658, 130.75809919977306, 33.71618955385571]},
+    {name:'沼津市',url:'https://t.tilemap.jp/jcp_maps/numazu/{z}/{x}/{y}.png',tms:true,bounds: [138.8324112693624, 35.1277526279410, 138.89685871702, 35.06471308977173]},
+    {name:'大垣市',url:'https://t.tilemap.jp/jcp_maps/ogaki/{z}/{x}/{y}.png',tms:true,bounds: [136.55413836399077, 35.40195135119643, 136.66695408681392, 35.33227207940551]},
+    {name:'大分市',url:'https://t.tilemap.jp/jcp_maps/oita/{z}/{x}/{y}.png',tms:true,bounds: [131.55698081039802, 33.27340799027354, 131.65331704103366, 33.203760920003575]},
+    {name:'岡山市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/okayama/{z}/{x}/{y}.png',tms:false,bounds: [133.87770654276844,34.708880685750856, 133.97912757114406,34.6163776195384]},
+    {name:'桶川市',url:'https://t.tilemap.jp/jcp_maps/okegawa/{z}/{x}/{y}.png',tms:true,bounds: [139.52177323905948, 36.0269588999937, 139.6205921455574, 35.95245423653812]},
+    {name:'大湊',url:'https://kenzkenz3.xsrv.jp/jcp_maps/ominato/{z}/{x}/{y}.png',tms:false,bounds: [141.10173496456386, 41.30304157411669, 141.22543978543519, 41.20456356172045]},
+    {name:'大村市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/omura/{z}/{x}/{y}.png',tms:false,bounds: [129.89270322251053, 32.95816906007779, 129.98746633755894, 32.8826256032659]},
+    // {name:'',url:'',tms:false,bounds: },
 ]
 const amsSources = []
 const amsLayers = []
@@ -44,7 +108,6 @@ urls.forEach(url => {
     url.bounds.sort(compareFunc);
     url.bounds = [url.bounds[2],url.bounds[0],url.bounds[3],url.bounds[1]]
     console.log(url.bounds)
-
     if (!url.tms) {
         amsSources.push({
             id: 'oh-ams-' + url.name,
@@ -692,15 +755,12 @@ const csKanagawaSource = {
         type: 'raster',
         tiles: ['https://shiworks.xsrv.jp/raster-tiles/pref-kanagawa/kanagawapc-cs-tiles/{z}/{x}/{y}.png'],
         tileSize: 256,
-        maxzoom: 22
     }
 }
 const csKanagawaLayer = {
     'id': 'oh-cs-kanagawa-layer',
     'type': 'raster',
     'source': 'cs-kanagawa-source',
-    'minzoom': 0,
-    'maxzoom': 22
 }
 // 岐阜県CS立体図---------------------------------------------------------------------------------------------------------
 const csGifuSource = {
@@ -2619,6 +2679,19 @@ const muraLayerLine = {
         ]
     },
 }
+// dronebird---------------------------------------------------------------------------------------------------------
+const dronebirdSource = {
+    id: 'dronebird-source', obj: {
+        type: 'raster',
+        tiles: ['https://apps.kontur.io/raster-tiler/oam/mosaic/{z}/{x}/{y}.png'],
+        tileSize: 256,
+    }
+}
+const dronebirdLayer = {
+    'id': 'oh-dronebird-layer',
+    'type': 'raster',
+    'source': 'dronebird-source',
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -2696,6 +2769,12 @@ const layers01 = [
                 label: "1928年航空写真(大阪府)",
                 source: sp28Source,
                 layers: [sp28Layer]
+            },
+            {
+                id: 'oh-dronebird',
+                label: "dronebird",
+                source: dronebirdSource,
+                layers: [dronebirdLayer]
             },
         ]
     },
