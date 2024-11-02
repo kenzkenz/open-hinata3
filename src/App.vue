@@ -1474,40 +1474,51 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
     this.mapNames.forEach(mapName => {
       const myDiv = document.getElementById("terrain-btn-div-" + mapName)
-      let startY = 0;      // マウスの初期Y座標
-      let startX = 0;      // マウスの初期X座標
+      let startY = 0;      // マウスまたはタッチの初期Y座標
+      let startX = 0;      // マウスまたはタッチの初期X座標
       let startBottom = 0; // divの初期bottom位置
       let startRight = 0;  // divの初期right位置
       let isDragging = false;
 
-      // マウスダウン時にドラッグを開始
-      myDiv.addEventListener("mousedown", (e) => {
+      // ドラッグ開始（マウスまたはタッチ）
+      function startDrag(e) {
         isDragging = true;
-        startY = e.clientY; // マウスのY座標を取得
-        startX = e.clientX; // マウスのX座標を取得
-        // 初期のbottomとright位置を取得
+        const clientX = e.clientX || e.touches[0].clientX;
+        const clientY = e.clientY || e.touches[0].clientY;
+        startY = clientY;
+        startX = clientX;
         startBottom = parseInt(window.getComputedStyle(myDiv).bottom, 10);
         startRight = parseInt(window.getComputedStyle(myDiv).right, 10);
-        myDiv.style.cursor = "grabbing"; // ドラッグ中のカーソル
-      });
+        myDiv.style.cursor = "grabbing";
+        e.preventDefault(); // タッチ時のスクロール防止
+      }
 
-      // マウスムーブ時に要素を移動
-      document.addEventListener("mousemove", (e) => {
+      // ドラッグ中（マウスまたはタッチ）
+      function drag(e) {
         if (isDragging) {
-          // マウスの移動量を計算
-          const deltaY = startY - e.clientY;
-          const deltaX = startX - e.clientX; // X軸の方向を反転
-          // bottomとrightの値を更新
+          const clientX = e.clientX || e.touches[0].clientX;
+          const clientY = e.clientY || e.touches[0].clientY;
+          const deltaY = startY - clientY;
+          const deltaX = startX - clientX;
           myDiv.style.bottom = `${startBottom + deltaY}px`;
           myDiv.style.right = `${startRight + deltaX}px`;
         }
-      });
+      }
 
-      // マウスアップ時にドラッグ終了
-      document.addEventListener("mouseup", () => {
+      // ドラッグ終了（マウスまたはタッチ）
+      function endDrag() {
         isDragging = false;
-        myDiv.style.cursor = "grab"; // ドラッグ終了時のカーソル
-      });
+        myDiv.style.cursor = "grab";
+      }
+
+      // イベントリスナーの追加（マウスとタッチの両方に対応）
+      myDiv.addEventListener("mousedown", startDrag);
+      document.addEventListener("mousemove", drag);
+      document.addEventListener("mouseup", endDrag);
+
+      myDiv.addEventListener("touchstart", startDrag);
+      document.addEventListener("touchmove", drag);
+      document.addEventListener("touchend", endDrag);
     })
     // -----------------------------------------------------------------------------------------------------------------
     pyramid()
