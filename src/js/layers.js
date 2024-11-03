@@ -827,6 +827,30 @@ const csKanagawaLayer = {
     'type': 'raster',
     'source': 'cs-kanagawa-source',
 }
+// 色別標高図---------------------------------------------------------------------------------------------------------
+const shikibetsuSource = {
+    id: 'shikibetsu-source', obj: {
+        type: 'raster',
+        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/relief/{z}/{x}/{y}.png'],
+    }
+}
+const shikibetsuLayer = {
+    'id': 'oh-shikibetsu-layer',
+    'type': 'raster',
+    'source': 'shikibetsu-source'
+}
+// 陰影起伏図---------------------------------------------------------------------------------------------------------
+const ineiSource = {
+    id: 'inei-source', obj: {
+        type: 'raster',
+        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/hillshademap/{z}/{x}/{y}.png'],
+    }
+}
+const ineiLayer = {
+    'id': 'oh-inei-layer',
+    'type': 'raster',
+    'source': 'inei-source'
+}
 // 岐阜県CS立体図---------------------------------------------------------------------------------------------------------
 const csGifuSource = {
     id: 'csGifu', obj: {
@@ -2080,7 +2104,7 @@ export const senkyokuLayerLabel = {
     'minzoom': 10
 }
 // 公示価格--------------------------------------------------------------------------------------------------------------
-export const kojiSource = {
+const kojiSource = {
     id: "koji-source", obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/kojikakaku/kojikakaku2.pmtiles",
@@ -2088,7 +2112,7 @@ export const kojiSource = {
             "<a href='' target='_blank'></a>",
     }
 }
-export const kojiLayerLabel = {
+const kojiLayerLabel = {
     id: "oh-koji-label",
     type: "symbol",
     source: "koji-source",
@@ -2107,7 +2131,7 @@ export const kojiLayerLabel = {
     'maxzoom': 24,
     'minzoom': 12
 }
-export const kojiLayerPoint = {
+const kojiLayerPoint = {
     id: "oh-koji_point",
     type: "circle",
     source: "koji-source",
@@ -2140,7 +2164,7 @@ export const kojiLayerPoint = {
         ]
     }
 }
-export const kojilayerheight = {
+const kojilayerheight = {
     id: 'oh-koji-height',
     type: 'fill-extrusion',
     source: "koji-source",
@@ -2164,14 +2188,14 @@ export const kojilayerheight = {
     }
 }
 // 道の駅 --------------------------------------------------------------------------------------------
-export const michinoekiSource = {
+const michinoekiSource = {
     id: "michinoeki-source", obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/michinoeki/michinoeki.pmtiles",
         attribution: "<a href='' target='_blank'></a>",
     }
 }
-export const michinoekiLayer = {
+const michinoekiLayer = {
     id: "oh-michinoeki",
     type: "circle",
     source: "michinoeki-source",
@@ -2189,7 +2213,7 @@ export const michinoekiLayer = {
             ]
     }
 }
-export const michinoekiLayerLabel = {
+const michinoekiLayerLabel = {
     id: "oh-michinoeki-label",
     type: "symbol",
     source: "michinoeki-source",
@@ -2209,14 +2233,14 @@ export const michinoekiLayerLabel = {
     'minzoom': 9
 }
 // 東京地震----------------------------------------------------------------------------------------------------------------
-export const tokyojishinSource = {
+const tokyojishinSource = {
     id: "tokyojishin-source", obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/tokyojishin/tokyojishin.pmtiles",
         attribution: "<a href='' target='_blank'></a>",
     }
 }
-export const tokyojishinLayerSogo = {
+const tokyojishinLayerSogo = {
     id: "oh-tokyojishin",
     type: "fill",
     source: "tokyojishin-source",
@@ -2243,7 +2267,7 @@ export const tokyojishinLayer = {
         'fill-color': 'gray'
     }
 }
-export const tokyojishinLayerLine = {
+const tokyojishinLayerLine = {
     id: "oh-tokyojishin_line",
     type: "line",
     source: "tokyojishin-source",
@@ -2259,7 +2283,7 @@ export const tokyojishinLayerLine = {
         ]
     },
 }
-export const tokyojishinLayerLabel = {
+const tokyojishinLayerLabel = {
     id: "oh-tokyojishin-label",
     type: "symbol",
     source: "tokyojishin-source",
@@ -2301,7 +2325,7 @@ export const tokyojishinLayerLabel = {
 //         ]
 //     }
 // }
-export const tokyojishinheightSogo = {
+const tokyojishinheightSogo = {
     id: 'oh-tokyojishin-height',
     type: 'fill-extrusion',
     source: "tokyojishin-source",
@@ -3055,6 +3079,18 @@ const layers01 = [
         id: 2,
         label: "自然、立体図等",
         nodes: [
+            {
+                id: 'oh-shikibetsu',
+                label: "色別標高図",
+                source: shikibetsuSource,
+                layers: [shikibetsuLayer]
+            },
+            {
+                id: 'oh-inei',
+                label: "陰影起伏図",
+                source: ineiSource,
+                layers: [ineiLayer]
+            },
             {
                 id: 'oh-kawadak',
                 label: "川だけ地形地図",
