@@ -88,8 +88,8 @@ export default {
           })
     },
     terrainLevelInput () {
-      this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': this.s_terrainLevel })
-      this.$store.state.map02.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': this.s_terrainLevel })
+      this.$store.state.map01.setTerrain({ 'source': 'terrain', 'exaggeration': this.s_terrainLevel })
+      this.$store.state.map02.setTerrain({ 'source': 'terrain', 'exaggeration': this.s_terrainLevel })
       localStorage.setItem('terrainLevel',this.s_terrainLevel)
       history('terrainLevelInput',window.location.href)
     }

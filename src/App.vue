@@ -70,6 +70,7 @@ import * as Layers from '@/js/layers'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import maplibregl from 'maplibre-gl'
 import { Protocol } from "pmtiles"
+import { useGsiTerrainSource } from 'maplibre-gl-gsi-terrain';
 
 export default {
   name: 'App',
@@ -430,6 +431,12 @@ export default {
         }
         // 以前のリンクをいかすため---------------------------------
         // const maptilerApiKey = 'CDedb3rcFcdaYuHkD9zR'
+        const gsiTerrainSource = useGsiTerrainSource(maplibregl.addProtocol, {
+          tileUrl: 'https://mapdata.qchizu2.xyz/03_dem/51_int/all_9999/int_01/{z}/{x}/{y}.png',
+          maxzoom: 19,
+          attribution: '<a href="https://www.geospatial.jp/ckan/dataset/qchizu_94dem_int">全国Q地図日本国内統合標高データ</a>'
+        })
+
         const map = new maplibregl.Map({
           container: mapName,
           localIdeographFontFamily: ['sans-serif'], // 日本語を表示するための設定
@@ -479,8 +486,13 @@ export default {
                 ],
                 'tileSize': 256,
                 'attribution': '© 国土地理院'
-              }
+              },
+              terrain: gsiTerrainSource,
             },
+            // terrain: {
+            //   source: 'terrain',
+            //   exaggeration: 5,
+            // },
             'layers': [
               {
                 'id': 'gsi-monochrome-layer',
@@ -708,24 +720,49 @@ export default {
           }
           if (params.slj) this.s_selectedLayers = params.slj
           // ----------------------------------------------------------------
+
+          // const gsiTerrainSource = useGsiTerrainSource(maplibregl.addProtocol, {
+          //   tileUrl: 'https://tiles.gsj.jp/tiles/elev/mixed/{z}/{y}/{x}.png',
+          //   maxzoom: 17,
+          //   attribution: '<a href="https://gbank.gsj.jp/seamless/elev/">産総研シームレス標高タイル</a>'
+          // });
+          // const gsiTerrainSource = useGsiTerrainSource(maplibregl.addProtocol);
+          // map.addSource(gsiTerrainSource)
+
+
+
+
+
           // 標高タイルソース---------------------------------------------------
-          map.addSource("gsidem-terrain-rgb", {
-            type: 'raster-dem',
-            tiles: ['https://xs489works.xsrv.jp/raster-tiles/gsi/gsi-dem-terrain-rgb/{z}/{x}/{y}.png'],
-            // tiles: ['https://mapdata.qchizu2.xyz/03_dem/51_int/all_9999/int_01/{z}/{x}/{y}.png'],
-            attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html#dem" target="_blank">地理院タイル(標高タイル)</a>',
-            tileSize: 256,
-          })
+          // map.addSource("gsidem-terrain-rgb", {
+          //   type: 'raster-dem',
+          //   tiles: ['https://xs489works.xsrv.jp/raster-tiles/gsi/gsi-dem-terrain-rgb/{z}/{x}/{y}.png'],
+          //   // tiles: ['https://mapdata.qchizu2.xyz/03_dem/51_int/all_9999/int_01/{z}/{x}/{y}.png'],
+          //   attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html#dem" target="_blank">地理院タイル(標高タイル)</a>',
+          //   tileSize: 256,
+          // })
           // 標高タイルセット
           // map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': this.s_terrainLevel });
           const vm = this
           if (isNaN(vm.s_terrainLevel)) vm.s_terrainLevel = 1
+
           document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('mouseover', function() {
-            map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': vm.s_terrainLevel })
+            map.setTerrain({ 'source': 'terrain', 'exaggeration': vm.s_terrainLevel })
           }, false);
           document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('pointerdown', function() {
-            map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': vm.s_terrainLevel })
+            map.setTerrain({ 'source': 'terrain', 'exaggeration': vm.s_terrainLevel })
           }, false);
+
+
+          // document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('mouseover', function() {
+          //   map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': vm.s_terrainLevel })
+          // }, false);
+          // document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('pointerdown', function() {
+          //   map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': vm.s_terrainLevel })
+          // }, false);
+
+
+
           // addEventListener('keydown', function () {
           //   map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': vm.s_terrainLevel })
           // })
@@ -1481,7 +1518,7 @@ export default {
           // -----------------------------------------------------------------------------------------------------------
           const pitch = !isNaN(this.pitch[mapName]) ? this.pitch[mapName]: 0
           if (pitch !== 0) {
-            this.$store.state[mapName].setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': this.s_terrainLevel })
+            this.$store.state[mapName].setTerrain({ 'source': 'terrain', 'exaggeration': this.s_terrainLevel })
           }
         })
         //on load終了----------------------------------------------------------------------------------------------------
