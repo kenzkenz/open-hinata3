@@ -5,8 +5,15 @@
         <draggable v-model="s_selectedLayers[mapName]" item-key="id" handle=".handle-div">
           <template #item="{element}">
             <div class="drag-item">
+
+              <div class="visible-layer-div">
+                <v-icon @click="toggleCheck(element)" class="clickable-icon">
+                  {{ element.visibility ? 'mdi-eye' : 'mdi-eye-off' }}
+                </v-icon>
+              </div>
+
               <div class="handle-div"><i class="fa-solid fa-up-down fa-lg handle-icon hover"></i></div>
-              <div class="info-div" @click="infoOpen(element)"><i class="fa-solid fa-gear hover"></i></div>
+              <div class="info-div" @click="infoOpen(element)"><v-icon>mdi-cog</v-icon></div>
               <div class="label-div">{{element.label}}</div>
               <div class="range-div">
                 <input type="range" min="0" max="1" step="0.01" class="range" v-model.number="element.opacity" @input="changeSlider(element)" @mouseover="changeWatchFlg(false)" @mouseleave="changeWatchFlg(true)"/>
@@ -52,7 +59,7 @@ export default {
     draggable
   },
   data: () => ({
-    // cnt: 0,
+    isChecked: true,
     searchText: '',
     selectedLayers: {
       map01:[],
@@ -63,9 +70,6 @@ export default {
     secondDivStyle: {'height': '390px', 'overflow': 'auto', 'user-select': 'text'},
   }),
   computed: {
-    // s_watchFlg () {
-    //   return this.$store.state.watchFlg
-    // },
     s_lngRange () {
       return this.$store.state.lngRange
     },
@@ -88,6 +92,28 @@ export default {
     },
   },
   methods: {
+    toggleCheck(element) {
+      const map = this.$store.state[this.mapName]
+      element.layers.forEach(layer0 => {
+        let visible
+        if (element.visibility) {
+          visible = 'visible'
+        } else {
+          visible = 'none'
+        }
+        if (layer0.id === 'oh-mw-dummy') {
+          const layers = map.getStyle().layers
+          layers.forEach(layer => {
+            if (layer.id.slice(0, 5) === 'oh-mw') {
+              map.setLayoutProperty(layer.id, 'visibility', visible)
+            }
+          })
+        } else {
+          map.setLayoutProperty(layer0.id, 'visibility', visible)
+          element.visibility = !element.visibility
+        }
+      })
+    },
     infoOpen (element) {
       this.$store.commit('incrDialogMaxZindex')
       const result = this.s_dialogsINfo[this.mapName].find(el => el.id === element.id)
@@ -186,6 +212,7 @@ export default {
                 layers: node.layers,
                 attribution: node.attribution,
                 opacity: 1,
+                visibility: true,
                 ext: node.ext,
               }
           )
@@ -247,6 +274,13 @@ export default {
               } else if (layer0.type === 'symbol') {
                 map.setPaintProperty(layer0.id, 'text-opacity', layer.opacity)
               }
+              let visibility
+              if (layer.visibility) {
+                visibility = 'visible'
+              } else {
+                visibility = 'none'
+              }
+              map.setLayoutProperty(layer0.id, 'visibility',visibility)
             }
           })
           // -------------------------------------------------
@@ -325,6 +359,18 @@ export default {
 
           const opacity = this.s_selectedLayers[mapName].find(v => v.id === 'oh-mw5').opacity
           map.setPaintProperty('oh-mw-' + value.id, 'raster-opacity', opacity)
+
+          console.log(77777777777)
+
+          const visibility0 = this.s_selectedLayers[mapName].find(v => v.id === 'oh-mw5').visibility
+          console.log(visibility0)
+          let visibility
+          if (visibility0) {
+            visibility = 'visible'
+          } else {
+            visibility = 'none'
+          }
+          map.setLayoutProperty('oh-mw-' + value.id, 'visibility',visibility)
 
         }
       })
@@ -433,11 +479,11 @@ export default {
 .range-div {
   position:absolute;
   top:10px;
-  left:50px;
-  width:calc(100% - 50px);
+  left:80px;
+  width:calc(100% - 80px);
 }
 .range{
-  width:calc(100% - 30px);
+  width:calc(100% - 40px);
 }
 .handle-div {
   width:30px;
@@ -451,16 +497,24 @@ export default {
 .label-div{
   position:absolute;
   top:0;
-  left:50px;
-  width:calc(100% - 50px);
+  left:80px;
+  width:calc(100% - 80px);
+  padding-left: 5px;
+}
+.visible-layer-div {
+  position:absolute;
+  top:0;
+  left:30px;
   padding-left: 5px;
 }
 .info-div{
   position:absolute;
   top:0;
-  left:30px;
-  /*width:calc(100% - 50px);*/
+  left:55px;
   padding-left: 5px;
+}
+.v-icon:hover {
+  color: blue;
 }
 </style>
 
