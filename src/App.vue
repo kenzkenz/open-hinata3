@@ -1401,6 +1401,41 @@ export default {
                   html = html0
                   break
                 }
+                case 'oh-city-t09-label':
+                case 'oh-city-t09-line':
+                case 'oh-city-t09':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-city-t09'] }
+                  )
+                  console.log(features)
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  const name = props.N03_004
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size:14px;">' + props.N03_001 + props.N03_003 + '</span><br>' +
+                      '<span style="font-size:20px;">' + name + '</span><br>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-city-r05-label':
+                case 'oh-city-r05-line':
+                case 'oh-city-r05':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-city-r05'] }
+                  )
+                  console.log(features)
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  const name = props.N03_004
+                  const gun = props.N03_003 ? props.N03_003: ''
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size:14px;">' + props.N03_001 + gun + '</span><br>' +
+                      '<span style="font-size:20px;">' + name + '</span><br>' +
+                      '</div>'
+                  break
+                }
               }
 
               // ポップアップ作成

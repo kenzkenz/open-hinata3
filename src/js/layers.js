@@ -2781,6 +2781,106 @@ const dronebirdLayer = {
     'type': 'raster',
     'source': 'dronebird-source',
 }
+// 市町村大正09年 --------------------------------------------------------------------------------------------
+const cityT09Source = {
+    id: "city-t09-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/city/t09/t09.pmtiles",
+        attribution: "<a href='' target='_blank'></a>",
+    }
+}
+const cityT09Layer = {
+    id: "oh-city-t09",
+    type: "fill",
+    source: "city-t09-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-color': ['get', 'random_color'],
+    }
+
+}
+const cityT09LayerLine = {
+    id: "oh-city-t09-line",
+    type: "line",
+    source: "city-t09-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            7, 0,
+            11, 0.5
+        ]
+    },
+}
+const cityT09LayerLabel = {
+    id: "oh-city-t09-label",
+    type: "symbol",
+    source: "city-t09-source",
+    "source-layer": "polygon",
+    'layout': {
+        'text-field': ['get', 'N03_004'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+    },
+    'paint': {
+        'text-color': 'black',
+        'text-halo-color': 'white',
+        'text-halo-width': 1.0,
+    },
+    'minzoom': 10
+}
+// 市町村令和５年 --------------------------------------------------------------------------------------------
+const cityR05Source = {
+    id: "city-r05-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/city/r05/r05.pmtiles",
+        attribution: "<a href='' target='_blank'></a>",
+    }
+}
+const cityR05Layer = {
+    id: "oh-city-r05",
+    type: "fill",
+    source: "city-r05-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-color': ['get', 'random_color'],
+    }
+
+}
+const cityR05LayerLine = {
+    id: "oh-city-r05-line",
+    type: "line",
+    source: "city-r05-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            7, 0,
+            11, 0.5
+        ]
+    },
+}
+const cityR05LayerLabel = {
+    id: "oh-city-r05-label",
+    type: "symbol",
+    source: "city-r05-source",
+    "source-layer": "polygon",
+    'layout': {
+        'text-field': ['get', 'N03_004'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+    },
+    'paint': {
+        'text-color': 'black',
+        'text-halo-color': 'white',
+        'text-halo-width': 1.0,
+    },
+    'minzoom': 10
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -3043,6 +3143,24 @@ const layers01 = [
                 source: iryokikanSource,
                 layers: [iryokikanLayer,iryokikanLayerLabel]
             }
+        ]
+    },
+    {
+        id: 'city',
+        label: "市町村",
+        nodes: [
+            {
+                id: 'oh-city-t09',
+                label: "T09市町村",
+                source: cityT09Source,
+                layers: [cityT09Layer,cityT09LayerLine,cityT09LayerLabel]
+            },
+            {
+                id: 'oh-city-r05',
+                label: "R05市町村",
+                source: cityR05Source,
+                layers: [cityR05Layer,cityR05LayerLine,cityR05LayerLabel]
+            },
         ]
     },
     {
