@@ -666,8 +666,10 @@ export default {
         map1.fire('click', { lngLat: coordinates })
         syncing = false
       })
+
       // -----------------------------------------------------------------------------------------------------------------
       // on load
+      const popups = []
       this.mapNames.forEach(mapName => {
         const map = this.$store.state[mapName]
         const params = this.parseUrlParams()
@@ -894,6 +896,7 @@ export default {
           })
 
           // レイヤーIDを特定せずに全てのフィーチャーから最初のものだけにポップアップ表示
+          // const popups = []
           map.on('click', (e) => {
             let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
 
@@ -1513,28 +1516,31 @@ export default {
               }
 
               // ポップアップ作成
-                new maplibregl.Popup({
-                  // offset: 10,
-                  closeButton: true,
-                })
-                    .setLngLat(coordinates)
-                    .setHTML(html)
-                    .addTo(map)
+              console.log(mapName)
+              const popup = new maplibregl.Popup({
+                closeButton: true,
+              })
+                  .setLngLat(coordinates)
+                  .setHTML(html)
+                  .addTo(map)
+              popups.push(popup)
+              popup.on('close', () => closeAllPopups())
               }
           })
-
-
-
+          function closeAllPopups() {
+            popups.forEach(popup => popup.remove());
+            // 配列をクリア
+            popups.length = 0;
+          }
           //------------------------------------------------------------------------------------------------------------
           function latLngToTile(lat, lng, z) {
             const
                 w = Math.pow(2, (z === undefined) ? 0 : z) / 2,		// 世界全体のピクセル幅
                 yrad = Math.log(Math.tan(Math.PI * (90 + lat) / 360))
-
             return { x: (lng / 180 + 1) * w, y: (1 - yrad / Math.PI) * w }
           }
           function getLegendItem(legend, url, lat, lng, z) {
-            map.getCanvas().style.cursor = 'progress'
+            // map.getCanvas().style.cursor = 'progress'
             return new Promise(function (resolve) {
               const
                   p = latLngToTile(lat, lng, z),
@@ -1543,8 +1549,7 @@ export default {
                   i = (p.x - x) * 256,			// タイル内i座標
                   j = (p.y - y) * 256,			// タイル内j座標
                   img = new Image();
-
-              img.crossOrigin = 'anonymous';	// 画像ファイルからデータを取り出すために必要です
+              img.crossOrigin = 'anonymous'
               img.onload = function () {
                 const
                     canvas = document.createElement('canvas'),
@@ -1562,15 +1567,15 @@ export default {
                 } else {
                   v = legend.find(o => o.r == d[0] && o.g == d[1] && o.b == d[2])
                 }
-                map.getCanvas().style.cursor = 'default'
+                // map.getCanvas().style.cursor = 'default'
                 resolve(v)
               }
               img.onerror = function () {
-                map.getCanvas().style.cursor = 'default'
+                // map.getCanvas().style.cursor = 'default'
                 resolve(null)
               }
-              img.src = url.replace('{z}', z).replace('{y}', y).replace('{x}', x);
-            });
+              img.src = url.replace('{z}', z).replace('{y}', y).replace('{x}', x)
+            })
           }
           const legend_shinsuishin = [
             { r: 247, g: 245, b: 169, title: '0.5m未満' },
@@ -1580,7 +1585,6 @@ export default {
             { r: 242, g: 133, b: 201, title: '10.0～20.0m' },
             { r: 220, g: 122, b: 220, title: '20.0m以上' }
           ]
-
           const legend_shitchi = [
             { r: 254, g: 227, b: 200, title: ['砂礫地',"土地の表面が砂と小石のところ。砂や礫でできた荒地、風の運搬作用によって砂が堆積してできた砂丘も含む。"] },
             { r: 254, g: 200, b: 200, title: ['泥地','常にぬかるんでいて植物が存在せず、通過が困難な土地。'] },
@@ -1597,28 +1601,22 @@ export default {
             { r: 173, g: 255, b: 173, title: ['茅','｢茅｣、｢萱｣と記された範囲。'] },
             { r: 144, g: 73, b: 11, title: ['堤防' ,'河川の氾濫や海水の浸入を防ぐため、河岸･海岸に沿って設けた土石の構築物。']}
           ]
+          // 高潮浸水想定区域、津波浸水想定
+          const legend_hightide_tsunami = [
+            { r: 255, g: 255, b: 179, title: '0.3m未満' },
+            { r: 247, g: 245, b: 169, title: '0.3～0.5m' },
+            { r: 248, g: 225, b: 166, title: '0.5～1.0m' },
+            { r: 255, g: 216, b: 192, title: '1.0～3.0m' },
+            { r: 255, g: 183, b: 183, title: '3.0～5.0m' },
+            { r: 255, g: 145, b: 145, title: '5.0～10.0m' },
+            { r: 242, g: 133, b: 201, title: '10.0～20.0m' },
+            { r: 220, g: 122, b: 188, title: '20.0m以上' }
+          ]
 
-                //     [254,227,200,"砂礫地","土地の表面が砂と小石のところ。砂や礫でできた荒地、風の運搬作用によって砂が堆積してできた砂丘も含む。",""],
-                // [254,200,200,"泥地","常にぬかるんでいて植物が存在せず、通過が困難な土地。",""],
-                // [228,172,123,"泥炭地","｢泥炭地｣と記された範囲。",""],
-                // [200,200,228,"湿地","概ね湿潤で葦(あし)などの植物が生えるような土地のこと。",""],
-                // [209,234,255,"干潟・砂浜","満潮時には、海面に没する地形。",""],
-                // [147,200,254,"河川、湖沼、海面","河川や水路、湖沼と記された範囲及び、河口部から海上の範囲。養魚場や貯木場、小規模な農業用の池なども含む。",""],
-                // [251,247,176,"田（水田、陸田）","水田は稲や蓮などを栽培する田で四季を通じて水がある土地のこと。陸田は稲を栽培する田で冬季に水が涸れ、歩けるような土地のこと。乾田とも言う。",""],
-                // [225,227,118,"深田","膝ぐらいまでぬかる泥深い田もしくは小舟を用いて耕作するような田のこと。沼田とも言う。",""],
-                // [227,227,200,"塩田","海水から食塩を取るために設けた砂浜の設備。",""],
-                // [162,222,162,"草地","牧草を栽培する土地や｢草｣と記された範囲。ただし、山地や台地上のものは取得しない。",""],
-                // [173,200,147,"荒地","開墾されたことがないまたは、かつては開墾されていたが長期間荒れ果てたところ。ただし、山地や台地上のものは取得しない。",""],
-                // [119,227,201,"ヨシ（芦葦）","蘆｣、｢芦｣、｢葦｣、｢葮｣、｢蓮｣と記された範囲。または芦葦記号。",""],
-                // [173,255,173,"茅","茅｣、｢萱｣と記された範囲。",""],
-              // [144,73,11,"堤防","河川の氾濫や海水の浸入を防ぐため、河岸･海岸に沿って設けた土石の構築物。",""],
-
-          map.on('click', function (e) {
-            // 表示されているレイヤーのIDを格納する配列
+          map.on('mousemove', function (e) {
             let rasterLayerIds = [];
             const mapLayers = map.getStyle().layers;
 
-            // 全てのレイヤーを走査して、'type'が'rasterのものをフィルタリング
             mapLayers.forEach(layer => {
               // const visibility = map.getLayoutProperty(layer.id, 'visibility');
               // レイヤーのtypeプロパティを取得
@@ -1638,6 +1636,51 @@ export default {
               } else if (rasterLayerId === 'oh-shitchi-layer') {
                 RasterTileUrl = 'https://cyberjapandata.gsi.go.jp/xyz/swale/{z}/{x}/{y}.png';
                 legend = legend_shitchi
+              } else if (rasterLayerId === 'oh-tsunami-layer') {
+                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png';
+                legend = legend_hightide_tsunami
+              }
+              const lng = e.lngLat.lng;
+              const lat = e.lngLat.lat;
+              const z = 16
+              if (RasterTileUrl) {
+                getLegendItem(legend, RasterTileUrl, lat, lng,z).then(function (v) {
+                  let res = (v ? v.title : '')
+                  if (res === '') {
+                    map.getCanvas().style.cursor = "default"
+                    return
+                  }
+                  map.getCanvas().style.cursor = "pointer"
+                })
+              }
+            })
+          })
+          map.on('click', function (e) {
+            let rasterLayerIds = [];
+            const mapLayers = map.getStyle().layers;
+
+            mapLayers.forEach(layer => {
+              // const visibility = map.getLayoutProperty(layer.id, 'visibility');
+              // レイヤーのtypeプロパティを取得
+              const type = layer.type;
+              if (type === 'raster') {
+                rasterLayerIds.push(layer.id);
+              }
+            });
+            // ラスタレイヤのidからポップアップ表示に使用するURLを生成
+            let RasterTileUrl = '';
+            let legend = [];
+            rasterLayerIds.forEach(rasterLayerId => {
+              if (rasterLayerId === 'oh-kozui-saidai-layer') {
+                // 洪水浸水想定区域（想定最大規模）
+                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin/{z}/{x}/{y}.png';
+                legend = legend_shinsuishin
+              } else if (rasterLayerId === 'oh-shitchi-layer') {
+                RasterTileUrl = 'https://cyberjapandata.gsi.go.jp/xyz/swale/{z}/{x}/{y}.png';
+                legend = legend_shitchi
+              } else if (rasterLayerId === 'oh-tsunami-layer') {
+                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png';
+                legend = legend_hightide_tsunami
               }
               const lng = e.lngLat.lng;
               const lat = e.lngLat.lat;
@@ -1646,8 +1689,9 @@ export default {
                 getLegendItem(legend, RasterTileUrl, lat, lng,z).then(function (v) {
                   let res = (v ? v.title : '')
                   if (res === '') return
+                  let popup
                   if (rasterLayerId === 'oh-kozui-saidai-layer') {
-                    new maplibregl.Popup()
+                    popup = new maplibregl.Popup()
                         .setLngLat(e.lngLat)
                         .setHTML(
                             '<div font-weight: normal; color: #333;line-height: 25px;">' +
@@ -1655,9 +1699,9 @@ export default {
                             '<span style="font-size: 24px;">' + res + '</span>' +
                             '</div>'
                         )
-                        .addTo(map);
+                        .addTo(map)
                   } else if (rasterLayerId === 'oh-shitchi-layer') {
-                      new maplibregl.Popup()
+                    popup = new maplibregl.Popup()
                           .setLngLat(e.lngLat)
                           .setHTML(
                               '<div font-weight: normal; color: #333;line-height: 25px;">' +
@@ -1665,8 +1709,20 @@ export default {
                               '<span style="font-size: 12px;">' + res[1] + '</span>' +
                               '</div>'
                           )
-                          .addTo(map);
+                          .addTo(map)
+                  } else if (rasterLayerId === 'oh-tsunami-layer') {
+                    popup = new maplibregl.Popup()
+                        .setLngLat(e.lngLat)
+                        .setHTML(
+                            '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                            '<span style="font-size: 12px;">津波によって想定される浸水深</span><br>' +
+                            '<span style="font-size: 24px;">' + res + '</span>' +
+                            '</div>'
+                        )
+                        .addTo(map);
                   }
+                  popups.push(popup)
+                  popup.on('close', () => closeAllPopups())
                 })
               }
             })

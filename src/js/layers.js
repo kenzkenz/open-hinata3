@@ -2508,6 +2508,18 @@ const kozuiSaidaiLayer = {
     'type': 'raster',
     'source': 'kozui-saidai-source',
 }
+// 津波------------------------------------------------------------------------------------------------------
+const tsunamiSource = {
+    id: 'tsunami-source', obj: {
+        type: 'raster',
+        tiles: ['https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png'],
+    }
+}
+const tsunamiLayer = {
+    'id': 'oh-tsunami-layer',
+    'type': 'raster',
+    'source': 'tsunami-source',
+}
 // Q地図橋梁 --------------------------------------------------------------------------------------------
 const qKyouryoSource = {
     id: "q-kyoryo-source", obj: {
@@ -3376,6 +3388,12 @@ const layers01 = [
                 label: "洪水浸水想定（想定最大規模）",
                 source: kozuiSaidaiSource,
                 layers: [kozuiSaidaiLayer],
+            },
+            {
+                id: 'oh-tsunami',
+                label: "津波浸水想定",
+                source: tsunamiSource,
+                layers: [tsunamiLayer],
             },
             {
                 id: 'oh-zosei',
