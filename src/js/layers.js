@@ -164,7 +164,6 @@ const urls =[
     {name:'横須賀市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/yokosuka/{z}/{x}/{y}.png',tms:false,bounds: [139.60289262315248, 35.342237358161995, 139.72813703199841, 35.24850065660095]},
     {name:'浦賀',url:'https://kenzkenz3.xsrv.jp/jcp_maps/uraga/{z}/{x}/{y}.png',tms:false,bounds: [139.65567449304083, 35.29220632171602, 139.75966105433923, 35.179361639527656]},
 ]
-console.log(urls.length)
 const amsSources = []
 const amsLayers = []
 urls.forEach(url => {
@@ -173,7 +172,6 @@ urls.forEach(url => {
     }
     url.bounds.sort(compareFunc);
     url.bounds = [url.bounds[2],url.bounds[0],url.bounds[3],url.bounds[1]]
-    // console.log(url.bounds)
     if (!url.tms) {
         amsSources.push({
             id: 'oh-ams-' + url.name,
@@ -202,8 +200,6 @@ urls.forEach(url => {
         type: 'raster',
     })
 })
-// console.log(amsSources,amsLayers)
-
 const amsLayers2 = amsLayers.map((layer,i) => {
     return {
         id: layer.id,
@@ -212,7 +208,6 @@ const amsLayers2 = amsLayers.map((layer,i) => {
         layers:[layer]
     }
 })
-// console.log(amsLayers2)
 // 古地図----------------------------------------------------------------------------------------------------------------
 // 戦前の旧版地形図
 const mw5DummySource = {
@@ -253,7 +248,6 @@ const jissokuSource = {
     id: 'jissoku-source', obj: {
         type: 'raster',
         tiles: ['https://kenzkenz3.xsrv.jp/jissoku/{z}/{x}/{y}.png'],
-        tileSize: 256
     }
 }
 const jissokuLayer = {
@@ -273,6 +267,20 @@ const jissokuMatsumaeLayer = {
     'type': 'raster',
     'source': 'jissoku-matsumae-source',
 }
+// 迅速測図----------------------------------------------------------------------------------------------
+const jinsokuSource = {
+    id: 'jinsoku-source', obj: {
+        type: 'raster',
+        tiles: ['https://boiledorange73.sakura.ne.jp/ws/tile/Kanto_Rapid-900913/{z}/{x}/{y}.png'],
+    }
+}
+const jinsokuLayer = {
+    'id': 'oh-jinsoku-layer',
+    'type': 'raster',
+    'source': 'jinsoku-source',
+}
+
+
 // ---------------------------------------------------------------------------------------------------------------------
 // syochiikiソース
 const syochiikiSource = {
@@ -2847,7 +2855,6 @@ const cityR05Layer = {
     paint: {
         'fill-color': ['get', 'random_color'],
     }
-
 }
 const cityR05LayerLine = {
     id: "oh-city-r05-line",
@@ -2873,6 +2880,7 @@ const cityR05LayerLabel = {
     'layout': {
         'text-field': ['get', 'N03_004'],
         'text-font': ['Noto Sans CJK JP Bold'],
+        'symbol-placement': 'point',
     },
     'paint': {
         'text-color': 'black',
@@ -2881,6 +2889,9 @@ const cityR05LayerLabel = {
     },
     'minzoom': 10
 }
+
+
+
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -2989,6 +3000,12 @@ const layers01 = [
                     },
                     ...amsLayers2,
                 ]
+            },
+            {
+                id: 'oh-jinsoku',
+                label: "迅速測図",
+                sources: [jinsokuSource],
+                layers: [jinsokuLayer]
             },
             {
                 id: 'oh-jissoku',
