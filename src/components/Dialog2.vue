@@ -116,7 +116,6 @@ export default {
     }
   },
   mounted() {
-    console.log(8888888)
     this.$nextTick(() => {
     })
   }

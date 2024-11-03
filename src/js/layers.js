@@ -929,6 +929,18 @@ const aichiSekisyokuLayer = {
     'type': 'raster',
     'source': 'aichiSekisyokuSource',
 }
+// 神奈川県赤色立体図------------------------------------------------------------------------------------------------------
+const kanagawaSekisyokuSource = {
+    id: 'kanagawa-sekisyoku-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz3.xsrv.jp/sekisyoku/kanagawa/{z}/{x}/{y}.png'],
+    }
+}
+const kanagawaSekisyokuLayer = {
+    'id': 'oh-kanagawa-sekisyoku-layer',
+    'type': 'raster',
+    'source': 'kanagawa-sekisyoku-source',
+}
 // 多摩地域赤色立体地図------------------------------------------------------------------------------------------------------
 const tamaSekisyokuSource = {
     id: 'tamaSekisyokuSource', obj: {
@@ -954,6 +966,18 @@ const tokyo23SekisyokuLayer = {
     'id': 'oh-tokyo23-sekisyoku-layer',
     'type': 'raster',
     'source': 'tokyo23-sekisyoku-source',
+}
+// 東京都23区CS立体図------------------------------------------------------------------------------------------------------
+const tokyo23CsSource = {
+    id: 'tokyo23-cs-source', obj: {
+        type: 'raster',
+        tiles: ['https://shiworks.xsrv.jp/raster-tiles/tokyo-digitaltwin/tokyopc-23ku-2024-cs-tiles/{z}/{x}/{y}.png'],
+    }
+}
+const tokyo23CsLayer = {
+    'id': 'oh-tokyo23-cs-layer',
+    'type': 'raster',
+    'source': 'tokyo23-cs-source',
 }
 // 大阪府CS立体地図------------------------------------------------------------------------------------------------------
 const csOsakaSource = {
@@ -1009,6 +1033,7 @@ export const amxSource = {
         minzoom: 2,
         maxzoom: 16,
         url: "pmtiles://https://habs.rad.naro.go.jp/spatial_data/amx/a.pmtiles",
+        // url: 'https://data.source.coop/smartmaps/amx-2024-04/MojMap_amx_2024.pmtiles',
         attribution: "<a href='https://www.moj.go.jp/MINJI/minji05_00494.html' target='_blank'>登記所備付地図データ（法務省）</a>",
     }
 }
@@ -2690,10 +2715,7 @@ const koazaSource = {
     id: "koaza-source", obj: {
         type: "vector",
         url: "pmtiles://https://osaru-san1.github.io/border/koaza.pmtiles",
-        // url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/koaza/koaza.pmtiles",
         attribution: '<a href="https://koaza.net/">関東小字地図</a>',
-        // minzoom: 10,
-        // maxzoom: 10,
     }
 }
 const koazaLayer = {
@@ -2704,8 +2726,6 @@ const koazaLayer = {
     paint: {
         'fill-color': 'rgba(255,255,255,0.1)'
     },
-    // minzoom: 0,
-    // maxzoom: 10,
 }
 const koazaLayerLine = {
     id: "oh-koaza-line",
@@ -2729,7 +2749,7 @@ const koazaLayerLabel = {
     source: "koaza-source",
     "source-layer": "koaza",
     'layout': {
-        'text-field': ['get', 'MURA_NAME'],
+        'text-field': ['get', 'KOAZA_NAME'],
         'text-font': ['Noto Sans CJK JP Bold'],
     },
     'paint': {
@@ -2737,16 +2757,13 @@ const koazaLayerLabel = {
         'text-halo-color': 'white',
         'text-halo-width': 1.0,
     },
-    'minzoom': 10
+    'minzoom': 12
 }
 const muraSource = {
     id: "mura-source", obj: {
         type: "vector",
         url: "pmtiles://https://osaru-san1.github.io/border/mura.pmtiles",
-        // url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/koaza/koaza.pmtiles",
         attribution: '<a href="https://koaza.net/">関東小字地図</a>',
-        // minzoom: 10,
-        // maxzoom: 10,
     }
 }
 const muraLayer = {
@@ -2757,8 +2774,6 @@ const muraLayer = {
     paint: {
         'fill-color': 'rgba(0,0,0,0)'
     },
-    // minzoom: 0,
-    // maxzoom: 10,
 }
 const muraLayerLine = {
     id: "oh-mura-line",
@@ -2771,8 +2786,8 @@ const muraLayerLine = {
             'interpolate',
             ['linear'],
             ['zoom'],
-            10, 1,
-            14, 4
+            10, 0.5,
+            14, 1
         ]
     },
 }
@@ -2805,7 +2820,6 @@ const cityT09Layer = {
     paint: {
         'fill-color': ['get', 'random_color'],
     }
-
 }
 const cityT09LayerLine = {
     id: "oh-city-t09-line",
@@ -2889,7 +2903,18 @@ const cityR05LayerLabel = {
     },
     'minzoom': 10
 }
-
+// 明治期の低湿地------------------------------------------------------------------------------------------------------
+const shitchiSource = {
+    id: 'shitchi-source', obj: {
+        type: 'raster',
+        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/swale/{z}/{x}/{y}.png'],
+    }
+}
+const shitchiLayer = {
+    'id': 'oh-shitchi-layer',
+    'type': 'raster',
+    'source': 'shitchi-source',
+}
 
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -3215,6 +3240,12 @@ const layers01 = [
         label: "自然、立体図等",
         nodes: [
             {
+                id: 'oh-shitchi',
+                label: "明治期の低湿地",
+                source: shitchiSource,
+                layers: [shitchiLayer]
+            },
+            {
                 id: 'oh-shikibetsu',
                 label: "色別標高図",
                 source: shikibetsuSource,
@@ -3287,6 +3318,12 @@ const layers01 = [
                 layers: [csKanagawaLayer]
             },
             {
+                id: 'oh-kanagawa-sekisyoku-layer',
+                label: "神奈川県赤色立体地図",
+                source: kanagawaSekisyokuSource,
+                layers: [kanagawaSekisyokuLayer]
+            },
+            {
                 id: 'oh-tamaSekisyokuLayer',
                 label: "東京都多摩地域赤色立体地図",
                 source: tamaSekisyokuSource,
@@ -3297,6 +3334,12 @@ const layers01 = [
                 label: "東京都23区赤色立体地図",
                 source: tokyo23SekisyokuSource,
                 layers: [tokyo23SekisyokuLayer]
+            },
+            {
+                id: 'oh-tokyo23-cs-layer',
+                label: "東京都23区CS立体図",
+                source: tokyo23CsSource,
+                layers: [tokyo23CsLayer]
             },
             {
                 id: 'oh-aichiSekisyokuLayer',

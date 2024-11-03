@@ -109,10 +109,11 @@ export default {
             }
           })
         } else {
+          console.log(layer0.id,visible)
           map.setLayoutProperty(layer0.id, 'visibility', visible)
-          element.visibility = !element.visibility
         }
       })
+      element.visibility = !element.visibility
     },
     infoOpen (element) {
       this.$store.commit('incrDialogMaxZindex')
@@ -147,7 +148,6 @@ export default {
               }
             }
         this.$store.commit('pushDialogsInfo', {mapName: this.mapName, dialog: infoDialog})
-        console.log(infoDialog)
       } else {
         result.style.display = 'block'
         result.style["z-index"] = this.$store.state.dialogMaxZindex
@@ -160,7 +160,6 @@ export default {
       const map = this.$store.state[this.mapName]
       if (element.layers) {
         element.layers.forEach(layer0 => {
-
           if (layer0.id === 'oh-mw-dummy') {
             const layers = map.getStyle().layers
             layers.forEach(layer => {
@@ -200,7 +199,6 @@ export default {
     },
     onNodeClick (node) {
       if (node.layers) {
-        console.log(node)
         if(!this.s_selectedLayers[this.mapName].find(layers => layers.id === node.id)) {
           this.s_selectedLayers[this.mapName].unshift(
               {
@@ -227,7 +225,6 @@ export default {
       if(!this.$store.state.watchFlg) return
       // if (!this.s_selectedLayers[this.mapName].length) return
       // ------------------------------------------------------------------
-      console.log(this.s_selectedLayers[this.mapName].length)
       const map = this.$store.state[this.mapName]
       // まずレイヤーを削除-------------------------
       const layers = map.getStyle().layers
@@ -241,7 +238,6 @@ export default {
       }
       // -----------------------------------------
       for (let i = this.s_selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
-        console.log(888)
         const layer = this.s_selectedLayers[this.mapName][i]
         if (layer.layers) {
           if (layer.sources) {
@@ -250,7 +246,6 @@ export default {
             })
           }
           if (layer.source) {
-            console.log(layer)
             if (!map.getSource(layer.source.id)) map.addSource(layer.source.id, layer.source.obj)
           }
 
@@ -284,7 +279,6 @@ export default {
             }
           })
           // -------------------------------------------------
-          console.log(layer.ext)
           if (layer.ext) {
             if (layer.ext.values) {
               layer.ext.values.forEach((v,i) => {
@@ -359,9 +353,6 @@ export default {
 
           const opacity = this.s_selectedLayers[mapName].find(v => v.id === 'oh-mw5').opacity
           map.setPaintProperty('oh-mw-' + value.id, 'raster-opacity', opacity)
-
-          console.log(77777777777)
-
           const visibility0 = this.s_selectedLayers[mapName].find(v => v.id === 'oh-mw5').visibility
           console.log(visibility0)
           let visibility
@@ -422,7 +413,6 @@ export default {
     s_selectedLayers: {
       handler: function(){
         console.log('変更を検出しました',this.$store.state.watchFlg)
-        console.log(this.$store.state.highwayYear)
         // ------------------------------------------------------------------
         const map01 = this.$store.state.map01
         const bounds = map01.getBounds()

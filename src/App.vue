@@ -70,7 +70,8 @@ import * as Layers from '@/js/layers'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import maplibregl from 'maplibre-gl'
 import { Protocol } from "pmtiles"
-import { useGsiTerrainSource } from 'maplibre-gl-gsi-terrain';
+import { useGsiTerrainSource } from 'maplibre-gl-gsi-terrain'
+// import mlcontour from '../node_modules/maplibre-contour/dist/index'
 
 export default {
   name: 'App',
@@ -403,7 +404,6 @@ export default {
       this.pitch.map02 = pitch02
       this.bearing = bearing
       this.s_terrainLevel = terrainLevel
-      console.log(this.s_terrainLevel)
       return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj}// 以前のリンクをいかすためpitchを入れている。
     },
     init() {
@@ -498,6 +498,9 @@ export default {
                 'id': 'gsi-monochrome-layer',
                 'type': 'raster',
                 'source': 'gsi-monochrome',
+                paint: {
+                  'raster-opacity': 1.0
+                }
               }
             ]
           },
@@ -515,6 +518,19 @@ export default {
       const map = this.$store.state.map01
       const vm = this
       //----------------------------------
+
+      // var contour = new mlcontour.DemSource({
+      //   url: "https://mapdata.qchizu2.xyz/03_dem/51_int/all_9999/int_01/{z}/{x}/{y}.png",
+      //   encoding: "numpng", // "mapbox", "terrarium" or "numpng" default="terrarium"
+      //   maxzoom: 13,
+      //   worker: true, // offload isoline computation to a web worker to reduce jank
+      //   cacheSize: 100, // number of most-recent tiles to cache
+      //   timeoutMs: 10_000, // timeout on fetch requests
+      // });
+      // contour.setupMaplibre(maplibregl);
+
+
+
 
       map.on('click', (e) => {
         const latitude = e.lngLat.lat
@@ -729,8 +745,66 @@ export default {
           // const gsiTerrainSource = useGsiTerrainSource(maplibregl.addProtocol);
           // map.addSource(gsiTerrainSource)
 
-
-
+          // map.addSource("contourSource", {
+          //   "type": "vector",
+          //   "tiles": [
+          //     contour.contourProtocolUrl({
+          //       multiplier: 1,
+          //       thresholds: {
+          //         // zoom: [minor, major]
+          //         11: [200, 1000],
+          //         12: [100, 500],
+          //         14: [50, 200],
+          //         15: [20, 100],
+          //       },
+          //       elevationKey: "ele",
+          //       levelKey: "level",
+          //       contourLayer: "contours",
+          //     }),
+          //   ],
+          //   "maxzoom": 19,
+          // });
+          //
+          // map.addLayer({
+          //   id: "contours",
+          //   type: "line",
+          //   source: "contourSource",
+          //   "source-layer": "contours",
+          //   paint: {
+          //     "line-color": "rgba(0,0,0, 1)",
+          //     "line-width": 10
+          //     // "line-width": ["*", ["match", ["get", "level"], 1, 1, 0.5], CONTOUR_LINE_WIDTH_FACTOR]
+          //   },
+          //   layout: {
+          //     "line-join": "round",
+          //     visibility: 'visible'
+          //   },
+          //   before: "gsi-monochrome-layer",
+          // });
+          //
+          // map.addLayer({
+          //   id: "contour-text",
+          //   type: "symbol",
+          //   source: "contourSource",
+          //   "source-layer": "contours",
+          //   filter: [">", ["get", "level"], 0],
+          //   paint: {
+          //     "text-halo-color": "white",
+          //     "text-halo-width": 1,
+          //   },
+          //   layout: {
+          //     "symbol-placement": "line",
+          //     "text-anchor": "center",
+          //     "text-size": 12,
+          //     "text-field": [
+          //       "concat",
+          //       ["number-format", ["get", "ele"], {}],
+          //       "",
+          //     ],
+          //     'text-font': ['Noto Sans CJK JP Bold'],
+          //     visibility: 'visible'
+          //   },
+          // });
 
 
           // 標高タイルソース---------------------------------------------------
@@ -1376,7 +1450,7 @@ export default {
                   console.log(features)
                   if (features.length === 0) return;
                   props = features[0].properties
-                  const name = props.MURA_NAME
+                  const name = props.KOAZA_NAME
                   html =
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span><br>' +
@@ -1482,6 +1556,7 @@ export default {
                 canvas.height = 1
                 context.drawImage(img, i, j, 1, 1, 0, 0, 1, 1)
                 d = context.getImageData(0, 0, 1, 1).data
+                console.log(d[0],d[1],d[2])
                 if (d[3] !== 255) {
                   v = null
                 } else {
@@ -1505,6 +1580,39 @@ export default {
             { r: 242, g: 133, b: 201, title: '10.0～20.0m' },
             { r: 220, g: 122, b: 220, title: '20.0m以上' }
           ]
+
+          const legend_shitchi = [
+            { r: 254, g: 227, b: 200, title: ['砂礫地',"土地の表面が砂と小石のところ。砂や礫でできた荒地、風の運搬作用によって砂が堆積してできた砂丘も含む。"] },
+            { r: 254, g: 200, b: 200, title: ['泥地','常にぬかるんでいて植物が存在せず、通過が困難な土地。'] },
+            { r: 228, g: 172, b: 123, title: ['泥炭地','｢泥炭地｣と記された範囲。'] },
+            { r: 200, g: 200, b: 228, title: ['湿地','概ね湿潤で葦(あし)などの植物が生えるような土地のこと。'] },
+            { r: 209, g: 234, b: 255, title: ['干潟・砂浜','満潮時には、海面に没する地形。'] },
+            { r: 147, g: 200, b: 254, title: ['河川、湖沼、海面','河川や水路、湖沼と記された範囲及び、河口部から海上の範囲。養魚場や貯木場、小規模な農業用の池なども含む。'] },
+            { r: 251, g: 247, b: 176, title: ['田（水田、陸田）','水田は稲や蓮などを栽培する田で四季を通じて水がある土地のこと。陸田は稲を栽培する田で冬季に水が涸れ、歩けるような土地のこと。乾田とも言う。'] },
+            { r: 225, g: 227, b: 118, title: ['深田','膝ぐらいまでぬかる泥深い田もしくは小舟を用いて耕作するような田のこと。沼田とも言う。'] },
+            { r: 227, g: 227, b: 200, title: ['塩田','海水から食塩を取るために設けた砂浜の設備。'] },
+            { r: 162, g: 222, b: 162, title: ['草地','牧草を栽培する土地や｢草｣と記された範囲。ただし、山地や台地上のものは取得しない。'] },
+            { r: 173, g: 200, b: 147, title: ['荒地','開墾されたことがないまたは、かつては開墾されていたが長期間荒れ果てたところ。ただし、山地や台地上のものは取得しない。'] },
+            { r: 119, g: 227, b: 201, title: ['ヨシ（芦葦）','蘆｣、｢芦｣、｢葦｣、｢葮｣、｢蓮｣と記された範囲。または芦葦記号。'] },
+            { r: 173, g: 255, b: 173, title: ['茅','｢茅｣、｢萱｣と記された範囲。'] },
+            { r: 144, g: 73, b: 11, title: ['堤防' ,'河川の氾濫や海水の浸入を防ぐため、河岸･海岸に沿って設けた土石の構築物。']}
+          ]
+
+                //     [254,227,200,"砂礫地","土地の表面が砂と小石のところ。砂や礫でできた荒地、風の運搬作用によって砂が堆積してできた砂丘も含む。",""],
+                // [254,200,200,"泥地","常にぬかるんでいて植物が存在せず、通過が困難な土地。",""],
+                // [228,172,123,"泥炭地","｢泥炭地｣と記された範囲。",""],
+                // [200,200,228,"湿地","概ね湿潤で葦(あし)などの植物が生えるような土地のこと。",""],
+                // [209,234,255,"干潟・砂浜","満潮時には、海面に没する地形。",""],
+                // [147,200,254,"河川、湖沼、海面","河川や水路、湖沼と記された範囲及び、河口部から海上の範囲。養魚場や貯木場、小規模な農業用の池なども含む。",""],
+                // [251,247,176,"田（水田、陸田）","水田は稲や蓮などを栽培する田で四季を通じて水がある土地のこと。陸田は稲を栽培する田で冬季に水が涸れ、歩けるような土地のこと。乾田とも言う。",""],
+                // [225,227,118,"深田","膝ぐらいまでぬかる泥深い田もしくは小舟を用いて耕作するような田のこと。沼田とも言う。",""],
+                // [227,227,200,"塩田","海水から食塩を取るために設けた砂浜の設備。",""],
+                // [162,222,162,"草地","牧草を栽培する土地や｢草｣と記された範囲。ただし、山地や台地上のものは取得しない。",""],
+                // [173,200,147,"荒地","開墾されたことがないまたは、かつては開墾されていたが長期間荒れ果てたところ。ただし、山地や台地上のものは取得しない。",""],
+                // [119,227,201,"ヨシ（芦葦）","蘆｣、｢芦｣、｢葦｣、｢葮｣、｢蓮｣と記された範囲。または芦葦記号。",""],
+                // [173,255,173,"茅","茅｣、｢萱｣と記された範囲。",""],
+              // [144,73,11,"堤防","河川の氾濫や海水の浸入を防ぐため、河岸･海岸に沿って設けた土石の構築物。",""],
+
           map.on('click', function (e) {
             // 表示されているレイヤーのIDを格納する配列
             let rasterLayerIds = [];
@@ -1526,11 +1634,14 @@ export default {
               if (rasterLayerId === 'oh-kozui-saidai-layer') {
                 // 洪水浸水想定区域（想定最大規模）
                 RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin/{z}/{x}/{y}.png';
-                legend = legend_shinsuishin;
+                legend = legend_shinsuishin
+              } else if (rasterLayerId === 'oh-shitchi-layer') {
+                RasterTileUrl = 'https://cyberjapandata.gsi.go.jp/xyz/swale/{z}/{x}/{y}.png';
+                legend = legend_shitchi
               }
               const lng = e.lngLat.lng;
               const lat = e.lngLat.lat;
-              const z = 17
+              const z = 16
               if (RasterTileUrl) {
                 getLegendItem(legend, RasterTileUrl, lat, lng,z).then(function (v) {
                   let res = (v ? v.title : '')
@@ -1545,6 +1656,16 @@ export default {
                             '</div>'
                         )
                         .addTo(map);
+                  } else if (rasterLayerId === 'oh-shitchi-layer') {
+                      new maplibregl.Popup()
+                          .setLngLat(e.lngLat)
+                          .setHTML(
+                              '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                              '<span style="font-size: 16px;">' + res[0] + '</span><hr>' +
+                              '<span style="font-size: 12px;">' + res[1] + '</span>' +
+                              '</div>'
+                          )
+                          .addTo(map);
                   }
                 })
               }
