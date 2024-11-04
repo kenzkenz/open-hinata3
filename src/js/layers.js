@@ -795,6 +795,31 @@ const sp28Layer = {
     'source': 'sp28-source',
     'type': 'raster',
 }
+// 宮崎県航空写真--------------------------------------------------------------------------------------------------------------
+const miyazakiSyashinSource = {
+    id:'miyazaki-syashin-source',obj:{
+        type: 'raster',
+        tiles: ['https://mtile.pref.miyazaki.lg.jp/tile/ort/{z}/{x}/{y}.png'],
+        scheme: 'tms'
+    }
+}
+const miyazakiSyashinLayer = {
+    'id': 'oh-miyazaki-syashin',
+    'source': 'miyazaki-syashin-source',
+    'type': 'raster',
+}
+// 神奈川県航空写真--------------------------------------------------------------------------------------------------------------
+const kanagawaSyashinSource = {
+    id:'kanagawa-syashin-source',obj:{
+        type: 'raster',
+        tiles: ['https://kenzkenz3.xsrv.jp/kokusyashin/kanagawa2/{z}/{x}/{y}.png'],
+    }
+}
+const kanagawaSyashinLayer = {
+    'id': 'oh-kanagawa-syashin',
+    'source': 'kanagawa-syashin-source',
+    'type': 'raster',
+}
 // ---------------------------------------------------------------------------------------------------------------------
 // PLATEAU建物（PMTiles）ソース
 const plateauPmtilesSource = {
@@ -827,7 +852,6 @@ const csKanagawaSource = {
     id: 'cs-kanagawa-source', obj: {
         type: 'raster',
         tiles: ['https://shiworks.xsrv.jp/raster-tiles/pref-kanagawa/kanagawapc-cs-tiles/{z}/{x}/{y}.png'],
-        tileSize: 256,
     }
 }
 const csKanagawaLayer = {
@@ -864,7 +888,6 @@ const csGifuSource = {
     id: 'csGifu', obj: {
         type: 'raster',
         tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://kenzkenz2.xsrv.jp/gihucs/{z}/{x}/{y}.png'],
-        tileSize: 256,
         scheme: 'tms'
     }
 }
@@ -3006,6 +3029,18 @@ const layers01 = [
                 label: "1928年航空写真(大阪府)",
                 source: sp28Source,
                 layers: [sp28Layer]
+            },
+            {
+                id: 'oh-kanagawa-syashin',
+                label: "神奈川航空写真",
+                source: kanagawaSyashinSource,
+                layers: [kanagawaSyashinLayer]
+            },
+            {
+                id: 'oh-miyazaki-syashin',
+                label: "宮崎県航空写真",
+                source: miyazakiSyashinSource,
+                layers: [miyazakiSyashinLayer]
             },
             {
                 id: 'oh-dronebird',

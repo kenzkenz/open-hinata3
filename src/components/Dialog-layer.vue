@@ -275,6 +275,7 @@ export default {
               } else {
                 visibility = 'none'
               }
+              if (layer.visibility === undefined) visibility = 'visible'
               map.setLayoutProperty(layer0.id, 'visibility',visibility)
             }
           })
