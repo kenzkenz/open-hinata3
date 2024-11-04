@@ -71,7 +71,7 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import maplibregl from 'maplibre-gl'
 import { Protocol } from "pmtiles"
 import { useGsiTerrainSource } from 'maplibre-gl-gsi-terrain'
-// import mlcontour from '../node_modules/maplibre-contour/dist/index'
+import {paleLayer, paleSource} from "@/js/layers"
 
 export default {
   name: 'App',
@@ -411,6 +411,24 @@ export default {
       maplibregl.addProtocol("pmtiles",protocol.tile)
       const params = this.parseUrlParams()
       this.mapNames.forEach(mapName => {
+
+        // 2画面-----------------------------------------------------------
+        if (mapName === 'map02') {
+          if (params.split === 'true') {
+            this.mapFlg.map02 = true
+            if (window.innerWidth > 1000) {
+              this.mapSize.map01.width = '50%'
+              this.mapSize.map01.height = '100%'
+            } else {
+              this.mapSize.map01.width = '100%'
+              this.mapSize.map01.height = '50%'
+              this.mapSize.map02.width = '100%'
+              this.mapSize.map02.height = '50%'
+              this.mapSize.map02.top = '50%'
+            }
+          }
+        }
+        // --------------------------------------------------------------
         let center = [139.84267451046338,38.36453863570733]
         let zoom = 5
         let pitch= {map01:0,map02:0}
@@ -445,7 +463,7 @@ export default {
           pitch: pitch[mapName],
           bearing:bearing,
           maxPitch: 85, // 最大の傾き、デフォルトは60
-          attributionControl: false, // デフォルトのアトリビューションコントロールを無効化
+          attributionControl: false,
           // style: 'https://raw.githubusercontent.com/gsi-cyberjapan/optimal_bvmap/52ba56f645334c979998b730477b2072c7418b94/style/std.json',
           // style:require('@/assets/json/std.json')
           // style: {
@@ -474,63 +492,28 @@ export default {
 
           // style:require('@/assets/json/mono.json')
 
-
           style: {
             'version': 8,
             glyphs: "https://glyphs.geolonia.com/{fontstack}/{range}.pbf",
             'sources': {
-              'gsi-monochrome': {
-                'type': 'raster',
-                'tiles': [
-                  'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'
-                ],
-                'tileSize': 256,
-                'attribution': '© 国土地理院'
-              },
               terrain: gsiTerrainSource,
             },
-            // terrain: {
-            //   source: 'terrain',
-            //   exaggeration: 5,
-            // },
-            'layers': [
-              {
-                'id': 'gsi-monochrome-layer',
-                'type': 'raster',
-                'source': 'gsi-monochrome',
-                paint: {
-                  'raster-opacity': 1.0
-                }
-              }
-            ]
+            'layers': []
           },
         })
         this.$store.state[mapName] = map
 
-        map.addControl(
-            new maplibregl.AttributionControl({
-              compact: true, // アトリビューションを小さくする
-            })
-        )
+        // map.addControl(
+        //     new maplibregl.AttributionControl({
+        //       compact: true, // アトリビューションを小さくする
+        //     })
+        // )
 
       })
       // --------------------------------
       const map = this.$store.state.map01
       const vm = this
       //----------------------------------
-
-      // var contour = new mlcontour.DemSource({
-      //   url: "https://mapdata.qchizu2.xyz/03_dem/51_int/all_9999/int_01/{z}/{x}/{y}.png",
-      //   encoding: "numpng", // "mapbox", "terrarium" or "numpng" default="terrarium"
-      //   maxzoom: 13,
-      //   worker: true, // offload isoline computation to a web worker to reduce jank
-      //   cacheSize: 100, // number of most-recent tiles to cache
-      //   timeoutMs: 10_000, // timeout on fetch requests
-      // });
-      // contour.setupMaplibre(maplibregl);
-
-
-
 
       map.on('click', (e) => {
         const latitude = e.lngLat.lat
@@ -645,8 +628,6 @@ export default {
       })
 
       // map1のクリックイベント
-
-
       map1.on('click', (e) => {
         if (syncing) return  // 同期中の場合は再帰呼び出しを防ぐ
         syncing = true
@@ -674,28 +655,30 @@ export default {
         const map = this.$store.state[mapName]
         const params = this.parseUrlParams()
         map.on('load', () => {
+          // map.setProjection({"type": "globe"})
+          map.resize()
 
-          const attributionButton = document.querySelector('#' + mapName +' .maplibregl-ctrl-attrib-button');
-          if (attributionButton) {
-            attributionButton.click(); // 初期状態で折りたたむ
-          }
+          // const attributionButton = document.querySelector('#' + mapName +' .maplibregl-ctrl-attrib-button');
+          // if (attributionButton) {
+          //   attributionButton.click(); // 初期状態で折りたたむ
+          // }
 
-          // 二画面-----------------------------------------------------------
-          if (mapName === 'map02') {
-            if (params.split === 'true') {
-              this.mapFlg.map02 = true
-              if (window.innerWidth > 1000) {
-                this.mapSize.map01.width = '50%'
-                this.mapSize.map01.height = '100%'
-              } else {
-                this.mapSize.map01.width = '100%'
-                this.mapSize.map01.height = '50%'
-                this.mapSize.map02.width = '100%'
-                this.mapSize.map02.height = '50%'
-                this.mapSize.map02.top = '50%'
-              }
-            }
-          }
+          // // 二画面-----------------------------------------------------------
+          // if (mapName === 'map02') {
+          //   if (params.split === 'true') {
+          //     this.mapFlg.map02 = true
+          //     if (window.innerWidth > 1000) {
+          //       this.mapSize.map01.width = '50%'
+          //       this.mapSize.map01.height = '100%'
+          //     } else {
+          //       this.mapSize.map01.width = '100%'
+          //       this.mapSize.map01.height = '50%'
+          //       this.mapSize.map02.width = '100%'
+          //       this.mapSize.map02.height = '50%'
+          //       this.mapSize.map02.top = '50%'
+          //     }
+          //   }
+          // }
           // ----------------------------------------------------------------
           // ここを改善する必要あり ここでプログラムがエラーなしでとまる。
           //
@@ -704,10 +687,12 @@ export default {
           if (params.slj) {
             params.slj[mapName].forEach(slg => {
               let cnt = 0
-              function aaa () {
+
+              function aaa() {
                 Layers.layers[mapName].forEach(value => {
                   if (!value.nodes) cnt++
-                  function bbb (v1) {
+
+                  function bbb(v1) {
                     if (v1.nodes) {
                       v1.nodes.forEach(v2 => {
                         if (!v2.nodes) {
@@ -729,14 +714,31 @@ export default {
                       }
                     }
                   }
+
                   bbb(value)
                 })
               }
+
               aaa()
               console.log('背景' + cnt + '件')
             })
+          } else {
+            this.s_selectedLayers[mapName].unshift(
+                {
+                  id: 'oh-pale-layer',
+                  label: '淡色地図',
+                  source: paleSource,
+                  layers: [paleLayer],
+                  attribution: '国土地理院',
+                  opacity: 1,
+                  visibility: true,
+                }
+            )
           }
           if (params.slj) this.s_selectedLayers = params.slj
+
+
+
           // ----------------------------------------------------------------
 
           // const gsiTerrainSource = useGsiTerrainSource(maplibregl.addProtocol, {
@@ -747,66 +749,7 @@ export default {
           // const gsiTerrainSource = useGsiTerrainSource(maplibregl.addProtocol);
           // map.addSource(gsiTerrainSource)
 
-          // map.addSource("contourSource", {
-          //   "type": "vector",
-          //   "tiles": [
-          //     contour.contourProtocolUrl({
-          //       multiplier: 1,
-          //       thresholds: {
-          //         // zoom: [minor, major]
-          //         11: [200, 1000],
-          //         12: [100, 500],
-          //         14: [50, 200],
-          //         15: [20, 100],
-          //       },
-          //       elevationKey: "ele",
-          //       levelKey: "level",
-          //       contourLayer: "contours",
-          //     }),
-          //   ],
-          //   "maxzoom": 19,
-          // });
-          //
-          // map.addLayer({
-          //   id: "contours",
-          //   type: "line",
-          //   source: "contourSource",
-          //   "source-layer": "contours",
-          //   paint: {
-          //     "line-color": "rgba(0,0,0, 1)",
-          //     "line-width": 10
-          //     // "line-width": ["*", ["match", ["get", "level"], 1, 1, 0.5], CONTOUR_LINE_WIDTH_FACTOR]
-          //   },
-          //   layout: {
-          //     "line-join": "round",
-          //     visibility: 'visible'
-          //   },
-          //   before: "gsi-monochrome-layer",
-          // });
-          //
-          // map.addLayer({
-          //   id: "contour-text",
-          //   type: "symbol",
-          //   source: "contourSource",
-          //   "source-layer": "contours",
-          //   filter: [">", ["get", "level"], 0],
-          //   paint: {
-          //     "text-halo-color": "white",
-          //     "text-halo-width": 1,
-          //   },
-          //   layout: {
-          //     "symbol-placement": "line",
-          //     "text-anchor": "center",
-          //     "text-size": 12,
-          //     "text-field": [
-          //       "concat",
-          //       ["number-format", ["get", "ele"], {}],
-          //       "",
-          //     ],
-          //     'text-font': ['Noto Sans CJK JP Bold'],
-          //     visibility: 'visible'
-          //   },
-          // });
+
 
 
           // 標高タイルソース---------------------------------------------------
@@ -1053,10 +996,27 @@ export default {
                   break
                 }
                 case 'oh-kyusekki':{
-                  let name = props.遺跡名
-                  html =
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 20px;">' + name + '</span>' +
+                  let sekkiHtml = ''
+                  const sekki = ['ナイフ形石器','台形（様）石器','斧形石器','剥片尖頭器','角錐状石器・三稜尖頭器','槍先形尖頭器',
+                    '両面調整石器','細石刃・細石核等','神子柴型石斧','有茎（舌）尖頭器','掻器・削器','彫器','砥石','叩石','台石',
+                    '礫器','その他の石器','草創期土器','ブロック･ユニット','礫群・配石','炭化物集中','その他の遺構','特記事項'
+                  ]
+                  sekki.forEach((value) =>{
+                    if (props[value]) {
+                      sekkiHtml = sekkiHtml + value + '=' + props[value] + '<br>'
+                    }
+                  })
+                  html = '<div style=font-size:small;>' +
+                      '<h4>' + props.遺跡名 + '</h4>' +
+                      '読み方=' + props.遺跡名読み方 + '<br>' +
+                      '都道府県=' + props.都道府県 + '<br>' +
+                      '所在地=' + props.所在地 + '<br>' +
+                      '標高=' + props.標高 + '<br>' +
+                      '文献=' + props.文献 + '<br>' +
+                      '調査歴=' + props.調査歴 + '<br>' +
+                      '作成年月日=' + props.作成年月日 + '<br>' +
+                      '作成者=' + props.作成者+ '<br>' +
+                      sekkiHtml +
                       '</div>'
                   break
                 }
@@ -1516,12 +1476,13 @@ export default {
               }
 
               // ポップアップ作成
-              console.log(mapName)
               const popup = new maplibregl.Popup({
                 closeButton: true,
+                // className: 'custom-popup'
               })
                   .setLngLat(coordinates)
                   .setHTML(html)
+                  .setMaxWidth("350px")
                   .addTo(map)
               popups.push(popup)
               popup.on('close', () => closeAllPopups())
@@ -2021,7 +1982,6 @@ html, body {
 }
 .maplibregl-popup-content {
   padding: 30px 20px 10px 20px;
-  max-width: 300px;
 }
 .maplibregl-popup-close-button{
   font-size: 40px;

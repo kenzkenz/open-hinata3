@@ -50,6 +50,7 @@ import "vue3-tree/dist/style.css"
 import draggable from "vuedraggable"
 import mw5 from '@/js/mw5'
 import * as turf from '@turf/turf'
+// import {stdLayer, stdSource} from "@/js/layers";
 
 export default {
   name: 'Dialog-layer',
@@ -188,7 +189,6 @@ export default {
           } else if (layer0.type === 'symbol') {
             map.setPaintProperty(layer0.id, 'text-opacity', element.opacity)
           }
-
         })
       }
     },
@@ -223,7 +223,26 @@ export default {
     },
     addLayers() {
       if(!this.$store.state.watchFlg) return
-      // if (!this.s_selectedLayers[this.mapName].length) return
+      console.log(this.s_selectedLayers[this.mapName])
+      // if (this.s_selectedLayers[this.mapName].length === 0) {
+      //   alert(this.s_selectedLayers[this.mapName].length)
+      //
+      //   this.s_selectedLayers[this.mapName].unshift(
+      //       {
+      //         id: 'oh-stdLayer',
+      //         label: '標準地図',
+      //         source: stdSource,
+      //         layer: stdLayer,
+      //         // layers: stdLayer,
+      //         attribution: '',
+      //         opacity: 1,
+      //         visibility: true,
+      //       }
+      //   )
+      //
+      //   alert(this.s_selectedLayers[this.mapName].length)
+      //
+      // }
       // ------------------------------------------------------------------
       const map = this.$store.state[this.mapName]
       // まずレイヤーを削除-------------------------
@@ -231,6 +250,7 @@ export default {
       if (layers) {
         for (let i = layers.length - 1; i >= 0; i--) {
           const layerId = layers[i].id
+          console.log(layers[i])
           if (layerId.slice(0,2) === 'oh' ) {
             map.removeLayer(layerId)
           }
@@ -248,7 +268,6 @@ export default {
           if (layer.source) {
             if (!map.getSource(layer.source.id)) map.addSource(layer.source.id, layer.source.obj)
           }
-
           layer.layers.forEach(layer0 => {
             if (layer0.id === 'oh-mw-dummy') {
               this.mw5AddLayers(map,this.mapName)

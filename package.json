@@ -15,7 +15,6 @@
     "core-js": "^3.8.3",
     "d3": "^7.9.0",
     "json-loader": "^0.5.7",
-    "maplibre-contour": "^0.0.8",
     "maplibre-gl": "^5.0.0-pre.4",
     "maplibre-gl-gsi-terrain": "^1.2.0",
     "pmtiles": "^3.2.0",

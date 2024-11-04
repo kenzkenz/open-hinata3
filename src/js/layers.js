@@ -672,19 +672,28 @@ const tetsudojikeiretsuLayerBlue = {
 //     'filter': ['==', 'N06_002', 2024]
 // }
 // 標準地図--------------------------------------------------------------------------------------------------------------
-const stdSource = {
+export const stdSource = {
     id: 'stdSource', obj: {
         type: 'raster',
         tiles: ['https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'],
-        tileSize: 256
     }
 }
-const stdLayer = {
+export const stdLayer = {
     'id': 'oh-stdLayer',
     'type': 'raster',
     'source': 'stdSource',
-    'minzoom': 0,
-    'maxzoom': 18
+}
+// 淡色地図--------------------------------------------------------------------------------------------------------------
+export const paleSource = {
+    id: 'pale-source', obj: {
+        type: 'raster',
+        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'],
+    }
+}
+export const paleLayer = {
+    'id': 'oh-pale-layer',
+    'type': 'raster',
+    'source': 'pale-source',
 }
 // 最新写真--------------------------------------------------------------------------------------------------------------
 const seamlessphotoSource = {
@@ -820,6 +829,18 @@ const kanagawaSyashinLayer = {
     'source': 'kanagawa-syashin-source',
     'type': 'raster',
 }
+// 横浜北部、川崎航空写真--------------------------------------------------------------------------------------------------------------
+const yokohamaSyashinSource = {
+    id:'yokohama-syashin-source',obj:{
+        type: 'raster',
+        tiles: ['https://kenzkenz3.xsrv.jp/kokusyashin/yokohama/{z}/{x}/{y}.png'],
+    }
+}
+const yokohamaSyashinLayer = {
+    'id': 'oh-yokohama-syashin',
+    'source': 'yokohama-syashin-source',
+    'type': 'raster',
+}
 // ---------------------------------------------------------------------------------------------------------------------
 // PLATEAU建物（PMTiles）ソース
 const plateauPmtilesSource = {
@@ -846,6 +867,18 @@ const plateauPmtilesLayer = {
         // "fill-extrusion-height": ["get", "measuredHeight"]
         "fill-extrusion-height": ["get", "measured_height"]
     }
+}
+// 横浜北部、川崎CS立体図---------------------------------------------------------------------------------------------------------
+const csYokohamSource = {
+    id: 'cs-yokohama-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz3.xsrv.jp/cs/yokohama/{z}/{x}/{y}.png'],
+    }
+}
+const csYokohamaLayer = {
+    'id': 'oh-cs-yokohama-layer',
+    'type': 'raster',
+    'source': 'cs-yokohama-source',
 }
 // 神奈川県CS立体図---------------------------------------------------------------------------------------------------------
 const csKanagawaSource = {
@@ -2951,7 +2984,6 @@ const shitchiLayer = {
     'source': 'shitchi-source',
 }
 
-
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -2963,6 +2995,12 @@ const layers01 = [
                 label: "標準地図",
                 source: stdSource,
                 layers: [stdLayer]
+            },
+            {
+                id: 'oh-pale-layer',
+                label: "淡色地図",
+                source: paleSource,
+                layers: [paleLayer]
             },
             {
                 id: 'oh-plateauPmtiles',
@@ -3035,6 +3073,12 @@ const layers01 = [
                 label: "神奈川航空写真",
                 source: kanagawaSyashinSource,
                 layers: [kanagawaSyashinLayer]
+            },
+            {
+                id: 'oh-yokohama-syashin',
+                label: "横浜北部、川崎航空写真",
+                source: yokohamaSyashinSource,
+                layers: [yokohamaSyashinLayer]
             },
             {
                 id: 'oh-miyazaki-syashin',
@@ -3369,6 +3413,12 @@ const layers01 = [
                 label: "神奈川県赤色立体地図",
                 source: kanagawaSekisyokuSource,
                 layers: [kanagawaSekisyokuLayer]
+            },
+            {
+                id: 'oh-cs-yokohama-layer',
+                label: "横浜北部、川崎CS立体図",
+                source: csYokohamSource,
+                layers: [csYokohamaLayer]
             },
             {
                 id: 'oh-tamaSekisyokuLayer',
