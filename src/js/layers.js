@@ -1187,7 +1187,7 @@ const bakumatsuSource = {
     }
 }
 const bakumatsuLayer = {
-    id: "oh-bakumatsu",
+    id: "oh-bakumatsu-layer",
     type: "fill",
     source: "bakumatsu",
     "source-layer": "b41",
@@ -1300,7 +1300,6 @@ const bakumatsuLayerLabel = {
     source: "bakumatsu",
     "source-layer": "b41",
     'layout': {
-        // 'text-field': ['get', '村名0'],
         'text-field': [
             'let', 'splitIndex', ['index-of', '・', ['get', '村名']],
             [
@@ -1311,7 +1310,33 @@ const bakumatsuLayerLabel = {
             ]
         ],
         'text-font': ['Noto Sans CJK JP Bold'],
-        // 'text-anchor': 'left',
+        'text-offset': [0.5, 0],
+        'visibility': 'visible',
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 10
+}
+const bakumatsuLayerLabel2 = {
+    id: "oh-bakumatsu-label-2",
+    type: "symbol",
+    source: "bakumatsu",
+    "source-layer": "b41",
+    'layout': {
+        'text-field': [
+            'let', 'splitIndex', ['index-of', '・', ['get', '村名']],
+            [
+                'case',
+                ['>=', ['var', 'splitIndex'], 0],
+                ['slice', ['get', '村名'], 0, ['var', 'splitIndex']],
+                ['get', '村名']
+            ]
+        ],
+        'text-font': ['Noto Sans CJK JP Bold'],
         'text-offset': [0.5, 0],
         'visibility': 'visible',
     },
@@ -3305,13 +3330,14 @@ const layers01 = [
                 id: 'oh-bakumatsu',
                 label: "幕末期近世の村",
                 source: bakumatsuSource,
-                layers: [bakumatsuLayer, bakumatsuLayerLine, bakumatsuLayerLabel]
+                layers: [bakumatsuLayer, bakumatsuLayerLine, bakumatsuLayerLabel],
+                ext: {name:'extBakumatsu',parameters:[]}
             },
             {
                 id: 'oh-bakumatsu-kokudaka',
                 label: "幕末期近世の村（石高/面積）",
                 source: bakumatsuSource,
-                layers: [bakumatsuLayerKokudaka,bakumatsuLayerLine,bakumatsuLayerLabel]
+                layers: [bakumatsuLayerKokudaka,bakumatsuLayerLine,bakumatsuLayerLabel2]
             },
             {
                 id: 'oh-bakumatsu-kokudaka-height',

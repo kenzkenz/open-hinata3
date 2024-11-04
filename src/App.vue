@@ -1209,10 +1209,11 @@ export default {
                       '</div>'
                   break
                 }
+                case 'oh-bakumatsu-label':
                 case 'oh-bakumatsu-line':
-                case 'oh-bakumatsu':{
+                case 'oh-bakumatsu-layer':{
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-bakumatsu'] }
+                      map.project(coordinates), { layers: ['oh-bakumatsu-layer'] }
                   )
                   if (features.length === 0) return;
                   props = features[0].properties
@@ -1262,7 +1263,7 @@ export default {
                 `
                   break
                 }
-                case 'oh-bakumatsu-label':
+                case 'oh-bakumatsu-label2':
                 case 'oh-bakumatsu-kokudaka':{
                   // ここを参考に
                   let features

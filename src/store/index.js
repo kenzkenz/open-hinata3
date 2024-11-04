@@ -68,6 +68,10 @@ export default createStore({
       map01: '',
       map02: ''
     },
+    bakumatsuText:{
+      map01: '',
+      map02: ''
+    },
     //------------------------
   },
   getters: {
@@ -84,6 +88,9 @@ export default createStore({
           break
         case 'extSyochiiki':
           variable = 'syochiikiNameText'
+          break
+        case 'extBakumatsu':
+          variable = 'bakumatsuText'
           break
       }
       console.log(payload.mapName,payload.name,payload.value)
