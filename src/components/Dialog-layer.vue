@@ -277,6 +277,8 @@ export default {
                 visibility = 'none'
               }
               if (layer.visibility === undefined) visibility = 'visible'
+              // ここを修正する必要があるが、昔のリンクがなくなれば問題なくなるか？
+              // console.log(layer.visibility)
               map.setLayoutProperty(layer0.id, 'visibility',visibility)
             }
           })

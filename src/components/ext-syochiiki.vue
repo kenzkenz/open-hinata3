@@ -38,16 +38,24 @@ export default {
       const map = this.$store.state[mapName]
       function filterBy(text) {
         if (text) {
-          map.setFilter('oh-syochiiki-line', [">=", ["index-of", text, ["get", "S_NAME"]], 0])
-          map.setFilter('oh-syochiiki-label', [">=", ["index-of", text, ["get", "S_NAME"]], 0])
-          map.setFilter('oh-syochiiki-layer', [">=", ["index-of", text, ["get", "S_NAME"]], 0])
+          let searchString = text
+          searchString = searchString.replace(/\u3000/g,' ')
+          const words = searchString.split(" ")
+          // 各単語に対して index-of チェックを実行
+          const filterConditions = words.map(word => [">=", ["index-of", word, ["get", "S_NAME"]], 0])
+          // いずれかの単語が含まれる場合の条件を作成 (どれか1つの条件が true であればOK)
+          const matchCondition = ["any", ...filterConditions]
+          map.setFilter('oh-syochiiki-line', matchCondition)
+          map.setFilter('oh-syochiiki-label', matchCondition)
+          map.setFilter('oh-syochiiki-layer', matchCondition)
           map.setPaintProperty('oh-syochiiki-layer', 'fill-color', [
             'case',
-            [">=", ["index-of", text, ["get", "S_NAME"]], 0],
+            matchCondition,
             'rgba(255,0,0,0.4)',
             // 条件が一致しない場合の色
             'rgba(0,0,0,0)'
           ])
+          // map.setFilter('oh-syochiiki-line', [">=", ["index-of", text, ["get", "S_NAME"]], 0])
         } else {
           map.setFilter('oh-syochiiki-line', null)
           map.setFilter('oh-syochiiki-label', null)
