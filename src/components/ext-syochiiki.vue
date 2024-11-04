@@ -39,7 +39,7 @@ export default {
       function filterBy(text) {
         if (text) {
           let searchString = text
-          searchString = searchString.replace(/\u3000/g,' ')
+          searchString = searchString.replace(/\u3000/g,' ').trim()
           const words = searchString.split(" ")
           // 各単語に対して index-of チェックを実行
           const filterConditions = words.map(word => [">=", ["index-of", word, ["get", "S_NAME"]], 0])
@@ -68,7 +68,6 @@ export default {
     }
   },
   mounted() {
-    console.log(this.s_syochiikiNameText)
     this.syochiikiInput (this.mapName)
   },
   watch: {
