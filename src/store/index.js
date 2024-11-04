@@ -64,6 +64,10 @@ export default createStore({
       map01: 2024,
       map02: 2024
     },
+    syochiikiNameText:{
+      map01: '',
+      map02: ''
+    },
     //------------------------
   },
   getters: {
@@ -78,7 +82,9 @@ export default createStore({
         case 'extTetsudojikeiretsu':
           variable = 'tetsudojikeiretsuYear'
           break
-
+        case 'extSyochiiki':
+          variable = 'syochiikiNameText'
+          break
       }
       console.log(payload.mapName,payload.name,payload.value)
       state[variable][payload.mapName] = payload.value

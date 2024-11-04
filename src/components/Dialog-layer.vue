@@ -16,7 +16,8 @@
               <div class="info-div" @click="infoOpen(element)"><v-icon>mdi-cog</v-icon></div>
               <div class="label-div">{{element.label}}</div>
               <div class="range-div">
-                <input type="range" min="0" max="1" step="0.01" class="range" v-model.number="element.opacity" @input="changeSlider(element)" @mouseover="changeWatchFlg(false)" @mouseleave="changeWatchFlg(true)"/>
+                <input type="range" min="0" max="1" step="0.01" class="range" v-model.number="element.opacity" @input="changeSlider(element)"/>
+<!--                <input type="range" min="0" max="1" step="0.01" class="range" v-model.number="element.opacity" @input="changeSlider(element)" @mouseover="changeWatchFlg(false)" @mouseleave="changeWatchFlg(true)"/>-->
               </div>
               <div class="trash-div" @click="removeLayer(element.id)"><i class="fa-sharp fa-solid fa-trash-arrow-up hover"></i></div>
             </div>
@@ -195,6 +196,7 @@ export default {
     removeLayer(id){
       // const map = this.$store.state[this.mapName]
       this.s_selectedLayers[this.mapName] = this.s_selectedLayers[this.mapName].filter(layer => layer.id !== id)
+      this.$store.state.watchFlg = true
       // map.removeLayer(id)
     },
     onNodeClick (node) {
@@ -223,26 +225,6 @@ export default {
     },
     addLayers() {
       if(!this.$store.state.watchFlg) return
-      console.log(this.s_selectedLayers[this.mapName])
-      // if (this.s_selectedLayers[this.mapName].length === 0) {
-      //   alert(this.s_selectedLayers[this.mapName].length)
-      //
-      //   this.s_selectedLayers[this.mapName].unshift(
-      //       {
-      //         id: 'oh-stdLayer',
-      //         label: '標準地図',
-      //         source: stdSource,
-      //         layer: stdLayer,
-      //         // layers: stdLayer,
-      //         attribution: '',
-      //         opacity: 1,
-      //         visibility: true,
-      //       }
-      //   )
-      //
-      //   alert(this.s_selectedLayers[this.mapName].length)
-      //
-      // }
       // ------------------------------------------------------------------
       const map = this.$store.state[this.mapName]
       // まずレイヤーを削除-------------------------
@@ -300,8 +282,10 @@ export default {
           })
           // -------------------------------------------------
           if (layer.ext) {
+            console.log(layer.ext)
             if (layer.ext.values) {
               layer.ext.values.forEach((v,i) => {
+                console.log(v)
                 this.$store.commit('updateParam', {
                   name: layer.ext.name,
                   mapName: this.mapName,

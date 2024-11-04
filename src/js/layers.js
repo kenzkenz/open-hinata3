@@ -291,7 +291,7 @@ const syochiikiSource = {
     }
 }
 const syochiikiLayer = {
-    'id': 'oh-syochiikiLayer',
+    'id': 'oh-syochiiki-layer',
     'source': 'syochiikiSource',
     'source-layer': "polygon",
     'type': 'fill',
@@ -300,7 +300,7 @@ const syochiikiLayer = {
     },
 }
 const syochiikLayerLine = {
-    id: "oh-syochiik-Line",
+    id: "oh-syochiiki-line",
     type: "line",
     source: "syochiikiSource",
     "source-layer": "polygon",
@@ -3139,7 +3139,8 @@ const layers01 = [
                 id: 'oh-syochiiki',
                 label: "国勢調査小地域人口ピラミッド",
                 source: syochiikiSource,
-                layers: [syochiikiLayer,syochiikLayerLine,syochiikiLayerLabel]
+                layers: [syochiikiLayer,syochiikLayerLine,syochiikiLayerLabel],
+                ext: {name:'extSyochiiki',parameters:[]}
             },
             {
                 id: 'oh-syochiiki-2',

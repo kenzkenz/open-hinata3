@@ -976,9 +976,9 @@ export default {
                 }
                 case 'oh-syochiiki-height':
                 case 'oh-syochiiki-label':
-                case 'oh-syochiikiLayer':{
+                case 'oh-syochiiki-layer':{
                   features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-syochiikiLayer'] }
+                      map.project(coordinates), { layers: ['oh-syochiiki-layer'] }
                   )
                   if (features.length === 0) return
                   props = features[0].properties
