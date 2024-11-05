@@ -72,6 +72,10 @@ export default createStore({
       map01: '',
       map02: ''
     },
+    bakumatsuSelected:{
+      map01: '',
+      map02: ''
+    },
     //------------------------
   },
   getters: {
@@ -90,7 +94,19 @@ export default createStore({
           variable = 'syochiikiNameText'
           break
         case 'extBakumatsu':
-          variable = 'bakumatsuText'
+          // variable = 'bakumatsuText'
+          if (payload.order === 0) {
+            variable = 'bakumatsuText'
+          } else if (payload.order === 1){
+            variable = 'bakumatsuSelected'
+          }
+          break
+        case 'jinko250m':
+          if (payload.order === 0) {
+            variable = 'jinko250m'
+          } else if (payload.order === 1){
+            variable = 'paintCheck250m'
+          }
           break
       }
       console.log(payload.mapName,payload.name,payload.value)

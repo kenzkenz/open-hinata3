@@ -1,15 +1,12 @@
 <template>
     <div :style="menuContentSize">
-
       <v-select
-          v-model="selected"
+          v-model="s_bakumatsuSelected"
           :items="items"
           label="表示方法を選択してください"
           outlined
           @update:modelValue="onSelectChange"
       ></v-select>
-
-
       <v-text-field label="抽出" v-model="s_bakumatsuText" @input="bakumatsuInput(mapName)" style="margin-top: 10px"></v-text-field>
     </div>
 </template>
@@ -27,6 +24,14 @@ export default {
   computed: {
     s_watchFlg () {
       return this.$store.state.watchFlg
+    },
+    s_bakumatsuSelected: {
+      get() {
+        return this.$store.state.bakumatsuSelected[this.mapName]
+      },
+      set(value) {
+        this.$store.state.bakumatsuSelected[this.mapName] = value
+      }
     },
     s_bakumatsuText: {
       get() {
@@ -79,13 +84,13 @@ export default {
           break
       }
       if (field) map.setPaintProperty('oh-bakumatsu-layer', 'fill-color', ['get', field])
-
-
+      this.update()
     },
     update () {
       try {
         const bakumatsu = this.s_bakumatsuText
-        this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [bakumatsu]})
+        const bakumatsuSelected = this.s_bakumatsuSelected
+        this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [bakumatsu,bakumatsuSelected]})
       }catch (e) {
         console.log(e)
       }
@@ -123,15 +128,18 @@ export default {
         }
       }
       filterBy(this.s_bakumatsuText)
+      this.$store.state.watchFlg = false
       this.update()
     }
   },
   mounted() {
     this.bakumatsuInput (this.mapName)
+    this.onSelectChange (this.s_bakumatsuSelected)
   },
   watch: {
     s_watchFlg () {
       this.bakumatsuInput (this.mapName)
+      this.onSelectChange (this.s_bakumatsuSelected)
     },
   }
 }

@@ -2,7 +2,7 @@
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div :id="'container-div-' + mapName" :style="menuContentSize">
       <div :id="'first-div-' + mapName" class="first-div">
-        <draggable v-model="s_selectedLayers[mapName]" item-key="id" handle=".handle-div">
+        <draggable @start="onStart" @end="onEnd" v-model="s_selectedLayers[mapName]" item-key="id" handle=".handle-div">
           <template #item="{element}">
             <div class="drag-item">
 
@@ -61,6 +61,7 @@ export default {
     draggable
   },
   data: () => ({
+    isDragging:false,
     isChecked: true,
     searchText: '',
     selectedLayers: {
@@ -94,6 +95,12 @@ export default {
     },
   },
   methods: {
+    onStart () {
+      this.isDragging = true
+    },
+    onEnd () {
+      this.isDragging = false
+    },
     toggleCheck(element) {
       const map = this.$store.state[this.mapName]
       element.layers.forEach(layer0 => {
@@ -224,7 +231,7 @@ export default {
       }
     },
     addLayers() {
-      if(!this.$store.state.watchFlg) return
+      if(!this.$store.state.watchFlg && !this.isDragging) return
       // ------------------------------------------------------------------
       const map = this.$store.state[this.mapName]
       // まずレイヤーを削除-------------------------
@@ -283,23 +290,25 @@ export default {
             }
           })
           // -------------------------------------------------
-          if (layer.ext) {
-            console.log(layer.ext)
-            if (layer.ext.values) {
-              layer.ext.values.forEach((v,i) => {
-                console.log(v)
-                this.$store.commit('updateParam', {
-                  name: layer.ext.name,
-                  mapName: this.mapName,
-                  value: String(v),
-                  order: i
+          if(!this.isDragging) {
+            if (layer.ext) {
+              if (layer.ext.values) {
+                layer.ext.values.forEach((v,i) => {
+                  this.$store.commit('updateParam', {
+                    name: layer.ext.name,
+                    mapName: this.mapName,
+                    value: String(v),
+                    order: i
+                  })
                 })
-              })
+              }
+              this.$store.state.watchFlg = ! this.$store.state.watchFlg
+              this.$store.state.watchFlg = true
+              // ここを改修する。
+              this.infoOpen(layer)
             }
-            this.$store.state.watchFlg = ! this.$store.state.watchFlg
-            // ここを改修する。
-            this.infoOpen(layer)
           }
+
         }
       }
       // console.log(map.getStyle().layers)
@@ -418,6 +427,7 @@ export default {
     },
     s_selectedLayers: {
       handler: function(){
+        // this.$store.state.watchFlg = true
         console.log('変更を検出しました',this.$store.state.watchFlg)
         // ------------------------------------------------------------------
         const map01 = this.$store.state.map01
