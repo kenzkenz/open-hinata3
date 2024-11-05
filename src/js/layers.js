@@ -1193,25 +1193,24 @@ const bakumatsuLayer = {
     "source-layer": "b41",
     paint: {
         'fill-color': ['get', 'random_color'],
-        'fill-opacity': 1
     }
 }
-const bakumatsuLayerKokudaka = {
-    id: "oh-bakumatsu-kokudaka",
-    type: "fill",
-    source: "bakumatsu",
-    "source-layer": "b41",
-    'paint': {
-        'fill-color': [
-            'interpolate',
-            ['linear'],
-            ['/', ['get', '石高計'], ['get', 'area']],
-            0, 'white',   // Color for low values
-            10000000, 'red', // Intermediate value
-            50000000, 'black' // Color for high values
-        ]
-    }
-}
+// const bakumatsuLayerKokudaka = {
+//     id: "oh-bakumatsu-kokudaka",
+//     type: "fill",
+//     source: "bakumatsu",
+//     "source-layer": "b41",
+//     'paint': {
+//         'fill-color': [
+//             'interpolate',
+//             ['linear'],
+//             ['/', ['get', '石高計'], ['get', 'area']],
+//             0, 'white',
+//             10000000, 'red',
+//             50000000, 'black'
+//         ]
+//     }
+// }
 const bakumatsuLayerHeight = {
     id: 'oh-bakumatsu-height',
     type: 'fill-extrusion',
@@ -1235,31 +1234,22 @@ const bakumatsuLayerHeight = {
         ]
     }
 }
-const bakumatsuLayerHan = {
-    id: "oh-bakumatsu-han",
-    type: "fill",
-    source: "bakumatsu",
-    "source-layer": "b41",
-    'paint': {
-        'fill-color': [
-            // 'match',
-            // ['get', '領分１'], '幕領', 'rgba(255,0,0,0.7)',
-            // '#ccc' // Default color (if no match)
-            'case',
-            ['>', ['index-of', '藩', ['get', '領分１']], -1], 'rgba(104,52,154,0.7)',
-            ['>', ['index-of', '幕領', ['get', '領分１']], -1], 'rgba(255,0,0,0.7)',
-            ['>', ['index-of', '皇室領', ['get', '領分１']], -1], 'rgba(255,215,0,0.7)',
-            ['>', ['index-of', '社寺領', ['get', '領分１']], -1], 'rgba(0,0,0,0.7)',
-            'rgba(0,0,255,0.7)'
-        ]
-    }
-    // paint: {
-    //     'fill-color': '#d7352b',
-    //     'fill-opacity': 0.6,
-    // },
-    // //別海町のジオコード（01691）で始まる町丁目のみ表示されるようにフィルターをセット
-    // filter: ['==', ['index-of', '吉村', ['get', '村名']], 0]
-}
+// const bakumatsuLayerHan = {
+//     id: "oh-bakumatsu-han",
+//     type: "fill",
+//     source: "bakumatsu",
+//     "source-layer": "b41",
+//     'paint': {
+//         'fill-color': [
+//             'case',
+//             ['>', ['index-of', '藩', ['get', '領分１']], -1], 'rgba(104,52,154,0.7)',
+//             ['>', ['index-of', '幕領', ['get', '領分１']], -1], 'rgba(255,0,0,0.7)',
+//             ['>', ['index-of', '皇室領', ['get', '領分１']], -1], 'rgba(255,215,0,0.7)',
+//             ['>', ['index-of', '社寺領', ['get', '領分１']], -1], 'rgba(0,0,0,0.7)',
+//             'rgba(0,0,255,0.7)'
+//         ]
+//     }
+// }
 const bakumatsuLayerLine = {
     id: "oh-bakumatsu-line",
     type: "line",
@@ -1277,23 +1267,23 @@ const bakumatsuLayerLine = {
         ]
     },
 }
-const bakumatsuLayerLine2 = {
-    id: "oh-bakumatsu-line2",
-    type: "line",
-    source: "bakumatsu",
-    "source-layer": "b41",
-    paint: {
-        'line-color': '#000',
-        // 'line-width': 0.5
-        'line-width': [
-            'interpolate', // Zoom-based interpolation
-            ['linear'],
-            ['zoom'], // Use the zoom level as the input
-            7, 0,
-            11, 0.5
-        ]
-    },
-}
+// const bakumatsuLayerLine2 = {
+//     id: "oh-bakumatsu-line2",
+//     type: "line",
+//     source: "bakumatsu",
+//     "source-layer": "b41",
+//     paint: {
+//         'line-color': '#000',
+//         // 'line-width': 0.5
+//         'line-width': [
+//             'interpolate', // Zoom-based interpolation
+//             ['linear'],
+//             ['zoom'], // Use the zoom level as the input
+//             7, 0,
+//             11, 0.5
+//         ]
+//     },
+// }
 const bakumatsuLayerLabel = {
     id: "oh-bakumatsu-label",
     type: "symbol",
@@ -1321,33 +1311,33 @@ const bakumatsuLayerLabel = {
     'maxzoom': 24,
     'minzoom': 10
 }
-const bakumatsuLayerLabel2 = {
-    id: "oh-bakumatsu-label-2",
-    type: "symbol",
-    source: "bakumatsu",
-    "source-layer": "b41",
-    'layout': {
-        'text-field': [
-            'let', 'splitIndex', ['index-of', '・', ['get', '村名']],
-            [
-                'case',
-                ['>=', ['var', 'splitIndex'], 0],
-                ['slice', ['get', '村名'], 0, ['var', 'splitIndex']],
-                ['get', '村名']
-            ]
-        ],
-        'text-font': ['Noto Sans CJK JP Bold'],
-        'text-offset': [0.5, 0],
-        'visibility': 'visible',
-    },
-    'paint': {
-        'text-color': 'rgba(255, 255, 255, 0.7)',
-        'text-halo-color': 'rgba(0,0,0,0.7)',
-        'text-halo-width': 1.0,
-    },
-    'maxzoom': 24,
-    'minzoom': 10
-}
+// const bakumatsuLayerLabel2 = {
+//     id: "oh-bakumatsu-label-2",
+//     type: "symbol",
+//     source: "bakumatsu",
+//     "source-layer": "b41",
+//     'layout': {
+//         'text-field': [
+//             'let', 'splitIndex', ['index-of', '・', ['get', '村名']],
+//             [
+//                 'case',
+//                 ['>=', ['var', 'splitIndex'], 0],
+//                 ['slice', ['get', '村名'], 0, ['var', 'splitIndex']],
+//                 ['get', '村名']
+//             ]
+//         ],
+//         'text-font': ['Noto Sans CJK JP Bold'],
+//         'text-offset': [0.5, 0],
+//         'visibility': 'visible',
+//     },
+//     'paint': {
+//         'text-color': 'rgba(255, 255, 255, 0.7)',
+//         'text-halo-color': 'rgba(0,0,0,0.7)',
+//         'text-halo-width': 1.0,
+//     },
+//     'maxzoom': 24,
+//     'minzoom': 10
+// }
 // 小学校ソース --------------------------------------------------------------------------------------------
 export const syogakkoR05Source = {
     id: "syogakkoR05Source", obj: {
@@ -3333,24 +3323,24 @@ const layers01 = [
                 layers: [bakumatsuLayer, bakumatsuLayerLine, bakumatsuLayerLabel],
                 ext: {name:'extBakumatsu',parameters:[]}
             },
-            {
-                id: 'oh-bakumatsu-kokudaka',
-                label: "幕末期近世の村（石高/面積）",
-                source: bakumatsuSource,
-                layers: [bakumatsuLayerKokudaka,bakumatsuLayerLine,bakumatsuLayerLabel2]
-            },
+            // {
+            //     id: 'oh-bakumatsu-kokudaka',
+            //     label: "幕末期近世の村（石高/面積）",
+            //     source: bakumatsuSource,
+            //     layers: [bakumatsuLayerKokudaka,bakumatsuLayerLine,bakumatsuLayerLabel2]
+            // },
             {
                 id: 'oh-bakumatsu-kokudaka-height',
                 label: "幕末期近世の村（石高/面積）3D",
                 source: bakumatsuSource,
                 layers: [bakumatsuLayerHeight]
             },
-            {
-                id: 'oh-bakumatsu-han',
-                label: "幕末期近世の村（藩）",
-                source: bakumatsuSource,
-                layers: [bakumatsuLayerHan,bakumatsuLayerLine2,bakumatsuLayerLabel]
-            },
+            // {
+            //     id: 'oh-bakumatsu-han',
+            //     label: "幕末期近世の村（藩）",
+            //     source: bakumatsuSource,
+            //     layers: [bakumatsuLayerHan,bakumatsuLayerLine2,bakumatsuLayerLabel]
+            // },
         ]
     },
     {

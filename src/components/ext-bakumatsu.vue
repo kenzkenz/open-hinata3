@@ -1,5 +1,15 @@
 <template>
     <div :style="menuContentSize">
+
+      <v-select
+          v-model="selected"
+          :items="items"
+          label="表示方法を選択してください"
+          outlined
+          @update:modelValue="onSelectChange"
+      ></v-select>
+
+
       <v-text-field label="抽出" v-model="s_bakumatsuText" @input="bakumatsuInput(mapName)" style="margin-top: 10px"></v-text-field>
     </div>
 </template>
@@ -10,6 +20,8 @@ export default {
   name: 'ext-bakumatsu',
   props: ['mapName','item'],
   data: () => ({
+    selected: null, // 選択されたアイテムを格納
+    items: ["標準", "藩で色分け",'藩で色分け2','令制国で色分け','県で色分け','群で色分け','石高（面積割）で色分け'], // 表示するアイテム
     menuContentSize: {'height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'}
   }),
   computed: {
@@ -26,6 +38,50 @@ export default {
     },
   },
   methods: {
+    onSelectChange (value) {
+      const map = this.$store.state[this.mapName]
+      let field
+      switch (value) {
+        case '標準':
+          field = 'random_color'
+          break
+        case '藩で色分け':
+          field = 'random_color_ryobun'
+          break
+        case '藩で色分け2':
+          map.setPaintProperty('oh-bakumatsu-layer', 'fill-color', [
+            'case',
+            ['>', ['index-of', '藩', ['get', '領分１']], -1], 'rgba(104,52,154,0.7)',    // 「藩」が含まれる場合
+            ['>', ['index-of', '幕領', ['get', '領分１']], -1], 'rgba(255,0,0,0.7)',      // 「幕領」が含まれる場合
+            ['>', ['index-of', '皇室領', ['get', '領分１']], -1], 'rgba(255,215,0,0.7)',  // 「皇室領」が含まれる場合
+            ['>', ['index-of', '社寺領', ['get', '領分１']], -1], 'rgba(0,0,0,0.7)',      // 「社寺領」が含まれる場合
+            'rgba(0,0,255,0.7)'                                                         // 上記の条件に一致しない場合
+          ])
+          break
+        case '令制国で色分け':
+          field = 'random_color_ryoseikoku'
+          break
+        case '県で色分け':
+          field = 'random_color_pref'
+          break
+        case '群で色分け':
+          field = 'random_color_gunmei'
+          break
+        case '石高（面積割）で色分け':
+          map.setPaintProperty('oh-bakumatsu-layer', 'fill-color', [
+            'interpolate',
+            ['linear'],
+            ['/', ['get', '石高計'], ['get', 'area']],
+            0, 'white',
+            10000000, 'red',
+            50000000, 'black'
+          ])
+          break
+      }
+      if (field) map.setPaintProperty('oh-bakumatsu-layer', 'fill-color', ['get', field])
+
+
+    },
     update () {
       try {
         const bakumatsu = this.s_bakumatsuText

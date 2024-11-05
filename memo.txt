@@ -208,6 +208,12 @@ tippecanoe -o output.pmtiles -Z 0 -z 16 --buffer=256 output.geojson
 tippecanoe -l polygon -f -o t09.pmtiles city.geojson
 tippecanoe -l polygon -f -o r05.pmtiles r05.geojson
 
+tippecanoe -pk -pf -l b41 -f -o b41.pmtiles b4.geojson
+
+
+
+
+
 import random
 from qgis.core import QgsField, QgsExpression, QgsExpressionContext, QgsExpressionContextUtils
 from qgis.PyQt.QtCore import QVariant
