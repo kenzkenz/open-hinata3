@@ -1869,16 +1869,14 @@ export default {
 </script>
 <style scoped>
 #map00 {
-  background-color: #000;
+  background-color: rgb(194,210,251);
   height: 100%;
 }
 #map01 {
-  background-color: #fff;
   border: #000 1px solid;
   height: 100%;
 }
 #map02 {
-  background-color: #fff;
   border: #000 1px solid;
   position:absolute;
 }

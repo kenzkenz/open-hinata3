@@ -3104,7 +3104,19 @@ const shitchiLayer = {
     'type': 'raster',
     'source': 'shitchi-source',
 }
-
+// エコリス植生図---------------------------------------------------------------------------------------------------------
+const ecoris67Source = {
+    id: 'ecoris67-source', obj: {
+        type: 'raster',
+        tiles: ['https://map.ecoris.info/tiles/vege67/{z}/{x}/{y}.png'],
+    }
+}
+const ecoris67Layer = {
+    'id': 'oh-ecoris67-layer',
+    'type': 'raster',
+    'source': 'ecoris67-source',
+    'raster-resampling': 'nearest'
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -3457,6 +3469,13 @@ const layers01 = [
         nodes: [
             {
                 id: 'oh-shitchi',
+                label: "第6-7回植生図",
+                source: ecoris67Source,
+                layers: [ecoris67Layer],
+                attribution: "<a href='https://map.ecoris.info/' target='_blank'>エコリス地図タイル</a>",
+            },
+            {
+                id: 'oh-shitchi',
                 label: "明治期の低湿地",
                 source: shitchiSource,
                 layers: [shitchiLayer]
@@ -3608,7 +3627,6 @@ const layers01 = [
                 sources: [tamaSekisyokuSource,tokyo23SekisyokuSource,tosyo01SekisyokuSource,tosyo02SekisyokuSource,tosyo03SekisyokuSource,tosyo04SekisyokuSource,tosyo05SekisyokuSource,tosyo06SekisyokuSource],
                 layers: [tamaSekisyokuLayer,tokyo23SekisyokuLayer,tosyo02SekisyokuLayer,tosyo03SekisyokuLayer,tosyo04SekisyokuLayer,tosyo05SekisyokuLayer,tosyo06SekisyokuLayer,tosyo01SekisyokuLayer],
                 attribution:'<a href="https://www.geospatial.jp/ckan/dataset/tokyopc-23ku-2024" target="_blank">G空間情報センター</a>'
-
             },
             {
                 id: 'oh-tokyo23-cs-layer',

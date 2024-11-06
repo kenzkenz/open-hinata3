@@ -1,22 +1,25 @@
 <template>
-  <div ref="dragDiv" :id="'dialog-info-'+ item.id" class="dialog-info-div" v-for="item in info" :key="item.id" :style="item.style" @touchstart="aaa(item)" @mousedown="dialogMouseDown(item)" @mouseup="dialogMouseDown(item)">
+  <div ref="dragDiv" :id="'dialog-info-'+ item.id" class="dialog-info-div" v-for="item in info" :key="item.id" :style="item.style" @mousedown="dialogMouseDown(item)" @mouseup="dialogMouseDown(item)">
     <div ref="dragHandle" class="drag-handle" :id="'handle-'+ item.id"></div>
     <div class="close-btn-div" @click="close(item)"><i style="" class="fa-solid fa-xmark hover close-btn"></i></div>
-    <!--なにもないとき。普通のラスターのとき-->
-    <div v-if="!item.ext">
-      <div class="info-content-div">
-        <p v-html="item.label"></p><hr>
-        <p v-html="item.attribution"></p>
+<!--    <div class="content-div">-->
+      <!--なにもないとき。普通のラスターのとき-->
+      <div v-if="!item.ext">
+        <div class="info-content-div">
+          <p v-html="item.label"></p><hr>
+          <br>
+          <p v-html="item.attribution"></p>
+        </div>
       </div>
+      <!--コンポーネントをここに書き連ねる -->
+      <extHighway :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extHighway'"/>
+      <extTetsudojikeiretsu :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extTetsudojikeiretsu'"/>
+      <extSyochiiki :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extSyochiiki'"/>
+      <extBakumatsu :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extBakumatsu'"/>
+      <extBakumatsu3d :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extBakumatsu3d'"/>
+      <extBus :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extBus'"/>
     </div>
-    <!--コンポーネントをここに書き連ねる -->
-    <extHighway :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extHighway'"/>
-    <extTetsudojikeiretsu :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extTetsudojikeiretsu'"/>
-    <extSyochiiki :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extSyochiiki'"/>
-    <extBakumatsu :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extBakumatsu'"/>
-    <extBakumatsu3d :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extBakumatsu3d'"/>
-    <extBus :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extBus'"/>
-  </div>
+<!--  </div>-->
 </template>
 
 <script>
@@ -171,9 +174,10 @@ export default {
       color: blue;
     }
     .info-content-div{
-        padding: 10px;
-        /*max-width: 350px;*/
-        word-wrap: break-word;
-        overflow-wrap: break-word;
+      padding: 10px;
+      /*max-width: 350px;*/
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      font-size: 16px;
     }
 </style>
