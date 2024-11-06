@@ -1236,15 +1236,36 @@ export default {
                   )
                   if (features.length === 0) return;
                   props = features[0].properties
-                  const name = props.村名
-                  const kokudaka = Math.floor(Number(props.石高計))
-                  const ryobun = props.領分１
-                  html =
-                      `
-                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
-                   村名=${name}<br>石高=${kokudaka}<br>領分=${ryobun}
-                  </div>
-                `
+                  const ryobun2p = props.領分２ ? '<tr><td>領分２</td><td>' + props.領分２ + '</td><td>' + Math.round(props.石高２).toLocaleString() + '</td></tr>' : ''
+                  const ryobun3p = props.領分３ ? '<tr><td>領分３</td><td>' + props.領分３ + '</td><td>' + Math.round(props.石高３).toLocaleString() + '</td></tr>' : ''
+                  const ryobun4p = props.領分４ ? '<tr><td>領分４</td><td>' + props.領分４ + '</td><td>' + Math.round(props.石高４).toLocaleString() + '</td></tr>' : ''
+                  const ryobun5p = props.領分５ ? '<tr><td>領分５</td><td>' + props.領分５ + '</td><td>' + Math.round(props.石高５).toLocaleString() + '</td></tr>' : ''
+                  const ryobun6p = props.領分６ ? '<tr><td>領分６</td><td>' + props.領分６ + '</td><td>' + Math.round(props.石高６).toLocaleString() + '</td></tr>' : ''
+                  const ryobun7p = props.領分７ ? '<tr><td>領分７</td><td>' + props.領分７ + '</td><td>' + Math.round(props.石高７).toLocaleString() + '</td></tr>' : ''
+                  const ryobun8p = props.領分８ ? '<tr><td>領分８</td><td>' + props.領分８ + '</td><td>' + Math.round(props.石高８).toLocaleString() + '</td></tr>' : ''
+                  html = '<div class="kinseipoint" style=width:250px;>' +
+                      '<span style="font-size: 20px">' + props.村名0 + '' +
+                      '<span style="font-size: 14px">(' + props.よみ0 + ')<span/><br>' +
+                      '石高計=' + Math.round(props.石高計).toLocaleString() + '' +
+                      '<table class="popup-table" align="center">' +
+                      '<tr><th></th><th>領分</th><th>石高</th></tr>' +
+                      '<tr><td>領分１</td><td>' + props.領分１ + '</td><td>' + Math.round(props.石高１).toLocaleString() + '</td></tr>' +
+                      ryobun2p +
+                      ryobun3p +
+                      ryobun4p +
+                      ryobun5p +
+                      ryobun6p +
+                      ryobun7p +
+                      ryobun8p +
+                      '</table>' +
+                      '<p>令制国=' + props.令制国 + '国</p>' +
+                      '<p>国郡名=' + props.国郡名 + '</p>' +
+                      '<p>郡名=' + props.郡名 + '</p>' +
+                      '<p>KEY=' + props.KEY + '</p>' +
+                      '<p>' + props.PREF_NAME + props.CITY_NAME + '</p>' +
+                      // '<p>面積=' + prop.area + '</p>' +
+                      // '<p>周長=' + prop.perimeter + '</p>' +
+                      '</div>'
                   break
                 }
                 case 'oh-bakumatsu-kokudaka-height':{
@@ -1253,15 +1274,36 @@ export default {
                   )
                   if (features.length === 0) return;
                   props = features[0].properties
-                  const name = props.村名
-                  const kokudaka = Math.floor(Number(props.石高計))
-                  const ryobun = props.領分１
-                  html =
-                      `
-                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
-                   村名=${name}<br>石高=${kokudaka}<br>領分=${ryobun}
-                  </div>
-                `
+                  const ryobun2p = props.領分２ ? '<tr><td>領分２</td><td>' + props.領分２ + '</td><td>' + Math.round(props.石高２).toLocaleString() + '</td></tr>' : ''
+                  const ryobun3p = props.領分３ ? '<tr><td>領分３</td><td>' + props.領分３ + '</td><td>' + Math.round(props.石高３).toLocaleString() + '</td></tr>' : ''
+                  const ryobun4p = props.領分４ ? '<tr><td>領分４</td><td>' + props.領分４ + '</td><td>' + Math.round(props.石高４).toLocaleString() + '</td></tr>' : ''
+                  const ryobun5p = props.領分５ ? '<tr><td>領分５</td><td>' + props.領分５ + '</td><td>' + Math.round(props.石高５).toLocaleString() + '</td></tr>' : ''
+                  const ryobun6p = props.領分６ ? '<tr><td>領分６</td><td>' + props.領分６ + '</td><td>' + Math.round(props.石高６).toLocaleString() + '</td></tr>' : ''
+                  const ryobun7p = props.領分７ ? '<tr><td>領分７</td><td>' + props.領分７ + '</td><td>' + Math.round(props.石高７).toLocaleString() + '</td></tr>' : ''
+                  const ryobun8p = props.領分８ ? '<tr><td>領分８</td><td>' + props.領分８ + '</td><td>' + Math.round(props.石高８).toLocaleString() + '</td></tr>' : ''
+                  html = '<div class="kinseipoint" style=width:250px;>' +
+                      '<span style="font-size: 20px">' + props.村名0 + '' +
+                      '<span style="font-size: 14px">(' + props.よみ0 + ')<span/><br>' +
+                      '石高計=' + Math.round(props.石高計).toLocaleString() + '' +
+                      '<table class="popup-table" align="center">' +
+                      '<tr><th></th><th>領分</th><th>石高</th></tr>' +
+                      '<tr><td>領分１</td><td>' + props.領分１ + '</td><td>' + Math.round(props.石高１).toLocaleString() + '</td></tr>' +
+                      ryobun2p +
+                      ryobun3p +
+                      ryobun4p +
+                      ryobun5p +
+                      ryobun6p +
+                      ryobun7p +
+                      ryobun8p +
+                      '</table>' +
+                      '<p>令制国=' + props.令制国 + '国</p>' +
+                      '<p>国郡名=' + props.国郡名 + '</p>' +
+                      '<p>郡名=' + props.郡名 + '</p>' +
+                      '<p>KEY=' + props.KEY + '</p>' +
+                      '<p>' + props.PREF_NAME + props.CITY_NAME + '</p>' +
+                      // '<p>面積=' + prop.area + '</p>' +
+                      // '<p>周長=' + prop.perimeter + '</p>' +
+                      '</div>'
                   break
                 }
                 case 'oh-bakumatsu-line2':
@@ -1284,7 +1326,6 @@ export default {
                 }
                 case 'oh-bakumatsu-label2':
                 case 'oh-bakumatsu-kokudaka':{
-                  // ここを参考に
                   let features
                   console.log(map.getLayer('oh-bakumatsu-kokudaka'))
                   if (map.getLayer('oh-bakumatsu-kokudaka')) {
@@ -2034,4 +2075,24 @@ font {
 .maplibregl-popup {
   z-index: 1;
 }
+.popup-table {
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.popup-table, .popup-table th, .popup-table td {
+  border: 1px solid darkgray;
+  border-collapse: collapse;
+  font-size: large;
+  padding: 5px;
+}
+.popup-table th {
+  text-align: center;
+  font-weight: normal;
+}
+
+.popup-table td:nth-of-type(3) {
+  text-align: right;
+}
+
 </style>

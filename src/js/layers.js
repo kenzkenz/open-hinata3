@@ -928,6 +928,102 @@ const ineiLayer = {
     'type': 'raster',
     'source': 'inei-source'
 }
+// 栃木県CS立体図---------------------------------------------------------------------------------------------------------
+const csTochigiSource = {
+    id: 'cs-tochigi', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://rinya-tochigi.geospatial.jp/2023/rinya/tile/csmap/{z}/{x}/{y}.png'],
+    }
+}
+const csTochigiLayer = {
+    'id': 'oh-cs-tochigi-layer',
+    'type': 'raster',
+    'source': 'cs-tochigi'
+}
+// 長野県CS立体図---------------------------------------------------------------------------------------------------------
+const csNaganoSource = {
+    id: 'cs-nagano', obj: {
+        type: 'raster',
+        tiles: ['https://tile.geospatial.jp/CS/VER2/{z}/{x}/{y}.png'],
+    }
+}
+const csNaganoLayer = {
+    'id': 'oh-cs-nagano-layer',
+    'type': 'raster',
+    'source': 'cs-nagano'
+}
+// 広島県CS立体図shi-works氏-CS 1m---------------------------------------------------------------------------------------------------------
+const csHiroshimaSource = {
+    id: 'cs-hiroshima', obj: {
+        type: 'raster',
+        tiles: ['https://xs489works.xsrv.jp/raster-tiles/pref-hiroshima/hiroshimapc-cs-tiles/{z}/{x}/{y}.png'],
+    }
+}
+const csHiroshimaLayer = {
+    'id': 'oh-cs-hiroshima-layer',
+    'type': 'raster',
+    'source': 'cs-hiroshima'
+}
+// 岡山県CS立体図---------------------------------------------------------------------------------------------------------
+const csOkayamaSource = {
+    id: 'cs-okayama', obj: {
+        type: 'raster',
+        tiles: ['https://www2.ffpri.go.jp/soilmap/tile/cs_okayama/{z}/{x}/{y}.png'],
+    }
+}
+const csOkayamaLayer = {
+    'id': 'oh-cs-okayama-layer',
+    'type': 'raster',
+    'source': 'cs-okayama'
+}
+// 福島県CS立体図---------------------------------------------------------------------------------------------------------
+const csFukushimaSource = {
+    id: 'cs-fukushima', obj: {
+        type: 'raster',
+        tiles: ['https://www2.ffpri.go.jp/soilmap/tile/cs_fukushima/{z}/{x}/{y}.png'],
+    }
+}
+const csFukushimaLayer = {
+    'id': 'oh-cs-fukushima-layer',
+    'type': 'raster',
+    'source': 'cs-fukushima'
+}
+// 愛媛県CS立体図---------------------------------------------------------------------------------------------------------
+const csEhimeSource = {
+    id: 'cs-ehime-source', obj: {
+        type: 'raster',
+        tiles: ['https://www2.ffpri.go.jp/soilmap/tile/cs_ehime/{z}/{x}/{y}.png'],
+    }
+}
+const csEhimeLayer = {
+    'id': 'oh-cs-ehime-layer',
+    'type': 'raster',
+    'source': 'cs-ehime-source'
+}
+// 高知県CS立体図---------------------------------------------------------------------------------------------------------
+const csKochiSource = {
+    id: 'cs-kochi-source', obj: {
+        type: 'raster',
+        tiles: ['https://rinya-kochi.geospatial.jp/2023/rinya/tile/csmap/{z}/{x}/{y}.png'],
+    }
+}
+const csKochiLayer = {
+    'id': 'oh-cs-kochi-layer',
+    'type': 'raster',
+    'source': 'cs-kochi-source'
+}
+// 熊本県・大分県CS立体図---------------------------------------------------------------------------------------------------------
+const csKumamotoSource = {
+    id: 'cs-kumamoto-source', obj: {
+        type: 'raster',
+        tiles: ['https://www2.ffpri.go.jp/soilmap/tile/cs_kumamoto_oita/{z}/{x}/{y}.png'],
+    }
+}
+const csKumamotoLayer = {
+    'id': 'oh-cs-kumamoto-layer',
+    'type': 'raster',
+    'source': 'cs-kumamoto-source'
+}
 // 岐阜県CS立体図---------------------------------------------------------------------------------------------------------
 const csGifuSource = {
     id: 'csGifu', obj: {
@@ -1034,6 +1130,80 @@ const tokyo23SekisyokuLayer = {
     'id': 'oh-tokyo23-sekisyoku-layer',
     'type': 'raster',
     'source': 'tokyo23-sekisyoku-source',
+}
+// 東京都島しょ地域赤色立体地図------------------------------------------------------------------------------------------------------
+const tosyo01SekisyokuSource = {
+    id: 'tosyo01-sekisyoku-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz2.xsrv.jp/tokyo/tousyosekisyoku01/{z}/{x}/{y}.png'],
+        scheme: 'tms'
+    }
+}
+const tosyo01SekisyokuLayer = {
+    'id': 'oh-tosyo01-sekisyoku-layer',
+    'type': 'raster',
+    'source': 'tosyo01-sekisyoku-source',
+}
+const tosyo02SekisyokuSource = {
+    id: 'tosyo02-sekisyoku-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz2.xsrv.jp/tokyo/tousyosekisyoku02/{z}/{x}/{y}.png'],
+        scheme: 'tms'
+    }
+}
+const tosyo02SekisyokuLayer = {
+    'id': 'oh-tosyo02-sekisyoku-layer',
+    'type': 'raster',
+    'source': 'tosyo02-sekisyoku-source',
+}
+const tosyo03SekisyokuSource = {
+    id: 'tosyo03-sekisyoku-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz2.xsrv.jp/tokyo/tousyosekisyoku03/{z}/{x}/{y}.png'],
+        scheme: 'tms'
+    }
+}
+const tosyo03SekisyokuLayer = {
+    'id': 'oh-tosyo03-sekisyoku-layer',
+    'type': 'raster',
+    'source': 'tosyo03-sekisyoku-source',
+    'raster-resampling': 'nearest'
+}
+const tosyo04SekisyokuSource = {
+    id: 'tosyo04-sekisyoku-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz2.xsrv.jp/tokyo/tousyosekisyoku04/{z}/{x}/{y}.png'],
+        scheme: 'tms'
+    }
+}
+const tosyo04SekisyokuLayer = {
+    'id': 'oh-tosyo04-sekisyoku-layer',
+    'type': 'raster',
+    'source': 'tosyo04-sekisyoku-source',
+}
+const tosyo05SekisyokuSource = {
+    id: 'tosyo05-sekisyoku-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz2.xsrv.jp/tokyo/tousyosekisyoku05/{z}/{x}/{y}.png'],
+        scheme: 'tms'
+    }
+}
+const tosyo05SekisyokuLayer = {
+    'id': 'oh-tosyo05-sekisyoku-layer',
+    'type': 'raster',
+    'source': 'tosyo05-sekisyoku-source',
+}
+const tosyo06SekisyokuSource = {
+    id: 'tosyo06-sekisyoku-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz2.xsrv.jp/tokyo/tousyosekisyoku06/{z}/{x}/{y}.png'],
+        scheme: 'tms'
+    }
+}
+const tosyo06SekisyokuLayer = {
+    'id': 'oh-tosyo06-sekisyoku-layer',
+    'type': 'raster',
+    'source': 'tosyo06-sekisyoku-source',
 }
 // 東京都23区CS立体図------------------------------------------------------------------------------------------------------
 const tokyo23CsSource = {
@@ -1204,7 +1374,7 @@ const bakumatsuLayer = {
     source: "bakumatsu",
     "source-layer": "b41",
     paint: {
-        'fill-color': ['get', 'random_color'],
+        'fill-color': ['get', 'random_color_ryobun'],
     }
 }
 const bakumatsuLayerHeight = {
@@ -3334,6 +3504,20 @@ const layers01 = [
                 layers: [csNotoLayer]
             },
             {
+                id: 'oh-cs-tochigi-layer',
+                label: "栃木県CS立体図",
+                source: csTochigiSource,
+                layers: [csTochigiLayer],
+                attribution:'<a href="https://www.geospatial.jp/ckan/dataset/csmap_tochigi" target="_blank">G空間情報センター</a>'
+            },
+            {
+                id: 'oh-cs-nagano-layer',
+                label: "長野県CS立体図",
+                source: csNaganoSource,
+                layers: [csNaganoLayer],
+                attribution:'<a href="https://www.geospatial.jp/ckan/dataset/nagano-csmap" target="_blank">G空間情報センター</a>'
+            },
+            {
                 id: 'oh-csGifuLayer',
                 label: "岐阜県CS立体図",
                 source: csGifuSource,
@@ -3358,6 +3542,48 @@ const layers01 = [
                 layers: [csShizuokaLayer]
             },
             {
+                id: 'oh-cs-hiroshima-layer',
+                label: "広島県CS立体図",
+                source: csHiroshimaSource,
+                layers: [csHiroshimaLayer],
+                attribution:'<a href="https://github.com/shi-works/aist-dem-with-cs-on-maplibre-gl-js" target="_blank">aist-dem-with-cs-on-maplibre-gl-js</a>'
+            },
+            {
+                id: 'oh-cs-okayama-layer',
+                label: "岡山県CS立体図",
+                source: csOkayamaSource,
+                layers: [csOkayamaLayer],
+                attribution:'<a href="https://www2.ffpri.go.jp/soilmap/index.html" target="_blank">森林総研・森林土壌デジタルマップ</a>'
+            },
+            {
+                id: 'oh-cs-fukushima-layer',
+                label: "福島県CS立体図",
+                source: csFukushimaSource,
+                layers: [csFukushimaLayer],
+                attribution:'<a href="https://www2.ffpri.go.jp/soilmap/index.html" target="_blank">森林総研・森林土壌デジタルマップ</a>'
+            },
+            {
+                id: 'oh-cs-ehime-layer',
+                label: "愛媛県CS立体図",
+                source: csEhimeSource,
+                layers: [csEhimeLayer],
+                attribution:'<a href="https://www2.ffpri.go.jp/soilmap/index.html" target="_blank">森林総研・森林土壌デジタルマップ</a>'
+            },
+            {
+                id: 'oh-cs-kochi-layer',
+                label: "高知県CS立体図",
+                source: csKochiSource,
+                layers: [csKochiLayer],
+                attribution:'<a href="https://www.geospatial.jp/ckan/dataset/csmap_kochi" target="_blank">G空間情報センター</a>'
+            },
+            {
+                id: 'oh-cs-kumamoto-layer',
+                label: "熊本県・大分県CS立体図",
+                source: csKumamotoSource,
+                layers: [csKumamotoLayer],
+                attribution:'<a href="https://www2.ffpri.go.jp/soilmap/index.html" target="_blank">森林総研・森林土壌デジタルマップ</a>'
+            },
+            {
                 id: 'oh-cs-kanagawa-layer',
                 label: "神奈川県CS立体図",
                 source: csKanagawaSource,
@@ -3367,7 +3593,8 @@ const layers01 = [
                 id: 'oh-kanagawa-sekisyoku-layer',
                 label: "神奈川県赤色立体地図",
                 source: kanagawaSekisyokuSource,
-                layers: [kanagawaSekisyokuLayer]
+                layers: [kanagawaSekisyokuLayer],
+                attribution:'<a href="https://www.geospatial.jp/ckan/dataset/kanagawa-2020-1-pointcloud" target="_blank">G空間情報センター</a>'
             },
             {
                 id: 'oh-cs-yokohama-layer',
@@ -3376,16 +3603,12 @@ const layers01 = [
                 layers: [csYokohamaLayer]
             },
             {
-                id: 'oh-tamaSekisyokuLayer',
-                label: "東京都多摩地域赤色立体地図",
-                source: tamaSekisyokuSource,
-                layers: [tamaSekisyokuLayer]
-            },
-            {
-                id: 'oh-tokyo23-sekisyoku-layer',
-                label: "東京都23区赤色立体地図",
-                source: tokyo23SekisyokuSource,
-                layers: [tokyo23SekisyokuLayer]
+                id: 'oh-tosyo-sekisyoku-layer',
+                label: "東京都赤色立体地図",
+                sources: [tamaSekisyokuSource,tokyo23SekisyokuSource,tosyo01SekisyokuSource,tosyo02SekisyokuSource,tosyo03SekisyokuSource,tosyo04SekisyokuSource,tosyo05SekisyokuSource,tosyo06SekisyokuSource],
+                layers: [tamaSekisyokuLayer,tokyo23SekisyokuLayer,tosyo02SekisyokuLayer,tosyo03SekisyokuLayer,tosyo04SekisyokuLayer,tosyo05SekisyokuLayer,tosyo06SekisyokuLayer,tosyo01SekisyokuLayer],
+                attribution:'<a href="https://www.geospatial.jp/ckan/dataset/tokyopc-23ku-2024" target="_blank">G空間情報センター</a>'
+
             },
             {
                 id: 'oh-tokyo23-cs-layer',

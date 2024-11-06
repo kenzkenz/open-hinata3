@@ -390,7 +390,7 @@ export default {
   },
   mounted() {
     // ----------------------------------------------------------------------------------------------------------------
-    this.layers = Layers.layers[this.mapName]
+    this.layers = Layers.layers[this.mapName];
     // ----------------------------------------------------
     const handle = document.getElementById('center-div-' + this.mapName);
     const topDiv = document.getElementById('first-div-' + this.mapName);
@@ -399,28 +399,78 @@ export default {
 
     let isDragging = false;
 
-    handle.addEventListener('mousedown', () => {
+    // マウスおよびタッチイベントの開始
+    const startDrag = () => {
       isDragging = true;
-    });
+    };
 
-    document.addEventListener('mouseup', () => {
+    const endDrag = () => {
       if (isDragging) {
         isDragging = false;
       }
-    });
+    };
 
-    document.addEventListener('mousemove', (e) => {
+    // マウスおよびタッチイベントの動作
+    const dragMove = (clientY) => {
       if (!isDragging) return;
       const containerRect = container.getBoundingClientRect();
-      const topHeight = e.clientY - containerRect.top;
+      const topHeight = clientY - containerRect.top;
       const bottomHeight = containerRect.height - topHeight - handle.offsetHeight;
-      console.log(bottomHeight)
       if (topHeight > 0 && bottomHeight > 0) {
-        topDiv.style.height = `${topHeight-8}px`;
-        // bottomDiv.style.height = `${bottomHeight-8}px`;
-        this.secondDivStyle.height = `${bottomHeight-8}px`
+        topDiv.style.height = `${topHeight - 8}px`;
+        this.secondDivStyle.height = `${bottomHeight - 8}px`;
+      }
+    };
+
+    // マウスイベントのリスナー
+    handle.addEventListener('mousedown', startDrag);
+    document.addEventListener('mouseup', endDrag);
+    document.addEventListener('mousemove', (e) => dragMove(e.clientY));
+
+    // タッチイベントのリスナー
+    handle.addEventListener('touchstart', startDrag);
+    document.addEventListener('touchend', endDrag);
+    document.addEventListener('touchmove', (e) => {
+      if (e.touches.length > 0) {
+        dragMove(e.touches[0].clientY);
       }
     });
+
+
+
+
+
+    // this.layers = Layers.layers[this.mapName]
+    // // ----------------------------------------------------
+    // const handle = document.getElementById('center-div-' + this.mapName);
+    // const topDiv = document.getElementById('first-div-' + this.mapName);
+    // // const bottomDiv = document.getElementById('second-div-' + this.mapName);
+    // const container = document.getElementById('container-div-' + this.mapName);
+    //
+    // let isDragging = false;
+    //
+    // handle.addEventListener('mousedown', () => {
+    //   isDragging = true;
+    // });
+    //
+    // document.addEventListener('mouseup', () => {
+    //   if (isDragging) {
+    //     isDragging = false;
+    //   }
+    // });
+    //
+    // document.addEventListener('mousemove', (e) => {
+    //   if (!isDragging) return;
+    //   const containerRect = container.getBoundingClientRect();
+    //   const topHeight = e.clientY - containerRect.top;
+    //   const bottomHeight = containerRect.height - topHeight - handle.offsetHeight;
+    //   console.log(bottomHeight)
+    //   if (topHeight > 0 && bottomHeight > 0) {
+    //     topDiv.style.height = `${topHeight-8}px`;
+    //     // bottomDiv.style.height = `${bottomHeight-8}px`;
+    //     this.secondDivStyle.height = `${bottomHeight-8}px`
+    //   }
+    // });
   },
   watch: {
     s_lngRange: {
