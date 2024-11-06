@@ -419,14 +419,14 @@ export const highwayLayerRed = {
 const busSource = {
     id: 'bus-source', obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bus/bus0.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bus/bus-h.pmtiles",
 
     }
 }
 const busteiSource = {
     id: 'bustei-source', obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bus/bustei.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bus/bustei-h.pmtiles",
     }
 }
 const busLayer = {
@@ -439,8 +439,8 @@ const busLayer = {
         'line-cap': 'round'
     },
     'paint': {
-        // 'line-color': 'dodgerblue',
-        'line-color': ['get', 'random_color'],
+        // 'line-color': ['get', 'random_color'],
+        'line-color': ['get', 'random_color_hash'],
         'line-blur': 0.8,
         'line-width': [
             'interpolate',
@@ -457,7 +457,8 @@ const busteiLayer = {
     source: "bustei-source",
     "source-layer": "point",
     'paint': {
-        'circle-color': 'dodgerblue',
+        // 'circle-color': 'dodgerblue',
+        'circle-color': ['get', 'random_color_hash'],
         // 'circle-color': [
         //     'match',
         //     ['slice', ['get', 'P11_004_01'], 0, 1], // 最初の1文字を取得
@@ -510,7 +511,6 @@ const tetsudoSource = {
     id: 'tetsudo-source', obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/tetsudo/tetsudojikeiretsu2.pmtiles",
-
     }
 }
 const tetsudoLayerRed = {
@@ -3176,7 +3176,8 @@ const layers01 = [
                 label: "R04バスルートと停留所",
                 sources: [busSource,busteiSource],
                 layers: [busLayer,busteiLayer,busteiLayerLabel],
-                attribution: "<a href='https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N07-v2_0.html' target='_blank'>国土数値情報</a>"
+                attribution: "<a href='https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N07-v2_0.html' target='_blank'>国土数値情報</a>",
+                ext: {name:'extBus',parameters:[]}
             },
             {
                 id: 'oh-tetsudo',

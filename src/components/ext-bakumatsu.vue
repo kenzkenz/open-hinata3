@@ -57,7 +57,6 @@ export default {
       set(value) {
         this.$store.state.bakumatsuText[this.mapName] = value
         this.calcKokudaka()
-
       }
     },
   },

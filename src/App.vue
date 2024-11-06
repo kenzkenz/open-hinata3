@@ -530,6 +530,7 @@ export default {
       })
 
       map.on('moveend', () => {
+        this.$store.state.watchFlg = true
         const bounds = map.getBounds()
         // 南西端と北東端の座標を取得
         const sw = bounds.getSouthWest()

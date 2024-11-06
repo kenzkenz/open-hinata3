@@ -77,17 +77,13 @@ export default createStore({
       map02: ''
     },
     bakumatsuSelected:{
-      map01: '',
-      map02: ''
+      map01: '藩で色分け',
+      map02: '藩で色分け'
     },
-    // kokudakakei: {
-    //   map01: 0,
-    //   map02: 0,
-    // },
-    // sonsu: {
-    //   map01: 0,
-    //   map02: 0,
-    // },
+    busSelected:{
+      map01: '標準',
+      map02: '標準'
+    },
     //------------------------
   },
   getters: {
@@ -121,6 +117,9 @@ export default createStore({
           } else if (payload.order === 1){
             variable = 'paintCheck250m'
           }
+          break
+        case 'extBus':
+          variable = 'busSelected'
           break
       }
       console.log(payload.mapName,payload.name,payload.value)
