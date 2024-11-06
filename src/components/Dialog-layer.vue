@@ -100,8 +100,11 @@ export default {
     },
     onEnd () {
       this.isDragging = false
+      this.$store.state.watchFlg = !this.$store.state.watchFlg
+      this.$store.state.watchFlg = true
     },
     toggleCheck(element) {
+      this.$store.state.watchFlg = true
       const map = this.$store.state[this.mapName]
       element.layers.forEach(layer0 => {
         let visible
@@ -110,6 +113,7 @@ export default {
         } else {
           visible = 'none'
         }
+
         if (layer0.id === 'oh-mw-dummy') {
           const layers = map.getStyle().layers
           layers.forEach(layer => {
@@ -208,6 +212,7 @@ export default {
     },
     onNodeClick (node) {
       if (node.layers) {
+        this.$store.state.watchFlg = true
         if(!this.s_selectedLayers[this.mapName].find(layers => layers.id === node.id)) {
           this.s_selectedLayers[this.mapName].unshift(
               {

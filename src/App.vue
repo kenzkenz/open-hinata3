@@ -41,7 +41,12 @@
 </template>
 
 <script>
-
+const popups = []
+function closeAllPopups() {
+  popups.forEach(popup => popup.remove());
+  // 配列をクリア
+  popups.length = 0;
+}
 export function history (event,url) {
   const ua = navigator.userAgent
   const width = window.screen.width;
@@ -334,6 +339,9 @@ export default {
           this.mapSize.map02.top = '50%'
         }
         this.mapFlg.map02 = true
+        if (popups.length > 0) {
+          closeAllPopups()
+        }
       }
     },
     updatePermalink() {
@@ -650,7 +658,7 @@ export default {
 
       // -----------------------------------------------------------------------------------------------------------------
       // on load
-      const popups = []
+      // const popups = []
       this.mapNames.forEach(mapName => {
         const map = this.$store.state[mapName]
         const params = this.parseUrlParams()
@@ -765,11 +773,21 @@ export default {
           const vm = this
           if (isNaN(vm.s_terrainLevel)) vm.s_terrainLevel = 1
 
-          document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('mouseover', function() {
-            map.setTerrain({ 'source': 'terrain', 'exaggeration': vm.s_terrainLevel })
+          document.querySelector('#' + mapName + ' .terrain-btn-up,terrain-btn-down').addEventListener('mouseover', function() {
+            const layers = map.getStyle().layers
+            if (!layers.find(layer => layer.id === 'oh-bakumatsu-kokudaka-height')) {
+              map.setTerrain({'source': 'terrain', 'exaggeration': vm.s_terrainLevel})
+            } else {
+              map.setTerrain(null)
+            }
           }, false);
-          document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('pointerdown', function() {
-            map.setTerrain({ 'source': 'terrain', 'exaggeration': vm.s_terrainLevel })
+          document.querySelector('#' + mapName + ' .terrain-btn-up,terrain-btn-down').addEventListener('pointerdown', function() {
+            const layers = map.getStyle().layers
+            if (!layers.find(layer => layer.id === 'oh-bakumatsu-kokudaka-height')) {
+              map.setTerrain({'source': 'terrain', 'exaggeration': vm.s_terrainLevel})
+            } else {
+              map.setTerrain(null)
+            }
           }, false);
 
 
@@ -1228,9 +1246,9 @@ export default {
                 `
                   break
                 }
-                case 'oh-bakumatsu-height':{
+                case 'oh-bakumatsu-kokudaka-height':{
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-bakumatsu-height'] }
+                      map.project(coordinates), { layers: ['oh-bakumatsu-kokudaka-height'] }
                   )
                   if (features.length === 0) return;
                   props = features[0].properties
@@ -1476,6 +1494,22 @@ export default {
                 }
               }
 
+
+              console.log(popups.length)
+              if (this.mapFlg.map02) {
+                // ここを改善 map02の最初のレイヤーがベクターでなかったらlen1で削除とか
+                const layer = this.$store.state.map02.getStyle().layers.at(-1)
+                console.log(layer.type)
+                if (layer.type === 'raster') {
+                  closeAllPopups()
+                } else {
+                  if (popups.length === 2) closeAllPopups()
+                }
+                if (popups.length === 2) closeAllPopups()
+              } else {
+                closeAllPopups()
+              }
+
               // ポップアップ作成
               const popup = new maplibregl.Popup({
                 closeButton: true,
@@ -1489,11 +1523,7 @@ export default {
               popup.on('close', () => closeAllPopups())
               }
           })
-          function closeAllPopups() {
-            popups.forEach(popup => popup.remove());
-            // 配列をクリア
-            popups.length = 0;
-          }
+
           //------------------------------------------------------------------------------------------------------------
           function latLngToTile(lat, lng, z) {
             const
@@ -1692,7 +1722,12 @@ export default {
           // -----------------------------------------------------------------------------------------------------------
           const pitch = !isNaN(this.pitch[mapName]) ? this.pitch[mapName]: 0
           if (pitch !== 0) {
-            this.$store.state[mapName].setTerrain({ 'source': 'terrain', 'exaggeration': this.s_terrainLevel })
+            // this.$store.state[mapName].setTerrain({ 'source': 'terrain', 'exaggeration': this.s_terrainLevel })
+            if (!this.s_selectedLayers[mapName].find(layer => layer.id === 'oh-bakumatsu-kokudaka-height')) {
+              this.$store.state[mapName].setTerrain({ 'source': 'terrain', 'exaggeration': this.s_terrainLevel })
+            } else {
+              map.setTerrain(null)
+            }
           }
         })
         //on load終了----------------------------------------------------------------------------------------------------

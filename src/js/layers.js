@@ -419,7 +419,7 @@ export const highwayLayerRed = {
 const busSource = {
     id: 'bus-source', obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bus/bus.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bus/bus0.pmtiles",
 
     }
 }
@@ -440,7 +440,7 @@ const busLayer = {
     },
     'paint': {
         // 'line-color': 'dodgerblue',
-        'line-color': 'blue',
+        'line-color': ['get', 'random_color'],
         'line-blur': 0.8,
         'line-width': [
             'interpolate',
@@ -458,12 +458,24 @@ const busteiLayer = {
     "source-layer": "point",
     'paint': {
         'circle-color': 'dodgerblue',
+        // 'circle-color': [
+        //     'match',
+        //     ['slice', ['get', 'P11_004_01'], 0, 1], // 最初の1文字を取得
+        //     '1', '#ff0000', // 最初の1文字が '"1' の場合の色 路線バス（民間）
+        //     '2', '#00ff00', // 最初の1文字が '"2' の場合の色 路線バス（公営）
+        //     '3', '#0000ff', // 最初の1文字が '"3' の場合の色 コミュニティバス
+        //     '4', '#ffff00', // 最初の1文字が '"4' の場合の色
+        //     '5', '#ff00ff', // 最初の1文字が '"5' の場合の色
+        //     '#ffffff' // マッチしない場合のデフォルト色
+        // ],
         'circle-radius': [
             'interpolate',
             ['linear'],
             ['zoom'],
             12, 0,
             13, 10
+            // 6, 0.1,
+            // 13, 10
         ],
         'circle-stroke-width': [
             'interpolate',
@@ -1181,7 +1193,7 @@ const amxLayerLabel = {
 const bakumatsuSource = {
     id: "bakumatsu", obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bakumatsu/b41.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bakumatsu/b410.pmtiles",
         attribution:
             "<a href='' target='_blank'></a>",
     }
@@ -1195,24 +1207,8 @@ const bakumatsuLayer = {
         'fill-color': ['get', 'random_color'],
     }
 }
-// const bakumatsuLayerKokudaka = {
-//     id: "oh-bakumatsu-kokudaka",
-//     type: "fill",
-//     source: "bakumatsu",
-//     "source-layer": "b41",
-//     'paint': {
-//         'fill-color': [
-//             'interpolate',
-//             ['linear'],
-//             ['/', ['get', '石高計'], ['get', 'area']],
-//             0, 'white',
-//             10000000, 'red',
-//             50000000, 'black'
-//         ]
-//     }
-// }
 const bakumatsuLayerHeight = {
-    id: 'oh-bakumatsu-height',
+    id: 'oh-bakumatsu-kokudaka-height',
     type: 'fill-extrusion',
     source: "bakumatsu",
     "source-layer": "b41",
@@ -1234,22 +1230,6 @@ const bakumatsuLayerHeight = {
         ]
     }
 }
-// const bakumatsuLayerHan = {
-//     id: "oh-bakumatsu-han",
-//     type: "fill",
-//     source: "bakumatsu",
-//     "source-layer": "b41",
-//     'paint': {
-//         'fill-color': [
-//             'case',
-//             ['>', ['index-of', '藩', ['get', '領分１']], -1], 'rgba(104,52,154,0.7)',
-//             ['>', ['index-of', '幕領', ['get', '領分１']], -1], 'rgba(255,0,0,0.7)',
-//             ['>', ['index-of', '皇室領', ['get', '領分１']], -1], 'rgba(255,215,0,0.7)',
-//             ['>', ['index-of', '社寺領', ['get', '領分１']], -1], 'rgba(0,0,0,0.7)',
-//             'rgba(0,0,255,0.7)'
-//         ]
-//     }
-// }
 const bakumatsuLayerLine = {
     id: "oh-bakumatsu-line",
     type: "line",
@@ -1267,23 +1247,6 @@ const bakumatsuLayerLine = {
         ]
     },
 }
-// const bakumatsuLayerLine2 = {
-//     id: "oh-bakumatsu-line2",
-//     type: "line",
-//     source: "bakumatsu",
-//     "source-layer": "b41",
-//     paint: {
-//         'line-color': '#000',
-//         // 'line-width': 0.5
-//         'line-width': [
-//             'interpolate', // Zoom-based interpolation
-//             ['linear'],
-//             ['zoom'], // Use the zoom level as the input
-//             7, 0,
-//             11, 0.5
-//         ]
-//     },
-// }
 const bakumatsuLayerLabel = {
     id: "oh-bakumatsu-label",
     type: "symbol",
@@ -1311,33 +1274,6 @@ const bakumatsuLayerLabel = {
     'maxzoom': 24,
     'minzoom': 10
 }
-// const bakumatsuLayerLabel2 = {
-//     id: "oh-bakumatsu-label-2",
-//     type: "symbol",
-//     source: "bakumatsu",
-//     "source-layer": "b41",
-//     'layout': {
-//         'text-field': [
-//             'let', 'splitIndex', ['index-of', '・', ['get', '村名']],
-//             [
-//                 'case',
-//                 ['>=', ['var', 'splitIndex'], 0],
-//                 ['slice', ['get', '村名'], 0, ['var', 'splitIndex']],
-//                 ['get', '村名']
-//             ]
-//         ],
-//         'text-font': ['Noto Sans CJK JP Bold'],
-//         'text-offset': [0.5, 0],
-//         'visibility': 'visible',
-//     },
-//     'paint': {
-//         'text-color': 'rgba(255, 255, 255, 0.7)',
-//         'text-halo-color': 'rgba(0,0,0,0.7)',
-//         'text-halo-width': 1.0,
-//     },
-//     'maxzoom': 24,
-//     'minzoom': 10
-// }
 // 小学校ソース --------------------------------------------------------------------------------------------
 export const syogakkoR05Source = {
     id: "syogakkoR05Source", obj: {
@@ -3333,7 +3269,8 @@ const layers01 = [
                 id: 'oh-bakumatsu-kokudaka-height',
                 label: "幕末期近世の村（石高/面積）3D",
                 source: bakumatsuSource,
-                layers: [bakumatsuLayerHeight]
+                layers: [bakumatsuLayerHeight],
+                ext: {name:'extBakumatsu3d',parameters:[]}
             },
             // {
             //     id: 'oh-bakumatsu-han',

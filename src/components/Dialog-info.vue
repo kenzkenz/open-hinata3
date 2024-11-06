@@ -14,6 +14,7 @@
     <extTetsudojikeiretsu :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extTetsudojikeiretsu'"/>
     <extSyochiiki :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extSyochiiki'"/>
     <extBakumatsu :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extBakumatsu'"/>
+    <extBakumatsu3d :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extBakumatsu3d'"/>
   </div>
 </template>
 
@@ -21,7 +22,9 @@
 import extHighway from "@/components/ext-highway"
 import extTetsudojikeiretsu from "@/components/ext-tetsudojikeiretsu"
 import extSyochiiki from '@/components/ext-syochiiki'
-import extBakumatsu from "@/components/ext-bakumatsu";
+import extBakumatsu from "@/components/ext-bakumatsu"
+import extBakumatsu3d from "@/components/ext-bakumatsu3d"
+
 
 export default {
   name: "dialog-info",
@@ -29,7 +32,8 @@ export default {
     extHighway,
     extTetsudojikeiretsu,
     extSyochiiki,
-    extBakumatsu
+    extBakumatsu,
+    extBakumatsu3d
   },
   props: ['mapName'],
   data: () => ({

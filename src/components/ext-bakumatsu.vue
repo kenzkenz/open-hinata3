@@ -18,7 +18,7 @@ export default {
   props: ['mapName','item'],
   data: () => ({
     selected: null, // 選択されたアイテムを格納
-    items: ["標準", "藩で色分け",'藩で色分け2','令制国で色分け','県で色分け','群で色分け','石高（面積割）で色分け'], // 表示するアイテム
+    items: ["標準", "藩で色分け",'藩で色分け2','令制国で色分け','県で色分け','郡で色分け','石高（面積割）で色分け'], // 表示するアイテム
     menuContentSize: {'height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'}
   }),
   computed: {
@@ -69,7 +69,7 @@ export default {
         case '県で色分け':
           field = 'random_color_pref'
           break
-        case '群で色分け':
+        case '郡で色分け':
           field = 'random_color_gunmei'
           break
         case '石高（面積割）で色分け':
@@ -112,24 +112,16 @@ export default {
           map.setFilter('oh-bakumatsu-line', matchCondition)
           map.setFilter('oh-bakumatsu-label', matchCondition)
           map.setFilter('oh-bakumatsu-layer', matchCondition)
-          // map.setPaintProperty('oh-bakumatsu-layer', 'fill-color', [
-          //   'case',
-          //   matchCondition,
-          //   'rgba(255,0,0,0.4)',
-          //   // 条件が一致しない場合の色
-          //   'rgba(0,0,0,0)'
-          // ])
-          // map.setFilter('oh-syochiiki-line', [">=", ["index-of", text, ["get", "S_NAME"]], 0])
         } else {
           map.setFilter('oh-bakumatsu-line', null)
           map.setFilter('oh-bakumatsu-label', null)
           map.setFilter('oh-bakumatsu-layer', null)
-          // map.setPaintProperty('oh-bakumatsu-layer', 'fill-color', 'rgba(0,0,0,0)')
         }
       }
-      filterBy(this.s_bakumatsuText)
       this.$store.state.watchFlg = false
+      filterBy(this.s_bakumatsuText)
       this.update()
+      // this.$store.state.watchFlg = true
     }
   },
   mounted() {

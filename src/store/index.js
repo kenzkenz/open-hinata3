@@ -72,6 +72,10 @@ export default createStore({
       map01: '',
       map02: ''
     },
+    bakumatsuText3d:{
+      map01: '',
+      map02: ''
+    },
     bakumatsuSelected:{
       map01: '',
       map02: ''
@@ -94,12 +98,14 @@ export default createStore({
           variable = 'syochiikiNameText'
           break
         case 'extBakumatsu':
-          // variable = 'bakumatsuText'
           if (payload.order === 0) {
             variable = 'bakumatsuText'
           } else if (payload.order === 1){
             variable = 'bakumatsuSelected'
           }
+          break
+        case 'extBakumatsu3d':
+          variable = 'bakumatsuText3d'
           break
         case 'jinko250m':
           if (payload.order === 0) {
