@@ -210,7 +210,7 @@ tippecanoe -l polygon -f -o r05.pmtiles r05.geojson
 
 tippecanoe -pk -pf -l b41 -f -o b41.pmtiles b4.geojson
 
-
+tippecanoe -pk -pf -l polygon -f -o hikari.pmtiles 2.geojson
 
 
 

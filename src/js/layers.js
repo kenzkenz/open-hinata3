@@ -1526,10 +1526,8 @@ export const cyugakuR05Layer = {
     source: "cyugakuR05Source",
     "source-layer": "t4polygon",
     paint: {
-        'fill-color': ['get', 'random_color'],  // フィーチャのプロパティ 'color' から色を取得
-        'fill-opacity': 0.8  // 透明度を設定
+        'fill-color': ['get', 'random_color']
     }
-
 }
 export const cyugakuR05LayerLine = {
     id: "oh-cyugakuR05-line",
@@ -3243,6 +3241,30 @@ export const tochiriyoLayerLine = {
         ]
     },
 }
+// 夜の光----------------------------------------------------------------------------------------------------------------
+export const hikariSource = {
+    id: "hikari-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/hikari/hikari.pmtiles",
+    }
+}
+export const hikariLayer = {
+    id: "oh-hikari",
+    type: "fill",
+    source: "hikari-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['to-number', ['get', 'light']],
+            0, '#000000',     // Black at 0
+            128, '#FFFF00',   // Yellow at midpoint
+            254, '#FFFF00',   // Yellow right up to 254
+            255, 'gold'    // White at 255
+        ]
+    }
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -3906,6 +3928,12 @@ const layers01 = [
         id: 'test',
         label: "テスト",
         nodes: [
+            {
+                id: 'oh-hikari',
+                label: "夜のあかり",
+                source: hikariSource,
+                layers: [hikariLayer]
+            },
             {
                 id: 'oh-koaza',
                 label: "関東小字地図テスト",

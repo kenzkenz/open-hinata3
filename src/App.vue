@@ -1711,6 +1711,20 @@ export default {
                       '</div>'
                   break
                 }
+                case 'oh-hikari':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-hikari'] }
+                  )
+                  console.log(features)
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  const name = props.light
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size:14px;">明るさ=' + name + '</span>' +
+                      '</div>'
+                  break
+                }
               }
 
 

@@ -72,61 +72,64 @@ export default {
     info: {
       handler: function(){
         this.$nextTick(() => {
-          const container = this.$refs.dragDiv[this.$refs.dragDiv.length -1]
-          const handle =  this.$refs.dragHandle[this.$refs.dragHandle.length -1]
-          // const container = document.querySelector("#dialog-info-" + this.item.id)
-          // const handle =  document.querySelector("#handle-" + this.item.id)
-          let offsetX, offsetY;
+          this.$refs.dragDiv.forEach((dragDiv,i) =>{
+            const container = dragDiv
+            const handle =  this.$refs.dragHandle[i]
+            // const container = this.$refs.dragDiv[this.$refs.dragDiv.length -1]
+            // const handle =  this.$refs.dragHandle[this.$refs.dragHandle.length -1]
+            // const container = document.querySelector("#dialog-info-" + this.item.id)
+            // const handle =  document.querySelector("#handle-" + this.item.id)
+            let offsetX, offsetY;
 
-          const startDrag = (event) => {
-            const clientX = event.type === 'touchstart' ? event.touches[0].clientX : event.clientX;
-            const clientY = event.type === 'touchstart' ? event.touches[0].clientY : event.clientY;
+            const startDrag = (event) => {
+              const clientX = event.type === 'touchstart' ? event.touches[0].clientX : event.clientX;
+              const clientY = event.type === 'touchstart' ? event.touches[0].clientY : event.clientY;
 
-            offsetX = clientX - container.offsetLeft;
-            offsetY = clientY - container.offsetTop;
+              offsetX = clientX - container.offsetLeft;
+              offsetY = clientY - container.offsetTop;
 
-            document.addEventListener('mousemove', drag);
-            document.addEventListener('mouseup', endDrag);
-            document.addEventListener('touchmove', drag);
-            document.addEventListener('touchend', endDrag);
-          };
+              document.addEventListener('mousemove', drag);
+              document.addEventListener('mouseup', endDrag);
+              document.addEventListener('touchmove', drag);
+              document.addEventListener('touchend', endDrag);
+            };
 
-          const drag = (event) => {
-            event.preventDefault(); // スクロールを防ぐ
+            const drag = (event) => {
+              event.preventDefault(); // スクロールを防ぐ
 
-            const clientX = event.type === 'touchmove' ? event.touches[0].clientX : event.clientX;
-            const clientY = event.type === 'touchmove' ? event.touches[0].clientY : event.clientY;
+              const clientX = event.type === 'touchmove' ? event.touches[0].clientX : event.clientX;
+              const clientY = event.type === 'touchmove' ? event.touches[0].clientY : event.clientY;
 
-            // 新しいX座標とY座標を計算
-            const newX = clientX - offsetX;
-            let newY = clientY - offsetY;
+              // 新しいX座標とY座標を計算
+              const newX = clientX - offsetX;
+              let newY = clientY - offsetY;
 
-            // ウィンドウの高さ内にY座標を制限
-            const windowHeight = window.innerHeight;
-            const handleHeight = handle.offsetHeight;
+              // ウィンドウの高さ内にY座標を制限
+              const windowHeight = window.innerHeight;
+              const handleHeight = handle.offsetHeight;
 
-            if (newY < 0) {
-              newY = 0; // 上限
-            } else if (newY > windowHeight - handleHeight) {
-              newY = windowHeight - handleHeight; // 下限
-            }
+              if (newY < 0) {
+                newY = 0; // 上限
+              } else if (newY > windowHeight - handleHeight) {
+                newY = windowHeight - handleHeight; // 下限
+              }
 
-            // 新しい位置を設定
-            container.style.left = `${newX}px`;
-            container.style.top = `${newY}px`;
-          };
+              // 新しい位置を設定
+              container.style.left = `${newX}px`;
+              container.style.top = `${newY}px`;
+            };
 
-          const endDrag = () => {
-            document.removeEventListener('mousemove', drag);
-            document.removeEventListener('mouseup', endDrag);
-            document.removeEventListener('touchmove', drag);
-            document.removeEventListener('touchend', endDrag);
-          };
+            const endDrag = () => {
+              document.removeEventListener('mousemove', drag);
+              document.removeEventListener('mouseup', endDrag);
+              document.removeEventListener('touchmove', drag);
+              document.removeEventListener('touchend', endDrag);
+            };
 
-          // ハンドルにイベントリスナーを追加
-          handle.addEventListener('mousedown', startDrag);
-          handle.addEventListener('touchstart', startDrag);
-
+            // ハンドルにイベントリスナーを追加
+            handle.addEventListener('mousedown', startDrag);
+            handle.addEventListener('touchstart', startDrag);
+          })
         })
       },
       deep: true
