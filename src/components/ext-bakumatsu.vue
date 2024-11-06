@@ -8,22 +8,39 @@
           @update:modelValue="onSelectChange"
       ></v-select>
       <v-text-field label="抽出" v-model="s_bakumatsuText" @input="bakumatsuInput(mapName)" style="margin-top: 10px"></v-text-field>
+      <div>
+        <p v-html="htmlKokudaka"></p>
+      </div>
     </div>
 </template>
 
 <script>
 
+import axios from "axios";
+
 export default {
   name: 'ext-bakumatsu',
   props: ['mapName','item'],
   data: () => ({
-    selected: null, // 選択されたアイテムを格納
+    kokudakakei: {
+      map01: 0,
+      map02: 0,
+    },
+    sonsu: {
+      map01: 0,
+      map02: 0,
+    },
+    // selected: null, // 選択されたアイテムを格納
     items: ["標準", "藩で色分け",'藩で色分け2','令制国で色分け','県で色分け','郡で色分け','石高（面積割）で色分け'], // 表示するアイテム
-    menuContentSize: {'height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'}
+    menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'}
   }),
   computed: {
     s_watchFlg () {
       return this.$store.state.watchFlg
+    },
+    htmlKokudaka () {
+      return '石高の総計=' + Math.round(this.kokudakakei[this.mapName]).toLocaleString() +
+          '（' + Math.round(this.sonsu[this.mapName]).toLocaleString() + '村）'
     },
     s_bakumatsuSelected: {
       get() {
@@ -39,10 +56,33 @@ export default {
       },
       set(value) {
         this.$store.state.bakumatsuText[this.mapName] = value
+        this.calcKokudaka()
+
       }
     },
   },
   methods: {
+    calcKokudaka () {
+      const vm = this
+      this.kokudakakei[this.mapName] = 0
+      let parameter
+      if (this.s_bakumatsuText) {
+        parameter = this.s_bakumatsuText.replace(/\u3000/g,' ').trim()
+      } else {
+        parameter = this.s_bakumatsuText.trim()
+      }
+      axios
+          .get('https://kenzkenz.xsrv.jp/open-hinata/php/kokudakasokei4.php', {
+            params: {
+              parameter: parameter
+            }
+          })
+          .then(function (response) {
+            console.log(response.data)
+            vm.kokudakakei[vm.mapName] = response.data.kokudaka
+            vm.sonsu[vm.mapName] = response.data.sonsu
+          })
+    },
     onSelectChange (value) {
       const map = this.$store.state[this.mapName]
       let field
@@ -127,11 +167,13 @@ export default {
   mounted() {
     this.bakumatsuInput (this.mapName)
     this.onSelectChange (this.s_bakumatsuSelected)
+    this.calcKokudaka()
   },
   watch: {
     s_watchFlg () {
       this.bakumatsuInput (this.mapName)
       this.onSelectChange (this.s_bakumatsuSelected)
+      this.calcKokudaka()
     },
   }
 }

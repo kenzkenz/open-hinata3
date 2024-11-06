@@ -10,7 +10,7 @@ export default {
   name: 'ext-syochiiki',
   props: ['mapName','item'],
   data: () => ({
-    menuContentSize: {'height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'}
+    menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'}
   }),
   computed: {
     s_watchFlg () {
