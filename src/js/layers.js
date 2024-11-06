@@ -3468,11 +3468,165 @@ const layers01 = [
         label: "自然、立体図等",
         nodes: [
             {
+                id: 'cd',
+                label: "CS立体図",
+                nodes: [
+                    {
+                        id: 'oh-csNotoLayer',
+                        label: "能登CS立体図",
+                        source: csNotoSource,
+                        layers: [csNotoLayer]
+                    },
+                    {
+                        id: 'oh-cs-tochigi-layer',
+                        label: "栃木県CS立体図",
+                        source: csTochigiSource,
+                        layers: [csTochigiLayer],
+                        attribution:'<a href="https://www.geospatial.jp/ckan/dataset/csmap_tochigi" target="_blank">G空間情報センター</a>'
+                    },
+                    {
+                        id: 'oh-cs-nagano-layer',
+                        label: "長野県CS立体図",
+                        source: csNaganoSource,
+                        layers: [csNaganoLayer],
+                        attribution:'<a href="https://www.geospatial.jp/ckan/dataset/nagano-csmap" target="_blank">G空間情報センター</a>'
+                    },
+                    {
+                        id: 'oh-csGifuLayer',
+                        label: "岐阜県CS立体図",
+                        source: csGifuSource,
+                        layers: [csGifuLayer]
+                    },
+                    {
+                        id: 'oh-csOsakaLayer',
+                        label: "大阪府CS立体図",
+                        source: csOsakaSource,
+                        layers: [csOsakaLayer]
+                    },
+                    {
+                        id: 'oh-csHyogoLayer',
+                        label: "兵庫県CS立体図",
+                        source: csHyogoSource,
+                        layers: [csHyogoLayer]
+                    },
+                    {
+                        id: 'oh-csShizuokaLayer',
+                        label: "静岡県CS立体図",
+                        source: csShizuokaSource,
+                        layers: [csShizuokaLayer]
+                    },
+                    {
+                        id: 'oh-cs-hiroshima-layer',
+                        label: "広島県CS立体図",
+                        source: csHiroshimaSource,
+                        layers: [csHiroshimaLayer],
+                        attribution:'<a href="https://github.com/shi-works/aist-dem-with-cs-on-maplibre-gl-js" target="_blank">aist-dem-with-cs-on-maplibre-gl-js</a>'
+                    },
+                    {
+                        id: 'oh-cs-okayama-layer',
+                        label: "岡山県CS立体図",
+                        source: csOkayamaSource,
+                        layers: [csOkayamaLayer],
+                        attribution:'<a href="https://www2.ffpri.go.jp/soilmap/index.html" target="_blank">森林総研・森林土壌デジタルマップ</a>'
+                    },
+                    {
+                        id: 'oh-cs-fukushima-layer',
+                        label: "福島県CS立体図",
+                        source: csFukushimaSource,
+                        layers: [csFukushimaLayer],
+                        attribution:'<a href="https://www2.ffpri.go.jp/soilmap/index.html" target="_blank">森林総研・森林土壌デジタルマップ</a>'
+                    },
+                    {
+                        id: 'oh-cs-ehime-layer',
+                        label: "愛媛県CS立体図",
+                        source: csEhimeSource,
+                        layers: [csEhimeLayer],
+                        attribution:'<a href="https://www2.ffpri.go.jp/soilmap/index.html" target="_blank">森林総研・森林土壌デジタルマップ</a>'
+                    },
+                    {
+                        id: 'oh-cs-kochi-layer',
+                        label: "高知県CS立体図",
+                        source: csKochiSource,
+                        layers: [csKochiLayer],
+                        attribution:'<a href="https://www.geospatial.jp/ckan/dataset/csmap_kochi" target="_blank">G空間情報センター</a>'
+                    },
+                    {
+                        id: 'oh-cs-kumamoto-layer',
+                        label: "熊本県・大分県CS立体図",
+                        source: csKumamotoSource,
+                        layers: [csKumamotoLayer],
+                        attribution:'<a href="https://www2.ffpri.go.jp/soilmap/index.html" target="_blank">森林総研・森林土壌デジタルマップ</a>'
+                    },
+                    {
+                        id: 'oh-cs-kanagawa-layer',
+                        label: "神奈川県CS立体図",
+                        source: csKanagawaSource,
+                        layers: [csKanagawaLayer]
+                    },
+                    {
+                        id: 'oh-tokyo23-cs-layer',
+                        label: "東京都23区CS立体図",
+                        source: tokyo23CsSource,
+                        layers: [tokyo23CsLayer]
+                    },
+                    {
+                        id: 'oh-cs-yokohama-layer',
+                        label: "横浜北部、川崎CS立体図",
+                        source: csYokohamSource,
+                        layers: [csYokohamaLayer]
+                    },
+                ]
+            },
+            {
+                id: 'sekisyoku',
+                label: "赤色立体地図",
+                nodes: [
+                    {
+                        id: 'oh-kanagawa-sekisyoku-layer',
+                        label: "神奈川県赤色立体地図",
+                        source: kanagawaSekisyokuSource,
+                        layers: [kanagawaSekisyokuLayer],
+                        attribution:'<a href="https://www.geospatial.jp/ckan/dataset/kanagawa-2020-1-pointcloud" target="_blank">G空間情報センター</a>'
+                    },
+                    {
+                        id: 'oh-tosyo-sekisyoku-layer',
+                        label: "東京都赤色立体地図",
+                        sources: [tamaSekisyokuSource,tokyo23SekisyokuSource,tosyo01SekisyokuSource,tosyo02SekisyokuSource,tosyo03SekisyokuSource,tosyo04SekisyokuSource,tosyo05SekisyokuSource,tosyo06SekisyokuSource],
+                        layers: [tamaSekisyokuLayer,tokyo23SekisyokuLayer,tosyo02SekisyokuLayer,tosyo03SekisyokuLayer,tosyo04SekisyokuLayer,tosyo05SekisyokuLayer,tosyo06SekisyokuLayer,tosyo01SekisyokuLayer],
+                        attribution:'<a href="https://www.geospatial.jp/ckan/dataset/tokyopc-23ku-2024" target="_blank">G空間情報センター</a>'
+                    },
+                    {
+                        id: 'oh-aichiSekisyokuLayer',
+                        label: "愛知県赤色立体地図",
+                        source: aichiSekisyokuSource,
+                        layers: [aichiSekisyokuLayer]
+                    },
+                ]},
+            {
                 id: 'oh-shitchi',
                 label: "第6-7回植生図",
                 source: ecoris67Source,
                 layers: [ecoris67Layer],
-                attribution: "<a href='https://map.ecoris.info/' target='_blank'>エコリス地図タイル</a>",
+                attribution: "<a href='https://map.ecoris.info/' target='_blank'>エコリス地図タイル</a>" +
+                    '<div class="legend-scale">' +
+                        '<ul class="legend-labels">' +
+                            '<li><span style="background:#fdf1ce;"></span>高山帯自然植生</li>' +
+                            '<li><span style="background:#997f60;"></span>コケモモートウヒクラス域 自然植生</li>' +
+                            '<li><span style="background:#a58f74;"></span>〃 代償植生</li>' +
+                            '<li><span style="background:#178017;"></span>ブナクラス域 自然植生</li>' +
+                            '<li><span style="background:#5b9700;"></span>〃 代償植生</li>' +
+                            '<li><span style="background:#003300;"></span>ヤブツバキクラス域 自然植生</li>' +
+                            '<li><span style="background:#004a00;"></span>〃 代償植生</li>' +
+                            '<li><span style="background:#ffff00;"></span>河川・湿原・沼沢地・砂丘植生</li>' +
+                            '<li><span style="background:#697720;"></span>植林地</li>' +
+                            '<li><span style="background:#8cd27d;"></span>耕作地</li>' +
+                            '<li><span style="background:#868585;"></span>市街地</li>' +
+                            '<li><span style="background:#99ffff;"></span>開放水域</li>' +
+                            '<li><span style="background:#cccc20;"></span>竹林</li>' +
+                            '<li><span style="background:#69ff00;"></span>牧草地・ゴルフ場・芝地</li>' +
+                            '<li><span style="background:#999662;"></span>水田以外の耕作地</li>' +
+                        '</ul>' +
+                    '</div>'
             },
             {
                 id: 'oh-shitchi',
@@ -3515,130 +3669,6 @@ const layers01 = [
                 label: "地形分類",
                 source: chikeibunruiSource,
                 layers: [chikeibunruiLayer]
-            },
-            {
-                id: 'oh-csNotoLayer',
-                label: "能登CS立体図",
-                source: csNotoSource,
-                layers: [csNotoLayer]
-            },
-            {
-                id: 'oh-cs-tochigi-layer',
-                label: "栃木県CS立体図",
-                source: csTochigiSource,
-                layers: [csTochigiLayer],
-                attribution:'<a href="https://www.geospatial.jp/ckan/dataset/csmap_tochigi" target="_blank">G空間情報センター</a>'
-            },
-            {
-                id: 'oh-cs-nagano-layer',
-                label: "長野県CS立体図",
-                source: csNaganoSource,
-                layers: [csNaganoLayer],
-                attribution:'<a href="https://www.geospatial.jp/ckan/dataset/nagano-csmap" target="_blank">G空間情報センター</a>'
-            },
-            {
-                id: 'oh-csGifuLayer',
-                label: "岐阜県CS立体図",
-                source: csGifuSource,
-                layers: [csGifuLayer]
-            },
-            {
-                id: 'oh-csOsakaLayer',
-                label: "大阪府CS立体図",
-                source: csOsakaSource,
-                layers: [csOsakaLayer]
-            },
-            {
-                id: 'oh-csHyogoLayer',
-                label: "兵庫県CS立体図",
-                source: csHyogoSource,
-                layers: [csHyogoLayer]
-            },
-            {
-                id: 'oh-csShizuokaLayer',
-                label: "静岡県CS立体図",
-                source: csShizuokaSource,
-                layers: [csShizuokaLayer]
-            },
-            {
-                id: 'oh-cs-hiroshima-layer',
-                label: "広島県CS立体図",
-                source: csHiroshimaSource,
-                layers: [csHiroshimaLayer],
-                attribution:'<a href="https://github.com/shi-works/aist-dem-with-cs-on-maplibre-gl-js" target="_blank">aist-dem-with-cs-on-maplibre-gl-js</a>'
-            },
-            {
-                id: 'oh-cs-okayama-layer',
-                label: "岡山県CS立体図",
-                source: csOkayamaSource,
-                layers: [csOkayamaLayer],
-                attribution:'<a href="https://www2.ffpri.go.jp/soilmap/index.html" target="_blank">森林総研・森林土壌デジタルマップ</a>'
-            },
-            {
-                id: 'oh-cs-fukushima-layer',
-                label: "福島県CS立体図",
-                source: csFukushimaSource,
-                layers: [csFukushimaLayer],
-                attribution:'<a href="https://www2.ffpri.go.jp/soilmap/index.html" target="_blank">森林総研・森林土壌デジタルマップ</a>'
-            },
-            {
-                id: 'oh-cs-ehime-layer',
-                label: "愛媛県CS立体図",
-                source: csEhimeSource,
-                layers: [csEhimeLayer],
-                attribution:'<a href="https://www2.ffpri.go.jp/soilmap/index.html" target="_blank">森林総研・森林土壌デジタルマップ</a>'
-            },
-            {
-                id: 'oh-cs-kochi-layer',
-                label: "高知県CS立体図",
-                source: csKochiSource,
-                layers: [csKochiLayer],
-                attribution:'<a href="https://www.geospatial.jp/ckan/dataset/csmap_kochi" target="_blank">G空間情報センター</a>'
-            },
-            {
-                id: 'oh-cs-kumamoto-layer',
-                label: "熊本県・大分県CS立体図",
-                source: csKumamotoSource,
-                layers: [csKumamotoLayer],
-                attribution:'<a href="https://www2.ffpri.go.jp/soilmap/index.html" target="_blank">森林総研・森林土壌デジタルマップ</a>'
-            },
-            {
-                id: 'oh-cs-kanagawa-layer',
-                label: "神奈川県CS立体図",
-                source: csKanagawaSource,
-                layers: [csKanagawaLayer]
-            },
-            {
-                id: 'oh-kanagawa-sekisyoku-layer',
-                label: "神奈川県赤色立体地図",
-                source: kanagawaSekisyokuSource,
-                layers: [kanagawaSekisyokuLayer],
-                attribution:'<a href="https://www.geospatial.jp/ckan/dataset/kanagawa-2020-1-pointcloud" target="_blank">G空間情報センター</a>'
-            },
-            {
-                id: 'oh-cs-yokohama-layer',
-                label: "横浜北部、川崎CS立体図",
-                source: csYokohamSource,
-                layers: [csYokohamaLayer]
-            },
-            {
-                id: 'oh-tosyo-sekisyoku-layer',
-                label: "東京都赤色立体地図",
-                sources: [tamaSekisyokuSource,tokyo23SekisyokuSource,tosyo01SekisyokuSource,tosyo02SekisyokuSource,tosyo03SekisyokuSource,tosyo04SekisyokuSource,tosyo05SekisyokuSource,tosyo06SekisyokuSource],
-                layers: [tamaSekisyokuLayer,tokyo23SekisyokuLayer,tosyo02SekisyokuLayer,tosyo03SekisyokuLayer,tosyo04SekisyokuLayer,tosyo05SekisyokuLayer,tosyo06SekisyokuLayer,tosyo01SekisyokuLayer],
-                attribution:'<a href="https://www.geospatial.jp/ckan/dataset/tokyopc-23ku-2024" target="_blank">G空間情報センター</a>'
-            },
-            {
-                id: 'oh-tokyo23-cs-layer',
-                label: "東京都23区CS立体図",
-                source: tokyo23CsSource,
-                layers: [tokyo23CsLayer]
-            },
-            {
-                id: 'oh-aichiSekisyokuLayer',
-                label: "愛知県赤色立体地図",
-                source: aichiSekisyokuSource,
-                layers: [aichiSekisyokuLayer]
             },
         ]
     },

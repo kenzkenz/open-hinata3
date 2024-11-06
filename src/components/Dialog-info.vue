@@ -180,4 +180,26 @@ export default {
       overflow-wrap: break-word;
       font-size: 16px;
     }
+    /* 凡例のスタイル */
+    .legend-scale{
+      margin-top: 20px;
+    }
+    .legend-scale ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .legend-scale ul li {
+      margin: 0 0 5px 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+    }
+    .legend-scale ul li span {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      margin-right: 5px;
+      border: 1px solid #999;
+    }
 </style>
