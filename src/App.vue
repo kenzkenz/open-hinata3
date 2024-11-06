@@ -1495,11 +1495,8 @@ export default {
               }
 
 
-              console.log(popups.length)
               if (this.mapFlg.map02) {
-                // ここを改善 map02の最初のレイヤーがベクターでなかったらlen1で削除とか
                 const layer = this.$store.state.map02.getStyle().layers.at(-1)
-                console.log(layer.type)
                 if (layer.type === 'raster') {
                   closeAllPopups()
                 } else {

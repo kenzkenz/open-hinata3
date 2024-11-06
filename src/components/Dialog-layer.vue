@@ -153,7 +153,8 @@ export default {
               attribution: element.attribution,
               ext: element.ext,
               style: {
-                width: '200px',
+                // width: '200px',
+                width: 'auto',
                 display: 'block',
                 top: top,
                 left: left,

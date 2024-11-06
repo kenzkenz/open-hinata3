@@ -80,6 +80,14 @@ export default createStore({
       map01: '',
       map02: ''
     },
+    // kokudakakei: {
+    //   map01: 0,
+    //   map02: 0,
+    // },
+    // sonsu: {
+    //   map01: 0,
+    //   map02: 0,
+    // },
     //------------------------
   },
   getters: {
