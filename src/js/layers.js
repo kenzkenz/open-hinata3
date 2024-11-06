@@ -3117,6 +3117,132 @@ const ecoris67Layer = {
     'source': 'ecoris67-source',
     'raster-resampling': 'nearest'
 }
+// 東京都土地利用現況調査----------------------------------------------------------------------------------------------------------------
+export const tochiriyoSource = {
+    id: "tochiriyo-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/tokyotochiriyo/t.pmtiles",
+    }
+}
+export const tochiriyoLayer = {
+    id: "oh-tochiriyo",
+    type: "fill",
+    source: "tochiriyo-source",
+    "source-layer": "t",
+    paint: {
+        'fill-color': [
+            'match',
+            ['get', 'LU_1'],
+
+            '111', 'rgba(128,128,128,0.7)', // 官公庁施設
+            '112', [
+                'match',
+                ['get', 'LU_2'],
+                '1', 'rgba(0,192,255,0.7)', // 教育施設
+                '2', 'rgba(240,230,140,0.7)', // 文化施設
+                '3', 'rgba(255,215,0,0.7)', // 宗教施設
+                /* default */ 'rgba(0,0,0,0)' // Default color if LU_2 doesn't match
+            ],
+            '113', [
+                'match',
+                ['get', 'LU_2'],
+                '1', 'rgba(255,192,203,0.7)', // 医療施設
+                '2', 'rgba(219,112,147,0.7)', // 厚生施設
+                /* default */ 'rgba(0,0,0,0)'
+            ],
+            '114', [
+                'match',
+                ['get', 'LU_2'],
+                '1', 'rgba(0,0,255,0.7)', // 供給施設
+                '2', 'rgba(0,0,139,0.7)', // 処理施設
+                /* default */ 'rgba(0,0,0,0)'
+            ],
+            '121', 'rgba(255,127,80,0.7)', // 事務所建築物
+            '122', [
+                'match',
+                ['get', 'LU_2'],
+                '1', 'rgba(255,0,0,0.7)', // 商業施設
+                '2', 'rgba(255,99,71,0.7)', // 公衆浴場等
+                /* default */ 'rgba(0,0,0,0)'
+            ],
+            '123', 'rgba(255,69,0,0.7)', // 住商併用建物
+            '124', [
+                'match',
+                ['get', 'LU_2'],
+                '1', 'rgba(0,255,127,0.7)', // 宿泊施設
+                '2', 'rgba(124,255,2,0.7)', // 遊興施設
+                /* default */ 'rgba(0,0,0,0)'
+            ],
+            '125', [
+                'match',
+                ['get', 'LU_2'],
+                '1', 'rgba(0,255,255,0.7)', // スポーツ施設
+                '2', 'rgba(64,224,208,0.7)', // 興行施設
+                /* default */ 'rgba(0,0,0,0)'
+            ],
+            '131', 'rgba(60,179,113,0.7)', // 独立住宅
+            '132', 'rgba(0,100,0,0.7)', // 集合住宅
+            '141', 'rgba(105,105,105,0.7)', // 専用工場
+            '142', 'rgba(169,169,169,0.7)', // 住居併用工場
+            '143', [
+                'match',
+                ['get', 'LU_2'],
+                '1', 'rgba(32,178,120,0.7)', // 運輸施設等
+                '2', 'rgba(95,158,160,0.7)', // 倉庫施設等
+                /* default */ 'rgba(0,0,0,0)'
+            ],
+            '150', 'rgba(85,107,47,0.7)', // 農林漁業施設
+            '210', [
+                'match',
+                ['get', 'LU_2'],
+                '1', 'rgba(250,250,120,0.7)', // 太陽光発電
+                '2', 'rgba(119,136,153,0.7)', // 屋外駐車場
+                '3', 'rgba(176,196,222,0.7)', // その他
+                /* default */ 'rgba(0,0,0,0)'
+            ],
+            '300', [
+                'match',
+                ['get', 'LU_2'],
+                '1', 'rgba(120,100,100,0.7)', // ゴルフ場
+                '2', 'rgba(154,205,50,0.7)', // その他
+                /* default */ 'rgba(0,0,0,0)'
+            ],
+            '400', 'rgba(255,222,173,0.7)', // 未利用地等
+            '510', 'rgba(192,192,192,0.7)', // 道路
+            '520', 'rgba(105,105,105,0.7)', // 鉄道・港湾等
+            '611', 'rgba(255,165,0,0.7)', // 田
+            '612', 'rgba(255,165,122,0.7)', // 畑
+            '613', 'rgba(128,0,0,0.7)', // 樹園地
+            '620', 'rgba(34,139,34,0.7)', // 採草放牧地
+            '700', 'rgba(0,0,205,0.7)', // 水面・河川・水路
+            '800', 'rgba(128,128,0,0.7)', // 原野
+            '900', 'rgba(205,133,63,0.7)', // 森林
+            '220', 'rgba(106,90,205,0.7)', // その他
+            '0', 'rgba(128,0,128,0.7)', // 不明
+            '9', 'rgba(75,0,130,0.7)', // 不整合
+
+            /* default */ 'rgba(0,0,0,0)' // Default color if LU_1 doesn't match
+        ]
+
+    }
+}
+export const tochiriyoLayerLine = {
+    id: "oh-tochiriyo-line",
+    type: "line",
+    source: "tochiriyo-source",
+    "source-layer": "t",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            7, 0.1,
+            11, 0.5,
+            16, 1
+        ]
+    },
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -3737,6 +3863,13 @@ const layers01 = [
         id: 'sonohoka',
         label: "その他",
         nodes: [
+            {
+                id: 'oh-tochiriyo',
+                label: "東京都土地利用現況調査",
+                source: tochiriyoSource,
+                layers:[tochiriyoLayer,tochiriyoLayerLine],
+                attribution: "<a href='https://catalog.data.metro.tokyo.lg.jp/dataset/t000008d2000000019' target='_blank'>土地利用現況調査GISデータ</a>"
+            },
             {
                 id: 'oh-senkyoku',
                 label: "選挙区（2022）",
