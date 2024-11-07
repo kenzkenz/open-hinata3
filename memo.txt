@@ -212,7 +212,7 @@ tippecanoe -pk -pf -l b41 -f -o b41.pmtiles b4.geojson
 
 tippecanoe -pk -pf -l polygon -f -o hikari.pmtiles 2.geojson
 
-
+tippecanoe -rg -pk -pf -l bp -f -o bp.pmtiles bp.geojson
 
 import random
 from qgis.core import QgsField, QgsExpression, QgsExpressionContext, QgsExpressionContextUtils

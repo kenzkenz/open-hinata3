@@ -659,7 +659,6 @@ export default {
 
       // -----------------------------------------------------------------------------------------------------------------
       // on load
-      // const popups = []
       this.mapNames.forEach(mapName => {
         const map = this.$store.state[mapName]
         const params = this.parseUrlParams()
@@ -1265,6 +1264,42 @@ export default {
                       '<p>' + props.PREF_NAME + props.CITY_NAME + '</p>' +
                       // '<p>面積=' + prop.area + '</p>' +
                       // '<p>周長=' + prop.perimeter + '</p>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-bakumatsu-point':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-bakumatsu-point'] }
+                  )
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  const ryobun2p = props.領分２ ? '<tr><td>領分２</td><td>' + props.領分２ + '</td><td>' + Math.round(props.石高２).toLocaleString() + '</td></tr>' : ''
+                  const ryobun3p = props.領分３ ? '<tr><td>領分３</td><td>' + props.領分３ + '</td><td>' + Math.round(props.石高３).toLocaleString() + '</td></tr>' : ''
+                  const ryobun4p = props.領分４ ? '<tr><td>領分４</td><td>' + props.領分４ + '</td><td>' + Math.round(props.石高４).toLocaleString() + '</td></tr>' : ''
+                  const ryobun5p = props.領分５ ? '<tr><td>領分５</td><td>' + props.領分５ + '</td><td>' + Math.round(props.石高５).toLocaleString() + '</td></tr>' : ''
+                  const ryobun6p = props.領分６ ? '<tr><td>領分６</td><td>' + props.領分６ + '</td><td>' + Math.round(props.石高６).toLocaleString() + '</td></tr>' : ''
+                  const ryobun7p = props.領分７ ? '<tr><td>領分７</td><td>' + props.領分７ + '</td><td>' + Math.round(props.石高７).toLocaleString() + '</td></tr>' : ''
+                  const ryobun8p = props.領分８ ? '<tr><td>領分８</td><td>' + props.領分８ + '</td><td>' + Math.round(props.石高８).toLocaleString() + '</td></tr>' : ''
+                  html = '<div class="kinseipoint" style=width:250px;>' +
+                      '<span style="font-size: 20px">' + props.村名 + '' +
+                      '<span style="font-size: 14px">(' + props.よみ + ')<span/><br>' +
+                      '<p>領分１=' + props.領分１ + '</p>' +
+                      '<p>石高計=' + Math.round(props.石高計).toLocaleString() + '</p>' +
+                      '<table class="popup-table" align="center">' +
+                      '<tr><th></th><th>領分</th><th>石高</th></tr>' +
+                      '<tr><td>領分１</td><td>' + props.領分１ + '</td><td>' + Math.round(props.石高１).toLocaleString() + '</td></tr>' +
+                      ryobun2p +
+                      ryobun3p +
+                      ryobun4p +
+                      ryobun5p +
+                      ryobun6p +
+                      ryobun7p +
+                      ryobun8p +
+                      '</table>' +
+                      '<p>国名=' + props.国名 + '</p>' +
+                      '<p>国郡=' + props.国郡 + '</p>' +
+                      '<p>郡名=' + props.郡名 + '</p>' +
+                      '<p>相給=' + props.相給 + '</p>' +
                       '</div>'
                   break
                 }

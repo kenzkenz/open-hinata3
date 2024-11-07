@@ -1235,12 +1235,12 @@ const csOsakaLayer = {
 export const kawadakeSource = {
     id: 'kawadake-source', obj: {
         type: 'raster',
-        tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://www.gridscapes.net/AllRivers/1.0.0/t/{z}/{x}/{y}.png'],
+        // tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://www.gridscapes.net/AllRivers/1.0.0/t/{z}/{x}/{y}.png'],
+        tiles: ['https://kenzkenz.xsrv.jp/kawadake/{z}/{x}/{y}.png'],
         tileSize: 256,
-        scheme: 'tms',
-        // crossOrigin: 'anonymous',
-        minzoom: 5,
-        maxzoom: 14
+        // scheme: 'tms',
+        'maxzoom': 14,
+        'minzoom': 5
     }
 }
 export const kawddakeLayer = {
@@ -1359,13 +1359,11 @@ const amxLayerLabel = {
     'maxzoom': 24,
     'minzoom': 17
 }
-// 幕末近世ソース --------------------------------------------------------------------------------------------
+// 幕末近世 --------------------------------------------------------------------------------------------
 const bakumatsuSource = {
     id: "bakumatsu", obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bakumatsu/b410.pmtiles",
-        attribution:
-            "<a href='' target='_blank'></a>",
     }
 }
 const bakumatsuLayer = {
@@ -1444,28 +1442,47 @@ const bakumatsuLayerLabel = {
     'maxzoom': 24,
     'minzoom': 10
 }
-// 小学校ソース --------------------------------------------------------------------------------------------
-export const syogakkoR05Source = {
+// 幕末近世ポイント --------------------------------------------------------------------------------------------
+const bakumatsuPointSource = {
+    id: "bakumatsu-point-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bakumatsupoint/bp.pmtiles",
+    }
+}
+const bakumatsuPointLayer = {
+    id: "oh-bakumatsu-point",
+    type: "circle",
+    source: "bakumatsu-point-source",
+    "source-layer": "bp",
+    'paint': {
+        'circle-color': ['get','random_color_ryobun'],
+        'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['sqrt', ['get', '石高計']],
+            0, 1,
+            200, 40
+        ],
+    }
+}
+// 小学校-------------------------------------------------------------------------------------------
+const syogakkoR05Source = {
     id: "syogakkoR05Source", obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/syogakko/r05/s4joint.pmtiles",
-        attribution:
-            "<a href='' target='_blank'></a>",
     }
 }
-// 小学校レイヤー
-export const syogakkoR05Layer = {
+const syogakkoR05Layer = {
     id: "oh-syogakkoR05",
     type: "fill",
     source: "syogakkoR05Source",
     "source-layer": "s4polygon",
     paint: {
-        'fill-color': ['get', 'random_color'],  // フィーチャのプロパティ 'color' から色を取得
-        'fill-opacity': 0.8  // 透明度を設定
+        'fill-color': ['get', 'random_color']
     }
 
 }
-export const syogakkoR05LayerLine = {
+const syogakkoR05LayerLine = {
     id: "oh-syogakkoR05-line",
     type: "line",
     source: "syogakkoR05Source",
@@ -1481,7 +1498,7 @@ export const syogakkoR05LayerLine = {
         ]
     },
 }
-export const syogakkoR05LayerLabel = {
+const syogakkoR05LayerLabel = {
     id: "oh-syogakkoR05-label",
     type: "symbol",
     source: "syogakkoR05Source",
@@ -1501,7 +1518,7 @@ export const syogakkoR05LayerLabel = {
     'maxzoom': 24,
     'minzoom': 10
 }
-export const syogakkoR05LayerPoint = {
+const syogakkoR05LayerPoint = {
     id: "oh-syogakkoR05-point",
     type: "circle",
     source: "syogakkoR05Source",
@@ -3590,12 +3607,6 @@ const layers01 = [
                 layers: [bakumatsuLayer, bakumatsuLayerLine, bakumatsuLayerLabel],
                 ext: {name:'extBakumatsu',parameters:[]}
             },
-            // {
-            //     id: 'oh-bakumatsu-kokudaka',
-            //     label: "幕末期近世の村（石高/面積）",
-            //     source: bakumatsuSource,
-            //     layers: [bakumatsuLayerKokudaka,bakumatsuLayerLine,bakumatsuLayerLabel2]
-            // },
             {
                 id: 'oh-bakumatsu-kokudaka-height',
                 label: "幕末期近世の村（石高/面積）3D",
@@ -3603,12 +3614,12 @@ const layers01 = [
                 layers: [bakumatsuLayerHeight],
                 ext: {name:'extBakumatsu3d',parameters:[]}
             },
-            // {
-            //     id: 'oh-bakumatsu-han',
-            //     label: "幕末期近世の村（藩）",
-            //     source: bakumatsuSource,
-            //     layers: [bakumatsuLayerHan,bakumatsuLayerLine2,bakumatsuLayerLabel]
-            // },
+            {
+                id: 'oh-bakumatsu-poin',
+                label: "幕末期近世の村（ポイント）",
+                source: bakumatsuPointSource,
+                layers: [bakumatsuPointLayer]
+            },
         ]
     },
     {
