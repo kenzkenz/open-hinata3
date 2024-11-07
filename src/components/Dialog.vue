@@ -40,6 +40,7 @@ export default {
     }
   },
   mounted() {
+    const vm = this
     this.$nextTick(() => {
       const container = this.$refs.dragDiv
       const handle =  this.$refs.dragHandle
@@ -99,6 +100,45 @@ export default {
       // ハンドルにイベントリスナーを追加
       handle.addEventListener('mousedown', startDrag);
       handle.addEventListener('touchstart', startDrag);
+      // --------------------------------------------------------------------------------------------------------------
+      function adjustDialogSize() {
+        const dialogDiv = vm.$store.state.dialogs[vm.dialog.name][vm.mapName]
+        const firstDiv = document.querySelector('.first-div')
+        const secondDiv = vm.$store.state.secondDivStyle
+        // const dialogDiv0 = document.querySelector('#dialog-div-' + vm.dialog.name + '-' + vm.mapName)
+        // const secondDiv = document.querySelector('.second-div')
+        console.log(firstDiv.style.background_color)
+        if (window.innerWidth < 450) {
+          // スマホ画面の場合の設定
+          dialogDiv.style.position = 'fixed';
+          dialogDiv.style.top = '0';
+          dialogDiv.style.left = '0';
+          dialogDiv.style.width = '100vw';
+          dialogDiv.style.height = '100vh';
+          dialogDiv.style.background = 'rgba(255,255,255,0.7)'
+          firstDiv.style.background = 'rgba(0,0,0,0)'
+          // ここを修正
+          secondDiv.height = (window.innerHeight - 260) + 'px';
+          handle.removeEventListener('mousedown', startDrag);
+          handle.removeEventListener('touchstart', startDrag);
+          vm.$store.commit('incrDialogMaxZindex')
+          vm.$store.state.dialogs[vm.dialog.name][vm.mapName].style['z-index'] = vm.$store.state.dialogMaxZindex
+        } else {
+          // PC画面に戻ったときの設定
+          dialogDiv.style.position = 'absolute';
+          dialogDiv.style.width = 'auto'; // 初期幅に戻す
+          dialogDiv.style.height = 'auto'; // 初期の高さに戻す
+          dialogDiv.style.background = 'rgba(255,255,255,1)'
+          firstDiv.style.background = 'gray'
+          handle.addEventListener('mousedown', startDrag);
+          handle.addEventListener('touchstart', startDrag);
+          secondDiv.height = '390px';
+        }
+      }
+      // ウィンドウサイズが変わるたびにイベントをトリガー
+      window.addEventListener('resize', adjustDialogSize);
+      // 初回読み込み時にサイズを調整
+      adjustDialogSize();
     })
   }
 }
@@ -118,6 +158,16 @@ export default {
   -ms-user-select: none;
   user-select: none;
   /*width: 300px;*/
+}
+
+/* スマホ用のスタイル */
+@media screen and (max-width: 768px) {
+  .dialog-div {
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left:0;
+  }
 }
 .drag-handle{
   height: 30px;

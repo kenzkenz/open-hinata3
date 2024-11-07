@@ -111,7 +111,8 @@ export default {
   overflow: auto;
   user-select: text;
   font-size: larger;
-  color: gray;
+  color: black;
+  background-color: white;
 }
 </style>
 

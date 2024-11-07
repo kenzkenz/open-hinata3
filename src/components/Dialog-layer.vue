@@ -30,7 +30,7 @@
 
       <div :id="'center-div-' + mapName" class="center-div"></div>
 
-      <div :id="'second-div-' + mapName" :style="secondDivStyle" class="second-div">
+      <div :id="'second-div-' + mapName" :style="s_secondDivStyle" class="second-div">
         <v-text-field label="地図抽出" v-model="searchText" style="margin-top: 10px"></v-text-field>
         <Tree
             :nodes="layers"
@@ -70,9 +70,17 @@ export default {
     },
     layers:[],
     menuContentSize: {'height': '600px','margin': '10px', 'user-select': 'text'},
-    secondDivStyle: {'height': '390px', 'overflow': 'auto', 'user-select': 'text'},
+    // secondDivStyle: {'height': '390px', 'overflow': 'auto', 'user-select': 'text'},
   }),
   computed: {
+    s_secondDivStyle: {
+      get() {
+        return this.$store.state.secondDivStyle
+      },
+      set(value) {
+        this.$store.state.secondDivStyle = value
+      }
+    },
     s_lngRange () {
       return this.$store.state.lngRange
     },
@@ -418,7 +426,7 @@ export default {
       const bottomHeight = containerRect.height - topHeight - handle.offsetHeight;
       if (topHeight > 0 && bottomHeight > 0) {
         topDiv.style.height = `${topHeight - 8}px`;
-        this.secondDivStyle.height = `${bottomHeight - 8}px`;
+        this.s_secondDivStyle.height = `${bottomHeight - 8}px`;
       }
     };
 
@@ -435,42 +443,6 @@ export default {
         dragMove(e.touches[0].clientY);
       }
     });
-
-
-
-
-
-    // this.layers = Layers.layers[this.mapName]
-    // // ----------------------------------------------------
-    // const handle = document.getElementById('center-div-' + this.mapName);
-    // const topDiv = document.getElementById('first-div-' + this.mapName);
-    // // const bottomDiv = document.getElementById('second-div-' + this.mapName);
-    // const container = document.getElementById('container-div-' + this.mapName);
-    //
-    // let isDragging = false;
-    //
-    // handle.addEventListener('mousedown', () => {
-    //   isDragging = true;
-    // });
-    //
-    // document.addEventListener('mouseup', () => {
-    //   if (isDragging) {
-    //     isDragging = false;
-    //   }
-    // });
-    //
-    // document.addEventListener('mousemove', (e) => {
-    //   if (!isDragging) return;
-    //   const containerRect = container.getBoundingClientRect();
-    //   const topHeight = e.clientY - containerRect.top;
-    //   const bottomHeight = containerRect.height - topHeight - handle.offsetHeight;
-    //   console.log(bottomHeight)
-    //   if (topHeight > 0 && bottomHeight > 0) {
-    //     topDiv.style.height = `${topHeight-8}px`;
-    //     // bottomDiv.style.height = `${bottomHeight-8}px`;
-    //     this.secondDivStyle.height = `${bottomHeight-8}px`
-    //   }
-    // });
   },
   watch: {
     s_lngRange: {
@@ -517,6 +489,7 @@ export default {
 }
 .second-div {
   /*min-height: 200px;*/
+  background-color: white;
 }
 .drag-item {
   position:relative;
