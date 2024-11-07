@@ -3620,6 +3620,17 @@ const layers01 = [
                 label: "CS立体図",
                 nodes: [
                     {
+                        id: 'oh-cs-all',
+                        label: "CS立体図全部",
+                        sources: [csNotoSource,csTochigiSource,csNaganoSource,csGifuSource,csOsakaSource,csHyogoSource,csShizuokaSource,
+                            csHiroshimaSource,csOkayamaSource,csFukushimaSource,csEhimeSource,csKochiSource,csKumamotoSource,csKanagawaSource,
+                            tokyo23CsSource],
+
+                        layers: [csNotoLayer,csTochigiLayer,csNaganoLayer,csGifuLayer,csOsakaLayer,csHyogoLayer,csShizuokaLayer,
+                            csHiroshimaLayer,csOkayamaLayer,csFukushimaLayer,csEhimeLayer,csKochiLayer,csKumamotoLayer,csKanagawaLayer,
+                            tokyo23CsLayer]
+                    },
+                    {
                         id: 'oh-csNotoLayer',
                         label: "能登CS立体図",
                         source: csNotoSource,
@@ -3729,6 +3740,12 @@ const layers01 = [
                 id: 'sekisyoku',
                 label: "赤色立体地図",
                 nodes: [
+                    {
+                        id: 'oh-sekisyoku-layer-all',
+                        label: "赤色立体地図全部",
+                        sources: [kanagawaSekisyokuSource,tamaSekisyokuSource,tokyo23SekisyokuSource,tosyo01SekisyokuSource,tosyo02SekisyokuSource,tosyo03SekisyokuSource,tosyo04SekisyokuSource,tosyo05SekisyokuSource,tosyo06SekisyokuSource,aichiSekisyokuSource],
+                        layers: [kanagawaSekisyokuLayer,tamaSekisyokuLayer,tokyo23SekisyokuLayer,tosyo02SekisyokuLayer,tosyo03SekisyokuLayer,tosyo04SekisyokuLayer,tosyo05SekisyokuLayer,tosyo06SekisyokuLayer,tosyo01SekisyokuLayer,aichiSekisyokuLayer],
+                    },
                     {
                         id: 'oh-kanagawa-sekisyoku-layer',
                         label: "神奈川県赤色立体地図",

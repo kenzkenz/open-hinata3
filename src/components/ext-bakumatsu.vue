@@ -142,8 +142,11 @@ export default {
           searchString = searchString.replace(/\u3000/g,' ').trim()
           const words = searchString.split(" ")
           // 複数フィールドを結合する
-          const combinedFields = ["concat", ["get", "令制国"], " ", ["get", "村名"], " ", ["get", "よみ"], " ", ["get", "統合"], " ",
+          // const combinedFields = ["concat", ["get", "KEY"], " ", ["get", "令制国"], " ", ["get", "村名"], " ", ["get", "よみ"], " ", ["get", "統合"], " ",
+          //   ["get", "領分１"], " ", ["get", "領分２"], " ", ["get", "領分３"], " ", ["get", "領分４"], " ", ["get", "領分５"], " ", ["get", "領分６"], " ", ["get", "領分７"], " ", ["get", "領分８"], " ", ["get", "CITY_NAME"], " ", ["get", "PREF_NAME"]];
+          const combinedFields = ["concat", ["get", "KEY"], " ", ["get", "令制国"], " ", ["get", "村名"], " ", ["get", "よみ"], " ", ["get", "統合"], " ",
             ["get", "領分１"], " ", ["get", "CITY_NAME"], " ", ["get", "PREF_NAME"]];
+
           // 各単語に対して、結合したフィールドに対する index-of チェックを実行
           const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);
           // いずれかの単語が含まれる場合の条件を作成 (OR条件)
