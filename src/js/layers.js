@@ -1205,6 +1205,18 @@ const tosyo06SekisyokuLayer = {
     'type': 'raster',
     'source': 'tosyo06-sekisyoku-source',
 }
+// 高知県赤色立体地図------------------------------------------------------------------------------------------------------
+const kochiSekisyokuSource = {
+    id: 'kochi-sekisyoku-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz3.xsrv.jp/sekisyoku/kochi/{z}/{x}/{y}.png'],
+    }
+}
+const kochiSekisyokuLayer = {
+    'id': 'oh-kochi-sekisyoku-layer',
+    'type': 'raster',
+    'source': 'kochi-sekisyoku-source',
+}
 // 東京都23区CS立体図------------------------------------------------------------------------------------------------------
 const tokyo23CsSource = {
     id: 'tokyo23-cs-source', obj: {
@@ -3754,8 +3766,8 @@ const layers01 = [
                     {
                         id: 'oh-sekisyoku-layer-all',
                         label: "赤色立体地図全部",
-                        sources: [kanagawaSekisyokuSource,tamaSekisyokuSource,tokyo23SekisyokuSource,tosyo01SekisyokuSource,tosyo02SekisyokuSource,tosyo03SekisyokuSource,tosyo04SekisyokuSource,tosyo05SekisyokuSource,tosyo06SekisyokuSource,aichiSekisyokuSource],
-                        layers: [kanagawaSekisyokuLayer,tamaSekisyokuLayer,tokyo23SekisyokuLayer,tosyo02SekisyokuLayer,tosyo03SekisyokuLayer,tosyo04SekisyokuLayer,tosyo05SekisyokuLayer,tosyo06SekisyokuLayer,tosyo01SekisyokuLayer,aichiSekisyokuLayer],
+                        sources: [kanagawaSekisyokuSource,tamaSekisyokuSource,tokyo23SekisyokuSource,tosyo01SekisyokuSource,tosyo02SekisyokuSource,tosyo03SekisyokuSource,tosyo04SekisyokuSource,tosyo05SekisyokuSource,tosyo06SekisyokuSource,aichiSekisyokuSource,kochiSekisyokuSource],
+                        layers: [kanagawaSekisyokuLayer,tamaSekisyokuLayer,tokyo23SekisyokuLayer,tosyo02SekisyokuLayer,tosyo03SekisyokuLayer,tosyo04SekisyokuLayer,tosyo05SekisyokuLayer,tosyo06SekisyokuLayer,tosyo01SekisyokuLayer,aichiSekisyokuLayer,kochiSekisyokuLayer],
                     },
                     {
                         id: 'oh-kanagawa-sekisyoku-layer',
@@ -3777,6 +3789,14 @@ const layers01 = [
                         source: aichiSekisyokuSource,
                         layers: [aichiSekisyokuLayer]
                     },
+                    {
+                        id: 'oh-kochi-sekisyoku-layer',
+                        label: "高知県赤色立体地図",
+                        sources: [kochiSekisyokuSource],
+                        layers: [kochiSekisyokuLayer],
+                        attribution:'<a href="https://www.geospatial.jp/ckan/dataset/sekisyoku" target="_blank">G空間情報センター</a>'
+                    },
+
                 ]},
             {
                 id: 'oh-shitchi',

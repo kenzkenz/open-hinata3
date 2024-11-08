@@ -13,7 +13,7 @@
               </div>
 
               <div class="handle-div"><i class="fa-solid fa-up-down fa-lg handle-icon hover"></i></div>
-              <div class="info-div" @click="infoOpen(element)"><v-icon>mdi-cog</v-icon></div>
+              <div class="info-div" @click="infoOpen(element,true)"><v-icon>mdi-cog</v-icon></div>
               <div class="label-div">{{element.label}}</div>
               <div class="range-div">
 <!--                <input type="range" min="0" max="1" step="0.01" class="range" v-model.number="element.opacity" @input="changeSlider(element)"/>-->
@@ -136,7 +136,7 @@ export default {
       })
       element.visibility = !element.visibility
     },
-    infoOpen (element) {
+    infoOpen (element,isNew) {
       this.$store.commit('incrDialogMaxZindex')
       const result = this.s_dialogsINfo[this.mapName].find(el => el.id === element.id)
       const dialogEl = document.querySelector('#dialog-div-layerDialog-' + this.mapName)
@@ -171,8 +171,10 @@ export default {
             }
         this.$store.commit('pushDialogsInfo', {mapName: this.mapName, dialog: infoDialog})
       } else {
-        result.style.display = 'block'
-        result.style["z-index"] = this.$store.state.dialogMaxZindex
+        if (isNew) {
+          result.style.display = 'block'
+          result.style["z-index"] = this.$store.state.dialogMaxZindex
+        }
       }
     },
     changeWatchFlg (bool) {
@@ -319,7 +321,7 @@ export default {
               this.$store.state.watchFlg = ! this.$store.state.watchFlg
               this.$store.state.watchFlg = true
               // ここを改修する。
-              this.infoOpen(layer)
+              this.infoOpen(layer,false)
             }
           }
 
