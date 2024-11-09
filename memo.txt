@@ -222,6 +222,10 @@ tippecanoe -rg -pk -pf -l polygon -f -o hokkaidotsunami.pmtiles h.geojson
 
 tippecanoe -rg -pk -pf -l polygon -f -o gun.pmtiles g.geojson
 
+tippecanoe -rg -pk -pf -l polygon -f -o tochiriyo.pmtiles t.geojson
+
+tippecanoe -l polygon -f -o tochiriyo.pmtiles t.geojson
+
 
 import random
 from qgis.core import QgsField, QgsExpression, QgsExpressionContext, QgsExpressionContextUtils
