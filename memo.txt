@@ -224,7 +224,8 @@ tippecanoe -rg -pk -pf -l polygon -f -o gun.pmtiles g.geojson
 
 tippecanoe -rg -pk -pf -l polygon -f -o tochiriyo.pmtiles t.geojson
 
-tippecanoe -l polygon -f -o tochiriyo.pmtiles t.geojson
+tippecanoe -rg -pk -pf -Z10 -l polygon -f -o tochiriyo2.pmtiles t.geojson
+
 
 
 import random

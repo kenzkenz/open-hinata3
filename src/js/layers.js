@@ -16,7 +16,7 @@
 //         'circle-color': '#007cbf'
 //     }
 // }
-const konUrls = [
+let konUrls = [
     {name: '首都圏', datasetFolder: 'tokyo50', time: '1896-1909年', timeFolder: '2man'},
     {name: '首都圏', datasetFolder: 'tokyo50', time: '1917-1924年', timeFolder: '00'},
     {name: '首都圏', datasetFolder: 'tokyo50', time: '1927-1939年', timeFolder: '01'},
@@ -337,6 +337,19 @@ const konUrls = [
     {name: '伊賀', datasetFolder: 'iga', time: '1996-2001年', timeFolder: '04'},
 ]
 console.log(konUrls.length)
+
+// konUrls = konUrls.forEach().map(url => {
+//     return {
+//         name: name,
+//         id:'oh-kon-' + url.name + '-source-' + url.timeFolder,
+//         source: 'oh-kon-' + url.name + '-source-' + url.timeFolder,
+//         tiles: ['https://ktgis.net/kjmapw/kjtilemap/' + url.datasetFolder + '/' + url.timeFolder + '/{z}/{x}/{y}.png']
+//     }
+// })
+
+
+
+
 const konSources = []
 const konLayers = []
 konUrls.forEach(url => {
@@ -349,7 +362,7 @@ konUrls.forEach(url => {
         }
     })
     konLayers.push({
-        id: 'oh-' + url.name + '-layer-' + url.timeFolder,
+        id: 'oh-kon' + url.name + '-layer-' + url.timeFolder,
         source: 'oh-kon-' + url.name + '-source-' + url.timeFolder,
         name0: url.name,
         name: url.name + url.time,
@@ -389,6 +402,11 @@ const konjyakuMap = {
     nodes: konjyakuMapWithParentNodes
 };
 console.log(konjyakuMap)
+
+
+
+
+
 // 戦後米軍地図-----------------------------------------------------------------------------------------------------------
 const urls =[
     {name:'宮崎市',url:'https://kenzkenz2.xsrv.jp/usarmy/miyazaki/{z}/{x}/{y}.png',tms:true,bounds:[131.38730562869546, 31.94874904974968, 131.47186495009896, 31.85909130381588]},
@@ -3896,6 +3914,39 @@ const hokkaidotsunamiLayerHeight = {
         ],
     }
 }
+// 土地利用100mメッシュ----------------------------------------------------------------------------------------------------------------
+const tochiriyo100Source = {
+    id: "tochiriyo100-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/tochiriyo/tochiriyo2.pmtiles",
+        // minzoom: 11
+    }
+}
+const tochiriyo100Layer = {
+    id: "oh-tochiriyo100",
+    type: "fill",
+    source: "tochiriyo100-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-color': [
+            'match',
+            ['get', '土地利用種別'],
+            '0100', 'rgba(255,255,0,0.8)',      // 田
+            '0200', 'rgba(255,204,153,0.8)',    // その他の農用地
+            '0500', 'rgba(0,170,0,0.8)',        // 森林
+            '0600', 'rgba(0,255,153,0.8)',      // 荒地
+            '0700', 'rgba(255,0,0,0.8)',        // 建物用地
+            '0901', 'rgba(140,140,140,0.8)',    // 道路
+            '0902', 'rgba(180,180,180,0.8)',    // 鉄道
+            '1000', 'rgba(200,70,15,0.8)',      // その他の用地
+            '1100', 'rgba(0,0,255,0.8)',        // 河川地及び湖沼
+            '1400', 'rgba(255,255,153,0.8)',    // 海浜
+            '1500', 'rgba(0,204,255,0.8)',      // 海水域
+            '1600', 'rgba(0,204,255,0.8)',      // ゴルフ場
+            'rgba(0,0,0,0)' // デフォルト値（該当しない場合は透明）
+        ]
+    }
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -4561,6 +4612,13 @@ const layers01 = [
         id: 'sonohoka',
         label: "その他",
         nodes: [
+            {
+                id: 'oh-tochiriyo100',
+                label: "2021土地利用細分メッシュ(100m)",
+                source: tochiriyo100Source,
+                layers:[tochiriyo100Layer],
+                attribution: "<a href='' target='_blank'></a>"
+            },
             {
                 id: 'oh-tochiriyo',
                 label: "東京都土地利用現況調査",
