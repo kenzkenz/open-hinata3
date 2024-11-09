@@ -16,7 +16,7 @@
 //         'circle-color': '#007cbf'
 //     }
 // }
-let konUrls = [
+export let konUrls = [
     {name: '首都圏', datasetFolder: 'tokyo50', time: '1896-1909年', timeFolder: '2man'},
     {name: '首都圏', datasetFolder: 'tokyo50', time: '1917-1924年', timeFolder: '00'},
     {name: '首都圏', datasetFolder: 'tokyo50', time: '1927-1939年', timeFolder: '01'},
@@ -338,15 +338,19 @@ let konUrls = [
 ]
 console.log(konUrls.length)
 
-// konUrls = konUrls.forEach().map(url => {
-//     return {
-//         name: name,
-//         id:'oh-kon-' + url.name + '-source-' + url.timeFolder,
-//         source: 'oh-kon-' + url.name + '-source-' + url.timeFolder,
-//         tiles: ['https://ktgis.net/kjmapw/kjtilemap/' + url.datasetFolder + '/' + url.timeFolder + '/{z}/{x}/{y}.png']
-//     }
-// })
-
+konUrls = konUrls.map(url => {
+    const times = url.time.replace('年','').split('-')
+    return {
+        name: url.name,
+        time: url.time,
+        id:'oh-kon-' + url.name + '-source-' + url.timeFolder,
+        source: 'oh-kon-' + url.name + '-source-' + url.timeFolder,
+        tiles: ['https://ktgis.net/kjmapw/kjtilemap/' + url.datasetFolder + '/' + url.timeFolder + '/{z}/{x}/{y}.png'],
+        timeStart: Number(times[0]),
+        timeEnd: isNaN(Number(times[1])) ? Number(times[0]) :Number(times[1])
+    }
+})
+console.log(konUrls)
 
 
 
@@ -354,16 +358,16 @@ const konSources = []
 const konLayers = []
 konUrls.forEach(url => {
     konSources.push({
-        id: 'oh-kon-' + url.name + '-source-' + url.timeFolder,
+        id: url.id,
         obj:{
             type: 'raster',
-            tiles: ['https://ktgis.net/kjmapw/kjtilemap/' + url.datasetFolder + '/' + url.timeFolder + '/{z}/{x}/{y}.png'],
+            tiles: url.tiles,
             scheme: 'tms',
         }
     })
     konLayers.push({
-        id: 'oh-kon' + url.name + '-layer-' + url.timeFolder,
-        source: 'oh-kon-' + url.name + '-source-' + url.timeFolder,
+        id: url.id,
+        source: url.source,
         name0: url.name,
         name: url.name + url.time,
         type: 'raster',

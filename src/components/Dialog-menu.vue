@@ -8,6 +8,12 @@
       <div class="range-div">
         <input type="range" min="1" max="10" step="0.1" class="range" v-model.number="s_terrainLevel" @input="terrainLevelInput"/>
       </div>
+      <hr style="margin-top: 20px">
+      今昔マップ<br>{{konjyakuYear}}年の直近（過去）の地図を表示します。
+      <div class="range-div">
+        <input type="range" min="1890" max="2024" step="1" class="range" v-model.number="konjyakuYear" @change="konjyakuYearInput"/>
+      </div>
+
     </div>
   </Dialog>
 </template>
@@ -16,13 +22,23 @@
 import axios from "axios"
 import maplibregl from 'maplibre-gl'
 import {history} from "@/App";
+import {konUrls} from "@/js/layers";
 export default {
   name: 'Dialog-menu',
   props: ['mapName'],
   data: () => ({
+    konjyakuYear: '1890',
     address: '',
   }),
   computed: {
+    s_selectedLayers: {
+      get() {
+        return this.$store.state.selectedLayers
+      },
+      set(value) {
+        this.$store.state.selectedLayers = value
+      }
+    },
     s_terrainLevel: {
       get() {
         return this.$store.state.terrainLevel
@@ -44,6 +60,65 @@ export default {
     },
   },
   methods: {
+    konjyakuYearInput () {
+      let filterdKonUrls = konUrls.filter(url => {
+        // console.log(url.timeStart)
+        if (url.timeStart <= Number(this.konjyakuYear) && url.timeEnd >= Number(this.konjyakuYear)) {
+          return true
+        } else if (url.timeEnd <= Number(this.konjyakuYear)) {
+          return true
+        }
+        // return url.timeStart <= Number(this.konjyakuYear) && url.timeEnd >= Number(this.konjyakuYear)
+      })
+      console.log(JSON.stringify(filterdKonUrls))
+
+      // filterdKonUrls = filterdKonUrls.
+
+      // nameごとに最もtimeEndが大きいものを選択する処理
+      filterdKonUrls = Object.values(filterdKonUrls.reduce((acc, item) => {
+        // nameが未登録、または現在のtimeEndが登録済みより大きければ更新
+        if (!acc[item.name] || item.timeEnd > acc[item.name].timeEnd) {
+          acc[item.name] = item;
+        }
+        return acc;
+      }, {}));
+
+      // 結果を表示
+      console.log(JSON.stringify(filterdKonUrls, null, 2));
+
+      const konSources = []
+      const konLayers = []
+      filterdKonUrls.forEach(url => {
+        konSources.push({
+          id: url.id,
+          obj:{
+            type: 'raster',
+            tiles: url.tiles,
+            scheme: 'tms',
+          }
+        })
+        konLayers.push({
+          id: url.id,
+          source: url.source,
+          name0: url.name,
+          name: url.name + url.time,
+          type: 'raster',
+        })
+      })
+
+      this.s_selectedLayers.map01 = this.s_selectedLayers.map01.filter(layer => layer.id !== 'oh-konzyaku-layer')
+      this.$store.state.watchFlg = true
+      this.s_selectedLayers.map01.unshift(
+          {
+            id: 'oh-konzyaku-layer',
+            label: '今昔マップ',
+            sources: konSources,
+            layers: konLayers,
+            opacity: 1,
+            visibility: true,
+          }
+      )
+    },
     changePitch () {
       localStorage.setItem('isPitch',this.s_isPitch)
     },

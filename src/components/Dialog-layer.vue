@@ -255,7 +255,7 @@ export default {
       if (layers) {
         for (let i = layers.length - 1; i >= 0; i--) {
           const layerId = layers[i].id
-          console.log(layers[i])
+          // console.log(layers[i])
           if (layerId.slice(0,2) === 'oh' ) {
             map.removeLayer(layerId)
           }

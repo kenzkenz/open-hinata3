@@ -744,8 +744,7 @@ export default {
             )
           }
           if (params.slj) this.s_selectedLayers = params.slj
-
-
+          this.s_selectedLayers.map01 = this.s_selectedLayers.map01.filter(layer => layer.id !== 'oh-konzyaku-layer')
 
           // ----------------------------------------------------------------
 
