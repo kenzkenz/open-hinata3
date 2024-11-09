@@ -123,12 +123,13 @@ export default createStore({
           variable = 'busSelected'
           break
       }
-      console.log(payload.mapName,payload.name,payload.value)
+      console.log(payload.mapName,payload.name,payload.value,variable)
       state[variable][payload.mapName] = payload.value
     },
     updateSelectedLayers (state, payload) {
       const result = state.selectedLayers[payload.mapName].find(el => el.id === payload.id);
       console.log(result,payload.values)
+      state.watchFlg = false
       result.ext.values = payload.values
     },
     incrDialogMaxZindex (state) {
@@ -141,7 +142,6 @@ export default createStore({
     pushDialogsInfo (state,payload) {
       const dialogs = state.dialogsInfo[payload.mapName];
       dialogs.push(payload.dialog)
-      // console.log(payload.dialog)
     },
     pushDialogs2 (state,payload) {
       const dialogs = state.dialogs2[payload.mapName];

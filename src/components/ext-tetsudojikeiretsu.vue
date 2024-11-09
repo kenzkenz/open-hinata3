@@ -17,6 +17,9 @@ export default {
     menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'}
   }),
   computed: {
+    s_selectedLayers () {
+      return this.$store.state.selectedLayers
+    },
     s_watchFlg () {
       return this.$store.state.watchFlg
     },
@@ -51,8 +54,11 @@ export default {
     this.highwayYearInput (this.mapName)
   },
   watch: {
-    s_watchFlg () {
-      this.highwayYearInput (this.mapName)
+    s_selectedLayers: {
+      handler() {
+        this.highwayYearInput (this.mapName)
+      },
+      deep: true
     },
   }
 }

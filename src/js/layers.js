@@ -350,9 +350,6 @@ konUrls = konUrls.map(url => {
         timeEnd: isNaN(Number(times[1])) ? Number(times[0]) :Number(times[1])
     }
 })
-console.log(konUrls)
-
-
 
 const konSources = []
 const konLayers = []
@@ -405,11 +402,6 @@ const konjyakuMap = {
     label: "今昔マップ",
     nodes: konjyakuMapWithParentNodes
 };
-console.log(konjyakuMap)
-
-
-
-
 
 // 戦後米軍地図-----------------------------------------------------------------------------------------------------------
 const urls =[

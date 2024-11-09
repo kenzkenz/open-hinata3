@@ -13,7 +13,10 @@
               </div>
 
               <div class="handle-div"><i class="fa-solid fa-up-down fa-lg handle-icon hover"></i></div>
-              <div class="info-div" @click="infoOpen(element,true)"><v-icon>mdi-cog</v-icon></div>
+              <div class="info-div" @click="infoOpen(element,true)">
+                <v-icon v-if="element.ext">mdi-cog</v-icon>
+                <v-icon v-if="!element.ext">mdi-information</v-icon>
+              </div>
               <div class="label-div">{{element.label}}</div>
               <div class="range-div">
 <!--                <input type="range" min="0" max="1" step="0.01" class="range" v-model.number="element.opacity" @input="changeSlider(element)"/>-->
@@ -216,10 +219,9 @@ export default {
       }
     },
     removeLayer(id){
-      // const map = this.$store.state[this.mapName]
       this.s_selectedLayers[this.mapName] = this.s_selectedLayers[this.mapName].filter(layer => layer.id !== id)
+      this.$store.state.dialogsInfo[this.mapName] = this.$store.state.dialogsInfo[this.mapName].filter(layer => layer.id !== id)
       this.$store.state.watchFlg = true
-      // map.removeLayer(id)
     },
     onNodeClick (node) {
       if (node.layers) {
@@ -306,6 +308,7 @@ export default {
             }
           })
           // -------------------------------------------------
+
           if(!this.isDragging) {
             if (layer.ext) {
               if (layer.ext.values) {
@@ -318,16 +321,12 @@ export default {
                   })
                 })
               }
-              this.$store.state.watchFlg = ! this.$store.state.watchFlg
-              this.$store.state.watchFlg = true
               // ここを改修する。
               this.infoOpen(layer,false)
             }
           }
-
         }
       }
-      // console.log(map.getStyle().layers)
     },
     mw5AddLayers(map,mapName) {
       // console.log(map._container)
@@ -427,8 +426,8 @@ export default {
       const topHeight = clientY - containerRect.top;
       const bottomHeight = containerRect.height - topHeight - handle.offsetHeight;
       if (topHeight > 0 && bottomHeight > 0) {
-        topDiv.style.height = `${topHeight - 8}px`;
-        this.s_secondDivStyle.height = `${bottomHeight - 8}px`;
+        topDiv.style.height = `${topHeight - 8}px`
+        this.s_secondDivStyle.height = `${bottomHeight - 8}px`
       }
     };
 
@@ -552,6 +551,8 @@ export default {
 }
 .v-icon:hover {
   color: blue;
+  transition: transform 0.3s ease;
+  transform: rotate(360deg);
 }
 </style>
 
