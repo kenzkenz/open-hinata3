@@ -1923,11 +1923,7 @@ export const m250mLayerHeight = {
 export const m500mSource = {
     id: "m500mSource", obj: {
         type: "vector",
-        // minzoom: 0,
-        // maxzoom: 15,
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/mesh/500m/500m2.pmtiles",
-        attribution:
-            "<a href='' target='_blank'></a>",
     }
 }
 export const m500mLayer = {
@@ -2819,7 +2815,6 @@ const yotochiikiSource = {
     id: "yotochiiki-source", obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/yotochiiki/r05/y.pmtiles",
-        attribution: "<a href='' target='_blank'></a>",
     }
 }
 const yotochiikiLayer = {
@@ -3019,6 +3014,55 @@ const dronebirdLayer = {
     'id': 'oh-dronebird-layer',
     'type': 'raster',
     'source': 'dronebird-source',
+}
+// 明治中期の郡 --------------------------------------------------------------------------------------------
+const cityGunSource = {
+    id: "city-gun-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/gun/gun.pmtiles",
+    }
+}
+const cityGunLayer = {
+    id: "oh-city-gun",
+    type: "fill",
+    source: "city-gun-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-color': ['get', 'random_color'],
+    }
+}
+const cityGunLayerLine = {
+    id: "oh-city-gun-line",
+    type: "line",
+    source: "city-gun-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            7, 0,
+            11, 0.5
+        ]
+    },
+}
+const cityGunLayerLabel = {
+    id: "oh-city-gun-label",
+    type: "symbol",
+    source: "city-gun-source",
+    "source-layer": "polygon",
+    'layout': {
+        'text-field': ['get', 'GUN'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+        'symbol-placement': 'point',
+    },
+    'paint': {
+        'text-color': 'black',
+        'text-halo-color': 'white',
+        'text-halo-width': 1.0,
+    },
+    'minzoom': 8
 }
 // 市町村大正09年 --------------------------------------------------------------------------------------------
 const cityT09Source = {
@@ -3288,10 +3332,195 @@ export const hikariLayer = {
             ['linear'],
             ['to-number', ['get', 'light']],
             0, '#000000',     // Black at 0
-            128, '#FFFF00',   // Yellow at midpoint
+            128, '#808000',   // Dark yellow (olive) at midpoint
             254, '#FFFF00',   // Yellow right up to 254
             255, 'gold'    // White at 255
         ]
+    }
+}
+export const hikariLayerHeight = {
+    id: "oh-hikari-height",
+    type: "fill-extrusion",
+    source: "hikari-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-extrusion-color': [
+            'interpolate',
+            ['linear'],
+            ['to-number', ['get', 'light']],
+            0, '#000000',     // Black at 0
+            128, '#808000',   // Dark yellow (olive) at midpoint
+            254, '#FFFF00',   // Yellow right up to 254
+            255, 'gold'    // White at 255
+        ],
+        'fill-extrusion-height': [
+            'interpolate',
+            ['linear'],
+            ['to-number', ['get', 'light']],
+            0, 10,
+            254, 6000,
+            255, 10000      // 20mで高さ200
+        ],
+    }
+}
+// 津波浸水想定-----------------------------------------------------------------------------------------------------
+const tsunamiSource2 = {
+    id: "tsunami-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz.xsrv.jp/pmtiles/tsunami/tsunami.pmtiles",
+    }
+}
+const tsunamiLayerHeight = {
+    id: "oh-tsunami-height",
+    type: "fill-extrusion",
+    source: "tsunami-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-extrusion-color': [
+            'match',
+            ['get', 'A40_003'],
+            '0.01m以上 ～ 0.3m未満', '#f7fcf0', // 最小カテゴリーの色（新しく追加）
+            '～0.3m未満', '#d1e5f0',           // 0.3m未満の色
+            '0.3m未満', '#d1e5f0',
+            '0.3m以上 ～ 1.0m未満', '#a6dba0',  // 0.3~1.0mの色
+            '0.3m以上 ～ 1m未満', '#a6dba0',
+            '1.0m以上 ～ 2.0m未満', '#7bccc4',  // 1.0~2.0mの色
+            '1m以上 ～ 2m未満', '#7bccc4',
+
+            '0.3m以上 ～ 0.5m未満', '#d1e5f0',
+            '0.5m以上 ～ 1.0m未満','#a6dba0',
+            '1.0m以上 ～ 3.0m未満', '#7bccc4',
+            '1m以上 ～ 3m未満', '#7bccc4',
+
+
+            '2m以上 ～ 3m未満', '#7bccc4',
+            '3m以上 ～ 4m未満', '#2b8cbe',
+            '4m以上 ～ 5m未満', '#2b8cbe',
+
+            '3.0m以上 ～ 5.0m未満', '#2b8cbe',
+            '3m以上 ～ 5m未満','#2b8cbe',
+            '5m以上 ～ 10m未満','#0868ac',
+            '10m以上 ～ 20m未満', '#084081',
+            '10.0m以上 ～ 20.0m未満', '#084081',
+
+            '2.0m以上 ～ 5.0m未満', '#2b8cbe',  // 2.0~5.0mの色
+            '2m以上 ～ 5m未満', '#2b8cbe',
+            '5.0m以上 ～ 10.0m未満', '#0868ac', // 5.0~10.0mの色
+            'gray' // 該当しない場合のデフォルトカラー
+        ],
+        'fill-extrusion-opacity': 0.8,
+        'fill-extrusion-height': [
+            'match',
+            ['get', 'A40_003'],
+            '0.01m以上 ～ 0.3m未満', 2,      // 新しく追加した最小カテゴリーの高さ
+            '～0.3m未満', 5,
+            '0.3m未満', 5,
+            '0.3m以上 ～ 1.0m未満', 20,
+            '0.3m以上 ～ 1m未満', 20,
+            '1.0m以上 ～ 2.0m未満', 40,
+            '1m以上 ～ 2m未満', 40,
+
+            '0.3m以上 ～ 0.5m未満', 4,
+            '0.5m以上 ～ 1.0m未満',20,
+            '1.0m以上 ～ 3.0m未満', 40,
+            '1m以上 ～ 3m未満', 40,
+
+            '2m以上 ～ 3m未満', 50,
+            '3m以上 ～ 4m未満', 60,
+            '4m以上 ～ 5m未満', 70,
+
+
+            '3.0m以上 ～ 5.0m未満', 80,
+            '3m以上 ～ 5m未満',80,
+            '5m以上 ～ 10m未満',100,
+            '10m以上 ～ 20m未満', 120,
+            '10.0m以上 ～ 20.0m未満',120,
+
+            '2.0m以上 ～ 5.0m未満', 80,
+            '2m以上 ～ 5m未満', 80,
+            '5.0m以上 ～ 10.0m未満', 100,
+            10 // デフォルトの高さ
+        ]
+    }
+}
+// 宮崎県南海トラフ-----------------------------------------------------------------------------------------------------
+const nantoraSource = {
+    id: "nantora-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz.xsrv.jp/pmtiles/tsunami/nantora.pmtiles",
+    }
+}
+const nantoraLayerHeight = {
+    id: "oh-nantora-height",
+    type: "fill-extrusion",
+    source: "nantora-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-extrusion-color': [
+            'interpolate',
+            ['linear'],
+            ['get', '最大浸水深'],
+            0, 'rgba(255,255,179,0.8)',    // 0.3m未満
+            0.3, 'rgba(247,245,169,0.8)',  // 0.3~0.5m
+            0.5, 'rgba(248,225,116,0.8)',  // 0.5~1.0m
+            1.0, 'rgba(255,216,192,0.8)',  // 1.0~3.0m
+            3.0, 'rgba(255,183,183,0.8)',  // 3.0~5.0m
+            5.0, 'rgba(255,145,145,0.8)',  // 5.0~10.0m
+            10.0, 'rgba(242,133,201,0.8)', // 10.0~20.0m
+            20.0, 'rgba(220,122,220,0.8)'  // 20.0m以上
+        ],
+        'fill-extrusion-height': [
+            'interpolate',
+            ['linear'],
+            ['get', '最大浸水深'],
+            0, 10,          // 0mで高さ10
+            0.5, 15,        // 0.5mで高さ15
+            1.0, 20,        // 1.0mで高さ20
+            3.0, 50,        // 3.0mで高さ50
+            5.0, 75,        // 5.0mで高さ75
+            10.0, 125,      // 10.0mで高さ125
+            20.0, 200       // 20mで高さ200
+        ],
+    }
+}
+// 北海道津波-----------------------------------------------------------------------------------------------------
+const hokkaidotsunamiSource = {
+    id: "hokkaidotsunami-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz.xsrv.jp/pmtiles/tsunami/hokkaidotsunami.pmtiles",
+    }
+}
+const hokkaidotsunamiLayerHeight = {
+    id: "oh-hokkaidotsunami-height",
+    type: "fill-extrusion",
+    source: "hokkaidotsunami-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-extrusion-color': [
+            'interpolate',
+            ['linear'],
+            ['coalesce', ['get', 'max'], ['get', 'MAX_SIN']],
+            0, 'rgba(255,255,179,0.8)',    // 0.3m未満
+            0.3, 'rgba(247,245,169,0.8)',  // 0.3~0.5m
+            0.5, 'rgba(248,225,116,0.8)',  // 0.5~1.0m
+            1.0, 'rgba(255,216,192,0.8)',  // 1.0~3.0m
+            3.0, 'rgba(255,183,183,0.8)',  // 3.0~5.0m
+            5.0, 'rgba(255,145,145,0.8)',  // 5.0~10.0m
+            10.0, 'rgba(242,133,201,0.8)', // 10.0~20.0m
+            20.0, 'rgba(220,122,220,0.8)'  // 20.0m以上
+        ],
+        'fill-extrusion-height': [
+            'interpolate',
+            ['linear'],
+            ['coalesce', ['get', 'max'], ['get', 'MAX_SIN']],
+            0, 10,          // 0mで高さ10
+            0.5, 15,        // 0.5mで高さ15
+            1.0, 20,        // 1.0mで高さ20
+            3.0, 50,        // 3.0mで高さ50
+            5.0, 75,        // 5.0mで高さ75
+            10.0, 125,      // 10.0mで高さ125
+            20.0, 200       // 20mで高さ200
+        ],
     }
 }
 // ---------------------------------------------------------------------------------------------------------------------
@@ -3594,6 +3823,13 @@ const layers01 = [
         id: 'city',
         label: "市町村",
         nodes: [
+            {
+                id: 'oh-city-gun',
+                label: "明治中期の郡",
+                source: cityGunSource,
+                layers: [cityGunLayer,cityGunLayerLine,cityGunLayerLabel],
+                attribution:'<a href="https://booth.pm/ja/items/3053727" target="_blank">郡地図研究会</a>'
+            },
             {
                 id: 'oh-city-t09',
                 label: "T09市町村",
@@ -3903,6 +4139,24 @@ const layers01 = [
                 layers: [tsunamiLayer],
             },
             {
+                id: 'oh-tsunami-height',
+                label: "津波浸水想定3D",
+                source: tsunamiSource2,
+                layers: [tsunamiLayerHeight],
+            },
+            {
+                id: 'oh-nantora-height',
+                label: "宮崎県南海トラフ津波浸水想定3D",
+                source: nantoraSource,
+                layers: [nantoraLayerHeight],
+            },
+            {
+                id: 'oh-hokkaidotsunami-height',
+                label: "北海道津波浸水想定3D",
+                source: hokkaidotsunamiSource,
+                layers: [hokkaidotsunamiLayerHeight],
+            },
+            {
                 id: 'oh-zosei',
                 label: "R05大規模盛土造成地",
                 source: zoseiSource,
@@ -3981,6 +4235,12 @@ const layers01 = [
                 label: "夜のあかり",
                 source: hikariSource,
                 layers: [hikariLayer]
+            },
+            {
+                id: 'oh-hikari-height',
+                label: "夜のあかり3D",
+                source: hikariSource,
+                layers: [hikariLayerHeight]
             },
             {
                 id: 'oh-koaza',

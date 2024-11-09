@@ -775,7 +775,10 @@ export default {
 
           document.querySelector('#' + mapName + ' .terrain-btn-up,terrain-btn-down').addEventListener('mouseover', function() {
             const layers = map.getStyle().layers
-            if (!layers.find(layer => layer.id === 'oh-bakumatsu-kokudaka-height')) {
+            if (!layers.find(layer => {
+              return layer.id.indexOf('height') !== -1
+            }
+            )) {
               map.setTerrain({'source': 'terrain', 'exaggeration': vm.s_terrainLevel})
             } else {
               map.setTerrain(null)
@@ -783,7 +786,10 @@ export default {
           }, false);
           document.querySelector('#' + mapName + ' .terrain-btn-up,terrain-btn-down').addEventListener('pointerdown', function() {
             const layers = map.getStyle().layers
-            if (!layers.find(layer => layer.id === 'oh-bakumatsu-kokudaka-height')) {
+            if (!layers.find(layer => {
+                  return layer.id.indexOf('height') !== -1
+                }
+            )) {
               map.setTerrain({'source': 'terrain', 'exaggeration': vm.s_terrainLevel})
             } else {
               map.setTerrain(null)
@@ -1756,7 +1762,81 @@ export default {
                   const name = props.light
                   html =
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size:14px;">明るさ=' + name + '</span>' +
+                      '<span style="font-size:20px;">明るさ＝' + name + '</span>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-hikari-height':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-hikari-height'] }
+                  )
+                  console.log(features)
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  const name = props.light
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size:20px;">明るさ＝' + name + '</span>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-nantora-height':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-nantora-height'] }
+                  )
+                  console.log(features)
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  const name = props.最大浸水深
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size:20px;">最大浸水深＝' + name + 'm</span>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-tsunami-height':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-tsunami-height'] }
+                  )
+                  console.log(features)
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  const name = props.A40_003
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size:20px;">' + name + '</span>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-hokkaidotsunami-height':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-hokkaidotsunami-height'] }
+                  )
+                  console.log(features)
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  let name = props.max
+                  console.log(name)
+                  if (name === undefined) name = props.MAX_SIN
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size:20px;">' + name + 'm</span>' +
+                      '</div>'
+                  break
+                }
+                case 'oh-city-gun':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: ['oh-city-gun'] }
+                  )
+                  console.log(features)
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  const name = props.GUN
+                  const kuni = props.KUNI
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size:20px;">' + kuni + '</span><br>' +
+                      '<span style="font-size:20px;">' + name + '</span>' +
                       '</div>'
                   break
                 }
@@ -1988,7 +2068,11 @@ export default {
           const pitch = !isNaN(this.pitch[mapName]) ? this.pitch[mapName]: 0
           if (pitch !== 0) {
             // this.$store.state[mapName].setTerrain({ 'source': 'terrain', 'exaggeration': this.s_terrainLevel })
-            if (!this.s_selectedLayers[mapName].find(layer => layer.id === 'oh-bakumatsu-kokudaka-height')) {
+            if (!this.s_selectedLayers[mapName].find(layer => {
+              // return layer.id === 'oh-bakumatsu-kokudaka-height'
+              return layer.id.indexOf('height') !== -1
+            }
+            )) {
               this.$store.state[mapName].setTerrain({ 'source': 'terrain', 'exaggeration': this.s_terrainLevel })
             } else {
               map.setTerrain(null)

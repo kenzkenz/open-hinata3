@@ -214,6 +214,15 @@ tippecanoe -pk -pf -l polygon -f -o hikari.pmtiles 2.geojson
 
 tippecanoe -rg -pk -pf -l bp -f -o bp.pmtiles bp.geojson
 
+tippecanoe -rg -pk -pf -l polygon -f -o nantora.pmtiles n.geojson
+
+tippecanoe -rg -pk -pf -l polygon -f -o tsunami.pmtiles tsunami.geojson
+
+tippecanoe -rg -pk -pf -l polygon -f -o hokkaidotsunami.pmtiles h.geojson
+
+tippecanoe -rg -pk -pf -l polygon -f -o gun.pmtiles g.geojson
+
+
 import random
 from qgis.core import QgsField, QgsExpression, QgsExpressionContext, QgsExpressionContextUtils
 from qgis.PyQt.QtCore import QVariant
