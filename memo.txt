@@ -228,6 +228,8 @@ tippecanoe -rg -pk -pf -Z10 -l polygon -f -o tochiriyo2.pmtiles t.geojson
 
 tippecanoe -rg -pk -pf -Z0 -z9 -l polygon -f -o tochiriyoD.pmtiles tDissolve.geojson
 
+tippecanoe -rg -pk -pf -l point -f -o yochien.pmtiles yochien.geojson
+
 
 import random
 from qgis.core import QgsField, QgsExpression, QgsExpressionContext, QgsExpressionContextUtils

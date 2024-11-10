@@ -16,6 +16,26 @@
 //         'circle-color': '#007cbf'
 //     }
 // }
+import std from '@/assets/json/std_modified.json'
+
+console.log(std.sources)
+console.log(std.layers)
+let stdSources = []
+const stdLayers = std.layers
+Object.keys(std.sources).forEach(function(key) {
+  console.log(key,std.sources[key])
+    stdSources.push({
+        id: key,
+        obj: std.sources[key]
+    })
+})
+console.log(stdSources)
+// stdSources = stdSources.map(source => {
+//
+// })
+
+
+
 export let konUrls = [
     {name: '首都圏', datasetFolder: 'tokyo50', time: '1896-1909年', timeFolder: '2man'},
     {name: '首都圏', datasetFolder: 'tokyo50', time: '1917-1924年', timeFolder: '00'},
@@ -3914,7 +3934,7 @@ const hokkaidotsunamiLayerHeight = {
 const tochiriyo100Source = {
     id: "tochiriyo100-source", obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/tochiriyo/tochiriyo2.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/tochiriyo/tochiriyoD.pmtiles",
         // minzoom: 11
     }
 }
@@ -3942,6 +3962,48 @@ const tochiriyo100Layer = {
             'rgba(0,0,0,0)' // デフォルト値（該当しない場合は透明）
         ]
     }
+}// 幼稚園 --------------------------------------------------------------------------------------------
+const yochienSource = {
+    id: "yochien-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/yochien/yochien.pmtiles",
+    }
+}
+const yochienLayer = {
+    id: "oh-yochien-layer",
+    type: "circle",
+    source: "yochien-source",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': 'pink',
+        'circle-radius':[
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            2, 0.5,
+            4, 1,
+            7, 6,
+            11, 10
+        ]
+    }
+}
+const yochienLayerLabel = {
+    id: "oh-yochien-label",
+    type: "symbol",
+    source: "yochien-source",
+    "source-layer": "point",
+    'layout': {
+        'text-field': ['get', 'P29_004'],
+        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-offset': [0, 1],
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 9
 }
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
@@ -3960,6 +4022,12 @@ const layers01 = [
                 label: "淡色地図",
                 source: paleSource,
                 layers: [paleLayer]
+            },
+            {
+                id: 'oh-vector-layer',
+                label: "ベクトルタイル",
+                sources: stdSources,
+                layers: stdLayers
             },
             {
                 id: 'oh-plateauPmtiles',
@@ -4220,6 +4288,12 @@ const layers01 = [
         id: 'skosodate',
         label: "子育て",
         nodes: [
+            {
+                id: 'oh-yochien',
+                label: "幼稚園・保育園等（R0２）",
+                source: yochienSource,
+                layers: [yochienLayer,yochienLayerLabel]
+            },
             {
                 id: 'oh-syogakkoR05',
                 label: "小学校（R05）",

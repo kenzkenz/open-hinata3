@@ -72,6 +72,7 @@ export default {
     info: {
       handler: function(){
         this.$nextTick(() => {
+          if (!this.$refs.dragDiv) return
           this.$refs.dragDiv.forEach((dragDiv,i) =>{
             const container = dragDiv
             const handle =  this.$refs.dragHandle[i]

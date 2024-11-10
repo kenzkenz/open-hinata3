@@ -33,7 +33,7 @@
               <v-btn icon type="button" class="terrain-btn-center terrain-btn" @pointerdown="terrainReset(mapName)"><v-icon>mdi-undo</v-icon></v-btn>
             </div>
           </div>
-          <div class="zoom-div">zoom={{zoom.toFixed(2)}}</div>
+          <div class="zoom-div">zoom={{zoom.toFixed(2)}}<br>{{address}}</div>
         </div>
       </div>
     </v-main>
@@ -77,6 +77,7 @@ import maplibregl from 'maplibre-gl'
 import { Protocol } from "pmtiles"
 import { useGsiTerrainSource } from 'maplibre-gl-gsi-terrain'
 import {paleLayer, paleSource} from "@/js/layers"
+import muni from '@/js/muni'
 
 export default {
   name: 'App',
@@ -100,6 +101,7 @@ export default {
     pitch:{map01:0,map02:0},
     bearing:0,
     zoom:0,
+    address:''
   }),
   computed: {
     s_terrainLevel: {
@@ -377,6 +379,21 @@ export default {
       // window.history.pushState({ lng, lat, zoom }, '', this.permalink)
       this.createShortUrl()
       this.zoom = zoom
+      const vm = this
+      axios
+          .get('https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress', {
+            params: {
+              lon: lng,
+              lat: lat
+            }
+          })
+          .then(function (response) {
+            if (response.data.results) {
+              const splitMuni = muni[Number(response.data.results.muniCd)].split(',')
+              vm.address = splitMuni[1] + splitMuni[3] + response.data.results.lv01Nm
+            }
+          })
+
       history('updatePermalink',window.location.href)
     },
     createShortUrl() {
@@ -474,6 +491,7 @@ export default {
           attributionControl: false,
           // style: 'https://raw.githubusercontent.com/gsi-cyberjapan/optimal_bvmap/52ba56f645334c979998b730477b2072c7418b94/style/std.json',
           // style:require('@/assets/json/std.json')
+          // style:"https://kenzkenz.xsrv.jp/open-hinata3/json/std.json",
           // style: {
           //   version: 8,
           //   // sprite: 'https://kenzkenz.xsrv.jp/open-hinata3/json/spritesheet',
@@ -498,17 +516,20 @@ export default {
 
           // style: `https://api.maptiler.com/maps/streets/style.json?key=${maptilerApiKey}`, // MapTilerのスタイルURL
 
-          // style:require('@/assets/json/mono.json')
+          // style:require('@/assets/json/basic.json')
 
           style: {
             'version': 8,
             glyphs: "https://glyphs.geolonia.com/{fontstack}/{range}.pbf",
+            // "glyphs": "https://gsi-cyberjapan.github.io/optimal_bvmap/glyphs/{fontstack}/{range}.pbf",
+            "sprite": "https://gsi-cyberjapan.github.io/optimal_bvmap/sprite/std",
             'sources': {
               terrain: gsiTerrainSource,
             },
             'layers': []
           },
         })
+        console.log(gsiTerrainSource)
         this.$store.state[mapName] = map
 
         // map.addControl(
@@ -1892,6 +1913,23 @@ export default {
                       '</div>'
                   break
                 }
+                case 'oh-yochien-label':
+                case 'oh-yochien-layer':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: [layerId] }
+                  )
+                  console.log(features)
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  const name = props.P29_004
+                  const address =props.P29_005
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size:12px;">' + address + '</span><br>' +
+                      '<span style="font-size:20px;">' + name + '</span>' +
+                      '</div>'
+                  break
+                }
               }
 
 
@@ -2286,6 +2324,11 @@ export default {
   bottom: 10px;
   font-size: large;
   z-index: 2;
+  text-shadow:
+      -1px -1px 0 #ffffff,
+      1px -1px 0 #ffffff,
+      -1px  1px 0 #ffffff,
+      1px  1px 0 #ffffff;
 }
 .zoom-in {
   position: absolute;

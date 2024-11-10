@@ -199,7 +199,7 @@ export default {
               }
             })
           }
-
+          console.log(layer0.type)
           if (layer0.type === 'raster') {
             map.setPaintProperty(layer0.id, 'raster-opacity', element.opacity)
           } else if (layer0.type === 'fill') {
@@ -215,6 +215,12 @@ export default {
           } else if (layer0.type === 'symbol') {
             map.setPaintProperty(layer0.id, 'text-opacity', element.opacity)
           }
+          // なぜか一度ズームしないと最適化ベクタータイルが反映しない。
+          // const zoom = map.getZoom()
+          // setTimeout(() => {
+          //   map.setZoom(12)
+          //   map.setZoom(zoom)
+          // },500)
         })
       }
     },
@@ -269,6 +275,7 @@ export default {
         if (layer.layers) {
           if (layer.sources) {
             layer.sources.forEach(source => {
+              // console.log(source,source.obj)
               if (!map.getSource(source.id)) map.addSource(source.id, source.obj)
             })
           }
@@ -279,7 +286,9 @@ export default {
             if (layer0.id === 'oh-mw-dummy') {
               this.mw5AddLayers(map,this.mapName)
             } else {
-              if (!map.getLayer(layer0.id)) map.addLayer(layer0)
+              if (!map.getLayer(layer0.id)) {
+                map.addLayer(layer0)
+              }
               if (layer0.type === 'raster') {
                 map.setPaintProperty(layer0.id, 'raster-opacity', layer.opacity)
               } else if (layer0.type === 'fill') {
@@ -304,6 +313,7 @@ export default {
               if (layer.visibility === undefined) visibility = 'visible'
               // ここを修正する必要があるが、昔のリンクがなくなれば問題なくなるか？
               // console.log(layer.visibility)
+              console.log(visibility)
               map.setLayoutProperty(layer0.id, 'visibility',visibility)
             }
           })
@@ -327,6 +337,12 @@ export default {
           }
         }
       }
+      // なぜか一度ズームしないと最適化ベクタータイルが反映しない。
+      const zoom = map.getZoom()
+      setTimeout(() => {
+        map.setZoom(12)
+        map.setZoom(zoom)
+      },500)
     },
     mw5AddLayers(map,mapName) {
       // console.log(map._container)
