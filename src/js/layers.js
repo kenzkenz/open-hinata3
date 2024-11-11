@@ -1,6 +1,9 @@
 // 地理院グリフを使う時は以下のフォントを使う。
 // "text-font": ["NotoSansJP-Regular"],
 
+
+// 'text-font': ['NotoSansJP-Regular'],
+
 // const testSource = {
 //     id: 'test-source', obj: {
 //         type: 'geojson',
@@ -16,24 +19,26 @@
 //         'circle-color': '#007cbf'
 //     }
 // }
-import std from '@/assets/json/std_modified.json'
+import std from '@/assets/json/modified_std.json'
+import mono from '@/assets/json/modified_mono.json'
 
-console.log(std.sources)
-console.log(std.layers)
 let stdSources = []
 const stdLayers = std.layers
 Object.keys(std.sources).forEach(function(key) {
-  console.log(key,std.sources[key])
     stdSources.push({
         id: key,
         obj: std.sources[key]
     })
 })
-console.log(stdSources)
-// stdSources = stdSources.map(source => {
-//
-// })
-
+// ---------------------------------------------------------------------
+let monoSources = []
+const monoLayers = mono.layers
+Object.keys(mono.sources).forEach(function(key) {
+    monoSources.push({
+        id: key,
+        obj: mono.sources[key]
+    })
+})
 
 
 export let konUrls = [
@@ -640,7 +645,7 @@ const mw5CenterLabel = {
     source: "mw5CenterSource",
     'layout': {
         'text-field': ['get', 'title'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
     },
     'paint': {
         'text-color': 'rgba(255, 255, 255, 0.7)',
@@ -743,7 +748,7 @@ const syochiikiLayerLabel = {
             ['get', 'JINKO'], { 'font-scale': 1.2 },
             '人', {},
         ],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
         // 'text-anchor': 'left',
         'text-offset': [0.5, 0],
         'visibility': 'visible',
@@ -901,7 +906,7 @@ const busteiLayerLabel = {
     "source-layer": "point",
     'layout': {
         'text-field': ['get', 'P11_001'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
         'text-offset': [0, 1],
         'visibility': 'visible',
     },
@@ -1768,7 +1773,7 @@ const amxLayerLabel = {
     "source-layer": "fude",
     'layout': {
         'text-field': ['get', '地番'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
     },
     'paint': {
         'text-color': 'rgba(255, 0, 0, 1)',
@@ -1849,7 +1854,7 @@ const bakumatsuLayerLabel = {
                 ['get', '村名']
             ]
         ],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
         'text-offset': [0.5, 0],
         'visibility': 'visible',
     },
@@ -1924,7 +1929,7 @@ const syogakkoR05LayerLabel = {
     "source-layer": "s4point",
     'layout': {
         'text-field': ['get', 'P29_004'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
         // 'text-anchor': 'left',
         'text-offset': [0, 1],
         'visibility': 'visible',
@@ -1988,7 +1993,7 @@ export const cyugakuR05LayerLabel = {
     "source-layer": "t4point",
     'layout': {
         'text-field': ['get', 'P29_004'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
         // 'text-anchor': 'left',
         'text-offset': [0, 1],
         'visibility': 'visible',
@@ -2099,7 +2104,7 @@ export const nihonrekishiLayerLabel = {
     "source-layer": "point",
     'layout': {
         'text-field': ['get', '名称'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
         // 'text-anchor': 'left',
         'text-offset': [0, 1],
         'visibility': 'visible',
@@ -2147,7 +2152,7 @@ export const iryokikanLayerLabel = {
     "source-layer": "i",
     'layout': {
         'text-field': ['get', 'P04_002'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
         // 'text-anchor': 'left',
         'text-offset': [0, 2],
     },
@@ -2209,7 +2214,7 @@ const m100mLayerLabel = {
         "text-field": [
             "to-string", ["round", ["get", "PopT"]]
         ],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
         'text-offset': [0, 0],
     },
     'paint': {
@@ -2291,7 +2296,7 @@ export const m250mLayerLabel = {
     "source-layer": "polygon",
     'layout': {
         'text-field': ['get', 'jinko'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
         // 'text-anchor': 'left',
         'text-offset': [0, 0],
     },
@@ -2372,7 +2377,7 @@ export const m500mLayerLabel = {
     "source-layer": "polygon",
     'layout': {
         'text-field': ['get', 'jinko'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
         'text-offset': [0, 0],
         'text-anchor': 'center',
         'text-allow-overlap': false, // 重複を許可しない
@@ -2460,7 +2465,7 @@ export const m1kmLayerLabel = {
     "source-layer": "polygon",
     'layout': {
         'text-field': ['get', 'jinko'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
         'text-offset': [0, 0],
         'text-anchor': 'center',
         'text-allow-overlap': false, // 重複を許可しない
@@ -2605,7 +2610,7 @@ export const kasenLayerLabel = {
     "source-layer": "line",
     'layout': {
         'text-field': ['get', 'W05_004'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
         'text-offset': [0, 0],
         'text-anchor': 'center',
         'text-allow-overlap': false, // 重複を許可しない
@@ -2731,7 +2736,7 @@ export const senkyokuLayerLabel = {
     "source-layer": "polygon",
     'layout': {
         'text-field': ['get', 'kuname'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
         'text-offset': [0, 2],
         'visibility': 'visible',
     },
@@ -2759,7 +2764,7 @@ const kojiLayerLabel = {
     "source-layer": "point",
     'layout': {
         'text-field': ['get', 'L01_025'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
         'text-offset': [0, 2],
         'visibility': 'visible',
     },
@@ -2860,7 +2865,7 @@ const michinoekiLayerLabel = {
     "source-layer": "michinoeki",
     'layout': {
         'text-field': ['get', 'P35_006'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
         'text-offset': [0, 1],
         'visibility': 'visible',
     },
@@ -2930,7 +2935,7 @@ const tokyojishinLayerLabel = {
     "source-layer": "polygon",
     'layout': {
         'text-field': ['get', '町丁目名'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
         'text-offset': [0, 2],
         'visibility': 'visible',
     },
@@ -3024,7 +3029,7 @@ const tokyojishinheightSogo = {
 //     source: "qKYouryo-source",
 //     'layout': {
 //         'text-field': ['get', 'P35_006'],
-//         'text-font': ['Noto Sans CJK JP Bold'],
+//         'text-font': ['NotoSansJP-Regular'],
 //         // 'text-anchor': 'left',
 //         'text-offset': [0, 1],
 //         'visibility': 'visible',
@@ -3092,7 +3097,7 @@ const zoseiLayerLabel = {
             '9', '区分をしていない',
             'その他' // デフォルトのテキスト
         ],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
     },
     'paint': {
         'text-color': 'rgba(255, 255, 255, 0.7)',
@@ -3160,7 +3165,7 @@ const qKyoryoLayerLabel = {
     "source-layer": "point",
     'layout': {
         'text-field': ['get', '_html'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
         'text-offset': [0, 1],
         'visibility': 'visible',
     },
@@ -3205,7 +3210,7 @@ const qTunnelLayerLabel = {
     "source-layer": "point",
     'layout': {
         'text-field': ['get', '_html'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
         'text-offset': [0, 1],
         'visibility': 'visible',
     },
@@ -3318,7 +3323,7 @@ const yotochiikiLayerLabel = {
     "source-layer": "y",
     'layout': {
         'text-field': ['get', '用途地域'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
     },
     'paint': {
         'text-color': 'rgba(255, 255, 255, 0.7)',
@@ -3368,7 +3373,7 @@ const koazaLayerLabel = {
     "source-layer": "koaza",
     'layout': {
         'text-field': ['get', 'KOAZA_NAME'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
     },
     'paint': {
         'text-color': 'red',
@@ -3461,7 +3466,7 @@ const cityGunLayerLabel = {
     "source-layer": "polygon",
     'layout': {
         'text-field': ['get', 'GUN'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
         'symbol-placement': 'point',
     },
     'paint': {
@@ -3511,7 +3516,7 @@ const cityT09LayerLabel = {
     "source-layer": "polygon",
     'layout': {
         'text-field': ['get', 'N03_004'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
     },
     'paint': {
         'text-color': 'black',
@@ -3560,7 +3565,7 @@ const cityR05LayerLabel = {
     "source-layer": "polygon",
     'layout': {
         'text-field': ['get', 'N03_004'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
         'symbol-placement': 'point',
     },
     'paint': {
@@ -3994,7 +3999,7 @@ const yochienLayerLabel = {
     "source-layer": "point",
     'layout': {
         'text-field': ['get', 'P29_004'],
-        'text-font': ['Noto Sans CJK JP Bold'],
+        'text-font': ['NotoSansJP-Regular'],
         'text-offset': [0, 1],
     },
     'paint': {
@@ -4028,6 +4033,12 @@ const layers01 = [
                 label: "ベクトルタイル",
                 sources: stdSources,
                 layers: stdLayers
+            },
+            {
+                id: 'oh-vector-layer-mono',
+                label: "ベクトルタイルモノクロ",
+                sources: monoSources,
+                layers: monoLayers
             },
             {
                 id: 'oh-plateauPmtiles',

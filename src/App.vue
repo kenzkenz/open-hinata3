@@ -520,8 +520,8 @@ export default {
 
           style: {
             'version': 8,
-            glyphs: "https://glyphs.geolonia.com/{fontstack}/{range}.pbf",
-            // "glyphs": "https://gsi-cyberjapan.github.io/optimal_bvmap/glyphs/{fontstack}/{range}.pbf",
+            // glyphs: "https://glyphs.geolonia.com/{fontstack}/{range}.pbf",
+            "glyphs": "https://gsi-cyberjapan.github.io/optimal_bvmap/glyphs/{fontstack}/{range}.pbf",
             "sprite": "https://gsi-cyberjapan.github.io/optimal_bvmap/sprite/std",
             'sources': {
               terrain: gsiTerrainSource,
