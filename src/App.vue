@@ -529,7 +529,6 @@ export default {
             'layers': []
           },
         })
-        console.log(gsiTerrainSource)
         this.$store.state[mapName] = map
 
         // map.addControl(
@@ -662,7 +661,6 @@ export default {
         if (syncing) return  // 同期中の場合は再帰呼び出しを防ぐ
         syncing = true
         const coordinates = e.lngLat
-        console.log(coordinates)
         // map2のクリックイベントをプログラムで発生させる
         map2.fire('click', { lngLat: coordinates })
         syncing = false

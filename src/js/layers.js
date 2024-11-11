@@ -21,7 +21,7 @@
 // }
 import std from '@/assets/json/modified_std.json'
 import mono from '@/assets/json/modified_mono.json'
-
+import dark from '@/assets/json/modified_dark.json'
 let stdSources = []
 const stdLayers = std.layers
 Object.keys(std.sources).forEach(function(key) {
@@ -37,6 +37,15 @@ Object.keys(mono.sources).forEach(function(key) {
     monoSources.push({
         id: key,
         obj: mono.sources[key]
+    })
+})
+// ---------------------------------------------------------------------
+let darkSources = []
+const darkLayers = dark.layers
+Object.keys(dark.sources).forEach(function(key) {
+    darkSources.push({
+        id: key,
+        obj: dark.sources[key]
     })
 })
 
@@ -4039,6 +4048,12 @@ const layers01 = [
                 label: "ベクトルタイルモノクロ",
                 sources: monoSources,
                 layers: monoLayers
+            },
+            {
+                id: 'oh-vector-layer-dark',
+                label: "ベクトルタイルダーク",
+                sources: darkSources,
+                layers: darkLayers
             },
             {
                 id: 'oh-plateauPmtiles',

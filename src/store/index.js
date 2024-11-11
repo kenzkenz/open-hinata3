@@ -55,6 +55,8 @@ export default createStore({
     isPitch: false,
     lngRange: [],
     latRange: [],
+    lngRange2: [],
+    latRange2: [],
     secondDivStyle: {'height': '390px', 'overflow': 'auto', 'user-select': 'text'},
     //------------------------
     highwayYear:{

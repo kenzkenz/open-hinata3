@@ -20,7 +20,7 @@
               <div class="label-div">{{element.label}}</div>
               <div class="range-div">
 <!--                <input type="range" min="0" max="1" step="0.01" class="range" v-model.number="element.opacity" @input="changeSlider(element)"/>-->
-                <input type="range" min="0" max="1" step="0.01" class="range" v-model.number="element.opacity" @input="changeSlider(element)" @mouseover="changeWatchFlg(false)" @mouseleave="changeWatchFlg(true)"/>
+                <input type="range" min="0" max="1" step="0.01" class="range" v-model.number="element.opacity" @input="inputSlider(element)" @change="changeSlider" @mouseover="changeWatchFlg(false)" @mouseleave="changeWatchFlg(true)"/>
               </div>
               <div class="trash-div" @click="removeLayer(element.id)"><i class="fa-sharp fa-solid fa-trash-arrow-up hover"></i></div>
             </div>
@@ -113,6 +113,13 @@ export default {
       this.isDragging = false
       this.$store.state.watchFlg = !this.$store.state.watchFlg
       this.$store.state.watchFlg = true
+      // なぜか一度ズームしないと最適化ベクタータイルが反映しない。
+      const map = this.$store.state.map01
+      const zoom = map.getZoom()
+      setTimeout(() => {
+        map.setZoom(12)
+        map.setZoom(zoom)
+      },500)
     },
     toggleCheck(element) {
       this.$store.state.watchFlg = true
@@ -183,7 +190,16 @@ export default {
     changeWatchFlg (bool) {
       this.$store.state.watchFlg = bool
     },
-    changeSlider (element){
+    changeSlider () {
+      // なぜか一度ズームしないと最適化ベクタータイルが反映しない。
+      const map = this.$store.state.map01
+      const zoom = map.getZoom()
+      setTimeout(() => {
+        map.setZoom(12)
+        map.setZoom(zoom)
+      },500)
+    },
+    inputSlider (element){
       const map = this.$store.state[this.mapName]
       if (element.layers) {
         element.layers.forEach(layer0 => {
@@ -199,7 +215,7 @@ export default {
               }
             })
           }
-          console.log(layer0.type)
+          // console.log(layer0.type)
           if (layer0.type === 'raster') {
             map.setPaintProperty(layer0.id, 'raster-opacity', element.opacity)
           } else if (layer0.type === 'fill') {
@@ -214,13 +230,9 @@ export default {
             map.setPaintProperty(layer0.id, 'circle-opacity', element.opacity)
           } else if (layer0.type === 'symbol') {
             map.setPaintProperty(layer0.id, 'text-opacity', element.opacity)
+          } else if (layer0.type === 'background') {
+            map.setPaintProperty(layer0.id, 'background-opacity', element.opacity)
           }
-          // なぜか一度ズームしないと最適化ベクタータイルが反映しない。
-          // const zoom = map.getZoom()
-          // setTimeout(() => {
-          //   map.setZoom(12)
-          //   map.setZoom(zoom)
-          // },500)
         })
       }
     },
@@ -232,6 +244,7 @@ export default {
     onNodeClick (node) {
       if (node.layers) {
         this.$store.state.watchFlg = true
+        const map = this.$store.state[this.mapName]
         if(!this.s_selectedLayers[this.mapName].find(layers => layers.id === node.id)) {
           this.s_selectedLayers[this.mapName].unshift(
               {
@@ -247,8 +260,13 @@ export default {
                 ext: node.ext,
               }
           )
+          // なぜか一度ズームしないと最適化ベクタータイルが反映しない。
+          const zoom = map.getZoom()
+          setTimeout(() => {
+            map.setZoom(12)
+            map.setZoom(zoom)
+          },500)
         } else {
-          const map = this.$store.state[this.mapName]
           this.s_selectedLayers[this.mapName] = this.s_selectedLayers[this.mapName].filter(layer => layer.id !== node.id)
           map.removeLayer(node.id)
         }
@@ -303,6 +321,8 @@ export default {
                 map.setPaintProperty(layer0.id, 'circle-opacity', layer.opacity)
               } else if (layer0.type === 'symbol') {
                 map.setPaintProperty(layer0.id, 'text-opacity', layer.opacity)
+              } else if (layer0.type === 'background') {
+                map.setPaintProperty(layer0.id, 'background-opacity', layer.opacity)
               }
               let visibility
               if (layer.visibility) {
@@ -313,7 +333,6 @@ export default {
               if (layer.visibility === undefined) visibility = 'visible'
               // ここを修正する必要があるが、昔のリンクがなくなれば問題なくなるか？
               // console.log(layer.visibility)
-              console.log(visibility)
               map.setLayoutProperty(layer0.id, 'visibility',visibility)
             }
           })
@@ -337,12 +356,6 @@ export default {
           }
         }
       }
-      // なぜか一度ズームしないと最適化ベクタータイルが反映しない。
-      const zoom = map.getZoom()
-      setTimeout(() => {
-        map.setZoom(12)
-        map.setZoom(zoom)
-      },500)
     },
     mw5AddLayers(map,mapName) {
       // console.log(map._container)
@@ -472,7 +485,6 @@ export default {
     },
     s_selectedLayers: {
       handler: function(){
-        // this.$store.state.watchFlg = true
         console.log('変更を検出しました',this.$store.state.watchFlg)
         // ------------------------------------------------------------------
         const map01 = this.$store.state.map01
