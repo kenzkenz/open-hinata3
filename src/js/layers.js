@@ -21,7 +21,7 @@
 // }
 import std from '@/assets/json/modified_std.json'
 import mono from '@/assets/json/modified_mono.json'
-import dark from '@/assets/json/modified_dark.json'
+// import dark from '@/assets/json/modified_dark.json'
 import fxDark from '@/assets/json/modified_fx-dark.json'
 let stdSources = []
 const stdLayers = std.layers
@@ -2851,6 +2851,50 @@ const kojilayerheight = {
         ]
     }
 }
+// 神社 --------------------------------------------------------------------------------------------
+const jinjyaSource = {
+    id: "jinjya-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/jinjya/jinjya.pmtiles",
+    }
+}
+const jinjyaLayer = {
+    id: "oh-jinjya-layer",
+    type: "circle",
+    source: "jinjya-source",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': 'navy',
+        'circle-radius':[
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            2, 1,
+            4, 3,
+            7, 6,
+            11, 10
+        ]
+    }
+}
+const jinjyaLayerLabel = {
+    id: "oh-jinjya-label",
+    type: "symbol",
+    source: "jinjya-source",
+    "source-layer": "point",
+    'layout': {
+        'text-field': ['get', 'name'],
+        'text-font': ['NotoSansJP-Regular'],
+        'text-offset': [0, 1],
+        'visibility': 'visible',
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 9
+}
 // 道の駅 --------------------------------------------------------------------------------------------
 const michinoekiSource = {
     id: "michinoeki-source", obj: {
@@ -4774,6 +4818,12 @@ const layers01 = [
         id: 'test',
         label: "テスト",
         nodes: [
+            {
+                id: 'oh-jinjya',
+                label: "延喜式神名帳式内社(神社)",
+                source: jinjyaSource,
+                layers: [jinjyaLayer,jinjyaLayerLabel]
+            },
             {
                 id: 'oh-hikari',
                 label: "夜のあかり",
