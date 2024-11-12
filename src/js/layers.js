@@ -851,7 +851,6 @@ const busSource = {
     id: 'bus-source', obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/bus/bus-h.pmtiles",
-
     }
 }
 const busteiSource = {
@@ -4073,6 +4072,40 @@ const yochienLayerLabel = {
     'maxzoom': 24,
     'minzoom': 9
 }
+// 空港等の周辺空域 --------------------------------------------------------------------------------------------
+const kokuareaSource = {
+    id: "kokuarea-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/kokuarea/kokuarea.pmtiles",
+        'maxzoom': 8,
+        'minzoom': 1
+    }
+}
+const kokuareaLayer = {
+    id: "oh-kokuarea-layer",
+    type: "fill",
+    source: "kokuarea-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-color': ['get', 'rgba'],
+    }
+}
+const kokuareaLayerLine = {
+    id: "oh-kokuarea-line",
+    type: "line",
+    source: "kokuarea-source",
+    "source-layer": "polygon",
+    paint: {
+        "line-color": "black",
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            14, 0.5,
+            20, 6
+        ]
+    },
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -4361,6 +4394,12 @@ const layers01 = [
                 source: highwaySource,
                 layers: [highwayLayerGreen,highwayLayerRed],
                 ext: {name:'extHighway',parameters:[]}
+            },
+            {
+                id: 'oh-kokuarea',
+                label: "空港等の周辺空域",
+                source: kokuareaSource,
+                layers: [kokuareaLayer,kokuareaLayerLine],
             },
             {
                 id: 'oh-michinoeki',
