@@ -1928,6 +1928,21 @@ export default {
                       '</div>'
                   break
                 }
+                case 'oh-jinjya-label':
+                case 'oh-jinjya-layer':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: [layerId] }
+                  )
+                  console.log(features)
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  const name = props.name
+                  html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size:20px;">' + name + '</span>' +
+                      '</div>'
+                  break
+                }
               }
 
 
