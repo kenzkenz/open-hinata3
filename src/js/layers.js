@@ -22,6 +22,7 @@
 import std from '@/assets/json/modified_std.json'
 import mono from '@/assets/json/modified_mono.json'
 import dark from '@/assets/json/modified_dark.json'
+import fxDark from '@/assets/json/modified_fx-dark.json'
 let stdSources = []
 const stdLayers = std.layers
 Object.keys(std.sources).forEach(function(key) {
@@ -40,12 +41,21 @@ Object.keys(mono.sources).forEach(function(key) {
     })
 })
 // ---------------------------------------------------------------------
-let darkSources = []
-const darkLayers = dark.layers
-Object.keys(dark.sources).forEach(function(key) {
-    darkSources.push({
+// let darkSources = []
+// const darkLayers = dark.layers
+// Object.keys(dark.sources).forEach(function(key) {
+//     darkSources.push({
+//         id: key,
+//         obj: dark.sources[key]
+//     })
+// })
+// ---------------------------------------------------------------------
+let fxDarkSources = []
+const fxDarkLayers = fxDark.layers
+Object.keys(fxDark.sources).forEach(function(key) {
+    fxDarkSources.push({
         id: key,
-        obj: dark.sources[key]
+        obj: fxDark.sources[key]
     })
 })
 
@@ -4049,11 +4059,17 @@ const layers01 = [
                 sources: monoSources,
                 layers: monoLayers
             },
+            // {
+            //     id: 'oh-vector-layer-dark',
+            //     label: "ベクトルタイルダーク",
+            //     sources: darkSources,
+            //     layers: darkLayers
+            // },
             {
-                id: 'oh-vector-layer-dark',
+                id: 'oh-vector-layer-fx-dark',
                 label: "ベクトルタイルダーク",
-                sources: darkSources,
-                layers: darkLayers
+                sources: fxDarkSources,
+                layers: fxDarkLayers
             },
             {
                 id: 'oh-plateauPmtiles',
