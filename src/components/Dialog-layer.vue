@@ -113,13 +113,7 @@ export default {
       this.isDragging = false
       this.$store.state.watchFlg = !this.$store.state.watchFlg
       this.$store.state.watchFlg = true
-      // なぜか一度ズームしないと最適化ベクタータイルが反映しない。
-      const map = this.$store.state.map01
-      const zoom = map.getZoom()
-      setTimeout(() => {
-        map.setZoom(12)
-        map.setZoom(zoom)
-      },500)
+      this.zoomOperation(500)
     },
     toggleCheck(element) {
       this.$store.state.watchFlg = true
@@ -191,13 +185,7 @@ export default {
       this.$store.state.watchFlg = bool
     },
     changeSlider () {
-      // なぜか一度ズームしないと最適化ベクタータイルが反映しない。
-      const map = this.$store.state.map01
-      const zoom = map.getZoom()
-      setTimeout(() => {
-        map.setZoom(12)
-        map.setZoom(zoom)
-      },500)
+      this.zoomOperation(500)
     },
     inputSlider (element){
       const map = this.$store.state[this.mapName]
@@ -236,17 +224,20 @@ export default {
         })
       }
     },
-    removeLayer(id){
-      this.s_selectedLayers[this.mapName] = this.s_selectedLayers[this.mapName].filter(layer => layer.id !== id)
-      this.$store.state.dialogsInfo[this.mapName] = this.$store.state.dialogsInfo[this.mapName].filter(layer => layer.id !== id)
-      this.$store.state.watchFlg = true
+    zoomOperation (timeOut) {
       // なぜか一度ズームしないと最適化ベクタータイルが反映しない。
       const map = this.$store.state.map01
       const zoom = map.getZoom()
       setTimeout(() => {
         map.setZoom(12)
         map.setZoom(zoom)
-      },1000)
+      },timeOut)
+    },
+    removeLayer(id){
+      this.s_selectedLayers[this.mapName] = this.s_selectedLayers[this.mapName].filter(layer => layer.id !== id)
+      this.$store.state.dialogsInfo[this.mapName] = this.$store.state.dialogsInfo[this.mapName].filter(layer => layer.id !== id)
+      this.$store.state.watchFlg = true
+      this.zoomOperation(1000)
     },
     onNodeClick (node) {
       if (node.layers) {
@@ -267,12 +258,7 @@ export default {
                 ext: node.ext,
               }
           )
-          // なぜか一度ズームしないと最適化ベクタータイルが反映しない。
-          const zoom = map.getZoom()
-          setTimeout(() => {
-            map.setZoom(12)
-            map.setZoom(zoom)
-          },1000)
+          this.zoomOperation(1000)
         } else {
           this.s_selectedLayers[this.mapName] = this.s_selectedLayers[this.mapName].filter(layer => layer.id !== node.id)
           map.removeLayer(node.id)

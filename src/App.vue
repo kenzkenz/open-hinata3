@@ -884,7 +884,6 @@ export default {
             // クリック可能なすべてのレイヤーからフィーチャーを取得
             const features = map.queryRenderedFeatures(e.point);
             if (features.length) {
-              console.log(features.length)
               const feature = features[0]; // 最初のフィーチャーのみ取得
               const layerId = feature.layer.id
               if (layerId.indexOf('vector') !== -1) {
@@ -1883,7 +1882,6 @@ export default {
                   console.log(features)
                   if (features.length === 0) return;
                   props = features[0].properties
-                  // const name = props.土地利用種別
                   let text
                   switch (props.土地利用種別) {
                     case '0100': // 田
@@ -1951,13 +1949,23 @@ export default {
                   const features = map.queryRenderedFeatures(
                       map.project(coordinates), { layers: [layerId] }
                   )
-                  console.log(features)
                   if (features.length === 0) return;
                   props = features[0].properties
+                  let href = ''
+                  if (props.description) {
+                    const description = props.description.split('\t')
+                    const url = description[3] ? description[3].split('<br>')[0] : ''
+                    if (url) {
+                      if (description[3].split('<br>').length > 1) {
+                        href='<a href="' + url + '" target="_blank">神社と古事記を開く</a>'
+                      }
+                    }
+                  }
                   const name = props.name
                   html =
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size:20px;">' + name + '</span>' +
+                      '<span style="font-size:20px;">' + name + '</span><br>' +
+                      '<span style="font-size:14px;">' + href + '</span>' +
                       '</div>'
                   break
                 }
