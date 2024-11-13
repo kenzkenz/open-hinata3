@@ -240,6 +240,13 @@ export default {
       this.s_selectedLayers[this.mapName] = this.s_selectedLayers[this.mapName].filter(layer => layer.id !== id)
       this.$store.state.dialogsInfo[this.mapName] = this.$store.state.dialogsInfo[this.mapName].filter(layer => layer.id !== id)
       this.$store.state.watchFlg = true
+      // なぜか一度ズームしないと最適化ベクタータイルが反映しない。
+      const map = this.$store.state.map01
+      const zoom = map.getZoom()
+      setTimeout(() => {
+        map.setZoom(12)
+        map.setZoom(zoom)
+      },1000)
     },
     onNodeClick (node) {
       if (node.layers) {
@@ -265,7 +272,7 @@ export default {
           setTimeout(() => {
             map.setZoom(12)
             map.setZoom(zoom)
-          },500)
+          },1000)
         } else {
           this.s_selectedLayers[this.mapName] = this.s_selectedLayers[this.mapName].filter(layer => layer.id !== node.id)
           map.removeLayer(node.id)

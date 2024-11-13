@@ -76,7 +76,8 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import maplibregl from 'maplibre-gl'
 import { Protocol } from "pmtiles"
 import { useGsiTerrainSource } from 'maplibre-gl-gsi-terrain'
-import {paleLayer, paleSource} from "@/js/layers"
+import {monoLayers, monoSources} from "@/js/layers"
+// import {paleLayer, paleSource} from "@/js/layers"
 import muni from '@/js/muni'
 
 export default {
@@ -751,11 +752,20 @@ export default {
             })
           } else {
             this.s_selectedLayers[mapName].unshift(
+                // {
+                //   id: 'oh-pale-layer',
+                //   label: '淡色地図',
+                //   source: paleSource,
+                //   layers: [paleLayer],
+                //   attribution: '国土地理院',
+                //   opacity: 1,
+                //   visibility: true,
+                // }
                 {
-                  id: 'oh-pale-layer',
-                  label: '淡色地図',
-                  source: paleSource,
-                  layers: [paleLayer],
+                  id: 'oh-vector-layer-mono',
+                  label: 'ベクトルタイルモノクロ',
+                  sources: monoSources,
+                  layers: monoLayers,
                   attribution: '国土地理院',
                   opacity: 1,
                   visibility: true,
@@ -874,11 +884,19 @@ export default {
             // クリック可能なすべてのレイヤーからフィーチャーを取得
             const features = map.queryRenderedFeatures(e.point);
             if (features.length) {
-              map.getCanvas().style.cursor = 'pointer'
+              console.log(features.length)
+              const feature = features[0]; // 最初のフィーチャーのみ取得
+              const layerId = feature.layer.id
+              if (layerId.indexOf('vector') !== -1) {
+                map.getCanvas().style.cursor = 'default'
+              } else {
+                map.getCanvas().style.cursor = 'pointer'
+              }
             } else {
               map.getCanvas().style.cursor = 'default'
             }
           })
+          //------------------------------------------------------------------------------------------------------------
 
           // レイヤーIDを特定せずに全てのフィーチャーから最初のものだけにポップアップ表示
           // const popups = []
@@ -1972,16 +1990,19 @@ export default {
               }
 
               // ポップアップ作成
-              const popup = new maplibregl.Popup({
-                closeButton: true,
-                // className: 'custom-popup'
-              })
-                  .setLngLat(coordinates)
-                  .setHTML(html)
-                  .setMaxWidth("350px")
-                  .addTo(map)
-              popups.push(popup)
-              popup.on('close', () => closeAllPopups())
+
+              if (html) {
+                const popup = new maplibregl.Popup({
+                  closeButton: true,
+                  // className: 'custom-popup'
+                })
+                    .setLngLat(coordinates)
+                    .setHTML(html)
+                    .setMaxWidth("350px")
+                    .addTo(map)
+                popups.push(popup)
+                popup.on('close', () => closeAllPopups())
+              }
               }
           })
 
@@ -2015,11 +2036,11 @@ export default {
                 context.drawImage(img, i, j, 1, 1, 0, 0, 1, 1)
                 d = context.getImageData(0, 0, 1, 1).data
                 console.log(d[0],d[1],d[2])
-                if (d[3] !== 255) {
-                  v = null
-                } else {
+                // if (d[3] !== 255) {
+                //   v = null
+                // } else {
                   v = legend.find(o => o.r == d[0] && o.g == d[1] && o.b == d[2])
-                }
+                // }
                 // map.getCanvas().style.cursor = 'default'
                 resolve(v)
               }
@@ -2065,6 +2086,18 @@ export default {
             { r: 242, g: 133, b: 201, title: '10.0～20.0m' },
             { r: 220, g: 122, b: 188, title: '20.0m以上' }
           ]
+          // 土砂災害警戒区域
+          const legend_dosyasaigai = [
+            { r: 229, g: 200, b: 49, title: '土石流警戒区域(指定前)<br><br>山腹が崩壊して生じた土石等又は渓流の土石等が水と一体となって流下する自然現象' },
+            { r: 230, g: 201, b: 49, title: '土石流警戒区域(指定前)<br><br>山腹が崩壊して生じた土石等又は渓流の土石等が水と一体となって流下する自然現象' },
+            { r: 229, g: 200, b: 50, title: '土石流警戒区域(指定前)<br><br>山腹が崩壊して生じた土石等又は渓流の土石等が水と一体となって流下する自然現象' },
+            { r: 230, g: 200, b: 49, title: '土石流警戒区域(指定前)<br><br>山腹が崩壊して生じた土石等又は渓流の土石等が水と一体となって流下する自然現象' },
+            { r: 230, g: 201, b: 49, title: '土石流警戒区域(指定前)<br><br>山腹が崩壊して生じた土石等又は渓流の土石等が水と一体となって流下する自然現象' },
+            { r: 230, g: 200, b: 50, title: '土石流警戒区域(指定済)<br><br>山腹が崩壊して生じた土石等又は渓流の土石等が水と一体となって流下する自然現象' },
+            { r: 165, g: 0, b: 33, title: '土石流<span style="color: red">特別</span>警戒区域(指定済)<br><br>山腹が崩壊して生じた土石等又は渓流の土石等が水と一体となって流下する自然現象' },
+            { r: 169, g: 10, b: 34, title: '土石流<span style="color: red">特別</span>警戒区域(指定前)<br><br>山腹が崩壊して生じた土石等又は渓流の土石等が水と一体となって流下する自然現象' },
+            { r: 169, g: 10, b: 33, title: '土石流<span style="color: red">特別</span>警戒区域(指定前)<br><br>山腹が崩壊して生じた土石等又は渓流の土石等が水と一体となって流下する自然現象' },
+          ]
 
           map.on('mousemove', function (e) {
             let rasterLayerIds = [];
@@ -2092,6 +2125,9 @@ export default {
               } else if (rasterLayerId === 'oh-tsunami-layer') {
                 RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png';
                 legend = legend_hightide_tsunami
+              } else if (rasterLayerId === 'oh-dosya-layer') {
+                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png';
+                legend = legend_dosyasaigai
               }
               const lng = e.lngLat.lng;
               const lat = e.lngLat.lat;
@@ -2134,9 +2170,12 @@ export default {
               } else if (rasterLayerId === 'oh-tsunami-layer') {
                 RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png';
                 legend = legend_hightide_tsunami
+              } else if (rasterLayerId === 'oh-dosya-layer') {
+                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png';
+                legend = legend_dosyasaigai
               }
-              const lng = e.lngLat.lng;
-              const lat = e.lngLat.lat;
+              const lng = e.lngLat.lng
+              const lat = e.lngLat.lat
               const z = 16
               if (RasterTileUrl) {
                 getLegendItem(legend, RasterTileUrl, lat, lng,z).then(function (v) {
@@ -2172,7 +2211,16 @@ export default {
                             '<span style="font-size: 24px;">' + res + '</span>' +
                             '</div>'
                         )
-                        .addTo(map);
+                        .addTo(map)
+                  } else if (rasterLayerId === 'oh-dosya-layer') {
+                    popup = new maplibregl.Popup()
+                        .setLngLat(e.lngLat)
+                        .setHTML(
+                            '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                            '<span style="font-size: 16px;">' + res + '</span>' +
+                            '</div>'
+                        )
+                        .addTo(map)
                   }
                   popups.push(popup)
                   popup.on('close', () => closeAllPopups())

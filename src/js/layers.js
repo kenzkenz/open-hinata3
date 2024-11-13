@@ -21,9 +21,8 @@
 // }
 import std from '@/assets/json/modified_std.json'
 import mono from '@/assets/json/modified_mono.json'
-// import dark from '@/assets/json/modified_dark.json'
 import fxDark from '@/assets/json/modified_fx-dark.json'
-let stdSources = []
+const stdSources = []
 const stdLayers = std.layers
 Object.keys(std.sources).forEach(function(key) {
     stdSources.push({
@@ -32,8 +31,8 @@ Object.keys(std.sources).forEach(function(key) {
     })
 })
 // ---------------------------------------------------------------------
-let monoSources = []
-const monoLayers = mono.layers
+export const monoSources = []
+export const monoLayers = mono.layers
 Object.keys(mono.sources).forEach(function(key) {
     monoSources.push({
         id: key,
@@ -41,16 +40,7 @@ Object.keys(mono.sources).forEach(function(key) {
     })
 })
 // ---------------------------------------------------------------------
-// let darkSources = []
-// const darkLayers = dark.layers
-// Object.keys(dark.sources).forEach(function(key) {
-//     darkSources.push({
-//         id: key,
-//         obj: dark.sources[key]
-//     })
-// })
-// ---------------------------------------------------------------------
-let fxDarkSources = []
+const fxDarkSources = []
 const fxDarkLayers = fxDark.layers
 Object.keys(fxDark.sources).forEach(function(key) {
     fxDarkSources.push({
@@ -4120,6 +4110,19 @@ const kokuareaLayerLine = {
         ]
     },
 }
+// 海洋地質図---------------------------------------------------------------------------------------------------------
+const kaiyochishitsuource = {
+    id: 'kaiyochishitsu-source', obj: {
+        type: 'raster',
+        tiles: ['https://gbank.gsj.jp/geonavi/maptile/wmts/1.0.0/MA3000_23japanes/default/EPSG900913/{z}/{y}/{x}.png'],
+    }
+}
+const kaiyochishitsuLayer = {
+    'id': 'oh-kaiyochishitsu-layer',
+    'type': 'raster',
+    'source': 'kaiyochishitsu-source',
+    'raster-resampling': 'nearest'
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const layers01 = [
     {
@@ -4827,6 +4830,13 @@ const layers01 = [
         id: 'sonohoka',
         label: "その他",
         nodes: [
+            {
+                id: 'oh-kaiyochishitsu',
+                label: "海洋地質図",
+                source: kaiyochishitsuource,
+                layers:[kaiyochishitsuLayer],
+                attribution: "<a href='https://www.msil.go.jp/msil/htm/main.html?Lang=0' target='_blank'>海洋状況表示システム</a>"
+            },
             {
                 id: 'oh-tochiriyo100',
                 label: "2021土地利用細分メッシュ(100m)",
