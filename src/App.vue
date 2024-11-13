@@ -1983,6 +1983,24 @@ export default {
                       '</div>'
                   break
                 }
+                case 'oh-hinanjyo-dosekiryu-label':
+                case 'oh-hinanjyo-dosekiryu':
+                case 'oh-hinanjyo-kozui-label':
+                case 'oh-hinanjyo-kozui':{
+                  const features = map.queryRenderedFeatures(
+                      map.project(coordinates), { layers: [layerId] }
+                  )
+                  if (features.length === 0) return;
+                  props = features[0].properties
+                  const name = props.name
+                  const address = props.address
+                   html =
+                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                      '<span style="font-size:20px;">' + name + '</span><br>' +
+                      '<span style="font-size:14px;">' + address + '</span>' +
+                      '</div>'
+                  break
+                }
               }
 
               if (this.mapFlg.map02) {

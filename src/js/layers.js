@@ -3050,50 +3050,97 @@ const tokyojishinheightSogo = {
         ]
     }
 }
-// Q地図橋梁-------------------------------------------------------------------------------------------------------------
-// const qKYouryoSource = {
-//     id: "qKYouryo-source", obj: {
-//         type: 'geojson',
-//         data: 'https://mapdata.qchizu.xyz/vector/mlit_road2019/bridge2/{z}/{x}/{y}.geojson',
-//         attribution: "<a href='' target='_blank'></a>",
-//     }
-// }
-// const qKYouryoLayer = {
-//     id: "oh-qKYouryo",
-//     type: "circle",
-//     source: "qKYouryo-source",
-//     'paint': {
-//         'circle-color': 'navy',
-//         'circle-radius':[
-//             'interpolate', // Zoom-based interpolation
-//             ['linear'],
-//             ['zoom'], // Use the zoom level as the input
-//             2, 1,
-//             4, 3,
-//             7, 6,
-//             11, 10
-//         ]
-//     }
-// }
-// const qKYouryoLayerLabel = {
-//     id: "oh-qKYouryo-label",
-//     type: "symbol",
-//     source: "qKYouryo-source",
-//     'layout': {
-//         'text-field': ['get', 'P35_006'],
-//         'text-font': ['NotoSansJP-Regular'],
-//         // 'text-anchor': 'left',
-//         'text-offset': [0, 1],
-//         'visibility': 'visible',
-//     },
-//     'paint': {
-//         'text-color': 'rgba(255, 255, 255, 0.7)',
-//         'text-halo-color': 'rgba(0,0,0,0.7)',
-//         'text-halo-width': 1.0,
-//     },
-//     'maxzoom': 24,
-//     'minzoom': 9
-// }
+// ハザードマップ等--------------------------------------------------------------------------------------------------------
+// 避難所洪水 --------------------------------------------------------------------------------------------
+const hinanjyoKozuiSource = {
+    id: "hinanjyo-kozui-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/hinanjyo/hinanjyo-kozui.pmtiles",
+        attribution: "<a href='' target='_blank'></a>",
+    }
+}
+const hinanjyoKozuiLayer = {
+    id: "oh-hinanjyo-kozui",
+    type: "circle",
+    source: "hinanjyo-kozui-source",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': 'steelblue',
+        'circle-radius':[
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            2, 0.1,
+            4, 0.5,
+            7, 2,
+            11, 10
+        ]
+    }
+}
+const hinanjyoKozuiLayerLabel = {
+    id: "oh-hinanjyo-kozui-label",
+    type: "symbol",
+    source: "hinanjyo-kozui-source",
+    "source-layer": "point",
+    'layout': {
+        'text-field': ['get', 'name'],
+        'text-font': ['NotoSansJP-Regular'],
+        'text-offset': [0, 1],
+        'visibility': 'visible',
+    },
+    'paint': {
+        'text-color': 'rgba(0, 0, 0, 1)',
+        'text-halo-color': 'rgba(255,255,255,1)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 13
+}
+// 避難所土石流 --------------------------------------------------------------------------------------------
+const hinanjyoDosekiryuSource = {
+    id: "hinanjyo-dosekiryu-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/hinanjyo/hinanjyo-dosekiryu.pmtiles",
+        attribution: "<a href='' target='_blank'></a>",
+    }
+}
+const hinanjyoDosekiryuLayer = {
+    id: "oh-hinanjyo-dosekiryu",
+    type: "circle",
+    source: "hinanjyo-dosekiryu-source",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': 'tomato',
+        'circle-radius':[
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            2, 0.1,
+            4, 0.5,
+            7, 2,
+            11, 10
+        ]
+    }
+}
+const hinanjyoDosekiryuLayerLabel = {
+    id: "oh-hinanjyo-dosekiryu-label",
+    type: "symbol",
+    source: "hinanjyo-dosekiryu-source",
+    "source-layer": "point",
+    'layout': {
+        'text-field': ['get', 'name'],
+        'text-font': ['NotoSansJP-Regular'],
+        'text-offset': [0, 1],
+        'visibility': 'visible',
+    },
+    'paint': {
+        'text-color': 'rgba(0, 0, 0, 1)',
+        'text-halo-color': 'rgba(255,255,255,1)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 13
+}
 // R05大規模盛土造成地-----------------------------------------------------------------------------------------------------
 const zoseiSource = {
     id: "zosei-source", obj: {
@@ -4763,6 +4810,19 @@ const layers01 = [
             //     source: tokyojishinSource,
             //     layers: [tokyojishinLayer,tokyojishinLayerLine,tokyojishinLayerLabel,tokyojishinheight],
             // },
+            {
+                id: 'oh-hinanjyo-kozui',
+                label: "指定緊急避難場所(洪水)",
+                source: hinanjyoKozuiSource,
+                layers: [hinanjyoKozuiLayer,hinanjyoKozuiLayerLabel],
+            },
+            {
+                id: 'oh-hinanjyo-dosekiryu',
+                label: "指定緊急避難場所(崖崩れ等)",
+                source: hinanjyoDosekiryuSource,
+                layers: [hinanjyoDosekiryuLayer,hinanjyoDosekiryuLayerLabel],
+                attribution: '指定緊急避難場所(崖崩れ、土石流及び地滑り)'
+            },
             {
                 id: 'oh-kozui-saidai',
                 label: "洪水浸水想定（想定最大規模）",

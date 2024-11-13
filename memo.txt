@@ -232,6 +232,9 @@ tippecanoe -rg -pk -pf -l point -f -o yochien.pmtiles yochien.geojson
 
 tippecanoe -l polygon -f -o kokuarea.pmtiles kokuarea_with_rgba.geojson
 
+tippecanoe -rg -pk -pf -l point -f -o hinanzyo-kozui.pmtiles hinanzyo-kozui.geojson
+
+tippecanoe -rg -pk -pf -l point -f -o hinanjyo-dosekiryu.pmtiles hinanjyo-dosekiryu.geojson
 
 
 import random
