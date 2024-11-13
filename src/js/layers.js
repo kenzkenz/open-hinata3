@@ -3168,6 +3168,20 @@ const zoseiLayerLabel = {
     },
     'minzoom': 14
 }
+// 土砂災害警戒区域------------------------------------------------------------------------------------------------------
+const dosyaSource = {
+    id: 'dosya-source', obj: {
+        type: 'raster',
+        tiles: ['https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        crossOrigin: 'anonymous',
+    }
+}
+const dosyaLayer = {
+    'id': 'oh-dosya-layer',
+    'type': 'raster',
+    'source': 'dosya-source',
+}
 // 洪水浸水想定------------------------------------------------------------------------------------------------------
 const kozuiSaidaiSource = {
     id: 'kozui-saidai-source', obj: {
@@ -4775,6 +4789,12 @@ const layers01 = [
                 label: "北海道津波浸水想定3D",
                 source: hokkaidotsunamiSource,
                 layers: [hokkaidotsunamiLayerHeight],
+            },
+            {
+                id: 'oh-dosya',
+                label: "土砂災害警戒区域",
+                source: dosyaSource,
+                layers: [dosyaLayer],
             },
             {
                 id: 'oh-zosei',

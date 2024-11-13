@@ -1959,7 +1959,6 @@ export default {
                 }
               }
 
-
               if (this.mapFlg.map02) {
                 const layer = this.$store.state.map02.getStyle().layers.at(-1)
                 if (layer.type === 'raster') {
