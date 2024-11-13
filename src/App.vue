@@ -886,41 +886,48 @@ export default {
             if (features.length) {
               const feature = features[0]; // 最初のフィーチャーのみ取得
               const layerId = feature.layer.id
+              console.log(layerId)
               if (layerId.indexOf('vector') !== -1) {
                 map.getCanvas().style.cursor = 'default'
               } else {
                 map.getCanvas().style.cursor = 'pointer'
               }
+              // map.getCanvas().style.cursor = 'pointer'
             } else {
               map.getCanvas().style.cursor = 'default'
             }
           })
           //------------------------------------------------------------------------------------------------------------
-
-          // レイヤーIDを特定せずに全てのフィーチャーから最初のものだけにポップアップ表示
-          // const popups = []
           map.on('click', (e) => {
+            let html = ''
             let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
-
             console.log(features[0])
+            const coordinates = e.lngLat
+            // let coordinates
+            // if (features.length > 0) {
+            //   coordinates = features[0].geometry.coordinates.slice()
+            //   if (coordinates.length !== 2) {
+            //     coordinates = e.lngLat
+            //   }
+            // } else {
+            //   coordinates = e.lngLat
+            // }
 
             if (features.length > 0) {
               const feature = features[0]; // 最初のフィーチャーのみ取得
               const layerId = feature.layer.id
               console.log(layerId)
               let props = feature.properties
-              const coordinates = e.lngLat
+              // const coordinates = e.lngLat
               // let coordinates = feature.geometry.coordinates.slice()
               // if (coordinates.length !== 2) coordinates = e.lngLat
-              console.log(coordinates)
               console.log(props)
-              let html = ''
               switch (layerId) {
                 case 'oh-zosei-line':
                 case 'oh-zosei-label':
                 case 'oh-zosei': {
                   features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-zosei'] }
+                      map.project(coordinates), {layers: ['oh-zosei']}
                   )
                   if (features.length === 0) return
                   props = features[0].properties
@@ -934,7 +941,7 @@ export default {
                   }
                   const syozai = props.A54_003 + props.A54_005
                   const bango = props.A54_006
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span><hr>' +
                       '<span style="font-size: 12px;">' + syozai + '</span><hr>' +
@@ -946,7 +953,7 @@ export default {
                   console.log(props)
                   const name = props.title
                   const link = '<a href="https://mapwarper.h-gis.jp/maps/' + props.id + '" target="_blank" >日本版Map Warper</a>'
-                  html=
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span><hr>' +
                       '<span style="font-size: 12px;">' + link + '</span><br>' +
@@ -954,10 +961,10 @@ export default {
                   break
                 }
                 case 'oh-tetsudo-blue-lines':
-                case 'oh-tetsudo-red-lines':{
+                case 'oh-tetsudo-red-lines': {
                   const name = props.N05_002
                   const kaisya = props.N05_003
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
                       '<span style="font-size: 20px;">' + name + '</span><br>' +
@@ -965,11 +972,11 @@ export default {
                   break
                 }
                 case 'oh-tetsudo-points-blue':
-                case 'oh-tetsudo-points-red':{
+                case 'oh-tetsudo-points-red': {
                   const name = props.N05_002
                   const kaisya = props.N05_003
                   const eki = props.N05_011
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
                       '<span style="font-size: 20px;">' + name + '</span><br>' +
@@ -978,21 +985,21 @@ export default {
                   break
                 }
                 case 'oh-tetsudojikeiretsu-red-lines':
-                case 'oh-tetsudojikeiretsu-blue-lines':{
+                case 'oh-tetsudojikeiretsu-blue-lines': {
                   const name = props.N05_002
                   const kaisya = props.N05_003
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
                       '<span style="font-size: 20px;">' + name + '</span><br>' +
                       '</div>'
                   break
                 }
-                case 'oh-tetsudojikeiretsu-points':{
+                case 'oh-tetsudojikeiretsu-points': {
                   const name = props.N05_002
                   const kaisya = props.N05_003
                   const eki = props.N05_011
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
                       '<span style="font-size: 16px;">' + name + '</span><br>' +
@@ -1001,10 +1008,10 @@ export default {
                   break
                 }
                 case 'oh-michinoeki-label':
-                case 'oh-michinoeki':{
+                case 'oh-michinoeki': {
                   const name = props.P35_006
                   const link = '<a href="' + props.P35_007 + '" target="_blank">道の駅ページへ</a>'
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span><br>' +
                       '<div style="font-size: 20px;margin-top: 10px;">' + link + '</div>' +
@@ -1013,20 +1020,20 @@ export default {
                 }
                 case 'oh-koji-label':
                 case 'oh-koji-height':
-                case 'oh-koji_point':{
+                case 'oh-koji_point': {
                   const name = props.L01_025
                   const kojikakaku = props.L01_008.toLocaleString() + '円'
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span><br>' +
                       '<span style="font-size: 20px;">' + kojikakaku + '</span>' +
                       '</div>'
                   break
                 }
-                case 'oh-did':{
+                case 'oh-did': {
                   const name = props.A16_003
                   const jinko = props.A16_005.toLocaleString() + '人'
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span><br>' +
                       '<span style="font-size: 20px;">' + jinko + '</span>' +
@@ -1035,14 +1042,14 @@ export default {
                 }
                 case 'oh-syochiiki-height':
                 case 'oh-syochiiki-label':
-                case 'oh-syochiiki-layer':{
+                case 'oh-syochiiki-layer': {
                   features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-syochiiki-layer'] }
+                      map.project(coordinates), {layers: ['oh-syochiiki-layer']}
                   )
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = props.S_NAME
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span><br>' +
                       '<span style="font-size: 20px;">' + props.JINKO + '人</span>' +
@@ -1054,18 +1061,18 @@ export default {
                       '</div>'
                   break
                 }
-                case 'oh-kyusekki':{
+                case 'oh-kyusekki': {
                   let sekkiHtml = ''
-                  const sekki = ['ナイフ形石器','台形（様）石器','斧形石器','剥片尖頭器','角錐状石器・三稜尖頭器','槍先形尖頭器',
-                    '両面調整石器','細石刃・細石核等','神子柴型石斧','有茎（舌）尖頭器','掻器・削器','彫器','砥石','叩石','台石',
-                    '礫器','その他の石器','草創期土器','ブロック･ユニット','礫群・配石','炭化物集中','その他の遺構','特記事項'
+                  const sekki = ['ナイフ形石器', '台形（様）石器', '斧形石器', '剥片尖頭器', '角錐状石器・三稜尖頭器', '槍先形尖頭器',
+                    '両面調整石器', '細石刃・細石核等', '神子柴型石斧', '有茎（舌）尖頭器', '掻器・削器', '彫器', '砥石', '叩石', '台石',
+                    '礫器', 'その他の石器', '草創期土器', 'ブロック･ユニット', '礫群・配石', '炭化物集中', 'その他の遺構', '特記事項'
                   ]
-                  sekki.forEach((value) =>{
+                  sekki.forEach((value) => {
                     if (props[value]) {
                       sekkiHtml = sekkiHtml + value + '=' + props[value] + '<br>'
                     }
                   })
-                  html = '<div style=font-size:small;>' +
+                  html += '<div style=font-size:small;>' +
                       '<h4>' + props.遺跡名 + '</h4>' +
                       '読み方=' + props.遺跡名読み方 + '<br>' +
                       '都道府県=' + props.都道府県 + '<br>' +
@@ -1074,7 +1081,7 @@ export default {
                       '文献=' + props.文献 + '<br>' +
                       '調査歴=' + props.調査歴 + '<br>' +
                       '作成年月日=' + props.作成年月日 + '<br>' +
-                      '作成者=' + props.作成者+ '<br>' +
+                      '作成者=' + props.作成者 + '<br>' +
                       sekkiHtml +
                       '</div>'
                   break
@@ -1082,14 +1089,14 @@ export default {
                 case 'oh-m250m-height':
                 case 'oh-m250m-label':
                 case 'oh-m250m-line':
-                case 'oh-m250m':{
+                case 'oh-m250m': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-m250m'] }
+                      map.project(coordinates), {layers: ['oh-m250m']}
                   )
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = '人口' + Math.floor(Number(props.jinko)) + '人'
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span>' +
                       '</div>'
@@ -1098,14 +1105,14 @@ export default {
                 case 'oh-m500m-height':
                 case 'oh-m500m-label':
                 case 'oh-m500m-line':
-                case 'oh-m500m':{
+                case 'oh-m500m': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-m500m'] }
+                      map.project(coordinates), {layers: ['oh-m500m']}
                   )
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = '人口' + Math.floor(Number(props.jinko)) + '人'
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span>' +
                       '</div>'
@@ -1114,14 +1121,14 @@ export default {
                 case 'oh-m1km-height':
                 case 'oh-m1km-label':
                 case 'oh-m1km-line':
-                case 'oh-m1km':{
+                case 'oh-m1km': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-m1km'] }
+                      map.project(coordinates), {layers: ['oh-m1km']}
                   )
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = '人口' + Math.floor(Number(props.jinko)) + '人'
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span>' +
                       '</div>'
@@ -1130,25 +1137,25 @@ export default {
                 case 'oh-m100m-height':
                 case 'oh-m100m-label':
                 case 'oh-m100m-line':
-                case 'oh-m100m':{
+                case 'oh-m100m': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-m100m'] }
+                      map.project(coordinates), {layers: ['oh-m100m']}
                   )
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = '人口' + Math.floor(Number(props.PopT)) + '人'
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span>' +
                       '</div>'
                   break
                 }
                 case 'oh-iryokikan-label':
-                case 'oh-iryokikan':{
+                case 'oh-iryokikan': {
                   const name = props.P04_002
                   const address = props.P04_003
                   const kamoku = props.P04_004
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span><hr>' +
                       '<span style="font-size: 12px;">' + address + '</span><hr>' +
@@ -1157,37 +1164,37 @@ export default {
                   break
                 }
                 case 'oh-nihonrekishi-label':
-                case 'oh-nihonrekishi':{
+                case 'oh-nihonrekishi': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: [layerId] }
+                      map.project(coordinates), {layers: [layerId]}
                   )
 
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = props.名称
-                  html =
+                  html +=
                       '<div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">' +
-                       name +
-                       '</div>'
+                      name +
+                      '</div>'
                   break
                 }
-                case 'oh-chikeibunrui':{
+                case 'oh-chikeibunrui': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-chikeibunrui'] }
+                      map.project(coordinates), {layers: ['oh-chikeibunrui']}
                   )
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = props.code
-                  let naritachi = "",risk = ""
+                  let naritachi = "", risk = ""
                   const list = codeShizen
-                  for(let i=0;i < list.length; i++){
-                    if(list[i][1] === name){//ズーム率によって数値型になったり文字型になったりしている模様
+                  for (let i = 0; i < list.length; i++) {
+                    if (list[i][1] === name) {//ズーム率によって数値型になったり文字型になったりしている模様
                       naritachi = list[i][2]
                       risk = list[i][3]
                       break;
                     }
                   }
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span><hr>' +
                       '<span style="font-size: 12px;">' + naritachi + '</span><hr>' +
@@ -1195,52 +1202,52 @@ export default {
                       '</div>'
                   break
                 }
-                // ここを改善する
-                case 'oh-cyugakuR05':{
+                  // ここを改善する
+                case 'oh-cyugakuR05': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-cyugakuR05'] }
+                      map.project(coordinates), {layers: ['oh-cyugakuR05']}
                   )
                   console.log(features)
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = props.A32_004
-                  html =
+                  html +=
                       '<div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">' +
-                       name +
+                      name +
                       '</div>'
                   break
                 }
                 case 'oh-cyugakuR05-line':
                 case 'oh-cyugakuR05-label':
-                case 'oh-cyugakuR05-point':{
+                case 'oh-cyugakuR05-point': {
                   features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: [layerId] }
+                      map.project(coordinates), {layers: [layerId]}
                   )
                   let objName = 'P29_004'
                   if (features.length === 0) {
                     features = map.queryRenderedFeatures(
-                        map.project(coordinates), { layers: ['oh-cyugakuR05'] }
+                        map.project(coordinates), {layers: ['oh-cyugakuR05']}
                     )
                     objName = 'A32_004'
                   }
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = props[objName]
-                  html =
+                  html +=
                       '<div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">' +
                       name +
                       '</div>'
                   break
                 }
                   // ここを改善する
-                case 'oh-syogakkoR05':{
+                case 'oh-syogakkoR05': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-syogakkoR05'] }
+                      map.project(coordinates), {layers: ['oh-syogakkoR05']}
                   )
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = props.A27_004
-                  html =
+                  html +=
                       '<div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">' +
                       name +
                       '</div>'
@@ -1248,21 +1255,21 @@ export default {
                 }
                 case 'oh-syogakkoR05-line':
                 case 'oh-syogakkoR05-label':
-                case 'oh-syogakkoR05-point':{
+                case 'oh-syogakkoR05-point': {
                   features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: [layerId] }
+                      map.project(coordinates), {layers: [layerId]}
                   )
                   let objName = 'P29_004'
                   if (features.length === 0) {
                     features = map.queryRenderedFeatures(
-                        map.project(coordinates), { layers: ['oh-syogakkoR05'] }
+                        map.project(coordinates), {layers: ['oh-syogakkoR05']}
                     )
                     objName = 'A27_004'
                   }
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = props[objName]
-                  html =
+                  html +=
                       '<div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">' +
                       name +
                       '</div>'
@@ -1270,9 +1277,9 @@ export default {
                 }
                 case 'oh-bakumatsu-label':
                 case 'oh-bakumatsu-line':
-                case 'oh-bakumatsu-layer':{
+                case 'oh-bakumatsu-layer': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-bakumatsu-layer'] }
+                      map.project(coordinates), {layers: ['oh-bakumatsu-layer']}
                   )
                   if (features.length === 0) return;
                   props = features[0].properties
@@ -1283,7 +1290,7 @@ export default {
                   const ryobun6p = props.領分６ ? '<tr><td>領分６</td><td>' + props.領分６ + '</td><td>' + Math.round(props.石高６).toLocaleString() + '</td></tr>' : ''
                   const ryobun7p = props.領分７ ? '<tr><td>領分７</td><td>' + props.領分７ + '</td><td>' + Math.round(props.石高７).toLocaleString() + '</td></tr>' : ''
                   const ryobun8p = props.領分８ ? '<tr><td>領分８</td><td>' + props.領分８ + '</td><td>' + Math.round(props.石高８).toLocaleString() + '</td></tr>' : ''
-                  html = '<div class="kinseipoint" style=width:250px;>' +
+                  html += '<div class="kinseipoint" style=width:250px;>' +
                       '<span style="font-size: 20px">' + props.村名0 + '' +
                       '<span style="font-size: 14px">(' + props.よみ0 + ')<span/><br>' +
                       '石高計=' + Math.round(props.石高計).toLocaleString() + '' +
@@ -1308,9 +1315,9 @@ export default {
                       '</div>'
                   break
                 }
-                case 'oh-bakumatsu-point':{
+                case 'oh-bakumatsu-point': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-bakumatsu-point'] }
+                      map.project(coordinates), {layers: ['oh-bakumatsu-point']}
                   )
                   if (features.length === 0) return;
                   props = features[0].properties
@@ -1321,7 +1328,7 @@ export default {
                   const ryobun6p = props.領分６ ? '<tr><td>領分６</td><td>' + props.領分６ + '</td><td>' + Math.round(props.石高６).toLocaleString() + '</td></tr>' : ''
                   const ryobun7p = props.領分７ ? '<tr><td>領分７</td><td>' + props.領分７ + '</td><td>' + Math.round(props.石高７).toLocaleString() + '</td></tr>' : ''
                   const ryobun8p = props.領分８ ? '<tr><td>領分８</td><td>' + props.領分８ + '</td><td>' + Math.round(props.石高８).toLocaleString() + '</td></tr>' : ''
-                  html = '<div class="kinseipoint" style=width:250px;>' +
+                  html += '<div class="kinseipoint" style=width:250px;>' +
                       '<span style="font-size: 20px">' + props.村名 + '' +
                       '<span style="font-size: 14px">(' + props.よみ + ')<span/><br>' +
                       '<p>領分１=' + props.領分１ + '</p>' +
@@ -1344,9 +1351,9 @@ export default {
                       '</div>'
                   break
                 }
-                case 'oh-bakumatsu-kokudaka-height':{
+                case 'oh-bakumatsu-kokudaka-height': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-bakumatsu-kokudaka-height'] }
+                      map.project(coordinates), {layers: ['oh-bakumatsu-kokudaka-height']}
                   )
                   if (features.length === 0) return;
                   props = features[0].properties
@@ -1357,7 +1364,7 @@ export default {
                   const ryobun6p = props.領分６ ? '<tr><td>領分６</td><td>' + props.領分６ + '</td><td>' + Math.round(props.石高６).toLocaleString() + '</td></tr>' : ''
                   const ryobun7p = props.領分７ ? '<tr><td>領分７</td><td>' + props.領分７ + '</td><td>' + Math.round(props.石高７).toLocaleString() + '</td></tr>' : ''
                   const ryobun8p = props.領分８ ? '<tr><td>領分８</td><td>' + props.領分８ + '</td><td>' + Math.round(props.石高８).toLocaleString() + '</td></tr>' : ''
-                  html = '<div class="kinseipoint" style=width:250px;>' +
+                  html += '<div class="kinseipoint" style=width:250px;>' +
                       '<span style="font-size: 20px">' + props.村名0 + '' +
                       '<span style="font-size: 14px">(' + props.よみ0 + ')<span/><br>' +
                       '石高計=' + Math.round(props.石高計).toLocaleString() + '' +
@@ -1383,16 +1390,16 @@ export default {
                   break
                 }
                 case 'oh-bakumatsu-line2':
-                case 'oh-bakumatsu-han':{
+                case 'oh-bakumatsu-han': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-bakumatsu-han'] }
+                      map.project(coordinates), {layers: ['oh-bakumatsu-han']}
                   )
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.村名
                   const kokudaka = Math.floor(Number(props.石高計))
                   const ryobun = props.領分１
-                  html =
+                  html +=
                       `
                   <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
                    村名=${name}<br>石高=${kokudaka}<br>領分=${ryobun}
@@ -1401,7 +1408,7 @@ export default {
                   break
                 }
                 case 'oh-bakumatsu-label2':
-                case 'oh-bakumatsu-kokudaka':{
+                case 'oh-bakumatsu-kokudaka': {
                   let features
                   console.log(map.getLayer('oh-bakumatsu-kokudaka'))
                   if (map.getLayer('oh-bakumatsu-kokudaka')) {
@@ -1418,7 +1425,7 @@ export default {
                   const name = props.村名
                   const kokudaka = Math.floor(Number(props.石高計))
                   const ryobun = props.領分１
-                  html =
+                  html +=
                       `
                   <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
                    村名=${name}<br>石高=${kokudaka}<br>領分=${ryobun}
@@ -1427,9 +1434,9 @@ export default {
                   break
                 }
                 case 'oh-highwayLayer-green-lines':
-                case 'oh-highwayLayer-red-lines':{
+                case 'oh-highwayLayer-red-lines': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-highwayLayer-green-lines'] }
+                      map.project(coordinates), {layers: ['oh-highwayLayer-green-lines']}
                   )
                   if (features.length === 0) return;
                   props = features[0].properties
@@ -1437,7 +1444,7 @@ export default {
                   const id = props.N06_004
                   const kyouyounen = props.N06_001
                   const kaishinen = props.N06_002
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span><br>' +
                       '<span style="font-size: 12px;">id=' + id + '</span><br>' +
@@ -1447,15 +1454,15 @@ export default {
                   break
                 }
                 case 'oh-q-kyoryo-label':
-                case 'oh-q-kyoryo':{
+                case 'oh-q-kyoryo': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-q-kyoryo'] }
+                      map.project(coordinates), {layers: ['oh-q-kyoryo']}
                   )
                   console.log(features)
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props._html
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span><br>' +
                       '<span style="font-size: 12px;">よみ=' + props.No1 + '</span><br>' +
@@ -1472,15 +1479,15 @@ export default {
                   break
                 }
                 case 'oh-q-tunnel-label':
-                case 'oh-q-tunnel':{
+                case 'oh-q-tunnel': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-q-tunnel'] }
+                      map.project(coordinates), {layers: ['oh-q-tunnel']}
                   )
                   console.log(features)
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props._html
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span><br>' +
                       '<span style="font-size: 12px;">よみ=' + props.No1 + '</span><br>' +
@@ -1498,44 +1505,44 @@ export default {
                 }
                 case 'oh-yotochiiki-height':
                 case 'oh-yotochiiki-line':
-                case 'oh-yotochiiki':{
+                case 'oh-yotochiiki': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-yotochiiki'] }
+                      map.project(coordinates), {layers: ['oh-yotochiiki']}
                   )
                   console.log(features)
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.用途地域
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span><br>' +
                       '</div>'
                   break
                 }
-                case 'oh-bus-lines':{
+                case 'oh-bus-lines': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-bus-lines'] }
+                      map.project(coordinates), {layers: ['oh-bus-lines']}
                   )
                   console.log(features)
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.N07_001
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 16px;">' + name + '</span><br>' +
                       '</div>'
                   break
                 }
                 case 'oh-bus-label':
-                case 'oh-bus-points':{
+                case 'oh-bus-points': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: [layerId] }
+                      map.project(coordinates), {layers: [layerId]}
                   )
                   console.log(features)
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.P11_001
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 16px;">' + name + '</span><br>' +
                       '<span style="font-size: 12px;">事業者名=' + props.P11_002 + '</span><br>' +
@@ -1543,15 +1550,15 @@ export default {
                   break
                 }
                 case 'oh-koaza-label':
-                case 'oh-koaza':{
+                case 'oh-koaza': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-koaza'] }
+                      map.project(coordinates), {layers: ['oh-koaza']}
                   )
                   console.log(features)
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.KOAZA_NAME
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span><br>' +
                       '</div>'
@@ -1559,33 +1566,33 @@ export default {
                 }
                 case 'oh-amx-label':
                 case 'oh-amx-a-fude-line':
-                case 'oh-amx-a-fude':{
+                case 'oh-amx-a-fude': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-amx-a-fude'] }
+                      map.project(coordinates), {layers: ['oh-amx-a-fude']}
                   )
                   console.log(features)
                   if (features.length === 0) return
                   props = features[0].properties
                   let html0 = ''
                   html0 += '<div font-weight: normal; color: #333;line-height: 25px;">'
-                  Object.keys(props).forEach(function(key) {
+                  Object.keys(props).forEach(function (key) {
                     html0 += key + '=' + props[key] + '<br>'
                   })
                   html0 += '<div>'
-                  html = html0
+                  html += html0
                   break
                 }
                 case 'oh-city-t09-label':
                 case 'oh-city-t09-line':
-                case 'oh-city-t09':{
+                case 'oh-city-t09': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-city-t09'] }
+                      map.project(coordinates), {layers: ['oh-city-t09']}
                   )
                   console.log(features)
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.N03_004
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size:14px;">' + props.N03_001 + props.N03_003 + '</span><br>' +
                       '<span style="font-size:20px;">' + name + '</span><br>' +
@@ -1594,16 +1601,16 @@ export default {
                 }
                 case 'oh-city-r05-label':
                 case 'oh-city-r05-line':
-                case 'oh-city-r05':{
+                case 'oh-city-r05': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-city-r05'] }
+                      map.project(coordinates), {layers: ['oh-city-r05']}
                   )
                   console.log(features)
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.N03_004
-                  const gun = props.N03_003 ? props.N03_003: ''
-                  html =
+                  const gun = props.N03_003 ? props.N03_003 : ''
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size:14px;">' + props.N03_001 + gun + '</span><br>' +
                       '<span style="font-size:20px;">' + name + '</span><br>' +
@@ -1611,9 +1618,9 @@ export default {
                   break
                 }
                 case 'oh-tochiriyo-line':
-                case 'oh-tochiriyo':{
+                case 'oh-tochiriyo': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-tochiriyo'] }
+                      map.project(coordinates), {layers: ['oh-tochiriyo']}
                   )
                   console.log(features)
                   if (features.length === 0) return;
@@ -1780,72 +1787,72 @@ export default {
                       shisetsu = '不整合'
                       break
                   }
-                  html = '<div class="tokyotochiriyo" style=width:200px;>' +
+                  html += '<div class="tokyotochiriyo" style=width:200px;>' +
                       '<span style="font-size: 20px">' + shisetsu + '</span>' +
                       '<p>' + props.NAME1 + props.NAME2 + '</p>' +
                       '<p>' + Math.floor(props.AREA) + 'm2</p>' +
                       '</div>'
                   break
                 }
-                case 'oh-hikari':{
+                case 'oh-hikari': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-hikari'] }
+                      map.project(coordinates), {layers: ['oh-hikari']}
                   )
                   console.log(features)
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.light
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size:20px;">明るさ＝' + name + '</span>' +
                       '</div>'
                   break
                 }
-                case 'oh-hikari-height':{
+                case 'oh-hikari-height': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-hikari-height'] }
+                      map.project(coordinates), {layers: ['oh-hikari-height']}
                   )
                   console.log(features)
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.light
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size:20px;">明るさ＝' + name + '</span>' +
                       '</div>'
                   break
                 }
-                case 'oh-nantora-height':{
+                case 'oh-nantora-height': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-nantora-height'] }
+                      map.project(coordinates), {layers: ['oh-nantora-height']}
                   )
                   console.log(features)
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.最大浸水深
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size:20px;">最大浸水深＝' + name + 'm</span>' +
                       '</div>'
                   break
                 }
-                case 'oh-tsunami-height':{
+                case 'oh-tsunami-height': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-tsunami-height'] }
+                      map.project(coordinates), {layers: ['oh-tsunami-height']}
                   )
                   console.log(features)
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.A40_003
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size:20px;">' + name + '</span>' +
                       '</div>'
                   break
                 }
-                case 'oh-hokkaidotsunami-height':{
+                case 'oh-hokkaidotsunami-height': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-hokkaidotsunami-height'] }
+                      map.project(coordinates), {layers: ['oh-hokkaidotsunami-height']}
                   )
                   console.log(features)
                   if (features.length === 0) return;
@@ -1853,31 +1860,31 @@ export default {
                   let name = props.max
                   console.log(name)
                   if (name === undefined) name = props.MAX_SIN
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size:20px;">' + name + 'm</span>' +
                       '</div>'
                   break
                 }
-                case 'oh-city-gun':{
+                case 'oh-city-gun': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-city-gun'] }
+                      map.project(coordinates), {layers: ['oh-city-gun']}
                   )
                   console.log(features)
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.GUN
                   const kuni = props.KUNI
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size:20px;">' + kuni + '</span><br>' +
                       '<span style="font-size:20px;">' + name + '</span>' +
                       '</div>'
                   break
                 }
-                case 'oh-tochiriyo100':{
+                case 'oh-tochiriyo100': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: ['oh-tochiriyo100'] }
+                      map.project(coordinates), {layers: ['oh-tochiriyo100']}
                   )
                   console.log(features)
                   if (features.length === 0) return;
@@ -1921,23 +1928,23 @@ export default {
                       text = 'ゴルフ場'
                       break
                   }
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size:20px;">' + text + '</span><br>' +
                       '</div>'
                   break
                 }
                 case 'oh-yochien-label':
-                case 'oh-yochien-layer':{
+                case 'oh-yochien-layer': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: [layerId] }
+                      map.project(coordinates), {layers: [layerId]}
                   )
                   console.log(features)
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.P29_004
-                  const address =props.P29_005
-                  html =
+                  const address = props.P29_005
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size:12px;">' + address + '</span><br>' +
                       '<span style="font-size:20px;">' + name + '</span>' +
@@ -1945,9 +1952,9 @@ export default {
                   break
                 }
                 case 'oh-jinjya-label':
-                case 'oh-jinjya-layer':{
+                case 'oh-jinjya-layer': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: [layerId] }
+                      map.project(coordinates), {layers: [layerId]}
                   )
                   if (features.length === 0) return;
                   props = features[0].properties
@@ -1957,27 +1964,27 @@ export default {
                     const url = description[3] ? description[3].split('<br>')[0] : ''
                     if (url) {
                       if (description[3].split('<br>').length > 1) {
-                        href='<a href="' + url + '" target="_blank">神社と古事記を開く</a>'
+                        href = '<a href="' + url + '" target="_blank">神社と古事記を開く</a>'
                       }
                     }
                   }
                   const name = props.name
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size:20px;">' + name + '</span><br>' +
                       '<span style="font-size:14px;">' + href + '</span>' +
                       '</div>'
                   break
                 }
-                case 'oh-kokuarea-layer':{
+                case 'oh-kokuarea-layer': {
                   const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: [layerId] }
+                      map.project(coordinates), {layers: [layerId]}
                   )
                   console.log(features)
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.name
-                  html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size:20px;">' + name + '</span>' +
                       '</div>'
@@ -1986,15 +1993,19 @@ export default {
                 case 'oh-hinanjyo-dosekiryu-label':
                 case 'oh-hinanjyo-dosekiryu':
                 case 'oh-hinanjyo-kozui-label':
-                case 'oh-hinanjyo-kozui':{
-                  const features = map.queryRenderedFeatures(
-                      map.project(coordinates), { layers: [layerId] }
+                case 'oh-hinanjyo-kozui': {
+                  let features = map.queryRenderedFeatures(
+                      map.project(coordinates), {layers: [layerId]}
                   )
-                  if (features.length === 0) return;
+                  if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                  }
                   props = features[0].properties
                   const name = props.name
                   const address = props.address
-                   html =
+                  html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size:20px;">' + name + '</span><br>' +
                       '<span style="font-size:14px;">' + address + '</span>' +
@@ -2002,34 +2013,118 @@ export default {
                   break
                 }
               }
+            }
 
-              if (this.mapFlg.map02) {
-                const layer = this.$store.state.map02.getStyle().layers.at(-1)
-                if (layer.type === 'raster') {
-                  closeAllPopups()
-                } else {
-                  if (popups.length === 2) closeAllPopups()
-                }
-                if (popups.length === 2) closeAllPopups()
-              } else {
+            if (this.mapFlg.map02) {
+              const layer = this.$store.state.map02.getStyle().layers.at(-1)
+              if (layer.type === 'raster') {
                 closeAllPopups()
+              } else {
+                if (popups.length === 2) closeAllPopups()
               }
+              if (popups.length === 2) closeAllPopups()
+            } else {
+              closeAllPopups()
+            }
 
-              // ポップアップ作成
+            // ポップアップ作成
 
-              if (html) {
-                const popup = new maplibregl.Popup({
-                  closeButton: true,
-                  // className: 'custom-popup'
-                })
-                    .setLngLat(coordinates)
-                    .setHTML(html)
-                    .setMaxWidth("350px")
-                    .addTo(map)
-                popups.push(popup)
-                popup.on('close', () => closeAllPopups())
+            let rasterLayerIds = [];
+            const mapLayers = map.getStyle().layers
+            console.log(mapLayers)
+
+            mapLayers.forEach(layer => {
+              // const visibility = map.getLayoutProperty(layer.id, 'visibility');
+              // レイヤーのtypeプロパティを取得
+              const type = layer.type;
+              if (type === 'raster') {
+                rasterLayerIds.push(layer.id);
               }
+            });
+            console.log(rasterLayerIds)
+            // ラスタレイヤのidからポップアップ表示に使用するURLを生成
+            let RasterTileUrl = '';
+            let legend = [];
+            rasterLayerIds.forEach(rasterLayerId => {
+              console.log(rasterLayerId)
+              if (rasterLayerId === 'oh-kozui-saidai-layer') {
+                // 洪水浸水想定区域（想定最大規模）
+                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin/{z}/{x}/{y}.png';
+                legend = legend_shinsuishin
+              } else if (rasterLayerId === 'oh-shitchi-layer') {
+                RasterTileUrl = 'https://cyberjapandata.gsi.go.jp/xyz/swale/{z}/{x}/{y}.png';
+                legend = legend_shitchi
+              } else if (rasterLayerId === 'oh-tsunami-layer') {
+                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png';
+                legend = legend_hightide_tsunami
+              } else if (rasterLayerId === 'oh-dosya-layer') {
+                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png';
+                legend = legend_dosyasaigai
               }
+              const lng = e.lngLat.lng
+              const lat = e.lngLat.lat
+              const z = 16
+              // if (RasterTileUrl) {
+              getLegendItem(legend, RasterTileUrl, lat, lng,z).then(function (v) {
+                let res = (v ? v.title : '')
+                // if (res === '') return
+                // let popup
+                if (res) {
+                  if (html) html += '<hr>'
+                  if (rasterLayerId === 'oh-kozui-saidai-layer') {
+                    html +=
+                        '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 12px;">洪水によって想定される浸水深</span><br>' +
+                        '<span style="font-size: 24px;">' + res + '</span>' +
+                        '</div>'
+                  } else if (rasterLayerId === 'oh-shitchi-layer') {
+                    html +=
+                        '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 16px;">' + res[0] + '</span><hr>' +
+                        '<span style="font-size: 12px;">' + res[1] + '</span>' +
+                        '</div>'
+                  } else if (rasterLayerId === 'oh-tsunami-layer') {
+                    html +=
+                        '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 12px;">津波によって想定される浸水深</span><br>' +
+                        '<span style="font-size: 24px;">' + res + '</span>' +
+                        '</div>'
+                  } else if (rasterLayerId === 'oh-dosya-layer') {
+                    html +=
+                        '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 16px;">' + res + '</span>' +
+                        '</div>'
+                  }
+                }
+
+                if (html) {
+                  const popup = new maplibregl.Popup({
+                    closeButton: true,
+                    // className: 'custom-popup'
+                  })
+                      .setLngLat(coordinates)
+                      .setHTML(html)
+                      .setMaxWidth("350px")
+                      .addTo(map)
+                  popups.push(popup)
+                  popup.on('close', () => closeAllPopups())
+                }
+              })
+            })
+
+            if (html) {
+              const popup = new maplibregl.Popup({
+                closeButton: true,
+                // className: 'custom-popup'
+              })
+                  .setLngLat(coordinates)
+                  .setHTML(html)
+                  .setMaxWidth("350px")
+                  .addTo(map)
+              popups.push(popup)
+              popup.on('close', () => closeAllPopups())
+            }
+
           })
 
           //------------------------------------------------------------------------------------------------------------
@@ -2128,7 +2223,6 @@ export default {
           map.on('mousemove', function (e) {
             let rasterLayerIds = [];
             const mapLayers = map.getStyle().layers;
-
             mapLayers.forEach(layer => {
               // const visibility = map.getLayoutProperty(layer.id, 'visibility');
               // レイヤーのtypeプロパティを取得
@@ -2162,94 +2256,10 @@ export default {
                 getLegendItem(legend, RasterTileUrl, lat, lng,z).then(function (v) {
                   let res = (v ? v.title : '')
                   if (res === '') {
-                    map.getCanvas().style.cursor = "default"
+                    // map.getCanvas().style.cursor = "default"
                     return
                   }
                   map.getCanvas().style.cursor = "pointer"
-                })
-              }
-            })
-          })
-          map.on('click', function (e) {
-            let rasterLayerIds = [];
-            const mapLayers = map.getStyle().layers;
-
-            mapLayers.forEach(layer => {
-              // const visibility = map.getLayoutProperty(layer.id, 'visibility');
-              // レイヤーのtypeプロパティを取得
-              const type = layer.type;
-              if (type === 'raster') {
-                rasterLayerIds.push(layer.id);
-              }
-            });
-            // ラスタレイヤのidからポップアップ表示に使用するURLを生成
-            let RasterTileUrl = '';
-            let legend = [];
-            rasterLayerIds.forEach(rasterLayerId => {
-              if (rasterLayerId === 'oh-kozui-saidai-layer') {
-                // 洪水浸水想定区域（想定最大規模）
-                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin/{z}/{x}/{y}.png';
-                legend = legend_shinsuishin
-              } else if (rasterLayerId === 'oh-shitchi-layer') {
-                RasterTileUrl = 'https://cyberjapandata.gsi.go.jp/xyz/swale/{z}/{x}/{y}.png';
-                legend = legend_shitchi
-              } else if (rasterLayerId === 'oh-tsunami-layer') {
-                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png';
-                legend = legend_hightide_tsunami
-              } else if (rasterLayerId === 'oh-dosya-layer') {
-                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png';
-                legend = legend_dosyasaigai
-              }
-              const lng = e.lngLat.lng
-              const lat = e.lngLat.lat
-              const z = 16
-              if (RasterTileUrl) {
-                getLegendItem(legend, RasterTileUrl, lat, lng,z).then(function (v) {
-                  let res = (v ? v.title : '')
-                  if (res === '') return
-                  let popup
-                  if (rasterLayerId === 'oh-kozui-saidai-layer') {
-                    popup = new maplibregl.Popup()
-                        .setLngLat(e.lngLat)
-                        .setHTML(
-                            '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                            '<span style="font-size: 12px;">洪水によって想定される浸水深</span><br>' +
-                            '<span style="font-size: 24px;">' + res + '</span>' +
-                            '</div>'
-                        )
-                        .addTo(map)
-                  } else if (rasterLayerId === 'oh-shitchi-layer') {
-                    popup = new maplibregl.Popup()
-                          .setLngLat(e.lngLat)
-                          .setHTML(
-                              '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                              '<span style="font-size: 16px;">' + res[0] + '</span><hr>' +
-                              '<span style="font-size: 12px;">' + res[1] + '</span>' +
-                              '</div>'
-                          )
-                          .addTo(map)
-                  } else if (rasterLayerId === 'oh-tsunami-layer') {
-                    popup = new maplibregl.Popup()
-                        .setLngLat(e.lngLat)
-                        .setHTML(
-                            '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                            '<span style="font-size: 12px;">津波によって想定される浸水深</span><br>' +
-                            '<span style="font-size: 24px;">' + res + '</span>' +
-                            '</div>'
-                        )
-                        .addTo(map)
-                  } else if (rasterLayerId === 'oh-dosya-layer') {
-                    popup = new maplibregl.Popup()
-                        .setLngLat(e.lngLat)
-                        .setHTML(
-                            '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                            '<span style="font-size: 16px;">' + res + '</span>' +
-                            '</div>'
-                        )
-                        .addTo(map)
-                  }
-                  popups.push(popup)
-                  popup.on('close', () => closeAllPopups())
                 })
               }
             })
