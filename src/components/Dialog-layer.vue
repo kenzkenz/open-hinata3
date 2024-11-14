@@ -139,6 +139,7 @@ export default {
         }
       })
       element.visibility = !element.visibility
+      this.zoomOperation(1000)
     },
     infoOpen (element,isNew) {
       this.$store.commit('incrDialogMaxZindex')
@@ -258,11 +259,11 @@ export default {
                 ext: node.ext,
               }
           )
-          this.zoomOperation(1000)
         } else {
           this.s_selectedLayers[this.mapName] = this.s_selectedLayers[this.mapName].filter(layer => layer.id !== node.id)
           map.removeLayer(node.id)
         }
+        this.zoomOperation(1000)
       }
     },
     addLayers() {

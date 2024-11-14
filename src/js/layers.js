@@ -2635,38 +2635,61 @@ export const kasenLayerLabel = {
 }
 // ---------------------------------------------------------------------------------------------------------------------
 // 災害伝承碑
-export const densyohiSource = {
-    id: "densyohiSource", obj: {
+const densyohiSource = {
+    id: "densyohi-source", obj: {
         type: "vector",
-        // minzoom: 0,
-        // maxzoom: 15,
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/densyohi/densyohi.pmtiles",
-        attribution: "<a href='' target='_blank'></a>",
     }
 }
-//
-export const densyohiLayer = {
+const densyohiLayer = {
     id: "oh-densyohi",
     type: "circle",
-    source: "densyohiSource",
+    source: "densyohi-source",
     "source-layer": "point",
     'paint': {
         'circle-color': '#3cb371',
-        'circle-radius': 8,
+        'circle-radius':[
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            2, 1,
+            4, 3,
+            7, 6,
+            11, 10
+        ]
     }
 }
-export const densyohiLayer2 = {
-    id: "oh-densyohi",
+const densyohiLayerLabel = {
+    id: "oh-densyohi-label",
     type: "symbol",
-    source: "densyohiSource",
+    source: "densyohi-source",
     "source-layer": "point",
-    "layout": {
-        "icon-image": "densyouhi",  // JSONに記述されたアイコン名を指定
-        "icon-size": 1.0
-    }
+    'layout': {
+        'text-field': ['get', '碑名'],
+        'text-font': ['NotoSansJP-Regular'],
+        'text-offset': [0, 1],
+        'visibility': 'visible',
+    },
+    'paint': {
+        'text-color': 'rgba(0, 0, 0, 1)',
+        'text-halo-color': 'rgba(255,255,255,1)',
+        'text-halo-width': 1.0,
+    },
+    'minzoom': 10
 }
+
+// const densyohiLayer2 = {
+//     id: "oh-densyohi",
+//     type: "symbol",
+//     source: "densyohiSource",
+//     "source-layer": "point",
+//     "layout": {
+//         "icon-image": "densyouhi",  // JSONに記述されたアイコン名を指定
+//         "icon-size": 1.0
+//     }
+// }
 // did------------------------------------------------------------------------------------------------------------------
-export const didSource = {
+const didSource = {
     id: "did-source", obj: {
         type: "vector",
         // minzoom: 0,
@@ -2676,7 +2699,7 @@ export const didSource = {
             "<a href='' target='_blank'></a>",
     }
 }
-export const didLayer = {
+const didLayer = {
     id: "oh-did",
     type: "fill",
     source: "did-source",
@@ -2685,7 +2708,7 @@ export const didLayer = {
         'fill-color': 'gray'
     }
 }
-export const didLayerLine = {
+const didLayerLine = {
     id: "oh-did_line",
     type: "line",
     source: "did-source",
@@ -2702,7 +2725,7 @@ export const didLayerLine = {
     },
 }
 // 選挙区----------------------------------------------------------------------------------------------------------------
-export const senkyokuSource = {
+const senkyokuSource = {
     id: "senkyoku-source", obj: {
         type: "vector",
         // minzoom: 0,
@@ -2712,7 +2735,7 @@ export const senkyokuSource = {
             "<a href='' target='_blank'></a>",
     }
 }
-export const senkyokuLayer = {
+const senkyokuLayer = {
     id: "oh-senkyoku",
     type: "fill",
     source: "senkyoku-source",
@@ -2721,7 +2744,7 @@ export const senkyokuLayer = {
         'fill-color': 'gray'
     }
 }
-export const senkyokuLayerLine = {
+const senkyokuLayerLine = {
     id: "oh-senkyoku_line",
     type: "line",
     source: "senkyoku-source",
@@ -2737,7 +2760,7 @@ export const senkyokuLayerLine = {
         ]
     },
 }
-export const senkyokuLayerLabel = {
+const senkyokuLayerLabel = {
     id: "oh-senkyoku-label",
     type: "symbol",
     source: "senkyoku-source",
@@ -3086,6 +3109,49 @@ const hinanjyoKozuiLayerLabel = {
         'text-field': ['get', 'name'],
         'text-font': ['NotoSansJP-Regular'],
         'text-offset': [0, 1],
+    },
+    'paint': {
+        'text-color': 'rgba(0, 0, 0, 1)',
+        'text-halo-color': 'rgba(255,255,255,1)',
+        'text-halo-width': 1.0,
+    },
+    'minzoom': 13
+}
+// 避難所津波 --------------------------------------------------------------------------------------------
+const hinanjyoTsunamiSource = {
+    id: "hinanjyo-tsunami-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/hinanjyo/hinanjyo-tsunami.pmtiles",
+        attribution: "<a href='' target='_blank'></a>",
+    }
+}
+const hinanjyoTsunamiLayer = {
+    id: "oh-hinanjyo-tsunami",
+    type: "circle",
+    source: "hinanjyo-tsunami-source",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': 'blue',
+        'circle-radius':[
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            2, 0.1,
+            4, 0.5,
+            7, 2,
+            11, 10
+        ]
+    }
+}
+const hinanjyoTsunamiLayerLabel = {
+    id: "oh-hinanjyo-tsunami-label",
+    type: "symbol",
+    source: "hinanjyo-tsunami-source",
+    "source-layer": "point",
+    'layout': {
+        'text-field': ['get', 'name'],
+        'text-font': ['NotoSansJP-Regular'],
+        'text-offset': [0, 1],
         'visibility': 'visible',
     },
     'paint': {
@@ -3093,7 +3159,6 @@ const hinanjyoKozuiLayerLabel = {
         'text-halo-color': 'rgba(255,255,255,1)',
         'text-halo-width': 1.0,
     },
-    'maxzoom': 24,
     'minzoom': 13
 }
 // 避難所土石流 --------------------------------------------------------------------------------------------
@@ -3131,7 +3196,6 @@ const hinanjyoDosekiryuLayerLabel = {
         'text-field': ['get', 'name'],
         'text-font': ['NotoSansJP-Regular'],
         'text-offset': [0, 1],
-        'visibility': 'visible',
     },
     'paint': {
         'text-color': 'rgba(0, 0, 0, 1)',
@@ -3141,6 +3205,7 @@ const hinanjyoDosekiryuLayerLabel = {
     'maxzoom': 24,
     'minzoom': 13
 }
+
 // R05大規模盛土造成地-----------------------------------------------------------------------------------------------------
 const zoseiSource = {
     id: "zosei-source", obj: {
@@ -4814,24 +4879,30 @@ const layers01 = [
         id: 'hazard',
         label: "ハザードマップ等",
         nodes: [
-            // {
-            //     id: 'oh-tokyojishin',
-            //     label: "地震に関する危険度一覧(東京都)",
-            //     source: tokyojishinSource,
-            //     layers: [tokyojishinLayer,tokyojishinLayerLine,tokyojishinLayerLabel,tokyojishinheight],
-            // },
             {
-                id: 'oh-hinanjyo-kozui',
-                label: "指定緊急避難場所(洪水)",
-                source: hinanjyoKozuiSource,
-                layers: [hinanjyoKozuiLayer,hinanjyoKozuiLayerLabel],
-            },
-            {
-                id: 'oh-hinanjyo-dosekiryu',
-                label: "指定緊急避難場所(崖崩れ等)",
-                source: hinanjyoDosekiryuSource,
-                layers: [hinanjyoDosekiryuLayer,hinanjyoDosekiryuLayerLabel],
-                attribution: '指定緊急避難場所(崖崩れ、土石流及び地滑り)'
+                id: 'hinanbasyo',
+                label: "指定緊急避難場所",
+                nodes: [
+                    {
+                        id: 'oh-hinanjyo-kozui',
+                        label: "指定緊急避難場所(洪水)",
+                        source: hinanjyoKozuiSource,
+                        layers: [hinanjyoKozuiLayer,hinanjyoKozuiLayerLabel],
+                    },
+                    {
+                        id: 'oh-tsunami-kozui',
+                        label: "指定緊急避難場所(津波)",
+                        source: hinanjyoTsunamiSource,
+                        layers: [hinanjyoTsunamiLayer,hinanjyoTsunamiLayerLabel],
+                    },
+                    {
+                        id: 'oh-hinanjyo-dosekiryu',
+                        label: "指定緊急避難場所(崖崩れ等)",
+                        source: hinanjyoDosekiryuSource,
+                        layers: [hinanjyoDosekiryuLayer,hinanjyoDosekiryuLayerLabel],
+                        attribution: '指定緊急避難場所(崖崩れ、土石流及び地滑り)'
+                    },
+                ]
             },
             {
                 id: 'oh-kozui-saidai',
@@ -4844,6 +4915,18 @@ const layers01 = [
                 label: "津波浸水想定",
                 source: tsunamiSource,
                 layers: [tsunamiLayer],
+            },
+            {
+                id: 'oh-dosya',
+                label: "土砂災害警戒区域",
+                source: dosyaSource,
+                layers: [dosyaLayer],
+            },
+            {
+                id: 'oh-dosekiryu',
+                label: "土石流危険渓流",
+                source: dosekiryuSource,
+                layers: [dosekiryuLayer],
             },
             {
                 id: 'oh-tsunami-height',
@@ -4864,18 +4947,6 @@ const layers01 = [
                 layers: [hokkaidotsunamiLayerHeight],
             },
             {
-                id: 'oh-dosya',
-                label: "土砂災害警戒区域",
-                source: dosyaSource,
-                layers: [dosyaLayer],
-            },
-            {
-                id: 'oh-dosekiryu',
-                label: "土石流危険渓流",
-                source: dosekiryuSource,
-                layers: [dosekiryuLayer],
-            },
-            {
                 id: 'oh-zosei',
                 label: "R05大規模盛土造成地",
                 source: zoseiSource,
@@ -4894,11 +4965,17 @@ const layers01 = [
                 source: tokyojishinSource,
                 layers: [tokyojishinLayerSogo,tokyojishinLayerLine,tokyojishinLayerLabel,tokyojishinheightSogo],
             },
+            // {
+            //     id: 'oh-tokyojishin',
+            //     label: "地震に関する危険度一覧(東京都)",
+            //     source: tokyojishinSource,
+            //     layers: [tokyojishinLayer,tokyojishinLayerLine,tokyojishinLayerLabel,tokyojishinheight],
+            // },
             {
                 id: 'oh-densyohi',
                 label: "災害伝承碑",
                 source: densyohiSource,
-                layers: [densyohiLayer],
+                layers: [densyohiLayer,densyohiLayerLabel],
             },
         ]
     },

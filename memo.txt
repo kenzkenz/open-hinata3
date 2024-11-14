@@ -236,6 +236,7 @@ tippecanoe -rg -pk -pf -l point -f -o hinanzyo-kozui.pmtiles hinanzyo-kozui.geoj
 
 tippecanoe -rg -pk -pf -l point -f -o hinanjyo-dosekiryu.pmtiles hinanjyo-dosekiryu.geojson
 
+tippecanoe -rg -pk -pf -l point -f -o hinanjyo-tsunami.pmtiles hinanjyo-tsunami.geojson
 
 import random
 from qgis.core import QgsField, QgsExpression, QgsExpressionContext, QgsExpressionContextUtils

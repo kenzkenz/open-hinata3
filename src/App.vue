@@ -532,12 +532,6 @@ export default {
         })
         this.$store.state[mapName] = map
 
-        // map.addControl(
-        //     new maplibregl.AttributionControl({
-        //       compact: true, // アトリビューションを小さくする
-        //     })
-        // )
-
       })
       // --------------------------------
       const map = this.$store.state.map01
@@ -658,24 +652,24 @@ export default {
       })
 
       // map1のクリックイベント
-      map1.on('click', (e) => {
-        if (syncing) return  // 同期中の場合は再帰呼び出しを防ぐ
-        syncing = true
-        const coordinates = e.lngLat
-        // map2のクリックイベントをプログラムで発生させる
-        map2.fire('click', { lngLat: coordinates })
-        syncing = false
-      })
-
-      // map2のクリックイベント
-      map2.on('click', (e) => {
-        if (syncing) return  // 同期中の場合は再帰呼び出しを防ぐ
-        syncing = true
-        const coordinates = e.lngLat
-        // map1のクリックイベントをプログラムで発生させる
-        map1.fire('click', { lngLat: coordinates })
-        syncing = false
-      })
+      // map1.on('click', (e) => {
+      //   if (syncing) return  // 同期中の場合は再帰呼び出しを防ぐ
+      //   syncing = true
+      //   const coordinates = e.lngLat
+      //   // map2のクリックイベントをプログラムで発生させる
+      //   map2.fire('click', { lngLat: coordinates })
+      //   syncing = false
+      // })
+      //
+      // // map2のクリックイベント
+      // map2.on('click', (e) => {
+      //   if (syncing) return  // 同期中の場合は再帰呼び出しを防ぐ
+      //   syncing = true
+      //   const coordinates = e.lngLat
+      //   // map1のクリックイベントをプログラムで発生させる
+      //   map1.fire('click', { lngLat: coordinates })
+      //   syncing = false
+      // })
 
       // -----------------------------------------------------------------------------------------------------------------
       // on load
@@ -886,7 +880,7 @@ export default {
             if (features.length) {
               const feature = features[0]; // 最初のフィーチャーのみ取得
               const layerId = feature.layer.id
-              console.log(layerId)
+              // console.log(layerId)
               if (layerId.indexOf('vector') !== -1) {
                 map.getCanvas().style.cursor = 'default'
               } else {
@@ -1099,7 +1093,7 @@ export default {
                   )
                   if (features.length === 0) return
                   props = features[0].properties
-                  const name = '人口' + Math.floor(Number(props.jinko)) + '人'
+                  const name = '人口' + Math.round(Number(props.jinko)) + '人'
                   html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span>' +
@@ -1115,7 +1109,7 @@ export default {
                   )
                   if (features.length === 0) return
                   props = features[0].properties
-                  const name = '人口' + Math.floor(Number(props.jinko)) + '人'
+                  const name = '人口' + Math.round(Number(props.jinko)) + '人'
                   html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span>' +
@@ -1131,7 +1125,7 @@ export default {
                   )
                   if (features.length === 0) return
                   props = features[0].properties
-                  const name = '人口' + Math.floor(Number(props.jinko)) + '人'
+                  const name = '人口' + Math.round(Number(props.jinko)) + '人'
                   html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span>' +
@@ -1147,7 +1141,7 @@ export default {
                   )
                   if (features.length === 0) return
                   props = features[0].properties
-                  const name = '人口' + Math.floor(Number(props.PopT)) + '人'
+                  const name = '人口' + Math.round(Number(props.PopT)) + '人'
                   html +=
                       '<div font-weight: normal; color: #333;line-height: 25px;">' +
                       '<span style="font-size: 20px;">' + name + '</span>' +
@@ -1995,6 +1989,8 @@ export default {
                       '</div>'
                   break
                 }
+                case 'oh-hinanjyo-tsunami-label':
+                case 'oh-hinanjyo-tsunami':
                 case 'oh-hinanjyo-dosekiryu-label':
                 case 'oh-hinanjyo-dosekiryu':
                 case 'oh-hinanjyo-kozui-label':
@@ -2015,6 +2011,35 @@ export default {
                       '<span style="font-size:20px;">' + name + '</span><br>' +
                       '<span style="font-size:14px;">' + address + '</span>' +
                       '</div>'
+                  break
+                }
+                case 'oh-densyohi-label':
+                case 'oh-densyohi': {
+                  let features = map.queryRenderedFeatures(
+                      map.project(coordinates), {layers: [layerId]}
+                  )
+                  if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                  }
+                  props = features[0].properties
+                  const src = 'https://maps.gsi.go.jp/legend/disaster_lore/' + props.ID.split('-')[0] + '/' + props.ID + '.jpg'
+                  console.log(src)
+                  html += '<div style="width:300px;font-size:small">' +
+                      '<h4>' + props.碑名 + '</h4>' +
+                      '災害名=' + props.災害名 + '<br>' +
+                      '災害種別=' + props.災害種別 + '<br>' +
+                      '所在地=' + props.所在地 + '<br>' +
+                      '建立年=' + props.建立年 + '<hr>' +
+                      '' + props.伝承内容 + '<br>' +
+                      '<a href="' + src + '" target="_blank"><img style="object-fit:cover;height:200px;width:300px;" src="' + src + '"></a>' +
+                      '</div>'
+                  // html +=
+                  //     '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                  //     '<span style="font-size:20px;">' + name + '</span><br>' +
+                  //     '<span style="font-size:14px;">' + address + '</span>' +
+                  //     '</div>'
                   break
                 }
               }
@@ -2264,6 +2289,7 @@ export default {
                 legend = legend_hightide_tsunami
               } else if (rasterLayerId === 'oh-dosya-layer') {
                 RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png';
+                legend = legend_dosyasaigai
               } else if (rasterLayerId === 'oh-dosekiryu-layer') {
                 RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukikenkeiryu/{z}/{x}/{y}.png';
                 legend = legend_dosekiryu
@@ -2625,5 +2651,10 @@ font {
 
 .popup-table td:nth-of-type(3) {
   text-align: right;
+}
+
+.maplibregl-popup-content hr {
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 </style>
