@@ -3210,14 +3210,24 @@ const dosyaSource = {
     id: 'dosya-source', obj: {
         type: 'raster',
         tiles: ['https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png'],
-        tileSize: 256,
-        crossOrigin: 'anonymous',
     }
 }
 const dosyaLayer = {
     'id': 'oh-dosya-layer',
     'type': 'raster',
     'source': 'dosya-source',
+}
+// 土石流危険渓流------------------------------------------------------------------------------------------------------
+const dosekiryuSource = {
+    id: 'dosekiryu-source', obj: {
+        type: 'raster',
+        tiles: ['https://disaportaldata.gsi.go.jp/raster/05_dosekiryukikenkeiryu/{z}/{x}/{y}.png'],
+    }
+}
+const dosekiryuLayer = {
+    'id': 'oh-dosekiryu-layer',
+    'type': 'raster',
+    'source': 'dosekiryu-source',
 }
 // 洪水浸水想定------------------------------------------------------------------------------------------------------
 const kozuiSaidaiSource = {
@@ -4858,6 +4868,12 @@ const layers01 = [
                 label: "土砂災害警戒区域",
                 source: dosyaSource,
                 layers: [dosyaLayer],
+            },
+            {
+                id: 'oh-dosekiryu',
+                label: "土石流危険渓流",
+                source: dosekiryuSource,
+                layers: [dosekiryuLayer],
             },
             {
                 id: 'oh-zosei',

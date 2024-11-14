@@ -902,16 +902,20 @@ export default {
             let html = ''
             let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
             console.log(features[0])
-            const coordinates = e.lngLat
-            // let coordinates
-            // if (features.length > 0) {
-            //   coordinates = features[0].geometry.coordinates.slice()
-            //   if (coordinates.length !== 2) {
-            //     coordinates = e.lngLat
-            //   }
-            // } else {
-            //   coordinates = e.lngLat
-            // }
+            // const coordinates = e.lngLat
+            let coordinates
+            if (features.length > 0) {
+              coordinates = features[0].geometry.coordinates.slice()
+              if (coordinates.length === 2) {
+                if (coordinates[0].length > 0) {
+                  coordinates = e.lngLat
+                }
+              } else {
+                coordinates = e.lngLat
+              }
+            } else {
+              coordinates = e.lngLat
+            }
 
             if (features.length > 0) {
               const feature = features[0]; // 最初のフィーチャーのみ取得
@@ -1179,6 +1183,7 @@ export default {
                   break
                 }
                 case 'oh-chikeibunrui': {
+                  console.log(coordinates)
                   const features = map.queryRenderedFeatures(
                       map.project(coordinates), {layers: ['oh-chikeibunrui']}
                   )
@@ -2060,6 +2065,9 @@ export default {
               } else if (rasterLayerId === 'oh-dosya-layer') {
                 RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png';
                 legend = legend_dosyasaigai
+              } else if (rasterLayerId === 'oh-dosekiryu-layer') {
+                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukikenkeiryu/{z}/{x}/{y}.png';
+                legend = legend_dosekiryu
               }
               const lng = e.lngLat.lng
               const lat = e.lngLat.lat
@@ -2090,6 +2098,11 @@ export default {
                         '<span style="font-size: 24px;">' + res + '</span>' +
                         '</div>'
                   } else if (rasterLayerId === 'oh-dosya-layer') {
+                    html +=
+                        '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 16px;">' + res + '</span>' +
+                        '</div>'
+                  } else if (rasterLayerId === 'oh-dosekiryu-layer') {
                     html +=
                         '<div font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size: 16px;">' + res + '</span>' +
@@ -2219,6 +2232,10 @@ export default {
             { r: 169, g: 10, b: 34, title: '土石流<span style="color: red">特別</span>警戒区域(指定前)<br><br>山腹が崩壊して生じた土石等又は渓流の土石等が水と一体となって流下する自然現象' },
             { r: 169, g: 10, b: 33, title: '土石流<span style="color: red">特別</span>警戒区域(指定前)<br><br>山腹が崩壊して生じた土石等又は渓流の土石等が水と一体となって流下する自然現象' },
           ]
+          // 土石流危険渓流
+          const legend_dosekiryu = [
+            { r: 245, g: 153, b: 101, title: '土石流危険渓流<br><br>土石流の発生の危険性があり、人家等に被害を与えるおそれがある渓流' },
+          ]
 
           map.on('mousemove', function (e) {
             let rasterLayerIds = [];
@@ -2247,7 +2264,9 @@ export default {
                 legend = legend_hightide_tsunami
               } else if (rasterLayerId === 'oh-dosya-layer') {
                 RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png';
-                legend = legend_dosyasaigai
+              } else if (rasterLayerId === 'oh-dosekiryu-layer') {
+                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukikenkeiryu/{z}/{x}/{y}.png';
+                legend = legend_dosekiryu
               }
               const lng = e.lngLat.lng;
               const lat = e.lngLat.lat;
