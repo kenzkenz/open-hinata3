@@ -911,8 +911,9 @@ export default {
               coordinates = e.lngLat
             }
 
-            if (features.length > 0) {
-              const feature = features[0]; // 最初のフィーチャーのみ取得
+            // if (features.length > 0) {
+            features.forEach(feature => {
+              // const feature = features[0]; // 最初のフィーチャーのみ取得
               const layerId = feature.layer.id
               console.log(layerId)
               let props = feature.properties
@@ -1289,29 +1290,31 @@ export default {
                   const ryobun6p = props.領分６ ? '<tr><td>領分６</td><td>' + props.領分６ + '</td><td>' + Math.round(props.石高６).toLocaleString() + '</td></tr>' : ''
                   const ryobun7p = props.領分７ ? '<tr><td>領分７</td><td>' + props.領分７ + '</td><td>' + Math.round(props.石高７).toLocaleString() + '</td></tr>' : ''
                   const ryobun8p = props.領分８ ? '<tr><td>領分８</td><td>' + props.領分８ + '</td><td>' + Math.round(props.石高８).toLocaleString() + '</td></tr>' : ''
-                  html += '<div class="kinseipoint" style=width:250px;>' +
-                      '<span style="font-size: 20px">' + props.村名0 + '' +
-                      '<span style="font-size: 14px">(' + props.よみ0 + ')<span/><br>' +
-                      '石高計=' + Math.round(props.石高計).toLocaleString() + '' +
-                      '<table class="popup-table" align="center">' +
-                      '<tr><th></th><th>領分</th><th>石高</th></tr>' +
-                      '<tr><td>領分１</td><td>' + props.領分１ + '</td><td>' + Math.round(props.石高１).toLocaleString() + '</td></tr>' +
-                      ryobun2p +
-                      ryobun3p +
-                      ryobun4p +
-                      ryobun5p +
-                      ryobun6p +
-                      ryobun7p +
-                      ryobun8p +
-                      '</table>' +
-                      '<p>令制国=' + props.令制国 + '国</p>' +
-                      '<p>国郡名=' + props.国郡名 + '</p>' +
-                      '<p>郡名=' + props.郡名 + '</p>' +
-                      '<p>KEY=' + props.KEY + '</p>' +
-                      '<p>' + props.PREF_NAME + props.CITY_NAME + '</p>' +
-                      // '<p>面積=' + prop.area + '</p>' +
-                      // '<p>周長=' + prop.perimeter + '</p>' +
-                      '</div>'
+                  if (html.indexOf('bakumatsu-layer') === -1) {
+                    html += '<div class="kinseipoint bakumatsu-layer" style=width:250px;>' +
+                        '<span style="font-size: 20px">' + props.村名0 + '' +
+                        '<span style="font-size: 14px">(' + props.よみ0 + ')<span/><br>' +
+                        '石高計=' + Math.round(props.石高計).toLocaleString() + '' +
+                        '<table class="popup-table" align="center">' +
+                        '<tr><th></th><th>領分</th><th>石高</th></tr>' +
+                        '<tr><td>領分１</td><td>' + props.領分１ + '</td><td>' + Math.round(props.石高１).toLocaleString() + '</td></tr>' +
+                        ryobun2p +
+                        ryobun3p +
+                        ryobun4p +
+                        ryobun5p +
+                        ryobun6p +
+                        ryobun7p +
+                        ryobun8p +
+                        '</table>' +
+                        '<p>令制国=' + props.令制国 + '国</p>' +
+                        '<p>国郡名=' + props.国郡名 + '</p>' +
+                        '<p>郡名=' + props.郡名 + '</p>' +
+                        '<p>KEY=' + props.KEY + '</p>' +
+                        '<p>' + props.PREF_NAME + props.CITY_NAME + '</p>' +
+                        // '<p>面積=' + prop.area + '</p>' +
+                        // '<p>周長=' + prop.perimeter + '</p>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-bakumatsu-point': {
@@ -1327,27 +1330,30 @@ export default {
                   const ryobun6p = props.領分６ ? '<tr><td>領分６</td><td>' + props.領分６ + '</td><td>' + Math.round(props.石高６).toLocaleString() + '</td></tr>' : ''
                   const ryobun7p = props.領分７ ? '<tr><td>領分７</td><td>' + props.領分７ + '</td><td>' + Math.round(props.石高７).toLocaleString() + '</td></tr>' : ''
                   const ryobun8p = props.領分８ ? '<tr><td>領分８</td><td>' + props.領分８ + '</td><td>' + Math.round(props.石高８).toLocaleString() + '</td></tr>' : ''
-                  html += '<div class="kinseipoint" style=width:250px;>' +
-                      '<span style="font-size: 20px">' + props.村名 + '' +
-                      '<span style="font-size: 14px">(' + props.よみ + ')<span/><br>' +
-                      '<p>領分１=' + props.領分１ + '</p>' +
-                      '<p>石高計=' + Math.round(props.石高計).toLocaleString() + '</p>' +
-                      '<table class="popup-table" align="center">' +
-                      '<tr><th></th><th>領分</th><th>石高</th></tr>' +
-                      '<tr><td>領分１</td><td>' + props.領分１ + '</td><td>' + Math.round(props.石高１).toLocaleString() + '</td></tr>' +
-                      ryobun2p +
-                      ryobun3p +
-                      ryobun4p +
-                      ryobun5p +
-                      ryobun6p +
-                      ryobun7p +
-                      ryobun8p +
-                      '</table>' +
-                      '<p>国名=' + props.国名 + '</p>' +
-                      '<p>国郡=' + props.国郡 + '</p>' +
-                      '<p>郡名=' + props.郡名 + '</p>' +
-                      '<p>相給=' + props.相給 + '</p>' +
-                      '</div>'
+                  if (html.indexOf('bakumatsu-point') === -1) {
+                    html += '<div class="kinseipoint bakumatsu-point" style=width:250px;>' +
+                        '<span style="font-size: 20px">' + props.村名 + '' +
+                        '<span style="font-size: 14px">(' + props.よみ + ')<span/><br>' +
+                        '<p>領分１=' + props.領分１ + '</p>' +
+                        '<p>石高計=' + Math.round(props.石高計).toLocaleString() + '</p>' +
+                        '<table class="popup-table" align="center">' +
+                        '<tr><th></th><th>領分</th><th>石高</th></tr>' +
+                        '<tr><td>領分１</td><td>' + props.領分１ + '</td><td>' + Math.round(props.石高１).toLocaleString() + '</td></tr>' +
+                        ryobun2p +
+                        ryobun3p +
+                        ryobun4p +
+                        ryobun5p +
+                        ryobun6p +
+                        ryobun7p +
+                        ryobun8p +
+                        '</table>' +
+                        '<p>国名=' + props.国名 + '</p>' +
+                        '<p>国郡=' + props.国郡 + '</p>' +
+                        '<p>郡名=' + props.郡名 + '</p>' +
+                        '<p>相給=' + props.相給 + '</p>' +
+                        '</div>'
+                    console.log(html)
+                  }
                   break
                 }
                 case 'oh-bakumatsu-kokudaka-height': {
@@ -1363,29 +1369,32 @@ export default {
                   const ryobun6p = props.領分６ ? '<tr><td>領分６</td><td>' + props.領分６ + '</td><td>' + Math.round(props.石高６).toLocaleString() + '</td></tr>' : ''
                   const ryobun7p = props.領分７ ? '<tr><td>領分７</td><td>' + props.領分７ + '</td><td>' + Math.round(props.石高７).toLocaleString() + '</td></tr>' : ''
                   const ryobun8p = props.領分８ ? '<tr><td>領分８</td><td>' + props.領分８ + '</td><td>' + Math.round(props.石高８).toLocaleString() + '</td></tr>' : ''
-                  html += '<div class="kinseipoint" style=width:250px;>' +
-                      '<span style="font-size: 20px">' + props.村名0 + '' +
-                      '<span style="font-size: 14px">(' + props.よみ0 + ')<span/><br>' +
-                      '石高計=' + Math.round(props.石高計).toLocaleString() + '' +
-                      '<table class="popup-table" align="center">' +
-                      '<tr><th></th><th>領分</th><th>石高</th></tr>' +
-                      '<tr><td>領分１</td><td>' + props.領分１ + '</td><td>' + Math.round(props.石高１).toLocaleString() + '</td></tr>' +
-                      ryobun2p +
-                      ryobun3p +
-                      ryobun4p +
-                      ryobun5p +
-                      ryobun6p +
-                      ryobun7p +
-                      ryobun8p +
-                      '</table>' +
-                      '<p>令制国=' + props.令制国 + '国</p>' +
-                      '<p>国郡名=' + props.国郡名 + '</p>' +
-                      '<p>郡名=' + props.郡名 + '</p>' +
-                      '<p>KEY=' + props.KEY + '</p>' +
-                      '<p>' + props.PREF_NAME + props.CITY_NAME + '</p>' +
-                      // '<p>面積=' + prop.area + '</p>' +
-                      // '<p>周長=' + prop.perimeter + '</p>' +
-                      '</div>'
+
+                  if (html.indexOf('bakumatsu-kokudaka-height') === -1) {
+                    html += '<div class="kinseipoint bakumatsu-kokudaka-height" style=width:250px;>' +
+                        '<span style="font-size: 20px">' + props.村名0 + '' +
+                        '<span style="font-size: 14px">(' + props.よみ0 + ')<span/><br>' +
+                        '石高計=' + Math.round(props.石高計).toLocaleString() + '' +
+                        '<table class="popup-table" align="center">' +
+                        '<tr><th></th><th>領分</th><th>石高</th></tr>' +
+                        '<tr><td>領分１</td><td>' + props.領分１ + '</td><td>' + Math.round(props.石高１).toLocaleString() + '</td></tr>' +
+                        ryobun2p +
+                        ryobun3p +
+                        ryobun4p +
+                        ryobun5p +
+                        ryobun6p +
+                        ryobun7p +
+                        ryobun8p +
+                        '</table>' +
+                        '<p>令制国=' + props.令制国 + '国</p>' +
+                        '<p>国郡名=' + props.国郡名 + '</p>' +
+                        '<p>郡名=' + props.郡名 + '</p>' +
+                        '<p>KEY=' + props.KEY + '</p>' +
+                        '<p>' + props.PREF_NAME + props.CITY_NAME + '</p>' +
+                        // '<p>面積=' + prop.area + '</p>' +
+                        // '<p>周長=' + prop.perimeter + '</p>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-bakumatsu-line2':
@@ -1874,11 +1883,13 @@ export default {
                   props = features[0].properties
                   const name = props.GUN
                   const kuni = props.KUNI
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size:20px;">' + kuni + '</span><br>' +
-                      '<span style="font-size:20px;">' + name + '</span>' +
-                      '</div>'
+                  if (html.indexOf('gun') === -1) {
+                    html +=
+                        '<div class="gun" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">' + kuni + '</span><br>' +
+                        '<span style="font-size:20px;">' + name + '</span>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-tochiriyo100': {
@@ -1927,10 +1938,12 @@ export default {
                       text = 'ゴルフ場'
                       break
                   }
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size:20px;">' + text + '</span><br>' +
-                      '</div>'
+                  if (html.indexOf('tochiriyo') === -1) {
+                    html +=
+                        '<div class="tochiriyo" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">' + text + '</span><br>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-yochien-label':
@@ -1943,11 +1956,13 @@ export default {
                   props = features[0].properties
                   const name = props.P29_004
                   const address = props.P29_005
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size:12px;">' + address + '</span><br>' +
-                      '<span style="font-size:20px;">' + name + '</span>' +
-                      '</div>'
+                  if (html.indexOf('yochien') === -1) {
+                    html +=
+                        '<div class="yochien" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:12px;">' + address + '</span><br>' +
+                        '<span style="font-size:20px;">' + name + '</span>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-jinjya-label':
@@ -1968,11 +1983,13 @@ export default {
                     }
                   }
                   const name = props.name
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size:20px;">' + name + '</span><br>' +
-                      '<span style="font-size:14px;">' + href + '</span>' +
-                      '</div>'
+                  if (html.indexOf('jinjya') === -1) {
+                    html +=
+                        '<div class="jimjya" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">' + name + '</span><br>' +
+                        '<span style="font-size:14px;">' + href + '</span>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-kokuarea-layer': {
@@ -1983,10 +2000,12 @@ export default {
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.name
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size:20px;">' + name + '</span>' +
-                      '</div>'
+                  if (html.indexOf('kokuarea') === -1) {
+                    html +=
+                        '<div class="kokuarea" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">' + name + '</span>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-hinanjyo-tsunami-label':
@@ -2006,11 +2025,13 @@ export default {
                   props = features[0].properties
                   const name = props.name
                   const address = props.address
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size:20px;">' + name + '</span><br>' +
-                      '<span style="font-size:14px;">' + address + '</span>' +
-                      '</div>'
+                  if (html.indexOf('hinanjyo') === -1) {
+                    html +=
+                        '<div class="hinanjyo" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">' + name + '</span><br>' +
+                        '<span style="font-size:14px;">' + address + '</span>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-densyohi-label':
@@ -2026,22 +2047,30 @@ export default {
                   props = features[0].properties
                   const src = 'https://maps.gsi.go.jp/legend/disaster_lore/' + props.ID.split('-')[0] + '/' + props.ID + '.jpg'
                   console.log(src)
-                  html += '<div style="width:300px;font-size:small">' +
-                      '<h4>' + props.碑名 + '</h4>' +
-                      '災害名=' + props.災害名 + '<br>' +
-                      '災害種別=' + props.災害種別 + '<br>' +
-                      '所在地=' + props.所在地 + '<br>' +
-                      '建立年=' + props.建立年 + '<hr>' +
-                      '' + props.伝承内容 + '<br>' +
-                      '<a href="' + src + '" target="_blank"><img style="object-fit:cover;height:200px;width:300px;" src="' + src + '"></a>' +
-                      '</div>'
-                  // html +=
-                  //     '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                  //     '<span style="font-size:20px;">' + name + '</span><br>' +
-                  //     '<span style="font-size:14px;">' + address + '</span>' +
-                  //     '</div>'
+                  if (html.indexOf('densyohi') === -1) {
+                    console.log(html)
+                    html += '<div class="densyohi" style="width:300px;font-size:small">' +
+                        '<h4>' + props.碑名 + '</h4>' +
+                        '災害名=' + props.災害名 + '<br>' +
+                        '災害種別=' + props.災害種別 + '<br>' +
+                        '所在地=' + props.所在地 + '<br>' +
+                        '建立年=' + props.建立年 + '<hr>' +
+                        '' + props.伝承内容 + '<br>' +
+                        '<a href="' + src + '" target="_blank"><img style="object-fit:cover;height:200px;width:300px;" src="' + src + '"></a>' +
+                        '</div>'
+                  }
                   break
                 }
+              }
+              if (html) {
+                if (html.slice(-4) !== '<hr>') {
+                  html += '<hr>'
+                }
+              }
+            })
+            if (html) {
+              if (html.slice(-4) === '<hr>') {
+                html = html.slice(0, -4)
               }
             }
 
