@@ -2024,8 +2024,8 @@ export const cyugakuR05LayerPoint = {
         'circle-radius': 6
     }
 }
-// 地形分類タイルソース --------------------------------------------------------------------------------------------
-export const chikeibunruiSource = {
+// 地形分類--------------------------------------------------------------------------------------------
+const chikeibunruiSource = {
     id: "chikeibunruiSource", obj: {
         type: "vector",
         tiles: ["https://optgeo.github.io/unite-one/zxy/{z}/{x}/{y}.pbf"],
@@ -2034,7 +2034,7 @@ export const chikeibunruiSource = {
         maxzoom: 12
     }
 }
-export const chikeibunruiLayer = {
+const chikeibunruiLayer = {
     id: "oh-chikeibunrui",
     type: "fill",
     source: "chikeibunruiSource",
@@ -2042,50 +2042,30 @@ export const chikeibunruiLayer = {
     "paint": {
         "fill-color": [
             "match",
-            [
-                "get",
-                "code"
-            ],
-            "山地",
-            "#d9cbae",
-            "崖・段丘崖",
-            "#9466ab",
-            "地すべり地形",
-            "#cc99ff",
-            "台地・段丘",
-            "#ffaa00",
-            "山麓堆積地形",
-            "#99804d",
-            "扇状地",
-            "#cacc60",
-            "自然堤防",
-            "#ffff33",
-            "天井川",
-            "#fbe09d",
-            "砂州・砂丘",
-            "#ffff99",
-            "凹地・浅い谷",
-            "#a3cc7e",
-            "氾濫平野",
-            "#bbff99",
-            "後背低地・湿地",
-            "#00d1a4",
-            "旧河道",
-            "#6699ff",
-            "落堀",
-            "#1f9999",
-            "河川敷・浜",
-            "#9f9fc4",
-            "水部",
-            "#e5ffff",
-            "旧水部",
-            "#779999",
-            "#f00"
+            ["get", "code"],
+            "山地", "rgba(217, 203, 174, 0.8)",
+            "崖・段丘崖", "rgba(148, 102, 171, 0.8)",
+            "地すべり地形", "rgba(204, 153, 255, 0.8)",
+            "台地・段丘", "rgba(255, 170, 0, 0.8)",
+            "山麓堆積地形", "rgba(153, 128, 77, 0.8)",
+            "扇状地", "rgba(202, 204, 96, 0.8)",
+            "自然堤防", "rgba(255, 255, 51, 0.8)",
+            "天井川", "rgba(251, 224, 157, 0.8)",
+            "砂州・砂丘", "rgba(255, 255, 153, 0.8)",
+            "凹地・浅い谷", "rgba(163, 204, 126, 0.8)",
+            "氾濫平野", "rgba(187, 255, 153, 0.8)",
+            "後背低地・湿地", "rgba(0, 209, 164, 0.8)",
+            "旧河道", "rgba(102, 153, 255, 0.8)",
+            "落堀", "rgba(31, 153, 153, 0.8)",
+            "河川敷・浜", "rgba(159, 159, 196, 0.8)",
+            "水部", "rgba(229, 255, 255, 0.8)",
+            "旧水部", "rgba(119, 153, 153, 0.8)",
+            "rgba(255, 0, 0, 0.8)"
         ]
-    },
+    }
 }
 // 日本歴史地名大系ソース --------------------------------------------------------------------------------------------
-export const nihonrekishiSource = {
+const nihonrekishiSource = {
     id: "nihonrekishiSouce", obj: {
         type: "vector",
         // minzoom: 0,
@@ -2095,7 +2075,7 @@ export const nihonrekishiSource = {
     }
 }
 // 日本歴史地名大系レイヤー
-export const nihonrekishiLayer = {
+const nihonrekishiLayer = {
     id: "oh-nihonrekishi",
     type: "circle",
     source: "nihonrekishiSouce",
@@ -2105,7 +2085,7 @@ export const nihonrekishiLayer = {
         'circle-radius': 6
     }
 }
-export const nihonrekishiLayerLabel = {
+const nihonrekishiLayerLabel = {
     id: "oh-nihonrekishi-label",
     type: "symbol",
     source: "nihonrekishiSouce",
@@ -2126,7 +2106,7 @@ export const nihonrekishiLayerLabel = {
     'minzoom': 10
 }
 // ---------------------------------------------------------------------------------------------------------------------
-export const iryokikanSource = {
+const iryokikanSource = {
     id: "iryokikanSource", obj: {
         type: "vector",
         // minzoom: 0,
@@ -2136,7 +2116,7 @@ export const iryokikanSource = {
     }
 }
 //
-export const iryokikanLayer = {
+const iryokikanLayer = {
     id: "oh-iryokikan",
     type: "circle",
     source: "iryokikanSource",
@@ -2153,7 +2133,7 @@ export const iryokikanLayer = {
         'circle-radius': 6
     }
 }
-export const iryokikanLayerLabel = {
+const iryokikanLayerLabel = {
     id: "oh-iryokikan-label",
     type: "symbol",
     source: "iryokikanSource",
@@ -2692,11 +2672,7 @@ const densyohiLayerLabel = {
 const didSource = {
     id: "did-source", obj: {
         type: "vector",
-        // minzoom: 0,
-        // maxzoom: 15,
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/did/did.pmtiles",
-        attribution:
-            "<a href='' target='_blank'></a>",
     }
 }
 const didLayer = {
@@ -2705,7 +2681,7 @@ const didLayer = {
     source: "did-source",
     "source-layer": "polygon",
     paint: {
-        'fill-color': 'gray'
+        'fill-color': 'rgba(255,192,203,0.8)'
     }
 }
 const didLayerLine = {

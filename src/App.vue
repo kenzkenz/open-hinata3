@@ -43,14 +43,14 @@
 <script>
 const popups = []
 function closeAllPopups() {
-  popups.forEach(popup => popup.remove());
+  popups.forEach(popup => popup.remove())
   // 配列をクリア
-  popups.length = 0;
+  popups.length = 0
 }
 export function history (event,url) {
   const ua = navigator.userAgent
-  const width = window.screen.width;
-  const height = window.screen.height;
+  const width = window.screen.width
+  const height = window.screen.height
   const referrer = document.referrer
   axios
       .get('https://kenzkenz.xsrv.jp/open-hinata3/php/history.php',{
@@ -913,7 +913,6 @@ export default {
 
             // if (features.length > 0) {
             features.forEach(feature => {
-              // const feature = features[0]; // 最初のフィーチャーのみ取得
               const layerId = feature.layer.id
               console.log(layerId)
               let props = feature.properties
@@ -940,34 +939,43 @@ export default {
                   }
                   const syozai = props.A54_003 + props.A54_005
                   const bango = props.A54_006
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 20px;">' + name + '</span><hr>' +
-                      '<span style="font-size: 12px;">' + syozai + '</span><hr>' +
-                      '<span style="font-size: 12px;">' + bango + '</span>' +
-                      '</div>'
+                  if (html.indexOf('zosei') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="zosei" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">' + name + '</span><hr>' +
+                        '<span style="font-size: 12px;">' + syozai + '</span><hr>' +
+                        '<span style="font-size: 12px;">' + bango + '</span>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-mw5-center': {
                   console.log(props)
                   const name = props.title
                   const link = '<a href="https://mapwarper.h-gis.jp/maps/' + props.id + '" target="_blank" >日本版Map Warper</a>'
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 20px;">' + name + '</span><hr>' +
-                      '<span style="font-size: 12px;">' + link + '</span><br>' +
-                      '</div>'
+                  if (html.indexOf('mw5-center') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="mw5-center" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">' + name + '</span><hr>' +
+                        '<span style="font-size: 12px;">' + link + '</span><br>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-tetsudo-blue-lines':
                 case 'oh-tetsudo-red-lines': {
                   const name = props.N05_002
                   const kaisya = props.N05_003
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
-                      '<span style="font-size: 20px;">' + name + '</span><br>' +
-                      '</div>'
+                  if (html.indexOf('tetsudo-red-lines') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="tetsudo-red-lines" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
+                        '<span style="font-size: 20px;">' + name + '</span><br>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-tetsudo-points-blue':
@@ -975,46 +983,58 @@ export default {
                   const name = props.N05_002
                   const kaisya = props.N05_003
                   const eki = props.N05_011
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
-                      '<span style="font-size: 20px;">' + name + '</span><br>' +
-                      '<span style="font-size: 20px;">' + eki + '</span><br>' +
-                      '</div>'
+                  if (html.indexOf('tetsudo-points-red') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="tetsudo-points-red" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
+                        '<span style="font-size: 20px;">' + name + '</span><br>' +
+                        '<span style="font-size: 20px;">' + eki + '</span><br>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-tetsudojikeiretsu-red-lines':
                 case 'oh-tetsudojikeiretsu-blue-lines': {
                   const name = props.N05_002
                   const kaisya = props.N05_003
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
-                      '<span style="font-size: 20px;">' + name + '</span><br>' +
-                      '</div>'
+                  if (html.indexOf('tetsudojikeiretsu-blue-lines') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="tetsudojikeiretsu-blue-lines" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
+                        '<span style="font-size: 20px;">' + name + '</span><br>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-tetsudojikeiretsu-points': {
                   const name = props.N05_002
                   const kaisya = props.N05_003
                   const eki = props.N05_011
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
-                      '<span style="font-size: 16px;">' + name + '</span><br>' +
-                      '<span style="font-size: 20px;">' + eki + '</span><br>' +
-                      '</div>'
+                  if (html.indexOf('tetsudojikeiretsu-points') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="tetsudojikeiretsu-points" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 12px;">運営会社=' + kaisya + '</span><hr>' +
+                        '<span style="font-size: 16px;">' + name + '</span><br>' +
+                        '<span style="font-size: 20px;">' + eki + '</span><br>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-michinoeki-label':
                 case 'oh-michinoeki': {
                   const name = props.P35_006
                   const link = '<a href="' + props.P35_007 + '" target="_blank">道の駅ページへ</a>'
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 20px;">' + name + '</span><br>' +
-                      '<div style="font-size: 20px;margin-top: 10px;">' + link + '</div>' +
-                      '</div>'
+                  if (html.indexOf('michinoeki') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="michinoeki" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">' + name + '</span><br>' +
+                        '<div style="font-size: 20px;margin-top: 10px;">' + link + '</div>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-koji-label':
@@ -1022,21 +1042,27 @@ export default {
                 case 'oh-koji_point': {
                   const name = props.L01_025
                   const kojikakaku = props.L01_008.toLocaleString() + '円'
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 20px;">' + name + '</span><br>' +
-                      '<span style="font-size: 20px;">' + kojikakaku + '</span>' +
-                      '</div>'
+                  if (html.indexOf('koji_point') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="koji_point" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">' + name + '</span><br>' +
+                        '<span style="font-size: 20px;">' + kojikakaku + '</span>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-did': {
                   const name = props.A16_003
                   const jinko = props.A16_005.toLocaleString() + '人'
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 20px;">' + name + '</span><br>' +
-                      '<span style="font-size: 20px;">' + jinko + '</span>' +
-                      '</div>'
+                  if (html.indexOf('did') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="did" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">' + name + '</span><br>' +
+                        '<span style="font-size: 20px;">' + jinko + '</span>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-syochiiki-height':
@@ -1048,16 +1074,19 @@ export default {
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = props.S_NAME
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 20px;">' + name + '</span><br>' +
-                      '<span style="font-size: 20px;">' + props.JINKO + '人</span>' +
-                      '<button class="pyramid-syochiiki-r02 pyramid-btn" year=2020 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2020（R02）人口ピラミッド</button><br>' +
-                      '<button class="pyramid-syochiiki-h27 pyramid-btn" year=2015 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2015（H27）人口ピラミッド</button><br>' +
-                      '<button class="pyramid-syochiiki-h22 pyramid-btn" year=2010 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2010（H22）人口ピラミッド</button><br>' +
-                      '<button class="pyramid-syochiiki-h17 pyramid-btn" year=2010 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2005（H17）人口ピラミッド</button><br>' +
-                      '<button class="jinkosuii pyramid-btn" mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">人口推移</button>' +
-                      '</div>'
+                  if (html.indexOf('syochiiki-layer') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="syochiiki-layer" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">' + name + '</span><br>' +
+                        '<span style="font-size: 20px;">' + props.JINKO + '人</span>' +
+                        '<button class="pyramid-syochiiki-r02 pyramid-btn" year=2020 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2020（R02）人口ピラミッド</button><br>' +
+                        '<button class="pyramid-syochiiki-h27 pyramid-btn" year=2015 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2015（H27）人口ピラミッド</button><br>' +
+                        '<button class="pyramid-syochiiki-h22 pyramid-btn" year=2010 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2010（H22）人口ピラミッド</button><br>' +
+                        '<button class="pyramid-syochiiki-h17 pyramid-btn" year=2010 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2005（H17）人口ピラミッド</button><br>' +
+                        '<button class="jinkosuii pyramid-btn" mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">人口推移</button>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-kyusekki': {
@@ -1071,18 +1100,21 @@ export default {
                       sekkiHtml = sekkiHtml + value + '=' + props[value] + '<br>'
                     }
                   })
-                  html += '<div style=font-size:small;>' +
-                      '<h4>' + props.遺跡名 + '</h4>' +
-                      '読み方=' + props.遺跡名読み方 + '<br>' +
-                      '都道府県=' + props.都道府県 + '<br>' +
-                      '所在地=' + props.所在地 + '<br>' +
-                      '標高=' + props.標高 + '<br>' +
-                      '文献=' + props.文献 + '<br>' +
-                      '調査歴=' + props.調査歴 + '<br>' +
-                      '作成年月日=' + props.作成年月日 + '<br>' +
-                      '作成者=' + props.作成者 + '<br>' +
-                      sekkiHtml +
-                      '</div>'
+                  if (html.indexOf('kyusekki') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html += '<div class="kyusekki" style=font-size:small;>' +
+                        '<h4>' + props.遺跡名 + '</h4>' +
+                        '読み方=' + props.遺跡名読み方 + '<br>' +
+                        '都道府県=' + props.都道府県 + '<br>' +
+                        '所在地=' + props.所在地 + '<br>' +
+                        '標高=' + props.標高 + '<br>' +
+                        '文献=' + props.文献 + '<br>' +
+                        '調査歴=' + props.調査歴 + '<br>' +
+                        '作成年月日=' + props.作成年月日 + '<br>' +
+                        '作成者=' + props.作成者 + '<br>' +
+                        sekkiHtml +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-m250m-height':
@@ -1095,10 +1127,13 @@ export default {
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = '人口' + Math.round(Number(props.jinko)) + '人'
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 20px;">' + name + '</span>' +
-                      '</div>'
+                  if (html.indexOf('m250m') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="m250m" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">' + name + '</span>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-m500m-height':
@@ -1111,10 +1146,13 @@ export default {
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = '人口' + Math.round(Number(props.jinko)) + '人'
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 20px;">' + name + '</span>' +
-                      '</div>'
+                  if (html.indexOf('m500m') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="m500m" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">' + name + '</span>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-m1km-height':
@@ -1127,10 +1165,13 @@ export default {
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = '人口' + Math.round(Number(props.jinko)) + '人'
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 20px;">' + name + '</span>' +
-                      '</div>'
+                  if (html.indexOf('m1km') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="m1km" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">' + name + '</span>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-m100m-height':
@@ -1143,10 +1184,13 @@ export default {
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = '人口' + Math.round(Number(props.PopT)) + '人'
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 20px;">' + name + '</span>' +
-                      '</div>'
+                  if (html.indexOf('m100m') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="m100m" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">' + name + '</span>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-iryokikan-label':
@@ -1154,12 +1198,15 @@ export default {
                   const name = props.P04_002
                   const address = props.P04_003
                   const kamoku = props.P04_004
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 20px;">' + name + '</span><hr>' +
-                      '<span style="font-size: 12px;">' + address + '</span><hr>' +
-                      '<span style="font-size: 12px;">' + kamoku + '</span>' +
-                      '</div>'
+                  if (html.indexOf('iryokikan') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="iryokikan" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">' + name + '</span><hr>' +
+                        '<span style="font-size: 12px;">' + address + '</span><hr>' +
+                        '<span style="font-size: 12px;">' + kamoku + '</span>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-nihonrekishi-label':
@@ -1171,10 +1218,13 @@ export default {
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = props.名称
-                  html +=
-                      '<div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">' +
-                      name +
-                      '</div>'
+                  if (html.indexOf('nihonrekishi') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="nihonrekishi" style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">' +
+                        name +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-chikeibunrui': {
@@ -1194,12 +1244,15 @@ export default {
                       break;
                     }
                   }
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 20px;">' + name + '</span><hr>' +
-                      '<span style="font-size: 12px;">' + naritachi + '</span><hr>' +
-                      '<span style="font-size: 12px;">' + risk + '</span>' +
-                      '</div>'
+                  if (html.indexOf('chikeibunrui') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="chikeibunrui" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">' + name + '</span><hr>' +
+                        '<span style="font-size: 12px;">' + naritachi + '</span><hr>' +
+                        '<span style="font-size: 12px;">' + risk + '</span>' +
+                        '</div>'
+                  }
                   break
                 }
                   // ここを改善する
@@ -1211,10 +1264,13 @@ export default {
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = props.A32_004
-                  html +=
-                      '<div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">' +
-                      name +
-                      '</div>'
+                  if (html.indexOf('cyugakuR05') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="cyugakuR05" style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">' +
+                        name +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-cyugakuR05-line':
@@ -1233,10 +1289,13 @@ export default {
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = props[objName]
-                  html +=
-                      '<div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">' +
-                      name +
-                      '</div>'
+                  if (html.indexOf('cyugakuR05-point') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="cyugakuR05-point" style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">' +
+                        name +
+                        '</div>'
+                  }
                   break
                 }
                   // ここを改善する
@@ -1247,10 +1306,13 @@ export default {
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = props.A27_004
-                  html +=
-                      '<div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">' +
-                      name +
-                      '</div>'
+                  if (html.indexOf('syogakkoR05') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="syogakkoR05" style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">' +
+                        name +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-syogakkoR05-line':
@@ -1269,10 +1331,13 @@ export default {
                   if (features.length === 0) return
                   props = features[0].properties
                   const name = props[objName]
-                  html +=
-                      '<div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">' +
-                      name +
-                      '</div>'
+                  if (html.indexOf('syogakkoR05-point') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="syogakkoR05-point" style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">' +
+                        name +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-bakumatsu-label':
@@ -1291,6 +1356,7 @@ export default {
                   const ryobun7p = props.領分７ ? '<tr><td>領分７</td><td>' + props.領分７ + '</td><td>' + Math.round(props.石高７).toLocaleString() + '</td></tr>' : ''
                   const ryobun8p = props.領分８ ? '<tr><td>領分８</td><td>' + props.領分８ + '</td><td>' + Math.round(props.石高８).toLocaleString() + '</td></tr>' : ''
                   if (html.indexOf('bakumatsu-layer') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
                     html += '<div class="kinseipoint bakumatsu-layer" style=width:250px;>' +
                         '<span style="font-size: 20px">' + props.村名0 + '' +
                         '<span style="font-size: 14px">(' + props.よみ0 + ')<span/><br>' +
@@ -1331,6 +1397,7 @@ export default {
                   const ryobun7p = props.領分７ ? '<tr><td>領分７</td><td>' + props.領分７ + '</td><td>' + Math.round(props.石高７).toLocaleString() + '</td></tr>' : ''
                   const ryobun8p = props.領分８ ? '<tr><td>領分８</td><td>' + props.領分８ + '</td><td>' + Math.round(props.石高８).toLocaleString() + '</td></tr>' : ''
                   if (html.indexOf('bakumatsu-point') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
                     html += '<div class="kinseipoint bakumatsu-point" style=width:250px;>' +
                         '<span style="font-size: 20px">' + props.村名 + '' +
                         '<span style="font-size: 14px">(' + props.よみ + ')<span/><br>' +
@@ -1371,6 +1438,7 @@ export default {
                   const ryobun8p = props.領分８ ? '<tr><td>領分８</td><td>' + props.領分８ + '</td><td>' + Math.round(props.石高８).toLocaleString() + '</td></tr>' : ''
 
                   if (html.indexOf('bakumatsu-kokudaka-height') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
                     html += '<div class="kinseipoint bakumatsu-kokudaka-height" style=width:250px;>' +
                         '<span style="font-size: 20px">' + props.村名0 + '' +
                         '<span style="font-size: 14px">(' + props.よみ0 + ')<span/><br>' +
@@ -1433,12 +1501,14 @@ export default {
                   const name = props.村名
                   const kokudaka = Math.floor(Number(props.石高計))
                   const ryobun = props.領分１
+                  if (html.indexOf('bakumatsu-kokudaka') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
                   html +=
                       `
-                  <div style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
+                  <div class="bakumatsu-kokudaka" style="font-size: 20px; font-weight: normal; color: #333;line-height: 25px;">
                    村名=${name}<br>石高=${kokudaka}<br>領分=${ryobun}
                   </div>
-                `
+                `}
                   break
                 }
                 case 'oh-highwayLayer-green-lines':
@@ -1452,13 +1522,16 @@ export default {
                   const id = props.N06_004
                   const kyouyounen = props.N06_001
                   const kaishinen = props.N06_002
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 20px;">' + name + '</span><br>' +
-                      '<span style="font-size: 12px;">id=' + id + '</span><br>' +
-                      '<span style="font-size: 12px;">供用開始年=' + kyouyounen + '</span><br>' +
-                      '<span style="font-size: 12px;">設置期間（開始年）=' + kaishinen + '</span><br>' +
-                      '</div>'
+                  if (html.indexOf('highwayLayer-red-lines') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class=highwayLayer-red-lines" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">' + name + '</span><br>' +
+                        '<span style="font-size: 12px;">id=' + id + '</span><br>' +
+                        '<span style="font-size: 12px;">供用開始年=' + kyouyounen + '</span><br>' +
+                        '<span style="font-size: 12px;">設置期間（開始年）=' + kaishinen + '</span><br>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-q-kyoryo-label':
@@ -1470,20 +1543,23 @@ export default {
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props._html
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 20px;">' + name + '</span><br>' +
-                      '<span style="font-size: 12px;">よみ=' + props.No1 + '</span><br>' +
-                      '<span style="font-size: 12px;">路線名=' + props.No2 + '</span><br>' +
-                      '<span style="font-size: 12px;">完成年（度）=' + props.No3 + '</span><br>' +
-                      '<span style="font-size: 12px;">延長=' + props.No4 + '</span><br>' +
-                      '<span style="font-size: 12px;">幅員=' + props.No5 + '</span><br>' +
-                      '<span style="font-size: 12px;">管理者名=' + props.No6 + '</span><br>' +
-                      '<span style="font-size: 12px;">所在市区町村=' + props.No7 + props.No8 + '</span><br>' +
-                      '<span style="font-size: 12px;">点検実施年度=' + props.No9 + '</span><br>' +
-                      '<span style="font-size: 12px;">判定区分=' + props.No10 + '</span><br>' +
-                      '<span style="font-size: 12px;">Ｑ地図管理ID=' + props.No14 + '</span><br>' +
-                      '</div>'
+                  if (html.indexOf('q-kyoryo') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="q-kyoryo" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">' + name + '</span><br>' +
+                        '<span style="font-size: 12px;">よみ=' + props.No1 + '</span><br>' +
+                        '<span style="font-size: 12px;">路線名=' + props.No2 + '</span><br>' +
+                        '<span style="font-size: 12px;">完成年（度）=' + props.No3 + '</span><br>' +
+                        '<span style="font-size: 12px;">延長=' + props.No4 + '</span><br>' +
+                        '<span style="font-size: 12px;">幅員=' + props.No5 + '</span><br>' +
+                        '<span style="font-size: 12px;">管理者名=' + props.No6 + '</span><br>' +
+                        '<span style="font-size: 12px;">所在市区町村=' + props.No7 + props.No8 + '</span><br>' +
+                        '<span style="font-size: 12px;">点検実施年度=' + props.No9 + '</span><br>' +
+                        '<span style="font-size: 12px;">判定区分=' + props.No10 + '</span><br>' +
+                        '<span style="font-size: 12px;">Ｑ地図管理ID=' + props.No14 + '</span><br>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-q-tunnel-label':
@@ -1495,20 +1571,23 @@ export default {
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props._html
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 20px;">' + name + '</span><br>' +
-                      '<span style="font-size: 12px;">よみ=' + props.No1 + '</span><br>' +
-                      '<span style="font-size: 12px;">路線名=' + props.No2 + '</span><br>' +
-                      '<span style="font-size: 12px;">完成年（度）=' + props.No3 + '</span><br>' +
-                      '<span style="font-size: 12px;">延長=' + props.No4 + '</span><br>' +
-                      '<span style="font-size: 12px;">幅員=' + props.No5 + '</span><br>' +
-                      '<span style="font-size: 12px;">管理者名=' + props.No6 + '</span><br>' +
-                      '<span style="font-size: 12px;">所在市区町村=' + props.No7 + props.No8 + '</span><br>' +
-                      '<span style="font-size: 12px;">点検実施年度=' + props.No9 + '</span><br>' +
-                      '<span style="font-size: 12px;">判定区分=' + props.No10 + '</span><br>' +
-                      '<span style="font-size: 12px;">Ｑ地図管理ID=' + props.No14 + '</span><br>' +
-                      '</div>'
+                  if (html.indexOf('q-tunnel') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="q-tunnel" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">' + name + '</span><br>' +
+                        '<span style="font-size: 12px;">よみ=' + props.No1 + '</span><br>' +
+                        '<span style="font-size: 12px;">路線名=' + props.No2 + '</span><br>' +
+                        '<span style="font-size: 12px;">完成年（度）=' + props.No3 + '</span><br>' +
+                        '<span style="font-size: 12px;">延長=' + props.No4 + '</span><br>' +
+                        '<span style="font-size: 12px;">幅員=' + props.No5 + '</span><br>' +
+                        '<span style="font-size: 12px;">管理者名=' + props.No6 + '</span><br>' +
+                        '<span style="font-size: 12px;">所在市区町村=' + props.No7 + props.No8 + '</span><br>' +
+                        '<span style="font-size: 12px;">点検実施年度=' + props.No9 + '</span><br>' +
+                        '<span style="font-size: 12px;">判定区分=' + props.No10 + '</span><br>' +
+                        '<span style="font-size: 12px;">Ｑ地図管理ID=' + props.No14 + '</span><br>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-yotochiiki-height':
@@ -1521,10 +1600,13 @@ export default {
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.用途地域
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 20px;">' + name + '</span><br>' +
-                      '</div>'
+                  if (html.indexOf('yotochiiki') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="yotochiiki" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">' + name + '</span><br>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-bus-lines': {
@@ -1535,10 +1617,13 @@ export default {
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.N07_001
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 16px;">' + name + '</span><br>' +
-                      '</div>'
+                  if (html.indexOf('bus-lines') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="bus-lines" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 16px;">' + name + '</span><br>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-bus-label':
@@ -1550,11 +1635,14 @@ export default {
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.P11_001
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 16px;">' + name + '</span><br>' +
-                      '<span style="font-size: 12px;">事業者名=' + props.P11_002 + '</span><br>' +
-                      '</div>'
+                  if (html.indexOf('bus-points') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="bus-points" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 16px;">' + name + '</span><br>' +
+                        '<span style="font-size: 12px;">事業者名=' + props.P11_002 + '</span><br>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-koaza-label':
@@ -1566,10 +1654,13 @@ export default {
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.KOAZA_NAME
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size: 20px;">' + name + '</span><br>' +
-                      '</div>'
+                  if (html.indexOf('koaza') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="koaza" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">' + name + '</span><br>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-amx-label':
@@ -1582,12 +1673,15 @@ export default {
                   if (features.length === 0) return
                   props = features[0].properties
                   let html0 = ''
-                  html0 += '<div font-weight: normal; color: #333;line-height: 25px;">'
-                  Object.keys(props).forEach(function (key) {
-                    html0 += key + '=' + props[key] + '<br>'
-                  })
-                  html0 += '<div>'
-                  html += html0
+                  if (html.indexOf('amx-a-fude') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html0 += '<div class="amx-a-fude" font-weight: normal; color: #333;line-height: 25px;">'
+                    Object.keys(props).forEach(function (key) {
+                      html0 += key + '=' + props[key] + '<br>'
+                    })
+                    html0 += '<div>'
+                    html += html0
+                  }
                   break
                 }
                 case 'oh-city-t09-label':
@@ -1600,11 +1694,14 @@ export default {
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.N03_004
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size:14px;">' + props.N03_001 + props.N03_003 + '</span><br>' +
-                      '<span style="font-size:20px;">' + name + '</span><br>' +
-                      '</div>'
+                  if (html.indexOf('city-t09') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="city-t09" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:14px;">' + props.N03_001 + props.N03_003 + '</span><br>' +
+                        '<span style="font-size:20px;">' + name + '</span><br>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-city-r05-label':
@@ -1618,11 +1715,14 @@ export default {
                   props = features[0].properties
                   const name = props.N03_004
                   const gun = props.N03_003 ? props.N03_003 : ''
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size:14px;">' + props.N03_001 + gun + '</span><br>' +
-                      '<span style="font-size:20px;">' + name + '</span><br>' +
-                      '</div>'
+                  if (html.indexOf('city-r05') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="city-r05" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:14px;">' + props.N03_001 + gun + '</span><br>' +
+                        '<span style="font-size:20px;">' + name + '</span><br>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-tochiriyo-line':
@@ -1795,11 +1895,14 @@ export default {
                       shisetsu = '不整合'
                       break
                   }
-                  html += '<div class="tokyotochiriyo" style=width:200px;>' +
-                      '<span style="font-size: 20px">' + shisetsu + '</span>' +
-                      '<p>' + props.NAME1 + props.NAME2 + '</p>' +
-                      '<p>' + Math.floor(props.AREA) + 'm2</p>' +
-                      '</div>'
+                  if (html.indexOf('tochiriyo') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html += '<div class="tochiriyo" style=width:200px;>' +
+                        '<span style="font-size: 20px">' + shisetsu + '</span>' +
+                        '<p>' + props.NAME1 + props.NAME2 + '</p>' +
+                        '<p>' + Math.floor(props.AREA) + 'm2</p>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-hikari': {
@@ -1810,10 +1913,13 @@ export default {
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.light
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size:20px;">明るさ＝' + name + '</span>' +
-                      '</div>'
+                  if (html.indexOf('hikari') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="hikari" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">明るさ＝' + name + '</span>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-hikari-height': {
@@ -1824,10 +1930,13 @@ export default {
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.light
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size:20px;">明るさ＝' + name + '</span>' +
-                      '</div>'
+                  if (html.indexOf('hikari-height') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="hikari-height" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">明るさ＝' + name + '</span>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-nantora-height': {
@@ -1838,10 +1947,13 @@ export default {
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.最大浸水深
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size:20px;">最大浸水深＝' + name + 'm</span>' +
-                      '</div>'
+                  if (html.indexOf('nantora-height') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="nantora-height" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">最大浸水深＝' + name + 'm</span>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-tsunami-height': {
@@ -1852,10 +1964,13 @@ export default {
                   if (features.length === 0) return;
                   props = features[0].properties
                   const name = props.A40_003
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size:20px;">' + name + '</span>' +
-                      '</div>'
+                  if (html.indexOf('tsunami-height') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="tsunami-height" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">' + name + '</span>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-hokkaidotsunami-height': {
@@ -1868,10 +1983,13 @@ export default {
                   let name = props.max
                   console.log(name)
                   if (name === undefined) name = props.MAX_SIN
-                  html +=
-                      '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                      '<span style="font-size:20px;">' + name + 'm</span>' +
-                      '</div>'
+                  if (html.indexOf('hokkaidotsunami-height') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
+                    html +=
+                        '<div class="hokkaidotsunami-height" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">' + name + 'm</span>' +
+                        '</div>'
+                  }
                   break
                 }
                 case 'oh-city-gun': {
@@ -1884,6 +2002,7 @@ export default {
                   const name = props.GUN
                   const kuni = props.KUNI
                   if (html.indexOf('gun') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
                     html +=
                         '<div class="gun" font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size:20px;">' + kuni + '</span><br>' +
@@ -1939,6 +2058,7 @@ export default {
                       break
                   }
                   if (html.indexOf('tochiriyo') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
                     html +=
                         '<div class="tochiriyo" font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size:20px;">' + text + '</span><br>' +
@@ -1957,6 +2077,7 @@ export default {
                   const name = props.P29_004
                   const address = props.P29_005
                   if (html.indexOf('yochien') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
                     html +=
                         '<div class="yochien" font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size:12px;">' + address + '</span><br>' +
@@ -1984,6 +2105,7 @@ export default {
                   }
                   const name = props.name
                   if (html.indexOf('jinjya') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
                     html +=
                         '<div class="jimjya" font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size:20px;">' + name + '</span><br>' +
@@ -2001,6 +2123,7 @@ export default {
                   props = features[0].properties
                   const name = props.name
                   if (html.indexOf('kokuarea') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
                     html +=
                         '<div class="kokuarea" font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size:20px;">' + name + '</span>' +
@@ -2026,6 +2149,7 @@ export default {
                   const name = props.name
                   const address = props.address
                   if (html.indexOf('hinanjyo') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
                     html +=
                         '<div class="hinanjyo" font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size:20px;">' + name + '</span><br>' +
@@ -2046,9 +2170,8 @@ export default {
                   }
                   props = features[0].properties
                   const src = 'https://maps.gsi.go.jp/legend/disaster_lore/' + props.ID.split('-')[0] + '/' + props.ID + '.jpg'
-                  console.log(src)
                   if (html.indexOf('densyohi') === -1) {
-                    console.log(html)
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, this.s_selectedLayers) + '</div>'
                     html += '<div class="densyohi" style="width:300px;font-size:small">' +
                         '<h4>' + props.碑名 + '</h4>' +
                         '災害名=' + props.災害名 + '<br>' +
@@ -2062,17 +2185,7 @@ export default {
                   break
                 }
               }
-              if (html) {
-                if (html.slice(-4) !== '<hr>') {
-                  html += '<hr>'
-                }
-              }
             })
-            if (html) {
-              if (html.slice(-4) === '<hr>') {
-                html = html.slice(0, -4)
-              }
-            }
 
             if (this.mapFlg.map02) {
               const layer = this.$store.state.map02.getStyle().layers.at(-1)
@@ -2090,7 +2203,7 @@ export default {
 
             let rasterLayerIds = [];
             const mapLayers = map.getStyle().layers
-            console.log(mapLayers)
+            // console.log(mapLayers)
 
             mapLayers.forEach(layer => {
               // const visibility = map.getLayoutProperty(layer.id, 'visibility');
@@ -2100,12 +2213,12 @@ export default {
                 rasterLayerIds.push(layer.id);
               }
             });
-            console.log(rasterLayerIds)
+            // console.log(rasterLayerIds)
             // ラスタレイヤのidからポップアップ表示に使用するURLを生成
             let RasterTileUrl = '';
             let legend = [];
             rasterLayerIds.forEach(rasterLayerId => {
-              console.log(rasterLayerId)
+              // console.log(rasterLayerId)
               if (rasterLayerId === 'oh-kozui-saidai-layer') {
                 // 洪水浸水想定区域（想定最大規模）
                 RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin/{z}/{x}/{y}.png';
@@ -2132,31 +2245,36 @@ export default {
                 // if (res === '') return
                 // let popup
                 if (res) {
-                  if (html) html += '<hr>'
+                  // if (html) html += '<hr class="break-hr">'
                   if (rasterLayerId === 'oh-kozui-saidai-layer') {
+                    html += '<div class="layer-label-div-red">' + getLabelByLayerId(rasterLayerId, vm.s_selectedLayers) + '</div>'
                     html +=
                         '<div font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size: 12px;">洪水によって想定される浸水深</span><br>' +
                         '<span style="font-size: 24px;">' + res + '</span>' +
                         '</div>'
                   } else if (rasterLayerId === 'oh-shitchi-layer') {
+                    html += '<div class="layer-label-div-red">' + getLabelByLayerId(rasterLayerId, vm.s_selectedLayers) + '</div>'
                     html +=
                         '<div font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size: 16px;">' + res[0] + '</span><hr>' +
                         '<span style="font-size: 12px;">' + res[1] + '</span>' +
                         '</div>'
                   } else if (rasterLayerId === 'oh-tsunami-layer') {
+                    html += '<div class="layer-label-div-red">' + getLabelByLayerId(rasterLayerId, vm.s_selectedLayers) + '</div>'
                     html +=
                         '<div font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size: 12px;">津波によって想定される浸水深</span><br>' +
                         '<span style="font-size: 24px;">' + res + '</span>' +
                         '</div>'
                   } else if (rasterLayerId === 'oh-dosya-layer') {
+                    html += '<div class="layer-label-div-red">' + getLabelByLayerId(rasterLayerId, vm.s_selectedLayers) + '</div>'
                     html +=
                         '<div font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size: 16px;">' + res + '</span>' +
                         '</div>'
                   } else if (rasterLayerId === 'oh-dosekiryu-layer') {
+                    html += '<div class="layer-label-div-red">' + getLabelByLayerId(rasterLayerId, vm.s_selectedLayers) + '</div>'
                     html +=
                         '<div font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size: 16px;">' + res + '</span>' +
@@ -2165,6 +2283,8 @@ export default {
                 }
 
                 if (html) {
+                  popups.forEach(popup => popup.remove())
+                  popups.length = 0;
                   const popup = new maplibregl.Popup({
                     closeButton: true,
                     // className: 'custom-popup'
@@ -2174,26 +2294,43 @@ export default {
                       .setMaxWidth("350px")
                       .addTo(map)
                   popups.push(popup)
+                  popups.push(popup)
                   popup.on('close', () => closeAllPopups())
+                  document.querySelector('.maplibregl-popup-content').scrollTop = 0
                 }
               })
             })
 
-            if (html) {
-              const popup = new maplibregl.Popup({
-                closeButton: true,
-                // className: 'custom-popup'
-              })
-                  .setLngLat(coordinates)
-                  .setHTML(html)
-                  .setMaxWidth("350px")
-                  .addTo(map)
-              popups.push(popup)
-              popup.on('close', () => closeAllPopups())
+            if (rasterLayerIds.length === 0){
+              if (html) {
+                popups.forEach(popup => popup.remove())
+                popups.length = 0;
+                const popup = new maplibregl.Popup({
+                  closeButton: true,
+                  // className: 'custom-popup'
+                })
+                    .setLngLat(coordinates)
+                    .setHTML(html)
+                    .setMaxWidth("350px")
+                    .addTo(map)
+                popups.push(popup)
+                popup.on('close', () => closeAllPopups())
+                document.querySelector('.maplibregl-popup-content').scrollTop = 0
+              }
             }
-
           })
-
+          // IDから対応するlabelを取得する関数
+          function getLabelByLayerId(layerId, data) {
+            for (const mapKey in data) {
+              const mapLayers = data[mapKey];
+              for (const item of mapLayers) {
+                if (item.layers.some(layer => layer.id === layerId)) {
+                  return item.label;
+                }
+              }
+            }
+            return null
+          }
           //------------------------------------------------------------------------------------------------------------
           function latLngToTile(lat, lng, z) {
             const
@@ -2434,6 +2571,7 @@ export default {
   watch: {
     s_selectedLayers: {
       handler: function () {
+        // console.log(JSON.stringify(this.s_selectedLayers))
         console.log('変更を検出しました2')
         this.updatePermalink()
         history('selectedLayers',window.location.href)
@@ -2644,6 +2782,8 @@ html, body {
 }
 .maplibregl-popup-content {
   padding: 30px 20px 10px 20px;
+  max-height: 500px;
+  overflow: auto;
 }
 .maplibregl-popup-close-button{
   font-size: 40px;
@@ -2684,6 +2824,25 @@ font {
 
 .maplibregl-popup-content hr {
   margin-top: 10px;
+  margin-bottom: 10px;
+}
+.break-hr {
+  border: solid 2px rgb(50,101,186);;
+}
+.layer-label-div {
+  color: white;
+  background-color: rgb(50,101,186);;
+  text-align: right;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin-bottom: 10px;
+}
+.layer-label-div-red {
+  color: white;
+  background-color: red;
+  text-align: right;
+  padding-left: 5px;
+  padding-right: 5px;
   margin-bottom: 10px;
 }
 </style>
