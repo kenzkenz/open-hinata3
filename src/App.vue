@@ -707,9 +707,9 @@ export default {
           // console.log(mapName)
           // console.log(params.slj)
           if (params.slj) {
+            console.log(params.slj)
             params.slj[mapName].forEach(slg => {
               let cnt = 0
-
               function aaa() {
                 Layers.layers[mapName].forEach(value => {
                   if (!value.nodes) cnt++
@@ -717,6 +717,7 @@ export default {
                   function bbb(v1) {
                     if (v1.nodes) {
                       v1.nodes.forEach(v2 => {
+                        console.log(v2.nodes)
                         if (!v2.nodes) {
                           if (v2.id === slg.id) {
                             slg.source = v2.source
@@ -740,7 +741,6 @@ export default {
                   bbb(value)
                 })
               }
-
               aaa()
               console.log('背景' + cnt + '件')
             })
@@ -2204,14 +2204,16 @@ export default {
             let rasterLayerIds = [];
             const mapLayers = map.getStyle().layers
             // console.log(mapLayers)
-
             mapLayers.forEach(layer => {
-              // const visibility = map.getLayoutProperty(layer.id, 'visibility');
               // レイヤーのtypeプロパティを取得
               const type = layer.type;
               if (type === 'raster') {
                 rasterLayerIds.push(layer.id);
               }
+              // 本当は↓こっちが良い。昔のリンクの関係で↑を使用している。
+              // if (layer.id.indexOf('rgb') !== -1) {
+              //   rasterLayerIds.push(layer.id)
+              // }
             });
             // console.log(rasterLayerIds)
             // ラスタレイヤのidからポップアップ表示に使用するURLを生成
@@ -2219,22 +2221,38 @@ export default {
             let legend = [];
             rasterLayerIds.forEach(rasterLayerId => {
               // console.log(rasterLayerId)
-              if (rasterLayerId === 'oh-kozui-saidai-layer') {
-                // 洪水浸水想定区域（想定最大規模）
-                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin/{z}/{x}/{y}.png';
-                legend = legend_shinsuishin
-              } else if (rasterLayerId === 'oh-shitchi-layer') {
-                RasterTileUrl = 'https://cyberjapandata.gsi.go.jp/xyz/swale/{z}/{x}/{y}.png';
-                legend = legend_shitchi
-              } else if (rasterLayerId === 'oh-tsunami-layer') {
-                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png';
-                legend = legend_hightide_tsunami
-              } else if (rasterLayerId === 'oh-dosya-layer') {
-                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png';
-                legend = legend_dosyasaigai
-              } else if (rasterLayerId === 'oh-dosekiryu-layer') {
-                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukikenkeiryu/{z}/{x}/{y}.png';
-                legend = legend_dosekiryu
+              switch (rasterLayerId) {
+                case 'oh-kozui-saidai-layer':
+                case 'oh-rgb-kozui-saidai-layer':
+                  // 洪水浸水想定区域（想定最大規模）
+                  RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin/{z}/{x}/{y}.png';
+                  legend = legend_shinsuishin;
+                  break;
+                case 'oh-shitchi-layer':
+                case 'oh-rgb-shitchi-layer':
+                  RasterTileUrl = 'https://cyberjapandata.gsi.go.jp/xyz/swale/{z}/{x}/{y}.png';
+                  legend = legend_shitchi;
+                  break;
+                case 'oh-tsunami-layer':
+                case 'oh-rgb-tsunami-layer':
+                  RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png';
+                  legend = legend_hightide_tsunami;
+                  break;
+                case 'oh-dosya-layer':
+                case 'oh-rgb-dosya-layer':
+                  RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png';
+                  legend = legend_dosyasaigai;
+                  break;
+                case 'oh-dosekiryu-layer':
+                case 'oh-rgb-dosekiryu-layer':
+                  RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukikenkeiryu/{z}/{x}/{y}.png';
+                  legend = legend_dosekiryu;
+                  break;
+                default:
+                  // 何も該当しない場合の処理
+                  RasterTileUrl = '';
+                  legend = null;
+                  break;
               }
               const lng = e.lngLat.lng
               const lat = e.lngLat.lat
@@ -2246,39 +2264,34 @@ export default {
                 // let popup
                 if (res) {
                   // if (html) html += '<hr class="break-hr">'
-                  if (rasterLayerId === 'oh-kozui-saidai-layer') {
-                    html += '<div class="layer-label-div-red">' + getLabelByLayerId(rasterLayerId, vm.s_selectedLayers) + '</div>'
-                    html +=
-                        '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                        '<span style="font-size: 12px;">洪水によって想定される浸水深</span><br>' +
-                        '<span style="font-size: 24px;">' + res + '</span>' +
-                        '</div>'
-                  } else if (rasterLayerId === 'oh-shitchi-layer') {
-                    html += '<div class="layer-label-div-red">' + getLabelByLayerId(rasterLayerId, vm.s_selectedLayers) + '</div>'
-                    html +=
-                        '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                        '<span style="font-size: 16px;">' + res[0] + '</span><hr>' +
-                        '<span style="font-size: 12px;">' + res[1] + '</span>' +
-                        '</div>'
-                  } else if (rasterLayerId === 'oh-tsunami-layer') {
-                    html += '<div class="layer-label-div-red">' + getLabelByLayerId(rasterLayerId, vm.s_selectedLayers) + '</div>'
-                    html +=
-                        '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                        '<span style="font-size: 12px;">津波によって想定される浸水深</span><br>' +
-                        '<span style="font-size: 24px;">' + res + '</span>' +
-                        '</div>'
-                  } else if (rasterLayerId === 'oh-dosya-layer') {
-                    html += '<div class="layer-label-div-red">' + getLabelByLayerId(rasterLayerId, vm.s_selectedLayers) + '</div>'
-                    html +=
-                        '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                        '<span style="font-size: 16px;">' + res + '</span>' +
-                        '</div>'
-                  } else if (rasterLayerId === 'oh-dosekiryu-layer') {
-                    html += '<div class="layer-label-div-red">' + getLabelByLayerId(rasterLayerId, vm.s_selectedLayers) + '</div>'
-                    html +=
-                        '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                        '<span style="font-size: 16px;">' + res + '</span>' +
-                        '</div>'
+                  html += '<div class="layer-label-div-red">' + getLabelByLayerId(rasterLayerId, vm.s_selectedLayers) + '</div>'
+                  switch (rasterLayerId) {
+                    case 'oh-rgb-kozui-saidai-layer':
+                      html +=
+                          '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                          '<span style="font-size: 12px;">洪水によって想定される浸水深</span><br>' +
+                          '<span style="font-size: 24px;">' + res + '</span>' +
+                          '</div>'
+                      break
+                    case 'oh-rgb-tsunami-layer':
+                      html +=
+                          '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                          '<span style="font-size: 12px;">津波によって想定される浸水深</span><br>' +
+                          '<span style="font-size: 24px;">' + res + '</span>' +
+                          '</div>'
+                      break
+                    case 'oh-rgb-shitchi-layer':
+                      html +=
+                            '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                            '<span style="font-size: 16px;">' + res[0] + '</span><hr>' +
+                            '<span style="font-size: 12px;">' + res[1] + '</span>' +
+                            '</div>'
+                      break
+                    default:
+                        html +=
+                            '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                            '<span style="font-size: 16px;">' + res + '</span>' +
+                            '</div>'
                   }
                 }
 
@@ -2443,23 +2456,41 @@ export default {
             let RasterTileUrl = '';
             let legend = [];
             rasterLayerIds.forEach(rasterLayerId => {
-              if (rasterLayerId === 'oh-kozui-saidai-layer') {
-                // 洪水浸水想定区域（想定最大規模）
-                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin/{z}/{x}/{y}.png';
-                legend = legend_shinsuishin
-              } else if (rasterLayerId === 'oh-shitchi-layer') {
-                RasterTileUrl = 'https://cyberjapandata.gsi.go.jp/xyz/swale/{z}/{x}/{y}.png';
-                legend = legend_shitchi
-              } else if (rasterLayerId === 'oh-tsunami-layer') {
-                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png';
-                legend = legend_hightide_tsunami
-              } else if (rasterLayerId === 'oh-dosya-layer') {
-                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png';
-                legend = legend_dosyasaigai
-              } else if (rasterLayerId === 'oh-dosekiryu-layer') {
-                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukikenkeiryu/{z}/{x}/{y}.png';
-                legend = legend_dosekiryu
+
+              switch (rasterLayerId) {
+                case 'oh-kozui-saidai-layer':
+                case 'oh-rgb-kozui-saidai-layer':
+                  // 洪水浸水想定区域（想定最大規模）
+                  RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin/{z}/{x}/{y}.png';
+                  legend = legend_shinsuishin;
+                  break;
+                case 'oh-shitchi-layer':
+                case 'oh-rgb-shitchi-layer':
+                  RasterTileUrl = 'https://cyberjapandata.gsi.go.jp/xyz/swale/{z}/{x}/{y}.png';
+                  legend = legend_shitchi;
+                  break;
+                case 'oh-tsunami-layer':
+                case 'oh-rgb-tsunami-layer':
+                  RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png';
+                  legend = legend_hightide_tsunami;
+                  break;
+                case 'oh-dosya-layer':
+                case 'oh-rgb-dosya-layer':
+                  RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png';
+                  legend = legend_dosyasaigai;
+                  break;
+                case 'oh-dosekiryu-layer':
+                case 'oh-rgb-dosekiryu-layer':
+                  RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukikenkeiryu/{z}/{x}/{y}.png';
+                  legend = legend_dosekiryu;
+                  break;
+                default:
+                  // 何も該当しない場合の処理
+                  RasterTileUrl = '';
+                  legend = null;
+                  break;
               }
+
               const lng = e.lngLat.lng;
               const lat = e.lngLat.lat;
               const z = 16

@@ -3255,7 +3255,7 @@ const dosyaSource = {
     }
 }
 const dosyaLayer = {
-    'id': 'oh-dosya-layer',
+    'id': 'oh-rgb-dosya-layer',
     'type': 'raster',
     'source': 'dosya-source',
 }
@@ -3267,7 +3267,7 @@ const dosekiryuSource = {
     }
 }
 const dosekiryuLayer = {
-    'id': 'oh-dosekiryu-layer',
+    'id': 'oh-rgb-dosekiryu-layer',
     'type': 'raster',
     'source': 'dosekiryu-source',
 }
@@ -3276,12 +3276,10 @@ const kozuiSaidaiSource = {
     id: 'kozui-saidai-source', obj: {
         type: 'raster',
         tiles: ['https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin/{z}/{x}/{y}.png'],
-        tileSize: 256,
-        crossOrigin: 'anonymous',
     }
 }
 const kozuiSaidaiLayer = {
-    'id': 'oh-kozui-saidai-layer',
+    'id': 'oh-rgb-kozui-saidai-layer',
     'type': 'raster',
     'source': 'kozui-saidai-source',
 }
@@ -3293,9 +3291,21 @@ const tsunamiSource = {
     }
 }
 const tsunamiLayer = {
-    'id': 'oh-tsunami-layer',
+    'id': 'oh-rgb-tsunami-layer',
     'type': 'raster',
     'source': 'tsunami-source',
+}
+// 明治期の低湿地------------------------------------------------------------------------------------------------------
+const shitchiSource = {
+    id: 'shitchi-source', obj: {
+        type: 'raster',
+        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/swale/{z}/{x}/{y}.png'],
+    }
+}
+const shitchiLayer = {
+    'id': 'oh-rgb-shitchi-layer',
+    'type': 'raster',
+    'source': 'shitchi-source',
 }
 // Q地図橋梁 --------------------------------------------------------------------------------------------
 const qKyouryoSource = {
@@ -3739,18 +3749,6 @@ const cityR05LayerLabel = {
         'text-halo-width': 1.0,
     },
     'minzoom': 10
-}
-// 明治期の低湿地------------------------------------------------------------------------------------------------------
-const shitchiSource = {
-    id: 'shitchi-source', obj: {
-        type: 'raster',
-        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/swale/{z}/{x}/{y}.png'],
-    }
-}
-const shitchiLayer = {
-    'id': 'oh-shitchi-layer',
-    'type': 'raster',
-    'source': 'shitchi-source',
 }
 // エコリス植生図---------------------------------------------------------------------------------------------------------
 const ecoris67Source = {
