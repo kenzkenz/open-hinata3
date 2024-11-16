@@ -240,6 +240,8 @@ tippecanoe -rg -pk -pf -l point -f -o hinanjyo-tsunami.pmtiles hinanjyo-tsunami.
 
 tippecanoe -rg -pk -pf -l polygon -f -o tsst.pmtiles miyazaki_merged.geojson
 
+tippecanoe -rg -pk -pf -l polygon -f -o chikeibunrui.pmtiles chikeibunrui.geojson
+
 
 import random
 from qgis.core import QgsField, QgsExpression, QgsExpressionContext, QgsExpressionContextUtils
