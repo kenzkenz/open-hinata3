@@ -3256,12 +3256,13 @@ const zoseiLayerLabel = {
     },
     'minzoom': 14
 }
-// rgbで値を取得するレイヤー
-// 土砂災害警戒区域------------------------------------------------------------------------------------------------------
+// rgbで値を取得するレイヤー------------------------------------------------------------------------------------------------
+// 土砂災害警戒区域--------------------------------------------------------------------------------------------------------
 const dosyaSource = {
     id: 'dosya-source', obj: {
         type: 'raster',
         tiles: ['https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png'],
+        rasterResampling: 'nearest',
     }
 }
 const dosyaLayer = {
@@ -3275,6 +3276,7 @@ const dosekiryuSource = {
     id: 'dosekiryu-source', obj: {
         type: 'raster',
         tiles: ['https://disaportaldata.gsi.go.jp/raster/05_dosekiryukikenkeiryu/{z}/{x}/{y}.png'],
+        rasterResampling: 'nearest',
     }
 }
 const dosekiryuLayer = {
@@ -3288,6 +3290,7 @@ const kozuiSaidaiSource = {
     id: 'kozui-saidai-source', obj: {
         type: 'raster',
         tiles: ['https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin/{z}/{x}/{y}.png'],
+        rasterResampling: 'nearest',
     }
 }
 const kozuiSaidaiLayer = {
@@ -3301,6 +3304,7 @@ const tsunamiSource = {
     id: 'tsunami-source', obj: {
         type: 'raster',
         tiles: ['https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png'],
+        rasterResampling: 'nearest',
     }
 }
 const tsunamiLayer = {
@@ -3309,11 +3313,14 @@ const tsunamiLayer = {
     'source': 'tsunami-source',
     'max-opacity': 0.8
 }
+// rgbで値を取得するレイヤー ここまで-----------------------------------------------------------------------------------------
+
 // 明治期の低湿地------------------------------------------------------------------------------------------------------
 const shitchiSource = {
     id: 'shitchi-source', obj: {
         type: 'raster',
         tiles: ['https://cyberjapandata.gsi.go.jp/xyz/swale/{z}/{x}/{y}.png'],
+        rasterResampling: 'nearest',
     }
 }
 const shitchiLayer = {
@@ -3322,6 +3329,7 @@ const shitchiLayer = {
     'source': 'shitchi-source',
     'max-opacity': 0.8
 }
+
 // Q地図橋梁 --------------------------------------------------------------------------------------------
 const qKyouryoSource = {
     id: "q-kyoryo-source", obj: {
