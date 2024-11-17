@@ -3302,11 +3302,10 @@ const kyukeisyaLayer = {
     'source': 'kyukeisya-source',
     'max-opacity': 0.8,
     paint: {
-        'raster-opacity': 1.0,            // 不透明度を設定
-        'raster-hue-rotate': 80,          // 色相を30度回転して茶色っぽくする
-        'raster-brightness-min': 0.1,     // 最小輝度を少し下げる
-        'raster-brightness-max': 1.0,     // 最大輝度を調整
-        'raster-saturation': 0.8          // 彩度を増加させて色を強調する
+        'raster-hue-rotate': 180,          // 色相
+        'raster-brightness-min': 0.1,     // 最小輝度
+        'raster-brightness-max': 1.0,     // 最大輝度
+        'raster-saturation': 0.8          // 彩度
     }
 }
 // 地すべり危険箇所------------------------------------------------------------------------------------------------------
@@ -3349,6 +3348,20 @@ const tsunamiLayer = {
     'id': 'oh-rgb-tsunami-layer',
     'type': 'raster',
     'source': 'tsunami-source',
+    'max-opacity': 0.8
+}
+// ため池結界------------------------------------------------------------------------------------------------------
+const tameikeSource = {
+    id: 'tameike-source', obj: {
+        type: 'raster',
+        tiles: ['https://disaportal.gsi.go.jp/data/raster/07_tameike/{z}/{x}/{y}.png'],
+        rasterResampling: 'nearest',
+    }
+}
+const tameikeLayer = {
+    'id': 'oh-rgb-tameike-layer',
+    'type': 'raster',
+    'source': 'tameike-source',
     'max-opacity': 0.8
 }
 // rgbで値を取得するレイヤー ここまで-----------------------------------------------------------------------------------------
@@ -4951,6 +4964,12 @@ const layers01 = [
                 label: "津波浸水想定",
                 source: tsunamiSource,
                 layers: [tsunamiLayer],
+            },
+            {
+                id: 'oh-tameike',
+                label: "ため池決壊による浸水想定",
+                source: tameikeSource,
+                layers: [tameikeLayer],
             },
             {
                 id: 'oh-dosya',

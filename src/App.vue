@@ -2221,9 +2221,9 @@ export default {
             rasterLayerIds.forEach(rasterLayerId => {
               const RasterTileUrl = urlByLayerId(rasterLayerId)[0]
               const legend = urlByLayerId(rasterLayerId)[1]
+              const z = urlByLayerId(rasterLayerId)[2]
               const lng = e.lngLat.lng
               const lat = e.lngLat.lat
-              const z = 16
               // if (RasterTileUrl) {
               getLegendItem(legend, RasterTileUrl, lat, lng,z).then(function (v) {
                 let res = (v ? v.title : '')
@@ -2357,40 +2357,52 @@ export default {
             })
           }
           function urlByLayerId (layerId) {
-            let RasterTileUrl,legend
+            let RasterTileUrl,legend,zoom
             switch (layerId) {
               case 'oh-kozui-saidai-layer':
               case 'oh-rgb-kozui-saidai-layer':
-                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin/{z}/{x}/{y}.png';
-                legend = legend_shinsuishin;
+                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin/{z}/{x}/{y}.png'
+                legend = legend_shinsuishin
+                zoom = 16
                 break;
               case 'oh-shitchi-layer':
               case 'oh-rgb-shitchi-layer':
                 RasterTileUrl = 'https://cyberjapandata.gsi.go.jp/xyz/swale/{z}/{x}/{y}.png';
-                legend = legend_shitchi;
+                legend = legend_shitchi
+                zoom = 16
                 break;
               case 'oh-tsunami-layer':
               case 'oh-rgb-tsunami-layer':
                 RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png';
-                legend = legend_hightide_tsunami;
+                legend = legend_hightide_tsunami
+                zoom = 16
                 break;
               case 'oh-dosya-layer':
               case 'oh-rgb-dosya-layer':
                 RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png';
-                legend = legend_dosyasaigai;
+                legend = legend_dosyasaigai
+                zoom = 16
                 break;
               case 'oh-dosekiryu-layer':
               case 'oh-rgb-dosekiryu-layer':
                 RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukikenkeiryu/{z}/{x}/{y}.png';
-                legend = legend_dosekiryu;
+                legend = legend_dosekiryu
+                zoom = 16
                 break;
               case 'oh-rgb-kyukeisya-layer':
                 RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_kyukeisyachihoukai/{z}/{x}/{y}.png';
-                legend = legend_kyukeisya;
+                legend = legend_kyukeisya
+                zoom = 16
                 break;
               case 'oh-rgb-jisuberi-layer':
                 RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_jisuberikikenkasyo/{z}/{x}/{y}.png';
-                legend = legend_jisuberi;
+                legend = legend_jisuberi
+                zoom = 16
+                break;
+              case 'oh-rgb-tameike-layer':
+                RasterTileUrl = 'https://disaportal.gsi.go.jp/data/raster/07_tameike/{z}/{x}/{y}.png';
+                legend = legend_tameike
+                zoom = 15
                 break;
               default:
                 // 何も該当しない場合の処理
@@ -2398,7 +2410,7 @@ export default {
                 legend = null;
                 break;
             }
-            return [RasterTileUrl,legend]
+            return [RasterTileUrl,legend,zoom]
           }
           const legend_shinsuishin = [
             { r: 247, g: 245, b: 169, title: '0.5m未満' },
@@ -2459,6 +2471,10 @@ export default {
           const legend_jisuberi = [
               { r: 255, g: 235, b: 223, title: '地すべり危険箇所<br><br>地すべりが発生している又は地すべりが発生するおそれがある区域のうち、人家等に被害を与えるおそれのある箇所' },
           ]
+          // ため池結界
+          const legend_tameike = [
+            { r: 0, g: 0, b: 255, title: 'ため池決壊による危険性' },
+          ]
 
           map.on('mousemove', function (e) {
             let rasterLayerIds = [];
@@ -2476,9 +2492,9 @@ export default {
             rasterLayerIds.forEach(rasterLayerId => {
               const RasterTileUrl = urlByLayerId(rasterLayerId)[0]
               const legend = urlByLayerId(rasterLayerId)[1]
+              const z = urlByLayerId(rasterLayerId)[2]
               const lng = e.lngLat.lng;
               const lat = e.lngLat.lat;
-              const z = 16
               if (RasterTileUrl) {
                 getLegendItem(legend, RasterTileUrl, lat, lng,z).then(function (v) {
                   let res = (v ? v.title : '')
