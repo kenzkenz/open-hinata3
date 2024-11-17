@@ -205,22 +205,29 @@ export default {
             })
           }
           // console.log(layer0.type)
+
+          let opacity
+          if (layer0['max-opacity']) {
+            opacity = element.opacity * layer0['max-opacity']
+          } else {
+            opacity = element.opacity
+          }
           if (layer0.type === 'raster') {
-            map.setPaintProperty(layer0.id, 'raster-opacity', element.opacity)
+            map.setPaintProperty(layer0.id, 'raster-opacity', opacity)
           } else if (layer0.type === 'fill') {
-            map.setPaintProperty(layer0.id, 'fill-opacity', element.opacity)
+            map.setPaintProperty(layer0.id, 'fill-opacity', opacity)
           } else if (layer0.type === 'line') {
-            map.setPaintProperty(layer0.id, 'line-opacity', element.opacity)
+            map.setPaintProperty(layer0.id, 'line-opacity', opacity)
           } else if (layer0.type === 'fill-extrusion') {
-            map.setPaintProperty(layer0.id, 'fill-extrusion-opacity', element.opacity)
+            map.setPaintProperty(layer0.id, 'fill-extrusion-opacity', opacity)
           } else if (layer0.type === 'heatmap') {
-            map.setPaintProperty(layer0.id, 'heatmap-opacity', element.opacity)
+            map.setPaintProperty(layer0.id, 'heatmap-opacity', opacity)
           } else if (layer0.type === 'circle') {
-            map.setPaintProperty(layer0.id, 'circle-opacity', element.opacity)
+            map.setPaintProperty(layer0.id, 'circle-opacity', opacity)
           } else if (layer0.type === 'symbol') {
-            map.setPaintProperty(layer0.id, 'text-opacity', element.opacity)
+            map.setPaintProperty(layer0.id, 'text-opacity', opacity)
           } else if (layer0.type === 'background') {
-            map.setPaintProperty(layer0.id, 'background-opacity', element.opacity)
+            map.setPaintProperty(layer0.id, 'background-opacity', opacity)
           }
         })
       }
@@ -245,6 +252,8 @@ export default {
         this.$store.state.watchFlg = true
         const map = this.$store.state[this.mapName]
         if(!this.s_selectedLayers[this.mapName].find(layers => layers.id === node.id)) {
+          // const opacity =
+          console.log(node)
           this.s_selectedLayers[this.mapName].unshift(
               {
                 id: node.id,
@@ -301,22 +310,28 @@ export default {
               if (!map.getLayer(layer0.id)) {
                 map.addLayer(layer0)
               }
+              let opacity
+              if (layer0['max-opacity']) {
+                opacity = layer.opacity * layer0['max-opacity']
+              } else {
+                opacity = layer.opacity
+              }
               if (layer0.type === 'raster') {
-                map.setPaintProperty(layer0.id, 'raster-opacity', layer.opacity)
+                map.setPaintProperty(layer0.id, 'raster-opacity', opacity)
               } else if (layer0.type === 'fill') {
-                map.setPaintProperty(layer0.id, 'fill-opacity', layer.opacity)
+                map.setPaintProperty(layer0.id, 'fill-opacity', opacity)
               } else if (layer0.type === 'line') {
-                map.setPaintProperty(layer0.id, 'line-opacity', layer.opacity)
+                map.setPaintProperty(layer0.id, 'line-opacity', opacity)
               } else if (layer0.type === 'fill-extrusion') {
-                map.setPaintProperty(layer0.id, 'fill-extrusion-opacity', layer.opacity)
+                map.setPaintProperty(layer0.id, 'fill-extrusion-opacity', opacity)
               } else if (layer0.type === 'heatmap') {
-                map.setPaintProperty(layer0.id, 'heatmap-opacity', layer.opacity)
+                map.setPaintProperty(layer0.id, 'heatmap-opacity', opacity)
               } else if (layer0.type === 'circle') {
-                map.setPaintProperty(layer0.id, 'circle-opacity', layer.opacity)
+                map.setPaintProperty(layer0.id, 'circle-opacity', opacity)
               } else if (layer0.type === 'symbol') {
-                map.setPaintProperty(layer0.id, 'text-opacity', layer.opacity)
+                map.setPaintProperty(layer0.id, 'text-opacity', opacity)
               } else if (layer0.type === 'background') {
-                map.setPaintProperty(layer0.id, 'background-opacity', layer.opacity)
+                map.setPaintProperty(layer0.id, 'background-opacity', opacity)
               }
               let visibility
               if (layer.visibility) {

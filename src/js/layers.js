@@ -3268,6 +3268,7 @@ const dosyaLayer = {
     'id': 'oh-rgb-dosya-layer',
     'type': 'raster',
     'source': 'dosya-source',
+    'max-opacity': 0.8
 }
 // 土石流危険渓流------------------------------------------------------------------------------------------------------
 const dosekiryuSource = {
@@ -3280,6 +3281,7 @@ const dosekiryuLayer = {
     'id': 'oh-rgb-dosekiryu-layer',
     'type': 'raster',
     'source': 'dosekiryu-source',
+    'max-opacity': 0.8
 }
 // 洪水浸水想定------------------------------------------------------------------------------------------------------
 const kozuiSaidaiSource = {
@@ -3292,6 +3294,7 @@ const kozuiSaidaiLayer = {
     'id': 'oh-rgb-kozui-saidai-layer',
     'type': 'raster',
     'source': 'kozui-saidai-source',
+    'max-opacity': 0.8
 }
 // 津波------------------------------------------------------------------------------------------------------
 const tsunamiSource = {
@@ -3304,6 +3307,7 @@ const tsunamiLayer = {
     'id': 'oh-rgb-tsunami-layer',
     'type': 'raster',
     'source': 'tsunami-source',
+    'max-opacity': 0.8
 }
 // 明治期の低湿地------------------------------------------------------------------------------------------------------
 const shitchiSource = {
@@ -3316,6 +3320,7 @@ const shitchiLayer = {
     'id': 'oh-rgb-shitchi-layer',
     'type': 'raster',
     'source': 'shitchi-source',
+    'max-opacity': 0.8
 }
 // Q地図橋梁 --------------------------------------------------------------------------------------------
 const qKyouryoSource = {

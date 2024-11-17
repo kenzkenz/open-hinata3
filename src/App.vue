@@ -717,7 +717,7 @@ export default {
                   function bbb(v1) {
                     if (v1.nodes) {
                       v1.nodes.forEach(v2 => {
-                        console.log(v2.nodes)
+                        // console.log(v2.nodes)
                         if (!v2.nodes) {
                           if (v2.id === slg.id) {
                             slg.source = v2.source
