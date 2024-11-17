@@ -4,21 +4,24 @@
 
 // 'text-font': ['NotoSansJP-Regular'],
 
-// const testSource = {
-//     id: 'test-source', obj: {
-//         type: 'geojson',
-//         data: "https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://mapdata.qchizu.xyz/vector/mlit_road2019/bridge2/{z}/{x}/{y}.geojson",
-//     }
-// }
-// const testLayer = {
-//     id: 'test-layer',
-//     type: 'circle', // シンボルの種類（ポイントデータならcircleやsymbol、ラインならline、エリアならfillなど）
-//     source: 'test-source',
-//     paint: {
-//         'circle-radius': 5,
-//         'circle-color': '#007cbf'
-//     }
-// }
+const testSource = {
+    id: 'test-source', obj: {
+        type: 'vector', // GeoJSONタイルなのでvectorタイプを使用
+        tiles: [
+            // テンプレートURLを配列で指定
+            'https://maps.gsi.go.jp/xyz/experimental_landformclassification1/{z}/{x}/{y}.geojson'
+        ],
+    }
+}
+const testLayer = {
+    id: 'test-layer',
+    type: 'fill',
+    source: 'test-source',
+    'source-layer': 'layer',
+    paint: {
+        "fill-color": "red",
+    },
+}
 // import std from '@/assets/json/modified_std.json'
 import fxBasic from '@/assets/json/modified_fx_basic.json'
 import mono from '@/assets/json/modified_mono.json'
@@ -3285,6 +3288,34 @@ const dosekiryuLayer = {
     'source': 'dosekiryu-source',
     'max-opacity': 0.8
 }
+// 急傾斜地崩壊危険箇所------------------------------------------------------------------------------------------------------
+const kyukeisyaSource = {
+    id: 'kyukeisya-source', obj: {
+        type: 'raster',
+        tiles: ['https://disaportaldata.gsi.go.jp/raster/05_kyukeisyachihoukai/{z}/{x}/{y}.png'],
+        rasterResampling: 'nearest',
+    }
+}
+const kyukeisyaLayer = {
+    'id': 'oh-rgb-kyukeisya-layer',
+    'type': 'raster',
+    'source': 'kyukeisya-source',
+    'max-opacity': 0.8
+}
+// 地すべり危険箇所------------------------------------------------------------------------------------------------------
+const jisuberiSource = {
+    id: 'jisuberi-source', obj: {
+        type: 'raster',
+        tiles: ['https://disaportaldata.gsi.go.jp/raster/05_jisuberikikenkasyo/{z}/{x}/{y}.png'],
+        rasterResampling: 'nearest',
+    }
+}
+const jisuberiLayer = {
+    'id': 'oh-rgb-jisuberi-layer',
+    'type': 'raster',
+    'source': 'jisuberi-source',
+    'max-opacity': 0.8
+}
 // 洪水浸水想定------------------------------------------------------------------------------------------------------
 const kozuiSaidaiSource = {
     id: 'kozui-saidai-source', obj: {
@@ -4927,6 +4958,18 @@ const layers01 = [
                 layers: [dosekiryuLayer],
             },
             {
+                id: 'oh-kyukeisya',
+                label: "急傾斜地崩壊危険箇所",
+                source: kyukeisyaSource,
+                layers: [kyukeisyaLayer],
+            },
+            {
+                id: 'oh-jisuberi',
+                label: "地すべり危険箇所",
+                source: jisuberiSource,
+                layers: [jisuberiLayer],
+            },
+            {
                 id: 'oh-tsunami-height',
                 label: "津波浸水想定3D",
                 source: tsunamiSource2,
@@ -5074,6 +5117,12 @@ const layers01 = [
                 label: "用途地域3D",
                 source: yotochiikiSource,
                 layers: [yotochiikiLayer,yotochiikiLayerLine,yotochiikiLayerLabel,yotochiikiLayerHeight]
+            },
+            {
+                id: 'oh-test',
+                label: "テスト",
+                source: testSource,
+                layers: [testLayer]
             },
             {
                 id: 'test2',

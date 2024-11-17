@@ -2217,43 +2217,9 @@ export default {
             });
             // console.log(rasterLayerIds)
             // ラスタレイヤのidからポップアップ表示に使用するURLを生成
-            let RasterTileUrl = '';
-            let legend = [];
             rasterLayerIds.forEach(rasterLayerId => {
-              // console.log(rasterLayerId)
-              switch (rasterLayerId) {
-                case 'oh-kozui-saidai-layer':
-                case 'oh-rgb-kozui-saidai-layer':
-                  // 洪水浸水想定区域（想定最大規模）
-                  RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin/{z}/{x}/{y}.png';
-                  legend = legend_shinsuishin;
-                  break;
-                case 'oh-shitchi-layer':
-                case 'oh-rgb-shitchi-layer':
-                  RasterTileUrl = 'https://cyberjapandata.gsi.go.jp/xyz/swale/{z}/{x}/{y}.png';
-                  legend = legend_shitchi;
-                  break;
-                case 'oh-tsunami-layer':
-                case 'oh-rgb-tsunami-layer':
-                  RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png';
-                  legend = legend_hightide_tsunami;
-                  break;
-                case 'oh-dosya-layer':
-                case 'oh-rgb-dosya-layer':
-                  RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png';
-                  legend = legend_dosyasaigai;
-                  break;
-                case 'oh-dosekiryu-layer':
-                case 'oh-rgb-dosekiryu-layer':
-                  RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukikenkeiryu/{z}/{x}/{y}.png';
-                  legend = legend_dosekiryu;
-                  break;
-                default:
-                  // 何も該当しない場合の処理
-                  RasterTileUrl = '';
-                  legend = null;
-                  break;
-              }
+              const RasterTileUrl = urlByLayerId(rasterLayerId)[0]
+              const legend = urlByLayerId(rasterLayerId)[1]
               const lng = e.lngLat.lng
               const lat = e.lngLat.lat
               const z = 16
@@ -2389,6 +2355,50 @@ export default {
               img.src = url.replace('{z}', z).replace('{y}', y).replace('{x}', x)
             })
           }
+          function urlByLayerId (layerId) {
+            let RasterTileUrl,legend
+            switch (layerId) {
+              case 'oh-kozui-saidai-layer':
+              case 'oh-rgb-kozui-saidai-layer':
+                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin/{z}/{x}/{y}.png';
+                legend = legend_shinsuishin;
+                break;
+              case 'oh-shitchi-layer':
+              case 'oh-rgb-shitchi-layer':
+                RasterTileUrl = 'https://cyberjapandata.gsi.go.jp/xyz/swale/{z}/{x}/{y}.png';
+                legend = legend_shitchi;
+                break;
+              case 'oh-tsunami-layer':
+              case 'oh-rgb-tsunami-layer':
+                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png';
+                legend = legend_hightide_tsunami;
+                break;
+              case 'oh-dosya-layer':
+              case 'oh-rgb-dosya-layer':
+                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png';
+                legend = legend_dosyasaigai;
+                break;
+              case 'oh-dosekiryu-layer':
+              case 'oh-rgb-dosekiryu-layer':
+                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukikenkeiryu/{z}/{x}/{y}.png';
+                legend = legend_dosekiryu;
+                break;
+              case 'oh-rgb-kyukeisya-layer':
+                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_kyukeisyachihoukai/{z}/{x}/{y}.png';
+                legend = legend_kyukeisya;
+                break;
+              case 'oh-rgb-jisuberi-layer':
+                RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_jisuberikikenkasyo/{z}/{x}/{y}.png';
+                legend = legend_jisuberi;
+                break;
+              default:
+                // 何も該当しない場合の処理
+                RasterTileUrl = '';
+                legend = null;
+                break;
+            }
+            return [RasterTileUrl,legend]
+          }
           const legend_shinsuishin = [
             { r: 247, g: 245, b: 169, title: '0.5m未満' },
             { r: 255, g: 216, b: 192, title: '0.5～3.0m' },
@@ -2440,6 +2450,14 @@ export default {
           const legend_dosekiryu = [
             { r: 245, g: 153, b: 101, title: '土石流危険渓流<br><br>土石流の発生の危険性があり、人家等に被害を与えるおそれがある渓流' },
           ]
+          // 急傾斜地崩壊危険箇所
+          const legend_kyukeisya = [
+            { r: 224, g: 224, b: 254, title: '急傾斜地崩壊危険箇所<br><br>傾斜度30°かつ高さ5m以上の急傾斜地で人家等に被害を与えるおそれのある箇所' },
+          ]
+          // 地すべり危険箇所
+          const legend_jisuberi = [
+              { r: 255, g: 235, b: 223, title: '地すべり危険箇所<br><br>地すべりが発生している又は地すべりが発生するおそれがある区域のうち、人家等に被害を与えるおそれのある箇所' },
+          ]
 
           map.on('mousemove', function (e) {
             let rasterLayerIds = [];
@@ -2453,44 +2471,10 @@ export default {
               }
             });
             // ラスタレイヤのidからポップアップ表示に使用するURLを生成
-            let RasterTileUrl = '';
-            let legend = [];
+
             rasterLayerIds.forEach(rasterLayerId => {
-
-              switch (rasterLayerId) {
-                case 'oh-kozui-saidai-layer':
-                case 'oh-rgb-kozui-saidai-layer':
-                  // 洪水浸水想定区域（想定最大規模）
-                  RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin/{z}/{x}/{y}.png';
-                  legend = legend_shinsuishin;
-                  break;
-                case 'oh-shitchi-layer':
-                case 'oh-rgb-shitchi-layer':
-                  RasterTileUrl = 'https://cyberjapandata.gsi.go.jp/xyz/swale/{z}/{x}/{y}.png';
-                  legend = legend_shitchi;
-                  break;
-                case 'oh-tsunami-layer':
-                case 'oh-rgb-tsunami-layer':
-                  RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png';
-                  legend = legend_hightide_tsunami;
-                  break;
-                case 'oh-dosya-layer':
-                case 'oh-rgb-dosya-layer':
-                  RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png';
-                  legend = legend_dosyasaigai;
-                  break;
-                case 'oh-dosekiryu-layer':
-                case 'oh-rgb-dosekiryu-layer':
-                  RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukikenkeiryu/{z}/{x}/{y}.png';
-                  legend = legend_dosekiryu;
-                  break;
-                default:
-                  // 何も該当しない場合の処理
-                  RasterTileUrl = '';
-                  legend = null;
-                  break;
-              }
-
+              const RasterTileUrl = urlByLayerId(rasterLayerId)[0]
+              const legend = urlByLayerId(rasterLayerId)[1]
               const lng = e.lngLat.lng;
               const lat = e.lngLat.lat;
               const z = 16
