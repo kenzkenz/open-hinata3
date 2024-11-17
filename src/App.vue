@@ -706,44 +706,43 @@ export default {
           //
           // console.log(mapName)
           // console.log(params.slj)
-          if (params.slj) {
-            console.log(params.slj)
-            params.slj[mapName].forEach(slg => {
-              let cnt = 0
-              function aaa() {
-                Layers.layers[mapName].forEach(value => {
-                  if (!value.nodes) cnt++
 
-                  function bbb(v1) {
-                    if (v1.nodes) {
-                      v1.nodes.forEach(v2 => {
-                        // console.log(v2.nodes)
-                        if (!v2.nodes) {
-                          if (v2.id === slg.id) {
-                            slg.source = v2.source
-                            slg.layers = v2.layers
-                            // console.log(slg.layers)
-                            // console.log(v2.layers)
+          if (params.slj) {
+            const mapNames = ['map01','map02']
+            mapNames.forEach(mapName => {
+              params.slj[mapName].forEach(slg => {
+                let cnt = 0
+                function aaa() {
+                  Layers.layers[mapName].forEach(value => {
+                    if (!value.nodes) cnt++
+
+                    function bbb(v1) {
+                      if (v1.nodes) {
+                        v1.nodes.forEach(v2 => {
+                          // console.log(v2.nodes)
+                          if (!v2.nodes) {
+                            if (v2.id === slg.id) {
+                              slg.source = v2.source
+                              slg.layers = v2.layers
+                            }
+                            cnt++
+                          } else {
+                            bbb(v2)
                           }
-                          cnt++
-                        } else {
-                          bbb(v2)
+                        })
+                      } else {
+                        if (value.id === slg.id) {
+                          slg.source = value.source
+                          slg.layers = value.layers
                         }
-                      })
-                    } else {
-                      if (value.id === slg.id) {
-                        slg.source = value.source
-                        slg.layers = value.layers
                       }
                     }
-                  }
-
-                  bbb(value)
-                })
-              }
-              aaa()
-              console.log('背景' + cnt + '件')
-            })
+                    bbb(value)
+                  })
+                }
+                aaa()
+                console.log('背景' + cnt + '件')
+              })            })
           } else {
             this.s_selectedLayers[mapName].unshift(
                 // {
@@ -766,8 +765,10 @@ export default {
                 }
             )
           }
+          console.log(params.slj)
           if (params.slj) this.s_selectedLayers = params.slj
           this.s_selectedLayers.map01 = this.s_selectedLayers.map01.filter(layer => layer.id !== 'oh-konzyaku-layer')
+
 
           // ----------------------------------------------------------------
 

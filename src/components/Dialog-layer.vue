@@ -308,7 +308,7 @@ export default {
               this.mw5AddLayers(map,this.mapName)
             } else {
               if (!map.getLayer(layer0.id)) {
-                map.addLayer(layer0)
+                  map.addLayer(layer0)
               }
               let opacity
               if (layer0['max-opacity']) {

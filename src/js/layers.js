@@ -3300,7 +3300,14 @@ const kyukeisyaLayer = {
     'id': 'oh-rgb-kyukeisya-layer',
     'type': 'raster',
     'source': 'kyukeisya-source',
-    'max-opacity': 0.8
+    'max-opacity': 0.8,
+    paint: {
+        'raster-opacity': 1.0,            // 不透明度を設定
+        'raster-hue-rotate': 80,          // 色相を30度回転して茶色っぽくする
+        'raster-brightness-min': 0.1,     // 最小輝度を少し下げる
+        'raster-brightness-max': 1.0,     // 最大輝度を調整
+        'raster-saturation': 0.8          // 彩度を増加させて色を強調する
+    }
 }
 // 地すべり危険箇所------------------------------------------------------------------------------------------------------
 const jisuberiSource = {
