@@ -19,17 +19,18 @@
 //         'circle-color': '#007cbf'
 //     }
 // }
-import std from '@/assets/json/modified_std.json'
+// import std from '@/assets/json/modified_std.json'
+import fxBasic from '@/assets/json/modified_fx_basic.json'
 import mono from '@/assets/json/modified_mono.json'
 import fxDark from '@/assets/json/modified_fx-dark.json'
-const stdSources = []
-const stdLayers = std.layers
-Object.keys(std.sources).forEach(function(key) {
-    stdSources.push({
-        id: key,
-        obj: std.sources[key]
-    })
-})
+// const stdSources = []
+// const stdLayers = std.layers
+// Object.keys(std.sources).forEach(function(key) {
+//     stdSources.push({
+//         id: key,
+//         obj: std.sources[key]
+//     })
+// })
 // ---------------------------------------------------------------------
 export const monoSources = []
 export const monoLayers = mono.layers
@@ -46,6 +47,15 @@ Object.keys(fxDark.sources).forEach(function(key) {
     fxDarkSources.push({
         id: key,
         obj: fxDark.sources[key]
+    })
+})
+// ---------------------------------------------------------------------
+const fxBasicSources = []
+const fxBasicLayers = fxBasic.layers
+Object.keys(fxBasic.sources).forEach(function(key) {
+    fxBasicSources.push({
+        id: key,
+        obj: fxBasic.sources[key]
     })
 })
 
@@ -4239,10 +4249,10 @@ const layers01 = [
                 layers: [paleLayer]
             },
             {
-                id: 'oh-vector-layer',
+                id: 'oh-vector-layer-fx-basic',
                 label: "ベクトルタイル",
-                sources: stdSources,
-                layers: stdLayers
+                sources: fxBasicSources,
+                layers: fxBasicLayers
             },
             {
                 id: 'oh-vector-layer-mono',
