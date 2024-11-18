@@ -41,6 +41,8 @@
 </template>
 
 <script>
+import {popup} from "@/js/popup";
+
 const popups = []
 function closeAllPopups() {
   popups.forEach(popup => popup.remove())
@@ -954,6 +956,10 @@ export default {
           })
           //------------------------------------------------------------------------------------------------------------
           map.on('click', (e) => {
+
+            popup(e,map,mapName,this.mapFlg)
+
+
             let html = ''
             let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
             console.log(features[0])
