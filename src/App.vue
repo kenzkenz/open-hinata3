@@ -370,8 +370,26 @@ export default {
           bearing = this.bearing
         }
       }
-      // console.log(pitch01)
-      const selectedLayersJson = JSON.stringify(this.$store.state.selectedLayers)
+      function removeKeys(obj, keysToRemove) {
+        if (Array.isArray(obj)) {
+          return obj.map(item => removeKeys(item, keysToRemove));
+        } else if (typeof obj === 'object' && obj !== null) {
+          const newObj = {};
+          for (const [key, value] of Object.entries(obj)) {
+            if (!keysToRemove.includes(key)) {
+              newObj[key] = removeKeys(value, keysToRemove);
+            }
+          }
+          return newObj;
+        }
+        return obj;
+      }
+
+      const keysToRemove = ['source', 'layers', 'sources'];
+      let copiedSelectedLayers = JSON.parse(JSON.stringify(this.$store.state.selectedLayers))
+      copiedSelectedLayers = removeKeys(copiedSelectedLayers, keysToRemove);
+      // console.log(JSON.stringify(copiedSelectedLayers))
+      const selectedLayersJson = JSON.stringify(copiedSelectedLayers)
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}&slj=${selectedLayersJson}`
       // console.log(this.param)
@@ -708,41 +726,83 @@ export default {
           // console.log(params.slj)
 
           if (params.slj) {
-            const mapNames = ['map01','map02']
+            const mapNames = ['map01', 'map02']
+            // 各マップについて処理を実行
             mapNames.forEach(mapName => {
-              params.slj[mapName].forEach(slg => {
-                let cnt = 0
-                function aaa() {
-                  Layers.layers[mapName].forEach(value => {
-                    if (!value.nodes) cnt++
-
-                    function bbb(v1) {
-                      if (v1.nodes) {
-                        v1.nodes.forEach(v2 => {
-                          // console.log(v2.nodes)
-                          if (!v2.nodes) {
-                            if (v2.id === slg.id) {
-                              slg.source = v2.source
-                              slg.layers = v2.layers
-                            }
-                            cnt++
-                          } else {
-                            bbb(v2)
+              params.slj[mapName].forEach(slj => {
+                let count = 0;
+                // レイヤーを探索して必要な情報を取得する関数
+                function traverseLayers(layers, slj) {
+                  layers.forEach(layer => {
+                    if (layer.nodes) {
+                      // 子ノードがある場合は再帰的に処理
+                      layer.nodes.forEach(node => {
+                        if (node.nodes) {
+                          traverseLayers([node], slj); // 再帰処理
+                        } else {
+                          // 子ノードがない場合の処理
+                          if (node.id === slj.id) {
+                            slj.source = node.source;
+                            slj.sources = node.sources;
+                            slj.layers = node.layers;
                           }
-                        })
-                      } else {
-                        if (value.id === slg.id) {
-                          slg.source = value.source
-                          slg.layers = value.layers
+                          count++;
                         }
+                      });
+                    } else {
+                      // 子ノードがない場合の処理
+                      if (layer.id === slj.id) {
+                        slj.source = layer.source;
+                        slj.layers = layer.layers;
                       }
+                      count++;
                     }
-                    bbb(value)
-                  })
+                  });
                 }
-                aaa()
-                console.log('背景' + cnt + '件')
-              })            })
+                // レイヤーの探索を開始
+                const layers = Layers.layers[mapName];
+                traverseLayers(layers, slj);
+                // 必要であれば処理結果のログを出力
+                console.log(`Processed ${count} layers for map: ${mapName}`);
+              });
+            });
+
+            // const mapNames = ['map01','map02']
+            // mapNames.forEach(mapName => {
+            //   params.slj[mapName].forEach(slj => {
+            //     let cnt = 0
+            //     function aaa() {
+            //       Layers.layers[mapName].forEach(value => {
+            //         if (!value.nodes) cnt++
+            //         function bbb(v1) {
+            //           if (v1.nodes) {
+            //             v1.nodes.forEach(v2 => {
+            //               if (!v2.nodes) {
+            //                 if (v2.id === slj.id) {
+            //                   slj.source = v2.source
+            //                   slj.sources = v2.sources
+            //                   slj.layers = v2.layers
+            //                 }
+            //                 cnt++
+            //               } else {
+            //                 bbb(v2)
+            //               }
+            //             })
+            //           } else {
+            //             if (value.id === slj.id) {
+            //               slj.source = value.source
+            //               slj.layers = value.layers
+            //             }
+            //           }
+            //         }
+            //         bbb(value)
+            //       })
+            //     }
+            //     aaa()
+            //     console.log('背景' + cnt + '件')
+            //   })
+            // })
+
           } else {
             this.s_selectedLayers[mapName].unshift(
                 // {
@@ -765,7 +825,7 @@ export default {
                 }
             )
           }
-          console.log(params.slj)
+          // console.log(params.slj)
           if (params.slj) this.s_selectedLayers = params.slj
           this.s_selectedLayers.map01 = this.s_selectedLayers.map01.filter(layer => layer.id !== 'oh-konzyaku-layer')
 
