@@ -3334,7 +3334,12 @@ const kozuiSaidaiLayer = {
     'id': 'oh-rgb-kozui-saidai-layer',
     'type': 'raster',
     'source': 'kozui-saidai-source',
-    'max-opacity': 0.8
+    'max-opacity': 0.8,
+    paint: {
+        'raster-opacity': 1,
+        // 乗算合成を設定
+        'raster-operation': 'multiply'
+    }
 }
 // 津波------------------------------------------------------------------------------------------------------
 const tsunamiSource = {

@@ -1558,6 +1558,7 @@ export function popup(e,map,mapName,mapFlg) {
             }
 
             if (html) {
+                html = '<div class="popup-html-div">' + html + '</div>'
                 popups.forEach(popup => popup.remove())
                 popups.length = 0;
                 const popup = new maplibregl.Popup({
@@ -1571,13 +1572,17 @@ export function popup(e,map,mapName,mapFlg) {
                 popups.push(popup)
                 popups.push(popup)
                 popup.on('close', () => closeAllPopups())
-                document.querySelector('.maplibregl-popup-content').scrollTop = 0
+                console.log(document.querySelector('.popup-html-div').scrollTop)
+                document.querySelectorAll('.popup-html-div').forEach(element => {
+                    element.scrollTop = 0
+                })
             }
         })
     })
 
     if (rasterLayerIds.length === 0){
         if (html) {
+            html = '<div class="popup-html-div">' + html + '</div>'
             popups.forEach(popup => popup.remove())
             popups.length = 0;
             const popup = new maplibregl.Popup({
@@ -1590,7 +1595,10 @@ export function popup(e,map,mapName,mapFlg) {
                 .addTo(map)
             popups.push(popup)
             popup.on('close', () => closeAllPopups())
-            document.querySelector('.maplibregl-popup-content').scrollTop = 0
+            console.log(document.querySelector('.popup-html-div').scrollTop)
+            document.querySelectorAll('.popup-html-div').forEach(element => {
+                element.scrollTop = 0
+            })
         }
     }
 }

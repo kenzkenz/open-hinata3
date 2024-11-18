@@ -1268,11 +1268,14 @@ html, body {
 }
 .maplibregl-popup-content {
   padding: 10px 20px 10px 20px;
-  max-height: 500px;
-  overflow: auto;
+
 }
 .maplibregl-popup-close-button{
   font-size: 40px;
+}
+.popup-html-div {
+  max-height: 500px;
+  overflow: auto;
 }
 font {
   pointer-events: none;
