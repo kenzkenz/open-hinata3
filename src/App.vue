@@ -1267,7 +1267,7 @@ html, body {
   touch-action: manipulation;
 }
 .maplibregl-popup-content {
-  padding: 30px 20px 10px 20px;
+  padding: 10px 20px 10px 20px;
   max-height: 500px;
   overflow: auto;
 }
