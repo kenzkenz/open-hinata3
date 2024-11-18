@@ -1594,4 +1594,34 @@ export function popup(e,map,mapName,mapFlg) {
         }
     }
 }
+export function mouseMoveForPopup (e,map) {
+    let rasterLayerIds = [];
+    const mapLayers = map.getStyle().layers;
+    mapLayers.forEach(layer => {
+        // const visibility = map.getLayoutProperty(layer.id, 'visibility');
+        // レイヤーのtypeプロパティを取得
+        const type = layer.type;
+        if (type === 'raster') {
+            rasterLayerIds.push(layer.id);
+        }
+    });
+    // ラスタレイヤのidからポップアップ表示に使用するURLを生成
+    rasterLayerIds.forEach(rasterLayerId => {
+        const RasterTileUrl = urlByLayerId(rasterLayerId)[0]
+        const legend = urlByLayerId(rasterLayerId)[1]
+        const z = urlByLayerId(rasterLayerId)[2]
+        const lng = e.lngLat.lng;
+        const lat = e.lngLat.lat;
+        if (RasterTileUrl) {
+            getLegendItem(legend, RasterTileUrl, lat, lng,z).then(function (v) {
+                let res = (v ? v.title : '')
+                if (res === '') {
+                    // map.getCanvas().style.cursor = "default"
+                    return
+                }
+                map.getCanvas().style.cursor = "pointer"
+            })
+        }
+    })
+}
 
