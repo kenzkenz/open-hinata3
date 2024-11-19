@@ -744,6 +744,7 @@ export default {
                         } else {
                           // 子ノードがない場合の処理
                           if (node.id === slj.id) {
+                            slj.label = node.label;
                             slj.source = node.source;
                             slj.sources = node.sources;
                             slj.layers = node.layers;
@@ -754,7 +755,9 @@ export default {
                     } else {
                       // 子ノードがない場合の処理
                       if (layer.id === slj.id) {
+                        slj.label = layer.label;
                         slj.source = layer.source;
+                        slj.sources = layer.sources;
                         slj.layers = layer.layers;
                       }
                       count++;
