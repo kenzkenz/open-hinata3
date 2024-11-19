@@ -26,6 +26,126 @@ const testLayer = {
 import fxBasic from '@/assets/json/modified_fx_basic.json'
 import mono from '@/assets/json/modified_mono.json'
 import fxDark from '@/assets/json/modified_fx-dark.json'
+
+
+//
+// // カスタム乗算合成シェーダーの定義
+// const customMultiplyBlend = {
+//     uniforms: ['u_image', 'u_baseTexture', 'u_opacity'],
+//     vertexSource: `
+//         attribute vec2 a_pos;
+//         varying vec2 v_texCoord;
+//
+//         void main() {
+//             gl_Position = vec4(a_pos, 0, 1);
+//             v_texCoord = (a_pos + 1.0) / 2.0;
+//         }
+//     `,
+//     fragmentSource: `
+//         precision mediump float;
+//         uniform sampler2D u_image;        // 上層のテクスチャ
+//         uniform sampler2D u_baseTexture;  // 下層のテクスチャ
+//         uniform float u_opacity;          // 不透明度
+//         varying vec2 v_texCoord;
+//
+//         void main() {
+//             vec4 topColor = texture2D(u_image, v_texCoord);
+//             vec4 baseColor = texture2D(u_baseTexture, v_texCoord);
+//
+//             // 乗算合成の計算
+//             vec3 multiplied = baseColor.rgb * topColor.rgb;
+//
+//             // 最終的な色を計算（アルファブレンディングを考慮）
+//             vec3 final = mix(baseColor.rgb, multiplied, u_opacity * topColor.a);
+//
+//             gl_FragColor = vec4(final, baseColor.a);
+//         }
+//     `
+// };
+//
+// // カスタムレイヤーの作成とシェーダーの適用
+// class CustomMultiplyLayer {
+//     constructor(options) {
+//         this.id = options.id;
+//         this.source = options.source;
+//         this.baseSource = options.baseSource;
+//         this.opacity = options.opacity || 1.0;
+//         this.type = 'custom';
+//         this.label = options.label
+//     }
+//
+//     onAdd(map, gl) {
+//         this.map = map;
+//         this.gl = gl;
+//
+//         // シェーダープログラムの初期化
+//         const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+//         gl.shaderSource(vertexShader, customMultiplyBlend.vertexSource);
+//         gl.compileShader(vertexShader);
+//
+//         const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+//         gl.shaderSource(fragmentShader, customMultiplyBlend.fragmentSource);
+//         gl.compileShader(fragmentShader);
+//
+//         this.program = gl.createProgram();
+//         gl.attachShader(this.program, vertexShader);
+//         gl.attachShader(this.program, fragmentShader);
+//         gl.linkProgram(this.program);
+//
+//         // 頂点バッファの設定
+//         this.buffer = gl.createBuffer();
+//         gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+//         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+//             -1, -1, 1, -1, -1, 1,
+//             1, -1, 1, 1, -1, 1
+//         ]), gl.STATIC_DRAW);
+//
+//         // uniformロケーションの取得
+//         this.uniformLocations = {
+//             u_image: gl.getUniformLocation(this.program, 'u_image'),
+//             u_baseTexture: gl.getUniformLocation(this.program, 'u_baseTexture'),
+//             u_opacity: gl.getUniformLocation(this.program, 'u_opacity')
+//         };
+//     }
+//
+//     render(gl, matrix) {
+//         gl.useProgram(this.program);
+//
+//         // 頂点属性の設定
+//         const positionLocation = gl.getAttribLocation(this.program, 'a_pos');
+//         gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+//         gl.enableVertexAttribArray(positionLocation);
+//         gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+//
+//         // テクスチャの設定
+//         const sourceTexture = this.map.painter.renderPass.getTexture(this.source);
+//         const baseTexture = this.map.painter.renderPass.getTexture(this.baseSource);
+//
+//         gl.activeTexture(gl.TEXTURE0);
+//         gl.bindTexture(gl.TEXTURE_2D, sourceTexture);
+//         gl.uniform1i(this.uniformLocations.u_image, 0);
+//
+//         gl.activeTexture(gl.TEXTURE1);
+//         gl.bindTexture(gl.TEXTURE_2D, baseTexture);
+//         gl.uniform1i(this.uniformLocations.u_baseTexture, 1);
+//
+//         // 不透明度の設定
+//         gl.uniform1f(this.uniformLocations.u_opacity, this.opacity);
+//
+//         // 描画
+//         gl.drawArrays(gl.TRIANGLES, 0, 6);
+//     }
+// }
+
+
+
+
+
+
+
+
+
+
 // const stdSources = []
 // const stdLayers = std.layers
 // Object.keys(std.sources).forEach(function(key) {
@@ -4300,6 +4420,20 @@ const kaiyochishitsuLayer = {
     'raster-resampling': 'nearest'
 }
 // ---------------------------------------------------------------------------------------------------------------------
+
+
+// const aaa = new CustomMultiplyLayer({
+//     id: 'oh-custom-multiply',
+//     label: "乗算合成テスト",
+//     source: 'multiply-source',
+//     baseSource: 'dosya-source',
+//     opacity: 0.8
+// })
+//
+// console.log(aaa)
+
+
+
 const layers01 = [
     {
         id: 1,
@@ -5112,6 +5246,12 @@ const layers01 = [
         id: 'test',
         label: "テスト",
         nodes: [
+            // {
+            //     id: 'oh-test2',
+            //     label: "test",
+            //     sources: [paleSource,dosyaSource],
+            //     layers: [aaa]
+            // },
             {
                 id: 'oh-jinjya',
                 label: "延喜式神名帳式内社(神社)",
