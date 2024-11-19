@@ -1,5 +1,6 @@
 import store from '@/store'
 import codeShizen from "@/js/codeShizen"
+import codeShizenOriginal from "@/js/codeShizenOriginal"
 import maplibregl from "maplibre-gl"
 const popups = []
 
@@ -328,7 +329,7 @@ export function popup(e,map,mapName,mapFlg) {
                     html +=
                         '<div class="michinoeki" font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size: 20px;">' + name + '</span><br>' +
-                        '<div style="font-size: 20px;margin-top: 10px;">' + link + '</div>' +
+                        '<div style="font-size: 14px;margin-top: 10px;">' + link + '</div>' +
                         '</div>'
                 }
                 break
@@ -544,6 +545,35 @@ export function popup(e,map,mapName,mapFlg) {
                     html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                     html +=
                         '<div class="chikeibunrui" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">' + name + '</span><hr>' +
+                        '<span style="font-size: 12px;">' + naritachi + '</span><hr>' +
+                        '<span style="font-size: 12px;">' + risk + '</span>' +
+                        '</div>'
+                }
+                break
+            }
+            case 'oh-jinkochikei': {
+                console.log(coordinates)
+                const features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: ['oh-jinkochikei']}
+                )
+                if (features.length === 0) return
+                props = features[0].properties
+                const code = props.code
+                let name = '', naritachi = "", risk = ""
+                const list = codeShizenOriginal
+                for (let i = 0; i < list.length; i++) {
+                    if (list[i][0] === Number(code)) {
+                        name = list[i][1]
+                        naritachi = list[i][2]
+                        risk = list[i][3]
+                        break;
+                    }
+                }
+                if (html.indexOf('jinkochikei') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="jinkochikei" font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size: 20px;">' + name + '</span><hr>' +
                         '<span style="font-size: 12px;">' + naritachi + '</span><hr>' +
                         '<span style="font-size: 12px;">' + risk + '</span>' +
@@ -950,11 +980,31 @@ export function popup(e,map,mapName,mapFlg) {
                 if (features.length === 0) return;
                 props = features[0].properties
                 const name = props.KOAZA_NAME
-                if (html.indexOf('koaza') === -1) {
+                if (html.indexOf('kantokoaza') === -1) {
+                    // html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="kantokoaza" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">小字名＝' + name + '</span><br>' +
+                        '</div>'
+                }
+                break
+            }
+            case 'oh-mura-label':
+            case 'oh-mura': {
+                const features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                console.log(features)
+                if (features.length === 0) return;
+                props = features[0].properties
+                const name = props.MURA_NAME
+                const a = '<a href="https://koaza.net/list/' + props.KUNI_NAME + props.GUN_NAME + '.html' + '#'+ props.MURA_NAME + '" target="_blank">' + name + '</a>'
+                console.log(a)
+                if (html.indexOf('kantomura') === -1) {
                     html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                     html +=
-                        '<div class="koaza" font-weight: normal; color: #333;line-height: 25px;">' +
-                        '<span style="font-size: 20px;">' + name + '</span><br>' +
+                        '<div class="kantomura" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">村　名＝' + a + '</span><hr>' +
                         '</div>'
                 }
                 break
@@ -1484,7 +1534,7 @@ export function popup(e,map,mapName,mapFlg) {
     })
 
     if (mapFlg.map02) {
-        const layer = this.$store.state.map02.getStyle().layers.at(-1)
+        const layer = store.state.map02.getStyle().layers.at(-1)
         if (layer.type === 'raster') {
             closeAllPopups()
         } else {

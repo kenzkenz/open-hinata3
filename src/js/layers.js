@@ -1633,19 +1633,19 @@ const csHyogoLayer = {
     'source': 'cs-hiyogo-source',
 }
 // 愛知県赤色立体図------------------------------------------------------------------------------------------------------
-const aichiSekisyokuSource = {
-    id: 'aichiSekisyokuSource', obj: {
-        type: 'raster',
-        tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://bg.maps.pref.aichi.jp/tiles/w213665/{z}/{x}/{y}.png'],
-        tileSize: 256,
-        crossOrigin: 'anonymous',
-    }
-}
-const aichiSekisyokuLayer = {
-    'id': 'oh-aichiSekisyokuLayer',
-    'type': 'raster',
-    'source': 'aichiSekisyokuSource',
-}
+// const aichiSekisyokuSource = {
+//     id: 'aichiSekisyokuSource', obj: {
+//         type: 'raster',
+//         tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://bg.maps.pref.aichi.jp/tiles/w213665/{z}/{x}/{y}.png'],
+//         tileSize: 256,
+//         crossOrigin: 'anonymous',
+//     }
+// }
+// const aichiSekisyokuLayer = {
+//     'id': 'oh-aichiSekisyokuLayer',
+//     'type': 'raster',
+//     'source': 'aichiSekisyokuSource',
+// }
 // 神奈川県赤色立体図------------------------------------------------------------------------------------------------------
 const kanagawaSekisyokuSource = {
     id: 'kanagawa-sekisyoku-source', obj: {
@@ -3711,15 +3711,15 @@ const yotochiikiLayerLabel = {
 const koazaSource = {
     id: "koaza-source", obj: {
         type: "vector",
-        url: "pmtiles://https://osaru-san1.github.io/border/koaza.pmtiles",
-        attribution: '<a href="https://koaza.net/">関東小字地図</a>',
+        // url: "pmtiles://https://osaru-san1.github.io/border/koaza.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/koaza/koaza_modified.pmtiles",
     }
 }
 const koazaLayer = {
     id: "oh-koaza",
     type: "fill",
     source: "koaza-source",
-    "source-layer": "koaza",
+    "source-layer": "polygon",
     paint: {
         'fill-color': 'rgba(255,255,255,0.1)'
     },
@@ -3728,9 +3728,9 @@ const koazaLayerLine = {
     id: "oh-koaza-line",
     type: "line",
     source: "koaza-source",
-    "source-layer": "koaza",
+    "source-layer": "polygon",
     paint: {
-        'line-color': 'red',
+        'line-color': 'hotpink',
         'line-width': [
             'interpolate',
             ['linear'],
@@ -3744,30 +3744,30 @@ const koazaLayerLabel = {
     id: "oh-koaza-label",
     type: "symbol",
     source: "koaza-source",
-    "source-layer": "koaza",
+    "source-layer": "polygon",
     'layout': {
         'text-field': ['get', 'KOAZA_NAME'],
         'text-font': ['NotoSansJP-Regular'],
     },
     'paint': {
-        'text-color': 'red',
+        'text-color': 'hotpink',
         'text-halo-color': 'white',
         'text-halo-width': 1.0,
     },
-    'minzoom': 12
+    'minzoom': 14
 }
 const muraSource = {
     id: "mura-source", obj: {
         type: "vector",
-        url: "pmtiles://https://osaru-san1.github.io/border/mura.pmtiles",
-        attribution: '<a href="https://koaza.net/">関東小字地図</a>',
+        // url: "pmtiles://https://osaru-san1.github.io/border/mura.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/koaza/mura_modified.pmtiles",
     }
 }
 const muraLayer = {
     id: "oh-mura",
     type: "fill",
-    source: "koaza-source",
-    "source-layer": "mura",
+    source: "mura-source",
+    "source-layer": "polygon",
     paint: {
         'fill-color': 'rgba(0,0,0,0)'
     },
@@ -3776,7 +3776,7 @@ const muraLayerLine = {
     id: "oh-mura-line",
     type: "line",
     source: "mura-source",
-    "source-layer": "mura",
+    "source-layer": "polygon",
     paint: {
         'line-color': 'blue',
         'line-width': [
@@ -3784,9 +3784,60 @@ const muraLayerLine = {
             ['linear'],
             ['zoom'],
             10, 0.5,
-            14, 1
+            14, 4
         ]
     },
+}
+// const muraLayerLabel = {
+//     id: "oh-mura-label",
+//     type: "symbol",
+//     source: "mura-source",
+//     "source-layer": "polygon",
+//     // 'layout': {
+//     //     'text-field': ['get', 'MURA_NAME'],
+//     //     'text-font': ['NotoSansJP-Regular'],
+//     // },
+//     layout: {
+//         'text-field': ['get', 'MURA_NAME'],
+//         'text-font': ['NotoSansJP-Regular'],
+//         'text-anchor': 'center',
+//         'symbol-placement': 'point', // ポイントとして配置
+//         'text-allow-overlap': false, // ラベルの重複を防ぐ
+//         'text-size': 20,
+//         'text-max-width': 50,
+//         'text-offset': [0, 0],
+//     },
+//     'paint': {
+//         'text-color': 'blue',
+//         'text-halo-color': 'white',
+//         'text-halo-width': 1.0,
+//     },
+//     'minzoom': 13
+// }
+
+
+const muraCenterSource = {
+    id: "mura-center-source", obj: {
+        type: "vector",
+        // url: "pmtiles://https://osaru-san1.github.io/border/mura.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/koaza/mura_center_point.pmtiles",
+    }
+}
+const muraCenterLabel = {
+    id: "oh-mura-center-label",
+    type: "symbol",
+    source: "mura-center-source",
+    "source-layer": "point",
+    layout: {
+        'text-field': ['get', 'MURA_NAME'],
+        'text-font': ['NotoSansJP-Regular'],
+    },
+    'paint': {
+        'text-color': 'blue',
+        'text-halo-color': 'white',
+        'text-halo-width': 1.0,
+    },
+    'minzoom': 13
 }
 // dronebird---------------------------------------------------------------------------------------------------------
 const dronebirdSource = {
@@ -4089,13 +4140,13 @@ export const tochiriyoLayerLine = {
     },
 }
 // 夜の光----------------------------------------------------------------------------------------------------------------
-export const hikariSource = {
+const hikariSource = {
     id: "hikari-source", obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/hikari/hikari.pmtiles",
     }
 }
-export const hikariLayer = {
+const hikariLayer = {
     id: "oh-hikari",
     type: "fill",
     source: "hikari-source",
@@ -4112,7 +4163,7 @@ export const hikariLayer = {
         ]
     }
 }
-export const hikariLayerHeight = {
+const hikariLayerHeight = {
     id: "oh-hikari-height",
     type: "fill-extrusion",
     source: "hikari-source",
@@ -4418,6 +4469,41 @@ const kaiyochishitsuLayer = {
     'type': 'raster',
     'source': 'kaiyochishitsu-source',
     'raster-resampling': 'nearest'
+}
+// 人工地形-----------------------------------------------------------------------------------------------------
+const jinkochikeiSource = {
+    id: "jinkochikei-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/jinkochikei/jinkochikei.pmtiles",
+    }
+}
+const jinkochikeiLayer = {
+    id: "oh-jinkochikei",
+    type: "fill",
+    source: "jinkochikei-source",
+    "source-layer": "polygon",
+    "paint": {
+        "fill-color": [
+            "match",
+            ["get", "code"],
+            "11001", "rgba(133, 196, 209, 0.8)",
+            "11003", "rgba(133, 196, 209, 0.8)",
+            "11009", "rgba(133, 196, 209, 0.8)",
+            "11011", "rgba(133, 196, 209, 0.8)",
+            "4010301", "rgba(133, 196, 209, 0.8)",
+            "11002", "rgba(138, 216, 182, 0.8)",
+            "11004", "rgba(239, 136, 136, 0.8)",
+            "11006", "rgba(239, 136, 136, 0.8)",
+            "11007", "rgba(239, 136, 136, 0.8)",
+            "11014", "rgba(239, 136, 136, 0.8)",
+            "4010201", "rgba(255, 79, 79, 0.8)",
+            "11005", "rgba(255, 79, 79, 0.8)",
+            "11008", "rgba(195, 122, 255, 0.8)",
+            "4010101", "rgba(195, 122, 255, 0.8)",
+            "11010", "rgba(255, 232, 232, 0.8)",
+            "rgba(0, 0, 0, 0.8)"  // デフォルトカラー
+        ]
+    }
 }
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -4818,6 +4904,17 @@ const layers01 = [
         ]
     },
     {
+        id: 'koaza',
+        label: "関東小字地図",
+        nodes: [
+            {
+                id: 'oh-koaza',
+                label: "関東小字地図",
+                sources: [koazaSource,muraSource,muraCenterSource],
+                layers: [koazaLayer,koazaLayerLine,koazaLayerLabel,muraLayer,muraLayerLine,muraCenterLabel],
+                attribution: '<a href="https://koaza.net/" target="_blank">関東小字地図</a>'
+            }]},
+    {
         id: 2,
         label: "自然、立体図等",
         nodes: [
@@ -4949,8 +5046,8 @@ const layers01 = [
                     {
                         id: 'oh-sekisyoku-layer-all',
                         label: "赤色立体地図全部",
-                        sources: [kanagawaSekisyokuSource,tamaSekisyokuSource,tokyo23SekisyokuSource,tosyo01SekisyokuSource,tosyo02SekisyokuSource,tosyo03SekisyokuSource,tosyo04SekisyokuSource,tosyo05SekisyokuSource,tosyo06SekisyokuSource,aichiSekisyokuSource,kochiSekisyokuSource],
-                        layers: [kanagawaSekisyokuLayer,tamaSekisyokuLayer,tokyo23SekisyokuLayer,tosyo02SekisyokuLayer,tosyo03SekisyokuLayer,tosyo04SekisyokuLayer,tosyo05SekisyokuLayer,tosyo06SekisyokuLayer,tosyo01SekisyokuLayer,aichiSekisyokuLayer,kochiSekisyokuLayer],
+                        sources: [kanagawaSekisyokuSource,tamaSekisyokuSource,tokyo23SekisyokuSource,tosyo01SekisyokuSource,tosyo02SekisyokuSource,tosyo03SekisyokuSource,tosyo04SekisyokuSource,tosyo05SekisyokuSource,tosyo06SekisyokuSource,kochiSekisyokuSource],
+                        layers: [kanagawaSekisyokuLayer,tamaSekisyokuLayer,tokyo23SekisyokuLayer,tosyo02SekisyokuLayer,tosyo03SekisyokuLayer,tosyo04SekisyokuLayer,tosyo05SekisyokuLayer,tosyo06SekisyokuLayer,tosyo01SekisyokuLayer,kochiSekisyokuLayer],
                     },
                     {
                         id: 'oh-kanagawa-sekisyoku-layer',
@@ -4966,12 +5063,12 @@ const layers01 = [
                         layers: [tamaSekisyokuLayer,tokyo23SekisyokuLayer,tosyo02SekisyokuLayer,tosyo03SekisyokuLayer,tosyo04SekisyokuLayer,tosyo05SekisyokuLayer,tosyo06SekisyokuLayer,tosyo01SekisyokuLayer],
                         attribution:'<a href="https://www.geospatial.jp/ckan/dataset/tokyopc-23ku-2024" target="_blank">G空間情報センター</a>'
                     },
-                    {
-                        id: 'oh-aichiSekisyokuLayer',
-                        label: "愛知県赤色立体地図",
-                        source: aichiSekisyokuSource,
-                        layers: [aichiSekisyokuLayer]
-                    },
+                    // {
+                    //     id: 'oh-aichiSekisyokuLayer',
+                    //     label: "愛知県赤色立体地図",
+                    //     source: aichiSekisyokuSource,
+                    //     layers: [aichiSekisyokuLayer]
+                    // },
                     {
                         id: 'oh-kochi-sekisyoku-layer',
                         label: "高知県赤色立体地図",
@@ -5048,6 +5145,12 @@ const layers01 = [
                 label: "地形分類",
                 source: chikeibunruiSource,
                 layers: [chikeibunruiLayer]
+            },
+            {
+                id: 'oh-jinkochikei',
+                label: "人工地形",
+                source: jinkochikeiSource,
+                layers: [jinkochikeiLayer]
             },
         ]
     },
@@ -5269,13 +5372,6 @@ const layers01 = [
                 label: "夜のあかり3D",
                 source: hikariSource,
                 layers: [hikariLayerHeight]
-            },
-            {
-                id: 'oh-koaza',
-                label: "関東小字地図テスト",
-                sources: [koazaSource,muraSource],
-                layers: [koazaLayer,koazaLayerLine,koazaLayerLabel,muraLayer,muraLayerLine],
-                attribution: '<a href="https://koaza.net/">関東小字地図</a>'
             },
             {
                 id: 'oh-yotochiiki',

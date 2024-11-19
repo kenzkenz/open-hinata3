@@ -242,6 +242,16 @@ tippecanoe -rg -pk -pf -l polygon -f -o tsst.pmtiles miyazaki_merged.geojson
 
 tippecanoe -rg -pk -pf -l polygon -f -o chikeibunrui.pmtiles chikeibunrui.geojson
 
+tippecanoe-decode koazamoto.pmtiles -z 14 -Z 14 -c > koaza_decode.geojson
+tippecanoe-decode muramoto.pmtiles -z 14 -Z 14 -c > mura_decode.geojson
+
+tippecanoe -l polygon -f -o koaza_modified.pmtiles koaza_modified.geojson
+
+tippecanoe -rg -pk -pf -l point -f -o mura_center_point.pmtiles mura_center_point.geojson
+
+tippecanoe -l polygon -f -o jinkochikei.pmtiles jinkochikei.geojson
+
+
 
 import random
 from qgis.core import QgsField, QgsExpression, QgsExpressionContext, QgsExpressionContextUtils
