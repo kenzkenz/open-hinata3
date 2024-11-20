@@ -3442,7 +3442,7 @@ const jisuberiLayer = {
     'source': 'jisuberi-source',
     'max-opacity': 0.8
 }
-// 洪水浸水想定------------------------------------------------------------------------------------------------------
+// 洪水浸水想定（最大）------------------------------------------------------------------------------------------------------
 const kozuiSaidaiSource = {
     id: 'kozui-saidai-source', obj: {
         type: 'raster',
@@ -3455,11 +3455,20 @@ const kozuiSaidaiLayer = {
     'type': 'raster',
     'source': 'kozui-saidai-source',
     'max-opacity': 0.8,
-    paint: {
-        'raster-opacity': 1,
-        // 乗算合成を設定
-        'raster-operation': 'multiply'
+}
+// 洪水浸水想定（計画規模）------------------------------------------------------------------------------------------------------
+const kozuikeikskuSource = {
+    id: 'kozui-keikaku-source', obj: {
+        type: 'raster',
+        tiles: ['https://disaportaldata.gsi.go.jp/raster/01_flood_l1_shinsuishin_newlegend_kuni_data/{z}/{x}/{y}.png'],
+        rasterResampling: 'nearest',
     }
+}
+const kozuiKeikskuLayer = {
+    'id': 'oh-rgb-kozui-keikaku-layer',
+    'type': 'raster',
+    'source': 'kozui-keikaku-source',
+    'max-opacity': 0.8,
 }
 // 津波------------------------------------------------------------------------------------------------------
 const tsunamiSource = {
@@ -5150,7 +5159,8 @@ const layers01 = [
                 id: 'oh-jinkochikei',
                 label: "人工地形",
                 source: jinkochikeiSource,
-                layers: [jinkochikeiLayer]
+                layers: [jinkochikeiLayer],
+                attribution: '<a href="https://github.com/gsi-cyberjapan/experimental_landformclassification" target="_blank">国土地理院ベクトルタイル提供実験（地形分類）</a>'
             },
         ]
     },
@@ -5200,6 +5210,12 @@ const layers01 = [
                 label: "洪水浸水想定（想定最大規模）",
                 source: kozuiSaidaiSource,
                 layers: [kozuiSaidaiLayer],
+            },
+            {
+                id: 'oh-keikaku-saidai',
+                label: "洪水浸水想定（計画規模）",
+                source: kozuikeikskuSource,
+                layers: [kozuiKeikskuLayer],
             },
             {
                 id: 'oh-tsunami',

@@ -141,6 +141,11 @@ function urlByLayerId (layerId) {
             legend = legend_shinsuishin
             zoom = 16
             break;
+        case 'oh-rgb-kozui-keikaku-layer':
+            RasterTileUrl = 'https://disaportaldata.gsi.go.jp/raster/01_flood_l1_shinsuishin_newlegend_kuni_data/{z}/{x}/{y}.png'
+            legend = legend_shinsuishin
+            zoom = 16
+            break;
         case 'oh-shitchi-layer':
         case 'oh-rgb-shitchi-layer':
             RasterTileUrl = 'https://cyberjapandata.gsi.go.jp/xyz/swale/{z}/{x}/{y}.png';
@@ -1578,6 +1583,7 @@ export function popup(e,map,mapName,mapFlg) {
                 // if (html) html += '<hr class="break-hr">'
                 html += '<div class="layer-label-div-red">' + getLabelByLayerId(rasterLayerId, store.state.selectedLayers) + '</div>'
                 switch (rasterLayerId) {
+                    case 'oh-rgb-kozui-keikaku-layer':
                     case 'oh-rgb-kozui-saidai-layer':
                         html +=
                             '<div font-weight: normal; color: #333;line-height: 25px;">' +
