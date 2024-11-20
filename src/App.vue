@@ -33,7 +33,10 @@
               <v-btn icon type="button" class="terrain-btn-center terrain-btn" @pointerdown="terrainReset(mapName)"><v-icon>mdi-undo</v-icon></v-btn>
             </div>
           </div>
-          <div class="zoom-div">zoom={{zoom.toFixed(2)}}<br>{{address}}</div>
+          <div class="zoom-div">
+            zoom={{zoom.toFixed(2)}} {{elevation}}<br>
+            {{address}}
+          </div>
         </div>
       </div>
     </v-main>
@@ -64,6 +67,86 @@ export function history (event,url) {
           url: url
         }
       })
+}
+// 緯度経度をタイル座標 (z, x, y) に変換
+function lonLatToTile(lon, lat, zoom) {
+  const n = Math.pow(2, zoom);
+  const xTile = Math.floor((lon + 180.0) / 360.0 * n);
+  const yTile = Math.floor(
+      (1.0 - Math.log(Math.tan((lat * Math.PI) / 180.0) + 1.0 / Math.cos((lat * Math.PI) / 180.0)) / Math.PI) /
+      2.0 *
+      n
+  );
+  return { xTile, yTile };
+}
+
+// タイル内のピクセル座標を計算
+function calculatePixelInTile(lon, lat, zoom, xTile, yTile, tileSize = 256) {
+  const n = Math.pow(2, zoom);
+  const x = ((lon + 180.0) / 360.0 * n - xTile) * tileSize;
+  const y =
+      ((1.0 - Math.log(Math.tan((lat * Math.PI) / 180.0) + 1.0 / Math.cos((lat * Math.PI) / 180.0)) / Math.PI) / 2.0 *
+          n -
+          yTile) *
+      tileSize;
+  return { x: Math.floor(x), y: Math.floor(y) };
+}
+
+// 修正版: RGB値を標高にデコードする関数
+function decodeElevationFromRGB(r, g, b) {
+  const scale = 0.01; // スケール値（仮定）
+  const offset = 0;   // オフセット値（仮定）
+  return (r * 256 * 256 + g * 256 + b) * scale + offset; // RGB値を計算
+}
+
+// 標高データをタイル画像から取得
+async function fetchElevationFromImage(imageUrl, lon, lat, zoom) {
+  const { xTile, yTile } = lonLatToTile(lon, lat, zoom);
+
+  const img = new Image();
+  img.crossOrigin = "Anonymous"; // クロスオリジン対応
+  img.src = imageUrl;
+
+  return new Promise((resolve, reject) => {
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+
+      // タイル内のピクセル座標を計算
+      const { x, y } = calculatePixelInTile(lon, lat, zoom, xTile, yTile, img.width);
+
+      // ピクセルデータを取得
+      const imageData = ctx.getImageData(x, y, 1, 1).data;
+      const [r, g, b] = imageData; // R, G, B 値を取得
+      // console.log(`R: ${r}, G: ${g}, B: ${b}`); // デバッグ用ログ
+      const elevation = decodeElevationFromRGB(r, g, b); // 標高を計算
+      resolve(elevation);
+    };
+
+    img.onerror = (err) => {
+      reject(`画像の読み込みに失敗しました: ${err}`);
+    };
+  });
+}
+
+// 標高を取得する関数
+async function fetchElevation(lon, lat, zoom = 15) {
+  const baseUrl = "https://mapdata.qchizu2.xyz/03_dem/51_int/all_9999/int_01/{z}/{x}/{y}.png";
+  const { xTile, yTile } = lonLatToTile(lon, lat, zoom);
+
+  // タイルURLを生成
+  const tileUrl = baseUrl.replace("{z}", zoom).replace("{x}", xTile).replace("{y}", yTile);
+
+  try {
+    const elevation = await fetchElevationFromImage(tileUrl, lon, lat, zoom);
+    // console.log(`標高: ${elevation}m`);
+    return elevation;
+  } catch (error) {
+    console.error("エラー:", error);
+  }
 }
 
 import axios from "axios"
@@ -104,7 +187,8 @@ export default {
     pitch:{map01:0,map02:0},
     bearing:0,
     zoom:0,
-    address:''
+    address:'',
+    elevation:''
   }),
   computed: {
     s_terrainLevel: {
@@ -939,6 +1023,32 @@ export default {
           // map.on('zoomend', this.updatePermalink)
           map.on('idle', this.updatePermalink)
 
+
+
+          map.on('move', async () => {
+            const center = map.getCenter(); // マップの中心座標を取得
+            const lon = center.lng; // 経度
+            const lat = center.lat; // 緯度
+            // const zoom = Math.round(map.getZoom()); // 現在のズームレベル
+
+            // 標高を取得
+            const elevation = await fetchElevation(lon, lat);
+
+            // 標高を画面に表示
+            if (elevation !== null) {
+              if (elevation <= 4000) {
+                // console.log(`画面の中心標高: ${elevation.toFixed(2)}m`)
+                this.elevation = `中心の標高: ${elevation.toFixed(2)}m`
+              } else {
+                this.elevation = ''
+              }
+            } else {
+              this.elevation = ''
+            }
+          });
+
+
+
           //------------------------------------------------------------------------------------------------------------
           map.on('mousemove', (e) => {
             // クリック可能なすべてのレイヤーからフィーチャーを取得
@@ -985,6 +1095,101 @@ export default {
     }
   },
   mounted() {
+
+
+// // 緯度経度をタイル座標 (z, x, y) に変換
+//     function lonLatToTile(lon, lat, zoom) {
+//       const n = Math.pow(2, zoom);
+//       const xTile = Math.floor((lon + 180.0) / 360.0 * n);
+//       const yTile = Math.floor(
+//           (1.0 - Math.log(Math.tan((lat * Math.PI) / 180.0) + 1.0 / Math.cos((lat * Math.PI) / 180.0)) / Math.PI) /
+//           2.0 *
+//           n
+//       );
+//       return { xTile, yTile };
+//     }
+//
+// // タイル内のピクセル座標を計算
+//     function calculatePixelInTile(lon, lat, zoom, xTile, yTile, tileSize = 256) {
+//       const n = Math.pow(2, zoom);
+//       const x = ((lon + 180.0) / 360.0 * n - xTile) * tileSize;
+//       const y =
+//           ((1.0 - Math.log(Math.tan((lat * Math.PI) / 180.0) + 1.0 / Math.cos((lat * Math.PI) / 180.0)) / Math.PI) / 2.0 *
+//               n -
+//               yTile) *
+//           tileSize;
+//       return { x: Math.floor(x), y: Math.floor(y) };
+//     }
+//
+// // 修正版: RGB値を標高にデコードする関数
+//     function decodeElevationFromRGB(r, g, b) {
+//       const scale = 0.01; // スケール値（仮定）
+//       const offset = 0;   // オフセット値（仮定）
+//       return (r * 256 * 256 + g * 256 + b) * scale + offset; // RGB値を計算
+//     }
+//
+// // 標高データをタイル画像から取得
+//     async function fetchElevationFromImage(imageUrl, lon, lat, zoom) {
+//       const { xTile, yTile } = lonLatToTile(lon, lat, zoom);
+//
+//       const img = new Image();
+//       img.crossOrigin = "Anonymous"; // クロスオリジン対応
+//       img.src = imageUrl;
+//
+//       return new Promise((resolve, reject) => {
+//         img.onload = () => {
+//           const canvas = document.createElement("canvas");
+//           const ctx = canvas.getContext("2d");
+//           canvas.width = img.width;
+//           canvas.height = img.height;
+//           ctx.drawImage(img, 0, 0);
+//
+//           // タイル内のピクセル座標を計算
+//           const { x, y } = calculatePixelInTile(lon, lat, zoom, xTile, yTile, img.width);
+//
+//           // ピクセルデータを取得
+//           const imageData = ctx.getImageData(x, y, 1, 1).data;
+//           const [r, g, b] = imageData; // R, G, B 値を取得
+//           console.log(`R: ${r}, G: ${g}, B: ${b}`); // デバッグ用ログ
+//           const elevation = decodeElevationFromRGB(r, g, b); // 標高を計算
+//           resolve(elevation);
+//         };
+//
+//         img.onerror = (err) => {
+//           reject(`画像の読み込みに失敗しました: ${err}`);
+//         };
+//       });
+//     }
+//
+// // 標高を取得する関数
+//     async function fetchElevation(lon, lat, zoom = 14) {
+//       const baseUrl = "https://mapdata.qchizu2.xyz/03_dem/51_int/all_9999/int_01/{z}/{x}/{y}.png";
+//       const { xTile, yTile } = lonLatToTile(lon, lat, zoom);
+//
+//       // タイルURLを生成
+//       const tileUrl = baseUrl.replace("{z}", zoom).replace("{x}", xTile).replace("{y}", yTile);
+//
+//       try {
+//         const elevation = await fetchElevationFromImage(tileUrl, lon, lat, zoom);
+//         console.log(`標高: ${elevation}m`);
+//         return elevation;
+//       } catch (error) {
+//         console.error("エラー:", error);
+//       }
+//     }
+
+// 使用例
+//     const longitude = 138.7274; // 経度 (例: 東京)
+//     const latitude = 35.3606;   // 緯度 (例: 東京)
+//     const zoomLevel = 14;       // ズームレベル
+//
+//     fetchElevation(longitude, latitude, zoomLevel);
+
+
+
+
+
+
     const vm = this
     // -----------------------------------------------------------------------------------------------------------------
     this.mapNames.forEach(mapName => {
