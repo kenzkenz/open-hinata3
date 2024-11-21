@@ -37,6 +37,7 @@ export default {
     syochiikiInput (mapName) {
       const map = this.$store.state[mapName]
       function filterBy(text) {
+        console.log(text)
         if (text) {
           let searchString = text
           searchString = searchString.replace(/\u3000/g,' ').trim()
@@ -72,6 +73,7 @@ export default {
   },
   watch: {
     s_watchFlg () {
+      // alert(1111)
       this.syochiikiInput (this.mapName)
     },
   }

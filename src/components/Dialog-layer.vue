@@ -76,6 +76,9 @@ export default {
     // secondDivStyle: {'height': '390px', 'overflow': 'auto', 'user-select': 'text'},
   }),
   computed: {
+    s_watchFlg () {
+      return this.$store.state.watchFlg
+    },
     s_secondDivStyle: {
       get() {
         return this.$store.state.secondDivStyle
@@ -307,7 +310,7 @@ export default {
             if (layer0.id === 'oh-mw-dummy') {
               this.mw5AddLayers(map,this.mapName)
             } else {
-              // console.log(layer0)
+              console.log(layer0)
               if (!map.getLayer(layer0.id)) {
                   map.addLayer(layer0)
               }
@@ -352,6 +355,7 @@ export default {
             if (layer.ext) {
               if (layer.ext.values) {
                 layer.ext.values.forEach((v,i) => {
+                  console.log(String(v))
                   this.$store.commit('updateParam', {
                     name: layer.ext.name,
                     mapName: this.mapName,
@@ -493,6 +497,12 @@ export default {
       },
       deep: true
     },
+    s_watchFlg: {
+      handler: function(){
+        // alert("333333333")
+      },
+      deep: true
+    },
     s_selectedLayers: {
       handler: function(){
         console.log('変更を検出しました',this.$store.state.watchFlg)
@@ -506,6 +516,13 @@ export default {
         this.$store.state.latRange = [sw.lat,ne.lat]
         // ------------------------------------------------------------------
         this.addLayers()
+
+        // const vm = this
+        // setTimeout(function() {
+        //   vm.$store.state.watchFlg = !vm.$store.state.watchFlg
+        //   vm.$store.state.watchFlg = !vm.$store.state.watchFlg
+        // },11000)
+
       },
       deep: true
     },

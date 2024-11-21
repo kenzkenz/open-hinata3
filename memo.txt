@@ -251,6 +251,7 @@ tippecanoe -rg -pk -pf -l point -f -o mura_center_point.pmtiles mura_center_poin
 
 tippecanoe -l polygon -f -o jinkochikei.pmtiles jinkochikei.geojson
 
+tippecanoe -rg -pk -pf -l point -f -o kansui.pmtiles merged_kansui.geojson
 
 
 import random

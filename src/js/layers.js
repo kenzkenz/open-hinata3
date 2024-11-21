@@ -3314,6 +3314,52 @@ const hinanjyoDosekiryuLayerLabel = {
     'maxzoom': 24,
     'minzoom': 13
 }
+// 冠水 --------------------------------------------------------------------------------------------
+const kansuiSource = {
+    id: "kansui-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/kansui/kansui.pmtiles",
+    }
+}
+const kansuiLayer = {
+    id: "oh-kansui",
+    type: "circle",
+    source: "kansui-source",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': 'navy',
+        'circle-radius':[
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            2, 0.1,
+            4, 0.5,
+            7, 2,
+            11, 10
+        ]
+    }
+}
+const kansuiLayerLabel = {
+    id: "oh-kansui-label",
+    type: "symbol",
+    source: "kansui-source",
+    "source-layer": "point",
+    'layout': {
+        'text-field': ['get', 'name'],
+        'text-font': ['NotoSansJP-Regular'],
+        'text-offset': [0, 1],
+    },
+    'paint': {
+        'text-color': 'rgba(0, 0, 0, 1)',
+        'text-halo-color': 'rgba(255,255,255,1)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 13
+}
+
+
+
 
 // R05大規模盛土造成地-----------------------------------------------------------------------------------------------------
 const zoseiSource = {
@@ -3484,7 +3530,7 @@ const tsunamiLayer = {
     'source': 'tsunami-source',
     'max-opacity': 0.8
 }
-// ため池結界------------------------------------------------------------------------------------------------------
+// ため池決壊------------------------------------------------------------------------------------------------------
 const tameikeSource = {
     id: 'tameike-source', obj: {
         type: 'raster',
@@ -5253,6 +5299,12 @@ const layers01 = [
                 label: "地すべり危険箇所",
                 source: jisuberiSource,
                 layers: [jisuberiLayer],
+            },
+            {
+                id: 'oh-kansui',
+                label: "道路冠水想定箇所（アンダーパス等",
+                source: kansuiSource,
+                layers: [kansuiLayer,kansuiLayerLabel],
             },
             {
                 id: 'oh-tsunami-height',

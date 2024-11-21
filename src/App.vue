@@ -498,7 +498,6 @@ export default {
               vm.address = splitMuni[1] + splitMuni[3] + response.data.results.lv01Nm
             }
           })
-
       history('updatePermalink',window.location.href)
     },
     createShortUrl() {
@@ -856,43 +855,6 @@ export default {
                 console.log(`Processed ${count} layers for map: ${mapName}`);
               });
             });
-
-            // const mapNames = ['map01','map02']
-            // mapNames.forEach(mapName => {
-            //   params.slj[mapName].forEach(slj => {
-            //     let cnt = 0
-            //     function aaa() {
-            //       Layers.layers[mapName].forEach(value => {
-            //         if (!value.nodes) cnt++
-            //         function bbb(v1) {
-            //           if (v1.nodes) {
-            //             v1.nodes.forEach(v2 => {
-            //               if (!v2.nodes) {
-            //                 if (v2.id === slj.id) {
-            //                   slj.source = v2.source
-            //                   slj.sources = v2.sources
-            //                   slj.layers = v2.layers
-            //                 }
-            //                 cnt++
-            //               } else {
-            //                 bbb(v2)
-            //               }
-            //             })
-            //           } else {
-            //             if (value.id === slj.id) {
-            //               slj.source = value.source
-            //               slj.layers = value.layers
-            //             }
-            //           }
-            //         }
-            //         bbb(value)
-            //       })
-            //     }
-            //     aaa()
-            //     console.log('背景' + cnt + '件')
-            //   })
-            // })
-
           } else {
             this.s_selectedLayers[mapName].unshift(
                 // {

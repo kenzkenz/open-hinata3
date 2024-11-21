@@ -7,7 +7,7 @@
           outlined
           @update:modelValue="onSelectChange"
       ></v-select>
-      <v-text-field label="抽出" v-model="s_bakumatsuText" @input="bakumatsuInput(mapName)" style="margin-top: 10px"></v-text-field>
+      <v-text-field label="抽出" v-model="s_bakumatsuText" @input="bakumatsuInput(mapName)" @change="aaa" style="margin-top: 10px"></v-text-field>
       <div>
         <p v-html="htmlKokudaka"></p>
       </div>
@@ -16,7 +16,9 @@
 
 <script>
 
-import axios from "axios";
+import axios from "axios"
+import { PMTiles } from "pmtiles"
+import * as turf from "@turf/turf"
 
 export default {
   name: 'ext-bakumatsu',
@@ -162,8 +164,43 @@ export default {
       }
       this.$store.state.watchFlg = false
       filterBy(this.s_bakumatsuText)
+      //
       this.update()
-      // this.$store.state.watchFlg = true
+    },
+    aaa() {
+      // const map = this.$store.state[this.mapName]
+      // // フィルタリング後にズームを調整する関数
+      // function zoomToFilteredPolygons(map, layerId) {
+      //   try {
+      //     // レンダリングされたフィルタリング済みのフィーチャを取得
+      //     const features = map.queryRenderedFeatures({ layers: [layerId] });
+      //
+      //     // フィルタリング結果が存在しない場合
+      //     if (features.length === 0) {
+      //       console.log("一致するポリゴンがありません");
+      //       return;
+      //     }
+      //
+      //     // フィーチャが1つの場合、その中心にズーム
+      //     if (features.length === 1) {
+      //       const center = turf.center(features[0]).geometry.coordinates; // Turf.jsで中心を取得
+      //       map.flyTo({ center, zoom: 14 });
+      //       return;
+      //     }
+      //
+      //     // フィーチャが複数の場合、BBOXを計算
+      //     const bbox = turf.bbox({
+      //       type: "FeatureCollection",
+      //       features: features
+      //     });
+      //
+      //     // マップをBBOXにズーム
+      //     map.fitBounds(bbox, { padding: 20, maxZoom: 15 });
+      //   } catch (error) {
+      //     console.error("エラーが発生しました:", error);
+      //   }
+      // }
+      // zoomToFilteredPolygons(map, 'oh-bakumatsu-layer')
     }
   },
   mounted() {

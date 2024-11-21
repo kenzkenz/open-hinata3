@@ -51,6 +51,7 @@ export default createStore({
     jinkosuiiDataset:[],
     jinkosuiiDatasetEstat:[],
     watchFlg: true,
+    extFire: true,
     terrainLevel:1,
     isPitch: false,
     lngRange: [],
