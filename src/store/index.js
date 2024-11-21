@@ -83,6 +83,10 @@ export default createStore({
       map01: '藩で色分け',
       map02: '藩で色分け'
     },
+    koazaText:{
+      map01: '',
+      map02: ''
+    },
     busSelected:{
       map01: '標準',
       map02: '標準'
@@ -123,6 +127,9 @@ export default createStore({
           break
         case 'extBus':
           variable = 'busSelected'
+          break
+        case 'extKoaza':
+          variable = 'koazaText'
           break
       }
       console.log(payload.mapName,payload.name,payload.value,variable)

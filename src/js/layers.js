@@ -4921,7 +4921,8 @@ const layers01 = [
                 label: "関東小字地図",
                 sources: [koazaSource,muraSource,muraCenterSource],
                 layers: [koazaLayer,koazaLayerLine,koazaLayerLabel,muraLayer,muraLayerLine,muraCenterLabel],
-                attribution: '<a href="https://koaza.net/" target="_blank">関東小字地図</a>'
+                attribution: '<a href="https://koaza.net/" target="_blank">関東小字地図</a>',
+                ext: {name:'extKoaza',parameters:[]}
             }]},
     {
         id: 2,
