@@ -984,11 +984,15 @@ export function popup(e,map,mapName,mapFlg) {
                 console.log(features)
                 if (features.length === 0) return;
                 props = features[0].properties
+                const gun = props.GUN_NAME
                 const name = props.KOAZA_NAME
+                const a = '<a href="https://koaza.net/list/' + props.KUNI_NAME + props.GUN_NAME + '.html' + '#'+ props.MURA_NAME + '" target="_blank">' + props.MURA_NAME + '</a>'
                 if (html.indexOf('kantokoaza') === -1) {
-                    // html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                     html +=
                         '<div class="kantokoaza" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">郡　名＝' + gun + '</span><br>' +
+                        '<span style="font-size: 20px;">村　名＝' + a + '</span><hr>' +
                         '<span style="font-size: 20px;">小字名＝' + name + '</span><br>' +
                         '</div>'
                 }
@@ -1002,14 +1006,16 @@ export function popup(e,map,mapName,mapFlg) {
                 console.log(features)
                 if (features.length === 0) return;
                 props = features[0].properties
+                const gun = props.GUN_NAME
                 const name = props.MURA_NAME
                 const a = '<a href="https://koaza.net/list/' + props.KUNI_NAME + props.GUN_NAME + '.html' + '#'+ props.MURA_NAME + '" target="_blank">' + name + '</a>'
                 console.log(a)
-                if (html.indexOf('kantomura') === -1) {
-                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                if (html.indexOf('kantokoaza') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '(mura)</div>'
                     html +=
-                        '<div class="kantomura" font-weight: normal; color: #333;line-height: 25px;">' +
-                        '<span style="font-size: 20px;">村　名＝' + a + '</span><hr>' +
+                        '<div class="kantokoaza" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">郡名＝' + gun + '</span><br>' +
+                        '<span style="font-size: 20px;">村名＝' + a + '</span>' +
                         '</div>'
                 }
                 break
