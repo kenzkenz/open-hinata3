@@ -3434,9 +3434,9 @@ const kansuiLayer = {
             'interpolate',
             ['linear'],
             ['zoom'],
-            2, 0.1,
-            4, 0.5,
-            7, 2,
+            2, 0.2,
+            4, 1,
+            7, 4,
             11, 10
         ]
     }
@@ -5048,7 +5048,6 @@ const layers01 = [
                 source: iryokikanSource,
                 layers: [iryokikanLayer,iryokikanLayerLabel],
                 attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P04-2020.html" target="_blank">国土数値情報</a>'
-
             }
         ]
     },
@@ -5402,48 +5401,60 @@ const layers01 = [
                 label: "洪水浸水想定（想定最大規模）",
                 source: kozuiSaidaiSource,
                 layers: [kozuiSaidaiLayer],
+                attribution: '<a href="https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/opendata.html" target="_blank">ハザードマップポータルサイト</a><br><br>' +
+                    '<img src="' + require('@/assets/legend/shinsui_legend3.png') + '">'
             },
             {
                 id: 'oh-keikaku-saidai',
                 label: "洪水浸水想定（計画規模）",
                 source: kozuikeikskuSource,
                 layers: [kozuiKeikskuLayer],
+                attribution: '<a href="https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/opendata.html" target="_blank">ハザードマップポータルサイト</a><br><br>' +
+                    '<img src="' + require('@/assets/legend/shinsui_legend3.png') + '">'
             },
             {
                 id: 'oh-tsunami',
                 label: "津波浸水想定",
                 source: tsunamiSource,
                 layers: [tsunamiLayer],
+                attribution: '<a href="https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/opendata.html" target="_blank">ハザードマップポータルサイト</a><br><br>' +
+                    '<img src="' + require('@/assets/legend/shinsui_legend3.png') + '">'
             },
             {
                 id: 'oh-tameike',
                 label: "ため池決壊による浸水想定",
                 source: tameikeSource,
                 layers: [tameikeLayer],
+                attribution: '<a href="https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/opendata.html" target="_blank">ハザードマップポータルサイト</a>'
+
             },
             {
                 id: 'oh-dosya',
                 label: "土砂災害警戒区域",
                 source: dosyaSource,
                 layers: [dosyaLayer],
+                attribution: '<a href="https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/opendata.html" target="_blank">ハザードマップポータルサイト</a>'
             },
             {
                 id: 'oh-dosekiryu',
                 label: "土石流危険渓流",
                 source: dosekiryuSource,
                 layers: [dosekiryuLayer],
+                attribution: '<a href="https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/opendata.html" target="_blank">ハザードマップポータルサイト</a>'
             },
             {
                 id: 'oh-kyukeisya',
                 label: "急傾斜地崩壊危険箇所",
                 source: kyukeisyaSource,
                 layers: [kyukeisyaLayer],
+                attribution: '<a href="https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/opendata.html" target="_blank">ハザードマップポータルサイト</a>'
             },
             {
                 id: 'oh-jisuberi',
                 label: "地すべり危険箇所",
                 source: jisuberiSource,
                 layers: [jisuberiLayer],
+                attribution: '<a href="https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/opendata.html" target="_blank">ハザードマップポータルサイト</a>'
             },
             {
                 id: 'oh-kansui',

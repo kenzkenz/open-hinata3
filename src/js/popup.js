@@ -1579,6 +1579,31 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-kansui-label':
+            case 'oh-kansui': {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                const str = props.description
+                const pattern = new RegExp( '(?<= href=).*?(?=target)' )
+                const name = props.name
+                if (html.indexOf('kansui') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="kansui" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">' + name + '</span><br>' +
+                        '<span style="font-size:20px;"><a href=' + str.match(pattern)[0] + ' target="_blank">箇所表</a></span>' +
+                        '</div>'
+                }
+                break
+            }
         }
     })
 
@@ -1659,6 +1684,10 @@ export function popup(e,map,mapName,mapFlg) {
 
             if (html) {
                 html = '<div class="popup-html-div">' + html + '</div>'
+                const streetView = '<hr><div style="text-align: center;"><a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' + coordinates[1] + ',' + coordinates[0] + '&hl=ja" target="_blank">Street View</a> ' +
+                    ' <a href="https://www.google.co.jp/maps?q=' + coordinates[1] + ',' + coordinates[0] + '&hl=ja" target="_blank">GoogleMap</a>' +
+                    '</div>'
+                html = html + streetView
                 popups.forEach(popup => popup.remove())
                 popups.length = 0;
                 const popup = new maplibregl.Popup({
@@ -1683,6 +1712,10 @@ export function popup(e,map,mapName,mapFlg) {
     if (rasterLayerIds.length === 0){
         if (html) {
             html = '<div class="popup-html-div">' + html + '</div>'
+            const streetView = '<hr><div style="text-align: center;"><a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' + coordinates[1] + ',' + coordinates[0] + '&hl=ja" target="_blank">Street View</a> ' +
+                ' <a href="https://www.google.co.jp/maps?q=' + coordinates[1] + ',' + coordinates[0] + '&hl=ja" target="_blank">GoogleMap</a>' +
+                '</div>'
+            html = html + streetView
             popups.forEach(popup => popup.remove())
             popups.length = 0;
             const popup = new maplibregl.Popup({
