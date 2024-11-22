@@ -458,22 +458,22 @@ export default {
       }
       function removeKeys(obj, keysToRemove) {
         if (Array.isArray(obj)) {
-          return obj.map(item => removeKeys(item, keysToRemove));
+          return obj.map(item => removeKeys(item, keysToRemove))
         } else if (typeof obj === 'object' && obj !== null) {
-          const newObj = {};
+          const newObj = {}
           for (const [key, value] of Object.entries(obj)) {
             if (!keysToRemove.includes(key)) {
-              newObj[key] = removeKeys(value, keysToRemove);
+              newObj[key] = removeKeys(value, keysToRemove)
             }
           }
-          return newObj;
+          return newObj
         }
-        return obj;
+        return obj
       }
 
-      const keysToRemove = ['label', 'source', 'layers', 'sources', 'attribution'];
+      const keysToRemove = ['label', 'source', 'layers', 'sources', 'attribution','info']
       let copiedSelectedLayers = JSON.parse(JSON.stringify(this.$store.state.selectedLayers))
-      copiedSelectedLayers = removeKeys(copiedSelectedLayers, keysToRemove);
+      copiedSelectedLayers = removeKeys(copiedSelectedLayers, keysToRemove)
       // console.log(JSON.stringify(copiedSelectedLayers))
       const selectedLayersJson = JSON.stringify(copiedSelectedLayers)
       // パーマリンクの生成
@@ -831,6 +831,7 @@ export default {
                             slj.sources = node.sources
                             slj.layers = node.layers
                             slj.attribution = node.attribution
+                            slj.info = node.info
                           }
                           count++
                         }
@@ -843,6 +844,7 @@ export default {
                         slj.sources = layer.sources
                         slj.layers = layer.layers
                         slj.attribution = layer.attribution
+                        slj.info = layer.info
                       }
                       count++;
                     }

@@ -4928,7 +4928,8 @@ const layers01 = [
                     '<li><span style="background:rgba(184, 38, 25, 0.8);"></span>増加</li>' +
                     '<li><span style="background:rgba(255, 0, 0, 0.8);"></span>さらに増加</li>' +
                     '</ul>' +
-                    '</div>'
+                    '</div>',
+                info: true
             },
             {
                 id: 'oh-suikei1km',
@@ -4945,7 +4946,8 @@ const layers01 = [
                     '<li><span style="background:rgba(184, 38, 25, 0.8);"></span>増加</li>' +
                     '<li><span style="background:rgba(255, 0, 0, 0.8);"></span>さらに増加</li>' +
                     '</ul>' +
-                    '</div>'
+                    '</div>',
+                info: true
             },
             {
                 id: 'oh-did',

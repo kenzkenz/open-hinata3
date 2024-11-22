@@ -48,6 +48,7 @@
 </template>
 
 <script>
+let infoCount = 0
 import * as Layers from '@/js/layers'
 import Tree from "vue3-tree"
 import "vue3-tree/dist/style.css"
@@ -161,6 +162,20 @@ export default {
         left = '10px'
       }
 
+      const dialogDivs = document.querySelectorAll(".dialog-info-div")
+      if (dialogDivs.length > 0) {
+        const lastDiv = dialogDivs[dialogDivs.length - 1];
+        const rect = lastDiv.getBoundingClientRect();
+        top = (rect.top + 20) + 'px'
+        left = (rect.left + 20) + 'px'
+      } else {
+        top = Number(top.replace('px','')) + (infoCount * 20) + 'px'
+        left = Number(left.replace('px','')) + (infoCount * 20) + 'px'
+        infoCount++
+      }
+
+      console.log(element.label,top,left)
+
       if (!result) {
         const infoDialog =
             {
@@ -178,12 +193,21 @@ export default {
               }
             }
         this.$store.commit('pushDialogsInfo', {mapName: this.mapName, dialog: infoDialog})
+        const dialogDivs = document.querySelectorAll(".dialog-info-div")
+        console.log(dialogDivs.length)
+
       } else {
         if (isNew) {
           result.style.display = 'block'
           result.style["z-index"] = this.$store.state.dialogMaxZindex
         }
       }
+
+
+      // const lastDiv = dialogDivs[dialogDivs.length - 1]
+      // lastDiv.style.top = top
+      // lastDiv.style.left = left
+
     },
     changeWatchFlg (bool) {
       this.$store.state.watchFlg = bool
@@ -269,6 +293,7 @@ export default {
                 opacity: 1,
                 visibility: true,
                 ext: node.ext,
+                info: node.info,
               }
           )
         } else {
@@ -350,7 +375,6 @@ export default {
             }
           })
           // -------------------------------------------------
-
           if(!this.isDragging) {
             if (layer.ext) {
               if (layer.ext.values) {
@@ -368,6 +392,17 @@ export default {
               this.infoOpen(layer,false)
             }
           }
+          // -------------------------------------------------
+          if (layer.info) this.infoOpen(layer,false)
+
+          // setTimeout(function() {
+          //   const dialogDivs = document.querySelectorAll(".dialog-info-div")
+          //   console.log(dialogDivs.length)
+          // },100)
+
+
+
+          // -------------------------------------------------
         }
       }
     },
