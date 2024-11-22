@@ -1541,6 +1541,44 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-suikei1km': {
+                const features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                console.log(features)
+                if (features.length === 0) return;
+                props = features[0].properties
+                const rate = '<span style="font-size:12px;">2050年人口/2020年人口＝</span>' + Math.floor(props.PTN_2050 / props.PTN_2020 * 100) + '%'
+                if (html.indexOf('suikei1km') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="suikei1km" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">' + rate + '</span><hr>' +
+                        '<span style="font-size:20px;"><span style="font-size:12px;">2050年人口＝</span>' + Math.floor(props.PTN_2050).toLocaleString(0) + '人</span><br>' +
+                        '<span style="font-size:20px;"><span style="font-size:12px;">2020年人口＝</span>' + Math.floor(props.PTN_2020).toLocaleString(0) + '人</span>' +
+                        '</div>'
+                }
+                break
+            }
+            case 'oh-suikei500m': {
+                const features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                console.log(features)
+                if (features.length === 0) return;
+                props = features[0].properties
+                const rate = '<span style="font-size:12px;">2050年人口/2020年人口＝</span>' + Math.floor(props.PTN_2050 / props.PTN_2020 * 100) + '%'
+                if (html.indexOf('suikei1km') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="suikei1km" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">' + rate + '</span><hr>' +
+                        '<span style="font-size:20px;"><span style="font-size:12px;">2050年人口＝</span>' + Math.floor(props.PTN_2050).toLocaleString(0) + '人</span><br>' +
+                        '<span style="font-size:20px;"><span style="font-size:12px;">2020年人口＝</span>' + Math.floor(props.PTN_2020).toLocaleString(0) + '人</span>' +
+                        '</div>'
+                }
+                break
+            }
         }
     })
 

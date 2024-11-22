@@ -2536,6 +2536,108 @@ export const m500mLayerHeight = {
         ]
     }
 }
+// 推計人口500mm --------------------------------------------------------------------------------------------
+const suikei500mSource = {
+    id: "suikei500m-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/suikei/suikei500mMini.pmtiles",
+    }
+}
+const suikei500mLayer = {
+    id: "oh-suikei500m",
+    type: "fill",
+    source: "suikei500m-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': [
+            'case',
+            ['==', ['get', 'PTN_2050'], 0],
+            'rgba(196, 253, 187, 0.8)',
+            // 'rgba(0, 0, 255, 0.8)',
+            // Check if PTN_2050 or PTN_2020 is NaN
+            ['any',
+                ['!=', ['typeof', ['get', 'PTN_2050']], 'number'],
+                ['!=', ['typeof', ['get', 'PTN_2020']], 'number']
+            ],
+            'rgba(196, 253, 187, 0.8)', // Color for NaN
+            // 'rgba(0, 0, 255, 0.8)',
+            ['==', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 0], 'rgba(196, 253, 187, 0.8)',
+            ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 1.1], 'rgba(255, 0, 0, 0.8)',
+            ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 1.0], 'rgba(184, 38, 25, 0.8)',
+            ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 0.7], 'rgba(89, 119, 246, 0.8)',
+            ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 0.5], 'rgba(97, 197, 250, 0.8)',
+            ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 0.00000000000001], 'rgba(140, 252, 114, 0.8)',
+            'rgba(0, 0, 0, 0)' // Default color (fully transparent)
+        ]
+    }
+}
+const suikei500mLayerLine = {
+    id: "oh-suikei500m-line",
+    type: "line",
+    source: "suikei500m-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
+// 推計人口1km --------------------------------------------------------------------------------------------
+const suikei1kmSource = {
+    id: "suikei1km-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/suikei/suikei1kmMini.pmtiles",
+    }
+}
+const suikei1kmLayer = {
+    id: "oh-suikei1km",
+    type: "fill",
+    source: "suikei1km-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': [
+            'case',
+            ['==', ['get', 'PTN_2050'], 0],
+            'rgba(196, 253, 187, 0.8)',
+            // 'rgba(0, 0, 255, 0.8)',
+            // Check if PTN_2050 or PTN_2020 is NaN
+            ['any',
+                ['!=', ['typeof', ['get', 'PTN_2050']], 'number'],
+                ['!=', ['typeof', ['get', 'PTN_2020']], 'number']
+            ],
+            'rgba(196, 253, 187, 0.8)', // Color for NaN
+            // 'rgba(0, 0, 255, 0.8)',
+            ['==', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 0], 'rgba(196, 253, 187, 0.8)',
+            ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 1.1], 'rgba(255, 0, 0, 0.8)',
+            ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 1.0], 'rgba(184, 38, 25, 0.8)',
+            ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 0.7], 'rgba(89, 119, 246, 0.8)',
+            ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 0.5], 'rgba(97, 197, 250, 0.8)',
+            ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 0.00000000000001], 'rgba(140, 252, 114, 0.8)',
+            'rgba(0, 0, 0, 0)' // Default color (fully transparent)
+        ]
+    }
+}
+const suikei1kmLayerLine = {
+    id: "oh-suikei1km-line",
+    type: "line",
+    source: "suikei1km-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
 // 1kmメッシュソース --------------------------------------------------------------------------------------------
 export const m1kmSource = {
     id: "m1kmSource", obj: {
@@ -4812,10 +4914,45 @@ const layers01 = [
                 layers: [m1kmLayer,m1kmLayerLine,m1kmLayerLabel,m1kmLayerHeight]
             },
             {
+                id: 'oh-suikei500m',
+                label: "500mメッシュ別将来推計人口",
+                source: suikei500mSource,
+                layers: [suikei500mLayer,suikei500mLayerLine],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-mesh500h30.html" target="_blank">国土数値情報</a>' +
+                    '<div class="legend-scale">' +
+                    '<ul class="legend-labels">' +
+                    '<li><span style="background:rgba(196, 253, 187, 0.8);"></span>無居住化</li>' +
+                    '<li><span style="background:rgba(140, 252, 114, 0.8);"></span>50%以上減少</li>' +
+                    '<li><span style="background:rgba(97, 197, 250, 0.8);"></span>30%以上50%未満減少</li>' +
+                    '<li><span style="background:rgba(89, 119, 246, 0.8);"></span>0%以上30%未満減少</li>' +
+                    '<li><span style="background:rgba(184, 38, 25, 0.8);"></span>増加</li>' +
+                    '<li><span style="background:rgba(255, 0, 0, 0.8);"></span>さらに増加</li>' +
+                    '</ul>' +
+                    '</div>'
+            },
+            {
+                id: 'oh-suikei1km',
+                label: "1kmメッシュ別将来推計人口",
+                source: suikei1kmSource,
+                layers: [suikei1kmLayer,suikei1kmLayerLine],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-mesh1000h30.html" target="_blank">国土数値情報</a>' +
+                    '<div class="legend-scale">' +
+                    '<ul class="legend-labels">' +
+                    '<li><span style="background:rgba(196, 253, 187, 0.8);"></span>無居住化</li>' +
+                    '<li><span style="background:rgba(140, 252, 114, 0.8);"></span>50%以上減少</li>' +
+                    '<li><span style="background:rgba(97, 197, 250, 0.8);"></span>30%以上50%未満減少</li>' +
+                    '<li><span style="background:rgba(89, 119, 246, 0.8);"></span>0%以上30%未満減少</li>' +
+                    '<li><span style="background:rgba(184, 38, 25, 0.8);"></span>増加</li>' +
+                    '<li><span style="background:rgba(255, 0, 0, 0.8);"></span>さらに増加</li>' +
+                    '</ul>' +
+                    '</div>'
+            },
+            {
                 id: 'oh-did',
                 label: "人口集中地区",
                 source: didSource,
-                layers: [didLayer,didLayerLine]
+                layers: [didLayer,didLayerLine],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A16-v2_3.html" target="_blank">国土数値情報</a>'
             },
         ]
     },
@@ -4891,19 +5028,25 @@ const layers01 = [
                 id: 'oh-syogakkoR05',
                 label: "小学校（R05）",
                 source: syogakkoR05Source,
-                layers: [syogakkoR05Layer,syogakkoR05LayerLine,syogakkoR05LayerLabel,syogakkoR05LayerPoint]
+                layers: [syogakkoR05Layer,syogakkoR05LayerLine,syogakkoR05LayerLabel,syogakkoR05LayerPoint],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A27-2023.html" target="_blank">国土数値情報</a>'
+
             },
             {
                 id: 'oh-cyugakuR05',
                 label: "中学校（R05）",
                 source: cyugakuR05Source,
-                layers: [cyugakuR05Layer,cyugakuR05LayerLine,cyugakuR05LayerLabel,cyugakuR05LayerPoint]
+                layers: [cyugakuR05Layer,cyugakuR05LayerLine,cyugakuR05LayerLabel,cyugakuR05LayerPoint],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A32-2023.html" target="_blank">国土数値情報</a>'
+
             },
             {
                 id: 'oh-iryokikan',
                 label: "医療機関（R02）",
                 source: iryokikanSource,
-                layers: [iryokikanLayer,iryokikanLayerLabel]
+                layers: [iryokikanLayer,iryokikanLayerLabel],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P04-2020.html" target="_blank">国土数値情報</a>'
+
             }
         ]
     },
@@ -5311,6 +5454,8 @@ const layers01 = [
                 label: "津波浸水想定3D",
                 source: tsunamiSource2,
                 layers: [tsunamiLayerHeight],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A40-2023.html" target="_blank">国土数値情報</a>'
+
             },
             {
                 id: 'oh-nantora-height',
@@ -5392,13 +5537,16 @@ const layers01 = [
                 id: 'oh-koji',
                 label: "公示価格（R06）",
                 source: kojiSource,
-                layers:[kojiLayerPoint,kojiLayerLabel]
+                layers:[kojiLayerPoint,kojiLayerLabel],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-L01-2024.html" target="_blank">国土数値情報</a>'
+
             },
             {
                 id: 'oh-koji-3d',
                 label: "公示価格（R06）3D",
                 source: kojiSource,
-                layers:[kojilayerheight]
+                layers:[kojilayerheight],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-L01-2024.html" target="_blank">国土数値情報</a>'
             },
             {
                 id: 'oh-nihonrekishi',

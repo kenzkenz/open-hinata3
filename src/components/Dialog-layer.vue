@@ -310,7 +310,7 @@ export default {
             if (layer0.id === 'oh-mw-dummy') {
               this.mw5AddLayers(map,this.mapName)
             } else {
-              console.log(layer0)
+              // console.log(layer0)
               if (!map.getLayer(layer0.id)) {
                   map.addLayer(layer0)
               }
