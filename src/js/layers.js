@@ -1332,6 +1332,13 @@ const sp61Layer = {
     'id': 'oh-sp61',
     'source': 'sp61-source',
     'type': 'raster',
+    paint: {
+        // 明るさ、コントラスト、彩度を調整
+        'raster-brightness-min': 0.3, // 最小明るさ
+        'raster-brightness-max': 0.8, // 最大明るさ
+        // 'raster-contrast': 1.2,       // コントラスト
+        // 'raster-saturation': 1.5,     // 彩度
+    },
 }
 // 45写真--------------------------------------------------------------------------------------------------------------
 const sp45Source = {
