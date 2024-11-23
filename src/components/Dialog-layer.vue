@@ -305,6 +305,7 @@ export default {
     },
     addLayers() {
       if(!this.$store.state.watchFlg && !this.isDragging) return
+      // console.log('aaaaaaaaaaaaaaaaa')
       // ------------------------------------------------------------------
       const map = this.$store.state[this.mapName]
       // まずレイヤーを削除-------------------------
@@ -312,14 +313,17 @@ export default {
       if (layers) {
         for (let i = layers.length - 1; i >= 0; i--) {
           const layerId = layers[i].id
-          // console.log(layers[i])
+          // console.log(layers[i].id)
           if (layerId.slice(0,2) === 'oh' ) {
             map.removeLayer(layerId)
           }
         }
       }
       // -----------------------------------------
+      // console.log(this.mapName)
       for (let i = this.s_selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
+        // console.log('bbbbbbbbbbb')
+
         const layer = this.s_selectedLayers[this.mapName][i]
         if (layer.layers) {
           if (layer.sources) {
@@ -329,6 +333,7 @@ export default {
             })
           }
           if (layer.source) {
+            // console.log(layer)
             if (!map.getSource(layer.source.id)) map.addSource(layer.source.id, layer.source.obj)
           }
           layer.layers.forEach(layer0 => {
@@ -375,13 +380,17 @@ export default {
             }
           })
           // -------------------------------------------------
+          // console.log(layer.ext)
+          // console.log(layer)
+          // console.log(this.mapName)
           if(!this.isDragging) {
             if (layer.ext) {
-              console.log(layer.ext)
+              // console.log(layer.ext)
+              // alert()
               if (layer.ext.values) {
-                console.log(layer.ext.values)
+                // console.log(layer.ext.values)
                 layer.ext.values.forEach((v,i) => {
-                  console.log(String(v))
+                  // console.log(String(v))
                   this.$store.commit('updateParam', {
                     name: layer.ext.name,
                     mapName: this.mapName,
@@ -396,14 +405,6 @@ export default {
           }
           // -------------------------------------------------
           if (layer.info) this.infoOpen(layer,false)
-
-          // setTimeout(function() {
-          //   const dialogDivs = document.querySelectorAll(".dialog-info-div")
-          //   console.log(dialogDivs.length)
-          // },100)
-
-
-
           // -------------------------------------------------
         }
       }
@@ -541,8 +542,8 @@ export default {
       deep: true
     },
     s_selectedLayers: {
-      handler: function(){
-        console.log('変更を検出しました',this.$store.state.watchFlg)
+      handler: function(val){
+        console.log('変更を検出しました',this.$store.state.watchFlg,val)
         // ------------------------------------------------------------------
         const map01 = this.$store.state.map01
         const bounds = map01.getBounds()

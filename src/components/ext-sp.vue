@@ -1,6 +1,7 @@
 <template>
     <div :style="menuContentSize">
       <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
+      <v-btn class="tiny-btn" @click="reset">元に戻す</v-btn>
       <div class="container">
         <div class="input-label">最小明るさ</div><input class="color-range" type="range" v-model.number="s_brightnessMin" @change="update" @input="input" min="0" max="1" step="0.01"/>
       </div>
@@ -27,6 +28,9 @@ export default {
     menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'}
   }),
   computed: {
+    s_extFire () {
+      return this.$store.state.extFire
+    },
     s_watchFlg () {
       return this.$store.state.watchFlg
     },
@@ -72,16 +76,30 @@ export default {
     },
   },
   methods: {
+    reset () {
+      this.s_brightnessMin = 0
+      this.s_brightnessMax = 1
+      this.s_hueRotate = 0
+      this.s_contrast = 0
+      this.s_saturation = 0
+      this.input()
+      this.update()
+    },
     update () {
       // try {
-      //   const koazaText = this.s_koazaText
-      //   this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [koazaText]})
+        this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [
+              // this.item.id.split('-')[1],
+              this.s_brightnessMin,
+              this.s_brightnessMax,
+              this.s_hueRotate,
+              this.s_contrast,
+              this.s_saturation
+          ]})
       // }catch (e) {
       //   console.log(e)
       // }
     },
     input () {
-      console.log(this.item)
       const vm = this
       const map = this.$store.state[this.mapName]
       function updateRasterPaintProperties(brightnessMin, brightnessMax, hueRotate, contrast, saturation) {
@@ -99,11 +117,14 @@ export default {
     },
   },
   mounted() {
-    // this.koazaInput(this.mapName)
+    this.input(this.mapName)
   },
   watch: {
     s_watchFlg () {
-      // this.koazaInput(this.mapName)
+      this.input(this.mapName)
+    },
+    s_extFire () {
+      this.input(this.mapName)
     },
   }
 }
@@ -121,6 +142,14 @@ export default {
 }
 .color-text {
   font-size: large;
+}
+.tiny-btn {
+  font-size: 10px; /* フォントサイズを小さく */
+  padding: 2px 6px; /* パディングを小さく */
+  min-width: 24px; /* ボタンの最小幅 */
+  height: 24px; /* ボタンの高さ */
+  line-height: 24px; /* 中央揃え */
+  margin-bottom: 10px;
 }
 </style>
 

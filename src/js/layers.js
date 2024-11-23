@@ -4756,51 +4756,57 @@ const layers01 = [
                 id: 'oh-sp87',
                 label: "1987~90年航空写真(一部)",
                 source: sp87Source,
-                layers: [sp87Layer]
+                layers: [sp87Layer],
+                ext: {name:'ext-sp87'}
             },
             {
                 id: 'oh-sp84',
                 label: "1984~86年航空写真(一部)",
                 source: sp84Source,
-                layers: [sp84Layer]
+                layers: [sp84Layer],
+                ext: {name:'ext-sp84'}
             },
             {
                 id: 'oh-sp79',
                 label: "1979~83年航空写真(一部)",
                 source: sp79Source,
-                layers: [sp79Layer]
+                layers: [sp79Layer],
+                ext: {name:'ext-sp79'}
             },
             {
                 id: 'oh-sp74',
                 label: "1974~78年航空写真(全国)",
                 source: sp74Source,
                 layers: [sp74Layer],
-                ext: {name:'ext-sp74',parameters:[]}
+                ext: {name:'ext-sp74'}
             },
             {
                 id: 'oh-sp61',
                 label: "1961~64年航空写真(一部)",
                 source: sp61Source,
                 layers: [sp61Layer],
-                ext: {name:'ext-sp61',parameters:[]}
+                ext: {name:'ext-sp61'}
             },
             {
                 id: 'oh-sp45',
                 label: "1945~50年航空写真(一部)",
                 source: sp45Source,
-                layers: [sp45Layer]
+                layers: [sp45Layer],
+                ext: {name:'ext-sp45'}
             },
             {
                 id: 'oh-sp36',
                 label: "1936~42年航空写真(一部)",
                 source: sp36Source,
-                layers: [sp36Layer]
+                layers: [sp36Layer],
+                ext: {name:'ext-sp36'}
             },
             {
                 id: 'oh-sp28',
                 label: "1928年航空写真(大阪府)",
                 source: sp28Source,
-                layers: [sp28Layer]
+                layers: [sp28Layer],
+                ext: {name:'ext-sp28'}
             },
             {
                 id: 'oh-kanagawa-syashin',

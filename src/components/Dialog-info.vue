@@ -19,7 +19,16 @@
       <extBakumatsu3d :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extBakumatsu3d'"/>
       <extKoaza :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extKoaza'"/>
       <extBus :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extBus'"/>
-      <extSp :item="item" :mapName="mapName" v-else-if="['ext-sp61', 'ext-sp74'].includes(item.ext.name)"/>
+      <extSp :item="item" :mapName="mapName" v-else-if="[
+        'ext-sp28',
+        'ext-sp36',
+        'ext-sp45',
+        'ext-sp61',
+        'ext-sp74',
+        'ext-sp79',
+        'ext-sp84',
+        'ext-sp87',
+          ].includes(item.ext.name)"/>
     </div>
 <!--  </div>-->
 </template>
