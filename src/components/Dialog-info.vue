@@ -19,6 +19,7 @@
       <extBakumatsu3d :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extBakumatsu3d'"/>
       <extKoaza :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extKoaza'"/>
       <extBus :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extBus'"/>
+      <extSp :item="item" :mapName="mapName" v-else-if="['ext-sp61', 'ext-sp74'].includes(item.ext.name)"/>
     </div>
 <!--  </div>-->
 </template>
@@ -31,6 +32,7 @@ import extBakumatsu from "@/components/ext-bakumatsu"
 import extBakumatsu3d from "@/components/ext-bakumatsu3d"
 import extKoaza from '@/components/ext-koaza'
 import extBus from "@/components/ext-bus"
+import extSp from "@/components/ext-sp"
 
 export default {
   name: "dialog-info",
@@ -41,7 +43,8 @@ export default {
     extBakumatsu,
     extBakumatsu3d,
     extKoaza,
-    extBus
+    extBus,
+    extSp,
   },
   props: ['mapName'],
   data: () => ({

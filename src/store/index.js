@@ -92,6 +92,16 @@ export default createStore({
       map01: '標準',
       map02: '標準'
     },
+    color:{
+      map01: {
+        sp61:{brightnessMin:0,brightnessMax:1,hueRotate:0,contrast:0.5,saturation:0},
+        sp74:{brightnessMin:0,brightnessMax:1,hueRotate:0,contrast:0.5,saturation:0},
+      },
+      map02: {
+        sp61:{brightnessMin:0,brightnessMax:1,hueRotate:0,contrast:0.5,saturation:0},
+        sp74:{brightnessMin:0,brightnessMax:1,hueRotate:0,contrast:0.5,saturation:0},
+      },
+    }
     //------------------------
   },
   getters: {

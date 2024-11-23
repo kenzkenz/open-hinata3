@@ -1320,14 +1320,14 @@ const sp74Layer = {
     'id': 'oh-sp74',
     'source': 'sp74-source',
     'type': 'raster',
-    paint: {
-        // 明るさ、コントラスト、彩度を調整
-        // 'raster-hue-rotate': 180,          // 色相
-        'raster-brightness-min': 0.3, // 最小明るさ
-        'raster-brightness-max': 0.8, // 最大明るさ
-        'raster-contrast': 0.7,       // コントラスト
-        // 'raster-saturation': 1,     // 彩度
-    },
+    // paint: {
+    //     // 明るさ、コントラスト、彩度を調整
+    //     // 'raster-hue-rotate': 180,          // 色相
+    //     'raster-brightness-min': 0.3, // 最小明るさ
+    //     'raster-brightness-max': 0.8, // 最大明るさ
+    //     'raster-contrast': 0.7,       // コントラスト
+    //     // 'raster-saturation': 1,     // 彩度
+    // },
 }
 // 61写真--------------------------------------------------------------------------------------------------------------
 const sp61Source = {
@@ -1340,14 +1340,14 @@ const sp61Layer = {
     'id': 'oh-sp61',
     'source': 'sp61-source',
     'type': 'raster',
-    paint: {
-        // 明るさ、コントラスト、彩度を調整
-        'raster-hue-rotate': 180,          // 色相
-        'raster-brightness-min': 0.3, // 最小明るさ
-        'raster-brightness-max': 0.8, // 最大明るさ
-        'raster-contrast': 0.7,       // コントラスト
-        'raster-saturation': 1,     // 彩度
-    },
+    // paint: {
+    //     // 明るさ、コントラスト、彩度を調整
+    //     'raster-brightness-min': 0.3, // 最小明るさ
+    //     'raster-brightness-max': 0.8, // 最大明るさ
+    //     'raster-hue-rotate': 180,     // 色相
+    //     'raster-contrast': 0.7,       // コントラスト
+    //     'raster-saturation': 1,       // 彩度
+    // },
 }
 // 45写真--------------------------------------------------------------------------------------------------------------
 const sp45Source = {
@@ -4774,13 +4774,15 @@ const layers01 = [
                 id: 'oh-sp74',
                 label: "1974~78年航空写真(全国)",
                 source: sp74Source,
-                layers: [sp74Layer]
+                layers: [sp74Layer],
+                ext: {name:'ext-sp74',parameters:[]}
             },
             {
                 id: 'oh-sp61',
                 label: "1961~64年航空写真(一部)",
                 source: sp61Source,
-                layers: [sp61Layer]
+                layers: [sp61Layer],
+                ext: {name:'ext-sp61',parameters:[]}
             },
             {
                 id: 'oh-sp45',

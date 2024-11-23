@@ -377,7 +377,9 @@ export default {
           // -------------------------------------------------
           if(!this.isDragging) {
             if (layer.ext) {
+              console.log(layer.ext)
               if (layer.ext.values) {
+                console.log(layer.ext.values)
                 layer.ext.values.forEach((v,i) => {
                   console.log(String(v))
                   this.$store.commit('updateParam', {

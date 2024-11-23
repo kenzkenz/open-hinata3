@@ -1,14 +1,27 @@
 <template>
     <div :style="menuContentSize">
-
-      <input class="highway-range" type="range" v-model.number="s_highwayYear" @change="update" @input="highwayYearInput(mapName)" min="1958" max="2024" step="1"/><br>
-
+      <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
+      <div class="container">
+        <div class="input-label">最小明るさ</div><input class="color-range" type="range" v-model.number="s_brightnessMin" @change="update" @input="input" min="0" max="1" step="0.01"/>
+      </div>
+      <div class="container">
+        <div class="input-label">最大明るさ</div><input class="color-range" type="range" v-model.number="s_brightnessMax" @change="update" @input="input" min="0" max="1" step="0.01"/>
+      </div>
+      <div class="container">
+        <div class="input-label">色相</div><input class="color-range" type="range" v-model.number="s_hueRotate" @change="update" @input="input" min="0" max="360" step="1"/><br>
+      </div>
+      <div class="container">
+        <div class="input-label">コントラスト</div><input class="color-range" type="range" v-model.number="s_contrast" @change="update" @input="input" min="0" max="0.99" step="0.01"/><br>
+      </div>
+      <div class="container">
+        <div class="input-label">彩度</div><input class="color-range" type="range" v-model.number="s_saturation" @change="update" @input="input" min="0" max="1" step="0.01"/><br>
+      </div>
     </div>
 </template>
 
 <script>
 export default {
-  name: 'ext-koaza',
+  name: 'ext-sp',
   props: ['mapName','item'],
   data: () => ({
     menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'}
@@ -17,73 +30,96 @@ export default {
     s_watchFlg () {
       return this.$store.state.watchFlg
     },
-    s_koazaText: {
+    s_brightnessMin: {
       get() {
-        return this.$store.state.koazaText[this.mapName]
+        return this.$store.state.color[this.mapName][this.item.id.split('-')[1]].brightnessMin
       },
       set(value) {
-        this.$store.state.koazaText[this.mapName] = value
+        return this.$store.state.color[this.mapName][this.item.id.split('-')[1]].brightnessMin = value
+      }
+    },
+    s_brightnessMax: {
+      get() {
+        return this.$store.state.color[this.mapName][this.item.id.split('-')[1]].brightnessMax
+      },
+      set(value) {
+        return this.$store.state.color[this.mapName][this.item.id.split('-')[1]].brightnessMax = value
+      }
+    },
+    s_hueRotate: {
+      get() {
+        return this.$store.state.color[this.mapName][this.item.id.split('-')[1]].hueRotate
+      },
+      set(value) {
+        return this.$store.state.color[this.mapName][this.item.id.split('-')[1]].hueRotate = value
+      }
+    },
+    s_contrast: {
+      get() {
+        return this.$store.state.color[this.mapName][this.item.id.split('-')[1]].contrast
+      },
+      set(value) {
+        return this.$store.state.color[this.mapName][this.item.id.split('-')[1]].contrast = value
+      }
+    },
+    s_saturation: {
+      get() {
+        return this.$store.state.color[this.mapName][this.item.id.split('-')[1]].saturation
+      },
+      set(value) {
+        return this.$store.state.color[this.mapName][this.item.id.split('-')[1]].saturation = value
       }
     },
   },
   methods: {
     update () {
-      try {
-        const koazaText = this.s_koazaText
-        this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [koazaText]})
-      }catch (e) {
-        console.log(e)
-      }
+      // try {
+      //   const koazaText = this.s_koazaText
+      //   this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [koazaText]})
+      // }catch (e) {
+      //   console.log(e)
+      // }
     },
-    koazaInput (mapName) {
-      const map = this.$store.state[mapName]
-      function filterBy(text) {
-        if (text) {
-          let searchString = text
-          searchString = searchString.replace(/\u3000/g,' ').trim()
-          const words = searchString.split(" ")
-          // 複数フィールドを結合する
-          const combinedFields = ["concat", ["get", "KOAZA_NAME"], " ", ["get", "MURA_NAME"], " " ,["get", "GUN_NAME"], ["get", "MURA_NAME"]];
-          // 各単語に対して、結合したフィールドに対する index-of チェックを実行
-          const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);
-          // いずれかの単語が含まれる場合の条件を作成 (OR条件)
-          const matchCondition = ["any", ...filterConditions]
-          console.log(matchCondition)
-          map.setFilter('oh-koaza', matchCondition)
-          map.setFilter('oh-koaza-line', matchCondition)
-          map.setFilter('oh-koaza-label', matchCondition)
-          map.setFilter('oh-mura', matchCondition)
-          map.setFilter('oh-mura-line', matchCondition)
-          map.setFilter('oh-mura-center-label', matchCondition)
+    input () {
+      console.log(this.item)
+      const vm = this
+      const map = this.$store.state[this.mapName]
+      function updateRasterPaintProperties(brightnessMin, brightnessMax, hueRotate, contrast, saturation) {
+        if (map.getLayer(vm.item.id)) { // レイヤーが存在することを確認
+          map.setPaintProperty(vm.item.id, 'raster-brightness-min', brightnessMin)// 最小明るさ
+          map.setPaintProperty(vm.item.id, 'raster-brightness-max', brightnessMax)// 最大明るさ
+          map.setPaintProperty(vm.item.id, 'raster-hue-rotate', hueRotate)        // 色相（0～360)
+          map.setPaintProperty(vm.item.id, 'raster-contrast', contrast)           // コントラスト
+          map.setPaintProperty(vm.item.id, 'raster-saturation', saturation)       // 彩度
         } else {
-          map.setFilter('oh-koaza', null)
-          map.setFilter('oh-koaza-line', null)
-          map.setFilter('oh-koaza-label', null)
-          map.setFilter('oh-mura', null)
-          map.setFilter('oh-mura-line', null)
-          map.setFilter('oh-mura-center-label', null)
+          console.error('Layer oh-sp61 does not exist');
         }
       }
-      filterBy(this.s_koazaText)
-      this.$store.state.watchFlg = false
-      this.update()
-    }
+      updateRasterPaintProperties(this.s_brightnessMin,this.s_brightnessMax,this.s_hueRotate,this.s_contrast,this.s_saturation)
+    },
   },
   mounted() {
-    this.koazaInput(this.mapName)
+    // this.koazaInput(this.mapName)
   },
   watch: {
     s_watchFlg () {
-      this.koazaInput(this.mapName)
+      // this.koazaInput(this.mapName)
     },
   }
 }
 </script>
 <style scoped>
-.highway-range {
-  width: 178px;
+.container {
+  display: flex; /* 子要素を横並びにする */
+  gap: 10px; /* 要素間の余白を設定 */
 }
-.highway-text {
+.input-label {
+  width: 75px;
+}
+.color-range {
+  width: 120px;
+}
+.color-text {
   font-size: large;
 }
 </style>
