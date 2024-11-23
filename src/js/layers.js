@@ -1320,6 +1320,14 @@ const sp74Layer = {
     'id': 'oh-sp74',
     'source': 'sp74-source',
     'type': 'raster',
+    paint: {
+        // 明るさ、コントラスト、彩度を調整
+        // 'raster-hue-rotate': 180,          // 色相
+        'raster-brightness-min': 0.3, // 最小明るさ
+        'raster-brightness-max': 0.8, // 最大明るさ
+        'raster-contrast': 0.7,       // コントラスト
+        // 'raster-saturation': 1,     // 彩度
+    },
 }
 // 61写真--------------------------------------------------------------------------------------------------------------
 const sp61Source = {
@@ -1334,10 +1342,11 @@ const sp61Layer = {
     'type': 'raster',
     paint: {
         // 明るさ、コントラスト、彩度を調整
+        'raster-hue-rotate': 180,          // 色相
         'raster-brightness-min': 0.3, // 最小明るさ
         'raster-brightness-max': 0.8, // 最大明るさ
-        // 'raster-contrast': 1.2,       // コントラスト
-        // 'raster-saturation': 1.5,     // 彩度
+        'raster-contrast': 0.7,       // コントラスト
+        'raster-saturation': 1,     // 彩度
     },
 }
 // 45写真--------------------------------------------------------------------------------------------------------------
