@@ -13,6 +13,9 @@ export default {
     menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'}
   }),
   computed: {
+    s_extFire () {
+      return this.$store.state.extFire
+    },
     s_watchFlg () {
       return this.$store.state.watchFlg
     },
@@ -68,12 +71,9 @@ export default {
       this.update()
     }
   },
-  mounted() {
-    this.syochiikiInput (this.mapName)
-  },
   watch: {
-    s_watchFlg () {
-      // alert(1111)
+    s_extFire () {
+      console.log(1111)
       this.syochiikiInput (this.mapName)
     },
   }

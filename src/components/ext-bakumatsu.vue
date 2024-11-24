@@ -37,6 +37,9 @@ export default {
     menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'}
   }),
   computed: {
+    s_extFire () {
+      return this.$store.state.extFire
+    },
     s_watchFlg () {
       return this.$store.state.watchFlg
     },
@@ -203,13 +206,8 @@ export default {
       // zoomToFilteredPolygons(map, 'oh-bakumatsu-layer')
     }
   },
-  mounted() {
-    this.bakumatsuInput (this.mapName)
-    this.onSelectChange (this.s_bakumatsuSelected)
-    this.calcKokudaka()
-  },
   watch: {
-    s_watchFlg () {
+    s_extFire () {
       this.bakumatsuInput (this.mapName)
       this.onSelectChange (this.s_bakumatsuSelected)
       this.calcKokudaka()

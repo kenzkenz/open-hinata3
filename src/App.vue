@@ -1408,4 +1408,12 @@ font {
   padding-right: 5px;
   margin-bottom: 10px;
 }
+.tiny-btn {
+  font-size: 10px; /* フォントサイズを小さく */
+  padding: 2px 6px; /* パディングを小さく */
+  min-width: 24px; /* ボタンの最小幅 */
+  height: 24px; /* ボタンの高さ */
+  line-height: 24px; /* 中央揃え */
+  margin-bottom: 10px;
+}
 </style>

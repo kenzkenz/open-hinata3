@@ -2626,11 +2626,62 @@ const suikei500mLayerLine = {
         ]
     },
 }
+// 推計人口1kmフル --------------------------------------------------------------------------------------------
+const suikei1kmFullSource = {
+    id: "suikei1km-full-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/suikei/suikei1km.pmtiles",
+    }
+}
+const suikei1kmFullLayer = {
+    id: "oh-suikei1km-full",
+    type: "fill",
+    source: "suikei1km-full-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': [
+            'case',
+            ['==', ['get', 'PTN_2050'], 0],
+            'rgba(196, 253, 187, 0.8)',
+            // 'rgba(0, 0, 255, 0.8)',
+            // Check if PTN_2050 or PTN_2020 is NaN
+            ['any',
+                ['!=', ['typeof', ['get', 'PTN_2050']], 'number'],
+                ['!=', ['typeof', ['get', 'PTN_2020']], 'number']
+            ],
+            'rgba(196, 253, 187, 0.8)', // Color for NaN
+            // 'rgba(0, 0, 255, 0.8)',
+            ['==', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 0], 'rgba(196, 253, 187, 0.8)',
+            ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 1.1], 'rgba(255, 0, 0, 0.8)',
+            ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 1.0], 'rgba(184, 38, 25, 0.8)',
+            ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 0.7], 'rgba(89, 119, 246, 0.8)',
+            ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 0.5], 'rgba(97, 197, 250, 0.8)',
+            ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 0.00000000000001], 'rgba(140, 252, 114, 0.8)',
+            'rgba(0, 0, 0, 0)' // Default color (fully transparent)
+        ]
+    }
+}
+const suikei1kmFullLayerLine = {
+    id: "oh-suikei1km-full-line",
+    type: "line",
+    source: "suikei1km-full-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
 // 推計人口1km --------------------------------------------------------------------------------------------
 const suikei1kmSource = {
     id: "suikei1km-source", obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/suikei/suikei1kmMini.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/suikei/suikei1kmMini2.pmtiles",
     }
 }
 const suikei1kmLayer = {
@@ -4701,6 +4752,84 @@ const jinkochikeiLayer = {
         ]
     }
 }
+// 都市計画決定情報パッケージ
+// 都市計画 --------------------------------------------------------------------------------------------
+const tokeiSource = {
+    id: "tokei-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/toshikeikaku/tokei.pmtiles",
+    }
+}
+const tokeiLayer = {
+    id: "oh-tokei",
+    type: "fill",
+    source: "tokei-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': [
+            'match',
+            ['get', 'kubunID'],
+            21, 'rgba(255, 0, 0, 0.6)',  // 都市計画区域（赤色）
+            26, 'rgba(0, 255, 0, 0.6)',  // 準都市計画区域（緑色）
+            27, 'rgba(0, 0, 255, 0.6)',  // 都市計画区域外（青色）
+            'rgba(200, 200, 200, 0.6)'   // デフォルト色（グレー）
+        ],
+    }
+}
+const tokeiLayerLine = {
+    id: "oh-tokei-line",
+    type: "line",
+    source: "tokei-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
+// 区域区分 --------------------------------------------------------------------------------------------
+const kuikikubunSource = {
+    id: "kuikikubun-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/toshikeikaku/senbiki.pmtiles",
+    }
+}
+const kuikikubunLayer = {
+    id: "oh-kuikikubun",
+    type: "fill",
+    source: "kuikikubun-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': [
+            'match',
+            ['get', 'kubunID'],
+            22, 'rgba(255, 165, 0, 0.6)',  // 市街化区域（オレンジ色）
+            23, 'rgba(0, 128, 0, 0.6)',    // 市街化調整区域（緑色）
+            'rgba(200, 200, 200, 0.6)'     // デフォルト色（グレー）
+        ],
+    }
+}
+const kuikikubunLayerLine = {
+    id: "oh-kuikikubun-line",
+    type: "line",
+    source: "kuikikubun-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
 // ---------------------------------------------------------------------------------------------------------------------
 
 
@@ -4997,6 +5126,24 @@ const layers01 = [
                     '</div>',
                 info: true
             },
+            // {
+            //     id: 'oh-suikei1km-full',
+            //     label: "1kmメッシュ別将来推計人口（フル）",
+            //     source: suikei1kmFullSource,
+            //     layers: [suikei1kmFullLayer,suikei1kmFullLayerLine],
+            //     attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-mesh1000h30.html" target="_blank">国土数値情報</a>' +
+            //         '<div class="legend-scale">' +
+            //         '<ul class="legend-labels">' +
+            //         '<li><span style="background:rgba(196, 253, 187, 0.8);"></span>無居住化</li>' +
+            //         '<li><span style="background:rgba(140, 252, 114, 0.8);"></span>50%以上減少</li>' +
+            //         '<li><span style="background:rgba(97, 197, 250, 0.8);"></span>30%以上50%未満減少</li>' +
+            //         '<li><span style="background:rgba(89, 119, 246, 0.8);"></span>0%以上30%未満減少</li>' +
+            //         '<li><span style="background:rgba(184, 38, 25, 0.8);"></span>増加</li>' +
+            //         '<li><span style="background:rgba(255, 0, 0, 0.8);"></span>さらに増加</li>' +
+            //         '</ul>' +
+            //         '</div>',
+            //     info: true
+            // },
             {
                 id: 'oh-did',
                 label: "人口集中地区",
@@ -5121,6 +5268,26 @@ const layers01 = [
                 label: "R05市町村",
                 source: cityR05Source,
                 layers: [cityR05Layer,cityR05LayerLine,cityR05LayerLabel]
+            },
+        ]
+    },
+    {
+        id: 'toshikeikaku',
+        label: "都市計画決定情報パッケージ",
+        nodes: [
+            {
+                id: 'oh-tokei',
+                label: "都市計画区域",
+                source: tokeiSource,
+                layers: [tokeiLayer,tokeiLayerLine],
+                attribution:'<a href="" target="_blank"></a>'
+            },
+            {
+                id: 'oh-kuikikubun',
+                label: "市街化調整区域",
+                source: kuikikubunSource,
+                layers: [kuikikubunLayer,kuikikubunLayerLine],
+                attribution:'<a href="" target="_blank"></a>'
             },
         ]
     },

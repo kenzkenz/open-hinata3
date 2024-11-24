@@ -118,6 +118,7 @@ export default {
       this.$store.state.watchFlg = !this.$store.state.watchFlg
       this.$store.state.watchFlg = true
       this.zoomOperation(500)
+      this.$store.state.extFire = !this.$store.state.extFire
     },
     toggleCheck(element) {
       this.$store.state.watchFlg = true
@@ -544,6 +545,7 @@ export default {
     s_selectedLayers: {
       handler: function(val){
         console.log('変更を検出しました',this.$store.state.watchFlg,val)
+
         // ------------------------------------------------------------------
         const map01 = this.$store.state.map01
         const bounds = map01.getBounds()
@@ -554,7 +556,6 @@ export default {
         this.$store.state.latRange = [sw.lat,ne.lat]
         // ------------------------------------------------------------------
         this.addLayers()
-
         // const vm = this
         // setTimeout(function() {
         //   vm.$store.state.watchFlg = !vm.$store.state.watchFlg

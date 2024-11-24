@@ -1625,6 +1625,50 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-tokei': {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                // const name = props.G08_002
+                if (html.indexOf('tokei') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="tokei" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">' + props.Type + '</span><br>' +
+                        '<span style="font-size:20px;">' + props.Pref + props.Cityname + '</span><br>' +
+                        '</div>'
+                }
+                break
+            }
+            case 'oh-kuikikubun': {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                // const name = props.G08_002
+                if (html.indexOf('kuikikubun') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="kuikikubun" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">' + props.区域区分 + '</span><br>' +
+                        '<span style="font-size:20px;">' + props.Pref + props.Cityname + '</span><br>' +
+                        '</div>'
+                }
+                break
+            }
         }
     })
 

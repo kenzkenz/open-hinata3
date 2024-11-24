@@ -86,18 +86,13 @@ export default {
       this.update()
     },
     update () {
-      // try {
-        this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [
-              // this.item.id.split('-')[1],
-              this.s_brightnessMin,
-              this.s_brightnessMax,
-              this.s_hueRotate,
-              this.s_contrast,
-              this.s_saturation
-          ]})
-      // }catch (e) {
-      //   console.log(e)
-      // }
+      this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [
+          this.s_brightnessMin,
+          this.s_brightnessMax,
+          this.s_hueRotate,
+          this.s_contrast,
+          this.s_saturation
+        ]})
     },
     input () {
       const vm = this
@@ -118,13 +113,13 @@ export default {
       updateRasterPaintProperties(this.s_brightnessMin,this.s_brightnessMax,this.s_hueRotate,this.s_contrast,this.s_saturation)
     },
   },
-  mounted() {
-    this.input(this.mapName)
-  },
+  // mounted() {
+  //   this.input(this.mapName)
+  // },
   watch: {
-    s_watchFlg () {
-      this.input(this.mapName)
-    },
+    // s_watchFlg () {
+    //   this.input(this.mapName)
+    // },
     s_extFire () {
       this.input(this.mapName)
     },
@@ -144,14 +139,6 @@ export default {
 }
 .color-text {
   font-size: large;
-}
-.tiny-btn {
-  font-size: 10px; /* フォントサイズを小さく */
-  padding: 2px 6px; /* パディングを小さく */
-  min-width: 24px; /* ボタンの最小幅 */
-  height: 24px; /* ボタンの高さ */
-  line-height: 24px; /* 中央揃え */
-  margin-bottom: 10px;
 }
 </style>
 

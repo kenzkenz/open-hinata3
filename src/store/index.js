@@ -163,11 +163,7 @@ export default createStore({
           //   target2 = 'sharpness'
           //   break
         }
-
         state.color[payload.mapName][target][target2] = Number(payload.value)
-        state.extFire = !state.extFire
-
-        // console.log(state.color[payload.mapName])
       } else {
         switch (payload.name) {
           case 'extHighway':
@@ -205,6 +201,7 @@ export default createStore({
         }
         console.log(payload.mapName,payload.name,payload.value,variable)
         state[variable][payload.mapName] = payload.value
+        state.extFire = !state.extFire
       }
     },
     updateSelectedLayers (state, payload) {
