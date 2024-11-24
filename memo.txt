@@ -257,6 +257,8 @@ tippecanoe -rg -pk -pf -l polygon -f -o suikei1km.pmtiles suikei1km.geojson
 tippecanoe -rg -pk -pf -l polygon -f -o suikei1kmMini.pmtiles --include=PTN_2050 --include=PTN_2020 suikei1km.geojson
 tippecanoe -rg -pk -pf -l polygon -f -o suikei500mMini.pmtiles --include=PTN_2050 --include=PTN_2020 suikei500m.geojson
 
+tippecanoe -rg -pk -pf -l polygon -f -o teiichitai.pmtiles teiichitai.geojson
+
 
 import random
 from qgis.core import QgsField, QgsExpression, QgsExpressionContext, QgsExpressionContextUtils

@@ -3,7 +3,7 @@
       <v-select
           v-model="s_busSelected"
           :items="items"
-          label="表示方法を選択してください"
+          label="バスルートの色"
           outlined
           @update:modelValue="onSelectChange"
       ></v-select>

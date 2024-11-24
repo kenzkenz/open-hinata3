@@ -28,6 +28,7 @@
         'ext-sp79',
         'ext-sp84',
         'ext-sp87',
+        'ext-jinsoku',
           ].includes(item.ext.name)"/>
     </div>
 <!--  </div>-->

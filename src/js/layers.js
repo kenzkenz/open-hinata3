@@ -829,12 +829,10 @@ const jinsokuSource = {
     }
 }
 const jinsokuLayer = {
-    'id': 'oh-jinsoku-layer',
+    'id': 'oh-jinsoku',
     'type': 'raster',
     'source': 'jinsoku-source',
 }
-
-
 // ---------------------------------------------------------------------------------------------------------------------
 // syochiikiソース
 const syochiikiSource = {
@@ -926,7 +924,7 @@ const syochiikiLayerHeight = {
     }
 }
 // 高速道路--------------------------------------
-export const highwaySource = {
+const highwaySource = {
     id: 'highwaySource', obj: {
         // 'type': 'geojson',
         // 'data': require('@/assets/json/highway_sections_2024.geojson'),
@@ -935,7 +933,7 @@ export const highwaySource = {
 
     }
 }
-export const highwayLayerGreen = {
+const highwayLayerGreen = {
     'id': 'oh-highwayLayer-green-lines',
     'type': 'line',
     'source': 'highwaySource',
@@ -952,7 +950,7 @@ export const highwayLayerGreen = {
     },
     'filter': ['<', 'N06_002', 2024]
 }
-export const highwayLayerRed = {
+const highwayLayerRed = {
     'id': 'oh-highwayLayer-red-lines',
     'type': 'line',
     'source': 'highwaySource',
@@ -1237,25 +1235,25 @@ const tetsudojikeiretsuLayerBlue = {
 //     'filter': ['==', 'N06_002', 2024]
 // }
 // 標準地図--------------------------------------------------------------------------------------------------------------
-export const stdSource = {
+const stdSource = {
     id: 'stdSource', obj: {
         type: 'raster',
         tiles: ['https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'],
     }
 }
-export const stdLayer = {
+const stdLayer = {
     'id': 'oh-stdLayer',
     'type': 'raster',
     'source': 'stdSource',
 }
 // 淡色地図--------------------------------------------------------------------------------------------------------------
-export const paleSource = {
+const paleSource = {
     id: 'pale-source', obj: {
         type: 'raster',
         tiles: ['https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'],
     }
 }
-export const paleLayer = {
+const paleLayer = {
     'id': 'oh-pale-layer',
     'type': 'raster',
     'source': 'pale-source',
@@ -1320,14 +1318,6 @@ const sp74Layer = {
     'id': 'oh-sp74',
     'source': 'sp74-source',
     'type': 'raster',
-    // paint: {
-    //     // 明るさ、コントラスト、彩度を調整
-    //     // 'raster-hue-rotate': 180,          // 色相
-    //     'raster-brightness-min': 0.3, // 最小明るさ
-    //     'raster-brightness-max': 0.8, // 最大明るさ
-    //     'raster-contrast': 0.7,       // コントラスト
-    //     // 'raster-saturation': 1,     // 彩度
-    // },
 }
 // 61写真--------------------------------------------------------------------------------------------------------------
 const sp61Source = {
@@ -2110,7 +2100,7 @@ const syogakkoR05LayerPoint = {
     }
 }
 // 中学校ソース --------------------------------------------------------------------------------------------
-export const cyugakuR05Source = {
+const cyugakuR05Source = {
     id: "cyugakuR05Source", obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/cyugakko/r05/t4joint.pmtiles",
@@ -2118,7 +2108,7 @@ export const cyugakuR05Source = {
     }
 }
 // 中学校レイヤー
-export const cyugakuR05Layer = {
+const cyugakuR05Layer = {
     id: "oh-cyugakuR05",
     type: "fill",
     source: "cyugakuR05Source",
@@ -2127,7 +2117,7 @@ export const cyugakuR05Layer = {
         'fill-color': ['get', 'random_color']
     }
 }
-export const cyugakuR05LayerLine = {
+const cyugakuR05LayerLine = {
     id: "oh-cyugakuR05-line",
     type: "line",
     source: "cyugakuR05Source",
@@ -2143,7 +2133,7 @@ export const cyugakuR05LayerLine = {
         ]
     },
 }
-export const cyugakuR05LayerLabel = {
+const cyugakuR05LayerLabel = {
     id: "oh-cyugakuR05-label",
     type: "symbol",
     source: "cyugakuR05Source",
@@ -2163,7 +2153,7 @@ export const cyugakuR05LayerLabel = {
     'maxzoom': 24,
     'minzoom': 10
 }
-export const cyugakuR05LayerPoint = {
+const cyugakuR05LayerPoint = {
     id: "oh-cyugakuR05-point",
     type: "circle",
     source: "cyugakuR05Source",
@@ -2171,6 +2161,39 @@ export const cyugakuR05LayerPoint = {
     'paint': {
         'circle-color': '#000',
         'circle-radius': 6
+    }
+}
+// 低位遅滞--------------------------------------------------------------------------------------------
+const teiiSource = {
+    id: "teii-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/teiichitai/teiichitai.pmtiles",
+    }
+}
+const teiiLayer = {
+    id: "oh-teii",
+    type: "fill",
+    source: "teii-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'G08_002'],
+            // 0, 'rgba(30, 30, 30, 0.8)', // 最小値の色（濃い灰色）
+            // 5, 'rgba(0, 80, 200, 0.8)', // 任意の色（濃い青）
+            // 10, 'rgba(0, 0, 180, 0.8)', // 任意の色（深い青）
+            // 15, 'rgba(0, 0, 130, 0.8)', // 任意の色（濃紺）
+            // 20, 'rgba(0, 0, 90, 0.8)' // 最大値の色（非常に濃い紺）
+            0, 'rgba(255,255,179,0.8)',    // 0.3m未満
+            0.3, 'rgba(247,245,169,0.8)',  // 0.3~0.5m
+            0.5, 'rgba(248,225,116,0.8)',  // 0.5~1.0m
+            1.0, 'rgba(255,216,192,0.8)',  // 1.0~3.0m
+            3.0, 'rgba(255,183,183,0.8)',  // 3.0~5.0m
+            5.0, 'rgba(255,145,145,0.8)',  // 5.0~10.0m
+            10.0, 'rgba(242,133,201,0.8)', // 10.0~20.0m
+            20.0, 'rgba(220,122,220,0.8)'  // 20.0m以上
+        ],
     }
 }
 // 地形分類--------------------------------------------------------------------------------------------
@@ -4862,7 +4885,8 @@ const layers01 = [
                 id: 'oh-jinsoku',
                 label: "迅速測図",
                 sources: [jinsokuSource],
-                layers: [jinsokuLayer]
+                layers: [jinsokuLayer],
+                ext: {name:'ext-jinsoku'}
             },
             {
                 id: 'oh-jissoku',
@@ -5376,6 +5400,15 @@ const layers01 = [
                 source: jinkochikeiSource,
                 layers: [jinkochikeiLayer],
                 attribution: '<a href="https://github.com/gsi-cyberjapan/experimental_landformclassification" target="_blank">国土地理院ベクトルタイル提供実験（地形分類）</a>'
+            },
+            {
+                id: 'oh-teii',
+                label: "低位地帯",
+                source: teiiSource,
+                layers: [teiiLayer],
+                attribution: '<div style="width: 200px;"><a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-G08-2015.html" target="_blank">国土数値情報</a><br>' +
+                    '本データは、周辺部よりも標高が低く、排水が困難である地帯（低位地帯）を整備したものである。<br>' +
+                    '<img src="' + require('@/assets/legend/shinsui_legend3.png') + '"></div>'
             },
         ]
     },

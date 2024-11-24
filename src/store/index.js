@@ -102,7 +102,7 @@ export default createStore({
         sp79:{brightnessMin:0,brightnessMax:1,hueRotate:0,contrast:0,saturation:0,sharpness:0},
         sp84:{brightnessMin:0,brightnessMax:1,hueRotate:0,contrast:0,saturation:0,sharpness:0},
         sp87:{brightnessMin:0,brightnessMax:1,hueRotate:0,contrast:0,saturation:0,sharpness:0},
-
+        jinsoku:{brightnessMin:0,brightnessMax:1,hueRotate:0,contrast:0,saturation:0,sharpness:0},
       },
       map02: {
         sp28:{brightnessMin:0,brightnessMax:1,hueRotate:0,contrast:0,saturation:0,sharpness:0},
@@ -113,6 +113,8 @@ export default createStore({
         sp79:{brightnessMin:0,brightnessMax:1,hueRotate:0,contrast:0,saturation:0,sharpness:0},
         sp84:{brightnessMin:0,brightnessMax:1,hueRotate:0,contrast:0,saturation:0,sharpness:0},
         sp87:{brightnessMin:0,brightnessMax:1,hueRotate:0,contrast:0,saturation:0,sharpness:0},
+        jinsoku:{brightnessMin:0,brightnessMax:1,hueRotate:0,contrast:0,saturation:0,sharpness:0},
+
       },
     }
     //------------------------
@@ -135,6 +137,7 @@ export default createStore({
         'ext-sp79',
         'ext-sp84',
         'ext-sp87',
+        'ext-jinsoku',
       ]
 
       if (estSps.includes(payload.name)) {
@@ -156,6 +159,9 @@ export default createStore({
           case 4:
             target2 = 'saturation'
             break
+          // case 5:
+          //   target2 = 'sharpness'
+          //   break
         }
 
         state.color[payload.mapName][target][target2] = Number(payload.value)

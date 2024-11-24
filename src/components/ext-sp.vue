@@ -103,14 +103,16 @@ export default {
       const vm = this
       const map = this.$store.state[this.mapName]
       function updateRasterPaintProperties(brightnessMin, brightnessMax, hueRotate, contrast, saturation) {
+        console.log(vm.item.id)
         if (map.getLayer(vm.item.id)) { // レイヤーが存在することを確認
           map.setPaintProperty(vm.item.id, 'raster-brightness-min', brightnessMin)// 最小明るさ
           map.setPaintProperty(vm.item.id, 'raster-brightness-max', brightnessMax)// 最大明るさ
           map.setPaintProperty(vm.item.id, 'raster-hue-rotate', hueRotate)        // 色相（0～360)
           map.setPaintProperty(vm.item.id, 'raster-contrast', contrast)           // コントラスト
           map.setPaintProperty(vm.item.id, 'raster-saturation', saturation)       // 彩度
+          // map.setPaintProperty(vm.item.id, 'raster-sharpness', 1)       // シャープネス。動かない。
         } else {
-          console.error('Layer oh-sp61 does not exist');
+          console.error('Layer does not exist');
         }
       }
       updateRasterPaintProperties(this.s_brightnessMin,this.s_brightnessMax,this.s_hueRotate,this.s_contrast,this.s_saturation)
