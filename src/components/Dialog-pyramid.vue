@@ -56,7 +56,7 @@ export default {
       if(vm.$store.state.isEstat) {
         dialog2DragHandle.innerHTML = vm.$store.state.kokuchoYear + ' ' + vm.$store.state.syochiikiName
       } else {
-        dialog2DragHandle.innerHTML = 'MESH_ID=' + vm.$store.state.MESH_ID + ' ' + vm.$store.state.suikeiYear
+        dialog2DragHandle.innerHTML = 'MESH_ID=' + vm.$store.state.MESH_ID + ' ' + vm.$store.state.popupAddress + ' ' + vm.$store.state.suikeiYear
         vm.$store.state.MESH_ID = ''
       }
 

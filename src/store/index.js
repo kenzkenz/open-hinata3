@@ -62,6 +62,7 @@ export default createStore({
     MESH_ID: '',
     isEstat: true,
     suikeiYear: '',
+    popupAddress: '',
     //------------------------
     highwayYear:{
       map01: 2024,

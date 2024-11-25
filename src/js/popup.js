@@ -2,6 +2,8 @@ import store from '@/store'
 import codeShizen from "@/js/codeShizen"
 import codeShizenOriginal from "@/js/codeShizenOriginal"
 import maplibregl from "maplibre-gl"
+import axios from "axios";
+import muni from "@/js/muni";
 const popups = []
 
 
@@ -1553,6 +1555,7 @@ export function popup(e,map,mapName,mapFlg) {
                     html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                     html +=
                         '<div class="suikei1km" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span class="popup-address" style="font-size:12px;"></span><br>' +
                         '<span style="font-size:12px;">MESH_ID=' + props.MESH_ID + '</span><br>' +
                         '<span style="font-size:20px;">' + rate + '</span><hr>' +
                         '<span style="font-size:20px;"><span style="font-size:12px;">2050年人口＝</span>' + Math.floor(props.PTN_2050).toLocaleString(0) + '人</span><br>' +
@@ -1560,7 +1563,7 @@ export function popup(e,map,mapName,mapFlg) {
                         '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2050 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2050人口ピラミッド</button><br>' +
                         '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2040 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2040人口ピラミッド</button><br>' +
                         '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2030 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2030人口ピラミッド</button><br>' +
-                        '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2020 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2020人口ピラミッド</button><br>' +
+                        '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2020 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2020人口ピラミッド</button><br><br>' +
                         '</div>'
                 }
                 break
@@ -1573,13 +1576,14 @@ export function popup(e,map,mapName,mapFlg) {
                 if (features.length === 0) return;
                 props = features[0].properties
                 const rate = '<span style="font-size:12px;">2050年人口/2020年人口＝</span>' + Math.floor(props.PTN_2050 / props.PTN_2020 * 100) + '%'
-                if (html.indexOf('suikei1km') === -1) {
+                if (html.indexOf('suikei500m') === -1) {
                     html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                     html +=
-                        '<div class="suikei1km" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<div class="suikei500m" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span class="popup-address" style="font-size:12px;"></span><br>' +
                         '<span style="font-size:20px;">' + rate + '</span><hr>' +
                         '<span style="font-size:20px;"><span style="font-size:12px;">2050年人口＝</span>' + Math.floor(props.PTN_2050).toLocaleString(0) + '人</span><br>' +
-                        '<span style="font-size:20px;"><span style="font-size:12px;">2020年人口＝</span>' + Math.floor(props.PTN_2020).toLocaleString(0) + '人</span>' +
+                        '<span style="font-size:20px;"><span style="font-size:12px;">2020年人口＝</span>' + Math.floor(props.PTN_2020).toLocaleString(0) + '人</span><br><br>' +
                         '</div>'
                 }
                 break
@@ -1797,9 +1801,15 @@ export function popup(e,map,mapName,mapFlg) {
             }
 
             if (html) {
+                let lng = e.lngLat.lng
+                let lat = e.lngLat.lat
+                if (coordinates.length > 0) {
+                    lng = coordinates[0]
+                    lat = coordinates[1]
+                }
                 html = '<div class="popup-html-div">' + html + '</div>'
-                const streetView = '<hr><div style="text-align: center;"><a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' + coordinates[1] + ',' + coordinates[0] + '&hl=ja" target="_blank">Street View</a> ' +
-                    ' <a href="https://www.google.co.jp/maps?q=' + coordinates[1] + ',' + coordinates[0] + '&hl=ja" target="_blank">GoogleMap</a>' +
+                const streetView = '<hr><div style="text-align: center;"><a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' + lat + ',' + lng + '&hl=ja" target="_blank">Street View</a> ' +
+                    ' <a href="https://www.google.co.jp/maps?q=' + lat + ',' + lng + '&hl=ja" target="_blank">GoogleMap</a>' +
                     '</div>'
                 html = html + streetView
                 popups.forEach(popup => popup.remove())
@@ -1819,15 +1829,40 @@ export function popup(e,map,mapName,mapFlg) {
                 document.querySelectorAll('.popup-html-div').forEach(element => {
                     element.scrollTop = 0
                 })
+                axios
+                    .get('https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress', {
+                        params: {
+                            lon: lng,
+                            lat: lat
+                        }
+                    })
+                    .then(function (response) {
+                        if (response.data.results) {
+                            const address = response.data.results.lv01Nm
+                            const popupAddress = document.querySelector( '#' + mapName + ' .popup-address')
+                            if (popupAddress) {
+                                popupAddress.innerHTML = address
+                                store.state.popupAddress = address
+                            }
+                            // const splitMuni = muni[Number(response.data.results.muniCd)].split(',')
+                            // vm.address = splitMuni[1] + splitMuni[3] + response.data.results.lv01Nm
+                        }
+                    })
             }
         })
     })
 
     if (rasterLayerIds.length === 0){
+        let lng = e.lngLat.lng
+        let lat = e.lngLat.lat
+        if (coordinates.length > 0) {
+            lng = coordinates[0]
+            lat = coordinates[1]
+        }
         if (html) {
             html = '<div class="popup-html-div">' + html + '</div>'
-            const streetView = '<hr><div style="text-align: center;"><a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' + coordinates[1] + ',' + coordinates[0] + '&hl=ja" target="_blank">Street View</a> ' +
-                ' <a href="https://www.google.co.jp/maps?q=' + coordinates[1] + ',' + coordinates[0] + '&hl=ja" target="_blank">GoogleMap</a>' +
+            const streetView = '<hr><div style="text-align: center;"><a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' + lat + ',' + lng + '&hl=ja" target="_blank">Street View</a> ' +
+                ' <a href="https://www.google.co.jp/maps?q=' + lat + ',' + lng + '&hl=ja" target="_blank">GoogleMap</a>' +
                 '</div>'
             html = html + streetView
             popups.forEach(popup => popup.remove())
@@ -1846,6 +1881,26 @@ export function popup(e,map,mapName,mapFlg) {
             document.querySelectorAll('.popup-html-div').forEach(element => {
                 element.scrollTop = 0
             })
+            axios
+                .get('https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress', {
+                    params: {
+                        lon: lng,
+                        lat: lat
+                    }
+                })
+                .then(function (response) {
+                    if (response.data.results) {
+                        const address = response.data.results.lv01Nm
+                        const popupAddress = document.querySelector( '#' + mapName + ' .popup-address')
+                        if (popupAddress) {
+                            popupAddress.innerHTML = address
+                            store.state.popupAddress = address
+                            // const splitMuni = muni[Number(response.data.results.muniCd)].split(',')
+                            // vm.address = splitMuni[1] + splitMuni[3] + response.data.results.lv01Nm
+                        }
+                    }
+                })
+
         }
     }
 }
