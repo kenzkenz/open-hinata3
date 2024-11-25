@@ -7,6 +7,7 @@
 <script>
 
 import * as d3 from "d3"
+import store from "@/store";
 
 export default {
   name: "Dialog-pyramid-estat",
@@ -52,10 +53,10 @@ export default {
       //----------------------------------------------------------------
       const dialog2DragHandle = document.querySelector('#dialog2-' + vm.item.id + ' .drag-handle')
       // console.log(vm.$store.state.MESH_ID)
-      if(!vm.$store.state.MESH_ID) {
+      if(vm.$store.state.isEstat) {
         dialog2DragHandle.innerHTML = vm.$store.state.kokuchoYear + ' ' + vm.$store.state.syochiikiName
       } else {
-        dialog2DragHandle.innerHTML = 'MESH_ID=' + vm.$store.state.MESH_ID
+        dialog2DragHandle.innerHTML = 'MESH_ID=' + vm.$store.state.MESH_ID + ' ' + vm.$store.state.suikeiYear
         vm.$store.state.MESH_ID = ''
       }
 
@@ -124,7 +125,7 @@ export default {
             .attr("stroke","black");
 
         let text
-        if (heikinnenrei) {
+        if (vm.$store.state.isEstat) {
           text = '男' + manSum + '人 女' + womanSum + '人 高齢化率' + koureikaritu + ' 平均年齢' + heikinnenrei
         } else {
           text = '男' + manSum + '人 女' + womanSum + '人 高齢化率' + koureikaritu

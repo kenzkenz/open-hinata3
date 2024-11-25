@@ -1356,7 +1356,8 @@ font {
 }
 .pyramid-btn {
   margin-top: 10px;
-  height: 40px;
+  height: 30px;
+  line-height: 30px;
   width: 100%;
   background-color: rgb(50,101,186);
   color: white;

@@ -60,6 +60,8 @@ export default createStore({
     secondDivStyle: {'height': '390px', 'overflow': 'auto', 'user-select': 'text'},
     extFire:false,
     MESH_ID: '',
+    isEstat: true,
+    suikeiYear: '',
     //------------------------
     highwayYear:{
       map01: 2024,

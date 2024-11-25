@@ -1557,7 +1557,10 @@ export function popup(e,map,mapName,mapFlg) {
                         '<span style="font-size:20px;">' + rate + '</span><hr>' +
                         '<span style="font-size:20px;"><span style="font-size:12px;">2050年人口＝</span>' + Math.floor(props.PTN_2050).toLocaleString(0) + '人</span><br>' +
                         '<span style="font-size:20px;"><span style="font-size:12px;">2020年人口＝</span>' + Math.floor(props.PTN_2020).toLocaleString(0) + '人</span>' +
-                        '<button class="suikei1km-2050 pyramid-btn" year=2050 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2050人口ピラミッド　作成中！</button><br>' +
+                        '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2050 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2050人口ピラミッド</button><br>' +
+                        '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2040 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2040人口ピラミッド</button><br>' +
+                        '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2030 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2030人口ピラミッド</button><br>' +
+                        '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2020 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2020人口ピラミッド</button><br>' +
                         '</div>'
                 }
                 break
@@ -1688,6 +1691,28 @@ export function popup(e,map,mapName,mapFlg) {
                     html +=
                         '<div class="kuikikubun" font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size:20px;">' + props.用途地域 + '</span><br>' +
+                        '<span style="font-size:20px;">' + props.Pref + props.Cityname + '</span><br>' +
+                        '</div>'
+                }
+                break
+            }
+            case 'oh-tkbt': {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                // const name = props.G08_002
+                if (html.indexOf('kuikikubun') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="kuikikubun" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">' + props.Type + '</span><br>' +
                         '<span style="font-size:20px;">' + props.Pref + props.Cityname + '</span><br>' +
                         '</div>'
                 }

@@ -4909,6 +4909,38 @@ const yotochiikiPLayerLine = {
         ]
     },
 }
+// 特別用途地区 --------------------------------------------------------------------------------------------
+const tkbtSource = {
+    id: "tkbt-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/toshikeikaku/tkbt.pmtiles",
+    }
+}
+const tkbtLayer = {
+    id: "oh-tkbt",
+    type: "fill",
+    source: "tkbt-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': 'rgba(255, 0, 0, 0.8)',
+    }
+}
+const tkbtLayerLine = {
+    id: "oh-tkbt-line",
+    type: "line",
+    source: "tkbt-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
 // ---------------------------------------------------------------------------------------------------------------------
 
 
@@ -5373,6 +5405,13 @@ const layers01 = [
                 label: "市街化調整区域",
                 source: kuikikubunSource,
                 layers: [kuikikubunLayer,kuikikubunLayerLine],
+                attribution:'<a href="" target="_blank"></a>'
+            },
+            {
+                id: 'oh-tkbt',
+                label: "特別用途地区",
+                source: tkbtSource,
+                layers: [tkbtLayer,tkbtLayerLine],
                 attribution:'<a href="" target="_blank"></a>'
             },
         ]

@@ -267,6 +267,8 @@ tippecanoe -l polygon -f -o yoto.pmtiles yoto.geojson
 
 tippecanoe -l polygon -f -o tkbt.pmtiles tkbt.geojson
 
+tippecanoe -l polygon -f -o kodoriyo.pmtiles kodoriyo.geojson
+
 
 import random
 from qgis.core import QgsField, QgsExpression, QgsExpressionContext, QgsExpressionContextUtils

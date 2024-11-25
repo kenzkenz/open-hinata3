@@ -12,6 +12,7 @@ export default function pyramid () {
                 console.log(e.target.getAttribute("cdArea"))
                 store.state.cdArea = e.target.getAttribute("cdArea")
                 store.state.syochiikiName = e.target.getAttribute("syochiikiname")
+                store.state.isEstat = true
                 const cityCode = store.state.cdArea.slice(0,5)
                 const azaCode = store.state.cdArea.slice(5)
                 console.log(cityCode)
@@ -134,6 +135,7 @@ export default function pyramid () {
             console.log(e.target.getAttribute("cdArea"))
             store.state.cdArea = e.target.getAttribute("cdArea")
             store.state.syochiikiName = e.target.getAttribute("syochiikiname")
+            store.state.isEstat = true
             const cityCode = store.state.cdArea.slice(0, 5)
             const azaCode = store.state.cdArea.slice(5)
             axios
@@ -242,6 +244,7 @@ export default function pyramid () {
             return new Promise(resolve => {
                 store.state.cdArea = e.target.getAttribute("cdArea")
                 store.state.syochiikiName = e.target.getAttribute("syochiikiname")
+                store.state.isEstat = true
                 const cityCode = store.state.cdArea.slice(0,5)
                 const azaCode = store.state.cdArea.slice(5)
                 axios
@@ -309,6 +312,7 @@ export default function pyramid () {
             return new Promise(resolve => {
                 store.state.cdArea = e.target.getAttribute("cdArea")
                 store.state.syochiikiName = e.target.getAttribute("syochiikiname")
+                store.state.isEstat = true
                 const cityCode = store.state.cdArea.slice(0, 5)
                 const azaCode = store.state.cdArea.slice(5)
                 axios
@@ -451,25 +455,21 @@ export default function pyramid () {
         })
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
-            // e.stopPropagation()
-            // console.log(e.target.classList)
             if (e.target && e.target.classList.contains('suikei1km-2050')) {
                 console.log(e.target.getAttribute("MESH_ID"))
                 const MESH_ID = e.target.getAttribute("MESH_ID")
-                // store.state.cdArea = e.target.getAttribute("cdArea")
-                store.state.MESH_ID = e.target.getAttribute("MESH_ID")
-                // const cityCode = store.state.cdArea.slice(0,5)
-                // const azaCode = store.state.cdArea.slice(5)
-                // console.log(cityCode)
-                // console.log(azaCode)
+                const suikeiYear = e.target.getAttribute("suikeiYear")
+                store.state.MESH_ID = MESH_ID
+                store.state.suikeiYear = suikeiYear
+                console.log(store.state.suikeiYear)
+                store.state.isEstat = false
                 axios
                     .get('https://kenzkenz.xsrv.jp/open-hinata3/php/pyramid2.php',{
                         params: {
                             MESH_ID: MESH_ID,
-                            // MESH_ID: 68421002
+                            suikeiYear: suikeiYear
                         }
                     }).then(function (response) {
-                    console.log(response.data)
                     if (response.data.error) {
                         alert("まだDBにありません。もう少しまってください。")
                         return
@@ -507,7 +507,6 @@ export default function pyramid () {
                     console.log(dataSet)
                     const sousu = dataSousu[0]['総数']
                     const over65 = dataSousu[1]['総数65歳以上']
-                    // const heikinnenrei = dataSousu[2]['平均年齢'].toFixed(2) + '歳'
                     let koureikaritu
                     if (isNaN(over65)) {
                         koureikaritu = '0%'
@@ -515,8 +514,6 @@ export default function pyramid () {
                         koureikaritu = ((over65 / sousu) * 100).toFixed(2) + '%'
                     }
                     store.state.koureikaritu = koureikaritu
-                    // store.state.heikinnenrei = heikinnenrei
-                    // store.state.kokuchoYear = year
 
                     store.state.estatDataset = dataSet
 
@@ -540,7 +537,6 @@ export default function pyramid () {
                             }
                         }
                     store.commit('pushDialogs2', {mapName: mapName, dialog: diialog})
-
                 })
             }
         })
