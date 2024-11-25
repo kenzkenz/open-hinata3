@@ -263,6 +263,9 @@ tippecanoe -l polygon -f -o tokei.pmtiles tokei.geojson
 
 tippecanoe -l polygon -f -o senbiki.pmtiles senbiki.geojson
 
+tippecanoe -l polygon -f -o yoto.pmtiles yoto.geojson
+
+tippecanoe -l polygon -f -o tkbt.pmtiles tkbt.geojson
 
 
 import random

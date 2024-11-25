@@ -51,7 +51,14 @@ export default {
       // d3.select('#' + vm.id + ' .loadingImg').style("display","block")
       //----------------------------------------------------------------
       const dialog2DragHandle = document.querySelector('#dialog2-' + vm.item.id + ' .drag-handle')
-      dialog2DragHandle.innerHTML = vm.$store.state.kokuchoYear + ' ' + vm.$store.state.syochiikiName
+      // console.log(vm.$store.state.MESH_ID)
+      if(!vm.$store.state.MESH_ID) {
+        dialog2DragHandle.innerHTML = vm.$store.state.kokuchoYear + ' ' + vm.$store.state.syochiikiName
+      } else {
+        dialog2DragHandle.innerHTML = 'MESH_ID=' + vm.$store.state.MESH_ID
+        vm.$store.state.MESH_ID = ''
+      }
+
       //----------------------------------------------------------------
       d3Create (vm.$store.state.estatDataset)
       function d3Create (response) {
@@ -103,8 +110,8 @@ export default {
             .attr("transform",
                 "translate(" + margin.left + "," + margin.top + ")");
 
-        const manSum = d3.sum(data, function(d){ return d.man; })
-        const womanSum = d3.sum(data, function(d){ return d.woman; })
+        const manSum = Math.round(d3.sum(data, function(d){ return d.man; }))
+        const womanSum = Math.round(d3.sum(data, function(d){ return d.woman; }))
         const koureikaritu = vm.$store.state.koureikaritu
         const heikinnenrei = vm.$store.state.heikinnenrei
 
@@ -116,14 +123,20 @@ export default {
             .attr("stroke-width",1)
             .attr("stroke","black");
 
+        let text
+        if (heikinnenrei) {
+          text = '男' + manSum + '人 女' + womanSum + '人 高齢化率' + koureikaritu + ' 平均年齢' + heikinnenrei
+        } else {
+          text = '男' + manSum + '人 女' + womanSum + '人 高齢化率' + koureikaritu
+        }
+
         svg.append("text")
             .attr("fill", "black")
             .attr("transform", "translate(" + textLeft + "," + -5 + ")")
             // .attr("dy", "5px")
             .attr("font-size", fontSize)
             .attr("text-anchor", "middle")
-            // .attr("class", "city-name")
-            .text('男' + manSum + '人 女' + womanSum + '人 高齢化率' + koureikaritu + ' 平均年齢' + heikinnenrei);
+            .text(text);
         let max
         const womanMax = d3.max(data, function(d){ return d.woman; })
         const manMax = d3.max(data, function(d){ return d.man; })

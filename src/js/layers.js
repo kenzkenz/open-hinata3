@@ -4830,6 +4830,85 @@ const kuikikubunLayerLine = {
         ]
     },
 }
+// 用途地域 --------------------------------------------------------------------------------------------
+const yotochiikiPSource = {
+    id: "yotochiikiP-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/toshikeikaku/yoto.pmtiles",
+    }
+}
+const yotochiikiPLayer = {
+    id: "oh-yotochiikiP",
+    type: "fill",
+    source: "yotochiikiP-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': [
+            'match',
+            ['get', 'YoutoID'],
+            0, 'rgba(169, 169, 169 , 0.8)',   // 用途地域の指定をしない区域（ダークグレー）
+            1, 'rgba(144, 238, 144 , 0.8)',   // 第1種低層住居専用地域（ライトグリーン）
+            2, 'rgba(152, 251, 152 , 0.8)',   // 第2種低層住居専用地域（パレグリーン）
+            3, 'rgba(60, 179, 113 , 0.8)',    // 第1種中高層住居専用地域（ミディアムシースグリーン）
+            4, 'rgba(46, 139, 87 , 0.8)',     // 第2種中高層住居専用地域（シーグリーン）
+            5, 'rgba(107, 142, 35 , 0.8)',    // 第1種住居地域（オリーブドラブ）
+            6, 'rgba(0, 128, 0 , 0.8)',       // 第2種住居地域（緑色）
+            7, 'rgba(144, 238, 144 , 0.8)',   // 準住居地域（ライトグリーン）
+            8, 'rgba(60, 179, 113 , 0.8)',    // 田園住居地域（ミディアムシースグリーン）
+            9, 'rgba(255, 69, 0 , 0.8)',      // 近隣商業地域（オレンジレッド）
+            10, 'rgba(255, 0, 0 , 0.8)',      // 商業地域（赤色）
+            11, 'rgba(105, 105, 105 , 0.8)',  // 準工業地域（ディムグレー）
+            12, 'rgba(0, 0, 0 , 0.8)',        // 工業地域（黒色）
+            13, 'rgba(47, 79, 79 , 0.8)',     // 工業専用地域（ダークスレートグレー）
+            14, 'rgba(218, 112, 214 , 0.8)',  // 特別用途地区（オーキッド）
+            15, 'rgba(186, 85, 211 , 0.8)',   // 特定用途制限地域（ミディアムオーキッド）
+            16, 'rgba(147, 112, 219 , 0.8)',  // 特例容積率適用地区（ミディアムスレートブルー）
+            17, 'rgba(138, 43, 226 , 0.8)',   // 高層住居誘導地区（ブルーバイオレット）
+            18, 'rgba(75, 0, 130 , 0.8)',     // 高度地区（インディゴ）
+            19, 'rgba(72, 61, 139 , 0.8)',    // 高度利用地区（ダークスレートブルー）
+            20, 'rgba(0, 0, 205 , 0.8)',      // 特定街区（ミディアムブルー）
+            21, 'rgba(0, 0, 255 , 0.8)',      // 都市再生特別地区（ブルー）
+            22, 'rgba(34, 139, 34 , 0.8)',    // 居住調整地域（フォレストグリーン）
+            23, 'rgba(46, 139, 87 , 0.8)',    // 特定用途誘導地区（シーグリーン）
+            24, 'rgba(255, 0, 0 , 0.8)',      // 防火地域（赤色）
+            25, 'rgba(255, 99, 71 , 0.8)',    // 準防火地域（トマト）
+            26, 'rgba(220, 20, 60 , 0.8)',    // 特定防災街区整備地区（クリムゾン）
+            27, 'rgba(154, 205, 50 , 0.8)',   // 景観地区（イエローグリーン）
+            28, 'rgba(85, 107, 47 , 0.8)',    // 風致地区（ダークオリーブグリーン）
+            29, 'rgba(139, 69, 19 , 0.8)',    // 駐車場整備地区（サドルブラウン）
+            30, 'rgba(210, 105, 30 , 0.8)',   // 臨港地区（チョコレート）
+            31, 'rgba(160, 82, 45 , 0.8)',    // 歴史的風土特別保存地区（シエナ）
+            32, 'rgba(205, 92, 92 , 0.8)',    // 第1種歴史的風土保存地区（インディアンレッド）
+            33, 'rgba(233, 150, 122 , 0.8)',  // 第2種歴史的風土保存地区（ダークサーモン）
+            34, 'rgba(152, 251, 152 , 0.8)',  // 緑地保全地域（パレグリーン）
+            35, 'rgba(0, 128, 0 , 0.8)',      // 特別緑地保全地区（緑色）
+            36, 'rgba(107, 142, 35 , 0.8)',   // 緑化地域（オリーブドラブ）
+            37, 'rgba(189, 183, 107 , 0.8)',  // 流通業務地区（ダークカーキ）
+            38, 'rgba(85, 107, 47 , 0.8)',    // 生産緑地地区（ダークオリーブグリーン）
+            39, 'rgba(255, 20, 147 , 0.8)',   // 伝統的建造物群保存地区（ディープピンク）
+            40, 'rgba(255, 105, 180 , 0.8)',  // 航空機騒音障害防止地区（ホットピンク）
+            41, 'rgba(199, 21, 133 , 0.8)',   // 航空機騒音障害防止特別地区（ミディアムバイオレットレッド）
+            42, 'rgba(255, 182, 193 , 0.8)',  // 居住環境向上用途誘導地区（ライトピンク）
+            'rgba(200, 200, 200 , 0.8)'       // デフォルト色（グレー）
+        ],
+    }
+    }
+const yotochiikiPLayerLine = {
+    id: "oh-yotochiikiP-line",
+    type: "line",
+    source: "yotochiikiP-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
 // ---------------------------------------------------------------------------------------------------------------------
 
 
@@ -5275,6 +5354,13 @@ const layers01 = [
         id: 'toshikeikaku',
         label: "都市計画決定情報パッケージ",
         nodes: [
+            {
+                id: 'oh-yotochiikiP',
+                label: "用途地域",
+                source: yotochiikiPSource,
+                layers: [yotochiikiPLayer,yotochiikiPLayerLine],
+                attribution:'<a href="" target="_blank"></a>'
+            },
             {
                 id: 'oh-tokei',
                 label: "都市計画区域",
@@ -5827,18 +5913,18 @@ const layers01 = [
                 source: hikariSource,
                 layers: [hikariLayerHeight]
             },
-            {
-                id: 'oh-yotochiiki',
-                label: "用途地域",
-                source: yotochiikiSource,
-                layers: [yotochiikiLayer,yotochiikiLayerLine,yotochiikiLayerLabel]
-            },
-            {
-                id: 'oh-yotochiiki-3d',
-                label: "用途地域3D",
-                source: yotochiikiSource,
-                layers: [yotochiikiLayer,yotochiikiLayerLine,yotochiikiLayerLabel,yotochiikiLayerHeight]
-            },
+            // {
+            //     id: 'oh-yotochiiki',
+            //     label: "用途地域",
+            //     source: yotochiikiSource,
+            //     layers: [yotochiikiLayer,yotochiikiLayerLine,yotochiikiLayerLabel]
+            // },
+            // {
+            //     id: 'oh-yotochiiki-3d',
+            //     label: "用途地域3D",
+            //     source: yotochiikiSource,
+            //     layers: [yotochiikiLayer,yotochiikiLayerLine,yotochiikiLayerLabel,yotochiikiLayerHeight]
+            // },
             {
                 id: 'oh-test',
                 label: "テスト",

@@ -59,6 +59,7 @@ export default createStore({
     latRange2: [],
     secondDivStyle: {'height': '390px', 'overflow': 'auto', 'user-select': 'text'},
     extFire:false,
+    MESH_ID: '',
     //------------------------
     highwayYear:{
       map01: 2024,

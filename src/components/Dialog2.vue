@@ -1,5 +1,6 @@
 <template>
-  <div ref="dragDiv" :id="'dialog2-' + item.id" v-for="item in s_dialog2" :key="item.id" :style="item.style" class="dialog2-div" @pointerdown.stop="dialogMouseDown(item)" @mousedown.stop="dialogMouseDown(item)" @mouseup.stop="dialogMouseDown(item)">
+  <div ref="dragDiv" :id="'dialog2-' + item.id" v-for="item in s_dialog2" :key="item.id" :style="item.style" class="dialog2-div" @pointerdown.stop="dialogMouseDown(item)">
+<!--    <div ref="dragDiv" :id="'dialog2-' + item.id" v-for="item in s_dialog2" :key="item.id" :style="item.style" class="dialog2-div" @pointerdown.stop="dialogMouseDown(item)" @mousedown.stop="dialogMouseDown(item)" @mouseup.stop="dialogMouseDown(item)">-->
     <div ref="dragHandle" class="drag-handle" :id="'dialog-handle2-' + item.id">
     </div>
     <div>
@@ -32,9 +33,13 @@ export default {
   },
   methods: {
     closeBtn (item) {
-      setTimeout(() => {
+      if (window.innerWidth > 600) {
         this.$store.state.dialogs2[this.mapName] = this.$store.state.dialogs2[this.mapName].filter(v => v.id !== item.id)
-      }, 500)
+      } else {
+        setTimeout(() => {
+          this.$store.state.dialogs2[this.mapName] = this.$store.state.dialogs2[this.mapName].filter(v => v.id !== item.id)
+        }, 500)
+      }
     },
     dialogMouseDown (item) {
       try {
@@ -52,10 +57,9 @@ export default {
     s_dialog2: {
       handler: function(){
         this.$nextTick(() => {
-          const container = this.$refs.dragDiv[this.$refs.dragDiv.length -1]
-          const handle =  this.$refs.dragHandle[this.$refs.dragHandle.length -1]
-          // const container = document.querySelector("#dialog-info-" + this.item.id)
-          // const handle =  document.querySelector("#handle-" + this.item.id)
+
+          const container = this.$refs.dragDiv[this.$refs.dragDiv.length - 1];
+          const handle = this.$refs.dragHandle[this.$refs.dragHandle.length - 1];
           let offsetX, offsetY;
 
           const startDrag = (event) => {
@@ -65,10 +69,10 @@ export default {
             offsetX = clientX - container.offsetLeft;
             offsetY = clientY - container.offsetTop;
 
-            document.addEventListener('mousemove', drag);
-            document.addEventListener('mouseup', endDrag);
-            document.addEventListener('touchmove', drag);
-            document.addEventListener('touchend', endDrag);
+            window.addEventListener('mousemove', drag);
+            window.addEventListener('mouseup', endDrag);
+            window.addEventListener('touchmove', drag, { passive: false });
+            window.addEventListener('touchend', endDrag);
           };
 
           const drag = (event) => {
@@ -83,12 +87,12 @@ export default {
 
             // ウィンドウの高さ内にY座標を制限
             const windowHeight = window.innerHeight;
-            const handleHeight = handle.offsetHeight;
+            const containerHeight = container.offsetHeight;
 
             if (newY < 0) {
               newY = 0; // 上限
-            } else if (newY > windowHeight - handleHeight) {
-              newY = windowHeight - handleHeight; // 下限
+            } else if (newY > windowHeight - containerHeight) {
+              newY = windowHeight - containerHeight; // 下限
             }
 
             // 新しい位置を設定
@@ -97,19 +101,81 @@ export default {
           };
 
           const endDrag = () => {
-            document.removeEventListener('mousemove', drag);
-            document.removeEventListener('mouseup', endDrag);
-            document.removeEventListener('touchmove', drag);
-            document.removeEventListener('touchend', endDrag);
+            window.removeEventListener('mousemove', drag);
+            window.removeEventListener('mouseup', endDrag);
+            window.removeEventListener('touchmove', drag);
+            window.removeEventListener('touchend', endDrag);
           };
 
           // ハンドルにイベントリスナーを追加
           try {
             handle.addEventListener('mousedown', startDrag);
-            handle.addEventListener('touchstart', startDrag);
+            handle.addEventListener('touchstart', startDrag, { passive: false });
           } catch (e) {
-            console.log(e)
+            console.log(e);
           }
+
+
+
+
+          // const container = this.$refs.dragDiv[this.$refs.dragDiv.length -1]
+          // const handle =  this.$refs.dragHandle[this.$refs.dragHandle.length -1]
+          // // const container = document.querySelector("#dialog-info-" + this.item.id)
+          // // const handle =  document.querySelector("#handle-" + this.item.id)
+          // let offsetX, offsetY;
+          //
+          // const startDrag = (event) => {
+          //   const clientX = event.type === 'touchstart' ? event.touches[0].clientX : event.clientX;
+          //   const clientY = event.type === 'touchstart' ? event.touches[0].clientY : event.clientY;
+          //
+          //   offsetX = clientX - container.offsetLeft;
+          //   offsetY = clientY - container.offsetTop;
+          //
+          //   document.addEventListener('mousemove', drag);
+          //   document.addEventListener('mouseup', endDrag);
+          //   document.addEventListener('touchmove', drag);
+          //   document.addEventListener('touchend', endDrag);
+          // };
+          //
+          // const drag = (event) => {
+          //   event.preventDefault(); // スクロールを防ぐ
+          //
+          //   const clientX = event.type === 'touchmove' ? event.touches[0].clientX : event.clientX;
+          //   const clientY = event.type === 'touchmove' ? event.touches[0].clientY : event.clientY;
+          //
+          //   // 新しいX座標とY座標を計算
+          //   const newX = clientX - offsetX;
+          //   let newY = clientY - offsetY;
+          //
+          //   // ウィンドウの高さ内にY座標を制限
+          //   const windowHeight = window.innerHeight;
+          //   const handleHeight = handle.offsetHeight;
+          //
+          //   if (newY < 0) {
+          //     newY = 0; // 上限
+          //   } else if (newY > windowHeight - handleHeight) {
+          //     newY = windowHeight - handleHeight; // 下限
+          //   }
+          //
+          //   // 新しい位置を設定
+          //   container.style.left = `${newX}px`;
+          //   container.style.top = `${newY}px`;
+          // };
+          //
+          // const endDrag = () => {
+          //   document.removeEventListener('mousemove', drag);
+          //   document.removeEventListener('mouseup', endDrag);
+          //   document.removeEventListener('touchmove', drag);
+          //   document.removeEventListener('touchend', endDrag);
+          // };
+          //
+          // // ハンドルにイベントリスナーを追加
+          // try {
+          //   handle.addEventListener('mousedown', startDrag);
+          //   handle.addEventListener('touchstart', startDrag);
+          // } catch (e) {
+          //   console.log(e)
+          // }
         })
       },
       deep: true
