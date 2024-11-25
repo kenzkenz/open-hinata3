@@ -5391,28 +5391,28 @@ const layers01 = [
                 label: "用途地域",
                 source: yotochiikiPSource,
                 layers: [yotochiikiPLayer,yotochiikiPLayerLine],
-                attribution:'<a href="" target="_blank"></a>'
+                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A55-2022.html" target="_blank">国土数値情報</a>'
             },
             {
                 id: 'oh-tokei',
                 label: "都市計画区域",
                 source: tokeiSource,
                 layers: [tokeiLayer,tokeiLayerLine],
-                attribution:'<a href="" target="_blank"></a>'
+                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A55-2022.html" target="_blank">国土数値情報</a>'
             },
             {
                 id: 'oh-kuikikubun',
                 label: "市街化調整区域",
                 source: kuikikubunSource,
                 layers: [kuikikubunLayer,kuikikubunLayerLine],
-                attribution:'<a href="" target="_blank"></a>'
+                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A55-2022.html" target="_blank">国土数値情報</a>'
             },
             {
                 id: 'oh-tkbt',
                 label: "特別用途地区",
                 source: tkbtSource,
                 layers: [tkbtLayer,tkbtLayerLine],
-                attribution:'<a href="" target="_blank"></a>'
+                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A55-2022.html" target="_blank">国土数値情報</a>'
             },
         ]
     },
