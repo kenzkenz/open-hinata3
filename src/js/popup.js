@@ -1556,8 +1556,8 @@ export function popup(e,map,mapName,mapFlg) {
                     html +=
                         '<div class="suikei1km" font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span class="popup-address" style="font-size:12px;"></span><br>' +
-                        '<span style="font-size:12px;">MESH_ID=' + props.MESH_ID + '</span><br>' +
-                        '<span style="font-size:20px;">' + rate + '</span><hr>' +
+                        // '<span style="font-size:12px;">MESH_ID=' + props.MESH_ID + '</span><br>' +
+                        '<span style="font-size:24px;">' + rate + '</span><br>' +
                         '<span style="font-size:20px;"><span style="font-size:12px;">2050年人口＝</span>' + Math.floor(props.PTN_2050).toLocaleString(0) + '人</span><br>' +
                         '<span style="font-size:20px;"><span style="font-size:12px;">2020年人口＝</span>' + Math.floor(props.PTN_2020).toLocaleString(0) + '人</span>' +
                         '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2050 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2050人口ピラミッド</button><br>' +
@@ -1581,9 +1581,9 @@ export function popup(e,map,mapName,mapFlg) {
                     html +=
                         '<div class="suikei500m" font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span class="popup-address" style="font-size:12px;"></span><br>' +
-                        '<span style="font-size:20px;">' + rate + '</span><hr>' +
+                        '<span style="font-size:24px;">' + rate + '</span><br>' +
                         '<span style="font-size:20px;"><span style="font-size:12px;">2050年人口＝</span>' + Math.floor(props.PTN_2050).toLocaleString(0) + '人</span><br>' +
-                        '<span style="font-size:20px;"><span style="font-size:12px;">2020年人口＝</span>' + Math.floor(props.PTN_2020).toLocaleString(0) + '人</span><br><br>' +
+                        '<span style="font-size:20px;"><span style="font-size:12px;">2020年人口＝</span>' + Math.floor(props.PTN_2020).toLocaleString(0) + '人</span><br>' +
                         '</div>'
                 }
                 break
@@ -1801,53 +1801,7 @@ export function popup(e,map,mapName,mapFlg) {
             }
 
             if (html) {
-                let lng = e.lngLat.lng
-                let lat = e.lngLat.lat
-                if (coordinates.length > 0) {
-                    lng = coordinates[0]
-                    lat = coordinates[1]
-                }
-                html = '<div class="popup-html-div">' + html + '</div>'
-                const streetView = '<hr><div style="text-align: center;"><a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' + lat + ',' + lng + '&hl=ja" target="_blank">Street View</a> ' +
-                    ' <a href="https://www.google.co.jp/maps?q=' + lat + ',' + lng + '&hl=ja" target="_blank">GoogleMap</a>' +
-                    '</div>'
-                html = html + streetView
-                popups.forEach(popup => popup.remove())
-                popups.length = 0;
-                const popup = new maplibregl.Popup({
-                    closeButton: true,
-                    // className: 'custom-popup'
-                })
-                    .setLngLat(coordinates)
-                    .setHTML(html)
-                    .setMaxWidth("350px")
-                    .addTo(map)
-                popups.push(popup)
-                popups.push(popup)
-                popup.on('close', () => closeAllPopups())
-                console.log(document.querySelector('.popup-html-div').scrollTop)
-                document.querySelectorAll('.popup-html-div').forEach(element => {
-                    element.scrollTop = 0
-                })
-                axios
-                    .get('https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress', {
-                        params: {
-                            lon: lng,
-                            lat: lat
-                        }
-                    })
-                    .then(function (response) {
-                        if (response.data.results) {
-                            const address = response.data.results.lv01Nm
-                            const popupAddress = document.querySelector( '#' + mapName + ' .popup-address')
-                            if (popupAddress) {
-                                popupAddress.innerHTML = address
-                                store.state.popupAddress = address
-                            }
-                            // const splitMuni = muni[Number(response.data.results.muniCd)].split(',')
-                            // vm.address = splitMuni[1] + splitMuni[3] + response.data.results.lv01Nm
-                        }
-                    })
+                createPopup(map, [lng,lat], html, mapName)
             }
         })
     })
@@ -1860,50 +1814,67 @@ export function popup(e,map,mapName,mapFlg) {
             lat = coordinates[1]
         }
         if (html) {
-            html = '<div class="popup-html-div">' + html + '</div>'
-            const streetView = '<hr><div style="text-align: center;"><a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' + lat + ',' + lng + '&hl=ja" target="_blank">Street View</a> ' +
-                ' <a href="https://www.google.co.jp/maps?q=' + lat + ',' + lng + '&hl=ja" target="_blank">GoogleMap</a>' +
-                '</div>'
-            html = html + streetView
-            popups.forEach(popup => popup.remove())
-            popups.length = 0;
-            const popup = new maplibregl.Popup({
-                closeButton: true,
-                // className: 'custom-popup'
-            })
-                .setLngLat(coordinates)
-                .setHTML(html)
-                .setMaxWidth("350px")
-                .addTo(map)
-            popups.push(popup)
-            popup.on('close', () => closeAllPopups())
-            console.log(document.querySelector('.popup-html-div').scrollTop)
-            document.querySelectorAll('.popup-html-div').forEach(element => {
-                element.scrollTop = 0
-            })
-            axios
-                .get('https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress', {
-                    params: {
-                        lon: lng,
-                        lat: lat
-                    }
-                })
-                .then(function (response) {
-                    if (response.data.results) {
-                        const address = response.data.results.lv01Nm
-                        const popupAddress = document.querySelector( '#' + mapName + ' .popup-address')
-                        if (popupAddress) {
-                            popupAddress.innerHTML = address
-                            store.state.popupAddress = address
-                            // const splitMuni = muni[Number(response.data.results.muniCd)].split(',')
-                            // vm.address = splitMuni[1] + splitMuni[3] + response.data.results.lv01Nm
-                        }
-                    }
-                })
-
+            createPopup(map, [lng,lat], html, mapName)
         }
     }
 }
+function createPopup(map, coordinates, htmlContent, mapName) {
+    // ストリートビューとGoogleマップへのリンクを追加
+    const [lng, lat] = coordinates;
+    const streetView =
+        '<hr>' +
+        '<div style="text-align: center;">' +
+        '<a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' + lat + ',' + lng + '&hl=ja" target="_blank">Street View</a>' +
+        '<a href="https://www.google.co.jp/maps?q=' + lat + ',' + lng + '&hl=ja" target="_blank">GoogleMap</a>' +
+        '</div>'
+
+    // ポップアップHTMLを生成
+    const popupHtml = `<div class="popup-html-div">${htmlContent}${streetView}</div>`;
+
+    // 既存のポップアップを全て削除
+    popups.forEach(popup => popup.remove());
+    popups.length = 0;
+
+    // ポップアップを作成して地図に追加
+    const popup = new maplibregl.Popup({ closeButton: true, maxWidth: "350px" })
+        .setLngLat(coordinates)
+        .setHTML(popupHtml)
+        .addTo(map);
+
+    // ポップアップイベント設定
+    popups.push(popup);
+    popup.on('close', closeAllPopups);
+
+    // スクロールリセット（ポップアップ内のスクロール位置をリセット）
+    document.querySelectorAll('.popup-html-div').forEach(element => {
+        element.scrollTop = 0;
+    });
+    // 逆ジオコーディング（住所の取得）
+    fetchReverseGeocoding(lng, lat, mapName);
+}
+function fetchReverseGeocoding(lng, lat, mapName) {
+    axios.get('https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress', {
+        params: { lon: lng, lat: lat }
+    })
+        .then(response => {
+            // レスポンスデータの処理
+            if (response.data.results) {
+                // const address = response.data.results.lv01Nm;
+                // ポップアップ内の住所表示要素を更新
+                const splitMuni = muni[Number(response.data.results.muniCd)].split(',')
+                const address = splitMuni[1] + splitMuni[3] + response.data.results.lv01Nm
+                const popupAddress = document.querySelector(`#${mapName} .popup-address`);
+                if (popupAddress) {
+                    popupAddress.innerHTML = address;
+                    store.state.popupAddress = address; // 状態に住所を保存
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Reverse geocoding failed:', error);
+        });
+}
+
 export function mouseMoveForPopup (e,map) {
     let rasterLayerIds = [];
     const mapLayers = map.getStyle().layers;
