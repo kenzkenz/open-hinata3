@@ -255,7 +255,7 @@ tippecanoe -rg -pk -pf -l point -f -o kansui.pmtiles merged_kansui.geojson
 
 tippecanoe -rg -pk -pf -l polygon -f -o suikei1km.pmtiles suikei1km.geojson
 tippecanoe -rg -pk -pf -l polygon -f -o suikei1kmMini2.pmtiles --include=PTN_2050 --include=PTN_2020 --include=MESH_ID suikei1km.geojson
-tippecanoe -rg -pk -pf -l polygon -f -o suikei500mMini.pmtiles --include=PTN_2050 --include=PTN_2020 suikei500m.geojson
+tippecanoe -rg -pk -pf -l polygon -f -o suikei500mMini.pmtiles --include=PTN_2050 --include=PTN_2020 --include=MESH_ID suikei500m.geojson
 
 tippecanoe -rg -pk -pf -l polygon -f -o teiichitai.pmtiles teiichitai.geojson
 

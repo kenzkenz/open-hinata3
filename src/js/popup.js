@@ -1583,9 +1583,15 @@ export function popup(e,map,mapName,mapFlg) {
                     html +=
                         '<div class="suikei500m" font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span class="popup-address" style="font-size:12px;"></span><br>' +
+                        '<span style="font-size:12px;">MESH_ID=' + props.MESH_ID + '</span><br>' +
                         '<span style="font-size:24px;">' + rate + '</span><br>' +
                         '<span style="font-size:20px;"><span style="font-size:12px;">2050年人口＝</span>' + Math.floor(props.PTN_2050).toLocaleString(0) + '人</span><br>' +
                         '<span style="font-size:20px;"><span style="font-size:12px;">2020年人口＝</span>' + Math.floor(props.PTN_2020).toLocaleString(0) + '人</span><br>' +
+                        '<button class="suikei500m-2050 pyramid-btn" suikeiYear=2050 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2050人口ピラミッド</button><br>' +
+                        '<button class="suikei500m-2050 pyramid-btn" suikeiYear=2040 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2040人口ピラミッド</button><br>' +
+                        '<button class="suikei500m-2050 pyramid-btn" suikeiYear=2030 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2030人口ピラミッド</button><br>' +
+                        '<button class="suikei500m-2050 pyramid-btn" suikeiYear=2020 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2020人口ピラミッド</button><br>' +
+                        '<button class="suikei500m-jinkosuii pyramid-btn" mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">人口推移</button><br><br>' +
                         '</div>'
                 }
                 break

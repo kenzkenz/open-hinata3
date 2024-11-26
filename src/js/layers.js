@@ -2579,7 +2579,7 @@ export const m500mLayerHeight = {
 const suikei500mSource = {
     id: "suikei500m-source", obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/suikei/suikei500mMini.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/suikei/suikei500mMini2.pmtiles",
     }
 }
 const suikei500mLayer = {

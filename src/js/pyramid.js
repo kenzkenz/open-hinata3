@@ -456,7 +456,7 @@ export default function pyramid () {
         })
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
-            if (e.target && e.target.classList.contains('suikei1km-2050')) {
+            if (e.target && (e.target.classList.contains('suikei1km-2050') || e.target.classList.contains('suikei500m-2050'))) {
                 console.log(e.target.getAttribute("MESH_ID"))
                 const MESH_ID = e.target.getAttribute("MESH_ID")
                 const suikeiYear = e.target.getAttribute("suikeiYear")
@@ -464,8 +464,14 @@ export default function pyramid () {
                 store.state.suikeiYear = suikeiYear
                 console.log(store.state.suikeiYear)
                 store.state.isEstat = false
+
+                // 使用するエンドポイントをクラスによって切り替え
+                const endpoint = e.target.classList.contains('suikei1km-2050')
+                    ? 'https://kenzkenz.xsrv.jp/open-hinata3/php/pyramid2.php'
+                    : 'https://kenzkenz.xsrv.jp/open-hinata3/php/pyramid3.php';
+
                 axios
-                    .get('https://kenzkenz.xsrv.jp/open-hinata3/php/pyramid2.php',{
+                    .get(endpoint, {
                         params: {
                             MESH_ID: MESH_ID,
                             suikeiYear: suikeiYear
@@ -501,8 +507,6 @@ export default function pyramid () {
 
                         dataSousu.push({class: '総数', 総数: Number(v['総数'])})
                         dataSousu.push({class: '総数', 総数65歳以上: Number(v['65歳以上'])})
-                        // dataSousu.push({class: '総数', 平均年齢: Number(v['平均年齢'])})
-                        // dataSousu.push({class: '総数', 秘匿処理: v['秘匿処理']})
                     })
 
                     console.log(dataSet)
@@ -541,118 +545,217 @@ export default function pyramid () {
                 })
             }
         })
+
+
+
+        // mapElm.addEventListener('click', (e) => {
+        //     if (e.target && e.target.classList.contains('suikei1km-2050')) {
+        //         console.log(e.target.getAttribute("MESH_ID"))
+        //         const MESH_ID = e.target.getAttribute("MESH_ID")
+        //         const suikeiYear = e.target.getAttribute("suikeiYear")
+        //         store.state.MESH_ID = MESH_ID
+        //         store.state.suikeiYear = suikeiYear
+        //         console.log(store.state.suikeiYear)
+        //         store.state.isEstat = false
+        //         axios
+        //             .get('https://kenzkenz.xsrv.jp/open-hinata3/php/pyramid2.php',{
+        //                 params: {
+        //                     MESH_ID: MESH_ID,
+        //                     suikeiYear: suikeiYear
+        //                 }
+        //             }).then(function (response) {
+        //             if (response.data.error) {
+        //                 alert("まだDBにありません。もう少しまってください。")
+        //                 return
+        //             }
+        //
+        //             const dataSet = []
+        //             const dataSousu = []
+        //             response.data.forEach((v) => {
+        //                 dataSet.push({class: '0～4歳', man: Number(v['男0～4歳']), woman: Number(v['女0～4歳'])})
+        //                 dataSet.push({class: '5～9歳', man: Number(v['男5～9歳']), woman: Number(v['女5～9歳'])})
+        //                 dataSet.push({class: '10～14歳', man: Number(v['男10～14歳']), woman: Number(v['女10～14歳'])})
+        //                 dataSet.push({class: '15～19歳', man: Number(v['男15～19歳']), woman: Number(v['女15～19歳'])})
+        //                 dataSet.push({class: '20～24歳', man: Number(v['男20～24歳']), woman: Number(v['女20～24歳'])})
+        //                 dataSet.push({class: '25～29歳', man: Number(v['男25～29歳']), woman: Number(v['女25～29歳'])})
+        //                 dataSet.push({class: '30～34歳', man: Number(v['男30～34歳']), woman: Number(v['女30～34歳'])})
+        //                 dataSet.push({class: '35～39歳', man: Number(v['男35～39歳']), woman: Number(v['女35～39歳'])})
+        //                 dataSet.push({class: '40～44歳', man: Number(v['男40～44歳']), woman: Number(v['女40～44歳'])})
+        //                 dataSet.push({class: '45～49歳', man: Number(v['男45～49歳']), woman: Number(v['女45～49歳'])})
+        //                 dataSet.push({class: '50～54歳', man: Number(v['男50～54歳']), woman: Number(v['女50～54歳'])})
+        //                 dataSet.push({class: '55～59歳', man: Number(v['男55～59歳']), woman: Number(v['女55～59歳'])})
+        //                 dataSet.push({class: '60～64歳', man: Number(v['男60～64歳']), woman: Number(v['女60～64歳'])})
+        //                 dataSet.push({class: '65～69歳', man: Number(v['男65～69歳']), woman: Number(v['女65～69歳'])})
+        //                 dataSet.push({class: '70～74歳', man: Number(v['男70～74歳']), woman: Number(v['女70～74歳'])})
+        //                 dataSet.push({class: '75～79歳', man: Number(v['男75～79歳']), woman: Number(v['女75～79歳'])})
+        //                 dataSet.push({class: '80～84歳', man: Number(v['男80～84歳']), woman: Number(v['女80～84歳'])})
+        //                 dataSet.push({class: '85～89歳', man: Number(v['男85～89歳']), woman: Number(v['女85～89歳'])})
+        //                 dataSet.push({class: '90歳以上', man: Number(v['男90歳以上']), woman: Number(v['女90歳以上'])})
+        //
+        //                 dataSousu.push({class: '総数', 総数: Number(v['総数'])})
+        //                 dataSousu.push({class: '総数', 総数65歳以上: Number(v['65歳以上'])})
+        //                 // dataSousu.push({class: '総数', 平均年齢: Number(v['平均年齢'])})
+        //                 // dataSousu.push({class: '総数', 秘匿処理: v['秘匿処理']})
+        //             })
+        //
+        //             console.log(dataSet)
+        //             const sousu = dataSousu[0]['総数']
+        //             const over65 = dataSousu[1]['総数65歳以上']
+        //             let koureikaritu
+        //             if (isNaN(over65)) {
+        //                 koureikaritu = '0%'
+        //             } else {
+        //                 koureikaritu = ((over65 / sousu) * 100).toFixed(2) + '%'
+        //             }
+        //             store.state.koureikaritu = koureikaritu
+        //
+        //             store.state.estatDataset = dataSet
+        //
+        //             store.commit('incrDialog2Id');
+        //             store.commit('incrDialogMaxZindex');
+        //             let left
+        //             if (window.innerWidth < 600) {
+        //                 left = (window.innerWidth / 2 - 175) + 'px'
+        //             } else {
+        //                 left = (document.querySelector('#map01').clientWidth - 560) + 'px'
+        //             }
+        //             const diialog =
+        //                 {
+        //                     id: store.state.dialog2Id,
+        //                     name: 'pyramid',
+        //                     style: {
+        //                         display: 'block',
+        //                         top: '60px',
+        //                         left: left,
+        //                         'z-index': store.state.dialogMaxZindex
+        //                     }
+        //                 }
+        //             store.commit('pushDialogs2', {mapName: mapName, dialog: diialog})
+        //         })
+        //     }
+        // })
         mapElm.addEventListener('click', (e) => {
-            if (e.target && e.target.classList.contains("suikei1km-jinkosuii") ) {
+            if (e.target && (e.target.classList.contains("suikei1km-jinkosuii") || e.target.classList.contains("suikei500m-jinkosuii"))) {
                 const MESH_ID = e.target.getAttribute("MESH_ID")
                 store.state.MESH_ID = MESH_ID
                 store.state.isEstat = false
+
+                // 使用するエンドポイントをクラスによって切り替え
+                const endpoint = e.target.classList.contains("suikei1km-jinkosuii")
+                    ? 'https://kenzkenz.xsrv.jp/open-hinata3/php/jinkosuii2.php'
+                    : 'https://kenzkenz.xsrv.jp/open-hinata3/php/jinkosuii3.php';
+
                 axios
-                    .get('https://kenzkenz.xsrv.jp/open-hinata3/php/jinkosuii2.php',{
+                    .get(endpoint, {
                         params: {
                             MESH_ID: MESH_ID,
                         }
                     }).then(function (response) {
-                        console.log(response.data)
-                        store.state.jinkosuiiDatasetEstat['datasetAll'] = response.data
-                        console.log(response)
-                        const ronen = response.data.map((value) =>{
-                            if (isNaN(value.ronenRate)) value.ronenRate = 0
-                            return {year:value.year,rate:value.ronenRate}
-                        })
-                        store.state.jinkosuiiDatasetEstat['datasetRonen'] = ronen
-                        const nensyo = response.data.map((value) =>{
-                            if (isNaN(value.nensyoRate)) value.nensyoRate = 0
-                            return {year:value.year,rate:value.nensyoRate}
-                        })
-                        store.state.jinkosuiiDatasetEstat['datasetNensyo'] = nensyo
-                        const seisan = response.data.map((value) =>{
-                            if (isNaN(value.seisanRate)) value.seisanRate = 0
-                            return {year:value.year,rate:value.seisanRate,sousu:value.value,seisan:value.seisan}
-                        })
-                        store.state.jinkosuiiDatasetEstat['datasetSeisan'] = seisan
-                        store.commit('incrDialog2Id');
-                        store.commit('incrDialogMaxZindex');
-                        let width
-                        let left
-                        if (window.innerWidth < 600) {
-                            left = (window.innerWidth / 2 - 175) + 'px'
-                        } else {
-                            left = (document.querySelector('#map01').clientWidth - 560) + 'px'
+                    console.log(response.data)
+                    store.state.jinkosuiiDatasetEstat['datasetAll'] = response.data
+                    console.log(response)
+
+                    const ronen = response.data.map((value) => {
+                        if (isNaN(value.ronenRate)) value.ronenRate = 0
+                        return { year: value.year, rate: value.ronenRate }
+                    })
+                    store.state.jinkosuiiDatasetEstat['datasetRonen'] = ronen
+
+                    const nensyo = response.data.map((value) => {
+                        if (isNaN(value.nensyoRate)) value.nensyoRate = 0
+                        return { year: value.year, rate: value.nensyoRate }
+                    })
+                    store.state.jinkosuiiDatasetEstat['datasetNensyo'] = nensyo
+
+                    const seisan = response.data.map((value) => {
+                        if (isNaN(value.seisanRate)) value.seisanRate = 0
+                        return { year: value.year, rate: value.seisanRate, sousu: value.value, seisan: value.seisan }
+                    })
+                    store.state.jinkosuiiDatasetEstat['datasetSeisan'] = seisan
+
+                    store.commit('incrDialog2Id');
+                    store.commit('incrDialogMaxZindex');
+
+                    let width;
+                    let left;
+                    if (window.innerWidth < 600) {
+                        left = (window.innerWidth / 2 - 175) + 'px'
+                    } else {
+                        left = (document.querySelector('#map01').clientWidth - 560) + 'px'
+                    }
+
+                    const diialog = {
+                        id: store.state.dialog2Id,
+                        name: 'jinkosuii',
+                        style: {
+                            display: 'block',
+                            width: width,
+                            top: '60px',
+                            left: left,
+                            'z-index': store.state.dialogMaxZindex
                         }
-                        const diialog =
-                            {
-                                id: store.state.dialog2Id,
-                                name:'jinkosuii',
-                                style: {
-                                    display: 'block',
-                                    width: width,
-                                    top: '60px',
-                                    left: left,
-                                    'z-index': store.state.dialogMaxZindex
-                                }
-                            }
-                        // store.state.resasOrEstat = 'eStat'
-                        store.commit('pushDialogs2',{mapName: mapName, dialog: diialog})
+                    }
 
+                    store.commit('pushDialogs2', { mapName: mapName, dialog: diialog })
                 })
-
-
-                // async function sample() {
-                //     const arr = []
-                //     const a2005 = await h27jinkosuii(e,mapName,2005)
-                //     arr.push(a2005)
-                //     const a2010 = await h27jinkosuii(e,mapName,2010)
-                //     arr.push(a2010)
-                //     const a2015 = await h27jinkosuii(e,mapName,2015)
-                //     arr.push(a2015)
-                //     const a2020 = await r2jinkosuii(e,mapName)
-                //     arr.push(a2020)
-                //     return arr
-                // }
-                // sample().then((response) => {
-                //     store.state.jinkosuiiDatasetEstat['datasetAll'] = response
-                //     console.log(JSON.stringify(response))
-                //     const ronen = response.map((value) =>{
-                //         if (isNaN(value.ronenRate)) value.ronenRate = 0
-                //         return {year:value.year,rate:value.ronenRate}
-                //     })
-                //     store.state.jinkosuiiDatasetEstat['datasetRonen'] = ronen
-                //     const nensyo = response.map((value) =>{
-                //         if (isNaN(value.nensyoRate)) value.nensyoRate = 0
-                //         return {year:value.year,rate:value.nensyoRate}
-                //     })
-                //     store.state.jinkosuiiDatasetEstat['datasetNensyo'] = nensyo
-                //     const seisan = response.map((value) =>{
-                //         if (isNaN(value.seisanRate)) value.seisanRate = 0
-                //         return {year:value.year,rate:value.seisanRate,sousu:value.value,seisan:value.seisan}
-                //     })
-                //     store.state.jinkosuiiDatasetEstat['datasetSeisan'] = seisan
-                //     store.commit('incrDialog2Id');
-                //     store.commit('incrDialogMaxZindex');
-                //     let width
-                //     let left
-                //     if (window.innerWidth < 600) {
-                //         left = (window.innerWidth / 2 - 175) + 'px'
-                //     } else {
-                //         left = (document.querySelector('#map01').clientWidth - 560) + 'px'
-                //     }
-                //     const diialog =
-                //         {
-                //             id: store.state.dialog2Id,
-                //             name:'jinkosuii',
-                //             style: {
-                //                 display: 'block',
-                //                 width: width,
-                //                 top: '60px',
-                //                 left: left,
-                //                 'z-index': store.state.dialogMaxZindex
-                //             }
-                //         }
-                //     // store.state.resasOrEstat = 'eStat'
-                //     store.commit('pushDialogs2',{mapName: mapName, dialog: diialog})
-                // });
             }
         })
+
+        // mapElm.addEventListener('click', (e) => {
+        //     if (e.target && e.target.classList.contains("suikei1km-jinkosuii") ) {
+        //         const MESH_ID = e.target.getAttribute("MESH_ID")
+        //         store.state.MESH_ID = MESH_ID
+        //         store.state.isEstat = false
+        //         axios
+        //             .get('https://kenzkenz.xsrv.jp/open-hinata3/php/jinkosuii2.php',{
+        //                 params: {
+        //                     MESH_ID: MESH_ID,
+        //                 }
+        //             }).then(function (response) {
+        //                 console.log(response.data)
+        //                 store.state.jinkosuiiDatasetEstat['datasetAll'] = response.data
+        //                 console.log(response)
+        //                 const ronen = response.data.map((value) =>{
+        //                     if (isNaN(value.ronenRate)) value.ronenRate = 0
+        //                     return {year:value.year,rate:value.ronenRate}
+        //                 })
+        //                 store.state.jinkosuiiDatasetEstat['datasetRonen'] = ronen
+        //                 const nensyo = response.data.map((value) =>{
+        //                     if (isNaN(value.nensyoRate)) value.nensyoRate = 0
+        //                     return {year:value.year,rate:value.nensyoRate}
+        //                 })
+        //                 store.state.jinkosuiiDatasetEstat['datasetNensyo'] = nensyo
+        //                 const seisan = response.data.map((value) =>{
+        //                     if (isNaN(value.seisanRate)) value.seisanRate = 0
+        //                     return {year:value.year,rate:value.seisanRate,sousu:value.value,seisan:value.seisan}
+        //                 })
+        //                 store.state.jinkosuiiDatasetEstat['datasetSeisan'] = seisan
+        //                 store.commit('incrDialog2Id');
+        //                 store.commit('incrDialogMaxZindex');
+        //                 let width
+        //                 let left
+        //                 if (window.innerWidth < 600) {
+        //                     left = (window.innerWidth / 2 - 175) + 'px'
+        //                 } else {
+        //                     left = (document.querySelector('#map01').clientWidth - 560) + 'px'
+        //                 }
+        //                 const diialog =
+        //                     {
+        //                         id: store.state.dialog2Id,
+        //                         name:'jinkosuii',
+        //                         style: {
+        //                             display: 'block',
+        //                             width: width,
+        //                             top: '60px',
+        //                             left: left,
+        //                             'z-index': store.state.dialogMaxZindex
+        //                         }
+        //                     }
+        //                 // store.state.resasOrEstat = 'eStat'
+        //                 store.commit('pushDialogs2',{mapName: mapName, dialog: diialog})
+        //         })
+        //     }
+        // })
         // -------------------------------------------------------------------------------------------------------------
 
     })
