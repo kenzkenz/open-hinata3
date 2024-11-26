@@ -8,6 +8,7 @@
 <script>
 
 import * as d3 from "d3"
+import store from "@/store";
 
 export default {
   name: "Dialog-jinkosuii",
@@ -46,7 +47,11 @@ export default {
       const datasetSeisan = vm.$store.state.jinkosuiiDatasetEstat.datasetSeisan
       const datasetRonen = vm.$store.state.jinkosuiiDatasetEstat.datasetRonen
       const dialog2DragHandle = document.querySelector('#dialog2-' + vm.item.id + ' .drag-handle')
-      dialog2DragHandle.innerHTML = vm.$store.state.syochiikiName + '　人口推移'
+      if (vm.$store.state.isEstat) {
+        dialog2DragHandle.innerHTML = vm.$store.state.syochiikiName + '　人口推移'
+      } else {
+        dialog2DragHandle.innerHTML = vm.$store.state.popupAddress + '　人口推移'
+      }
 
       let width = 550; // グラフの幅
       const height = 300; // グラフの高さ
