@@ -4943,6 +4943,41 @@ const tkbtLayerLine = {
 }
 // ---------------------------------------------------------------------------------------------------------------------
 
+// // 地形分類テスト --------------------------------------------------------------------------------------------
+// const chikeibunruiSource2 = {
+//     id: "chikeibunrui-source", obj: {
+//         type: "vector",
+//         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/chikeibunrui/chikeibunrui.pmtiles",
+//     }
+// }
+// const chikeibunruiLayer2 = {
+//     id: "oh-chikeibunrui",
+//     type: "fill",
+//     source: "chikeibunrui-source",
+//     "source-layer": "polygon",
+//     'paint': {
+//         'fill-color': 'rgba(255, 0, 0, 0.8)',
+//     }
+// }
+// const chikeibunruiLine2 = {
+//     id: "oh-chikeibunrui-line",
+//     type: "line",
+//     source: "chikeibunrui-source",
+//     "source-layer": "polygon",
+//     paint: {
+//         'line-color': '#000',
+//         'line-width': [
+//             'interpolate', // Zoom-based interpolation
+//             ['linear'],
+//             ['zoom'], // Use the zoom level as the input
+//             11, 0,
+//             12, 0.5
+//         ]
+//     },
+// }
+
+
+
 
 // const aaa = new CustomMultiplyLayer({
 //     id: 'oh-custom-multiply',
@@ -5686,6 +5721,12 @@ const layers01 = [
                 source: chikeibunruiSource,
                 layers: [chikeibunruiLayer]
             },
+            // {
+            //     id: 'oh-chikeibunrui2',
+            //     label: "地形分類テスト",
+            //     source: chikeibunruiSource2,
+            //     layers: [chikeibunruiLayer2,chikeibunruiLine2]
+            // },
             {
                 id: 'oh-jinkochikei',
                 label: "人工地形",
