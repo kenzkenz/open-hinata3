@@ -1,5 +1,5 @@
 <template>
-  <div ref="dragDiv" :id="'dialog2-' + item.id" v-for="item in s_dialog2" :key="item.id" :style="item.style" class="dialog2-div" @pointerdown.stop="dialogMouseDown(item)">
+  <div ref="dragDiv" :id="'dialog2-' + item.id" v-for="item in s_dialog2" :key="item.id" :style="item.style" class="dialog2-div" @pointerdown="dialogMouseDown(item)" @mouseup="dialogMouseUp(item)">
 <!--    <div ref="dragDiv" :id="'dialog2-' + item.id" v-for="item in s_dialog2" :key="item.id" :style="item.style" class="dialog2-div" @pointerdown.stop="dialogMouseDown(item)" @mousedown.stop="dialogMouseDown(item)" @mouseup.stop="dialogMouseDown(item)">-->
     <div ref="dragHandle" class="drag-handle" :id="'dialog-handle2-' + item.id">
     </div>
@@ -40,6 +40,11 @@ export default {
           this.$store.state.dialogs2[this.mapName] = this.$store.state.dialogs2[this.mapName].filter(v => v.id !== item.id)
         }, 500)
       }
+    },
+    dialogMouseUp (item) {
+      const result = this.$store.state.dialogs2[this.mapName] .find(el => el.id === item.id)
+      result.style.top = document.querySelector( '#dialog2-' + item.id).style.top
+      result.style.left = document.querySelector('#dialog2-' + item.id).style.left
     },
     dialogMouseDown (item) {
       try {
