@@ -1730,6 +1730,155 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-kosyo': {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                // const name = props.G08_002
+                if (html.indexOf('kosyo') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="kosyo" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">' + props.W09_001 + '</span><br>' +
+                        '<span style="font-size:16px;">水深＝' + props.W09_003 + 'm</span><br>' +
+                        '</div>'
+                }
+                break
+            }
+            case 'oh-dam-label':
+            case 'oh-dam-layer': {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                function getDamType(W01_005) {
+                    switch (W01_005) {
+                        case 1:
+                            return "アーチダム";
+                        case 2:
+                            return "バットレスダム";
+                        case 3:
+                            return "アースダム";
+                        case 4:
+                            return "アスファルトフェイシングダム";
+                        case 5:
+                            return "アスファルトコアダム";
+                        case 6:
+                            return "フローティングゲートダム（可動堰）";
+                        case 7:
+                            return "重力式コンクリートダム";
+                        case 8:
+                            return "重力式アーチダム";
+                        case 9:
+                            return "重力式コンクリートダム・フィルダム複合ダム";
+                        case 10:
+                            return "中空重力式コンクリートダム";
+                        case 11:
+                            return "マルティプルアーチダム";
+                        case 12:
+                            return "ロックフィルダム";
+                        case 13:
+                            return "台形CSGダム";
+                        default:
+                            return "不明なダムタイプ";
+                    }
+                }
+                function getPurposes(W01_006) {
+                    // 文字列をカンマで分割して数値に変換
+                    const purposes = W01_006.split(",").map(Number);
+
+                    // 各値に対応する目的を取得
+                    return purposes.map(purpose => {
+                        switch (purpose) {
+                            case 1:
+                                return "洪水調節、農地防災";
+                            case 2:
+                                return "不特定用水、河川維持用水";
+                            case 3:
+                                return "灌漑、特定(新規)灌漑用水";
+                            case 4:
+                                return "上水道用水";
+                            case 5:
+                                return "工業用水道用水";
+                            case 6:
+                                return "発電";
+                            case 7:
+                                return "消流雪用水";
+                            case 8:
+                                return "レクリエーション";
+                            default:
+                                return "不明な目的";
+                        }
+                    });
+                }
+                function getProjectOperator(W01_011) {
+                    switch (W01_011) {
+                        case 1:
+                            return "国土交通省（各地方整備局、北海道開発局含む）";
+                        case 2:
+                            return "沖縄開発庁";
+                        case 3:
+                            return "農林水産省（各地方農政局含む）";
+                        case 4:
+                            return "都道府県";
+                        case 5:
+                            return "市区町村";
+                        case 6:
+                            return "水資源開発公団";
+                        case 7:
+                            return "その他の公共企業体";
+                        case 8:
+                            return "土地改良区";
+                        case 9:
+                            return "利水組合・用水組合";
+                        case 10:
+                            return "電力会社・電源開発株式会社";
+                        case 11:
+                            return "その他の企業";
+                        case 12:
+                            return "個人";
+                        case 13:
+                            return "その他";
+                        default:
+                            return "不明な事業者";
+                    }
+                }
+                const damType = getDamType(Number(props.W01_005))
+                const projectOperator = getProjectOperator(Number(props.W01_011))
+                const purposes = getPurposes(props.W01_006)
+                if (html.indexOf('kosyo') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="kosyo" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">ダム名＝' + props.W01_001 + '</span><hr>' +
+                        '<span style="font-size:16px;">タイプ＝' + damType + '</span><br>' +
+                        '<span style="font-size:16px;">水系名＝' + props.W01_003 + '</span><br>' +
+                        '<span style="font-size:16px;">河川名＝' + props.W01_004 + '</span><br>' +
+                        '<span style="font-size:16px;">目的＝' + purposes + '</span><br>' +
+                        '<span style="font-size:16px;">ダム規模（堤高）＝' + props.W01_007 + 'm</span><br>' +
+                        '<span style="font-size:16px;">ダム規模（堤頂長）＝' + props.W01_008 + 'm</span><br>' +
+                        '<span style="font-size:16px;">堤体積＝' + props.W01_009 + '000m3</span><br>' +
+                        '<span style="font-size:16px;">総貯水量＝' + props.W01_010 + '000m3</span><br>' +
+                        '<span style="font-size:16px;">事業者＝' + projectOperator + '</span><br>' +
+                        '<span style="font-size:16px;">竣工年＝' + props.W01_012 + '</span><br>' +
+                        '<span style="font-size:16px;">所在地＝' + props.W01_013 + '</span><br>' +
+                        '</div>'
+                }
+                break
+            }
         }
     })
 

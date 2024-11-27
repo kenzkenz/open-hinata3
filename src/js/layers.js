@@ -4942,6 +4942,81 @@ const tkbtLayerLine = {
     },
 }
 // ---------------------------------------------------------------------------------------------------------------------
+// 湖沼 --------------------------------------------------------------------------------------------
+const kosyoSource = {
+    id: "kosyo-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/kosyo/kosyo.pmtiles",
+    }
+}
+const kosyoLayer = {
+    id: "oh-kosyo",
+    type: "fill",
+    source: "kosyo-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': 'rgba(0, 0, 255, 0.8)',
+    }
+}
+const kosyoLine = {
+    id: "oh-kosyo-line",
+    type: "line",
+    source: "kosyo-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
+// ダム --------------------------------------------------------------------------------------------
+const damSource = {
+    id: "dam-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/dam/dam.pmtiles",
+    }
+}
+const damLayer = {
+    id: "oh-dam-layer",
+    type: "circle",
+    source: "dam-source",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': 'navy',
+        'circle-radius':[
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            2, 0.5,
+            4, 1,
+            7, 6,
+            11, 10
+        ]
+    }
+}
+const damLayerLabel = {
+    id: "oh-dam-label",
+    type: "symbol",
+    source: "dam-source",
+    "source-layer": "point",
+    'layout': {
+        'text-field': ['get', 'W01_001'],
+        'text-font': ['NotoSansJP-Regular'],
+        'text-offset': [0, 1],
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 9
+}
 
 // // 地形分類テスト --------------------------------------------------------------------------------------------
 // const chikeibunruiSource2 = {
@@ -5742,6 +5817,20 @@ const layers01 = [
                 attribution: '<div style="width: 200px;"><a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-G08-2015.html" target="_blank">国土数値情報</a><br>' +
                     '本データは、周辺部よりも標高が低く、排水が困難である地帯（低位地帯）を整備したものである。<br>' +
                     '<img src="' + require('@/assets/legend/shinsui_legend3.png') + '"></div>'
+            },
+            {
+                id: 'oh-kosyo',
+                label: "湖沼",
+                source: kosyoSource,
+                layers: [kosyoLayer,kosyoLine],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-W09-2005.html" target="_blank">国土数値情報</a>'
+            },
+            {
+                id: 'oh-dam',
+                label: "ダム",
+                source: damSource,
+                layers: [damLayer,damLayerLabel],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-W01.html" target="_blank">国土数値情報</a>'
             },
         ]
     },

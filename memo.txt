@@ -271,6 +271,9 @@ tippecanoe -l polygon -f -o kodoriyo.pmtiles kodoriyo.geojson
 
 tippecanoe -l polygon -f -o chikeibunrui.pmtiles chikeibunrui.geojson
 
+tippecanoe -l polygon -f -o kosyo.pmtiles kosyo.geojson
+
+tippecanoe -rg -l point -f -o dam.pmtiles dam.geojson
 
 import random
 from qgis.core import QgsField, QgsExpression, QgsExpressionContext, QgsExpressionContextUtils
