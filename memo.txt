@@ -275,6 +275,8 @@ tippecanoe -l polygon -f -o kosyo.pmtiles kosyo.geojson
 
 tippecanoe -rg -l point -f -o dam.pmtiles dam.geojson
 
+tippecanoe-decode kasen.pmtiles -c > kasen.geojson
+
 import random
 from qgis.core import QgsField, QgsExpression, QgsExpressionContext, QgsExpressionContextUtils
 from qgis.PyQt.QtCore import QVariant

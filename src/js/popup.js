@@ -1879,6 +1879,29 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-kasen-label':
+            case 'oh-kasen': {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                // const name = props.G08_002
+                if (html.indexOf('kuikikubun') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="kuikikubun" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">河川名＝' + props.W05_004 + '</span><hr>' +
+                        '<span style="font-size:16px;">水系名＝' + props.suikei + '</span><br>' +
+                        '</div>'
+                }
+                break
+            }
         }
     })
 

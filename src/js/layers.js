@@ -2885,19 +2885,44 @@ export const kyusekkiLayerHeatmap = {
 export const kasenSource = {
     id: "kasenSource", obj: {
         type: "vector",
-        // minzoom: 0,
-        // maxzoom: 15,
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/kasen/kasen.pmtiles",
-        attribution:
-            "<a href='' target='_blank'></a>",
     }
 }
+// 値リストの生成関数
+function generateUniqueValues(start, end) {
+    const uniqueValues = [];
+    for (let i = parseInt(start); i <= parseInt(end); i++) {
+        uniqueValues.push(i.toString().padStart(6, "0")); // 6桁にゼロ埋め
+    }
+    return uniqueValues;
+}
+
+// 開始と終了の値を指定
+const startValue = "010001";
+const endValue = "890920";
+// ユニーク値リストを生成
+const uniqueValues = generateUniqueValues(startValue, endValue);
+
+// 色を繰り返し適用するためのリスト
+const baseColors = ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF"];
+
+// ユニーク値に対応する色を生成
+const colorMap = uniqueValues.reduce((acc, value, index) => {
+    acc.push(value, baseColors[index % baseColors.length]); // 繰り返し色を適用
+    return acc;
+}, []);
+
+// デフォルト色を追加
+colorMap.push("#CCCCCC"); // デフォルト色（値が一致しない場合の色）
+
+
 export const kasenLayer = {
     id: "oh-kasen",
     type: "line",
     source: "kasenSource",
     "source-layer": "line",
     paint: {
+        // 'line-color':["match", ["get", "W05_001"], ...colorMap],
         'line-color': 'blue',
         'line-width': [
             'interpolate', // Zoom-based interpolation
