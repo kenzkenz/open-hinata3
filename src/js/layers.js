@@ -2882,48 +2882,22 @@ export const kyusekkiLayerHeatmap = {
     }
 }
 // 河川ソース --------------------------------------------------------------------------------------------
-export const kasenSource = {
+const kasenSource = {
     id: "kasenSource", obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/kasen/kasen.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/kasen/kasen2.pmtiles",
     }
 }
-// 値リストの生成関数
-function generateUniqueValues(start, end) {
-    const uniqueValues = [];
-    for (let i = parseInt(start); i <= parseInt(end); i++) {
-        uniqueValues.push(i.toString().padStart(6, "0")); // 6桁にゼロ埋め
-    }
-    return uniqueValues;
-}
-
-// 開始と終了の値を指定
-const startValue = "010001";
-const endValue = "890920";
-// ユニーク値リストを生成
-const uniqueValues = generateUniqueValues(startValue, endValue);
-
-// 色を繰り返し適用するためのリスト
-const baseColors = ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF"];
-
-// ユニーク値に対応する色を生成
-const colorMap = uniqueValues.reduce((acc, value, index) => {
-    acc.push(value, baseColors[index % baseColors.length]); // 繰り返し色を適用
-    return acc;
-}, []);
-
-// デフォルト色を追加
-colorMap.push("#CCCCCC"); // デフォルト色（値が一致しない場合の色）
-
-
-export const kasenLayer = {
+const kasenLayer = {
     id: "oh-kasen",
     type: "line",
     source: "kasenSource",
     "source-layer": "line",
+    // filter: ['has', 'suikei'], // 'suikei' フィールドが存在する場合のみ表示
     paint: {
         // 'line-color':["match", ["get", "W05_001"], ...colorMap],
         'line-color': 'blue',
+        // 'line-color': ['get', 'random_color'],
         'line-width': [
             'interpolate', // Zoom-based interpolation
             ['linear'],
@@ -2941,7 +2915,7 @@ export const kasenLayer = {
         ]
     },
 }
-export const kasenLayerLabel = {
+const kasenLayerLabel = {
     id: "oh-kasen-label",
     type: "symbol",
     source: "kasenSource",
@@ -2957,8 +2931,8 @@ export const kasenLayerLabel = {
         'text-padding': 10 // ラベル同士の間隔を調整
     },
     'paint': {
-        'text-color': 'rgba(255, 255, 255, 0.7)',
-        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-color': 'rgba(0, 0, 0, 1)',
+        'text-halo-color': 'rgba(255,255,255,1)',
         'text-halo-width': 1.0,
     },
     'minzoom': 12

@@ -695,69 +695,25 @@ export default function pyramid () {
                             'z-index': store.state.dialogMaxZindex
                         }
                     }
-
                     store.commit('pushDialogs2', { mapName: mapName, dialog: diialog })
                 })
             }
         })
-
-        // mapElm.addEventListener('click', (e) => {
-        //     if (e.target && e.target.classList.contains("suikei1km-jinkosuii") ) {
-        //         const MESH_ID = e.target.getAttribute("MESH_ID")
-        //         store.state.MESH_ID = MESH_ID
-        //         store.state.isEstat = false
-        //         axios
-        //             .get('https://kenzkenz.xsrv.jp/open-hinata3/php/jinkosuii2.php',{
-        //                 params: {
-        //                     MESH_ID: MESH_ID,
-        //                 }
-        //             }).then(function (response) {
-        //                 console.log(response.data)
-        //                 store.state.jinkosuiiDatasetEstat['datasetAll'] = response.data
-        //                 console.log(response)
-        //                 const ronen = response.data.map((value) =>{
-        //                     if (isNaN(value.ronenRate)) value.ronenRate = 0
-        //                     return {year:value.year,rate:value.ronenRate}
-        //                 })
-        //                 store.state.jinkosuiiDatasetEstat['datasetRonen'] = ronen
-        //                 const nensyo = response.data.map((value) =>{
-        //                     if (isNaN(value.nensyoRate)) value.nensyoRate = 0
-        //                     return {year:value.year,rate:value.nensyoRate}
-        //                 })
-        //                 store.state.jinkosuiiDatasetEstat['datasetNensyo'] = nensyo
-        //                 const seisan = response.data.map((value) =>{
-        //                     if (isNaN(value.seisanRate)) value.seisanRate = 0
-        //                     return {year:value.year,rate:value.seisanRate,sousu:value.value,seisan:value.seisan}
-        //                 })
-        //                 store.state.jinkosuiiDatasetEstat['datasetSeisan'] = seisan
-        //                 store.commit('incrDialog2Id');
-        //                 store.commit('incrDialogMaxZindex');
-        //                 let width
-        //                 let left
-        //                 if (window.innerWidth < 600) {
-        //                     left = (window.innerWidth / 2 - 175) + 'px'
-        //                 } else {
-        //                     left = (document.querySelector('#map01').clientWidth - 560) + 'px'
-        //                 }
-        //                 const diialog =
-        //                     {
-        //                         id: store.state.dialog2Id,
-        //                         name:'jinkosuii',
-        //                         style: {
-        //                             display: 'block',
-        //                             width: width,
-        //                             top: '60px',
-        //                             left: left,
-        //                             'z-index': store.state.dialogMaxZindex
-        //                         }
-        //                     }
-        //                 // store.state.resasOrEstat = 'eStat'
-        //                 store.commit('pushDialogs2',{mapName: mapName, dialog: diialog})
-        //         })
-        //     }
-        // })
-        // -------------------------------------------------------------------------------------------------------------
-
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("kasen-suikei"))) {
+                const map = store.state[mapName]
+                if (map.getFilter('oh-kasen') === undefined) {
+                    const suikei = e.target.getAttribute("suikei")
+                    if (suikei !== 'undefined') {
+                        map.setFilter('oh-kasen', ['==', ['get', 'suikei'], suikei])
+                        map.setFilter('oh-kasen-label', ['==', ['get', 'suikei'], suikei])
+                    }
+                } else {
+                    map.setFilter('oh-kasen', null)
+                    map.setFilter('oh-kasen-label', null)
+                }
+            }
+        })
     })
 }
 

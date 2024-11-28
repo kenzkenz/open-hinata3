@@ -1892,12 +1892,13 @@ export function popup(e,map,mapName,mapFlg) {
                 console.log(coordinates)
                 props = features[0].properties
                 // const name = props.G08_002
-                if (html.indexOf('kuikikubun') === -1) {
+                if (html.indexOf('kasen') === -1) {
                     html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                     html +=
-                        '<div class="kuikikubun" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<div class="kasen" font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size:20px;">河川名＝' + props.W05_004 + '</span><hr>' +
                         '<span style="font-size:16px;">水系名＝' + props.suikei + '</span><br>' +
+                        '<button class="kasen-suikei pyramid-btn" mapname="' + mapName + '" suikei="' + props.suikei + '">水系で抽出</button><br>' +
                         '</div>'
                 }
                 break
