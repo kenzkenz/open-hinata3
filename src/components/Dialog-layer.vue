@@ -344,6 +344,7 @@ export default {
               // console.log(layer0)
               if (!map.getLayer(layer0.id)) {
                   map.addLayer(layer0)
+                  this.$store.state.extFire = !this.$store.state.extFire
               }
               let opacity
               if (layer0['max-opacity']) {
@@ -409,6 +410,7 @@ export default {
           // -------------------------------------------------
         }
       }
+      // this.$store.state.extFire = !this.$store.state.extFire
     },
     mw5AddLayers(map,mapName) {
       // console.log(map._container)
@@ -556,12 +558,6 @@ export default {
         this.$store.state.latRange = [sw.lat,ne.lat]
         // ------------------------------------------------------------------
         this.addLayers()
-        // const vm = this
-        // setTimeout(function() {
-        //   vm.$store.state.watchFlg = !vm.$store.state.watchFlg
-        //   vm.$store.state.watchFlg = !vm.$store.state.watchFlg
-        // },11000)
-
       },
       deep: true
     },

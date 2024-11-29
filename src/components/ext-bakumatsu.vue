@@ -170,41 +170,6 @@ export default {
       //
       this.update()
     },
-    aaa() {
-      // const map = this.$store.state[this.mapName]
-      // // フィルタリング後にズームを調整する関数
-      // function zoomToFilteredPolygons(map, layerId) {
-      //   try {
-      //     // レンダリングされたフィルタリング済みのフィーチャを取得
-      //     const features = map.queryRenderedFeatures({ layers: [layerId] });
-      //
-      //     // フィルタリング結果が存在しない場合
-      //     if (features.length === 0) {
-      //       console.log("一致するポリゴンがありません");
-      //       return;
-      //     }
-      //
-      //     // フィーチャが1つの場合、その中心にズーム
-      //     if (features.length === 1) {
-      //       const center = turf.center(features[0]).geometry.coordinates; // Turf.jsで中心を取得
-      //       map.flyTo({ center, zoom: 14 });
-      //       return;
-      //     }
-      //
-      //     // フィーチャが複数の場合、BBOXを計算
-      //     const bbox = turf.bbox({
-      //       type: "FeatureCollection",
-      //       features: features
-      //     });
-      //
-      //     // マップをBBOXにズーム
-      //     map.fitBounds(bbox, { padding: 20, maxZoom: 15 });
-      //   } catch (error) {
-      //     console.error("エラーが発生しました:", error);
-      //   }
-      // }
-      // zoomToFilteredPolygons(map, 'oh-bakumatsu-layer')
-    }
   },
   watch: {
     s_extFire () {
