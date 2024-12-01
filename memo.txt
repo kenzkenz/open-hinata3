@@ -279,6 +279,11 @@ tippecanoe-decode kasen.pmtiles -c > kasen.geojson
 
 tippecanoe -pk -pf -l line -f -o kasen.pmtiles kasenline3.geojson
 
+tippecanoe-decode koaza.pmtiles -z 14 -Z 14 -c > koaza_decode.geojson
+tippecanoe -l polygon -f -o koaza_modified.pmtiles koaza_decode2.geojson
+
+tippecanoe-decode mura.pmtiles -z 14 -Z 14 -c > mura_decode.geojson
+tippecanoe -l polygon -f -o mura_modified.pmtiles mura_decode2.geojson
 
 import random
 from qgis.core import QgsField, QgsExpression, QgsExpressionContext, QgsExpressionContextUtils

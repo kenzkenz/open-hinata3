@@ -306,7 +306,6 @@ export default {
     },
     addLayers() {
       if(!this.$store.state.watchFlg && !this.isDragging) return
-      // console.log('aaaaaaaaaaaaaaaaa')
       // ------------------------------------------------------------------
       const map = this.$store.state[this.mapName]
       // まずレイヤーを削除-------------------------
@@ -321,30 +320,24 @@ export default {
         }
       }
       // -----------------------------------------
-      // console.log(this.mapName)
       for (let i = this.s_selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
-        // console.log('bbbbbbbbbbb')
-
         const layer = this.s_selectedLayers[this.mapName][i]
         if (layer.layers) {
           if (layer.sources) {
             layer.sources.forEach(source => {
-              // console.log(source,source.obj)
               if (!map.getSource(source.id)) map.addSource(source.id, source.obj)
             })
           }
           if (layer.source) {
-            // console.log(layer)
             if (!map.getSource(layer.source.id)) map.addSource(layer.source.id, layer.source.obj)
           }
           layer.layers.forEach(layer0 => {
             if (layer0.id === 'oh-mw-dummy') {
               this.mw5AddLayers(map,this.mapName)
             } else {
-              // console.log(layer0)
               if (!map.getLayer(layer0.id)) {
-                  map.addLayer(layer0)
-                  this.$store.state.extFire = !this.$store.state.extFire
+                map.addLayer(layer0)
+                // this.$store.state.extFire = !this.$store.state.extFire
               }
               let opacity
               if (layer0['max-opacity']) {
@@ -382,17 +375,10 @@ export default {
             }
           })
           // -------------------------------------------------
-          // console.log(layer.ext)
-          // console.log(layer)
-          // console.log(this.mapName)
           if(!this.isDragging) {
             if (layer.ext) {
-              // console.log(layer.ext)
-              // alert()
               if (layer.ext.values) {
-                // console.log(layer.ext.values)
                 layer.ext.values.forEach((v,i) => {
-                  // console.log(String(v))
                   this.$store.commit('updateParam', {
                     name: layer.ext.name,
                     mapName: this.mapName,
@@ -403,6 +389,7 @@ export default {
               }
               // ここを改修する。
               this.infoOpen(layer,false)
+              this.$store.state.extFire = !this.$store.state.extFire
             }
           }
           // -------------------------------------------------
@@ -413,7 +400,6 @@ export default {
       // this.$store.state.extFire = !this.$store.state.extFire
     },
     mw5AddLayers(map,mapName) {
-      // console.log(map._container)
       if (!this.s_selectedLayers[mapName].find(v => v.id === 'oh-mw5')) {
         return
       }
@@ -547,7 +533,6 @@ export default {
     s_selectedLayers: {
       handler: function(val){
         console.log('変更を検出しました',this.$store.state.watchFlg,val)
-
         // ------------------------------------------------------------------
         const map01 = this.$store.state.map01
         const bounds = map01.getBounds()
@@ -558,6 +543,10 @@ export default {
         this.$store.state.latRange = [sw.lat,ne.lat]
         // ------------------------------------------------------------------
         this.addLayers()
+        // setTimeout(() => {
+        //   this.$store.state.extFire = !this.$store.state.extFire
+        // },1000)
+        // this.$store.state.extFire = !this.$store.state.extFire
       },
       deep: true
     },

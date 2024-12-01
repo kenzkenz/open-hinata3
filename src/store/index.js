@@ -205,7 +205,10 @@ export default createStore({
         }
         console.log(payload.mapName,payload.name,payload.value,variable)
         state[variable][payload.mapName] = payload.value
-        state.extFire = !state.extFire
+        // state.extFire = !state.extFire
+        setTimeout(() => {
+          state.extFire = !state.extFire
+        },10)
       }
     },
     updateSelectedLayers (state, payload) {

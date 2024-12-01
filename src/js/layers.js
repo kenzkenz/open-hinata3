@@ -5559,7 +5559,7 @@ const layers01 = [
                 id: 'oh-koaza',
                 label: "関東小字地図",
                 sources: [koazaSource,muraSource,muraCenterSource],
-                layers: [muraLayer,muraLayerLine,muraCenterLabel,koazaLayer,koazaLayerLine,koazaLayerLabel],
+                layers: [muraCenterLabel,koazaLayer,koazaLayerLine,koazaLayerLabel,muraLayer,muraLayerLine],
                 attribution: '<a href="https://koaza.net/" target="_blank">関東小字地図</a>',
                 ext: {name:'extKoaza',parameters:[]}
             }]},

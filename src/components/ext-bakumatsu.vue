@@ -173,8 +173,8 @@ export default {
   },
   watch: {
     s_extFire () {
-      this.bakumatsuInput (this.mapName)
       this.onSelectChange (this.s_bakumatsuSelected)
+      this.bakumatsuInput (this.mapName)
       this.calcKokudaka()
     },
   }

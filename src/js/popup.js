@@ -996,6 +996,7 @@ export function popup(e,map,mapName,mapFlg) {
                         '<span style="font-size: 20px;">郡　名＝' + gun + '</span><br>' +
                         '<span style="font-size: 20px;">村　名＝' + a + '</span><hr>' +
                         '<span style="font-size: 20px;">小字名＝' + name + '</span><br>' +
+                        '<button class="mura-name pyramid-btn" mapname="' + mapName + '" mura="' + props.MURA_NAME + '">村で抽出</button><br>' +
                         '</div>'
                 }
                 break
@@ -1018,6 +1019,7 @@ export function popup(e,map,mapName,mapFlg) {
                         '<div class="kantokoaza" font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size: 20px;">郡名＝' + gun + '</span><br>' +
                         '<span style="font-size: 20px;">村名＝' + a + '</span>' +
+                        '<button class="mura-name pyramid-btn" mapname="' + mapName + '" mura="' + props.MURA_NAME + '">村で抽出</button><br>' +
                         '</div>'
                 }
                 break
@@ -2005,7 +2007,7 @@ function createPopup(map, coordinates, htmlContent, mapName) {
     const streetView =
         '<hr>' +
         '<div style="text-align: center;">' +
-        '<a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' + lat + ',' + lng + '&hl=ja" target="_blank">Street View</a>' +
+        '<a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' + lat + ',' + lng + '&hl=ja" target="_blank">Street View</a>　' +
         '<a href="https://www.google.co.jp/maps?q=' + lat + ',' + lng + '&hl=ja" target="_blank">GoogleMap</a>' +
         '</div>'
 

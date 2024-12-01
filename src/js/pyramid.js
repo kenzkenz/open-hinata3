@@ -699,6 +699,7 @@ export default function pyramid () {
                 })
             }
         })
+        // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
             if (e.target && (e.target.classList.contains("kasen-suikei"))) {
                 const map = store.state[mapName]
@@ -711,6 +712,33 @@ export default function pyramid () {
                 } else {
                     map.setFilter('oh-kasen', null)
                     map.setFilter('oh-kasen-label', null)
+                }
+            }
+        })
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("mura-name"))) {
+                const map = store.state[mapName]
+                if (map.getFilter('oh-mura') === undefined) {
+                    const mura = e.target.getAttribute("mura")
+                    if (mura !== 'undefined') {
+                        map.setFilter('oh-mura', ['==', ['get', 'MURA_NAME'], mura])
+                        map.setFilter('oh-mura-line', ['==', ['get', 'MURA_NAME'], mura])
+                        map.setFilter('oh-koaza', ['==', ['get', 'MURA_NAME'], mura])
+                        map.setFilter('oh-koaza-label', ['==', ['get', 'MURA_NAME'], mura])
+                        map.setFilter('oh-koaza-line', ['==', ['get', 'MURA_NAME'], mura])
+                        map.setFilter('oh-mura-center-label', ['==', ['get', 'MURA_NAME'], mura])
+                        store.state.koazaText[mapName] = mura
+                    }
+                } else {
+                    map.setFilter('oh-mura', null)
+                    map.setFilter('oh-mura-line', null)
+                    map.setFilter('oh-koaza', null)
+                    map.setFilter('oh-koaza-label', null)
+                    map.setFilter('oh-koaza-line', null)
+                    map.setFilter('oh-mura-center-label', null)
+                    store.state.koazaText[mapName] = ''
+
                 }
             }
         })
