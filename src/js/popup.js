@@ -72,6 +72,10 @@ const legend_jisuberi = [
 const legend_tameike = [
     { r: 0, g: 0, b: 255, title: 'ため池決壊による危険性' },
 ]
+// シームレス地質図
+const legend_seamless = [
+    { r: 0, g: 0, b: 0, title: '' },
+]
 function closeAllPopups() {
     popups.forEach(popup => popup.remove())
     // 配列をクリア
@@ -119,11 +123,15 @@ function getLegendItem(legend, url, lat, lng, z) {
             context.drawImage(img, i, j, 1, 1, 0, 0, 1, 1)
             d = context.getImageData(0, 0, 1, 1).data
             console.log(d[0],d[1],d[2])
-            // if (d[3] !== 255) {
-            //   v = null
-            // } else {
-            v = legend.find(o => o.r == d[0] && o.g == d[1] && o.b == d[2])
-            // }
+            if (legend[0].r + legend[0].g + legend[0].b === 0) {
+                if (d[3] === 255) {
+                    v = 'dummy'
+                } else {
+                    v = null
+                }
+            } else {
+                v = legend.find(o => o.r == d[0] && o.g == d[1] && o.b == d[2])
+            }
             // map.getCanvas().style.cursor = 'default'
             resolve(v)
         }
@@ -186,6 +194,11 @@ function urlByLayerId (layerId) {
             RasterTileUrl = 'https://disaportal.gsi.go.jp/data/raster/07_tameike/{z}/{x}/{y}.png';
             legend = legend_tameike
             zoom = 15
+            break;
+        case 'oh-rgb-seamless-layer':
+            RasterTileUrl = 'https://gbank.gsj.jp/seamless/v2/api/1.2/tiles/{z}/{y}/{x}.png';
+            legend = legend_seamless
+            zoom = 13
             break;
         default:
             // 何も該当しない場合の処理
@@ -1985,23 +1998,30 @@ export function popup(e,map,mapName,mapFlg) {
             }
         })
 
-        const point = lat + "," + lng;
-        const url = 'https://gbank.gsj.jp/seamless/v2/api/1.2/legend.json'
-        axios.get(url, {
-            params: {
-                point:point
-            }
-        }) .then(function (response) {
-            console.log(response)
+        const result = mapLayers.find(layer => {
+            return layer.id === 'oh-rgb-seamless-layer'
         })
-
-
-
-
-
-
-
-
+        if (result) {
+            const point = lat + "," + lng;
+            const url = 'https://gbank.gsj.jp/seamless/v2/api/1.2/legend.json'
+            axios.get(url, {
+                params: {
+                    point:point
+                }
+            }) .then(function (response) {
+                if (response.data.symbol) {
+                    if (html.indexOf('seamless') === -1) {
+                        html += '<div class="layer-label-div">' + getLabelByLayerId('oh-rgb-seamless-layer', store.state.selectedLayers) + '</div>'
+                        html +=
+                            '<div class="seamless" font-weight: normal; color: #333;line-height: 25px;">' +
+                            '<span style="font-size:16px;">形成時代 = ' + response.data["formationAge_ja"] + '</span><hr>' +
+                            '<span style="font-size:16px;">グループ = ' + response.data["group_ja"] + '</span><hr>' +
+                            '<span style="font-size:16px;">岩相 = ' + response.data["lithology_ja"] + '</span>'
+                        createPopup(map, [lng,lat], html, mapName)
+                    }
+                }
+            })
+        }
     })
 
     if (rasterLayerIds.length === 0){
@@ -2088,6 +2108,7 @@ export function mouseMoveForPopup (e,map) {
     rasterLayerIds.forEach(rasterLayerId => {
         const RasterTileUrl = urlByLayerId(rasterLayerId)[0]
         const legend = urlByLayerId(rasterLayerId)[1]
+        console.log(legend)
         const z = urlByLayerId(rasterLayerId)[2]
         const lng = e.lngLat.lng;
         const lat = e.lngLat.lat;
