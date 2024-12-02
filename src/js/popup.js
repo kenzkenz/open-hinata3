@@ -1948,9 +1948,7 @@ export function popup(e,map,mapName,mapFlg) {
         getLegendItem(legend, RasterTileUrl, lat, lng,z).then(function (v) {
             let res = (v ? v.title : '')
             // if (res === '') return
-            // let popup
             if (res) {
-                // if (html) html += '<hr class="break-hr">'
                 html += '<div class="layer-label-div-red">' + getLabelByLayerId(rasterLayerId, store.state.selectedLayers) + '</div>'
                 switch (rasterLayerId) {
                     case 'oh-rgb-kozui-keikaku-layer':
@@ -1982,11 +1980,28 @@ export function popup(e,map,mapName,mapFlg) {
                             '</div>'
                 }
             }
-
             if (html) {
                 createPopup(map, [lng,lat], html, mapName)
             }
         })
+
+        const point = lat + "," + lng;
+        const url = 'https://gbank.gsj.jp/seamless/v2/api/1.2/legend.json'
+        axios.get(url, {
+            params: {
+                point:point
+            }
+        }) .then(function (response) {
+            console.log(response)
+        })
+
+
+
+
+
+
+
+
     })
 
     if (rasterLayerIds.length === 0){

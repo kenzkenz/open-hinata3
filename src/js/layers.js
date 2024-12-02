@@ -3557,7 +3557,6 @@ const zoseiSource = {
     id: "zosei-source", obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/zosei/zosei.pmtiles",
-        attribution: "<a href='' target='_blank'></a>",
     }
 }
 const zoseiLayer = {
@@ -3617,6 +3616,20 @@ const zoseiLayerLabel = {
     'minzoom': 14
 }
 // rgbで値を取得するレイヤー------------------------------------------------------------------------------------------------
+// シームレス地質図--------------------------------------------------------------------------------------------------------
+const seamlessSource = {
+    id: 'seamless-source', obj: {
+        type: 'raster',
+        tiles: ['https://gbank.gsj.jp/seamless/v2/api/1.2/tiles/{z}/{y}/{x}.png?layer=glf'],
+        rasterResampling: 'nearest',
+    }
+}
+const seamlessLayer = {
+    'id': 'oh-rgb-seamless-layer',
+    'type': 'raster',
+    'source': 'seamless-source',
+    'max-opacity': 0.8
+}
 // 土砂災害警戒区域--------------------------------------------------------------------------------------------------------
 const dosyaSource = {
     id: 'dosya-source', obj: {
@@ -5830,6 +5843,13 @@ const layers01 = [
                 source: damSource,
                 layers: [damLayer,damLayerLabel],
                 attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-W01.html" target="_blank">国土数値情報</a>'
+            },
+            {
+                id: 'oh-seamless',
+                label: "シームレス地質図",
+                source: seamlessSource,
+                layers: [seamlessLayer],
+                attribution: '<a href="https://gbank.gsj.jp/seamless/" target="_blank">20万分の1日本シームレス地質図</a>'
             },
         ]
     },
