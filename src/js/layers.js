@@ -26,126 +26,6 @@ const testLayer = {
 import fxBasic from '@/assets/json/modified_fx_basic.json'
 import mono from '@/assets/json/modified_mono.json'
 import fxDark from '@/assets/json/modified_fx-dark.json'
-
-
-//
-// // カスタム乗算合成シェーダーの定義
-// const customMultiplyBlend = {
-//     uniforms: ['u_image', 'u_baseTexture', 'u_opacity'],
-//     vertexSource: `
-//         attribute vec2 a_pos;
-//         varying vec2 v_texCoord;
-//
-//         void main() {
-//             gl_Position = vec4(a_pos, 0, 1);
-//             v_texCoord = (a_pos + 1.0) / 2.0;
-//         }
-//     `,
-//     fragmentSource: `
-//         precision mediump float;
-//         uniform sampler2D u_image;        // 上層のテクスチャ
-//         uniform sampler2D u_baseTexture;  // 下層のテクスチャ
-//         uniform float u_opacity;          // 不透明度
-//         varying vec2 v_texCoord;
-//
-//         void main() {
-//             vec4 topColor = texture2D(u_image, v_texCoord);
-//             vec4 baseColor = texture2D(u_baseTexture, v_texCoord);
-//
-//             // 乗算合成の計算
-//             vec3 multiplied = baseColor.rgb * topColor.rgb;
-//
-//             // 最終的な色を計算（アルファブレンディングを考慮）
-//             vec3 final = mix(baseColor.rgb, multiplied, u_opacity * topColor.a);
-//
-//             gl_FragColor = vec4(final, baseColor.a);
-//         }
-//     `
-// };
-//
-// // カスタムレイヤーの作成とシェーダーの適用
-// class CustomMultiplyLayer {
-//     constructor(options) {
-//         this.id = options.id;
-//         this.source = options.source;
-//         this.baseSource = options.baseSource;
-//         this.opacity = options.opacity || 1.0;
-//         this.type = 'custom';
-//         this.label = options.label
-//     }
-//
-//     onAdd(map, gl) {
-//         this.map = map;
-//         this.gl = gl;
-//
-//         // シェーダープログラムの初期化
-//         const vertexShader = gl.createShader(gl.VERTEX_SHADER);
-//         gl.shaderSource(vertexShader, customMultiplyBlend.vertexSource);
-//         gl.compileShader(vertexShader);
-//
-//         const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-//         gl.shaderSource(fragmentShader, customMultiplyBlend.fragmentSource);
-//         gl.compileShader(fragmentShader);
-//
-//         this.program = gl.createProgram();
-//         gl.attachShader(this.program, vertexShader);
-//         gl.attachShader(this.program, fragmentShader);
-//         gl.linkProgram(this.program);
-//
-//         // 頂点バッファの設定
-//         this.buffer = gl.createBuffer();
-//         gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
-//         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-//             -1, -1, 1, -1, -1, 1,
-//             1, -1, 1, 1, -1, 1
-//         ]), gl.STATIC_DRAW);
-//
-//         // uniformロケーションの取得
-//         this.uniformLocations = {
-//             u_image: gl.getUniformLocation(this.program, 'u_image'),
-//             u_baseTexture: gl.getUniformLocation(this.program, 'u_baseTexture'),
-//             u_opacity: gl.getUniformLocation(this.program, 'u_opacity')
-//         };
-//     }
-//
-//     render(gl, matrix) {
-//         gl.useProgram(this.program);
-//
-//         // 頂点属性の設定
-//         const positionLocation = gl.getAttribLocation(this.program, 'a_pos');
-//         gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
-//         gl.enableVertexAttribArray(positionLocation);
-//         gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-//
-//         // テクスチャの設定
-//         const sourceTexture = this.map.painter.renderPass.getTexture(this.source);
-//         const baseTexture = this.map.painter.renderPass.getTexture(this.baseSource);
-//
-//         gl.activeTexture(gl.TEXTURE0);
-//         gl.bindTexture(gl.TEXTURE_2D, sourceTexture);
-//         gl.uniform1i(this.uniformLocations.u_image, 0);
-//
-//         gl.activeTexture(gl.TEXTURE1);
-//         gl.bindTexture(gl.TEXTURE_2D, baseTexture);
-//         gl.uniform1i(this.uniformLocations.u_baseTexture, 1);
-//
-//         // 不透明度の設定
-//         gl.uniform1f(this.uniformLocations.u_opacity, this.opacity);
-//
-//         // 描画
-//         gl.drawArrays(gl.TRIANGLES, 0, 6);
-//     }
-// }
-
-
-
-
-
-
-
-
-
-
 // const stdSources = []
 // const stdLayers = std.layers
 // Object.keys(std.sources).forEach(function(key) {
@@ -762,6 +642,76 @@ const amsLayers2 = amsLayers.map((layer,i) => {
         layers:[layer]
     }
 })
+
+// 江戸切絵図-----------------------------------------------------------------------------------------------------------
+// https://mapwarper.h-gis.jp/maps/tile/4915/{z}/{x}/{y}.png
+const kirieurls =[
+    {name:'麻布絵図',url:'4915'},
+    {name:'御江戸大名小路絵図',url:'4709'},
+    {name:'築地八町堀日本橋南絵図',url:'4901'},
+    {name:'外桜田永田町絵図',url:'4910'},
+    {name:'芝高輪辺絵図（挿入図）',url:'4986'},
+    {name:'芝高輪辺絵図',url:'4908'},
+    {name:'東都小石川繪圖',url:'4942'},
+    {name:'目黒白金辺図',url:'4939'},
+    {name:'今戸箕輪浅草絵図',url:'4935'},
+    {name:'駒込絵図',url:'4937'},
+    {name:'巣鴨絵図',url:'4938'},
+    {name:'根岸谷中辺絵図',url:'4941'},
+    {name:'隅田川向島絵図',url:'4940'},
+    {name:'本郷湯島絵図',url:'4934'},
+    {name:'音羽絵図',url:'4933'},
+    {name:'青山渋谷絵図',url:'4932'},
+    {name:'浅草御蔵前辺図',url:'4931'},
+    {name:'本所絵図',url:'4930'},
+    {name:'小日向絵図',url:'4929'},
+    {name:'深川絵図',url:'4928'},
+    {name:'下谷絵図',url:'4919'},
+    {name:'内藤新宿千駄ヶ谷絵図',url:'4918'},
+    {name:'大久保絵図',url:'4917'},
+    {name:'市ヶ谷牛込絵図',url:'4916'},
+    {name:'赤坂絵図',url:'4913'},
+    {name:'御江戸番町絵図',url:'4914'},
+    {name:'四ツ谷絵図',url:'4911'},
+    {name:'日本橋北神田浜町絵図',url:'4902'},
+    {name:'駿河台小川町絵図',url:'4909'},
+    {name:'芝愛宕下絵図',url:'4907'},
+    {name:'今戸箕輪浅草絵図',url:'3899'},
+]
+const kirieSources = []
+const kirieLayers = []
+kirieurls.forEach(url => {
+    kirieSources.push({
+        id: 'oh-kirie-' + url.name,
+        obj:{
+            type: 'raster',
+            tiles: ['https://mapwarper.h-gis.jp/maps/tile/' + url.url + '/{z}/{x}/{y}.png'],
+            minzoom: 0,
+        }
+    })
+    kirieLayers.push({
+        url: url.url,
+        id: 'oh-kirie-' + url.name,
+        source: 'oh-kirie-' + url.name,
+        type: 'raster',
+    })
+})
+const kirieLayers2 = kirieLayers.map((layer,i) => {
+    return {
+        id: layer.id,
+        label: layer.id.replace('oh-kirie-','') + '',
+        source: kirieSources[i],
+        layers:[layer],
+        attribution: '<a href="http://codh.rois.ac.jp/edo-maps/owariya/" target="_blank">人文学オープンデータ共同利用センター</a>' +
+            '<br><br><a href="https://mapwarper.h-gis.jp/maps/' + layer.url + '" target="_blank">日本版Map Warper</a>'
+
+    }
+})
+
+console.log(kirieLayers2)
+
+
+
 // 古地図----------------------------------------------------------------------------------------------------------------
 // 戦前の旧版地形図
 const mw5DummySource = {
@@ -5240,6 +5190,13 @@ const layers01 = [
                         layers: amsLayers
                     },
                     ...amsLayers2,
+                ]
+            },
+            {
+                id: 'kirie',
+                label: "江戸切絵図",
+                nodes: [
+                    ...kirieLayers2,
                 ]
             },
             konjyakuMap,

@@ -2108,7 +2108,7 @@ export function mouseMoveForPopup (e,map) {
     rasterLayerIds.forEach(rasterLayerId => {
         const RasterTileUrl = urlByLayerId(rasterLayerId)[0]
         const legend = urlByLayerId(rasterLayerId)[1]
-        console.log(legend)
+        // console.log(legend)
         const z = urlByLayerId(rasterLayerId)[2]
         const lng = e.lngLat.lng;
         const lat = e.lngLat.lat;
