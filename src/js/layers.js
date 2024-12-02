@@ -1753,7 +1753,7 @@ const csOsakaLayer = {
     'source': 'csOsakaSource',
 }
 // 川だけ地形地図------------------------------------------------------------------------------------------------------
-export const kawadakeSource = {
+const kawadakeSource = {
     id: 'kawadake-source', obj: {
         type: 'raster',
         // tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://www.gridscapes.net/AllRivers/1.0.0/t/{z}/{x}/{y}.png'],
@@ -1764,13 +1764,13 @@ export const kawadakeSource = {
         'minzoom': 5
     }
 }
-export const kawddakeLayer = {
+const kawddakeLayer = {
     'id': 'oh-kawadakeLayer',
     'type': 'raster',
     'source': 'kawadake-source',
 }
 // 川と流域地図------------------------------------------------------------------------------------------------------
-export const ryuikiSource = {
+const ryuikiSource = {
     id: 'ryuiki-source', obj: {
         type: 'raster',
         tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://tiles.dammaps.jp/ryuiki_t/1/{z}/{x}/{y}.png'],
@@ -1780,13 +1780,13 @@ export const ryuikiSource = {
         maxzoom: 14
     }
 }
-export const ryuikiLayer = {
+const ryuikiLayer = {
     'id': 'oh-ryuikiLayer',
     'type': 'raster',
     'source': 'ryuiki-source',
 }
 // 登記所備付地図データ --------------------------------------------------------------------------------------------
-export const amxSource = {
+const amxSource = {
     id: "amx-a-pmtiles", obj: {
         type: "vector",
         minzoom: 2,
@@ -4979,7 +4979,18 @@ const damLayerLabel = {
     'maxzoom': 24,
     'minzoom': 9
 }
-
+// ----------------------------------------------------------------------------------------------
+const kazanSource = {
+    id: 'kazan-source', obj: {
+        type: 'raster',
+        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/vlcd/{z}/{x}/{y}.png'],
+    }
+}
+const kazanLayer = {
+    'id': 'oh-kazan',
+    'type': 'raster',
+    'source': 'kazan-source',
+}
 // // 地形分類テスト --------------------------------------------------------------------------------------------
 // const chikeibunruiSource2 = {
 //     id: "chikeibunrui-source", obj: {
@@ -5807,6 +5818,13 @@ const layers01 = [
                 source: seamlessSource,
                 layers: [seamlessLayer],
                 attribution: '<a href="https://gbank.gsj.jp/seamless/" target="_blank">20万分の1日本シームレス地質図</a>'
+            },
+            {
+                id: 'oh-kazan',
+                label: "火山土地条件図",
+                source: kazanSource,
+                layers: [kazanLayer],
+                attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html#vlcd" target="_blank">地理院タイル</a>'
             },
         ]
     },
