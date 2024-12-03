@@ -1918,6 +1918,27 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-hifuku': {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                if (html.indexOf('hifuku') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="hifuku" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">植生被覆率＝' +  Math.round(Number(props.c_FRAC_VEG) * 1000) / 1000 + '</span><hr>' +
+                        '<span style="font-size:16px;">' + props.c_PREF_NAME + props.c_CITY_NAME + props.c_S_NAME + '</span><br>' +
+                        '</div>'
+                }
+                break
+            }
         }
     })
 

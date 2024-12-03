@@ -4991,6 +4991,46 @@ const kazanLayer = {
     'type': 'raster',
     'source': 'kazan-source',
 }
+// 植生被覆率 --------------------------------------------------------------------------------------------
+const hifukuSource = {
+    id: "hifuku-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/hifuku/hifuku.pmtiles",
+    }
+}
+const hifukuLayer = {
+    id: "oh-hifuku",
+    type: "fill",
+    source: "hifuku-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['to-number', ['get', 'c_FRAC_VEG']],
+            0, 'rgba(255, 255, 200, 0.8)', // 淡い黄色
+            1, 'rgba(0, 128, 0, 0.8)'       // 濃い緑
+        ],
+    }
+}
+const hifukuLine = {
+    id: "oh-hifuku-line",
+    type: "line",
+    source: "hifuku-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
+
+
 // // 地形分類テスト --------------------------------------------------------------------------------------------
 // const chikeibunruiSource2 = {
 //     id: "chikeibunrui-source", obj: {
@@ -5825,6 +5865,13 @@ const layers01 = [
                 source: kazanSource,
                 layers: [kazanLayer],
                 attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html#vlcd" target="_blank">地理院タイル</a>'
+            },
+            {
+                id: 'oh-hifuku',
+                label: "植生被覆率",
+                source: hifukuSource,
+                layers: [hifukuLayer,hifukuLine],
+                attribution: '<a href="https://zenodo.org/records/5553516" target="_blank">日本全国の町内各地区の植生被覆率</a>'
             },
         ]
     },
