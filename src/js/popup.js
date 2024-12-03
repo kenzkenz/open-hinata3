@@ -572,6 +572,35 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-shizenchikei': {
+                console.log(coordinates)
+                const features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: ['oh-shizenchikei']}
+                )
+                if (features.length === 0) return
+                props = features[0].properties
+                const code = props.code
+                let name = '', naritachi = "", risk = ""
+                const list = codeShizenOriginal
+                for (let i = 0; i < list.length; i++) {
+                    if (list[i][0] === Number(code)) {
+                        name = list[i][1]
+                        naritachi = list[i][2]
+                        risk = list[i][3]
+                        break;
+                    }
+                }
+                if (html.indexOf('shizenchikei') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="shizenchikei" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 20px;">' + name + '</span><hr>' +
+                        '<span style="font-size: 12px;">' + naritachi + '</span><hr>' +
+                        '<span style="font-size: 12px;">' + risk + '</span>' +
+                        '</div>'
+                }
+                break
+            }
             case 'oh-jinkochikei': {
                 console.log(coordinates)
                 const features = map.queryRenderedFeatures(

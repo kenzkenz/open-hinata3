@@ -298,6 +298,9 @@ tippecanoe -l polygon -f -o hifuku.pmtiles hifuku.geojson
 
 tippecanoe -pk -pf -l polygon -f -o hifuku.pmtiles --include=c_KEY_CODE --include=c_PREF_NAME --include=c_CITY_NAME --include=c_S_NAME --include=c_NDVI --include=c_FRAC_VEG hifuku.geojson
 
+tippecanoe -l polygon -f -o shizenchikei.pmtiles shizenchikei.geojson
+tippecanoe -pk -pf -l polygon -f -o shizenchikei.pmtiles shizenchikei.geojson
+
 
 
 import random
