@@ -229,6 +229,7 @@ export function popup(e,map,mapName,mapFlg) {
     }
 
     // if (features.length > 0) {
+    let regionType = ''
     features.forEach(feature => {
         const layerId = feature.layer.id
         console.log(layerId)
@@ -1965,6 +1966,182 @@ export function popup(e,map,mapName,mapFlg) {
                         '<span style="font-size:20px;">植生被覆率＝' +  Math.round(Number(props.c_FRAC_VEG) * 1000) / 1000 + '</span><hr>' +
                         '<span style="font-size:16px;">' + props.c_PREF_NAME + props.c_CITY_NAME + props.c_S_NAME + '</span><br>' +
                         '</div>'
+                }
+                break
+            }
+            case 'oh-shizenisan': {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                let name
+                let link
+                switch (props.WHC) {
+                    case '01':
+                        name = '知床';
+                        link = '<a href="https://www.env.go.jp/nature/isan/worldheritage/shiretoko/index.html" target="_blank">日本の世界自然遺産</a>'
+                        break;
+                    case '02':
+                        name = '白神山地';
+                        link = '<a href="https://www.env.go.jp/nature/isan/worldheritage/shirakami/index.html" target="_blank">日本の世界自然遺産</a>'
+                        break;
+                    case '03':
+                        name = '屋久島';
+                        link = '<a href="https://www.env.go.jp/nature/isan/worldheritage/yakushima/index.html" target="_blank">日本の世界自然遺産</a>'
+                        break;
+                    case '04':
+                        name = '小笠原';
+                        link = '<a href="https://www.env.go.jp/nature/isan/worldheritage/ogasawara/index.html" target="_blank">日本の世界自然遺産</a>'
+                        break;
+                    case '05':
+                        name = '奄美大島、徳之島、沖縄県北部及び西表島';
+                        link = '<a href="https://www.env.go.jp/nature/isan/worldheritage/amami/index.html" target="_blank">日本の世界自然遺産</a>'
+                        break;
+                    default:
+                        name = '不明なWHCコード';
+                }
+                if (html.indexOf('shizenisan') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="shizenisan" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">' + name  + '</span><br>' +
+                        '<span style="font-size:16px;">' + link  + '</span>' +
+                        '</div>'
+                }
+                break
+            }
+            case 'oh-bunkaisan-point-A34g':
+            case 'oh-bunkaisan-point-A34e':
+            case 'oh-bunkaisan-point-A34d':
+            case 'oh-bunkaisan-line-A34c':
+            case 'oh-bunkaisan-point-A34b':
+            case 'oh-bunkaisan-layer-A34f':
+            case 'oh-bunkaisan-layer-A34a':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                let layerName = layerId.split('-')[3]
+                console.log(layerName)
+                console.log(coordinates)
+                props = features[0].properties
+                if (html.indexOf(layerName) === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="' + layerName + '" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">' +  props[layerName + '_003'] + '</span><hr>' +
+                        '<span style="font-size:16px;">' +  props[layerName + '_007'] + '</span>' +
+                        '</div>'
+                }
+                break
+            }
+            case 'oh-kokuritsukoen-layer':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                if (html.indexOf('kokuritsukoen') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="kokuritsukoen" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">名称＝' +  props.名称 + '</span><br>' +
+                        '<span style="font-size:16px;">地域区＝' +  props.地域区 + '</span>' +
+                        '</div>'
+                }
+                break
+            }
+            case 'oh-shizenkoen-layer':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                // props = features[0].properties
+                // let regionType = ''
+                switch (props.LAYER_NO) {
+                    case 1:
+                        regionType += "都市地域";
+                        break;
+                    case 2:
+                        regionType += "市街化区域";
+                        break;
+                    case 3:
+                        regionType += "市街化調整区域";
+                        break;
+                    case 4:
+                        regionType += "その他用途地域";
+                        break;
+                    case 5:
+                        regionType += "農業地域";
+                        break;
+                    case 6:
+                        regionType += "農用地区域";
+                        break;
+                    case 7:
+                        regionType += "森林地域";
+                        break;
+                    case 8:
+                        regionType += "国有林";
+                        break;
+                    case 9:
+                        regionType += "地域森林計画対象民有林";
+                        break;
+                    case 10:
+                        regionType += "・保安林<br>";
+                        break;
+                    case 11:
+                        regionType += "・自然公園地域<br>";
+                        break;
+                    case 12:
+                        regionType += "・特別地域<br>";
+                        break;
+                    case 13:
+                        regionType += "・特別保護地区<br>";
+                        break;
+                    case 14:
+                        regionType += "・自然保全地域<br>";
+                        break;
+                    case 15:
+                        regionType += "・原生自然環境保全地域<br>";
+                        break;
+                    case 16:
+                        regionType += "・特別地区<br>";
+                        break;
+                }
+                console.log(props.LAYER_NO,regionType)
+                if (html.indexOf('shizenkoen') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="shizenkoen" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:14px;">市町村名＝' + props.CTV_NAME + '<hr>' +
+                        '<span style="font-size:14px;">土地利用基本計画＝<br><span class="region-type">' + regionType + '</span>' +
+                        '</div>'
+                } else {
+                    const regionType2 = regionType.slice(0, -4)
+                    html = html.replace(/<span class="region-type">.*?<\/span>/, `<span class="region-type">${regionType2}</span>`);
                 }
                 break
             }

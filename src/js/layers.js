@@ -707,8 +707,9 @@ const kirieLayers2 = kirieLayers.map((layer,i) => {
 
     }
 })
-
-console.log(kirieLayers2)
+// console.log(kirieSources)
+// console.log(kirieLayers)
+// console.log(kirieLayers2)
 
 
 
@@ -4718,7 +4719,7 @@ const jinkochikeiLayer = {
 const shizenchikeiSource = {
     id: "shizenchikei-source", obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/shizenchikei/shizenchikei.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/shizenchikei/shizenchikei_mini.pmtiles",
     }
 }
 const shizenchikeiLayer = {
@@ -5157,8 +5158,310 @@ const hifukuLine = {
         ]
     },
 }
-
-
+// 世界自然遺産 --------------------------------------------------------------------------------------------
+const shizenisanSource = {
+    id: "shizenisan-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/sekaiisan/shizenisan.pmtiles",
+    }
+}
+const shizenisanLayer = {
+    id: "oh-shizenisan",
+    type: "fill",
+    source: "shizenisan-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': 'rgba(255, 105, 180, 0.8)',
+    }
+}
+const shizenisanLine = {
+    id: "oh-shizenisan-line",
+    type: "line",
+    source: "shizenisan-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
+// 世界文化遺産 --------------------------------------------------------------------------------------------
+const bunkaisanSource = {
+    id: "bunkaisan-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/sekaiisan/bunkaisan.pmtiles",
+    }
+}
+const bunkaisanLayerA34a = {
+    id: "oh-bunkaisan-layer-A34a",
+    type: "fill",
+    source: "bunkaisan-source",
+    "source-layer": "A34a",
+    'paint': {
+        'fill-color': 'rgba(157, 209, 199, 0.8)',
+    }
+}
+const bunkaisanLineA34a = {
+    id: "oh-bunkaisan-line-A34a",
+    type: "line",
+    source: "bunkaisan-source",
+    "source-layer": "A34a",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
+const bunkaisanLayerA34f = {
+    id: "oh-bunkaisan-layer-A34f",
+    type: "fill",
+    source: "bunkaisan-source",
+    "source-layer": "A34f",
+    'paint': {
+        'fill-color': 'rgba(242, 183, 112, 0.8)',
+    }
+}
+const bunkaisanLineA34f = {
+    id: "oh-bunkaisan-line-A34f",
+    type: "line",
+    source: "bunkaisan-source",
+    "source-layer": "A34f",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
+const bunkaisanLineA34c = {
+    id: "oh-bunkaisan-line-A34c",
+    type: "line",
+    source: "bunkaisan-source",
+    "source-layer": "A34c",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 1,
+            12, 4
+        ]
+    },
+}
+const bunkaisanPointA34b = {
+    id: "oh-bunkaisan-point-A34b",
+    type: "circle",
+    source: "bunkaisan-source",
+    "source-layer": "A34b",
+    paint: {
+        'circle-color': 'rgba(145, 82, 45, 1)',
+        'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            1, 1,
+            13, 8
+        ],
+        'circle-stroke-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            12, 0,
+            13, 1
+        ],
+    },
+}
+const bunkaisanPointA34d = {
+    id: "oh-bunkaisan-point-A34d",
+    type: "circle",
+    source: "bunkaisan-source",
+    "source-layer": "A34d",
+    paint: {
+        'circle-color': 'rgba(152, 125, 183, 1)',
+        'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            1, 1,
+            13, 8
+        ],
+        'circle-stroke-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            12, 0,
+            13, 1
+        ],
+    },
+}
+const bunkaisanPointA34e = {
+    id: "oh-bunkaisan-point-A34e",
+    type: "circle",
+    source: "bunkaisan-source",
+    "source-layer": "A34e",
+    paint: {
+        'circle-color': 'rgba(255, 158, 23, 1)',
+        'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            1, 1,
+            13, 8
+        ],
+        'circle-stroke-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            12, 0,
+            13, 1
+        ],
+    },
+}
+const bunkaisanPointA34g = {
+    id: "oh-bunkaisan-point-A34g",
+    type: "circle",
+    source: "bunkaisan-source",
+    "source-layer": "A34g",
+    paint: {
+        'circle-color': 'rgba(164, 113, 88, 1)',
+        'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            1, 1,
+            13, 8
+        ],
+        'circle-stroke-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            12, 0,
+            13, 1
+        ],
+    },
+}
+// 自然公園 --------------------------------------------------------------------------------------------
+const shizenkoenSource = {
+    id: "shizenkoen-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/shizenkoen/shizenkoen.pmtiles",
+    }
+}
+const shizenkoenLayer = {
+    id: "oh-shizenkoen-layer",
+    type: "fill",
+    source: "shizenkoen-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': [
+            'match',
+            ['to-number', ['get', 'LAYER_NO']], // 数値に変換
+            1, 'rgba(169, 223, 191, 0.8)', // 薄い緑
+            2, 'rgba(144, 190, 109, 0.8)', // 明るい緑
+            3, 'rgba(116, 178, 97, 0.8)',  // 中程度の緑
+            4, 'rgba(92, 154, 82, 0.8)',   // 深い緑
+            5, 'rgba(162, 217, 206, 0.8)', // パステルの緑
+            6, 'rgba(127, 205, 153, 0.8)', // 爽やかな緑
+            7, 'rgba(139, 195, 74, 0.8)',  // 少し黄緑寄り
+            8, 'rgba(102, 187, 106, 0.8)', // 鮮やかな緑
+            9, 'rgba(174, 213, 129, 0.8)', // 薄めの緑
+            10, 'rgba(76, 175, 80, 0.8)',   // 標準的な緑
+            11, 'rgba(124, 179, 66, 0.8)',  // 明るい深緑
+            12, 'rgba(85, 139, 47, 0.8)',   // 暗めの緑
+            13, 'rgba(51, 105, 30, 0.8)',   // 森っぽい深緑
+            14, 'rgba(130, 204, 171, 0.8)', // パステル深緑
+            15, 'rgba(165, 214, 167, 0.8)', // 柔らかな緑
+            16, 'rgba(200, 230, 201, 0.8)', // とても柔らかな緑
+            'rgba(0, 0, 0, 0.8)'            // デフォルト色
+        ],
+    }
+}
+const shizenkoenLine = {
+    id: "oh-shizenkoen-line",
+    type: "line",
+    source: "shizenkoen-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
+// 国立公園 --------------------------------------------------------------------------------------------
+const kokuritsukoenSource = {
+    id: "kokuritsukoen-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/kokuritsukoen/kokuritsukoen.pmtiles",
+    }
+}
+const kokuritsukoenLayer = {
+    id: "oh-kokuritsukoen-layer",
+    type: "fill",
+    source: "kokuritsukoen-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': [
+            'match',
+            ['get', '地域区'],
+            '特別保護地区', 'rgba(34, 139, 34, 0.8)',          // フォレストグリーン
+            '第1種特別地域', 'rgba(60, 179, 113, 0.8)',        // ミディアムシーグリーン
+            '第2種特別地域', 'rgba(107, 142, 35, 0.8)',        // オリーブドラブ
+            '第3種特別地域', 'rgba(85, 107, 47, 0.8)',         // ダークオリーブグリーン
+            '普通地域', 'rgba(144, 238, 144, 0.8)',           // ライトグリーン
+            '海域公園地区', 'rgba(32, 178, 170, 0.8)',        // ライトシーグリーン
+            '区分未定', 'rgba(169, 169, 169, 0.8)',           // ダークグレー
+            /* default */ 'rgba(0, 0, 0, 0.8)'                // デフォルトは黒
+        ],
+    }
+}
+const kokuritsukoenLine = {
+    id: "oh-kokuritsukoen-line",
+    type: "line",
+    source: "kokuritsukoen-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
+// 都市圏活断層図----------------------------------------------------------------------------------------------------------
+const dansoSource = {
+    id: 'danso-source', obj: {
+        type: 'raster',
+        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/afm/{z}/{x}/{y}.png'],
+    }
+}
+const dansoLayer = {
+    'id': 'oh-danso-layer',
+    'type': 'raster',
+    'source': 'danso-source',
+}
 // // 地形分類テスト --------------------------------------------------------------------------------------------
 // const chikeibunruiSource2 = {
 //     id: "chikeibunrui-source", obj: {
@@ -5375,6 +5678,14 @@ const layers01 = [
                 id: 'kirie',
                 label: "江戸切絵図",
                 nodes: [
+                    {
+                        id: 'oh-kirie-all',
+                        label: "江戸切絵図全て",
+                        sources: kirieSources,
+                        layers: kirieLayers,
+                        attribution: '<a href="http://codh.rois.ac.jp/edo-maps/owariya/" target="_blank">人文学オープンデータ共同利用センター</a>' +
+                            '<br><br><a href="https://mapwarper.h-gis.jp/maps?utf8=%E2%9C%93&field=title&query=%E6%B1%9F%E6%88%B8%E5%88%87%E7%B5%B5%E5%9B%B3&from=1527&to=2025&show_warped=0" target="_blank">日本版Map Warper</a>'
+                    },
                     ...kirieLayers2,
                 ]
             },
@@ -6007,6 +6318,44 @@ const layers01 = [
                 source: hifukuSource,
                 layers: [hifukuLayer,hifukuLine],
                 attribution: '<a href="https://zenodo.org/records/5553516" target="_blank">日本全国の町内各地区の植生被覆率</a>'
+            },
+            {
+                id: 'oh-shizenisan',
+                label: "世界自然遺産",
+                source: shizenisanSource,
+                layers: [shizenisanLayer,shizenisanLine],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A28.html" target="_blank">国土数値情報</a>'
+            },
+            {
+                id: 'oh-bunkaisan',
+                label: "世界文化遺産",
+                source: bunkaisanSource,
+                layers: [bunkaisanLayerA34a,bunkaisanLineA34a,bunkaisanLayerA34f,bunkaisanLineA34f,
+                    bunkaisanLineA34c,
+                    bunkaisanPointA34b,bunkaisanPointA34d,bunkaisanPointA34e,bunkaisanPointA34g
+                ],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A34-2022.html" target="_blank">国土数値情報</a>'
+            },
+            {
+                id: 'oh-kokuritsukoen',
+                label: "国立公園",
+                source: kokuritsukoenSource,
+                layers: [kokuritsukoenLayer,kokuritsukoenLine],
+                attribution: '<a href="http://gis.biodic.go.jp/webgis/sc-026.html?kind=nps" target="_blank">生物多様性センター</a>'
+            },
+            {
+                id: 'oh-shizenkoen',
+                label: "自然公園",
+                source: shizenkoenSource,
+                layers: [shizenkoenLayer,shizenkoenLine],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A10-2015.html" target="_blank">国土数値情報</a>'
+            },
+            {
+                id: 'oh-danso',
+                label: "都市圏活断層図",
+                source: dansoSource,
+                layers: [dansoLayer],
+                attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html#afm" target="_blank">地理院タイル</a>'
             },
         ]
     },

@@ -301,6 +301,20 @@ tippecanoe -pk -pf -l polygon -f -o hifuku.pmtiles --include=c_KEY_CODE --includ
 tippecanoe -l polygon -f -o shizenchikei.pmtiles shizenchikei.geojson
 tippecanoe -pk -pf -l polygon -f -o shizenchikei.pmtiles shizenchikei.geojson
 
+tippecanoe -l polygon -f -o shizenisan.pmtiles shizenisan.geojson
+
+tippecanoe -rg -f -o bunkaisan.pmtiles \
+  -L A34a:A34a-230328.geojson \
+  -L A34b:A34b-230328.geojson \
+  -L A34c:A34c-230328.geojson \
+  -L A34d:A34d-230328.geojson \
+  -L A34e:A34e-230328.geojson \
+  -L A34f:A34f-230328.geojson \
+  -L A34g:A34g-230328.geojson
+
+tippecanoe -l polygon -f -o shizenkoen.pmtiles shizenkoen.geojson
+
+tippecanoe -l polygon -f -o kokuritsukoen.pmtiles kokuritsukoen.geojson
 
 
 import random
