@@ -26,7 +26,7 @@
 
           <div :id="'terrain-btn-div-' + mapName" class="terrain-btn-div">
             <div class="terrain-btn-container">
-              <v-icon class="terrain-btn-close" @click="terrainBtnClos">mdi-close</v-icon>
+              <v-icon class="terrain-btn-close" @pointerdown="terrainBtnClos">mdi-close</v-icon>
               <v-btn type="button" class="terrain-btn-up terrain-btn" @pointerdown="upMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-up fa-lg hover'></i></v-btn>
               <v-btn type="button" class="terrain-btn-down terrain-btn" @pointerdown="downMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-down fa-lg'></i></v-btn>
               <v-btn type="button" class="terrain-btn-left terrain-btn" @pointerdown="leftMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-left fa-lg'></i></v-btn>
@@ -35,7 +35,7 @@
             </div>
           </div>
           <div class="terrain-btn-expand-div">
-            <v-btn icon type="button" @click="terrainBtnExpand"><v-icon>mdi-arrow-expand</v-icon></v-btn>
+            <v-btn icon type="button" @pointerdown="terrainBtnExpand"><v-icon>mdi-arrow-expand</v-icon></v-btn>
           </div>
 
           <div class="zoom-div">
@@ -1286,6 +1286,7 @@ export default {
   position: absolute;
   top:25px;
   left:25px;
+  font-size: x-large;
 }
 .terrain-btn-up{
   position:absolute;
