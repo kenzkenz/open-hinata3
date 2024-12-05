@@ -26,6 +26,7 @@
 
           <div :id="'terrain-btn-div-' + mapName" class="terrain-btn-div">
             <div class="terrain-btn-container">
+              <v-icon class="terrain-btn-close" @click="terrainBtnClos">mdi-close</v-icon>
               <v-btn type="button" class="terrain-btn-up terrain-btn" @pointerdown="upMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-up fa-lg hover'></i></v-btn>
               <v-btn type="button" class="terrain-btn-down terrain-btn" @pointerdown="downMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-down fa-lg'></i></v-btn>
               <v-btn type="button" class="terrain-btn-left terrain-btn" @pointerdown="leftMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-left fa-lg'></i></v-btn>
@@ -33,6 +34,10 @@
               <v-btn icon type="button" class="terrain-btn-center terrain-btn" @pointerdown="terrainReset(mapName)"><v-icon>mdi-undo</v-icon></v-btn>
             </div>
           </div>
+          <div class="terrain-btn-expand-div">
+            <v-btn icon type="button" @click="terrainBtnExpand"><v-icon>mdi-arrow-expand</v-icon></v-btn>
+          </div>
+
           <div class="zoom-div">
             zoom={{zoom.toFixed(2)}} {{elevation}}<br>
             {{address}}
@@ -188,7 +193,7 @@ export default {
     bearing:0,
     zoom:0,
     address:'',
-    elevation:''
+    elevation:'',
   }),
   computed: {
     s_terrainLevel: {
@@ -266,6 +271,22 @@ export default {
         document.querySelector('.terrain-btn-div').style.left = ''
         document.querySelector('.terrain-btn-div').style.right = '10px'
       }
+    },
+    terrainBtnClos () {
+      document.querySelectorAll('.terrain-btn-div').forEach(elm => {
+        elm.style.display = 'none'
+      })
+      document.querySelectorAll('.terrain-btn-expand-div').forEach(elm => {
+        elm.style.display = 'block'
+      })
+    },
+    terrainBtnExpand () {
+      document.querySelectorAll('.terrain-btn-div').forEach(elm => {
+        elm.style.display = 'block'
+      })
+      document.querySelectorAll('.terrain-btn-expand-div').forEach(elm => {
+        elm.style.display = 'none'
+      })
     },
     terrainReset (mapName) {
       const vm = this
@@ -1223,6 +1244,13 @@ export default {
   left: 0;
 }
 /*3Dのボタン-------------------------------------------------------------*/
+.terrain-btn-expand-div {
+  position:absolute;
+  bottom: 20px;
+  right:10px;
+  z-index:2;
+  display: none;
+}
 .terrain-btn {
   background-color: rgb(50,101,186);
 }
@@ -1253,6 +1281,11 @@ export default {
 .terrain-btn-container{
   position:relative;
   height:100%;
+}
+.terrain-btn-close {
+  position: absolute;
+  top:25px;
+  left:25px;
 }
 .terrain-btn-up{
   position:absolute;
