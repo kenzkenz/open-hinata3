@@ -5418,9 +5418,10 @@ const geoparkLine = {
             'interpolate', // Zoom-based interpolation
             ['linear'],
             ['zoom'], // Use the zoom level as the input
-            11, 1,
-            12, 2,
-            14,4
+            9,2,
+            10, 4,
+            12, 8,
+            14,10
         ]
     },
 }
