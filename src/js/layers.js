@@ -5413,13 +5413,14 @@ const geoparkLine = {
     source: "geopark-source",
     "source-layer": "polygon",
     paint: {
-        'line-color': '#000',
+        'line-color': 'red',
         'line-width': [
             'interpolate', // Zoom-based interpolation
             ['linear'],
             ['zoom'], // Use the zoom level as the input
-            11, 0,
-            12, 0.5
+            11, 1,
+            12, 2,
+            14,4
         ]
     },
 }
@@ -6399,6 +6400,7 @@ const layers01 = [
                 label: "ジオパーク",
                 source: geoparkSource,
                 layers: [geoparkLayer,geoparkLine],
+                ext: {name:'extGeopark'},
                 attribution: '<a href="https://tosashimizu-geo.jp/leaflet/geopark/geoparkarea.html" target="_blank">ジオパークエリア</a><br>' +
                     '土井恵治氏　土佐清水ジオパーク推進協議会事務局'
             },

@@ -118,9 +118,12 @@ export default createStore({
         sp84:{brightnessMin:0,brightnessMax:1,hueRotate:0,contrast:0,saturation:0,sharpness:0},
         sp87:{brightnessMin:0,brightnessMax:1,hueRotate:0,contrast:0,saturation:0,sharpness:0},
         jinsoku:{brightnessMin:0,brightnessMax:1,hueRotate:0,contrast:0,saturation:0,sharpness:0},
-
-      },
-    }
+      }
+    },
+    isPaintGeopark:{
+      map01: true,
+      map02: true
+    },
     //------------------------
   },
   getters: {
@@ -128,10 +131,6 @@ export default createStore({
   mutations: {
     updateParam (state,payload) {
       let variable;
-      // console.log(payload.value)
-      // console.log(payload.order)
-      // console.log(payload.name)
-
       const estSps = [
         'ext-sp28',
         'ext-sp36',
@@ -143,7 +142,6 @@ export default createStore({
         'ext-sp87',
         'ext-jinsoku',
       ]
-
       if (estSps.includes(payload.name)) {
         const target = payload.name.split('-')[1]
         let target2
@@ -201,6 +199,9 @@ export default createStore({
             break
           case 'extKoaza':
             variable = 'koazaText'
+            break
+          case 'extGeopark':
+            variable = 'isPaintGeopark'
             break
         }
         console.log(payload.mapName,payload.name,payload.value,variable)

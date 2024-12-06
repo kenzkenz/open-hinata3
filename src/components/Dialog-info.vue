@@ -2,7 +2,6 @@
   <div ref="dragDiv" :id="'dialog-info-'+ item.id" class="dialog-info-div" v-for="item in info" :key="item.id" :style="item.style" @mousedown="dialogMouseDown(item)" @mouseup="dialogMouseDown(item)">
     <div ref="dragHandle" class="drag-handle" :id="'handle-'+ item.id"></div>
     <div class="close-btn-div" @click="close(item)"><i style="" class="fa-solid fa-xmark hover close-btn"></i></div>
-<!--    <div class="content-div">-->
       <!--なにもないとき。普通のラスターのとき-->
       <div v-if="!item.ext">
         <div class="info-content-div">
@@ -30,8 +29,10 @@
         'ext-sp87',
         'ext-jinsoku',
           ].includes(item.ext.name)"/>
-    </div>
-<!--  </div>-->
+    <extGeopark :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extGeopark'"/>
+
+
+  </div>
 </template>
 
 <script>
@@ -43,6 +44,7 @@ import extBakumatsu3d from "@/components/ext-bakumatsu3d"
 import extKoaza from '@/components/ext-koaza'
 import extBus from "@/components/ext-bus"
 import extSp from "@/components/ext-sp"
+import extGeopark from "@/components/ext-geopark"
 
 export default {
   name: "dialog-info",
@@ -55,6 +57,7 @@ export default {
     extKoaza,
     extBus,
     extSp,
+    extGeopark
   },
   props: ['mapName'],
   data: () => ({
