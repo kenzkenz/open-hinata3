@@ -5591,7 +5591,8 @@ const layers01 = [
                 id: 'oh-plateau-tokyo23ku',
                 label: "PLATEAU建物東京都23区",
                 source: plateauTokyo23kuSource,
-                layers: [plateauTokyo23kuLayer]
+                layers: [plateauTokyo23kuLayer],
+                attribution: '<a href="https://github.com/indigo-lab/plateau-lod2-mvt?tab=readme-ov-file">plateau-lod2-mvt</a>'
             },
         ]
     },
