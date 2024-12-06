@@ -6705,30 +6705,30 @@ const layers01 = [
             //     source: yotochiikiSource,
             //     layers: [yotochiikiLayer,yotochiikiLayerLine,yotochiikiLayerLabel,yotochiikiLayerHeight]
             // },
-            {
-                id: 'oh-test',
-                label: "テスト",
-                source: testSource,
-                layers: [testLayer]
-            },
-            {
-                id: 'test2',
-                label: "標準地図",
-                nodes: [
-                    {
-                        id: 'test3',
-                        label: "標準地図",
-                        nodes: [
-                            {
-                                id: 'oh-stdLayer',
-                                label: "テスト標準地図",
-                                source: stdSource,
-                                layers: [stdLayer]
-                            },
-                        ]
-                    },
-                ]
-            },
+            // {
+            //     id: 'oh-test',
+            //     label: "テスト",
+            //     source: testSource,
+            //     layers: [testLayer]
+            // },
+            // {
+            //     id: 'test2',
+            //     label: "標準地図",
+            //     nodes: [
+            //         {
+            //             id: 'test3',
+            //             label: "標準地図",
+            //             nodes: [
+            //                 {
+            //                     id: 'oh-stdLayer',
+            //                     label: "テスト標準地図",
+            //                     source: stdSource,
+            //                     layers: [stdLayer]
+            //                 },
+            //             ]
+            //         },
+            //     ]
+            // },
         ]
     },
 ]
