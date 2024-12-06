@@ -1363,6 +1363,36 @@ const yokohamaSyashinLayer = {
     'source': 'yokohama-syashin-source',
     'type': 'raster',
 }
+// plateau-tokyo23ku-building-mvt-2020--------------------------------------------------------------------------------------------
+const plateauTokyo23kuSource = {
+    id: "plateau-tokyo23ku-source", obj: {
+        type: "vector",
+        tiles: ["https://indigo-lab.github.io/plateau-tokyo23ku-building-mvt-2020/{z}/{x}/{y}.pbf"],
+        attribution: "国土地理院ベクトルタイル提供実験",
+        minzoom: 10,
+        maxzoom: 16
+    }
+}
+const plateauTokyo23kuLayer = {
+    'id': 'oh-plateau-tokyo23ku-layer',
+    'source': 'plateau-tokyo23ku-source',
+    'source-layer': "bldg",
+    'type': 'fill-extrusion',
+    'paint': {
+        "fill-extrusion-height": ["get", "measuredHeight"],
+        "fill-extrusion-color": [
+            "interpolate",
+            ["linear"],
+            ["get", "measuredHeight"],
+            0, "#d9d9d9",       // 0m: グレー
+            10, "#a6bddb",      // 10m: 明るいブルー
+            30, "#74a9cf",      // 30m: 中間ブルー
+            60, "#2b8cbe",      // 60m: 濃いブルー
+            100, "#045a8d"      // 100m以上: 非常に濃いブルー
+        ],
+    },
+    'max-opacity': 0.9
+}
 // ---------------------------------------------------------------------------------------------------------------------
 // PLATEAU建物（PMTiles）ソース
 const plateauPmtilesSource = {
@@ -5556,6 +5586,12 @@ const layers01 = [
                 label: "PLATEAU建物",
                 source: plateauPmtilesSource,
                 layers: [plateauPmtilesLayer]
+            },
+            {
+                id: 'oh-plateau-tokyo23ku',
+                label: "PLATEAU建物東京都23区",
+                source: plateauTokyo23kuSource,
+                layers: [plateauTokyo23kuLayer]
             },
         ]
     },
