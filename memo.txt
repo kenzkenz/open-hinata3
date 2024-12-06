@@ -316,6 +316,8 @@ tippecanoe -l polygon -f -o shizenkoen.pmtiles shizenkoen.geojson
 
 tippecanoe -l polygon -f -o kokuritsukoen.pmtiles kokuritsukoen.geojson
 
+tippecanoe -l polygon -f -o geopark.pmtiles geopark.geojson
+
 
 import random
 from qgis.core import QgsField, QgsExpression, QgsExpressionContext, QgsExpressionContextUtils

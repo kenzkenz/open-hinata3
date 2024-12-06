@@ -2145,6 +2145,59 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-plateau-tokyo23ku-layer':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                if (html.indexOf('plateau-tokyo23ku') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="plateau-tokyo23ku" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:24px;">高さ＝' +  props.measuredHeight + 'm</span><br>' +
+                        '<span style="font-size:14px;">建物ID＝' +  props.建物ID + '</span>' +
+                        '</div>'
+                }
+                break
+            }
+            case 'oh-geopark-layer':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                let geoPark = ''
+                if (props.attr === 'GGP') {
+                    geoPark = 'ユネスコ世界ジオパーク'
+                } else {
+                    geoPark = 'ジオパーク'
+                }
+                if (html.indexOf('plateau-tokyo23ku') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="plateau-tokyo23ku" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">名称＝' +  props.name + geoPark + '</span><br>' +
+                        '<span style="font-size:14px;">運営組織＝' +  props.organization + '</span><br>' +
+                        '<span style="font-size:14px;">事務局所在地＝' +  props.office + '</span><br>' +
+                        '<span style="font-size:14px;">構成自治体＝' +  props.member.replace(/<br>/gi,'・') + '</span><br>' +
+                        '<span style="font-size:14px;">' +  '<a href="' + props.url + '" target="_blank">' + 'リンク' +  '</a></span>' +
+                        '</div>'
+                }
+                break
+            }
         }
     })
 

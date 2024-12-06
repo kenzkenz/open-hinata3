@@ -1057,6 +1057,47 @@ export default {
           map.on('mousemove', function (e) {
             mouseMoveForPopup(e,map)
           })
+          //------------------------------------------------------------------------------------------------------------
+          // PLATEAU建物東京都23区
+          map.on('mousemove', 'oh-plateau-tokyo23ku-layer', function (e) {
+            map.getCanvas().style.cursor = 'pointer'
+            map.setPaintProperty(
+                'oh-plateau-tokyo23ku-layer',
+                'fill-extrusion-color',
+                [
+                  'case',
+                  ['==', ['get', '建物ID'], e.features[0].properties['建物ID']],
+                  'rgba(255, 0, 0, 1)', // カーソルが当たったフィーチャーの色
+                  [
+                    "interpolate",
+                    ["linear"],
+                    ["get", "measuredHeight"],
+                    0, "#d9d9d9",       // 0m: グレー
+                    10, "#a6bddb",      // 10m: 明るいブルー
+                    30, "#74a9cf",      // 30m: 中間ブルー
+                    60, "#2b8cbe",      // 60m: 濃いブルー
+                    100, "#045a8d"      // 100m以上: 非常に濃いブルー
+                  ]
+                ]
+            )
+          })
+          map.on('mouseleave', 'oh-plateau-tokyo23ku-layer', function () {
+            map.getCanvas().style.cursor = ''
+            map.setPaintProperty(
+                'oh-plateau-tokyo23ku-layer',
+                'fill-extrusion-color',
+                [
+                  "interpolate",
+                  ["linear"],
+                  ["get", "measuredHeight"],
+                  0, "#d9d9d9",       // 0m: グレー
+                  10, "#a6bddb",      // 10m: 明るいブルー
+                  30, "#74a9cf",      // 30m: 中間ブルー
+                  60, "#2b8cbe",      // 60m: 濃いブルー
+                  100, "#045a8d"      // 100m以上: 非常に濃いブルー
+                ]
+            )
+          })
           // -----------------------------------------------------------------------------------------------------------
           const pitch = !isNaN(this.pitch[mapName]) ? this.pitch[mapName]: 0
           if (pitch !== 0) {

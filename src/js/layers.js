@@ -5385,6 +5385,44 @@ const bunkaisanPointA34g = {
         ],
     },
 }
+// ジオパーク --------------------------------------------------------------------------------------------
+const geoparkSource = {
+    id: "geopark-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/geopark/geopark.pmtiles",
+    }
+}
+const geoparkLayer = {
+    id: "oh-geopark-layer",
+    type: "fill",
+    source: "geopark-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': [
+            'match',
+            ['get', 'attr'],
+            'GGP', 'rgba(255, 182, 193, 0.8)', // 淡い赤色
+            'JGP', 'rgba(102, 187, 106, 0.8)', // 既存の色
+            'rgba(200, 200, 200, 0.8)' // デフォルト色
+        ],
+    }
+}
+const geoparkLine = {
+    id: "oh-geopark-line",
+    type: "line",
+    source: "geopark-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
 // 自然公園 --------------------------------------------------------------------------------------------
 const shizenkoenSource = {
     id: "shizenkoen-source", obj: {
@@ -6355,6 +6393,14 @@ const layers01 = [
                 source: hifukuSource,
                 layers: [hifukuLayer,hifukuLine],
                 attribution: '<a href="https://zenodo.org/records/5553516" target="_blank">日本全国の町内各地区の植生被覆率</a>'
+            },
+            {
+                id: 'oh-geopark',
+                label: "ジオパーク",
+                source: geoparkSource,
+                layers: [geoparkLayer,geoparkLine],
+                attribution: '<a href="https://tosashimizu-geo.jp/leaflet/geopark/geoparkarea.html" target="_blank">ジオパークエリア</a><br>' +
+                    '土井恵治氏　土佐清水ジオパーク推進協議会事務局'
             },
             {
                 id: 'oh-shizenisan',

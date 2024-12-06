@@ -695,7 +695,7 @@ export default function pyramid () {
                             'z-index': store.state.dialogMaxZindex
                         }
                     }
-                    store.commit('pushDialogs2', { mapName: mapName, dialog: diialog })
+                    store.commit('pushDialogs2',        { mapName: mapName, dialog: diialog })
                 })
             }
         })
