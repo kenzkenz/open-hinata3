@@ -2797,6 +2797,57 @@ export const m1kmLayerHeight = {
         ]
     }
 }
+// 地理院250mメッシュソース --------------------------------------------------------------------------------------------
+export const chiriin250mSource = {
+    id: "chiriin250m-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/mesh/chiriin250m/chiriin250m2.pmtiles"
+    }
+}
+export const chiriin250mLayer = {
+    id: "oh-chiriin250m",
+    type: "fill",
+    source: "chiriin250m-source",
+    "source-layer": "polygon",
+    'paint': {
+        "fill-color": ['get', '_fillColor']
+    },
+}
+export const chiriin250mLayerLine = {
+    id: "oh-m250m-line",
+    type: "line",
+    source: "chiriin250m-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
+export const chiriin250mLayerLabel = {
+    id: "oh-chiriin250m-label",
+    type: "symbol",
+    source: "chiriin250m-source",
+    "source-layer": "polygon",
+    'layout': {
+        'text-field': ['get', 'jinko'],
+        'text-font': ['NotoSansJP-Regular'],
+        // 'text-anchor': 'left',
+        'text-offset': [0, 0],
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 13
+}
 // ---------------------------------------------------------------------------------------------------------------------
 // 全国旧石器
 export const kyusekkiSource = {
@@ -5846,6 +5897,24 @@ const layers01 = [
                 label: "1kmメッシュ人口3D",
                 source: m1kmSource,
                 layers: [m1kmLayer,m1kmLayerLine,m1kmLayerLabel,m1kmLayerHeight]
+            },
+            {
+                id: 'oh-chiriin250m',
+                label: "地理院版250mメッシュ人口",
+                source: chiriin250mSource,
+                layers: [chiriin250mLayer,chiriin250mLayerLine],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-mesh1000h30.html" target="_blank">国土数値情報</a>' +
+                    '<div class="legend-scale">' +
+                    '<ul class="legend-labels">' +
+                    '<li><span style="background:rgba(196, 253, 187, 0.8);"></span>無居住化</li>' +
+                    '<li><span style="background:rgba(140, 252, 114, 0.8);"></span>50%以上減少</li>' +
+                    '<li><span style="background:rgba(97, 197, 250, 0.8);"></span>30%以上50%未満減少</li>' +
+                    '<li><span style="background:rgba(89, 119, 246, 0.8);"></span>0%以上30%未満減少</li>' +
+                    '<li><span style="background:rgba(184, 38, 25, 0.8);"></span>増加</li>' +
+                    '<li><span style="background:rgba(255, 0, 0, 0.8);"></span>さらに増加</li>' +
+                    '</ul>' +
+                    '</div>',
+                info: true
             },
             {
                 id: 'oh-suikei500m',
