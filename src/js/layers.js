@@ -2812,6 +2812,7 @@ export const chiriin250mLayer = {
     'paint': {
         "fill-color": ['get', '_fillColor']
     },
+    'max-opacity': 0.9
 }
 export const chiriin250mLayerLine = {
     id: "oh-m250m-line",
@@ -5903,17 +5904,8 @@ const layers01 = [
                 label: "地理院版250mメッシュ人口",
                 source: chiriin250mSource,
                 layers: [chiriin250mLayer,chiriin250mLayerLine],
-                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-mesh1000h30.html" target="_blank">国土数値情報</a>' +
-                    '<div class="legend-scale">' +
-                    '<ul class="legend-labels">' +
-                    '<li><span style="background:rgba(196, 253, 187, 0.8);"></span>無居住化</li>' +
-                    '<li><span style="background:rgba(140, 252, 114, 0.8);"></span>50%以上減少</li>' +
-                    '<li><span style="background:rgba(97, 197, 250, 0.8);"></span>30%以上50%未満減少</li>' +
-                    '<li><span style="background:rgba(89, 119, 246, 0.8);"></span>0%以上30%未満減少</li>' +
-                    '<li><span style="background:rgba(184, 38, 25, 0.8);"></span>増加</li>' +
-                    '<li><span style="background:rgba(255, 0, 0, 0.8);"></span>さらに増加</li>' +
-                    '</ul>' +
-                    '</div>',
+                attribution: '<a href="" target="_blank"></a>' +
+                    '<img width="200px" src="' + require('@/assets/legend/kokusei_population.png') + '">',
                 info: true
             },
             {

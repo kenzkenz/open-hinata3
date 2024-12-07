@@ -2198,6 +2198,27 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-chiriin250m':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                if (html.indexOf('chiriin250m') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="chiriin250m" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">人口＝' +  props['人口（人）'] + '人</span>' +
+                        '</div>'
+                }
+                break
+            }
         }
     })
 
