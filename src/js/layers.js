@@ -3112,13 +3112,99 @@ const senkyokuLayerLabel = {
     'maxzoom': 24,
     'minzoom': 10
 }
+// 地価--------------------------------------------------------------------------------------------------------------
+const chikaSource3d = {
+    id: "chika-source-3d", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/chika/chika3d.pmtiles",
+    }
+}
+const chikaLayerLabel = {
+    id: "oh-chika-label",
+    type: "symbol",
+    source: "chika-source",
+    "source-layer": "point",
+    'layout': {
+        'text-field': ['get', 'L01_025'],
+        'text-font': ['NotoSansJP-Regular'],
+        'text-offset': [0, 2],
+        'visibility': 'visible',
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 12
+}
+const chikaLayerPoint = {
+    id: "oh-koji_point",
+    type: "circle",
+    source: "koji-source",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': [
+            'interpolate',
+            ['linear'],
+            ["to-number",['get', 'L01_008']],
+            0, 'white',
+            500000, 'red',
+            50000000, 'black'
+        ],
+        'circle-stroke-color': 'black',
+        'circle-stroke-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            8, 0,
+            10, 1
+        ],
+        'circle-radius':[
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            2, 0.1,
+            4, 0.5,
+            7, 2,
+            11, 8
+        ]
+    }
+}
+const chikalayerheight = {
+    id: 'oh-chika-height',
+    type: 'fill-extrusion',
+    source: "chika-source-3d",
+    "source-layer": "polygon",
+    filter: [
+        "!=", ["get", "L02_003"], "020" // フィールドL02_003が020のときは表示しない
+    ],
+    paint: {
+        'fill-extrusion-height': [
+            'interpolate',
+            ['linear'],
+            ['get', 'L02_006'],
+            0, 50.0, // 高さの最小値を50mに設定
+            50000000, 5000.0 // 高さの最大値を5000mに設定
+        ],
+        'fill-extrusion-color': [
+            'step',
+            ['get', 'L02_006'],
+            'rgb(245, 245, 81)', // 10万未満の色
+            100000, 'rgb(239, 211, 71)', // 10万から25万の色
+            250000, 'rgb(235, 178, 61)', // 25万から50万の色
+            500000, 'rgb(231, 145, 52)', // 50万から75万の色
+            750000, 'rgb(226, 84, 39)', // 75万から100万の色
+            1000000, 'rgb(225, 61, 35)', // 100万から1000万の色
+            10000000, 'rgb(225, 49, 33)' // 1000万以上の色
+        ]
+    }
+}
 // 公示価格--------------------------------------------------------------------------------------------------------------
 const kojiSource = {
     id: "koji-source", obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/kojikakaku/kojikakaku2.pmtiles",
-        attribution:
-            "<a href='' target='_blank'></a>",
     }
 }
 const kojiLayerLabel = {
@@ -6703,7 +6789,6 @@ const layers01 = [
                 source: kojiSource,
                 layers:[kojiLayerPoint,kojiLayerLabel],
                 attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-L01-2024.html" target="_blank">国土数値情報</a>'
-
             },
             {
                 id: 'oh-koji-3d',
@@ -6711,6 +6796,25 @@ const layers01 = [
                 source: kojiSource,
                 layers:[kojilayerheight],
                 attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-L01-2024.html" target="_blank">国土数値情報</a>'
+            },
+            {
+                id: 'oh-chika',
+                label: "都道府県地価調査（R06）",
+                source: chikaSource3d,
+                layers:[chikalayerheight],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-L02-2024.html" target="_blank">国土数値情報</a>' +
+                    '<div class="legend-scale">' +
+                    '<ul class="legend-labels">' +
+                    '<li><span style="background:rgb(225, 49, 33);"></span>1000万円以上</li>' +
+                    '<li><span style="background:rgb(225, 61, 35);"></span>100万円ー1000万円</li>' +
+                    '<li><span style="background:rgb(226, 84, 39);"></span>75万円ー100万円</li>' +
+                    '<li><span style="background:rgb(231, 145, 52);"></span>50万円ー75万円</li>' +
+                    '<li><span style="background:rgb(235, 178, 61);"></span>25万円ー50万円</li>' +
+                    '<li><span style="background:rgb(239, 211, 71);"></span>10万円ー25万円</li>' +
+                    '<li><span style="background:rgb(245, 245, 81);"></span>10万円未満</li>' +
+                    '</ul>' +
+                    '</div>',
+                info: true
             },
             {
                 id: 'oh-nihonrekishi',

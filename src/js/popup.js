@@ -2219,6 +2219,44 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-chika-height':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                let yoto
+                switch (props.L02_003) {
+                    case '000':
+                        yoto = '住宅地'
+                        break
+                    case '003':
+                        yoto = '宅地見込地'
+                        break
+                    case '005':
+                        yoto = '商業地'
+                        break
+                    case '009':
+                        yoto = '工業地'
+                        break
+                }
+                if (html.indexOf('chika-height') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="chika-height" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">調査価格＝' +  props.L02_006.toLocaleString() + '円</span><br>' +
+                        '<span style="font-size:14px;">' +  props.L02_022 + '</span><br>' +
+                        '<span style="font-size:14px;">' +  yoto + '</span><br>' +
+                        '</div>'
+                }
+                break
+            }
         }
     })
 
