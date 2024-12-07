@@ -3196,7 +3196,9 @@ const chikalayerheight = {
             500000, 'rgb(231, 145, 52)', // 50万から75万の色
             750000, 'rgb(226, 84, 39)', // 75万から100万の色
             1000000, 'rgb(225, 61, 35)', // 100万から1000万の色
-            10000000, 'rgb(225, 49, 33)' // 1000万以上の色
+            10000000, 'rgb(225, 49, 33)', // 1000万から2000万の色
+            20000000, 'rgb(180, 30, 25)', // 2000万から4000万をさらに赤黒く
+            40000000, 'rgb(160, 20, 20)' // 4000万以上をさらにさらに赤黒く
         ]
     }
 }
@@ -3667,10 +3669,6 @@ const kansuiLayerLabel = {
     'maxzoom': 24,
     'minzoom': 13
 }
-
-
-
-
 // R05大規模盛土造成地-----------------------------------------------------------------------------------------------------
 const zoseiSource = {
     id: "zosei-source", obj: {
@@ -5670,6 +5668,54 @@ const dansoLayer = {
     'type': 'raster',
     'source': 'danso-source',
 }
+// 駅別乗降客数-----------------------------------------------------------------------------------------------------
+const ekibetsukyakuSource = {
+    id: "ekibetsukyaku-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/ekibetsukyaku/ekibetsukyaku.pmtiles",
+    }
+}
+const ekibetsukyakuLine = {
+    id: "oh-ekibetsukyaku-line",
+    type: "line",
+    source: "ekibetsukyaku-source",
+    "source-layer": "line",
+    paint: {
+        'line-color': 'hotpink',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            7, 5,
+            11, 10
+        ]
+    },
+}
+const ekibetsukyakuLabel = {
+    id: "oh-ekibetsukyaku-label",
+    type: "symbol",
+    source: "ekibetsukyaku-source",
+    "source-layer": "line",
+    'layout': {
+        'text-field': [
+            "number-format",
+            ["to-number", ["get", "S12_053"]],
+            { "min-fraction-digits": 0 }
+        ],
+        'text-font': ['NotoSansJP-Regular'],
+        'symbol-placement': 'line', // ラインに沿って配置
+        'text-offset': [0, 1], // ラインの横側に表示（Y方向にオフセット）
+        'text-anchor': 'center', // テキストのアンカー位置
+        'text-rotation-alignment': 'map' // マップの向きにテキストを合わせる
+    },
+    'paint': {
+        'text-color': 'rgba(255, 0, 0, 1)',
+        'text-halo-color': 'rgba(255,255,255,1)',
+        'text-halo-width': 1.0,
+    },
+    'filter': ['!=', ['to-number', ['get', 'S12_053']], 0], // 0以外を表示
+    'minzoom': 10
+}
 // // 地形分類テスト --------------------------------------------------------------------------------------------
 // const chikeibunruiSource2 = {
 //     id: "chikeibunrui-source", obj: {
@@ -6093,6 +6139,13 @@ const layers01 = [
                 source: tetsudojikeiretsuSource,
                 layers: [tetsudojikeiretsuLayerBlue,tetsudojikeiretsuLayerPoint],
                 ext: {name:'extTetsudojikeiretsu',parameters:[]}
+            },
+            {
+                id: 'oh-ekibetsukyaku',
+                label: "駅別乗降客数",
+                sources: [ekibetsukyakuSource],
+                layers: [ekibetsukyakuLine,ekibetsukyakuLabel],
+                attribution: "<a href='https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-S12-2022.html' target='_blank'>国土数値情報</a>",
             },
             {
                 id: 'oh-highway',

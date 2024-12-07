@@ -2257,6 +2257,35 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-ekibetsukyaku-label':
+            case 'oh-ekibetsukyaku-line':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                let kyakusu = ''
+                if (props.S12_053) {
+                    kyakusu = '<span style="font-size:20px;">2022乗降客数＝' +  props.S12_053.toLocaleString() + '人</span><br>'
+                }
+                if (html.indexOf('ekibetsukyaku-line') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="ekibetsukyaku-line" font-weight: normal; color: #333;line-height: 25px;">' +
+                        kyakusu +
+                        '<span style="font-size:14px;">駅名＝' +  props.S12_001 + '</span><br>' +
+                        '<span style="font-size:14px;">運営会社＝' +  props.S12_002 + '</span><br>' +
+                        '<span style="font-size:14px;">路線名＝' +  props.S12_003 + '</span><br>' +
+                        '</div>'
+                }
+                break
+            }
         }
     })
 

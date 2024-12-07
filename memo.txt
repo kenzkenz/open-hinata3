@@ -318,7 +318,7 @@ tippecanoe -l polygon -f -o kokuritsukoen.pmtiles kokuritsukoen.geojson
 
 tippecanoe -l polygon -f -o geopark.pmtiles geopark.geojson
 
-tippecanoe -pk -pf -l polygon -f -o chiriin250m.pmtiles chiriin250m.geojson
+tippecanoe -pk -pf -l polygon -f -o chiriin250m2.pmtiles chiriin250m2.geojson
 
 
 
