@@ -2287,13 +2287,30 @@ export function popup(e,map,mapName,mapFlg) {
                         '<span style="font-size:20px;">2012乗降客数＝' + props.S12_013.toLocaleString() + '人</span><br>' +
                         '<span style="font-size:20px;">2011乗降客数＝' + props.S12_009.toLocaleString() + '人</span><br>'
                 }
+                const dataset =
+                    [
+                        { year: 2011, value: props.S12_009 },
+                        { year: 2012, value: props.S12_013 },
+                        { year: 2013, value: props.S12_017 },
+                        { year: 2014, value: props.S12_021 },
+                        { year: 2015, value: props.S12_025 },
+                        { year: 2016, value: props.S12_029 },
+                        { year: 2017, value: props.S12_033 },
+                        { year: 2018, value: props.S12_037 },
+                        { year: 2019, value: props.S12_041 },
+                        { year: 2020, value: props.S12_045 },
+                        { year: 2021, value: props.S12_049 },
+                        { year: 2022, value: props.S12_053 }
+                    ]
                 if (html.indexOf('ekibetsukyaku-line') === -1) {
                     html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                     html +=
                         '<div class="ekibetsukyaku-line" font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size:20px;">駅名＝' +  props.S12_001 + '</span><br>' +
                         '<span style="font-size:14px;">運営会社＝' +  props.S12_002 + '</span><br>' +
-                        '<span style="font-size:14px;">路線名＝' +  props.S12_003 + '</span><hr>' +
+                        '<span style="font-size:14px;">路線名＝' +  props.S12_003 + '</span><br>' +
+                        // '<button class="kyakusu-suii pyramid-btn" mapname="' + mapName + '" dataset="' + JSON.stringify(dataset) + '">駅別乗降客数推移</button><br>' +
+                        "<button style='margin-bottom:10px;' class='kyakusu-suii pyramid-btn' mapname='" + mapName + "' dataset='" + JSON.stringify(dataset) + "' stationname='" + props.S12_001 + "'>駅別乗降客数推移</button><br>" +
                         kyakusu +
                         '</div>'
                 }

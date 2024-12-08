@@ -7,6 +7,7 @@
       <div class="close-btn-div" @clic.stop="closeBtn(item)" @pointerdown.stop="closeBtn(item)"><i class="fa-solid fa-xmark hover close-btn"></i></div>
       <DialogPyramid :item="item" :mapName="mapName" v-if="item.name === 'pyramid'" />
       <DialogJinkosuii :item="item" :mapName="mapName" v-if="item.name === 'jinkosuii'" />
+      <DialogKyakususuii :item="item" :mapName="mapName" v-if="item.name === 'kyakususuii'" />
     </div>
   </div>
 </template>
@@ -14,13 +15,15 @@
 <script>
 import DialogPyramid from "@/components/Dialog-pyramid"
 import DialogJinkosuii from "@/components/Dialog-jinkosuii"
+import DialogKyakususuii from "@/components/Dialog-kyakususuii"
 
 export default {
   name: 'dialog-2',
   props: ['mapName'],
   components: {
     DialogPyramid,
-    DialogJinkosuii
+    DialogJinkosuii,
+    DialogKyakususuii
   },
   data () {
     return {

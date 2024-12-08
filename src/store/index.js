@@ -63,6 +63,7 @@ export default createStore({
     isEstat: true,
     suikeiYear: '',
     popupAddress: '',
+    stationName: '',
     //------------------------
     highwayYear:{
       map01: 2024,

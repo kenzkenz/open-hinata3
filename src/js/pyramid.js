@@ -699,6 +699,37 @@ export default function pyramid () {
                 })
             }
         })
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("kyakusu-suii"))) {
+                const dataset = JSON.parse(e.target.getAttribute("dataset"))
+                store.state.jinkosuiiDatasetEstat['datasetAll'] = dataset
+                store.state.stationName = e.target.getAttribute("stationname") + '駅'
+
+                store.commit('incrDialog2Id');
+                store.commit('incrDialogMaxZindex');
+
+                let width;
+                let left;
+                if (window.innerWidth < 600) {
+                    left = (window.innerWidth / 2 - 175) + 'px'
+                } else {
+                    left = (document.querySelector('#map01').clientWidth - 560) + 'px'
+                }
+
+                const diialog = {
+                    id: store.state.dialog2Id,
+                    name: 'kyakususuii',
+                    style: {
+                        display: 'block',
+                        width: width,
+                        top: '60px',
+                        left: left,
+                        'z-index': store.state.dialogMaxZindex
+                    }
+                }
+                store.commit('pushDialogs2',        { mapName: mapName, dialog: diialog })
+            }
+        })
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
             if (e.target && (e.target.classList.contains("kasen-suikei"))) {
