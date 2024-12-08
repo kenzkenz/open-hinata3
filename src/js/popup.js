@@ -2257,6 +2257,7 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-ekibetsukyakue-height':
             case 'oh-ekibetsukyaku-label':
             case 'oh-ekibetsukyaku-line':
             {
@@ -2272,16 +2273,28 @@ export function popup(e,map,mapName,mapFlg) {
                 props = features[0].properties
                 let kyakusu = ''
                 if (props.S12_053) {
-                    kyakusu = '<span style="font-size:20px;">2022乗降客数＝' +  props.S12_053.toLocaleString() + '人</span><br>'
+                    kyakusu =
+                        '<span style="font-size:20px;">2022乗降客数＝' + props.S12_053.toLocaleString() + '人</span><br>' +
+                        '<span style="font-size:20px;">2021乗降客数＝' + props.S12_049.toLocaleString() + '人</span><br>' +
+                        '<span style="font-size:20px;">2020乗降客数＝' + props.S12_045.toLocaleString() + '人</span><br>' +
+                        '<span style="font-size:20px;">2019乗降客数＝' + props.S12_041.toLocaleString() + '人</span><br>' +
+                        '<span style="font-size:20px;">2018乗降客数＝' + props.S12_037.toLocaleString() + '人</span><br>' +
+                        '<span style="font-size:20px;">2017乗降客数＝' + props.S12_033.toLocaleString() + '人</span><br>' +
+                        '<span style="font-size:20px;">2016乗降客数＝' + props.S12_029.toLocaleString() + '人</span><br>' +
+                        '<span style="font-size:20px;">2015乗降客数＝' + props.S12_025.toLocaleString() + '人</span><br>' +
+                        '<span style="font-size:20px;">2014乗降客数＝' + props.S12_021.toLocaleString() + '人</span><br>' +
+                        '<span style="font-size:20px;">2013乗降客数＝' + props.S12_017.toLocaleString() + '人</span><br>' +
+                        '<span style="font-size:20px;">2012乗降客数＝' + props.S12_013.toLocaleString() + '人</span><br>' +
+                        '<span style="font-size:20px;">2011乗降客数＝' + props.S12_009.toLocaleString() + '人</span><br>'
                 }
                 if (html.indexOf('ekibetsukyaku-line') === -1) {
                     html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                     html +=
                         '<div class="ekibetsukyaku-line" font-weight: normal; color: #333;line-height: 25px;">' +
-                        kyakusu +
-                        '<span style="font-size:14px;">駅名＝' +  props.S12_001 + '</span><br>' +
+                        '<span style="font-size:20px;">駅名＝' +  props.S12_001 + '</span><br>' +
                         '<span style="font-size:14px;">運営会社＝' +  props.S12_002 + '</span><br>' +
-                        '<span style="font-size:14px;">路線名＝' +  props.S12_003 + '</span><br>' +
+                        '<span style="font-size:14px;">路線名＝' +  props.S12_003 + '</span><hr>' +
+                        kyakusu +
                         '</div>'
                 }
                 break

@@ -320,7 +320,9 @@ tippecanoe -l polygon -f -o geopark.pmtiles geopark.geojson
 
 tippecanoe -pk -pf -l polygon -f -o chiriin250m2.pmtiles chiriin250m2.geojson
 
+tippecanoe -pk -pf -l polygon -f -o ekibetsukyaku3d.pmtiles ekibetsukyakuround.geojson
 
+tippecanoe -pk -pf -l line -f -o tetsudo.pmtiles tetsudo.geojson
 
 import random
 from qgis.core import QgsField, QgsExpression, QgsExpressionContext, QgsExpressionContextUtils

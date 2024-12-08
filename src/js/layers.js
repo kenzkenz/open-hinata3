@@ -5675,6 +5675,34 @@ const ekibetsukyakuSource = {
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/ekibetsukyaku/ekibetsukyaku.pmtiles",
     }
 }
+const ekibetsukyakuSource3d = {
+    id: "ekibetsukyaku-source-3d", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/ekibetsukyaku/ekibetsukyaku3d.pmtiles",
+    }
+}
+const tetsudo2Source = {
+    id: "tetsudo-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/tetsudo/tetsudo.pmtiles",
+    }
+}
+const tetsudoLine = {
+    id: "oh-tetsudo-line",
+    type: "line",
+    source: "tetsudo-source",
+    "source-layer": "line",
+    paint: {
+        'line-color': 'blue',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            7, 1,
+            11, 3
+        ]
+    },
+}
 const ekibetsukyakuLine = {
     id: "oh-ekibetsukyaku-line",
     type: "line",
@@ -5689,6 +5717,36 @@ const ekibetsukyakuLine = {
             7, 5,
             11, 10
         ]
+    },
+}
+const ekibetsukyakuHeight = {
+    id: "oh-ekibetsukyakue-height",
+    type: "fill-extrusion",
+    source: "ekibetsukyaku-source-3d",
+    "source-layer": "polygon",
+    paint: {
+        'fill-extrusion-height': [
+            'interpolate',
+            ['linear'],
+            ['get', 'S12_053'],
+            0, 50,
+            1200000, 3000
+        ],
+        'fill-extrusion-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'S12_053'],
+            0, 'hsl(240, 100%, 50%)',    // 深い青
+            100, 'hsl(230, 100%, 55%)',  // 明るめの青
+            300, 'hsl(220, 100%, 60%)',  // 薄い青
+            500, 'hsl(210, 100%, 65%)',  // 青
+            1000, 'hsl(200, 100%, 70%)', // 青みがかったシアン
+            5000, 'hsl(180, 100%, 50%)', // シアン
+            20000, 'hsl(150, 100%, 50%)', // 青緑
+            100000, 'hsl(120, 100%, 50%)', // 緑
+            500000, 'hsl(60, 100%, 50%)',  // 黄色
+            1200000, 'hsl(0, 100%, 50%)'   // 赤
+        ],
     },
 }
 const ekibetsukyakuLabel = {
@@ -6146,6 +6204,29 @@ const layers01 = [
                 sources: [ekibetsukyakuSource],
                 layers: [ekibetsukyakuLine,ekibetsukyakuLabel],
                 attribution: "<a href='https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-S12-2022.html' target='_blank'>国土数値情報</a>",
+            },
+            {
+                id: 'oh-ekibetsukyaku-3d',
+                label: "駅別乗降客数３D",
+                sources: [ekibetsukyakuSource3d,tetsudo2Source],
+                layers: [tetsudoLine,ekibetsukyakuHeight],
+                attribution: "<a href='https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-S12-2022.html' target='_blank'>国土数値情報</a>" +
+                    '<div class="legend-scale">' +
+                    '<ul class="legend-labels">' +
+                    '<li><span style="background:hsl(240, 100%, 50%);"></span>0 - 99人</li>' +
+                    '<li><span style="background:hsl(230, 100%, 55%);"></span>100 - 299人</li>' +
+                    '<li><span style="background:hsl(220, 100%, 60%);"></span>300 - 499人</li>' +
+                    '<li><span style="background:hsl(210, 100%, 65%);"></span>500 - 999人</li>' +
+                    '<li><span style="background:hsl(200, 100%, 70%);"></span>1000 - 4999人</li>' +
+                    '<li><span style="background:hsl(180, 100%, 50%);"></span>5000 - 19999人</li>' +
+                    '<li><span style="background:hsl(150, 100%, 50%);"></span>20000 - 99999人</li>' +
+                    '<li><span style="background:hsl(120, 100%, 50%);"></span>100000 - 499999人</li>' +
+                    '<li><span style="background:hsl(60, 100%, 50%);"></span>500000 - 1199999人</li>' +
+                    '<li><span style="background:hsl(0, 100%, 50%);"></span>1200000人+</li>' +
+                    '</ul>' +
+                    '</div>',
+                info:true
+
             },
             {
                 id: 'oh-highway',
