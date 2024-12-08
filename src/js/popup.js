@@ -2198,6 +2198,7 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-chiriin250m-height':
             case 'oh-chiriin250m':
             {
                 let features = map.queryRenderedFeatures(
@@ -2214,6 +2215,7 @@ export function popup(e,map,mapName,mapFlg) {
                     html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                     html +=
                         '<div class="chiriin250m" font-weight: normal; color: #333;line-height: 25px;">' +
+                        // '<span class="popup-address" style="font-size:14px;"></span><br>' +
                         '<span style="font-size:20px;">人口＝' +  props['人口（人）'] + '人</span>' +
                         '</div>'
                 }

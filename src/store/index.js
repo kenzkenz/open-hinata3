@@ -125,6 +125,14 @@ export default createStore({
       map01: true,
       map02: true
     },
+    kyakusuYear:{
+      map01: 2022,
+      map02: 2022
+    },
+    jigyousya:{
+      map01: '全て',
+      map02: '全て'
+    },
     //------------------------
   },
   getters: {
@@ -203,6 +211,16 @@ export default createStore({
             break
           case 'extGeopark':
             variable = 'isPaintGeopark'
+            break
+          // case 'extKyakusu':
+          //   variable = 'kyakusuYear'
+          //   break
+          case 'extKyakusu':
+            if (payload.order === 0) {
+              variable = 'kyakusuYear'
+            } else if (payload.order === 1){
+              variable = 'jigyousya'
+            }
             break
         }
         console.log(payload.mapName,payload.name,payload.value,variable)

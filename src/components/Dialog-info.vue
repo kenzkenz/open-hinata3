@@ -30,7 +30,7 @@
         'ext-jinsoku',
           ].includes(item.ext.name)"/>
     <extGeopark :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extGeopark'"/>
-
+    <extKyakusu :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extKyakusu'"/>
 
   </div>
 </template>
@@ -45,6 +45,7 @@ import extKoaza from '@/components/ext-koaza'
 import extBus from "@/components/ext-bus"
 import extSp from "@/components/ext-sp"
 import extGeopark from "@/components/ext-geopark"
+import extKyakusu from "@/components/ext-kyakusu"
 
 export default {
   name: "dialog-info",
@@ -57,7 +58,8 @@ export default {
     extKoaza,
     extBus,
     extSp,
-    extGeopark
+    extGeopark,
+    extKyakusu
   },
   props: ['mapName'],
   data: () => ({

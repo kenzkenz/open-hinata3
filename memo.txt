@@ -285,7 +285,6 @@ tippecanoe -l polygon -f -o koaza_modified.pmtiles koaza_decode2.geojson
 tippecanoe-decode mura.pmtiles -z 14 -Z 14 -c > mura_decode.geojson
 tippecanoe -l polygon -f -o mura_modified.pmtiles mura_decode2.geojson
 
-
 tippecanoe -l polygon -f -o hifuku.pmtiles hifuku.geojson
 
 
@@ -327,6 +326,8 @@ tippecanoe -pk -pf -l line -f -o tetsudo.pmtiles tetsudo.geojson
 import random
 from qgis.core import QgsField, QgsExpression, QgsExpressionContext, QgsExpressionContextUtils
 from qgis.PyQt.QtCore import QVariant
+
+tippecanoe -pk -pf -l polygon -f -o chiriin250m3.pmtiles chiriinban250mesh3.geojson
 
 //-----------------------------------
 # アクティブなレイヤーを取得

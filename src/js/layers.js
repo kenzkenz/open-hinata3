@@ -2801,7 +2801,7 @@ export const m1kmLayerHeight = {
 export const chiriin250mSource = {
     id: "chiriin250m-source", obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/mesh/chiriin250m/chiriin250m2.pmtiles"
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/mesh/chiriin250m/chiriin250m3.pmtiles"
     }
 }
 export const chiriin250mLayer = {
@@ -2848,6 +2848,22 @@ export const chiriin250mLayerLabel = {
     },
     'maxzoom': 24,
     'minzoom': 13
+}
+const chiriin250mLayerHeight = {
+    id: 'oh-chiriin250m-height',
+    type: 'fill-extrusion',
+    source: "chiriin250m-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-extrusion-height': [
+            'interpolate',
+            ['linear'],
+            ['get', '人口（人）'],
+            0, 50.0, // 高さの最小値を50mに設定
+            10000, 10000.0 // 高さの最大値を5000mに設定
+        ],
+        'fill-extrusion-color': ['get', '_fillColor'],
+    }
 }
 // ---------------------------------------------------------------------------------------------------------------------
 // 全国旧石器
@@ -6099,6 +6115,15 @@ const layers01 = [
                 info: true
             },
             {
+                id: 'oh-chiriin250m-3D',
+                label: "地理院版250mメッシュ人口3D",
+                source: chiriin250mSource,
+                layers: [chiriin250mLayerHeight],
+                attribution: '<a href="" target="_blank"></a>' +
+                    '<img width="200px" src="' + require('@/assets/legend/kokusei_population.png') + '">',
+                info: true
+            },
+            {
                 id: 'oh-suikei500m',
                 label: "500mメッシュ別将来推計人口",
                 source: suikei500mSource,
@@ -6210,6 +6235,7 @@ const layers01 = [
                 label: "駅別乗降客数３D",
                 sources: [ekibetsukyakuSource3d,tetsudo2Source],
                 layers: [tetsudoLine,ekibetsukyakuHeight],
+                ext: {name:'extKyakusu'},
                 attribution: "<a href='https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-S12-2022.html' target='_blank'>国土数値情報</a>" +
                     '<div class="legend-scale">' +
                     '<ul class="legend-labels">' +
@@ -6225,7 +6251,7 @@ const layers01 = [
                     '<li><span style="background:hsl(0, 100%, 50%);"></span>1200000人+</li>' +
                     '</ul>' +
                     '</div>',
-                info:true
+                // info:true
 
             },
             {
