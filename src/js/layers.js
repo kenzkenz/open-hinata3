@@ -5790,6 +5790,41 @@ const ekibetsukyakuLabel = {
     'filter': ['!=', ['to-number', ['get', 'S12_053']], 0], // 0以外を表示
     'minzoom': 10
 }
+// ---------------------------------------------------------------------------------------------------------------------
+// 交通事故統計情報(2019年〜2022年)
+const trafficAccidentSource = {
+    id: "traffic-accident-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/TrafficAccidentRecord/TrafficAccidentRecord_20192022.pmtiles",
+    }
+}
+const trafficAccidentLayer = {
+    id: "oh-traffic-accident",
+    type: "circle",
+    source: "traffic-accident-source",
+    "source-layer": "TrafficAccidentRecord_20192022",
+    'paint': {
+        'circle-color': [
+            'case',
+            [
+                'all',
+                ['>=', ['to-number', ['get', '発生日時　　時']], 6],
+                ['<', ['to-number', ['get', '発生日時　　時']], 18]
+            ],
+            'rgba(173, 216, 230, 1)', // 昼間: 淡い青色（Light Blue）
+            'rgba(47, 79, 79, 0.9)'    // 夜間: 暗っぽい色（Dark Slate Gray）
+        ],
+        'circle-radius':[
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            2, 1,
+            4, 3,
+            7, 6,
+            11, 10
+        ]
+    }
+}
 // // 地形分類テスト --------------------------------------------------------------------------------------------
 // const chikeibunruiSource2 = {
 //     id: "chikeibunrui-source", obj: {
@@ -6823,7 +6858,6 @@ const layers01 = [
                 source: tameikeSource,
                 layers: [tameikeLayer],
                 attribution: '<a href="https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/opendata.html" target="_blank">ハザードマップポータルサイト</a>'
-
             },
             {
                 id: 'oh-dosya',
@@ -6916,6 +6950,20 @@ const layers01 = [
         id: 'sonohoka',
         label: "その他",
         nodes: [
+            {
+                id: 'oh-traffic-accident',
+                label: "交通事故統計情報(2019年〜2022年)",
+                source: trafficAccidentSource,
+                layers: [trafficAccidentLayer],
+                attribution: '<div style="width: 150px;"><a href="https://github.com/sanskruthiya/ta-jp2022?tab=readme-ov-file" target="_blank">Geographic Record of Traffic Accident in Japan</a>' +
+                '<div class="legend-scale">' +
+                        '<ul class="legend-labels">' +
+                    '<li><span style="background:rgba(173, 216, 230, 1);"></span>昼間に発生</li>' +
+                    '<li><span style="background:rgba(47, 79, 79, 0.9);"></span>夜間に発生</li>' +
+                    '</ul>' +
+                    '</div></div>',
+                info: true
+            },
             {
                 id: 'oh-kaiyochishitsu',
                 label: "海洋地質図",

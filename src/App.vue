@@ -1492,4 +1492,7 @@ font {
   line-height: 24px; /* 中央揃え */
   margin-bottom: 10px;
 }
+.style01 {
+  background: linear-gradient(transparent 85%, #ffd700 80%);
+}
 </style>

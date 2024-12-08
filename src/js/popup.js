@@ -2281,18 +2281,18 @@ export function popup(e,map,mapName,mapFlg) {
                     }
                 }
                 const kyakusu =
-                        '<span style="font-size:20px;">2022乗降客数＝' + localeString(props.S12_053) + '人</span><br>' +
-                        '<span style="font-size:20px;">2021乗降客数＝' + localeString(props.S12_049) + '人</span><br>' +
-                        '<span style="font-size:20px;">2020乗降客数＝' + localeString(props.S12_045) + '人</span><br>' +
-                        '<span style="font-size:20px;">2019乗降客数＝' + localeString(props.S12_041) + '人</span><br>' +
-                        '<span style="font-size:20px;">2018乗降客数＝' + localeString(props.S12_037) + '人</span><br>' +
-                        '<span style="font-size:20px;">2017乗降客数＝' + localeString(props.S12_033) + '人</span><br>' +
-                        '<span style="font-size:20px;">2016乗降客数＝' + localeString(props.S12_029) + '人</span><br>' +
-                        '<span style="font-size:20px;">2015乗降客数＝' + localeString(props.S12_025) + '人</span><br>' +
-                        '<span style="font-size:20px;">2014乗降客数＝' + localeString(props.S12_021) + '人</span><br>' +
-                        '<span style="font-size:20px;">2013乗降客数＝' + localeString(props.S12_017) + '人</span><br>' +
-                        '<span style="font-size:20px;">2012乗降客数＝' + localeString(props.S12_013) + '人</span><br>' +
-                        '<span style="font-size:20px;">2011乗降客数＝' + localeString(props.S12_009) + '人</span><br>'
+                        '<span style="font-size:20px;">2022乗降客数＝' + localeString(props.S12_053) + '人/日</span><br>' +
+                        '<span style="font-size:20px;">2021乗降客数＝' + localeString(props.S12_049) + '人/日</span><br>' +
+                        '<span style="font-size:20px;">2020乗降客数＝' + localeString(props.S12_045) + '人/日</span><br>' +
+                        '<span style="font-size:20px;">2019乗降客数＝' + localeString(props.S12_041) + '人/日</span><br>' +
+                        '<span style="font-size:20px;">2018乗降客数＝' + localeString(props.S12_037) + '人/日</span><br>' +
+                        '<span style="font-size:20px;">2017乗降客数＝' + localeString(props.S12_033) + '人/日</span><br>' +
+                        '<span style="font-size:20px;">2016乗降客数＝' + localeString(props.S12_029) + '人/日</span><br>' +
+                        '<span style="font-size:20px;">2015乗降客数＝' + localeString(props.S12_025) + '人/日</span><br>' +
+                        '<span style="font-size:20px;">2014乗降客数＝' + localeString(props.S12_021) + '人/日</span><br>' +
+                        '<span style="font-size:20px;">2013乗降客数＝' + localeString(props.S12_017) + '人/日</span><br>' +
+                        '<span style="font-size:20px;">2012乗降客数＝' + localeString(props.S12_013) + '人/日</span><br>' +
+                        '<span style="font-size:20px;">2011乗降客数＝' + localeString(props.S12_009) + '人/日</span><br>'
                 const dataset =
                     [
                         { year: 2011, value: props.S12_009 },
@@ -2317,6 +2317,140 @@ export function popup(e,map,mapName,mapFlg) {
                         '<span style="font-size:14px;">路線名＝' +  props.S12_003 + '</span><br>' +
                         "<button style='margin-bottom:10px;' class='kyakusu-suii pyramid-btn' mapname='" + mapName + "' dataset='" + JSON.stringify(dataset) + "' stationname='" + props.S12_001 + "'>駅別乗降客数推移</button><br>" +
                         kyakusu +
+                        '</div>'
+                }
+                break
+            }
+            case 'oh-traffic-accident':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                function getDay(d) {
+                    const days = {
+                        '1': '日',
+                        '2': '月',
+                        '3': '火',
+                        '4': '水',
+                        '5': '木',
+                        '6': '金',
+                        '7': '土'
+                    };
+                    return days[d] || '-';
+                }
+
+                function getWeather(d) {
+                    const weather = {
+                        '1': '晴れ',
+                        '2': '曇り',
+                        '3': '雨',
+                        '4': '霧',
+                        '5': '雪'
+                    };
+                    return weather[d] || '不明';
+                }
+
+                function getCondition(d) {
+                    const conditions = {
+                        '1': '良好だった',
+                        '2': '湿っていた',
+                        '3': '凍結していた',
+                        '4': '積雪していた',
+                        '5': '舗装されていなかった'
+                    };
+                    return conditions[d] || '不明';
+                }
+
+                function getRoadtype(d) {
+                    const roadTypes = {
+                        '1': '上りカーブの',
+                        '2': '下りカーブの',
+                        '3': '平坦なカーブの',
+                        '4': '上りカーブの',
+                        '5': '下りカーブの',
+                        '6': '平坦なカーブの',
+                        '7': '上り直線の',
+                        '8': '下り直線の',
+                        '9': '平坦な直線の',
+                        '0': '自由通行可能な'
+                    };
+                    return roadTypes[d] || '';
+                }
+
+                function getLocation(d) {
+                    const locations = {
+                        '01': '交差点',
+                        '07': '交差点',
+                        '31': '交差点',
+                        '37': '交差点',
+                        '11': 'トンネル',
+                        '12': '橋',
+                        '13': '曲がり道',
+                        '14': '道路',
+                        '21': '踏切',
+                        '22': '踏切',
+                        '23': '踏切',
+                        '00': '場所'
+                    };
+                    return locations[d] || '場所';
+                }
+
+                function getSignal(d) {
+                    const signals = {
+                        '1': '信号機がある',
+                        '2': '信号機がある',
+                        '3': '信号機がある',
+                        '4': '信号機がある',
+                        '5': '信号機が消灯中の',
+                        '6': '信号機が故障中の',
+                        '7': '信号機がない',
+                        '8': '信号機がある'
+                    };
+                    return signals[d] || '';
+                }
+
+                function getType(d) {
+                    const types = {
+                        '01': '人と車両',
+                        '21': '車両同士',
+                        '41': '車両単独',
+                        '61': '列車'
+                    };
+                    return types[d] || '状況不明';
+                }
+
+                function getAge(d) {
+                    const ages = {
+                        '01': '24歳以下の若年者',
+                        '25': '25～34歳',
+                        '35': '35～44歳',
+                        '45': '45～54歳',
+                        '55': '55～64歳',
+                        '65': '65～74歳',
+                        '75': '75歳以上の高齢者'
+                    };
+                    return ages[d] || '-';
+                }
+
+                const a_size = Number(props["負傷者数"])+Number(props["死者数"])
+                let popupContent = '<p class="tipstyle02"><span class="style01">'+props["発生日時　　年"]+'年'+props["発生日時　　月"]+'月'+props["発生日時　　日"]+'日（'+getDay(props["曜日(発生年月日)"])+(props["祝日(発生年月日)"]==="0"?'・祝':'')+'）';
+                popupContent += props["発生日時　　時"]+'時'+props["発生日時　　分"]+'分頃</span>に発生した<span class="style01">'+ getType(props["事故類型"]) +'の事故</span>で、';
+                popupContent += (props["負傷者数"] != "0" ? '<span class="style01">'+props["負傷者数"]+'名が負傷</span>':'')+(props["死者数"] != "0" ? " ":"した。")+(props["死者数"] != "0" ? '<span class="style01">'+props["死者数"]+'名が亡くなった</span>。':'')+'<br>';
+                popupContent += '当事者の年齢層は<span class="style01">'+ getAge(props["年齢（当事者A）"]) +(getAge(props["年齢（当事者B）"]) != "-" ? 'と、'+getAge(props["年齢（当事者B）"]):'')+'</span>'+(a_size > 2 ? '（本票記載の２名のみ表示）':'')+'。<br>';
+                popupContent += '現場は<span class="style01">'+getRoadtype(props["道路線形"])+(getLocation(props["道路形状"]) != "交差点" ? getLocation(props["道路形状"]):getSignal(props["信号機"])+"交差点")+'</span>で、';
+                popupContent += '当時の天候は<span class="style01">'+getWeather(props["天候"])+'</span>、路面状態は<span class="style01">'+getCondition(props["路面状態"])+'</span>。</p>';
+                if (html.indexOf('traffic-accident') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="traffic-accident" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:14px;">' + popupContent + '</span>' +
                         '</div>'
                 }
                 break
