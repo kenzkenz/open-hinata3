@@ -2271,22 +2271,26 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 console.log(coordinates)
                 props = features[0].properties
-                let kyakusu = ''
-                if (props.S12_053) {
-                    kyakusu =
-                        '<span style="font-size:20px;">2022乗降客数＝' + props.S12_053.toLocaleString() + '人</span><br>' +
-                        '<span style="font-size:20px;">2021乗降客数＝' + props.S12_049.toLocaleString() + '人</span><br>' +
-                        '<span style="font-size:20px;">2020乗降客数＝' + props.S12_045.toLocaleString() + '人</span><br>' +
-                        '<span style="font-size:20px;">2019乗降客数＝' + props.S12_041.toLocaleString() + '人</span><br>' +
-                        '<span style="font-size:20px;">2018乗降客数＝' + props.S12_037.toLocaleString() + '人</span><br>' +
-                        '<span style="font-size:20px;">2017乗降客数＝' + props.S12_033.toLocaleString() + '人</span><br>' +
-                        '<span style="font-size:20px;">2016乗降客数＝' + props.S12_029.toLocaleString() + '人</span><br>' +
-                        '<span style="font-size:20px;">2015乗降客数＝' + props.S12_025.toLocaleString() + '人</span><br>' +
-                        '<span style="font-size:20px;">2014乗降客数＝' + props.S12_021.toLocaleString() + '人</span><br>' +
-                        '<span style="font-size:20px;">2013乗降客数＝' + props.S12_017.toLocaleString() + '人</span><br>' +
-                        '<span style="font-size:20px;">2012乗降客数＝' + props.S12_013.toLocaleString() + '人</span><br>' +
-                        '<span style="font-size:20px;">2011乗降客数＝' + props.S12_009.toLocaleString() + '人</span><br>'
+                function localeString (prop) {
+                    if (prop) {
+                        return prop.toLocaleString()
+                    } else {
+                        return 0
+                    }
                 }
+                const kyakusu =
+                        '<span style="font-size:20px;">2022乗降客数＝' + localeString(props.S12_053) + '人</span><br>' +
+                        '<span style="font-size:20px;">2021乗降客数＝' + localeString(props.S12_049) + '人</span><br>' +
+                        '<span style="font-size:20px;">2020乗降客数＝' + localeString(props.S12_045) + '人</span><br>' +
+                        '<span style="font-size:20px;">2019乗降客数＝' + localeString(props.S12_041) + '人</span><br>' +
+                        '<span style="font-size:20px;">2018乗降客数＝' + localeString(props.S12_037) + '人</span><br>' +
+                        '<span style="font-size:20px;">2017乗降客数＝' + localeString(props.S12_033) + '人</span><br>' +
+                        '<span style="font-size:20px;">2016乗降客数＝' + localeString(props.S12_029) + '人</span><br>' +
+                        '<span style="font-size:20px;">2015乗降客数＝' + localeString(props.S12_025) + '人</span><br>' +
+                        '<span style="font-size:20px;">2014乗降客数＝' + localeString(props.S12_021) + '人</span><br>' +
+                        '<span style="font-size:20px;">2013乗降客数＝' + localeString(props.S12_017) + '人</span><br>' +
+                        '<span style="font-size:20px;">2012乗降客数＝' + localeString(props.S12_013) + '人</span><br>' +
+                        '<span style="font-size:20px;">2011乗降客数＝' + localeString(props.S12_009) + '人</span><br>'
                 const dataset =
                     [
                         { year: 2011, value: props.S12_009 },
@@ -2309,7 +2313,6 @@ export function popup(e,map,mapName,mapFlg) {
                         '<span style="font-size:20px;">駅名＝' +  props.S12_001 + '</span><br>' +
                         '<span style="font-size:14px;">運営会社＝' +  props.S12_002 + '</span><br>' +
                         '<span style="font-size:14px;">路線名＝' +  props.S12_003 + '</span><br>' +
-                        // '<button class="kyakusu-suii pyramid-btn" mapname="' + mapName + '" dataset="' + JSON.stringify(dataset) + '">駅別乗降客数推移</button><br>' +
                         "<button style='margin-bottom:10px;' class='kyakusu-suii pyramid-btn' mapname='" + mapName + "' dataset='" + JSON.stringify(dataset) + "' stationname='" + props.S12_001 + "'>駅別乗降客数推移</button><br>" +
                         kyakusu +
                         '</div>'
