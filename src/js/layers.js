@@ -6980,14 +6980,8 @@ const layers01 = [
                 label: "みんなで石仏調査",
                 source: sekibutsuSource,
                 layers: [sekibutsuLayer],
-                attribution: '<a href="https://map.sekibutsu.info/about" target="_blank">みんなで石仏調査</a>'
-                //     '<div class="legend-scale">' +
-                //     '<ul class="legend-labels">' +
-                //     '<li><span style="background:rgba(173, 216, 230, 1);"></span>昼間に発生</li>' +
-                //     '<li><span style="background:rgba(47, 79, 79, 0.9);"></span>夜間に発生</li>' +
-                //     '</ul>' +
-                //     '</div></div>',
-                // info: true
+                attribution: '<a href="https://map.sekibutsu.info/about" target="_blank">みんなで石仏調査</a>',
+                ext: {name:'extSekibutsu'}
             },
             {
                 id: 'oh-traffic-accident',
