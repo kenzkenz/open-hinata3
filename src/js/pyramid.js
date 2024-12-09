@@ -1,6 +1,6 @@
 import store from '@/store'
 import axios from "axios"
-
+export let currentIndex = 0;
 export default function pyramid () {
     ['map01','map02'].forEach(mapName => {
         const mapElm = document.querySelector('#' + mapName)
@@ -769,10 +769,80 @@ export default function pyramid () {
                     map.setFilter('oh-koaza-line', null)
                     map.setFilter('oh-mura-center-label', null)
                     store.state.koazaText[mapName] = ''
-
                 }
             }
         })
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("popup-btn-traffic"))) {
+                if(e.target.nextElementSibling.style.display === 'none') {
+                    e.target.nextElementSibling.style.display = 'block'
+                    document.querySelectorAll('.popup-html-div').forEach(element => {
+                        element.scrollTop = 0;
+                    })
+                } else {
+                    e.target.nextElementSibling.style.display = 'none'
+                }
+            }
+        })
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("carousel-button-prev"))) {
+                const carouselImages = document.querySelector('.carousel-images');
+                const images = document.querySelectorAll('.carousel-images img');
+                const totalImages = images.length;
+                function updateCarousel(direction) {
+                    let offset = 0;
+                    if (direction === 'next') {
+                        currentIndex = (currentIndex + 1) % totalImages;
+                    } else if (direction === 'prev') {
+                        currentIndex = (currentIndex - 1 + totalImages) % totalImages;
+                    }
+                    for (let i = 0; i < currentIndex; i++) {
+                        offset += images[i].offsetWidth;
+                    }
+                    carouselImages.style.transform = `translateX(-${offset}px)`;
+                }
+                updateCarousel('prev');
+                // currentIndex = (currentIndex - 1 + totalImages) % totalImages;
+                // updateCarousel();
+                // if (currentIndex > 0) {
+                //     currentIndex--;
+                //     updateCarousel();
+                // }
+            }
+        })
+        // -------------------------------------------------------------------------------------------------------------
+        // let currentIndex = 0;
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("carousel-button-next"))) {
+                const carouselImages = document.querySelector('.carousel-images');
+                const images = document.querySelectorAll('.carousel-images img');
+                const totalImages = images.length;
+                function updateCarousel(direction) {
+                    let offset = 0;
+                    if (direction === 'next') {
+                        currentIndex = (currentIndex + 1) % totalImages;
+                    } else if (direction === 'prev') {
+                        currentIndex = (currentIndex - 1 + totalImages) % totalImages;
+                    }
+                    for (let i = 0; i < currentIndex; i++) {
+                        offset += images[i].offsetWidth;
+                    }
+                    carouselImages.style.transform = `translateX(-${offset}px)`;
+                }
+                updateCarousel('next');
+                // currentIndex = (currentIndex + 1) % totalImages;
+                // updateCarousel();
+                // if (currentIndex < totalImages - 1) {
+                //     currentIndex++;
+                //     updateCarousel();
+                // }
+            }
+        })
+
+
+
     })
 }
 

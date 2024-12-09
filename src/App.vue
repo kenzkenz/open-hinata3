@@ -1460,17 +1460,23 @@ font {
 .popup-table td:nth-of-type(3) {
   text-align: right;
 }
-
+.popup-btn {
+  cursor: pointer;
+  background-color: rgb(50,101,186);
+  color: white;
+  padding: 3px 10px 3px 10px;
+  border-radius:8px;
+}
 .maplibregl-popup-content hr {
   margin-top: 10px;
   margin-bottom: 10px;
 }
 .break-hr {
-  border: solid 2px rgb(50,101,186);;
+  border: solid 2px rgb(50,101,186);
 }
 .layer-label-div {
   color: white;
-  background-color: rgb(50,101,186);;
+  background-color: rgb(50,101,186);
   text-align: right;
   padding-left: 5px;
   padding-right: 5px;
@@ -1494,5 +1500,53 @@ font {
 }
 .style01 {
   background: linear-gradient(transparent 85%, #ffd700 80%);
+}
+
+.carousel {
+  position: relative;
+  width: 80%;
+  /*max-width: 600px;*/
+  width: 200px;
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px;
+}
+.carousel-images {
+  display: flex;
+  transition: transform 0.5s ease-in-out;
+}
+.carousel-images img {
+  display: block;
+  width: 200px; /* Ensures consistent width */
+  height: auto; /* Maintains aspect ratio */
+  flex-shrink: 0;
+  object-fit: contain; /* Prevents stretching */
+}
+.carousel-buttons {
+  position: absolute;
+  top: 50%;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  transform: translateY(-50%);
+}
+.carousel-button {
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+.carousel-button:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+.carousel-buttons.hidden {
+  display: none;
+}
+.carousel-button.disabled {
+  background-color: rgba(0, 0, 0, 0.2);
+  cursor: not-allowed;
 }
 </style>

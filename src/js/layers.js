@@ -5825,6 +5825,31 @@ const trafficAccidentLayer = {
         ]
     }
 }
+// みんなで石仏調査--------------------------------------------------------------------------------------------------------
+const sekibutsuSource = {
+    id: "sekibutsu-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/sekibutsu/sekibutsu.pmtiles",
+    }
+}
+const sekibutsuLayer = {
+    id: "oh-sekibutsu",
+    type: "circle",
+    source: "sekibutsu-source",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': 'rgba(47, 79, 79, 0.9)',
+        'circle-radius':[
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            2, 1,
+            4, 3,
+            7, 6,
+            11, 10
+        ]
+    }
+}
 // // 地形分類テスト --------------------------------------------------------------------------------------------
 // const chikeibunruiSource2 = {
 //     id: "chikeibunrui-source", obj: {
@@ -6950,6 +6975,20 @@ const layers01 = [
         id: 'sonohoka',
         label: "その他",
         nodes: [
+            {
+                id: 'oh-sekibutsu',
+                label: "みんなで石仏調査",
+                source: sekibutsuSource,
+                layers: [sekibutsuLayer],
+                attribution: '<a href="https://map.sekibutsu.info/about" target="_blank">みんなで石仏調査</a>'
+                //     '<div class="legend-scale">' +
+                //     '<ul class="legend-labels">' +
+                //     '<li><span style="background:rgba(173, 216, 230, 1);"></span>昼間に発生</li>' +
+                //     '<li><span style="background:rgba(47, 79, 79, 0.9);"></span>夜間に発生</li>' +
+                //     '</ul>' +
+                //     '</div></div>',
+                // info: true
+            },
             {
                 id: 'oh-traffic-accident',
                 label: "交通事故統計情報(2019年〜2022年)",

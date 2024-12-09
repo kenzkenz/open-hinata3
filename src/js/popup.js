@@ -4,6 +4,7 @@ import codeShizenOriginal from "@/js/codeShizenOriginal"
 import maplibregl from "maplibre-gl"
 import axios from "axios";
 import muni from "@/js/muni";
+import pyramid from "@/js/pyramid";
 const popups = []
 
 
@@ -213,6 +214,9 @@ export function popup(e,map,mapName,mapFlg) {
     let html = ''
     let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
     console.log(features[0])
+    if (features.length> 20) {
+        features = features.slice(0, 20);
+    }
     // const coordinates = e.lngLat
     let coordinates
     if (features.length > 0) {
@@ -2438,6 +2442,11 @@ export function popup(e,map,mapName,mapFlg) {
                     };
                     return ages[d] || '-';
                 }
+                let html0 = ''
+                Object.keys(props).forEach(function (key) {
+                    html0 += key + '=' + props[key] + '<br>'
+                })
+                html0 = '<btn class="popup-btn popup-btn-traffic">全データ表示</btn><div style="display: none">' + html0 + '</div>'
 
                 const a_size = Number(props["負傷者数"])+Number(props["死者数"])
                 let popupContent = '<p class="tipstyle02"><span class="style01">'+props["発生日時　　年"]+'年'+props["発生日時　　月"]+'月'+props["発生日時　　日"]+'日（'+getDay(props["曜日(発生年月日)"])+(props["祝日(発生年月日)"]==="0"?'・祝':'')+'）';
@@ -2451,6 +2460,67 @@ export function popup(e,map,mapName,mapFlg) {
                     html +=
                         '<div class="traffic-accident" font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size:14px;">' + popupContent + '</span>' +
+                        '</div>'
+                    html = html + html0
+                }
+                break
+            }
+            case 'oh-sekibutsu':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                function parseAndJoin (propArr) {
+                    if (propArr === undefined) {
+                        return ''
+                    } else {
+                        return JSON.parse(propArr).join(',')
+                    }
+                }
+                function parseAndJoinImage (propArr) {
+                    if (propArr === undefined) {
+                        return ''
+                    } else {
+                        const srcArr = JSON.parse(propArr).map(prop => {
+                            return '<a href="https://map.sekibutsu.info/images/' + prop + '" target="_blank"><img src="https://map.sekibutsu.info/images/' + prop + '"></a>'
+                        })
+                        return srcArr.join('')
+                    }
+                }
+                console.log(parseAndJoinImage(props.image))
+
+                const carousel =
+                    '<div class="carousel">' +
+                    '<div class="carousel-images">' +
+                    parseAndJoinImage(props.image) +
+                    '</div>' +
+                    '<div class="carousel-buttons">' +
+                    '<button class="carousel-button carousel-button-prev" id="prev">&#10094;</button>' +
+                    '<button class="carousel-button carousel-button-next" id="next">&#10095;</button>' +
+                    '</div>' +
+                    '</div>'
+
+                if (html.indexOf('sekibutsu') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="sekibutsu" font-weight: normal; color: #333;line-height: 25px;">' +
+                        carousel +
+                        '<span style="font-size:20px;">場所＝' +  parseAndJoin(props.place) + '</span><br>' +
+                        '<span style="font-size:12px;">所在地＝' +  parseAndJoin(props.address) + '</span><br>' +
+                        '<span style="font-size:12px;">データ作成者＝' +  props.contributor + '</span><br>' +
+                        '<span style="font-size:12px;">データ作成日＝' +  props.created_at + '</span><br>' +
+                        '<span style="font-size:12px;">写真撮影日＝' +  props.photo_date + '</span><br>' +
+                        '<span style="font-size:12px;">種類＝' +  parseAndJoin(props.type) + '</span><br>' +
+                        '<span style="font-size:12px;">造立年（和暦）＝' +  parseAndJoin(props.built_year) + '</span><br>' +
+                        '<span style="font-size:12px;">造立年（西暦）＝' +  parseAndJoin(props.built_year_ce) + '</span><br>' +
+                        '<span style="font-size:12px;">タグ＝' +  parseAndJoin(props.tag) + '</span><br>' +
                         '</div>'
                 }
                 break
@@ -2606,6 +2676,15 @@ function createPopup(map, coordinates, htmlContent, mapName) {
     });
     // 逆ジオコーディング（住所の取得）
     fetchReverseGeocoding(lng, lat, mapName);
+    // -------------------
+    const images = document.querySelectorAll('.carousel-images img');
+    const carouselButtons = document.querySelector('.carousel-buttons');
+    const totalImages = images.length;
+    if (totalImages === 1) {
+        console.log(carouselButtons)
+        carouselButtons.classList.add('hidden');
+    }
+    pyramid.currentIndex = 0
 }
 function fetchReverseGeocoding(lng, lat, mapName) {
     axios.get('https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress', {
