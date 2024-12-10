@@ -406,7 +406,7 @@ export function popup(e,map,mapName,mapFlg) {
                         '<button class="pyramid-syochiiki-h27 pyramid-btn" year=2015 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2015（H27）人口ピラミッド</button><br>' +
                         '<button class="pyramid-syochiiki-h22 pyramid-btn" year=2010 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2010（H22）人口ピラミッド</button><br>' +
                         '<button class="pyramid-syochiiki-h17 pyramid-btn" year=2010 mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">2005（H17）人口ピラミッド</button><br>' +
-                        '<button class="jinkosuii pyramid-btn" mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">人口推移</button>' +
+                        '<button style="margin-bottom: 10px;" class="jinkosuii pyramid-btn" mapname="' + mapName + '" cdArea="' + props.KEY_CODE + '" syochiikiname="' + name + '">人口推移</button>' +
                         '</div>'
                 }
                 break
@@ -2319,7 +2319,7 @@ export function popup(e,map,mapName,mapFlg) {
                         '<span style="font-size:20px;">駅名＝' +  props.S12_001 + '</span><br>' +
                         '<span style="font-size:14px;">運営会社＝' +  props.S12_002 + '</span><br>' +
                         '<span style="font-size:14px;">路線名＝' +  props.S12_003 + '</span><br>' +
-                        "<button style='margin-bottom:10px;' class='kyakusu-suii pyramid-btn' mapname='" + mapName + "' dataset='" + JSON.stringify(dataset) + "' stationname='" + props.S12_001 + "'>駅別乗降客数推移</button><br>" +
+                        "<button style='margin-bottom:10px;' class='kyakusu-suii popup-btn' mapname='" + mapName + "' dataset='" + JSON.stringify(dataset) + "' stationname='" + props.S12_001 + "'>駅別乗降客数推移</button><br>" +
                         kyakusu +
                         '</div>'
                 }

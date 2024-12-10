@@ -1430,9 +1430,9 @@ font {
   pointer-events: none;
 }
 .pyramid-btn {
-  margin-top: 10px;
-  height: 30px;
-  line-height: 30px;
+  margin-top: 5px;
+  height: 20px;
+  line-height: 20px;
   width: 100%;
   background-color: rgb(50,101,186);
   color: white;
