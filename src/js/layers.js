@@ -2032,7 +2032,6 @@ const syogakkoR05Layer = {
     paint: {
         'fill-color': ['get', 'random_color']
     }
-
 }
 const syogakkoR05LayerLine = {
     id: "oh-syogakkoR05-line",
@@ -5850,6 +5849,38 @@ const sekibutsuLayer = {
         ]
     }
 }
+// 流域-------------------------------------------------------------------------------------------
+const ryuikiSource2 = {
+    id: "ryuiki-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/ryuiki/ryuiki.pmtiles",
+    }
+}
+const ryuikiLayer2 = {
+    id: "oh-ryuiki",
+    type: "fill",
+    source: "ryuiki-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-color': ['get', 'random_color']
+    }
+}
+const ryuikiLayerLine2 = {
+    id: "oh-ryuiki-line",
+    type: "line",
+    source: "ryuiki-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            7, 0,
+            11, 0.5
+        ]
+    },
+}
 // // 地形分類テスト --------------------------------------------------------------------------------------------
 // const chikeibunruiSource2 = {
 //     id: "chikeibunrui-source", obj: {
@@ -6692,6 +6723,12 @@ const layers01 = [
                 label: "河川",
                 source: kasenSource,
                 layers: [kasenLayer,kasenLayerLabel]
+            },
+            {
+                id: 'oh-ryuiki',
+                label: "流域",
+                source: ryuikiSource2,
+                layers: [ryuikiLayer2,ryuikiLayerLine2]
             },
             // {
             //     id: 'oh-chikeibunrui',
