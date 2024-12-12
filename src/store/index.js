@@ -145,6 +145,10 @@ export default createStore({
       map01: true,
       map02: true
     },
+    suikeiText:{
+      map01: '',
+      map02: ''
+    },
     //------------------------
   },
   getters: {
@@ -239,6 +243,8 @@ export default createStore({
               variable = 'isPaintBunsuirei'
             } else if (payload.order === 1){
               variable = 'isKasen'
+            } else if (payload.order === 2){
+              variable = 'suikeiText'
             }
             break
         }

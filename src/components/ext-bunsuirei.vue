@@ -4,6 +4,7 @@
       <v-switch class="custom-switch" v-model="s_isPaintBunsuirei" @change="changePaint" label="塗りつぶし" color="primary" />
       <v-switch class="custom-switch" v-model="s_isKasen" @change="changePaint" label="河川" color="primary" />
       <br>
+      <v-text-field label="水系で抽出" v-model="s_suikeiText" @input="changePaint" style="margin-top: 10px"></v-text-field>
       <a href='https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-W07.html' target='_blank'>国土数値情報</a>    </div>
 </template>
 
@@ -46,15 +47,25 @@ export default {
         return this.$store.state.isKasen[this.mapName] = value
       }
     },
+    s_suikeiText: {
+      get() {
+        return this.$store.state.suikeiText[this.mapName]
+      },
+      set(value) {
+        this.$store.state.suikeiText[this.mapName] = value
+      }
+    },
   },
   methods: {
     update () {
       this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [
           this.s_isPaintBunsuirei,
           this.s_isKasen,
+          this.s_suikeiText
         ]})
     },
     changePaint () {
+      const vm = this
       const map = this.$store.state[this.mapName]
       if (!this.s_isPaintBunsuirei) {
         map.setPaintProperty('oh-bunsuirei', 'fill-color', 'rgba(0, 0, 0, 0)')
@@ -69,6 +80,7 @@ export default {
           11, 0.5
         ]);
       }
+      //----------------------------------------------------------------
       if (!this.s_isKasen) {
         map.setFilter("oh-kasen", ['==', 'nonexistent-field', true])
         map.setFilter("oh-kasen-label", ['==', 'nonexistent-field', true])
@@ -76,8 +88,50 @@ export default {
         map.setFilter("oh-kasen", null)
         map.setFilter("oh-kasen-label", null)
       }
-
-
+      //----------------------------------------------------------------
+      function filterBy(text) {
+        if (text) {
+          let searchString = text
+          searchString = searchString.replace(/\u3000/g,' ').trim()
+          const words = searchString.split(" ")
+          // 複数フィールドを結合する
+          const combinedFields = ["concat", ["get", "suikei"], " ", ["get", "W05_004"]];
+          // 各単語に対して、結合したフィールドに対する index-of チェックを実行
+          const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);
+          // いずれかの単語が含まれる場合の条件を作成 (OR条件)
+          const matchCondition = ["any", ...filterConditions]
+          console.log(matchCondition)
+          map.setFilter('oh-bunsuirei', matchCondition)
+          map.setFilter('oh-bunsuirei-line', matchCondition)
+          map.setFilter('oh-kasen', matchCondition)
+          map.setFilter('oh-kasen-label', matchCondition)
+          if (!vm.s_isKasen) {
+            map.setFilter("oh-kasen", ['==', 'nonexistent-field', true])
+            map.setFilter("oh-kasen-label", ['==', 'nonexistent-field', true])
+          } else {
+            map.setFilter("oh-kasen", [
+              'all',
+              ['==', 'nonexistent-field', true],
+              matchCondition
+            ])
+            map.setFilter("oh-kasen-label", [
+              'all',
+              ['==', 'nonexistent-field', true],
+              matchCondition
+            ])
+          }
+        } else {
+          map.setFilter('oh-bunsuirei', null)
+          map.setFilter('oh-bunsuirei-line', null)
+          map.setFilter('oh-kasen', null)
+          map.setFilter('oh-kasen-label', null)
+          if (!vm.s_isKasen) {
+            map.setFilter("oh-kasen", ['==', 'nonexistent-field', true])
+            map.setFilter("oh-kasen-label", ['==', 'nonexistent-field', true])
+          }
+        }
+      }
+      filterBy(this.s_suikeiText)
       this.update()
     },
   },
