@@ -330,6 +330,7 @@ from qgis.PyQt.QtCore import QVariant
 tippecanoe -pk -pf -l polygon -f -o chiriin250m3.pmtiles chiriinban250mesh3.geojson
 
 tippecanoe -l polygon -f -o ryuiki.pmtiles merged_ryuiki.geojson
+tippecanoe -l polygon -f -o ryuiki2.pmtiles updated_merged_ryuiki.geojson
 
 //-----------------------------------
 # アクティブなレイヤーを取得

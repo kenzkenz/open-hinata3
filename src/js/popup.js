@@ -2525,6 +2525,7 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-bunsuirei':
             case 'oh-ryuiki':
             {
                 let features = map.queryRenderedFeatures(

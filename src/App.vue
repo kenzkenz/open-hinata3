@@ -1549,4 +1549,15 @@ font {
   background-color: rgba(0, 0, 0, 0.2);
   cursor: not-allowed;
 }
+.custom-switch {
+  height: 34px; /* 全体の高さを調整 */
+}
+.custom-switch .v-switch__control {
+  height: 18px; /* スイッチ部分の高さ */
+  width: 32px;  /* スイッチ部分の幅 */
+}
+.custom-switch .v-switch__thumb {
+  height: 18px; /* スイッチの丸部分の高さ */
+  width: 18px;  /* スイッチの丸部分の幅 */
+}
 </style>

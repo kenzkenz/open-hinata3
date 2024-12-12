@@ -137,6 +137,14 @@ export default createStore({
       map01: '全て',
       map02: '全て'
     },
+    isPaintBunsuirei:{
+      map01: true,
+      map02: true
+    },
+    isKasen:{
+      map01: true,
+      map02: true
+    },
     //------------------------
   },
   getters: {
@@ -225,6 +233,13 @@ export default createStore({
             break
           case 'extSekibutsu':
             variable = 'sekibutsuText'
+            break
+          case 'extBunsuirei':
+            if (payload.order === 0) {
+              variable = 'isPaintBunsuirei'
+            } else if (payload.order === 1){
+              variable = 'isKasen'
+            }
             break
         }
         console.log(payload.mapName,payload.name,payload.value,variable)

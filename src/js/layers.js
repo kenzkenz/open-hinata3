@@ -5849,11 +5849,11 @@ const sekibutsuLayer = {
         ]
     }
 }
-// 流域-------------------------------------------------------------------------------------------
+// 流域（分水嶺）-------------------------------------------------------------------------------------------
 const ryuikiSource2 = {
     id: "ryuiki-source", obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/ryuiki/ryuiki.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/ryuiki/ryuiki2.pmtiles",
     }
 }
 const ryuikiLayer2 = {
@@ -5883,6 +5883,42 @@ const ryuikiLayerLine2 = {
     },
     filter: ['has', 'suikei']
 }
+// 分水嶺-------------------------------------------------------------------------------------------
+const bunsuireiSource = {
+    id: "bunsuirei-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/ryuiki/ryuiki2.pmtiles",
+    }
+}
+const bunsuireiLayer = {
+    id: "oh-bunsuirei",
+    type: "fill",
+    source: "bunsuirei-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-color': ['get', 'random_color']
+    },
+    filter: ['has', 'suikei']
+}
+const bunsuireiLayerLine = {
+    id: "oh-bunsuirei-line",
+    type: "line",
+    source: "bunsuirei-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            7, 0,
+            11, 0.5
+        ]
+    },
+    filter: ['has', 'suikei']
+}
+
+
 // // 地形分類テスト --------------------------------------------------------------------------------------------
 // const chikeibunruiSource2 = {
 //     id: "chikeibunrui-source", obj: {
@@ -6721,6 +6757,14 @@ const layers01 = [
                 layers: [ryuikiLayer]
             },
             {
+                id: 'oh-bunsuirei',
+                label: "河川と分水嶺",
+                sources: [bunsuireiSource,kasenSource],
+                layers: [bunsuireiLayer,bunsuireiLayerLine,kasenLayer,kasenLayerLabel],
+                attribution: "<a href='https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-W07.html' target='_blank'>国土数値情報</a>",
+                ext: {name:'extBunsuirei'}
+            },
+            {
                 id: 'oh-kasen',
                 label: "河川",
                 source: kasenSource,
@@ -6728,7 +6772,7 @@ const layers01 = [
             },
             {
                 id: 'oh-ryuiki',
-                label: "流域",
+                label: "流域（分水嶺）",
                 source: ryuikiSource2,
                 layers: [ryuikiLayer2,ryuikiLayerLine2],
                 attribution: "<a href='https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-W07.html' target='_blank'>国土数値情報</a>"
