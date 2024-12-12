@@ -5863,7 +5863,8 @@ const ryuikiLayer2 = {
     "source-layer": "polygon",
     paint: {
         'fill-color': ['get', 'random_color']
-    }
+    },
+    filter: ['has', 'suikei']
 }
 const ryuikiLayerLine2 = {
     id: "oh-ryuiki-line",
@@ -5880,6 +5881,7 @@ const ryuikiLayerLine2 = {
             11, 0.5
         ]
     },
+    filter: ['has', 'suikei']
 }
 // // 地形分類テスト --------------------------------------------------------------------------------------------
 // const chikeibunruiSource2 = {
@@ -6728,7 +6730,8 @@ const layers01 = [
                 id: 'oh-ryuiki',
                 label: "流域",
                 source: ryuikiSource2,
-                layers: [ryuikiLayer2,ryuikiLayerLine2]
+                layers: [ryuikiLayer2,ryuikiLayerLine2],
+                attribution: "<a href='https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-W07.html' target='_blank'>国土数値情報</a>"
             },
             // {
             //     id: 'oh-chikeibunrui',
