@@ -750,6 +750,7 @@ export default function pyramid () {
         mapElm.addEventListener('click', (e) => {
             if (e.target && (e.target.classList.contains("bunsuikai-btn"))) {
                 const map = store.state[mapName]
+                console.log(map.getFilter('oh-bunsuirei'))
                 if (map.getFilter('oh-bunsuirei') === undefined) {
                     const bunsuikai = e.target.getAttribute("bunsuikai")
                     if (bunsuikai !== 'undefined') {

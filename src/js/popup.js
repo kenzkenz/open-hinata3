@@ -2562,6 +2562,7 @@ export function popup(e,map,mapName,mapFlg) {
                     html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                     html +=
                         '<div class="bunsuirei" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:12px;">水系コード＝' +  props.W07_002 + '</span><br>' +
                         '<span style="font-size:20px;">水系名＝' +  props.suikei + '</span><br>' +
                         '<button style="margin-bottom: 10px;" class="bunsuikai-btn pyramid-btn" mapname="' + mapName + '" bunsuikai="' + props.W07_002 + '">分水界で抽出</button><br>' +
                         '</div>'

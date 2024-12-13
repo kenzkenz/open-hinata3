@@ -4,7 +4,7 @@
       <v-switch class="custom-switch" v-model="s_isPaintBunsuirei" @change="changePaint" label="塗りつぶし" color="primary" />
       <v-switch class="custom-switch" v-model="s_isKasen" @change="changePaint" label="河川" color="primary" />
       <br>
-      <v-text-field label="水系で抽出" v-model="s_suikeiText" @input="changePaint" style="margin-top: 10px"></v-text-field>
+      <v-text-field label="水系名、水系コードで抽出" v-model="s_suikeiText" @input="changePaint" style="margin-top: 10px"></v-text-field>
       <a href='https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-W07.html' target='_blank'>国土数値情報</a>    </div>
 </template>
 
@@ -13,7 +13,7 @@ export default {
   name: 'ext-bunsuirei',
   props: ['mapName','item'],
   data: () => ({
-    menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'}
+    menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text', 'font-size':'large'}
   }),
   computed: {
     s_extFire () {

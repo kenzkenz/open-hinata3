@@ -5853,7 +5853,7 @@ const sekibutsuLayer = {
 const ryuikiSource2 = {
     id: "ryuiki-source", obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/ryuiki/ryuiki2.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/ryuiki/ryuiki3.pmtiles",
     }
 }
 const ryuikiLayer2 = {
@@ -5887,7 +5887,7 @@ const ryuikiLayerLine2 = {
 const bunsuireiSource = {
     id: "bunsuirei-source", obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/ryuiki/ryuiki2.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/ryuiki/ryuiki3.pmtiles",
     }
 }
 const bunsuireiLayer = {
@@ -5898,7 +5898,7 @@ const bunsuireiLayer = {
     paint: {
         'fill-color': ['get', 'random_color']
     },
-    filter: ['has', 'suikei']
+    // filter: ['has', 'suikei']
 }
 const bunsuireiLayerLine = {
     id: "oh-bunsuirei-line",
@@ -5915,7 +5915,7 @@ const bunsuireiLayerLine = {
             11, 0.5
         ]
     },
-    filter: ['has', 'suikei']
+    // filter: ['has', 'suikei']
 }
 
 

@@ -331,38 +331,10 @@ tippecanoe -pk -pf -l polygon -f -o chiriin250m3.pmtiles chiriinban250mesh3.geoj
 
 tippecanoe -l polygon -f -o ryuiki.pmtiles merged_ryuiki.geojson
 tippecanoe -l polygon -f -o ryuiki2.pmtiles updated_merged_ryuiki.geojson
-
-//-----------------------------------
-# アクティブなレイヤーを取得
-layer = iface.activeLayer()
-
-# "random_color" フィールドが存在するか確認し、なければ追加
-if layer.fields().indexFromName("random_color") == -1:
-    layer.dataProvider().addAttributes([QgsField("random_color", QVariant.String)])
-    layer.updateFields()
-
-# ランダムな色を生成する関数（透明度を0.8に固定）
-def random_color():
-    r = random.randint(0, 255)
-    g = random.randint(0, 255)
-    b = random.randint(0, 255)
-    a = 0.8  # 透明度を0.8に固定
-    return f'rgba({r}, {g}, {b}, {a})'
-
-# 編集モードを開始
-layer.startEditing()
-
-# 各フィーチャにランダムな色を設定
-for feature in layer.getFeatures():
-    # ランダムな色を生成
-    color = random_color()
-
-    # "random_color" フィールドに値を設定
-    layer.changeAttributeValue(feature.id(), layer.fields().indexFromName("random_color"), color)
-
-# 変更を保存
-layer.commitChanges()
-
-print("ランダムな色が 'random_color' フィールドに設定されました。")
-//-----------------------------------
+tippecanoe -l polygon -f -o ryuiki3.pmtiles updated_merged_ryuiki_no_donuts.geojson
+tippecanoe -l polygon -f -o ryuiki3.pmtiles flattened_no_holes.geojson
+tippecanoe-decode ryuiki3.pmtiles -z 14 -Z 14 -c > output.geojson
+tippecanoe-decode ryuiki2.pmtiles -z 14 -Z 14 -c > output.geojson
+tippecanoe -l polygon -f -o ryuiki3.pmtiles no_holes.geojson
+tippecanoe -l polygon -f -o ryuiki3.pmtiles anaume.geojson
 
