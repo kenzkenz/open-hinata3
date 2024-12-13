@@ -95,7 +95,7 @@ export default {
           searchString = searchString.replace(/\u3000/g,' ').trim()
           const words = searchString.split(" ")
           // 複数フィールドを結合する
-          const combinedFields = ["concat", ["get", "suikei"], " ", ["get", "W05_004"]];
+          const combinedFields = ["concat", ["get", "suikei"], " ", ["get", "W05_004"], " ", ["get", "W07_002"], " ", ["get", "W05_001"]];
           // 各単語に対して、結合したフィールドに対する index-of チェックを実行
           const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);
           // いずれかの単語が含まれる場合の条件を作成 (OR条件)
@@ -136,6 +136,9 @@ export default {
     },
   },
   watch: {
+    s_suikeiText () {
+      this.changePaint(this.mapName)
+    },
     s_extFire () {
       this.changePaint(this.mapName)
     },

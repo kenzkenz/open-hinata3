@@ -748,6 +748,26 @@ export default function pyramid () {
         })
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("bunsuikai-btn"))) {
+                const map = store.state[mapName]
+                if (map.getFilter('oh-bunsuirei') === undefined) {
+                    const bunsuikai = e.target.getAttribute("bunsuikai")
+                    if (bunsuikai !== 'undefined') {
+                        map.setFilter('oh-bunsuirei', ['==', ['get', 'W07_002'], bunsuikai])
+                        map.setFilter('oh-kasen', ['==', ['get', 'W05_001'], bunsuikai])
+                        map.setFilter('oh-kasen-label', ['==', ['get', 'W05_001'], bunsuikai])
+                        store.state.suikeiText[mapName] = bunsuikai
+                    }
+                } else {
+                    map.setFilter('oh-bunsuirei', null)
+                    map.setFilter('oh-kasen', null)
+                    map.setFilter('oh-kasen-label', null)
+                    store.state.suikeiText[mapName] = ''
+                }
+            }
+        })
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', (e) => {
             if (e.target && (e.target.classList.contains("mura-name"))) {
                 const map = store.state[mapName]
                 if (map.getFilter('oh-mura') === undefined) {

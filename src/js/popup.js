@@ -1947,7 +1947,7 @@ export function popup(e,map,mapName,mapFlg) {
                         '<div class="kasen" font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size:20px;">河川名＝' + props.W05_004 + '</span><hr>' +
                         '<span style="font-size:16px;">水系名＝' + props.suikei + '</span><br>' +
-                        '<button style="margin-bottom: 10px;" class="kasen-suikei pyramid-btn" mapname="' + mapName + '" suikei="' + props.suikei + '">水系で抽出</button><br>' +
+                        // '<button style="margin-bottom: 10px;" class="kasen-suikei pyramid-btn" mapname="' + mapName + '" suikei="' + props.suikei + '">水系で抽出</button><br>' +
                         '</div>'
                 }
                 break
@@ -2525,7 +2525,6 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
-            case 'oh-bunsuirei':
             case 'oh-ryuiki':
             {
                 let features = map.queryRenderedFeatures(
@@ -2543,6 +2542,28 @@ export function popup(e,map,mapName,mapFlg) {
                     html +=
                         '<div class="ryuiki" font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size:20px;">水系名＝' +  props.suikei + '</span><br>' +
+                        '</div>'
+                }
+                break
+            }
+            case 'oh-bunsuirei':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                if (html.indexOf('bunsuirei') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="bunsuirei" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">水系名＝' +  props.suikei + '</span><br>' +
+                        '<button style="margin-bottom: 10px;" class="bunsuikai-btn pyramid-btn" mapname="' + mapName + '" bunsuikai="' + props.W07_002 + '">分水界で抽出</button><br>' +
                         '</div>'
                 }
                 break
