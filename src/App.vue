@@ -1179,7 +1179,8 @@ export default {
     }, { passive: false });
     //------------------------------------------------------------------------------------------------------------------
     const params = new URLSearchParams(window.location.search)
-    const urlid = params.get('s')
+    let urlid = params.get('s')
+    if (urlid === 'jIdukg') urlid = '2O65Hr' //以前のリンクを活かす
     axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrlSelect.php',{
       params: {
         urlid: urlid

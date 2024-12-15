@@ -153,6 +153,10 @@ export default createStore({
       map01: '',
       map02: ''
     },
+    kasenMei:{
+      map01: '',
+      map02: ''
+    },
     //------------------------
   },
   getters: {
@@ -251,6 +255,8 @@ export default createStore({
               variable = 'suikeiText'
             } else if (payload.order === 3){
               variable = 'kasenCode'
+            } else if (payload.order === 4){
+              variable = 'kasenMei'
             }
             break
         }

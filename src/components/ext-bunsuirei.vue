@@ -63,6 +63,14 @@ export default {
         this.$store.state.kasenCode[this.mapName] = value
       }
     },
+    s_kasenMei: {
+      get() {
+        return this.$store.state.kasenMei[this.mapName]
+      },
+      set(value) {
+        this.$store.state.kasenMei[this.mapName] = value
+      }
+    },
   },
   methods: {
     update () {
@@ -70,7 +78,8 @@ export default {
           this.s_isPaintBunsuirei,
           this.s_isKasen,
           this.s_suikeiText,
-          this.s_kasenCode
+          this.s_kasenCode,
+          this.s_kasenMei
         ]})
     },
     changePaint () {
@@ -159,7 +168,8 @@ export default {
       if (this.s_kasenCode) {
         map.setPaintProperty('oh-kasen', 'line-color', [
           'case',
-          ['==', ['get', 'W05_002'], this.s_kasenCode],
+          // ['==', ['get', 'W05_002'], this.s_kasenCode],
+          ['all', ['==', ['get', 'W05_002'], this.s_kasenCode], ['==', ['get', 'W05_004'], this.s_kasenMei]],
           'red',
           'blue'
         ])
@@ -170,6 +180,9 @@ export default {
     },
   },
   watch: {
+    s_kasenMei () {
+      this.changePaint()
+    },
     s_kasenCode () {
       this.changePaint()
     },

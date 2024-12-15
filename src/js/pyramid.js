@@ -762,15 +762,18 @@ export default function pyramid () {
                     store.state.kasenCode[mapName] = null
                     return
                 }
+
                 kasen = e.target.getAttribute("kasen")
+                const kasenmei = e.target.getAttribute("kasenmei")
                 if (kasen) {
                     map.setPaintProperty('oh-kasen', 'line-color', [
                         'case',
-                        ['==', ['get', 'W05_002'], kasen],
+                        ['all', ['==', ['get', 'W05_002'], kasen], ['==', ['get', 'W05_004'], kasenmei]],
                         'red',
                         'blue'
                     ])
                     store.state.kasenCode[mapName] = kasen
+                    store.state.kasenMei[mapName] = kasenmei
                 }
             }
         })
