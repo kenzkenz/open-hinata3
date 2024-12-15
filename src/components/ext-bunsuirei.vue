@@ -55,13 +55,22 @@ export default {
         this.$store.state.suikeiText[this.mapName] = value
       }
     },
+    s_kasenCode: {
+      get() {
+        return this.$store.state.kasenCode[this.mapName]
+      },
+      set(value) {
+        this.$store.state.kasenCode[this.mapName] = value
+      }
+    },
   },
   methods: {
     update () {
       this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [
           this.s_isPaintBunsuirei,
           this.s_isKasen,
-          this.s_suikeiText
+          this.s_suikeiText,
+          this.s_kasenCode
         ]})
     },
     changePaint () {
@@ -146,15 +155,29 @@ export default {
         }
       }
       filterBy(this.s_suikeiText)
+      // -------------------------------------------------------------------
+      if (this.s_kasenCode) {
+        map.setPaintProperty('oh-kasen', 'line-color', [
+          'case',
+          ['==', ['get', 'W05_002'], this.s_kasenCode],
+          'red',
+          'blue'
+        ])
+      } else {
+        map.setPaintProperty('oh-kasen', 'line-color','blue')
+      }
       this.update()
     },
   },
   watch: {
+    s_kasenCode () {
+      this.changePaint()
+    },
     s_suikeiText () {
-      this.changePaint(this.mapName)
+      this.changePaint()
     },
     s_extFire () {
-      this.changePaint(this.mapName)
+      this.changePaint()
     },
   }
 }

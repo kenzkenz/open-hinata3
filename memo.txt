@@ -337,6 +337,7 @@ tippecanoe-decode ryuiki3.pmtiles -z 14 -Z 14 -c > output.geojson
 tippecanoe-decode ryuiki2.pmtiles -z 14 -Z 14 -c > output.geojson
 tippecanoe -l polygon -f -o ryuiki3.pmtiles no_holes.geojson
 tippecanoe -l polygon -f -o ryuiki3.pmtiles anaume.geojson
-tippecanoe -l polygon -f -o ryuiki4.pmtiles anaume_dissolved_largest_length.geojson　//これが最終。
-tippecanoe -l polygon -f -o ryuiki5.pmtiles smoothed_final.geojson
-tippecanoe -l polygon -f -o ryuiki5.pmtiles anaume4.geojson
+tippecanoe -l polygon -f -o ryuiki4.pmtiles anaume_dissolved_largest_length.geojson　//これがマップシェイプする前。
+tippecanoe -l polygon -f -o ryuiki5.pmtiles anaume4.geojson　//これが最終。
+
+tippecanoe -pk -pf -l line -f -o kasen3.pmtiles kasenline4_with_totallength.geojson

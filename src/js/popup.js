@@ -1928,30 +1928,6 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
-            case 'oh-kasen-label':
-            case 'oh-kasen': {
-                let features = map.queryRenderedFeatures(
-                    map.project(coordinates), {layers: [layerId]}
-                )
-                if (features.length === 0) {
-                    features = map.queryRenderedFeatures(
-                        map.project(e.lngLat), {layers: [layerId]}
-                    )
-                }
-                console.log(coordinates)
-                props = features[0].properties
-                // const name = props.G08_002
-                if (html.indexOf('kasen') === -1) {
-                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
-                    html +=
-                        '<div class="kasen" font-weight: normal; color: #333;line-height: 25px;">' +
-                        '<span style="font-size:20px;">河川名＝' + props.W05_004 + '</span><hr>' +
-                        '<span style="font-size:16px;">水系名＝' + props.suikei + '</span><br>' +
-                        // '<button style="margin-bottom: 10px;" class="kasen-suikei pyramid-btn" mapname="' + mapName + '" suikei="' + props.suikei + '">水系で抽出</button><br>' +
-                        '</div>'
-                }
-                break
-            }
             case 'oh-hifuku': {
                 let features = map.queryRenderedFeatures(
                     map.project(coordinates), {layers: [layerId]}
@@ -2566,6 +2542,39 @@ export function popup(e,map,mapName,mapFlg) {
                         '<span style="font-size:14px;">水系コード＝' +  props.W07_002 + '</span><br>' +
                         '<span style="font-size:14px;">面積＝' +  props.area + 'km2</span><br>' +
                         '<button style="margin-bottom: 10px;" class="bunsuikai-btn pyramid-btn" mapname="' + mapName + '" bunsuikai="' + props.W07_002 + '">分水界で抽出</button><br>' +
+                        '</div>'
+                }
+                break
+            }
+            case 'oh-kasen-label':
+            case 'oh-kasen':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                // const name = props.G08_002
+                let totalLength = ''
+                if (props.W05_004 !== '名称不明') {
+                    totalLength = '<span style="font-size:16px;">全長＝' + (props.totallength/1000).toFixed(2) + 'km</span><br>'
+                }
+                if (props.W05_002.endsWith('0000')) {
+                    totalLength = '<span style="font-size:16px;">全長＝' + (props.length/1000).toFixed(2) + 'km</span><br>'
+                }
+                if (html.indexOf('kasen') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="kasen" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">河川名＝' + props.W05_004 + '</span><hr>' +
+                        '<span style="font-size:16px;">水系名＝' + props.suikei + '</span><br>' +
+                        totalLength +
+                        '<button style="margin-bottom: 10px;" class="kasen-highlights pyramid-btn" mapname="' + mapName + '" kasen="' + props.W05_002 + '" kasenmei="' + props.W05_004 + '">河川を強調</button><br>' +
                         '</div>'
                 }
                 break

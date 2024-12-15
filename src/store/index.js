@@ -149,6 +149,10 @@ export default createStore({
       map01: '',
       map02: ''
     },
+    kasenCode:{
+      map01: '',
+      map02: ''
+    },
     //------------------------
   },
   getters: {
@@ -245,12 +249,13 @@ export default createStore({
               variable = 'isKasen'
             } else if (payload.order === 2){
               variable = 'suikeiText'
+            } else if (payload.order === 3){
+              variable = 'kasenCode'
             }
             break
         }
         console.log(payload.mapName,payload.name,payload.value,variable)
         state[variable][payload.mapName] = payload.value
-        // state.extFire = !state.extFire
         setTimeout(() => {
           state.extFire = !state.extFire
         },10)

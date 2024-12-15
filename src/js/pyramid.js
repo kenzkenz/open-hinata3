@@ -1,6 +1,7 @@
 import store from '@/store'
 import axios from "axios"
-export let currentIndex = 0;
+export let currentIndex = 0
+let kasen
 export default function pyramid () {
     ['map01','map02'].forEach(mapName => {
         const mapElm = document.querySelector('#' + mapName)
@@ -743,6 +744,33 @@ export default function pyramid () {
                 } else {
                     map.setFilter('oh-kasen', null)
                     map.setFilter('oh-kasen-label', null)
+                }
+            }
+        })
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("kasen-highlights"))) {
+                const map = store.state[mapName]
+                if (e.target.getAttribute("kasenmei") === '名称不明') {
+                    alert('名称不明の河川は強調できません。')
+                    return
+                }
+
+                if (kasen === e.target.getAttribute("kasen")) {
+                    map.setPaintProperty('oh-kasen', 'line-color','blue')
+                    kasen = null
+                    store.state.kasenCode[mapName] = null
+                    return
+                }
+                kasen = e.target.getAttribute("kasen")
+                if (kasen) {
+                    map.setPaintProperty('oh-kasen', 'line-color', [
+                        'case',
+                        ['==', ['get', 'W05_002'], kasen],
+                        'red',
+                        'blue'
+                    ])
+                    store.state.kasenCode[mapName] = kasen
                 }
             }
         })
