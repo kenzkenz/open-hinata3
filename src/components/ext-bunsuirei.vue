@@ -69,9 +69,11 @@ export default {
       const map = this.$store.state[this.mapName]
       if (!this.s_isPaintBunsuirei) {
         map.setPaintProperty('oh-bunsuirei', 'fill-color', 'rgba(0, 0, 0, 0)')
+        map.setPaintProperty("oh-bunsuirei-line", "line-color", 'red')
         map.setPaintProperty("oh-bunsuirei-line", "line-width", 4)
       } else {
         map.setPaintProperty('oh-bunsuirei', 'fill-color', ['get', 'random_color'])
+        map.setPaintProperty("oh-bunsuirei-line", "line-color", 'black')
         map.setPaintProperty("oh-bunsuirei-line", "line-width", [
           'interpolate',
           ['linear'],
@@ -100,6 +102,14 @@ export default {
           const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);
           // いずれかの単語が含まれる場合の条件を作成 (OR条件)
           const matchCondition = ["any", ...filterConditions]
+
+          // 複数フィールドを結合する
+          const combinedFields1 = ["concat", ["get", "W05_004"]];
+          // 各単語に対して、結合したフィールドに対する index-of チェックを実行
+          const filterConditions1 = words.map(word => [">=", ["index-of", word, combinedFields1], 0]);
+          // いずれかの単語が含まれる場合の条件を作成 (OR条件)
+          const matchCondition1 = ["any", ...filterConditions1]
+
           console.log(matchCondition)
           map.setFilter('oh-bunsuirei', matchCondition)
           map.setFilter('oh-bunsuirei-line', matchCondition)
@@ -109,22 +119,26 @@ export default {
             map.setFilter("oh-kasen", ['==', 'nonexistent-field', true])
             map.setFilter("oh-kasen-label", ['==', 'nonexistent-field', true])
           } else {
+            // alert()
             map.setFilter("oh-kasen", [
               'all',
               ['==', 'nonexistent-field', true],
-              matchCondition
+              matchCondition1
             ])
             map.setFilter("oh-kasen-label", [
               'all',
-              ['==', 'nonexistent-field', true],
-              matchCondition
+              ['!=', 'W05_004', '名称不明'], // W05_004 が "名称不明" ではない
+              [
+                'any', // OR 条件
+                matchCondition1
+              ]
             ])
           }
         } else {
           map.setFilter('oh-bunsuirei', null)
           map.setFilter('oh-bunsuirei-line', null)
           map.setFilter('oh-kasen', null)
-          map.setFilter('oh-kasen-label', null)
+          map.setFilter('oh-kasen-label', ['!=', 'W05_004', '名称不明'])
           if (!vm.s_isKasen) {
             map.setFilter("oh-kasen", ['==', 'nonexistent-field', true])
             map.setFilter("oh-kasen-label", ['==', 'nonexistent-field', true])

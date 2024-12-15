@@ -1,5 +1,5 @@
 <template>
-  <div :id="'dialog-div-' + dialog.name + '-' + mapName" class="dialog-div" ref="dragDiv" @mousedown="dialogMouseDown" :style="this.dialog.style">
+  <div :id="'dialog-div-' +  dialog.name + '-' + mapName" class="dialog-div" ref="dragDiv" @mousedown="dialogMouseDown" :style="this.dialog.style">
     <div class="drag-handle" :id="id" ref="dragHandle">
     </div>
     <div>
@@ -158,6 +158,8 @@ export default {
   -ms-user-select: none;
   user-select: none;
   /*width: 300px;*/
+  touch-action: auto; /* タッチイベントを有効化 */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* スマホ用のスタイル */

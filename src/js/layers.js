@@ -2941,28 +2941,66 @@ const kasenLayer = {
     type: "line",
     source: "kasenSource",
     "source-layer": "line",
-    // filter: ['has', 'suikei'], // 'suikei' フィールドが存在する場合のみ表示
     paint: {
-        // 'line-color':["match", ["get", "W05_001"], ...colorMap],
         'line-color': 'blue',
-        // 'line-color': ['get', 'random_color'],
         'line-width': [
-            'interpolate', // Zoom-based interpolation
+            'interpolate',
             ['linear'],
-            ['zoom'], // Use the zoom level as the input
-            1, 0.1,
-            4, 0.2,
-            6, 0.5,
-            8, 0.7,
-            11, 1.0,
-            12, 1.5,
-            14, 2,
-            16, 3,
-            18, 6,
-            30, 10,
+            ['zoom'],
+            1, [
+                '*',
+                0.1,
+                ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+            ],
+            11, [
+                '*',
+                1,
+                ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+            ],
+            12, [
+                '*',
+                2,
+                ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+            ],
+            14, [
+                '*',
+                3,
+                ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+            ],
+            16, [
+                '*',
+                5,
+                ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+            ],
         ]
     },
-}
+};
+const kasenGlowLayer = {
+    id: "oh-kasen-glow",
+    type: "line",
+    source: "kasenSource",
+    "source-layer": "line",
+    paint: {
+        'line-color': 'rgba(0, 0, 255, 0.3)', // Outer glow color
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            1, 1,
+            18, 20
+        ],
+        'line-blur': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            1, 2,
+            18, 7
+        ]
+    },
+    layout: {
+        'visibility': 'visible'
+    }
+};
 const kasenLayerLabel = {
     id: "oh-kasen-label",
     type: "symbol",
@@ -2983,7 +3021,8 @@ const kasenLayerLabel = {
         'text-halo-color': 'rgba(255,255,255,1)',
         'text-halo-width': 1.0,
     },
-    'minzoom': 12
+    'minzoom': 12,
+    filter: ['!=', 'W05_004', '名称不明'],
 }
 // ---------------------------------------------------------------------------------------------------------------------
 // 災害伝承碑
@@ -5853,7 +5892,7 @@ const sekibutsuLayer = {
 const ryuikiSource2 = {
     id: "ryuiki-source", obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/ryuiki/ryuiki3.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/ryuiki/ryuiki5.pmtiles",
     }
 }
 const ryuikiLayer2 = {
@@ -5887,7 +5926,7 @@ const ryuikiLayerLine2 = {
 const bunsuireiSource = {
     id: "bunsuirei-source", obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/ryuiki/ryuiki3.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/ryuiki/ryuiki5.pmtiles",
     }
 }
 const bunsuireiLayer = {
@@ -6748,13 +6787,15 @@ const layers01 = [
                 id: 'oh-kawadak',
                 label: "川だけ地形地図",
                 source: kawadakeSource,
-                layers: [kawddakeLayer]
+                layers: [kawddakeLayer],
+                attribution: "<a href='https://www.gridscapes.net/#AllRiversAllLakesTopography' target='_blank'>川だけ地形地図</a>",
             },
             {
                 id: 'oh-ryuiki',
                 label: "川と流域地図",
                 source: ryuikiSource,
-                layers: [ryuikiLayer]
+                layers: [ryuikiLayer],
+                attribution: "<a href='https://tiles.dammaps.jp/ryuiki/' target='_blank'>川と流域地図</a>",
             },
             {
                 id: 'oh-bunsuirei',

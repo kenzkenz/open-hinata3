@@ -559,6 +559,7 @@ export default {
     init() {
       let protocol = new Protocol();
       maplibregl.addProtocol("pmtiles",protocol.tile)
+      // protocol.setCacheSize(50) // タイルキャッシュサイズを設定（単位: タイル数）
       const params = this.parseUrlParams()
       this.mapNames.forEach(mapName => {
 
@@ -612,7 +613,7 @@ export default {
           zoom: zoom,
           pitch: pitch[mapName],
           bearing:bearing,
-          maxPitch: 85, // 最大の傾き、デフォルトは60
+          maxPitch: 85, // 最大の傾き85、デフォルトは60
           attributionControl: false,
           // style: 'https://raw.githubusercontent.com/gsi-cyberjapan/optimal_bvmap/52ba56f645334c979998b730477b2072c7418b94/style/std.json',
           // style:require('@/assets/json/std.json')
@@ -1412,8 +1413,9 @@ export default {
 
 <style>
 html, body {
-  overscroll-behavior: none;
-  touch-action: manipulation;
+  /*overscroll-behavior: none;*/
+  /*touch-action: manipulation;*/
+  -webkit-overflow-scrolling: touch;
 }
 .maplibregl-popup-content {
   padding: 10px 20px 10px 20px;
