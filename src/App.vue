@@ -557,6 +557,30 @@ export default {
       return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj}// 以前のリンクをいかすためpitchを入れている。
     },
     init() {
+
+      const scrollable = document.querySelector('.scrollable-content');
+      let startY;
+      scrollable.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].clientY; // タッチ開始位置を記録
+      });
+      scrollable.addEventListener('touchmove', (e) => {
+        const moveY = e.touches[0].clientY;
+        const deltaY = startY - moveY; // 移動量を計算
+
+        scrollable.scrollTop += deltaY; // スクロール位置を更新
+        startY = moveY; // タッチ位置を更新
+
+        e.preventDefault(); // デフォルト動作を無効化
+      }, { passive: false });
+
+      //
+      //
+      //
+      // document.addEventListener('touchmove', (e) => {
+      //   console.log('Touchmove detected on:', e.target);
+      // }, { passive: false });
+
+
       let protocol = new Protocol();
       maplibregl.addProtocol("pmtiles",protocol.tile)
       // protocol.setCacheSize(50) // タイルキャッシュサイズを設定（単位: タイル数）
@@ -1417,6 +1441,10 @@ html, body {
   /*overscroll-behavior: none;*/
   /*touch-action: manipulation;*/
   -webkit-overflow-scrolling: touch;
+  height: 100%;
+}
+#app {
+  height: 100%; /* 親要素が100%の高さを持つ */
 }
 .maplibregl-popup-content {
   padding: 10px 20px 10px 20px;

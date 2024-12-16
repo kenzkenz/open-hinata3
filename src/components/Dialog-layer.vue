@@ -33,7 +33,7 @@
 
       <div :id="'center-div-' + mapName" class="center-div"></div>
 
-      <div :id="'second-div-' + mapName" :style="s_secondDivStyle" class="second-div">
+      <div :id="'second-div-' + mapName" :style="s_secondDivStyle" class="second-div scrollable-content">
         <v-text-field label="地図抽出" v-model="searchText" style="margin-top: 10px"></v-text-field>
         <Tree
             :nodes="layers"
@@ -73,7 +73,7 @@ export default {
       map02:[]
     },
     layers:[],
-    menuContentSize: {'height': '600px','margin': '10px', 'user-select': 'text','overflow-y': 'auto'},
+    menuContentSize: {'height': 'auto','margin': '10px', 'user-select': 'text','overflow-y': 'auto'},
     // secondDivStyle: {'height': '390px', 'overflow': 'auto', 'user-select': 'text'},
   }),
   computed: {
@@ -468,6 +468,7 @@ export default {
     }
   },
   mounted() {
+
     // ----------------------------------------------------------------------------------------------------------------
     this.layers = Layers.layers[this.mapName];
     // ----------------------------------------------------
@@ -475,6 +476,8 @@ export default {
     const topDiv = document.getElementById('first-div-' + this.mapName);
     // const bottomDiv = document.getElementById('second-div-' + this.mapName);
     const container = document.getElementById('container-div-' + this.mapName);
+
+
 
     let isDragging = false;
 
