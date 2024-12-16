@@ -758,6 +758,42 @@ export default function pyramid () {
 
                 if (kasen === e.target.getAttribute("kasen")) {
                     map.setPaintProperty('oh-kasen', 'line-color','blue')
+
+                    map.setPaintProperty('oh-kasen', 'line-width', [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        1,
+                        [
+                            '*',
+                            0.1,
+                            ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+                        ],
+                        11,
+                        [
+                            '*',
+                            1,
+                            ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+                        ],
+                        12,
+                        [
+                            '*',
+                            2,
+                            ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+                        ],
+                        14,
+                        [
+                            '*',
+                            3,
+                            ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+                        ],
+                        16,
+                        [
+                            '*',
+                            5,
+                            ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+                        ]
+                    ]);
                     kasen = null
                     store.state.kasenCode[mapName] = null
                     return
@@ -772,6 +808,62 @@ export default function pyramid () {
                         'red',
                         'blue'
                     ])
+
+                    map.setPaintProperty('oh-kasen', 'line-width', [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        1, [
+                            'case',
+                            ['all', ['==', ['get', 'W05_002'], kasen], ['==', ['get', 'W05_004'], kasenmei]],
+                            5, // 条件が一致する場合の固定値
+                            [
+                                '*',
+                                0.1,
+                                ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+                            ]
+                        ],
+                        11, [
+                            'case',
+                            ['all', ['==', ['get', 'W05_002'], kasen], ['==', ['get', 'W05_004'], kasenmei]],
+                            5,
+                            [
+                                '*',
+                                1,
+                                ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+                            ]
+                        ],
+                        12, [
+                            'case',
+                            ['all', ['==', ['get', 'W05_002'], kasen], ['==', ['get', 'W05_004'], kasenmei]],
+                            5,
+                            [
+                                '*',
+                                2,
+                                ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+                            ]
+                        ],
+                        14, [
+                            'case',
+                            ['all', ['==', ['get', 'W05_002'], kasen], ['==', ['get', 'W05_004'], kasenmei]],
+                            5,
+                            [
+                                '*',
+                                3,
+                                ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+                            ]
+                        ],
+                        16, [
+                            'case',
+                            ['all', ['==', ['get', 'W05_002'], kasen], ['==', ['get', 'W05_004'], kasenmei]],
+                            5,
+                            [
+                                '*',
+                                5,
+                                ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+                            ]
+                        ]
+                    ]);
                     store.state.kasenCode[mapName] = kasen
                     store.state.kasenMei[mapName] = kasenmei
                 }

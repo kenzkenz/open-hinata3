@@ -172,6 +172,63 @@ export default {
           'red',
           'blue'
         ])
+
+        map.setPaintProperty('oh-kasen', 'line-width', [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          1, [
+            'case',
+            ['all', ['==', ['get', 'W05_002'], this.s_kasenCode], ['==', ['get', 'W05_004'], this.s_kasenMei]],
+            5, // 条件が一致する場合の固定値
+            [
+              '*',
+              0.1,
+              ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+            ]
+          ],
+          11, [
+            'case',
+            ['all', ['==', ['get', 'W05_002'], this.s_kasenCode], ['==', ['get', 'W05_004'], this.s_kasenMei]],
+            5,
+            [
+              '*',
+              1,
+              ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+            ]
+          ],
+          12, [
+            'case',
+            ['all', ['==', ['get', 'W05_002'], this.s_kasenCode], ['==', ['get', 'W05_004'], this.s_kasenMei]],
+            5,
+            [
+              '*',
+              2,
+              ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+            ]
+          ],
+          14, [
+            'case',
+            ['all', ['==', ['get', 'W05_002'], this.s_kasenCode], ['==', ['get', 'W05_004'], this.s_kasenMei]],
+            5,
+            [
+              '*',
+              3,
+              ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+            ]
+          ],
+          16, [
+            'case',
+            ['all', ['==', ['get', 'W05_002'], this.s_kasenCode], ['==', ['get', 'W05_004'], this.s_kasenMei]],
+            5,
+            [
+              '*',
+              5,
+              ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+            ]
+          ]
+        ]);
+
       } else {
         map.setPaintProperty('oh-kasen', 'line-color','blue')
       }
