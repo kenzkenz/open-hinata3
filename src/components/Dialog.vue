@@ -159,7 +159,7 @@ export default {
   user-select: none;
   /*width: 300px;*/
   touch-action: auto; /* タッチイベントを有効化 */
-  height: 100px;
+  height: 600px;
   -webkit-overflow-scrolling: touch;
 }
 

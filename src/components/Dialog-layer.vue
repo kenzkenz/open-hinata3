@@ -1,6 +1,6 @@
 <template>
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
-    <div :id="'container-div-' + mapName" :style="menuContentSize">
+    <div :id="'container-div-' + mapName" :style="menuContentSize" class="container-div">
       <div :id="'first-div-' + mapName" class="first-div">
         <draggable @start="onStart" @end="onEnd" v-model="s_selectedLayers[mapName]" item-key="id" handle=".handle-div">
           <template #item="{element}">
@@ -55,7 +55,6 @@ import "vue3-tree/dist/style.css"
 import draggable from "vuedraggable"
 import mw5 from '@/js/mw5'
 import * as turf from '@turf/turf'
-// import {stdLayer, stdSource} from "@/js/layers";
 
 export default {
   name: 'Dialog-layer',
@@ -469,54 +468,63 @@ export default {
   },
   mounted() {
 
+    if (window.innerWidth > 480) {
+      this.menuContentSize.height = '600px'
+    } else {
+      this.menuContentSize.height = 'auto'
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     this.layers = Layers.layers[this.mapName];
     // ----------------------------------------------------
-    const handle = document.getElementById('center-div-' + this.mapName);
-    const topDiv = document.getElementById('first-div-' + this.mapName);
-    // const bottomDiv = document.getElementById('second-div-' + this.mapName);
-    const container = document.getElementById('container-div-' + this.mapName);
 
+    if (window.innerWidth > 480) {
 
+      const handle = document.getElementById('center-div-' + this.mapName);
+      const topDiv = document.getElementById('first-div-' + this.mapName);
+      // const bottomDiv = document.getElementById('second-div-' + this.mapName);
+      const container = document.getElementById('container-div-' + this.mapName);
 
-    let isDragging = false;
+      let isDragging = false;
 
-    // マウスおよびタッチイベントの開始
-    const startDrag = () => {
-      isDragging = true;
-    };
+      // マウスおよびタッチイベントの開始
+      const startDrag = () => {
+        isDragging = true;
+      };
 
-    const endDrag = () => {
-      if (isDragging) {
-        isDragging = false;
-      }
-    };
+      const endDrag = () => {
+        if (isDragging) {
+          isDragging = false;
+        }
+      };
 
-    // マウスおよびタッチイベントの動作
-    const dragMove = (clientY) => {
-      if (!isDragging) return;
-      const containerRect = container.getBoundingClientRect();
-      const topHeight = clientY - containerRect.top;
-      const bottomHeight = containerRect.height - topHeight - handle.offsetHeight;
-      if (topHeight > 0 && bottomHeight > 0) {
-        topDiv.style.height = `${topHeight - 8}px`
-        this.s_secondDivStyle.height = `${bottomHeight - 8}px`
-      }
-    };
+      // マウスおよびタッチイベントの動作
+      const dragMove = (clientY) => {
+        if (!isDragging) return;
+        const containerRect = container.getBoundingClientRect();
+        const topHeight = clientY - containerRect.top;
+        const bottomHeight = containerRect.height - topHeight - handle.offsetHeight;
+        if (topHeight > 0 && bottomHeight > 0) {
+          topDiv.style.height = `${topHeight - 8}px`
+          this.s_secondDivStyle.height = `${bottomHeight - 8}px`
+        }
+      };
 
-    // マウスイベントのリスナー
-    handle.addEventListener('mousedown', startDrag);
-    document.addEventListener('mouseup', endDrag);
-    document.addEventListener('mousemove', (e) => dragMove(e.clientY));
+      // マウスイベントのリスナー
+      handle.addEventListener('mousedown', startDrag);
+      document.addEventListener('mouseup', endDrag);
+      document.addEventListener('mousemove', (e) => dragMove(e.clientY));
 
-    // タッチイベントのリスナー
-    handle.addEventListener('touchstart', startDrag);
-    document.addEventListener('touchend', endDrag);
-    document.addEventListener('touchmove', (e) => {
-      if (e.touches.length > 0) {
-        dragMove(e.touches[0].clientY);
-      }
-    });
+      // タッチイベントのリスナー
+      handle.addEventListener('touchstart', startDrag);
+      document.addEventListener('touchend', endDrag);
+      document.addEventListener('touchmove', (e) => {
+        if (e.touches.length > 0) {
+          dragMove(e.touches[0].clientY);
+        }
+      });
+    }
+
   },
   watch: {
     s_lngRange: {
@@ -750,5 +758,14 @@ input[type=range]:focus::-ms-fill-upper {
   background: #B6B6B6;
 }
 /*スライダーここまで*/
+
+/* スマホ用のスタイル */
+/*@media screen and (max-width: 768px) {*/
+/*  .container-div {*/
+/*    height: 100px;*/
+/*  }*/
+/*}*/
+
+
 </style>
 

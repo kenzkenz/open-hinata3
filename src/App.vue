@@ -1592,35 +1592,4 @@ font {
   width: 18px;  /* スイッチの丸部分の幅 */
 }
 
-
-
-
-
-#container-div-map01 {
-  position: relative;
-  overflow: hidden; /* 子要素がはみ出さないように */
-}
-
-#first-div-map01,
-#second-div-map01 {
-  overflow: auto; /* コンテンツをスクロール可能に */
-  min-height: 50px; /* 最小高さを指定 */
-}
-
-#center-div-map01 {
-  height: 8px; /* ドラッグバーの高さ */
-  background-color: gray; /* 見やすい色 */
-  cursor: row-resize; /* マウスカーソルを変更 */
-}
-
-
-
-
-
-
-
-
-
-
-
 </style>
