@@ -137,7 +137,6 @@ export default {
             map.setFilter("oh-kasen", ['==', 'nonexistent-field', true])
             map.setFilter("oh-kasen-label", ['==', 'nonexistent-field', true])
           } else {
-            // alert()
             map.setFilter("oh-kasen", [
               'all',
               ['==', 'nonexistent-field', true],
