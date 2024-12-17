@@ -3,7 +3,7 @@
       <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
       <v-switch class="custom-switch" v-model="s_isPaintCity" @change="changePaint" label="塗りつぶし" color="primary" />
       <br>
-<!--      <v-text-field label="水系名、水系コードで抽出" v-model="s_suikeiText" @input="changePaint" style="margin-top: 10px"></v-text-field>-->
+      <v-text-field label="抽出" v-model="s_cityText" @input="changePaint" style="margin-top: 10px"></v-text-field>
       <div v-html="item.attribution"></div>
     </div>
 </template>
@@ -33,23 +33,25 @@ export default {
         return this.$store.state.isPaintCity[this.mapName][this.item.id.split('-')[2]] = value
       }
     },
-    s_suikeiText: {
+    s_cityText: {
       get() {
-        return this.$store.state.suikeiText[this.mapName]
+        return this.$store.state.cityText[this.mapName][this.item.id.split('-')[2]]
       },
       set(value) {
-        this.$store.state.suikeiText[this.mapName] = value
+        this.$store.state.cityText[this.mapName][this.item.id.split('-')[2]] = value
       }
     },
   },
   methods: {
     update () {
       this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [
-          this.s_isPaintCity
+          this.s_isPaintCity,
+          this.s_cityText
         ]})
     },
     changePaint () {
       console.log(this.item)
+      const vm = this
       const map = this.$store.state[this.mapName]
       if (!this.s_isPaintCity) {
         map.setPaintProperty(this.item.id, 'fill-color', 'rgba(0, 0, 0, 0)')
@@ -72,6 +74,29 @@ export default {
           11, 0.5
         ]);
       }
+      //-------------------------------------------------------------------------
+      function filterBy(text) {
+        if (text) {
+          let searchString = text
+          searchString = searchString.replace(/\u3000/g,' ').trim()
+          const words = searchString.split(" ")
+          // 複数フィールドを結合する
+         const combinedFields = ["concat", ["get", "N03_001"], " ", ["get", "N03_003"], " ", ["get", "N03_004"], " ", ["get", "よみ"],
+           " ", ["get", "GUN"], " ", ["get", "KUNI"], " ", ["get", "PREF"]];
+          // 各単語に対して、結合したフィールドに対する index-of チェックを実行
+          const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);
+          // いずれかの単語が含まれる場合の条件を作成 (OR条件)
+          const matchCondition = ["any", ...filterConditions]
+          map.setFilter(vm.item.id, matchCondition)
+          map.setFilter(vm.item.id + '-line', matchCondition)
+          map.setFilter(vm.item.id + '-label', matchCondition)
+        } else {
+          map.setFilter(vm.item.id, null)
+          map.setFilter(vm.item.id + '-line', null)
+          map.setFilter(vm.item.id + '-label', null)
+        }
+      }
+      filterBy(this.s_cityText)
       this.update()
     },
   },

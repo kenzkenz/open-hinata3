@@ -6164,7 +6164,7 @@ const layers01 = [
         nodes: [
             {
                 id: 'oh-mw5',
-                label: "戦前の旧版地形図（５万分の1）",
+                label: "戦前の地形図(5万分の1:S8年頃)",
                 sources: [mw5DummySource,mw5CenterSource],
                 layers: [mw5DummyLayer,mw5CenterLabel]
             },

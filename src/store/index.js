@@ -169,6 +169,18 @@ export default createStore({
         gun:true,
       },
     },
+    cityText:{
+      map01:{
+        t09:'',
+        r05:'',
+        gun:'',
+      },
+      map02: {
+        t09:'',
+        r05:'',
+        gun:'',
+      },
+    },
     //------------------------
   },
   getters: {
@@ -277,6 +289,9 @@ export default createStore({
           case 'ext-city-t09':
             if (payload.order === 0) {
               variable = 'isPaintCity'
+              variable2 = payload.name.split('-')[2]
+            } else if (payload.order === 1){
+              variable = 'cityText'
               variable2 = payload.name.split('-')[2]
             }
             break

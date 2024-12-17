@@ -17,8 +17,6 @@
 <script>
 
 import axios from "axios"
-import { PMTiles } from "pmtiles"
-import * as turf from "@turf/turf"
 
 export default {
   name: 'ext-bakumatsu',
