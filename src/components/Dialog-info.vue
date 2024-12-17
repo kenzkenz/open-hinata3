@@ -33,6 +33,9 @@
     <extKyakusu :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extKyakusu'"/>
     <extSekibutsu :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extSekibutsu'"/>
     <extBunsuirei :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extBunsuirei'"/>
+    <extCity :item="item" :mapName="mapName" v-else-if="[
+        'ext-city-t09',
+          ].includes(item.ext.name)"/>
   </div>
 </template>
 
@@ -49,6 +52,7 @@ import extGeopark from "@/components/ext-geopark"
 import extKyakusu from "@/components/ext-kyakusu"
 import extSekibutsu from '@/components/ext-sekibutsu'
 import extBunsuirei from "@/components/ext-bunsuirei"
+import extCity from "@/components/ext-city"
 
 export default {
   name: "dialog-info",
@@ -64,7 +68,8 @@ export default {
     extGeopark,
     extKyakusu,
     extSekibutsu,
-    extBunsuirei
+    extBunsuirei,
+    extCity
   },
   props: ['mapName'],
   data: () => ({

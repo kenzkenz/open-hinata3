@@ -4341,7 +4341,6 @@ const cityT09Source = {
     id: "city-t09-source", obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/city/t09/t09.pmtiles",
-        attribution: "<a href='' target='_blank'></a>",
     }
 }
 const cityT09Layer = {
@@ -6498,7 +6497,8 @@ const layers01 = [
                 id: 'oh-city-t09',
                 label: "T09市町村",
                 source: cityT09Source,
-                layers: [cityT09Layer,cityT09LayerLine,cityT09LayerLabel]
+                layers: [cityT09Layer,cityT09LayerLine,cityT09LayerLabel],
+                ext: {name:'ext-city-t09'}
             },
             {
                 id: 'oh-city-r05',

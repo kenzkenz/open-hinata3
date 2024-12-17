@@ -157,13 +157,22 @@ export default createStore({
       map01: '',
       map02: ''
     },
+    isPaintCity:{
+      map01:{
+        t09:true
+      },
+      map02: {
+        t09:true
+      },
+    },
     //------------------------
   },
   getters: {
   },
   mutations: {
     updateParam (state,payload) {
-      let variable;
+      let variable
+      let variable2
       const estSps = [
         'ext-sp28',
         'ext-sp36',
@@ -259,9 +268,20 @@ export default createStore({
               variable = 'kasenMei'
             }
             break
+          case 'ext-city-t09':
+            if (payload.order === 0) {
+              variable = 'isPaintCity'
+              variable2 = payload.name.split('-')[2]
+            }
+            break
         }
-        console.log(payload.mapName,payload.name,payload.value,variable)
-        state[variable][payload.mapName] = payload.value
+        console.log(payload.mapName,payload.name,payload.value,variable,variable2)
+        if (!variable2) {
+          state[variable][payload.mapName] = payload.value
+        } else {
+          // alert()
+          state[variable][payload.mapName][variable2] = payload.value
+        }
         setTimeout(() => {
           state.extFire = !state.extFire
         },10)
