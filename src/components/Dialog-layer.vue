@@ -74,8 +74,6 @@ export default {
     layers:[],
     menuContentSize: {'height': 'auto','margin': '10px', 'user-select': 'text'},
     // menuContentSize: {'height': 'auto','margin': '10px', 'user-select': 'text','overflow-y': 'auto'},
-
-    // secondDivStyle: {'height': '390px', 'overflow': 'auto', 'user-select': 'text'},
   }),
   computed: {
     s_watchFlg () {

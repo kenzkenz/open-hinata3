@@ -558,6 +558,7 @@ export default {
     },
     init() {
 
+      // Androidでスクロールできるように=============================================
       const scrollable = document.querySelector('.scrollable-content');
       let startY;
       scrollable.addEventListener('touchstart', (e) => {
@@ -566,20 +567,11 @@ export default {
       scrollable.addEventListener('touchmove', (e) => {
         const moveY = e.touches[0].clientY;
         const deltaY = startY - moveY; // 移動量を計算
-
         scrollable.scrollTop += deltaY; // スクロール位置を更新
         startY = moveY; // タッチ位置を更新
-
         e.preventDefault(); // デフォルト動作を無効化
       }, { passive: false });
-
-      //
-      //
-      //
-      // document.addEventListener('touchmove', (e) => {
-      //   console.log('Touchmove detected on:', e.target);
-      // }, { passive: false });
-
+      // ======================================================================
 
       let protocol = new Protocol();
       maplibregl.addProtocol("pmtiles",protocol.tile)

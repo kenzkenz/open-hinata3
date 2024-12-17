@@ -2143,7 +2143,7 @@ const cyugakuR05LayerPoint = {
         'circle-radius': 6
     }
 }
-// 低位遅滞--------------------------------------------------------------------------------------------
+// 低位地帯--------------------------------------------------------------------------------------------
 const teiiSource = {
     id: "teii-source", obj: {
         type: "vector",
@@ -3324,23 +3324,10 @@ const kojilayerheight = {
         'fill-extrusion-height': [
             'interpolate',
             ['linear'],
-            // ['^', ["to-number",['get', 'L01_008']],0.8],
-            // 0, 100,
-            // 4000000, 100000
             ["to-number",['get', 'L01_008']],
             0, 50.0, // 高さの最小値を50mに設定
             50000000, 5000.0 // 高さの最大値を5000mに設定
-
-
         ],
-        // 'fill-extrusion-color': [
-        //     'interpolate',
-        //     ['linear'],
-        //     ['^', ["to-number",['get', 'L01_008']],0.8],
-        //     0, 'white',
-        //     50000, 'red',
-        //     4000000, 'black'
-        // ]
         'fill-extrusion-color': [
             'step',
             ['get', 'L01_008'],
@@ -6869,7 +6856,8 @@ const layers01 = [
                 layers: [teiiLayer],
                 attribution: '<div style="width: 200px;"><a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-G08-2015.html" target="_blank">国土数値情報</a><br>' +
                     '本データは、周辺部よりも標高が低く、排水が困難である地帯（低位地帯）を整備したものである。<br>' +
-                    '<img src="' + require('@/assets/legend/shinsui_legend3.png') + '"></div>'
+                    '<img src="' + require('@/assets/legend/shinsui_legend3.png') + '"></div>',
+                info: true
             },
             {
                 id: 'oh-kosyo',
@@ -7179,11 +7167,23 @@ const layers01 = [
                 label: "公示価格（R06）3D",
                 source: kojiSource,
                 layers:[kojilayerheight],
-                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-L01-2024.html" target="_blank">国土数値情報</a>'
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-L01-2024.html" target="_blank">国土数値情報</a>' +
+                '<div class="legend-scale">' +
+                        '<ul class="legend-labels">' +
+                    '<li><span style="background:rgb(225, 49, 33);"></span>1000万円以上</li>' +
+                    '<li><span style="background:rgb(225, 61, 35);"></span>100万円ー1000万円</li>' +
+                    '<li><span style="background:rgb(226, 84, 39);"></span>75万円ー100万円</li>' +
+                    '<li><span style="background:rgb(231, 145, 52);"></span>50万円ー75万円</li>' +
+                    '<li><span style="background:rgb(235, 178, 61);"></span>25万円ー50万円</li>' +
+                    '<li><span style="background:rgb(239, 211, 71);"></span>10万円ー25万円</li>' +
+                    '<li><span style="background:rgb(245, 245, 81);"></span>10万円未満</li>' +
+                    '</ul>' +
+                    '</div>',
+                info: true
             },
             {
                 id: 'oh-chika',
-                label: "都道府県地価調査（R06）",
+                label: "都道府県地価調査（R06）3D",
                 source: chikaSource3d,
                 layers:[chikalayerheight],
                 attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-L02-2024.html" target="_blank">国土数値情報</a>' +
