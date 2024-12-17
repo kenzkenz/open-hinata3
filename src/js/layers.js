@@ -6804,7 +6804,7 @@ const layers01 = [
             },
             {
                 id: 'oh-bunsuirei',
-                label: "河川と分水嶺",
+                label: "⭐️河川と分水嶺",
                 sources: [bunsuireiSource,kasenSource],
                 layers: [bunsuireiLayer,bunsuireiLayerLine,kasenLayer,kasenLayerLabel],
                 attribution: "<a href='https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-W07.html' target='_blank'>国土数値情報</a>",

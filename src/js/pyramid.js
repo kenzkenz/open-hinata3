@@ -758,7 +758,6 @@ export default function pyramid () {
 
                 if (kasen === e.target.getAttribute("kasen")) {
                     map.setPaintProperty('oh-kasen', 'line-color','blue')
-
                     map.setPaintProperty('oh-kasen', 'line-width', [
                         'interpolate',
                         ['linear'],
@@ -796,74 +795,75 @@ export default function pyramid () {
                     ]);
                     kasen = null
                     store.state.kasenCode[mapName] = null
+                    store.state.kasenMei[mapName] = null
                     return
                 }
 
                 kasen = e.target.getAttribute("kasen")
                 const kasenmei = e.target.getAttribute("kasenmei")
                 if (kasen) {
-                    map.setPaintProperty('oh-kasen', 'line-color', [
-                        'case',
-                        ['all', ['==', ['get', 'W05_002'], kasen], ['==', ['get', 'W05_004'], kasenmei]],
-                        'red',
-                        'blue'
-                    ])
-
-                    map.setPaintProperty('oh-kasen', 'line-width', [
-                        'interpolate',
-                        ['linear'],
-                        ['zoom'],
-                        1, [
-                            'case',
-                            ['all', ['==', ['get', 'W05_002'], kasen], ['==', ['get', 'W05_004'], kasenmei]],
-                            5, // 条件が一致する場合の固定値
-                            [
-                                '*',
-                                0.1,
-                                ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
-                            ]
-                        ],
-                        11, [
-                            'case',
-                            ['all', ['==', ['get', 'W05_002'], kasen], ['==', ['get', 'W05_004'], kasenmei]],
-                            5,
-                            [
-                                '*',
-                                1,
-                                ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
-                            ]
-                        ],
-                        12, [
-                            'case',
-                            ['all', ['==', ['get', 'W05_002'], kasen], ['==', ['get', 'W05_004'], kasenmei]],
-                            5,
-                            [
-                                '*',
-                                2,
-                                ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
-                            ]
-                        ],
-                        14, [
-                            'case',
-                            ['all', ['==', ['get', 'W05_002'], kasen], ['==', ['get', 'W05_004'], kasenmei]],
-                            5,
-                            [
-                                '*',
-                                3,
-                                ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
-                            ]
-                        ],
-                        16, [
-                            'case',
-                            ['all', ['==', ['get', 'W05_002'], kasen], ['==', ['get', 'W05_004'], kasenmei]],
-                            5,
-                            [
-                                '*',
-                                5,
-                                ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
-                            ]
-                        ]
-                    ]);
+                    // map.setPaintProperty('oh-kasen', 'line-color', [
+                    //     'case',
+                    //     ['all', ['==', ['get', 'W05_002'], kasen], ['==', ['get', 'W05_004'], kasenmei]],
+                    //     'red',
+                    //     'blue'
+                    // ])
+                    //
+                    // map.setPaintProperty('oh-kasen', 'line-width', [
+                    //     'interpolate',
+                    //     ['linear'],
+                    //     ['zoom'],
+                    //     1, [
+                    //         'case',
+                    //         ['all', ['==', ['get', 'W05_002'], kasen], ['==', ['get', 'W05_004'], kasenmei]],
+                    //         5, // 条件が一致する場合の固定値
+                    //         [
+                    //             '*',
+                    //             0.1,
+                    //             ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+                    //         ]
+                    //     ],
+                    //     11, [
+                    //         'case',
+                    //         ['all', ['==', ['get', 'W05_002'], kasen], ['==', ['get', 'W05_004'], kasenmei]],
+                    //         5,
+                    //         [
+                    //             '*',
+                    //             1,
+                    //             ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+                    //         ]
+                    //     ],
+                    //     12, [
+                    //         'case',
+                    //         ['all', ['==', ['get', 'W05_002'], kasen], ['==', ['get', 'W05_004'], kasenmei]],
+                    //         5,
+                    //         [
+                    //             '*',
+                    //             2,
+                    //             ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+                    //         ]
+                    //     ],
+                    //     14, [
+                    //         'case',
+                    //         ['all', ['==', ['get', 'W05_002'], kasen], ['==', ['get', 'W05_004'], kasenmei]],
+                    //         5,
+                    //         [
+                    //             '*',
+                    //             3,
+                    //             ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+                    //         ]
+                    //     ],
+                    //     16, [
+                    //         'case',
+                    //         ['all', ['==', ['get', 'W05_002'], kasen], ['==', ['get', 'W05_004'], kasenmei]],
+                    //         5,
+                    //         [
+                    //             '*',
+                    //             5,
+                    //             ['case', ['==', ['get', 'W05_003'], '1'], 3, 1]
+                    //         ]
+                    //     ]
+                    // ]);
                     store.state.kasenCode[mapName] = kasen
                     store.state.kasenMei[mapName] = kasenmei
                 }
