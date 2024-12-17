@@ -159,10 +159,14 @@ export default createStore({
     },
     isPaintCity:{
       map01:{
-        t09:true
+        t09:true,
+        r05:true,
+        gun:true,
       },
       map02: {
-        t09:true
+        t09:true,
+        r05:true,
+        gun:true,
       },
     },
     //------------------------
@@ -268,6 +272,8 @@ export default createStore({
               variable = 'kasenMei'
             }
             break
+          case 'ext-city-gun':
+          case 'ext-city-r05':
           case 'ext-city-t09':
             if (payload.order === 0) {
               variable = 'isPaintCity'

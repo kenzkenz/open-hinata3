@@ -4,6 +4,7 @@
       <v-switch class="custom-switch" v-model="s_isPaintCity" @change="changePaint" label="塗りつぶし" color="primary" />
       <br>
 <!--      <v-text-field label="水系名、水系コードで抽出" v-model="s_suikeiText" @input="changePaint" style="margin-top: 10px"></v-text-field>-->
+      <div v-html="item.attribution"></div>
     </div>
 </template>
 
@@ -20,16 +21,16 @@ export default {
     },
     s_isPaintCity: {
       get() {
-        if (this.$store.state.isPaintCity[this.mapName].t09 === 'true') {
+        if (this.$store.state.isPaintCity[this.mapName][this.item.id.split('-')[2]] === 'true') {
           return true
-        } else if (this.$store.state.isPaintCity[this.mapName].t09 === 'false') {
+        } else if (this.$store.state.isPaintCity[this.mapName][this.item.id.split('-')[2]] === 'false') {
           return false
         } else {
-          return this.$store.state.isPaintCity[this.mapName].t09
+          return this.$store.state.isPaintCity[this.mapName][this.item.id.split('-')[2]]
         }
       },
       set(value) {
-        return this.$store.state.isPaintCity[this.mapName].t09 = value
+        return this.$store.state.isPaintCity[this.mapName][this.item.id.split('-')[2]] = value
       }
     },
     s_suikeiText: {
@@ -48,15 +49,22 @@ export default {
         ]})
     },
     changePaint () {
+      console.log(this.item)
       const map = this.$store.state[this.mapName]
       if (!this.s_isPaintCity) {
-        map.setPaintProperty('oh-city-t09', 'fill-color', 'rgba(0, 0, 0, 0)')
-        map.setPaintProperty("oh-city-t09-line", "line-color", 'black')
-        map.setPaintProperty("oh-city-t09-line", "line-width", 4)
+        map.setPaintProperty(this.item.id, 'fill-color', 'rgba(0, 0, 0, 0)')
+        map.setPaintProperty(this.item.id + '-line', 'line-color', 'black')
+        map.setPaintProperty(this.item.id + '-line', 'line-width',  [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          7, 1,
+          11, 4
+        ]);
       } else {
-        map.setPaintProperty('oh-city-t09', 'fill-color', ['get', 'random_color'])
-        map.setPaintProperty("oh-city-t09-line", "line-color", 'black')
-        map.setPaintProperty("oh-city-t09-line", "line-width", [
+        map.setPaintProperty(this.item.id, 'fill-color', ['get', 'random_color'])
+        map.setPaintProperty(this.item.id + '-line', 'line-color', 'black')
+        map.setPaintProperty(this.item.id + '-line', 'line-width', [
           'interpolate',
           ['linear'],
           ['zoom'],

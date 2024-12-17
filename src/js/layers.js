@@ -6491,20 +6491,24 @@ const layers01 = [
                 label: "明治中期の郡",
                 source: cityGunSource,
                 layers: [cityGunLayer,cityGunLayerLine,cityGunLayerLabel],
-                attribution:'<a href="https://booth.pm/ja/items/3053727" target="_blank">郡地図研究会</a>'
+                attribution:'<a href="https://booth.pm/ja/items/3053727" target="_blank">郡地図研究会</a>',
+                ext: {name:'ext-city-gun'}
             },
             {
                 id: 'oh-city-t09',
                 label: "T09市町村",
                 source: cityT09Source,
                 layers: [cityT09Layer,cityT09LayerLine,cityT09LayerLabel],
+                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2015.html" target="_blank">国土数値情報</a>',
                 ext: {name:'ext-city-t09'}
             },
             {
                 id: 'oh-city-r05',
                 label: "R05市町村",
                 source: cityR05Source,
-                layers: [cityR05Layer,cityR05LayerLine,cityR05LayerLabel]
+                layers: [cityR05Layer,cityR05LayerLine,cityR05LayerLabel],
+                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2023.html" target="_blank">国土数値情報</a>',
+                ext: {name:'ext-city-r05'}
             },
         ]
     },

@@ -35,6 +35,8 @@
     <extBunsuirei :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extBunsuirei'"/>
     <extCity :item="item" :mapName="mapName" v-else-if="[
         'ext-city-t09',
+        'ext-city-r05',
+        'ext-city-gun',
           ].includes(item.ext.name)"/>
   </div>
 </template>
