@@ -2376,7 +2376,7 @@ const m100mLayerHeight = {
             ['linear'],
             ["to-number",['get', 'jinko']],
             0, 100,
-            1400, 10000
+            1400, 5000
         ],
         'fill-extrusion-color': [
             'interpolate',
@@ -2459,7 +2459,7 @@ export const m250mLayerHeight = {
             ['linear'],
             ["to-number",['get', 'jinko']],
             0, 100,
-            3000, 10000
+            3000, 5000
         ],
         'fill-extrusion-color': [
             'interpolate',
@@ -2472,13 +2472,13 @@ export const m250mLayerHeight = {
     }
 }
 // 500mメッシュソース --------------------------------------------------------------------------------------------
-export const m500mSource = {
+const m500mSource = {
     id: "m500mSource", obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/mesh/500m/500m2.pmtiles",
     }
 }
-export const m500mLayer = {
+const m500mLayer = {
     id: "oh-m500m",
     type: "fill",
     source: "m500mSource",
@@ -2494,7 +2494,7 @@ export const m500mLayer = {
         ]
     }
 }
-export const m500mLayerLine = {
+const m500mLayerLine = {
     id: "oh-m500m-line",
     type: "line",
     source: "m500mSource",
@@ -2510,7 +2510,7 @@ export const m500mLayerLine = {
         ]
     },
 }
-export const m500mLayerLabel = {
+const m500mLayerLabel = {
     id: "oh-m500m-label",
     type: "symbol",
     source: "m500mSource",
@@ -2532,7 +2532,7 @@ export const m500mLayerLabel = {
     },
     'minzoom': 12
 }
-export const m500mLayerHeight = {
+const m500mLayerHeight = {
     id: 'oh-m500m-height',
     type: 'fill-extrusion',
     source: "m500mSource",
@@ -2543,7 +2543,7 @@ export const m500mLayerHeight = {
             ['linear'],
             ["to-number",['get', 'jinko']],
             0, 100,
-            17500, 10000
+            17500, 5000
         ],
         'fill-extrusion-color': [
             'interpolate',
@@ -2572,21 +2572,18 @@ const suikei500mLayer = {
             'case',
             ['==', ['get', 'PTN_2050'], 0],
             'rgba(196, 253, 187, 0.8)',
-            // 'rgba(0, 0, 255, 0.8)',
-            // Check if PTN_2050 or PTN_2020 is NaN
             ['any',
                 ['!=', ['typeof', ['get', 'PTN_2050']], 'number'],
                 ['!=', ['typeof', ['get', 'PTN_2020']], 'number']
             ],
-            'rgba(196, 253, 187, 0.8)', // Color for NaN
-            // 'rgba(0, 0, 255, 0.8)',
+            'rgba(196, 253, 187, 0.8)',
             ['==', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 0], 'rgba(196, 253, 187, 0.8)',
             ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 1.1], 'rgba(255, 0, 0, 0.8)',
             ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 1.0], 'rgba(184, 38, 25, 0.8)',
             ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 0.7], 'rgba(89, 119, 246, 0.8)',
             ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 0.5], 'rgba(97, 197, 250, 0.8)',
             ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 0.00000000000001], 'rgba(140, 252, 114, 0.8)',
-            'rgba(0, 0, 0, 0)' // Default color (fully transparent)
+            'rgba(0, 0, 0, 0)'
         ]
     }
 }
@@ -2598,9 +2595,9 @@ const suikei500mLayerLine = {
     paint: {
         'line-color': '#000',
         'line-width': [
-            'interpolate', // Zoom-based interpolation
+            'interpolate',
             ['linear'],
-            ['zoom'], // Use the zoom level as the input
+            ['zoom'],
             11, 0,
             12, 0.5
         ]
@@ -2623,21 +2620,18 @@ const suikei1kmFullLayer = {
             'case',
             ['==', ['get', 'PTN_2050'], 0],
             'rgba(196, 253, 187, 0.8)',
-            // 'rgba(0, 0, 255, 0.8)',
-            // Check if PTN_2050 or PTN_2020 is NaN
             ['any',
                 ['!=', ['typeof', ['get', 'PTN_2050']], 'number'],
                 ['!=', ['typeof', ['get', 'PTN_2020']], 'number']
             ],
-            'rgba(196, 253, 187, 0.8)', // Color for NaN
-            // 'rgba(0, 0, 255, 0.8)',
+            'rgba(196, 253, 187, 0.8)',
             ['==', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 0], 'rgba(196, 253, 187, 0.8)',
             ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 1.1], 'rgba(255, 0, 0, 0.8)',
             ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 1.0], 'rgba(184, 38, 25, 0.8)',
             ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 0.7], 'rgba(89, 119, 246, 0.8)',
             ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 0.5], 'rgba(97, 197, 250, 0.8)',
             ['>', ['/', ['get', 'PTN_2050'], ['get', 'PTN_2020']], 0.00000000000001], 'rgba(140, 252, 114, 0.8)',
-            'rgba(0, 0, 0, 0)' // Default color (fully transparent)
+            'rgba(0, 0, 0, 0)'
         ]
     }
 }
@@ -2821,9 +2815,9 @@ export const chiriin250mLayerLine = {
     paint: {
         'line-color': '#000',
         'line-width': [
-            'interpolate', // Zoom-based interpolation
+            'interpolate',
             ['linear'],
-            ['zoom'], // Use the zoom level as the input
+            ['zoom'],
             11, 0,
             12, 0.5
         ]
@@ -2859,7 +2853,7 @@ const chiriin250mLayerHeight = {
             ['linear'],
             ['get', '人口（人）'],
             0, 50.0, // 高さの最小値を50mに設定
-            10000, 10000.0 // 高さの最大値を5000mに設定
+            10000, 5000 // 高さの最大値を5000mに設定
         ],
         'fill-extrusion-color': ['get', '_fillColor'],
     }
