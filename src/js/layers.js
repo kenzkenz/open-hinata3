@@ -6234,7 +6234,7 @@ const layers01 = [
             },
             {
                 id: 'oh-m100m',
-                label: "100mメッシュ人口",
+                label: "100mメッシュ人口(2020)",
                 source: m100mSource,
                 layers: [m100mLayer,m100mLayerLine,m100mLayerLabel],
                 attribution: '出典：<a href="https://gtfs-gis.jp/teikyo/" target="_blank">地域分析に有用なデータの提供</a>',
@@ -6242,7 +6242,7 @@ const layers01 = [
             },
             {
                 id: 'oh-m100m-3d',
-                label: "100mメッシュ人口3D",
+                label: "100mメッシュ人口3D(2020)",
                 source: m100mSource,
                 layers: [m100mLayer,m100mLayerLine,m100mLayerLabel,m100mLayerHeight],
                 attribution: '出典：<a href="https://gtfs-gis.jp/teikyo/" target="_blank">地域分析に有用なデータの提供</a>',
