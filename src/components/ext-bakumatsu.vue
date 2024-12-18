@@ -7,10 +7,11 @@
           outlined
           @update:modelValue="onSelectChange"
       ></v-select>
-      <v-text-field label="抽出" v-model="s_bakumatsuText" @input="bakumatsuInput(mapName)" @change="aaa" style="margin-top: 10px"></v-text-field>
+      <v-text-field label="抽出" v-model="s_bakumatsuText" @input="bakumatsuInput(mapName)" style="margin-top: 10px"></v-text-field>
       <div>
         <p v-html="htmlKokudaka"></p>
       </div>
+      <div v-html="item.attribution"></div>
     </div>
 </template>
 
@@ -38,9 +39,9 @@ export default {
     s_extFire () {
       return this.$store.state.extFire
     },
-    s_watchFlg () {
-      return this.$store.state.watchFlg
-    },
+    // s_watchFlg () {
+    //   return this.$store.state.watchFlg
+    // },
     htmlKokudaka () {
       return '石高の総計=' + Math.round(this.kokudakakei[this.mapName]).toLocaleString() +
           '（' + Math.round(this.sonsu[this.mapName]).toLocaleString() + '村）'
@@ -163,7 +164,7 @@ export default {
           map.setFilter('oh-bakumatsu-layer', null)
         }
       }
-      this.$store.state.watchFlg = false
+      // this.$store.state.watchFlg = false
       filterBy(this.s_bakumatsuText)
       //
       this.update()

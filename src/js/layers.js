@@ -4341,6 +4341,7 @@ const cityT09Source = {
     id: "city-t09-source", obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/city/t09/t09.pmtiles",
+        attribution: "<a href='' target='_blank'></a>",
     }
 }
 const cityT09Layer = {
@@ -6164,7 +6165,7 @@ const layers01 = [
         nodes: [
             {
                 id: 'oh-mw5',
-                label: "戦前の地形図(5万分の1:S8年頃)",
+                label: "戦前の旧版地形図（５万分の1）",
                 sources: [mw5DummySource,mw5CenterSource],
                 layers: [mw5DummyLayer,mw5CenterLabel]
             },
@@ -6218,68 +6219,79 @@ const layers01 = [
         nodes: [
             {
                 id: 'oh-syochiiki',
-                label: "国勢調査小地域人口ピラミッド",
+                label: "2020国勢調査小地域人口ピラミッド",
                 source: syochiikiSource,
                 layers: [syochiikiLayer,syochiikLayerLine,syochiikiLayerLabel],
-                ext: {name:'extSyochiiki',parameters:[]}
+                attribution: '出典：<a href="https://www.e-stat.go.jp/stat-search/files?page=1&toukei=00200521&tstat=000001136464&cycle=0&tclass1=000001136472" target="_blank">e-Stat</a>',
+                ext: {name:'extSyochiiki'}
             },
             {
                 id: 'oh-syochiiki-2',
-                label: "国勢調査小地域人口密度3D",
+                label: "2020国勢調査小地域人口密度3D",
                 source: syochiikiSource,
-                layers: [syochiikiLayer,syochiikiLayerHeight]
+                layers: [syochiikiLayer,syochiikiLayerHeight],
+                attribution: '出典：<a href="https://www.e-stat.go.jp/stat-search/files?page=1&toukei=00200521&tstat=000001136464&cycle=0&tclass1=000001136472" target="_blank">e-Stat</a>',
             },
             {
                 id: 'oh-m100m',
                 label: "100mメッシュ人口",
                 source: m100mSource,
-                layers: [m100mLayer,m100mLayerLine,m100mLayerLabel]
+                layers: [m100mLayer,m100mLayerLine,m100mLayerLabel],
+                attribution: '出典：<a href="https://gtfs-gis.jp/teikyo/" target="_blank">地域分析に有用なデータの提供</a>',
+
             },
             {
                 id: 'oh-m100m-3d',
                 label: "100mメッシュ人口3D",
                 source: m100mSource,
-                layers: [m100mLayer,m100mLayerLine,m100mLayerLabel,m100mLayerHeight]
+                layers: [m100mLayer,m100mLayerLine,m100mLayerLabel,m100mLayerHeight],
+                attribution: '出典：<a href="https://gtfs-gis.jp/teikyo/" target="_blank">地域分析に有用なデータの提供</a>',
             },
             {
                 id: 'oh-m250m',
-                label: "250mメッシュ人口",
+                label: "250mメッシュ人口(2020)",
                 source: m250mSource,
-                layers: [m250mLayer,m250mLayerLine,m250mLayerLabel]
+                layers: [m250mLayer,m250mLayerLine,m250mLayerLabel],
+                attribution: '出典：<a href="https://www.e-stat.go.jp/gis/statmap-search?page=1&type=1&toukeiCode=00200521&toukeiYear=2020&aggregateUnit=Q&serveyId=Q002005112020&statsId=T001142" target="_blank">e-Stat</a>',
             },
             {
                 id: 'oh-m250m-3d',
-                label: "250mメッシュ人口3D",
+                label: "250mメッシュ人口3D(2020)",
                 source: m250mSource,
-                layers: [m250mLayer,m250mLayerLine,m250mLayerLabel,m250mLayerHeight]
+                layers: [m250mLayer,m250mLayerLine,m250mLayerLabel,m250mLayerHeight],
+                attribution: '出典：<a href="https://www.e-stat.go.jp/gis/statmap-search?page=1&type=1&toukeiCode=00200521&toukeiYear=2020&aggregateUnit=Q&serveyId=Q002005112020&statsId=T001142" target="_blank">e-Stat</a>',
             },
             {
                 id: 'oh-m500m',
-                label: "500mメッシュ人口",
+                label: "500mメッシュ人口(2020)",
                 source: m500mSource,
-                layers: [m500mLayer,m500mLayerLine,m500mLayerLabel]
+                layers: [m500mLayer,m500mLayerLine,m500mLayerLabel],
+                attribution: '出典：<a href="https://www.e-stat.go.jp/gis/statmap-search?page=8&type=1&toukeiCode=00200521&toukeiYear=2020&aggregateUnit=H&serveyId=H002005112020&statsId=T001141&datum=2011" target="_blank">e-Stsat</a>',
             },
             {
                 id: 'oh-m500m-3d',
-                label: "500mメッシュ人口3D",
+                label: "500mメッシュ人口3D(2020)",
                 source: m500mSource,
-                layers: [m500mLayer,m500mLayerLine,m500mLayerLabel,m500mLayerHeight]
+                layers: [m500mLayer,m500mLayerLine,m500mLayerLabel,m500mLayerHeight],
+                attribution: '出典：<a href="https://www.e-stat.go.jp/gis/statmap-search?page=8&type=1&toukeiCode=00200521&toukeiYear=2020&aggregateUnit=H&serveyId=H002005112020&statsId=T001141&datum=2011" target="_blank">e-Stsat</a>',
             },
             {
                 id: 'oh-m1km',
-                label: "1kmメッシュ人口",
+                label: "1kmメッシュ人口(2020)",
                 source: m1kmSource,
-                layers: [m1kmLayer,m1kmLayerLine,m1kmLayerLabel]
+                layers: [m1kmLayer,m1kmLayerLine,m1kmLayerLabel],
+                attribution:'<a href="https://www.e-stat.go.jp/gis/statmap-search?page=8&type=1&toukeiCode=00200521&toukeiYear=2020&aggregateUnit=S&serveyId=S002005112020&statsId=T001100&prefCode=01%2C02%2C03%2C04%2C05%2C06%2C07%2C08%2C09%2C10%2C11%2C12%2C13%2C14%2C15%2C16%2C17%2C18%2C19%2C20%2C21%2C22%2C23%2C24%2C25%2C26%2C27%2C28%2C29%2C30%2C31%2C32%2C33%2C34%2C35%2C36%2C37%2C38%2C39%2C40%2C41%2C42%2C43%2C44%2C45%2C46%2C47&datum=2000" target="_blank">e-Stat</a>',
             },
             {
                 id: 'oh-m1km-3d',
-                label: "1kmメッシュ人口3D",
+                label: "1kmメッシュ人口3D(2020)",
                 source: m1kmSource,
-                layers: [m1kmLayer,m1kmLayerLine,m1kmLayerLabel,m1kmLayerHeight]
+                layers: [m1kmLayer,m1kmLayerLine,m1kmLayerLabel,m1kmLayerHeight],
+                attribution:'<a href="https://www.e-stat.go.jp/gis/statmap-search?page=8&type=1&toukeiCode=00200521&toukeiYear=2020&aggregateUnit=S&serveyId=S002005112020&statsId=T001100&prefCode=01%2C02%2C03%2C04%2C05%2C06%2C07%2C08%2C09%2C10%2C11%2C12%2C13%2C14%2C15%2C16%2C17%2C18%2C19%2C20%2C21%2C22%2C23%2C24%2C25%2C26%2C27%2C28%2C29%2C30%2C31%2C32%2C33%2C34%2C35%2C36%2C37%2C38%2C39%2C40%2C41%2C42%2C43%2C44%2C45%2C46%2C47&datum=2000" target="_blank">e-Stat</a>',
             },
             {
                 id: 'oh-chiriin250m',
-                label: "地理院版250mメッシュ人口",
+                label: "地理院版250mメッシュ人口(2020)",
                 source: chiriin250mSource,
                 layers: [chiriin250mLayer,chiriin250mLayerLine],
                 attribution: '<a href="" target="_blank"></a>' +
@@ -6288,7 +6300,7 @@ const layers01 = [
             },
             {
                 id: 'oh-chiriin250m-3D',
-                label: "地理院版250mメッシュ人口3D",
+                label: "地理院版250mメッシュ人口3D(2020)",
                 source: chiriin250mSource,
                 layers: [chiriin250mLayerHeight],
                 attribution: '<a href="" target="_blank"></a>' +
@@ -6491,24 +6503,19 @@ const layers01 = [
                 label: "明治中期の郡",
                 source: cityGunSource,
                 layers: [cityGunLayer,cityGunLayerLine,cityGunLayerLabel],
-                attribution:'<a href="https://booth.pm/ja/items/3053727" target="_blank">郡地図研究会</a>',
-                ext: {name:'ext-city-gun'}
+                attribution:'<a href="https://booth.pm/ja/items/3053727" target="_blank">郡地図研究会</a>'
             },
             {
                 id: 'oh-city-t09',
                 label: "T09市町村",
                 source: cityT09Source,
-                layers: [cityT09Layer,cityT09LayerLine,cityT09LayerLabel],
-                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2015.html" target="_blank">国土数値情報</a>',
-                ext: {name:'ext-city-t09'}
+                layers: [cityT09Layer,cityT09LayerLine,cityT09LayerLabel]
             },
             {
                 id: 'oh-city-r05',
                 label: "R05市町村",
                 source: cityR05Source,
-                layers: [cityR05Layer,cityR05LayerLine,cityR05LayerLabel],
-                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2023.html" target="_blank">国土数値情報</a>',
-                ext: {name:'ext-city-r05'}
+                layers: [cityR05Layer,cityR05LayerLine,cityR05LayerLabel]
             },
         ]
     },
@@ -6555,14 +6562,16 @@ const layers01 = [
                 label: "幕末期近世の村",
                 source: bakumatsuSource,
                 layers: [bakumatsuLayer, bakumatsuLayerLine, bakumatsuLayerLabel],
-                ext: {name:'extBakumatsu',parameters:[]}
+                attribution:'出典：<a href="https://github.com/yaoyue00085856/Kyudaka_agrivillage" target="_blank">幕末期近世村領域データ</a>',
+                ext: {name:'extBakumatsu'}
             },
             {
                 id: 'oh-bakumatsu-kokudaka-height',
                 label: "幕末期近世の村（石高/面積）3D",
                 source: bakumatsuSource,
                 layers: [bakumatsuLayerHeight],
-                ext: {name:'extBakumatsu3d',parameters:[]}
+                attribution:'出典：<a href="https://github.com/yaoyue00085856/Kyudaka_agrivillage" target="_blank">幕末期近世村領域データ</a>',
+                ext: {name:'extBakumatsu3d'}
             },
             {
                 id: 'oh-bakumatsu-poin',

@@ -1,7 +1,9 @@
 <template>
-    <div :style="menuContentSize">
-      <v-text-field label="小地域名で抽出" v-model="s_syochiikiNameText" @input="syochiikiInput(mapName)" style="margin-top: 10px"></v-text-field>
-    </div>
+  <div :style="menuContentSize">
+    <div v-html="item.label"></div>
+    <v-text-field label="小地域名で抽出" v-model="s_syochiikiNameText" @input="syochiikiInput(mapName)" style="margin-top: 10px"></v-text-field>
+    <div v-html="item.attribution"></div>
+  </div>
 </template>
 
 <script>

@@ -4,6 +4,7 @@
       <div>
         <p v-html="htmlKokudaka"></p>
       </div>
+      <div v-html="item.attribution"></div>
     </div>
 </template>
 
@@ -98,8 +99,8 @@ export default {
     }
   },
   mounted() {
-    this.bakumatsuInput (this.mapName)
-    this.calcKokudaka()
+    // this.bakumatsuInput (this.mapName)
+    // this.calcKokudaka()
   },
   watch: {
     s_watchFlg () {
