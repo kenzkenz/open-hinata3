@@ -59,6 +59,7 @@ export default createStore({
     latRange2: [],
     secondDivStyle: {'height': '390px', 'overflow': 'auto', 'user-select': 'text'},
     extFire:false,
+    osmFire:false,
     MESH_ID: '',
     isEstat: true,
     suikeiYear: '',
@@ -181,6 +182,10 @@ export default createStore({
         gun:'',
       },
     },
+    osmText:{
+      map01: '',
+      map02: ''
+    },
     //------------------------
   },
   getters: {
@@ -225,6 +230,7 @@ export default createStore({
         }
         state.color[payload.mapName][target][target2] = Number(payload.value)
       } else {
+        console.log(payload.name)
         switch (payload.name) {
           case 'extHighway':
             variable = 'highwayYear'
@@ -295,9 +301,15 @@ export default createStore({
               variable2 = payload.name.split('-')[2]
             }
             break
+          case 'extOSM':
+            if (payload.order === 0) {
+              variable = 'osmText'
+            }
+            break
         }
         console.log(payload.mapName,payload.name,payload.value,variable,variable2)
         if (!variable2) {
+          console.log(variable)
           state[variable][payload.mapName] = payload.value
         } else {
           // alert()

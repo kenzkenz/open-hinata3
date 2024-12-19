@@ -6092,7 +6092,8 @@ const layers01 = [
                 label: "OpenStreetMap",
                 source: osmSource,
                 layers: [osmLayer],
-                attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
+                attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+                ext: {name:'extOSM'}
             },
             {
                 id: 'oh-stdLayer',
@@ -6675,7 +6676,7 @@ const layers01 = [
                 sources: [koazaSource,muraSource,muraCenterSource],
                 layers: [muraCenterLabel,koazaLayer,koazaLayerLine,koazaLayerLabel,muraLayer,muraLayerLine],
                 attribution: '<a href="https://koaza.net/" target="_blank">関東小字地図</a>',
-                ext: {name:'extKoaza',parameters:[]}
+                ext: {name:'extKoaza'}
             }]},
     {
         id: 2,

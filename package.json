@@ -17,6 +17,7 @@
     "json-loader": "^0.5.7",
     "maplibre-gl": "^5.0.0-pre.9",
     "maplibre-gl-gsi-terrain": "^1.2.0",
+    "osmtogeojson": "^3.0.0-beta.5",
     "pmtiles": "^3.2.0",
     "register-service-worker": "^1.7.2",
     "roboto-fontface": "*",

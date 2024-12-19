@@ -2603,6 +2603,29 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'osm-overpass-layer-line':
+            case 'osm-overpass-layer-polygon':
+            case 'osm-overpass-layer-point':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                if (html.indexOf('osm') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="osm" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">名称＝' +  props.name + '</span><br>' +
+                        '</div>'
+                }
+                break
+            }
         }
     })
 

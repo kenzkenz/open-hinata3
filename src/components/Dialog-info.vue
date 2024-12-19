@@ -38,6 +38,7 @@
         'ext-city-r05',
         'ext-city-gun',
           ].includes(item.ext.name)"/>
+    <extOSM :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extOSM'"/>
   </div>
 </template>
 
@@ -55,6 +56,7 @@ import extKyakusu from "@/components/ext-kyakusu"
 import extSekibutsu from '@/components/ext-sekibutsu'
 import extBunsuirei from "@/components/ext-bunsuirei"
 import extCity from "@/components/ext-city"
+import extOSM from "@/components/ext-osm"
 
 export default {
   name: "dialog-info",
@@ -71,7 +73,8 @@ export default {
     extKyakusu,
     extSekibutsu,
     extBunsuirei,
-    extCity
+    extCity,
+    extOSM
   },
   props: ['mapName'],
   data: () => ({

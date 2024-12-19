@@ -697,24 +697,24 @@ export default {
 
       // 画面同期----------------------------------------------------------------------------------------------------------
       // スロットリング用のヘルパー関数
-      // function throttle(func, limit) {
-      //   let lastFunc;
-      //   let lastRan;
-      //   return function(...args) {
-      //     if (!lastRan) {
-      //       func(...args);
-      //       lastRan = Date.now();
-      //     } else {
-      //       clearTimeout(lastFunc);
-      //       lastFunc = setTimeout(function() {
-      //         if ((Date.now() - lastRan) >= limit) {
-      //           func(...args);
-      //           lastRan = Date.now();
-      //         }
-      //       }, limit - (Date.now() - lastRan));
-      //     }
-      //   };
-      // }
+      function throttle(func, limit) {
+        let lastFunc;
+        let lastRan;
+        return function(...args) {
+          if (!lastRan) {
+            func(...args);
+            lastRan = Date.now();
+          } else {
+            clearTimeout(lastFunc);
+            lastFunc = setTimeout(function() {
+              if ((Date.now() - lastRan) >= limit) {
+                func(...args);
+                lastRan = Date.now();
+              }
+            }, limit - (Date.now() - lastRan));
+          }
+        };
+      }
 
       let syncing = false
       function syncMaps(mapA, mapB) {
@@ -1025,6 +1025,45 @@ export default {
           map.on('dragend', this.updatePermalink)
           // map.on('zoomend', this.updatePermalink)
           map.on('idle', this.updatePermalink)
+
+          // map.on('dragend', () => {
+          //   this.$store.state.osmFire = !this.$store.state.osmFire
+          // })
+          // map.on('zoomend', () => {
+          //   this.$store.state.osmFire = !this.$store.state.osmFire
+          // })
+
+          let previousBounds = null;
+          map.on('dragend', () => {
+            const currentBounds = map.getBounds();
+            if (!previousBounds ||
+                currentBounds.getNorth() > previousBounds.getNorth() ||
+                currentBounds.getSouth() < previousBounds.getSouth() ||
+                currentBounds.getEast() > previousBounds.getEast() ||
+                currentBounds.getWest() < previousBounds.getWest()) {
+              // マップの範囲が拡大または移動した場合のみ発火
+              console.log('Bounds expanded or moved:', currentBounds);
+              this.$store.state.osmFire = !this.$store.state.osmFire
+            }
+            // 現在の範囲を保存
+            previousBounds = currentBounds;
+          });
+
+          map.on('zoomend', () => {
+            const currentBounds = map.getBounds();
+            if (!previousBounds ||
+                currentBounds.getNorth() > previousBounds.getNorth() ||
+                currentBounds.getSouth() < previousBounds.getSouth() ||
+                currentBounds.getEast() > previousBounds.getEast() ||
+                currentBounds.getWest() < previousBounds.getWest()) {
+              // マップの範囲が拡大または移動した場合のみ発火
+              console.log('Bounds expanded or moved:', currentBounds);
+              this.$store.state.osmFire = !this.$store.state.osmFire
+            }
+            // 現在の範囲を保存
+            previousBounds = currentBounds;
+          });
+
 
           map.on('move', async () => {
             const center = map.getCenter(); // マップの中心座標を取得
