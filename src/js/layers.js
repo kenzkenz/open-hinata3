@@ -6033,6 +6033,73 @@ const kankoPoint = {
         'circle-stroke-width': 1
     }
 }
+// 宿泊容量メッシュ --------------------------------------------------------------------------------------------
+const syukuhakuSource = {
+    id: "syukuhaku-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/syukuhaku/syukuhaku.pmtiles",
+    }
+}
+export const syukuhakuLayer = {
+    id: "oh-syukuhaku",
+    type: "fill",
+    source: "syukuhaku-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': [
+            'interpolate',
+            ['linear'],
+            ["to-number",['get', 'P09_013']],
+            0, 'white',
+            3000, 'red',
+            20000, 'black'
+        ]
+    }
+}
+export const syukuhakuLayerLine = {
+    id: "oh-syukuhaku-line",
+    type: "line",
+    source: "syukuhaku-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
+export const syukuhakuLayerHeight = {
+    id: 'oh-syukuhaku-height',
+    type: 'fill-extrusion',
+    source: "syukuhaku-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-extrusion-height': [
+            'interpolate',
+            ['linear'],
+            ["to-number",['get', 'P09_013']],
+            0, 50,
+            11000, 5000
+        ],
+        'fill-extrusion-color': [
+            'interpolate',
+            ['linear'],
+            ["to-number",['get', 'P09_013']],
+            0, 'white',
+            3000, 'red',
+            20000, 'black'
+        ]
+    }
+}
+
+
+
+
+
 
 // // 地形分類テスト --------------------------------------------------------------------------------------------
 // const chikeibunruiSource2 = {
@@ -6576,19 +6643,22 @@ const layers01 = [
                 label: "明治中期の郡",
                 source: cityGunSource,
                 layers: [cityGunLayer,cityGunLayerLine,cityGunLayerLabel],
-                attribution:'<a href="https://booth.pm/ja/items/3053727" target="_blank">郡地図研究会</a>'
+                attribution:'<a href="https://booth.pm/ja/items/3053727" target="_blank">郡地図研究会</a>',
+                ext: {name:'ext-city-gun'},
             },
             {
                 id: 'oh-city-t09',
                 label: "T09市町村",
                 source: cityT09Source,
-                layers: [cityT09Layer,cityT09LayerLine,cityT09LayerLabel]
+                layers: [cityT09Layer,cityT09LayerLine,cityT09LayerLabel],
+                ext: {name:'ext-city-t09'},
             },
             {
                 id: 'oh-city-r05',
                 label: "R05市町村",
                 source: cityR05Source,
-                layers: [cityR05Layer,cityR05LayerLine,cityR05LayerLabel]
+                layers: [cityR05Layer,cityR05LayerLine,cityR05LayerLabel],
+                ext: {name:'ext-city-r05'},
             },
         ]
     },
@@ -6636,7 +6706,22 @@ const layers01 = [
                 sources: [kankoSource],
                 layers: [kankoLayer,kankoLayerLine,kankoLine,kankoPoint],
                 attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P12-2014.html">国土数値情報</a>'
-            }]
+            },
+            {
+                id: 'oh-syukuhaku',
+                label: "宿泊容量メッシュ1km",
+                sources: [syukuhakuSource],
+                layers: [syukuhakuLayer,syukuhakuLayerLine],
+                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P09.html">国土数値情報</a>'
+            },
+            {
+                id: 'oh-syukuhaku',
+                label: "宿泊容量メッシュ1km3D",
+                sources: [syukuhakuSource],
+                layers: [syukuhakuLayerHeight],
+                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P09.html">国土数値情報</a>'
+            },
+            ]
     },
     {
         id: 'bakumatsu',
