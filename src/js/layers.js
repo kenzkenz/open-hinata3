@@ -1186,6 +1186,18 @@ const tetsudojikeiretsuLayerBlue = {
 //     'filter': ['==', 'N06_002', 2024]
 // }
 // 標準地図--------------------------------------------------------------------------------------------------------------
+const osmSource = {
+    id: 'osm-source', obj: {
+        type: 'raster',
+        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+    }
+}
+const osmLayer = {
+    'id': 'oh-osm-layer',
+    'type': 'raster',
+    'source': 'osm-source',
+}
+// 標準地図--------------------------------------------------------------------------------------------------------------
 const stdSource = {
     id: 'stdSource', obj: {
         type: 'raster',
@@ -5955,7 +5967,72 @@ const bunsuireiLayerLine = {
     },
     // filter: ['has', 'suikei']
 }
-
+// 観光-------------------------------------------------------------------------------------------
+const kankoSource = {
+    id: "kanko-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/kanko/kanko.pmtiles",
+    }
+}
+const kankoLayer = {
+    id: "oh-kanko",
+    type: "fill",
+    source: "kanko-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-color': 'rgba(216,233,169,0.8)'
+    },
+}
+const kankoLayerLine = {
+    id: "oh-kanko-layer-line",
+    type: "line",
+    source: "kanko-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            7, 0,
+            11, 0.5
+        ]
+    },
+}
+const kankoLine = {
+    id: "oh-kanko-line",
+    type: "line",
+    source: "kanko-source",
+    "source-layer": "line",
+    paint: {
+        'line-color': 'rgba(173,135,184,1)',
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            7, 1,
+            11, 4
+        ]
+    },
+}
+const kankoPoint = {
+    id: "oh-kanko-point",
+    type: "circle",
+    source: "kanko-source",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': 'rgba(248,216,74,1.0)',
+        'circle-radius':[
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            2, 1,
+            11, 10
+        ],
+        'circle-stroke-color': 'rgba(255, 255, 255, 1)',
+        'circle-stroke-width': 1
+    }
+}
 
 // // 地形分類テスト --------------------------------------------------------------------------------------------
 // const chikeibunruiSource2 = {
@@ -6011,6 +6088,13 @@ const layers01 = [
         label: "基本地図",
         nodes: [
             {
+                id: 'oh-osm',
+                label: "OpenStreetMap",
+                source: osmSource,
+                layers: [osmLayer],
+                attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
+            },
+            {
                 id: 'oh-stdLayer',
                 label: "標準地図",
                 source: stdSource,
@@ -6034,12 +6118,6 @@ const layers01 = [
                 sources: monoSources,
                 layers: monoLayers
             },
-            // {
-            //     id: 'oh-vector-layer-dark',
-            //     label: "ベクトルタイルダーク",
-            //     sources: darkSources,
-            //     layers: darkLayers
-            // },
             {
                 id: 'oh-vector-layer-fx-dark',
                 label: "ベクトルタイルダーク",
@@ -6546,6 +6624,18 @@ const layers01 = [
                 attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A55-2022.html" target="_blank">国土数値情報</a>'
             },
         ]
+    },
+    {
+        id: 'kanko',
+        label: "観光",
+        nodes: [
+            {
+                id: 'oh-kanko',
+                label: "観光資源",
+                sources: [kankoSource],
+                layers: [kankoLayer,kankoLayerLine,kankoLine,kankoPoint],
+                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P12-2014.html">国土数値情報</a>'
+            }]
     },
     {
         id: 'bakumatsu',

@@ -341,3 +341,11 @@ tippecanoe -l polygon -f -o ryuiki4.pmtiles anaume_dissolved_largest_length.geoj
 tippecanoe -l polygon -f -o ryuiki5.pmtiles anaume4.geojson　//これが最終。
 
 tippecanoe -pk -pf -l line -f -o kasen3.pmtiles kasenline4_with_totallength.geojson
+
+tippecanoe -l polygon -f -o kanko-polygon.pmtiles kanko-polygon.geojson
+tippecanoe -l line -f -o kanko-line.pmtiles kanko-line.geojson
+tippecanoe -rg -l point -f -o kanko-point.pmtiles kanko-point.geojson
+tile-join -rg -f -o kanko.pmtiles \
+  kanko-polygon.pmtiles \
+  kanko-line.pmtiles \
+  kanko-point.pmtiles

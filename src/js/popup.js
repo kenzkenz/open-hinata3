@@ -2579,6 +2579,30 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-kanko-line':
+            case 'oh-kanko-point':
+            case 'oh-kanko':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                if (html.indexOf('kanko') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="kanko" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">名称＝' +  props.P12_003 + '</span><br>' +
+                        '<span style="font-size:14px;">種別＝' +  props.P12_004 + '</span>' +
+                        '</div>'
+                }
+                break
+            }
         }
     })
 
