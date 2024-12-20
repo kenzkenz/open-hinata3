@@ -108,16 +108,18 @@ export default {
       const vm = this
       const map = this.$store.state[this.mapName]
       if (!this.s_osmText) {
-        map.removeLayer('oh-osm-overpass-layer-point')
-        map.removeLayer('oh-osm-overpass-layer-polygon')
-        map.removeLayer('oh-osm-overpass-layer-line')
+        map.getSource('osm-overpass-source').setData({
+          type: 'FeatureCollection',
+          features: [] // 空の features 配列
+        });
         this.update()
         return
       }
       if (map.getZoom() < 9) {
-        map.removeLayer('oh-osm-overpass-layer-point')
-        map.removeLayer('oh-osm-overpass-layer-polygon')
-        map.removeLayer('oh-osm-overpass-layer-line')
+        map.getSource('osm-overpass-source').setData({
+          type: 'FeatureCollection',
+          features: [] // 空の features 配列
+        });
         return
       }
 
@@ -170,58 +172,14 @@ export default {
         document.body.style.cursor = 'wait'
         const geojsonData = await fetchOverpassData(tagKey, tagValue)
         if (geojsonData) {
-          if (!map.getSource('osm-overpass')) {
-            map.addSource('osm-overpass', {
+          if (!map.getSource('osm-overpass-source')) {
+            map.addSource('osm-overpass-source', {
               type: 'geojson',
               data: geojsonData
             })
           } else {
-            map.removeLayer('oh-osm-overpass-layer-point')
-            map.removeLayer('oh-osm-overpass-layer-polygon')
-            map.removeLayer('oh-osm-overpass-layer-line')
-            map.removeSource('osm-overpass')
-            map.addSource('osm-overpass', {
-              type: 'geojson',
-              data: geojsonData
-            })
+            map.getSource('osm-overpass-source').setData(geojsonData)
           }
-          map.addLayer({
-            id: 'oh-osm-overpass-layer-point',
-            type: 'circle',
-            source: 'osm-overpass',
-            filter: ['==', '$type', 'Point'],
-            paint: {
-              'circle-radius': 8,
-              'circle-color': 'green'
-            }
-          })
-          map.addLayer({
-            id: 'oh-osm-overpass-layer-polygon',
-            type: 'fill',
-            source: 'osm-overpass',
-            filter: ['==', '$type', 'Polygon'],
-            paint: {
-              'fill-color': 'blue',
-              'fill-opacity': 0.5
-            }
-          })
-          map.addLayer({
-            id: 'oh-osm-overpass-layer-line',
-            type: 'line',
-            source: 'osm-overpass',
-            filter: ['==', '$type', 'LineString'],
-            paint: {
-              'line-color': 'blue',
-              'line-width': [
-                'interpolate', // Zoom-based interpolation
-                ['linear'],
-                ['zoom'], // Use the zoom level as the input
-                1, 0.1,
-                18, 10,
-              ]
-            }
-          })
-
           document.body.style.cursor = 'default'
         }
       }

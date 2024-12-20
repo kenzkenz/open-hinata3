@@ -70,30 +70,35 @@ Object.keys(osmBright.sources).forEach(function(key) {
 //         // maxzoom: 13
 //     }
 // }
-const osmBrightPoint = {
+const overpassSource = {
+    id: 'osm-overpass-source', obj: {
+        type: 'geojson',
+        data: null
+    }
+}
+const overpassPoint = {
     id: 'oh-osm-overpass-layer-point',
     type: 'circle',
-    source: 'osm-overpass',
+    source: 'osm-overpass-source',
     filter: ['==', '$type', 'Point'],
     paint: {
         'circle-radius': 8,
         'circle-color': 'green'
     }
 }
-const osmBrightPolygon = {
+const overpassPolygon = {
     id: 'oh-osm-overpass-layer-polygon',
     type: 'fill',
-    source: 'osm-overpass',
+    source: 'osm-overpass-source',
     filter: ['==', '$type', 'Polygon'],
     paint: {
-        'fill-color': 'blue',
-        'fill-opacity': 0.5
+        'fill-color': 'rgba(0,0,255,0.5)',
     }
 }
-const osmBrightLine = {
+const overpassLine = {
     id: 'oh-osm-overpass-layer-line',
     type: 'line',
-    source: 'osm-overpass',
+    source: 'osm-overpass-source',
     filter: ['==', '$type', 'LineString'],
     paint: {
         'line-color': 'blue',
@@ -6238,7 +6243,7 @@ const layers01 = [
                 id: 'oh-vector-layer-osm-bright',
                 label: "OSMベクター",
                 sources: osmBrightSources,
-                layers: [...osmBrightLayers,osmBrightPoint,osmBrightPolygon,osmBrightLine],
+                layers: osmBrightLayers,
                 attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
                 ext: {name:'extOSM'}
             },
@@ -7384,6 +7389,14 @@ const layers01 = [
         id: 'sonohoka',
         label: "その他",
         nodes: [
+            {
+                id: 'oh-overpass',
+                label: "OSM overpass",
+                source: overpassSource,
+                layers: [overpassPolygon,overpassLine,overpassPoint],
+                attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
+                ext: {name:'extOSM'}
+            },
             {
                 id: 'oh-sekibutsu',
                 label: "みんなで石仏調査",
