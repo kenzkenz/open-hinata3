@@ -239,10 +239,19 @@ export default {
           } else {
             opacity = element.opacity
           }
+
           if (layer0.type === 'raster') {
             map.setPaintProperty(layer0.id, 'raster-opacity', opacity)
           } else if (layer0.type === 'fill') {
-            map.setPaintProperty(layer0.id, 'fill-opacity', opacity)
+            if (layer0.metadata && layer0.metadata.group === 'osm-bright') {
+              if (typeof layer0.paint['fill-opacity'] === 'number') {
+                map.setPaintProperty(layer0.id, 'fill-opacity', layer0.paint['fill-opacity'] * opacity)
+              } else {
+                map.setPaintProperty(layer0.id, 'fill-opacity', opacity)
+              }
+            } else {
+              map.setPaintProperty(layer0.id, 'fill-opacity', opacity)
+            }
           } else if (layer0.type === 'line') {
             map.setPaintProperty(layer0.id, 'line-opacity', opacity)
           } else if (layer0.type === 'fill-extrusion') {
@@ -289,7 +298,7 @@ export default {
                 layer: node.layer,
                 layers: node.layers,
                 attribution: node.attribution,
-                // opacity: 1,
+                opacity: 1,
                 visibility: true,
                 ext: node.ext,
                 info: node.info,
@@ -343,23 +352,33 @@ export default {
               } else {
                 opacity = layer.opacity
               }
-              // if (layer0.type === 'raster') {
-              //   map.setPaintProperty(layer0.id, 'raster-opacity', opacity)
-              // } else if (layer0.type === 'fill') {
-              //   map.setPaintProperty(layer0.id, 'fill-opacity', opacity)
-              // } else if (layer0.type === 'line') {
-              //   map.setPaintProperty(layer0.id, 'line-opacity', opacity)
-              // } else if (layer0.type === 'fill-extrusion') {
-              //   map.setPaintProperty(layer0.id, 'fill-extrusion-opacity', opacity)
-              // } else if (layer0.type === 'heatmap') {
-              //   map.setPaintProperty(layer0.id, 'heatmap-opacity', opacity)
-              // } else if (layer0.type === 'circle') {
-              //   map.setPaintProperty(layer0.id, 'circle-opacity', opacity)
-              // } else if (layer0.type === 'symbol') {
-              //   map.setPaintProperty(layer0.id, 'text-opacity', opacity)
-              // } else if (layer0.type === 'background') {
-              //   map.setPaintProperty(layer0.id, 'background-opacity', opacity)
-              // }
+
+              if (layer0.type === 'raster') {
+                map.setPaintProperty(layer0.id, 'raster-opacity', opacity)
+              } else if (layer0.type === 'fill') {
+                if (layer0.metadata && layer0.metadata.group === 'osm-bright') {
+                  if (typeof layer0.paint['fill-opacity'] === 'number') {
+                    console.log(layer0.paint['fill-opacity'])
+                    map.setPaintProperty(layer0.id, 'fill-opacity', layer0.paint['fill-opacity'] * opacity)
+                  } else {
+                    map.setPaintProperty(layer0.id, 'fill-opacity', opacity)
+                  }
+                } else {
+                  map.setPaintProperty(layer0.id, 'fill-opacity', opacity)
+                }
+              } else if (layer0.type === 'line') {
+                map.setPaintProperty(layer0.id, 'line-opacity', opacity)
+              } else if (layer0.type === 'fill-extrusion') {
+                map.setPaintProperty(layer0.id, 'fill-extrusion-opacity', opacity)
+              } else if (layer0.type === 'heatmap') {
+                map.setPaintProperty(layer0.id, 'heatmap-opacity', opacity)
+              } else if (layer0.type === 'circle') {
+                map.setPaintProperty(layer0.id, 'circle-opacity', opacity)
+              } else if (layer0.type === 'symbol') {
+                map.setPaintProperty(layer0.id, 'text-opacity', opacity)
+              } else if (layer0.type === 'background') {
+                map.setPaintProperty(layer0.id, 'background-opacity', opacity)
+              }
               let visibility
               if (layer.visibility) {
                 visibility = 'visible'

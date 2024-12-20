@@ -1,7 +1,6 @@
 <template>
     <div :style="menuContentSize">
       <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
-      時間がかかります。zoom=8以上で表示
       <v-select
           v-model="s_osmText"
           :items="tagOptions"

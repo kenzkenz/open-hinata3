@@ -32,8 +32,15 @@ import osmBright from '@/assets/json/osm_bright.json'
 console.log(osmBright)
 
 const osmBrightSources = []
-const osmBrightLayers = osmBright.layers
-// const osmBrightLayers = [...osmBright.layers].reverse()
+// const osmBrightLayers = osmBright.layers
+const osmBrightLayers = osmBright.layers.map(layer => {
+    return {
+        ...layer, // 既存のレイヤー設定を維持
+        metadata: {
+            group: 'osm-bright' // 新しいmetadataプロパティを追加
+        }
+    }
+})
 Object.keys(osmBright.sources).forEach(function(key) {
     osmBrightSources.push({
         id: key,
@@ -6215,11 +6222,29 @@ const layers01 = [
         nodes: [
             {
                 id: 'oh-vector-layer-osm-bright',
-                label: "OpenStreetMapベクター",
+                label: "OSMベクター",
                 sources: osmBrightSources,
                 layers: [...osmBrightLayers,osmBrightPoint,osmBrightPolygon,osmBrightLine],
                 attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
                 ext: {name:'extOSM'}
+            },
+            {
+                id: 'oh-vector-layer-fx-basic',
+                label: "地理院ベクター",
+                sources: fxBasicSources,
+                layers: fxBasicLayers
+            },
+            {
+                id: 'oh-vector-layer-mono',
+                label: "地理院ベクターモノクロ",
+                sources: monoSources,
+                layers: monoLayers
+            },
+            {
+                id: 'oh-vector-layer-fx-dark',
+                label: "地理院ベクターダーク",
+                sources: fxDarkSources,
+                layers: fxDarkLayers
             },
             // {
             //     id: 'oh-osm',
@@ -6240,24 +6265,6 @@ const layers01 = [
                 label: "淡色地図",
                 source: paleSource,
                 layers: [paleLayer]
-            },
-            {
-                id: 'oh-vector-layer-fx-basic',
-                label: "ベクトルタイル",
-                sources: fxBasicSources,
-                layers: fxBasicLayers
-            },
-            {
-                id: 'oh-vector-layer-mono',
-                label: "ベクトルタイルモノクロ",
-                sources: monoSources,
-                layers: monoLayers
-            },
-            {
-                id: 'oh-vector-layer-fx-dark',
-                label: "ベクトルタイルダーク",
-                sources: fxDarkSources,
-                layers: fxDarkLayers
             },
             {
                 id: 'oh-plateauPmtiles',
