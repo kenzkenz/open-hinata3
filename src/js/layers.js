@@ -26,6 +26,65 @@ const testLayer = {
 import fxBasic from '@/assets/json/modified_fx_basic.json'
 import mono from '@/assets/json/modified_mono.json'
 import fxDark from '@/assets/json/modified_fx-dark.json'
+// import osmBright from '@/assets/json/modified_osm_style2.json'
+import osmBright from '@/assets/json/osm_bright.json'
+
+console.log(osmBright)
+
+const osmBrightSources = []
+const osmBrightLayers = osmBright.layers
+// const osmBrightLayers = [...osmBright.layers].reverse()
+Object.keys(osmBright.sources).forEach(function(key) {
+    osmBrightSources.push({
+        id: key,
+        obj: osmBright.sources[key]
+    })
+})
+const osmBrightSource = {
+    id: "openmaptiles", obj:{
+        type: "vector",
+        url: "pmtiles://https://tile.openstreetmap.jp/static/planet.pmtiles",
+        // tiles: ["https://tile.openstreetmap.jp/data/planet/{z}/{x}/{y}.pbf"],
+        // minzoom: 6,
+        // maxzoom: 13
+    }
+}
+const osmBrightPoint = {
+    id: 'oh-osm-overpass-layer-point',
+    type: 'circle',
+    source: 'osm-overpass',
+    filter: ['==', '$type', 'Point'],
+    paint: {
+        'circle-radius': 8,
+        'circle-color': 'green'
+    }
+}
+const osmBrightPolygon = {
+    id: 'oh-osm-overpass-layer-polygon',
+    type: 'fill',
+    source: 'osm-overpass',
+    filter: ['==', '$type', 'Polygon'],
+    paint: {
+        'fill-color': 'blue',
+        'fill-opacity': 0.5
+    }
+}
+const osmBrightLine = {
+    id: 'oh-osm-overpass-layer-line',
+    type: 'line',
+    source: 'osm-overpass',
+    filter: ['==', '$type', 'LineString'],
+    paint: {
+        'line-color': 'blue',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            1, 0.1,
+            18, 10,
+        ]
+    }
+}
 // const stdSources = []
 // const stdLayers = std.layers
 // Object.keys(std.sources).forEach(function(key) {
@@ -6040,7 +6099,7 @@ const syukuhakuSource = {
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/syukuhaku/syukuhaku.pmtiles",
     }
 }
-export const syukuhakuLayer = {
+const syukuhakuLayer = {
     id: "oh-syukuhaku",
     type: "fill",
     source: "syukuhaku-source",
@@ -6056,7 +6115,7 @@ export const syukuhakuLayer = {
         ]
     }
 }
-export const syukuhakuLayerLine = {
+const syukuhakuLayerLine = {
     id: "oh-syukuhaku-line",
     type: "line",
     source: "syukuhaku-source",
@@ -6072,7 +6131,7 @@ export const syukuhakuLayerLine = {
         ]
     },
 }
-export const syukuhakuLayerHeight = {
+const syukuhakuLayerHeight = {
     id: 'oh-syukuhaku-height',
     type: 'fill-extrusion',
     source: "syukuhaku-source",
@@ -6155,13 +6214,21 @@ const layers01 = [
         label: "基本地図",
         nodes: [
             {
-                id: 'oh-osm',
-                label: "OpenStreetMap",
-                source: osmSource,
-                layers: [osmLayer],
-                attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+                id: 'oh-vector-layer-osm-bright',
+                label: "OpenStreetMapベクター",
+                sources: osmBrightSources,
+                layers: [...osmBrightLayers,osmBrightPoint,osmBrightPolygon,osmBrightLine],
+                attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
                 ext: {name:'extOSM'}
             },
+            // {
+            //     id: 'oh-osm',
+            //     label: "OpenStreetMap",
+            //     source: osmSource,
+            //     layers: [osmLayer],
+            //     attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+            //     ext: {name:'extOSM'}
+            // },
             {
                 id: 'oh-stdLayer',
                 label: "標準地図",

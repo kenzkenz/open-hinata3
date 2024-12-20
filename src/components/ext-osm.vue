@@ -22,6 +22,7 @@ export default {
   data: () => ({
     selectedTag: null,
     tagOptions: [
+      { key: '', value: '', label: '無し' },
       { key: 'highway', value: 'primary', label: '主要道路' },
       { key: 'highway', value: 'highway-all', label: '道路全て' },
       { key: 'leisure', value: 'park', label: '公園' },
@@ -107,11 +108,17 @@ export default {
     change () {
       const vm = this
       const map = this.$store.state[this.mapName]
-      if (!this.s_osmText) return
+      if (!this.s_osmText) {
+        map.removeLayer('oh-osm-overpass-layer-point')
+        map.removeLayer('oh-osm-overpass-layer-polygon')
+        map.removeLayer('oh-osm-overpass-layer-line')
+        this.update()
+        return
+      }
       if (map.getZoom() < 9) {
-        map.removeLayer('osm-overpass-layer-point')
-        map.removeLayer('osm-overpass-layer-polygon')
-        map.removeLayer('osm-overpass-layer-line')
+        map.removeLayer('oh-osm-overpass-layer-point')
+        map.removeLayer('oh-osm-overpass-layer-polygon')
+        map.removeLayer('oh-osm-overpass-layer-line')
         return
       }
 
@@ -170,9 +177,9 @@ export default {
               data: geojsonData
             })
           } else {
-            map.removeLayer('osm-overpass-layer-point')
-            map.removeLayer('osm-overpass-layer-polygon')
-            map.removeLayer('osm-overpass-layer-line')
+            map.removeLayer('oh-osm-overpass-layer-point')
+            map.removeLayer('oh-osm-overpass-layer-polygon')
+            map.removeLayer('oh-osm-overpass-layer-line')
             map.removeSource('osm-overpass')
             map.addSource('osm-overpass', {
               type: 'geojson',
@@ -180,7 +187,7 @@ export default {
             })
           }
           map.addLayer({
-            id: 'osm-overpass-layer-point',
+            id: 'oh-osm-overpass-layer-point',
             type: 'circle',
             source: 'osm-overpass',
             filter: ['==', '$type', 'Point'],
@@ -190,7 +197,7 @@ export default {
             }
           })
           map.addLayer({
-            id: 'osm-overpass-layer-polygon',
+            id: 'oh-osm-overpass-layer-polygon',
             type: 'fill',
             source: 'osm-overpass',
             filter: ['==', '$type', 'Polygon'],
@@ -200,7 +207,7 @@ export default {
             }
           })
           map.addLayer({
-            id: 'osm-overpass-layer-line',
+            id: 'oh-osm-overpass-layer-line',
             type: 'line',
             source: 'osm-overpass',
             filter: ['==', '$type', 'LineString'],

@@ -279,7 +279,6 @@ export default {
         this.$store.state.watchFlg = true
         const map = this.$store.state[this.mapName]
         if(!this.s_selectedLayers[this.mapName].find(layers => layers.id === node.id)) {
-          // const opacity =
           console.log(node)
           this.s_selectedLayers[this.mapName].unshift(
               {
@@ -290,7 +289,7 @@ export default {
                 layer: node.layer,
                 layers: node.layers,
                 attribution: node.attribution,
-                opacity: 1,
+                // opacity: 1,
                 visibility: true,
                 ext: node.ext,
                 info: node.info,
@@ -344,23 +343,23 @@ export default {
               } else {
                 opacity = layer.opacity
               }
-              if (layer0.type === 'raster') {
-                map.setPaintProperty(layer0.id, 'raster-opacity', opacity)
-              } else if (layer0.type === 'fill') {
-                map.setPaintProperty(layer0.id, 'fill-opacity', opacity)
-              } else if (layer0.type === 'line') {
-                map.setPaintProperty(layer0.id, 'line-opacity', opacity)
-              } else if (layer0.type === 'fill-extrusion') {
-                map.setPaintProperty(layer0.id, 'fill-extrusion-opacity', opacity)
-              } else if (layer0.type === 'heatmap') {
-                map.setPaintProperty(layer0.id, 'heatmap-opacity', opacity)
-              } else if (layer0.type === 'circle') {
-                map.setPaintProperty(layer0.id, 'circle-opacity', opacity)
-              } else if (layer0.type === 'symbol') {
-                map.setPaintProperty(layer0.id, 'text-opacity', opacity)
-              } else if (layer0.type === 'background') {
-                map.setPaintProperty(layer0.id, 'background-opacity', opacity)
-              }
+              // if (layer0.type === 'raster') {
+              //   map.setPaintProperty(layer0.id, 'raster-opacity', opacity)
+              // } else if (layer0.type === 'fill') {
+              //   map.setPaintProperty(layer0.id, 'fill-opacity', opacity)
+              // } else if (layer0.type === 'line') {
+              //   map.setPaintProperty(layer0.id, 'line-opacity', opacity)
+              // } else if (layer0.type === 'fill-extrusion') {
+              //   map.setPaintProperty(layer0.id, 'fill-extrusion-opacity', opacity)
+              // } else if (layer0.type === 'heatmap') {
+              //   map.setPaintProperty(layer0.id, 'heatmap-opacity', opacity)
+              // } else if (layer0.type === 'circle') {
+              //   map.setPaintProperty(layer0.id, 'circle-opacity', opacity)
+              // } else if (layer0.type === 'symbol') {
+              //   map.setPaintProperty(layer0.id, 'text-opacity', opacity)
+              // } else if (layer0.type === 'background') {
+              //   map.setPaintProperty(layer0.id, 'background-opacity', opacity)
+              // }
               let visibility
               if (layer.visibility) {
                 visibility = 'visible'

@@ -2603,9 +2603,9 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
-            case 'osm-overpass-layer-line':
-            case 'osm-overpass-layer-polygon':
-            case 'osm-overpass-layer-point':
+            case 'oh-osm-overpass-layer-line':
+            case 'oh-osm-overpass-layer-polygon':
+            case 'oh-osm-overpass-layer-point':
             {
                 let features = map.queryRenderedFeatures(
                     map.project(coordinates), {layers: [layerId]}
@@ -2643,7 +2643,11 @@ export function popup(e,map,mapName,mapFlg) {
                     html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                     html +=
                         '<div class="osm" font-weight: normal; color: #333;line-height: 25px;">' +
-                        '<span style="font-size:16px;">収容人数＝' +  Number(props.P09_013).toLocaleString() + '人</span><br>' +
+                        '<span style="font-size:18px;">総収容人数＝' +  Number(props.P09_013).toLocaleString() + '人</span><br>' +
+                        '<span style="font-size:18px;">総数客室数＝' +  Number(props.P09_014).toLocaleString() + '室</span><hr>' +
+                        '<span style="font-size:16px;">ホテル＝' +  Number(props.P09_002).toLocaleString() + '施設</span><br>' +
+                        '<span style="font-size:16px;">旅館＝' +  Number(props.P09_003).toLocaleString() + '施設</span><br>' +
+                        '<span style="font-size:16px;">民宿＝' +  Number(props.P09_005).toLocaleString() + '施設</span><br>' +
                         '</div>'
                 }
                 break
