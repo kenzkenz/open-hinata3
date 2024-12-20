@@ -26,11 +26,25 @@ const testLayer = {
 import fxBasic from '@/assets/json/modified_fx_basic.json'
 import mono from '@/assets/json/modified_mono.json'
 import fxDark from '@/assets/json/modified_fx-dark.json'
-// import osmBright from '@/assets/json/modified_osm_style2.json'
 import osmBright from '@/assets/json/osm_bright.json'
+import osmToner from '@/assets/json/osm_toner.json'
 
-console.log(osmBright)
-
+const osmTonerSources = []
+const osmTonerLayers = osmToner.layers.map(layer => {
+    return {
+        ...layer, // 既存のレイヤー設定を維持
+        metadata: {
+            group: 'osm-toner' // 新しいmetadataプロパティを追加
+        }
+    }
+})
+Object.keys(osmToner.sources).forEach(function(key) {
+    osmTonerSources.push({
+        id: key,
+        obj: osmToner.sources[key]
+    })
+})
+//-------------------------------------------------------
 const osmBrightSources = []
 // const osmBrightLayers = osmBright.layers
 const osmBrightLayers = osmBright.layers.map(layer => {
@@ -47,15 +61,15 @@ Object.keys(osmBright.sources).forEach(function(key) {
         obj: osmBright.sources[key]
     })
 })
-const osmBrightSource = {
-    id: "openmaptiles", obj:{
-        type: "vector",
-        url: "pmtiles://https://tile.openstreetmap.jp/static/planet.pmtiles",
-        // tiles: ["https://tile.openstreetmap.jp/data/planet/{z}/{x}/{y}.pbf"],
-        // minzoom: 6,
-        // maxzoom: 13
-    }
-}
+// const osmBrightSource = {
+//     id: "openmaptiles", obj:{
+//         type: "vector",
+//         url: "pmtiles://https://tile.openstreetmap.jp/static/planet.pmtiles",
+//         // tiles: ["https://tile.openstreetmap.jp/data/planet/{z}/{x}/{y}.pbf"],
+//         // minzoom: 6,
+//         // maxzoom: 13
+//     }
+// }
 const osmBrightPoint = {
     id: 'oh-osm-overpass-layer-point',
     type: 'circle',
@@ -6228,6 +6242,13 @@ const layers01 = [
                 attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
                 ext: {name:'extOSM'}
             },
+            // {
+            //     id: 'oh-vector-layer-osm-toner',
+            //     label: "OSMベクター・トナー",
+            //     sources: osmTonerSources,
+            //     layers: osmTonerLayers,
+            //     attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
+            // },
             {
                 id: 'oh-vector-layer-fx-basic',
                 label: "地理院ベクター",
@@ -6236,13 +6257,13 @@ const layers01 = [
             },
             {
                 id: 'oh-vector-layer-mono',
-                label: "地理院ベクターモノクロ",
+                label: "地理院ベクター・モノクロ",
                 sources: monoSources,
                 layers: monoLayers
             },
             {
                 id: 'oh-vector-layer-fx-dark',
-                label: "地理院ベクターダーク",
+                label: "地理院ベクター・ダーク",
                 sources: fxDarkSources,
                 layers: fxDarkLayers
             },
@@ -6256,13 +6277,13 @@ const layers01 = [
             // },
             {
                 id: 'oh-stdLayer',
-                label: "標準地図",
+                label: "地理院標準地図",
                 source: stdSource,
                 layers: [stdLayer]
             },
             {
                 id: 'oh-pale-layer',
-                label: "淡色地図",
+                label: "地理院淡色地図",
                 source: paleSource,
                 layers: [paleLayer]
             },
