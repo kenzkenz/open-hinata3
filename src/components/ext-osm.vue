@@ -9,6 +9,17 @@
           item-title="label"
           @update:modelValue="change"
       ></v-select>
+
+      <v-textarea
+          v-model="query"
+          label="クエリを貼り付け"
+          outlined
+          rows="3"
+          placeholder="マッパー向け機能です。"
+      ></v-textarea>
+      <v-btn style="margin-top: -10px" class="tiny-btn" @click="run">クエリ実行</v-btn>
+      <v-btn style="margin-left: 10px;margin-top: -10px" class="tiny-btn" @click="reset">クエリ解除</v-btn>
+
       <div v-html="item.attribution"></div>
     </div>
 </template>
@@ -19,12 +30,12 @@ export default {
   name: 'ext-osm',
   props: ['mapName','item'],
   data: () => ({
+    query: null,
+    queryText: null,
+    flg: false,
     selectedTag: null,
     tagOptions: [
       { key: '', value: '', label: '無し' },
-      { key: 'waterway', value: 'river', label: '河川' },
-      { key: 'waterway', value: 'stream', label: '小川' },
-      { key: 'waterway', value: 'canal', label: '運河' },
       { key: 'highway', value: 'primary', label: '主要道路' },
       { key: 'highway', value: 'highway-all', label: '道路全て' },
       { key: 'leisure', value: 'park', label: '公園' },
@@ -35,7 +46,10 @@ export default {
       { key: 'highway', value: 'bus_stop', label: 'バス停' },
       { key: 'shop', value: 'supermarket', label: 'スーパーマーケット' },
       { key: 'tourism', value: 'attraction', label: '観光名所' },
+      { key: 'historic', value: 'historic-all', label: 'ヒストリック全て' },
+      { key: 'historic', value: 'wayside_shrine', label: '地蔵' },
       { key: 'historic', value: 'monument', label: '記念碑' },
+      { key: 'historic', value: 'memorial', label: '小さな記念碑' },
       { key: 'railway', value: 'station', label: '駅' },
       { key: 'amenity', value: 'restaurant', label: 'レストラン' },
       { key: 'amenity', value: 'cafe', label: 'カフェ' },
@@ -81,6 +95,11 @@ export default {
       { key: 'tourism', value: 'viewpoint', label: '展望台' },
       { key: 'tourism', value: 'theme_park', label: 'テーマパーク' },
       { key: 'tourism', value: 'castle', label: '城' },
+      { key: 'waterway', value: 'river', label: '河川' },
+      { key: 'waterway', value: 'stream', label: '小川' },
+      { key: 'waterway', value: 'canal', label: '運河' },
+      { key: 'amenity', value: 'fast_food', label: 'ファストフード' },
+
     ],
     menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text', 'font-size':'large'}
   }),
@@ -107,10 +126,47 @@ export default {
           this.s_osmText
         ]})
     },
+    run () {
+      this.flg = true
+      this.change ()
+      this.flg = false
+    },
+    reset () {
+      const map = this.$store.state[this.mapName]
+      map.getSource('osm-overpass-source').setData({
+        type: 'FeatureCollection',
+        features: [] // 空の features 配列
+      });
+      this.queryText = ''
+    },
     change () {
       const vm = this
       const map = this.$store.state[this.mapName]
-      if (!this.s_osmText) {
+
+      if (this.query) {
+        const past24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const bounds = map.getBounds();
+        const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
+        this.queryText = this.query.replace(/^\s*\/\/.*$\n?/gm, '')
+        this.queryText = this.queryText.replace(/\(\s*user:[^)]*\)\s*/g, '');
+        this.queryText = this.queryText.replace(/\s*\n\s*/g, ' ');
+        this.queryText = this.queryText.replace(/\{\{bbox\}\}/g, bbox);
+        this.queryText = this.queryText.replace(
+            /\bnwr\s*\((.*?)\)\s*\((.*?)\)\s*;?/g,
+            'node($1)($2);\nway($1)($2);\nrelation($1)($2);'
+        );
+        // this.queryText = this.queryText.replace(/\{\{date:[^}]+\}\}/g, '2024-06-20T00:00:00Z');
+        this.queryText = this.queryText.replace(/\{\{date:(\d+)hours\}\}/g, (_, hours) => {
+          const pastDate = new Date(Date.now() - Number(hours) * 60 * 60 * 1000).toISOString();
+          return pastDate;
+        });
+
+
+      }
+
+      console.log(this.queryText)
+
+      if (!this.s_osmText && !this.query) {
         map.getSource('osm-overpass-source').setData({
           type: 'FeatureCollection',
           features: [] // 空の features 配列
@@ -118,6 +174,7 @@ export default {
         this.update()
         return
       }
+
       if (map.getZoom() <= 11) {
         map.getSource('osm-overpass-source').setData({
           type: 'FeatureCollection',
@@ -127,29 +184,59 @@ export default {
       }
 
       async function fetchOverpassData(tagKey, tagValue) {
+        // const bounds = map.getBounds();
+        // const query = '[out:json];' +
+        //     '(' +
+        //     'node["amenity"="drinking_water"](' + bounds.getSouth() + ',' + bounds.getWest() + ',' + bounds.getNorth() + ',' + bounds.getEast() + '););' +
+        //     'out body;';
+
+        // node [amenity=drinking_water]({{bbox}});out;
+
         const bounds = map.getBounds();
-        const query = tagValue.includes("all")
-            ? `
-            [out:json];
-            (
-                way["${tagKey}"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});
-                node["${tagKey}"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});
-            );
-            out body;
-            >;
-            out skel qt;
-          `
-            : `
-            [out:json];
-            (
-                way["${tagKey}"="${tagValue}"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});
-                node["${tagKey}"="${tagValue}"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});
-            );
-            out body;
-            >;
-            out skel qt;
-          `;
-        const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+        // const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
+
+        // const query = vm.queryText
+        // console.log(query)
+        let query = tagValue.includes("highway-all")
+            ? '[out:json];' +
+            '(' +
+            'way["' + tagKey + '"](' +
+            bounds.getSouth() + ',' + bounds.getWest() + ',' + bounds.getNorth() + ',' + bounds.getEast() + ');' +
+            ');' +
+            'out body;' +
+            '>;' +
+            'out skel qt;'
+            : tagValue.includes("-all")
+                ? '[out:json];' +
+                '(' +
+                'way[' + tagKey + '](' +
+                bounds.getSouth() + ',' + bounds.getWest() + ',' + bounds.getNorth() + ',' + bounds.getEast() + ');' +
+                'node[' + tagKey + '](' +
+                bounds.getSouth() + ',' + bounds.getWest() + ',' + bounds.getNorth() + ',' + bounds.getEast() + ');' +
+                'relation[' + tagKey + '](' +
+                bounds.getSouth() + ',' + bounds.getWest() + ',' + bounds.getNorth() + ',' + bounds.getEast() + ');' +
+                ');' +
+                'out body;' +
+                '>;' +
+                'out skel qt;'
+                : '[out:json];' +
+                '(' +
+                'way["' + tagKey + '"="' + tagValue + '"](' +
+                bounds.getSouth() + ',' + bounds.getWest() + ',' + bounds.getNorth() + ',' + bounds.getEast() + ');' +
+                'node["' + tagKey + '"="' + tagValue + '"](' +
+                bounds.getSouth() + ',' + bounds.getWest() + ',' + bounds.getNorth() + ',' + bounds.getEast() + ');' +
+                ');' +
+                'out body;' +
+                '>;' +
+                'out skel qt;';
+
+
+        if (vm.queryText) {
+          query = vm.queryText
+        }
+        console.log(query)
+
+        const url = `https://overpass.openstreetmap.jp/api/interpreter?data=${encodeURIComponent(query)}`;
 
         try {
           document.body.style.cursor = 'wait';
@@ -168,7 +255,7 @@ export default {
         map.getCanvas().style.cursor = 'wait'
         const geojsonData = await fetchOverpassData(tagKey, tagValue)
         if (geojsonData) {
-          console.log(JSON.stringify(geojsonData))
+          // console.log(JSON.stringify(geojsonData))
           if (!map.getSource('osm-overpass-source')) {
             map.addSource('osm-overpass-source', {
               type: 'geojson',
