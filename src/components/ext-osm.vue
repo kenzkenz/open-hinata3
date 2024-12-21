@@ -11,7 +11,7 @@
       ></v-select>
 
       <v-textarea
-          v-model="query"
+          v-model="s_rawQueryText"
           label="クエリを貼り付け"
           outlined
           rows="3"
@@ -19,6 +19,7 @@
       ></v-textarea>
       <v-btn style="margin-top: -10px" class="tiny-btn" @click="run">クエリ実行</v-btn>
       <v-btn style="margin-left: 10px;margin-top: -10px" class="tiny-btn" @click="reset">クエリ解除</v-btn>
+      <v-btn style="margin-left: 10px;margin-top: -10px" class="tiny-btn" @click="clear">クリア</v-btn>
 
       <div v-html="item.attribution"></div>
     </div>
@@ -118,18 +119,28 @@ export default {
         this.$store.state.osmText[this.mapName] = value
       }
     },
+    s_rawQueryText: {
+      get() {
+        return this.$store.state.rawQueryText[this.mapName]
+      },
+      set(value) {
+        this.$store.state.rawQueryText[this.mapName] = value
+      }
+    },
   },
   methods: {
     update () {
       console.log(this.s_osmText)
       this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [
-          this.s_osmText
+          this.s_osmText,
+          this.s_rawQueryText
         ]})
     },
     run () {
-      this.flg = true
-      this.change ()
-      this.flg = false
+      if (this.s_rawQueryText){
+        this.s_osmText = ''
+        this.change ()
+      }
     },
     reset () {
       const map = this.$store.state[this.mapName]
@@ -139,34 +150,104 @@ export default {
       });
       this.queryText = ''
     },
+    clear () {
+      const map = this.$store.state[this.mapName]
+      map.getSource('osm-overpass-source').setData({
+        type: 'FeatureCollection',
+        features: [] // 空の features 配列
+      });
+      this.s_osmText = ''
+      this.s_rawQueryText = ''
+      this.queryText = ''
+    },
     change () {
       const vm = this
       const map = this.$store.state[this.mapName]
 
-      if (this.query) {
-        const past24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      if (this.s_rawQueryText) {
+
+        // ユーザーの変更セットIDを取得
+        async function getChangesetIds(userName) {
+          const changesetUrl = `https://api.openstreetmap.org/api/0.6/changesets?display_name=${userName}`;
+          const changesetResponse = await fetch(changesetUrl);
+          const changesetData = await changesetResponse.text();
+
+          // 正規表現で changeset ID を抽出
+          const changesetIds = [...changesetData.matchAll(/id="(\d+)"/g)].map(match => match[1]);
+
+          console.log(`取得したChangeset ID一覧:`, changesetIds);
+          return changesetIds;
+        }
+        // 使用例
+        //console.log(getChangesetIds('Hokkosha'))
         const bounds = map.getBounds();
         const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
-        this.queryText = this.query.replace(/^\s*\/\/.*$\n?/gm, '')
-        this.queryText = this.queryText.replace(/\(\s*user:[^)]*\)\s*/g, '');
-        this.queryText = this.queryText.replace(/\s*\n\s*/g, ' ');
-        this.queryText = this.queryText.replace(/\{\{bbox\}\}/g, bbox);
-        this.queryText = this.queryText.replace(
-            /\bnwr\s*\((.*?)\)\s*\((.*?)\)\s*;?/g,
-            'node($1)($2);\nway($1)($2);\nrelation($1)($2);'
-        );
-        // this.queryText = this.queryText.replace(/\{\{date:[^}]+\}\}/g, '2024-06-20T00:00:00Z');
-        this.queryText = this.queryText.replace(/\{\{date:(\d+)hours\}\}/g, (_, hours) => {
-          const pastDate = new Date(Date.now() - Number(hours) * 60 * 60 * 1000).toISOString();
-          return pastDate;
-        });
+        if (!this.s_rawQueryText.includes('\n')) {
+          // キーと値を分割する関数
+          function splitKeyValue(input) {
+            const match = input.match(/^(\w+)\s*[=,\s]\s*(\w+)$/);
+            if (match) {
+              return {key: match[1], value: match[2]};
+            } else {
+              return {key: input,value: null};
+            }
+          }
+          const {key, value} = splitKeyValue(this.s_rawQueryText);
+          console.log(key, value)
+          function buildOverpassQuery(key, value) {
+            let rawQueryText;
 
+            if (value === null || value === undefined) {
+              // valueがnullまたはundefinedの場合、keyに一致する全てを抽出
+              rawQueryText = '[out:json][timeout:60];' +
+                  '(' +
+                  'node[' + key + '](' + bbox + ');' +
+                  'way[' + key + '](' + bbox + ');' +
+                  'relation[' + key + '](' + bbox + ');' +
+                  ');' +
+                  '(._;>;);' +
+                  'out body qt;';
+            } else {
+              rawQueryText = '[out:json][timeout:60];' +
+                  '(' +
+                  'node[' + key + '=' + value + '](' + bbox + ');' +
+                  'way[' + key + '=' + value + '](' + bbox + ');' +
+                  'relation[' + key + '=' + value + '](' + bbox + ');' +
+                  ');' +
+                  '(._;>;);' +
+                  'out body qt;';
+            }
+            return rawQueryText;
 
+          //   return `[out:json][timeout:60];
+          // (
+          // node[${key}=${value}](${bbox});
+          // way[${key}=${value}](${bbox});
+          // );
+          // out body;
+          // >;
+          // out skel qt;`;
+          }
+          this.queryText = buildOverpassQuery(key, value);
+          console.log('生成されたクエリ:', this.queryText);
+        } else {
+          this.queryText = this.query.replace(/^\s*\/\/.*$\n?/gm, '')
+          this.queryText = this.queryText.replace(/\(\s*user:[^)]*\)\s*/g, '');
+          this.queryText = this.queryText.replace(/\s*\n\s*/g, ' ');
+          this.queryText = this.queryText.replace(/\{\{bbox\}\}/g, bbox);
+          this.queryText = this.queryText.replace(
+              /\bnwr\s*\((.*?)\)\s*\((.*?)\)\s*;?/g,
+              'node($1)($2);\nway($1)($2);\nrelation($1)($2);'
+          );
+          this.queryText = this.queryText.replace(/\{\{date:(\d+)hours\}\}/g, (_, hours) => {
+            const pastDate = new Date(Date.now() - Number(hours) * 60 * 60 * 1000).toISOString();
+            return pastDate;
+          });
+        }
       }
-
       console.log(this.queryText)
 
-      if (!this.s_osmText && !this.query) {
+      if (!this.s_osmText && !this.s_rawQueryText) {
         map.getSource('osm-overpass-source').setData({
           type: 'FeatureCollection',
           features: [] // 空の features 配列
@@ -230,8 +311,7 @@ export default {
                 '>;' +
                 'out skel qt;';
 
-
-        if (vm.queryText) {
+        if (vm.s_rawQueryText) {
           query = vm.queryText
         }
         console.log(query)

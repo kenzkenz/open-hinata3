@@ -186,6 +186,10 @@ export default createStore({
       map01: '',
       map02: ''
     },
+    rawQueryText:{
+      map01: '',
+      map02: ''
+    },
     //------------------------
   },
   getters: {
@@ -304,6 +308,9 @@ export default createStore({
           case 'extOSM':
             if (payload.order === 0) {
               variable = 'osmText'
+            }
+            if (payload.order === 1) {
+              variable = 'rawQueryText'
             }
             break
         }
