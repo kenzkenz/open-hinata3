@@ -4,7 +4,7 @@
       <v-select
           v-model="s_osmText"
           :items="tagOptions"
-          label="選択"
+          label="ズーム11以上で表示"
           item-value="value"
           item-title="label"
           @update:modelValue="change"
@@ -22,6 +22,9 @@ export default {
     selectedTag: null,
     tagOptions: [
       { key: '', value: '', label: '無し' },
+      { key: 'waterway', value: 'river', label: '河川' },
+      { key: 'waterway', value: 'stream', label: '小川' },
+      { key: 'waterway', value: 'canal', label: '運河' },
       { key: 'highway', value: 'primary', label: '主要道路' },
       { key: 'highway', value: 'highway-all', label: '道路全て' },
       { key: 'leisure', value: 'park', label: '公園' },
@@ -115,7 +118,7 @@ export default {
         this.update()
         return
       }
-      if (map.getZoom() < 9) {
+      if (map.getZoom() <= 11) {
         map.getSource('osm-overpass-source').setData({
           type: 'FeatureCollection',
           features: [] // 空の features 配列
@@ -123,44 +126,37 @@ export default {
         return
       }
 
-      let fetchController = null; // 前回の fetch をキャンセルするためのコントローラ
-
       async function fetchOverpassData(tagKey, tagValue) {
-        if (fetchController) {
-          fetchController.abort(); // 前回のリクエストをキャンセル
-        }
-        fetchController = new AbortController();
-        const { signal } = fetchController;
         const bounds = map.getBounds();
         const query = tagValue.includes("all")
             ? `
-                [out:json];
-                (
-                    way["${tagKey}"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});
-                    node["${tagKey}"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});
-                );
-                out body;
-                >;
-                out skel qt;
-              `
+            [out:json];
+            (
+                way["${tagKey}"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});
+                node["${tagKey}"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});
+            );
+            out body;
+            >;
+            out skel qt;
+          `
             : `
-                [out:json];
-                (
-                    way["${tagKey}"="${tagValue}"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});
-                    node["${tagKey}"="${tagValue}"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});
-                );
-                out body;
-                >;
-                out skel qt;
-              `;
+            [out:json];
+            (
+                way["${tagKey}"="${tagValue}"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});
+                node["${tagKey}"="${tagValue}"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});
+            );
+            out body;
+            >;
+            out skel qt;
+          `;
         const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
 
         try {
-          document.body.style.cursor = 'wait'
-          const response = await fetch(url,{ signal });
+          document.body.style.cursor = 'wait';
+          const response = await fetch(url);
           const data = await response.json();
-          const geojson = osmtogeojson(data)
-          document.body.style.cursor = 'default'
+          const geojson = osmtogeojson(data);
+          document.body.style.cursor = 'default';
           return geojson;
         } catch (error) {
           console.error('Error fetching Overpass data:', error);
@@ -169,9 +165,10 @@ export default {
 
       // MapLibreにGeoJSONレイヤーを追加
       async function addOverpassLayer(tagKey, tagValue) {
-        document.body.style.cursor = 'wait'
+        map.getCanvas().style.cursor = 'wait'
         const geojsonData = await fetchOverpassData(tagKey, tagValue)
         if (geojsonData) {
+          console.log(JSON.stringify(geojsonData))
           if (!map.getSource('osm-overpass-source')) {
             map.addSource('osm-overpass-source', {
               type: 'geojson',
@@ -180,7 +177,7 @@ export default {
           } else {
             map.getSource('osm-overpass-source').setData(geojsonData)
           }
-          document.body.style.cursor = 'default'
+          map.getCanvas().style.cursor = 'default'
         }
       }
 

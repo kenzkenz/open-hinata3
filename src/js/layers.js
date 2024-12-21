@@ -95,6 +95,7 @@ const overpassPolygon = {
         'fill-color': 'rgba(0,0,255,0.5)',
     }
 }
+
 const overpassLine = {
     id: 'oh-osm-overpass-layer-line',
     type: 'line',
@@ -103,14 +104,18 @@ const overpassLine = {
     paint: {
         'line-color': 'blue',
         'line-width': [
-            'interpolate', // Zoom-based interpolation
-            ['linear'],
-            ['zoom'], // Use the zoom level as the input
-            1, 0.1,
-            18, 10,
+            'case',
+            ['boolean', ['get', 'name'], false], // name フィールドが存在する場合 効いていない
+            4, // 倍の太さ
+            2  // 通常の太さ
         ]
     }
-}
+};
+
+
+
+
+
 // const stdSources = []
 // const stdLayers = std.layers
 // Object.keys(std.sources).forEach(function(key) {
@@ -6240,20 +6245,33 @@ const layers01 = [
         label: "基本地図",
         nodes: [
             {
-                id: 'oh-vector-layer-osm-bright',
-                label: "OSMベクター",
-                sources: osmBrightSources,
-                layers: osmBrightLayers,
-                attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
-                ext: {name:'extOSM'}
-            },
-            // {
-            //     id: 'oh-vector-layer-osm-toner',
-            //     label: "OSMベクター・トナー",
-            //     sources: osmTonerSources,
-            //     layers: osmTonerLayers,
-            //     attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
-            // },
+                id: 'OSM',
+                label: "OSM",
+                nodes: [
+                    {
+                        id: 'oh-vector-layer-osm-bright',
+                        label: "OSMベクター",
+                        sources: osmBrightSources,
+                        layers: osmBrightLayers,
+                        attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
+                        ext: {name:'extOSM'}
+                    },
+                    {
+                        id: 'oh-overpass',
+                        label: "OSM overpass",
+                        source: overpassSource,
+                        layers: [overpassPolygon,overpassLine,overpassPoint],
+                        attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/Community_Overpass_API" target="_blank">OpenStreetMap</a> contributors',
+                        ext: {name:'extOSM'}
+                    },
+                    // {
+                    //     id: 'oh-vector-layer-osm-toner',
+                    //     label: "OSMベクター・トナー",
+                    //     sources: osmTonerSources,
+                    //     layers: osmTonerLayers,
+                    //     attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
+                    // },
+                ]},
             {
                 id: 'oh-vector-layer-fx-basic',
                 label: "地理院ベクター",
@@ -7389,14 +7407,6 @@ const layers01 = [
         id: 'sonohoka',
         label: "その他",
         nodes: [
-            {
-                id: 'oh-overpass',
-                label: "OSM overpass",
-                source: overpassSource,
-                layers: [overpassPolygon,overpassLine,overpassPoint],
-                attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
-                ext: {name:'extOSM'}
-            },
             {
                 id: 'oh-sekibutsu',
                 label: "みんなで石仏調査",

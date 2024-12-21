@@ -1094,18 +1094,23 @@ export default {
             const features = map.queryRenderedFeatures(e.point);
             if (features.length) {
               const feature = features[0]; // 最初のフィーチャーのみ取得
-              const layerId = feature.layer.id
+              const layerId = feature.layer.id;
               // console.log(layerId)
               if (layerId.indexOf('vector') !== -1) {
-                map.getCanvas().style.cursor = 'default'
+                if (map.getCanvas().style.cursor !== 'wait') {
+                  map.getCanvas().style.cursor = 'default';
+                }
               } else {
-                map.getCanvas().style.cursor = 'pointer'
+                if (map.getCanvas().style.cursor !== 'wait') {
+                  map.getCanvas().style.cursor = 'pointer';
+                }
               }
-              // map.getCanvas().style.cursor = 'pointer'
             } else {
-              map.getCanvas().style.cursor = 'default'
+              if (map.getCanvas().style.cursor !== 'wait') {
+                map.getCanvas().style.cursor = 'default';
+              }
             }
-          })
+          });
           //------------------------------------------------------------------------------------------------------------
           // ポップアップ
           map.on('click', (e) => {
