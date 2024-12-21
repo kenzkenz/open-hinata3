@@ -17,12 +17,14 @@
             <v-btn icon @click="goToCurrentLocation" v-if="mapName === 'map01'"><v-icon>mdi-crosshairs-gps</v-icon></v-btn>
             <v-btn class="zoom-in" icon @click="zoomIn" v-if="mapName === 'map01'"><v-icon>mdi-plus</v-icon></v-btn>
             <v-btn class="zoom-out" icon @click="zoomOut" v-if="mapName === 'map01'"><v-icon>mdi-minus</v-icon></v-btn>
+            <v-btn class="share" icon @click="share(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-share-variant</v-icon></v-btn>
           </div>
 
           <DialogMenu :mapName=mapName />
           <DialogLayer :mapName=mapName />
           <dialog-info :mapName=mapName />
           <dialog2 :mapName=mapName />
+          <dialogShare :mapName=mapName />
 
           <div :id="'terrain-btn-div-' + mapName" class="terrain-btn-div">
             <div class="terrain-btn-container">
@@ -159,6 +161,7 @@ import DialogMenu from '@/components/Dialog-menu'
 import DialogLayer from '@/components/Dialog-layer'
 import DialogInfo from '@/components/Dialog-info'
 import Dialog2 from '@/components/Dialog2'
+import DialogShare from "@/components/Dialog-share"
 // import codeShizen from '@/js/codeShizen'
 import pyramid from '@/js/pyramid'
 import * as Layers from '@/js/layers'
@@ -177,6 +180,7 @@ export default {
     DialogMenu,
     DialogInfo,
     Dialog2,
+    DialogShare,
   },
   data: () => ({
     mapNames: ['map01','map02'],
@@ -214,6 +218,16 @@ export default {
     },
   },
   methods: {
+    share (mapName) {
+      if (this.$store.state.dialogs.shareDialog[mapName].style.display === 'none') {
+        this.$store.commit('incrDialogMaxZindex')
+        this.$store.state.dialogs.shareDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
+        this.$store.state.dialogs.shareDialog[mapName].style.display = 'block'
+        this.$store.state.dialogs.shareDialog[mapName].style.left = (window.innerWidth - 360) + 'px'
+      } else {
+        this.$store.state.dialogs.shareDialog[mapName].style.display = 'none'
+      }
+    },
     zoomIn () {
       const map = this.$store.state.map01
       map.zoomIn({ duration: 500 })
@@ -527,6 +541,7 @@ export default {
       axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrl.php', params)
           .then(response => {
             window.history.pushState(null, 'map', "?s=" + response.data.urlid)
+            this.$store.state.url = window.location.host + "/?s=" + response.data.urlid
             console.log('保存成功')
           })
           .catch(error => {
@@ -1345,6 +1360,11 @@ export default {
 .zoom-out {
   position: absolute;
   top: 120px;
+  left: 0;
+}
+.share {
+  position: absolute;
+  top: 180px;
   left: 0;
 }
 /*3Dのボタン-------------------------------------------------------------*/

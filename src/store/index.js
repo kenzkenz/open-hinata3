@@ -7,6 +7,10 @@ export default createStore({
     // changeFlg: false,
     storeTest: 'storeTest',
     dialogs: {
+      shareDialog:{
+        map01:{name:'shareDialog',style: {top: '65px', left: '10px', 'z-index': 1, height: 'auto', 'width': '350px', display: 'none'}},
+        map02:{name:'shareDialog',style: {top: '65px', left: '10px', 'z-index': 1, height: 'auto', 'width': '250px', display: 'none'}},
+      },
       menuDialog: {
         map01:{name:'menuDialog',style: {top: '65px', left: '10px', 'z-index': 1, height: 'auto', 'width': '250px', display: 'none'}},
         map02:{name:'menuDialog',style: {top: '65px', left: '10px', 'z-index': 1, height: 'auto', 'width': '250px', display: 'none'}},
@@ -40,6 +44,7 @@ export default createStore({
       map01: [],
       map02: [],
     },
+    url: '',
     dialog2Id:1,
     dialogMaxZindex: 0,
     cdArea: '',
