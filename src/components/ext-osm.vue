@@ -333,7 +333,7 @@ export default {
       // GeoJSONをGitHub Gistにアップロードするプログラム
       async function uploadGeoJSONToGist(geojsonText, gistDescription = 'Uploaded GeoJSON') {
 
-        const token = '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';
+        const token = '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';
 
         const gistAPIUrl = 'https://api.github.com/gists';
 
@@ -374,7 +374,7 @@ export default {
     gistCsv () {
       // CSVをGistにアップロードする関数
       async function uploadCSVToGist(csvText, gistDescription = 'GeoJSONから変換されたCSV') {
-        const token = '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';
+        const token = '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';
         const gistData = {
           description: gistDescription,
           public: true,
