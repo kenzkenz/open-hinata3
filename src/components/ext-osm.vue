@@ -4,7 +4,7 @@
       <v-select
           v-model="s_osmText"
           :items="tagOptions"
-          label="ズーム11以上で表示"
+          label=""
           item-value="value"
           item-title="label"
           @update:modelValue="change"
