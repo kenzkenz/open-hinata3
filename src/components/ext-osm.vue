@@ -18,8 +18,11 @@
           placeholder="マッパー向け機能です。"
       ></v-textarea>
       <v-btn style="margin-top: -10px" class="tiny-btn" @click="run">クエリ実行</v-btn>
-      <v-btn style="margin-left: 10px;margin-top: -10px" class="tiny-btn" @click="reset">クエリ解除</v-btn>
-      <v-btn style="margin-left: 10px;margin-top: -10px" class="tiny-btn" @click="clear">クリア</v-btn>
+      <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="reset">クエリ解除</v-btn>
+      <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="clear">クリア</v-btn>
+      <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="prev">prev</v-btn>
+      <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="next">next</v-btn>
+      <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="delete0">del</v-btn>
 
       <div v-html="item.attribution"></div>
     </div>
@@ -31,6 +34,7 @@ export default {
   name: 'ext-osm',
   props: ['mapName','item'],
   data: () => ({
+    counter: 0,
     query: null,
     queryText: null,
     flg: false,
@@ -102,7 +106,7 @@ export default {
       { key: 'amenity', value: 'fast_food', label: 'ファストフード' },
 
     ],
-    menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text', 'font-size':'large'}
+    menuContentSize: {'width':'330px','height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text', 'font-size':'large'}
   }),
   computed: {
     s_extFire () {
@@ -140,6 +144,16 @@ export default {
       if (this.s_rawQueryText){
         this.s_osmText = ''
         this.change ()
+
+        let queryText = JSON.parse(localStorage.getItem('queryText'))
+        if (!queryText) {
+          queryText = []
+        }
+        queryText.push(this.s_rawQueryText)
+        queryText = [...new Set(queryText)]
+        localStorage.setItem('queryText',JSON.stringify(queryText))
+        console.log(JSON.parse(localStorage.getItem('queryText')))
+
       }
     },
     reset () {
@@ -160,92 +174,187 @@ export default {
       this.s_rawQueryText = ''
       this.queryText = ''
     },
+    prev () {
+      const queryText = JSON.parse(localStorage.getItem('queryText'));
+      // カウンタが負にならないように調整
+      if (this.counter > 0) {
+        this.counter--;
+      }
+      this.s_rawQueryText = queryText[this.counter];
+    },
+    next () {
+      const queryText = JSON.parse(localStorage.getItem('queryText'));
+      // カウンタが配列の長さより大きくならないように調整
+      if (this.counter < queryText.length - 1) {
+        this.counter++;
+      }
+      this.s_rawQueryText = queryText[this.counter];
+    },
+    delete0 () {
+      let queryText = JSON.parse(localStorage.getItem('queryText'));
+      queryText = queryText.filter(v => v !== this.s_rawQueryText)
+      console.log(queryText)
+      localStorage.setItem('queryText',JSON.stringify(queryText))
+      this.s_rawQueryText = queryText[this.counter];
+    },
     change () {
       const vm = this
       const map = this.$store.state[this.mapName]
 
       if (this.s_rawQueryText) {
 
-        // ユーザーの変更セットIDを取得
-        async function getChangesetIds(userName) {
-          const changesetUrl = `https://api.openstreetmap.org/api/0.6/changesets?display_name=${userName}`;
-          const changesetResponse = await fetch(changesetUrl);
-          const changesetData = await changesetResponse.text();
+        if (this.s_rawQueryText.includes("user")) {
 
-          // 正規表現で changeset ID を抽出
-          const changesetIds = [...changesetData.matchAll(/id="(\d+)"/g)].map(match => match[1]);
+          const name = this.s_rawQueryText.match(/"([^"]+)"/)[1];
+          console.log(name);
 
-          console.log(`取得したChangeset ID一覧:`, changesetIds);
-          return changesetIds;
-        }
-        // 使用例
-        //console.log(getChangesetIds('Hokkosha'))
-        const bounds = map.getBounds();
-        const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
-        if (!this.s_rawQueryText.includes('\n')) {
-          // キーと値を分割する関数
-          function splitKeyValue(input) {
-            const match = input.match(/^(\w+)\s*[=,\s]\s*(\w+)$/);
-            if (match) {
-              return {key: match[1], value: match[2]};
-            } else {
-              return {key: input,value: null};
+          async function getChangesetQuery(userName) {
+            try {
+              // 現在時刻と24時間前の時刻をISO形式で取得
+              const now = new Date();
+              const yesterday = new Date(now.getTime() - 72 * 60 * 60 * 1000);
+              const timeFilter = `${yesterday.toISOString()},${now.toISOString()}`;
+
+              // Changeset IDを取得（過去72時間以内に絞り込み）
+              const changesetUrl = `https://api.openstreetmap.org/api/0.6/changesets?display_name=${userName}&time=${timeFilter}`;
+              const changesetResponse = await fetch(changesetUrl);
+              const changesetData = await changesetResponse.text();
+
+              // 正規表現でChangeset IDを抽出し、数値に変換して降順に並べ替え
+              const changesetIds = [...changesetData.matchAll(/id="(\d+)"/g)]
+                  .map(match => parseInt(match[1], 10))
+                  .sort((a, b) => b - a)
+                  .slice(0, 200); // 上位1件を取得
+
+              if (changesetIds.length === 0) {
+                throw new Error('過去24時間以内のChangeset IDが見つかりませんでした。');
+              }
+
+              // 上位1件のChangesetの詳細を取得
+              const changesetId = changesetIds[0];
+              const changesetDetailUrl = `https://api.openstreetmap.org/api/0.6/changeset/${changesetId}/download`;
+              const detailResponse = await fetch(changesetDetailUrl);
+              const detailData = await detailResponse.text();
+
+              // 正規表現でNode、Way、RelationのIDを抽出（すべてのIDを取得）
+              const nodeIds = [...detailData.matchAll(/<node id="(\d+)"/g)].map(match => match[1]);
+              const wayIds = [...detailData.matchAll(/<way id="(\d+)"/g)].map(match => match[1]);
+              const relationIds = [...detailData.matchAll(/<relation id="(\d+)"/g)].map(match => match[1]);
+
+              // 地図のBBOXを取得
+              const bounds = map.getBounds();
+              const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
+              // console.log('使用するBBOX:', bbox);
+
+              // Overpass APIクエリを生成 (BBOXを含む)
+              const query = `[out:json][timeout:60];
+             (
+              ${nodeIds.map(id => `node(${id})(${bbox});`).join(' ')}
+              ${wayIds.map(id => `way(${id})(${bbox});`).join(' ')}
+              ${relationIds.map(id => `relation(${id})(${bbox});`).join(' ')}
+             );
+              (._;>;);
+              out body;`;
+
+              // console.log('生成されたOverpass APIクエリ:', query);
+
+              // Overpass APIからデータを取得しMapLibreに表示 (POSTリクエスト)
+              const url = `https://overpass.openstreetmap.jp/api/interpreter`;
+              const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `data=${encodeURIComponent(query)}`
+              });
+              const data = await response.json();
+              const geojson = osmtogeojson(data);
+              map.getSource('osm-overpass-source').setData(geojson);
+              map.getCanvas().style.cursor = 'default'
+              console.log('MapLibreにGeoJSONレイヤーを追加しました');
+            } catch (error) {
+              console.error('エラー:', error.message);
+              document.body.style.cursor = 'default';
+              throw error;
             }
           }
-          const {key, value} = splitKeyValue(this.s_rawQueryText);
-          console.log(key, value)
-          function buildOverpassQuery(key, value) {
-            let rawQueryText;
 
-            if (value === null || value === undefined) {
-              // valueがnullまたはundefinedの場合、keyに一致する全てを抽出
-              rawQueryText = '[out:json][timeout:60];' +
-                  '(' +
-                  'node[' + key + '](' + bbox + ');' +
-                  'way[' + key + '](' + bbox + ');' +
-                  'relation[' + key + '](' + bbox + ');' +
-                  ');' +
-                  '(._;>;);' +
-                  'out body qt;';
-            } else {
-              rawQueryText = '[out:json][timeout:60];' +
-                  '(' +
-                  'node[' + key + '=' + value + '](' + bbox + ');' +
-                  'way[' + key + '=' + value + '](' + bbox + ');' +
-                  'relation[' + key + '=' + value + '](' + bbox + ');' +
-                  ');' +
-                  '(._;>;);' +
-                  'out body qt;';
+          (async () => {
+            try {
+              await getChangesetQuery(name);
+            } catch (error) {
+              console.error('処理中にエラーが発生しました:', error);
             }
-            return rawQueryText;
+          })();
 
-          //   return `[out:json][timeout:60];
-          // (
-          // node[${key}=${value}](${bbox});
-          // way[${key}=${value}](${bbox});
-          // );
-          // out body;
-          // >;
-          // out skel qt;`;
-          }
-          this.queryText = buildOverpassQuery(key, value);
-          console.log('生成されたクエリ:', this.queryText);
         } else {
-          this.queryText = this.query.replace(/^\s*\/\/.*$\n?/gm, '')
-          this.queryText = this.queryText.replace(/\(\s*user:[^)]*\)\s*/g, '');
-          this.queryText = this.queryText.replace(/\s*\n\s*/g, ' ');
-          this.queryText = this.queryText.replace(/\{\{bbox\}\}/g, bbox);
-          this.queryText = this.queryText.replace(
-              /\bnwr\s*\((.*?)\)\s*\((.*?)\)\s*;?/g,
-              'node($1)($2);\nway($1)($2);\nrelation($1)($2);'
-          );
-          this.queryText = this.queryText.replace(/\{\{date:(\d+)hours\}\}/g, (_, hours) => {
-            const pastDate = new Date(Date.now() - Number(hours) * 60 * 60 * 1000).toISOString();
-            return pastDate;
-          });
+          const bounds = map.getBounds();
+          const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
+          if (!this.s_rawQueryText.includes('\n')) {
+            // キーと値を分割する関数
+            function splitKeyValue(input) {
+              const match = input.match(/^(\w+)\s*[=,\s]\s*(\w+)$/);
+              if (match) {
+                return {key: match[1], value: match[2]};
+              } else {
+                return {key: input,value: null};
+              }
+            }
+            const {key, value} = splitKeyValue(this.s_rawQueryText);
+            console.log(key, value)
+            function buildOverpassQuery(key, value) {
+              let rawQueryText;
+              if (value === null || value === undefined) {
+                // valueがnullまたはundefinedの場合、keyに一致する全てを抽出
+                rawQueryText = '[out:json][timeout:60];' +
+                    '(' +
+                    'node[' + key + '](' + bbox + ');' +
+                    'way[' + key + '](' + bbox + ');' +
+                    'relation[' + key + '](' + bbox + ');' +
+                    ');' +
+                    '(._;>;);' +
+                    'out body qt;';
+              } else {
+                rawQueryText = '[out:json][timeout:60];' +
+                    '(' +
+                    'node[' + key + '=' + value + '](' + bbox + ');' +
+                    'way[' + key + '=' + value + '](' + bbox + ');' +
+                    'relation[' + key + '=' + value + '](' + bbox + ');' +
+                    ');' +
+                    '(._;>;);' +
+                    'out body qt;';
+              }
+              return rawQueryText;
+            }
+            this.queryText = buildOverpassQuery(key, value);
+            console.log('生成されたクエリ:', this.queryText);
+          } else {
+            this.queryText = this.query.replace(/^\s*\/\/.*$\n?/gm, '')
+            this.queryText = this.queryText.replace(/\(\s*user:[^)]*\)\s*/g, '');
+            this.queryText = this.queryText.replace(/\s*\n\s*/g, ' ');
+            this.queryText = this.queryText.replace(/\{\{bbox\}\}/g, bbox);
+            this.queryText = this.queryText.replace(
+                /\bnwr\s*\((.*?)\)\s*\((.*?)\)\s*;?/g,
+                'node($1)($2);\nway($1)($2);\nrelation($1)($2);'
+            );
+            this.queryText = this.queryText.replace(/\{\{date:(\d+)hours\}\}/g, (_, hours) => {
+              const pastDate = new Date(Date.now() - Number(hours) * 60 * 60 * 1000).toISOString();
+              return pastDate;
+            });
+          }
         }
+        console.log(this.queryText)
       }
-      console.log(this.queryText)
+
+      //
+      //
+      //
+      //
+      //
+      //
+      //
+      //
+      //
 
       if (!this.s_osmText && !this.s_rawQueryText) {
         map.getSource('osm-overpass-source').setData({
@@ -315,15 +424,13 @@ export default {
           query = vm.queryText
         }
         console.log(query)
-
+        // alert(query)
         const url = `https://overpass.openstreetmap.jp/api/interpreter?data=${encodeURIComponent(query)}`;
 
         try {
-          document.body.style.cursor = 'wait';
           const response = await fetch(url);
           const data = await response.json();
           const geojson = osmtogeojson(data);
-          document.body.style.cursor = 'default';
           return geojson;
         } catch (error) {
           console.error('Error fetching Overpass data:', error);

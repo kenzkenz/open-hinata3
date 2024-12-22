@@ -95,7 +95,21 @@ const overpassPolygon = {
         'fill-color': 'rgba(0,0,255,0.5)',
     }
 }
-
+const overpassPolygonLine = {
+    id: "oh-osm-overpass-layer-polygon-line",
+    type: "line",
+    source: "osm-overpass-source",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 1,
+            12, 1.5
+        ]
+    },
+}
 const overpassLine = {
     id: 'oh-osm-overpass-layer-line',
     type: 'line',
@@ -6254,14 +6268,14 @@ const layers01 = [
                         sources: osmBrightSources,
                         layers: osmBrightLayers,
                         attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
-                        ext: {name:'extOSM'}
                     },
                     {
                         id: 'oh-overpass',
                         label: "OSM overpass",
                         source: overpassSource,
-                        layers: [overpassPolygon,overpassLine,overpassPoint],
-                        attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/Community_Overpass_API" target="_blank">OpenStreetMap</a> contributors',
+                        layers: [overpassPolygon,overpassPolygonLine,overpassLine,overpassPoint],
+                        attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/Community_Overpass_API" target="_blank">OpenStreetMap</a> contributors<br>' +
+                        '<a href="https://wiki.openstreetmap.org/wiki/JA:How_to_map_a" target="_blank">How to map a</a>',
                         ext: {name:'extOSM'}
                     },
                     // {

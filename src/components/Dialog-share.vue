@@ -1,9 +1,9 @@
 <template>
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div class="share-div">
-      <v-text-field label="" style="margin-top: 10px">{{s_url}}</v-text-field>
-
-
+      <v-text-field label="" v-model="s_url" style="margin-top: 10px"></v-text-field>
+      <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="copy">クリップボードにコピー</v-btn>
+      <vue-qrcode :value="s_url" :options="{ width: 320 }"></vue-qrcode>
     </div>
   </Dialog>
 </template>
@@ -17,8 +17,7 @@ export default {
   name: 'Dialog-share',
   props: ['mapName'],
   data: () => ({
-    konjyakuYear: '1890',
-    address: '',
+
   }),
   computed: {
     s_url () {
@@ -27,65 +26,12 @@ export default {
     s_dialogs () {
       return this.$store.state.dialogs.shareDialog
     },
-    s_isPitch: {
-      get() {
-        return this.$store.state.isPitch
-      },
-      set(value) {
-        this.$store.state.isPitch = value
-      }
-    },
   },
   methods: {
-    changePitch () {
-      localStorage.setItem('isPitch',this.s_isPitch)
+    copy () {
+      navigator.clipboard.writeText(this.s_url);
+      alert('テキストをクリップボードにコピーしました!');
     },
-    reset () {
-      const baseUrl = `${window.location.origin}${window.location.pathname}`
-      location.href = baseUrl
-    },
-    sercheAdress () {
-      const map = this.$store.state.map01
-      // const vm = this
-      axios
-          .get('https://msearch.gsi.go.jp/address-search/AddressSearch?q=' + this.address)
-          .then(function (response) {
-            console.log(response)
-            const coordinates = response.data[0].geometry.coordinates
-            // ユーザーの操作を一時的に無効化
-            map.scrollZoom.disable();
-            map.dragPan.disable();
-            map.keyboard.disable();
-            map.doubleClickZoom.disable();
-            map.flyTo({
-              center: [parseFloat(coordinates[0]), parseFloat(coordinates[1])],
-              zoom: 14,
-              essential: true
-            })
-            // flyToアニメーション完了後にユーザー操作を再度有効化
-            map.once('moveend', () => {
-              map.scrollZoom.enable();
-              map.dragPan.enable();
-              map.keyboard.enable();
-              map.doubleClickZoom.enable();
-            });
-            // 検索結果の位置にマーカーを追加
-            const marker = new maplibregl.Marker()
-                .setLngLat([parseFloat(coordinates[0]), parseFloat(coordinates[1])])
-                // .setPopup(new maplibregl.Popup().setHTML(`<strong>${vm.address}</strong>`)) // ポップアップに住所を表示
-                .addTo(map);
-            // マーカーをクリックしたときにマーカーを削除
-            marker.getElement().addEventListener('click', () => {
-              marker.remove(); // マーカーをマップから削除
-            });
-          })
-    },
-    terrainLevelInput () {
-      this.$store.state.map01.setTerrain({ 'source': 'terrain', 'exaggeration': this.s_terrainLevel })
-      this.$store.state.map02.setTerrain({ 'source': 'terrain', 'exaggeration': this.s_terrainLevel })
-      localStorage.setItem('terrainLevel',this.s_terrainLevel)
-      history('terrainLevelInput',window.location.href)
-    }
   },
   mounted() {
     if (localStorage.getItem('terrainLevel')) {
@@ -107,6 +53,14 @@ export default {
   font-size: larger;
   color: black;
   background-color: white;
+  text-align: center;
+}
+/* スマホ用のスタイル */
+@media screen and (max-width: 768px) {
+  .share-div {
+    width: 100%;
+    margin: 0;
+  }
 }
 </style>
 

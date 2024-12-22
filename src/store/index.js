@@ -44,7 +44,7 @@ export default createStore({
       map01: [],
       map02: [],
     },
-    url: '',
+    url: 'dumy',
     dialog2Id:1,
     dialogMaxZindex: 0,
     cdArea: '',

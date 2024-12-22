@@ -223,7 +223,11 @@ export default {
         this.$store.commit('incrDialogMaxZindex')
         this.$store.state.dialogs.shareDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
         this.$store.state.dialogs.shareDialog[mapName].style.display = 'block'
-        this.$store.state.dialogs.shareDialog[mapName].style.left = (window.innerWidth - 360) + 'px'
+        if (window.innerWidth < 450) {
+          this.$store.state.dialogs.shareDialog[mapName].style.left = '0px'
+        } else {
+          this.$store.state.dialogs.shareDialog[mapName].style.left = (window.innerWidth - 360) + 'px'
+        }
       } else {
         this.$store.state.dialogs.shareDialog[mapName].style.display = 'none'
       }
@@ -541,7 +545,12 @@ export default {
       axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrl.php', params)
           .then(response => {
             window.history.pushState(null, 'map', "?s=" + response.data.urlid)
-            this.$store.state.url = window.location.host + "/?s=" + response.data.urlid
+            console.log(window.location.pathname)
+            let pathName = ''
+            if (window.location.pathname !== '/') {
+              pathName = window.location.pathname
+            }
+            this.$store.state.url = window.location.protocol + window.location.host + pathName + "/?s=" + response.data.urlid
             console.log('保存成功')
           })
           .catch(error => {
