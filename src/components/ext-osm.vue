@@ -26,6 +26,8 @@
       <v-btn style="margin-top: 0px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
       <v-btn style="margin-left: 5px;margin-top: 0px" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
 
+      <div style="font-size: small;" v-html="errorLog"></div>
+      <hr>
       <div v-html="item.attribution"></div>
     </div>
 </template>
@@ -36,6 +38,7 @@ export default {
   name: 'ext-osm',
   props: ['mapName','item'],
   data: () => ({
+    errorLog: '',
     geojsonText: '',
     counter: 0,
     query: null,
@@ -107,7 +110,6 @@ export default {
       { key: 'waterway', value: 'stream', label: '小川' },
       { key: 'waterway', value: 'canal', label: '運河' },
       { key: 'amenity', value: 'fast_food', label: 'ファストフード' },
-
     ],
     menuContentSize: {'width':'330px','height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text', 'font-size':'large'}
   }),
@@ -145,6 +147,7 @@ export default {
     },
     run () {
       if (this.s_rawQueryText){
+        this.errorLog = ''
         this.s_osmText = ''
         this.change ()
 
@@ -160,6 +163,7 @@ export default {
       }
     },
     reset () {
+      this.errorLog = ''
       const map = this.$store.state[this.mapName]
       map.getSource('osm-overpass-source').setData({
         type: 'FeatureCollection',
@@ -168,6 +172,7 @@ export default {
       this.queryText = ''
     },
     clear () {
+      this.errorLog = ''
       const map = this.$store.state[this.mapName]
       map.getSource('osm-overpass-source').setData({
         type: 'FeatureCollection',
@@ -178,6 +183,7 @@ export default {
       this.queryText = ''
     },
     prev () {
+      this.errorLog = ''
       const queryText = JSON.parse(localStorage.getItem('queryText'));
       // カウンタが負にならないように調整
       if (this.counter > 0) {
@@ -186,6 +192,7 @@ export default {
       this.s_rawQueryText = queryText[this.counter];
     },
     next () {
+      this.errorLog = ''
       const queryText = JSON.parse(localStorage.getItem('queryText'));
       // カウンタが配列の長さより大きくならないように調整
       if (this.counter < queryText.length - 1) {
@@ -194,6 +201,7 @@ export default {
       this.s_rawQueryText = queryText[this.counter];
     },
     delete0 () {
+      this.errorLog = ''
       let queryText = JSON.parse(localStorage.getItem('queryText'));
       queryText = queryText.filter(v => v !== this.s_rawQueryText)
       console.log(queryText)
@@ -201,6 +209,7 @@ export default {
       this.s_rawQueryText = queryText[this.counter];
     },
     saveGeojson () {
+      this.errorLog = ''
       // GeoJSONテキストをBlobオブジェクトに変換
       const blob = new Blob([this.geojsonText], { type: 'application/json' });
 
@@ -218,7 +227,9 @@ export default {
       URL.revokeObjectURL(link.href);
     },
     saveCsv () {
+      this.errorLog = ''
       // GeoJSONをCSVに変換してダウンロード
+// GeoJSONをCSVに変換してダウンロード
       function downloadGeoJSONAsCSV(geojsonText) {
         try {
           // GeoJSONをオブジェクトに変換
@@ -236,22 +247,52 @@ export default {
               Object.keys(feature.properties).forEach(key => headers.add(key));
             }
           });
-          headers.add('longitude'); // 緯度
-          headers.add('latitude'); // 経度
+          headers.add('中心座標緯度'); // 中心座標緯度
+          headers.add('中心座標経度'); // 中心座標経度
 
           const headerArray = Array.from(headers);
           let csv = headerArray.join(',') + '\n';
 
           // 各FeatureのデータをCSV行に追加
           geojson.features.forEach(feature => {
-            const row = headerArray.map(header => {
-              if (header === 'longitude' || header === 'latitude') {
-                if (feature.geometry && feature.geometry.type === 'Point') {
-                  return header === 'longitude'
-                      ? feature.geometry.coordinates[0]
-                      : feature.geometry.coordinates[1];
+            let centerLat = '';
+            let centerLng = '';
+            if (feature.geometry) {
+              switch (feature.geometry.type) {
+                case 'Point': {
+                  [centerLng, centerLat] = feature.geometry.coordinates;
+                  break;
                 }
-                return '';
+                case 'LineString': {
+                  const coords = feature.geometry.coordinates;
+                  const avg = coords.reduce((acc, coord) => {
+                    acc[0] += coord[0];
+                    acc[1] += coord[1];
+                    return acc;
+                  }, [0, 0]);
+                  centerLng = avg[0] / coords.length;
+                  centerLat = avg[1] / coords.length;
+                  break;
+                }
+                case 'Polygon': {
+                  const coords = feature.geometry.coordinates[0];
+                  const avg = coords.reduce((acc, coord) => {
+                    acc[0] += coord[0];
+                    acc[1] += coord[1];
+                    return acc;
+                  }, [0, 0]);
+                  centerLng = avg[0] / coords.length;
+                  centerLat = avg[1] / coords.length;
+                  break;
+                }
+              }
+            }
+
+            const row = headerArray.map(header => {
+              if (header === '中心座標緯度') {
+                return centerLat;
+              } else if (header === '中心座標経度') {
+                return centerLng;
               } else {
                 return feature.properties?.[header] || '';
               }
@@ -274,7 +315,68 @@ export default {
           console.error('GeoJSONをCSVに変換中にエラーが発生しました:', error.message);
         }
       }
-      downloadGeoJSONAsCSV(this.geojsonText)
+
+      downloadGeoJSONAsCSV(this.geojsonText);
+
+
+
+      // // GeoJSONをCSVに変換してダウンロード
+      // function downloadGeoJSONAsCSV(geojsonText) {
+      //   try {
+      //     // GeoJSONをオブジェクトに変換
+      //     const geojson = JSON.parse(geojsonText);
+      //
+      //     // FeatureCollectionの確認
+      //     if (!geojson.features || !Array.isArray(geojson.features)) {
+      //       throw new Error('GeoJSONデータが不正です。FeatureCollectionが見つかりません。');
+      //     }
+      //
+      //     // CSVのヘッダーを作成
+      //     const headers = new Set();
+      //     geojson.features.forEach(feature => {
+      //       if (feature.properties) {
+      //         Object.keys(feature.properties).forEach(key => headers.add(key));
+      //       }
+      //     });
+      //     headers.add('longitude'); // 緯度
+      //     headers.add('latitude'); // 経度
+      //
+      //     const headerArray = Array.from(headers);
+      //     let csv = headerArray.join(',') + '\n';
+      //
+      //     // 各FeatureのデータをCSV行に追加
+      //     geojson.features.forEach(feature => {
+      //       const row = headerArray.map(header => {
+      //         if (header === 'longitude' || header === 'latitude') {
+      //           if (feature.geometry && feature.geometry.type === 'Point') {
+      //             return header === 'longitude'
+      //                 ? feature.geometry.coordinates[0]
+      //                 : feature.geometry.coordinates[1];
+      //           }
+      //           return '';
+      //         } else {
+      //           return feature.properties?.[header] || '';
+      //         }
+      //       });
+      //       csv += row.join(',') + '\n';
+      //     });
+      //
+      //     // Blobを作成してダウンロードリンクを生成
+      //     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      //     const link = document.createElement('a');
+      //     const url = URL.createObjectURL(blob);
+      //     link.setAttribute('href', url);
+      //     link.setAttribute('download', 'osm.csv');
+      //     document.body.appendChild(link);
+      //     link.click();
+      //     document.body.removeChild(link);
+      //     URL.revokeObjectURL(url);
+      //
+      //   } catch (error) {
+      //     console.error('GeoJSONをCSVに変換中にエラーが発生しました:', error.message);
+      //   }
+      // }
+      // downloadGeoJSONAsCSV(this.geojsonText)
     },
     change () {
       const vm = this
@@ -335,7 +437,7 @@ export default {
               (._;>;);
               out body;`;
 
-              // console.log('生成されたOverpass APIクエリ:', query);
+              console.log('生成されたOverpass APIクエリ:', query);
 
               // Overpass APIからデータを取得しMapLibreに表示 (POSTリクエスト)
               const url = `https://overpass.openstreetmap.jp/api/interpreter`;
@@ -346,6 +448,12 @@ export default {
                 },
                 body: `data=${encodeURIComponent(query)}`
               });
+
+              if (!response.ok) {
+                const errorText = await response.text();
+                vm.errorLog = errorText
+              }
+
               const data = await response.json();
               const geojson = osmtogeojson(data);
               vm.geojsonText = JSON.stringify(geojson)
@@ -509,11 +617,21 @@ export default {
 
         try {
           const response = await fetch(url);
+
+          console.log(response)
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            vm.errorLog = errorText
+            map.getCanvas().style.cursor = 'default'
+          }
+
           const data = await response.json();
           const geojson = osmtogeojson(data);
           return geojson;
         } catch (error) {
           console.error('Error fetching Overpass data:', error);
+          map.getCanvas().style.cursor = 'default'
         }
       }
 
@@ -522,7 +640,7 @@ export default {
         map.getCanvas().style.cursor = 'wait'
         const geojsonData = await fetchOverpassData(tagKey, tagValue)
         if (geojsonData) {
-          console.log(JSON.stringify(geojsonData))
+          // console.log(JSON.stringify(geojsonData))
           vm.geojsonText = JSON.stringify(geojsonData)
           if (!map.getSource('osm-overpass-source')) {
             map.addSource('osm-overpass-source', {
