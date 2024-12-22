@@ -15,7 +15,7 @@
           label="クエリを貼り付け"
           outlined
           rows="3"
-          placeholder="key=value形式でOSMタグを入力してください"
+          placeholder="key=value形式でOSMタグを入力してください。"
       ></v-textarea>
       <v-btn style="margin-top: -10px" class="tiny-btn" @click="run">クエリ実行</v-btn>
       <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="reset">クエリ解除</v-btn>
