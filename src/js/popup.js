@@ -2617,12 +2617,19 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 console.log(coordinates)
                 props = features[0].properties
+
+                let html0 = ''
+                Object.keys(props).forEach(function (key) {
+                    html0 += key + '=' + props[key] + '<br>'
+                })
+                html0 = '<div style="margin-top: 10px;"><btn class="popup-btn popup-btn-traffic">全データ表示</btn><div style="display: none;">' + html0 + '</div></div>'
                 if (html.indexOf('osm') === -1) {
                     html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                     html +=
                         '<div class="osm" font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size:20px;">名称＝' +  props.name + '</span><br>' +
                         '</div>'
+                    html = html + html0
                 }
                 break
             }

@@ -15,14 +15,16 @@
           label="クエリを貼り付け"
           outlined
           rows="3"
-          placeholder="マッパー向け機能です。"
+          placeholder="key=value形式でOSMタグを入力してください。"
       ></v-textarea>
       <v-btn style="margin-top: -10px" class="tiny-btn" @click="run">クエリ実行</v-btn>
       <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="reset">クエリ解除</v-btn>
       <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="clear">クリア</v-btn>
       <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="prev">prev</v-btn>
       <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="next">next</v-btn>
-      <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="delete0">del</v-btn>
+      <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="delete0">del</v-btn><br>
+      <v-btn style="margin-top: 0px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
+      <v-btn style="margin-left: 5px;margin-top: 0px" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
 
       <div v-html="item.attribution"></div>
     </div>
@@ -34,6 +36,7 @@ export default {
   name: 'ext-osm',
   props: ['mapName','item'],
   data: () => ({
+    geojsonText: '',
     counter: 0,
     query: null,
     queryText: null,
@@ -197,6 +200,82 @@ export default {
       localStorage.setItem('queryText',JSON.stringify(queryText))
       this.s_rawQueryText = queryText[this.counter];
     },
+    saveGeojson () {
+      // GeoJSONテキストをBlobオブジェクトに変換
+      const blob = new Blob([this.geojsonText], { type: 'application/json' });
+
+      // 一時的なダウンロード用リンクを作成
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'osm.geojson'; // ダウンロードするファイル名
+
+      // リンクをクリックしてダウンロードを実行
+      document.body.appendChild(link);
+      link.click();
+
+      // 後処理: リンクを削除してメモリを解放
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    },
+    saveCsv () {
+      // GeoJSONをCSVに変換してダウンロード
+      function downloadGeoJSONAsCSV(geojsonText) {
+        try {
+          // GeoJSONをオブジェクトに変換
+          const geojson = JSON.parse(geojsonText);
+
+          // FeatureCollectionの確認
+          if (!geojson.features || !Array.isArray(geojson.features)) {
+            throw new Error('GeoJSONデータが不正です。FeatureCollectionが見つかりません。');
+          }
+
+          // CSVのヘッダーを作成
+          const headers = new Set();
+          geojson.features.forEach(feature => {
+            if (feature.properties) {
+              Object.keys(feature.properties).forEach(key => headers.add(key));
+            }
+          });
+          headers.add('longitude'); // 緯度
+          headers.add('latitude'); // 経度
+
+          const headerArray = Array.from(headers);
+          let csv = headerArray.join(',') + '\n';
+
+          // 各FeatureのデータをCSV行に追加
+          geojson.features.forEach(feature => {
+            const row = headerArray.map(header => {
+              if (header === 'longitude' || header === 'latitude') {
+                if (feature.geometry && feature.geometry.type === 'Point') {
+                  return header === 'longitude'
+                      ? feature.geometry.coordinates[0]
+                      : feature.geometry.coordinates[1];
+                }
+                return '';
+              } else {
+                return feature.properties?.[header] || '';
+              }
+            });
+            csv += row.join(',') + '\n';
+          });
+
+          // Blobを作成してダウンロードリンクを生成
+          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+          const link = document.createElement('a');
+          const url = URL.createObjectURL(blob);
+          link.setAttribute('href', url);
+          link.setAttribute('download', 'osm.csv');
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+
+        } catch (error) {
+          console.error('GeoJSONをCSVに変換中にエラーが発生しました:', error.message);
+        }
+      }
+      downloadGeoJSONAsCSV(this.geojsonText)
+    },
     change () {
       const vm = this
       const map = this.$store.state[this.mapName]
@@ -224,7 +303,7 @@ export default {
               const changesetIds = [...changesetData.matchAll(/id="(\d+)"/g)]
                   .map(match => parseInt(match[1], 10))
                   .sort((a, b) => b - a)
-                  .slice(0, 200); // 上位1件を取得
+                  .slice(0, 200); // 上位200件を取得
 
               if (changesetIds.length === 0) {
                 throw new Error('過去24時間以内のChangeset IDが見つかりませんでした。');
@@ -269,6 +348,7 @@ export default {
               });
               const data = await response.json();
               const geojson = osmtogeojson(data);
+              vm.geojsonText = JSON.stringify(geojson)
               map.getSource('osm-overpass-source').setData(geojson);
               map.getCanvas().style.cursor = 'default'
               console.log('MapLibreにGeoJSONレイヤーを追加しました');
@@ -442,7 +522,8 @@ export default {
         map.getCanvas().style.cursor = 'wait'
         const geojsonData = await fetchOverpassData(tagKey, tagValue)
         if (geojsonData) {
-          // console.log(JSON.stringify(geojsonData))
+          console.log(JSON.stringify(geojsonData))
+          vm.geojsonText = JSON.stringify(geojsonData)
           if (!map.getSource('osm-overpass-source')) {
             map.addSource('osm-overpass-source', {
               type: 'geojson',
