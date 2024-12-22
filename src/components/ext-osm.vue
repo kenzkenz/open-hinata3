@@ -27,6 +27,7 @@
       <v-btn style="margin-left: 5px;margin-top: 0px" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
       <v-btn style="margin-left: 5px;margin-top: 0px" class="tiny-btn" @click="gist">gist-geojson</v-btn>
       <v-btn style="margin-left: 5px;margin-top: 0px" class="tiny-btn" @click="gistCsv">gist-csv</v-btn>
+      <v-btn style="margin-left: 0px;margin-top: 0px" class="tiny-btn" @click="sima">simaテスト</v-btn>
 
       <div style="font-size: small;" v-html="errorLog"></div>
       <hr>
@@ -36,6 +37,8 @@
 
 <script>
 import osmtogeojson from 'osmtogeojson'
+import proj4 from 'proj4'
+
 export default {
   name: 'ext-osm',
   props: ['mapName','item'],
@@ -405,6 +408,140 @@ export default {
       }
       const csvData = this.convertGeoJSONToCSV(this.geojsonText);
       uploadCSVToGist(csvData);
+    },
+    sima () {
+      const map = this.$store.state[this.mapName]
+
+
+
+// 🛠️ 1. 平面直角座標系 (JGD2011) の定義
+      const planeCS = [
+        { code: "EPSG:6668", originLon: 129.5, originLat: 33 },
+        { code: "EPSG:6669", originLon: 131.0, originLat: 33 },
+        { code: "EPSG:6670", originLon: 132.1667, originLat: 36 },
+        { code: "EPSG:6671", originLon: 133.5, originLat: 33 },
+        { code: "EPSG:6672", originLon: 134.3333, originLat: 36 },
+        { code: "EPSG:6673", originLon: 136.0, originLat: 36 }
+      ];
+
+      /**
+       * 📌 EPSGコードに対応する座標系の定義文字列を返す
+       * @param {string} epsgCode - EPSGコード（例: "EPSG:6670"）
+       * @returns {string|null} - 座標系定義文字列または警告
+       */
+      function getCRSDefinition(epsgCode) {
+        const crsDefs = {
+          "EPSG:6668": "+proj=tmerc +lat_0=33 +lon_0=129.5 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
+          "EPSG:6669": "+proj=tmerc +lat_0=33 +lon_0=131.0 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
+          "EPSG:6670": "+proj=tmerc +lat_0=36 +lon_0=132.1667 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
+          "EPSG:6671": "+proj=tmerc +lat_0=33 +lon_0=133.5 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
+          "EPSG:6672": "+proj=tmerc +lat_0=36 +lon_0=134.3333 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
+          "EPSG:6673": "+proj=tmerc +lat_0=36 +lon_0=136.0 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs"
+        };
+
+        return crsDefs[epsgCode] || null;
+      }
+
+      /**
+       * 📌 緯度・経度から最も近い平面直角座標系 (EPSGコード) を判定
+       * @param {number} lon - 経度
+       * @param {number} lat - 緯度
+       * @returns {string} - EPSGコード
+       */
+      function detectPlaneRectangularCRS(lon, lat) {
+        const closest = planeCS.reduce((prev, curr) => {
+          const prevDist = Math.sqrt(Math.pow(prev.originLon - lon, 2) + Math.pow(prev.originLat - lat, 2));
+          const currDist = Math.sqrt(Math.pow(curr.originLon - lon, 2) + Math.pow(curr.originLat - lat, 2));
+          return currDist < prevDist ? curr : prev;
+        });
+
+        console.log(`🎯 推定座標系: ${closest.code}`);
+        return closest.code;
+      }
+
+
+
+// 📌 3. 画面中心から座標系を判定し、定義文字列を取得
+
+
+      const center = map.getCenter();
+      const detectedCRS = detectPlaneRectangularCRS(center.lng, center.lat);
+      const definition = getCRSDefinition(detectedCRS);
+      if (definition) {
+        console.log(`✅ 座標系 (${detectedCRS}): ${definition}`);
+      } else {
+        console.warn(`⚠️ 指定された座標系 (${detectedCRS}) は存在しません。`);
+      }
+
+      // 宮崎県の第II系を定義
+      proj4.defs(detectedCRS, definition);
+      // proj4.defs("EPSG:6670", "+proj=tmerc +lat_0=33 +lon_0=131 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs");
+
+      /**
+       * MapLibreで表示されている地物をSIMA形式でエクスポート
+       */
+      function exportVisibleFeaturesAsSIMA(map, layerIds = []) {
+        const visibleFeatures = map.queryRenderedFeatures(undefined, {
+          layers: layerIds
+        });
+
+        if (visibleFeatures.length === 0) {
+          console.warn('表示されているフィーチャがありません。');
+          return;
+        }
+
+        let simaData = 'POINTS\n';
+        let pointIndex = 1;
+        const pointMap = new Map();
+        const lines = [];
+
+        visibleFeatures.forEach((feature) => {
+          const { geometry, properties } = feature;
+
+          if (geometry.type === 'Polygon') {
+            geometry.coordinates.forEach((ring) => {
+              const polygonLine = [];
+              ring.forEach(([lng, lat]) => {
+                const [x, y] = proj4('EPSG:4326', detectedCRS, [lng, lat]);
+                const key = `${x},${y}`;
+                if (!pointMap.has(key)) {
+                  simaData += `${pointIndex},${y.toFixed(3)},${x.toFixed(3)},Polygon_Point\n`;
+                  pointMap.set(key, pointIndex);
+                  pointIndex++;
+                }
+                polygonLine.push(pointMap.get(key));
+              });
+
+              // ポリゴンを閉じる（始点と終点を繋ぐ）
+              if (polygonLine.length > 2) {
+                polygonLine.push(polygonLine[0]);
+                lines.push(polygonLine);
+              }
+            });
+          }
+        });
+
+        // LINESセクションを追加
+        simaData += 'LINES\n';
+        lines.forEach((line) => {
+          simaData += `${line.join(',')}\n`;
+        });
+
+        simaData += 'END';
+
+        // ファイルとしてエクスポート
+        const blob = new Blob([simaData], { type: 'text/plain;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'miyazaki_visible_features.sima';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+
+      exportVisibleFeaturesAsSIMA(map, ['oh-osm-overpass-layer-point','oh-osm-overpass-layer-polygon','oh-osm-overpass-layer-line']);
+
     },
     change () {
       let dataLength
