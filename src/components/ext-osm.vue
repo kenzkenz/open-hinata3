@@ -405,6 +405,7 @@ export default {
       uploadCSVToGist(csvData);
     },
     change () {
+      let dataLength
       const vm = this
       const map = this.$store.state[this.mapName]
 
@@ -583,14 +584,14 @@ export default {
         this.update()
         return
       }
-
-      if (map.getZoom() <= 11) {
-        map.getSource('osm-overpass-source').setData({
-          type: 'FeatureCollection',
-          features: [] // 空の features 配列
-        });
-        return
-      }
+      //
+      // if (map.getZoom() <= 11) {
+      //   map.getSource('osm-overpass-source').setData({
+      //     type: 'FeatureCollection',
+      //     features: [] // 空の features 配列
+      //   });
+      //   return
+      // }
 
       async function fetchOverpassData(tagKey, tagValue) {
         // const bounds = map.getBounds();
@@ -651,11 +652,14 @@ export default {
           if (!response.ok) {
             const errorText = await response.text();
             vm.errorLog = errorText
-            map.getCanvas().style.cursor = 'default'
+            // map.getCanvas().style.cursor = 'default'
+          } else {
+            vm.errorLog = ''
           }
 
           const data = await response.json();
           console.log(data.elements.length)
+          dataLength = data.elements.length
           const geojson = osmtogeojson(data);
           return geojson;
         } catch (error) {
@@ -678,6 +682,22 @@ export default {
             })
           } else {
             map.getSource('osm-overpass-source').setData(geojsonData)
+          }
+          let zoom = 0
+          if (dataLength < 10000) {
+            zoom = 0
+          } else if (dataLength < 100000) {
+            zoom = 9
+          } else {
+            zoom = 11
+          }
+          if (map.getZoom() <= zoom) {
+            map.getSource('osm-overpass-source').setData({
+              type: 'FeatureCollection',
+              features: [] // 空の features 配列
+            });
+            map.getCanvas().style.cursor = 'default'
+            return
           }
           map.getCanvas().style.cursor = 'default'
         }
