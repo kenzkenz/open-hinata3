@@ -1198,6 +1198,153 @@ export default {
               map.setTerrain(null)
             }
           }
+
+          // -----------------------------------------------------------------------------------------------------------
+
+          // ドラッグ&ドロップ用の要素
+          const dropzone = document.getElementById('map00');
+
+          // ドラッグイベントのリスナー追加
+          document.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            dropzone.classList.add('active');
+          });
+
+          document.addEventListener('dragleave', (event) => {
+            event.preventDefault();
+            dropzone.classList.remove('active');
+          });
+
+          // ファイルドロップ処理
+          document.addEventListener('drop', (event) => {
+            event.preventDefault();
+            dropzone.classList.remove('active');
+
+            const files = event.dataTransfer.files;
+            if (files.length === 0) {
+              alert('ファイルが選択されていません');
+              return;
+            }
+
+            const file = files[0];
+            if (file.type !== 'application/geo+json' && file.type !== 'application/json') {
+              alert('GeoJSONファイルを選択してください');
+              return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              try {
+                const geojson = JSON.parse(e.target.result);
+
+                if (!geojson || !geojson.features) {
+                  throw new Error('無効なGeoJSONデータです');
+                }
+
+                const sourceId = 'user-geojson';
+                const pointLayerId = 'user-geojson-points';
+                const lineLayerId = 'user-geojson-lines';
+                const polygonLayerId = 'user-geojson-polygons';
+
+                // 既存のレイヤーとソースがある場合は削除
+                [pointLayerId, lineLayerId, polygonLayerId].forEach(layer => {
+                  if (map.getLayer(layer)) {
+                    map.removeLayer(layer);
+                  }
+                });
+                if (map.getSource(sourceId)) {
+                  map.removeSource(sourceId);
+                }
+
+                // GeoJSONをソースとして追加
+                map.addSource(sourceId, {
+                  type: 'geojson',
+                  data: geojson
+                });
+
+                // ポイントレイヤー
+                map.addLayer({
+                  id: pointLayerId,
+                  type: 'circle',
+                  source: sourceId,
+                  filter: ['==', '$type', 'Point'],
+                  paint: {
+                    'circle-radius': 6,
+                    'circle-color': '#ff5722',
+                    'circle-stroke-width': 2,
+                    'circle-stroke-color': '#fff'
+                  }
+                });
+
+                // ラインレイヤー
+                map.addLayer({
+                  id: lineLayerId,
+                  type: 'line',
+                  source: sourceId,
+                  filter: ['==', '$type', 'LineString'],
+                  paint: {
+                    'line-color': '#4caf50',
+                    'line-width': 3
+                  }
+                });
+
+                // ポリゴンレイヤー
+                map.addLayer({
+                  id: polygonLayerId,
+                  type: 'fill',
+                  source: sourceId,
+                  filter: ['==', '$type', 'Polygon'],
+                  paint: {
+                    'fill-color': '#2196f3',
+                    'fill-opacity': 0.5,
+                    'fill-outline-color': '#000'
+                  }
+                });
+
+                // 地図をGeoJSONの範囲にズーム
+                const bounds = new maplibregl.LngLatBounds();
+
+                geojson.features.forEach(feature => {
+                  const geometry = feature.geometry;
+                  if (!geometry) return;
+
+                  switch (geometry.type) {
+                    case 'Point':
+                      bounds.extend(geometry.coordinates);
+                      break;
+                    case 'LineString':
+                      geometry.coordinates.forEach(coord => bounds.extend(coord));
+                      break;
+                    case 'Polygon':
+                      geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
+                      break;
+                    case 'MultiPolygon':
+                      geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
+                      break;
+                  }
+                });
+
+                // boundsが有効か確認
+                if (bounds.isEmpty()) {
+                  console.warn('有効な座標範囲が見つかりませんでした。');
+                  return;
+                }
+
+                // fitBoundsを適用
+                map.fitBounds(bounds, {
+                  padding: 50,
+                  animate: true
+                });
+
+              } catch (error) {
+                console.error('GeoJSONの読み込みに失敗しました:', error);
+                alert('無効なGeoJSONファイルです');
+              }
+            };
+
+            reader.readAsText(file);
+          });
+
         })
         //on load終了----------------------------------------------------------------------------------------------------
       })

@@ -83,7 +83,9 @@ const overpassPoint = {
     filter: ['==', '$type', 'Point'],
     paint: {
         'circle-radius': 8,
-        'circle-color': 'green'
+        'circle-color': 'green',
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#fff'
     }
 }
 const overpassPolygon = {

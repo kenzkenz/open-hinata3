@@ -2603,6 +2603,9 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'user-geojson-polygons':
+            case 'user-geojson-lines':
+            case 'user-geojson-points':
             case 'oh-osm-overpass-layer-line':
             case 'oh-osm-overpass-layer-polygon':
             case 'oh-osm-overpass-layer-point':
