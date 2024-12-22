@@ -421,7 +421,20 @@ export default {
         { code: "EPSG:6670", originLon: 132.1667, originLat: 36 },
         { code: "EPSG:6671", originLon: 133.5, originLat: 33 },
         { code: "EPSG:6672", originLon: 134.3333, originLat: 36 },
-        { code: "EPSG:6673", originLon: 136.0, originLat: 36 }
+        { code: "EPSG:6673", originLon: 136.0, originLat: 36 },
+        { code: "EPSG:6674", originLon: 137.1667, originLat: 36 },
+        { code: "EPSG:6675", originLon: 138.5, originLat: 36 },
+        { code: "EPSG:6676", originLon: 139.8333, originLat: 36 },
+        { code: "EPSG:6677", originLon: 140.8333, originLat: 40 },
+        { code: "EPSG:6678", originLon: 140.25, originLat: 44 },
+        { code: "EPSG:6679", originLon: 142.0, originLat: 44 },
+        { code: "EPSG:6680", originLon: 144.0, originLat: 44 },
+        { code: "EPSG:6681", originLon: 142.0, originLat: 26 },
+        { code: "EPSG:6682", originLon: 127.5, originLat: 26 },
+        { code: "EPSG:6683", originLon: 124.0, originLat: 26 },
+        { code: "EPSG:6684", originLon: 131.0, originLat: 26 },
+        { code: "EPSG:6685", originLon: 136.0, originLat: 20 },
+        { code: "EPSG:6686", originLon: 154.0, originLat: 26 }
       ];
 
       /**
@@ -436,7 +449,20 @@ export default {
           "EPSG:6670": "+proj=tmerc +lat_0=36 +lon_0=132.1667 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
           "EPSG:6671": "+proj=tmerc +lat_0=33 +lon_0=133.5 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
           "EPSG:6672": "+proj=tmerc +lat_0=36 +lon_0=134.3333 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
-          "EPSG:6673": "+proj=tmerc +lat_0=36 +lon_0=136.0 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs"
+          "EPSG:6673": "+proj=tmerc +lat_0=36 +lon_0=136.0 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
+          "EPSG:6674": "+proj=tmerc +lat_0=36 +lon_0=137.1667 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
+          "EPSG:6675": "+proj=tmerc +lat_0=36 +lon_0=138.5 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
+          "EPSG:6676": "+proj=tmerc +lat_0=36 +lon_0=139.8333 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
+          "EPSG:6677": "+proj=tmerc +lat_0=40 +lon_0=140.8333 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
+          "EPSG:6678": "+proj=tmerc +lat_0=44 +lon_0=140.25 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
+          "EPSG:6679": "+proj=tmerc +lat_0=44 +lon_0=142.0 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
+          "EPSG:6680": "+proj=tmerc +lat_0=44 +lon_0=144.0 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
+          "EPSG:6681": "+proj=tmerc +lat_0=26 +lon_0=142.0 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
+          "EPSG:6682": "+proj=tmerc +lat_0=26 +lon_0=127.5 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
+          "EPSG:6683": "+proj=tmerc +lat_0=26 +lon_0=124.0 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
+          "EPSG:6684": "+proj=tmerc +lat_0=26 +lon_0=131.0 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
+          "EPSG:6685": "+proj=tmerc +lat_0=20 +lon_0=136.0 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
+          "EPSG:6686": "+proj=tmerc +lat_0=26 +lon_0=154.0 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs"
         };
 
         return crsDefs[epsgCode] || null;
@@ -475,6 +501,7 @@ export default {
 
       // 宮崎県の第II系を定義
       proj4.defs(detectedCRS, definition);
+      console.log(detectedCRS)
       // proj4.defs("EPSG:6670", "+proj=tmerc +lat_0=33 +lon_0=131 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs");
 
       /**
@@ -533,14 +560,165 @@ export default {
         const blob = new Blob([simaData], { type: 'text/plain;charset=utf-8' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = 'miyazaki_visible_features.sima';
+        link.download = 'visible_features.sima';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
       }
 
+      exportVisibleFeaturesAsSIMA(map, ['oh-osm-overpass-layer-point','oh-osm-overpass-layer-polygon','oh-osm-overpass-layer-line',"oh-amx-a-fude"]);
 
-      exportVisibleFeaturesAsSIMA(map, ['oh-osm-overpass-layer-point','oh-osm-overpass-layer-polygon','oh-osm-overpass-layer-line']);
+
+
+
+
+
+
+      /**
+       * 📌 GeoJSONデータからSIMAファイルを生成 (ポリゴン処理強化版)
+       * @param {string} geojsonText - GeoJSON形式のテキスト
+       */
+      function exportGeoJSONToSIMA(geojsonText) {
+        let geojson;
+        try {
+          geojson = JSON.parse(geojsonText);
+        } catch (error) {
+          console.error('⚠️ GeoJSONのパースに失敗:', error.message);
+          return;
+        }
+
+        if (!geojson || !geojson.features) {
+          console.error('⚠️ 無効なGeoJSONデータです。');
+          return;
+        }
+
+        let simaData = 'POINTS\n';
+        let pointIndex = 1;
+        const pointMap = new Map();
+        const lines = [];
+
+        geojson.features.forEach((feature, featureIndex) => {
+          const { geometry } = feature;
+
+          if (!geometry || !geometry.type || !geometry.coordinates) {
+            console.warn(`⚠️ 無効なフィーチャ (#${featureIndex}) です。`);
+            return;
+          }
+
+          console.log(`▶️ フィーチャ #${featureIndex}: ${geometry.type}`);
+
+          // ✅ ポリゴン・マルチポリゴンの処理
+          if (geometry.type === 'Polygon' || geometry.type === 'MultiPolygon') {
+            const polygons = geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.coordinates;
+
+            polygons.forEach((polygon, polygonIndex) => {
+              polygon.forEach((ring, ringIndex) => {
+                if (ring.length < 3) {
+                  console.warn(`⚠️ ポリゴン (#${polygonIndex}, リング #${ringIndex}) が不完全です。`);
+                  return;
+                }
+
+                // ポリゴンの閉鎖確認
+                if (
+                    ring[0][0] !== ring[ring.length - 1][0] ||
+                    ring[0][1] !== ring[ring.length - 1][1]
+                ) {
+                  console.warn('🔄 ポリゴンの始点と終点が一致していません。自動修正を行います。');
+                  ring.push(ring[0]); // 閉じる
+                }
+
+                const polygonLine = [];
+                ring.forEach(([lng, lat], coordIndex) => {
+                  if (lng < -180 || lng > 180 || lat < -90 || lat > 90) {
+                    console.warn(`⚠️ 範囲外の座標 (#${coordIndex}): lng=${lng}, lat=${lat}`);
+                    return;
+                  }
+
+                  const x = lng;
+                  const y = lat;
+
+                  console.log(`🔹 ポリゴン座標: lng=${lng}, lat=${lat} → X=${x}, Y=${y}`);
+
+                  const key = `${x},${y}`;
+                  if (!pointMap.has(key)) {
+                    simaData += `${pointIndex},${y.toFixed(6)},${x.toFixed(6)},Polygon_Point\n`;
+                    pointMap.set(key, pointIndex);
+                    pointIndex++;
+                  }
+                  polygonLine.push(pointMap.get(key));
+                });
+
+                if (polygonLine.length > 2) {
+                  lines.push(polygonLine);
+                }
+              });
+            });
+          }
+
+          // ✅ ポイントの処理
+          if (geometry.type === 'Point') {
+            const [lng, lat] = geometry.coordinates;
+
+            if (lng < -180 || lng > 180 || lat < -90 || lat > 90) {
+              console.warn(`⚠️ 範囲外の座標: lng=${lng}, lat=${lat}`);
+              return;
+            }
+
+            const x = lng;
+            const y = lat;
+
+            console.log(`🔹 ポイント: lng=${lng}, lat=${lat} → X=${x}, Y=${y}`);
+
+            const key = `${x},${y}`;
+            if (!pointMap.has(key)) {
+              simaData += `${pointIndex},${y.toFixed(6)},${x.toFixed(6)},Point_Feature\n`;
+              pointMap.set(key, pointIndex);
+              pointIndex++;
+            }
+          }
+        });
+
+        // ✅ LINESセクションを追加
+        simaData += 'LINES\n';
+        lines.forEach((line, lineIndex) => {
+          if (line.length > 1) {
+            simaData += `${line.join(',')}\n`;
+          } else {
+            console.warn(`⚠️ 無効なライン (#${lineIndex})`);
+          }
+        });
+        simaData += 'END';
+
+        console.log(`✅ SIMAデータ生成完了: ポイント数=${pointIndex - 1}`);
+
+        // ✅ ファイルとしてダウンロード
+        const blob = new Blob([simaData], { type: 'text/plain;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'miyazaki_debug_polygon_fixed.sima';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      /**
+       * 📌 SIMAエクスポートを実行
+       */
+      function exportFromGeoJSONText() {
+        if (this.geojsonText) {
+          exportGeoJSONToSIMA(this.geojsonText);
+        } else {
+          console.warn('⚠️ `this.geojsonText` が空です。');
+        }
+      }
+
+
+
+      // exportGeoJSONToSIMA(this.geojsonText);
+
+
+
+
 
     },
     change () {
