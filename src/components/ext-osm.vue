@@ -25,6 +25,8 @@
       <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="delete0">del</v-btn><br>
       <v-btn style="margin-top: 0px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
       <v-btn style="margin-left: 5px;margin-top: 0px" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
+      <v-btn style="margin-left: 5px;margin-top: 0px" class="tiny-btn" @click="gist">gist-geojson</v-btn>
+      <v-btn style="margin-left: 5px;margin-top: 0px" class="tiny-btn" @click="gistCsv">gist-csv</v-btn>
 
       <div style="font-size: small;" v-html="errorLog"></div>
       <hr>
@@ -226,157 +228,181 @@ export default {
       document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
     },
-    saveCsv () {
-      this.errorLog = ''
-      // GeoJSONをCSVに変換してダウンロード
-// GeoJSONをCSVに変換してダウンロード
-      function downloadGeoJSONAsCSV(geojsonText) {
-        try {
-          // GeoJSONをオブジェクトに変換
-          const geojson = JSON.parse(geojsonText);
+    convertGeoJSONToCSV(geojsonText) {
+      try {
+        // GeoJSONをオブジェクトに変換
+        const geojson = JSON.parse(geojsonText);
 
-          // FeatureCollectionの確認
-          if (!geojson.features || !Array.isArray(geojson.features)) {
-            throw new Error('GeoJSONデータが不正です。FeatureCollectionが見つかりません。');
+        // FeatureCollectionの確認
+        if (!geojson.features || !Array.isArray(geojson.features)) {
+          throw new Error('GeoJSONデータが不正です。FeatureCollectionが見つかりません。');
+        }
+
+        // CSVのヘッダーを作成
+        const headers = new Set();
+        geojson.features.forEach(feature => {
+          if (feature.properties) {
+            Object.keys(feature.properties).forEach(key => headers.add(key));
+          }
+        });
+        headers.add('中心座標緯度'); // 中心座標緯度
+        headers.add('中心座標経度'); // 中心座標経度
+
+        const headerArray = Array.from(headers);
+        let csv = headerArray.join(',') + '\n';
+
+        // 各FeatureのデータをCSV行に追加
+        geojson.features.forEach(feature => {
+          let centerLat = '';
+          let centerLng = '';
+          if (feature.geometry) {
+            switch (feature.geometry.type) {
+              case 'Point': {
+                [centerLng, centerLat] = feature.geometry.coordinates;
+                break;
+              }
+              case 'LineString': {
+                const coords = feature.geometry.coordinates;
+                const avg = coords.reduce((acc, coord) => {
+                  acc[0] += coord[0];
+                  acc[1] += coord[1];
+                  return acc;
+                }, [0, 0]);
+                centerLng = avg[0] / coords.length;
+                centerLat = avg[1] / coords.length;
+                break;
+              }
+              case 'Polygon': {
+                const coords = feature.geometry.coordinates[0];
+                const avg = coords.reduce((acc, coord) => {
+                  acc[0] += coord[0];
+                  acc[1] += coord[1];
+                  return acc;
+                }, [0, 0]);
+                centerLng = avg[0] / coords.length;
+                centerLat = avg[1] / coords.length;
+                break;
+              }
+            }
           }
 
-          // CSVのヘッダーを作成
-          const headers = new Set();
-          geojson.features.forEach(feature => {
-            if (feature.properties) {
-              Object.keys(feature.properties).forEach(key => headers.add(key));
+          const row = headerArray.map(header => {
+            if (header === '中心座標緯度') {
+              return centerLat;
+            } else if (header === '中心座標経度') {
+              return centerLng;
+            } else {
+              return feature.properties?.[header] || '';
             }
           });
-          headers.add('中心座標緯度'); // 中心座標緯度
-          headers.add('中心座標経度'); // 中心座標経度
+          csv += row.join(',') + '\n';
+        });
 
-          const headerArray = Array.from(headers);
-          let csv = headerArray.join(',') + '\n';
+        return csv;
+      } catch (error) {
+        console.error('GeoJSONをCSVに変換中にエラーが発生しました:', error.message);
+        throw error;
+      }
+    },
+    downloadCSV(csvText, fileName = 'osm.csv') {
+      try {
+        // Blobを作成してダウンロードリンクを生成
+        const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', fileName);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('CSVダウンロード中にエラーが発生しました:', error.message);
+      }
+    },
+    saveCsv () {
+      this.errorLog = ''
+      const csvData = this.convertGeoJSONToCSV(this.geojsonText);
+      this.downloadCSV(csvData);
+    },
+    gist () {
+      this.errorLog = ''
+      // GeoJSONをGitHub Gistにアップロードするプログラム
+      async function uploadGeoJSONToGist(geojsonText, gistDescription = 'Uploaded GeoJSON') {
+        const token = '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';
+        const gistAPIUrl = 'https://api.github.com/gists';
 
-          // 各FeatureのデータをCSV行に追加
-          geojson.features.forEach(feature => {
-            let centerLat = '';
-            let centerLng = '';
-            if (feature.geometry) {
-              switch (feature.geometry.type) {
-                case 'Point': {
-                  [centerLng, centerLat] = feature.geometry.coordinates;
-                  break;
-                }
-                case 'LineString': {
-                  const coords = feature.geometry.coordinates;
-                  const avg = coords.reduce((acc, coord) => {
-                    acc[0] += coord[0];
-                    acc[1] += coord[1];
-                    return acc;
-                  }, [0, 0]);
-                  centerLng = avg[0] / coords.length;
-                  centerLat = avg[1] / coords.length;
-                  break;
-                }
-                case 'Polygon': {
-                  const coords = feature.geometry.coordinates[0];
-                  const avg = coords.reduce((acc, coord) => {
-                    acc[0] += coord[0];
-                    acc[1] += coord[1];
-                    return acc;
-                  }, [0, 0]);
-                  centerLng = avg[0] / coords.length;
-                  centerLat = avg[1] / coords.length;
-                  break;
+        try {
+          const response = await fetch(gistAPIUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              description: gistDescription,
+              public: true,
+              files: {
+                'data.geojson': {
+                  content: geojsonText
                 }
               }
-            }
-
-            const row = headerArray.map(header => {
-              if (header === '中心座標緯度') {
-                return centerLat;
-              } else if (header === '中心座標経度') {
-                return centerLng;
-              } else {
-                return feature.properties?.[header] || '';
-              }
-            });
-            csv += row.join(',') + '\n';
+            })
           });
 
-          // Blobを作成してダウンロードリンクを生成
-          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-          const link = document.createElement('a');
-          const url = URL.createObjectURL(blob);
-          link.setAttribute('href', url);
-          link.setAttribute('download', 'osm.csv');
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
+          if (!response.ok) {
+            throw new Error(`アップロード失敗: ${response.statusText}`);
+          }
 
+          const data = await response.json();
+          console.log('アップロード成功:', data.html_url);
+          // alert(`アップロード成功: ${data.html_url}`);
+          window.open(data.html_url, '_blank'); // Gistページを新しいタブで開く
+          return data.html_url;
         } catch (error) {
-          console.error('GeoJSONをCSVに変換中にエラーが発生しました:', error.message);
+          console.error('GeoJSONをアップロード中にエラーが発生しました:', error.message);
+          alert(`エラー: ${error.message}`);
         }
       }
+      uploadGeoJSONToGist(this.geojsonText, 'GeoJSON Dataset Upload');
+    },
+    gistCsv () {
+      // CSVをGistにアップロードする関数
+      async function uploadCSVToGist(csvText, gistDescription = 'GeoJSONから変換されたCSV') {
+        const token = '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';
+        const gistData = {
+          description: gistDescription,
+          public: true,
+          files: {
+            'osm.csv': {
+              content: csvText
+            }
+          }
+        };
 
-      downloadGeoJSONAsCSV(this.geojsonText);
+        try {
+          const response = await fetch('https://api.github.com/gists', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(gistData)
+          });
 
+          if (!response.ok) {
+            throw new Error(`Gistアップロード失敗: ${response.statusText}`);
+          }
 
-
-      // // GeoJSONをCSVに変換してダウンロード
-      // function downloadGeoJSONAsCSV(geojsonText) {
-      //   try {
-      //     // GeoJSONをオブジェクトに変換
-      //     const geojson = JSON.parse(geojsonText);
-      //
-      //     // FeatureCollectionの確認
-      //     if (!geojson.features || !Array.isArray(geojson.features)) {
-      //       throw new Error('GeoJSONデータが不正です。FeatureCollectionが見つかりません。');
-      //     }
-      //
-      //     // CSVのヘッダーを作成
-      //     const headers = new Set();
-      //     geojson.features.forEach(feature => {
-      //       if (feature.properties) {
-      //         Object.keys(feature.properties).forEach(key => headers.add(key));
-      //       }
-      //     });
-      //     headers.add('longitude'); // 緯度
-      //     headers.add('latitude'); // 経度
-      //
-      //     const headerArray = Array.from(headers);
-      //     let csv = headerArray.join(',') + '\n';
-      //
-      //     // 各FeatureのデータをCSV行に追加
-      //     geojson.features.forEach(feature => {
-      //       const row = headerArray.map(header => {
-      //         if (header === 'longitude' || header === 'latitude') {
-      //           if (feature.geometry && feature.geometry.type === 'Point') {
-      //             return header === 'longitude'
-      //                 ? feature.geometry.coordinates[0]
-      //                 : feature.geometry.coordinates[1];
-      //           }
-      //           return '';
-      //         } else {
-      //           return feature.properties?.[header] || '';
-      //         }
-      //       });
-      //       csv += row.join(',') + '\n';
-      //     });
-      //
-      //     // Blobを作成してダウンロードリンクを生成
-      //     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      //     const link = document.createElement('a');
-      //     const url = URL.createObjectURL(blob);
-      //     link.setAttribute('href', url);
-      //     link.setAttribute('download', 'osm.csv');
-      //     document.body.appendChild(link);
-      //     link.click();
-      //     document.body.removeChild(link);
-      //     URL.revokeObjectURL(url);
-      //
-      //   } catch (error) {
-      //     console.error('GeoJSONをCSVに変換中にエラーが発生しました:', error.message);
-      //   }
-      // }
-      // downloadGeoJSONAsCSV(this.geojsonText)
+          const result = await response.json();
+          console.log('Gistが正常にアップロードされました:', result.html_url);
+          window.open(result.html_url, '_blank');
+        } catch (error) {
+          console.error('Gistへのアップロード中にエラーが発生しました:', error.message);
+        }
+      }
+      const csvData = this.convertGeoJSONToCSV(this.geojsonText);
+      uploadCSVToGist(csvData);
     },
     change () {
       const vm = this
@@ -456,7 +482,7 @@ export default {
 
               const data = await response.json();
               const geojson = osmtogeojson(data);
-              vm.geojsonText = JSON.stringify(geojson)
+              vm.geojsonText = JSON.stringify(geojson, null, 2)
               map.getSource('osm-overpass-source').setData(geojson);
               map.getCanvas().style.cursor = 'default'
               console.log('MapLibreにGeoJSONレイヤーを追加しました');
@@ -481,13 +507,16 @@ export default {
           if (!this.s_rawQueryText.includes('\n')) {
             // キーと値を分割する関数
             function splitKeyValue(input) {
-              const match = input.match(/^(\w+)\s*[=,\s]\s*(\w+)$/);
+              const match = input.match(/^([\w:]+)\s*=\s*["']?([^"']+)["']?$/);
               if (match) {
-                return {key: match[1], value: match[2]};
+                return { key: match[1], value: match[2] };
               } else {
-                return {key: input,value: null};
+                return { key: input, value: null };
               }
             }
+
+            console.log(splitKeyValue('name:ja="国道134号"'))
+
             const {key, value} = splitKeyValue(this.s_rawQueryText);
             console.log(key, value)
             function buildOverpassQuery(key, value) {
@@ -500,17 +529,19 @@ export default {
                     'way[' + key + '](' + bbox + ');' +
                     'relation[' + key + '](' + bbox + ');' +
                     ');' +
-                    '(._;>;);' +
-                    'out body qt;';
+                    'out body;' +
+                    '>;' +
+                    'out skel qt;';
               } else {
                 rawQueryText = '[out:json][timeout:60];' +
                     '(' +
-                    'node[' + key + '=' + value + '](' + bbox + ');' +
-                    'way[' + key + '=' + value + '](' + bbox + ');' +
-                    'relation[' + key + '=' + value + '](' + bbox + ');' +
+                    'node["' + key + '"="' + value + '"](' + bbox + ');' +
+                    'way["' + key + '"="' + value + '"](' + bbox + ');' +
+                    'relation["' + key + '"="' + value + '"](' + bbox + ');' +
                     ');' +
-                    '(._;>;);' +
-                    'out body qt;';
+                    'out body;' +
+                    '>;' +
+                    'out skel qt;';
               }
               return rawQueryText;
             }
@@ -571,10 +602,7 @@ export default {
         // node [amenity=drinking_water]({{bbox}});out;
 
         const bounds = map.getBounds();
-        // const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
 
-        // const query = vm.queryText
-        // console.log(query)
         let query = tagValue.includes("highway-all")
             ? '[out:json];' +
             '(' +
@@ -627,6 +655,7 @@ export default {
           }
 
           const data = await response.json();
+          console.log(data.elements.length)
           const geojson = osmtogeojson(data);
           return geojson;
         } catch (error) {
@@ -641,7 +670,7 @@ export default {
         const geojsonData = await fetchOverpassData(tagKey, tagValue)
         if (geojsonData) {
           // console.log(JSON.stringify(geojsonData))
-          vm.geojsonText = JSON.stringify(geojsonData)
+          vm.geojsonText = JSON.stringify(geojsonData, null, 2)
           if (!map.getSource('osm-overpass-source')) {
             map.addSource('osm-overpass-source', {
               type: 'geojson',
