@@ -1058,7 +1058,7 @@ export default {
           //   this.$store.state.osmFire = !this.$store.state.osmFire
           // })
 
-          let previousBounds = null;
+          // let previousBounds = null;
 
           // デバウンス関数
           function debounce(func, delay) {
@@ -1070,8 +1070,21 @@ export default {
           }
 
           // マップ範囲の変更を処理
+          let previousBounds = null;
+          let previousZoom = map.getZoom(); // 初期ズームレベルを取得
+
           const handleBoundsChange = () => {
             const currentBounds = map.getBounds();
+            const currentZoom = map.getZoom();
+
+            // ズームイン時は発火しない
+            if (currentZoom > previousZoom) {
+              console.log('Zoomed in - No action taken');
+              previousZoom = currentZoom;
+              previousBounds = currentBounds;
+              return;
+            }
+
             if (
                 !previousBounds ||
                 currentBounds.getNorth() > previousBounds.getNorth() ||
@@ -1083,8 +1096,10 @@ export default {
               console.log('Bounds expanded or moved:', currentBounds);
               this.$store.state.osmFire = !this.$store.state.osmFire;
             }
-            // 現在の範囲を保存
+
+            // 現在の範囲とズームレベルを保存
             previousBounds = currentBounds;
+            previousZoom = currentZoom;
           };
 
           // デバウンス版の関数を作成（遅延を500msに設定）
@@ -1093,6 +1108,7 @@ export default {
           // イベントリスナーにデバウンス関数を適用
           map.on('dragend', debouncedHandleBoundsChange);
           map.on('zoomend', debouncedHandleBoundsChange);
+
 
 
 

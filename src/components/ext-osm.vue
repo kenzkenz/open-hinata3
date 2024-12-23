@@ -27,7 +27,7 @@
       <v-btn style="margin-left: 5px;margin-top: 0px" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
       <v-btn style="margin-left: 5px;margin-top: 0px" class="tiny-btn" @click="gist">gist-geojson</v-btn>
       <v-btn style="margin-left: 5px;margin-top: 0px" class="tiny-btn" @click="gistCsv">gist-csv</v-btn>
-      <v-btn style="margin-left: 0px;margin-top: 0px" class="tiny-btn" @click="sima">simaテスト</v-btn>
+<!--      <v-btn style="margin-left: 0px;margin-top: 0px" class="tiny-btn" @click="sima">simaテスト</v-btn>-->
 
       <div style="font-size: small;" v-html="errorLog"></div>
       <hr>
@@ -48,7 +48,7 @@ export default {
     geojsonText: '',
     counter: 0,
     query: null,
-    queryText: null,
+    queryText: [],
     flg: false,
     selectedTag: null,
     tagOptions: [
@@ -150,6 +150,7 @@ export default {
           this.s_osmText,
           this.s_rawQueryText
         ]})
+      console.log(this.s_rawQueryText)
     },
     run () {
       if (this.s_rawQueryText){
@@ -164,6 +165,7 @@ export default {
         queryText.push(this.s_rawQueryText)
         queryText = [...new Set(queryText)]
         localStorage.setItem('queryText',JSON.stringify(queryText))
+        this.counter = queryText.length - 1;
         console.log(JSON.parse(localStorage.getItem('queryText')))
 
       }
@@ -176,6 +178,7 @@ export default {
         features: [] // 空の features 配列
       });
       this.queryText = ''
+      this.update()
     },
     clear () {
       this.errorLog = ''
@@ -187,20 +190,30 @@ export default {
       this.s_osmText = ''
       this.s_rawQueryText = ''
       this.queryText = ''
+      this.update()
     },
-    prev () {
-      this.errorLog = ''
+    prev() {
+      this.errorLog = '';
       const queryText = JSON.parse(localStorage.getItem('queryText'));
-      // カウンタが負にならないように調整
+
+      if (!queryText || queryText.length === 0) {
+        return;
+      }
+
+      // カウンタが0より大きい場合のみ減少
       if (this.counter > 0) {
         this.counter--;
+        this.s_rawQueryText = queryText[this.counter];
       }
-      this.s_rawQueryText = queryText[this.counter];
     },
-    next () {
-      this.errorLog = ''
+    next() {
+      this.errorLog = '';
       const queryText = JSON.parse(localStorage.getItem('queryText'));
-      // カウンタが配列の長さより大きくならないように調整
+
+      if (!queryText || queryText.length === 0) {
+        return;
+      }
+
       if (this.counter < queryText.length - 1) {
         this.counter++;
       }
@@ -412,12 +425,58 @@ export default {
       const csvData = this.convertGeoJSONToCSV(this.geojsonText);
       uploadCSVToGist(csvData);
     },
-    sima () {
-      const map = this.$store.state[this.mapName]
+
+    sima() {
+      const map = this.$store.state[this.mapName];
+
+// 現在のマップに追加されている全てのレイヤーIDを表示
+      function listAllLayerIDs() {
+        const layers = map.getStyle().layers;
+        const layerIDs = layers.map(layer => layer.id);
+        console.log('現在のレイヤーID一覧:', layerIDs);
+        return layerIDs;
+      }
+      listAllLayerIDs()
+      console.log(map.getSource('amx-a-pmtiles'))
+
+// 指定したレイヤーIDをGeoJSONとして取得
+      function exportLayerToGeoJSON(layerId) {
+        const source = map.getSource('amx-a-pmtiles');
+
+        if (!source) {
+          console.error(`レイヤー ${layerId} のソースが見つかりません。`);
+          return null;
+        }
+
+        if (source.type === 'geojson') {
+          // GeoJSONソースならそのまま返す
+          return source._data;
+        } else if (source.type === 'vector') {
+          // Vectorタイルの場合、現在表示されているフィーチャを取得
+          const features = map.queryRenderedFeatures({ layers: [layerId] });
+          return {
+            type: "FeatureCollection",
+            features: features.map(f => f.toJSON())
+          };
+        } else {
+          console.warn('このソースタイプはサポートされていません。');
+          return null;
+        }
+      }
+
+// レイヤーIDを指定してエクスポート
+      const layerId = 'oh-amx-a-fude'; // 例: 'oh-bakumatsu-layer'
+      const geojson = exportLayerToGeoJSON(layerId);
+
+
+      console.log(geojson)
 
 
 
-// 🛠️ 1. 平面直角座標系 (JGD2011) の定義
+
+      /**
+       * 📌 1. 平面直角座標系 (JGD2011) の定義
+       */
       const planeCS = [
         { code: "EPSG:6668", originLon: 129.5, originLat: 33 },
         { code: "EPSG:6669", originLon: 131.0, originLat: 33 },
@@ -427,55 +486,23 @@ export default {
         { code: "EPSG:6673", originLon: 136.0, originLat: 36 },
         { code: "EPSG:6674", originLon: 137.1667, originLat: 36 },
         { code: "EPSG:6675", originLon: 138.5, originLat: 36 },
-        { code: "EPSG:6676", originLon: 139.8333, originLat: 36 },
-        { code: "EPSG:6677", originLon: 140.8333, originLat: 40 },
-        { code: "EPSG:6678", originLon: 140.25, originLat: 44 },
-        { code: "EPSG:6679", originLon: 142.0, originLat: 44 },
-        { code: "EPSG:6680", originLon: 144.0, originLat: 44 },
-        { code: "EPSG:6681", originLon: 142.0, originLat: 26 },
-        { code: "EPSG:6682", originLon: 127.5, originLat: 26 },
-        { code: "EPSG:6683", originLon: 124.0, originLat: 26 },
-        { code: "EPSG:6684", originLon: 131.0, originLat: 26 },
-        { code: "EPSG:6685", originLon: 136.0, originLat: 20 },
-        { code: "EPSG:6686", originLon: 154.0, originLat: 26 }
+        { code: "EPSG:6676", originLon: 139.8333, originLat: 36 }
       ];
 
       /**
-       * 📌 EPSGコードに対応する座標系の定義文字列を返す
-       * @param {string} epsgCode - EPSGコード（例: "EPSG:6670"）
-       * @returns {string|null} - 座標系定義文字列または警告
+       * 📌 2. EPSGコードに対応する座標系の定義文字列を返す
        */
       function getCRSDefinition(epsgCode) {
         const crsDefs = {
-          "EPSG:6668": "+proj=tmerc +lat_0=33 +lon_0=129.5 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
-          "EPSG:6669": "+proj=tmerc +lat_0=33 +lon_0=131.0 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
-          "EPSG:6670": "+proj=tmerc +lat_0=36 +lon_0=132.1667 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
-          "EPSG:6671": "+proj=tmerc +lat_0=33 +lon_0=133.5 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
-          "EPSG:6672": "+proj=tmerc +lat_0=36 +lon_0=134.3333 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
-          "EPSG:6673": "+proj=tmerc +lat_0=36 +lon_0=136.0 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
-          "EPSG:6674": "+proj=tmerc +lat_0=36 +lon_0=137.1667 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
-          "EPSG:6675": "+proj=tmerc +lat_0=36 +lon_0=138.5 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
-          "EPSG:6676": "+proj=tmerc +lat_0=36 +lon_0=139.8333 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
-          "EPSG:6677": "+proj=tmerc +lat_0=40 +lon_0=140.8333 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
-          "EPSG:6678": "+proj=tmerc +lat_0=44 +lon_0=140.25 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
-          "EPSG:6679": "+proj=tmerc +lat_0=44 +lon_0=142.0 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
-          "EPSG:6680": "+proj=tmerc +lat_0=44 +lon_0=144.0 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
-          "EPSG:6681": "+proj=tmerc +lat_0=26 +lon_0=142.0 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
-          "EPSG:6682": "+proj=tmerc +lat_0=26 +lon_0=127.5 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
-          "EPSG:6683": "+proj=tmerc +lat_0=26 +lon_0=124.0 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
-          "EPSG:6684": "+proj=tmerc +lat_0=26 +lon_0=131.0 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
-          "EPSG:6685": "+proj=tmerc +lat_0=20 +lon_0=136.0 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
-          "EPSG:6686": "+proj=tmerc +lat_0=26 +lon_0=154.0 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs"
+          "EPSG:6668": "+proj=tmerc +lat_0=33 +lon_0=129.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs",
+          "EPSG:6669": "+proj=tmerc +lat_0=33 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs",
+          "EPSG:6670": "+proj=tmerc +lat_0=36 +lon_0=132.1667 +k=0.9999 +ellps=GRS80 +units=m +no_defs"
         };
-
         return crsDefs[epsgCode] || null;
       }
 
       /**
-       * 📌 緯度・経度から最も近い平面直角座標系 (EPSGコード) を判定
-       * @param {number} lon - 経度
-       * @param {number} lat - 緯度
-       * @returns {string} - EPSGコード
+       * 📌 3. 緯度・経度から最も近い平面直角座標系 (EPSGコード) を判定
        */
       function detectPlaneRectangularCRS(lon, lat) {
         const closest = planeCS.reduce((prev, curr) => {
@@ -488,249 +515,218 @@ export default {
         return closest.code;
       }
 
-
-
-// 📌 3. 画面中心から座標系を判定し、定義文字列を取得
-
-
+      /**
+       * 📌 4. 画面中心から座標系を判定し、定義文字列を取得
+       */
       const center = map.getCenter();
       const detectedCRS = detectPlaneRectangularCRS(center.lng, center.lat);
       const definition = getCRSDefinition(detectedCRS);
+
       if (definition) {
+        proj4.defs(detectedCRS, definition);
         console.log(`✅ 座標系 (${detectedCRS}): ${definition}`);
       } else {
         console.warn(`⚠️ 指定された座標系 (${detectedCRS}) は存在しません。`);
+        return;
       }
 
-      // 宮崎県の第II系を定義
-      proj4.defs(detectedCRS, definition);
-      console.log(detectedCRS)
-      // proj4.defs("EPSG:6670", "+proj=tmerc +lat_0=33 +lon_0=131 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs");
-
       /**
-       * MapLibreで表示されている地物をSIMA形式でエクスポート
+       * 📌 5. GeoJSONデータをSIMA形式に変換 (座標系反映)
+       * @param {Object} geojson - GeoJSONデータ
        */
-      function exportVisibleFeaturesAsSIMA(map, layerIds = []) {
-        const visibleFeatures = map.queryRenderedFeatures(undefined, {
-          layers: layerIds
-        });
-
-        if (visibleFeatures.length === 0) {
-          console.warn('表示されているフィーチャがありません。');
-          return;
-        }
-
-        let simaData = 'POINTS\n';
+      function geoJSONtoSIMA(geojson) {
+        let simaData = 'G00,01,INFINITY現場ﾃﾞｰﾀ ,\nZ00,座標ﾃﾞｰﾀ,\nA00,\n';
         let pointIndex = 1;
-        const pointMap = new Map();
-        const lines = [];
+        const pointMap = new Map(); // 重複座標排除
+        const polygonPoints = []; // ポリゴンポイントリスト
 
-        visibleFeatures.forEach((feature) => {
-          const { geometry, properties } = feature;
+        geojson.features.forEach((feature) => {
+          if (feature.geometry.type === 'Polygon') {
+            const exteriorRing = feature.geometry.coordinates[0]; // 外周リングのみ
 
-          if (geometry.type === 'Polygon') {
-            geometry.coordinates.forEach((ring) => {
-              const polygonLine = [];
-              ring.forEach(([lng, lat]) => {
-                const [x, y] = proj4('EPSG:4326', detectedCRS, [lng, lat]);
-                const key = `${x},${y}`;
-                if (!pointMap.has(key)) {
-                  simaData += `${pointIndex},${y.toFixed(3)},${x.toFixed(3)},Polygon_Point\n`;
-                  pointMap.set(key, pointIndex);
-                  pointIndex++;
-                }
-                polygonLine.push(pointMap.get(key));
-              });
+            exteriorRing.forEach(([lng, lat]) => {
+              const [x, y] = proj4('EPSG:4326', detectedCRS, [lng, lat]); // 座標系変換
 
-              // ポリゴンを閉じる（始点と終点を繋ぐ）
-              if (polygonLine.length > 2) {
-                polygonLine.push(polygonLine[0]);
-                lines.push(polygonLine);
+              const key = `${y.toFixed(3)},${x.toFixed(3)}`;
+              if (!pointMap.has(key)) {
+                // 座標データ（A01）
+                simaData += `A01,${pointIndex},Pt-${pointIndex},${y.toFixed(3)},${x.toFixed(3)},0.000,\n`;
+                pointMap.set(key, pointIndex);
+                polygonPoints.push(pointIndex);
+                pointIndex++;
+              } else {
+                polygonPoints.push(pointMap.get(key));
               }
             });
+
+            // ポリゴンを閉じる（最初と最後のポイントが異なる場合）
+            if (polygonPoints[0] !== polygonPoints[polygonPoints.length - 1]) {
+              polygonPoints.push(polygonPoints[0]);
+            }
           }
         });
 
-        // LINESセクションを追加
-        simaData += 'LINES\n';
-        lines.forEach((line) => {
-          simaData += `${line.join(',')}\n`;
+        simaData += 'A99,\n';
+        simaData += 'Z00,区画ﾃﾞｰﾀ,\nD00,1,pt区画,1,\n';
+
+        // 区画データ（B01）
+        polygonPoints.forEach((pointId, index) => {
+          simaData += `B01,${index + 1},Pt-${pointId},\n`;
         });
 
-        simaData += 'END';
+        simaData += 'D99,\n';
 
-        // ファイルとしてエクスポート
+        console.log(simaData);
+
+        // ✅ ダウンロード処理
         const blob = new Blob([simaData], { type: 'text/plain;charset=utf-8' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = 'visible_features.sima';
+        link.download = 'geojson_to_sima_with_crs.sima';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
       }
 
-      exportVisibleFeaturesAsSIMA(map, ['oh-osm-overpass-layer-point','oh-osm-overpass-layer-polygon','oh-osm-overpass-layer-line',"oh-amx-a-fude"]);
-
-
-
-
-
-
-
-      /**
-       * 📌 GeoJSONデータからSIMAファイルを生成 (ポリゴン処理強化版)
-       * @param {string} geojsonText - GeoJSON形式のテキスト
-       */
-      function exportGeoJSONToSIMA(geojsonText) {
-        let geojson;
-        try {
-          geojson = JSON.parse(geojsonText);
-        } catch (error) {
-          console.error('⚠️ GeoJSONのパースに失敗:', error.message);
-          return;
-        }
-
-        if (!geojson || !geojson.features) {
-          console.error('⚠️ 無効なGeoJSONデータです。');
-          return;
-        }
-
-        let simaData = 'POINTS\n';
-        let pointIndex = 1;
-        const pointMap = new Map();
-        const lines = [];
-
-        geojson.features.forEach((feature, featureIndex) => {
-          const { geometry } = feature;
-
-          if (!geometry || !geometry.type || !geometry.coordinates) {
-            console.warn(`⚠️ 無効なフィーチャ (#${featureIndex}) です。`);
-            return;
-          }
-
-          console.log(`▶️ フィーチャ #${featureIndex}: ${geometry.type}`);
-
-          // ✅ ポリゴン・マルチポリゴンの処理
-          if (geometry.type === 'Polygon' || geometry.type === 'MultiPolygon') {
-            const polygons = geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.coordinates;
-
-            polygons.forEach((polygon, polygonIndex) => {
-              polygon.forEach((ring, ringIndex) => {
-                if (ring.length < 3) {
-                  console.warn(`⚠️ ポリゴン (#${polygonIndex}, リング #${ringIndex}) が不完全です。`);
-                  return;
-                }
-
-                // ポリゴンの閉鎖確認
-                if (
-                    ring[0][0] !== ring[ring.length - 1][0] ||
-                    ring[0][1] !== ring[ring.length - 1][1]
-                ) {
-                  console.warn('🔄 ポリゴンの始点と終点が一致していません。自動修正を行います。');
-                  ring.push(ring[0]); // 閉じる
-                }
-
-                const polygonLine = [];
-                ring.forEach(([lng, lat], coordIndex) => {
-                  if (lng < -180 || lng > 180 || lat < -90 || lat > 90) {
-                    console.warn(`⚠️ 範囲外の座標 (#${coordIndex}): lng=${lng}, lat=${lat}`);
-                    return;
-                  }
-
-                  const x = lng;
-                  const y = lat;
-
-                  console.log(`🔹 ポリゴン座標: lng=${lng}, lat=${lat} → X=${x}, Y=${y}`);
-
-                  const key = `${x},${y}`;
-                  if (!pointMap.has(key)) {
-                    simaData += `${pointIndex},${y.toFixed(6)},${x.toFixed(6)},Polygon_Point\n`;
-                    pointMap.set(key, pointIndex);
-                    pointIndex++;
-                  }
-                  polygonLine.push(pointMap.get(key));
-                });
-
-                if (polygonLine.length > 2) {
-                  lines.push(polygonLine);
-                }
-              });
-            });
-          }
-
-          // ✅ ポイントの処理
-          if (geometry.type === 'Point') {
-            const [lng, lat] = geometry.coordinates;
-
-            if (lng < -180 || lng > 180 || lat < -90 || lat > 90) {
-              console.warn(`⚠️ 範囲外の座標: lng=${lng}, lat=${lat}`);
-              return;
-            }
-
-            const x = lng;
-            const y = lat;
-
-            console.log(`🔹 ポイント: lng=${lng}, lat=${lat} → X=${x}, Y=${y}`);
-
-            const key = `${x},${y}`;
-            if (!pointMap.has(key)) {
-              simaData += `${pointIndex},${y.toFixed(6)},${x.toFixed(6)},Point_Feature\n`;
-              pointMap.set(key, pointIndex);
-              pointIndex++;
-            }
-          }
-        });
-
-        // ✅ LINESセクションを追加
-        simaData += 'LINES\n';
-        lines.forEach((line, lineIndex) => {
-          if (line.length > 1) {
-            simaData += `${line.join(',')}\n`;
-          } else {
-            console.warn(`⚠️ 無効なライン (#${lineIndex})`);
-          }
-        });
-        simaData += 'END';
-
-        console.log(`✅ SIMAデータ生成完了: ポイント数=${pointIndex - 1}`);
-
-        // ✅ ファイルとしてダウンロード
-        const blob = new Blob([simaData], { type: 'text/plain;charset=utf-8' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'miyazaki_debug_polygon_fixed.sima';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
-
-      /**
-       * 📌 SIMAエクスポートを実行
-       */
-      function exportFromGeoJSONText() {
-        if (this.geojsonText) {
-          exportGeoJSONToSIMA(this.geojsonText);
-        } else {
-          console.warn('⚠️ `this.geojsonText` が空です。');
-        }
-      }
-
-
-
-      // exportGeoJSONToSIMA(this.geojsonText);
-
-
-
-
-
+      // ✅ GeoJSONテキストを使用してSIMAデータ生成
+      // geoJSONtoSIMA(JSON.parse(this.geojsonText));
+      geoJSONtoSIMA(geojson);
     },
+
+
+    // sima () {
+    //   const map = this.$store.state[this.mapName];
+    //
+    //   /**
+    //    * 📌 1. 平面直角座標系 (JGD2011) の定義
+    //    */
+    //   const planeCS = [
+    //     { code: "EPSG:6668", originLon: 129.5, originLat: 33 },
+    //     { code: "EPSG:6669", originLon: 131.0, originLat: 33 },
+    //     { code: "EPSG:6670", originLon: 132.1667, originLat: 36 },
+    //     { code: "EPSG:6671", originLon: 133.5, originLat: 33 },
+    //     { code: "EPSG:6672", originLon: 134.3333, originLat: 36 },
+    //     { code: "EPSG:6673", originLon: 136.0, originLat: 36 },
+    //     { code: "EPSG:6674", originLon: 137.1667, originLat: 36 },
+    //     { code: "EPSG:6675", originLon: 138.5, originLat: 36 },
+    //     { code: "EPSG:6676", originLon: 139.8333, originLat: 36 },
+    //     { code: "EPSG:6677", originLon: 140.8333, originLat: 40 },
+    //     { code: "EPSG:6678", originLon: 140.25, originLat: 44 },
+    //     { code: "EPSG:6679", originLon: 142.0, originLat: 44 },
+    //     { code: "EPSG:6680", originLon: 144.0, originLat: 44 },
+    //     { code: "EPSG:6681", originLon: 142.0, originLat: 26 },
+    //     { code: "EPSG:6682", originLon: 127.5, originLat: 26 },
+    //     { code: "EPSG:6683", originLon: 124.0, originLat: 26 },
+    //     { code: "EPSG:6684", originLon: 131.0, originLat: 26 },
+    //     { code: "EPSG:6685", originLon: 136.0, originLat: 20 },
+    //     { code: "EPSG:6686", originLon: 154.0, originLat: 26 }
+    //   ];
+    //
+    //   /**
+    //    * 📌 2. EPSGコードに対応する座標系の定義文字列を返す
+    //    */
+    //   function getCRSDefinition(epsgCode) {
+    //     const crsDefs = {
+    //       "EPSG:6668": "+proj=tmerc +lat_0=33 +lon_0=129.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs",
+    //       "EPSG:6669": "+proj=tmerc +lat_0=33 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs",
+    //       "EPSG:6670": "+proj=tmerc +lat_0=36 +lon_0=132.1667 +k=0.9999 +ellps=GRS80 +units=m +no_defs",
+    //       "EPSG:6671": "+proj=tmerc +lat_0=33 +lon_0=133.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs",
+    //       "EPSG:6672": "+proj=tmerc +lat_0=36 +lon_0=134.3333 +k=0.9999 +ellps=GRS80 +units=m +no_defs",
+    //       "EPSG:6673": "+proj=tmerc +lat_0=36 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs",
+    //       "EPSG:6674": "+proj=tmerc +lat_0=36 +lon_0=137.1667 +k=0.9999 +ellps=GRS80 +units=m +no_defs",
+    //       "EPSG:6675": "+proj=tmerc +lat_0=36 +lon_0=138.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs",
+    //       "EPSG:6676": "+proj=tmerc +lat_0=36 +lon_0=139.8333 +k=0.9999 +ellps=GRS80 +units=m +no_defs"
+    //     };
+    //     return crsDefs[epsgCode] || null;
+    //   }
+    //
+    //   /**
+    //    * 📌 3. 緯度・経度から最も近い平面直角座標系 (EPSGコード) を判定
+    //    */
+    //   function detectPlaneRectangularCRS(lon, lat) {
+    //     const closest = planeCS.reduce((prev, curr) => {
+    //       const prevDist = Math.sqrt(Math.pow(prev.originLon - lon, 2) + Math.pow(prev.originLat - lat, 2));
+    //       const currDist = Math.sqrt(Math.pow(curr.originLon - lon, 2) + Math.pow(curr.originLat - lat, 2));
+    //       return currDist < prevDist ? curr : prev;
+    //     });
+    //
+    //     console.log(`🎯 推定座標系: ${closest.code}`);
+    //     return closest.code;
+    //   }
+    //
+    //   /**
+    //    * 📌 4. 画面中心から座標系を判定し、定義文字列を取得
+    //    */
+    //   const center = map.getCenter();
+    //   const detectedCRS = detectPlaneRectangularCRS(center.lng, center.lat);
+    //   const definition = getCRSDefinition(detectedCRS);
+    //
+    //   if (definition) {
+    //     proj4.defs(detectedCRS, definition);
+    //     console.log(`✅ 座標系 (${detectedCRS}): ${definition}`);
+    //   } else {
+    //     console.warn(`⚠️ 指定された座標系 (${detectedCRS}) は存在しません。`);
+    //   }
+    //
+    //   function geoJSONtoSIMA(geojson) {
+    //     let simaData = 'G00,01,INFINITY現場ﾃﾞｰﾀ ,\nZ00,座標ﾃﾞｰﾀ,\nA00,\n';
+    //     let pointIndex = 1;
+    //     const pointMap = new Map(); // 重複座標排除
+    //     const polygonPoints = []; // ポリゴンポイントリスト
+    //
+    //     geojson.features.forEach(feature => {
+    //       if (feature.geometry.type === 'Polygon') {
+    //         const exteriorRing = feature.geometry.coordinates[0];
+    //
+    //         exteriorRing.forEach(([lng, lat]) => {
+    //           const key = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+    //
+    //           if (!pointMap.has(key)) {
+    //             // 座標データ（A01）
+    //             simaData += `A01,${pointIndex},Pt-${pointIndex},${lat.toFixed(6)},${lng.toFixed(6)},0.000,\n`;
+    //             pointMap.set(key, pointIndex);
+    //             polygonPoints.push(pointIndex);
+    //             pointIndex++;
+    //           } else {
+    //             polygonPoints.push(pointMap.get(key));
+    //           }
+    //         });
+    //       }
+    //     });
+    //
+    //     simaData += 'A99,\n';
+    //     simaData += 'Z00,区画ﾃﾞｰﾀ,\nD00,1,pt区画,1,\n';
+    //
+    //     // 区画データ（B01）
+    //     polygonPoints.forEach((pointId, index) => {
+    //       simaData += `B01,${index + 1},Pt-${pointId},\n`;
+    //     });
+    //
+    //     simaData += 'D99,\n';
+    //
+    //     console.log(simaData);
+    //
+    //     // ダウンロード処理
+    //     const blob = new Blob([simaData], { type: 'text/plain;charset=utf-8' });
+    //     const link = document.createElement('a');
+    //     link.href = URL.createObjectURL(blob);
+    //     link.download = 'geojson_to_sima.sima';
+    //     document.body.appendChild(link);
+    //     link.click();
+    //     document.body.removeChild(link);
+    //   }
+    //
+    //   geoJSONtoSIMA(JSON.parse(this.geojsonText));
+    //
+    // },
     change () {
+      console.log(this.s_rawQueryText)
       let dataLength
       const vm = this
       const map = this.$store.state[this.mapName]
 
       if (this.s_rawQueryText) {
-
+        // alert(0)
         if (this.s_rawQueryText.includes("user")) {
 
           const name = this.s_rawQueryText.match(/"([^"]+)"/)[1];
@@ -830,9 +826,9 @@ export default {
             function splitKeyValue(input) {
               const match = input.match(/^([\w:]+)\s*=\s*["']?([^"']+)["']?$/);
               if (match) {
-                return { key: match[1], value: match[2] };
+                return {key: match[1], value: match[2]};
               } else {
-                return { key: input, value: null };
+                return {key: input, value: null};
               }
             }
 
@@ -840,6 +836,7 @@ export default {
 
             const {key, value} = splitKeyValue(this.s_rawQueryText);
             console.log(key, value)
+
             function buildOverpassQuery(key, value) {
               let rawQueryText;
               if (value === null || value === undefined) {
@@ -866,6 +863,7 @@ export default {
               }
               return rawQueryText;
             }
+
             this.queryText = buildOverpassQuery(key, value);
             console.log('生成されたクエリ:', this.queryText);
           } else {
@@ -884,6 +882,14 @@ export default {
           }
         }
         console.log(this.queryText)
+      } else {
+        // alert(1)
+        map.getSource('osm-overpass-source').setData({
+          type: 'FeatureCollection',
+          features: [] // 空の features 配列
+        });
+        this.s_rawQueryText = ''
+        this.queryText = ''
       }
 
       //
@@ -1036,14 +1042,26 @@ export default {
     },
   },
   mounted() {
-    // const script = document.createElement('script');
-    // script.src = "https://cdnjs.cloudflare.com/ajax/libs/osmtogeojson/3.0.0/osmtogeojson.min.js";
-    // document.head.appendChild(script);
+    // localStorage.clear()
+    console.log(this.s_rawQueryText)
+    try {
+      const storedQueryText = localStorage.getItem('queryText');
+      this.queryText = storedQueryText ? JSON.parse(storedQueryText) : [];
+      if (this.queryText.length > 0) {
+        this.counter = this.queryText.length - 1; // 初期時に配列の最後のインデックスを設定
+        // this.s_rawQueryText = this.queryText[this.counter];
+      }
+    } catch (e) {
+      this.queryText = [];
+    }
   },
   watch: {
-    s_osmFire () {
+    s_osmFire() {
       this.change()
     },
+    // s_rawQueryText() {
+    //   this.change()
+    // },
     s_extFire () {
       this.change()
     },
