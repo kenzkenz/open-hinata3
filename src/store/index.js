@@ -195,6 +195,10 @@ export default createStore({
       map01: '',
       map02: ''
     },
+    tokijyoText:{
+      map01: '',
+      map02: ''
+    },
     //------------------------
   },
   getters: {
@@ -318,6 +322,10 @@ export default createStore({
               variable = 'rawQueryText'
             }
             break
+          case 'extTokijyo':
+            if (payload.order === 0) {
+              variable = 'tokijyoText'
+            }
         }
         console.log(payload.mapName,payload.name,payload.value,variable,variable2)
         if (!variable2) {

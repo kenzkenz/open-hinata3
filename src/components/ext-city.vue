@@ -56,11 +56,27 @@ export default {
     },
     saveGeojson () {
       const map = this.$store.state[this.mapName]
-      saveGeojson(map,this.item.id,this.item.id + '-source')
+      let fields
+      switch (this.item.id) {
+        case 'oh-city-gun':
+          fields = ['CODE']
+          break
+        default:
+          fields = ['N03_007']
+      }
+      saveGeojson(map,this.item.id,this.item.id + '-source',fields)
     },
     gistUpload () {
       const map = this.$store.state[this.mapName]
-      gistUpload(map,this.item.id,this.item.id + '-source')
+      let fields
+      switch (this.item.id) {
+        case 'oh-city-gun':
+          fields = ['CODE']
+          break
+        default:
+          fields = ['N03_007']
+      }
+      gistUpload(map,this.item.id,this.item.id + '-source',fields)
     },
     changePaint () {
       console.log(this.item)

@@ -1,6 +1,65 @@
 import {GITHUB_TOKEN} from "@/js/config";
+import * as turf from '@turf/turf'
+function dissolveGeoJSONByFields(geojson, fields) {
+    if (!geojson || !fields || !Array.isArray(fields)) {
+        throw new Error("GeoJSONデータとフィールド名（配列）は必須です。");
+    }
 
-export function exportLayerToGeoJSON(map,layerId,sourceId) {
+    try {
+        const normalizedFeatures = geojson.features
+            .map((feature) => {
+                if (feature.geometry.type === "MultiPolygon") {
+                    return feature.geometry.coordinates.map((polygon) => ({
+                        type: "Feature",
+                        properties: feature.properties,
+                        geometry: {
+                            type: "Polygon",
+                            coordinates: polygon,
+                        },
+                    }));
+                } else if (feature.geometry.type === "MultiLineString") {
+                    return feature.geometry.coordinates.map((line) => ({
+                        type: "Feature",
+                        properties: feature.properties,
+                        geometry: {
+                            type: "LineString",
+                            coordinates: line,
+                        },
+                    }));
+                } else if (
+                    feature.geometry.type === "Polygon" ||
+                    feature.geometry.type === "LineString"
+                ) {
+                    return feature;
+                }
+                return null; // PointやMultiPointは無視
+            })
+            .flat()
+            .filter(Boolean);
+
+        const normalizedGeoJSON = {
+            type: "FeatureCollection",
+            features: normalizedFeatures,
+        };
+
+        try {
+            // AND条件でプロパティ結合
+            normalizedGeoJSON.features.forEach(feature => {
+                feature.properties._combinedField = fields.map(field => feature.properties[field]).join('_');
+            });
+
+            return turf.dissolve(normalizedGeoJSON, { propertyName: '_combinedField' });
+        } catch (error) {
+            console.warn("ディゾルブ中にエラーが発生しましたが無視します:", error);
+            return normalizedGeoJSON;
+        }
+    } catch (error) {
+        console.error("GeoJSON処理中にエラーが発生しましたが無視します:", error);
+        return geojson;
+    }
+}
+
+export function exportLayerToGeoJSON(map,layerId,sourceId,fields) {
     const source = map.getSource(sourceId);
     if (!source) {
         console.error(`レイヤー ${layerId} のソースが見つかりません。`);
@@ -12,18 +71,18 @@ export function exportLayerToGeoJSON(map,layerId,sourceId) {
     } else if (source.type === 'vector') {
         // Vectorタイルの場合、現在表示されているフィーチャを取得
         const features = map.queryRenderedFeatures({ layers: [layerId] });
-        return {
+        let geojson = {
             type: "FeatureCollection",
             features: features.map(f => f.toJSON())
         };
+        return dissolveGeoJSONByFields(geojson, fields)
     } else {
         console.warn('このソースタイプはサポートされていません。');
         return null;
     }
 }
-
-export function saveGeojson (map,layerId,sourceId) {
-    const geojsonText = JSON.stringify(exportLayerToGeoJSON(map,layerId,sourceId))
+export function saveGeojson (map,layerId,sourceId,fields) {
+    const geojsonText = JSON.stringify(exportLayerToGeoJSON(map,layerId,sourceId,fields))
     const blob = new Blob([geojsonText], { type: 'application/json' });
     // 一時的なダウンロード用リンクを作成
     const link = document.createElement('a');
@@ -71,7 +130,7 @@ export async function uploadGeoJSONToGist(geojsonText, gistDescription = 'Upload
     }
 }
 
-export function gistUpload (map,layerId,sourceId) {
-    const geojsonText = JSON.stringify(exportLayerToGeoJSON(map,layerId,sourceId))
+export function gistUpload (map,layerId,sourceId,fields) {
+    const geojsonText = JSON.stringify(exportLayerToGeoJSON(map,layerId,sourceId,fields))
     uploadGeoJSONToGist(geojsonText, 'GeoJSON Dataset Upload');
 }

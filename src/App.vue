@@ -1291,16 +1291,17 @@ export default {
               try {
                 const geojson = JSON.parse(e.target.result);
 
-                if (!geojson || !geojson.features) {
-                  throw new Error('無効なGeoJSONデータです');
-                }
+                // if (!geojson || !geojson.features) {
+                //   throw new Error('無効なGeoJSONデータです');
+                // }
 
                 const sourceId = 'user-geojson';
                 const pointLayerId = 'user-geojson-points';
                 const lineLayerId = 'user-geojson-lines';
                 const polygonLayerId = 'user-geojson-polygons';
+                const polygonLayerLineId = 'user-geojson-polygons-line';
 
-                // 既存のレイヤーとソースがある場合は削除
+                    // 既存のレイヤーとソースがある場合は削除
                 [pointLayerId, lineLayerId, polygonLayerId].forEach(layer => {
                   if (map.getLayer(layer)) {
                     map.removeLayer(layer);
@@ -1354,6 +1355,21 @@ export default {
                     'fill-outline-color': '#000'
                   }
                 });
+
+                // ポリゴンレイヤーライン
+                map.addLayer({
+                  id: polygonLayerLineId,
+                  type: 'line',
+                  source: sourceId,
+                  filter: ['==', '$type', 'Polygon'],
+                  paint: {
+                    'line-color': '##000',
+                    'line-width': '1'
+                  }
+                });
+
+
+
 
                 // 地図をGeoJSONの範囲にズーム
                 const bounds = new maplibregl.LngLatBounds();
