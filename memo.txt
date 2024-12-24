@@ -351,3 +351,5 @@ tile-join -rg -f -o kanko.pmtiles \
   kanko-point.pmtiles
 
 tippecanoe -pk -pf -l polygon -f -o syukuhaku.pmtiles filtered_syukuhaku.geojson
+
+tippecanoe -l polygon -f -o tahata.pmtiles output.geojson

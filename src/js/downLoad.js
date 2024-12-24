@@ -1,10 +1,10 @@
 import {GITHUB_TOKEN} from "@/js/config";
 import * as turf from '@turf/turf'
+import proj4 from 'proj4'
 function dissolveGeoJSONByFields(geojson, fields) {
     if (!geojson || !fields || !Array.isArray(fields)) {
         throw new Error("GeoJSONデータとフィールド名（配列）は必須です。");
     }
-
     try {
         const normalizedFeatures = geojson.features
             .map((feature) => {
@@ -75,6 +75,79 @@ export function exportLayerToGeoJSON(map,layerId,sourceId,fields) {
             type: "FeatureCollection",
             features: features.map(f => f.toJSON())
         };
+
+
+
+        // geojson = {
+        //     "type": "FeatureCollection",
+        //     "features": [
+        //         {
+        //             "type": "Feature",
+        //             "geometry": {
+        //                 "type": "MultiPolygon",
+        //                 "coordinates": [
+        //                     [
+        //                         [
+        //                             [
+        //                                 -51763.867,
+        //                                 3666.959
+        //                             ],
+        //                             [
+        //                                 -51751.211,
+        //                                 3661.721
+        //                             ],
+        //                             [
+        //                                 -51748.36,
+        //                                 3654.315
+        //                             ],
+        //                             [
+        //                                 -51751.157,
+        //                                 3648.169
+        //                             ],
+        //                             [
+        //                                 -51768.324,
+        //                                 3655.634
+        //                             ],
+        //                             [
+        //                                 -51763.867,
+        //                                 3666.959
+        //                             ]
+        //                         ]
+        //                     ]
+        //                 ]
+        //             },
+        //             "properties": {
+        //                 "筆ID": "H000000001",
+        //                 "version": "ver1.0",
+        //                 "座標系": "公共座標2系",
+        //                 "測地系判別": "測量",
+        //                 "地図名": "有明町１７Ａ０２",
+        //                 "地図番号": "682",
+        //                 "縮尺分母": "600",
+        //                 "地図種類": "街区基本調査成果図",
+        //                 "地図分類": "地図に準ずる図面（街区成果B）",
+        //                 "市区町村コード": "40202",
+        //                 "市区町村名": "大牟田市",
+        //                 "大字コード": "028",
+        //                 "丁目コード": "002",
+        //                 "小字コード": "0000",
+        //                 "予備コード": "00",
+        //                 "大字名": "有明町",
+        //                 "丁目名": "２丁目",
+        //                 "小字名": null,
+        //                 "予備名": null,
+        //                 "地番": "1-1",
+        //                 "精度区分": null,
+        //                 "座標値種別": "図上測量",
+        //                 "筆界未定構成筆": null,
+        //                 "代表点緯度": 3658.6775,
+        //                 "代表点経度": -51758.58279902
+        //             }
+        //         }
+        //     ]
+        // }
+
+
         return dissolveGeoJSONByFields(geojson, fields)
     } else {
         console.warn('このソースタイプはサポートされていません。');
@@ -134,3 +207,154 @@ export function gistUpload (map,layerId,sourceId,fields) {
     const geojsonText = JSON.stringify(exportLayerToGeoJSON(map,layerId,sourceId,fields))
     uploadGeoJSONToGist(geojsonText, 'GeoJSON Dataset Upload');
 }
+
+/**
+ * 座標変換関数
+ * @param {Array} coords - 座標データ
+ * @param {String} sourceProj - 元の座標系（EPSG:4326）
+ * @param {String} targetProj - 変換先の座標系（EPSG:6670）
+ * @returns {Array} - 変換後の座標データ
+ */
+function transformCoordinates(coords, sourceProj, targetProj) {
+    if (Array.isArray(coords[0])) {
+        return coords.map(coord => transformCoordinates(coord, sourceProj, targetProj));
+    } else {
+        const [x, y] = proj4(sourceProj, targetProj, [coords[0], coords[1]]);
+        return [x, y]; // 緯度と経度の反転は不要
+    }
+}
+
+/**
+ * ジオメトリ変換関数
+ * @param {Object} geometry - GeoJSONジオメトリオブジェクト
+ * @param {String} sourceProj - 元の座標系（EPSG:4326）
+ * @param {String} targetProj - 変換先の座標系（EPSG:6670）
+ * @returns {Object} - 変換後のジオメトリ
+ */
+function transformGeometry(geometry, sourceProj, targetProj) {
+    switch (geometry.type) {
+        case 'Point':
+        case 'LineString':
+        case 'Polygon':
+            geometry.coordinates = transformCoordinates(geometry.coordinates, sourceProj, targetProj);
+            break;
+        case 'MultiLineString':
+        case 'MultiPolygon':
+            geometry.coordinates = geometry.coordinates.map(coords =>
+                transformCoordinates(coords, sourceProj, targetProj)
+            );
+            break;
+        default:
+            console.warn(`Unsupported geometry type: ${geometry.type}`);
+    }
+    return geometry;
+}
+
+/**
+ * GeoJSONを指定した直角座標系に変換
+ * @param {Object} geojson - 入力GeoJSONデータ（EPSG:4326）
+ * @param {String} targetProj - 変換先の座標系（EPSG:6670）
+ * @returns {Object} - 変換後のGeoJSONデータ
+ */
+function convertGeoJSONToCRS(geojson, targetProj) {
+    if (!geojson || geojson.type !== 'FeatureCollection') {
+        throw new Error('無効なGeoJSONデータです。FeatureCollectionが必要です。');
+    }
+
+    proj4.defs([
+        ["EPSG:4326", "+proj=longlat +datum=WGS84 +no_defs"],
+        ["EPSG:6670", "+proj=tmerc +lat_0=32 +lon_0=131.0 +k=0.9999 +x_0=0 +y_0=0 +datum=JGD2011 +units=m +no_defs"]
+    ]);
+
+    const sourceProj = 'EPSG:4326';
+
+    const transformedGeoJSON = JSON.parse(JSON.stringify(geojson));
+    transformedGeoJSON.features = transformedGeoJSON.features.map((feature) => {
+        if (!feature.geometry) return feature;
+        feature.geometry = transformGeometry(feature.geometry, sourceProj, targetProj);
+        return feature;
+    });
+
+    return transformedGeoJSON;
+}
+
+/**
+ * GeoJSONをSIMA形式に変換してダウンロード
+ * @param {Object} geojson - 入力GeoJSONデータ
+ * @param {String} fileName - 出力ファイル名
+ */
+function convertAndDownloadGeoJSONToSIMA(geojson, fileName = 'output.sim') {
+    if (!geojson || geojson.type !== 'FeatureCollection') {
+        throw new Error('無効なGeoJSONデータです。FeatureCollectionが必要です。');
+    }
+
+    let simaData = 'G00,01,法務省地図XML2sima,\n';
+    simaData += 'Z00,座標ﾃﾞｰﾀ,,\n';
+    simaData += 'A00,\n';
+
+    let globalIndex = 1;
+    let pointMapping = {};
+    let vertexIndex = 1;
+
+    geojson.features.forEach((feature) => {
+        if (!feature.geometry || !feature.geometry.coordinates) {
+            return;
+        }
+
+        feature.geometry.coordinates.flat().forEach((coord) => {
+            if (Array.isArray(coord) && coord.length >= 2) {
+                let [x, y] = coord;
+                if (x !== undefined && y !== undefined) {
+                    simaData += `A01,${vertexIndex},${globalIndex},${x},${y},,\n`;
+                    pointMapping[vertexIndex] = globalIndex;
+                    vertexIndex++;
+                    globalIndex++;
+                }
+            }
+        });
+    });
+
+    simaData += 'A99,\n';
+    simaData += 'Z00,区画ﾃﾞｰﾀ,\n';
+
+    geojson.features.forEach((feature, featureIndex) => {
+        const plotId = feature.properties?.['筆ID'] || `${featureIndex + 1}`;
+        simaData += `D00,${featureIndex + 1},${plotId},1,\n`;
+        let pointIndex = 1;
+        feature.geometry.coordinates.flat().forEach((coord) => {
+            if (Array.isArray(coord) && coord.length >= 2) {
+                simaData += `B01,${pointIndex},${pointMapping[pointIndex]},\n`;
+                pointIndex++;
+            }
+        });
+        simaData += 'D99,\n';
+    });
+
+    simaData += 'A99,END,,\n';
+
+    const blob = new Blob([simaData], { type: 'text/plain' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+/**
+ * 保存関数
+ */
+export function saveCima(map, layerId, sourceId, fields) {
+    const geojson = convertGeoJSONToCRS(exportLayerToGeoJSON(map, layerId, sourceId, fields), 'EPSG:6670');
+    convertAndDownloadGeoJSONToSIMA(geojson);
+}
+
+
+
+
+
+
+
+// GeoJSONをSIMAに変換してダウンロード
+// convertAndDownloadGeoJSONToSIMA(sampleGeoJSON, 'output.sim');
+
