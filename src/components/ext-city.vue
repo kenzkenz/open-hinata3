@@ -4,11 +4,16 @@
       <v-switch class="custom-switch" v-model="s_isPaintCity" @change="changePaint" label="塗りつぶし" color="primary" />
       <br>
       <v-text-field label="抽出" v-model="s_cityText" @input="changePaint" style="margin-top: 10px"></v-text-field>
+      <v-btn style="margin-top: -10px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
+      <v-btn style="margin-top: -10px;margin-left: 5px;" class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>
       <div v-html="item.attribution"></div>
     </div>
 </template>
 
 <script>
+
+import { saveGeojson,gistUpload } from "@/js/downLoad";
+
 export default {
   name: 'ext-city',
   props: ['mapName','item'],
@@ -48,6 +53,14 @@ export default {
           this.s_isPaintCity,
           this.s_cityText
         ]})
+    },
+    saveGeojson () {
+      const map = this.$store.state[this.mapName]
+      saveGeojson(map,this.item.id,this.item.id + '-source')
+    },
+    gistUpload () {
+      const map = this.$store.state[this.mapName]
+      gistUpload(map,this.item.id,this.item.id + '-source')
     },
     changePaint () {
       console.log(this.item)

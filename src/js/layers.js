@@ -4401,7 +4401,7 @@ const dronebirdLayer = {
 }
 // 明治中期の郡 --------------------------------------------------------------------------------------------
 const cityGunSource = {
-    id: "city-gun-source", obj: {
+    id: "oh-city-gun-source", obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/gun/gun.pmtiles",
     }
@@ -4409,7 +4409,7 @@ const cityGunSource = {
 const cityGunLayer = {
     id: "oh-city-gun",
     type: "fill",
-    source: "city-gun-source",
+    source: "oh-city-gun-source",
     "source-layer": "polygon",
     paint: {
         'fill-color': ['get', 'random_color'],
@@ -4418,7 +4418,7 @@ const cityGunLayer = {
 const cityGunLayerLine = {
     id: "oh-city-gun-line",
     type: "line",
-    source: "city-gun-source",
+    source: "oh-city-gun-source",
     "source-layer": "polygon",
     paint: {
         'line-color': '#000',
@@ -4434,7 +4434,7 @@ const cityGunLayerLine = {
 const cityGunLayerLabel = {
     id: "oh-city-gun-label",
     type: "symbol",
-    source: "city-gun-source",
+    source: "oh-city-gun-source",
     "source-layer": "polygon",
     'layout': {
         'text-field': ['get', 'GUN'],
@@ -4450,7 +4450,7 @@ const cityGunLayerLabel = {
 }
 // 市町村大正09年 --------------------------------------------------------------------------------------------
 const cityT09Source = {
-    id: "city-t09-source", obj: {
+    id: "oh-city-t09-source", obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/city/t09/t09.pmtiles",
         attribution: "<a href='' target='_blank'></a>",
@@ -4459,7 +4459,7 @@ const cityT09Source = {
 const cityT09Layer = {
     id: "oh-city-t09",
     type: "fill",
-    source: "city-t09-source",
+    source: "oh-city-t09-source",
     "source-layer": "polygon",
     paint: {
         'fill-color': ['get', 'random_color'],
@@ -4468,7 +4468,7 @@ const cityT09Layer = {
 const cityT09LayerLine = {
     id: "oh-city-t09-line",
     type: "line",
-    source: "city-t09-source",
+    source: "oh-city-t09-source",
     "source-layer": "polygon",
     paint: {
         'line-color': '#000',
@@ -4484,7 +4484,7 @@ const cityT09LayerLine = {
 const cityT09LayerLabel = {
     id: "oh-city-t09-label",
     type: "symbol",
-    source: "city-t09-source",
+    source: "oh-city-t09-source",
     "source-layer": "polygon",
     'layout': {
         'text-field': ['get', 'N03_004'],
@@ -4499,7 +4499,7 @@ const cityT09LayerLabel = {
 }
 // 市町村令和５年 --------------------------------------------------------------------------------------------
 const cityR05Source = {
-    id: "city-r05-source", obj: {
+    id: "oh-city-r05-source", obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/city/r05/r05.pmtiles",
         attribution: "<a href='' target='_blank'></a>",
@@ -4508,7 +4508,7 @@ const cityR05Source = {
 const cityR05Layer = {
     id: "oh-city-r05",
     type: "fill",
-    source: "city-r05-source",
+    source: "oh-city-r05-source",
     "source-layer": "polygon",
     paint: {
         'fill-color': ['get', 'random_color'],
@@ -4517,7 +4517,7 @@ const cityR05Layer = {
 const cityR05LayerLine = {
     id: "oh-city-r05-line",
     type: "line",
-    source: "city-r05-source",
+    source: "oh-city-r05-source",
     "source-layer": "polygon",
     paint: {
         'line-color': '#000',
@@ -4533,7 +4533,7 @@ const cityR05LayerLine = {
 const cityR05LayerLabel = {
     id: "oh-city-r05-label",
     type: "symbol",
-    source: "city-r05-source",
+    source: "oh-city-r05-source",
     "source-layer": "polygon",
     'layout': {
         'text-field': ['get', 'N03_004'],

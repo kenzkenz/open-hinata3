@@ -346,11 +346,8 @@ export default {
       this.errorLog = ''
       // GeoJSONをGitHub Gistにアップロードするプログラム
       async function uploadGeoJSONToGist(geojsonText, gistDescription = 'Uploaded GeoJSON') {
-
         const token = GITHUB_TOKEN;
-
         const gistAPIUrl = 'https://api.github.com/gists';
-
         try {
           const response = await fetch(gistAPIUrl, {
             method: 'POST',
