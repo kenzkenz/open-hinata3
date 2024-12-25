@@ -263,10 +263,30 @@ function convertGeoJSONToCRS(geojson, targetProj) {
 
     proj4.defs([
         ["EPSG:4326", "+proj=longlat +datum=WGS84 +no_defs"],
-        ["EPSG:6670", "+proj=tmerc +lat_0=32 +lon_0=131.0 +k=0.9999 +x_0=0 +y_0=0 +datum=JGD2011 +units=m +no_defs"]
+        ["EPSG:6670", "+proj=tmerc +lat_0=33 +lon_0=131 +k=0.9999 +x_0=200000 +y_0=0 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"]
     ]);
 
     const sourceProj = 'EPSG:4326';
+
+    const transformCoordinates = (coords, sourceProj, targetProj) => {
+        if (Array.isArray(coords[0])) {
+            return coords.map((innerCoords) => transformCoordinates(innerCoords, sourceProj, targetProj));
+        }
+        const transformed = proj4(sourceProj, targetProj, coords);
+        console.log(`変換前: ${coords}, 変換後: ${transformed}`);
+        return transformed;
+    };
+
+    const transformGeometry = (geometry, sourceProj, targetProj) => {
+        if (!geometry) return null;
+
+        const { type, coordinates } = geometry;
+
+        return {
+            type,
+            coordinates: transformCoordinates(coordinates, sourceProj, targetProj)
+        };
+    };
 
     const transformedGeoJSON = JSON.parse(JSON.stringify(geojson));
     transformedGeoJSON.features = transformedGeoJSON.features.map((feature) => {
