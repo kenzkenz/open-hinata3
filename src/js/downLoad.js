@@ -346,3 +346,119 @@ export function saveCima(map, layerId, sourceId, fields) {
     convertAndDownloadGeoJSONToSIMA(map,geojson);
 }
 
+function geojsonToDXF(geojson) {
+    let dxf = "0\n" +
+        "SECTION\n" +
+        "2\n" +
+        "HEADER\n" +
+        "0\n" +
+        "ENDSEC\n" +
+        "0\n" +
+        "SECTION\n" +
+        "2\n" +
+        "TABLES\n" +
+        "0\n" +
+        "ENDSEC\n" +
+        "0\n" +
+        "SECTION\n" +
+        "2\n" +
+        "ENTITIES\n";
+
+    function processPoint(coord, layer = 'Default') {
+        return "0\n" +
+            "POINT\n" +
+            "8\n" + layer + "\n" +
+            "10\n" + coord[0] + "\n" +
+            "20\n" + coord[1] + "\n";
+    }
+
+    function processLineString(coords, layer = 'Default') {
+        let dxfPart = "0\n" +
+            "LWPOLYLINE\n" +
+            "8\n" + layer + "\n" +
+            "90\n" + coords.length + "\n";
+        coords.forEach(coord => {
+            dxfPart += "10\n" + coord[0] + "\n" +
+                "20\n" + coord[1] + "\n";
+        });
+        return dxfPart;
+    }
+
+    function processPolygon(coords, layer = 'Default') {
+        let dxfPart = "0\n" +
+            "LWPOLYLINE\n" +
+            "8\n" + layer + "\n" +
+            "90\n" + coords[0].length + "\n" +
+            "70\n1\n";
+        coords[0].forEach(coord => {
+            dxfPart += "10\n" + coord[0] + "\n" +
+                "20\n" + coord[1] + "\n";
+        });
+        return dxfPart;
+    }
+
+    function processMultiPoint(coords, layer = 'Default') {
+        return coords.map(coord => processPoint(coord, layer)).join('');
+    }
+
+    function processMultiLineString(coords, layer = 'Default') {
+        return coords.map(line => processLineString(line, layer)).join('');
+    }
+
+    function processMultiPolygon(coords, layer = 'Default') {
+        return coords.map(polygon => processPolygon(polygon, layer)).join('');
+    }
+
+    geojson.features.forEach(feature => {
+        const geometry = feature.geometry;
+        const properties = feature.properties || {};
+        const layer = properties.layer || 'Default';
+
+        switch (geometry.type) {
+            case 'Point':
+                dxf += processPoint(geometry.coordinates, layer);
+                break;
+            case 'LineString':
+                dxf += processLineString(geometry.coordinates, layer);
+                break;
+            case 'Polygon':
+                dxf += processPolygon(geometry.coordinates, layer);
+                break;
+            case 'MultiPoint':
+                dxf += processMultiPoint(geometry.coordinates, layer);
+                break;
+            case 'MultiLineString':
+                dxf += processMultiLineString(geometry.coordinates, layer);
+                break;
+            case 'MultiPolygon':
+                dxf += processMultiPolygon(geometry.coordinates, layer);
+                break;
+            default:
+                console.warn("サポートされていないジオメトリタイプ: " + geometry.type);
+                break;
+        }
+    });
+
+    dxf += "0\n" +
+        "ENDSEC\n" +
+        "0\n" +
+        "EOF\n";
+    return dxf;
+}
+
+export function saveDxf (map, layerId, sourceId, fields) {
+    const geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields)
+    console.log(geojson)
+    try {
+        const dxfString = geojsonToDXF(geojson);
+        // DXFファイルとしてダウンロード
+        const blob = new Blob([dxfString], { type: 'application/dxf' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'output.dxf';
+        link.click();
+    } catch (error) {
+        console.error('GeoJSONの解析中にエラーが発生しました:', error);
+        alert('有効なGeoJSONを入力してください。');
+    }
+}

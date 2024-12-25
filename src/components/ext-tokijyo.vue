@@ -5,13 +5,14 @@
       <v-btn style="margin-top: -10px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
       <v-btn style="margin-top: -10px;margin-left: 5px;" class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>
       <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveCima">sima保存</v-btn>
+      <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveDxf">dxf保存テスト</v-btn>
       <div v-html="item.attribution"></div>
     </div>
 </template>
 
 <script>
 
-import { saveGeojson,gistUpload,saveCima } from "@/js/downLoad";
+import { saveGeojson,gistUpload,saveCima,saveDxf } from "@/js/downLoad";
 
 export default {
   name: 'ext-tokijyo',
@@ -37,6 +38,10 @@ export default {
       this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [
           this.s_tokijyoText
         ]})
+    },
+    saveDxf () {
+      const map = this.$store.state[this.mapName]
+      saveDxf (map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
     },
     saveCima () {
       const map = this.$store.state[this.mapName]
