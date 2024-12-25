@@ -4,7 +4,7 @@
       <v-text-field label="抽出" v-model="s_tokijyoText" @input="change" style="margin-top: 10px"></v-text-field>
       <v-btn style="margin-top: -10px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
       <v-btn style="margin-top: -10px;margin-left: 5px;" class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>
-      <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveCima">simaテスト(宮崎県の座標系)</v-btn>
+      <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveCima">sima保存</v-btn>
       <div v-html="item.attribution"></div>
     </div>
 </template>
