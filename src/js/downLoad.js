@@ -291,31 +291,28 @@ function convertAndDownloadGeoJSONToSIMA(geojson, fileName = 'output.sim') {
     let simaData = 'G00,01,法務省地図XML2sima,\n';
     simaData += 'Z00,座標ﾃﾞｰﾀ,,\n';
     simaData += 'A00,\n';
-
-    let globalIndex = 1;
     let pointMapping = {};
-    let vertexIndex = 1;
+    let A01Text = ''
+    let B01Text = ''
+    let i = 1
+    let j = 1
 
     geojson.features.forEach((feature) => {
-        if (!feature.geometry || !feature.geometry.coordinates) {
-            return;
-        }
-
-        feature.geometry.coordinates.flat().forEach((coord) => {
-            if (Array.isArray(coord) && coord.length >= 2) {
-                let [x, y] = coord;
-                if (x !== undefined && y !== undefined) {
-                    simaData += `A01,${vertexIndex},${globalIndex},${x},${y},,\n`;
-                    pointMapping[vertexIndex] = globalIndex;
-                    vertexIndex++;
-                    globalIndex++;
-                }
+        B01Text += 'D00,' + i + ',' + i + ',\n'
+        const len = feature.geometry.coordinates.flat().length
+        feature.geometry.coordinates.flat().forEach((coord,index) => {
+            A01Text += 'A01,' + j + ',' + j + ',' + coord[1] + ',' + coord[0] + ',\n'
+            if (len-2 < index) {
+                B01Text += 'B01,' + j + ',' + j + ',\nD99,\n'
+            } else {
+                B01Text += 'B01,' + j + ',' + j + ',\n'
             }
-        });
-    });
-
-    simaData += 'A99,\n';
-    simaData += 'Z00,区画ﾃﾞｰﾀ,\n';
+            j++
+        })
+        i++
+    })
+    simaData = simaData + A01Text + 'A99\nZ00,区画データ,\n' + B01Text
+    console.log(simaData)
 
     geojson.features.forEach((feature, featureIndex) => {
         const plotId = feature.properties?.['筆ID'] || `${featureIndex + 1}`;
