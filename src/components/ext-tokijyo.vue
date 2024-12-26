@@ -6,18 +6,19 @@
       <v-btn style="margin-top: -10px;margin-left: 5px;" class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>
       <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveCima">sima保存</v-btn>
       <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveDxf">dxf保存テスト</v-btn>
-      <div v-html="item.attribution"></div>
+      <span style="font-size: 12px"><div v-html="item.attribution"></div>平面直角座標系の時は「{{ kei }}」で変換</span>
     </div>
 </template>
 
 <script>
 
-import { saveGeojson,gistUpload,saveCima,saveDxf } from "@/js/downLoad";
+import { saveGeojson,gistUpload,saveCima,saveDxf,initializePlaneRectangularCRS } from "@/js/downLoad";
 
 export default {
   name: 'ext-tokijyo',
   props: ['mapName','item'],
   data: () => ({
+    kei: '',
     menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text', 'font-size':'large'}
   }),
   computed: {
@@ -107,6 +108,14 @@ export default {
       filterBy(this.s_tokijyoText)
       this.update()
     },
+  },
+  mounted() {
+    const map = this.$store.state[this.mapName]
+    map.on('moveend', () => {
+      const crs = initializePlaneRectangularCRS(map)
+      this.kei = crs.kei
+      console.log(crs.kei)
+    })
   },
   watch: {
     s_extFire () {
