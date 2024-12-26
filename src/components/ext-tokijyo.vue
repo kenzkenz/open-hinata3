@@ -4,19 +4,31 @@
       <v-text-field label="抽出" v-model="s_tokijyoText" @input="change" style="margin-top: 10px"></v-text-field>
       <v-btn style="margin-top: -10px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
       <v-btn style="margin-top: -10px;margin-left: 5px;" class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>
-      <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveCima">simaテスト(宮崎県の座標系)</v-btn>
-      <div v-html="item.attribution"></div>
+      <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveSima">sima保存</v-btn>
+      <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
+      <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
+      <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="loadSima">sima読込テスト（２系だけ）</v-btn>
+<!--      <span style="font-size: 12px"><div v-html="item.attribution"></div>平面直角座標系の時は「{{ kei }}」で変換</span>-->
     </div>
 </template>
 
 <script>
 
-import { saveGeojson,gistUpload,saveCima } from "@/js/downLoad";
+import {
+  saveGeojson,
+  gistUpload,
+  saveCima,
+  saveDxf,
+  initializePlaneRectangularCRS,
+  saveCsv,
+  simaToGeoJSON
+} from "@/js/downLoad";
 
 export default {
   name: 'ext-tokijyo',
   props: ['mapName','item'],
   data: () => ({
+    kei: '',
     menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text', 'font-size':'large'}
   }),
   computed: {
@@ -38,9 +50,20 @@ export default {
           this.s_tokijyoText
         ]})
     },
-    saveCima () {
+    loadSima () {
+      document.querySelector('#simaFileInput').click()
+    },
+    saveCsv () {
       const map = this.$store.state[this.mapName]
-      saveCima (map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
+      saveCsv(map,'oh-amx-a-fude','amx-a-pmtiles',[])
+    },
+    saveDxf () {
+      const map = this.$store.state[this.mapName]
+      saveDxf(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
+    },
+    saveSima () {
+      const map = this.$store.state[this.mapName]
+      saveCima(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
     },
     saveGeojson () {
       const map = this.$store.state[this.mapName]
@@ -102,6 +125,14 @@ export default {
       filterBy(this.s_tokijyoText)
       this.update()
     },
+  },
+  mounted() {
+    const map = this.$store.state[this.mapName]
+    map.on('moveend', () => {
+      const crs = initializePlaneRectangularCRS(map)
+      this.kei = crs.kei
+      console.log(crs.kei)
+    })
   },
   watch: {
     s_extFire () {

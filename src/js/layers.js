@@ -6262,6 +6262,13 @@ const syukuhakuLayerHeight = {
 
 const layers01 = [
     {
+        id: 'oh-amx-a-fude',
+        label: "登記所備付地図データ",
+        source: amxSource,
+        layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel],
+        ext: {name:'extTokijyo'}
+    },
+    {
         id: 1,
         label: "基本地図",
         nodes: [
