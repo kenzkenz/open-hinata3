@@ -5,14 +5,15 @@
       <v-btn style="margin-top: -10px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
       <v-btn style="margin-top: -10px;margin-left: 5px;" class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>
       <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveCima">sima保存</v-btn>
-      <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveDxf">dxf保存テスト</v-btn>
+      <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
+      <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
 <!--      <span style="font-size: 12px"><div v-html="item.attribution"></div>平面直角座標系の時は「{{ kei }}」で変換</span>-->
     </div>
 </template>
 
 <script>
 
-import { saveGeojson,gistUpload,saveCima,saveDxf,initializePlaneRectangularCRS } from "@/js/downLoad";
+import { saveGeojson,gistUpload,saveCima,saveDxf,initializePlaneRectangularCRS,saveCsv } from "@/js/downLoad";
 
 export default {
   name: 'ext-tokijyo',
@@ -40,13 +41,17 @@ export default {
           this.s_tokijyoText
         ]})
     },
+    saveCsv () {
+      const map = this.$store.state[this.mapName]
+      saveCsv(map,'oh-amx-a-fude','amx-a-pmtiles',[])
+    },
     saveDxf () {
       const map = this.$store.state[this.mapName]
-      saveDxf (map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
+      saveDxf(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
     },
     saveCima () {
       const map = this.$store.state[this.mapName]
-      saveCima (map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
+      saveCima(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
     },
     saveGeojson () {
       const map = this.$store.state[this.mapName]

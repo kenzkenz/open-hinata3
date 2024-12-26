@@ -2,11 +2,70 @@ import store from '@/store'
 import {GITHUB_TOKEN} from "@/js/config";
 import * as turf from '@turf/turf'
 import proj4 from 'proj4'
+// function dissolveGeoJSONByFields(geojson, fields) {
+//     if (!geojson || !fields || !Array.isArray(fields)) {
+//         throw new Error("GeoJSONデータとフィールド名（配列）は必須です。");
+//     }
+//     try {
+//         const normalizedFeatures = geojson.features
+//             .map((feature) => {
+//                 if (feature.geometry.type === "MultiPolygon") {
+//                     return feature.geometry.coordinates.map((polygon) => ({
+//                         type: "Feature",
+//                         properties: feature.properties,
+//                         geometry: {
+//                             type: "Polygon",
+//                             coordinates: polygon,
+//                         },
+//                     }));
+//                 } else if (feature.geometry.type === "MultiLineString") {
+//                     return feature.geometry.coordinates.map((line) => ({
+//                         type: "Feature",
+//                         properties: feature.properties,
+//                         geometry: {
+//                             type: "LineString",
+//                             coordinates: line,
+//                         },
+//                     }));
+//                 } else if (
+//                     feature.geometry.type === "Polygon" ||
+//                     feature.geometry.type === "LineString"
+//                 ) {
+//                     return feature;
+//                 }
+//                 return null; // PointやMultiPointは無視
+//             })
+//             .flat()
+//             .filter(Boolean);
+//
+//         const normalizedGeoJSON = {
+//             type: "FeatureCollection",
+//             features: normalizedFeatures,
+//         };
+//
+//         try {
+//             // AND条件でプロパティ結合
+//             normalizedGeoJSON.features.forEach(feature => {
+//                 feature.properties._combinedField = fields.map(field => feature.properties[field]).join('_');
+//             });
+//
+//             return turf.dissolve(normalizedGeoJSON, { propertyName: '_combinedField' });
+//         } catch (error) {
+//             console.warn("ディゾルブ中にエラーが発生しましたが無視します:", error);
+//             return normalizedGeoJSON;
+//         }
+//     } catch (error) {
+//         console.error("GeoJSON処理中にエラーが発生しましたが無視します:", error);
+//         return geojson;
+//     }
+// }
+
 function dissolveGeoJSONByFields(geojson, fields) {
     if (!geojson || !fields || !Array.isArray(fields)) {
         throw new Error("GeoJSONデータとフィールド名（配列）は必須です。");
     }
     try {
+        // 1. MultiPolygonやMultiLineStringを標準化
         const normalizedFeatures = geojson.features
             .map((feature) => {
                 if (feature.geometry.type === "MultiPolygon") {
@@ -43,22 +102,46 @@ function dissolveGeoJSONByFields(geojson, fields) {
             features: normalizedFeatures,
         };
 
-        try {
-            // AND条件でプロパティ結合
-            normalizedGeoJSON.features.forEach(feature => {
-                feature.properties._combinedField = fields.map(field => feature.properties[field]).join('_');
-            });
+        // 2. _combinedField を追加して結合キーを作成
+        normalizedGeoJSON.features.forEach(feature => {
+            feature.properties._combinedField = fields
+                .map(field => feature.properties[field] || '')
+                .join('_');
+        });
 
-            return turf.dissolve(normalizedGeoJSON, { propertyName: '_combinedField' });
-        } catch (error) {
-            console.warn("ディゾルブ中にエラーが発生しましたが無視します:", error);
-            return normalizedGeoJSON;
-        }
+        // 3. 融合を実行
+        const dissolved = turf.dissolve(normalizedGeoJSON, { propertyName: '_combinedField' });
+
+        // 4. 融合後のプロパティを修復
+        const featurePropertyMap = new Map();
+
+        normalizedGeoJSON.features.forEach(feature => {
+            const key = feature.properties._combinedField;
+            if (!featurePropertyMap.has(key)) {
+                featurePropertyMap.set(key, feature.properties);
+            }
+        });
+
+        dissolved.features.forEach(feature => {
+            const key = feature.properties._combinedField;
+            if (featurePropertyMap.has(key)) {
+                // 融合後のプロパティに元のプロパティを統合
+                feature.properties = {
+                    ...featurePropertyMap.get(key)
+                };
+                // _combinedFieldを削除して元に戻す
+                delete feature.properties._combinedField;
+            }
+        });
+
+        return dissolved;
     } catch (error) {
-        console.error("GeoJSON処理中にエラーが発生しましたが無視します:", error);
+        console.error("GeoJSON処理中にエラーが発生しました:", error);
         return geojson;
     }
 }
+
+
 
 export function exportLayerToGeoJSON(map,layerId,sourceId,fields) {
     const source = map.getSource(sourceId);
@@ -76,80 +159,11 @@ export function exportLayerToGeoJSON(map,layerId,sourceId,fields) {
             type: "FeatureCollection",
             features: features.map(f => f.toJSON())
         };
-
-
-
-        // geojson = {
-        //     "type": "FeatureCollection",
-        //     "features": [
-        //         {
-        //             "type": "Feature",
-        //             "geometry": {
-        //                 "type": "MultiPolygon",
-        //                 "coordinates": [
-        //                     [
-        //                         [
-        //                             [
-        //                                 -51763.867,
-        //                                 3666.959
-        //                             ],
-        //                             [
-        //                                 -51751.211,
-        //                                 3661.721
-        //                             ],
-        //                             [
-        //                                 -51748.36,
-        //                                 3654.315
-        //                             ],
-        //                             [
-        //                                 -51751.157,
-        //                                 3648.169
-        //                             ],
-        //                             [
-        //                                 -51768.324,
-        //                                 3655.634
-        //                             ],
-        //                             [
-        //                                 -51763.867,
-        //                                 3666.959
-        //                             ]
-        //                         ]
-        //                     ]
-        //                 ]
-        //             },
-        //             "properties": {
-        //                 "筆ID": "H000000001",
-        //                 "version": "ver1.0",
-        //                 "座標系": "公共座標2系",
-        //                 "測地系判別": "測量",
-        //                 "地図名": "有明町１７Ａ０２",
-        //                 "地図番号": "682",
-        //                 "縮尺分母": "600",
-        //                 "地図種類": "街区基本調査成果図",
-        //                 "地図分類": "地図に準ずる図面（街区成果B）",
-        //                 "市区町村コード": "40202",
-        //                 "市区町村名": "大牟田市",
-        //                 "大字コード": "028",
-        //                 "丁目コード": "002",
-        //                 "小字コード": "0000",
-        //                 "予備コード": "00",
-        //                 "大字名": "有明町",
-        //                 "丁目名": "２丁目",
-        //                 "小字名": null,
-        //                 "予備名": null,
-        //                 "地番": "1-1",
-        //                 "精度区分": null,
-        //                 "座標値種別": "図上測量",
-        //                 "筆界未定構成筆": null,
-        //                 "代表点緯度": 3658.6775,
-        //                 "代表点経度": -51758.58279902
-        //             }
-        //         }
-        //     ]
-        // }
-
-
-        return dissolveGeoJSONByFields(geojson, fields)
+        if (fields.length === 0) {
+            return geojson
+        } else {
+            return dissolveGeoJSONByFields(geojson, fields)
+        }
     } else {
         console.warn('このソースタイプはサポートされていません。');
         return null;
@@ -464,30 +478,61 @@ function convertAndDownloadGeoJSONToSIMA(map,geojson, fileName = 'output.sim') {
     const crs = initializePlaneRectangularCRS(map)
     console.log(crs)
     alert('平面直角座標系（' + crs.kei + ')でsimファイルを作ります。')
+    // let simaData = 'G00,01,open-hinata3,\n';
+    // simaData += 'Z00,座標ﾃﾞｰﾀ,,\n';
+    // simaData += 'A00,\n';
+    // let A01Text = ''
+    // let B01Text = ''
+    // let i = 1
+    // let j = 1
+    // geojson.features.forEach((feature) => {
+    //     B01Text += 'D00,' + i + ',' + i + ',\n'
+    //     const len = feature.geometry.coordinates.flat().length
+    //     feature.geometry.coordinates.flat().forEach((coord,index) => {
+    //         const [x, y] = proj4('EPSG:4326', crs.code, coord); // 座標系変換
+    //         A01Text += 'A01,' + j + ',' + j + ',' + y + ',' + x + ',\n'
+    //         if (len-2 < index) {
+    //             B01Text += 'B01,' + j + ',' + j + ',\nD99,\n'
+    //         } else {
+    //             B01Text += 'B01,' + j + ',' + j + ',\n'
+    //         }
+    //         j++
+    //     })
+    //     i++
+    // })
     let simaData = 'G00,01,open-hinata3,\n';
     simaData += 'Z00,座標ﾃﾞｰﾀ,,\n';
     simaData += 'A00,\n';
-    let pointMapping = {};
-    let A01Text = ''
-    let B01Text = ''
-    let i = 1
-    let j = 1
-
+    let A01Text = '';
+    let B01Text = '';
+    let i = 1;
+    let j = 1;
+    // 座標とカウンターを関連付けるマップ
+    const coordinateMap = new Map();
     geojson.features.forEach((feature) => {
-        B01Text += 'D00,' + i + ',' + i + ',\n'
-        const len = feature.geometry.coordinates.flat().length
-        feature.geometry.coordinates.flat().forEach((coord,index) => {
+        B01Text += 'D00,' + i + ',' + i + ',\n';
+        const len = feature.geometry.coordinates.flat().length;
+        feature.geometry.coordinates.flat().forEach((coord, index) => {
             const [x, y] = proj4('EPSG:4326', crs.code, coord); // 座標系変換
-            A01Text += 'A01,' + j + ',' + j + ',' + y + ',' + x + ',\n'
-            if (len-2 < index) {
-                B01Text += 'B01,' + j + ',' + j + ',\nD99,\n'
-            } else {
-                B01Text += 'B01,' + j + ',' + j + ',\n'
+            // 座標のキーを作成
+            const coordinateKey = `${x},${y}`;
+            if (!coordinateMap.has(coordinateKey)) {
+                // 新しい座標の場合、A01Textに追加し、カウンターを登録
+                coordinateMap.set(coordinateKey, j);
+                A01Text += 'A01,' + j + ',' + j + ',' + y + ',' + x + ',\n';
+                j++;
             }
-            j++
-        })
-        i++
-    })
+            // 現在の座標のカウンターを取得してB01Textに使用
+            const currentCounter = coordinateMap.get(coordinateKey);
+            if (len - 2 < index) {
+                B01Text += 'B01,' + currentCounter + ',' + currentCounter + ',\nD99,\n';
+            } else {
+                B01Text += 'B01,' + currentCounter + ',' + currentCounter + ',\n';
+            }
+        });
+        i++;
+    });
+
     simaData = simaData + A01Text + 'A99\nZ00,区画データ,\n' + B01Text
     // console.log(simaData)
     simaData += 'A99,END,,\n';
@@ -653,4 +698,57 @@ export function saveDxf (map, layerId, sourceId, fields) {
         console.error('GeoJSONの解析中にエラーが発生しました:', error);
         alert('有効なGeoJSONを入力してください。');
     }
+}
+
+function downloadGeoJSONAsCSV(geojson, filename = 'data.csv') {
+    if (!geojson || !geojson.features || !Array.isArray(geojson.features)) {
+        throw new Error('Invalid GeoJSON data');
+    }
+
+    // 1. 属性のキーを取得（最初のfeatureから）
+    const properties = geojson.features[0]?.properties || {};
+    const propertyKeys = Object.keys(properties);
+    const headers = ['latitude', 'longitude', ...propertyKeys];
+
+    // 2. 各フィーチャのデータを抽出
+    const rows = geojson.features.map(feature => {
+        const coords = feature.geometry?.coordinates || [];
+        let latitude = '';
+        let longitude = '';
+
+        // Pointの場合
+        if (feature.geometry?.type === 'Point') {
+            [longitude, latitude] = coords;
+        }
+        // PolygonまたはLineStringの場合（代表点を使用）
+        else if (feature.geometry?.type === 'Polygon' || feature.geometry?.type === 'LineString') {
+            [longitude, latitude] = coords[0][0] || coords[0];
+        }
+
+        // 各プロパティの値を取得
+        const propValues = propertyKeys.map(key => feature.properties[key] || '');
+
+        return [latitude, longitude, ...propValues];
+    });
+
+    // 3. CSV形式に変換
+    const csvContent = [
+        headers.join(','), // ヘッダー
+        ...rows.map(row => row.join(',')) // 各行
+    ].join('\n');
+
+    // 4. CSVをダウンロード
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+export function saveCsv(map, layerId, sourceId, fields) {
+    const geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields);
+    downloadGeoJSONAsCSV(geojson)
 }
