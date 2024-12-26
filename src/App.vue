@@ -1276,7 +1276,7 @@ export default {
 
             const files = event.dataTransfer.files;
             if (files.length === 0) {
-              alert('ファイルが選択されていません');
+              // alert('ファイルが選択されていません');
               return;
             }
 
