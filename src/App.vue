@@ -52,6 +52,7 @@
 
 <script>
 import {mouseMoveForPopup, popup} from "@/js/popup";
+import {handleFileUpload} from '@/js/downLoad'
 
 const popups = []
 function closeAllPopups() {
@@ -607,6 +608,17 @@ export default {
       return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj}// 以前のリンクをいかすためpitchを入れている。
     },
     init() {
+
+// HTML要素を追加
+      const uploadInput = document.createElement('input');
+      uploadInput.type = 'file';
+      uploadInput.id = 'simaFileInput';
+      uploadInput.accept = '.sim';
+      uploadInput.style.display = 'none';
+      uploadInput.addEventListener('change', handleFileUpload);
+      document.body.appendChild(uploadInput);
+
+
 
       // Androidでスクロールできるように=============================================
       const scrollable = document.querySelector('.scrollable-content');

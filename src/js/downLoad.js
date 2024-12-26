@@ -1,6 +1,8 @@
 import store from '@/store'
 import {GITHUB_TOKEN} from "@/js/config";
 import * as turf from '@turf/turf'
+import * as flatgeobuf from 'flatgeobuf'
+import maplibregl from 'maplibre-gl'
 import proj4 from 'proj4'
 // function dissolveGeoJSONByFields(geojson, fields) {
 //     if (!geojson || !fields || !Array.isArray(fields)) {
@@ -481,7 +483,7 @@ function convertAndDownloadGeoJSONToSIMA(map,geojson, fileName = 'output.sim') {
     // let simaData = 'G00,01,open-hinata3,\n';
     // simaData += 'Z00,座標ﾃﾞｰﾀ,,\n';
     // simaData += 'A00,\n';
-    // let A01Text = ''
+    // let A01Text = ''４３２６
     // let B01Text = ''
     // let i = 1
     // let j = 1
@@ -751,4 +753,223 @@ function downloadGeoJSONAsCSV(geojson, filename = 'data.csv') {
 export function saveCsv(map, layerId, sourceId, fields) {
     const geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields);
     downloadGeoJSONAsCSV(geojson)
+}
+
+// SIMAファイルをGeoJSONに変換する関数 (EPSG:6669変換対応)
+function simaToGeoJSON(simaData,map) {
+    // 座標系の定義
+    proj4.defs([
+        ["EPSG:6668", "+proj=tmerc +lat_0=33 +lon_0=129.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第1系
+        ["EPSG:6669", "+proj=tmerc +lat_0=33 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第2系
+        ["EPSG:6670", "+proj=tmerc +lat_0=36 +lon_0=132.1667 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第3系
+        ["EPSG:6671", "+proj=tmerc +lat_0=33 +lon_0=133.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第4系
+        ["EPSG:6672", "+proj=tmerc +lat_0=36 +lon_0=134.3333 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第5系
+        ["EPSG:6673", "+proj=tmerc +lat_0=36 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第6系
+        ["EPSG:6674", "+proj=tmerc +lat_0=36 +lon_0=137.1667 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第7系
+        ["EPSG:6675", "+proj=tmerc +lat_0=36 +lon_0=138.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第8系
+        ["EPSG:6676", "+proj=tmerc +lat_0=36 +lon_0=139.8333 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第9系
+        ["EPSG:6677", "+proj=tmerc +lat_0=40 +lon_0=140.8333 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第10系
+        ["EPSG:6678", "+proj=tmerc +lat_0=44 +lon_0=140.25 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第11系
+        ["EPSG:6679", "+proj=tmerc +lat_0=44 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第12系
+        ["EPSG:6680", "+proj=tmerc +lat_0=44 +lon_0=144.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第13系
+        ["EPSG:6681", "+proj=tmerc +lat_0=26 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第14系
+        ["EPSG:6682", "+proj=tmerc +lat_0=26 +lon_0=127.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第15系
+        ["EPSG:6683", "+proj=tmerc +lat_0=26 +lon_0=124.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第16系
+        ["EPSG:6684", "+proj=tmerc +lat_0=26 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第17系
+        ["EPSG:6685", "+proj=tmerc +lat_0=20 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第18系
+        ["EPSG:6686", "+proj=tmerc +lat_0=26 +lon_0=154.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"]     // 第19系
+    ]);
+
+
+    const lines = simaData.split('\n');
+    let coordinates = {}; // 座標データを格納
+    let features = []; // GeoJSONのフィーチャーを格納
+    let currentFeature = null;
+    let firstCoordinateChecked = false;
+    let detectedCRS
+
+    lines.forEach(line => {
+        const parts = line.split(',');
+        const type = parts[0].trim();
+
+        // 座標データ (A01)
+        if (type === 'A01') {
+            const id = parts[1].trim();
+            const x = parseFloat(parts[3]); // X座標 (東方向)
+            const y = parseFloat(parts[4]); // Y座標 (北方向)
+
+            // 最初の座標で座標系を判定
+            if (!firstCoordinateChecked) {
+                detectedCRS = determinePlaneRectangularZone(x, y);
+                console.log(detectedCRS)
+                firstCoordinateChecked = true;
+            }
+
+
+            try {
+                // 座標系をEPSG:4326に変換 (x, yの順番で指定)
+                const [lon, lat] = proj4('EPSG:6669', 'EPSG:4326', [y, x]);
+                coordinates[id] = [lon, lat];
+            } catch (error) {
+                console.error(`座標変換エラー: ${error.message}`);
+                coordinates[id] = [x, y]; // 変換失敗時は元の座標を使用
+            }
+        }
+
+        // 区画データ (D00, B01, D99)
+        if (type === 'D00') {
+            // 新しいフィーチャーの開始
+            currentFeature = {
+                type: 'Feature',
+                properties: { id: parts[1].trim() },
+                geometry: {
+                    type: 'Polygon',
+                    coordinates: [[]]
+                }
+            };
+        } else if (type === 'B01' && currentFeature) {
+            const coordId = parts[1].trim();
+            if (coordinates[coordId]) {
+                currentFeature.geometry.coordinates[0].push(coordinates[coordId]);
+            }
+        } else if (type === 'D99' && currentFeature) {
+            // フィーチャー終了
+            features.push(currentFeature);
+            currentFeature = null;
+        }
+    });
+
+    // GeoJSONオブジェクトを生成
+    const geoJSON = {
+        type: 'FeatureCollection',
+        features: features
+    };
+    console.log(JSON.stringify(geoJSON, null, 2));
+
+    if (map) {
+        if (map.getSource('sima-data')) {
+            map.getSource('sima-data').setData(geoJSON);
+        } else {
+            map.addSource('sima-data', {
+                type: 'geojson',
+                data: geoJSON
+            });
+
+            map.addLayer({
+                id: 'sima-layer',
+                type: 'fill',
+                source: 'sima-data',
+                layout: {},
+                paint: {
+                    'fill-color': '#088',
+                    'fill-opacity': 0.5
+                }
+            });
+
+            map.addLayer({
+                id: 'sima-border',
+                type: 'line',
+                source: 'sima-data',
+                layout: {},
+                paint: {
+                    'line-color': '#000',
+                    'line-width': 2
+                }
+            });
+        }
+    }
+    // GeoJSONの範囲にフライ (地図を移動)
+    const bounds = new maplibregl.LngLatBounds();
+    geoJSON.features.forEach(feature => {
+        feature.geometry.coordinates[0].forEach(coord => {
+            bounds.extend(coord);
+        });
+    });
+    map.fitBounds(bounds, { padding: 20 });
+
+    // GeoJSONをダウンロード
+    // const blob = new Blob([JSON.stringify(geoJSON, null, 2)], { type: 'application/json' });
+    // const url = URL.createObjectURL(blob);
+    // const a = document.createElement('a');
+    // a.href = url;
+    // a.download = 'output.geojson';
+    // document.body.appendChild(a);
+    // a.click();
+    // document.body.removeChild(a);
+    // setTimeout(() => URL.revokeObjectURL(url), 1000);
+    //
+    // ファイル入力をリセット
+    const uploadInput = document.querySelector('#simaFileInput');
+    if (uploadInput) {
+        uploadInput.value = '';
+    }
+    return JSON.stringify(geoJSON, null, 2);
+}
+// ファイルアップロード処理
+export function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.sim')) {
+        alert('SIMAファイル(.sim)をアップロードしてください。');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const simaData = e.target.result;
+        try {
+            const map = store.state.map01
+            const geoJSON = simaToGeoJSON(simaData,map);
+            console.log(geoJSON);
+        } catch (error) {
+            console.error(`変換エラー: ${error.message}`);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function determinePlaneRectangularZone(x, y) {
+    // 平面直角座標系（1系〜19系）の定義
+    proj4.defs([
+        ["EPSG:6668", "+proj=tmerc +lat_0=33 +lon_0=129.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第1系
+        ["EPSG:6669", "+proj=tmerc +lat_0=33 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第2系
+        ["EPSG:6670", "+proj=tmerc +lat_0=36 +lon_0=132.1667 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第3系
+        ["EPSG:6671", "+proj=tmerc +lat_0=33 +lon_0=133.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第4系
+        ["EPSG:6672", "+proj=tmerc +lat_0=36 +lon_0=134.3333 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第5系
+        ["EPSG:6673", "+proj=tmerc +lat_0=36 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第6系
+        ["EPSG:6674", "+proj=tmerc +lat_0=36 +lon_0=137.1667 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第7系
+        ["EPSG:6675", "+proj=tmerc +lat_0=36 +lon_0=138.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第8系
+        ["EPSG:6676", "+proj=tmerc +lat_0=36 +lon_0=139.8333 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第9系
+        ["EPSG:6677", "+proj=tmerc +lat_0=40 +lon_0=140.8333 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第10系
+        ["EPSG:6678", "+proj=tmerc +lat_0=44 +lon_0=140.25 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第11系
+        ["EPSG:6679", "+proj=tmerc +lat_0=44 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第12系
+        ["EPSG:6680", "+proj=tmerc +lat_0=44 +lon_0=144.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第13系
+        ["EPSG:6681", "+proj=tmerc +lat_0=26 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第14系
+        ["EPSG:6682", "+proj=tmerc +lat_0=26 +lon_0=127.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第15系
+        ["EPSG:6683", "+proj=tmerc +lat_0=26 +lon_0=124.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第16系
+        ["EPSG:6684", "+proj=tmerc +lat_0=26 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第17系
+        ["EPSG:6685", "+proj=tmerc +lat_0=20 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第18系
+        ["EPSG:6686", "+proj=tmerc +lat_0=26 +lon_0=154.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"]     // 第19系
+    ]);
+
+    let closestZone = null;
+    let minDistance = Number.MAX_VALUE;
+
+    for (let i = 0; i < 19; i++) {
+        try {
+            const [lon, lat] = proj4(`EPSG:666${8 + i}`, 'EPSG:4326', [x, y]);
+            const [zoneLon, zoneLat] = proj4(`EPSG:666${8 + i}`, 'EPSG:4326', [0, 0]);
+            const distance = Math.sqrt(Math.pow(lon - zoneLon, 2) + Math.pow(lat - zoneLat, 2));
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestZone = i + 1;
+            }
+        } catch (error) {
+            console.warn(`系 ${i + 1} の変換でエラー:`, error);
+        }
+    }
+
+    return closestZone;
 }
