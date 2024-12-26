@@ -6,7 +6,7 @@
       <v-btn style="margin-top: -10px;margin-left: 5px;" class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>
       <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveCima">sima保存</v-btn>
       <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveDxf">dxf保存テスト</v-btn>
-      <span style="font-size: 12px"><div v-html="item.attribution"></div>平面直角座標系の時は「{{ kei }}」で変換</span>
+<!--      <span style="font-size: 12px"><div v-html="item.attribution"></div>平面直角座標系の時は「{{ kei }}」で変換</span>-->
     </div>
 </template>
 
