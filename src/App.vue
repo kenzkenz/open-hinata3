@@ -619,20 +619,77 @@ export default {
       document.body.appendChild(uploadInput);
 
 
+// 複数の.scrollable-content要素やVuetifyのv-selectに対応したタッチスクロール処理
 
-      // Androidでスクロールできるように=============================================
-      const scrollable = document.querySelector('.scrollable-content');
+// グローバルイベントリスナーを使用して動的要素にも対応
       let startY;
-      scrollable.addEventListener('touchstart', (e) => {
-        startY = e.touches[0].clientY; // タッチ開始位置を記録
-      });
-      scrollable.addEventListener('touchmove', (e) => {
+      let isTouching = false;
+      let currentTarget = null;
+      let initialScrollTop = 0;
+
+
+
+      function watchSelectMenu() {
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.addedNodes.length) {
+              const menuContent = document.querySelector('.v-overlay__content');
+              if (menuContent) {
+                observer.disconnect(); // 監視を終了
+                menuContent.scrollTop = 200; // スクロール位置を調整
+              }
+            }
+          });
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+      }
+      watchSelectMenu()
+
+
+
+
+// Android向けにタッチイベントの挙動を調整
+      const isAndroid = /Android/i.test(navigator.userAgent);
+
+// タッチ開始時の処理
+      document.addEventListener('touchstart', (e) => {
+        const target = e.target.closest('.scrollable-content, .v-overlay-container .v-select__content');
+        if (target) {
+          startY = e.touches[0].clientY; // タッチ開始位置を記録
+          initialScrollTop = target.scrollTop; // 初期スクロール位置を記録
+          isTouching = true;
+          currentTarget = target;
+          target.style.overflowY = 'auto'; // スクロールを強制的に有効化
+        }
+      }, { passive: false });
+
+// タッチ移動時の処理
+      document.addEventListener('touchmove', (e) => {
+        if (!isTouching || !currentTarget) return; // タッチが開始されていなければ処理しない
+
         const moveY = e.touches[0].clientY;
         const deltaY = startY - moveY; // 移動量を計算
-        scrollable.scrollTop += deltaY; // スクロール位置を更新
-        startY = moveY; // タッチ位置を更新
-        e.preventDefault(); // デフォルト動作を無効化
+
+        // スクロール位置を更新
+        currentTarget.scrollTop += deltaY;
+
+        startY = moveY; // 開始位置を現在の位置に更新
+        e.preventDefault(); // デフォルトのスクロールを防止
       }, { passive: false });
+
+// タッチ終了時の処理
+      document.addEventListener('touchend', () => {
+        if (currentTarget) {
+          currentTarget.style.overflowY = ''; // スクロール設定をリセット
+        }
+        currentTarget = null; // 現在のターゲットをリセット
+        isTouching = false; // タッチ中フラグをOFF
+        initialScrollTop = 0; // 初期スクロール位置をリセット
+      });
+
+
+
       // ======================================================================
 
       let protocol = new Protocol();
@@ -1911,6 +1968,12 @@ font {
 .custom-switch .v-switch__thumb {
   height: 18px; /* スイッチの丸部分の高さ */
   width: 18px;  /* スイッチの丸部分の幅 */
+}
+.v-overlay-container .v-select__content {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  max-height: 300px; /* 必要に応じて調整 */
+  touch-action: pan-y !important; /* 縦方向のタッチスクロールを有効化 */
 }
 
 </style>

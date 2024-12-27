@@ -1,15 +1,36 @@
 <template>
-    <div :style="menuContentSize">
-      <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
-      <v-text-field label="抽出" v-model="s_tokijyoText" @input="change" style="margin-top: 10px"></v-text-field>
-      <v-btn style="margin-top: -10px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
-      <v-btn style="margin-top: -10px;margin-left: 5px;" class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>
-      <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveSima">sima保存</v-btn>
-      <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
-      <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
-      <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="loadSima">sima読込テスト（２系だけ）</v-btn>
-<!--      <span style="font-size: 12px"><div v-html="item.attribution"></div>平面直角座標系の時は「{{ kei }}」で変換</span>-->
-    </div>
+  <v-dialog v-model="dialog" max-width="500px">
+    <v-card>
+      <v-card-title>
+        座標系選択
+      </v-card-title>
+      <v-card-text>
+        <v-select class="scrollable-content"
+            v-model="s_zahyokei"
+            :items="items"
+            label="選択してください"
+            density="compact"
+            outlined
+        ></v-select>
+        <v-btn @click="loadSima">読込開始</v-btn>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="blue-darken-1" text @click="dialog = false">Close</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+  <div :style="menuContentSize">
+    <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
+    <v-text-field label="抽出" v-model="s_tokijyoText" @input="change" style="margin-top: 10px"></v-text-field>
+    <v-btn style="margin-top: -10px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
+    <v-btn style="margin-top: -10px;margin-left: 5px;" class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveSima">sima保存</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog=true">sima読込</v-btn>
+    <!--      <span style="font-size: 12px"><div v-html="item.attribution"></div>平面直角座標系の時は「{{ kei }}」で変換</span>-->
+  </div>
 </template>
 
 <script>
@@ -28,6 +49,17 @@ export default {
   name: 'ext-tokijyo',
   props: ['mapName','item'],
   data: () => ({
+    dialog: false,
+    selectedItem: null,
+    items: [
+      '公共座標1系', '公共座標2系', '公共座標3系',
+      '公共座標4系', '公共座標5系', '公共座標6系',
+      '公共座標7系', '公共座標8系', '公共座標9系',
+      '公共座標10系', '公共座標11系', '公共座標12系',
+      '公共座標13系', '公共座標14系', '公共座標15系',
+      '公共座標16系', '公共座標17系', '公共座標18系',
+      '公共座標19系'
+    ],
     kei: '',
     menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text', 'font-size':'large'}
   }),
@@ -43,6 +75,14 @@ export default {
         this.$store.state.tokijyoText[this.mapName] = value
       }
     },
+    s_zahyokei: {
+      get() {
+        return this.$store.state.zahyokei
+      },
+      set(value) {
+        this.$store.state.zahyokei = value
+      }
+    },
   },
   methods: {
     update () {
@@ -51,7 +91,12 @@ export default {
         ]})
     },
     loadSima () {
+      if (!this.s_zahyokei) {
+        alert('座標系を選択してください。')
+        return
+      }
       document.querySelector('#simaFileInput').click()
+      this.dialog = false
     },
     saveCsv () {
       const map = this.$store.state[this.mapName]

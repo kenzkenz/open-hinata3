@@ -389,6 +389,27 @@ export function initializePlaneRectangularCRS(map) {
  * @param {Object} geojson - 入力GeoJSONデータ
  * @param {String} fileName - 出力ファイル名
  */
+const zahyokei = [
+    { kei: '公共座標1系', code: "EPSG:6668" },
+    { kei: '公共座標2系', code: "EPSG:6669" },
+    { kei: '公共座標3系', code: "EPSG:6670" },
+    { kei: '公共座標4系', code: "EPSG:6671" },
+    { kei: '公共座標5系', code: "EPSG:6672" },
+    { kei: '公共座標6系', code: "EPSG:6673" },
+    { kei: '公共座標7系', code: "EPSG:6674" },
+    { kei: '公共座標8系', code: "EPSG:6675" },
+    { kei: '公共座標9系', code: "EPSG:6676" },
+    { kei: '公共座標10系', code: "EPSG:6677" },
+    { kei: '公共座標11系', code: "EPSG:6678" },
+    { kei: '公共座標12系', code: "EPSG:6679" },
+    { kei: '公共座標13系', code: "EPSG:6680" },
+    { kei: '公共座標14系', code: "EPSG:6681" },
+    { kei: '公共座標15系', code: "EPSG:6682" },
+    { kei: '公共座標16系', code: "EPSG:6683" },
+    { kei: '公共座標17系', code: "EPSG:6684" },
+    { kei: '公共座標18系', code: "EPSG:6685" },
+    { kei: '公共座標19系', code: "EPSG:6686" }
+];
 function convertAndDownloadGeoJSONToSIMA(map,geojson, fileName = 'output.sim') {
     if (!geojson || geojson.type !== 'FeatureCollection') {
         throw new Error('無効なGeoJSONデータです。FeatureCollectionが必要です。');
@@ -423,27 +444,7 @@ function convertAndDownloadGeoJSONToSIMA(map,geojson, fileName = 'output.sim') {
     ]);
     console.log(zahyo)
 // 公共座標系のリスト
-    const zahyokei = [
-        { kei: '公共座標1系', code: "EPSG:6668" },
-        { kei: '公共座標2系', code: "EPSG:6669" },
-        { kei: '公共座標3系', code: "EPSG:6670" },
-        { kei: '公共座標4系', code: "EPSG:6671" },
-        { kei: '公共座標5系', code: "EPSG:6672" },
-        { kei: '公共座標6系', code: "EPSG:6673" },
-        { kei: '公共座標7系', code: "EPSG:6674" },
-        { kei: '公共座標8系', code: "EPSG:6675" },
-        { kei: '公共座標9系', code: "EPSG:6676" },
-        { kei: '公共座標10系', code: "EPSG:6677" },
-        { kei: '公共座標11系', code: "EPSG:6678" },
-        { kei: '公共座標12系', code: "EPSG:6679" },
-        { kei: '公共座標13系', code: "EPSG:6680" },
-        { kei: '公共座標14系', code: "EPSG:6681" },
-        { kei: '公共座標15系', code: "EPSG:6682" },
-        { kei: '公共座標16系', code: "EPSG:6683" },
-        { kei: '公共座標17系', code: "EPSG:6684" },
-        { kei: '公共座標18系', code: "EPSG:6685" },
-        { kei: '公共座標19系', code: "EPSG:6686" }
-    ];
+
 
     const code = zahyokei.find(item => item.kei === zahyo).code
     const kei = zahyokei.find(item => item.kei === zahyo).kei
@@ -704,8 +705,7 @@ export function saveCsv(map, layerId, sourceId, fields) {
     downloadGeoJSONAsCSV(geojson)
 }
 
-// SIMAファイルをGeoJSONに変換する関数 (EPSG:6669変換対応)
-function simaToGeoJSON(simaData,map) {
+(function() {
     // 座標系の定義
     proj4.defs([
         ["EPSG:6668", "+proj=tmerc +lat_0=33 +lon_0=129.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第1系
@@ -728,19 +728,21 @@ function simaToGeoJSON(simaData,map) {
         ["EPSG:6685", "+proj=tmerc +lat_0=20 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第18系
         ["EPSG:6686", "+proj=tmerc +lat_0=26 +lon_0=154.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"]     // 第19系
     ]);
+})()
 
 
+// SIMAファイルをGeoJSONに変換する関数
+function simaToGeoJSON(simaData,map) {
     const lines = simaData.split('\n');
     let coordinates = {}; // 座標データを格納
     let features = []; // GeoJSONのフィーチャーを格納
     let currentFeature = null;
     let firstCoordinateChecked = false;
     let detectedCRS
-
+    const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
     lines.forEach(line => {
         const parts = line.split(',');
         const type = parts[0].trim();
-
         // 座標データ (A01)
         if (type === 'A01') {
             const id = parts[1].trim();
@@ -754,10 +756,9 @@ function simaToGeoJSON(simaData,map) {
                 firstCoordinateChecked = true;
             }
 
-
             try {
                 // 座標系をEPSG:4326に変換 (x, yの順番で指定)
-                const [lon, lat] = proj4('EPSG:6669', 'EPSG:4326', [y, x]);
+                const [lon, lat] = proj4(code, 'EPSG:4326', [y, x]);
                 coordinates[id] = [lon, lat];
             } catch (error) {
                 console.error(`座標変換エラー: ${error.message}`);

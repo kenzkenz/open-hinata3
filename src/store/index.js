@@ -71,6 +71,7 @@ export default createStore({
     popupAddress: '',
     stationName: '',
     kei: '',
+    zahyokei: '',
     //------------------------
     highwayYear:{
       map01: 2024,
