@@ -129,7 +129,6 @@ export default {
         } else {
           visible = 'none'
         }
-
         if (layer0.id === 'oh-mw-dummy') {
           const layers = map.getStyle().layers
           layers.forEach(layer => {
@@ -142,8 +141,20 @@ export default {
           map.setLayoutProperty(layer0.id, 'visibility', visible)
         }
       })
+      console.log(element)
       element.visibility = !element.visibility
+      // const layers = map.getStyle().layers;
+      // const firstLayerId = layers.length > 0 ? layers[0].id : null;
+      // map.moveLayer('sima-borders', firstLayerId)
+      // map.moveLayer('sima-layer', firstLayerId)
+
       this.zoomOperation(1000)
+      // プログラムの最後に追加
+      const layers = map.getStyle().layers;
+      const lastLayerId = layers.length > 0 ? layers[layers.length - 1].id : null;
+      if (map.getLayer('sima-layer') && lastLayerId) {
+        map.moveLayer('sima-layer',lastLayerId);
+      }
     },
     infoOpen (element,isNew) {
       this.$store.commit('incrDialogMaxZindex')
@@ -275,6 +286,12 @@ export default {
       setTimeout(() => {
         map.setZoom(12)
         map.setZoom(zoom)
+        const layers = map.getStyle().layers;
+        const lastLayerId = layers.length > 0 ? layers[layers.length - 1].id : null;
+        if (map.getLayer('sima-layer') && lastLayerId) {
+          map.moveLayer('sima-layer',lastLayerId);
+          map.moveLayer('sima-borders',lastLayerId);
+        }
       },timeOut)
     },
     removeLayer(id){

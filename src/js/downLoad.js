@@ -867,7 +867,7 @@ function simaToGeoJSON(simaData,map) {
             });
 
             map.addLayer({
-                id: 'sima-border',
+                id: 'sima-borders',
                 type: 'line',
                 source: 'sima-data',
                 layout: {},
@@ -970,6 +970,5 @@ function determinePlaneRectangularZone(x, y) {
             console.warn(`系 ${i + 1} の変換でエラー:`, error);
         }
     }
-
     return closestZone;
 }
