@@ -52,7 +52,7 @@
 
 <script>
 import {mouseMoveForPopup, popup} from "@/js/popup";
-import {handleFileUpload} from '@/js/downLoad'
+import { handleFileUpload,highlightSpecificFeatures,highlightedChibans} from '@/js/downLoad'
 
 const popups = []
 function closeAllPopups() {
@@ -1467,9 +1467,6 @@ export default {
                   }
                 });
 
-
-
-
                 // 地図をGeoJSONの範囲にズーム
                 const bounds = new maplibregl.LngLatBounds();
 
@@ -1514,6 +1511,22 @@ export default {
             reader.readAsText(file);
           });
 
+          map.on('click', 'oh-amx-a-fude', (e) => {
+            if (e.features && e.features.length > 0) {
+              const targetId = `${e.features[0].properties['丁目コード']}_${e.features[0].properties['地番']}`;
+              console.log('Clicked ID (丁目コード_地番):', targetId);
+
+              if (highlightedChibans.has(targetId)) {
+                // すでに選択されている場合は解除
+                highlightedChibans.delete(targetId);
+              } else {
+                // 新しいIDを追加
+                highlightedChibans.add(targetId);
+              }
+
+              highlightSpecificFeatures(map);
+            }
+          });
         })
         //on load終了----------------------------------------------------------------------------------------------------
       })

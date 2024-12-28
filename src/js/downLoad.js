@@ -1027,3 +1027,25 @@ export async function saveCima2 (map) {
     }
     deserializeAndPrepareGeojson()
 }
+
+// ポリゴンレイヤー名
+// ポリゴンレイヤー名
+const layerId = 'oh-amx-a-fude'; // 任意のレイヤー名に変更
+const sourceLayer = 'fude'; // ソースレイヤー名を明示的に指定
+
+// 複数のクリックされた地番を強調表示するためのセット
+export let highlightedChibans = new Set();
+
+// クリックされた地番を強調表示する関数
+export function highlightSpecificFeatures(map) {
+    map.setPaintProperty(
+        layerId,
+        'fill-color',
+        [
+            'case',
+            ['in', ['concat', ['get', '丁目コード'], '_', ['get', '地番']], ['literal', Array.from(highlightedChibans)]],
+            'rgba(255, 0, 0, 0.5)', // クリックされた地番が選択された場合
+            'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
+        ]
+    );
+}
