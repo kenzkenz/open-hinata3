@@ -1039,15 +1039,20 @@ export async function saveCima2 (map) {
 
 // ポリゴンレイヤー名
 const layerId = 'oh-amx-a-fude'; // 任意のレイヤー名に変更
+
 // クリックされた地番を強調表示する関数
 export function highlightSpecificFeatures(map) {
-    console.log(highlightedChibans)
+    console.log(highlightedChibans);
     map.setPaintProperty(
         layerId,
         'fill-color',
         [
             'case',
-            ['in', ['concat', ['get', '丁目コード'], '_', ['get', '地番']], ['literal', Array.from(highlightedChibans)]],
+            [
+                'in',
+                ['concat', ['get', '丁目コード'], '_', ['get', '小字コード'], '_', ['get', '地番']],
+                ['literal', Array.from(highlightedChibans)]
+            ],
             'rgba(255, 0, 0, 0.5)', // クリックされた地番が選択された場合
             'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
         ]
@@ -1060,8 +1065,9 @@ function extractHighlightedGeoJSONFromSource(geojsonData) {
         console.warn('No highlighted features to extract.');
         return geojsonData;
     }
+
     const filteredFeatures = geojsonData.features.filter(feature => {
-        const targetId = `${feature.properties['丁目コード']}_${feature.properties['地番']}`;
+        const targetId = `${feature.properties['丁目コード']}_${feature.properties['小字コード']}_${feature.properties['地番']}`;
         return highlightedChibans.has(targetId);
     });
 
@@ -1069,6 +1075,7 @@ function extractHighlightedGeoJSONFromSource(geojsonData) {
         type: 'FeatureCollection',
         features: filteredFeatures
     };
+
     console.log('Extracted GeoJSON from Source:', geojson);
     return geojson;
 }
