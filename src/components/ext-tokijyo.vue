@@ -29,6 +29,8 @@
     <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="dialog=true">sima読込</v-btn>
+    <hr>
+    <v-btn style="margin-top: 10px;margin-left: 0px;" class="tiny-btn" @click="resetFeatureColors">選択解除</v-btn>
     <!--      <span style="font-size: 12px"><div v-html="item.attribution"></div>平面直角座標系の時は「{{ kei }}」で変換</span>-->
   </div>
 </template>
@@ -44,7 +46,7 @@ import {
   initializePlaneRectangularCRS,
   saveCsv,
   simaToGeoJSON,
-  test
+  resetFeatureColors
 } from "@/js/downLoad";
 
 export default {
@@ -92,8 +94,11 @@ export default {
           this.s_tokijyoText
         ]})
     },
+    resetFeatureColors () {
+      const map = this.$store.state[this.mapName]
+      resetFeatureColors(map)
+    },
     loadSima () {
-      // test(this.$store.state[this.mapName])
       if (!this.s_zahyokei) {
         alert('座標系を選択してください。')
         return

@@ -3,6 +3,8 @@ import {GITHUB_TOKEN} from "@/js/config";
 import * as turf from '@turf/turf'
 import maplibregl from 'maplibre-gl'
 import proj4 from 'proj4'
+// 複数のクリックされた地番を強調表示するためのセット
+export let highlightedChibans = new Set();
 // function dissolveGeoJSONByFields(geojson, fields) {
 //     if (!geojson || !fields || !Array.isArray(fields)) {
 //         throw new Error("GeoJSONデータとフィールド名（配列）は必須です。");
@@ -159,8 +161,10 @@ export function exportLayerToGeoJSON(map,layerId,sourceId,fields) {
             features: features.map(f => f.toJSON())
         };
         if (fields.length === 0) {
+            geojson = extractHighlightedGeoJSONFromSource(geojson)
             return geojson
         } else {
+            geojson = extractHighlightedGeoJSONFromSource(geojson)
             return dissolveGeoJSONByFields(geojson, fields)
         }
     } else {
@@ -416,6 +420,7 @@ const zahyokei = [
     { kei: '公共座標19系', code: "EPSG:6686" }
 ];
 function convertAndDownloadGeoJSONToSIMA(map,geojson, fileName) {
+    geojson = extractHighlightedGeoJSONFromSource(geojson)
     if (!geojson || geojson.type !== 'FeatureCollection') {
         throw new Error('無効なGeoJSONデータです。FeatureCollectionが必要です。');
     }
@@ -1033,11 +1038,11 @@ export async function saveCima2 (map) {
 const layerId = 'oh-amx-a-fude'; // 任意のレイヤー名に変更
 const sourceLayer = 'fude'; // ソースレイヤー名を明示的に指定
 
-// 複数のクリックされた地番を強調表示するためのセット
-export let highlightedChibans = new Set();
+
 
 // クリックされた地番を強調表示する関数
 export function highlightSpecificFeatures(map) {
+    console.log(highlightedChibans)
     map.setPaintProperty(
         layerId,
         'fill-color',
@@ -1047,5 +1052,34 @@ export function highlightSpecificFeatures(map) {
             'rgba(255, 0, 0, 0.5)', // クリックされた地番が選択された場合
             'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
         ]
+    );
+}
+
+// 既存の GeoJSON データから highlightedChibans に基づいてフィーチャを抽出する関数
+function extractHighlightedGeoJSONFromSource(geojsonData) {
+    if (highlightedChibans.size === 0) {
+        console.warn('No highlighted features to extract.');
+        return geojsonData;
+    }
+    const filteredFeatures = geojsonData.features.filter(feature => {
+        const targetId = `${feature.properties['丁目コード']}_${feature.properties['地番']}`;
+        return highlightedChibans.has(targetId);
+    });
+
+    const geojson = {
+        type: 'FeatureCollection',
+        features: filteredFeatures
+    };
+    console.log('Extracted GeoJSON from Source:', geojson);
+    return geojson;
+}
+
+// 全フィーチャの選択状態をリセットする関数
+export function resetFeatureColors(map) {
+    highlightedChibans.clear();
+    map.setPaintProperty(
+        layerId,
+        'fill-color',
+        'rgba(0, 0, 0, 0)' // 全ての地番+丁目コードを透明にリセット
     );
 }
