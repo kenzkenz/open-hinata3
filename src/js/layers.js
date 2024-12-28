@@ -1,8 +1,127 @@
 // 地理院グリフを使う時は以下のフォントを使う。
 // "text-font": ["NotoSansJP-Regular"],
+import store from '@/store'
+import * as turf from '@turf/turf'
+// 善意の基準局 --------------------------------------------------------------------------------------------
+const zeniSource = {
+    id: "zeni-source", obj: {
+        'type': 'geojson',
+        'data': null,
+    }
+}
+const zeniPointLayer = {
+    id: "oh-zeni",
+    type: "circle",
+    source: "zeni-source",
+    paint: {
+        'circle-color': 'rgba(0,255,0,0.5)',
+        'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            0, 0.5,   // ズームレベル0では小さな円
+            5, 5,     // ズームレベル5では半径5px
+            10, 50,   // ズームレベル10では半径50px
+            15, 500,  // ズームレベル15では半径500px
+            20, 20000 // ズームレベル20では20,000px（約20km相当）
+        ],
+        'circle-stroke-width': 1,
+        'circle-stroke-color': '#000'
+    }
+};
+const zeniCenterPointLayer = {
+    id: "oh-zeni-center",
+    type: "circle",
+    source: "zeni-source",
+    paint: {
+        'circle-color': 'rgba(255,0,0,1)', // 赤色で中心点を強調
+        'circle-radius': 5, // 固定サイズの点
+        'circle-opacity': 1,
+        'circle-stroke-width': 1,
+        'circle-stroke-color': '#fff'
+    }
+};
+const zeniCircleSource = {
+    id: "zeni-circle-source", obj: {
+        'type': 'geojson',
+        'data': null,
+    }
+};
+// 円形レイヤー
+const zeniCircleLayer = {
+    id: 'oh-zeni-circle',
+    type: 'fill',
+    source: 'zeni-circle-source',
+    layout: {},
+    paint: {
+        'fill-color': 'rgba(0,255,0,0.3)',
+        'fill-outline-color': '#000'
+    }
+};
 
+    // eslint-disable-next-line no-unexpected-multiline
+async function convertToGeoJSON() {
+    try {
+        // データをフェッチ
+        const response = await fetch('https://raw.githubusercontent.com/Bolero-fk/ZeniKijunkyokuChecker/main/Viewer/resource/result.json');
+        const data = await response.json();
 
-// 'text-font': ['NotoSansJP-Regular'],
+        // GeoJSONフォーマットに変換
+        const geojson = {
+            type: "FeatureCollection",
+            features: data.ReferenceStationData.map(station => ({
+                type: "Feature",
+                properties: {
+                    id: station.id,
+                    city_name: station.city_name,
+                    station_name: station.station_name,
+                    geoid_height: parseFloat(station.geoid_height),
+                    server_address: station.server_address,
+                    port_number: station.port_number,
+                    data_type: station.data_type,
+                    connection_type: station.connection_type,
+                    status: station.status,
+                    mail: station.mail,
+                    comment: station.comment
+                },
+                geometry: {
+                    type: "Point",
+                    coordinates: [
+                        parseFloat(station.longitude),
+                        parseFloat(station.latitude)
+                    ]
+                }
+            }))
+        };
+
+        const radiusInKm = 20;
+
+        // 各ポイントごとに円を生成し、プロパティを引き継ぐ
+        const circleGeoJSON = {
+            type: "FeatureCollection",
+            features: geojson.features.map(feature => {
+                const circle = turf.circle(feature.geometry.coordinates, radiusInKm, {
+                    steps: 64, // 円の滑らかさ
+                    units: 'kilometers'
+                });
+                return {
+                    type: "Feature",
+                    properties: feature.properties, // プロパティを引き継ぐ
+                    geometry: circle.geometry
+                };
+            })
+        };
+        zeniCircleSource.obj.data = circleGeoJSON
+        zeniSource.obj.data = geojson;
+        store.state.zeniGeojson = geojson
+        console.log(geojson);
+        console.log(circleGeoJSON);
+        return { geojson, circleGeoJSON };
+    } catch (error) {
+        console.error('Error converting to GeoJSON:', error);
+    }
+}
+convertToGeoJSON()
 
 const testSource = {
     id: 'test-source', obj: {
@@ -6294,8 +6413,6 @@ const fudeLine = {
 //
 // console.log(aaa)
 
-
-
 const layers01 = [
     {
         id: 'oh-amx-a-fude',
@@ -6321,6 +6438,14 @@ const layers01 = [
                 source: fudeSource,
                 layers:[fudeLayer,fudeLine],
                 attribution: '<a href="https://www.maff.go.jp/j/tokei/porigon/" target="_blank">農地の区画情報（筆ポリゴン）のデータ提供・利用</a>'
+            },
+            {
+                id: 'oh-zeni',
+                label: "善意の基準局(ZeniKijunkyokuChecker)",
+                sources: [zeniSource,zeniCircleSource],
+                layers:[zeniCircleLayer,zeniCenterPointLayer],
+                attribution: '<a href="https://github.com/Bolero-fk/ZeniKijunkyokuChecker" target="_blank">ZeniKijunkyokuChecker</a>',
+                ext: {name:'extZeni'}
             },
         ]},
     {

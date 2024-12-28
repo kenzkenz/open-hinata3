@@ -73,6 +73,7 @@ export default createStore({
     kei: '',
     prefId: '',
     zahyokei: '',
+    zeniGeojson: '',
     //------------------------
     highwayYear:{
       map01: 2024,
@@ -202,6 +203,10 @@ export default createStore({
       map01: '',
       map02: ''
     },
+    zeniKm:{
+      map01: 20,
+      map02: 20
+    },
     //------------------------
   },
   getters: {
@@ -329,6 +334,12 @@ export default createStore({
             if (payload.order === 0) {
               variable = 'tokijyoText'
             }
+            break
+          case 'extZeni':
+            if (payload.order === 0) {
+              variable = 'zeniKm'
+            }
+            break
         }
         console.log(payload.mapName,payload.name,payload.value,variable,variable2)
         if (!variable2) {
