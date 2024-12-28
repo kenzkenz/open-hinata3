@@ -2662,6 +2662,33 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-fude':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                let nouti
+                if (props.land_type === 100) {
+                    nouti = '田'
+                } else if (props.land_type === 200) {
+                    nouti = '畑'
+                }
+                if (html.indexOf('fude') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="fude" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:26px;">' + nouti + '</span><br>' +
+                        '</div>'
+                }
+                break
+            }
         }
     })
 

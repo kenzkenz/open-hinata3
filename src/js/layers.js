@@ -6206,7 +6206,43 @@ const syukuhakuLayerHeight = {
         ]
     }
 }
-
+// 筆ポリゴン --------------------------------------------------------------------------------------------
+const fudeSource = {
+    id: "fude-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/fude/f.pmtiles",
+    }
+}
+const fudeLayer = {
+    id: "oh-fude",
+    type: "fill",
+    source: "fude-source",
+    "source-layer": "f",
+    'paint': {
+        'fill-color': [
+            'case',
+            ['==', ['get', 'land_type'], 100], 'green', // land_type が 100 の場合は緑色
+            ['==', ['get', 'land_type'], 200], 'red',   // land_type が 200 の場合は赤色
+            'white' // それ以外の場合は白色
+        ]
+    }
+}
+const fudeLine = {
+    id: "oh-fude-line",
+    type: "line",
+    source: "fude-source",
+    "source-layer": "f",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
 
 
 
@@ -6268,6 +6304,25 @@ const layers01 = [
         layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel],
         ext: {name:'extTokijyo'}
     },
+    {
+        id: 'hikkai',
+        label: "筆界調査データベース",
+        nodes: [
+            {
+                id: 'oh-amx-a-fude',
+                label: "登記所備付地図データ",
+                source: amxSource,
+                layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel],
+                ext: {name:'extTokijyo'}
+            },
+            {
+                id: 'oh-fude',
+                label: "農地の区画情報(筆ポリゴン)",
+                source: fudeSource,
+                layers:[fudeLayer,fudeLine],
+                attribution: '<a href="https://www.maff.go.jp/j/tokei/porigon/" target="_blank">農地の区画情報（筆ポリゴン）のデータ提供・利用</a>'
+            },
+        ]},
     {
         id: 1,
         label: "基本地図",
