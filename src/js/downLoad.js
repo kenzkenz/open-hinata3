@@ -419,7 +419,7 @@ const zahyokei = [
     { kei: '公共座標18系', code: "EPSG:6685" },
     { kei: '公共座標19系', code: "EPSG:6686" }
 ];
-function convertAndDownloadGeoJSONToSIMA(map,geojson, fileName) {
+function convertAndDownloadGeoJSONToSIMA(map,geojson, fileName, kaniFlg) {
     geojson = extractHighlightedGeoJSONFromSource(geojson)
     if (!geojson || geojson.type !== 'FeatureCollection') {
         throw new Error('無効なGeoJSONデータです。FeatureCollectionが必要です。');
@@ -458,7 +458,11 @@ function convertAndDownloadGeoJSONToSIMA(map,geojson, fileName) {
     const kei = zahyokei.find(item => item.kei === zahyo).kei
     const crs = initializePlaneRectangularCRS(map)
     console.log(crs)
-    alert(kei + 'でsimファイルを作ります。')
+    if (kaniFlg) {
+        alert('注!簡易の場合、座標値は暫定です。座標の利用は自己責任でお願いします。' + kei + 'でsimファイルを作ります。')
+    } else {
+        alert(kei + 'でsimファイルを作ります。')
+    }
     let simaData = 'G00,01,open-hinata3,\n';
     simaData += 'Z00,座標ﾃﾞｰﾀ,,\n';
     simaData += 'A00,\n';
@@ -558,13 +562,13 @@ function convertAndDownloadGeoJSONToSIMA(map,geojson, fileName) {
 /**
  * 保存関数
  */
-export function saveCima(map, layerId, sourceId, fields) {
+export function saveCima(map, layerId, sourceId, fields, kaniFlg) {
     if (map.getZoom() <= 14) {
         alert('ズーム14以上にしてください。')
         return
     }
     const geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields);
-    convertAndDownloadGeoJSONToSIMA(map,geojson,'簡易_');
+    convertAndDownloadGeoJSONToSIMA(map,geojson,'簡易_',kaniFlg);
 }
 
 function geojsonToDXF(geojson) {
@@ -1034,12 +1038,7 @@ export async function saveCima2 (map) {
 }
 
 // ポリゴンレイヤー名
-// ポリゴンレイヤー名
 const layerId = 'oh-amx-a-fude'; // 任意のレイヤー名に変更
-const sourceLayer = 'fude'; // ソースレイヤー名を明示的に指定
-
-
-
 // クリックされた地番を強調表示する関数
 export function highlightSpecificFeatures(map) {
     console.log(highlightedChibans)

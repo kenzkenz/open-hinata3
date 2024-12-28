@@ -1510,12 +1510,11 @@ export default {
 
             reader.readAsText(file);
           });
-
+          // -----------------------------------------------------------------------------------------------------------
           map.on('click', 'oh-amx-a-fude', (e) => {
             if (e.features && e.features.length > 0) {
               const targetId = `${e.features[0].properties['丁目コード']}_${e.features[0].properties['地番']}`;
               console.log('Clicked ID (丁目コード_地番):', targetId);
-
               if (highlightedChibans.has(targetId)) {
                 // すでに選択されている場合は解除
                 highlightedChibans.delete(targetId);
@@ -1523,7 +1522,6 @@ export default {
                 // 新しいIDを追加
                 highlightedChibans.add(targetId);
               }
-
               highlightSpecificFeatures(map);
             }
           });

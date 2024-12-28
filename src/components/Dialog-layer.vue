@@ -344,6 +344,18 @@ export default {
         }
       }
       // -----------------------------------------
+      if (this.s_selectedLayers[this.mapName]?.some(layer => layer.id === 'oh-amx-a-fude')) {
+        this.$store.state.watchFlg = false
+        if (Array.isArray(this.s_selectedLayers[this.mapName])) {
+          const layers = this.s_selectedLayers[this.mapName];
+          const index = layers.findIndex(layer => layer.id === 'oh-amx-a-fude');
+          if (index !== -1) {
+            // 要素が存在する場合、先頭に移動
+            const [targetLayer] = layers.splice(index, 1); // 指定した要素を取り除く
+            layers.unshift(targetLayer); // 取り除いた要素を先頭に追加
+          }
+        }
+      }
       for (let i = this.s_selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
         const layer = this.s_selectedLayers[this.mapName][i]
         if (layer.layers) {
@@ -361,7 +373,6 @@ export default {
             } else {
               if (!map.getLayer(layer0.id)) {
                 map.addLayer(layer0)
-                // this.$store.state.extFire = !this.$store.state.extFire
               }
               let opacity
               if (layer0['max-opacity']) {

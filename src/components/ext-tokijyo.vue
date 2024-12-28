@@ -120,7 +120,7 @@ export default {
     },
     saveSima () {
       const map = this.$store.state[this.mapName]
-      saveCima(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
+      saveCima(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'],true)
     },
     saveGeojson () {
       const map = this.$store.state[this.mapName]
