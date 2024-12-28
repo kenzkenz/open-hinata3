@@ -536,7 +536,11 @@ export default {
             if (response.data.results) {
               const splitMuni = muni[Number(response.data.results.muniCd)].split(',')
               vm.address = splitMuni[1] + splitMuni[3] + response.data.results.lv01Nm
-              console.log(splitMuni[1])
+              console.log(splitMuni[0])
+              vm.$store.state.prefId = splitMuni[0]
+
+
+
               const zahyokei = [
                 { kei: '第1系', regions: ['長崎県', '鹿児島県（北部・奄美群島含む）'] },
                 { kei: '第2系', regions: ['福岡県', '佐賀県', '熊本県', '大分県', '宮崎県', '鹿児島県（第1系除く）'] },
@@ -737,8 +741,8 @@ export default {
         // const maptilerApiKey = 'CDedb3rcFcdaYuHkD9zR'
         const gsiTerrainSource = useGsiTerrainSource(maplibregl.addProtocol, {
           tileUrl: 'https://mapdata.qchizu2.xyz/03_dem/51_int/all_9999/int_01/{z}/{x}/{y}.png',
+          // tileUrl: 'https://tiles.gsj.jp/tiles/elev/land/{z}/{y}/{x}.png',
           maxzoom: 19,
-          attribution: '<a href="https://www.geospatial.jp/ckan/dataset/qchizu_94dem_int">全国Q地図日本国内統合標高データ</a>'
         })
 
         const map = new maplibregl.Map({
@@ -1028,7 +1032,7 @@ export default {
                 // }
                 {
                   id: 'oh-vector-layer-mono',
-                  label: 'ベクトルタイルモノクロ',
+                  label: '地理院ベクター・モノクロ',
                   sources: monoSources,
                   layers: monoLayers,
                   attribution: '国土地理院',

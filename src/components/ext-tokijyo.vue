@@ -9,7 +9,6 @@
             v-model="s_zahyokei"
             :items="items"
             label="選択してください"
-            density="compact"
             outlined
         ></v-select>
         <v-btn @click="loadSima">読込開始</v-btn>
@@ -25,10 +24,11 @@
     <v-text-field label="抽出" v-model="s_tokijyoText" @input="change" style="margin-top: 10px"></v-text-field>
     <v-btn style="margin-top: -10px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
     <v-btn style="margin-top: -10px;margin-left: 5px;" class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveSima">sima保存</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveSima">sima保存（簡易）</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveSima2">sima保存（詳細）</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog=true">sima読込</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="dialog=true">sima読込</v-btn>
     <!--      <span style="font-size: 12px"><div v-html="item.attribution"></div>平面直角座標系の時は「{{ kei }}」で変換</span>-->
   </div>
 </template>
@@ -39,10 +39,12 @@ import {
   saveGeojson,
   gistUpload,
   saveCima,
+  saveCima2,
   saveDxf,
   initializePlaneRectangularCRS,
   saveCsv,
-  simaToGeoJSON
+  simaToGeoJSON,
+  test
 } from "@/js/downLoad";
 
 export default {
@@ -91,6 +93,7 @@ export default {
         ]})
     },
     loadSima () {
+      // test(this.$store.state[this.mapName])
       if (!this.s_zahyokei) {
         alert('座標系を選択してください。')
         return
@@ -105,6 +108,10 @@ export default {
     saveDxf () {
       const map = this.$store.state[this.mapName]
       saveDxf(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
+    },
+    saveSima2 () {
+      const map = this.$store.state[this.mapName]
+      saveCima2(map)
     },
     saveSima () {
       const map = this.$store.state[this.mapName]

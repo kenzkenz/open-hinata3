@@ -1,7 +1,6 @@
 import store from '@/store'
 import {GITHUB_TOKEN} from "@/js/config";
 import * as turf from '@turf/turf'
-import * as flatgeobuf from 'flatgeobuf'
 import maplibregl from 'maplibre-gl'
 import proj4 from 'proj4'
 // function dissolveGeoJSONByFields(geojson, fields) {
@@ -143,8 +142,6 @@ function dissolveGeoJSONByFields(geojson, fields) {
     }
 }
 
-
-
 export function exportLayerToGeoJSON(map,layerId,sourceId,fields) {
     const source = map.getSource(sourceId);
     if (!source) {
@@ -172,6 +169,10 @@ export function exportLayerToGeoJSON(map,layerId,sourceId,fields) {
     }
 }
 export function saveGeojson (map,layerId,sourceId,fields) {
+    if (map.getZoom() <= 14) {
+        alert('ズーム14以上にしてください。')
+        return
+    }
     const geojsonText = JSON.stringify(exportLayerToGeoJSON(map,layerId,sourceId,fields))
     const blob = new Blob([geojsonText], { type: 'application/json' });
     // 一時的なダウンロード用リンクを作成
@@ -221,6 +222,10 @@ export async function uploadGeoJSONToGist(geojsonText, gistDescription = 'Upload
 }
 
 export function gistUpload (map,layerId,sourceId,fields) {
+    if (map.getZoom() <= 14) {
+        alert('ズーム14以上にしてください。')
+        return
+    }
     const geojsonText = JSON.stringify(exportLayerToGeoJSON(map,layerId,sourceId,fields))
     uploadGeoJSONToGist(geojsonText, 'GeoJSON Dataset Upload');
 }
@@ -410,7 +415,7 @@ const zahyokei = [
     { kei: '公共座標18系', code: "EPSG:6685" },
     { kei: '公共座標19系', code: "EPSG:6686" }
 ];
-function convertAndDownloadGeoJSONToSIMA(map,geojson, fileName = 'output.sim') {
+function convertAndDownloadGeoJSONToSIMA(map,geojson, fileName) {
     if (!geojson || geojson.type !== 'FeatureCollection') {
         throw new Error('無効なGeoJSONデータです。FeatureCollectionが必要です。');
     }
@@ -443,9 +448,7 @@ function convertAndDownloadGeoJSONToSIMA(map,geojson, fileName = 'output.sim') {
         ["EPSG:6686", "+proj=tmerc +lat_0=26 +lon_0=154.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"]     // 第19系
     ]);
     console.log(zahyo)
-// 公共座標系のリスト
-
-
+    // 公共座標系のリスト
     const code = zahyokei.find(item => item.kei === zahyo).code
     const kei = zahyokei.find(item => item.kei === zahyo).kei
     const crs = initializePlaneRectangularCRS(map)
@@ -461,26 +464,51 @@ function convertAndDownloadGeoJSONToSIMA(map,geojson, fileName = 'output.sim') {
     // 座標とカウンターを関連付けるマップ
     const coordinateMap = new Map();
     geojson.features.forEach((feature) => {
-        B01Text += 'D00,' + i + ',' + i + ',\n';
-        const len = feature.geometry.coordinates.flat().length;
-        feature.geometry.coordinates.flat().forEach((coord, index) => {
-            const [x, y] = proj4('EPSG:4326', code, coord); // 座標系変換
-            // 座標のキーを作成
-            const coordinateKey = `${x},${y}`;
-            if (!coordinateMap.has(coordinateKey)) {
-                // 新しい座標の場合、A01Textに追加し、カウンターを登録
-                coordinateMap.set(coordinateKey, j);
-                A01Text += 'A01,' + j + ',' + j + ',' + y + ',' + x + ',\n';
-                j++;
-            }
-            // 現在の座標のカウンターを取得してB01Textに使用
-            const currentCounter = coordinateMap.get(coordinateKey);
-            if (len - 2 < index) {
-                B01Text += 'B01,' + currentCounter + ',' + currentCounter + ',\nD99,\n';
+        B01Text += 'D00,' + i + ',' + i + ',1,\n';
+        // ジオメトリタイプに応じて座標を処理
+        let coordinates = [];
+        if (feature.geometry.type === 'Polygon') {
+            coordinates = feature.geometry.coordinates.flat();
+        } else if (feature.geometry.type === 'MultiPolygon') {
+            coordinates = feature.geometry.coordinates.flat(2); // 深さ2までフラット化
+        } else {
+            console.warn('Unsupported geometry type:', feature.geometry.type);
+            return; // 他のタイプはスキップ
+        }
+
+        const len = coordinates.length;
+
+        coordinates.forEach((coord, index) => {
+            // console.log('Coordinate:', coord);
+            // 座標のバリデーション
+            if (
+                Array.isArray(coord) &&
+                coord.length === 2 &&
+                Number.isFinite(coord[0]) &&
+                Number.isFinite(coord[1])
+            ) {
+                const [x, y] = proj4('EPSG:4326', code, coord); // 座標系変換
+                // 座標のキーを作成
+                const coordinateKey = `${x},${y}`;
+                if (!coordinateMap.has(coordinateKey)) {
+                    // 新しい座標の場合、A01Textに追加し、カウンターを登録
+                    coordinateMap.set(coordinateKey, j);
+                    A01Text += 'A01,' + j + ',' + j + ',' + y.toFixed(3) + ',' + x.toFixed(3) + ',\n';
+                    j++;
+                }
+
+                // 現在の座標のカウンターを取得してB01Textに使用
+                const currentCounter = coordinateMap.get(coordinateKey);
+                if (len - 2 < index) {
+                    B01Text += 'B01,' + currentCounter + ',' + currentCounter + ',\nD99,\n';
+                } else {
+                    B01Text += 'B01,' + currentCounter + ',' + currentCounter + ',\n';
+                }
             } else {
-                B01Text += 'B01,' + currentCounter + ',' + currentCounter + ',\n';
+                console.error('Invalid coordinate skipped:', coord);
             }
         });
+
         i++;
     });
 
@@ -488,22 +516,50 @@ function convertAndDownloadGeoJSONToSIMA(map,geojson, fileName = 'output.sim') {
     // console.log(simaData)
     simaData += 'A99,END,,\n';
 
-    const blob = new Blob([simaData], { type: 'text/plain' });
+    // UTF-8で文字列をコードポイントに変換
+    const utf8Array = window.Encoding.stringToCode(simaData);
+
+    // UTF-8からShift-JISに変換
+    const shiftJISArray = window.Encoding.convert(utf8Array, 'SJIS');
+
+    // Shift-JISエンコードされたデータをUint8Arrayに格納
+    const uint8Array = new Uint8Array(shiftJISArray);
+
+    // Blobを作成
+    const blob = new Blob([uint8Array], { type: 'text/plain;charset=shift-jis' });
+
+    // ダウンロード用リンクを作成
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    fileName = kei + '.sim'
+    fileName = fileName + kei + '.sim';
     link.download = fileName;
+
+    // リンクをクリックしてダウンロードを実行
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+
+    // const blob = new Blob([simaData], { type: 'text/plain' });
+    // const link = document.createElement('a');
+    // link.href = URL.createObjectURL(blob);
+    // fileName = fileName + kei + '.sim'
+    // link.download = fileName;
+    // document.body.appendChild(link);
+    // link.click();
+    // document.body.removeChild(link);
 }
 
 /**
  * 保存関数
  */
 export function saveCima(map, layerId, sourceId, fields) {
+    if (map.getZoom() <= 14) {
+        alert('ズーム14以上にしてください。')
+        return
+    }
     const geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields);
-    convertAndDownloadGeoJSONToSIMA(map,geojson);
+    convertAndDownloadGeoJSONToSIMA(map,geojson,'簡易_');
 }
 
 function geojsonToDXF(geojson) {
@@ -607,6 +663,10 @@ function geojsonToDXF(geojson) {
 }
 
 export function saveDxf (map, layerId, sourceId, fields) {
+    if (map.getZoom() <= 14) {
+        alert('ズーム14以上にしてください。')
+        return
+    }
     const crs = initializePlaneRectangularCRS(map)
     let geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields)
     console.log(geojson)
@@ -701,6 +761,10 @@ function downloadGeoJSONAsCSV(geojson, filename = 'data.csv') {
 }
 
 export function saveCsv(map, layerId, sourceId, fields) {
+    if (map.getZoom() <= 14) {
+        alert('ズーム14以上にしてください。')
+        return
+    }
     const geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields);
     downloadGeoJSONAsCSV(geojson)
 }
@@ -921,4 +985,45 @@ function determinePlaneRectangularZone(x, y) {
         }
     }
     return closestZone;
+}
+
+
+export async function saveCima2 (map) {
+    if (map.getZoom() <= 14) {
+        alert('ズーム14以上にしてください。')
+        return
+    }
+    // https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_01.fgb
+    const prefId = String(store.state.prefId).padStart(2, '0')
+    console.log(prefId)
+    const fgb_URL = 'https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_' + prefId + '.fgb'
+    function fgBoundingBox() {
+        const LngLatBounds = map.getBounds();
+        var Lng01 = LngLatBounds.getWest();
+        var Lng02 = LngLatBounds.getEast();
+        var Lat01 = LngLatBounds.getNorth();
+        var Lat02 = LngLatBounds.getSouth();
+        return {
+            minX: Lng01,
+            minY: Lat02,
+            maxX: Lng02,
+            maxY: Lat01
+        };
+    }
+    async function deserializeAndPrepareGeojson() {
+        const geojson = { type: 'FeatureCollection', features: [] };
+        console.log('データをデシリアライズ中...');
+        const fbg_ref = fgb_URL
+        const iter = window.flatgeobuf.deserialize(fbg_ref, fgBoundingBox())
+        for await (const feature of iter) {
+            geojson.features.push(feature);
+        }
+        console.log(geojson)
+        if(geojson.features.length === 0) {
+            alert('地物が一つもありません。「簡易」で試してみてください。')
+            return
+        }
+        convertAndDownloadGeoJSONToSIMA(map,geojson, '詳細_')
+    }
+    deserializeAndPrepareGeojson()
 }
