@@ -361,3 +361,10 @@ tippecanoe -l polygon -f -o nogyo.pmtiles nougyou.geojson
 tippecanoe -rg -l point -f -o kizyunten.pmtiles merged.geojson
 
 tippecanoe -pk -pf -l polygon -f -o iwatapolygon.pmtiles iwatapolygon.geojson
+
+tippecanoe -l polygon -f -o shinrin.pmtiles shinrin.geojson
+
+ogr2ogr -f "GeoJSON" -t_srs "EPSG:4326" nagaokashi.geojson 筆界.shp
+tippecanoe -l polygon -f -o nagaokashi.pmtiles nagaokashi.geojson
+
+tippecanoe -l polygon -f -o narashi.pmtiles narashi.geojson

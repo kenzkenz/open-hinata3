@@ -19,6 +19,29 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+  <v-dialog v-model="dialogInfo" max-width="400px">
+    <v-card>
+      <v-card-title>
+        簡易と詳細の違い
+      </v-card-title>
+      <v-card-text>
+        <ul>
+          <li>
+            SIMA保存（簡易）
+            <div>描画用に簡略化された座標です。</div>
+          </li>
+          <li>
+            SIMA保存（詳細）
+            <div>元のXMLと同様の座標を持っています。</div>
+          </li>
+        </ul>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="blue-darken-1" text @click="dialogInfo = false">Close</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
     <v-text-field label="抽出" v-model="s_tokijyoText" @input="change" style="margin-top: 10px"></v-text-field>
@@ -31,6 +54,7 @@
     <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="dialog=true">sima読込</v-btn>
     <hr>
     <v-btn style="margin-top: 10px;margin-left: 0px;" class="tiny-btn" @click="resetFeatureColors">選択解除</v-btn>
+    <v-btn style="margin-top: 10px;margin-left: 100px;width: 50px" class="tiny-btn" @click="info">help</v-btn>
     <!--      <span style="font-size: 12px"><div v-html="item.attribution"></div>平面直角座標系の時は「{{ kei }}」で変換</span>-->
   </div>
 </template>
@@ -54,6 +78,7 @@ export default {
   props: ['mapName','item'],
   data: () => ({
     dialog: false,
+    dialogInfo: false,
     selectedItem: null,
     items: [
       '公共座標1系', '公共座標2系', '公共座標3系',
@@ -93,6 +118,9 @@ export default {
       this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [
           this.s_tokijyoText
         ]})
+    },
+    info () {
+      this.dialogInfo = true
     },
     resetFeatureColors () {
       const map = this.$store.state[this.mapName]

@@ -555,101 +555,28 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg)
         i++;
     });
 
-    // let simaData = 'G00,01,open-hinata3,\n';
-    // simaData += 'Z00,座標ﾃﾞｰﾀ,,\n';
-    // simaData += 'A00,\n';
-    // let A01Text = '';
-    // let B01Text = '';
-    // let i = 1;
-    // let j = 1;
-    // // 座標とカウンターを関連付けるマップ
-    // const coordinateMap = new Map();
-    // geojson.features.forEach((feature) => {
-    //     // B01Text += 'D00,' + i + ',' + i + ',1,\n';
-    //     console.log(feature.properties.地番)
-    //     const chiban = feature.properties.地番
-    //     B01Text += 'D00,' + i + ',' + chiban + ',1,\n';
-    //     // ジオメトリタイプに応じて座標を処理
-    //     let coordinates = [];
-    //     if (feature.geometry.type === 'Polygon') {
-    //         coordinates = feature.geometry.coordinates.flat();
-    //     } else if (feature.geometry.type === 'MultiPolygon') {
-    //         coordinates = feature.geometry.coordinates.flat(2); // 深さ2までフラット化
-    //     } else {
-    //         console.warn('Unsupported geometry type:', feature.geometry.type);
-    //         return; // 他のタイプはスキップ
-    //     }
-    //
-    //     const len = coordinates.length;
-    //
-    //     coordinates.forEach((coord, index) => {
-    //         // console.log('Coordinate:', coord);
-    //         // 座標のバリデーション
-    //         if (
-    //             Array.isArray(coord) &&
-    //             coord.length === 2 &&
-    //             Number.isFinite(coord[0]) &&
-    //             Number.isFinite(coord[1])
-    //         ) {
-    //             const [x, y] = proj4('EPSG:4326', code, coord); // 座標系変換
-    //             // 座標のキーを作成
-    //             const coordinateKey = `${x},${y}`;
-    //             if (!coordinateMap.has(coordinateKey)) {
-    //                 // 新しい座標の場合、A01Textに追加し、カウンターを登録
-    //                 coordinateMap.set(coordinateKey, j);
-    //                 A01Text += 'A01,' + j + ',' + j + ',' + y.toFixed(3) + ',' + x.toFixed(3) + ',\n';
-    //                 j++;
-    //             }
-    //             // 現在の座標のカウンターを取得してB01Textに使用
-    //             const currentCounter = coordinateMap.get(coordinateKey);
-    //             if (len - 2 < index) {
-    //                 B01Text += 'B01,' + currentCounter + ',' + currentCounter + ',\nD99,\n';
-    //             } else {
-    //                 B01Text += 'B01,' + currentCounter + ',' + currentCounter + ',\n';
-    //             }
-    //         } else {
-    //             console.error('Invalid coordinate skipped:', coord);
-    //         }
-    //     });
-    //     i++;
-    // });
-
     simaData = simaData + A01Text + 'A99\nZ00,区画データ,\n' + B01Text
     // console.log(simaData)
     simaData += 'A99,END,,\n';
 
-    // UTF-8で文字列をコードポイントに変換
+// UTF-8で文字列をコードポイントに変換
     const utf8Array = window.Encoding.stringToCode(simaData);
-
-    // UTF-8からShift-JISに変換
+// UTF-8からShift-JISに変換
     const shiftJISArray = window.Encoding.convert(utf8Array, 'SJIS');
-
-    // Shift-JISエンコードされたデータをUint8Arrayに格納
+// Shift-JISエンコードされたデータをUint8Arrayに格納
     const uint8Array = new Uint8Array(shiftJISArray);
+// Blobを作成（MIMEタイプを変更）
+    const blob = new Blob([uint8Array], { type: 'application/octet-stream' });
 
-    // Blobを作成
-    const blob = new Blob([uint8Array], { type: 'text/plain;charset=shift-jis' });
-
-    // ダウンロード用リンクを作成
+// ダウンロード用リンクを作成
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     fileName = fileName + kei + '.sim';
-    link.download = fileName;
+    link.download = fileName; // ファイル名を正確に指定
 
-    // リンクをクリックしてダウンロードを実行
-    document.body.appendChild(link);
+// リンクをクリックしてダウンロード
     link.click();
-    document.body.removeChild(link);
-
-
-    // const blob = new Blob([simaData], { type: 'text/plain' });
-    // const link = document.createElement('a');
-    // link.href = URL.createObjectURL(blob);
-    // fileName = fileName + kei + '.sim'
-    // link.download = fileName;
-    // document.body.appendChild(link);
-    // link.click();
-    // document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
 }
 
 /**
@@ -1091,19 +1018,22 @@ function determinePlaneRectangularZone(x, y) {
 }
 
 
-export async function saveCima2 (map,layerId) {
+export async function saveCima2(map, layerId) {
     if (map.getZoom() <= 14) {
-        alert('ズーム14以上にしてください。')
-        return
+        alert('ズーム14以上にしてください。');
+        return;
     }
-    // https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_01.fgb
-    const prefId = String(store.state.prefId).padStart(2, '0')
-    console.log(prefId)
-    let fgb_URL
-    if (prefId === '22') {
-        fgb_URL = 'https://kenzkenz3.xsrv.jp/fgb/shizuoka.fgb'
-    } else {
-        fgb_URL = 'https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_' + prefId + '.fgb'
+
+    let prefId = String(store.state.prefId).padStart(2, '0');
+    console.log('初期 prefId:', prefId);
+
+    let fgb_URL;
+
+    function getFgbUrl(prefId) {
+        const specialIds = ['22', '40', '43', '44','45'];
+        return specialIds.includes(prefId)
+            ? `https://kenzkenz3.xsrv.jp/fgb/2024/${prefId}.fgb`
+            : `https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_${prefId}.fgb`;
     }
 
     function fgBoundingBox() {
@@ -1116,26 +1046,39 @@ export async function saveCima2 (map,layerId) {
             minX: Lng01,
             minY: Lat02,
             maxX: Lng02,
-            maxY: Lat01
+            maxY: Lat01,
         };
     }
+
     async function deserializeAndPrepareGeojson(layerId) {
         const geojson = { type: 'FeatureCollection', features: [] };
         console.log('データをデシリアライズ中...');
-        const fbg_ref = fgb_URL
-        const iter = window.flatgeobuf.deserialize(fbg_ref, fgBoundingBox())
+        fgb_URL = getFgbUrl(prefId);
+        const iter = window.flatgeobuf.deserialize(fgb_URL, fgBoundingBox());
+
         for await (const feature of iter) {
             geojson.features.push(feature);
         }
-        console.log(geojson)
-        if(geojson.features.length === 0) {
-            alert('地物が一つもありません。「簡易」で試してみてください。')
-            return
+
+        console.log('取得した地物:', geojson);
+
+        if (geojson.features.length === 0) {
+            if (prefId !== '43') {
+                console.warn('地物が存在しません。prefIdを43に変更して再試行します。');
+                prefId = '43';
+                await deserializeAndPrepareGeojson(layerId);
+            } else {
+                alert('地物が一つもありません。「簡易」で試してみてください。');
+            }
+            return;
         }
-        convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, '詳細_')
+
+        convertAndDownloadGeoJSONToSIMA(map, layerId, geojson, '詳細_');
     }
-    deserializeAndPrepareGeojson(layerId)
+
+    deserializeAndPrepareGeojson(layerId);
 }
+
 
 // ポリゴンレイヤー名
 // const layerId = 'oh-amx-a-fude'; // 任意のレイヤー名に変更

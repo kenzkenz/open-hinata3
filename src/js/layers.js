@@ -68,6 +68,19 @@ const zeniCircleLayer = {
         'fill-outline-color': '#000'
     }
 };
+const zeniCircleLayerLine = {
+    id: 'oh-zeni-circle-line',
+    type: 'line',
+    source: 'zeni-circle-source',
+    filter: [
+        '!=', ['get', 'status'], '休止' // 'status'が'休止'ではない場合のみ表示
+    ],
+    paint: {
+        'line-color': 'rgba(0,0,0,1)',
+        'line-width': 1
+    }
+};
+
 
     // eslint-disable-next-line no-unexpected-multiline
 async function convertToGeoJSON() {
@@ -6648,7 +6661,7 @@ const layers01 = [
                 id: 'oh-zeni',
                 label: "善意の基準局",
                 sources: [zeniSource,zeniCircleSource],
-                layers:[zeniCircleLayer,zeniCenterPointLayer],
+                layers:[zeniCircleLayer,zeniCenterPointLayer,zeniCircleLayerLine],
                 attribution: '<a href="https://github.com/Bolero-fk/ZeniKijunkyokuChecker" target="_blank">ZeniKijunkyokuChecker</a><br>' +
                     '<a href="https://rtk.silentsystem.jp/" target="_blank">善意の基準局掲示板</a>',
                 ext: {name:'extZeni'}
