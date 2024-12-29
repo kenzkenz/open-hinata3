@@ -6583,6 +6583,38 @@ const iwatapolygonLine = {
         ]
     },
 }
+// 奈良市 --------------------------------------------------------------------------------------------
+const narashichibanSource = {
+    id: "narashichiban-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/chiban/narashi.pmtiles",
+    }
+}
+const narashichibanLayer = {
+    id: "oh-narashichiban",
+    type: "fill",
+    source: "narashichiban-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': 'rgba(0,0,0,0)',
+    }
+}
+const narashichibanLine = {
+    id: "oh-narashichiban-line",
+    type: "line",
+    source: "narashichiban-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': 'navy',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            1, 0.1,
+            16, 2
+        ]
+    },
+}
 
 
 // // 地形分類テスト --------------------------------------------------------------------------------------------
@@ -6689,6 +6721,14 @@ const layers01 = [
                 layers:[iwatapolygonLayer,iwatapolygonLine],
                 attribution: '<a href="https://www.city.iwata.shizuoka.jp/shiseijouhou/1006207/1002775.html" target="_blank">磐田市オープンデータ</a>',
                 ext: {name:'extIwata'}
+            },
+            {
+                id: 'oh-narashi',
+                label: "奈良市地番図",
+                source: narashichibanSource,
+                layers:[narashichibanLayer,narashichibanLine],
+                attribution: '<a href="https://www.city.nara.lg.jp/soshiki/14/104605.html" target="_blank">奈良市地番図オープンデータ</a>',
+                // ext: {name:'extNarashi'}
             },
         ]},
     {

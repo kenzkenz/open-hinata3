@@ -2767,6 +2767,7 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-narashichiban':
             case 'oh-iwatapolygon':
             {
                 let features = map.queryRenderedFeatures(
