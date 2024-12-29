@@ -6728,7 +6728,7 @@ const layers01 = [
                 source: narashichibanSource,
                 layers:[narashichibanLayer,narashichibanLine],
                 attribution: '<a href="https://www.city.nara.lg.jp/soshiki/14/104605.html" target="_blank">奈良市地番図オープンデータ</a>',
-                // ext: {name:'extNarashi'}
+                ext: {name:'extNarashi'}
             },
         ]},
     {
