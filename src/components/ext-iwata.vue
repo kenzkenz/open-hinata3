@@ -6,10 +6,10 @@
       </v-card-title>
       <v-card-text>
         <v-select class="scrollable-content"
-            v-model="s_zahyokei"
-            :items="items"
-            label="選択してください"
-            outlined
+                  v-model="s_zahyokei"
+                  :items="items"
+                  label="選択してください"
+                  outlined
         ></v-select>
         <v-btn @click="loadSima">読込開始</v-btn>
       </v-card-text>
@@ -21,13 +21,13 @@
   </v-dialog>
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
-    <v-text-field label="抽出" v-model="s_tokijyoText" @input="change" style="margin-top: 10px"></v-text-field>
+
     <v-btn style="margin-top: -10px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
     <v-btn style="margin-top: -10px;margin-left: 5px;" class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveSima">sima保存（簡易）</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveSima2">sima保存（詳細）</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
+<!--    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveSima2">sima保存（詳細）</v-btn>-->
+    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="dialog=true">sima読込</v-btn>
     <hr>
     <v-btn style="margin-top: 10px;margin-left: 0px;" class="tiny-btn" @click="resetFeatureColors">選択解除</v-btn>
@@ -50,7 +50,7 @@ import {
 } from "@/js/downLoad";
 
 export default {
-  name: 'ext-tokijyo',
+  name: 'ext-iwate',
   props: ['mapName','item'],
   data: () => ({
     dialog: false,
@@ -71,14 +71,6 @@ export default {
     s_extFire () {
       return this.$store.state.extFire
     },
-    s_tokijyoText: {
-      get() {
-        return this.$store.state.tokijyoText[this.mapName]
-      },
-      set(value) {
-        this.$store.state.tokijyoText[this.mapName] = value
-      }
-    },
     s_zahyokei: {
       get() {
         return this.$store.state.zahyokei
@@ -89,14 +81,14 @@ export default {
     },
   },
   methods: {
-    update () {
-      this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [
-          this.s_tokijyoText
-        ]})
-    },
+    // update () {
+    //   this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [
+    //       this.s_tokijyoText
+    //     ]})
+    // },
     resetFeatureColors () {
       const map = this.$store.state[this.mapName]
-      resetFeatureColors(map,'oh-amx-a-fude')
+      resetFeatureColors(map,'oh-iwatapolygon')
     },
     loadSima () {
       if (!this.s_zahyokei) {
@@ -108,27 +100,27 @@ export default {
     },
     saveCsv () {
       const map = this.$store.state[this.mapName]
-      saveCsv(map,'oh-amx-a-fude','amx-a-pmtiles',[])
+      saveCsv(map,'oh-iwatapolygon','iwatapolygon-source',[])
     },
     saveDxf () {
       const map = this.$store.state[this.mapName]
-      saveDxf(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
+      saveDxf(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'])
     },
     saveSima2 () {
       const map = this.$store.state[this.mapName]
-      saveCima2(map,'oh-amx-a-fude')
+      saveCima2(map)
     },
     saveSima () {
       const map = this.$store.state[this.mapName]
-      saveCima(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'],true)
+      saveCima(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'],true)
     },
     saveGeojson () {
       const map = this.$store.state[this.mapName]
-      saveGeojson(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
+      saveGeojson(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'])
     },
     gistUpload () {
       const map = this.$store.state[this.mapName]
-      gistUpload(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
+      gistUpload(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'])
     },
     change () {
       console.log(this.item)
@@ -162,8 +154,8 @@ export default {
           searchString = searchString.replace(/\u3000/g,' ').trim()
           const words = searchString.split(" ")
           // 複数フィールドを結合する
-         const combinedFields = ["concat", ["get", "大字名"], " ", ["get", "大字コード"], " ", ["get", "地番"], " ", ["get", "丁目コード"],
-           " ", ["get", "小字コード"], " ", ["get", "市区町村名"]];
+          const combinedFields = ["concat", ["get", "大字名"], " ", ["get", "大字コード"], " ", ["get", "地番"], " ", ["get", "丁目コード"],
+            " ", ["get", "小字コード"], " ", ["get", "市区町村名"]];
           // 各単語に対して、結合したフィールドに対する index-of チェックを実行
           const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);
           // いずれかの単語が含まれる場合の条件を作成 (OR条件)
@@ -180,7 +172,7 @@ export default {
         }
       }
       filterBy(this.s_tokijyoText)
-      this.update()
+      // this.update()
     },
   },
   mounted() {

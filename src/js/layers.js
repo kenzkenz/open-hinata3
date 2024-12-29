@@ -34,7 +34,14 @@ const zeniCenterPointLayer = {
     type: "circle",
     source: "zeni-source",
     paint: {
-        'circle-color': 'rgba(255,0,0,1)', // 赤色で中心点を強調
+        // 'circle-color': 'rgba(255,0,0,1)', // 赤色で中心点を強調
+        'circle-color': [
+            'match',
+            ['get', 'status'], // 'status'フィールドの値を取得
+            '公開', 'rgba(255,0,0,1)', // 公開の場合は赤色
+            '休止', 'rgba(0,0,255,1)', // 中止の場合は青色
+            'rgba(0,0,0,0)' // その他の場合は透明（黒を指定しても見えないようにする）
+        ],
         'circle-radius': 5, // 固定サイズの点
         'circle-opacity': 1,
         'circle-stroke-width': 1,
@@ -53,6 +60,9 @@ const zeniCircleLayer = {
     type: 'fill',
     source: 'zeni-circle-source',
     layout: {},
+    filter: [
+        '!=', ['get', 'status'], '休止' // 'status'が'休止'ではない場合のみ表示
+    ],
     paint: {
         'fill-color': 'rgba(0,255,0,0.3)',
         'fill-outline-color': '#000'
@@ -6362,9 +6372,204 @@ const fudeLine = {
         ]
     },
 }
-
-
-
+// 農業地域 --------------------------------------------------------------------------------------------
+const nogyochiikiSource = {
+    id: "nogyochiiki-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/nogyo/nogyo.pmtiles",
+    }
+}
+const nogyochiikiLayer = {
+    id: "oh-nogyochiiki",
+    type: "fill",
+    source: "nogyochiiki-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'LAYER_NO'],
+            5, 'rgba(163,222,192,0.8)',
+            6, 'rgba(166,142,186,0.8)',
+        ],
+    }
+}
+const nogyochiikiLine = {
+    id: "oh-nogyochiiki-line",
+    type: "line",
+    source: "nogyochiiki-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
+// 基準点-------------------------------------------------------------------------------------------
+const kizyuntenSource = {
+    id: "kizyunten-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/kizyunten/kizyunten.pmtiles",
+    }
+}
+const kizyuntenPoint = {
+    id: "oh-kizyunten-point",
+    type: "circle",
+    source: "kizyunten-source",
+    "source-layer": "point",
+    filter: [
+        'any', // OR条件でフィルタ
+        ['>=', ['zoom'], 9], // ズームレベル11以上の場合は全て表示
+        [
+            'all', // AND条件
+            ['<=', ['zoom'], 8], // ズームレベル10以下
+            ['match', ['get', '基準点種別'], ['電子基準点', '一等三角点'], true, false] // 電子基準点と一等三角点のみ
+        ]
+    ],
+    'paint': {
+        'circle-color': [
+            'case',
+            ['==', ['get', '成果状態'], '正常'],
+            [
+                'match',
+                ['get', '基準点種別'],
+                '電子基準点', 'darkorange',  // 正常な電子基準点
+                '一等三角点', 'rgba(255, 0, 0, 1.0)',    // 正常な一等三角点
+                '二等三角点', 'rgba(0, 128, 0, 1.0)',   // 正常な二等三角点
+                '三等三角点', 'rgba(0, 0, 255, 1.0)',   // 正常な三等三角点
+                '四等三角点', 'rgba(128, 0, 128, 1.0)', // 正常な四等三角点
+                '基準水準点', 'rgba(255, 165, 0, 1.0)', // 正常な基準水準点
+                '準基準水準点', 'rgba(0, 255, 255, 1.0)', // 正常な準基準水準点
+                '一等水準交差点', 'rgba(75, 0, 130, 1.0)', // 正常な一等水準交差点
+                '一等道路水準点', 'rgba(128, 128, 0, 1.0)', // 正常な一等道路水準点
+                '一等水準点', 'rgba(255, 20, 147, 1.0)',  // 正常な一等水準点
+                '二等水準点', 'rgba(0, 191, 255, 1.0)',   // 正常な二等水準点
+                '二等道路水準点', 'rgba(46, 139, 87, 1.0)', // 正常な二等道路水準点
+                /* デフォルト色（正常な場合） */
+                'rgba(0, 0, 0, 1.0)'
+            ],
+            [
+                'match',
+                ['get', '基準点種別'],
+                '電子基準点', 'rgba(200, 200, 200, 1.0)',  // 異常な電子基準点
+                '一等三角点', 'rgba(128, 0, 0, 1.0)',    // 異常な一等三角点
+                '二等三角点', 'rgba(0, 64, 0, 1.0)',     // 異常な二等三角点
+                '三等三角点', 'rgba(0, 0, 128, 1.0)',    // 異常な三等三角点
+                '四等三角点', 'rgba(64, 0, 64, 1.0)',    // 異常な四等三角点
+                '基準水準点', 'rgba(128, 85, 0, 1.0)',   // 異常な基準水準点
+                '準基準水準点', 'rgba(0, 128, 128, 1.0)', // 異常な準基準水準点
+                '一等水準交差点', 'rgba(37, 0, 64, 1.0)',  // 異常な一等水準交差点
+                '一等道路水準点', 'rgba(64, 64, 0, 1.0)',  // 異常な一等道路水準点
+                '一等水準点', 'rgba(128, 10, 73, 1.0)',   // 異常な一等水準点
+                '二等水準点', 'rgba(0, 95, 128, 1.0)',    // 異常な二等水準点
+                '二等道路水準点', 'rgba(23, 64, 43, 1.0)', // 異常な二等道路水準点
+                /* デフォルト色（異常な場合） */
+                'rgba(0, 0, 0, 1.0)'
+            ]
+        ],
+        'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            1, [
+                'match',
+                ['get', '基準点種別'],
+                '電子基準点', 1,
+                '一等三角点', 1,
+                '二等三角点', 1,
+                '三等三角点', 1,
+                '四等三角点', 1,
+                1 // デフォルト
+            ],
+            16, [
+                'match',
+                ['get', '基準点種別'],
+                '電子基準点', 15,
+                '一等三角点', 15,
+                '二等三角点', 12,
+                '三等三角点', 10,
+                '四等三角点', 8,
+                8 // デフォルト
+            ]
+        ],
+        'circle-stroke-color': 'rgba(255, 255, 255, 1)',
+        'circle-stroke-width': 1
+    }
+};
+const kizyuntenPointLabel = {
+    id: "oh-kizyunten-point-label",
+    type: "symbol",
+    source: "kizyunten-source",
+    "source-layer": "point",
+    filter: [
+        'any', // OR条件でフィルタ
+        ['>=', ['zoom'], 9], // ズームレベル11以上の場合は全て表示
+        [
+            'all', // AND条件
+            ['<=', ['zoom'], 8], // ズームレベル10以下
+            ['match', ['get', '基準点種別'], ['電子基準点', '一等三角点'], true, false] // 電子基準点と一等三角点のみ
+        ]
+    ],
+    layout: {
+        "text-field": [
+            "match",
+            ["get", "基準点種別"], // フィールド名に基づいて条件分岐
+            "電子基準点", "電",
+            "一等三角点", "1",
+            "二等三角点", "2",
+            "三等三角点", "3",
+            "四等三角点", "4",
+            /* デフォルト値 */
+            ""
+        ],
+        "text-size": 12, // テキストのサイズ
+        // "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"], // フォント
+        "text-anchor": "center", // テキストをポイントの中心に配置
+        "text-offset": [0, 0], // テキストのオフセット
+    },
+    paint: {
+        "text-color": "rgba(255, 255, 255, 1)", // テキストの色
+        // "text-halo-color": "rgba(255, 255, 255, 1)", // テキストの背景（ハロー）色
+        // "text-halo-width": 1, // テキストの背景（ハロー）の幅
+    }
+};
+// 磐田 --------------------------------------------------------------------------------------------
+const iwatapolygonSource = {
+    id: "iwatapolygon-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/iwata/iwatapolygon.pmtiles",
+    }
+}
+const iwatapolygonLayer = {
+    id: "oh-iwatapolygon",
+    type: "fill",
+    source: "iwatapolygon-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': 'rgba(0,0,0,0)',
+    }
+}
+const iwatapolygonLine = {
+    id: "oh-iwatapolygon-line",
+    type: "line",
+    source: "iwatapolygon-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': 'navy',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            1, 0.1,
+            16, 2
+        ]
+    },
+}
 
 
 // // 地形分類テスト --------------------------------------------------------------------------------------------
@@ -6441,11 +6646,36 @@ const layers01 = [
             },
             {
                 id: 'oh-zeni',
-                label: "善意の基準局(ZeniKijunkyokuChecker)",
+                label: "善意の基準局",
                 sources: [zeniSource,zeniCircleSource],
                 layers:[zeniCircleLayer,zeniCenterPointLayer],
-                attribution: '<a href="https://github.com/Bolero-fk/ZeniKijunkyokuChecker" target="_blank">ZeniKijunkyokuChecker</a>',
+                attribution: '<a href="https://github.com/Bolero-fk/ZeniKijunkyokuChecker" target="_blank">ZeniKijunkyokuChecker</a><br>' +
+                    '<a href="https://rtk.silentsystem.jp/" target="_blank">善意の基準局掲示板</a>',
                 ext: {name:'extZeni'}
+            },
+            {
+                id: 'oh-nogyochiiki',
+                label: "H27農業地域",
+                source: nogyochiikiSource,
+                layers:[nogyochiikiLayer,nogyochiikiLine],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A12.html" target="_blank">国土数値情報</a>'
+                // ext: {name:'extTokijyo'}
+            },
+            {
+                id: 'oh-kizyunten',
+                label: "基準点",
+                source: kizyuntenSource,
+                layers:[kizyuntenPoint,kizyuntenPointLabel],
+                attribution: '<a href="" target="_blank"></a>'
+                // ext: {name:'extTokijyo'}
+            },
+            {
+                id: 'oh-iwata',
+                label: "磐田市地番図",
+                source: iwatapolygonSource,
+                layers:[iwatapolygonLayer,iwatapolygonLine],
+                attribution: '<a href="https://www.city.iwata.shizuoka.jp/shiseijouhou/1006207/1002775.html" target="_blank">磐田市オープンデータ</a>',
+                ext: {name:'extIwata'}
             },
         ]},
     {

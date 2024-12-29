@@ -52,7 +52,12 @@
 
 <script>
 import {mouseMoveForPopup, popup} from "@/js/popup";
-import { handleFileUpload,highlightSpecificFeatures,highlightedChibans} from '@/js/downLoad'
+import {
+  handleFileUpload,
+  highlightSpecificFeatures,
+  highlightedChibans,
+  highlightSpecificFeaturesIwata
+} from '@/js/downLoad'
 
 const popups = []
 function closeAllPopups() {
@@ -1523,7 +1528,21 @@ export default {
                 // 新しいIDを追加
                 highlightedChibans.add(targetId);
               }
-              highlightSpecificFeatures(map);
+              highlightSpecificFeatures(map,'oh-amx-a-fude');
+            }
+          });
+          map.on('click', 'oh-iwatapolygon', (e) => {
+            if (e.features && e.features.length > 0) {
+              const targetId = `${e.features[0].properties['SKSCD']}_${e.features[0].properties['AZACD']}_${e.features[0].properties['TXTCD']}`;
+              console.log('Clicked ID', targetId);
+              if (highlightedChibans.has(targetId)) {
+                // すでに選択されている場合は解除
+                highlightedChibans.delete(targetId);
+              } else {
+                // 新しいIDを追加
+                highlightedChibans.add(targetId);
+              }
+              highlightSpecificFeaturesIwata(map,'oh-iwatapolygon');
             }
           });
         })

@@ -346,6 +346,7 @@ export default {
       // -----------------------------------------
       if (this.s_selectedLayers[this.mapName]?.some(layer => layer.id === 'oh-amx-a-fude')) {
         this.$store.state.watchFlg = false
+        this.isDragging =false
         if (Array.isArray(this.s_selectedLayers[this.mapName])) {
           const layers = this.s_selectedLayers[this.mapName];
           const index = layers.findIndex(layer => layer.id === 'oh-amx-a-fude');

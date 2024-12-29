@@ -2689,6 +2689,7 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-zeni-center':
             case 'oh-zeni-circle':
             {
                 let features = map.queryRenderedFeatures(
@@ -2706,6 +2707,82 @@ export function popup(e,map,mapName,mapFlg) {
                 if (html.indexOf('zeni') === -1) {
                     html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                     html0 += '<div class="zeni" font-weight: normal; color: #333;line-height: 25px;">'
+                    Object.keys(props).forEach(function (key) {
+                        html0 += key + '=' + props[key] + '<br>'
+                    })
+                    html0 += '<div>'
+                    html += html0
+                }
+                break
+            }
+            case 'oh-nogyochiiki':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                let nouti
+                if (props.LAYER_NO === 5) {
+                    nouti = '農業地域'
+                } else if (props.LAYER_NO === 6) {
+                    nouti = '農用地区域'
+                }
+                if (html.indexOf('nogyochiiki') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="nogyochiiki" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:26px;">' + nouti + '</span><br>' +
+                        '</div>'
+                }
+                break
+            }
+            case 'oh-kizyunten-point-label':
+            case 'oh-kizyunten-point':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                if (html.indexOf('kizyunten') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="kizyunten" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:24px;">点名＝' + props.点名 + '</span><hr>' +
+                        '<span style="font-size:20px;">基準点種別＝' + props.基準点種別 + '</span><br>' +
+                        '<span style="font-size:14px;">基準点コード＝' + props.基準点コード + '</span><br>' +
+                        '<span style="font-size:14px;">成果状態＝' + props.成果状態 + '</span><br>' +
+                        '</div>'
+                }
+                break
+            }
+            case 'oh-iwatapolygon':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                let html0 = ''
+                if (html.indexOf('iwatapolygon') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html0 += '<div class="iwatapolygon" font-weight: normal; color: #333;line-height: 25px;">'
                     Object.keys(props).forEach(function (key) {
                         html0 += key + '=' + props[key] + '<br>'
                     })

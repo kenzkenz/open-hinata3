@@ -355,3 +355,9 @@ tippecanoe -pk -pf -l polygon -f -o syukuhaku.pmtiles filtered_syukuhaku.geojson
 tippecanoe -l polygon -f -o tahata.pmtiles output.geojson
 
 ogr2ogr -f FlatGeobuf shizuoka.fgb merged.geojson
+
+tippecanoe -l polygon -f -o nogyo.pmtiles nougyou.geojson
+
+tippecanoe -rg -l point -f -o kizyunten.pmtiles merged.geojson
+
+tippecanoe -pk -pf -l polygon -f -o iwatapolygon.pmtiles iwatapolygon.geojson

@@ -160,11 +160,13 @@ export function exportLayerToGeoJSON(map,layerId,sourceId,fields) {
             type: "FeatureCollection",
             features: features.map(f => f.toJSON())
         };
+        console.log(geojson)
         if (fields.length === 0) {
-            geojson = extractHighlightedGeoJSONFromSource(geojson)
+            geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
             return geojson
         } else {
-            geojson = extractHighlightedGeoJSONFromSource(geojson)
+            geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
+            console.log(geojson)
             return dissolveGeoJSONByFields(geojson, fields)
         }
     } else {
@@ -231,6 +233,7 @@ export function gistUpload (map,layerId,sourceId,fields) {
         return
     }
     const geojsonText = JSON.stringify(exportLayerToGeoJSON(map,layerId,sourceId,fields))
+    console.log(geojsonText)
     uploadGeoJSONToGist(geojsonText, 'GeoJSON Dataset Upload');
 }
 
@@ -419,18 +422,25 @@ const zahyokei = [
     { kei: '公共座標18系', code: "EPSG:6685" },
     { kei: '公共座標19系', code: "EPSG:6686" }
 ];
-function convertAndDownloadGeoJSONToSIMA(map,geojson, fileName, kaniFlg) {
-    geojson = extractHighlightedGeoJSONFromSource(geojson)
+function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg) {
+    geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
+    console.log(geojson)
     if (!geojson || geojson.type !== 'FeatureCollection') {
         throw new Error('無効なGeoJSONデータです。FeatureCollectionが必要です。');
     }
     let zahyo
-    for (const feature of geojson.features) {
-        if (feature.properties && feature.properties.座標系) {
-            console.log("Found Coordinate Property:", feature.properties.座標系);
-            zahyo = feature.properties.座標系; // 最初に見つけた値を返す
+    console.log(layerId)
+    if (layerId ==='oh-amx-a-fude') {
+        for (const feature of geojson.features) {
+            if (feature.properties && feature.properties.座標系) {
+                console.log("Found Coordinate Property:", feature.properties.座標系);
+                zahyo = feature.properties.座標系; // 最初に見つけた値を返す
+            }
         }
+    } else {
+        zahyo = '公共座標8系'
     }
+
     proj4.defs([
         ["EPSG:6668", "+proj=tmerc +lat_0=33 +lon_0=129.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第1系
         ["EPSG:6669", "+proj=tmerc +lat_0=33 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第2系
@@ -651,7 +661,8 @@ export function saveCima(map, layerId, sourceId, fields, kaniFlg) {
         return
     }
     const geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields);
-    convertAndDownloadGeoJSONToSIMA(map,geojson,'簡易_',kaniFlg);
+    console.log(geojson)
+    convertAndDownloadGeoJSONToSIMA(map,layerId,geojson,'簡易_',kaniFlg);
 }
 
 function geojsonToDXF(geojson) {
@@ -1080,7 +1091,7 @@ function determinePlaneRectangularZone(x, y) {
 }
 
 
-export async function saveCima2 (map) {
+export async function saveCima2 (map,layerId) {
     if (map.getZoom() <= 14) {
         alert('ズーム14以上にしてください。')
         return
@@ -1108,7 +1119,7 @@ export async function saveCima2 (map) {
             maxY: Lat01
         };
     }
-    async function deserializeAndPrepareGeojson() {
+    async function deserializeAndPrepareGeojson(layerId) {
         const geojson = { type: 'FeatureCollection', features: [] };
         console.log('データをデシリアライズ中...');
         const fbg_ref = fgb_URL
@@ -1121,16 +1132,15 @@ export async function saveCima2 (map) {
             alert('地物が一つもありません。「簡易」で試してみてください。')
             return
         }
-        convertAndDownloadGeoJSONToSIMA(map,geojson, '詳細_')
+        convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, '詳細_')
     }
-    deserializeAndPrepareGeojson()
+    deserializeAndPrepareGeojson(layerId)
 }
 
 // ポリゴンレイヤー名
-const layerId = 'oh-amx-a-fude'; // 任意のレイヤー名に変更
-
+// const layerId = 'oh-amx-a-fude'; // 任意のレイヤー名に変更
 // クリックされた地番を強調表示する関数
-export function highlightSpecificFeatures(map) {
+export function highlightSpecificFeatures(map,layerId) {
     console.log(highlightedChibans);
     map.setPaintProperty(
         layerId,
@@ -1147,16 +1157,37 @@ export function highlightSpecificFeatures(map) {
         ]
     );
 }
-
+export function highlightSpecificFeaturesIwata(map,layerId) {
+    console.log(highlightedChibans);
+    map.setPaintProperty(
+        layerId,
+        'fill-color',
+        [
+            'case',
+            [
+                'in',
+                ['concat', ['get', 'SKSCD'], '_', ['get', 'AZACD'], '_', ['get', 'TXTCD']],
+                ['literal', Array.from(highlightedChibans)]
+            ],
+            'rgba(255, 0, 0, 0.5)', // クリックされた地番が選択された場合
+            'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
+        ]
+    );
+}
 // 既存の GeoJSON データから highlightedChibans に基づいてフィーチャを抽出する関数
-function extractHighlightedGeoJSONFromSource(geojsonData) {
+function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
     if (highlightedChibans.size === 0) {
         console.warn('No highlighted features to extract.');
         return geojsonData;
     }
-
+    console.log(geojsonData)
     const filteredFeatures = geojsonData.features.filter(feature => {
-        const targetId = `${feature.properties['丁目コード']}_${feature.properties['小字コード']}_${feature.properties['地番']}`;
+        let targetId
+        if( layerId === 'oh-amx-a-fude' ) {
+            targetId = `${feature.properties['丁目コード']}_${feature.properties['小字コード']}_${feature.properties['地番']}`;
+        } else {
+            targetId = `${feature.properties['SKSCD']}_${feature.properties['AZACD']}_${feature.properties['TXTCD']}`;
+        }
         return highlightedChibans.has(targetId);
     });
 
@@ -1170,7 +1201,7 @@ function extractHighlightedGeoJSONFromSource(geojsonData) {
 }
 
 // 全フィーチャの選択状態をリセットする関数
-export function resetFeatureColors(map) {
+export function resetFeatureColors(map,layerId) {
     highlightedChibans.clear();
     map.setPaintProperty(
         layerId,
