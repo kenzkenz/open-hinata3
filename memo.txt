@@ -384,7 +384,7 @@ tippecanoe -o Chibanzu_2024.pmtiles \
   --layer=chibanzu \
   Chibanzu_2024.fgb
 
-tippecanoe -o Chibanzu_2024_with_id.pmtiles \
+tippecanoe -o Chibanzu_2024_with_id2.pmtiles \
     --no-feature-limit \
     --no-tile-size-limit \
     --force \
@@ -396,3 +396,10 @@ tippecanoe -o Chibanzu_2024_with_id.pmtiles \
     --minimum-zoom=0 \
     --layer=chibanzu \
     Chibanzu_2024_with_id.fgb
+
+ogr2ogr -f FlatGeobuf -append -update Chibanzu_2024_merged.fgb fukushimashi_edited.fgb -nln Chibanzu_2024
+
+ogr2ogr -f FlatGeobuf Chibanzu_2024_with_id.fgb Chibanzu_2024.fgb \
+    -sql "SELECT *, FID AS id FROM Chibanzu_2024"
+
+

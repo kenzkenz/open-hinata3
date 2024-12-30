@@ -1519,7 +1519,7 @@ export default {
           // マップ上でポリゴンをクリックしたときのイベントリスナー
           map.on('click', 'oh-chibanzu2024', (e) => {
             if (e.features && e.features.length > 0) {
-              const targetId = `${e.features[0].properties['地番']}_${e.features[0].properties['所在']}`;
+              const targetId = `${e.features[0].properties['id']}`;
               if (highlightedChibans.has(targetId)) {
                 // すでに選択されている場合は解除
                 highlightedChibans.delete(targetId);

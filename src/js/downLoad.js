@@ -1051,7 +1051,7 @@ export function highlightSpecificFeaturesCity(map,layerId) {
     let fields
     switch (layerId) {
         case 'oh-chibanzu2024':
-            fields = ['concat', ['get', '地番'], '_', ['get', '所在']]
+            fields = ['concat', ['get', 'id']]
             break
         case 'oh-iwatapolygon':
             fields = ['concat', ['get', 'SKSCD'], '_', ['get', 'AZACD'], '_', ['get', 'TXTCD']]
@@ -1090,7 +1090,7 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
         let targetId;
         switch (layerId) {
             case 'oh-chibanzu2024':
-                targetId = `${feature.properties['地番']}_${feature.properties['所在']}`;
+                targetId = `${feature.properties['id']}`;
                 break;
             case 'oh-amx-a-fude':
                 targetId = `${feature.properties['丁目コード']}_${feature.properties['小字コード']}_${feature.properties['地番']}`;

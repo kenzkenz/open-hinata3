@@ -6651,7 +6651,7 @@ const fukushimachibanLine = {
 const chibanzu2024Source = {
     id: "chibanzu2024-source", obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/chiban/Chibanzu_2024_with_id.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/chiban/Chibanzu_2024_with_id2.pmtiles",
     }
 }
 const chibanzu2024Layer = {
@@ -6778,11 +6778,11 @@ const layers01 = [
             },
             {
                 id: 'oh-chibanzu2024',
-                label: "23自治体地番図",
+                label: "24自治体地番図",
                 source: chibanzu2024Source,
                 layers:[chibanzu2024Layer,chibanzu2024Line],
                 attribution: '<a href="https://www.geospatial.jp/ckan/dataset/chibanzu_2024/resource/79642df8-0456-4847-97cd-a9934cbee42e">Chibanzu_2024.fgb</a><br>'+
-                '<a href="https://hackmd.io/@kenz/SkQ_R21Lkg" target="_blank">23自治体</a>',
+                '<a href="https://hackmd.io/@kenz/SkQ_R21Lkg" target="_blank">24自治体の情報はこちら</a>',
                 ext: {name:'extChibanz2024'}
             },
             {
