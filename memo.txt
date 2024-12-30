@@ -376,16 +376,6 @@ tippecanoe -o Chibanzu_2024.pmtiles \
   --no-tile-size-limit \
   --force \
   --drop-densest-as-needed \
-  --maximum-zoom=16 \
-  --minimum-zoom=0 \
-  --layer=chibanzu \
-  Chibanzu_2024.fgb
-
-tippecanoe -o Chibanzu_2024.pmtiles \
-  --no-feature-limit \
-  --no-tile-size-limit \
-  --force \
-  --drop-densest-as-needed \
   --coalesce-densest-as-needed \
   --simplification=2 \
   --simplify-only-low-zooms \
@@ -393,3 +383,16 @@ tippecanoe -o Chibanzu_2024.pmtiles \
   --minimum-zoom=0 \
   --layer=chibanzu \
   Chibanzu_2024.fgb
+
+tippecanoe -o Chibanzu_2024_with_id.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=0 \
+    --layer=chibanzu \
+    Chibanzu_2024_with_id.fgb

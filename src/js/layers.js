@@ -6651,7 +6651,7 @@ const fukushimachibanLine = {
 const chibanzu2024Source = {
     id: "chibanzu2024-source", obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/chiban/Chibanzu_2024.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/chiban/Chibanzu_2024_with_id.pmtiles",
     }
 }
 const chibanzu2024Layer = {

@@ -31,6 +31,7 @@
     <hr>
     <v-btn style="margin-top: 10px;margin-left: 0px;" class="tiny-btn" @click="resetFeatureColors">選択解除</v-btn>
     <!--      <span style="font-size: 12px"><div v-html="item.attribution"></div>平面直角座標系の時は「{{ kei }}」で変換</span>-->
+    <hr>
     <div v-html="item.attribution"></div>
   </div>
 </template>
