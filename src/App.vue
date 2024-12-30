@@ -1517,10 +1517,9 @@ export default {
           });
           // -----------------------------------------------------------------------------------------------------------
           // マップ上でポリゴンをクリックしたときのイベントリスナー
-          map.on('click', 'oh-amx-a-fude', (e) => {
+          map.on('click', 'oh-chibanzu2024', (e) => {
             if (e.features && e.features.length > 0) {
-              const targetId = `${e.features[0].properties['丁目コード']}_${e.features[0].properties['小字コード']}_${e.features[0].properties['地番']}`;
-              console.log('Clicked ID (丁目コード_小字コード_地番):', targetId);
+              const targetId = `${e.features[0].properties['地番']}_${e.features[0].properties['所在']}`;
               if (highlightedChibans.has(targetId)) {
                 // すでに選択されている場合は解除
                 highlightedChibans.delete(targetId);
@@ -1528,7 +1527,21 @@ export default {
                 // 新しいIDを追加
                 highlightedChibans.add(targetId);
               }
-              highlightSpecificFeatures(map,'oh-amx-a-fude');
+              highlightSpecificFeaturesCity(map,'oh-chibanzu2024');
+            }
+          });
+          map.on('click', 'oh-fukushimachiban', (e) => {
+            if (e.features && e.features.length > 0) {
+              const targetId = `${e.features[0].properties['X']}_${e.features[0].properties['Y']}`;
+              console.log('Clicked ID', targetId);
+              if (highlightedChibans.has(targetId)) {
+                // すでに選択されている場合は解除
+                highlightedChibans.delete(targetId);
+              } else {
+                // 新しいIDを追加
+                highlightedChibans.add(targetId);
+              }
+              highlightSpecificFeaturesCity(map,'oh-fukushimachiban');
             }
           });
           map.on('click', 'oh-iwatapolygon', (e) => {

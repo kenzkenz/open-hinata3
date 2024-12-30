@@ -370,3 +370,26 @@ tippecanoe -l polygon -f -o nagaokashi.pmtiles nagaokashi.geojson
 tippecanoe -l polygon -f -o narashi.pmtiles narashi.geojson
 tippecanoe -pk -pf -l polygon -f -o fukushimashi.pmtiles fukushimashi.geojson
 ogr2ogr -f GeoJSON -t_srs EPSG:4326 fukushimashi.geojson tochi_poly.shp
+
+tippecanoe -o Chibanzu_2024.pmtiles \
+  --no-feature-limit \
+  --no-tile-size-limit \
+  --force \
+  --drop-densest-as-needed \
+  --maximum-zoom=16 \
+  --minimum-zoom=0 \
+  --layer=chibanzu \
+  Chibanzu_2024.fgb
+
+tippecanoe -o Chibanzu_2024.pmtiles \
+  --no-feature-limit \
+  --no-tile-size-limit \
+  --force \
+  --drop-densest-as-needed \
+  --coalesce-densest-as-needed \
+  --simplification=2 \
+  --simplify-only-low-zooms \
+  --maximum-zoom=16 \
+  --minimum-zoom=0 \
+  --layer=chibanzu \
+  Chibanzu_2024.fgb

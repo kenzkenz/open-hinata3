@@ -31,6 +31,7 @@
     <hr>
     <v-btn style="margin-top: 10px;margin-left: 0px;" class="tiny-btn" @click="resetFeatureColors">選択解除</v-btn>
     <!--      <span style="font-size: 12px"><div v-html="item.attribution"></div>平面直角座標系の時は「{{ kei }}」で変換</span>-->
+    <div v-html="item.attribution"></div>
   </div>
 </template>
 
@@ -89,6 +90,11 @@ export default {
     // },
     idForLayerId (id) {
       switch (id) {
+        case 'oh-chibanzu2024':
+          this.layerId = 'oh-chibanzu2024'
+          this.sourceId = 'chibanzu2024-source'
+          this.fields = ['地番','所在']
+          break
         case 'oh-iwata':
           this.layerId = 'oh-iwatapolygon'
           this.sourceId = 'iwatapolygon-source'
@@ -211,23 +217,6 @@ export default {
     },
   },
   mounted() {
-
-    // function idForLayerId (id) {
-    //   switch (id) {
-    //     case 'oh-iwata':
-    //       layerId = 'oh-iwatapolygon'
-    //       sourceId = 'iwatapolygon-source'
-    //       fields = ['SKSCD','AZACD','TXTCD']
-    //       break
-    //     case 'oh-narashi':
-    //       layerId = 'oh-narashichiban'
-    //       sourceId = 'narashichiban-source'
-    //       fields = ['土地key','大字cd']
-    //       break
-    //   }
-    // }
-
-
     const map = this.$store.state[this.mapName]
     map.on('moveend', () => {
       const crs = initializePlaneRectangularCRS(map)
@@ -237,7 +226,7 @@ export default {
   },
   watch: {
     s_extFire () {
-      this.change()
+      // this.change()
     },
   }
 }

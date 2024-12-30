@@ -5,64 +5,6 @@ import maplibregl from 'maplibre-gl'
 import proj4 from 'proj4'
 // 複数のクリックされた地番を強調表示するためのセット
 export let highlightedChibans = new Set();
-// function dissolveGeoJSONByFields(geojson, fields) {
-//     if (!geojson || !fields || !Array.isArray(fields)) {
-//         throw new Error("GeoJSONデータとフィールド名（配列）は必須です。");
-//     }
-//     try {
-//         const normalizedFeatures = geojson.features
-//             .map((feature) => {
-//                 if (feature.geometry.type === "MultiPolygon") {
-//                     return feature.geometry.coordinates.map((polygon) => ({
-//                         type: "Feature",
-//                         properties: feature.properties,
-//                         geometry: {
-//                             type: "Polygon",
-//                             coordinates: polygon,
-//                         },
-//                     }));
-//                 } else if (feature.geometry.type === "MultiLineString") {
-//                     return feature.geometry.coordinates.map((line) => ({
-//                         type: "Feature",
-//                         properties: feature.properties,
-//                         geometry: {
-//                             type: "LineString",
-//                             coordinates: line,
-//                         },
-//                     }));
-//                 } else if (
-//                     feature.geometry.type === "Polygon" ||
-//                     feature.geometry.type === "LineString"
-//                 ) {
-//                     return feature;
-//                 }
-//                 return null; // PointやMultiPointは無視
-//             })
-//             .flat()
-//             .filter(Boolean);
-//
-//         const normalizedGeoJSON = {
-//             type: "FeatureCollection",
-//             features: normalizedFeatures,
-//         };
-//
-//         try {
-//             // AND条件でプロパティ結合
-//             normalizedGeoJSON.features.forEach(feature => {
-//                 feature.properties._combinedField = fields.map(field => feature.properties[field]).join('_');
-//             });
-//
-//             return turf.dissolve(normalizedGeoJSON, { propertyName: '_combinedField' });
-//         } catch (error) {
-//             console.warn("ディゾルブ中にエラーが発生しましたが無視します:", error);
-//             return normalizedGeoJSON;
-//         }
-//     } catch (error) {
-//         console.error("GeoJSON処理中にエラーが発生しましたが無視します:", error);
-//         return geojson;
-//     }
-// }
-
 function dissolveGeoJSONByFields(geojson, fields) {
     if (!geojson || !fields || !Array.isArray(fields)) {
         throw new Error("GeoJSONデータとフィールド名（配列）は必須です。");
@@ -1105,8 +1047,12 @@ export function highlightSpecificFeatures(map,layerId) {
 }
 export function highlightSpecificFeaturesCity(map,layerId) {
     console.log(highlightedChibans);
+    console.log(layerId)
     let fields
     switch (layerId) {
+        case 'oh-chibanzu2024':
+            fields = ['concat', ['get', '地番'], '_', ['get', '所在']]
+            break
         case 'oh-iwatapolygon':
             fields = ['concat', ['get', 'SKSCD'], '_', ['get', 'AZACD'], '_', ['get', 'TXTCD']]
             break
@@ -1143,6 +1089,9 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
     const filteredFeatures = geojsonData.features.filter(feature => {
         let targetId;
         switch (layerId) {
+            case 'oh-chibanzu2024':
+                targetId = `${feature.properties['地番']}_${feature.properties['所在']}`;
+                break;
             case 'oh-amx-a-fude':
                 targetId = `${feature.properties['丁目コード']}_${feature.properties['小字コード']}_${feature.properties['地番']}`;
                 break;

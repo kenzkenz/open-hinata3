@@ -2767,6 +2767,7 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-chibanzu2024':
             case 'oh-fukushimachiban':
             case 'oh-narashichiban':
             case 'oh-iwatapolygon':
