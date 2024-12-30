@@ -436,9 +436,14 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
     let i = 1;
     let j = 1;
 
-// 座標とカウンターを関連付けるマップ
+    // 座標とカウンターを関連付けるマップ
     const coordinateMap = new Map();
-
+    const firstChiban = geojson.features[0].properties.地番
+    console.log(geojson.features[0])
+    let hoka = ''
+    if (geojson.features.length > 1) {
+        hoka = '外' + (geojson.features.length - 1) + '筆'
+    }
     geojson.features.forEach((feature) => {
         // console.log(feature.properties.地番);
         const chiban = feature.properties.地番;
@@ -530,7 +535,7 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     if (!kukaku) {
-        fileName = fileName + kei + '.sim';
+        fileName = fileName + kei + firstChiban + hoka + '.sim';
     } else {
         fileName = fileName + kei + '.txt';
     }
