@@ -8,7 +8,7 @@
         <v-select class="scrollable-content"
                   v-model="s_zahyokei"
                   :items="items"
-                  label="選択してください"
+                  label="座標系を選択してください"
                   outlined
         ></v-select>
         <v-btn @click="loadSima">読込開始</v-btn>
@@ -25,12 +25,25 @@
         座標系選択
       </v-card-title>
       <v-card-text>
-        <v-select class="scrollable-content"
-                  v-model="s_zahyokei"
-                  :items="items"
-                  label="選択してください"
-                  outlined
-        ></v-select>
+
+        <div v-if="isAndroid" class="select-container">
+          <select id="selectBox" v-model="s_zahyokei" class="custom-select">
+            <option value="" disabled selected>座標を選択してください。</option>
+            <option v-for="number in 19" :key="number" :value="`公共座標${number}系`">
+              公共座標{{ number }}系
+            </option>
+          </select>
+        </div>
+
+        <div v-else>
+          <v-select class="scrollable-content"
+                    v-model="s_zahyokei"
+                    :items="items"
+                    label="座標系を選択してください"
+                    outlined
+          ></v-select>
+        </div>
+
         <v-btn @click="outputSima">出力開始</v-btn>
       </v-card-text>
       <v-card-actions>
@@ -81,6 +94,8 @@ export default {
     dialog: false,
     dialog2: false,
     selectedItem: null,
+    isAndroid: false,
+    // selectedCoordinate: '公共座標1系',
     items: [
       '公共座標1系', '公共座標2系', '公共座標3系',
       '公共座標4系', '公共座標5系', '公共座標6系',
@@ -112,6 +127,11 @@ export default {
     //       this.s_tokijyoText
     //     ]})
     // },
+    checkDevice() {
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+      console.log(/android/i.test(userAgent))
+      this.isAndroid = /android/i.test(userAgent);
+    },
     idForLayerId (id) {
       switch (id) {
         case 'oh-chibanzu2024':
@@ -248,6 +268,9 @@ export default {
       // this.update()
     },
   },
+  created() {
+    this.checkDevice();
+  },
   mounted() {
     const map = this.$store.state[this.mapName]
     map.on('moveend', () => {
@@ -264,6 +287,44 @@ export default {
 }
 </script>
 <style scoped>
+.select-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: auto;
+  margin: 20px auto;
+}
 
+.select-label {
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.custom-select {
+  appearance: none; /* ブラウザのデフォルトスタイルを無効化 */
+  background: linear-gradient(to right, #f0f4ff, #e0eaff);
+  border: 1px solid #a0c4ff;
+  border-radius: 8px;
+  padding: 10px 15px;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.custom-select:hover {
+  border-color: #4d94ff;
+}
+
+.custom-select:focus {
+  border-color: #1a73e8;
+  box-shadow: 0 0 5px rgba(26, 115, 232, 0.5);
+}
+
+.custom-select option {
+  padding: 10px;
+}
 </style>
 

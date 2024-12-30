@@ -1169,3 +1169,22 @@ export function resetFeatureColors(map,layerId) {
         'rgba(0, 0, 0, 0)' // 全ての地番+丁目コードを透明にリセット
     );
 }
+function convertSIMtoTXT(simText) {
+    const lines = simText.split('\n');
+    let formattedLines = '';
+
+    lines.forEach(line => {
+        // A01行のみ処理
+        if (line.startsWith('A01')) {
+            const parts = line.split(',');
+            if (parts.length >= 5) {
+                const x = parseFloat(parts[3]);
+                const y = parseFloat(parts[4]);
+                if (!isNaN(x) && !isNaN(y)) {
+                    formattedLines += `${x.toFixed(3).padStart(12)}  ${y.toFixed(3).padStart(12)}\n`;
+                }
+            }
+        }
+    });
+    return formattedLines;
+}
