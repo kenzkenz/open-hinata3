@@ -21,9 +21,8 @@
   </v-dialog>
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
-
-    <v-btn style="margin-top: -10px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
-    <v-btn style="margin-top: -10px;margin-left: 5px;" class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>
+    <v-btn style="margin-top: 0px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveSima">sima保存（簡易）</v-btn>
 <!--    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveSima2">sima保存（詳細）</v-btn>-->
     <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
@@ -36,7 +35,6 @@
 </template>
 
 <script>
-
 import {
   saveGeojson,
   gistUpload,
@@ -53,6 +51,9 @@ export default {
   name: 'ext-iwate',
   props: ['mapName','item'],
   data: () => ({
+    fields: '',
+    sourceId: '',
+    layerId: '',
     dialog: false,
     selectedItem: null,
     items: [
@@ -86,9 +87,30 @@ export default {
     //       this.s_tokijyoText
     //     ]})
     // },
+    idForLayerId (id) {
+      switch (id) {
+        case 'oh-iwata':
+          this.layerId = 'oh-iwatapolygon'
+          this.sourceId = 'iwatapolygon-source'
+          this.fields = ['SKSCD','AZACD','TXTCD']
+          break
+        case 'oh-narashi':
+          this.layerId = 'oh-narashichiban'
+          this.sourceId = 'narashichiban-source'
+          this.fields = ['土地key','大字cd']
+          break
+        case 'oh-fukushimashi':
+          this.layerId = 'oh-fukushimachiban'
+          this.sourceId = 'fukushimachiban-source'
+          this.fields = ['X','Y']
+          break
+      }
+    },
     resetFeatureColors () {
       const map = this.$store.state[this.mapName]
-      resetFeatureColors(map,'oh-iwatapolygon')
+      this.idForLayerId(this.item.id)
+      console.log(this.layerId)
+      resetFeatureColors(map,this.layerId)
     },
     loadSima () {
       if (!this.s_zahyokei) {
@@ -100,27 +122,40 @@ export default {
     },
     saveCsv () {
       const map = this.$store.state[this.mapName]
-      saveCsv(map,'oh-iwatapolygon','iwatapolygon-source',[])
+      this.idForLayerId(this.item.id)
+      console.log(this.layerId,this.sourceId)
+      // saveCsv(map,'oh-iwatapolygon','iwatapolygon-source',[])
+      saveCsv(map,this.layerId,this.sourceId,this.fields,[])
     },
     saveDxf () {
       const map = this.$store.state[this.mapName]
-      saveDxf(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'])
+      this.idForLayerId(this.item.id)
+      // saveDxf(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'])
+      saveDxf(map,this.layerId,this.sourceId,this.fields)
+
     },
-    saveSima2 () {
-      const map = this.$store.state[this.mapName]
-      saveCima2(map)
-    },
+    // saveSima2 () {
+    //   const map = this.$store.state[this.mapName]
+    //   saveCima2(map)
+    // },
     saveSima () {
       const map = this.$store.state[this.mapName]
-      saveCima(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'],true)
+      this.idForLayerId(this.item.id)
+      // saveCima(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'],true)
+      saveCima(map,this.layerId,this.sourceId,this.fields,true)
     },
     saveGeojson () {
       const map = this.$store.state[this.mapName]
-      saveGeojson(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'])
+      this.idForLayerId(this.item.id)
+      console.log(this.layerId)
+      // saveGeojson(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'])
+      saveGeojson(map,this.layerId,this.sourceId,this.fields)
     },
     gistUpload () {
       const map = this.$store.state[this.mapName]
-      gistUpload(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'])
+      this.idForLayerId(this.item.id)
+      // gistUpload(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'])
+      gistUpload(map,this.layerId,this.sourceId,this.fields)
     },
     change () {
       console.log(this.item)
@@ -176,6 +211,23 @@ export default {
     },
   },
   mounted() {
+
+    // function idForLayerId (id) {
+    //   switch (id) {
+    //     case 'oh-iwata':
+    //       layerId = 'oh-iwatapolygon'
+    //       sourceId = 'iwatapolygon-source'
+    //       fields = ['SKSCD','AZACD','TXTCD']
+    //       break
+    //     case 'oh-narashi':
+    //       layerId = 'oh-narashichiban'
+    //       sourceId = 'narashichiban-source'
+    //       fields = ['土地key','大字cd']
+    //       break
+    //   }
+    // }
+
+
     const map = this.$store.state[this.mapName]
     map.on('moveend', () => {
       const crs = initializePlaneRectangularCRS(map)

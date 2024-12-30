@@ -368,3 +368,5 @@ ogr2ogr -f "GeoJSON" -t_srs "EPSG:4326" nagaokashi.geojson 筆界.shp
 tippecanoe -l polygon -f -o nagaokashi.pmtiles nagaokashi.geojson
 
 tippecanoe -l polygon -f -o narashi.pmtiles narashi.geojson
+tippecanoe -pk -pf -l polygon -f -o fukushimashi.pmtiles fukushimashi.geojson
+ogr2ogr -f GeoJSON -t_srs EPSG:4326 fukushimashi.geojson tochi_poly.shp

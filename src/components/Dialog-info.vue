@@ -41,7 +41,11 @@
     <extOSM :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extOSM'"/>
     <extTokijyo :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extTokijyo'"/>
     <extZeni :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extZeni'"/>
-    <extIwata :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extIwata'"/>
+    <extIwata :item="item" :mapName="mapName" v-else-if="[
+        'extIwata',
+        'extNarashi',
+        'extFukushimashi',
+          ].includes(item.ext.name)"/>
   </div>
 </template>
 
@@ -62,7 +66,7 @@ import extCity from "@/components/ext-city"
 import extOSM from "@/components/ext-osm"
 import extTokijyo from "@/components/ext-tokijyo"
 import extZeni from "@/components/ext-zeni"
-import extIwata from "@/components/ext-iwata"
+import extIwata from "@/components/ext-chiban"
 
 export default {
   name: "dialog-info",

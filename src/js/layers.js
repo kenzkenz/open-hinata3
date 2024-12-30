@@ -6615,7 +6615,38 @@ const narashichibanLine = {
         ]
     },
 }
-
+// 福島市 --------------------------------------------------------------------------------------------
+const fukushimachibanSource = {
+    id: "fukushimachiban-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/chiban/fukushimashi.pmtiles",
+    }
+}
+const fukushimachibanLayer = {
+    id: "oh-fukushimachiban",
+    type: "fill",
+    source: "fukushimachiban-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': 'rgba(0,0,0,0)',
+    }
+}
+const fukushimachibanLine = {
+    id: "oh-fukushimachiban-line",
+    type: "line",
+    source: "fukushimachiban-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': 'navy',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            1, 0.1,
+            16, 2
+        ]
+    },
+}
 
 // // 地形分類テスト --------------------------------------------------------------------------------------------
 // const chikeibunruiSource2 = {
@@ -6729,6 +6760,14 @@ const layers01 = [
                 layers:[narashichibanLayer,narashichibanLine],
                 attribution: '<a href="https://www.city.nara.lg.jp/soshiki/14/104605.html" target="_blank">奈良市地番図オープンデータ</a>',
                 ext: {name:'extNarashi'}
+            },
+            {
+                id: 'oh-fukushimashi',
+                label: "福島市地番図",
+                source: fukushimachibanSource,
+                layers:[fukushimachibanLayer,fukushimachibanLine],
+                attribution: '<a href="https://www.city.fukushima.fukushima.jp/d-kikaku/shise/opendate/machidukuri.html" target="_blank">福島市オープンデータ</a>',
+                ext: {name:'extFukushimashi'}
             },
         ]},
     {

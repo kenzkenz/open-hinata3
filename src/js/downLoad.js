@@ -145,6 +145,7 @@ function dissolveGeoJSONByFields(geojson, fields) {
 }
 
 export function exportLayerToGeoJSON(map,layerId,sourceId,fields) {
+    console.log(layerId)
     const source = map.getSource(sourceId);
     if (!source) {
         console.error(`レイヤー ${layerId} のソースが見つかりません。`);
@@ -156,6 +157,7 @@ export function exportLayerToGeoJSON(map,layerId,sourceId,fields) {
     } else if (source.type === 'vector') {
         // Vectorタイルの場合、現在表示されているフィーチャを取得
         const features = map.queryRenderedFeatures({ layers: [layerId] });
+        console.log(features)
         let geojson = {
             type: "FeatureCollection",
             features: features.map(f => f.toJSON())
@@ -180,6 +182,7 @@ export function saveGeojson (map,layerId,sourceId,fields) {
         return
     }
     const geojsonText = JSON.stringify(exportLayerToGeoJSON(map,layerId,sourceId,fields))
+    console.log(geojsonText)
     const blob = new Blob([geojsonText], { type: 'application/json' });
     // 一時的なダウンロード用リンクを作成
     const link = document.createElement('a');
@@ -1100,8 +1103,21 @@ export function highlightSpecificFeatures(map,layerId) {
         ]
     );
 }
-export function highlightSpecificFeaturesIwata(map,layerId) {
+export function highlightSpecificFeaturesCity(map,layerId) {
     console.log(highlightedChibans);
+    let fields
+    switch (layerId) {
+        case 'oh-iwatapolygon':
+            fields = ['concat', ['get', 'SKSCD'], '_', ['get', 'AZACD'], '_', ['get', 'TXTCD']]
+            break
+        case 'oh-narashichiban':
+            fields = ['concat', ['get', '土地key'], '_', ['get', '大字cd']]
+            break
+        case 'oh-fukushimachiban':
+            fields = ['concat', ['get', 'X'], '_', ['get', 'Y']]
+            break
+    }
+    console.log(fields)
     map.setPaintProperty(
         layerId,
         'fill-color',
@@ -1109,7 +1125,7 @@ export function highlightSpecificFeaturesIwata(map,layerId) {
             'case',
             [
                 'in',
-                ['concat', ['get', 'SKSCD'], '_', ['get', 'AZACD'], '_', ['get', 'TXTCD']],
+                fields,
                 ['literal', Array.from(highlightedChibans)]
             ],
             'rgba(255, 0, 0, 0.5)', // クリックされた地番が選択された場合
@@ -1125,11 +1141,23 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
     }
     console.log(geojsonData)
     const filteredFeatures = geojsonData.features.filter(feature => {
-        let targetId
-        if( layerId === 'oh-amx-a-fude' ) {
-            targetId = `${feature.properties['丁目コード']}_${feature.properties['小字コード']}_${feature.properties['地番']}`;
-        } else {
-            targetId = `${feature.properties['SKSCD']}_${feature.properties['AZACD']}_${feature.properties['TXTCD']}`;
+        let targetId;
+        switch (layerId) {
+            case 'oh-amx-a-fude':
+                targetId = `${feature.properties['丁目コード']}_${feature.properties['小字コード']}_${feature.properties['地番']}`;
+                break;
+            case 'oh-iwatapolygon':
+                targetId = `${feature.properties['SKSCD']}_${feature.properties['AZACD']}_${feature.properties['TXTCD']}`;
+                break;
+            case 'oh-narashichiban':
+                targetId = `${feature.properties['土地key']}_${feature.properties['大字cd']}`;
+                break;
+            case 'oh-fukushimachiban':
+                targetId = `${feature.properties['X']}_${feature.properties['Y']}`;
+                break;
+            default:
+                targetId = null; // どのケースにも一致しない場合のデフォルト値
+                break;
         }
         return highlightedChibans.has(targetId);
     });

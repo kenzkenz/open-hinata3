@@ -56,7 +56,7 @@ import {
   handleFileUpload,
   highlightSpecificFeatures,
   highlightedChibans,
-  highlightSpecificFeaturesIwata
+  highlightSpecificFeaturesCity
 } from '@/js/downLoad'
 
 const popups = []
@@ -1542,7 +1542,35 @@ export default {
                 // 新しいIDを追加
                 highlightedChibans.add(targetId);
               }
-              highlightSpecificFeaturesIwata(map,'oh-iwatapolygon');
+              highlightSpecificFeaturesCity(map,'oh-iwatapolygon');
+            }
+          });
+          map.on('click', 'oh-narashichiban', (e) => {
+            if (e.features && e.features.length > 0) {
+              const targetId = `${e.features[0].properties['土地key']}_${e.features[0].properties['大字cd']}`;
+              console.log('Clicked ID', targetId);
+              if (highlightedChibans.has(targetId)) {
+                // すでに選択されている場合は解除
+                highlightedChibans.delete(targetId);
+              } else {
+                // 新しいIDを追加
+                highlightedChibans.add(targetId);
+              }
+              highlightSpecificFeaturesCity(map,'oh-narashichiban');
+            }
+          });
+          map.on('click', 'oh-fukushimachiban', (e) => {
+            if (e.features && e.features.length > 0) {
+              const targetId = `${e.features[0].properties['X']}_${e.features[0].properties['Y']}`;
+              console.log('Clicked ID', targetId);
+              if (highlightedChibans.has(targetId)) {
+                // すでに選択されている場合は解除
+                highlightedChibans.delete(targetId);
+              } else {
+                // 新しいIDを追加
+                highlightedChibans.add(targetId);
+              }
+              highlightSpecificFeaturesCity(map,'oh-fukushimachiban');
             }
           });
         })
