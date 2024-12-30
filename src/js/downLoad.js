@@ -440,12 +440,16 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
     const coordinateMap = new Map();
     // const firstChiban = geojson.features[0].properties.地番
     const deepCopiedGeojsonFeatures = JSON.parse(JSON.stringify(geojson.features))
-    const firstChiban = deepCopiedGeojsonFeatures
+    let firstChiban = deepCopiedGeojsonFeatures
         .map(feature => feature.properties?.地番) // 地番を抽出
         .filter(chiban => chiban !== undefined && chiban !== null) // undefinedやnullを除外
         .map(chiban => Number(chiban)) // 数値に変換（地番が数値型である場合）
         .filter(chiban => !isNaN(chiban)) // NaNを除外
         .reduce((min, current) => Math.min(min, current), Infinity); // 最小値を取得
+    console.log(firstChiban)
+    if (firstChiban === Infinity) {
+        firstChiban = geojson.features[0].properties.地番
+    }
 
     console.log("最小の地番:", firstChiban);
     console.log(geojson.features[0])
@@ -1005,7 +1009,7 @@ export async function saveCima2(map, layerId, kukaku) {
     let fgb_URL;
 
     function getFgbUrl(prefId) {
-        const specialIds = ['22', '40', '43', '44','45'];
+        const specialIds = ['22', '40', '43', '44','45','46'];
         return specialIds.includes(prefId)
             ? `https://kenzkenz3.xsrv.jp/fgb/2024/${prefId}.fgb`
             : `https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_${prefId}.fgb`;
