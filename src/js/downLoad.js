@@ -367,7 +367,7 @@ const zahyokei = [
     { kei: '公共座標18系', code: "EPSG:6685" },
     { kei: '公共座標19系', code: "EPSG:6686" }
 ];
-function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg, zahyokei2) {
+function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg, zahyokei2, kukaku) {
     geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
     console.log(geojson)
     if (!geojson || geojson.type !== 'FeatureCollection') {
@@ -507,22 +507,31 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
     // console.log(simaData)
     simaData += 'A99,END,,\n';
 
-// UTF-8で文字列をコードポイントに変換
+    if (kukaku) {
+        simaData = convertSIMtoTXT(simaData)
+    }
+
+
+    // UTF-8で文字列をコードポイントに変換
     const utf8Array = window.Encoding.stringToCode(simaData);
-// UTF-8からShift-JISに変換
+    // UTF-8からShift-JISに変換
     const shiftJISArray = window.Encoding.convert(utf8Array, 'SJIS');
-// Shift-JISエンコードされたデータをUint8Arrayに格納
+    // Shift-JISエンコードされたデータをUint8Arrayに格納
     const uint8Array = new Uint8Array(shiftJISArray);
-// Blobを作成（MIMEタイプを変更）
+    // Blobを作成（MIMEタイプを変更）
     const blob = new Blob([uint8Array], { type: 'application/octet-stream' });
 
-// ダウンロード用リンクを作成
+    // ダウンロード用リンクを作成
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    fileName = fileName + kei + '.sim';
+    if (!kukaku) {
+        fileName = fileName + kei + '.sim';
+    } else {
+        fileName = fileName + kei + '.txt';
+    }
     link.download = fileName; // ファイル名を正確に指定
 
-// リンクをクリックしてダウンロード
+    // リンクをクリックしてダウンロード
     link.click();
     URL.revokeObjectURL(link.href);
 }
@@ -966,7 +975,7 @@ function determinePlaneRectangularZone(x, y) {
 }
 
 
-export async function saveCima2(map, layerId) {
+export async function saveCima2(map, layerId, kukaku) {
     if (map.getZoom() <= 14) {
         alert('ズーム14以上にしてください。');
         return;
@@ -1020,7 +1029,7 @@ export async function saveCima2(map, layerId) {
             return;
         }
 
-        convertAndDownloadGeoJSONToSIMA(map, layerId, geojson, '詳細_');
+        convertAndDownloadGeoJSONToSIMA(map, layerId, geojson, '詳細_', false,'',kukaku);
     }
 
     deserializeAndPrepareGeojson(layerId);
@@ -1174,17 +1183,30 @@ function convertSIMtoTXT(simText) {
     let formattedLines = '';
 
     lines.forEach(line => {
-        // A01行のみ処理
         if (line.startsWith('A01')) {
             const parts = line.split(',');
             if (parts.length >= 5) {
                 const x = parseFloat(parts[3]);
                 const y = parseFloat(parts[4]);
                 if (!isNaN(x) && !isNaN(y)) {
-                    formattedLines += `${x.toFixed(3).padStart(12)}  ${y.toFixed(3).padStart(12)}\n`;
+                    formattedLines += `${x.toFixed(3)} ${y.toFixed(3)}\n`;
                 }
             }
         }
     });
+
+    // 最初のA01行を最後に追加
+    const firstA01 = lines.find(line => line.startsWith('A01'));
+    if (firstA01) {
+        const parts = firstA01.split(',');
+        if (parts.length >= 5) {
+            const x = parseFloat(parts[3]);
+            const y = parseFloat(parts[4]);
+            if (!isNaN(x) && !isNaN(y)) {
+                formattedLines += `${x.toFixed(3)} ${y.toFixed(3)}\n`;
+            }
+        }
+    }
+
     return formattedLines;
 }
