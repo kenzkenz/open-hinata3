@@ -367,7 +367,7 @@ const zahyokei = [
     { kei: '公共座標18系', code: "EPSG:6685" },
     { kei: '公共座標19系', code: "EPSG:6686" }
 ];
-function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg, zahyokei2, kukaku) {
+function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg, zahyokei2, kukaku,jww) {
     geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
     console.log(geojson)
     if (!geojson || geojson.type !== 'FeatureCollection') {
@@ -512,7 +512,7 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
     // console.log(simaData)
     simaData += 'A99,END,,\n';
 
-    if (kukaku) {
+    if (kukaku || jww) {
         simaData = convertSIMtoTXT(simaData)
     }
 
@@ -1040,7 +1040,7 @@ export async function saveCima2(map, layerId, kukaku) {
     deserializeAndPrepareGeojson(layerId);
 }
 
-export async function saveCima3(map,kei) {
+export async function saveCima3(map,kei,jww) {
     if (map.getZoom() <= 14) {
         alert('ズーム14以上にしてください。');
         return;
@@ -1074,7 +1074,7 @@ export async function saveCima3(map,kei) {
         if (geojson.features.length === 0) {
             return;
         }
-        convertAndDownloadGeoJSONToSIMA(map, layerId, geojson, '詳細_',false, kei);
+        convertAndDownloadGeoJSONToSIMA(map, layerId, geojson, '詳細_',false, kei, jww);
     }
     deserializeAndPrepareGeojson(layerId);
 }
