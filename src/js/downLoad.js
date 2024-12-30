@@ -438,7 +438,16 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
 
     // 座標とカウンターを関連付けるマップ
     const coordinateMap = new Map();
-    const firstChiban = geojson.features[0].properties.地番
+    // const firstChiban = geojson.features[0].properties.地番
+    const deepCopiedGeojsonFeatures = JSON.parse(JSON.stringify(geojson.features))
+    const firstChiban = deepCopiedGeojsonFeatures
+        .map(feature => feature.properties?.地番) // 地番を抽出
+        .filter(chiban => chiban !== undefined && chiban !== null) // undefinedやnullを除外
+        .map(chiban => Number(chiban)) // 数値に変換（地番が数値型である場合）
+        .filter(chiban => !isNaN(chiban)) // NaNを除外
+        .reduce((min, current) => Math.min(min, current), Infinity); // 最小値を取得
+
+    console.log("最小の地番:", firstChiban);
     console.log(geojson.features[0])
     let hoka = ''
     if (geojson.features.length > 1) {
