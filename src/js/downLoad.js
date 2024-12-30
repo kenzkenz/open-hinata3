@@ -417,11 +417,16 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
     console.log(geojson)
     const crs = initializePlaneRectangularCRS(map)
     console.log(crs)
-    if (kaniFlg) {
-        alert('注!簡易の場合、座標値は暫定です。座標の利用は自己責任でお願いします。' + kei + 'でsimファイルを作ります。')
+    if (kukaku) {
+        alert(kei + 'で区画ファイルを作ります。作図範囲は1区画です。ドーナツ形状には対応していません。')
     } else {
-        alert(kei + 'でsimファイルを作ります。')
+        if (kaniFlg) {
+            alert('注!簡易の場合、座標値は暫定です。座標の利用は自己責任でお願いします。' + kei + 'でsimファイルを作ります。')
+        } else {
+            alert(kei + 'でsimファイルを作ります。')
+        }
     }
+
     let simaData = 'G00,01,open-hinata3,\n';
     simaData += 'Z00,座標ﾃﾞｰﾀ,,\n';
     simaData += 'A00,\n';
@@ -1074,8 +1079,6 @@ export async function saveCima3(map,kei) {
     deserializeAndPrepareGeojson(layerId);
 }
 
-// ポリゴンレイヤー名
-// const layerId = 'oh-amx-a-fude'; // 任意のレイヤー名に変更
 // クリックされた地番を強調表示する関数
 export function highlightSpecificFeatures(map,layerId) {
     console.log(highlightedChibans);

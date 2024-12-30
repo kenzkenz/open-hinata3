@@ -326,5 +326,12 @@ export default {
 .custom-select option {
   padding: 10px;
 }
+
+select {
+  position: relative;
+  z-index: 1000; /* 他の要素の上に表示 */
+  direction: ltr; /* 左から右に展開 */
+}
+
 </style>
 
