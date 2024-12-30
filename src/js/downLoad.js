@@ -367,7 +367,7 @@ const zahyokei = [
     { kei: '公共座標18系', code: "EPSG:6685" },
     { kei: '公共座標19系', code: "EPSG:6686" }
 ];
-function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg) {
+function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg, zahyokei2) {
     geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
     console.log(geojson)
     if (!geojson || geojson.type !== 'FeatureCollection') {
@@ -385,6 +385,9 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg)
     } else {
         zahyo = '公共座標8系'
     }
+
+    console.log(zahyokei2)
+    if (zahyokei2) zahyo = zahyokei2
 
     proj4.defs([
         ["EPSG:6668", "+proj=tmerc +lat_0=33 +lon_0=129.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第1系
@@ -432,7 +435,7 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg)
     const coordinateMap = new Map();
 
     geojson.features.forEach((feature) => {
-        console.log(feature.properties.地番);
+        // console.log(feature.properties.地番);
         const chiban = feature.properties.地番;
         B01Text += 'D00,' + i + ',' + chiban + ',1,\n';
 
@@ -968,7 +971,6 @@ export async function saveCima2(map, layerId) {
         alert('ズーム14以上にしてください。');
         return;
     }
-
     let prefId = String(store.state.prefId).padStart(2, '0');
     console.log('初期 prefId:', prefId);
 
@@ -1024,6 +1026,44 @@ export async function saveCima2(map, layerId) {
     deserializeAndPrepareGeojson(layerId);
 }
 
+export async function saveCima3(map,kei) {
+    if (map.getZoom() <= 14) {
+        alert('ズーム14以上にしてください。');
+        return;
+    }
+    const layerId = 'oh-chibanzu2024'
+    const fgb_URL = 'https://kenzkenz3.xsrv.jp/fgb/Chibanzu_2024_with_id.fgb'
+
+    function fgBoundingBox() {
+        const LngLatBounds = map.getBounds();
+        var Lng01 = LngLatBounds.getWest();
+        var Lng02 = LngLatBounds.getEast();
+        var Lat01 = LngLatBounds.getNorth();
+        var Lat02 = LngLatBounds.getSouth();
+        return {
+            minX: Lng01,
+            minY: Lat02,
+            maxX: Lng02,
+            maxY: Lat01,
+        };
+    }
+
+    async function deserializeAndPrepareGeojson(layerId) {
+        const geojson = { type: 'FeatureCollection', features: [] };
+        console.log('データをデシリアライズ中...');
+        const iter = window.flatgeobuf.deserialize(fgb_URL, fgBoundingBox());
+
+        for await (const feature of iter) {
+            geojson.features.push(feature);
+        }
+        console.log('取得した地物:', geojson);
+        if (geojson.features.length === 0) {
+            return;
+        }
+        convertAndDownloadGeoJSONToSIMA(map, layerId, geojson, '詳細_',false, kei);
+    }
+    deserializeAndPrepareGeojson(layerId);
+}
 
 // ポリゴンレイヤー名
 // const layerId = 'oh-amx-a-fude'; // 任意のレイヤー名に変更

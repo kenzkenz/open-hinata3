@@ -19,15 +19,37 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+  <v-dialog v-model="dialog2" max-width="500px">
+    <v-card>
+      <v-card-title>
+        座標系選択
+      </v-card-title>
+      <v-card-text>
+        <v-select class="scrollable-content"
+                  v-model="s_zahyokei"
+                  :items="items"
+                  label="選択してください"
+                  outlined
+        ></v-select>
+        <v-btn @click="outputSima">出力開始</v-btn>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="blue-darken-1" text @click="dialog2 = false">Close</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
     <v-btn style="margin-top: 0px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveSima">sima保存（簡易）</v-btn>
-<!--    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveSima2">sima保存（詳細）</v-btn>-->
-    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveSima" v-if="item.id !== 'oh-chibanzu2024'">sima保存（簡易）</v-btn>
+<!--    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveSima3" v-if="item.id === 'oh-chibanzu2024'">sima保存</v-btn>-->
+    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="dialog2=true" v-if="item.id === 'oh-chibanzu2024'">sima保存</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="dialog=true">sima読込</v-btn>
+    <br>
+    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
     <hr>
     <v-btn style="margin-top: 10px;margin-left: 0px;" class="tiny-btn" @click="resetFeatureColors">選択解除</v-btn>
     <!--      <span style="font-size: 12px"><div v-html="item.attribution"></div>平面直角座標系の時は「{{ kei }}」で変換</span>-->
@@ -41,7 +63,7 @@ import {
   saveGeojson,
   gistUpload,
   saveCima,
-  saveCima2,
+  saveCima3,
   saveDxf,
   initializePlaneRectangularCRS,
   saveCsv,
@@ -57,6 +79,7 @@ export default {
     sourceId: '',
     layerId: '',
     dialog: false,
+    dialog2: false,
     selectedItem: null,
     items: [
       '公共座標1系', '公共座標2系', '公共座標3系',
@@ -119,6 +142,14 @@ export default {
       console.log(this.layerId)
       resetFeatureColors(map,this.layerId)
     },
+    outputSima () {
+      if (!this.s_zahyokei) {
+        alert('座標系を選択してください。')
+        return
+      }
+      const map = this.$store.state[this.mapName]
+      saveCima3(map,this.s_zahyokei)
+    },
     loadSima () {
       if (!this.s_zahyokei) {
         alert('座標系を選択してください。')
@@ -141,10 +172,10 @@ export default {
       saveDxf(map,this.layerId,this.sourceId,this.fields)
 
     },
-    // saveSima2 () {
-    //   const map = this.$store.state[this.mapName]
-    //   saveCima2(map)
-    // },
+    saveSima3 () {
+      const map = this.$store.state[this.mapName]
+      saveCima3(map)
+    },
     saveSima () {
       const map = this.$store.state[this.mapName]
       this.idForLayerId(this.item.id)

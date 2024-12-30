@@ -1517,6 +1517,20 @@ export default {
           });
           // -----------------------------------------------------------------------------------------------------------
           // マップ上でポリゴンをクリックしたときのイベントリスナー
+          map.on('click', 'oh-amx-a-fude', (e) => {
+            if (e.features && e.features.length > 0) {
+              const targetId = `${e.features[0].properties['丁目コード']}_${e.features[0].properties['小字コード']}_${e.features[0].properties['地番']}`;
+              console.log('Clicked ID (丁目コード_小字コード_地番):', targetId);
+              if (highlightedChibans.has(targetId)) {
+                // すでに選択されている場合は解除
+                highlightedChibans.delete(targetId);
+              } else {
+                // 新しいIDを追加
+                highlightedChibans.add(targetId);
+              }
+              highlightSpecificFeatures(map,'oh-amx-a-fude');
+            }
+          });
           map.on('click', 'oh-chibanzu2024', (e) => {
             if (e.features && e.features.length > 0) {
               const targetId = `${e.features[0].properties['id']}`;
