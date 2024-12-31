@@ -7,29 +7,54 @@ import proj4 from 'proj4'
 export let highlightedChibans = new Set();
 (function() {
     // 座標系の定義
-    proj4.defs([
-        ["EPSG:6668", "+proj=tmerc +lat_0=33 +lon_0=129.5 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第1系
-        ["EPSG:6669", "+proj=tmerc +lat_0=33 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第2系
-        ["EPSG:6670", "+proj=tmerc +lat_0=36 +lon_0=132.1667 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"], // 第3系
-        ["EPSG:6671", "+proj=tmerc +lat_0=33 +lon_0=133.5 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第4系
-        ["EPSG:6672", "+proj=tmerc +lat_0=36 +lon_0=134.3333 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"], // 第5系
-        ["EPSG:6673", "+proj=tmerc +lat_0=36 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第6系
-        ["EPSG:6674", "+proj=tmerc +lat_0=36 +lon_0=137.1667 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"], // 第7系
-        ["EPSG:6675", "+proj=tmerc +lat_0=36 +lon_0=138.5 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第8系
-        // ["EPSG:6676", "+proj=tmerc +lat_0=36 +lon_0=139.8333 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"], // 第9系がおかしい
-        // ["EPSG:6676", "+proj=tmerc +lat_0=36 +lon_0=139.833333 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],
-        ["EPSG:6676", "+proj=tmerc +lat_0=36 +lon_0=139.833333 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +x_0=1 +y_0=-0.019 +no_defs"],
-        ["EPSG:6677", "+proj=tmerc +lat_0=40 +lon_0=140.8333 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"], // 第10系
-        ["EPSG:6678", "+proj=tmerc +lat_0=44 +lon_0=140.25 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第11系
-        ["EPSG:6679", "+proj=tmerc +lat_0=44 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第12系
-        ["EPSG:6680", "+proj=tmerc +lat_0=44 +lon_0=144.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第13系
-        ["EPSG:6681", "+proj=tmerc +lat_0=26 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第14系
-        ["EPSG:6682", "+proj=tmerc +lat_0=26 +lon_0=127.5 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第15系
-        ["EPSG:6683", "+proj=tmerc +lat_0=26 +lon_0=124.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第16系
-        ["EPSG:6684", "+proj=tmerc +lat_0=26 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第17系
-        ["EPSG:6685", "+proj=tmerc +lat_0=20 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第18系
-        ["EPSG:6686", "+proj=tmerc +lat_0=26 +lon_0=154.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"]     // 第19系
-    ]);
+
+    // proj4.defs['EPSG:4326'] = proj4.Proj("+proj=longlat +datum=WGS84 +no_defs");
+    proj4.defs['EPSG:2443'] = proj4.Proj("+proj=tmerc +lat_0=33 +lon_0=129.5 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");		// 1系
+    proj4.defs['EPSG:2444'] = proj4.Proj("+proj=tmerc +lat_0=33 +lon_0=131 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");			// 2系
+    proj4.defs['EPSG:2445'] = proj4.Proj("+proj=tmerc +lat_0=36 +lon_0=132.1666666666667 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");	// 3系
+    proj4.defs['EPSG:2446'] = proj4.Proj("+proj=tmerc +lat_0=33 +lon_0=133.5 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");		// 4系
+    proj4.defs['EPSG:2447'] = proj4.Proj("+proj=tmerc +lat_0=36 +lon_0=134.3333333333333 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");	// 5系
+    proj4.defs['EPSG:2448'] = proj4.Proj("+proj=tmerc +lat_0=36 +lon_0=136 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");			// 6系
+    proj4.defs['EPSG:2449'] = proj4.Proj("+proj=tmerc +lat_0=36 +lon_0=137.1666666666667 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");	// 7系
+    proj4.defs['EPSG:2450'] = proj4.Proj("+proj=tmerc +lat_0=36 +lon_0=138.5 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");		// 8系
+    proj4.defs['EPSG:2451'] = proj4.Proj("+proj=tmerc +lat_0=36 +lon_0=139.8333333333333 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");	// 9系
+    proj4.defs['EPSG:2452'] = proj4.Proj("+proj=tmerc +lat_0=40 +lon_0=140.8333333333333 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");	//10系
+    proj4.defs['EPSG:2453'] = proj4.Proj("+proj=tmerc +lat_0=44 +lon_0=140.25 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");		//11系
+    proj4.defs['EPSG:2454'] = proj4.Proj("+proj=tmerc +lat_0=44 +lon_0=142.25 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");		//12系
+    proj4.defs['EPSG:2455'] = proj4.Proj("+proj=tmerc +lat_0=44 +lon_0=144.25 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");		//13系
+    proj4.defs['EPSG:2456'] = proj4.Proj("+proj=tmerc +lat_0=26 +lon_0=142 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");			//14系
+    proj4.defs['EPSG:2457'] = proj4.Proj("+proj=tmerc +lat_0=26 +lon_0=127.5 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");		//15系
+    proj4.defs['EPSG:2458'] = proj4.Proj("+proj=tmerc +lat_0=26 +lon_0=124 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");			//16系
+    proj4.defs['EPSG:2459'] = proj4.Proj("+proj=tmerc +lat_0=26 +lon_0=131 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");			//17系
+    proj4.defs['EPSG:2460'] = proj4.Proj("+proj=tmerc +lat_0=20 +lon_0=136 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");			//18系
+    proj4.defs['EPSG:2461'] = proj4.Proj("+proj=tmerc +lat_0=26 +lon_0=154 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+
+
+    // proj4.defs([
+    //     ["EPSG:6668", "+proj=tmerc +lat_0=33 +lon_0=129.5 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第1系
+    //     ["EPSG:6669", "+proj=tmerc +lat_0=33 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第2系
+    //     ["EPSG:6670", "+proj=tmerc +lat_0=36 +lon_0=132.1667 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"], // 第3系
+    //     ["EPSG:6671", "+proj=tmerc +lat_0=33 +lon_0=133.5 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第4系
+    //     ["EPSG:6672", "+proj=tmerc +lat_0=36 +lon_0=134.3333 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"], // 第5系
+    //     ["EPSG:6673", "+proj=tmerc +lat_0=36 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第6系
+    //     ["EPSG:6674", "+proj=tmerc +lat_0=36 +lon_0=137.1667 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"], // 第7系
+    //     ["EPSG:6675", "+proj=tmerc +lat_0=36 +lon_0=138.5 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第8系
+    //     // ["EPSG:6676", "+proj=tmerc +lat_0=36 +lon_0=139.8333 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"], // 第9系がおかしい
+    //     // ["EPSG:6676", "+proj=tmerc +lat_0=36 +lon_0=139.833333 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],
+    //     // ["EPSG:6676", "+proj=tmerc +lat_0=36 +lon_0=139.833333 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +x_0=1 +y_0=-0.019 +no_defs"],
+    //     ["EPSG:6677", "+proj=tmerc +lat_0=40 +lon_0=140.8333 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"], // 第10系
+    //     ["EPSG:6678", "+proj=tmerc +lat_0=44 +lon_0=140.25 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第11系
+    //     ["EPSG:6679", "+proj=tmerc +lat_0=44 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第12系
+    //     ["EPSG:6680", "+proj=tmerc +lat_0=44 +lon_0=144.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第13系
+    //     ["EPSG:6681", "+proj=tmerc +lat_0=26 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第14系
+    //     ["EPSG:6682", "+proj=tmerc +lat_0=26 +lon_0=127.5 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第15系
+    //     ["EPSG:6683", "+proj=tmerc +lat_0=26 +lon_0=124.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第16系
+    //     ["EPSG:6684", "+proj=tmerc +lat_0=26 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第17系
+    //     ["EPSG:6685", "+proj=tmerc +lat_0=20 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第18系
+    //     ["EPSG:6686", "+proj=tmerc +lat_0=26 +lon_0=154.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"]     // 第19系
+    // ]);
+    // proj4.defs['EPSG:2451'] = proj4.Proj("+proj=tmerc +lat_0=36 +lon_0=139.8333333333333 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");	// 9邉ｻ
+    //
 
 })()
 function dissolveGeoJSONByFields(geojson, fields) {
@@ -209,31 +234,46 @@ export function gistUpload (map,layerId,sourceId,fields) {
     uploadGeoJSONToGist(geojsonText, 'GeoJSON Dataset Upload');
 }
 
-/**
- * GeoJSONをSIMA形式に変換してダウンロード
- * @param {Object} geojson - 入力GeoJSONデータ
- * @param {String} fileName - 出力ファイル名
- */
 const zahyokei = [
-    { kei: '公共座標1系', code: "EPSG:6668" },
-    { kei: '公共座標2系', code: "EPSG:6669" },
-    { kei: '公共座標3系', code: "EPSG:6670" },
-    { kei: '公共座標4系', code: "EPSG:6671" },
-    { kei: '公共座標5系', code: "EPSG:6672" },
-    { kei: '公共座標6系', code: "EPSG:6673" },
-    { kei: '公共座標7系', code: "EPSG:6674" },
-    { kei: '公共座標8系', code: "EPSG:6675" },
-    { kei: '公共座標9系', code: "EPSG:6676" },
-    { kei: '公共座標10系', code: "EPSG:6677" },
-    { kei: '公共座標11系', code: "EPSG:6678" },
-    { kei: '公共座標12系', code: "EPSG:6679" },
-    { kei: '公共座標13系', code: "EPSG:6680" },
-    { kei: '公共座標14系', code: "EPSG:6681" },
-    { kei: '公共座標15系', code: "EPSG:6682" },
-    { kei: '公共座標16系', code: "EPSG:6683" },
-    { kei: '公共座標17系', code: "EPSG:6684" },
-    { kei: '公共座標18系', code: "EPSG:6685" },
-    { kei: '公共座標19系', code: "EPSG:6686" }
+    { kei: '公共座標1系', code: "EPSG:2443" },
+    { kei: '公共座標2系', code: "EPSG:2444" },
+    { kei: '公共座標3系', code: "EPSG:2445" },
+    { kei: '公共座標4系', code: "EPSG:2446" },
+    { kei: '公共座標5系', code: "EPSG:2447" },
+    { kei: '公共座標6系', code: "EPSG:2448" },
+    { kei: '公共座標7系', code: "EPSG:2449" },
+    { kei: '公共座標8系', code: "EPSG:2450" },
+    { kei: '公共座標9系', code: "EPSG:2451" },
+    { kei: '公共座標10系', code: "EPSG:2452" },
+    { kei: '公共座標11系', code: "EPSG:2453" },
+    { kei: '公共座標12系', code: "EPSG:2454" },
+    { kei: '公共座標13系', code: "EPSG:2455" },
+    { kei: '公共座標14系', code: "EPSG:2456" },
+    { kei: '公共座標15系', code: "EPSG:2457" },
+    { kei: '公共座標16系', code: "EPSG:2458" },
+    { kei: '公共座標17系', code: "EPSG:2459" },
+    { kei: '公共座標18系', code: "EPSG:2460" },
+    { kei: '公共座標19系', code: "EPSG:2461" }
+    // { kei: '公共座標1系', code: "EPSG:6668" },
+    // { kei: '公共座標2系', code: "EPSG:6669" },
+    // { kei: '公共座標3系', code: "EPSG:6670" },
+    // { kei: '公共座標4系', code: "EPSG:6671" },
+    // { kei: '公共座標5系', code: "EPSG:6672" },
+    // { kei: '公共座標6系', code: "EPSG:6673" },
+    // { kei: '公共座標7系', code: "EPSG:6674" },
+    // { kei: '公共座標8系', code: "EPSG:6675" },
+    // // { kei: '公共座標9系', code: "EPSG:6676" },
+    // { kei: '公共座標9系', code: "EPSG:2451" },
+    // { kei: '公共座標10系', code: "EPSG:6677" },
+    // { kei: '公共座標11系', code: "EPSG:6678" },
+    // { kei: '公共座標12系', code: "EPSG:6679" },
+    // { kei: '公共座標13系', code: "EPSG:6680" },
+    // { kei: '公共座標14系', code: "EPSG:6681" },
+    // { kei: '公共座標15系', code: "EPSG:6682" },
+    // { kei: '公共座標16系', code: "EPSG:6683" },
+    // { kei: '公共座標17系', code: "EPSG:6684" },
+    // { kei: '公共座標18系', code: "EPSG:6685" },
+    // { kei: '公共座標19系', code: "EPSG:6686" }
 ];
 // codeからkeiを取得する関数
 function getKeiByCode(code) {
@@ -298,7 +338,7 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
     // 公共座標系のリスト
     const code = zahyokei.find(item => item.kei === zahyo).code
     const kei = zahyokei.find(item => item.kei === zahyo).kei
-    console.log(geojson)
+    console.log(code,kei)
     if (kukaku) {
         alert(kei + 'で区画ファイルを作ります。作図範囲は1区画です。ドーナツ形状には対応していません。')
     } else {
