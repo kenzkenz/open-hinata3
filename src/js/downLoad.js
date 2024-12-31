@@ -454,9 +454,14 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
     console.log("最小の地番:", firstChiban);
     console.log(geojson.features[0])
     let hoka = ''
-    if (geojson.features.length > 1) {
-        hoka = '外' + (geojson.features.length - 1) + '筆'
+    if (firstChiban !== undefined) {
+        if (geojson.features.length > 1) {
+            hoka = '外' + (geojson.features.length - 1) + '筆'
+        }
+    } else {
+        firstChiban = ''
     }
+
     geojson.features.forEach((feature) => {
         // console.log(feature.properties.地番);
         const chiban = feature.properties.地番;
@@ -997,7 +1002,6 @@ function determinePlaneRectangularZone(x, y) {
     return closestZone;
 }
 
-
 export async function saveCima2(map, layerId, kukaku) {
     if (map.getZoom() <= 14) {
         alert('ズーム14以上にしてください。');
@@ -1007,9 +1011,10 @@ export async function saveCima2(map, layerId, kukaku) {
     console.log('初期 prefId:', prefId);
 
     let fgb_URL;
+    let retryAttempted = false;
 
     function getFgbUrl(prefId) {
-        const specialIds = ['22', '40', '43', '44','45','46'];
+        const specialIds = ['22', '26', '29', '40', '43', '44','45','46'];
         return specialIds.includes(prefId)
             ? `https://kenzkenz3.xsrv.jp/fgb/2024/${prefId}.fgb`
             : `https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_${prefId}.fgb`;
@@ -1029,11 +1034,20 @@ export async function saveCima2(map, layerId, kukaku) {
         };
     }
 
+    let bbox;
+    console.log(highlightedChibans.size);
+    if (highlightedChibans.size > 0) {
+        bbox = getBoundingBoxByLayer(map, layerId);
+    } else {
+        bbox = fgBoundingBox();
+    }
+
     async function deserializeAndPrepareGeojson(layerId) {
         const geojson = { type: 'FeatureCollection', features: [] };
         console.log('データをデシリアライズ中...');
         fgb_URL = getFgbUrl(prefId);
-        const iter = window.flatgeobuf.deserialize(fgb_URL, fgBoundingBox());
+        // alert(fgb_URL)
+        const iter = window.flatgeobuf.deserialize(fgb_URL, bbox);
 
         for await (const feature of iter) {
             geojson.features.push(feature);
@@ -1042,9 +1056,11 @@ export async function saveCima2(map, layerId, kukaku) {
         console.log('取得した地物:', geojson);
 
         if (geojson.features.length === 0) {
-            if (prefId !== '43') {
+            if (prefId !== '43' && !retryAttempted) {
                 console.warn('地物が存在しません。prefIdを43に変更して再試行します。');
+                alert('飛地かもしれません。再試行します。')
                 prefId = '43';
+                retryAttempted = true;
                 await deserializeAndPrepareGeojson(layerId);
             } else {
                 alert('地物が一つもありません。「簡易」で試してみてください。');
@@ -1057,6 +1073,7 @@ export async function saveCima2(map, layerId, kukaku) {
 
     deserializeAndPrepareGeojson(layerId);
 }
+
 
 export async function saveCima3(map,kei,jww) {
     if (map.getZoom() <= 14) {
@@ -1116,6 +1133,7 @@ export function highlightSpecificFeatures(map,layerId) {
     );
 }
 export function highlightSpecificFeaturesCity(map,layerId) {
+    // alert(highlightedChibans.size)
     console.log(highlightedChibans);
     console.log(layerId)
     let fields
@@ -1148,6 +1166,66 @@ export function highlightSpecificFeaturesCity(map,layerId) {
             'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
         ]
     );
+}
+// 特定のレイヤーから地物を取得し、フィルタリング後にBBOXを計算する関数
+function getBoundingBoxByLayer(map, layerId) {
+    // 地物をフィルタリング
+    const filteredFeatures = map.queryRenderedFeatures({
+        layers: [layerId] // 対象のレイヤーIDを指定
+    }).filter(feature => {
+        let targetId;
+        switch (layerId) {
+            case 'oh-chibanzu2024':
+                targetId = `${feature.properties['id']}`;
+                break;
+            case 'oh-amx-a-fude':
+                targetId = `${feature.properties['丁目コード']}_${feature.properties['小字コード']}_${feature.properties['地番']}`;
+                break;
+            case 'oh-iwatapolygon':
+                targetId = `${feature.properties['SKSCD']}_${feature.properties['AZACD']}_${feature.properties['TXTCD']}`;
+                break;
+            case 'oh-narashichiban':
+                targetId = `${feature.properties['土地key']}_${feature.properties['大字cd']}`;
+                break;
+            case 'oh-fukushimachiban':
+                targetId = `${feature.properties['X']}_${feature.properties['Y']}`;
+                break;
+            default:
+                targetId = null; // どのケースにも一致しない場合のデフォルト値
+                break;
+
+        }
+        return highlightedChibans.has(targetId); // 特定のIDセットに含まれているか
+    });
+
+    // 抽出結果の確認
+    console.log(filteredFeatures);
+
+    // BBOX計算
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    filteredFeatures.forEach(feature => {
+        if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
+            const coordinates = feature.geometry.coordinates.flat(Infinity);
+            for (let i = 0; i < coordinates.length; i += 2) {
+                const [x, y] = [coordinates[i], coordinates[i + 1]];
+                if (x < minX) minX = x;
+                if (y < minY) minY = y;
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+            }
+        }
+    });
+
+    return {
+        minX,
+        minY,
+        maxX,
+        maxY
+    };
 }
 // 既存の GeoJSON データから highlightedChibans に基づいてフィーチャを抽出する関数
 function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {

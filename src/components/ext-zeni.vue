@@ -1,7 +1,12 @@
 <template>
     <div :style="menuContentSize">
       <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
-      半径{{s_zeniKm}}km
+<!--      半径{{s_zeniKm}}km-->
+      <div class="input-container">
+        <v-btn icon @click="decrease" :disabled="s_zeniKm <= 1" class="expand-btn">−</v-btn>
+        <span class="radius-text">半径{{ s_zeniKm }}km</span>
+        <v-btn icon @click="increase" :disabled="s_zeniKm >= 50" class="expand-btn">＋</v-btn>
+      </div>
       <input class="color-range" type="range" v-model.number="s_zeniKm" @change="update" @input="input" min="1" max="50" step="1"/>
       <div style="margin-top: 0" class="legend-scale">
         <ul class="legend-labels">
@@ -41,6 +46,18 @@ export default {
           this.s_zeniKm,
         ]})
     },
+    increase() {
+      if (this.s_zeniKm < 50) {
+        this.s_zeniKm++;
+        this.input()
+      }
+    },
+    decrease() {
+      if (this.s_zeniKm > 1) {
+        this.s_zeniKm--;
+        this.input()
+      }
+    },
     input () {
       console.log((this.s_zeniKm))
       const map = this.$store.state[this.mapName]
@@ -72,6 +89,27 @@ export default {
 }
 </script>
 <style scoped>
+.input-container {
+  display: flex;
+  justify-content: space-between; /* 均等配置 */
+  align-items: center; /* 垂直方向中央揃え */
+  width: 100%; /* 横幅いっぱい */
+  gap: 10px; /* ボタンとテキストの間隔 */
+}
+
+.expand-btn {
+  flex: 1; /* 均等に横幅を広げる */
+  text-align: center;
+  font-size: 25px;
+  cursor: pointer;
+}
+
+.radius-text {
+  flex: 2; /* テキスト部分をボタンの2倍の幅に */
+  text-align: center;
+  font-size: 20px;
+  cursor: pointer;
+}
 
 </style>
 

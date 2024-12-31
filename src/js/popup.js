@@ -5,10 +5,22 @@ import maplibregl from "maplibre-gl"
 import axios from "axios";
 import muni from "@/js/muni";
 import pyramid from "@/js/pyramid";
+import * as turf from '@turf/turf'
 const popups = []
 
-
 console.log(store.state.selectedLayers)
+
+// Turf.jsを使用して面積と周長を計算する関数
+function calculatePolygonMetrics(polygon) {
+    try {
+        const area = turf.area(polygon).toFixed(2) + 'm2'; // Turf.jsで面積を計算
+        const perimeter = turf.length(polygon, { units: 'meters' }).toFixed(2) + 'm'; // Turf.jsで周長を計算
+        // alert(`ポリゴンの面積: ${area.toFixed(2)} 平方メートル\nポリゴンの周長: ${perimeter.toFixed(2)} メートル`);
+        return {area:area,perimeter:perimeter}
+    } catch (error) {
+        console.error('面積・周長の計算中にエラーが発生しました:', error);
+    }
+}
 
 const legend_shinsuishin = [
     { r: 247, g: 245, b: 169, title: '0.5m未満' },
@@ -210,6 +222,7 @@ function urlByLayerId (layerId) {
     return [RasterTileUrl,legend,zoom]
 }
 export function popup(e,map,mapName,mapFlg) {
+
     console.log(mapName)
     let html = ''
     let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
@@ -218,6 +231,26 @@ export function popup(e,map,mapName,mapFlg) {
         features = features.slice(0, 20);
     }
     // const coordinates = e.lngLat
+
+    // クリックした地物の中からレイヤーIDが"oh-amx-a-fude"かつポリゴンを探す
+    const polygonFeature = features.find(feature =>
+        // feature.layer.id === 'oh-amx-a-fude' &&
+        (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')
+    );
+    let PolygonMetrics
+    if (polygonFeature) {
+        // Turf.jsのGeoJSONフォーマットに変換
+        const polygon = {
+            type: 'Feature',
+            geometry: polygonFeature.geometry,
+            properties: {}
+        };
+        // 面積と周長を計算
+        PolygonMetrics = calculatePolygonMetrics(polygon);
+    } else {
+        console.log('クリックされた地物は対象レイヤーのポリゴンではありません。');
+    }
+
     let coordinates
     if (features.length > 0) {
         coordinates = features[0].geometry.coordinates.slice()
@@ -1087,6 +1120,8 @@ export function popup(e,map,mapName,mapFlg) {
                     Object.keys(props).forEach(function (key) {
                         html0 += key + '=' + props[key] + '<br>'
                     })
+                    // html0 += '<br><soan style="font-size: 14px;">面積:' + PolygonMetrics.area + ' 周長:' + PolygonMetrics.perimeter + '</soan>'
+                    html0 += '<br><soan style="font-size: 14px;">面積:' + PolygonMetrics.area + '</soan>'
                     html0 += '<div>'
                     html += html0
                 }
@@ -2789,6 +2824,7 @@ export function popup(e,map,mapName,mapFlg) {
                     Object.keys(props).forEach(function (key) {
                         html0 += key + '=' + props[key] + '<br>'
                     })
+                    html0 += '<soan style="font-size: 14px;">面積:' + PolygonMetrics.area + '</soan>'
                     html0 += '<div>'
                     html += html0
                 }

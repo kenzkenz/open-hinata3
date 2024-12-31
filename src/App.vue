@@ -1554,6 +1554,8 @@ export default {
               } else {
                 // 新しいIDを追加
                 highlightedChibans.add(targetId);
+                console.log(highlightedChibans)
+                alert(0)
               }
               highlightSpecificFeaturesCity(map,'oh-fukushimachiban');
             }
@@ -1584,20 +1586,6 @@ export default {
                 highlightedChibans.add(targetId);
               }
               highlightSpecificFeaturesCity(map,'oh-narashichiban');
-            }
-          });
-          map.on('click', 'oh-fukushimachiban', (e) => {
-            if (e.features && e.features.length > 0) {
-              const targetId = `${e.features[0].properties['X']}_${e.features[0].properties['Y']}`;
-              console.log('Clicked ID', targetId);
-              if (highlightedChibans.has(targetId)) {
-                // すでに選択されている場合は解除
-                highlightedChibans.delete(targetId);
-              } else {
-                // 新しいIDを追加
-                highlightedChibans.add(targetId);
-              }
-              highlightSpecificFeaturesCity(map,'oh-fukushimachiban');
             }
           });
         })
