@@ -1122,8 +1122,8 @@ console.log(store.state.isRenzoku)
                     Object.keys(props).forEach(function (key) {
                         html0 += key + '=' + props[key] + '<br>'
                     })
-                    // html0 += '<br><soan style="font-size: 14px;">面積:' + PolygonMetrics.area + ' 周長:' + PolygonMetrics.perimeter + '</soan>'
-                    html0 += '<br><soan style="font-size: 14px;">面積:' + PolygonMetrics.area + '</soan>'
+                    html0 += '<br><soan style="font-size: 14px;">面積:' + PolygonMetrics.area + ' 周長:' + PolygonMetrics.perimeter + '</soan>'
+                    // html0 += '<br><soan style="font-size: 14px;">面積:' + PolygonMetrics.area + '</soan>'
                     html0 += '<div>'
                     html += html0
                 }
@@ -2826,7 +2826,8 @@ console.log(store.state.isRenzoku)
                     Object.keys(props).forEach(function (key) {
                         html0 += key + '=' + props[key] + '<br>'
                     })
-                    html0 += '<soan style="font-size: 14px;">面積:' + PolygonMetrics.area + '</soan>'
+                    html0 += '<br><soan style="font-size: 14px;">面積:' + PolygonMetrics.area + ' 周長:' + PolygonMetrics.perimeter + '</soan>'
+                    // html0 += '<soan style="font-size: 14px;">面積:' + PolygonMetrics.area + '</soan>'
                     html0 += '<div>'
                     html += html0
                 }

@@ -96,7 +96,20 @@
       <v-btn style="height: 40px; line-height: 40px; margin-left: 0px;margin-top: 10px;" class="tiny-btn" @click="resetFeatureColors">
         選択解除
       </v-btn>
-      <v-switch v-model="s_isRenzoku" label="連続選択" color="primary" style="height: 40px;margin-top: -15px;"/>
+<!--      <v-switch v-model="s_isRenzoku" label="連続選択" color="primary" style="height: 40px;margin-top: -15px;"/>-->
+      <v-tooltip top>
+        <template v-slot:activator="{ props }">
+          <v-switch
+              v-model="s_isRenzoku"
+              label="連続選択"
+              color="primary"
+              style="height: 40px; margin-top: -15px;"
+              v-bind="props"
+          />
+        </template>
+        <span>オフにするとポップアップします。</span>
+      </v-tooltip>
+
     </div>
     <hr>
     <div v-html="item.attribution"></div>
