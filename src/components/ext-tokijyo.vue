@@ -198,9 +198,9 @@ export default {
   mounted() {
     const map = this.$store.state[this.mapName]
     map.on('moveend', () => {
-      const crs = initializePlaneRectangularCRS(map)
-      this.kei = crs.kei
-      console.log(crs.kei)
+      // const crs = initializePlaneRectangularCRS(map)
+      // this.kei = crs.kei
+      // console.log(crs.kei)
     })
   },
   watch: {

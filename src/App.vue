@@ -546,31 +546,31 @@ export default {
 
 
 
-              const zahyokei = [
-                { kei: '第1系', regions: ['長崎県', '鹿児島県（北部・奄美群島含む）'] },
-                { kei: '第2系', regions: ['福岡県', '佐賀県', '熊本県', '大分県', '宮崎県', '鹿児島県（第1系除く）'] },
-                { kei: '第3系', regions: ['山口県', '島根県', '広島県'] },
-                { kei: '第4系', regions: ['香川県', '愛媛県', '徳島県', '高知県'] },
-                { kei: '第5系', regions: ['兵庫県', '鳥取県', '岡山県'] },
-                { kei: '第6系', regions: ['京都府', '大阪府', '福井県', '滋賀県', '三重県', '奈良県', '和歌山県'] },
-                { kei: '第7系', regions: ['石川県', '富山県', '岐阜県', '愛知県'] },
-                { kei: '第8系', regions: ['新潟県', '長野県', '山梨県', '静岡県'] },
-                { kei: '第9系', regions: ['東京都', '神奈川県', '千葉県', '埼玉県', '群馬県', '栃木県'] },
-                { kei: '第10系', regions: ['青森県', '秋田県', '山形県', '岩手県', '宮城県'] },
-                { kei: '第11系', regions: ['茨城県', '福島県'] },
-                { kei: '第12系', regions: ['北海道（道央）'] },
-                { kei: '第13系', regions: ['北海道（道北・道東）'] },
-                { kei: '第14系', regions: ['北海道（道東）'] },
-                { kei: '第15系', regions: ['小笠原諸島'] },
-                { kei: '第16系', regions: ['沖縄本島'] },
-                { kei: '第17系', regions: ['宮古島'] },
-                { kei: '第18系', regions: ['石垣島'] },
-                { kei: '第19系', regions: ['南大東島'] }
-              ];
-
-              const kei = zahyokei.find(item => item.regions.includes(splitMuni[1]))?.kei;
-              vm.$store.state.kei = kei
-              console.log(kei)
+              // const zahyokei = [
+              //   { kei: '第1系', regions: ['長崎県', '鹿児島県（北部・奄美群島含む）'] },
+              //   { kei: '第2系', regions: ['福岡県', '佐賀県', '熊本県', '大分県', '宮崎県', '鹿児島県（第1系除く）'] },
+              //   { kei: '第3系', regions: ['山口県', '島根県', '広島県'] },
+              //   { kei: '第4系', regions: ['香川県', '愛媛県', '徳島県', '高知県'] },
+              //   { kei: '第5系', regions: ['兵庫県', '鳥取県', '岡山県'] },
+              //   { kei: '第6系', regions: ['京都府', '大阪府', '福井県', '滋賀県', '三重県', '奈良県', '和歌山県'] },
+              //   { kei: '第7系', regions: ['石川県', '富山県', '岐阜県', '愛知県'] },
+              //   { kei: '第8系', regions: ['新潟県', '長野県', '山梨県', '静岡県'] },
+              //   { kei: '第9系', regions: ['東京都', '神奈川県', '千葉県', '埼玉県', '群馬県', '栃木県'] },
+              //   { kei: '第10系', regions: ['青森県', '秋田県', '山形県', '岩手県', '宮城県'] },
+              //   { kei: '第11系', regions: ['茨城県', '福島県'] },
+              //   { kei: '第12系', regions: ['北海道（道央）'] },
+              //   { kei: '第13系', regions: ['北海道（道北・道東）'] },
+              //   { kei: '第14系', regions: ['北海道（道東）'] },
+              //   { kei: '第15系', regions: ['小笠原諸島'] },
+              //   { kei: '第16系', regions: ['沖縄本島'] },
+              //   { kei: '第17系', regions: ['宮古島'] },
+              //   { kei: '第18系', regions: ['石垣島'] },
+              //   { kei: '第19系', regions: ['南大東島'] }
+              // ];
+              //
+              // const kei = zahyokei.find(item => item.regions.includes(splitMuni[1]))?.kei;
+              // vm.$store.state.kei = kei
+              // console.log(kei)
             }
           })
       history('updatePermalink',window.location.href)

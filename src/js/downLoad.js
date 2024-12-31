@@ -5,6 +5,33 @@ import maplibregl from 'maplibre-gl'
 import proj4 from 'proj4'
 // 複数のクリックされた地番を強調表示するためのセット
 export let highlightedChibans = new Set();
+(function() {
+    // 座標系の定義
+    proj4.defs([
+        ["EPSG:6668", "+proj=tmerc +lat_0=33 +lon_0=129.5 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第1系
+        ["EPSG:6669", "+proj=tmerc +lat_0=33 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第2系
+        ["EPSG:6670", "+proj=tmerc +lat_0=36 +lon_0=132.1667 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"], // 第3系
+        ["EPSG:6671", "+proj=tmerc +lat_0=33 +lon_0=133.5 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第4系
+        ["EPSG:6672", "+proj=tmerc +lat_0=36 +lon_0=134.3333 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"], // 第5系
+        ["EPSG:6673", "+proj=tmerc +lat_0=36 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第6系
+        ["EPSG:6674", "+proj=tmerc +lat_0=36 +lon_0=137.1667 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"], // 第7系
+        ["EPSG:6675", "+proj=tmerc +lat_0=36 +lon_0=138.5 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第8系
+        // ["EPSG:6676", "+proj=tmerc +lat_0=36 +lon_0=139.8333 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"], // 第9系がおかしい
+        // ["EPSG:6676", "+proj=tmerc +lat_0=36 +lon_0=139.833333 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],
+        ["EPSG:6676", "+proj=tmerc +lat_0=36 +lon_0=139.833333 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +x_0=1 +y_0=-0.019 +no_defs"],
+        ["EPSG:6677", "+proj=tmerc +lat_0=40 +lon_0=140.8333 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"], // 第10系
+        ["EPSG:6678", "+proj=tmerc +lat_0=44 +lon_0=140.25 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第11系
+        ["EPSG:6679", "+proj=tmerc +lat_0=44 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第12系
+        ["EPSG:6680", "+proj=tmerc +lat_0=44 +lon_0=144.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第13系
+        ["EPSG:6681", "+proj=tmerc +lat_0=26 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第14系
+        ["EPSG:6682", "+proj=tmerc +lat_0=26 +lon_0=127.5 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第15系
+        ["EPSG:6683", "+proj=tmerc +lat_0=26 +lon_0=124.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第16系
+        ["EPSG:6684", "+proj=tmerc +lat_0=26 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第17系
+        ["EPSG:6685", "+proj=tmerc +lat_0=20 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第18系
+        ["EPSG:6686", "+proj=tmerc +lat_0=26 +lon_0=154.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"]     // 第19系
+    ]);
+
+})()
 function dissolveGeoJSONByFields(geojson, fields) {
     if (!geojson || !fields || !Array.isArray(fields)) {
         throw new Error("GeoJSONデータとフィールド名（配列）は必須です。");
@@ -187,18 +214,18 @@ export function gistUpload (map,layerId,sourceId,fields) {
  */
 export function initializePlaneRectangularCRS(map) {
     const kei = store.state.kei; // ストアからkeiを取得
-
+    console.log(kei)
     // 1. 平面直角座標系 (JGD2011) の定義
     const planeCS = [
-        { kei: '第1系', code: "EPSG:6668", originLon: 129.5, originLat: 33 },
-        { kei: '第2系', code: "EPSG:6669", originLon: 131.0, originLat: 33 },
-        { kei: '第3系', code: "EPSG:6670", originLon: 132.1667, originLat: 36 },
-        { kei: '第4系', code: "EPSG:6671", originLon: 133.5, originLat: 33 },
-        { kei: '第5系', code: "EPSG:6672", originLon: 134.3333, originLat: 36 },
-        { kei: '第6系', code: "EPSG:6673", originLon: 136.0, originLat: 36 },
-        { kei: '第7系', code: "EPSG:6674", originLon: 137.1667, originLat: 36 },
-        { kei: '第8系', code: "EPSG:6675", originLon: 138.5, originLat: 36 },
-        { kei: '第9系', code: "EPSG:6676", originLon: 139.8333, originLat: 36 },
+        { kei: '第1系', code: "EPSG:6668"},
+        { kei: '第2系', code: "EPSG:6669"},
+        { kei: '第3系', code: "EPSG:6670"},
+        { kei: '第4系', code: "EPSG:6671"},
+        { kei: '第5系', code: "EPSG:6672"},
+        { kei: '第6系', code: "EPSG:6673"},
+        { kei: '第7系', code: "EPSG:6674"},
+        { kei: '第8系', code: "EPSG:6675"},
+        { kei: '第9系', code: "EPSG:6676"},
         { kei: '第10系', code: "EPSG:6677", originLon: 140.8333, originLat: 40 },
         { kei: '第11系', code: "EPSG:6678", originLon: 140.25, originLat: 44 },
         { kei: '第12系', code: "EPSG:6679", originLon: 142.0, originLat: 44 },
@@ -212,30 +239,30 @@ export function initializePlaneRectangularCRS(map) {
     ];
 
     // 2. EPSGコードに対応する座標系の定義文字列を返す
-    function getCRSDefinition(epsgCode) {
-        const crsDefs = {
-            "EPSG:6668": "+proj=tmerc +lat_0=33 +lon_0=129.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs",   // 第1系
-            "EPSG:6669": "+proj=tmerc +lat_0=33 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs",   // 第2系
-            "EPSG:6670": "+proj=tmerc +lat_0=36 +lon_0=132.1667 +k=0.9999 +ellps=GRS80 +units=m +no_defs", // 第3系
-            "EPSG:6671": "+proj=tmerc +lat_0=33 +lon_0=133.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs",   // 第4系
-            "EPSG:6672": "+proj=tmerc +lat_0=36 +lon_0=134.3333 +k=0.9999 +ellps=GRS80 +units=m +no_defs", // 第5系
-            "EPSG:6673": "+proj=tmerc +lat_0=36 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs",   // 第6系
-            "EPSG:6674": "+proj=tmerc +lat_0=36 +lon_0=137.1667 +k=0.9999 +ellps=GRS80 +units=m +no_defs", // 第7系
-            "EPSG:6675": "+proj=tmerc +lat_0=36 +lon_0=138.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs",   // 第8系
-            "EPSG:6676": "+proj=tmerc +lat_0=36 +lon_0=139.8333 +k=0.9999 +ellps=GRS80 +units=m +no_defs", // 第9系
-            "EPSG:6677": "+proj=tmerc +lat_0=40 +lon_0=140.8333 +k=0.9999 +ellps=GRS80 +units=m +no_defs", // 第10系
-            "EPSG:6678": "+proj=tmerc +lat_0=44 +lon_0=140.25 +k=0.9999 +ellps=GRS80 +units=m +no_defs",   // 第11系
-            "EPSG:6679": "+proj=tmerc +lat_0=44 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs",    // 第12系
-            "EPSG:6680": "+proj=tmerc +lat_0=44 +lon_0=144.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs",    // 第13系
-            "EPSG:6681": "+proj=tmerc +lat_0=26 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs",    // 第14系
-            "EPSG:6682": "+proj=tmerc +lat_0=26 +lon_0=127.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs",    // 第15系
-            "EPSG:6683": "+proj=tmerc +lat_0=26 +lon_0=124.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs",    // 第16系
-            "EPSG:6684": "+proj=tmerc +lat_0=26 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs",    // 第17系
-            "EPSG:6685": "+proj=tmerc +lat_0=20 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs",    // 第18系
-            "EPSG:6686": "+proj=tmerc +lat_0=26 +lon_0=154.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"     // 第19系
-        };
-        return crsDefs[epsgCode] || null;
-    }
+    // function getCRSDefinition(epsgCode) {
+    //     const crsDefs = {
+    //         "EPSG:6668": "+proj=tmerc +lat_0=33 +lon_0=129.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs",   // 第1系
+    //         "EPSG:6669": "+proj=tmerc +lat_0=33 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs",   // 第2系
+    //         "EPSG:6670": "+proj=tmerc +lat_0=36 +lon_0=132.1667 +k=0.9999 +ellps=GRS80 +units=m +no_defs", // 第3系
+    //         "EPSG:6671": "+proj=tmerc +lat_0=33 +lon_0=133.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs",   // 第4系
+    //         "EPSG:6672": "+proj=tmerc +lat_0=36 +lon_0=134.3333 +k=0.9999 +ellps=GRS80 +units=m +no_defs", // 第5系
+    //         "EPSG:6673": "+proj=tmerc +lat_0=36 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs",   // 第6系
+    //         "EPSG:6674": "+proj=tmerc +lat_0=36 +lon_0=137.1667 +k=0.9999 +ellps=GRS80 +units=m +no_defs", // 第7系
+    //         "EPSG:6675": "+proj=tmerc +lat_0=36 +lon_0=138.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs",   // 第8系
+    //         "EPSG:6676": "+proj=tmerc +lat_0=36 +lon_0=139.8333 +k=0.9999 +ellps=GRS80 +units=m +no_defs", // 第9系
+    //         "EPSG:6677": "+proj=tmerc +lat_0=40 +lon_0=140.8333 +k=0.9999 +ellps=GRS80 +units=m +no_defs", // 第10系
+    //         "EPSG:6678": "+proj=tmerc +lat_0=44 +lon_0=140.25 +k=0.9999 +ellps=GRS80 +units=m +no_defs",   // 第11系
+    //         "EPSG:6679": "+proj=tmerc +lat_0=44 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs",    // 第12系
+    //         "EPSG:6680": "+proj=tmerc +lat_0=44 +lon_0=144.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs",    // 第13系
+    //         "EPSG:6681": "+proj=tmerc +lat_0=26 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs",    // 第14系
+    //         "EPSG:6682": "+proj=tmerc +lat_0=26 +lon_0=127.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs",    // 第15系
+    //         "EPSG:6683": "+proj=tmerc +lat_0=26 +lon_0=124.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs",    // 第16系
+    //         "EPSG:6684": "+proj=tmerc +lat_0=26 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs",    // 第17系
+    //         "EPSG:6685": "+proj=tmerc +lat_0=20 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs",    // 第18系
+    //         "EPSG:6686": "+proj=tmerc +lat_0=26 +lon_0=154.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"     // 第19系
+    //     };
+    //     return crsDefs[epsgCode] || null;
+    // }
 
     let detected;
     if (kei) {
@@ -254,13 +281,13 @@ export function initializePlaneRectangularCRS(map) {
         });
     }
 
-    const definition = getCRSDefinition(detected.code);
-    if (definition) {
-        proj4.defs(detected.code, definition);
-        console.log(`✅ 座標系 (${detected.code} - ${detected.kei}): ${definition}`);
-    } else {
-        console.warn(`⚠️ 指定された座標系 (${detected.code}) は存在しません。`);
-    }
+    // const definition = getCRSDefinition(detected.code);
+    // if (definition) {
+    //     proj4.defs(detected.code, definition);
+    //     console.log(`✅ 座標系 (${detected.code} - ${detected.kei}): ${definition}`);
+    // } else {
+    //     console.warn(`⚠️ 指定された座標系 (${detected.code}) は存在しません。`);
+    // }
 
     return { code: detected.code, kei: detected.kei };
 }
@@ -426,27 +453,6 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
     console.log(zahyokei2)
     if (zahyokei2) zahyo = zahyokei2
 
-    proj4.defs([
-        ["EPSG:6668", "+proj=tmerc +lat_0=33 +lon_0=129.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第1系
-        ["EPSG:6669", "+proj=tmerc +lat_0=33 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第2系
-        ["EPSG:6670", "+proj=tmerc +lat_0=36 +lon_0=132.1667 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第3系
-        ["EPSG:6671", "+proj=tmerc +lat_0=33 +lon_0=133.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第4系
-        ["EPSG:6672", "+proj=tmerc +lat_0=36 +lon_0=134.3333 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第5系
-        ["EPSG:6673", "+proj=tmerc +lat_0=36 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第6系
-        ["EPSG:6674", "+proj=tmerc +lat_0=36 +lon_0=137.1667 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第7系
-        ["EPSG:6675", "+proj=tmerc +lat_0=36 +lon_0=138.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第8系
-        ["EPSG:6676", "+proj=tmerc +lat_0=36 +lon_0=139.8333 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第9系
-        ["EPSG:6677", "+proj=tmerc +lat_0=40 +lon_0=140.8333 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第10系
-        ["EPSG:6678", "+proj=tmerc +lat_0=44 +lon_0=140.25 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第11系
-        ["EPSG:6679", "+proj=tmerc +lat_0=44 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第12系
-        ["EPSG:6680", "+proj=tmerc +lat_0=44 +lon_0=144.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第13系
-        ["EPSG:6681", "+proj=tmerc +lat_0=26 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第14系
-        ["EPSG:6682", "+proj=tmerc +lat_0=26 +lon_0=127.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第15系
-        ["EPSG:6683", "+proj=tmerc +lat_0=26 +lon_0=124.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第16系
-        ["EPSG:6684", "+proj=tmerc +lat_0=26 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第17系
-        ["EPSG:6685", "+proj=tmerc +lat_0=20 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第18系
-        ["EPSG:6686", "+proj=tmerc +lat_0=26 +lon_0=154.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"]     // 第19系
-    ]);
     console.log(zahyo)
     // 公共座標系のリスト
     const code = zahyokei.find(item => item.kei === zahyo).code
@@ -686,7 +692,6 @@ function geojsonToDXF(geojson) {
 }
 
 export function saveDxf (map, layerId, sourceId, fields, detailGeojson) {
-    const crs = initializePlaneRectangularCRS(map)
     let geojson
     if (detailGeojson) {
         geojson = detailGeojson
@@ -700,9 +705,17 @@ export function saveDxf (map, layerId, sourceId, fields, detailGeojson) {
 
     geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
 
-    console.log(geojson)
-    console.log(crs.code) //EPSG:6669
-
+    let zahyo
+    for (const feature of geojson.features) {
+        if (feature.properties && feature.properties.座標系) {
+            console.log("Found Coordinate Property:", feature.properties.座標系);
+            zahyo = feature.properties.座標系; // 最初に見つけた値を返す
+        }
+    }
+    const code = zahyokei.find(item => item.kei === zahyo).code
+    const kei = zahyokei.find(item => item.kei === zahyo).kei
+    console.log(code,kei)
+    console.log(zahyo)
     function transformGeoJSON(geojson, crsCode) {
         if (!geojson || !geojson.type) {
             console.warn('⚠️ 無効なGeoJSONデータです。');
@@ -714,7 +727,7 @@ export function saveDxf (map, layerId, sourceId, fields, detailGeojson) {
             if (Array.isArray(coords[0])) {
                 return coords.map(transformCoordinates);
             } else if (Array.isArray(coords) && coords.length >= 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
-                return proj4('EPSG:4326', crsCode, coords);
+                return proj4('EPSG:4326', code, coords);
             } else {
                 console.warn('⚠️ 無効な座標が検出され、スキップされました:', coords);
                 return null;
@@ -776,7 +789,7 @@ export function saveDxf (map, layerId, sourceId, fields, detailGeojson) {
         }
     }
 
-    geojson = transformGeoJSON(geojson,crs.code)
+    geojson = transformGeoJSON(geojson,code)
 
     console.log(geojson)
     try {
@@ -788,7 +801,7 @@ export function saveDxf (map, layerId, sourceId, fields, detailGeojson) {
 
         const firstChiban = getChibanAndHoka(geojson).firstChiban
         const hoka = getChibanAndHoka(geojson).hoka
-        const kei = getKeiByCode(crs.code)
+        const kei = getKeiByCode(code)
         link.download = kei + firstChiban + hoka + '.dxf';
 
 
@@ -855,32 +868,6 @@ export function saveCsv(map, layerId, sourceId, fields) {
     const geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields);
     downloadGeoJSONAsCSV(geojson)
 }
-
-(function() {
-    // 座標系の定義
-    proj4.defs([
-        ["EPSG:6668", "+proj=tmerc +lat_0=33 +lon_0=129.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第1系
-        ["EPSG:6669", "+proj=tmerc +lat_0=33 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第2系
-        ["EPSG:6670", "+proj=tmerc +lat_0=36 +lon_0=132.1667 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第3系
-        ["EPSG:6671", "+proj=tmerc +lat_0=33 +lon_0=133.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第4系
-        ["EPSG:6672", "+proj=tmerc +lat_0=36 +lon_0=134.3333 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第5系
-        ["EPSG:6673", "+proj=tmerc +lat_0=36 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第6系
-        ["EPSG:6674", "+proj=tmerc +lat_0=36 +lon_0=137.1667 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第7系
-        ["EPSG:6675", "+proj=tmerc +lat_0=36 +lon_0=138.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第8系
-        ["EPSG:6676", "+proj=tmerc +lat_0=36 +lon_0=139.8333 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第9系
-        ["EPSG:6677", "+proj=tmerc +lat_0=40 +lon_0=140.8333 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第10系
-        ["EPSG:6678", "+proj=tmerc +lat_0=44 +lon_0=140.25 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第11系
-        ["EPSG:6679", "+proj=tmerc +lat_0=44 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第12系
-        ["EPSG:6680", "+proj=tmerc +lat_0=44 +lon_0=144.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第13系
-        ["EPSG:6681", "+proj=tmerc +lat_0=26 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第14系
-        ["EPSG:6682", "+proj=tmerc +lat_0=26 +lon_0=127.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第15系
-        ["EPSG:6683", "+proj=tmerc +lat_0=26 +lon_0=124.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第16系
-        ["EPSG:6684", "+proj=tmerc +lat_0=26 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第17系
-        ["EPSG:6685", "+proj=tmerc +lat_0=20 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第18系
-        ["EPSG:6686", "+proj=tmerc +lat_0=26 +lon_0=154.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"]     // 第19系
-    ]);
-})()
-
 
 // SIMAファイルをGeoJSONに変換する関数
 function simaToGeoJSON(simaData,map) {
@@ -1032,27 +1019,7 @@ export function handleFileUpload(event) {
 
 function determinePlaneRectangularZone(x, y) {
     // 平面直角座標系（1系〜19系）の定義
-    proj4.defs([
-        ["EPSG:6668", "+proj=tmerc +lat_0=33 +lon_0=129.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第1系
-        ["EPSG:6669", "+proj=tmerc +lat_0=33 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第2系
-        ["EPSG:6670", "+proj=tmerc +lat_0=36 +lon_0=132.1667 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第3系
-        ["EPSG:6671", "+proj=tmerc +lat_0=33 +lon_0=133.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第4系
-        ["EPSG:6672", "+proj=tmerc +lat_0=36 +lon_0=134.3333 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第5系
-        ["EPSG:6673", "+proj=tmerc +lat_0=36 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第6系
-        ["EPSG:6674", "+proj=tmerc +lat_0=36 +lon_0=137.1667 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第7系
-        ["EPSG:6675", "+proj=tmerc +lat_0=36 +lon_0=138.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第8系
-        ["EPSG:6676", "+proj=tmerc +lat_0=36 +lon_0=139.8333 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第9系
-        ["EPSG:6677", "+proj=tmerc +lat_0=40 +lon_0=140.8333 +k=0.9999 +ellps=GRS80 +units=m +no_defs"], // 第10系
-        ["EPSG:6678", "+proj=tmerc +lat_0=44 +lon_0=140.25 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],   // 第11系
-        ["EPSG:6679", "+proj=tmerc +lat_0=44 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第12系
-        ["EPSG:6680", "+proj=tmerc +lat_0=44 +lon_0=144.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第13系
-        ["EPSG:6681", "+proj=tmerc +lat_0=26 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第14系
-        ["EPSG:6682", "+proj=tmerc +lat_0=26 +lon_0=127.5 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第15系
-        ["EPSG:6683", "+proj=tmerc +lat_0=26 +lon_0=124.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第16系
-        ["EPSG:6684", "+proj=tmerc +lat_0=26 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第17系
-        ["EPSG:6685", "+proj=tmerc +lat_0=20 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"],    // 第18系
-        ["EPSG:6686", "+proj=tmerc +lat_0=26 +lon_0=154.0 +k=0.9999 +ellps=GRS80 +units=m +no_defs"]     // 第19系
-    ]);
+
 
     let closestZone = null;
     let minDistance = Number.MAX_VALUE;
@@ -1156,7 +1123,7 @@ export async function saveCima2(map, layerId, kukaku, isDfx, sourceId, fields) {
     let retryAttempted = false;
     // ここを改修する必要あり。amxと24自治体以外の動きがあやしい。
     function getFgbUrl(prefId) {
-        const specialIds = ['22', '26', '29', '40', '43', '44','45','46'];
+        const specialIds = ['07','22', '26', '29', '40', '43', '44','45','46'];
         return specialIds.includes(prefId)
             ? `https://kenzkenz3.xsrv.jp/fgb/2024/${prefId}.fgb`
             : `https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_${prefId}.fgb`;
@@ -1188,7 +1155,7 @@ export async function saveCima2(map, layerId, kukaku, isDfx, sourceId, fields) {
         const geojson = { type: 'FeatureCollection', features: [] };
         console.log('データをデシリアライズ中...');
         fgb_URL = getFgbUrl(prefId);
-        // alert(fgb_URL)
+        alert(fgb_URL)
         const iter = window.flatgeobuf.deserialize(fgb_URL, bbox);
 
         for await (const feature of iter) {
