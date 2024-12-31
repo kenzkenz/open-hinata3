@@ -185,7 +185,6 @@ function dissolveGeoJSONByFields(geojson, fields) {
 }
 
 export function exportLayerToGeoJSON(map,layerId,sourceId,fields) {
-    alert()
     console.log(layerId)
     const source = map.getSource(sourceId);
     if (!source) {
@@ -313,7 +312,7 @@ function getChibanAndHoka(geojson) {
 
     return { firstChiban, hoka };
 }
-function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg, zahyokei2, kukaku,jww) {
+function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg, zahyokei2, kukaku,jww, kei2) {
     geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
     console.log(geojson)
     if (!geojson || geojson.type !== 'FeatureCollection') {
@@ -329,7 +328,7 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
             }
         }
     } else {
-        zahyo = '公共座標8系'
+        zahyo = kei2
     }
 
     console.log(zahyokei2)
@@ -437,7 +436,6 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
         simaData = convertSIMtoTXT(simaData)
     }
 
-
     // UTF-8で文字列をコードポイントに変換
     const utf8Array = window.Encoding.stringToCode(simaData);
     // UTF-8からShift-JISに変換
@@ -461,14 +459,14 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
     URL.revokeObjectURL(link.href);
 }
 
-export function saveCima(map, layerId, sourceId, fields, kaniFlg) {
+export function saveCima(map, layerId, sourceId, fields, kaniFlg, kei) {
     if (map.getZoom() <= 14) {
         alert('ズーム14以上にしてください。')
         return
     }
     const geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields);
     console.log(geojson)
-    convertAndDownloadGeoJSONToSIMA(map,layerId,geojson,'簡易_',kaniFlg);
+    convertAndDownloadGeoJSONToSIMA(map,layerId,geojson,'簡易_',kaniFlg,kei);
 }
 
 function geojsonToDXF(geojson) {
@@ -757,7 +755,6 @@ export function saveCsv(map, layerId, sourceId, fields) {
 
 // SIMAファイルをGeoJSONに変換する関数
 function simaToGeoJSON(simaData,map) {
-    alert()
     const lines = simaData.split('\n');
     let coordinates = {}; // 座標データを格納
     let features = []; // GeoJSONのフィーチャーを格納
@@ -1007,13 +1004,15 @@ export async function saveCima2(map, layerId, kukaku, isDfx, sourceId, fields, k
     let retryAttempted = false;
     // ここを改修する必要あり。amxと24自治体以外の動きがあやしい。
     function getFgbUrl(prefId) {
-        if (layerId === 'oh-chibanzu2024') {
-            return 'https://kenzkenz3.xsrv.jp/fgb/Chibanzu_2024_with_id.fgb'
-        }
         const specialIds = ['07','22', '26', '29', '40', '43', '44','45','46'];
-        return specialIds.includes(prefId)
-            ? `https://kenzkenz3.xsrv.jp/fgb/2024/${prefId}.fgb`
-            : `https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_${prefId}.fgb`;
+        switch (layerId) {
+            case 'oh-chibanzu2024':
+                return 'https://kenzkenz3.xsrv.jp/fgb/Chibanzu_2024_with_id.fgb'
+            case 'oh-amx-a-fude':
+                return specialIds.includes(prefId)
+                    ? `https://kenzkenz3.xsrv.jp/fgb/2024/${prefId}.fgb`
+                    : `https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_${prefId}.fgb`
+        }
     }
 
     function fgBoundingBox() {
@@ -1031,20 +1030,20 @@ export async function saveCima2(map, layerId, kukaku, isDfx, sourceId, fields, k
     }
 
     let bbox;
-    console.log(highlightedChibans.size);
+    // alert(highlightedChibans.size);
     if (highlightedChibans.size > 0) {
         bbox = getBoundingBoxByLayer(map, layerId);
     } else {
         bbox = fgBoundingBox();
     }
-
+    console.log(bbox)
+    fgb_URL = getFgbUrl(prefId);
     async function deserializeAndPrepareGeojson(layerId) {
         const geojson = { type: 'FeatureCollection', features: [] };
         console.log('データをデシリアライズ中...');
-        fgb_URL = getFgbUrl(prefId);
-        // alert(fgb_URL)
+        alert(fgb_URL)
         const iter = window.flatgeobuf.deserialize(fgb_URL, bbox);
-
+        console.log(iter)
         for await (const feature of iter) {
             geojson.features.push(feature);
         }
@@ -1069,7 +1068,26 @@ export async function saveCima2(map, layerId, kukaku, isDfx, sourceId, fields, k
             saveDxf (map, layerId, sourceId, fields, geojson, kei)
         }
     }
-    deserializeAndPrepareGeojson(layerId);
+    if (fgb_URL) {
+        deserializeAndPrepareGeojson(layerId);
+    } else {
+        const features = map.queryRenderedFeatures({
+            layers: [layerId] // 対象レイヤーを指定
+        });
+        // GeoJSONに変換
+        const geojson = {
+            type: "FeatureCollection",
+            features: features.map(feature => ({
+                type: "Feature",
+                geometry: feature.geometry,
+                properties: feature.properties
+            }))
+        };
+        console.log(geojson);
+        saveDxf (map, layerId, sourceId, fields, geojson, kei)
+    }
+
+
 }
 
 
@@ -1193,6 +1211,7 @@ function getBoundingBoxByLayer(map, layerId) {
                 break;
 
         }
+        console.log(highlightedChibans)
         return highlightedChibans.has(targetId); // 特定のIDセットに含まれているか
     });
 
@@ -1251,6 +1270,7 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
                 targetId = `${feature.properties['土地key']}_${feature.properties['大字cd']}`;
                 break;
             case 'oh-fukushimachiban':
+                console.log(feature.properties)
                 targetId = `${feature.properties['X']}_${feature.properties['Y']}`;
                 break;
             default:

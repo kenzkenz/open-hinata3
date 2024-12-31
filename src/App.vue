@@ -1555,7 +1555,6 @@ export default {
                 // 新しいIDを追加
                 highlightedChibans.add(targetId);
                 console.log(highlightedChibans)
-                alert(0)
               }
               highlightSpecificFeaturesCity(map,'oh-fukushimachiban');
             }

@@ -109,11 +109,41 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+  <v-dialog v-model="dialog5" max-width="500px">
+    <v-card>
+      <v-card-title>
+        座標系選択
+      </v-card-title>
+      <v-card-text>
+        <div v-if="isAndroid" class="select-container">
+          <select id="selectBox" v-model="s_zahyokei" class="custom-select">
+            <option value="" disabled selected>座標を選択してください。</option>
+            <option v-for="number in 19" :key="number" :value="`公共座標${number}系`">
+              公共座標{{ number }}系
+            </option>
+          </select>
+        </div>
+        <div v-else>
+          <v-select class="scrollable-content"
+                    v-model="s_zahyokei"
+                    :items="items"
+                    label="座標系を選択してください"
+                    outlined
+          ></v-select>
+        </div>
+        <v-btn @click="saveSima">sima出力開始</v-btn>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="blue-darken-1" text @click="dialog5 = false">Close</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
     <v-btn style="margin-top: 0px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveSima" v-if="item.id !== 'oh-chibanzu2024'">sima保存（簡易）</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog5=true" v-if="item.id !== 'oh-chibanzu2024'">sima保存（簡易）</v-btn>
 <!--    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveSima3" v-if="item.id === 'oh-chibanzu2024'">sima保存</v-btn>-->
     <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog2=true" v-if="item.id === 'oh-chibanzu2024'">sima保存</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="dialog=true">sima読込</v-btn>
@@ -169,9 +199,9 @@ export default {
     dialog2: false,
     dialog3: false,
     dialog4: false,
+    dialog5: false,
     selectedItem: null,
     isAndroid: false,
-    // selectedCoordinate: '公共座標1系',
     items: [
       '公共座標1系', '公共座標2系', '公共座標3系',
       '公共座標4系', '公共座標5系', '公共座標6系',
@@ -182,7 +212,7 @@ export default {
       '公共座標19系'
     ],
     kei: '',
-    menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text', 'font-size':'large'}
+    menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'hidden', 'user-select': 'text', 'font-size':'large'}
   }),
   computed: {
     s_extFire () {
@@ -294,7 +324,7 @@ export default {
       const map = this.$store.state[this.mapName]
       this.idForLayerId(this.item.id)
       // saveCima(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'],true)
-      saveCima(map,this.layerId,this.sourceId,this.fields,true)
+      saveCima(map,this.layerId,this.sourceId,this.fields,true,this.s_zahyokei)
     },
     saveGeojson () {
       const map = this.$store.state[this.mapName]
