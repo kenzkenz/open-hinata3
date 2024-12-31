@@ -92,8 +92,12 @@
     <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog3=true" v-if="item.id === 'oh-chibanzu2024'">jww座標ファイル</v-btn>
     <hr>
-    <v-btn style="margin-top: 10px;margin-left: 0px;" class="tiny-btn" @click="resetFeatureColors">選択解除</v-btn>
-    <!--      <span style="font-size: 12px"><div v-html="item.attribution"></div>平面直角座標系の時は「{{ kei }}」で変換</span>-->
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <v-btn style="height: 40px; line-height: 40px; margin-left: 0px;margin-top: 10px;" class="tiny-btn" @click="resetFeatureColors">
+        選択解除
+      </v-btn>
+      <v-switch v-model="s_isRenzoku" label="連続選択" color="primary" style="height: 40px;margin-top: -15px;"/>
+    </div>
     <hr>
     <div v-html="item.attribution"></div>
   </div>
@@ -147,6 +151,14 @@ export default {
       },
       set(value) {
         this.$store.state.zahyokei = value
+      }
+    },
+    s_isRenzoku: {
+      get() {
+        return this.$store.state.isRenzoku
+      },
+      set(value) {
+        this.$store.state.isRenzoku = value
       }
     },
   },

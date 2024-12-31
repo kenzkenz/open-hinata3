@@ -222,8 +222,8 @@ function urlByLayerId (layerId) {
     return [RasterTileUrl,legend,zoom]
 }
 export function popup(e,map,mapName,mapFlg) {
-
-    if (!store.state.isPopupVisible) return
+console.log(store.state.isRenzoku)
+    if (store.state.isRenzoku) return
 
     console.log(mapName)
     let html = ''
