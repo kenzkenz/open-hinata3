@@ -79,6 +79,36 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+  <v-dialog v-model="dialog4" max-width="500px">
+    <v-card>
+      <v-card-title>
+        座標系選択
+      </v-card-title>
+      <v-card-text>
+        <div v-if="isAndroid" class="select-container">
+          <select id="selectBox" v-model="s_zahyokei" class="custom-select">
+            <option value="" disabled selected>座標を選択してください。</option>
+            <option v-for="number in 19" :key="number" :value="`公共座標${number}系`">
+              公共座標{{ number }}系
+            </option>
+          </select>
+        </div>
+        <div v-else>
+          <v-select class="scrollable-content"
+                    v-model="s_zahyokei"
+                    :items="items"
+                    label="座標系を選択してください"
+                    outlined
+          ></v-select>
+        </div>
+        <v-btn @click="saveDxf">DXF出力開始</v-btn>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="blue-darken-1" text @click="dialog4 = false">Close</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
     <v-btn style="margin-top: 0px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
@@ -88,7 +118,7 @@
     <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog2=true" v-if="item.id === 'oh-chibanzu2024'">sima保存</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="dialog=true">sima読込</v-btn>
     <br>
-    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog4=true">dxf保存</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog3=true" v-if="item.id === 'oh-chibanzu2024'">jww座標ファイル</v-btn>
     <hr>
@@ -123,7 +153,6 @@ import {
   saveCima,
   saveCima3,
   saveDxf,
-  initializePlaneRectangularCRS,
   saveCsv,
   simaToGeoJSON,
   resetFeatureColors, saveCima2
@@ -139,6 +168,7 @@ export default {
     dialog: false,
     dialog2: false,
     dialog3: false,
+    dialog4: false,
     selectedItem: null,
     isAndroid: false,
     // selectedCoordinate: '公共座標1系',
@@ -233,6 +263,13 @@ export default {
       const map = this.$store.state[this.mapName]
       saveCima3(map,this.s_zahyokei)
     },
+    saveDxf () {
+      const map = this.$store.state[this.mapName]
+      this.idForLayerId(this.item.id)
+      // saveDxf(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'])
+      // saveDxf(map,this.layerId,this.sourceId,this.fields)
+      saveCima2(map,this.layerId,null,true,this.sourceId,this.fields,this.s_zahyokei)
+    },
     loadSima () {
       if (!this.s_zahyokei) {
         alert('座標系を選択してください。')
@@ -248,13 +285,7 @@ export default {
       // saveCsv(map,'oh-iwatapolygon','iwatapolygon-source',[])
       saveCsv(map,this.layerId,this.sourceId,this.fields,[])
     },
-    saveDxf () {
-      const map = this.$store.state[this.mapName]
-      this.idForLayerId(this.item.id)
-      // saveDxf(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'])
-      // saveDxf(map,this.layerId,this.sourceId,this.fields)
-      saveCima2(map,this.layerId,null,true,this.sourceId,this.fields)
-    },
+
     saveSima3 () {
       const map = this.$store.state[this.mapName]
       saveCima3(map)
@@ -335,12 +366,7 @@ export default {
     this.checkDevice();
   },
   mounted() {
-    const map = this.$store.state[this.mapName]
-    map.on('moveend', () => {
-      const crs = initializePlaneRectangularCRS(map)
-      this.kei = crs.kei
-      console.log(crs.kei)
-    })
+
   },
   watch: {
     s_extFire () {

@@ -57,6 +57,52 @@ export let highlightedChibans = new Set();
     //
 
 })()
+const zahyokei = [
+    { kei: '公共座標1系', code: "EPSG:2443" },
+    { kei: '公共座標2系', code: "EPSG:2444" },
+    { kei: '公共座標3系', code: "EPSG:2445" },
+    { kei: '公共座標4系', code: "EPSG:2446" },
+    { kei: '公共座標5系', code: "EPSG:2447" },
+    { kei: '公共座標6系', code: "EPSG:2448" },
+    { kei: '公共座標7系', code: "EPSG:2449" },
+    { kei: '公共座標8系', code: "EPSG:2450" },
+    { kei: '公共座標9系', code: "EPSG:2451" },
+    { kei: '公共座標10系', code: "EPSG:2452" },
+    { kei: '公共座標11系', code: "EPSG:2453" },
+    { kei: '公共座標12系', code: "EPSG:2454" },
+    { kei: '公共座標13系', code: "EPSG:2455" },
+    { kei: '公共座標14系', code: "EPSG:2456" },
+    { kei: '公共座標15系', code: "EPSG:2457" },
+    { kei: '公共座標16系', code: "EPSG:2458" },
+    { kei: '公共座標17系', code: "EPSG:2459" },
+    { kei: '公共座標18系', code: "EPSG:2460" },
+    { kei: '公共座標19系', code: "EPSG:2461" }
+    // { kei: '公共座標1系', code: "EPSG:6668" },
+    // { kei: '公共座標2系', code: "EPSG:6669" },
+    // { kei: '公共座標3系', code: "EPSG:6670" },
+    // { kei: '公共座標4系', code: "EPSG:6671" },
+    // { kei: '公共座標5系', code: "EPSG:6672" },
+    // { kei: '公共座標6系', code: "EPSG:6673" },
+    // { kei: '公共座標7系', code: "EPSG:6674" },
+    // { kei: '公共座標8系', code: "EPSG:6675" },
+    // // { kei: '公共座標9系', code: "EPSG:6676" },
+    // { kei: '公共座標9系', code: "EPSG:2451" },
+    // { kei: '公共座標10系', code: "EPSG:6677" },
+    // { kei: '公共座標11系', code: "EPSG:6678" },
+    // { kei: '公共座標12系', code: "EPSG:6679" },
+    // { kei: '公共座標13系', code: "EPSG:6680" },
+    // { kei: '公共座標14系', code: "EPSG:6681" },
+    // { kei: '公共座標15系', code: "EPSG:6682" },
+    // { kei: '公共座標16系', code: "EPSG:6683" },
+    // { kei: '公共座標17系', code: "EPSG:6684" },
+    // { kei: '公共座標18系', code: "EPSG:6685" },
+    // { kei: '公共座標19系', code: "EPSG:6686" }
+];
+// codeからkeiを取得する関数
+function getKeiByCode(code) {
+    const result = zahyokei.find(item => item.code === code);
+    return result ? result.kei : null;
+}
 function dissolveGeoJSONByFields(geojson, fields) {
     if (!geojson || !fields || !Array.isArray(fields)) {
         throw new Error("GeoJSONデータとフィールド名（配列）は必須です。");
@@ -139,6 +185,7 @@ function dissolveGeoJSONByFields(geojson, fields) {
 }
 
 export function exportLayerToGeoJSON(map,layerId,sourceId,fields) {
+    alert()
     console.log(layerId)
     const source = map.getSource(sourceId);
     if (!source) {
@@ -234,52 +281,6 @@ export function gistUpload (map,layerId,sourceId,fields) {
     uploadGeoJSONToGist(geojsonText, 'GeoJSON Dataset Upload');
 }
 
-const zahyokei = [
-    { kei: '公共座標1系', code: "EPSG:2443" },
-    { kei: '公共座標2系', code: "EPSG:2444" },
-    { kei: '公共座標3系', code: "EPSG:2445" },
-    { kei: '公共座標4系', code: "EPSG:2446" },
-    { kei: '公共座標5系', code: "EPSG:2447" },
-    { kei: '公共座標6系', code: "EPSG:2448" },
-    { kei: '公共座標7系', code: "EPSG:2449" },
-    { kei: '公共座標8系', code: "EPSG:2450" },
-    { kei: '公共座標9系', code: "EPSG:2451" },
-    { kei: '公共座標10系', code: "EPSG:2452" },
-    { kei: '公共座標11系', code: "EPSG:2453" },
-    { kei: '公共座標12系', code: "EPSG:2454" },
-    { kei: '公共座標13系', code: "EPSG:2455" },
-    { kei: '公共座標14系', code: "EPSG:2456" },
-    { kei: '公共座標15系', code: "EPSG:2457" },
-    { kei: '公共座標16系', code: "EPSG:2458" },
-    { kei: '公共座標17系', code: "EPSG:2459" },
-    { kei: '公共座標18系', code: "EPSG:2460" },
-    { kei: '公共座標19系', code: "EPSG:2461" }
-    // { kei: '公共座標1系', code: "EPSG:6668" },
-    // { kei: '公共座標2系', code: "EPSG:6669" },
-    // { kei: '公共座標3系', code: "EPSG:6670" },
-    // { kei: '公共座標4系', code: "EPSG:6671" },
-    // { kei: '公共座標5系', code: "EPSG:6672" },
-    // { kei: '公共座標6系', code: "EPSG:6673" },
-    // { kei: '公共座標7系', code: "EPSG:6674" },
-    // { kei: '公共座標8系', code: "EPSG:6675" },
-    // // { kei: '公共座標9系', code: "EPSG:6676" },
-    // { kei: '公共座標9系', code: "EPSG:2451" },
-    // { kei: '公共座標10系', code: "EPSG:6677" },
-    // { kei: '公共座標11系', code: "EPSG:6678" },
-    // { kei: '公共座標12系', code: "EPSG:6679" },
-    // { kei: '公共座標13系', code: "EPSG:6680" },
-    // { kei: '公共座標14系', code: "EPSG:6681" },
-    // { kei: '公共座標15系', code: "EPSG:6682" },
-    // { kei: '公共座標16系', code: "EPSG:6683" },
-    // { kei: '公共座標17系', code: "EPSG:6684" },
-    // { kei: '公共座標18系', code: "EPSG:6685" },
-    // { kei: '公共座標19系', code: "EPSG:6686" }
-];
-// codeからkeiを取得する関数
-function getKeiByCode(code) {
-    const result = zahyokei.find(item => item.code === code);
-    return result ? result.kei : null;
-}
 // geojsonから最小の地番を取得する関数
 function getChibanAndHoka(geojson) {
     if (!geojson || !geojson.features || geojson.features.length === 0) {
@@ -570,7 +571,8 @@ function geojsonToDXF(geojson) {
     return dxf;
 }
 
-export function saveDxf (map, layerId, sourceId, fields, detailGeojson) {
+export function saveDxf (map, layerId, sourceId, fields, detailGeojson, kei2) {
+    console.log(detailGeojson)
     let geojson
     if (detailGeojson) {
         geojson = detailGeojson
@@ -579,18 +581,23 @@ export function saveDxf (map, layerId, sourceId, fields, detailGeojson) {
             alert('ズーム14以上にしてください。')
             return
         }
-        exportLayerToGeoJSON(map, layerId, sourceId, fields)
+        geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields)
     }
-
+    console.log(geojson)
     geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
-
+    console.log(geojson)
     let zahyo
-    for (const feature of geojson.features) {
-        if (feature.properties && feature.properties.座標系) {
-            console.log("Found Coordinate Property:", feature.properties.座標系);
-            zahyo = feature.properties.座標系; // 最初に見つけた値を返す
+    if (kei2) {
+        zahyo = kei2
+    } else {
+        for (const feature of geojson.features) {
+            if (feature.properties && feature.properties.座標系) {
+                console.log("Found Coordinate Property:", feature.properties.座標系);
+                zahyo = feature.properties.座標系; // 最初に見つけた値を返す
+            }
         }
     }
+    console.log(zahyo)
     const code = zahyokei.find(item => item.kei === zahyo).code
     const kei = zahyokei.find(item => item.kei === zahyo).kei
     console.log(code,kei)
@@ -750,6 +757,7 @@ export function saveCsv(map, layerId, sourceId, fields) {
 
 // SIMAファイルをGeoJSONに変換する関数
 function simaToGeoJSON(simaData,map) {
+    alert()
     const lines = simaData.split('\n');
     let coordinates = {}; // 座標データを格納
     let features = []; // GeoJSONのフィーチャーを格納
@@ -897,9 +905,6 @@ export function handleFileUpload(event) {
 }
 
 function determinePlaneRectangularZone(x, y) {
-    // 平面直角座標系（1系〜19系）の定義
-
-
     let closestZone = null;
     let minDistance = Number.MAX_VALUE;
 
@@ -990,7 +995,7 @@ async function detailGeojson(map, layerId, kukaku) {
 }
 
 
-export async function saveCima2(map, layerId, kukaku, isDfx, sourceId, fields) {
+export async function saveCima2(map, layerId, kukaku, isDfx, sourceId, fields, kei) {
     if (map.getZoom() <= 14) {
         alert('ズーム14以上にしてください。');
         return;
@@ -1002,6 +1007,9 @@ export async function saveCima2(map, layerId, kukaku, isDfx, sourceId, fields) {
     let retryAttempted = false;
     // ここを改修する必要あり。amxと24自治体以外の動きがあやしい。
     function getFgbUrl(prefId) {
+        if (layerId === 'oh-chibanzu2024') {
+            return 'https://kenzkenz3.xsrv.jp/fgb/Chibanzu_2024_with_id.fgb'
+        }
         const specialIds = ['07','22', '26', '29', '40', '43', '44','45','46'];
         return specialIds.includes(prefId)
             ? `https://kenzkenz3.xsrv.jp/fgb/2024/${prefId}.fgb`
@@ -1034,7 +1042,7 @@ export async function saveCima2(map, layerId, kukaku, isDfx, sourceId, fields) {
         const geojson = { type: 'FeatureCollection', features: [] };
         console.log('データをデシリアライズ中...');
         fgb_URL = getFgbUrl(prefId);
-        alert(fgb_URL)
+        // alert(fgb_URL)
         const iter = window.flatgeobuf.deserialize(fgb_URL, bbox);
 
         for await (const feature of iter) {
@@ -1053,10 +1061,12 @@ export async function saveCima2(map, layerId, kukaku, isDfx, sourceId, fields) {
             }
             return;
         }
+        console.log(isDfx)
         if (!isDfx) {
             convertAndDownloadGeoJSONToSIMA(map, layerId, geojson, '詳細_', false, '', kukaku);
         } else {
-            saveDxf (map, layerId, sourceId, fields, geojson)
+            console.log(geojson)
+            saveDxf (map, layerId, sourceId, fields, geojson, kei)
         }
     }
     deserializeAndPrepareGeojson(layerId);
@@ -1222,10 +1232,13 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
         return geojsonData;
     }
     console.log(geojsonData)
+    console.log(layerId)
+    console.log(highlightedChibans)
     const filteredFeatures = geojsonData.features.filter(feature => {
         let targetId;
         switch (layerId) {
             case 'oh-chibanzu2024':
+                console.log(feature.properties['id'])
                 targetId = `${feature.properties['id']}`;
                 break;
             case 'oh-amx-a-fude':
@@ -1244,6 +1257,7 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
                 targetId = null; // どのケースにも一致しない場合のデフォルト値
                 break;
         }
+        console.log(targetId)
         return highlightedChibans.has(targetId);
     });
 
