@@ -693,24 +693,75 @@ export function saveDxf (map, layerId, sourceId, fields) {
             console.warn('⚠️ 無効なGeoJSONデータです。');
             return null;
         }
-        const transformed = JSON.parse(JSON.stringify(geojson));
+
+        // 再帰的に座標を変換する関数
         function transformCoordinates(coords) {
-            if (Array.isArray(coords)) {
-                return coords.map(coord => {
-                    if (Array.isArray(coord) && coord.length >= 2 && !isNaN(coord[0]) && !isNaN(coord[1])) {
-                        return proj4('EPSG:4326', crsCode, coord);
-                    } else {
-                        console.warn('⚠️ 無効な座標が検出され、スキップされました:', coord);
-                        return null;
-                    }
-                }).filter(coord => coord !== null);
+            if (Array.isArray(coords[0])) {
+                return coords.map(transformCoordinates);
+            } else if (Array.isArray(coords) && coords.length >= 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+                return proj4('EPSG:4326', crsCode, coords);
+            } else {
+                console.warn('⚠️ 無効な座標が検出され、スキップされました:', coords);
+                return null;
             }
-            return coords;
         }
-        transformed.coordinates = transformCoordinates(geojson.coordinates);
-        return transformed;
+
+        // 再帰的にジオメトリを処理する関数
+        function transformGeometry(geometry) {
+            if (!geometry || !geometry.type) return null;
+
+            const transformed = { ...geometry };
+
+            switch (geometry.type) {
+                case 'Point':
+                    transformed.coordinates = transformCoordinates(geometry.coordinates);
+                    break;
+                case 'LineString':
+                case 'MultiPoint':
+                    transformed.coordinates = geometry.coordinates.map(transformCoordinates);
+                    break;
+                case 'Polygon':
+                case 'MultiLineString':
+                    transformed.coordinates = geometry.coordinates.map(ring => ring.map(transformCoordinates));
+                    break;
+                case 'MultiPolygon':
+                    transformed.coordinates = geometry.coordinates.map(polygon =>
+                        polygon.map(ring => ring.map(transformCoordinates))
+                    );
+                    break;
+                default:
+                    console.warn(`⚠️ 未対応のジオメトリタイプ: ${geometry.type}`);
+                    return null;
+            }
+
+            return transformed;
+        }
+
+        // FeatureとFeatureCollectionを処理
+        if (geojson.type === 'Feature') {
+            return {
+                ...geojson,
+                geometry: transformGeometry(geojson.geometry),
+            };
+        } else if (geojson.type === 'FeatureCollection') {
+            return {
+                ...geojson,
+                features: geojson.features.map(feature => ({
+                    ...feature,
+                    geometry: transformGeometry(feature.geometry),
+                })),
+            };
+        } else if (geojson.type === 'GeometryCollection') {
+            return {
+                ...geojson,
+                geometries: geojson.geometries.map(transformGeometry),
+            };
+        } else {
+            return transformGeometry(geojson);
+        }
     }
-    geojson = transformGeoJSON(geojson)
+
+    geojson = transformGeoJSON(geojson,crs.code)
 
     console.log(geojson)
     try {
