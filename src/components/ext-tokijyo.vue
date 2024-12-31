@@ -54,8 +54,12 @@
     <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="dialog=true">sima読込</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="jww">jww座標ファイル</v-btn>
     <hr>
-    <v-btn style="margin-top: 10px;margin-left: 0px;" class="tiny-btn" @click="resetFeatureColors">選択解除</v-btn>
-
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <v-btn style="height: 40px; line-height: 40px; margin-left: 0px;margin-top: 10px;" class="tiny-btn" @click="resetFeatureColors">
+        選択解除
+      </v-btn>
+      <v-switch v-model="mode" @change="changeMode" label="連続選択" color="primary" style="height: 40px;margin-top: -15px;"/>
+    </div>
 <!--    <v-btn style="margin-top: 10px;margin-left: 100px;width: 50px" class="tiny-btn" @click="info">help</v-btn>-->
     <!--      <span style="font-size: 12px"><div v-html="item.attribution"></div>平面直角座標系の時は「{{ kei }}」で変換</span>-->
   </div>
@@ -79,6 +83,7 @@ export default {
   name: 'ext-tokijyo',
   props: ['mapName','item'],
   data: () => ({
+    mode: false,
     dialog: false,
     dialogInfo: false,
     selectedItem: null,
@@ -120,6 +125,9 @@ export default {
       this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [
           this.s_tokijyoText
         ]})
+    },
+    changeMode () {
+      this.$store.state.isPopupVisible = !this.$store.state.isPopupVisible
     },
     info () {
       this.dialogInfo = true
@@ -233,6 +241,8 @@ export default {
 }
 </script>
 <style scoped>
-
+.small-label .v-label {
+  font-size: 1px;
+}
 </style>
 

@@ -223,6 +223,8 @@ function urlByLayerId (layerId) {
 }
 export function popup(e,map,mapName,mapFlg) {
 
+    if (!store.state.isPopupVisible) return
+
     console.log(mapName)
     let html = ''
     let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得

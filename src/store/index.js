@@ -74,6 +74,7 @@ export default createStore({
     prefId: '',
     zahyokei: '',
     zeniGeojson: '',
+    isPopupVisible: true,
     //------------------------
     highwayYear:{
       map01: 2024,
