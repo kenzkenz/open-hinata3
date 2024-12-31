@@ -367,6 +367,43 @@ const zahyokei = [
     { kei: '公共座標18系', code: "EPSG:6685" },
     { kei: '公共座標19系', code: "EPSG:6686" }
 ];
+// codeからkeiを取得する関数
+function getKeiByCode(code) {
+    const result = zahyokei.find(item => item.code === code);
+    return result ? result.kei : null;
+}
+// geojsonから最小の地番を取得する関数
+function getChibanAndHoka(geojson) {
+    if (!geojson || !geojson.features || geojson.features.length === 0) {
+        console.warn('GeoJSONが無効または空です');
+        return { firstChiban: '', hoka: '' };
+    }
+
+    // 地番の最小値を取得
+    let firstChiban = geojson.features
+        .map(feature => feature.properties?.地番) // 地番を抽出
+        .filter(chiban => chiban !== undefined && chiban !== null) // undefinedやnullを除外
+        .map(chiban => Number(chiban)) // 数値に変換（地番が数値型である場合）
+        .filter(chiban => !isNaN(chiban)) // NaNを除外
+        .reduce((min, current) => Math.min(min, current), Infinity); // 最小値を取得
+
+    if (firstChiban === Infinity) {
+        // 有効な地番が見つからない場合、最初の地番を取得
+        firstChiban = geojson.features[0]?.properties?.地番 || '';
+    }
+
+    // hokaの値を設定
+    let hoka = '';
+    if (firstChiban !== '') {
+        if (geojson.features.length > 1) {
+            hoka = '外' + (geojson.features.length - 1) + '筆';
+        }
+    } else {
+        firstChiban = '';
+    }
+
+    return { firstChiban, hoka };
+}
 function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg, zahyokei2, kukaku,jww) {
     geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
     console.log(geojson)
@@ -438,37 +475,12 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
 
     // 座標とカウンターを関連付けるマップ
     const coordinateMap = new Map();
-    // const firstChiban = geojson.features[0].properties.地番
-    const deepCopiedGeojsonFeatures = JSON.parse(JSON.stringify(geojson.features))
-    let firstChiban = deepCopiedGeojsonFeatures
-        .map(feature => feature.properties?.地番) // 地番を抽出
-        .filter(chiban => chiban !== undefined && chiban !== null) // undefinedやnullを除外
-        .map(chiban => Number(chiban)) // 数値に変換（地番が数値型である場合）
-        .filter(chiban => !isNaN(chiban)) // NaNを除外
-        .reduce((min, current) => Math.min(min, current), Infinity); // 最小値を取得
-    console.log(firstChiban)
-    if (firstChiban === Infinity) {
-        firstChiban = geojson.features[0].properties.地番
-    }
-
-    console.log("最小の地番:", firstChiban);
-    console.log(geojson.features[0])
-    let hoka = ''
-    if (firstChiban !== undefined) {
-        if (geojson.features.length > 1) {
-            hoka = '外' + (geojson.features.length - 1) + '筆'
-        }
-    } else {
-        firstChiban = ''
-    }
-
+    const firstChiban = getChibanAndHoka(geojson).firstChiban
+    const hoka = getChibanAndHoka(geojson).hoka
     geojson.features.forEach((feature) => {
-        // console.log(feature.properties.地番);
         const chiban = feature.properties.地番;
         B01Text += 'D00,' + i + ',' + chiban + ',1,\n';
-
         let coordinates = [];
-
         if (feature.geometry.type === 'Polygon') {
             coordinates = feature.geometry.coordinates.map(ring => {
                 // 最後の点が最初の点と同じ場合、最後の点を削除
@@ -558,15 +570,11 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
         fileName = fileName + kei + '.txt';
     }
     link.download = fileName; // ファイル名を正確に指定
-
     // リンクをクリックしてダウンロード
     link.click();
     URL.revokeObjectURL(link.href);
 }
 
-/**
- * 保存関数
- */
 export function saveCima(map, layerId, sourceId, fields, kaniFlg) {
     if (map.getZoom() <= 14) {
         alert('ズーム14以上にしてください。')
@@ -693,8 +701,7 @@ export function saveDxf (map, layerId, sourceId, fields, detailGeojson) {
     geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
 
     console.log(geojson)
-    console.log(crs.code)
-    // geojson = proj4('EPSG:4326', crs.code, geojson);
+    console.log(crs.code) //EPSG:6669
 
     function transformGeoJSON(geojson, crsCode) {
         if (!geojson || !geojson.type) {
@@ -778,7 +785,13 @@ export function saveDxf (map, layerId, sourceId, fields, detailGeojson) {
         const blob = new Blob([dxfString], { type: 'application/dxf' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = 'output.dxf';
+
+        const firstChiban = getChibanAndHoka(geojson).firstChiban
+        const hoka = getChibanAndHoka(geojson).hoka
+        const kei = getKeiByCode(crs.code)
+        link.download = kei + firstChiban + hoka + '.dxf';
+
+
         link.click();
     } catch (error) {
         console.error('GeoJSONの解析中にエラーが発生しました:', error);
