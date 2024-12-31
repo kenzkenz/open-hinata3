@@ -227,8 +227,8 @@ export default {
       const map = this.$store.state[this.mapName]
       this.idForLayerId(this.item.id)
       // saveDxf(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'])
-      saveDxf(map,this.layerId,this.sourceId,this.fields)
-
+      // saveDxf(map,this.layerId,this.sourceId,this.fields)
+      saveCima2(map,this.layerId,null,true,this.sourceId,this.fields)
     },
     saveSima3 () {
       const map = this.$store.state[this.mapName]

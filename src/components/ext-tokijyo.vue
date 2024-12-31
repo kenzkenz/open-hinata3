@@ -154,7 +154,8 @@ export default {
     },
     saveDxf () {
       const map = this.$store.state[this.mapName]
-      saveDxf(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
+      // saveDxf(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
+      saveCima2(map,'oh-amx-a-fude',null,true,'amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
     },
     saveSima2 () {
       const map = this.$store.state[this.mapName]

@@ -677,13 +677,21 @@ function geojsonToDXF(geojson) {
     return dxf;
 }
 
-export function saveDxf (map, layerId, sourceId, fields) {
-    if (map.getZoom() <= 14) {
-        alert('ズーム14以上にしてください。')
-        return
-    }
+export function saveDxf (map, layerId, sourceId, fields, detailGeojson) {
     const crs = initializePlaneRectangularCRS(map)
-    let geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields)
+    let geojson
+    if (detailGeojson) {
+        geojson = detailGeojson
+    } else {
+        if (map.getZoom() <= 14) {
+            alert('ズーム14以上にしてください。')
+            return
+        }
+        exportLayerToGeoJSON(map, layerId, sourceId, fields)
+    }
+
+    geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
+
     console.log(geojson)
     console.log(crs.code)
     // geojson = proj4('EPSG:4326', crs.code, geojson);
@@ -1053,7 +1061,7 @@ function determinePlaneRectangularZone(x, y) {
     return closestZone;
 }
 
-export async function saveCima2(map, layerId, kukaku) {
+async function detailGeojson(map, layerId, kukaku) {
     if (map.getZoom() <= 14) {
         alert('ズーム14以上にしてください。');
         return;
@@ -1103,9 +1111,7 @@ export async function saveCima2(map, layerId, kukaku) {
         for await (const feature of iter) {
             geojson.features.push(feature);
         }
-
         console.log('取得した地物:', geojson);
-
         if (geojson.features.length === 0) {
             if (prefId !== '43' && !retryAttempted) {
                 console.warn('地物が存在しません。prefIdを43に変更して再試行します。');
@@ -1121,7 +1127,79 @@ export async function saveCima2(map, layerId, kukaku) {
 
         convertAndDownloadGeoJSONToSIMA(map, layerId, geojson, '詳細_', false,'',kukaku);
     }
+    deserializeAndPrepareGeojson(layerId);
+}
 
+
+export async function saveCima2(map, layerId, kukaku, isDfx, sourceId, fields) {
+    if (map.getZoom() <= 14) {
+        alert('ズーム14以上にしてください。');
+        return;
+    }
+    let prefId = String(store.state.prefId).padStart(2, '0');
+    console.log('初期 prefId:', prefId);
+
+    let fgb_URL;
+    let retryAttempted = false;
+    // ここを改修する必要あり。amxと24自治体以外の動きがあやしい。
+    function getFgbUrl(prefId) {
+        const specialIds = ['22', '26', '29', '40', '43', '44','45','46'];
+        return specialIds.includes(prefId)
+            ? `https://kenzkenz3.xsrv.jp/fgb/2024/${prefId}.fgb`
+            : `https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_${prefId}.fgb`;
+    }
+
+    function fgBoundingBox() {
+        const LngLatBounds = map.getBounds();
+        var Lng01 = LngLatBounds.getWest();
+        var Lng02 = LngLatBounds.getEast();
+        var Lat01 = LngLatBounds.getNorth();
+        var Lat02 = LngLatBounds.getSouth();
+        return {
+            minX: Lng01,
+            minY: Lat02,
+            maxX: Lng02,
+            maxY: Lat01,
+        };
+    }
+
+    let bbox;
+    console.log(highlightedChibans.size);
+    if (highlightedChibans.size > 0) {
+        bbox = getBoundingBoxByLayer(map, layerId);
+    } else {
+        bbox = fgBoundingBox();
+    }
+
+    async function deserializeAndPrepareGeojson(layerId) {
+        const geojson = { type: 'FeatureCollection', features: [] };
+        console.log('データをデシリアライズ中...');
+        fgb_URL = getFgbUrl(prefId);
+        // alert(fgb_URL)
+        const iter = window.flatgeobuf.deserialize(fgb_URL, bbox);
+
+        for await (const feature of iter) {
+            geojson.features.push(feature);
+        }
+        console.log('取得した地物:', geojson);
+        if (geojson.features.length === 0) {
+            if (prefId !== '43' && !retryAttempted) {
+                console.warn('地物が存在しません。prefIdを43に変更して再試行します。');
+                alert('飛地かもしれません。再試行します。')
+                prefId = '43';
+                retryAttempted = true;
+                await deserializeAndPrepareGeojson(layerId);
+            } else {
+                alert('地物が一つもありません。「簡易」で試してみてください。');
+            }
+            return;
+        }
+        if (!isDfx) {
+            convertAndDownloadGeoJSONToSIMA(map, layerId, geojson, '詳細_', false, '', kukaku);
+        } else {
+            saveDxf (map, layerId, sourceId, fields, geojson)
+        }
+    }
     deserializeAndPrepareGeojson(layerId);
 }
 
