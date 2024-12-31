@@ -402,4 +402,4 @@ ogr2ogr -f FlatGeobuf -append -update Chibanzu_2024_merged.fgb fukushimashi_edit
 ogr2ogr -f FlatGeobuf Chibanzu_2024_with_id.fgb Chibanzu_2024.fgb \
     -sql "SELECT *, FID AS id FROM Chibanzu_2024"
 
-
+tippecanoe -pk -pf -l polygon -f -o kitahiroshimashi.pmtiles kitahiroshimashi.geojson
