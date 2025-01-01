@@ -988,8 +988,15 @@ export default {
               console.log(c)
               this.$store.state.highlightedChibans.add(c)
             })
-            highlightSpecificFeatures(map,'oh-amx-a-fude');
-            highlightSpecificFeaturesCity(map,'oh-chibanzu2024');
+            setTimeout(() => {
+              if (map.getLayer('oh-amx-a-fude')) highlightSpecificFeatures(map, 'oh-amx-a-fude');
+              if (map.getLayer('oh-chibanzu2024')) highlightSpecificFeaturesCity(map, 'oh-chibanzu2024');
+              if (map.getLayer('oh-kitahiroshimachiban')) highlightSpecificFeaturesCity(map, 'oh-kitahiroshimachiban');
+              if (map.getLayer('oh-narashichiban')) highlightSpecificFeaturesCity(map, 'oh-narashichiban');
+              if (map.getLayer('oh-iwatapolygon')) highlightSpecificFeaturesCity(map, 'oh-iwatapolygon');
+              if (map.getLayer('oh-fukushimachiban')) highlightSpecificFeaturesCity(map, 'oh-fukushimachiban');
+              if (map.getLayer('oh-kitahiroshimachiban')) highlightSpecificFeaturesCity(map, 'oh-kitahiroshimachiban');
+            },100)
           }
 
           if (params.slj) {

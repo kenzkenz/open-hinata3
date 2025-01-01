@@ -1575,13 +1575,13 @@ export function highlightSpecificFeatures(map,layerId) {
     }, sec)
     isFirstRun = false
 }
-let isFirstRunCity = true;
+let isFirstRunCity1 = true;
 export function highlightSpecificFeaturesCity(map,layerId) {
     // alert(store.state.highlightedChibans.size)
     console.log(store.state.highlightedChibans);
     console.log(layerId)
     let sec = 0
-    if (isFirstRunCity) {
+    if (isFirstRunCity1) {
         sec = 1000
     } else {
         sec = 0
@@ -1622,7 +1622,7 @@ export function highlightSpecificFeaturesCity(map,layerId) {
             ]
         );
     }, sec)
-    isFirstRunCity = false
+    isFirstRunCity1 = false
 }
 // 特定のレイヤーから地物を取得し、フィルタリング後にBBOXを計算する関数
 function getBoundingBoxByLayer(map, layerId) {

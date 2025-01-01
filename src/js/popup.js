@@ -222,10 +222,12 @@ function urlByLayerId (layerId) {
     return [RasterTileUrl,legend,zoom]
 }
 export function popup(e,map,mapName,mapFlg) {
-console.log(store.state.isRenzoku)
-    if (store.state.isRenzoku) return
 
-    console.log(mapName)
+    // 改修する必要あり
+    if (map.getLayer('oh-amx-a-fude') || map.getLayer('oh-chibanzu2024')) {
+        if (store.state.isRenzoku) return
+    }
+
     let html = ''
     let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
     console.log(features[0])
