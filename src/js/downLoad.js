@@ -204,6 +204,7 @@ export function exportLayerToGeoJSON(map,layerId,sourceId,fields) {
         console.log(geojson)
         if (fields.length === 0) {
             geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
+            console.log(geojson)
             return geojson
         } else {
             geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
@@ -450,7 +451,7 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
     if (!kukaku) {
         fileName = fileName + kei + firstChiban + hoka + '.sim';
     } else {
-        fileName = fileName + kei + '.txt';
+        fileName = fileName + kei + firstChiban + hoka + '.txt';
     }
     link.download = fileName; // ファイル名を正確に指定
     // リンクをクリックしてダウンロード
@@ -1142,7 +1143,8 @@ function downloadGeoJSONAsCSV(geojson, filename = 'data.csv') {
         // 各プロパティの値を取得
         const propValues = propertyKeys.map(key => feature.properties[key] || '');
 
-        return [latitude, longitude, ...propValues];
+        // return [latitude, longitude, ...propValues];
+        return propValues;
     });
 
     // 3. CSV形式に変換
@@ -1152,11 +1154,13 @@ function downloadGeoJSONAsCSV(geojson, filename = 'data.csv') {
     ].join('\n');
 
     // 4. CSVをダウンロード
+    const firstChiban = getChibanAndHoka(geojson).firstChiban
+    const hoka = getChibanAndHoka(geojson).hoka
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', filename);
+    link.setAttribute('download', firstChiban + hoka);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1168,6 +1172,7 @@ export function saveCsv(map, layerId, sourceId, fields) {
         return
     }
     const geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields);
+    console.log(geojson)
     downloadGeoJSONAsCSV(geojson)
 }
 
@@ -1720,7 +1725,7 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
                 targetId = `${feature.properties['Aza']}_${feature.properties['Chiban']}_${feature.properties['Edaban']}`;
                 break;
         }
-        console.log(targetId)
+        // console.log(targetId)
         return store.state.highlightedChibans.has(targetId);
     });
 
