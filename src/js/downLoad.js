@@ -569,7 +569,6 @@ function geojsonToDXF(geojson) {
 }
 
 
-
 // ⭐️これはHO-CADでうまくいった例、bricscadでは区画は表示されるがポイントがぐちゃぐちゃ
 // function geojsonToDXF(geojson) {
 //     let dxf = "0\nSECTION\n" +
