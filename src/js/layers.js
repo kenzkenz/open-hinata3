@@ -6795,6 +6795,7 @@ const layers01 = [
         label: "登記所備付地図データ",
         source: amxSource,
         layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel],
+        attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
         ext: {name:'extTokijyo'}
     },
     {

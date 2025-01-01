@@ -1550,21 +1550,32 @@ export default {
             source: 'zones-source',
             'source-layer': 'polygon',
             paint: {
-              'fill-color': '#0080ff',
-              'fill-opacity': 0.9
+              'fill-color': '#0080',
+              'fill-opacity': 0
             }
           });
-          // 画面中心の座標系を取得
-          map.on('moveend', () => {
+
+          setTimeout(() => {
             const center = map.getCenter();
             const centerPoint = map.project([center.lng, center.lat]);
-
             // 画面中心地点でのフィーチャークエリ
             const features = map.queryRenderedFeatures(centerPoint, {
               layers: ['zones-layer']
             });
-
-            // 公共座標1系
+            if (features.length > 0) {
+              const zoneFeature = features[0];
+              const zone = zoneFeature.properties.zone;
+              this.$store.state.zahyokei = '公共座標' + zone + '系';
+              console.log(this.$store.state.zahyokei);
+            }
+          },1000)
+          map.on('moveend', () => {
+            const center = map.getCenter();
+            const centerPoint = map.project([center.lng, center.lat]);
+            // 画面中心地点でのフィーチャークエリ
+            const features = map.queryRenderedFeatures(centerPoint, {
+              layers: ['zones-layer']
+            });
             if (features.length > 0) {
               const zoneFeature = features[0];
               const zone = zoneFeature.properties.zone;
@@ -1575,7 +1586,6 @@ export default {
               this.$store.state.zahyokei = '';
             }
           });
-
 
           // -----------------------------------------------------------------------------------------------------------
           // マップ上でポリゴンをクリックしたときのイベントリスナー
