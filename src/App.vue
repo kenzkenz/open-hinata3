@@ -111,7 +111,57 @@ function decodeElevationFromRGB(r, g, b) {
   return (r * 256 * 256 + g * 256 + b) * scale + offset; // RGB値を計算
 }
 
-// 標高データをタイル画像から取得
+// // 標高データをタイル画像から取得
+// async function fetchElevationFromImage(imageUrl, lon, lat, zoom) {
+//   const { xTile, yTile } = lonLatToTile(lon, lat, zoom);
+//
+//   const img = new Image();
+//   img.crossOrigin = "Anonymous"; // クロスオリジン対応
+//   img.src = imageUrl;
+//
+//   return new Promise((resolve, reject) => {
+//     img.onload = () => {
+//       const canvas = document.createElement("canvas");
+//       const ctx = canvas.getContext("2d");
+//       canvas.width = img.width;
+//       canvas.height = img.height;
+//       ctx.drawImage(img, 0, 0);
+//
+//       // タイル内のピクセル座標を計算
+//       const { x, y } = calculatePixelInTile(lon, lat, zoom, xTile, yTile, img.width);
+//
+//       // ピクセルデータを取得
+//       const imageData = ctx.getImageData(x, y, 1, 1).data;
+//       const [r, g, b] = imageData; // R, G, B 値を取得
+//       // console.log(`R: ${r}, G: ${g}, B: ${b}`); // デバッグ用ログ
+//       const elevation = decodeElevationFromRGB(r, g, b); // 標高を計算
+//       resolve(elevation);
+//     };
+//
+//     img.onerror = (err) => {
+//       reject(`画像の読み込みに失敗しました: ${err}`);
+//     };
+//   });
+// }
+//
+// // 標高を取得する関数
+// async function fetchElevation(lon, lat, zoom = 15) {
+//   const baseUrl = "https://mapdata.qchizu2.xyz/03_dem/51_int/all_9999/int_01/{z}/{x}/{y}.png";
+//   const { xTile, yTile } = lonLatToTile(lon, lat, zoom);
+//
+//   // タイルURLを生成
+//   const tileUrl = baseUrl.replace("{z}", zoom).replace("{x}", xTile).replace("{y}", yTile);
+//
+//   try {
+//     const elevation = await fetchElevationFromImage(tileUrl, lon, lat, zoom);
+//     // console.log(`標高: ${elevation}m`);
+//     return elevation;
+//   } catch (error) {
+//     console.error("エラー:", error);
+//   }
+// }
+
+// 標高データをタイル画像から取得し、キャンバスに出力
 async function fetchElevationFromImage(imageUrl, lon, lat, zoom) {
   const { xTile, yTile } = lonLatToTile(lon, lat, zoom);
 
@@ -133,8 +183,18 @@ async function fetchElevationFromImage(imageUrl, lon, lat, zoom) {
       // ピクセルデータを取得
       const imageData = ctx.getImageData(x, y, 1, 1).data;
       const [r, g, b] = imageData; // R, G, B 値を取得
-      // console.log(`R: ${r}, G: ${g}, B: ${b}`); // デバッグ用ログ
       const elevation = decodeElevationFromRGB(r, g, b); // 標高を計算
+
+      // キャンバスに描画
+      ctx.fillStyle = "red";
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.font = "12px Arial";
+      ctx.fillStyle = "white";
+      ctx.fillText(`${elevation}m`, x + 10, y - 10);
+      document.body.appendChild(canvas);
+
       resolve(elevation);
     };
 
@@ -146,20 +206,21 @@ async function fetchElevationFromImage(imageUrl, lon, lat, zoom) {
 
 // 標高を取得する関数
 async function fetchElevation(lon, lat, zoom = 15) {
-  const baseUrl = "https://mapdata.qchizu2.xyz/03_dem/51_int/all_9999/int_01/{z}/{x}/{y}.png";
+  const baseUrl = "https://tiles.gsj.jp/tiles/elev/mixed/{z}/{y}/{x}.png";
   const { xTile, yTile } = lonLatToTile(lon, lat, zoom);
 
-  // タイルURLを生成
+  // y と x を反転してタイルURLを生成
   const tileUrl = baseUrl.replace("{z}", zoom).replace("{x}", xTile).replace("{y}", yTile);
 
   try {
     const elevation = await fetchElevationFromImage(tileUrl, lon, lat, zoom);
-    // console.log(`標高: ${elevation}m`);
+    console.log(`標高: ${elevation}m`);
     return elevation;
   } catch (error) {
     console.error("エラー:", error);
   }
 }
+
 
 import axios from "axios"
 import DialogMenu from '@/components/Dialog-menu'
@@ -530,7 +591,7 @@ export default {
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
       ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}&slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}`
-      console.log(this.param)
+      // console.log(this.param)
       // this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
       // window.history.pushState({ lng, lat, zoom }, '', this.permalink)
@@ -753,11 +814,22 @@ export default {
         }
         // 以前のリンクをいかすため---------------------------------
         // const maptilerApiKey = 'CDedb3rcFcdaYuHkD9zR'
+
+
+
+
+        // const gsiTerrainSource = useGsiTerrainSource(maplibregl.addProtocol, {
+        //   tileUrl: 'https://mapdata.qchizu2.xyz/03_dem/51_int/all_9999/int_01/{z}/{x}/{y}.png',
+        //   // tileUrl: 'https://tiles.gsj.jp/tiles/elev/land/{z}/{y}/{x}.png',
+        //   maxzoom: 19,
+        // })
+
         const gsiTerrainSource = useGsiTerrainSource(maplibregl.addProtocol, {
-          tileUrl: 'https://mapdata.qchizu2.xyz/03_dem/51_int/all_9999/int_01/{z}/{x}/{y}.png',
-          // tileUrl: 'https://tiles.gsj.jp/tiles/elev/land/{z}/{y}/{x}.png',
-          maxzoom: 19,
-        })
+          tileUrl: 'https://tiles.gsj.jp/tiles/elev/mixed/{z}/{y}/{x}.png',
+          maxzoom: 17,
+          attribution: '<a href="https://gbank.gsj.jp/seamless/elev/">産総研シームレス標高タイル</a>'
+        });
+
 
         const map = new maplibregl.Map({
           container: mapName,
