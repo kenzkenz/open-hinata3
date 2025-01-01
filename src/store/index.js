@@ -1,4 +1,5 @@
 import { createStore } from 'vuex'
+import {highlightedChibans} from "@/js/downLoad";
 
 export default createStore({
   state: {
@@ -74,9 +75,8 @@ export default createStore({
     prefId: '',
     zahyokei: '',
     zeniGeojson: '',
-    // isPopupVisible: true,
     isRenzoku: true,
-
+    highlightedChibans: new Set(),
     //------------------------
     highwayYear:{
       map01: 2024,

@@ -4,10 +4,9 @@ import * as turf from '@turf/turf'
 import maplibregl from 'maplibre-gl'
 import proj4 from 'proj4'
 // 複数のクリックされた地番を強調表示するためのセット
-export let highlightedChibans = new Set();
+// export let highlightedChibans = new Set();
 (function() {
     // 座標系の定義
-
     // proj4.defs['EPSG:4326'] = proj4.Proj("+proj=longlat +datum=WGS84 +no_defs");
     proj4.defs['EPSG:2443'] = proj4.Proj("+proj=tmerc +lat_0=33 +lon_0=129.5 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");		// 1系
     proj4.defs['EPSG:2444'] = proj4.Proj("+proj=tmerc +lat_0=33 +lon_0=131 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");			// 2系
@@ -469,25 +468,28 @@ export function saveCima(map, layerId, sourceId, fields, kaniFlg, kei) {
     convertAndDownloadGeoJSONToSIMA(map,layerId,geojson,'簡易_',kaniFlg,kei);
 }
 
-
 function geojsonToDXF(geojson) {
-    let dxf = "0\nSECTION\n" +
-        "2\nHEADER\n" +
-        "9\n$INSUNITS\n" +
-        "70\n4\n" +  // 単位: メートル
-        "0\nENDSEC\n" +
-        "0\nSECTION\n" +
-        "2\nTABLES\n" +
-        "0\nENDSEC\n" +
-        "0\nSECTION\n" +
-        "2\nENTITIES\n";
+    let dxf = "  0\nSECTION\n" +
+        "  2\nHEADER\n" +
+        "  9\n$ACADVER\n" +
+        "  1\nAC1032\n" +
+        "  9\n$INSUNITS\n" +
+        " 70\n4\n" +  // 単位: メートル
+        "  9\n$DWGCODEPAGE\n" +
+        "  3\nANSI_932\n" +
+        "  0\nENDSEC\n" +
+        "  0\nSECTION\n" +
+        "  2\nTABLES\n" +
+        "  0\nENDSEC\n" +
+        "  0\nSECTION\n" +
+        "  2\nENTITIES\n";
 
     function processPoint(coord, layer = 'Default', lotNumber = '') {
-        let point = "0\nPOINT\n" +
-            "8\n" + layer + "\n" +
-            "10\n" + coord[0] + "\n" +
-            "20\n" + coord[1] + "\n" +
-            "30\n0.0\n";
+        let point = "  0\nPOINT\n" +
+            "  8\n" + layer + "\n" +
+            " 10\n" + coord[0] + "\n" +
+            " 20\n" + coord[1] + "\n" +
+            " 30\n0.0\n";
         if (lotNumber && lotNumber.trim() !== '') {
             point += processText(coord, lotNumber, layer);
         }
@@ -495,25 +497,29 @@ function geojsonToDXF(geojson) {
     }
 
     function processLineString(coords, layer = 'Default') {
-        let dxfPart = "0\nLWPOLYLINE\n" +
-            "8\n" + layer + "\n" +
-            "90\n" + coords.length + "\n" +
-            "70\n0\n";
+        let dxfPart = "  0\nLWPOLYLINE\n" +
+            "  8\n" + layer + "\n" +
+            " 90\n" + coords.length + "\n" +
+            " 70\n0\n" +
+            " 43\n0.0\n" +
+            " 38\n0.0\n";
         coords.forEach(coord => {
-            dxfPart += "10\n" + coord[0] + "\n" +
-                "20\n" + coord[1] + "\n";
+            dxfPart += " 10\n" + coord[0] + "\n" +
+                " 20\n" + coord[1] + "\n";
         });
         return dxfPart;
     }
 
     function processPolygon(coords, layer = 'Default', lotNumber = '') {
-        let dxfPart = "0\nLWPOLYLINE\n" +
-            "8\n" + layer + "\n" +
-            "90\n" + coords[0].length + "\n" +
-            "70\n1\n";
+        let dxfPart = "  0\nLWPOLYLINE\n" +
+            "  8\n" + layer + "\n" +
+            " 90\n" + coords[0].length + "\n" +
+            " 70\n1\n" +
+            " 43\n0.0\n" +
+            " 38\n0.0\n";
         coords[0].forEach(coord => {
-            dxfPart += "10\n" + coord[0] + "\n" +
-                "20\n" + coord[1] + "\n";
+            dxfPart += " 10\n" + coord[0] + "\n" +
+                " 20\n" + coord[1] + "\n";
         });
         if (lotNumber && lotNumber.trim() !== '') {
             const centroid = coords[0].reduce((acc, coord) => {
@@ -529,16 +535,17 @@ function geojsonToDXF(geojson) {
     }
 
     function processText(coord, text, layer = 'Default') {
-        return "0\nTEXT\n" +
-            "8\n" + layer + "\n" +
-            "10\n" + coord[0] + "\n" +
-            "20\n" + coord[1] + "\n" +
-            "30\n0.0\n" +
-            "40\n1.5\n" +
-            "72\n1\n" +
-            "73\n1\n" +
-            "71\n0\n" +
-            "1\n" + text + "\n";
+        return "  0\nTEXT\n" +
+            "  8\n" + layer + "\n" +
+            " 10\n" + coord[0] + "\n" +
+            " 20\n" + coord[1] + "\n" +
+            " 30\n0.0\n" +
+            " 40\n1.5\n" +
+            " 72\n1\n" +
+            " 73\n1\n" +
+            " 71\n0\n" +
+            "  1\n" + text + "\n" +
+            "  7\nStandard\n";
     }
 
     geojson.features.forEach(feature => {
@@ -563,10 +570,109 @@ function geojsonToDXF(geojson) {
         }
     });
 
-    dxf += "0\nENDSEC\n" +
-        "0\nEOF\n";
+    dxf += "  0\nENDSEC\n" +
+        "  0\nEOF\n";
     return dxf;
 }
+
+
+// function geojsonToDXF(geojson) {
+//     let dxf = "0\nSECTION\n" +
+//         "2\nHEADER\n" +
+//         "9\n$INSUNITS\n" +
+//         "70\n4\n" +  // 単位: メートル
+//         "0\nENDSEC\n" +
+//         "0\nSECTION\n" +
+//         "2\nTABLES\n" +
+//         "0\nENDSEC\n" +
+//         "0\nSECTION\n" +
+//         "2\nENTITIES\n";
+//
+//     function processPoint(coord, layer = 'Default', lotNumber = '') {
+//         let point = "0\nPOINT\n" +
+//             "8\n" + layer + "\n" +
+//             "10\n" + coord[0] + "\n" +
+//             "20\n" + coord[1] + "\n" +
+//             "30\n0.0\n";
+//         if (lotNumber && lotNumber.trim() !== '') {
+//             point += processText(coord, lotNumber, layer);
+//         }
+//         return point;
+//     }
+//
+//     function processLineString(coords, layer = 'Default') {
+//         let dxfPart = "0\nLWPOLYLINE\n" +
+//             "8\n" + layer + "\n" +
+//             "90\n" + coords.length + "\n" +
+//             "70\n0\n";
+//         coords.forEach(coord => {
+//             dxfPart += "10\n" + coord[0] + "\n" +
+//                 "20\n" + coord[1] + "\n";
+//         });
+//         return dxfPart;
+//     }
+//
+//     function processPolygon(coords, layer = 'Default', lotNumber = '') {
+//         let dxfPart = "0\nLWPOLYLINE\n" +
+//             "8\n" + layer + "\n" +
+//             "90\n" + coords[0].length + "\n" +
+//             "70\n1\n";
+//         coords[0].forEach(coord => {
+//             dxfPart += "10\n" + coord[0] + "\n" +
+//                 "20\n" + coord[1] + "\n";
+//         });
+//         if (lotNumber && lotNumber.trim() !== '') {
+//             const centroid = coords[0].reduce((acc, coord) => {
+//                 acc[0] += coord[0];
+//                 acc[1] += coord[1];
+//                 return acc;
+//             }, [0, 0]);
+//             centroid[0] /= coords[0].length;
+//             centroid[1] /= coords[0].length;
+//             dxfPart += processText(centroid, lotNumber, layer);
+//         }
+//         return dxfPart;
+//     }
+//
+//     function processText(coord, text, layer = 'Default') {
+//         return "0\nTEXT\n" +
+//             "8\n" + layer + "\n" +
+//             "10\n" + coord[0] + "\n" +
+//             "20\n" + coord[1] + "\n" +
+//             "30\n0.0\n" +
+//             "40\n1.5\n" +
+//             "72\n1\n" +
+//             "73\n1\n" +
+//             "71\n0\n" +
+//             "1\n" + text + "\n";
+//     }
+//
+//     geojson.features.forEach(feature => {
+//         const geometry = feature.geometry;
+//         const properties = feature.properties || {};
+//         const layer = properties.layer || 'Default';
+//         const lotNumber = properties['地番'] || '';
+//
+//         switch (geometry.type) {
+//             case 'Point':
+//                 dxf += processPoint(geometry.coordinates, layer, lotNumber);
+//                 break;
+//             case 'LineString':
+//                 dxf += processLineString(geometry.coordinates, layer);
+//                 break;
+//             case 'Polygon':
+//                 dxf += processPolygon(geometry.coordinates, layer, lotNumber);
+//                 break;
+//             default:
+//                 console.warn("サポートされていないジオメトリタイプ: " + geometry.type);
+//                 break;
+//         }
+//     });
+//
+//     dxf += "0\nENDSEC\n" +
+//         "0\nEOF\n";
+//     return dxf;
+// }
 
 
 // ⭐️これはHO-CADでうまくいった例、bricscadでは区画は表示されるがポイントがぐちゃぐちゃ
@@ -1267,8 +1373,8 @@ async function detailGeojson(map, layerId, kukaku) {
     }
 
     let bbox;
-    console.log(highlightedChibans.size);
-    if (highlightedChibans.size > 0) {
+    console.log(store.state.highlightedChibans.size);
+    if (store.state.highlightedChibans.size > 0) {
         bbox = getBoundingBoxByLayer(map, layerId);
     } else {
         bbox = fgBoundingBox();
@@ -1342,7 +1448,7 @@ export async function saveCima2(map, layerId, kukaku, isDfx, sourceId, fields, k
     }
 
     let bbox;
-    if (highlightedChibans.size > 0) {
+    if (store.state.highlightedChibans.size > 0) {
         console.log(fgBoundingBox())
         bbox = getBoundingBoxByLayer(map, layerId);
         console.log(bbox)
@@ -1442,61 +1548,81 @@ export async function saveCima3(map,kei,jww) {
 }
 
 // クリックされた地番を強調表示する関数
+let isFirstRun = true;
 export function highlightSpecificFeatures(map,layerId) {
-    console.log(highlightedChibans);
-    map.setPaintProperty(
-        layerId,
-        'fill-color',
-        [
-            'case',
-            [
-                'in',
-                ['concat', ['get', '丁目コード'], '_', ['get', '小字コード'], '_', ['get', '地番']],
-                ['literal', Array.from(highlightedChibans)]
-            ],
-            'rgba(255, 0, 0, 0.5)', // クリックされた地番が選択された場合
-            'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
-        ]
-    );
-}
-export function highlightSpecificFeaturesCity(map,layerId) {
-    // alert(highlightedChibans.size)
-    console.log(highlightedChibans);
-    console.log(layerId)
-    let fields
-    switch (layerId) {
-        case 'oh-chibanzu2024':
-            fields = ['concat', ['get', 'id']]
-            break
-        case 'oh-iwatapolygon':
-            fields = ['concat', ['get', 'SKSCD'], '_', ['get', 'AZACD'], '_', ['get', 'TXTCD']]
-            break
-        case 'oh-narashichiban':
-            fields = ['concat', ['get', '土地key'], '_', ['get', '大字cd']]
-            break
-        case 'oh-fukushimachiban':
-            fields = ['concat', ['get', 'X'], '_', ['get', 'Y']]
-            break
-        case 'oh-kitahiroshimachiban':
-            fields = ['concat', ['get', 'Aza'], '_', ['get', 'Chiban'], '_', ['get', 'Edaban']]
-            break
-
+    console.log(store.state.highlightedChibans);
+    let sec = 0
+    if (isFirstRun) {
+        sec = 100
+    } else {
+        sec = 0
     }
-    console.log(fields)
-    map.setPaintProperty(
-        layerId,
-        'fill-color',
-        [
-            'case',
+    setTimeout(() => {
+        map.setPaintProperty(
+            layerId,
+            'fill-color',
             [
-                'in',
-                fields,
-                ['literal', Array.from(highlightedChibans)]
-            ],
-            'rgba(255, 0, 0, 0.5)', // クリックされた地番が選択された場合
-            'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
-        ]
-    );
+                'case',
+                [
+                    'in',
+                    ['concat', ['get', '丁目コード'], '_', ['get', '小字コード'], '_', ['get', '地番']],
+                    ['literal', Array.from(store.state.highlightedChibans)]
+                ],
+                'rgba(255, 0, 0, 0.5)', // クリックされた地番が選択された場合
+                'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
+            ]
+        );
+    }, sec)
+    isFirstRun = false
+}
+let isFirstRunCity = true;
+export function highlightSpecificFeaturesCity(map,layerId) {
+    // alert(store.state.highlightedChibans.size)
+    console.log(store.state.highlightedChibans);
+    console.log(layerId)
+    let sec = 0
+    if (isFirstRunCity) {
+        sec = 1000
+    } else {
+        sec = 0
+    }
+    setTimeout(() => {
+        let fields
+        switch (layerId) {
+            case 'oh-chibanzu2024':
+                fields = ['concat', ['get', 'id']]
+                break
+            case 'oh-iwatapolygon':
+                fields = ['concat', ['get', 'SKSCD'], '_', ['get', 'AZACD'], '_', ['get', 'TXTCD']]
+                break
+            case 'oh-narashichiban':
+                fields = ['concat', ['get', '土地key'], '_', ['get', '大字cd']]
+                break
+            case 'oh-fukushimachiban':
+                fields = ['concat', ['get', 'X'], '_', ['get', 'Y']]
+                break
+            case 'oh-kitahiroshimachiban':
+                fields = ['concat', ['get', 'Aza'], '_', ['get', 'Chiban'], '_', ['get', 'Edaban']]
+                break
+
+        }
+        console.log(fields)
+        map.setPaintProperty(
+            layerId,
+            'fill-color',
+            [
+                'case',
+                [
+                    'in',
+                    fields,
+                    ['literal', Array.from(store.state.highlightedChibans)]
+                ],
+                'rgba(255, 0, 0, 0.5)', // クリックされた地番が選択された場合
+                'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
+            ]
+        );
+    }, sec)
+    isFirstRunCity = false
 }
 // 特定のレイヤーから地物を取得し、フィルタリング後にBBOXを計算する関数
 function getBoundingBoxByLayer(map, layerId) {
@@ -1525,8 +1651,8 @@ function getBoundingBoxByLayer(map, layerId) {
                 targetId = `${feature.properties['Aza']}_${feature.properties['Chiban']}_${feature.properties['Edaban']}`;
                 break;
         }
-        console.log(highlightedChibans)
-        return highlightedChibans.has(targetId); // 特定のIDセットに含まれているか
+        console.log(store.state.highlightedChibans)
+        return store.state.highlightedChibans.has(targetId); // 特定のIDセットに含まれているか
     });
 
     // 抽出結果の確認
@@ -1558,15 +1684,15 @@ function getBoundingBoxByLayer(map, layerId) {
         maxY
     };
 }
-// 既存の GeoJSON データから highlightedChibans に基づいてフィーチャを抽出する関数
+// 既存の GeoJSON データから store.state.highlightedChibans に基づいてフィーチャを抽出する関数
 function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
-    if (highlightedChibans.size === 0) {
+    if (store.state.highlightedChibans.size === 0) {
         console.warn('No highlighted features to extract.');
         return geojsonData;
     }
     console.log(geojsonData)
     console.log(layerId)
-    console.log(highlightedChibans)
+    console.log(store.state.highlightedChibans)
     const filteredFeatures = geojsonData.features.filter(feature => {
         let targetId;
         switch (layerId) {
@@ -1595,7 +1721,7 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
                 break;
         }
         console.log(targetId)
-        return highlightedChibans.has(targetId);
+        return store.state.highlightedChibans.has(targetId);
     });
 
     const geojson = {
@@ -1609,7 +1735,7 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
 
 // 全フィーチャの選択状態をリセットする関数
 export function resetFeatureColors(map,layerId) {
-    highlightedChibans.clear();
+    store.state.highlightedChibans.clear();
     map.setPaintProperty(
         layerId,
         'fill-color',

@@ -55,7 +55,6 @@ import {mouseMoveForPopup, popup} from "@/js/popup";
 import {
   handleFileUpload,
   highlightSpecificFeatures,
-  highlightedChibans,
   highlightSpecificFeaturesCity
 } from '@/js/downLoad'
 
@@ -521,9 +520,17 @@ export default {
       copiedSelectedLayers = removeKeys(copiedSelectedLayers, keysToRemove)
       // console.log(JSON.stringify(copiedSelectedLayers))
       const selectedLayersJson = JSON.stringify(copiedSelectedLayers)
+      console.log(this.$store.state.highlightedChibans)
+      const chibans = []
+      this.$store.state.highlightedChibans.forEach(h => {
+        console.log(h)
+        chibans.push(h)
+      })
+      console.log(chibans)
       // パーマリンクの生成
-      this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}&slj=${selectedLayersJson}`
-      // console.log(this.param)
+      this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
+      ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}&slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}`
+      console.log(this.param)
       // this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
       // window.history.pushState({ lng, lat, zoom }, '', this.permalink)
@@ -610,11 +617,13 @@ export default {
       const bearing = parseFloat(params.get('bearing'))
       const terrainLevel = parseFloat(params.get('terrainLevel'))
       const slj = JSON.parse(params.get('slj'))
+      const chibans = params.get('chibans')
+      console.log(chibans)
       this.pitch.map01 = pitch01
       this.pitch.map02 = pitch02
       this.bearing = bearing
       this.s_terrainLevel = terrainLevel
-      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj}// 以前のリンクをいかすためpitchを入れている。
+      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans}// 以前のリンクをいかすためpitchを入れている。
     },
     init() {
 
@@ -972,10 +981,16 @@ export default {
           //   }
           // }
           // ----------------------------------------------------------------
-          // ここを改善する必要あり ここでプログラムがエラーなしでとまる。
-          //
-          // console.log(mapName)
-          // console.log(params.slj)
+
+          if (params.chibans) {
+            console.log(params.chibans)
+            JSON.parse(params.chibans).forEach(c => {
+              console.log(c)
+              this.$store.state.highlightedChibans.add(c)
+            })
+            highlightSpecificFeatures(map,'oh-amx-a-fude');
+            highlightSpecificFeaturesCity(map,'oh-chibanzu2024');
+          }
 
           if (params.slj) {
             const mapNames = ['map01', 'map02']
@@ -1518,15 +1533,18 @@ export default {
           // -----------------------------------------------------------------------------------------------------------
           // マップ上でポリゴンをクリックしたときのイベントリスナー
           map.on('click', 'oh-amx-a-fude', (e) => {
+            console.log(this.$store.state.highlightedChibans)
+            // this.$store.state.highlightedChibans = new Set()
             if (e.features && e.features.length > 0) {
               const targetId = `${e.features[0].properties['丁目コード']}_${e.features[0].properties['小字コード']}_${e.features[0].properties['地番']}`;
-              console.log('Clicked ID (丁目コード_小字コード_地番):', targetId);
-              if (highlightedChibans.has(targetId)) {
+              console.log(targetId);
+              console.log(this.$store.state.highlightedChibans)
+              if (this.$store.state.highlightedChibans.has(targetId)) {
                 // すでに選択されている場合は解除
-                highlightedChibans.delete(targetId);
+                this.$store.state.highlightedChibans.delete(targetId);
               } else {
                 // 新しいIDを追加
-                highlightedChibans.add(targetId);
+                this.$store.state.highlightedChibans.add(targetId);
               }
               highlightSpecificFeatures(map,'oh-amx-a-fude');
             }
@@ -1534,12 +1552,12 @@ export default {
           map.on('click', 'oh-chibanzu2024', (e) => {
             if (e.features && e.features.length > 0) {
               const targetId = `${e.features[0].properties['id']}`;
-              if (highlightedChibans.has(targetId)) {
+              if (this.$store.state.highlightedChibans.has(targetId)) {
                 // すでに選択されている場合は解除
-                highlightedChibans.delete(targetId);
+                this.$store.state.highlightedChibans.delete(targetId);
               } else {
                 // 新しいIDを追加
-                highlightedChibans.add(targetId);
+                this.$store.state.highlightedChibans.add(targetId);
               }
               highlightSpecificFeaturesCity(map,'oh-chibanzu2024');
             }
@@ -1548,13 +1566,13 @@ export default {
             if (e.features && e.features.length > 0) {
               const targetId = `${e.features[0].properties['X']}_${e.features[0].properties['Y']}`;
               console.log('Clicked ID', targetId);
-              if (highlightedChibans.has(targetId)) {
+              if (this.$store.state.highlightedChibans.has(targetId)) {
                 // すでに選択されている場合は解除
-                highlightedChibans.delete(targetId);
+                this.$store.state.highlightedChibans.delete(targetId);
               } else {
                 // 新しいIDを追加
-                highlightedChibans.add(targetId);
-                console.log(highlightedChibans)
+                this.$store.state.highlightedChibans.add(targetId);
+                console.log(this.$store.state.highlightedChibans)
               }
               highlightSpecificFeaturesCity(map,'oh-fukushimachiban');
             }
@@ -1563,12 +1581,12 @@ export default {
             if (e.features && e.features.length > 0) {
               const targetId = `${e.features[0].properties['SKSCD']}_${e.features[0].properties['AZACD']}_${e.features[0].properties['TXTCD']}`;
               console.log('Clicked ID', targetId);
-              if (highlightedChibans.has(targetId)) {
+              if (this.$store.state.highlightedChibans.has(targetId)) {
                 // すでに選択されている場合は解除
-                highlightedChibans.delete(targetId);
+                this.$store.state.highlightedChibans.delete(targetId);
               } else {
                 // 新しいIDを追加
-                highlightedChibans.add(targetId);
+                this.$store.state.highlightedChibans.add(targetId);
               }
               highlightSpecificFeaturesCity(map,'oh-iwatapolygon');
             }
@@ -1577,12 +1595,12 @@ export default {
             if (e.features && e.features.length > 0) {
               const targetId = `${e.features[0].properties['土地key']}_${e.features[0].properties['大字cd']}`;
               console.log('Clicked ID', targetId);
-              if (highlightedChibans.has(targetId)) {
+              if (this.$store.state.highlightedChibans.has(targetId)) {
                 // すでに選択されている場合は解除
-                highlightedChibans.delete(targetId);
+                this.$store.state.highlightedChibans.delete(targetId);
               } else {
                 // 新しいIDを追加
-                highlightedChibans.add(targetId);
+                this.$store.state.highlightedChibans.add(targetId);
               }
               highlightSpecificFeaturesCity(map,'oh-narashichiban');
             }
@@ -1591,12 +1609,12 @@ export default {
             if (e.features && e.features.length > 0) {
               const targetId = `${e.features[0].properties['Aza']}_${e.features[0].properties['Chiban']}_${e.features[0].properties['Edaban']}`;
               console.log('Clicked ID', targetId);
-              if (highlightedChibans.has(targetId)) {
+              if (this.$store.state.highlightedChibans.has(targetId)) {
                 // すでに選択されている場合は解除
-                highlightedChibans.delete(targetId);
+                this.$store.state.highlightedChibans.delete(targetId);
               } else {
                 // 新しいIDを追加
-                highlightedChibans.add(targetId);
+                this.$store.state.highlightedChibans.add(targetId);
               }
               highlightSpecificFeaturesCity(map,'oh-kitahiroshimachiban');
             }
@@ -1607,6 +1625,7 @@ export default {
     }
   },
   mounted() {
+    // this.$store.state.highlightedChibans = new Set()
     const vm = this
     // -----------------------------------------------------------------------------------------------------------------
     this.mapNames.forEach(mapName => {
