@@ -1211,7 +1211,7 @@ async function detailGeojson(map, layerId, kukaku) {
         }
         console.log('取得した地物:', geojson);
         if (geojson.features.length === 0) {
-            if (prefId !== '43' && !retryAttempted) {
+            if (prefId !== '43') {
                 console.warn('地物が存在しません。prefIdを43に変更して再試行します。');
                 alert('飛地かもしれません。再試行します。')
                 prefId = '43';
@@ -1267,10 +1267,24 @@ export async function saveCima2(map, layerId, kukaku, isDfx, sourceId, fields, k
     }
 
     let bbox;
+    console.log(store.state.highlightedChibans)
     if (store.state.highlightedChibans.size > 0) {
-        console.log(fgBoundingBox())
+        // console.log(fgBoundingBox())
         bbox = getBoundingBoxByLayer(map, layerId);
-        console.log(bbox)
+        // console.log(bbox)
+        // bboxが画面内にあるかどうかをチェック
+        console.log(bbox.minX)
+        if (bbox.minX === Infinity) bbox = fgBoundingBox()
+        // function isBBoxInView(bbox) {
+        //     const mapBounds = map.getBounds();
+        //     return (
+        //         bbox[0][0] >= mapBounds.getWest() && // bboxの西端が画面の西端より右
+        //         bbox[1][0] <= mapBounds.getEast() && // bboxの東端が画面の東端より左
+        //         bbox[0][1] >= mapBounds.getSouth() && // bboxの南端が画面の南端より上
+        //         bbox[1][1] <= mapBounds.getNorth()   // bboxの北端が画面の北端より下
+        //     );
+        // }
+        // if (!isBBoxInView(bbox)) bbox = fgBoundingBox();
     } else {
         bbox = fgBoundingBox();
     }
@@ -1300,6 +1314,7 @@ export async function saveCima2(map, layerId, kukaku, isDfx, sourceId, fields, k
         }
         console.log(isDfx)
         if (!isDfx) {
+            console.log(geojson)
             convertAndDownloadGeoJSONToSIMA(map, layerId, geojson, '詳細_', false, '', kukaku);
         } else {
             console.log(geojson)
@@ -1476,7 +1491,7 @@ function getBoundingBoxByLayer(map, layerId) {
                 targetId = `${feature.properties['id']}`;
                 break;
         }
-        console.log(store.state.highlightedChibans)
+        // console.log(store.state.highlightedChibans)
         return store.state.highlightedChibans.has(targetId); // 特定のIDセットに含まれているか
     });
 
@@ -1577,12 +1592,15 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
         // console.log(targetId)
         return store.state.highlightedChibans.has(targetId);
     });
-
-    const geojson = {
-        type: 'FeatureCollection',
-        features: filteredFeatures
-    };
-
+    let geojson
+    if (filteredFeatures.length > 0) {
+        geojson = {
+            type: 'FeatureCollection',
+            features: filteredFeatures
+        };
+    } else {
+        geojson = geojsonData
+    }
     console.log('Extracted GeoJSON from Source:', geojson);
     return geojson;
 }

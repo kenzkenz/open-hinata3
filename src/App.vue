@@ -1539,6 +1539,45 @@ export default {
             reader.readAsText(file);
           });
           // -----------------------------------------------------------------------------------------------------------
+          map.addSource('zones-source', {
+            type: 'vector',
+            url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/zahyokei/zahyokei.pmtiles',
+          });
+
+          map.addLayer({
+            id: 'zones-layer',
+            type: 'fill',
+            source: 'zones-source',
+            'source-layer': 'polygon',
+            paint: {
+              'fill-color': '#0080ff',
+              'fill-opacity': 0.9
+            }
+          });
+          // 画面中心の座標系を取得
+          map.on('moveend', () => {
+            const center = map.getCenter();
+            const centerPoint = map.project([center.lng, center.lat]);
+
+            // 画面中心地点でのフィーチャークエリ
+            const features = map.queryRenderedFeatures(centerPoint, {
+              layers: ['zones-layer']
+            });
+
+            // 公共座標1系
+            if (features.length > 0) {
+              const zoneFeature = features[0];
+              const zone = zoneFeature.properties.zone;
+              this.$store.state.zahyokei = '公共座標' + zone + '系';
+              console.log(this.$store.state.zahyokei);
+            } else {
+              console.log('画面中心地点は座標系ゾーンに該当しません。');
+              this.$store.state.zahyokei = '';
+            }
+          });
+
+
+          // -----------------------------------------------------------------------------------------------------------
           // マップ上でポリゴンをクリックしたときのイベントリスナー
           map.on('click', 'oh-amx-a-fude', (e) => {
             console.log(this.$store.state.highlightedChibans)

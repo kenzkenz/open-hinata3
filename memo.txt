@@ -405,3 +405,7 @@ ogr2ogr -f FlatGeobuf Chibanzu_2024_with_id.fgb Chibanzu_2024.fgb \
 tippecanoe -pk -pf -l polygon -f -o kitahiroshimashi.pmtiles kitahiroshimashi.geojson
 
 tippecanoe -l polygon -f -o kunitachishi.pmtiles kunitachishi.geojson
+
+ogr2ogr -f "GeoJSON" zahyokei.geojson heimenchokkaku.shp
+
+tippecanoe -l polygon -f -o zahyokei.pmtiles zahyokei.geojson

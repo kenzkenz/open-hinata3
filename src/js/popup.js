@@ -10,15 +10,33 @@ const popups = []
 
 console.log(store.state.selectedLayers)
 
-// Turf.jsを使用して面積と周長を計算する関数
+// Turf.jsを使用して面積、周長、頂点数を計算する関数
 function calculatePolygonMetrics(polygon) {
     try {
+        // 面積の計算
         const area = turf.area(polygon).toFixed(2) + 'm2'; // Turf.jsで面積を計算
+
+        // 周長の計算
         const perimeter = turf.length(polygon, { units: 'meters' }).toFixed(2) + 'm'; // Turf.jsで周長を計算
-        // alert(`ポリゴンの面積: ${area.toFixed(2)} 平方メートル\nポリゴンの周長: ${perimeter.toFixed(2)} メートル`);
-        return {area:area,perimeter:perimeter}
+
+        // 頂点数の計算 (GeoJSON座標から取得)
+        const coordinates = polygon.geometry.coordinates[0]; // 外周の座標を取得
+        let vertexCount = coordinates.length;
+
+        // GeoJSONでは最初と最後の座標が同じなので、閉じたポリゴンの場合は1点減らす
+        if (coordinates[0][0] === coordinates[vertexCount - 1][0] &&
+            coordinates[0][1] === coordinates[vertexCount - 1][1]) {
+            vertexCount -= 1;
+        }
+
+        // 結果を返す
+        return {
+            area: area,
+            perimeter: perimeter,
+            vertexCount: vertexCount
+        };
     } catch (error) {
-        console.error('面積・周長の計算中にエラーが発生しました:', error);
+        console.error('面積・周長・頂点数の計算中にエラーが発生しました:', error);
     }
 }
 
@@ -1125,8 +1143,8 @@ export function popup(e,map,mapName,mapFlg) {
                     Object.keys(props).forEach(function (key) {
                         html0 += key + '=' + props[key] + '<br>'
                     })
-                    html0 += '<br><soan style="font-size: 14px;">面積:' + PolygonMetrics.area + ' 周長:' + PolygonMetrics.perimeter + '</soan>'
-                    // html0 += '<br><soan style="font-size: 14px;">面積:' + PolygonMetrics.area + '</soan>'
+                    html0 += '<br><span style="font-size: 14px;">面積:' + PolygonMetrics.area + ' 周長:' + PolygonMetrics.perimeter +
+                        '<br>境界点数:' + PolygonMetrics.vertexCount + '</span>'
                     html0 += '<div>'
                     html += html0
                 }
@@ -2831,8 +2849,8 @@ export function popup(e,map,mapName,mapFlg) {
                     Object.keys(props).forEach(function (key) {
                         html0 += key + '=' + props[key] + '<br>'
                     })
-                    html0 += '<br><soan style="font-size: 14px;">面積:' + PolygonMetrics.area + ' 周長:' + PolygonMetrics.perimeter + '</soan>'
-                    // html0 += '<soan style="font-size: 14px;">面積:' + PolygonMetrics.area + '</soan>'
+                    html0 += '<br><span style="font-size: 14px;">面積:' + PolygonMetrics.area + ' 周長:' + PolygonMetrics.perimeter +
+                        '<br>境界点数:' + PolygonMetrics.vertexCount + '</span>'
                     html0 += '<div>'
                     html += html0
                 }

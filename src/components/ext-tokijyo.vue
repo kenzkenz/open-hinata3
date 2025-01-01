@@ -74,7 +74,7 @@
 
     </div>
 <!--    <v-btn style="margin-top: 10px;margin-left: 100px;width: 50px" class="tiny-btn" @click="info">help</v-btn>-->
-    <!--      <span style="font-size: 12px"><div v-html="item.attribution"></div>平面直角座標系の時は「{{ kei }}」で変換</span>-->
+          <span style="font-size: 12px"><div v-html="item.attribution"></div>{{ s_zahyokei }}</span>
   </div>
 </template>
 
@@ -109,7 +109,6 @@ export default {
       '公共座標16系', '公共座標17系', '公共座標18系',
       '公共座標19系'
     ],
-    kei: '',
     menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'hidden', 'user-select': 'text', 'font-size':'large'}
   }),
   computed: {
