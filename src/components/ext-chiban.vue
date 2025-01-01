@@ -273,6 +273,11 @@ export default {
           this.sourceId = 'kitahiroshimachiban-source'
           this.fields = ['Aza','Chiban','Edaban']
           break
+        case 'oh-kunitachishi':
+          this.layerId = 'oh-kunitachishi'
+          this.sourceId = 'kunitachishichiban-source'
+          this.fields = ['id']
+          break
       }
     },
     resetFeatureColors () {

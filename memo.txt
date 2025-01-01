@@ -403,3 +403,5 @@ ogr2ogr -f FlatGeobuf Chibanzu_2024_with_id.fgb Chibanzu_2024.fgb \
     -sql "SELECT *, FID AS id FROM Chibanzu_2024"
 
 tippecanoe -pk -pf -l polygon -f -o kitahiroshimashi.pmtiles kitahiroshimashi.geojson
+
+tippecanoe -l polygon -f -o kunitachishi.pmtiles kunitachishi.geojson

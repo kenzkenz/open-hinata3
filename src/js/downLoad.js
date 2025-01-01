@@ -1423,6 +1423,9 @@ export function highlightSpecificFeaturesCity(map,layerId) {
             case 'oh-kitahiroshimachiban':
                 fields = ['concat', ['get', 'Aza'], '_', ['get', 'Chiban'], '_', ['get', 'Edaban']]
                 break
+            case 'oh-kunitachishi':
+                fields = ['concat', ['get', 'id']]
+                break
 
         }
         console.log(fields)
@@ -1468,6 +1471,9 @@ function getBoundingBoxByLayer(map, layerId) {
                 break;
             case 'oh-kitahiroshimachiban':
                 targetId = `${feature.properties['Aza']}_${feature.properties['Chiban']}_${feature.properties['Edaban']}`;
+                break;
+            case 'oh-kunitachishi':
+                targetId = `${feature.properties['id']}`;
                 break;
         }
         console.log(store.state.highlightedChibans)
@@ -1563,6 +1569,9 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
                 break;
             case 'oh-kitahiroshimachiban':
                 targetId = `${feature.properties['Aza']}_${feature.properties['Chiban']}_${feature.properties['Edaban']}`;
+                break;
+            case 'oh-kunitachishi':
+                targetId = `${feature.properties['id']}`;
                 break;
         }
         // console.log(targetId)

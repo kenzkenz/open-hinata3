@@ -996,6 +996,7 @@ export default {
               if (map.getLayer('oh-iwatapolygon')) highlightSpecificFeaturesCity(map, 'oh-iwatapolygon');
               if (map.getLayer('oh-fukushimachiban')) highlightSpecificFeaturesCity(map, 'oh-fukushimachiban');
               if (map.getLayer('oh-kitahiroshimachiban')) highlightSpecificFeaturesCity(map, 'oh-kitahiroshimachiban');
+              if (map.getLayer('oh-kunitachishi')) highlightSpecificFeaturesCity(map, 'oh-kunitachishi');
             },100)
           }
 
@@ -1624,6 +1625,20 @@ export default {
                 this.$store.state.highlightedChibans.add(targetId);
               }
               highlightSpecificFeaturesCity(map,'oh-kitahiroshimachiban');
+            }
+          });
+          map.on('click', 'oh-kunitachishi', (e) => {
+            if (e.features && e.features.length > 0) {
+              const targetId = `${e.features[0].properties['id']}`;
+              console.log('Clicked ID', targetId);
+              if (this.$store.state.highlightedChibans.has(targetId)) {
+                // すでに選択されている場合は解除
+                this.$store.state.highlightedChibans.delete(targetId);
+              } else {
+                // 新しいIDを追加
+                this.$store.state.highlightedChibans.add(targetId);
+              }
+              highlightSpecificFeaturesCity(map,'oh-kunitachishi');
             }
           });
         })

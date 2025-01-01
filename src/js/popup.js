@@ -223,8 +223,9 @@ function urlByLayerId (layerId) {
 }
 export function popup(e,map,mapName,mapFlg) {
 
-    // 改修する必要あり
-    if (map.getLayer('oh-amx-a-fude') || map.getLayer('oh-chibanzu2024')) {
+    if (map.getLayer('oh-amx-a-fude') || map.getLayer('oh-chibanzu2024')
+        || map.getLayer('oh-kunitachishi') || map.getLayer('oh-kitahiroshimachiban')
+        || map.getLayer('oh-fukushimachiban') || map.getLayer('oh-narashichiban') || map.getLayer('oh-iwatapolygon')) {
         if (store.state.isRenzoku) return
     }
 
@@ -2807,6 +2808,7 @@ export function popup(e,map,mapName,mapFlg) {
                 break
             }
             case 'oh-chibanzu2024':
+            case 'oh-kunitachishi':
             case 'oh-kitahiroshimachiban':
             case 'oh-fukushimachiban':
             case 'oh-narashichiban':

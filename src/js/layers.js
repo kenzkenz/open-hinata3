@@ -6679,6 +6679,38 @@ const kitahiroshimachibanLine = {
         ]
     },
 }
+// 国立市 --------------------------------------------------------------------------------------------
+const kunitachishichibanSource = {
+    id: "kunitachishichiban-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/chiban/kunitachishi.pmtiles",
+    }
+}
+const kunitachishichibanLayer = {
+    id: "oh-kunitachishi",
+    type: "fill",
+    source: "kunitachishichiban-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': 'rgba(0,0,0,0)',
+    }
+}
+const kunitachishichibanLine = {
+    id: "oh-kunitachishichiban-line",
+    type: "line",
+    source: "kunitachishichiban-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': 'navy',
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            1, 0.1,
+            16, 2
+        ]
+    },
+}
 // Chibanzu_2024 --------------------------------------------------------------------------------------------
 const chibanzu2024Source = {
     id: "chibanzu2024-source", obj: {
@@ -6848,6 +6880,14 @@ const layers01 = [
                 layers:[kitahiroshimachibanLayer,kitahiroshimachibanLine],
                 attribution: '<a href="https://www.harp.lg.jp/opendata/dataset/2061.html" target="_blank">北海道オープンデータポータル</a>',
                 ext: {name:'extKitahiroshimashi'}
+            },
+            {
+                id: 'oh-kunitachishi',
+                label: "国立市地番図",
+                source: kunitachishichibanSource,
+                layers:[kunitachishichibanLayer,kunitachishichibanLine],
+                attribution: '<a href="https://www.city.kunitachi.tokyo.jp/soshiki/Dept01/Div03/Sec01/oshirase/11883.html" target="_blank">地番図の公開について</a>',
+                ext: {name:'extKunitachishi'}
             },
         ]},
     {
