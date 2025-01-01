@@ -268,6 +268,11 @@ export default {
           this.sourceId = 'fukushimachiban-source'
           this.fields = ['X','Y']
           break
+        case 'oh-kitahiroshima':
+          this.layerId = 'oh-kitahiroshimachiban'
+          this.sourceId = 'kitahiroshimachiban-source'
+          this.fields = ['Aza','Chiban','Edaban']
+          break
       }
     },
     resetFeatureColors () {

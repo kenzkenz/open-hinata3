@@ -2805,6 +2805,7 @@ console.log(store.state.isRenzoku)
                 break
             }
             case 'oh-chibanzu2024':
+            case 'oh-kitahiroshimachiban':
             case 'oh-fukushimachiban':
             case 'oh-narashichiban':
             case 'oh-iwatapolygon':

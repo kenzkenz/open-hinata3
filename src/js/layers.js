@@ -6647,6 +6647,38 @@ const fukushimachibanLine = {
         ]
     },
 }
+// 北広島市 --------------------------------------------------------------------------------------------
+const kitahiroshimachibanSource = {
+    id: "kitahiroshimachiban-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/chiban/kitahiroshimashi.pmtiles",
+    }
+}
+const kitahiroshimachibanLayer = {
+    id: "oh-kitahiroshimachiban",
+    type: "fill",
+    source: "kitahiroshimachiban-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': 'rgba(0,0,0,0)',
+    }
+}
+const kitahiroshimachibanLine = {
+    id: "oh-kitahiroshimachiban-line",
+    type: "line",
+    source: "kitahiroshimachiban-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': 'navy',
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            1, 0.1,
+            16, 2
+        ]
+    },
+}
 // Chibanzu_2024 --------------------------------------------------------------------------------------------
 const chibanzu2024Source = {
     id: "chibanzu2024-source", obj: {
@@ -6808,6 +6840,14 @@ const layers01 = [
                 layers:[fukushimachibanLayer,fukushimachibanLine],
                 attribution: '<a href="https://www.city.fukushima.fukushima.jp/d-kikaku/shise/opendate/machidukuri.html" target="_blank">福島市オープンデータ</a>',
                 ext: {name:'extFukushimashi'}
+            },
+            {
+                id: 'oh-kitahiroshima',
+                label: "北広島市地番図",
+                source: kitahiroshimachibanSource,
+                layers:[kitahiroshimachibanLayer,kitahiroshimachibanLine],
+                attribution: '<a href="https://www.harp.lg.jp/opendata/dataset/2061.html" target="_blank">北海道オープンデータポータル</a>',
+                ext: {name:'extKitahiroshimashi'}
             },
         ]},
     {

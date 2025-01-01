@@ -469,6 +469,7 @@ export function saveCima(map, layerId, sourceId, fields, kaniFlg, kei) {
     convertAndDownloadGeoJSONToSIMA(map,layerId,geojson,'簡易_',kaniFlg,kei);
 }
 
+
 function geojsonToDXF(geojson) {
     let dxf = "0\nSECTION\n" +
         "2\nHEADER\n" +
@@ -566,6 +567,107 @@ function geojsonToDXF(geojson) {
         "0\nEOF\n";
     return dxf;
 }
+
+
+
+// ⭐️これはHO-CADでうまくいった例、bricscadでは区画は表示されるがポイントがぐちゃぐちゃ
+// function geojsonToDXF(geojson) {
+//     let dxf = "0\nSECTION\n" +
+//         "2\nHEADER\n" +
+//         "9\n$INSUNITS\n" +
+//         "70\n4\n" +  // 単位: メートル
+//         "0\nENDSEC\n" +
+//         "0\nSECTION\n" +
+//         "2\nTABLES\n" +
+//         "0\nENDSEC\n" +
+//         "0\nSECTION\n" +
+//         "2\nENTITIES\n";
+//
+//     function processPoint(coord, layer = 'Default', lotNumber = '') {
+//         let point = "0\nPOINT\n" +
+//             "8\n" + layer + "\n" +
+//             "10\n" + coord[0] + "\n" +
+//             "20\n" + coord[1] + "\n" +
+//             "30\n0.0\n";
+//         if (lotNumber && lotNumber.trim() !== '') {
+//             point += processText(coord, lotNumber, layer);
+//         }
+//         return point;
+//     }
+//
+//     function processLineString(coords, layer = 'Default') {
+//         let dxfPart = "0\nLWPOLYLINE\n" +
+//             "8\n" + layer + "\n" +
+//             "90\n" + coords.length + "\n" +
+//             "70\n0\n";
+//         coords.forEach(coord => {
+//             dxfPart += "10\n" + coord[0] + "\n" +
+//                 "20\n" + coord[1] + "\n";
+//         });
+//         return dxfPart;
+//     }
+//
+//     function processPolygon(coords, layer = 'Default', lotNumber = '') {
+//         let dxfPart = "0\nLWPOLYLINE\n" +
+//             "8\n" + layer + "\n" +
+//             "90\n" + coords[0].length + "\n" +
+//             "70\n1\n";
+//         coords[0].forEach(coord => {
+//             dxfPart += "10\n" + coord[0] + "\n" +
+//                 "20\n" + coord[1] + "\n";
+//         });
+//         if (lotNumber && lotNumber.trim() !== '') {
+//             const centroid = coords[0].reduce((acc, coord) => {
+//                 acc[0] += coord[0];
+//                 acc[1] += coord[1];
+//                 return acc;
+//             }, [0, 0]);
+//             centroid[0] /= coords[0].length;
+//             centroid[1] /= coords[0].length;
+//             dxfPart += processText(centroid, lotNumber, layer);
+//         }
+//         return dxfPart;
+//     }
+//
+//     function processText(coord, text, layer = 'Default') {
+//         return "0\nTEXT\n" +
+//             "8\n" + layer + "\n" +
+//             "10\n" + coord[0] + "\n" +
+//             "20\n" + coord[1] + "\n" +
+//             "30\n0.0\n" +
+//             "40\n1.5\n" +
+//             "72\n1\n" +
+//             "73\n1\n" +
+//             "71\n0\n" +
+//             "1\n" + text + "\n";
+//     }
+//
+//     geojson.features.forEach(feature => {
+//         const geometry = feature.geometry;
+//         const properties = feature.properties || {};
+//         const layer = properties.layer || 'Default';
+//         const lotNumber = properties['地番'] || '';
+//
+//         switch (geometry.type) {
+//             case 'Point':
+//                 dxf += processPoint(geometry.coordinates, layer, lotNumber);
+//                 break;
+//             case 'LineString':
+//                 dxf += processLineString(geometry.coordinates, layer);
+//                 break;
+//             case 'Polygon':
+//                 dxf += processPolygon(geometry.coordinates, layer, lotNumber);
+//                 break;
+//             default:
+//                 console.warn("サポートされていないジオメトリタイプ: " + geometry.type);
+//                 break;
+//         }
+//     });
+//
+//     dxf += "0\nENDSEC\n" +
+//         "0\nEOF\n";
+//     return dxf;
+// }
 
 
 // ⭐️これはHO-CADでうまくいった例
@@ -899,7 +1001,6 @@ export function saveDxf (map, layerId, sourceId, fields, detailGeojson, kei2) {
         const hoka = getChibanAndHoka(geojson).hoka
         const kei = getKeiByCode(code)
         link.download = kei + firstChiban + hoka + '.dxf';
-
 
         link.click();
     } catch (error) {
@@ -1377,6 +1478,10 @@ export function highlightSpecificFeaturesCity(map,layerId) {
         case 'oh-fukushimachiban':
             fields = ['concat', ['get', 'X'], '_', ['get', 'Y']]
             break
+        case 'oh-kitahiroshimachiban':
+            fields = ['concat', ['get', 'Aza'], '_', ['get', 'Chiban'], '_', ['get', 'Edaban']]
+            break
+
     }
     console.log(fields)
     map.setPaintProperty(
@@ -1417,10 +1522,9 @@ function getBoundingBoxByLayer(map, layerId) {
             case 'oh-fukushimachiban':
                 targetId = `${feature.properties['X']}_${feature.properties['Y']}`;
                 break;
-            default:
-                targetId = null; // どのケースにも一致しない場合のデフォルト値
+            case 'oh-kitahiroshimachiban':
+                targetId = `${feature.properties['Aza']}_${feature.properties['Chiban']}_${feature.properties['Edaban']}`;
                 break;
-
         }
         console.log(highlightedChibans)
         return highlightedChibans.has(targetId); // 特定のIDセットに含まれているか
@@ -1486,6 +1590,9 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
                 break;
             default:
                 targetId = null; // どのケースにも一致しない場合のデフォルト値
+                break;
+            case 'oh-kitahiroshimachiban':
+                targetId = `${feature.properties['Aza']}_${feature.properties['Chiban']}_${feature.properties['Edaban']}`;
                 break;
         }
         console.log(targetId)
