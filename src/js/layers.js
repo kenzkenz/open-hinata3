@@ -6874,62 +6874,69 @@ const layers01 = [
                 // ext: {name:'extTokijyo'}
             },
             {
-                id: 'oh-chibanzu2024',
-                label: "24自治体地番図",
-                source: chibanzu2024Source,
-                layers:[chibanzu2024Layer,chibanzu2024Line],
-                attribution: '<a href="https://www.geospatial.jp/ckan/dataset/chibanzu_2024/resource/79642df8-0456-4847-97cd-a9934cbee42e">Chibanzu_2024.fgb</a><br>'+
-                '<a href="https://hackmd.io/@kenz/SkQ_R21Lkg" target="_blank">24自治体の情報はこちら</a>',
-                ext: {name:'extChibanz2024'}
+                id: 'citychibanzu',
+                label: "市町村地番図",
+                nodes: [
+                    {
+                        id: 'oh-chibanzu2024',
+                        label: "24自治体地番図",
+                        source: chibanzu2024Source,
+                        layers:[chibanzu2024Layer,chibanzu2024Line],
+                        attribution: '<a href="https://www.geospatial.jp/ckan/dataset/chibanzu_2024/resource/79642df8-0456-4847-97cd-a9934cbee42e">Chibanzu_2024.fgb</a><br>'+
+                            '<a href="https://hackmd.io/@kenz/SkQ_R21Lkg" target="_blank">24自治体の情報はこちら</a>',
+                        ext: {name:'extChibanz2024'}
+                    },
+                    {
+                        id: 'oh-iwata',
+                        label: "磐田市地番図",
+                        source: iwatapolygonSource,
+                        layers:[iwatapolygonLayer,iwatapolygonLine],
+                        attribution: '<a href="https://www.city.iwata.shizuoka.jp/shiseijouhou/1006207/1002775.html" target="_blank">磐田市オープンデータ</a>',
+                        ext: {name:'extIwata'}
+                    },
+                    {
+                        id: 'oh-narashi',
+                        label: "奈良市地番図",
+                        source: narashichibanSource,
+                        layers:[narashichibanLayer,narashichibanLine],
+                        attribution: '<a href="https://www.city.nara.lg.jp/soshiki/14/104605.html" target="_blank">奈良市地番図オープンデータ</a>',
+                        ext: {name:'extNarashi'}
+                    },
+                    {
+                        id: 'oh-fukushimashi',
+                        label: "福島市地番図",
+                        source: fukushimachibanSource,
+                        layers:[fukushimachibanLayer,fukushimachibanLine],
+                        attribution: '<a href="https://www.city.fukushima.fukushima.jp/d-kikaku/shise/opendate/machidukuri.html" target="_blank">福島市オープンデータ</a>',
+                        ext: {name:'extFukushimashi'}
+                    },
+                    {
+                        id: 'oh-kitahiroshima',
+                        label: "北広島市地番図",
+                        source: kitahiroshimachibanSource,
+                        layers:[kitahiroshimachibanLayer,kitahiroshimachibanLine],
+                        attribution: '<a href="https://www.harp.lg.jp/opendata/dataset/2061.html" target="_blank">北海道オープンデータポータル</a>',
+                        ext: {name:'extKitahiroshimashi'}
+                    },
+                    {
+                        id: 'oh-kunitachishi',
+                        label: "国立市地番図",
+                        source: kunitachishichibanSource,
+                        layers:[kunitachishichibanLayer,kunitachishichibanLine],
+                        attribution: '<a href="https://www.city.kunitachi.tokyo.jp/soshiki/Dept01/Div03/Sec01/oshirase/11883.html" target="_blank">地番図の公開について</a>',
+                        ext: {name:'extKunitachishi'}
+                    },
+                    {
+                        id: 'oh-fukuokashi',
+                        label: "福岡市市地番図",
+                        source: fukuokashichibanSource,
+                        layers:[fukuokashichibanLayer,fukuokashichibanLine],
+                        attribution: '<a href="https://webmap.city.fukuoka.lg.jp/fukuoka/OpenData?mids=&pno=1" target="_blank">福岡市Webマップ</a>',
+                        ext: {name:'extFukuokashi'}
+                    },
+                    ]
             },
-            {
-                id: 'oh-iwata',
-                label: "磐田市地番図",
-                source: iwatapolygonSource,
-                layers:[iwatapolygonLayer,iwatapolygonLine],
-                attribution: '<a href="https://www.city.iwata.shizuoka.jp/shiseijouhou/1006207/1002775.html" target="_blank">磐田市オープンデータ</a>',
-                ext: {name:'extIwata'}
-            },
-            {
-                id: 'oh-narashi',
-                label: "奈良市地番図",
-                source: narashichibanSource,
-                layers:[narashichibanLayer,narashichibanLine],
-                attribution: '<a href="https://www.city.nara.lg.jp/soshiki/14/104605.html" target="_blank">奈良市地番図オープンデータ</a>',
-                ext: {name:'extNarashi'}
-            },
-            {
-                id: 'oh-fukushimashi',
-                label: "福島市地番図",
-                source: fukushimachibanSource,
-                layers:[fukushimachibanLayer,fukushimachibanLine],
-                attribution: '<a href="https://www.city.fukushima.fukushima.jp/d-kikaku/shise/opendate/machidukuri.html" target="_blank">福島市オープンデータ</a>',
-                ext: {name:'extFukushimashi'}
-            },
-            {
-                id: 'oh-kitahiroshima',
-                label: "北広島市地番図",
-                source: kitahiroshimachibanSource,
-                layers:[kitahiroshimachibanLayer,kitahiroshimachibanLine],
-                attribution: '<a href="https://www.harp.lg.jp/opendata/dataset/2061.html" target="_blank">北海道オープンデータポータル</a>',
-                ext: {name:'extKitahiroshimashi'}
-            },
-            {
-                id: 'oh-kunitachishi',
-                label: "国立市地番図",
-                source: kunitachishichibanSource,
-                layers:[kunitachishichibanLayer,kunitachishichibanLine],
-                attribution: '<a href="https://www.city.kunitachi.tokyo.jp/soshiki/Dept01/Div03/Sec01/oshirase/11883.html" target="_blank">地番図の公開について</a>',
-                ext: {name:'extKunitachishi'}
-            },
-            {
-                id: 'oh-fukuokashi',
-                label: "福岡市市地番図",
-                source: fukuokashichibanSource,
-                layers:[fukuokashichibanLayer,fukuokashichibanLine],
-                attribution: '<a href="https://webmap.city.fukuoka.lg.jp/fukuoka/OpenData?mids=&pno=1" target="_blank">福岡市Webマップ</a>',
-                ext: {name:'extFukuokashi'}
-            },
+
         ]},
     {
         id: 1,
