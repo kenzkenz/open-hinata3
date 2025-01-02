@@ -185,7 +185,7 @@ import {
   saveDxf,
   saveCsv,
   simaToGeoJSON,
-  resetFeatureColors, saveCima2
+  resetFeatureColors, saveSima2
 } from "@/js/downLoad";
 
 export default {
@@ -247,6 +247,7 @@ export default {
       this.isAndroid = /android/i.test(userAgent);
     },
     idForLayerId (id) {
+      console.log(id)
       switch (id) {
         case 'oh-chibanzu2024':
           this.layerId = 'oh-chibanzu2024'
@@ -276,6 +277,11 @@ export default {
         case 'oh-kunitachishi':
           this.layerId = 'oh-kunitachishi'
           this.sourceId = 'kunitachishichiban-source'
+          this.fields = ['id']
+          break
+        case 'oh-fukuokashi':
+          this.layerId = 'oh-fukuokashichiban'
+          this.sourceId = 'fukuokashichiban-source'
           this.fields = ['id']
           break
       }
@@ -308,7 +314,7 @@ export default {
       this.idForLayerId(this.item.id)
       // saveDxf(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'])
       // saveDxf(map,this.layerId,this.sourceId,this.fields)
-      saveCima2(map,this.layerId,null,true,this.sourceId,this.fields,this.s_zahyokei)
+      saveSima2(map,this.layerId,null,true,this.sourceId,this.fields,this.s_zahyokei)
     },
     loadSima () {
       if (!this.s_zahyokei) {

@@ -409,3 +409,18 @@ tippecanoe -l polygon -f -o kunitachishi.pmtiles kunitachishi.geojson
 ogr2ogr -f "GeoJSON" zahyokei.geojson heimenchokkaku.shp
 
 tippecanoe -l polygon -f -o zahyokei.pmtiles zahyokei.geojson
+
+tippecanoe -l polygon -f -o fukuokashi.pmtiles fukuokashi.geojson
+
+tippecanoe -o fukuokashi.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=0 \
+    --layer=chibanzu \
+    fukuokashi.geojson

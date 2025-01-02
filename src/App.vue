@@ -1069,6 +1069,7 @@ export default {
               if (map.getLayer('oh-fukushimachiban')) highlightSpecificFeaturesCity(map, 'oh-fukushimachiban');
               if (map.getLayer('oh-kitahiroshimachiban')) highlightSpecificFeaturesCity(map, 'oh-kitahiroshimachiban');
               if (map.getLayer('oh-kunitachishi')) highlightSpecificFeaturesCity(map, 'oh-kunitachishi');
+              if (map.getLayer('oh-fukuokashichiban')) highlightSpecificFeaturesCity(map, 'oh-fukuokashichiban');
             },100)
           }
 
@@ -1468,6 +1469,33 @@ export default {
             dropzone.classList.remove('active');
           });
 
+
+          // ドロップ時の処理 SIMA
+          dropzone.addEventListener('drop', (event) => {
+            event.preventDefault();
+            dropzone.style.backgroundColor = '';
+
+            const files = event.dataTransfer.files;
+
+            if (files.length > 0) {
+              const file = files[0];
+              const fileName = file.name;
+              const fileExtension = fileName.split('.').pop().toLowerCase();
+
+              if (fileExtension === 'sim') {
+                this.$store.state.dialogForSima = true
+                // const fileInputEvent = { target: { files: [file] } };
+
+                // handleFileUpload(fileInputEvent);
+              } else {
+                alert('拡張子が.simのファイルのみ対応しています。');
+              }
+            }
+          });
+
+
+
+
           // ファイルドロップ処理
           document.addEventListener('drop', (event) => {
             event.preventDefault();
@@ -1481,7 +1509,7 @@ export default {
 
             const file = files[0];
             if (file.type !== 'application/geo+json' && file.type !== 'application/json') {
-              alert('GeoJSONファイルを選択してください');
+              // alert('GeoJSONファイルを選択してください');
               return;
             }
 
@@ -1760,6 +1788,20 @@ export default {
                 this.$store.state.highlightedChibans.add(targetId);
               }
               highlightSpecificFeaturesCity(map,'oh-kunitachishi');
+            }
+          });
+          map.on('click', 'oh-fukuokashichiban', (e) => {
+            if (e.features && e.features.length > 0) {
+              const targetId = `${e.features[0].properties['id']}`;
+              console.log('Clicked ID', targetId);
+              if (this.$store.state.highlightedChibans.has(targetId)) {
+                // すでに選択されている場合は解除
+                this.$store.state.highlightedChibans.delete(targetId);
+              } else {
+                // 新しいIDを追加
+                this.$store.state.highlightedChibans.add(targetId);
+              }
+              highlightSpecificFeaturesCity(map,'oh-fukuokashichiban');
             }
           });
         })

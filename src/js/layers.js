@@ -6711,6 +6711,38 @@ const kunitachishichibanLine = {
         ]
     },
 }
+// 福岡市 --------------------------------------------------------------------------------------------
+const fukuokashichibanSource = {
+    id: "fukuokashichiban-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/chiban/fukuokashi.pmtiles",
+    }
+}
+const fukuokashichibanLayer = {
+    id: "oh-fukuokashichiban",
+    type: "fill",
+    source: "fukuokashichiban-source",
+    "source-layer": "chibanzu",
+    'paint': {
+        'fill-color': 'rgba(0,0,0,0)',
+    }
+}
+const fukuokashichibanLine = {
+    id: "oh-fukuokashichiban-line",
+    type: "line",
+    source: "fukuokashichiban-source",
+    "source-layer": "chibanzu",
+    paint: {
+        'line-color': 'navy',
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            1, 0.1,
+            16, 2
+        ]
+    },
+}
 // Chibanzu_2024 --------------------------------------------------------------------------------------------
 const chibanzu2024Source = {
     id: "chibanzu2024-source", obj: {
@@ -6889,6 +6921,14 @@ const layers01 = [
                 layers:[kunitachishichibanLayer,kunitachishichibanLine],
                 attribution: '<a href="https://www.city.kunitachi.tokyo.jp/soshiki/Dept01/Div03/Sec01/oshirase/11883.html" target="_blank">地番図の公開について</a>',
                 ext: {name:'extKunitachishi'}
+            },
+            {
+                id: 'oh-fukuokashi',
+                label: "福岡市市地番図",
+                source: fukuokashichibanSource,
+                layers:[fukuokashichibanLayer,fukuokashichibanLine],
+                attribution: '<a href="https://webmap.city.fukuoka.lg.jp/fukuoka/OpenData?mids=&pno=1" target="_blank">福岡市Webマップ</a>',
+                ext: {name:'extFukuokashi'}
             },
         ]},
     {

@@ -77,6 +77,7 @@ export default createStore({
     zeniGeojson: '',
     isRenzoku: true,
     highlightedChibans: new Set(),
+    dialogForSima: false,
     //------------------------
     highwayYear:{
       map01: 2024,

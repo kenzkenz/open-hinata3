@@ -470,38 +470,30 @@ export function saveCima(map, layerId, sourceId, fields, kaniFlg, kei) {
 }
 
 
+
+
+// ⭐️これはHO-CADでうまくいった例
 function geojsonToDXF(geojson) {
     let dxf = "0\n" +
         "SECTION\n" +
         "2\n" +
         "HEADER\n" +
-        "9\n$ACADVER\n1\nAC1015\n" + // AutoCAD 2000 DXF version, compatible with BricsCAD
-        "9\n$HANDSEED\n5\nFFFF\n" + // Ensures compatibility with BricsCAD
-        "9\n$DWGCODEPAGE\n3\nANSI_1252\n" + // Ensures text encoding compatibility
-        "0\nENDSEC\n" +
-        "0\nSECTION\n" +
-        "2\nCLASSES\n" +
-        "0\nENDSEC\n" +
-        "0\nSECTION\n" +
-        "2\nTABLES\n" +
-        "0\nTABLE\n" +
-        "2\nLAYER\n" +
-        "70\n1\n" +
-        "0\nLAYER\n" +
-        "2\nDefault\n" +
-        "70\n0\n" +
-        "62\n7\n" +
-        "6\nCONTINUOUS\n" +
-        "0\nENDTAB\n" +
-        "0\nENDSEC\n" +
-        "0\nSECTION\n" +
-        "2\nBLOCKS\n" +
-        "0\nENDSEC\n" +
-        "0\nSECTION\n" +
-        "2\nENTITIES\n";
+        "0\n" +
+        "ENDSEC\n" +
+        "0\n" +
+        "SECTION\n" +
+        "2\n" +
+        "TABLES\n" +
+        "0\n" +
+        "ENDSEC\n" +
+        "0\n" +
+        "SECTION\n" +
+        "2\n" +
+        "ENTITIES\n";
 
     function processPoint(coord, layer = 'Default', lotNumber = '') {
-        let point = "0\nPOINT\n" +
+        let point = "0\n" +
+            "POINT\n" +
             "8\n" + layer + "\n" +
             "10\n" + coord[0] + "\n" +
             "20\n" + coord[1] + "\n";
@@ -510,16 +502,17 @@ function geojsonToDXF(geojson) {
                 "8\n" + layer + "\n" +
                 "10\n" + coord[0] + "\n" +
                 "20\n" + coord[1] + "\n" +
-                "40\n2.0\n" + // Adjusted text height for better visibility
-                "72\n1\n" +
-                "73\n1\n" +
+                "40\n1.5\n" + // Smaller Text height
+                "72\n1\n" + // Horizontal alignment (center)
+                "73\n1\n" + // Vertical alignment (center)
                 "1\n" + lotNumber + "\n";
         }
         return point;
     }
 
     function processLineString(coords, layer = 'Default') {
-        let dxfPart = "0\nLWPOLYLINE\n" +
+        let dxfPart = "0\n" +
+            "LWPOLYLINE\n" +
             "8\n" + layer + "\n" +
             "90\n" + coords.length + "\n";
         coords.forEach(coord => {
@@ -530,7 +523,8 @@ function geojsonToDXF(geojson) {
     }
 
     function processPolygon(coords, layer = 'Default', lotNumber = '') {
-        let dxfPart = "0\nLWPOLYLINE\n" +
+        let dxfPart = "0\n" +
+            "LWPOLYLINE\n" +
             "8\n" + layer + "\n" +
             "90\n" + coords[0].length + "\n" +
             "70\n1\n";
@@ -539,6 +533,7 @@ function geojsonToDXF(geojson) {
                 "20\n" + coord[1] + "\n";
         });
         if (lotNumber && lotNumber.trim() !== '') {
+            // Add lot number as text at the centroid of the polygon
             const centroid = coords[0].reduce((acc, coord) => {
                 acc[0] += coord[0];
                 acc[1] += coord[1];
@@ -551,9 +546,9 @@ function geojsonToDXF(geojson) {
                 "8\n" + layer + "\n" +
                 "10\n" + centroid[0] + "\n" +
                 "20\n" + centroid[1] + "\n" +
-                "40\n2.0\n" +
-                "72\n1\n" +
-                "73\n1\n" +
+                "40\n1.5\n" + // Smaller Text height
+                "72\n1\n" + // Horizontal alignment (center)
+                "73\n1\n" + // Vertical alignment (center)
                 "1\n" + lotNumber + "\n";
         }
         return dxfPart;
@@ -581,125 +576,12 @@ function geojsonToDXF(geojson) {
         }
     });
 
-    dxf += "0\nENDSEC\n" +
-        "0\nSECTION\n" +
-        "2\nOBJECTS\n" +
-        "0\nENDSEC\n" +
-        "0\nEOF\n";
+    dxf += "0\n" +
+        "ENDSEC\n" +
+        "0\n" +
+        "EOF\n";
     return dxf;
 }
-
-
-// ⭐️これはHO-CADでうまくいった例
-// function geojsonToDXF(geojson) {
-//     let dxf = "0\n" +
-//         "SECTION\n" +
-//         "2\n" +
-//         "HEADER\n" +
-//         "0\n" +
-//         "ENDSEC\n" +
-//         "0\n" +
-//         "SECTION\n" +
-//         "2\n" +
-//         "TABLES\n" +
-//         "0\n" +
-//         "ENDSEC\n" +
-//         "0\n" +
-//         "SECTION\n" +
-//         "2\n" +
-//         "ENTITIES\n";
-//
-//     function processPoint(coord, layer = 'Default', lotNumber = '') {
-//         let point = "0\n" +
-//             "POINT\n" +
-//             "8\n" + layer + "\n" +
-//             "10\n" + coord[0] + "\n" +
-//             "20\n" + coord[1] + "\n";
-//         if (lotNumber && lotNumber.trim() !== '') {
-//             point += "0\nTEXT\n" +
-//                 "8\n" + layer + "\n" +
-//                 "10\n" + coord[0] + "\n" +
-//                 "20\n" + coord[1] + "\n" +
-//                 "40\n1.5\n" + // Smaller Text height
-//                 "72\n1\n" + // Horizontal alignment (center)
-//                 "73\n1\n" + // Vertical alignment (center)
-//                 "1\n" + lotNumber + "\n";
-//         }
-//         return point;
-//     }
-//
-//     function processLineString(coords, layer = 'Default') {
-//         let dxfPart = "0\n" +
-//             "LWPOLYLINE\n" +
-//             "8\n" + layer + "\n" +
-//             "90\n" + coords.length + "\n";
-//         coords.forEach(coord => {
-//             dxfPart += "10\n" + coord[0] + "\n" +
-//                 "20\n" + coord[1] + "\n";
-//         });
-//         return dxfPart;
-//     }
-//
-//     function processPolygon(coords, layer = 'Default', lotNumber = '') {
-//         let dxfPart = "0\n" +
-//             "LWPOLYLINE\n" +
-//             "8\n" + layer + "\n" +
-//             "90\n" + coords[0].length + "\n" +
-//             "70\n1\n";
-//         coords[0].forEach(coord => {
-//             dxfPart += "10\n" + coord[0] + "\n" +
-//                 "20\n" + coord[1] + "\n";
-//         });
-//         if (lotNumber && lotNumber.trim() !== '') {
-//             // Add lot number as text at the centroid of the polygon
-//             const centroid = coords[0].reduce((acc, coord) => {
-//                 acc[0] += coord[0];
-//                 acc[1] += coord[1];
-//                 return acc;
-//             }, [0, 0]);
-//             centroid[0] /= coords[0].length;
-//             centroid[1] /= coords[0].length;
-//
-//             dxfPart += "0\nTEXT\n" +
-//                 "8\n" + layer + "\n" +
-//                 "10\n" + centroid[0] + "\n" +
-//                 "20\n" + centroid[1] + "\n" +
-//                 "40\n1.5\n" + // Smaller Text height
-//                 "72\n1\n" + // Horizontal alignment (center)
-//                 "73\n1\n" + // Vertical alignment (center)
-//                 "1\n" + lotNumber + "\n";
-//         }
-//         return dxfPart;
-//     }
-//
-//     geojson.features.forEach(feature => {
-//         const geometry = feature.geometry;
-//         const properties = feature.properties || {};
-//         const layer = properties.layer || 'Default';
-//         const lotNumber = properties['地番'] || '';
-//
-//         switch (geometry.type) {
-//             case 'Point':
-//                 dxf += processPoint(geometry.coordinates, layer, lotNumber);
-//                 break;
-//             case 'LineString':
-//                 dxf += processLineString(geometry.coordinates, layer);
-//                 break;
-//             case 'Polygon':
-//                 dxf += processPolygon(geometry.coordinates, layer, lotNumber);
-//                 break;
-//             default:
-//                 console.warn("サポートされていないジオメトリタイプ: " + geometry.type);
-//                 break;
-//         }
-//     });
-//
-//     dxf += "0\n" +
-//         "ENDSEC\n" +
-//         "0\n" +
-//         "EOF\n";
-//     return dxf;
-// }
 
 
 // ⭐️これは地番がない最もベーシックなもの
@@ -1229,7 +1111,7 @@ async function detailGeojson(map, layerId, kukaku) {
 }
 
 
-export async function saveCima2(map, layerId, kukaku, isDfx, sourceId, fields, kei) {
+export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, kei) {
     if (map.getZoom() <= 14) {
         alert('ズーム14以上にしてください。');
         return;
@@ -1441,8 +1323,12 @@ export function highlightSpecificFeaturesCity(map,layerId) {
             case 'oh-kunitachishi':
                 fields = ['concat', ['get', 'id']]
                 break
+            case 'oh-fukuokashichiban':
+                fields = ['concat', ['get', 'id']]
+                break
 
         }
+        console.log(layerId)
         console.log(fields)
         map.setPaintProperty(
             layerId,
@@ -1487,7 +1373,7 @@ function getBoundingBoxByLayer(map, layerId) {
             case 'oh-kitahiroshimachiban':
                 targetId = `${feature.properties['Aza']}_${feature.properties['Chiban']}_${feature.properties['Edaban']}`;
                 break;
-            case 'oh-kunitachishi':
+            case 'oh-fukuokashichiban':
                 targetId = `${feature.properties['id']}`;
                 break;
         }
@@ -1586,6 +1472,9 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
                 targetId = `${feature.properties['Aza']}_${feature.properties['Chiban']}_${feature.properties['Edaban']}`;
                 break;
             case 'oh-kunitachishi':
+                targetId = `${feature.properties['id']}`;
+                break;
+            case 'oh-fukuokashichiban':
                 targetId = `${feature.properties['id']}`;
                 break;
         }

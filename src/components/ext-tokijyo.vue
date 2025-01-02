@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="dialog" max-width="500px">
+  <v-dialog v-model="s_dialogForSima" max-width="500px">
     <v-card>
       <v-card-title>
         座標系選択
@@ -11,11 +11,11 @@
             label="選択してください"
             outlined
         ></v-select>
-        <v-btn @click="loadSima">読込開始</v-btn>
+        <v-btn @click="loadSima">SIMA読込開始</v-btn>
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="blue-darken-1" text @click="dialog = false">Close</v-btn>
+        <v-btn color="blue-darken-1" text @click="s_dialogForSima = false">Close</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -51,7 +51,7 @@
     <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveSima2">sima保存（詳細）</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="dialog=true">sima読込</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="s_dialogForSima=true">sima読込</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="jww">jww座標ファイル</v-btn>
     <hr>
     <div style="display: flex; align-items: center; gap: 10px;">
@@ -84,7 +84,7 @@ import {
   saveGeojson,
   gistUpload,
   saveCima,
-  saveCima2,
+  saveSima2,
   saveDxf,
   initializePlaneRectangularCRS,
   saveCsv,
@@ -97,7 +97,7 @@ export default {
   props: ['mapName','item'],
   data: () => ({
     mode: false,
-    dialog: false,
+    // dialog: false,
     dialogInfo: false,
     selectedItem: null,
     items: [
@@ -114,6 +114,14 @@ export default {
   computed: {
     s_extFire () {
       return this.$store.state.extFire
+    },
+    s_dialogForSima: {
+      get() {
+        return this.$store.state.dialogForSima
+      },
+      set(value) {
+        return this.$store.state.dialogForSima = value
+      }
     },
     s_tokijyoText: {
       get() {
@@ -154,7 +162,7 @@ export default {
     },
     jww () {
       const map = this.$store.state[this.mapName]
-      saveCima2(map,'oh-amx-a-fude',true)
+      saveSima2(map,'oh-amx-a-fude',true)
     },
     resetFeatureColors () {
       const map = this.$store.state[this.mapName]
@@ -175,11 +183,11 @@ export default {
     saveDxf () {
       const map = this.$store.state[this.mapName]
       // saveDxf(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
-      saveCima2(map,'oh-amx-a-fude',null,true,'amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
+      saveSima2(map,'oh-amx-a-fude',null,true,'amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
     },
     saveSima2 () {
       const map = this.$store.state[this.mapName]
-      saveCima2(map,'oh-amx-a-fude')
+      saveSima2(map,'oh-amx-a-fude')
     },
     saveSima () {
       const map = this.$store.state[this.mapName]
