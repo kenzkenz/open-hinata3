@@ -892,7 +892,7 @@ export default {
       map.on('click', (e) => {
         const latitude = e.lngLat.lat
         const longitude = e.lngLat.lng
-        console.log(longitude, latitude)
+        console.log(JSON.stringify([longitude, latitude]))
       })
 
       map.on('moveend', () => {

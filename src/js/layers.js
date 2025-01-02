@@ -957,12 +957,90 @@ const kirieLayers2 = kirieLayers.map((layer,i) => {
         layers:[layer],
         attribution: '<a href="http://codh.rois.ac.jp/edo-maps/owariya/" target="_blank">人文学オープンデータ共同利用センター</a>' +
             '<br><br><a href="https://mapwarper.h-gis.jp/maps/' + layer.url + '" target="_blank">日本版Map Warper</a>'
-
     }
 })
-// console.log(kirieSources)
-// console.log(kirieLayers)
-// console.log(kirieLayers2)
+console.log(kirieLayers2)
+// ---------------------------------------------------------------------------------------------------------------------
+// 市町村地番図
+const sicyosonChibanzuUrls = [
+    {name:'室蘭市', position:[140.99286678768675,42.36472347973418], bounds:'', page:''},
+    {name:'ニセコ町', position:'', bounds:'', page:''},
+    {name:'音更町', position:'', bounds:'', page:''},
+    {name:'鹿角市', position:'', bounds:'', page:''},
+    {name:'舟形町', position:'', bounds:'', page:''},
+    {name:'利根町', position:'', bounds:'', page:''},
+    {name:'小平市', position:'', bounds:'', page:''},
+    {name:'町田市', position:'', bounds:'', page:''},
+    {name:'静岡市', position:'', bounds:'', page:''},
+    {name:'磐田市', position:'', bounds:'', page:''},
+    {name:'半田市', position:'', bounds:'', page:''},
+    {name:'京都市', position:'', bounds:'', page:''},
+    {name:'長岡京市', position:'', bounds:'', page:''},
+    {name:'岸和田市', position:'', bounds:'', page:''},
+    {name:'泉南市', position:'', bounds:'', page:''},
+    {name:'西宮市', position:'', bounds:'', page:''},
+    {name:'加古川市', position:'', bounds:'', page:''},
+    {name:'川西市', position:'', bounds:'', page:''},
+    {name:'佐用町', position:'', bounds:'', page:''},
+    {name:'奈良市', position:'', bounds:'', page:''},
+    {name:'坂出市', position:'', bounds:'', page:''},
+    {name:'善通寺市', position:'', bounds:'', page:''},
+    {name:'長与町', position:'', bounds:'', page:''},
+    {name:'福島市', position:'', bounds:'', page:''}
+];
+const chibanzuSources = []
+const chibanzuLayers = []
+const chibanzuLayerLines = []
+sicyosonChibanzuUrls.forEach(url => {
+    chibanzuSources.push({
+        id: 'oh-chibanzu-source',
+        obj: {
+            type: "vector",
+            url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/chiban/Chibanzu_2024_with_id2.pmtiles',
+        }
+    })
+    chibanzuLayers.push({
+        id: 'oh-chibanzu-' + url.name,
+        source: 'oh-chibanzu-source',
+        type: 'fill',
+        "source-layer": "chibanzu",
+        'paint': {
+            'fill-color': 'rgba(0,0,0,0)',
+        },
+        position: url.position
+    })
+    chibanzuLayerLines.push({
+        id: 'oh-chibanzu-line-' + url.name,
+        source: 'oh-chibanzu-source',
+        type: 'line',
+        "source-layer": "chibanzu",
+        paint: {
+            'line-color': 'navy',
+            'line-width': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                1, 0.1,
+                16, 2
+            ]
+        },
+    })
+
+
+})
+const chibanzuLayers2 = chibanzuLayers.map((layer,i) => {
+    const name = layer.id.replace('oh-chibanzu-','') + '地番図'
+    return {
+        id: layer.id,
+        label: name,
+        source: chibanzuSources[i],
+        layers:[layer,chibanzuLayerLines[i]],
+        attribution: '<a href="" target="_blank">' + name + '</a>',
+        position: layer.position
+    }
+})
+
+console.log(chibanzuLayers2)
 
 
 
@@ -6877,6 +6955,7 @@ const layers01 = [
                 id: 'citychibanzu',
                 label: "市町村地番図",
                 nodes: [
+                    ...chibanzuLayers2,
                     {
                         id: 'oh-chibanzu2024',
                         label: "24自治体地番図",
