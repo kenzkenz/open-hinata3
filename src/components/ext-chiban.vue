@@ -284,6 +284,66 @@ export default {
           this.sourceId = 'fukuokashichiban-source'
           this.fields = ['id']
           break
+        case 'oh-chibanzu-室蘭市':
+          this.layerId = 'oh-chibanzu-室蘭市'
+          this.sourceId = 'oh-chibanzu-室蘭市-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-ニセコ町':
+          this.layerId = 'oh-chibanzu-ニセコ町'
+          this.sourceId = 'oh-chibanzu-ニセコ町-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-音更町':
+          this.layerId = 'oh-chibanzu-音更町'
+          this.sourceId = 'oh-chibanzu-音更町-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-鹿角市':
+          this.layerId = 'oh-chibanzu-鹿角市'
+          this.sourceId = 'oh-chibanzu-鹿角市-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-舟形町':
+          this.layerId = 'oh-chibanzu-舟形町'
+          this.sourceId = 'oh-chibanzu-舟形町-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-利根町':
+          this.layerId = 'oh-chibanzu-利根町'
+          this.sourceId = 'oh-chibanzu-利根町-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-小平市':
+          this.layerId = 'oh-chibanzu-小平市'
+          this.sourceId = 'oh-chibanzu-小平市-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-町田市':
+          this.layerId = 'oh-chibanzu-町田市'
+          this.sourceId = 'oh-chibanzu-町田市-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-静岡市':
+          this.layerId = 'oh-chibanzu-静岡市'
+          this.sourceId = 'oh-chibanzu-静岡市-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-磐田市':
+          this.layerId = 'oh-chibanzu-磐田市'
+          this.sourceId = 'oh-chibanzu-磐田市-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-半田市':
+          this.layerId = 'oh-chibanzu-半田市'
+          this.sourceId = 'oh-chibanzu-半田市-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-京都市':
+          this.layerId = 'oh-chibanzu-京都市'
+          this.sourceId = 'oh-chibanzu-京都市-source'
+          this.fields = ['id']
+          break
       }
     },
     resetFeatureColors () {
@@ -352,6 +412,7 @@ export default {
     gistUpload () {
       const map = this.$store.state[this.mapName]
       this.idForLayerId(this.item.id)
+      console.log(this.layerId,this.sourceId,this.fields)
       // gistUpload(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'])
       gistUpload(map,this.layerId,this.sourceId,this.fields)
     },

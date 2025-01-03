@@ -49,6 +49,7 @@
         'extKitahiroshimashi',
         'extKunitachishi',
         'extFukuokashi',
+        'ext-chibanzu',
           ].includes(item.ext.name)"/>
   </div>
 </template>

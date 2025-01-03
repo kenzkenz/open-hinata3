@@ -319,6 +319,7 @@ export default {
                 visibility: true,
                 ext: node.ext,
                 info: node.info,
+                position: node.position
               }
           )
         } else {
@@ -368,12 +369,32 @@ export default {
           if (layer.source) {
             if (!map.getSource(layer.source.id)) map.addSource(layer.source.id, layer.source.obj)
           }
+
+          console.log(layer.layers)
+          let flyFlg = true
           layer.layers.forEach(layer0 => {
             if (layer0.id === 'oh-mw-dummy') {
               this.mw5AddLayers(map,this.mapName)
             } else {
               if (!map.getLayer(layer0.id)) {
                 map.addLayer(layer0)
+                // console.log(layer0)
+                if (layer0.position) {
+                  console.log(Array.from(layer0.position))
+                  if (flyFlg) {
+                    setTimeout(() => {
+                      map.flyTo({
+                        center: Array.from(layer0.position), // フライ先の座標（経度, 緯度）
+                        zoom: 14.5,                   // ズームレベル（任意）
+                        speed: 1.2,                 // アニメーション速度（オプション）
+                        curve: 1.42,                // アニメーションの曲線効果（オプション）
+                        essential: true            // ユーザーがアニメーションを無効化していても実行
+                      });
+                    },1000)
+                    flyFlg = false
+                  }
+
+                }
               }
               let opacity
               if (layer0['max-opacity']) {

@@ -963,45 +963,47 @@ console.log(kirieLayers2)
 // ---------------------------------------------------------------------------------------------------------------------
 // 市町村地番図
 const sicyosonChibanzuUrls = [
-    {name:'室蘭市', position:[140.99286678768675,42.36472347973418], bounds:'', page:''},
-    {name:'ニセコ町', position:'', bounds:'', page:''},
-    {name:'音更町', position:'', bounds:'', page:''},
-    {name:'鹿角市', position:'', bounds:'', page:''},
-    {name:'舟形町', position:'', bounds:'', page:''},
-    {name:'利根町', position:'', bounds:'', page:''},
-    {name:'小平市', position:'', bounds:'', page:''},
-    {name:'町田市', position:'', bounds:'', page:''},
-    {name:'静岡市', position:'', bounds:'', page:''},
-    {name:'磐田市', position:'', bounds:'', page:''},
-    {name:'半田市', position:'', bounds:'', page:''},
-    {name:'京都市', position:'', bounds:'', page:''},
-    {name:'長岡京市', position:'', bounds:'', page:''},
-    {name:'岸和田市', position:'', bounds:'', page:''},
-    {name:'泉南市', position:'', bounds:'', page:''},
-    {name:'西宮市', position:'', bounds:'', page:''},
-    {name:'加古川市', position:'', bounds:'', page:''},
-    {name:'川西市', position:'', bounds:'', page:''},
-    {name:'佐用町', position:'', bounds:'', page:''},
-    {name:'奈良市', position:'', bounds:'', page:''},
-    {name:'坂出市', position:'', bounds:'', page:''},
-    {name:'善通寺市', position:'', bounds:'', page:''},
-    {name:'長与町', position:'', bounds:'', page:''},
-    {name:'福島市', position:'', bounds:'', page:''}
+    {name:'室蘭市', position:[140.99286678768675,42.36472347973418], url:'muroranshi', page:''},
+    {name:'ニセコ町', position:[140.68806409835815,42.80495731522012], url:'nisekocyo',  page:'https://www.harp.lg.jp/opendata/dataset/1750.html'},
+    {name:'音更町', position:'', url:'otohukechyo', page:'https://www.harp.lg.jp/opendata/dataset/2035.html'},
+    {name:'鹿角市', position:[140.7886727460321,40.21559737412008], url:'kazunoshi', bounds:'', page:'https://www.city.kazuno.lg.jp/soshiki/somu/digital/gyomu/opendata/9788.html'},
+    {name:'舟形町', position:[140.32022099999745,38.691255021073715], url: 'funagatamachi', page:'https://www.town.funagata.yamagata.jp/s012/opendata/010/010/20230711101613.html'},
+    {name:'利根町', position:[140.1391729153425,35.85756030920088], url: 'tonechyo', page:'https://www.town.tone.ibaraki.jp/opendata.php'},
+    // {name:'小平市', position:[139.47755191534628,35.7282649693596], url: 'kodairashi', page:'https://www.city.kodaira.tokyo.jp/kurashi/111/111978.html'},
+    {name:'町田市', position:[139.4387823343277,35.546591812173475], url:'machidashi', page:'https://www.city.machida.tokyo.jp/shisei/opendata/chizujoho/chisekizu.html'},
+    {name:'静岡市', position:[138.38294267724638,34.974974010631584], url:'shizuokashi', page:'https://dataset.city.shizuoka.jp/dataset/1707986930/resource/4a40cc33-0aef-4426-825e-3b034347812b'},
+    {name:'磐田市', position:[137.85162388532535,34.7178716931619], url:'iwatashi', page:'https://www.city.iwata.shizuoka.jp/shiseijouhou/1006207/1002775.html'},
+    {name:'半田市', position:[136.93819204686196,34.891670467553226], url:'handashi', page:'https://www.city.handa.lg.jp/opendata/1005557/1005561/1004329.html'},
+    {name:'京都市', position:[135.76794033862097,35.011458104660534], url:'kyotoshi', page:'https://data.city.kyoto.lg.jp/resource/?id=18537'},
+    // {name:'長岡京市', position:'', bounds:'', page:''},
+    // {name:'岸和田市', position:'', bounds:'', page:''},
+    // {name:'泉南市', position:'', bounds:'', page:''},
+    // {name:'西宮市', position:'', bounds:'', page:''},
+    // {name:'加古川市', position:'', bounds:'', page:''},
+    // {name:'川西市', position:'', bounds:'', page:''},
+    // {name:'佐用町', position:'', bounds:'', page:''},
+    // {name:'奈良市', position:'', bounds:'', page:''},
+    // {name:'坂出市', position:'', bounds:'', page:''},
+    // {name:'善通寺市', position:'', bounds:'', page:''},
+    // {name:'長与町', position:'', bounds:'', page:''},
+    // {name:'福島市', position:'', bounds:'', page:''}
 ];
 const chibanzuSources = []
 const chibanzuLayers = []
 const chibanzuLayerLines = []
 sicyosonChibanzuUrls.forEach(url => {
+    console.log(url.url)
     chibanzuSources.push({
-        id: 'oh-chibanzu-source',
+        id: 'oh-chibanzu-' + url.name + '-source',
         obj: {
             type: "vector",
-            url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/chiban/Chibanzu_2024_with_id2.pmtiles',
+            url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/chiban/' + url.url + '.pmtiles',
+            tileSize: 512, // タイルサイズを適切に設定
         }
     })
     chibanzuLayers.push({
         id: 'oh-chibanzu-' + url.name,
-        source: 'oh-chibanzu-source',
+        source: 'oh-chibanzu-' + url.name + '-source',
         type: 'fill',
         "source-layer": "chibanzu",
         'paint': {
@@ -1011,7 +1013,7 @@ sicyosonChibanzuUrls.forEach(url => {
     })
     chibanzuLayerLines.push({
         id: 'oh-chibanzu-line-' + url.name,
-        source: 'oh-chibanzu-source',
+        source: 'oh-chibanzu-' + url.name + '-source',
         type: 'line',
         "source-layer": "chibanzu",
         paint: {
@@ -1036,7 +1038,8 @@ const chibanzuLayers2 = chibanzuLayers.map((layer,i) => {
         source: chibanzuSources[i],
         layers:[layer,chibanzuLayerLines[i]],
         attribution: '<a href="" target="_blank">' + name + '</a>',
-        position: layer.position
+        position: layer.position,
+        ext: {name:'ext-chibanzu'}
     }
 })
 

@@ -1070,6 +1070,18 @@ export default {
               if (map.getLayer('oh-kitahiroshimachiban')) highlightSpecificFeaturesCity(map, 'oh-kitahiroshimachiban');
               if (map.getLayer('oh-kunitachishi')) highlightSpecificFeaturesCity(map, 'oh-kunitachishi');
               if (map.getLayer('oh-fukuokashichiban')) highlightSpecificFeaturesCity(map, 'oh-fukuokashichiban');
+              if (map.getLayer('oh-chibanzu-室蘭市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-室蘭市');
+              if (map.getLayer('oh-chibanzu-ニセコ町')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-ニセコ町');
+              if (map.getLayer('oh-chibanzu-音更町')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-音更町');
+              if (map.getLayer('oh-chibanzu-鹿角市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-鹿角市');
+              if (map.getLayer('oh-chibanzu-舟形町')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-舟形町');
+              if (map.getLayer('oh-chibanzu-利根町')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-利根町');
+              if (map.getLayer('oh-chibanzu-小平市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-小平市');
+              if (map.getLayer('oh-chibanzu-町田市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-町田市');
+              if (map.getLayer('oh-chibanzu-静岡市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-静岡市');
+              if (map.getLayer('oh-chibanzu-磐田市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-磐田市');
+              if (map.getLayer('oh-chibanzu-半田市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-半田市');
+              if (map.getLayer('oh-chibanzu-京都市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-京都市');
             },100)
           }
 
@@ -1689,6 +1701,7 @@ export default {
 
           // -----------------------------------------------------------------------------------------------------------
           // マップ上でポリゴンをクリックしたときのイベントリスナー
+          let highlightCounter = 0;
           map.on('click', 'oh-amx-a-fude', (e) => {
             console.log(this.$store.state.highlightedChibans)
             // this.$store.state.highlightedChibans = new Set()
@@ -1805,6 +1818,26 @@ export default {
             }
           });
         })
+        const layers = ['oh-chibanzu-室蘭市', 'oh-chibanzu-ニセコ町', 'oh-chibanzu-音更町',
+          'oh-chibanzu-鹿角市', 'oh-chibanzu-舟形町', 'oh-chibanzu-利根町','oh-chibanzu-小平市',
+          'oh-chibanzu-町田市','oh-chibanzu-静岡市','oh-chibanzu-磐田市','oh-chibanzu-半田市',
+          'oh-chibanzu-京都市'];
+        layers.forEach(layer => {
+          map.on('click', layer, (e) => {
+            if (e.features && e.features.length > 0) {
+              const targetId = `${e.features[0].properties['id']}`;
+              console.log('Clicked ID', targetId);
+              if (this.$store.state.highlightedChibans.has(targetId)) {
+                // すでに選択されている場合は解除
+                vm.$store.state.highlightedChibans.delete(targetId);
+              } else {
+                // 新しいIDを追加
+                this.$store.state.highlightedChibans.add(targetId);
+              }
+              highlightSpecificFeaturesCity(map,layer);
+            }
+          });
+        });
         //on load終了----------------------------------------------------------------------------------------------------
       })
     }

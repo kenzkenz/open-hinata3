@@ -1295,6 +1295,7 @@ let isFirstRunCity1 = true;
 export function highlightSpecificFeaturesCity(map,layerId) {
     // alert(store.state.highlightedChibans.size)
     console.log(store.state.highlightedChibans);
+    console.log(Array.from(store.state.highlightedChibans))
     console.log(layerId)
     let sec = 0
     if (isFirstRunCity1) {
@@ -1303,6 +1304,7 @@ export function highlightSpecificFeaturesCity(map,layerId) {
         sec = 0
     }
     setTimeout(() => {
+        console.log(Array.from(store.state.highlightedChibans))
         let fields
         switch (layerId) {
             case 'oh-chibanzu2024':
@@ -1326,10 +1328,25 @@ export function highlightSpecificFeaturesCity(map,layerId) {
             case 'oh-fukuokashichiban':
                 fields = ['concat', ['get', 'id']]
                 break
+            case 'oh-chibanzu-京都市':
+            case 'oh-chibanzu-半田市':
+            case 'oh-chibanzu-磐田市':
+            case 'oh-chibanzu-静岡市':
+            case 'oh-chibanzu-町田市':
+            case 'oh-chibanzu-小平市':
+            case 'oh-chibanzu-利根町':
+            case 'oh-chibanzu-舟形町':
+            case 'oh-chibanzu-鹿角市':
+            case 'oh-chibanzu-音更町':
+            case 'oh-chibanzu-ニセコ町':
+            case 'oh-chibanzu-室蘭市':
+                fields = ['concat', ['get', 'id']]
+                break
 
         }
         console.log(layerId)
         console.log(fields)
+        console.log(Array.from(store.state.highlightedChibans))
         map.setPaintProperty(
             layerId,
             'fill-color',
@@ -1374,6 +1391,20 @@ function getBoundingBoxByLayer(map, layerId) {
                 targetId = `${feature.properties['Aza']}_${feature.properties['Chiban']}_${feature.properties['Edaban']}`;
                 break;
             case 'oh-fukuokashichiban':
+                targetId = `${feature.properties['id']}`;
+                break;
+            case 'oh-chibanzu-京都市':
+            case 'oh-chibanzu-半田市':
+            case 'oh-chibanzu-磐田市':
+            case 'oh-chibanzu-静岡市':
+            case 'oh-chibanzu-町田市':
+            case 'oh-chibanzu-小平市':
+            case 'oh-chibanzu-利根町':
+            case 'oh-chibanzu-舟形町':
+            case 'oh-chibanzu-鹿角市':
+            case 'oh-chibanzu-音更町':
+            case 'oh-chibanzu-ニセコ町':
+            case 'oh-chibanzu-室蘭市':
                 targetId = `${feature.properties['id']}`;
                 break;
         }
@@ -1475,6 +1506,20 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
                 targetId = `${feature.properties['id']}`;
                 break;
             case 'oh-fukuokashichiban':
+                targetId = `${feature.properties['id']}`;
+                break;
+            case 'oh-chibanzu-京都市':
+            case 'oh-chibanzu-半田市':
+            case 'oh-chibanzu-磐田市':
+            case 'oh-chibanzu-静岡市':
+            case 'oh-chibanzu-町田市':
+            case 'oh-chibanzu-小平市':
+            case 'oh-chibanzu-利根町':
+            case 'oh-chibanzu-舟形町':
+            case 'oh-chibanzu-鹿角市':
+            case 'oh-chibanzu-音更町':
+            case 'oh-chibanzu-ニセコ町':
+            case 'oh-chibanzu-室蘭市':
                 targetId = `${feature.properties['id']}`;
                 break;
         }
