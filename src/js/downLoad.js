@@ -472,119 +472,7 @@ export function saveCima(map, layerId, sourceId, fields, kaniFlg, kei) {
 
 
 
-// ⭐️これはHO-CADでうまくいった例
-function geojsonToDXF(geojson) {
-    let dxf = "0\n" +
-        "SECTION\n" +
-        "2\n" +
-        "HEADER\n" +
-        "0\n" +
-        "ENDSEC\n" +
-        "0\n" +
-        "SECTION\n" +
-        "2\n" +
-        "TABLES\n" +
-        "0\n" +
-        "ENDSEC\n" +
-        "0\n" +
-        "SECTION\n" +
-        "2\n" +
-        "ENTITIES\n";
-
-    function processPoint(coord, layer = 'Default', lotNumber = '') {
-        let point = "0\n" +
-            "POINT\n" +
-            "8\n" + layer + "\n" +
-            "10\n" + coord[0] + "\n" +
-            "20\n" + coord[1] + "\n";
-        if (lotNumber && lotNumber.trim() !== '') {
-            point += "0\nTEXT\n" +
-                "8\n" + layer + "\n" +
-                "10\n" + coord[0] + "\n" +
-                "20\n" + coord[1] + "\n" +
-                "40\n1.5\n" + // Smaller Text height
-                "72\n1\n" + // Horizontal alignment (center)
-                "73\n1\n" + // Vertical alignment (center)
-                "1\n" + lotNumber + "\n";
-        }
-        return point;
-    }
-
-    function processLineString(coords, layer = 'Default') {
-        let dxfPart = "0\n" +
-            "LWPOLYLINE\n" +
-            "8\n" + layer + "\n" +
-            "90\n" + coords.length + "\n";
-        coords.forEach(coord => {
-            dxfPart += "10\n" + coord[0] + "\n" +
-                "20\n" + coord[1] + "\n";
-        });
-        return dxfPart;
-    }
-
-    function processPolygon(coords, layer = 'Default', lotNumber = '') {
-        let dxfPart = "0\n" +
-            "LWPOLYLINE\n" +
-            "8\n" + layer + "\n" +
-            "90\n" + coords[0].length + "\n" +
-            "70\n1\n";
-        coords[0].forEach(coord => {
-            dxfPart += "10\n" + coord[0] + "\n" +
-                "20\n" + coord[1] + "\n";
-        });
-        if (lotNumber && lotNumber.trim() !== '') {
-            // Add lot number as text at the centroid of the polygon
-            const centroid = coords[0].reduce((acc, coord) => {
-                acc[0] += coord[0];
-                acc[1] += coord[1];
-                return acc;
-            }, [0, 0]);
-            centroid[0] /= coords[0].length;
-            centroid[1] /= coords[0].length;
-
-            dxfPart += "0\nTEXT\n" +
-                "8\n" + layer + "\n" +
-                "10\n" + centroid[0] + "\n" +
-                "20\n" + centroid[1] + "\n" +
-                "40\n1.5\n" + // Smaller Text height
-                "72\n1\n" + // Horizontal alignment (center)
-                "73\n1\n" + // Vertical alignment (center)
-                "1\n" + lotNumber + "\n";
-        }
-        return dxfPart;
-    }
-
-    geojson.features.forEach(feature => {
-        const geometry = feature.geometry;
-        const properties = feature.properties || {};
-        const layer = properties.layer || 'Default';
-        const lotNumber = properties['地番'] || '';
-
-        switch (geometry.type) {
-            case 'Point':
-                dxf += processPoint(geometry.coordinates, layer, lotNumber);
-                break;
-            case 'LineString':
-                dxf += processLineString(geometry.coordinates, layer);
-                break;
-            case 'Polygon':
-                dxf += processPolygon(geometry.coordinates, layer, lotNumber);
-                break;
-            default:
-                console.warn("サポートされていないジオメトリタイプ: " + geometry.type);
-                break;
-        }
-    });
-
-    dxf += "0\n" +
-        "ENDSEC\n" +
-        "0\n" +
-        "EOF\n";
-    return dxf;
-}
-
-
-// ⭐️これは地番がない最もベーシックなもの
+// // ⭐️これはHO-CADでうまくいった例
 // function geojsonToDXF(geojson) {
 //     let dxf = "0\n" +
 //         "SECTION\n" +
@@ -603,12 +491,23 @@ function geojsonToDXF(geojson) {
 //         "2\n" +
 //         "ENTITIES\n";
 //
-//     function processPoint(coord, layer = 'Default') {
-//         return "0\n" +
+//     function processPoint(coord, layer = 'Default', lotNumber = '') {
+//         let point = "0\n" +
 //             "POINT\n" +
 //             "8\n" + layer + "\n" +
 //             "10\n" + coord[0] + "\n" +
 //             "20\n" + coord[1] + "\n";
+//         if (lotNumber && lotNumber.trim() !== '') {
+//             point += "0\nTEXT\n" +
+//                 "8\n" + layer + "\n" +
+//                 "10\n" + coord[0] + "\n" +
+//                 "20\n" + coord[1] + "\n" +
+//                 "40\n1.5\n" + // Smaller Text height
+//                 "72\n1\n" + // Horizontal alignment (center)
+//                 "73\n1\n" + // Vertical alignment (center)
+//                 "1\n" + lotNumber + "\n";
+//         }
+//         return point;
 //     }
 //
 //     function processLineString(coords, layer = 'Default') {
@@ -623,7 +522,7 @@ function geojsonToDXF(geojson) {
 //         return dxfPart;
 //     }
 //
-//     function processPolygon(coords, layer = 'Default') {
+//     function processPolygon(coords, layer = 'Default', lotNumber = '') {
 //         let dxfPart = "0\n" +
 //             "LWPOLYLINE\n" +
 //             "8\n" + layer + "\n" +
@@ -633,44 +532,43 @@ function geojsonToDXF(geojson) {
 //             dxfPart += "10\n" + coord[0] + "\n" +
 //                 "20\n" + coord[1] + "\n";
 //         });
+//         if (lotNumber && lotNumber.trim() !== '') {
+//             // Add lot number as text at the centroid of the polygon
+//             const centroid = coords[0].reduce((acc, coord) => {
+//                 acc[0] += coord[0];
+//                 acc[1] += coord[1];
+//                 return acc;
+//             }, [0, 0]);
+//             centroid[0] /= coords[0].length;
+//             centroid[1] /= coords[0].length;
+//
+//             dxfPart += "0\nTEXT\n" +
+//                 "8\n" + layer + "\n" +
+//                 "10\n" + centroid[0] + "\n" +
+//                 "20\n" + centroid[1] + "\n" +
+//                 "40\n1.5\n" + // Smaller Text height
+//                 "72\n1\n" + // Horizontal alignment (center)
+//                 "73\n1\n" + // Vertical alignment (center)
+//                 "1\n" + lotNumber + "\n";
+//         }
 //         return dxfPart;
-//     }
-//
-//     function processMultiPoint(coords, layer = 'Default') {
-//         return coords.map(coord => processPoint(coord, layer)).join('');
-//     }
-//
-//     function processMultiLineString(coords, layer = 'Default') {
-//         return coords.map(line => processLineString(line, layer)).join('');
-//     }
-//
-//     function processMultiPolygon(coords, layer = 'Default') {
-//         return coords.map(polygon => processPolygon(polygon, layer)).join('');
 //     }
 //
 //     geojson.features.forEach(feature => {
 //         const geometry = feature.geometry;
 //         const properties = feature.properties || {};
 //         const layer = properties.layer || 'Default';
+//         const lotNumber = properties['地番'] || '';
 //
 //         switch (geometry.type) {
 //             case 'Point':
-//                 dxf += processPoint(geometry.coordinates, layer);
+//                 dxf += processPoint(geometry.coordinates, layer, lotNumber);
 //                 break;
 //             case 'LineString':
 //                 dxf += processLineString(geometry.coordinates, layer);
 //                 break;
 //             case 'Polygon':
-//                 dxf += processPolygon(geometry.coordinates, layer);
-//                 break;
-//             case 'MultiPoint':
-//                 dxf += processMultiPoint(geometry.coordinates, layer);
-//                 break;
-//             case 'MultiLineString':
-//                 dxf += processMultiLineString(geometry.coordinates, layer);
-//                 break;
-//             case 'MultiPolygon':
-//                 dxf += processMultiPolygon(geometry.coordinates, layer);
+//                 dxf += processPolygon(geometry.coordinates, layer, lotNumber);
 //                 break;
 //             default:
 //                 console.warn("サポートされていないジオメトリタイプ: " + geometry.type);
@@ -684,6 +582,108 @@ function geojsonToDXF(geojson) {
 //         "EOF\n";
 //     return dxf;
 // }
+
+
+// ⭐️これは地番がない最もベーシックなもの
+function geojsonToDXF(geojson) {
+    let dxf = "0\n" +
+        "SECTION\n" +
+        "2\n" +
+        "HEADER\n" +
+        "0\n" +
+        "ENDSEC\n" +
+        "0\n" +
+        "SECTION\n" +
+        "2\n" +
+        "TABLES\n" +
+        "0\n" +
+        "ENDSEC\n" +
+        "0\n" +
+        "SECTION\n" +
+        "2\n" +
+        "ENTITIES\n";
+
+    function processPoint(coord, layer = 'Default') {
+        return "0\n" +
+            "POINT\n" +
+            "8\n" + layer + "\n" +
+            "10\n" + coord[0] + "\n" +
+            "20\n" + coord[1] + "\n";
+    }
+
+    function processLineString(coords, layer = 'Default') {
+        let dxfPart = "0\n" +
+            "LWPOLYLINE\n" +
+            "8\n" + layer + "\n" +
+            "90\n" + coords.length + "\n";
+        coords.forEach(coord => {
+            dxfPart += "10\n" + coord[0] + "\n" +
+                "20\n" + coord[1] + "\n";
+        });
+        return dxfPart;
+    }
+
+    function processPolygon(coords, layer = 'Default') {
+        let dxfPart = "0\n" +
+            "LWPOLYLINE\n" +
+            "8\n" + layer + "\n" +
+            "90\n" + coords[0].length + "\n" +
+            "70\n1\n";
+        coords[0].forEach(coord => {
+            dxfPart += "10\n" + coord[0] + "\n" +
+                "20\n" + coord[1] + "\n";
+        });
+        return dxfPart;
+    }
+
+    function processMultiPoint(coords, layer = 'Default') {
+        return coords.map(coord => processPoint(coord, layer)).join('');
+    }
+
+    function processMultiLineString(coords, layer = 'Default') {
+        return coords.map(line => processLineString(line, layer)).join('');
+    }
+
+    function processMultiPolygon(coords, layer = 'Default') {
+        return coords.map(polygon => processPolygon(polygon, layer)).join('');
+    }
+
+    geojson.features.forEach(feature => {
+        const geometry = feature.geometry;
+        const properties = feature.properties || {};
+        const layer = properties.layer || 'Default';
+
+        switch (geometry.type) {
+            case 'Point':
+                dxf += processPoint(geometry.coordinates, layer);
+                break;
+            case 'LineString':
+                dxf += processLineString(geometry.coordinates, layer);
+                break;
+            case 'Polygon':
+                dxf += processPolygon(geometry.coordinates, layer);
+                break;
+            case 'MultiPoint':
+                dxf += processMultiPoint(geometry.coordinates, layer);
+                break;
+            case 'MultiLineString':
+                dxf += processMultiLineString(geometry.coordinates, layer);
+                break;
+            case 'MultiPolygon':
+                dxf += processMultiPolygon(geometry.coordinates, layer);
+                break;
+            default:
+                console.warn("サポートされていないジオメトリタイプ: " + geometry.type);
+                break;
+        }
+    });
+
+    dxf += "0\n" +
+        "ENDSEC\n" +
+        "0\n" +
+        "EOF\n";
+    return dxf;
+}
 
 export function saveDxf (map, layerId, sourceId, fields, detailGeojson, kei2) {
     console.log(detailGeojson)
