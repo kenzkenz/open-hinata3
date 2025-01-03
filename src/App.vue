@@ -53,6 +53,7 @@
 
 <script>
 import {mouseMoveForPopup, popup} from "@/js/popup";
+import { CompassControl } from 'maplibre-gl-compass'
 import {
   handleFileUpload,
   highlightSpecificFeatures,
@@ -217,6 +218,7 @@ export default {
     watchId: null,
     centerMarker: null,
     isTracking: false,
+    compass: null,
   }),
   computed: {
     s_terrainLevel: {
@@ -276,6 +278,7 @@ export default {
       if (this.watchId === null) {
         this.startWatchPosition()
         this.isTracking = true
+        this.compass.turnOn()
         history('現在位置継続取得スタート',window.location.href)
       } else {
         navigator.geolocation.clearWatch(this.watchId);
@@ -283,6 +286,7 @@ export default {
         this.centerMarker.remove()
         this.centerMarker = null
         this.isTracking = false
+        this.compass.turnOff()
         history('現在位置継続取得ストップ',window.location.href)
       }
     },
@@ -1523,9 +1527,6 @@ export default {
             }
           });
 
-
-
-
           // ファイルドロップ処理
           document.addEventListener('drop', (event) => {
             event.preventDefault();
@@ -1860,6 +1861,13 @@ export default {
             }
           });
         });
+
+        this.compass = new CompassControl({
+          visible: false // ボタンを非表示にする
+        })
+        map.addControl(this.compass)
+
+
         //on load終了----------------------------------------------------------------------------------------------------
       })
     }
@@ -2169,6 +2177,7 @@ export default {
   background:rgba(0,0,0,0);
   border:none;
 }
+
 </style>
 
 <style>
@@ -2335,5 +2344,7 @@ font {
   max-height: 300px; /* 必要に応じて調整 */
   touch-action: pan-y !important; /* 縦方向のタッチスクロールを有効化 */
 }
-
+.maplibregl-ctrl-compass-heading {
+  display: none!important;
+}
 </style>
