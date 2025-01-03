@@ -1328,6 +1328,11 @@ export function highlightSpecificFeaturesCity(map,layerId) {
             case 'oh-fukuokashichiban':
                 fields = ['concat', ['get', 'id']]
                 break
+            case 'oh-chibanzu-福山市':
+            case 'oh-chibanzu-越谷市':
+            case 'oh-chibanzu-福岡市':
+            case 'oh-chibanzu-国立市':
+            case 'oh-chibanzu-北広島市':
             case 'oh-chibanzu-福島市':
             case 'oh-chibanzu-長与町':
             case 'oh-chibanzu-善通寺市':
@@ -1404,6 +1409,11 @@ function getBoundingBoxByLayer(map, layerId) {
             case 'oh-fukuokashichiban':
                 targetId = `${feature.properties['id']}`;
                 break;
+            case 'oh-chibanzu-福山市':
+            case 'oh-chibanzu-越谷市':
+            case 'oh-chibanzu-福岡市':
+            case 'oh-chibanzu-国立市':
+            case 'oh-chibanzu-北広島市':
             case 'oh-chibanzu-福島市':
             case 'oh-chibanzu-長与町':
             case 'oh-chibanzu-善通寺市':
@@ -1530,6 +1540,11 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
             case 'oh-fukuokashichiban':
                 targetId = `${feature.properties['id']}`;
                 break;
+            case 'oh-chibanzu-福山市':
+            case 'oh-chibanzu-越谷市':
+            case 'oh-chibanzu-福岡市':
+            case 'oh-chibanzu-国立市':
+            case 'oh-chibanzu-北広島市':
             case 'oh-chibanzu-福島市':
             case 'oh-chibanzu-長与町':
             case 'oh-chibanzu-善通寺市':

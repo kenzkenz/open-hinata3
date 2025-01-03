@@ -965,7 +965,7 @@ console.log(kirieLayers2)
 const sicyosonChibanzuUrls = [
     {name:'室蘭市', position:[140.99286678768675,42.36472347973418], url:'muroranshi', page:''},
     {name:'ニセコ町', position:[140.68806409835815,42.80495731522012], url:'nisekocyo',  page:'https://www.harp.lg.jp/opendata/dataset/1750.html'},
-    {name:'音更町', position:'', url:'otohukechyo', page:'https://www.harp.lg.jp/opendata/dataset/2035.html'},
+    {name:'音更町', position:[143.19814145767117,42.99396722127685], url:'otohukechyo', page:'https://www.harp.lg.jp/opendata/dataset/2035.html'},
     {name:'鹿角市', position:[140.7886727460321,40.21559737412008], url:'kazunoshi', bounds:'', page:'https://www.city.kazuno.lg.jp/soshiki/somu/digital/gyomu/opendata/9788.html'},
     {name:'舟形町', position:[140.32022099999745,38.691255021073715], url: 'funagatamachi', page:'https://www.town.funagata.yamagata.jp/s012/opendata/010/010/20230711101613.html'},
     {name:'利根町', position:[140.1391729153425,35.85756030920088], url: 'tonechyo', page:'https://www.town.tone.ibaraki.jp/opendata.php'},
@@ -986,7 +986,12 @@ const sicyosonChibanzuUrls = [
     {name:'坂出市', position:[133.8605011373076,34.3166967696347], url:'sakaideshi', page:'https://www.city.sakaide.lg.jp/soshiki/kouminrenkei/opendata.html'},
     {name:'善通寺市', position:[133.78706908666885,34.22705330992301], url:'zentujishi', page:'https://opendata.pref.kagawa.lg.jp/dataset/701.html'},
     {name:'長与町', position:[129.87507937301513,32.82524812594376], url:'nagayochyo', page:'https://data.bodik.jp/dataset/423076_tibansankouzu/resource/580da941-74d1-4ddd-a0f0-fb6b88fc793a'},
-    {name:'福島市', position:[140.47460922099737,37.76082999999447], url:'fukushimashi2', page:'https://www.city.fukushima.fukushima.jp/d-kikaku/shise/opendate/machidukuri.html'}
+    {name:'福島市', position:[140.47460922099737,37.76082999999447], url:'fukushimashi2', page:'https://www.city.fukushima.fukushima.jp/d-kikaku/shise/opendate/machidukuri.html'},
+    {name:'北広島市', position:[141.56311494973653,42.98537981878215], url:'kitahiroshimashi2', page:'https://www.harp.lg.jp/opendata/dataset/2061.html'},
+    {name:'国立市', position:[139.44141245767452,35.68379371055923], url:'kunitachishi3', page:'https://www.city.kunitachi.tokyo.jp/soshiki/Dept01/Div03/Sec01/oshirase/11883.html'},
+    {name:'福岡市', position:[130.40177928836357,33.5897855042562], url:'fukuokashi2', page:'https://webmap.city.fukuoka.lg.jp/fukuoka/OpenData?mids=&pno=1'},
+    {name:'越谷市', position:[139.79105245767255,35.890609232668695], url:'koshigayashi', page:'https://www.city.koshigaya.saitama.jp/kurashi_shisei/kurashi/zeikin/koteisisan_tosikeikaku/tibanzu_opendate.html'},
+    {name:'福山市', position:[133.3626006455013,34.48397340686658], url:'fukuyamashi', page:'https://data.city.fukuyama.hiroshima.jp/dataset/digital_numbers_map/resource/93328fe8-64fb-4321-9964-84eab4f68fcd'},
 ];
 const chibanzuSources = []
 const chibanzuLayers = []
@@ -1009,7 +1014,8 @@ sicyosonChibanzuUrls.forEach(url => {
         'paint': {
             'fill-color': 'rgba(0,0,0,0)',
         },
-        position: url.position
+        position: url.position,
+        page :url.page
     })
     chibanzuLayerLines.push({
         id: 'oh-chibanzu-line-' + url.name,
@@ -1027,8 +1033,6 @@ sicyosonChibanzuUrls.forEach(url => {
             ]
         },
     })
-
-
 })
 const chibanzuLayers2 = chibanzuLayers.map((layer,i) => {
     const name = layer.id.replace('oh-chibanzu-','') + '地番図'
@@ -1037,16 +1041,12 @@ const chibanzuLayers2 = chibanzuLayers.map((layer,i) => {
         label: name,
         source: chibanzuSources[i],
         layers:[layer,chibanzuLayerLines[i]],
-        attribution: '<a href="" target="_blank">' + name + '</a>',
+        attribution: '<a href="' + layer.page + '" target="_blank">' + name + '</a>',
         position: layer.position,
         ext: {name:'ext-chibanzu'}
     }
 })
-
 console.log(chibanzuLayers2)
-
-
-
 // 古地図----------------------------------------------------------------------------------------------------------------
 // 戦前の旧版地形図
 const mw5DummySource = {
@@ -6968,54 +6968,54 @@ const layers01 = [
                             '<a href="https://hackmd.io/@kenz/SkQ_R21Lkg" target="_blank">24自治体の情報はこちら</a>',
                         ext: {name:'extChibanz2024'}
                     },
-                    {
-                        id: 'oh-iwata',
-                        label: "磐田市地番図",
-                        source: iwatapolygonSource,
-                        layers:[iwatapolygonLayer,iwatapolygonLine],
-                        attribution: '<a href="https://www.city.iwata.shizuoka.jp/shiseijouhou/1006207/1002775.html" target="_blank">磐田市オープンデータ</a>',
-                        ext: {name:'extIwata'}
-                    },
-                    {
-                        id: 'oh-narashi',
-                        label: "奈良市地番図",
-                        source: narashichibanSource,
-                        layers:[narashichibanLayer,narashichibanLine],
-                        attribution: '<a href="https://www.city.nara.lg.jp/soshiki/14/104605.html" target="_blank">奈良市地番図オープンデータ</a>',
-                        ext: {name:'extNarashi'}
-                    },
-                    {
-                        id: 'oh-fukushimashi',
-                        label: "福島市地番図",
-                        source: fukushimachibanSource,
-                        layers:[fukushimachibanLayer,fukushimachibanLine],
-                        attribution: '<a href="https://www.city.fukushima.fukushima.jp/d-kikaku/shise/opendate/machidukuri.html" target="_blank">福島市オープンデータ</a>',
-                        ext: {name:'extFukushimashi'}
-                    },
-                    {
-                        id: 'oh-kitahiroshima',
-                        label: "北広島市地番図",
-                        source: kitahiroshimachibanSource,
-                        layers:[kitahiroshimachibanLayer,kitahiroshimachibanLine],
-                        attribution: '<a href="https://www.harp.lg.jp/opendata/dataset/2061.html" target="_blank">北海道オープンデータポータル</a>',
-                        ext: {name:'extKitahiroshimashi'}
-                    },
-                    {
-                        id: 'oh-kunitachishi',
-                        label: "国立市地番図",
-                        source: kunitachishichibanSource,
-                        layers:[kunitachishichibanLayer,kunitachishichibanLine],
-                        attribution: '<a href="https://www.city.kunitachi.tokyo.jp/soshiki/Dept01/Div03/Sec01/oshirase/11883.html" target="_blank">地番図の公開について</a>',
-                        ext: {name:'extKunitachishi'}
-                    },
-                    {
-                        id: 'oh-fukuokashi',
-                        label: "福岡市市地番図",
-                        source: fukuokashichibanSource,
-                        layers:[fukuokashichibanLayer,fukuokashichibanLine],
-                        attribution: '<a href="https://webmap.city.fukuoka.lg.jp/fukuoka/OpenData?mids=&pno=1" target="_blank">福岡市Webマップ</a>',
-                        ext: {name:'extFukuokashi'}
-                    },
+                    // {
+                    //     id: 'oh-iwata',
+                    //     label: "磐田市地番図",
+                    //     source: iwatapolygonSource,
+                    //     layers:[iwatapolygonLayer,iwatapolygonLine],
+                    //     attribution: '<a href="https://www.city.iwata.shizuoka.jp/shiseijouhou/1006207/1002775.html" target="_blank">磐田市オープンデータ</a>',
+                    //     ext: {name:'extIwata'}
+                    // },
+                    // {
+                    //     id: 'oh-narashi',
+                    //     label: "奈良市地番図",
+                    //     source: narashichibanSource,
+                    //     layers:[narashichibanLayer,narashichibanLine],
+                    //     attribution: '<a href="https://www.city.nara.lg.jp/soshiki/14/104605.html" target="_blank">奈良市地番図オープンデータ</a>',
+                    //     ext: {name:'extNarashi'}
+                    // },
+                    // {
+                    //     id: 'oh-fukushimashi',
+                    //     label: "福島市地番図",
+                    //     source: fukushimachibanSource,
+                    //     layers:[fukushimachibanLayer,fukushimachibanLine],
+                    //     attribution: '<a href="https://www.city.fukushima.fukushima.jp/d-kikaku/shise/opendate/machidukuri.html" target="_blank">福島市オープンデータ</a>',
+                    //     ext: {name:'extFukushimashi'}
+                    // },
+                    // {
+                    //     id: 'oh-kitahiroshima',
+                    //     label: "北広島市地番図",
+                    //     source: kitahiroshimachibanSource,
+                    //     layers:[kitahiroshimachibanLayer,kitahiroshimachibanLine],
+                    //     attribution: '<a href="https://www.harp.lg.jp/opendata/dataset/2061.html" target="_blank">北海道オープンデータポータル</a>',
+                    //     ext: {name:'extKitahiroshimashi'}
+                    // },
+                    // {
+                    //     id: 'oh-kunitachishi',
+                    //     label: "国立市地番図",
+                    //     source: kunitachishichibanSource,
+                    //     layers:[kunitachishichibanLayer,kunitachishichibanLine],
+                    //     attribution: '<a href="https://www.city.kunitachi.tokyo.jp/soshiki/Dept01/Div03/Sec01/oshirase/11883.html" target="_blank">地番図の公開について</a>',
+                    //     ext: {name:'extKunitachishi'}
+                    // },
+                    // {
+                    //     id: 'oh-fukuokashi',
+                    //     label: "福岡市市地番図",
+                    //     source: fukuokashichibanSource,
+                    //     layers:[fukuokashichibanLayer,fukuokashichibanLine],
+                    //     attribution: '<a href="https://webmap.city.fukuoka.lg.jp/fukuoka/OpenData?mids=&pno=1" target="_blank">福岡市Webマップ</a>',
+                    //     ext: {name:'extFukuokashi'}
+                    // },
                     ]
             },
 

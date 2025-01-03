@@ -306,22 +306,25 @@ export default {
         const map = this.$store.state[this.mapName]
         if(!this.s_selectedLayers[this.mapName].find(layers => layers.id === node.id)) {
           console.log(node)
-          this.s_selectedLayers[this.mapName].unshift(
-              {
-                id: node.id,
-                label: node.label,
-                source: node.source,
-                sources: node.sources,
-                layer: node.layer,
-                layers: node.layers,
-                attribution: node.attribution,
-                opacity: 1,
-                visibility: true,
-                ext: node.ext,
-                info: node.info,
-                position: node.position
-              }
-          )
+          const obj = {
+            id: node.id,
+            label: node.label,
+            source: node.source,
+            sources: node.sources,
+            layer: node.layer,
+            layers: node.layers,
+            attribution: node.attribution,
+            opacity: 1,
+            visibility: true,
+            ext: node.ext,
+            info: node.info,
+            position: node.position
+          }
+          if (!this.s_selectedLayers[this.mapName]?.some(layer => layer.id === 'oh-amx-a-fude')) {
+            this.s_selectedLayers[this.mapName].unshift(obj)
+          } else {
+            this.s_selectedLayers[this.mapName].splice(1, 0, obj)
+          }
         } else {
           this.s_selectedLayers[this.mapName] = this.s_selectedLayers[this.mapName].filter(layer => layer.id !== node.id)
           map.removeLayer(node.id)
@@ -347,7 +350,7 @@ export default {
       // -----------------------------------------
       // if (this.s_selectedLayers[this.mapName]?.some(layer => layer.id === 'oh-amx-a-fude')) {
       //   this.$store.state.watchFlg = false
-      //   this.isDragging =false
+      //   this.isDragging = false
       //   if (Array.isArray(this.s_selectedLayers[this.mapName])) {
       //     const layers = this.s_selectedLayers[this.mapName];
       //     const index = layers.findIndex(layer => layer.id === 'oh-amx-a-fude');
@@ -623,10 +626,11 @@ export default {
         this.$store.state.latRange = [sw.lat,ne.lat]
         // ------------------------------------------------------------------
         this.addLayers()
+        // 突貫で修正。ここを改修する必要あり。
         // setTimeout(() => {
-        //   this.$store.state.extFire = !this.$store.state.extFire
-        // },1000)
-        // this.$store.state.extFire = !this.$store.state.extFire
+        //   this.$store.state.watchFlg = true
+        //   this.isDragging = true
+        // },2000)
       },
       deep: true
     },

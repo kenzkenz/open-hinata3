@@ -1093,6 +1093,11 @@ export default {
               if (map.getLayer('oh-chibanzu-善通寺市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-善通寺市');
               if (map.getLayer('oh-chibanzu-長与町')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-長与町');
               if (map.getLayer('oh-chibanzu-福島市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-福島市');
+              if (map.getLayer('oh-chibanzu-北広島市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-北広島市');
+              if (map.getLayer('oh-chibanzu-国立市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-国立市');
+              if (map.getLayer('oh-chibanzu-福岡市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-福岡市');
+              if (map.getLayer('oh-chibanzu-越谷市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-越谷市');
+              if (map.getLayer('oh-chibanzu-福山市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-福山市');
             },100)
           }
 
@@ -1834,7 +1839,9 @@ export default {
           'oh-chibanzu-町田市','oh-chibanzu-静岡市','oh-chibanzu-磐田市','oh-chibanzu-半田市',
           'oh-chibanzu-京都市','oh-chibanzu-長岡京市','oh-chibanzu-岸和田市','oh-chibanzu-泉南市',
           'oh-chibanzu-西宮市','oh-chibanzu-加古川市','oh-chibanzu-佐用町','oh-chibanzu-奈良市',
-          'oh-chibanzu-坂出市','oh-chibanzu-善通寺市','oh-chibanzu-長与町','oh-chibanzu-福島市'];
+          'oh-chibanzu-坂出市','oh-chibanzu-善通寺市','oh-chibanzu-長与町','oh-chibanzu-福島市',
+          'oh-chibanzu-北広島市','oh-chibanzu-国立市','oh-chibanzu-福岡市','oh-chibanzu-越谷市',
+          'oh-chibanzu-福山市'];
         layers.forEach(layer => {
           map.on('click', layer, (e) => {
             if (e.features && e.features.length > 0) {
@@ -1919,6 +1926,8 @@ export default {
     const params = new URLSearchParams(window.location.search)
     let urlid = params.get('s')
     if (urlid === 'jIdukg') urlid = '2O65Hr' //以前のリンクを活かす
+    if (urlid === 'da0J4l') urlid = 'W8lFo4' //以前のリンクを活かす
+    // https://kenzkenz.xsrv.jp/open-hinata3/?s=da0J4l
     axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrlSelect.php',{
       params: {
         urlid: urlid
@@ -2157,8 +2166,11 @@ export default {
 
 <style>
 html, body {
-  /*overscroll-behavior: none;*/
-  /*touch-action: manipulation;*/
+  overscroll-behavior: none;
+
+  overflow: hidden;
+  touch-action: none;
+
   -webkit-overflow-scrolling: touch;
   height: 100%;
 }
