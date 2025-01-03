@@ -247,7 +247,10 @@ export function popup(e,map,mapName,mapFlg) {
         || map.getLayer('oh-chibanzu-室蘭市')|| map.getLayer('oh-chibanzu-ニセコ町')|| map.getLayer('oh-chibanzu-音更町')
         || map.getLayer('oh-chibanzu-鹿角市')|| map.getLayer('oh-chibanzu-利根町')|| map.getLayer('oh-chibanzu-町田市')
         || map.getLayer('oh-chibanzu-静岡市')|| map.getLayer('oh-chibanzu-磐田市')|| map.getLayer('oh-chibanzu-半田市')
-        || map.getLayer('oh-chibanzu-京都市')) {
+        || map.getLayer('oh-chibanzu-京都市')|| map.getLayer('oh-chibanzu-長岡京市')|| map.getLayer('oh-chibanzu-岸和田市')
+        || map.getLayer('oh-chibanzu-泉南市')|| map.getLayer('oh-chibanzu-西宮市')|| map.getLayer('oh-chibanzu-加古川市')
+        || map.getLayer('oh-chibanzu-佐用町')|| map.getLayer('oh-chibanzu-奈良市')|| map.getLayer('oh-chibanzu-坂出市')
+        || map.getLayer('oh-chibanzu-善通寺市')|| map.getLayer('oh-chibanzu-長与町')|| map.getLayer('oh-chibanzu-福島市')) {
         if (store.state.isRenzoku) return
     }
 
@@ -2829,6 +2832,17 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-chibanzu-福島市':
+            case 'oh-chibanzu-長与町':
+            case 'oh-chibanzu-善通寺市':
+            case 'oh-chibanzu-坂出市':
+            case 'oh-chibanzu-奈良市':
+            case 'oh-chibanzu-佐用町':
+            case 'oh-chibanzu-加古川市':
+            case 'oh-chibanzu-西宮市':
+            case 'oh-chibanzu-泉南市':
+            case 'oh-chibanzu-岸和田市':
+            case 'oh-chibanzu-長岡京市':
             case 'oh-chibanzu-京都市':
             case 'oh-chibanzu-半田市':
             case 'oh-chibanzu-磐田市':

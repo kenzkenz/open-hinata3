@@ -975,18 +975,18 @@ const sicyosonChibanzuUrls = [
     {name:'磐田市', position:[137.85162388532535,34.7178716931619], url:'iwatashi', page:'https://www.city.iwata.shizuoka.jp/shiseijouhou/1006207/1002775.html'},
     {name:'半田市', position:[136.93819204686196,34.891670467553226], url:'handashi', page:'https://www.city.handa.lg.jp/opendata/1005557/1005561/1004329.html'},
     {name:'京都市', position:[135.76794033862097,35.011458104660534], url:'kyotoshi', page:'https://data.city.kyoto.lg.jp/resource/?id=18537'},
-    // {name:'長岡京市', position:'', bounds:'', page:''},
-    // {name:'岸和田市', position:'', bounds:'', page:''},
-    // {name:'泉南市', position:'', bounds:'', page:''},
-    // {name:'西宮市', position:'', bounds:'', page:''},
-    // {name:'加古川市', position:'', bounds:'', page:''},
-    // {name:'川西市', position:'', bounds:'', page:''},
-    // {name:'佐用町', position:'', bounds:'', page:''},
-    // {name:'奈良市', position:'', bounds:'', page:''},
-    // {name:'坂出市', position:'', bounds:'', page:''},
-    // {name:'善通寺市', position:'', bounds:'', page:''},
-    // {name:'長与町', position:'', bounds:'', page:''},
-    // {name:'福島市', position:'', bounds:'', page:''}
+    // {name:'長岡京市', position:[135.69492798069342,34.926492078646305], url:'nagaokakyoshi', page:'https://www.city.nagaokakyo.lg.jp/0000012991.html'},
+    {name:'岸和田市', position:[135.37090737539307,34.46054514396512], url:'kishiwadashi', page:'https://www.city.kishiwada.osaka.jp/soshiki/16/tochi-chibankrnnsakuichiranhyou.html'},
+    {name:'泉南市', position:[135.2734460647299,34.36591222577401], url:'sennanshi', page:'https://www.city.sennan.lg.jp/kakuka/soumu/zeimuka/kazeikakari/zeikin/koteishisan/1505179465186.html'},
+    {name:'西宮市', position:[135.3419717460348,34.737704733498134], url:'nishinomiyashi', page:'https://opendata.nishi.or.jp/opendata/ResultDetail.php?id=69'},
+    {name:'加古川市', position:[134.84064926983825,34.75678296665963], url:'kakogawashi', page:'https://opendata-api-kakogawa.jp/ckan/dataset/landhouse/resource/c37f9b63-54c8-4094-9e48-8d3817918476'},
+    // {name:'川西市', position:'', bounds:'', page:''},//座標系がおかしい？？
+    {name:'佐用町', position:[134.35598183068578,35.004205695261106], url:'sayochyo', page:'https://www.town.sayo.lg.jp/cms-sypher/www/service/detail.jsp?id=9343'},
+    {name:'奈良市', position:[135.80463216931253,34.684824554866864], url:'narashi2', page:'https://www.city.nara.lg.jp/soshiki/14/104605.html'},
+    {name:'坂出市', position:[133.8605011373076,34.3166967696347], url:'sakaideshi', page:'https://www.city.sakaide.lg.jp/soshiki/kouminrenkei/opendata.html'},
+    {name:'善通寺市', position:[133.78706908666885,34.22705330992301], url:'zentujishi', page:'https://opendata.pref.kagawa.lg.jp/dataset/701.html'},
+    {name:'長与町', position:[129.87507937301513,32.82524812594376], url:'nagayochyo', page:'https://data.bodik.jp/dataset/423076_tibansankouzu/resource/580da941-74d1-4ddd-a0f0-fb6b88fc793a'},
+    {name:'福島市', position:[140.47460922099737,37.76082999999447], url:'fukushimashi2', page:'https://www.city.fukushima.fukushima.jp/d-kikaku/shise/opendate/machidukuri.html'}
 ];
 const chibanzuSources = []
 const chibanzuLayers = []

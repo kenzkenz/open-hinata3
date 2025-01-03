@@ -344,6 +344,61 @@ export default {
           this.sourceId = 'oh-chibanzu-京都市-source'
           this.fields = ['id']
           break
+        case 'oh-chibanzu-長岡京市':
+          this.layerId = 'oh-chibanzu-長岡京市'
+          this.sourceId = 'oh-chibanzu-長岡京市-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-岸和田市':
+          this.layerId = 'oh-chibanzu-岸和田市'
+          this.sourceId = 'oh-chibanzu-岸和田市-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-泉南市':
+          this.layerId = 'oh-chibanzu-泉南市'
+          this.sourceId = 'oh-chibanzu-泉南市-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-西宮市':
+          this.layerId = 'oh-chibanzu-西宮市'
+          this.sourceId = 'oh-chibanzu-西宮市-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-加古川市':
+          this.layerId = 'oh-chibanzu-加古川市'
+          this.sourceId = 'oh-chibanzu-加古川市-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-佐用町':
+          this.layerId = 'oh-chibanzu-佐用町'
+          this.sourceId = 'oh-chibanzu-佐用町-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-奈良市':
+          this.layerId = 'oh-chibanzu-奈良市'
+          this.sourceId = 'oh-chibanzu-奈良市-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-坂出市':
+          this.layerId = 'oh-chibanzu-坂出市'
+          this.sourceId = 'oh-chibanzu-坂出市-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-善通寺市':
+          this.layerId = 'oh-chibanzu-善通寺市'
+          this.sourceId = 'oh-chibanzu-善通寺市-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-長与町':
+          this.layerId = 'oh-chibanzu-長与町'
+          this.sourceId = 'oh-chibanzu-長与町-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-福島市':
+          this.layerId = 'oh-chibanzu-福島市'
+          this.sourceId = 'oh-chibanzu-福島市-source'
+          this.fields = ['id']
+          break
       }
     },
     resetFeatureColors () {

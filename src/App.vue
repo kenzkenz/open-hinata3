@@ -1082,6 +1082,17 @@ export default {
               if (map.getLayer('oh-chibanzu-磐田市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-磐田市');
               if (map.getLayer('oh-chibanzu-半田市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-半田市');
               if (map.getLayer('oh-chibanzu-京都市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-京都市');
+              if (map.getLayer('oh-chibanzu-長岡京市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-長岡京市');
+              if (map.getLayer('oh-chibanzu-岸和田市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-岸和田市');
+              if (map.getLayer('oh-chibanzu-泉南市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-泉南市');
+              if (map.getLayer('oh-chibanzu-西宮市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-西宮市');
+              if (map.getLayer('oh-chibanzu-加古川市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-加古川市');
+              if (map.getLayer('oh-chibanzu-佐用町')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-佐用町');
+              if (map.getLayer('oh-chibanzu-奈良市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-奈良市');
+              if (map.getLayer('oh-chibanzu-坂出市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-坂出市');
+              if (map.getLayer('oh-chibanzu-善通寺市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-善通寺市');
+              if (map.getLayer('oh-chibanzu-長与町')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-長与町');
+              if (map.getLayer('oh-chibanzu-福島市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-福島市');
             },100)
           }
 
@@ -1821,7 +1832,9 @@ export default {
         const layers = ['oh-chibanzu-室蘭市', 'oh-chibanzu-ニセコ町', 'oh-chibanzu-音更町',
           'oh-chibanzu-鹿角市', 'oh-chibanzu-舟形町', 'oh-chibanzu-利根町','oh-chibanzu-小平市',
           'oh-chibanzu-町田市','oh-chibanzu-静岡市','oh-chibanzu-磐田市','oh-chibanzu-半田市',
-          'oh-chibanzu-京都市'];
+          'oh-chibanzu-京都市','oh-chibanzu-長岡京市','oh-chibanzu-岸和田市','oh-chibanzu-泉南市',
+          'oh-chibanzu-西宮市','oh-chibanzu-加古川市','oh-chibanzu-佐用町','oh-chibanzu-奈良市',
+          'oh-chibanzu-坂出市','oh-chibanzu-善通寺市','oh-chibanzu-長与町','oh-chibanzu-福島市'];
         layers.forEach(layer => {
           map.on('click', layer, (e) => {
             if (e.features && e.features.length > 0) {

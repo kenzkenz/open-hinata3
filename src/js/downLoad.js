@@ -1328,6 +1328,17 @@ export function highlightSpecificFeaturesCity(map,layerId) {
             case 'oh-fukuokashichiban':
                 fields = ['concat', ['get', 'id']]
                 break
+            case 'oh-chibanzu-福島市':
+            case 'oh-chibanzu-長与町':
+            case 'oh-chibanzu-善通寺市':
+            case 'oh-chibanzu-坂出市':
+            case 'oh-chibanzu-奈良市':
+            case 'oh-chibanzu-佐用町':
+            case 'oh-chibanzu-加古川市':
+            case 'oh-chibanzu-西宮市':
+            case 'oh-chibanzu-泉南市':
+            case 'oh-chibanzu-岸和田市':
+            case 'oh-chibanzu-長岡京市':
             case 'oh-chibanzu-京都市':
             case 'oh-chibanzu-半田市':
             case 'oh-chibanzu-磐田市':
@@ -1393,6 +1404,17 @@ function getBoundingBoxByLayer(map, layerId) {
             case 'oh-fukuokashichiban':
                 targetId = `${feature.properties['id']}`;
                 break;
+            case 'oh-chibanzu-福島市':
+            case 'oh-chibanzu-長与町':
+            case 'oh-chibanzu-善通寺市':
+            case 'oh-chibanzu-坂出市':
+            case 'oh-chibanzu-奈良市':
+            case 'oh-chibanzu-佐用町':
+            case 'oh-chibanzu-加古川市':
+            case 'oh-chibanzu-西宮市':
+            case 'oh-chibanzu-泉南市':
+            case 'oh-chibanzu-岸和田市':
+            case 'oh-chibanzu-長岡京市':
             case 'oh-chibanzu-京都市':
             case 'oh-chibanzu-半田市':
             case 'oh-chibanzu-磐田市':
@@ -1508,6 +1530,17 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
             case 'oh-fukuokashichiban':
                 targetId = `${feature.properties['id']}`;
                 break;
+            case 'oh-chibanzu-福島市':
+            case 'oh-chibanzu-長与町':
+            case 'oh-chibanzu-善通寺市':
+            case 'oh-chibanzu-坂出市':
+            case 'oh-chibanzu-奈良市':
+            case 'oh-chibanzu-佐用町':
+            case 'oh-chibanzu-加古川市':
+            case 'oh-chibanzu-西宮市':
+            case 'oh-chibanzu-泉南市':
+            case 'oh-chibanzu-岸和田市':
+            case 'oh-chibanzu-長岡京市':
             case 'oh-chibanzu-京都市':
             case 'oh-chibanzu-半田市':
             case 'oh-chibanzu-磐田市':
