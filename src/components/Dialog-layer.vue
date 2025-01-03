@@ -64,6 +64,7 @@ export default {
     draggable
   },
   data: () => ({
+    nodeClicked: false,
     isDragging:false,
     isChecked: true,
     searchText: '',
@@ -302,6 +303,7 @@ export default {
     },
     onNodeClick (node) {
       if (node.layers) {
+        this.nodeClicked = true
         this.$store.state.watchFlg = true
         const map = this.$store.state[this.mapName]
         if(!this.s_selectedLayers[this.mapName].find(layers => layers.id === node.id)) {
@@ -385,7 +387,8 @@ export default {
                 // console.log(layer0)
                 if (layer0.position) {
                   console.log(Array.from(layer0.position))
-                  if (flyFlg) {
+
+                  if (flyFlg && this.nodeClicked) {
                     setTimeout(() => {
                       map.flyTo({
                         center: Array.from(layer0.position), // フライ先の座標（経度, 緯度）
@@ -396,6 +399,7 @@ export default {
                       });
                     },1000)
                     flyFlg = false
+
                   }
 
                 }
