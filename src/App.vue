@@ -15,6 +15,7 @@
           </div>
           <div id="right-top-div">
             <v-btn icon @click="goToCurrentLocation" v-if="mapName === 'map01'"><v-icon>mdi-crosshairs-gps</v-icon></v-btn>
+            <v-btn class="watch-position" :color="isTracking ? 'green' : undefined" icon @click="toggleWatchPosition" v-if="mapName === 'map01'"><v-icon>mdi-map-marker-radius</v-icon></v-btn>
             <v-btn class="zoom-in" icon @click="zoomIn" v-if="mapName === 'map01'"><v-icon>mdi-plus</v-icon></v-btn>
             <v-btn class="zoom-out" icon @click="zoomOut" v-if="mapName === 'map01'"><v-icon>mdi-minus</v-icon></v-btn>
             <v-btn class="share" icon @click="share(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-share-variant</v-icon></v-btn>
@@ -111,56 +112,6 @@ function decodeElevationFromRGB(r, g, b) {
   return (r * 256 * 256 + g * 256 + b) * scale + offset; // RGB値を計算
 }
 
-// // 標高データをタイル画像から取得
-// async function fetchElevationFromImage(imageUrl, lon, lat, zoom) {
-//   const { xTile, yTile } = lonLatToTile(lon, lat, zoom);
-//
-//   const img = new Image();
-//   img.crossOrigin = "Anonymous"; // クロスオリジン対応
-//   img.src = imageUrl;
-//
-//   return new Promise((resolve, reject) => {
-//     img.onload = () => {
-//       const canvas = document.createElement("canvas");
-//       const ctx = canvas.getContext("2d");
-//       canvas.width = img.width;
-//       canvas.height = img.height;
-//       ctx.drawImage(img, 0, 0);
-//
-//       // タイル内のピクセル座標を計算
-//       const { x, y } = calculatePixelInTile(lon, lat, zoom, xTile, yTile, img.width);
-//
-//       // ピクセルデータを取得
-//       const imageData = ctx.getImageData(x, y, 1, 1).data;
-//       const [r, g, b] = imageData; // R, G, B 値を取得
-//       // console.log(`R: ${r}, G: ${g}, B: ${b}`); // デバッグ用ログ
-//       const elevation = decodeElevationFromRGB(r, g, b); // 標高を計算
-//       resolve(elevation);
-//     };
-//
-//     img.onerror = (err) => {
-//       reject(`画像の読み込みに失敗しました: ${err}`);
-//     };
-//   });
-// }
-//
-// // 標高を取得する関数
-// async function fetchElevation(lon, lat, zoom = 15) {
-//   const baseUrl = "https://mapdata.qchizu2.xyz/03_dem/51_int/all_9999/int_01/{z}/{x}/{y}.png";
-//   const { xTile, yTile } = lonLatToTile(lon, lat, zoom);
-//
-//   // タイルURLを生成
-//   const tileUrl = baseUrl.replace("{z}", zoom).replace("{x}", xTile).replace("{y}", yTile);
-//
-//   try {
-//     const elevation = await fetchElevationFromImage(tileUrl, lon, lat, zoom);
-//     // console.log(`標高: ${elevation}m`);
-//     return elevation;
-//   } catch (error) {
-//     console.error("エラー:", error);
-//   }
-// }
-
 // 標高データをタイル画像から取得し、キャンバスに出力
 async function fetchElevationFromImage(imageUrl, lon, lat, zoom) {
   const { xTile, yTile } = lonLatToTile(lon, lat, zoom);
@@ -221,7 +172,6 @@ async function fetchElevation(lon, lat, zoom = 15) {
   }
 }
 
-
 import axios from "axios"
 import DialogMenu from '@/components/Dialog-menu'
 import DialogLayer from '@/components/Dialog-layer'
@@ -264,6 +214,9 @@ export default {
     zoom:0,
     address:'',
     elevation:'',
+    watchId: null,
+    centerMarker: null,
+    isTracking: false,
   }),
   computed: {
     s_terrainLevel: {
@@ -284,7 +237,7 @@ export default {
     },
   },
   methods: {
-    share (mapName) {
+    share(mapName) {
       if (this.$store.state.dialogs.shareDialog[mapName].style.display === 'none') {
         this.$store.commit('incrDialogMaxZindex')
         this.$store.state.dialogs.shareDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
@@ -298,13 +251,62 @@ export default {
         this.$store.state.dialogs.shareDialog[mapName].style.display = 'none'
       }
     },
-    zoomIn () {
+    zoomIn() {
       const map = this.$store.state.map01
-      map.zoomIn({ duration: 500 })
+      map.zoomIn({duration: 500})
     },
-    zoomOut () {
+    zoomOut() {
       const map = this.$store.state.map01
-      map.zoomOut({ duration: 500 })
+      map.zoomOut({duration: 500})
+    },
+    startWatchPosition () {
+      if (this.watchId === null && navigator.geolocation) {
+        this.watchId = navigator.geolocation.watchPosition(
+            (position) => {
+              this.updateLocationAndCoordinates(position);
+            },
+            (error) => {
+              console.error('Geolocation error:', error);
+            },
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+        );
+      }
+    },
+    toggleWatchPosition () {
+      if (this.watchId === null) {
+        this.startWatchPosition()
+        this.isTracking = true
+        history('現在位置継続取得スタート',window.location.href)
+      } else {
+        navigator.geolocation.clearWatch(this.watchId);
+        this.watchId = null;
+        this.centerMarker.remove()
+        this.centerMarker = null
+        this.isTracking = false
+        history('現在位置継続取得ストップ',window.location.href)
+      }
+    },
+    updateLocationAndCoordinates(position) {
+      const map = this.$store.state.map01
+      let longitude, latitude;
+      if (position) {
+        ({latitude, longitude} = position.coords);
+        // map.setCenter([longitude, latitude]);
+        // map.setZoom(15);
+        map.flyTo({ center: [longitude, latitude], zoom: map.getZoom() });
+      } else {
+        const center = map.getCenter();
+        longitude = center.lng;
+        latitude = center.lat;
+      }
+      // 中心を示すマーカーを追加・更新
+      if (!this.centerMarker) {
+        this.centerMarker = new maplibregl.Marker({ color: 'green' })
+            .setLngLat([longitude, latitude])
+            .addTo(map);
+      } else {
+        this.centerMarker.setLngLat([longitude, latitude]);
+      }
     },
     goToCurrentLocation () {
       const map = this.$store.state.map01
@@ -2023,19 +2025,24 @@ export default {
       -1px  1px 0 #ffffff,
       1px  1px 0 #ffffff;
 }
-.zoom-in {
+.watch-position {
   position: absolute;
   top: 60px;
   left: 0;
 }
-.zoom-out {
+.zoom-in {
   position: absolute;
   top: 120px;
   left: 0;
 }
-.share {
+.zoom-out {
   position: absolute;
   top: 180px;
+  left: 0;
+}
+.share {
+  position: absolute;
+  top: 240px;
   left: 0;
 }
 /*3Dのボタン-------------------------------------------------------------*/
