@@ -6917,6 +6917,51 @@ const chibanzu2024Line = {
         ]
     },
 }
+
+
+// 福岡県森林計画区域-------------------------------------------------------------------------------------------
+const fukuokakenshinrinSource = {
+    id: "fukuokakenshinrin-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/shinrin/fukuokaken/fukuokashinrin.pmtiles",
+    }
+}
+const fukuokakenshinrinLayer = {
+    id: "oh-fukuokakenshinrin",
+    type: "fill",
+    source: "fukuokakenshinrin-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-color': [
+            'match',
+            ['get', 'rinsyu_nam'],
+            '人工林', 'rgba(139, 69, 19, 0.8)', // 茶色（人工林, 透過度0.8）
+            '天然林', 'rgba(34, 139, 34, 0.8)', // 緑色（天然林, 透過度0.8）
+            '伐採跡地', 'rgba(169, 169, 169, 0.8)', // 灰色（伐採跡地, 透過度0.8）
+            '竹林', 'rgba(107, 142, 35, 0.8)', // オリーブ色（竹林, 透過度0.8）
+            'rgba(204, 204, 204, 0.8)' // デフォルト色（透過度0.8）
+        ]
+    }
+};
+const fukuokakenshinrinLayerLine = {
+    id: "oh-fukuokakenshinrin-line",
+    type: "line",
+    source: "fukuokakenshinrin-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            12, 0,
+            16, 2
+        ]
+    },
+}
+
+
+
 // // 地形分類テスト --------------------------------------------------------------------------------------------
 // const chikeibunruiSource2 = {
 //     id: "chikeibunrui-source", obj: {
@@ -8087,6 +8132,13 @@ const layers01 = [
                 source: dansoSource,
                 layers: [dansoLayer],
                 attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html#afm" target="_blank">地理院タイル</a>'
+            },
+            {
+                id: 'oh-fukuokakenshinrin',
+                label: "福岡県森林計画区域",
+                source: fukuokakenshinrinSource,
+                layers: [fukuokakenshinrinLayer,fukuokakenshinrinLayerLine],
+                attribution: '<a href="https://www.pref.fukuoka.lg.jp/contents/forest-opendata.html" target="_blank">ふくおか森林オープンデータ</a>'
             },
         ]
     },

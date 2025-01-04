@@ -241,20 +241,20 @@ function urlByLayerId (layerId) {
 }
 export function popup(e,map,mapName,mapFlg) {
 
-    if (map.getLayer('oh-amx-a-fude') || map.getLayer('oh-chibanzu2024')
-        || map.getLayer('oh-kunitachishi') || map.getLayer('oh-kitahiroshimachiban') || map.getLayer('oh-fukuokashichiban')
-        || map.getLayer('oh-fukushimachiban') || map.getLayer('oh-narashichiban') || map.getLayer('oh-iwatapolygon')
-        || map.getLayer('oh-chibanzu-室蘭市')|| map.getLayer('oh-chibanzu-ニセコ町')|| map.getLayer('oh-chibanzu-音更町')
-        || map.getLayer('oh-chibanzu-鹿角市')|| map.getLayer('oh-chibanzu-利根町')|| map.getLayer('oh-chibanzu-町田市')
-        || map.getLayer('oh-chibanzu-静岡市')|| map.getLayer('oh-chibanzu-磐田市')|| map.getLayer('oh-chibanzu-半田市')
-        || map.getLayer('oh-chibanzu-京都市')|| map.getLayer('oh-chibanzu-長岡京市')|| map.getLayer('oh-chibanzu-岸和田市')
-        || map.getLayer('oh-chibanzu-泉南市')|| map.getLayer('oh-chibanzu-西宮市')|| map.getLayer('oh-chibanzu-加古川市')
-        || map.getLayer('oh-chibanzu-佐用町')|| map.getLayer('oh-chibanzu-奈良市')|| map.getLayer('oh-chibanzu-坂出市')
-        || map.getLayer('oh-chibanzu-善通寺市')|| map.getLayer('oh-chibanzu-長与町')|| map.getLayer('oh-chibanzu-福島市')
-        || map.getLayer('oh-chibanzu-北広島市')|| map.getLayer('oh-chibanzu-国立市')|| map.getLayer('oh-chibanzu-福岡市')
-        || map.getLayer('oh-chibanzu-越谷市')|| map.getLayer('oh-chibanzu-福山市')) {
-        if (store.state.isRenzoku) return
-    }
+    // if (map.getLayer('oh-amx-a-fude') || map.getLayer('oh-chibanzu2024')
+    //     || map.getLayer('oh-kunitachishi') || map.getLayer('oh-kitahiroshimachiban') || map.getLayer('oh-fukuokashichiban')
+    //     || map.getLayer('oh-fukushimachiban') || map.getLayer('oh-narashichiban') || map.getLayer('oh-iwatapolygon')
+    //     || map.getLayer('oh-chibanzu-室蘭市')|| map.getLayer('oh-chibanzu-ニセコ町')|| map.getLayer('oh-chibanzu-音更町')
+    //     || map.getLayer('oh-chibanzu-鹿角市')|| map.getLayer('oh-chibanzu-利根町')|| map.getLayer('oh-chibanzu-町田市')
+    //     || map.getLayer('oh-chibanzu-静岡市')|| map.getLayer('oh-chibanzu-磐田市')|| map.getLayer('oh-chibanzu-半田市')
+    //     || map.getLayer('oh-chibanzu-京都市')|| map.getLayer('oh-chibanzu-長岡京市')|| map.getLayer('oh-chibanzu-岸和田市')
+    //     || map.getLayer('oh-chibanzu-泉南市')|| map.getLayer('oh-chibanzu-西宮市')|| map.getLayer('oh-chibanzu-加古川市')
+    //     || map.getLayer('oh-chibanzu-佐用町')|| map.getLayer('oh-chibanzu-奈良市')|| map.getLayer('oh-chibanzu-坂出市')
+    //     || map.getLayer('oh-chibanzu-善通寺市')|| map.getLayer('oh-chibanzu-長与町')|| map.getLayer('oh-chibanzu-福島市')
+    //     || map.getLayer('oh-chibanzu-北広島市')|| map.getLayer('oh-chibanzu-国立市')|| map.getLayer('oh-chibanzu-福岡市')
+    //     || map.getLayer('oh-chibanzu-越谷市')|| map.getLayer('oh-chibanzu-福山市')) {
+    //     if (store.state.isRenzoku) return
+    // }
 
     let html = ''
     let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
@@ -1133,29 +1133,6 @@ export function popup(e,map,mapName,mapFlg) {
                         '<span style="font-size: 20px;">村名＝' + a + '</span>' +
                         '<button class="mura-name pyramid-btn" mapname="' + mapName + '" mura="' + props.MURA_NAME + '">村で抽出</button><br>' +
                         '</div>'
-                }
-                break
-            }
-            case 'oh-amx-label':
-            case 'oh-amx-a-fude-line':
-            case 'oh-amx-a-fude': {
-                const features = map.queryRenderedFeatures(
-                    map.project(coordinates), {layers: ['oh-amx-a-fude']}
-                )
-                console.log(features)
-                if (features.length === 0) return
-                props = features[0].properties
-                let html0 = ''
-                if (html.indexOf('amx-a-fude') === -1) {
-                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
-                    html0 += '<div class="amx-a-fude" font-weight: normal; color: #333;line-height: 25px;">'
-                    Object.keys(props).forEach(function (key) {
-                        html0 += key + '=' + props[key] + '<br>'
-                    })
-                    html0 += '<br><span style="font-size: 14px;">面積:' + PolygonMetrics.area + ' 周長:' + PolygonMetrics.perimeter +
-                        '<br>境界点数:' + PolygonMetrics.vertexCount + '</span>'
-                    html0 += '<div>'
-                    html += html0
                 }
                 break
             }
@@ -2869,6 +2846,7 @@ export function popup(e,map,mapName,mapFlg) {
             case 'oh-narashichiban':
             case 'oh-iwatapolygon':
             {
+                if (store.state.isRenzoku) return
                 let features = map.queryRenderedFeatures(
                     map.project(coordinates), {layers: [layerId]}
                 )
@@ -2883,6 +2861,57 @@ export function popup(e,map,mapName,mapFlg) {
                 if (html.indexOf('iwatapolygon') === -1) {
                     html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                     html0 += '<div class="iwatapolygon" font-weight: normal; color: #333;line-height: 25px;">'
+                    Object.keys(props).forEach(function (key) {
+                        html0 += key + '=' + props[key] + '<br>'
+                    })
+                    html0 += '<br><span style="font-size: 14px;">面積:' + PolygonMetrics.area + ' 周長:' + PolygonMetrics.perimeter +
+                        '<br>境界点数:' + PolygonMetrics.vertexCount + '</span>'
+                    html0 += '<div>'
+                    html += html0
+                }
+                break
+            }
+            case 'oh-amx-label':
+            case 'oh-amx-a-fude-line':
+            case 'oh-amx-a-fude': {
+                if (store.state.isRenzoku) return
+                const features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: ['oh-amx-a-fude']}
+                )
+                console.log(features)
+                if (features.length === 0) return
+                props = features[0].properties
+                let html0 = ''
+                if (html.indexOf('amx-a-fude') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html0 += '<div class="amx-a-fude" font-weight: normal; color: #333;line-height: 25px;">'
+                    Object.keys(props).forEach(function (key) {
+                        html0 += key + '=' + props[key] + '<br>'
+                    })
+                    html0 += '<br><span style="font-size: 14px;">面積:' + PolygonMetrics.area + ' 周長:' + PolygonMetrics.perimeter +
+                        '<br>境界点数:' + PolygonMetrics.vertexCount + '</span>'
+                    html0 += '<div>'
+                    html += html0
+                }
+                break
+            }
+            case 'oh-fukuokakenshinrin':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(features)
+                if (features.length === 0) return
+                props = features[0].properties
+                let html0 = ''
+                if (html.indexOf(layerId) === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html0 += '<div class="' + layerId + '" font-weight: normal; color: #333;line-height: 25px;">'
                     Object.keys(props).forEach(function (key) {
                         html0 += key + '=' + props[key] + '<br>'
                     })

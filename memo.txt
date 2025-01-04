@@ -791,6 +791,21 @@ tippecanoe -o fukuyamashi.pmtiles \
 
 tippecanoe-decode MojMap_amx_2024.pmtiles -z 14 -Z 14 -c > amx2024.geojson
 
+ogr2ogr -f GeoJSON -dialect SQLite -sql "SELECT * FROM amx2024 LIMIT 10000 OFFSET 0" part1.geojson amx2024.geojson
+ogr2ogr -f GeoJSON -dialect SQLite -sql "SELECT * FROM amx2024 LIMIT 10000 OFFSET 10000" part2.geojson amx2024.geojson
+
+tippecanoe -o fukuokashinrin.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=0 \
+    --layer=polygon \
+    shinrin.geojson
 
 
 
