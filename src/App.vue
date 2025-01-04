@@ -280,8 +280,8 @@ export default {
       if (this.watchId === null) {
         this.startWatchPosition()
         this.isTracking = true
-        this.compass.turnOn()
-        this.currentMarker.remove();
+        // this.compass.turnOn()
+        if (this.currentMarker) this.currentMarker.remove();
         history('現在位置継続取得スタート',window.location.href)
       } else {
         navigator.geolocation.clearWatch(this.watchId);
@@ -289,7 +289,8 @@ export default {
         this.centerMarker.remove()
         this.centerMarker = null
         this.isTracking = false
-        this.compass.turnOff()
+        this.currentMarker = null
+        // this.compass.turnOff()
         history('現在位置継続取得ストップ',window.location.href)
       }
     },
@@ -663,7 +664,7 @@ export default {
             if (window.location.pathname !== '/') {
               pathName = window.location.pathname
             }
-            this.$store.state.url = window.location.protocol + window.location.host + pathName + "/?s=" + response.data.urlid
+            this.$store.state.url = window.location.protocol + '//' + window.location.host + pathName + "/?s=" + response.data.urlid
             console.log('保存成功')
           })
           .catch(error => {

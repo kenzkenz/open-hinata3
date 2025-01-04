@@ -1163,7 +1163,7 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
     console.log(bbox)
     fgb_URL = getFgbUrl(prefId);
     async function deserializeAndPrepareGeojson(layerId) {
-        const geojson = { type: 'FeatureCollection', features: [] };
+        let geojson = { type: 'FeatureCollection', features: [] };
         console.log('データをデシリアライズ中...');
         // alert(fgb_URL)
         const iter = window.flatgeobuf.deserialize(fgb_URL, bbox);
@@ -1188,6 +1188,13 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
         console.log(isDfx)
         if (!isDfx) {
             console.log(geojson)
+            if (layerId === 'oh-amx-a-fude') {
+                geojson = extractMatchingFeatures(map,geojson)
+            }
+            console.log(geojson)
+            if (layerId === 'oh-amx-a-fude') {
+                geojson = extractMatchingFeatures(map,geojson)
+            }
             convertAndDownloadGeoJSONToSIMA(map, layerId, geojson, '詳細_', false, '', kukaku);
         } else {
             console.log(geojson)
@@ -1618,4 +1625,29 @@ function convertSIMtoTXT(simText) {
     }
 
     return formattedLines;
+}
+// oh-amx-a-fude専用ファンクション。
+function extractMatchingFeatures(map,geojson) {
+    const layerId = 'oh-amx-a-fude'
+    // 1. MapLibreから現在表示されている地物を取得
+    const visibleFeatures = map.queryRenderedFeatures({ layers: [layerId] });
+    // 2. 表示中地物のプロパティを収集
+    const visiblePropertiesSet = new Set();
+    visibleFeatures.forEach(feature => {
+        const { 丁目コード, 小字コード, 地番 } = feature.properties;
+        if (丁目コード && 小字コード && 地番) {
+            visiblePropertiesSet.add(`${丁目コード}_${小字コード}_${地番}`);
+        }
+    });
+    // 3. GeoJSONから一致する地物を抽出
+    const filteredFeatures = geojson.features.filter(feature => {
+        const { 丁目コード, 小字コード, 地番 } = feature.properties || {};
+        return 丁目コード && 小字コード && 地番 &&
+            visiblePropertiesSet.has(`${丁目コード}_${小字コード}_${地番}`);
+    });
+    // 4. 新しいGeoJSONを生成して返却
+    return {
+        type: "FeatureCollection",
+        features: filteredFeatures
+    };
 }

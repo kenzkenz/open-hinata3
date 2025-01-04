@@ -6967,10 +6967,10 @@ const layers01 = [
     {
         id: 'oh-amx-a-fude',
         label: "登記所備付地図データ",
-        // source: amxSource,
-        // layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel],
-        source: amx2024Source,amx2024Source,
-        layers:[amx2024Layer,amx2024LayerLine,amxLayerDaihyou,amx2024LayerLabel],
+        source: amxSource,
+        layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel],
+        // source: amx2024Source,amx2024Source,
+        // layers:[amx2024Layer,amx2024LayerLine,amxLayerDaihyou,amx2024LayerLabel],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
         ext: {name:'extTokijyo'}
     },
@@ -6981,10 +6981,10 @@ const layers01 = [
             {
                 id: 'oh-amx-a-fude',
                 label: "登記所備付地図データ",
-                // source: amxSource,
-                // layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel],
-                source: amx2024Source,amx2024Source,
-                layers:[amx2024Layer,amx2024LayerLine,amxLayerDaihyou,amx2024LayerLabel],
+                source: amxSource,
+                layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel],
+                // source: amx2024Source,amx2024Source,
+                // layers:[amx2024Layer,amx2024LayerLine,amxLayerDaihyou,amx2024LayerLabel],
                 attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
                 ext: {name:'extTokijyo'}
             },

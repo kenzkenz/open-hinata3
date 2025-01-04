@@ -789,6 +789,7 @@ tippecanoe -o fukuyamashi.pmtiles \
     --layer=chibanzu \
     fukuyamashi.geojson
 
+tippecanoe-decode MojMap_amx_2024.pmtiles -z 14 -Z 14 -c > amx2024.geojson
 
 
 
