@@ -2173,7 +2173,58 @@ const ryuikiLayer = {
     'type': 'raster',
     'source': 'ryuiki-source',
 }
-// 登記所備付地図データ --------------------------------------------------------------------------------------------
+// 登記所備付地図データ ----------------------------------------------------------------------------------------------------
+const amx2024Source = {
+    id: "amx-a-2024-pmtiles", obj: {
+        type: "vector",
+        url: 'pmtiles://https://data.source.coop/smartmaps/amx-2024-04/MojMap_amx_2024.pmtiles',
+    }
+}
+// 登記所備付地図データ 間引きなし
+const amx2024Layer = {
+    id: "oh-amx-a-fude",
+    type: "fill",
+    source: "amx-a-2024-pmtiles",
+    "source-layer": "fude",
+    paint: {
+        "fill-color": "rgba(254, 217, 192, 0)",
+        "fill-outline-color": "rgba(255, 0, 0, 1)",
+    },
+}
+const amx2024LayerLine = {
+    id: "oh-amx-a-fude-line",
+    type: "line",
+    source: "amx-a-2024-pmtiles",
+    "source-layer": "fude",
+    paint: {
+        "line-color": "red",
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            14, 0.5,
+            20, 6
+        ]
+    },
+}
+const amx2024LayerLabel = {
+    id: "oh-amx-label",
+    type: "symbol",
+    source: "amx-a-2024-pmtiles",
+    "source-layer": "fude",
+    'layout': {
+        'text-field': ['get', '地番'],
+        'text-font': ['NotoSansJP-Regular'],
+    },
+    'paint': {
+        'text-color': 'rgba(255, 0, 0, 1)',
+        'text-halo-color': 'rgba(255,255,255,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 17
+}
+// ---------------------------------------------------------------------------------------------------------------------
 const amxSource = {
     id: "amx-a-pmtiles", obj: {
         type: "vector",
@@ -2181,7 +2232,6 @@ const amxSource = {
         maxzoom: 16,
         url: "pmtiles://https://habs.rad.naro.go.jp/spatial_data/amx/a.pmtiles",
         // url: 'https://data.source.coop/smartmaps/amx-2024-04/MojMap_amx_2024.pmtiles',
-        attribution: "<a href='https://www.moj.go.jp/MINJI/minji05_00494.html' target='_blank'>登記所備付地図データ（法務省）</a>",
     }
 }
 // 登記所備付地図データ 間引きなし
@@ -6917,8 +6967,10 @@ const layers01 = [
     {
         id: 'oh-amx-a-fude',
         label: "登記所備付地図データ",
-        source: amxSource,
-        layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel],
+        // source: amxSource,
+        // layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel],
+        source: amx2024Source,amx2024Source,
+        layers:[amx2024Layer,amx2024LayerLine,amxLayerDaihyou,amx2024LayerLabel],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
         ext: {name:'extTokijyo'}
     },
@@ -6929,8 +6981,11 @@ const layers01 = [
             {
                 id: 'oh-amx-a-fude',
                 label: "登記所備付地図データ",
-                source: amxSource,
-                layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel],
+                // source: amxSource,
+                // layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel],
+                source: amx2024Source,amx2024Source,
+                layers:[amx2024Layer,amx2024LayerLine,amxLayerDaihyou,amx2024LayerLabel],
+                attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
                 ext: {name:'extTokijyo'}
             },
             {

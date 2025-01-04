@@ -584,12 +584,136 @@ export function saveCima(map, layerId, sourceId, fields, kaniFlg, kei) {
 // }
 
 
-// ⭐️これは地番がない最もベーシックなもの
+
+// ⭐️これは地番がない最もベーシックなものに各セクションをプラスしたもの 福井が読み込みエラーになった
+// function geojsonToDXF(geojson) {
+//     let dxf = "0\n" +
+//         "SECTION\n" +
+//         "2\n" +
+//         "HEADER\n" +
+//         "9\n$ACADVER\n1\nAC1021\n" +
+//         "0\n" +
+//         "ENDSEC\n" +
+//         "0\n" +
+//         "SECTION\n" +
+//         "2\n" +
+//         "CLASSES\n" +
+//         "0\n" +
+//         "ENDSEC\n" +
+//         "0\n" +
+//         "SECTION\n" +
+//         "2\n" +
+//         "TABLES\n" +
+//         "0\n" +
+//         "TABLE\n" +
+//         "2\nLAYER\n" +
+//         "70\n0\n" +
+//         "0\nLAYER\n" +
+//         "2\n0\n" +
+//         "70\n0\n" +
+//         "62\n7\n" +
+//         "6\nCONTINUOUS\n" +
+//         "0\nENDTAB\n" +
+//         "0\nENDSEC\n" +
+//         "0\nSECTION\n" +
+//         "2\nBLOCKS\n" +
+//         "0\nENDSEC\n" +
+//         "0\nSECTION\n" +
+//         "2\nENTITIES\n";
+//
+//     function processPoint(coord, layer = 'Default') {
+//         return "0\n" +
+//             "POINT\n" +
+//             "8\n" + layer + "\n" +
+//             "10\n" + coord[0] + "\n" +
+//             "20\n" + coord[1] + "\n";
+//     }
+//
+//     function processLineString(coords, layer = 'Default') {
+//         let dxfPart = "0\n" +
+//             "LWPOLYLINE\n" +
+//             "8\n" + layer + "\n" +
+//             "90\n" + coords.length + "\n";
+//         coords.forEach(coord => {
+//             dxfPart += "10\n" + coord[0] + "\n" +
+//                 "20\n" + coord[1] + "\n";
+//         });
+//         return dxfPart;
+//     }
+//
+//     function processPolygon(coords, layer = 'Default') {
+//         let dxfPart = "0\n" +
+//             "LWPOLYLINE\n" +
+//             "8\n" + layer + "\n" +
+//             "90\n" + coords[0].length + "\n" +
+//             "70\n1\n";
+//         coords[0].forEach(coord => {
+//             dxfPart += "10\n" + coord[0] + "\n" +
+//                 "20\n" + coord[1] + "\n";
+//         });
+//         return dxfPart;
+//     }
+//
+//     function processMultiPoint(coords, layer = 'Default') {
+//         return coords.map(coord => processPoint(coord, layer)).join('');
+//     }
+//
+//     function processMultiLineString(coords, layer = 'Default') {
+//         return coords.map(line => processLineString(line, layer)).join('');
+//     }
+//
+//     function processMultiPolygon(coords, layer = 'Default') {
+//         return coords.map(polygon => processPolygon(polygon, layer)).join('');
+//     }
+//
+//     geojson.features.forEach(feature => {
+//         const geometry = feature.geometry;
+//         const properties = feature.properties || {};
+//         const layer = properties.layer || 'Default';
+//
+//         switch (geometry.type) {
+//             case 'Point':
+//                 dxf += processPoint(geometry.coordinates, layer);
+//                 break;
+//             case 'LineString':
+//                 dxf += processLineString(geometry.coordinates, layer);
+//                 break;
+//             case 'Polygon':
+//                 dxf += processPolygon(geometry.coordinates, layer);
+//                 break;
+//             case 'MultiPoint':
+//                 dxf += processMultiPoint(geometry.coordinates, layer);
+//                 break;
+//             case 'MultiLineString':
+//                 dxf += processMultiLineString(geometry.coordinates, layer);
+//                 break;
+//             case 'MultiPolygon':
+//                 dxf += processMultiPolygon(geometry.coordinates, layer);
+//                 break;
+//             default:
+//                 console.warn("サポートされていないジオメトリタイプ: " + geometry.type);
+//                 break;
+//         }
+//     });
+//
+//     dxf += "0\n" +
+//         "ENDSEC\n" +
+//         "0\n" +
+//         "SECTION\n" +
+//         "2\nOBJECTS\n" +
+//         "0\nENDSEC\n" +
+//         "0\nEOF\n";
+//     return dxf;
+// }
+
+
+// // ⭐️これは地番がない最もベーシックなもの をm単位？にしたもの
 function geojsonToDXF(geojson) {
     let dxf = "0\n" +
         "SECTION\n" +
         "2\n" +
         "HEADER\n" +
+        "9\n$INSUNITS\n70\n6\n" + // 単位をメートルに設定
         "0\n" +
         "ENDSEC\n" +
         "0\n" +
@@ -684,6 +808,109 @@ function geojsonToDXF(geojson) {
         "EOF\n";
     return dxf;
 }
+
+
+
+// ⭐️これは地番がない最もベーシックなもの
+// function geojsonToDXF(geojson) {
+//     let dxf = "0\n" +
+//         "SECTION\n" +
+//         "2\n" +
+//         "HEADER\n" +
+//         "0\n" +
+//         "ENDSEC\n" +
+//         "0\n" +
+//         "SECTION\n" +
+//         "2\n" +
+//         "TABLES\n" +
+//         "0\n" +
+//         "ENDSEC\n" +
+//         "0\n" +
+//         "SECTION\n" +
+//         "2\n" +
+//         "ENTITIES\n";
+//
+//     function processPoint(coord, layer = 'Default') {
+//         return "0\n" +
+//             "POINT\n" +
+//             "8\n" + layer + "\n" +
+//             "10\n" + coord[0] + "\n" +
+//             "20\n" + coord[1] + "\n";
+//     }
+//
+//     function processLineString(coords, layer = 'Default') {
+//         let dxfPart = "0\n" +
+//             "LWPOLYLINE\n" +
+//             "8\n" + layer + "\n" +
+//             "90\n" + coords.length + "\n";
+//         coords.forEach(coord => {
+//             dxfPart += "10\n" + coord[0] + "\n" +
+//                 "20\n" + coord[1] + "\n";
+//         });
+//         return dxfPart;
+//     }
+//
+//     function processPolygon(coords, layer = 'Default') {
+//         let dxfPart = "0\n" +
+//             "LWPOLYLINE\n" +
+//             "8\n" + layer + "\n" +
+//             "90\n" + coords[0].length + "\n" +
+//             "70\n1\n";
+//         coords[0].forEach(coord => {
+//             dxfPart += "10\n" + coord[0] + "\n" +
+//                 "20\n" + coord[1] + "\n";
+//         });
+//         return dxfPart;
+//     }
+//
+//     function processMultiPoint(coords, layer = 'Default') {
+//         return coords.map(coord => processPoint(coord, layer)).join('');
+//     }
+//
+//     function processMultiLineString(coords, layer = 'Default') {
+//         return coords.map(line => processLineString(line, layer)).join('');
+//     }
+//
+//     function processMultiPolygon(coords, layer = 'Default') {
+//         return coords.map(polygon => processPolygon(polygon, layer)).join('');
+//     }
+//
+//     geojson.features.forEach(feature => {
+//         const geometry = feature.geometry;
+//         const properties = feature.properties || {};
+//         const layer = properties.layer || 'Default';
+//
+//         switch (geometry.type) {
+//             case 'Point':
+//                 dxf += processPoint(geometry.coordinates, layer);
+//                 break;
+//             case 'LineString':
+//                 dxf += processLineString(geometry.coordinates, layer);
+//                 break;
+//             case 'Polygon':
+//                 dxf += processPolygon(geometry.coordinates, layer);
+//                 break;
+//             case 'MultiPoint':
+//                 dxf += processMultiPoint(geometry.coordinates, layer);
+//                 break;
+//             case 'MultiLineString':
+//                 dxf += processMultiLineString(geometry.coordinates, layer);
+//                 break;
+//             case 'MultiPolygon':
+//                 dxf += processMultiPolygon(geometry.coordinates, layer);
+//                 break;
+//             default:
+//                 console.warn("サポートされていないジオメトリタイプ: " + geometry.type);
+//                 break;
+//         }
+//     });
+//
+//     dxf += "0\n" +
+//         "ENDSEC\n" +
+//         "0\n" +
+//         "EOF\n";
+//     return dxf;
+// }
 
 export function saveDxf (map, layerId, sourceId, fields, detailGeojson, kei2) {
     console.log(detailGeojson)
@@ -1095,12 +1322,13 @@ async function detailGeojson(map, layerId, kukaku) {
         if (geojson.features.length === 0) {
             if (prefId !== '43') {
                 console.warn('地物が存在しません。prefIdを43に変更して再試行します。');
-                alert('飛地かもしれません。再試行します。')
+                alert('データが見つかりませんでした。再試行します。')
                 prefId = '43';
                 retryAttempted = true;
                 await deserializeAndPrepareGeojson(layerId);
             } else {
-                alert('地物が一つもありません。「簡易」で試してみてください。');
+                alert('地物が一つもありません。「簡易」で出力します。。');
+                saveCima(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'],true)
             }
             return;
         }
@@ -1185,12 +1413,13 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
         if (geojson.features.length === 0) {
             if (prefId !== '43' && !retryAttempted) {
                 console.warn('地物が存在しません。prefIdを43に変更して再試行します。');
-                alert('飛地かもしれません。再試行します。')
+                alert('データが見つかりませんでした。。再試行します。')
                 prefId = '43';
                 retryAttempted = true;
                 await deserializeAndPrepareGeojson(layerId);
             } else {
-                alert('地物が一つもありません。「簡易」で試してみてください。');
+                alert('地物が一つもありません。「簡易」で出力します。');
+                saveCima(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'],true)
             }
             return;
         }
@@ -1269,7 +1498,7 @@ export function highlightSpecificFeatures(map,layerId) {
     console.log(store.state.highlightedChibans);
     let sec = 0
     if (isFirstRun) {
-        sec = 100
+        sec = 500
     } else {
         sec = 0
     }

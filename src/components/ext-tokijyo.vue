@@ -47,12 +47,12 @@
     <v-text-field label="抽出" v-model="s_tokijyoText" @input="change" style="margin-top: 10px"></v-text-field>
     <v-btn style="margin-top: -10px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
     <v-btn style="margin-top: -10px;margin-left: 5px;" class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveSima">sima保存（簡易）</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveSima2">sima保存（詳細）</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
+<!--    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveSima">sima保存（簡易）</v-btn>-->
+    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveSima2">sima保存</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="s_dialogForSima=true">sima読込</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="jww">jww座標ファイル</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="jww">jww座標ファイル保存</v-btn>
     <hr>
     <div style="display: flex; align-items: center; gap: 10px;">
       <v-btn style="height: 40px; line-height: 40px; margin-left: 0px;margin-top: 10px;" class="tiny-btn" @click="resetFeatureColors">
