@@ -217,8 +217,10 @@ export default {
     elevation:'',
     watchId: null,
     centerMarker: null,
+    currentMarker: null,
     isTracking: false,
     compass: null,
+    // cancelGoToCurrentLocation: false,
   }),
   computed: {
     s_terrainLevel: {
@@ -279,6 +281,7 @@ export default {
         this.startWatchPosition()
         this.isTracking = true
         this.compass.turnOn()
+        this.currentMarker.remove();
         history('現在位置継続取得スタート',window.location.href)
       } else {
         navigator.geolocation.clearWatch(this.watchId);
@@ -338,13 +341,13 @@ export default {
                 map.doubleClickZoom.enable();
               });
               // 現在位置にマーカーを追加
-              const marker = new maplibregl.Marker()
+               this.currentMarker = new maplibregl.Marker()
                   .setLngLat([userLongitude, userLatitude])
                   // .setPopup(new maplibregl.Popup().setHTML("<strong>現在位置</strong>"))
                   .addTo(map);
               // マーカーをクリックしたときにマーカーを削除
-              marker.getElement().addEventListener('click', () => {
-                marker.remove(); // マーカーをマップから削除
+              this.currentMarker.getElement().addEventListener('click', () => {
+                this.currentMarker.remove(); // マーカーをマップから削除
               });
             },
             (error) => {
