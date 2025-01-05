@@ -6960,7 +6960,93 @@ const fukuokakenshinrinLayerLine = {
     },
 }
 
+// 街区--------------------------------------------------------------------------------------------
+const gaikuSource = {
+    id: "gaiku-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/gaiku/gaiku2.pmtiles",
+    }
+}
+const gaikuLayer = {
+    id: "oh-gaiku-layer",
+    type: "circle",
+    source: "gaiku-source",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': [
+            'match',
+            ['get', 'type'],
+            'S', 'rgba(255, 100, 100, 1)', // Sは赤っぽく
+            'T', 'rgba(100, 100, 255, 1)', // Tは青っぽく
+            'TS', 'rgba(150, 50, 200, 1)', // TSは紫っぽく
+            'SS', 'rgba(200, 200, 0, 1)', // SSは黄色っぽく
+            'H', 'rgba(100, 200, 100, 1)', // Hは緑っぽく
+            'red'
+        ],
+        'circle-opacity': 1, // すべて不透明
+        'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            0, 0,
+            14,10
 
+        ]
+    }
+}
+
+const gaikuLabelLayer = {
+    id: "oh-gaiku-label-layer",
+    type: "symbol",
+    source: "gaiku-source",
+    "source-layer": "point",
+    'layout': {
+        'text-field': [
+            'match',
+            ['get', 'type'],
+            'S', 'あ',
+            'T', 'い',
+            'TS', 'う',
+            'SS', 'え',
+            'H', 'お',
+            '' // デフォルトは空文字
+        ],
+        'text-size': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            11,0,
+            13, 14
+        ],
+        'text-anchor': 'center', // テキストを中央配置
+        'text-allow-overlap': true // サークルとテキストの重なりを許可
+    },
+    'paint': {
+        'text-color': 'black',
+        'text-halo-color': 'white',
+        'text-halo-width': 1.5
+    }
+}
+
+const gaikuLayerLabel = {
+    id: "oh-gaiku-label",
+    type: "symbol",
+    source: "gaiku-source",
+    "source-layer": "point",
+    'filter': ['!=', ['get', 'type'], 'H'], // typeがHの要素を除外
+    'layout': {
+        'text-field': ['get', '基準点等名称'],
+        'text-font': ['NotoSansJP-Regular'],
+        'text-offset': [0, 1.5],
+    },
+    'paint': {
+        'text-color': 'rgba(0, 0, 0, 1)',
+        'text-halo-color': 'rgba(255,255,255,1)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 15
+}
 
 // // 地形分類テスト --------------------------------------------------------------------------------------------
 // const chikeibunruiSource2 = {
@@ -7059,9 +7145,17 @@ const layers01 = [
             },
             {
                 id: 'oh-kizyunten',
-                label: "基準点",
+                label: "基本基準点",
                 source: kizyuntenSource,
                 layers:[kizyuntenPoint,kizyuntenPointLabel],
+                attribution: '<a href="" target="_blank"></a>'
+                // ext: {name:'extTokijyo'}
+            },
+            {
+                id: 'oh-gaiku',
+                label: "街区基準点",
+                source: gaikuSource,
+                layers:[gaikuLayer,gaikuLayerLabel,gaikuLabelLayer],
                 attribution: '<a href="" target="_blank"></a>'
                 // ext: {name:'extTokijyo'}
             },
