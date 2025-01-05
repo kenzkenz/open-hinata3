@@ -1,6 +1,25 @@
 <template>
   <v-app>
     <v-main>
+
+      <v-dialog v-model="dialog" max-width="500px">
+        <v-card>
+          <v-card-title>
+            open-hinata3 利用規約
+          </v-card-title>
+          <v-card-text>
+            あ<br>
+            あ<br>
+            あ<br>
+            あ<br>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="dialog = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
       <div id="map00">
         <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="mapFlg[mapName]" @click="btnPosition">
 
@@ -221,6 +240,7 @@ export default {
     currentMarker: null,
     isTracking: false,
     compass: null,
+    dialog: true,
     // cancelGoToCurrentLocation: false,
   }),
   computed: {
