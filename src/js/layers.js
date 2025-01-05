@@ -6960,7 +6960,7 @@ const fukuokakenshinrinLayerLine = {
     },
 }
 
-// 街区--------------------------------------------------------------------------------------------
+// 街区基準点--------------------------------------------------------------------------------------------
 const gaikuSource = {
     id: "gaiku-source", obj: {
         type: "vector",
@@ -6972,6 +6972,7 @@ const gaikuLayer = {
     type: "circle",
     source: "gaiku-source",
     "source-layer": "point",
+    filter: ['!=', ['get', '廃点情報'], '廃点'], // 廃点情報が "廃点" の場合は非表示
     'paint': {
         'circle-color': [
             'match',
@@ -6989,8 +6990,8 @@ const gaikuLayer = {
             ['linear'],
             ['zoom'],
             0, 0,
-            14,10
-
+            12,10,
+            16,20
         ]
     }
 }
@@ -7000,13 +7001,14 @@ const gaikuLabelLayer = {
     type: "symbol",
     source: "gaiku-source",
     "source-layer": "point",
+    filter: ['!=', ['get', '廃点情報'], '廃点'], // 廃点情報が "廃点" の場合は非表示
     'layout': {
         'text-field': [
             'match',
             ['get', 'type'],
             'S', '三',
-            'T', 'タ',
-            'TS', 'タ節',
+            'T', '多',
+            'TS', '多節',
             'SS', '三節',
             'H', '補',
             '' // デフォルトは空文字
@@ -7033,6 +7035,7 @@ const gaikuLayerLabel = {
     type: "symbol",
     source: "gaiku-source",
     "source-layer": "point",
+    filter: ['!=', ['get', '廃点情報'], '廃点'], // 廃点情報が "廃点" の場合は非表示
     'layout': {
         'text-field': [
             'coalesce',
@@ -7062,15 +7065,13 @@ const toshikanLayer = {
     type: "circle",
     source: "toshikan-source",
     "source-layer": "point",
+    filter: ['!=', ['get', '廃点情報'], '廃点'], // 廃点情報が "廃点" の場合は非表示
     'paint': {
         'circle-color': [
             'match',
             ['get', 'type'],
-            'S', 'rgba(255, 100, 100, 1)', // Sは赤っぽく
-            'T', 'rgba(100, 100, 255, 1)', // Tは青っぽく
-            'TS', 'rgba(150, 50, 200, 1)', // TSは紫っぽく
-            'SS', 'rgba(200, 200, 0, 1)', // SSは黄色っぽく
-            'H', 'rgba(100, 200, 100, 1)', // Hは緑っぽく
+            'TKS', 'rgba(200, 100, 100, 1)', // Sは赤っぽく
+            'TKT', 'green', // Tは青っぽく
             'red'
         ],
         'circle-opacity': 1, // すべて不透明
@@ -7079,7 +7080,8 @@ const toshikanLayer = {
             ['linear'],
             ['zoom'],
             0, 0,
-            14,10
+            12,10,
+            16,20
 
         ]
     }
@@ -7090,15 +7092,13 @@ const toshikanLabelLayer = {
     type: "symbol",
     source: "toshikan-source",
     "source-layer": "point",
+    filter: ['!=', ['get', '廃点情報'], '廃点'], // 廃点情報が "廃点" の場合は非表示
     'layout': {
         'text-field': [
             'match',
             ['get', 'type'],
-            'S', '三',
-            'T', 'タ',
-            'TS', 'タ節',
-            'SS', '三節',
-            'H', '補',
+            'TKS', '都三',
+            'TKT', '都多',
             '' // デフォルトは空文字
         ],
         'text-size': [
@@ -7123,6 +7123,7 @@ const toshikanLayerLabel = {
     type: "symbol",
     source: "toshikan-source",
     "source-layer": "point",
+    filter: ['!=', ['get', '廃点情報'], '廃点'], // 廃点情報が "廃点" の場合は非表示
     'layout': {
         'text-field': [
             'coalesce',
@@ -7249,7 +7250,7 @@ const layers01 = [
                 label: "都市部官民基準点",
                 source: toshikanSource,
                 layers:[toshikanLayer,toshikanLayerLabel,toshikanLabelLayer],
-                attribution: '<a href="https://gaikuchosa.mlit.go.jp/gaiku/system/download.phtml" target="_blank">街区基準点</a>',
+                attribution: '<a href="https://gaikuchosa.mlit.go.jp/gaiku/system/download.phtml" target="_blank">都市部官民基準点</a>',
                 ext: {name:'extToshikan'}
             },
             {

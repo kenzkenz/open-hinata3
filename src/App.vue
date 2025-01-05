@@ -124,6 +124,7 @@ async function fetchElevationFromImage(imageUrl, lon, lat, zoom) {
   return new Promise((resolve, reject) => {
     img.onload = () => {
       const canvas = document.createElement("canvas");
+      canvas.style.display = "none"
       const ctx = canvas.getContext("2d");
       canvas.width = img.width;
       canvas.height = img.height;

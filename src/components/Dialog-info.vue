@@ -51,7 +51,7 @@
         'extFukuokashi',
         'ext-chibanzu',
           ].includes(item.ext.name)"/>
-    <extGaiku :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extGaiku'"/>
+    <extGaiku :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extGaiku' || item.ext.name === 'extToshikan'"/>
   </div>
 </template>
 

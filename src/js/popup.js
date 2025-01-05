@@ -2922,6 +2922,9 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-toshikan-label-layer':
+            case 'oh-toshikan-label':
+            case 'oh-toshikan-layer':
             case 'oh-gaiku-label-layer':
             case 'oh-gaiku-label':
             case 'oh-gaiku-layer':

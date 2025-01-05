@@ -812,3 +812,11 @@ tippecanoe -o fukuokashinrin.pmtiles \
 tippecanoe -rg -pk -pf -l point -f -o gaiku6.pmtiles merged_result.geojson
 
 tippecanoe -rg -pk -pf -l point -f -o toshikan.pmtiles merged_groups_merged.geojson
+
+ogr2ogr -f GeoJSON output_points.geojson amx2024.geojson \
+  -dialect SQLite \
+  -sql "SELECT ST_Centroid(geometry) AS geometry, * FROM input_polygons"
+
+ogr2ogr -f GeoJSON output_points.geojson amx2024.geojson \
+  -dialect SQLite \
+  -sql "SELECT ST_Centroid(geometry) AS geometry, 大字名, 大字コード, 地番, 丁目コード, 小字コード, 市区町村名 FROM input_polygons"

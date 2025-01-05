@@ -1653,9 +1653,10 @@ function extractMatchingFeatures(map,geojson) {
     };
 }
 
-export function saveSimaGaiku (map) {
+export function saveSimaGaiku (map,layerId) {
+    console.log(layerId)
     const features = map.queryRenderedFeatures({
-        layers: ['oh-gaiku-layer'] // 対象のレイヤー名を指定
+        layers: [layerId] // 対象のレイヤー名を指定
     });
     // GeoJSON形式に変換
     const geojson = {
