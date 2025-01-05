@@ -7250,7 +7250,7 @@ const layers01 = [
                 label: "都市部官民基準点",
                 source: toshikanSource,
                 layers:[toshikanLayer,toshikanLayerLabel,toshikanLabelLayer],
-                attribution: '<a href="https://gaikuchosa.mlit.go.jp/gaiku/system/download.phtml" target="_blank">都市部官民基準点</a>',
+                attribution: '<a href="https://gaikuchosa.mlit.go.jp/gaiku/system/download_kanmin.phtml" target="_blank">都市部官民基準点</a>',
                 ext: {name:'extToshikan'}
             },
             {
