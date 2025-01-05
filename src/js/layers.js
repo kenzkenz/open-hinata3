@@ -7050,7 +7050,96 @@ const gaikuLayerLabel = {
     'maxzoom': 24,
     'minzoom': 15
 };
+// 都市部官民基準点--------------------------------------------------------------------------------------------
+const toshikanSource = {
+    id: "toshikan-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/toshikan/toshikan.pmtiles",
+    }
+}
+const toshikanLayer = {
+    id: "oh-toshikan-layer",
+    type: "circle",
+    source: "toshikan-source",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': [
+            'match',
+            ['get', 'type'],
+            'S', 'rgba(255, 100, 100, 1)', // Sは赤っぽく
+            'T', 'rgba(100, 100, 255, 1)', // Tは青っぽく
+            'TS', 'rgba(150, 50, 200, 1)', // TSは紫っぽく
+            'SS', 'rgba(200, 200, 0, 1)', // SSは黄色っぽく
+            'H', 'rgba(100, 200, 100, 1)', // Hは緑っぽく
+            'red'
+        ],
+        'circle-opacity': 1, // すべて不透明
+        'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            0, 0,
+            14,10
 
+        ]
+    }
+}
+
+const toshikanLabelLayer = {
+    id: "oh-toshikan-label-layer",
+    type: "symbol",
+    source: "toshikan-source",
+    "source-layer": "point",
+    'layout': {
+        'text-field': [
+            'match',
+            ['get', 'type'],
+            'S', '三',
+            'T', 'タ',
+            'TS', 'タ節',
+            'SS', '三節',
+            'H', '補',
+            '' // デフォルトは空文字
+        ],
+        'text-size': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            11,0,
+            13, 14
+        ],
+        'text-anchor': 'center', // テキストを中央配置
+        'text-allow-overlap': true // サークルとテキストの重なりを許可
+    },
+    'paint': {
+        'text-color': 'black',
+        'text-halo-color': 'white',
+        'text-halo-width': 1.5
+    }
+}
+
+const toshikanLayerLabel = {
+    id: "oh-toshikan-label",
+    type: "symbol",
+    source: "toshikan-source",
+    "source-layer": "point",
+    'layout': {
+        'text-field': [
+            'coalesce',
+            ['get', '基準点等名称'], // 優先的に使用
+            ['get', '街区点・補助点名称'] // 基準点等名称がない場合はこちらを使用
+        ],
+        'text-font': ['NotoSansJP-Regular'],
+        'text-offset': [0, 1.5],
+    },
+    'paint': {
+        'text-color': 'rgba(0, 0, 0, 1)',
+        'text-halo-color': 'rgba(255,255,255,1)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 15
+};
 
 // // 地形分類テスト --------------------------------------------------------------------------------------------
 // const chikeibunruiSource2 = {
@@ -7154,6 +7243,14 @@ const layers01 = [
                 layers:[kizyuntenPoint,kizyuntenPointLabel],
                 attribution: '<a href="" target="_blank"></a>'
                 // ext: {name:'extTokijyo'}
+            },
+            {
+                id: 'oh-toshikan',
+                label: "都市部官民基準点",
+                source: toshikanSource,
+                layers:[toshikanLayer,toshikanLayerLabel,toshikanLabelLayer],
+                attribution: '<a href="https://gaikuchosa.mlit.go.jp/gaiku/system/download.phtml" target="_blank">街区基準点</a>',
+                ext: {name:'extToshikan'}
             },
             {
                 id: 'oh-gaiku',

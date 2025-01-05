@@ -811,3 +811,4 @@ tippecanoe -o fukuokashinrin.pmtiles \
 
 tippecanoe -rg -pk -pf -l point -f -o gaiku6.pmtiles merged_result.geojson
 
+tippecanoe -rg -pk -pf -l point -f -o toshikan.pmtiles merged_groups_merged.geojson

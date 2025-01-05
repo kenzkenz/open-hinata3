@@ -3,6 +3,7 @@ import {GITHUB_TOKEN} from "@/js/config";
 import * as turf from '@turf/turf'
 import maplibregl from 'maplibre-gl'
 import proj4 from 'proj4'
+import vuetify from "@/plugins/vuetify";
 // 複数のクリックされた地番を強調表示するためのセット
 // export let highlightedChibans = new Set();
 (function() {
@@ -1695,10 +1696,16 @@ export function saveSimaGaiku (map) {
         ) {
             const [x, y] = proj4('EPSG:4326', code, coord); // 座標系変換
             const coordinateKey = `${x},${y}`;
-
+            console.log(feature.properties.基準点等名称)
+            let name = ''
+            if (feature.properties.基準点等名称) {
+                name = feature.properties.基準点等名称
+            } else if (feature.properties['街区点・補助点名称']){
+                name = feature.properties['街区点・補助点名称']
+            }
             if (!coordinateMap.has(coordinateKey)) {
                 coordinateMap.set(coordinateKey, j);
-                A01Text += 'A01,' + j + ',' + j + ',' + y.toFixed(3) + ',' + x.toFixed(3) + ',\n';
+                A01Text += 'A01,' + j + ',' + name + ',' + y.toFixed(3) + ',' + x.toFixed(3) + ',\n';
                 j++;
             }
         } else {
