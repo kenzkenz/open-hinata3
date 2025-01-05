@@ -51,6 +51,7 @@
         'extFukuokashi',
         'ext-chibanzu',
           ].includes(item.ext.name)"/>
+    <extGaiku :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extGaiku'"/>
   </div>
 </template>
 
@@ -72,6 +73,7 @@ import extOSM from "@/components/ext-osm"
 import extTokijyo from "@/components/ext-tokijyo"
 import extZeni from "@/components/ext-zeni"
 import extIwata from "@/components/ext-chiban"
+import extGaiku from "@/components/ext-gaiku"
 
 export default {
   name: "dialog-info",
@@ -92,7 +94,7 @@ export default {
     extOSM,
     extTokijyo,
     extZeni,
-    extIwata
+    extGaiku,
   },
   props: ['mapName'],
   data: () => ({

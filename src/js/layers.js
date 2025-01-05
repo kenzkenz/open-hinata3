@@ -6964,7 +6964,7 @@ const fukuokakenshinrinLayerLine = {
 const gaikuSource = {
     id: "gaiku-source", obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/gaiku/gaiku2.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/gaiku/gaiku6.pmtiles",
     }
 }
 const gaikuLayer = {
@@ -7004,11 +7004,11 @@ const gaikuLabelLayer = {
         'text-field': [
             'match',
             ['get', 'type'],
-            'S', 'あ',
-            'T', 'い',
-            'TS', 'う',
-            'SS', 'え',
-            'H', 'お',
+            'S', '三',
+            'T', 'タ',
+            'TS', 'タ節',
+            'SS', '三節',
+            'H', '補',
             '' // デフォルトは空文字
         ],
         'text-size': [
@@ -7033,9 +7033,12 @@ const gaikuLayerLabel = {
     type: "symbol",
     source: "gaiku-source",
     "source-layer": "point",
-    'filter': ['!=', ['get', 'type'], 'H'], // typeがHの要素を除外
     'layout': {
-        'text-field': ['get', '基準点等名称'],
+        'text-field': [
+            'coalesce',
+            ['get', '基準点等名称'], // 優先的に使用
+            ['get', '街区点・補助点名称'] // 基準点等名称がない場合はこちらを使用
+        ],
         'text-font': ['NotoSansJP-Regular'],
         'text-offset': [0, 1.5],
     },
@@ -7046,7 +7049,8 @@ const gaikuLayerLabel = {
     },
     'maxzoom': 24,
     'minzoom': 15
-}
+};
+
 
 // // 地形分類テスト --------------------------------------------------------------------------------------------
 // const chikeibunruiSource2 = {
@@ -7156,8 +7160,8 @@ const layers01 = [
                 label: "街区基準点",
                 source: gaikuSource,
                 layers:[gaikuLayer,gaikuLayerLabel,gaikuLabelLayer],
-                attribution: '<a href="" target="_blank"></a>'
-                // ext: {name:'extTokijyo'}
+                attribution: '<a href="https://gaikuchosa.mlit.go.jp/gaiku/system/download.phtml" target="_blank">街区基準点</a>',
+                ext: {name:'extGaiku'}
             },
             {
                 id: 'citychibanzu',

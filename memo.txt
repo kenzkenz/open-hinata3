@@ -809,5 +809,5 @@ tippecanoe -o fukuokashinrin.pmtiles \
 
 
 
-tippecanoe -rg -l point -f -o gaiku.pmtiles output.geojson
+tippecanoe -rg -pk -pf -l point -f -o gaiku6.pmtiles merged_result.geojson
 
