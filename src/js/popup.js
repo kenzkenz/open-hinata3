@@ -14,10 +14,10 @@ console.log(store.state.selectedLayers)
 function calculatePolygonMetrics(polygon) {
     try {
         // 面積の計算
-        const area = turf.area(polygon).toFixed(2) + 'm2'; // Turf.jsで面積を計算
+        const area = '約' + turf.area(polygon).toFixed(1) + 'm2'; // Turf.jsで面積を計算
 
         // 周長の計算
-        const perimeter = turf.length(polygon, { units: 'meters' }).toFixed(2) + 'm'; // Turf.jsで周長を計算
+        const perimeter = '約' + turf.length(polygon, { units: 'meters' }).toFixed(1) + 'm'; // Turf.jsで周長を計算
 
         // 頂点数の計算 (GeoJSON座標から取得)
         const coordinates = polygon.geometry.coordinates[0]; // 外周の座標を取得

@@ -207,6 +207,10 @@ export default createStore({
       map01: '',
       map02: ''
     },
+    tokijyoColor:{
+      map01: 'red',
+      map02: 'red'
+    },
     zeniKm:{
       map01: 20,
       map02: 20
@@ -337,6 +341,9 @@ export default createStore({
           case 'extTokijyo':
             if (payload.order === 0) {
               variable = 'tokijyoText'
+            }
+            if (payload.order === 1) {
+              variable = 'tokijyoColor'
             }
             break
           case 'extZeni':

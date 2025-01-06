@@ -21,6 +21,7 @@
       </v-dialog>
 
       <div id="map00">
+        <img class='loadingImg' src="https://kenzkenz.xsrv.jp/open-hinata3/img/icons/loading2.gif">
         <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="mapFlg[mapName]" @click="btnPosition">
 
           <div id="pointer1" class="pointer" v-if="mapName === 'map01'"></div>
@@ -2174,7 +2175,14 @@ export default {
   background:rgba(0,0,0,0);
   border:none;
 }
-
+.loadingImg {
+  width:40px;
+  display:none;
+  position: absolute;
+  top:calc(50% - 20px);
+  left:calc(50% - 20px);
+  z-index:1;
+}
 </style>
 
 <style>
@@ -2343,5 +2351,36 @@ font {
 }
 .maplibregl-ctrl-compass-heading {
   display: none!important;
+}
+.color-container {
+  display: flex; /* 横並びにする */
+  gap: 10px; /* ボックス間の余白 */
+  height: 25px;
+}
+.color-container .box {
+  width: 100px;
+  height: 25px;
+  text-align: center;
+  line-height: 100px;
+  font-weight: bold;
+  color: white;
+  border-radius: 6px; /* 角を少し丸く */
+  cursor: pointer; /* ポインターアイコン */
+  transition: transform 0.1s, box-shadow 0.1s; /* スムーズなアニメーション */
+}
+.box:hover {
+  filter: brightness(1.2); /* 明るさを少しアップ */
+}
+.box:active {
+  transform: translateY(2px); /* クリック時に少し下がる */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* 影をつける */
+}
+.box1 { background-color: red; }
+.box2 { background-color: black; }
+.box3 { background-color: blue; }
+.box4 { background-color: green; }
+.box5 { background-color: orange; }
+.swich .v-input__control {
+  height: 20px!important;
 }
 </style>

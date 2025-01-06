@@ -218,8 +218,8 @@ export function exportLayerToGeoJSON(map,layerId,sourceId,fields) {
     }
 }
 export function saveGeojson (map,layerId,sourceId,fields) {
-    if (map.getZoom() <= 14) {
-        alert('ズーム14以上にしてください。')
+    if (map.getZoom() <= 15) {
+        alert('ズーム15以上にしてください。')
         return
     }
     const geojsonText = JSON.stringify(exportLayerToGeoJSON(map,layerId,sourceId,fields))
@@ -272,8 +272,8 @@ export async function uploadGeoJSONToGist(geojsonText, gistDescription = 'Upload
 }
 
 export function gistUpload (map,layerId,sourceId,fields) {
-    if (map.getZoom() <= 14) {
-        alert('ズーム14以上にしてください。')
+    if (map.getZoom() <= 15) {
+        alert('ズーム15以上にしてください。')
         return
     }
     const geojsonText = JSON.stringify(exportLayerToGeoJSON(map,layerId,sourceId,fields))
@@ -287,7 +287,6 @@ function getChibanAndHoka(geojson) {
         console.warn('GeoJSONが無効または空です');
         return { firstChiban: '', hoka: '' };
     }
-
     // 地番の最小値を取得
     let firstChiban = geojson.features
         .map(feature => feature.properties?.地番) // 地番を抽出
@@ -295,12 +294,10 @@ function getChibanAndHoka(geojson) {
         .map(chiban => Number(chiban)) // 数値に変換（地番が数値型である場合）
         .filter(chiban => !isNaN(chiban)) // NaNを除外
         .reduce((min, current) => Math.min(min, current), Infinity); // 最小値を取得
-
     if (firstChiban === Infinity) {
         // 有効な地番が見つからない場合、最初の地番を取得
         firstChiban = geojson.features[0]?.properties?.地番 || '';
     }
-
     // hokaの値を設定
     let hoka = '';
     if (firstChiban !== '') {
@@ -310,9 +307,39 @@ function getChibanAndHoka(geojson) {
     } else {
         firstChiban = '';
     }
-
     return { firstChiban, hoka };
 }
+// GeoJSONから最初に現れる「基準点等名称」または「街区点・補助点名称」を取得する関数
+function getFirstPointName(geojson) {
+    if (!geojson || !geojson.features || geojson.features.length === 0) {
+        console.warn('GeoJSONが無効または空です');
+        return { pointName: '', hoka: '' };
+    }
+
+    // 最初に見つかった「基準点等名称」または「街区点・補助点名称」を取得
+    let pointName = geojson.features
+        .map(feature => feature.properties?.['基準点等名称'] || feature.properties?.['街区点・補助点名称'])
+        .find(name => name !== undefined && name !== null && name !== '');
+
+    if (!pointName) {
+        pointName = geojson.features[0]?.properties?.['基準点等名称'] || geojson.features[0]?.properties?.['街区点・補助点名称'] || '';
+    }
+
+    // hokaの値を設定
+    let hoka = '';
+    if (pointName !== '') {
+        if (geojson.features.length > 1) {
+            hoka = '外' + (geojson.features.length - 1) + '点';
+        }
+    } else {
+        pointName = '';
+    }
+
+    return { pointName, hoka };
+}
+
+
+
 function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg, zahyokei2, kukaku,jww, kei2) {
     geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
     console.log(geojson)
@@ -346,7 +373,7 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
         if (kaniFlg) {
             alert('注!簡易の場合、座標値は暫定です。座標の利用は自己責任でお願いします。' + kei + 'でsimファイルを作ります。')
         } else {
-            alert(kei + 'でsimファイルを作ります。')
+            // alert(kei + 'でsimファイルを作ります。')
         }
     }
 
@@ -437,6 +464,8 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
         simaData = convertSIMtoTXT(simaData)
     }
 
+    document.querySelector('.loadingImg').style.display = 'none'
+
     // UTF-8で文字列をコードポイントに変換
     const utf8Array = window.Encoding.stringToCode(simaData);
     // UTF-8からShift-JISに変換
@@ -445,6 +474,12 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
     const uint8Array = new Uint8Array(shiftJISArray);
     // Blobを作成（MIMEタイプを変更）
     const blob = new Blob([uint8Array], { type: 'application/octet-stream' });
+
+
+
+    // alert('test')
+
+
 
     // ダウンロード用リンクを作成
     const link = document.createElement('a');
@@ -461,8 +496,8 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
 }
 
 export function saveCima(map, layerId, sourceId, fields, kaniFlg, kei) {
-    if (map.getZoom() <= 14) {
-        alert('ズーム14以上にしてください。')
+    if (map.getZoom() <= 15) {
+        alert('ズーム15以上にしてください。')
         return
     }
     const geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields);
@@ -681,8 +716,8 @@ export function saveDxf (map, layerId, sourceId, fields, detailGeojson, kei2) {
     if (detailGeojson) {
         geojson = detailGeojson
     } else {
-        if (map.getZoom() <= 14) {
-            alert('ズーム14以上にしてください。')
+        if (map.getZoom() <= 15) {
+            alert('ズーム15以上にしてください。')
             return
         }
         geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields)
@@ -853,8 +888,8 @@ function downloadGeoJSONAsCSV(geojson, filename = 'data.csv') {
 }
 
 export function saveCsv(map, layerId, sourceId, fields) {
-    if (map.getZoom() <= 14) {
-        alert('ズーム14以上にしてください。')
+    if (map.getZoom() <= 15) {
+        alert('ズーム15以上にしてください。')
         return
     }
     const geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields);
@@ -1032,8 +1067,8 @@ function determinePlaneRectangularZone(x, y) {
 }
 
 async function detailGeojson(map, layerId, kukaku) {
-    if (map.getZoom() <= 14) {
-        alert('ズーム14以上にしてください。');
+    if (map.getZoom() <= 15) {
+        alert('ズーム15以上にしてください。');
         return;
     }
     let prefId = String(store.state.prefId).padStart(2, '0');
@@ -1043,7 +1078,7 @@ async function detailGeojson(map, layerId, kukaku) {
     let retryAttempted = false;
 
     function getFgbUrl(prefId) {
-        const specialIds = ['22', '26', '29', '40', '43', '44','45','46'];
+        const specialIds = ['22', '26', '29', '40', '43', '44','45','47'];
         return specialIds.includes(prefId)
             ? `https://kenzkenz3.xsrv.jp/fgb/2024/${prefId}.fgb`
             : `https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_${prefId}.fgb`;
@@ -1103,10 +1138,11 @@ async function detailGeojson(map, layerId, kukaku) {
 
 
 export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, kei) {
-    if (map.getZoom() <= 14) {
-        alert('ズーム14以上にしてください。');
+    if (map.getZoom() <= 15) {
+        alert('ズーム15以上にしてください。');
         return;
     }
+    document.querySelector('.loadingImg').style.display = 'block'
     let prefId = String(store.state.prefId).padStart(2, '0');
     console.log('初期 prefId:', prefId);
 
@@ -1114,7 +1150,7 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
     let retryAttempted = false;
     // ここを改修する必要あり。amxと24自治体以外の動きがあやしい。
     function getFgbUrl(prefId) {
-        const specialIds = ['07','22', '26', '29', '40', '43', '44','45','46'];
+        const specialIds = ['07','22', '26', '29', '40', '43', '44','45','47'];
         switch (layerId) {
             case 'oh-chibanzu2024':
                 return 'https://kenzkenz3.xsrv.jp/fgb/Chibanzu_2024_with_id.fgb'
@@ -1224,8 +1260,8 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
 
 
 export async function saveCima3(map,kei,jww) {
-    if (map.getZoom() <= 14) {
-        alert('ズーム14以上にしてください。');
+    if (map.getZoom() <= 15) {
+        alert('ズーム15以上にしてください。');
         return;
     }
     const layerId = 'oh-chibanzu2024'
@@ -1654,6 +1690,10 @@ function extractMatchingFeatures(map,geojson) {
 }
 
 export function saveSimaGaiku (map,layerId) {
+    if (map.getZoom() <= 12) {
+        alert('ズーム12以上にしてください。')
+        return
+    }
     console.log(layerId)
     const features = map.queryRenderedFeatures({
         layers: [layerId] // 対象のレイヤー名を指定
@@ -1730,9 +1770,16 @@ export function saveSimaGaiku (map,layerId) {
     // ダウンロード用リンクを作成
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    const firstChiban = getChibanAndHoka(geojson).firstChiban
-    const hoka = getChibanAndHoka(geojson).hoka
-    const fileName = '街区_' + store.state.zahyokei + firstChiban + hoka + '.sim'
+
+    const firstPoint = getFirstPointName(geojson).pointName
+    const hoka = getFirstPointName(geojson).hoka
+    let gaiku = ''
+    if (layerId === 'oh-gaiku-layer') {
+        gaiku = '街区_'
+    } else {
+        gaiku = '都管_'
+    }
+    const fileName = gaiku + store.state.zahyokei + firstPoint + hoka + '.sim'
 
     link.download = fileName; // ファイル名を正確に指定
     // リンクをクリックしてダウンロード

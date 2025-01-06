@@ -95,6 +95,7 @@ export default {
     extTokijyo,
     extZeni,
     extGaiku,
+    extIwata
   },
   props: ['mapName'],
   data: () => ({

@@ -45,36 +45,56 @@
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
     <v-text-field label="抽出" v-model="s_tokijyoText" @input="change" style="margin-top: 10px"></v-text-field>
-    <v-btn style="margin-top: -10px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
-    <v-btn style="margin-top: -10px;margin-left: 5px;" class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>
-<!--    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveSima">sima保存（簡易）</v-btn>-->
-    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveSima2">sima保存</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="s_dialogForSima=true">sima読込</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="jww">jww座標ファイル保存</v-btn>
+
+      <!-- 1行目 -->
+      <div style="display: flex; justify-content: space-between; gap: 10px; padding-right: 30px;">
+        <v-btn class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
+        <v-btn class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>
+      </div>
+
+      <!-- 2行目 -->
+      <div style="display: flex; justify-content: space-between; gap: 10px; padding-right: 30px;">
+        <v-btn class="tiny-btn" @click="saveSima2">sima保存</v-btn>
+        <v-btn class="tiny-btn" @click="s_dialogForSima = true">sima読込</v-btn>
+        <v-btn class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
+      </div>
+
+      <!-- 3行目 -->
+      <div style="display: flex; justify-content: space-between; gap: 10px; padding-right: 17px;">
+        <v-btn class="tiny-btn" @click="saveCsv">csv保存</v-btn>
+        <v-btn class="tiny-btn" @click="jww">jww座標ファイル保存</v-btn>
+      </div>
+
     <hr>
     <div style="display: flex; align-items: center; gap: 10px;">
       <v-btn style="height: 40px; line-height: 40px; margin-left: 0px;margin-top: 10px;" class="tiny-btn" @click="resetFeatureColors">
         選択解除
       </v-btn>
-<!--      <v-switch v-model="s_isRenzoku" @change="changeMode" label="連続選択" color="primary" style="height: 40px;margin-top: -15px;"/>-->
+      <div class="swich">
       <v-tooltip top>
         <template v-slot:activator="{ props }">
           <v-switch
               v-model="s_isRenzoku"
               label="連続選択"
               color="primary"
-              style="height: 40px; margin-top: -15px;"
+              style="height: 20px; margin-top: -30px;padding-bottom: 30px"
               v-bind="props"
           />
         </template>
         <span>オフにするとポップアップします。</span>
       </v-tooltip>
-
+      </div>
+    </div>
+    <div class="color-container">
+      <div class="box box1" @click="changeColor('red')"></div>
+      <div class="box box2" @click="changeColor('black')"></div>
+      <div class="box box3" @click="changeColor('blue')"></div>
+      <div class="box box4" @click="changeColor('green')"></div>
+      <div class="box box5" @click="changeColor('orange')"></div>
     </div>
 <!--    <v-btn style="margin-top: 10px;margin-left: 100px;width: 50px" class="tiny-btn" @click="info">help</v-btn>-->
-          <span style="font-size: 12px"><div v-html="item.attribution"></div>{{ s_zahyokei }}</span>
+
+    <div style="font-size: 12px;margin-top: 10px;"><div v-html="item.attribution"></div>{{ s_zahyokei }}</div>
   </div>
 </template>
 
@@ -91,6 +111,7 @@ import {
   simaToGeoJSON,
   resetFeatureColors
 } from "@/js/downLoad";
+import {history} from "@/App";
 
 export default {
   name: 'ext-tokijyo',
@@ -131,6 +152,14 @@ export default {
         this.$store.state.tokijyoText[this.mapName] = value
       }
     },
+    s_tokijyoColor: {
+      get() {
+        return this.$store.state.tokijyoColor[this.mapName]
+      },
+      set(value) {
+        this.$store.state.tokijyoColor[this.mapName] = value
+      }
+    },
     s_zahyokei: {
       get() {
         return this.$store.state.zahyokei
@@ -151,8 +180,35 @@ export default {
   methods: {
     update () {
       this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [
-          this.s_tokijyoText
+          this.s_tokijyoText,
+          this.s_tokijyoColor
         ]})
+    },
+    changeColor (color) {
+      const map = this.$store.state[this.mapName]
+      map.setPaintProperty('oh-amx-a-fude-line', 'line-color', color)
+      this.s_tokijyoColor = color
+
+      // map.setPaintProperty(
+      //     'oh-amx-a-daihyo', // レイヤID
+      //     'heatmap-color',   // プロパティ
+      //     [
+      //       'interpolate',
+      //       ['linear'],
+      //       ['heatmap-density'],
+      //       0,
+      //       'rgba(255, 255, 255, 0)', // 透明
+      //       0.5,
+      //       'rgba(144, 238, 144, 0.5)', // 薄い緑
+      //       1,
+      //       'rgba(0, 100, 0, 0.8)' // 濃い緑
+      //     ]
+      // );
+
+
+
+
+      this.update()
     },
     changeMode () {
       this.$store.state.isPopupVisible = !this.$store.state.isPopupVisible
@@ -188,6 +244,7 @@ export default {
     saveSima2 () {
       const map = this.$store.state[this.mapName]
       saveSima2(map,'oh-amx-a-fude')
+      history('SIMA保存',window.location.href)
     },
     saveSima () {
       const map = this.$store.state[this.mapName]
@@ -265,6 +322,7 @@ export default {
   watch: {
     s_extFire () {
       this.change()
+      this.changeColor(this.s_tokijyoColor)
     },
   }
 }
@@ -273,5 +331,6 @@ export default {
 .small-label .v-label {
   font-size: 1px;
 }
+
 </style>
 
