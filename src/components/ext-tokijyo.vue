@@ -136,6 +136,12 @@ export default {
     s_extFire () {
       return this.$store.state.extFire
     },
+    s_simaData () {
+      return this.$store.state.simaData[this.mapName]
+    },
+    s_simaZahyokei () {
+      return this.$store.state.simaZahyokei[this.mapName]
+    },
     s_dialogForSima: {
       get() {
         return this.$store.state.dialogForSima
@@ -179,10 +185,24 @@ export default {
   },
   methods: {
     update () {
-      this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [
-          this.s_tokijyoText,
-          this.s_tokijyoColor
-        ]})
+      // alert(this.s_simaData)
+      if (this.s_simaData) {
+        this.$store.commit('updateSelectedLayers', {
+          mapName: this.mapName, id: this.item.id, values: [
+            this.s_tokijyoText,
+            this.s_tokijyoColor,
+            this.s_simaData,
+            this.s_simaZahyokei
+          ]
+        })
+      } else {
+        this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [
+            this.s_tokijyoText,
+            this.s_tokijyoColor,
+            // this.s_simaData,
+            // this.s_simaZahyokei
+          ]})
+      }
     },
     changeColor (color) {
       const map = this.$store.state[this.mapName]
@@ -204,9 +224,6 @@ export default {
       //       'rgba(0, 100, 0, 0.8)' // 濃い緑
       //     ]
       // );
-
-
-
 
       this.update()
     },
@@ -262,27 +279,6 @@ export default {
       console.log(this.item)
       // const vm = this
       const map = this.$store.state[this.mapName]
-      // if (!this.s_isPaintCity) {
-      //   map.setPaintProperty(this.item.id, 'fill-color', 'rgba(0, 0, 0, 0)')
-      //   map.setPaintProperty(this.item.id + '-line', 'line-color', 'black')
-      //   map.setPaintProperty(this.item.id + '-line', 'line-width',  [
-      //     'interpolate',
-      //     ['linear'],
-      //     ['zoom'],
-      //     7, 1,
-      //     11, 4
-      //   ]);
-      // } else {
-      //   map.setPaintProperty(this.item.id, 'fill-color', ['get', 'random_color'])
-      //   map.setPaintProperty(this.item.id + '-line', 'line-color', 'black')
-      //   map.setPaintProperty(this.item.id + '-line', 'line-width', [
-      //     'interpolate',
-      //     ['linear'],
-      //     ['zoom'],
-      //     7, 0,
-      //     11, 0.5
-      //   ]);
-      // }
       //-------------------------------------------------------------------------
       function filterBy(text) {
         if (text) {
@@ -312,16 +308,41 @@ export default {
     },
   },
   mounted() {
+    const vm = this
     const map = this.$store.state[this.mapName]
-    map.on('moveend', () => {
-      // const crs = initializePlaneRectangularCRS(map)
-      // this.kei = crs.kei
-      // console.log(crs.kei)
-    })
+    // alert(this.s_simaData)
+    if (this.s_simaData) {
+      // setTimeout(function() {
+      //   simaToGeoJSON(vm.s_simaData, map, vm.s_simaZahyokei)
+      // },1000)
+      // setTimeout(function() {
+      //   simaToGeoJSON(vm.s_simaData, map, vm.s_simaZahyokei)
+      // },2000)
+      // setTimeout(function() {
+      //   simaToGeoJSON(vm.s_simaData, map, vm.s_simaZahyokei)
+      // },3000)
+      // setTimeout(function() {
+      //   simaToGeoJSON(vm.s_simaData, map, vm.s_simaZahyokei)
+      // },4000)
+      // setTimeout(function() {
+      //   simaToGeoJSON(vm.s_simaData, map, vm.s_simaZahyokei)
+      // },5000)
+      // setTimeout(function() {
+      //   simaToGeoJSON(vm.s_simaData, map, vm.s_simaZahyokei)
+      // },6000)
+    }
   },
   watch: {
+    s_simaData () {
+      this.update()
+    },
     s_extFire () {
       this.change()
+      const map = this.$store.state[this.mapName]
+      // if (this.s_simaData) {
+      //   simaToGeoJSON(this.s_simaData, map, this.s_simaZahyokei)
+      // }
+
       this.changeColor(this.s_tokijyoColor)
     },
   }

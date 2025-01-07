@@ -898,14 +898,22 @@ export function saveCsv(map, layerId, sourceId, fields) {
 }
 
 // SIMAファイルをGeoJSONに変換する関数
-function simaToGeoJSON(simaData,map) {
+export function simaToGeoJSON(simaData,map,simaZahyokei) {
+    if (!simaData) return
+    console.log(simaData)
     const lines = simaData.split('\n');
     let coordinates = {}; // 座標データを格納
     let features = []; // GeoJSONのフィーチャーを格納
     let currentFeature = null;
     let firstCoordinateChecked = false;
     let detectedCRS
-    const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
+    let code
+    if (!simaZahyokei) {
+        code = zahyokei.find(item => item.kei === store.state.zahyokei).code
+    } else {
+        console.log(simaZahyokei)
+        code = zahyokei.find(item => item.kei === simaZahyokei).code
+    }
     lines.forEach(line => {
         const parts = line.split(',');
         const type = parts[0].trim();
@@ -1034,6 +1042,9 @@ export function handleFileUpload(event) {
     const reader = new FileReader();
     reader.onload = function(e) {
         const simaData = e.target.result;
+        console.log(store.state.zahyokei)
+        store.state.simaZahyokei.map01 = store.state.zahyokei
+        store.state.simaData.map01 = simaData
         try {
             const map = store.state.map01
             const geoJSON = simaToGeoJSON(simaData,map);
@@ -1304,7 +1315,7 @@ export function highlightSpecificFeatures(map,layerId) {
     console.log(store.state.highlightedChibans);
     let sec = 0
     if (isFirstRun) {
-        sec = 500
+        sec = 1000
     } else {
         sec = 0
     }
@@ -1787,8 +1798,7 @@ export function saveSimaGaiku (map,layerId) {
     URL.revokeObjectURL(link.href);
 }
 
-export async function queryFGBWithPolygon(polygon) {
-    alert()
+export async function queryFGBWithPolygon(map,polygon,chiban) {
     polygon = polygon.geometry.coordinates[0]
     console.log(polygon)
 
@@ -1803,7 +1813,6 @@ export async function queryFGBWithPolygon(polygon) {
             : `https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_${prefId}.fgb`;
     }
     fgbUrl = getFgbUrl(prefId)
-    alert(fgbUrl)
     try {
         // BBOXを計算
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -1815,30 +1824,58 @@ export async function queryFGBWithPolygon(polygon) {
             if (y > maxY) maxY = y;
         });
 
-        // const bbox = [minX, minY, maxX, maxY];
-
-
-        // 200mのバッファを追加 (約0.002度を加減)
-        const buffer = 0.001; // 緯度経度の簡易バッファ（200m）
-        const bbox = [
-            minX - buffer,
-            minY - buffer,
-            maxX + buffer,
-            maxY + buffer
-        ];
-        alert(bbox)
-
+        const bbox = {
+            minX,
+            minY,
+            maxX,
+            maxY,
+        };
+        console.log(bbox)
         // FlatGeobuf ファイルを取得し、GeoJSON 形式で BBOX クエリ
-        const features = [];
+        let features = [];
         for await (const feature of window.flatgeobuf.deserialize(fgbUrl, bbox)) {
             features.push(feature);
         }
-        alert(11)
-        console.log("取得した地物:", features);
+        features = features.filter(feature => feature.properties.地番 === chiban);
         console.log(features)
-        return features;
+
+        if (features.length === 1) {
+            // Turf.jsのGeoJSONフォーマットに変換
+            const polygon = {
+                type: 'Feature',
+                geometry: features[0].geometry,
+                properties: {}
+            };
+            console.log(calculatePolygonMetrics(polygon))
+            document.querySelector('.feature-area').innerHTML = calculatePolygonMetrics(polygon)
+        }
+
+        // return features;
     } catch (error) {
-        alert(9)
         console.error("FGBからの地物取得に失敗しました:", error);
+    }
+}
+function calculatePolygonMetrics(polygon) {
+    try {
+        // 面積の計算
+        const area = '約' + turf.area(polygon).toFixed(1) + 'm2'; // Turf.jsで面積を計算
+
+        // 周長の計算
+        const perimeter = '約' + turf.length(polygon, { units: 'meters' }).toFixed(1) + 'm'; // Turf.jsで周長を計算
+
+        // 頂点数の計算 (GeoJSON座標から取得)
+        const coordinates = polygon.geometry.coordinates[0]; // 外周の座標を取得
+        let vertexCount = coordinates.length;
+
+        // GeoJSONでは最初と最後の座標が同じなので、閉じたポリゴンの場合は1点減らす
+        if (coordinates[0][0] === coordinates[vertexCount - 1][0] &&
+            coordinates[0][1] === coordinates[vertexCount - 1][1]) {
+            vertexCount -= 1;
+        }
+
+        return '面積：' + area + ' 周長:' + perimeter + '<br>境界点数：' + vertexCount
+
+    } catch (error) {
+        console.error('面積・周長・頂点数の計算中にエラーが発生しました:', error);
     }
 }

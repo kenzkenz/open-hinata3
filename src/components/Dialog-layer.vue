@@ -48,6 +48,8 @@
 </template>
 
 <script>
+import {simaToGeoJSON} from "@/js/downLoad";
+
 let infoCount = 0
 import * as Layers from '@/js/layers'
 import Tree from "vue3-tree"
@@ -473,6 +475,17 @@ export default {
         }
       }
       // this.$store.state.extFire = !this.$store.state.extFire
+      if (map.getLayer('sima-layer')) {
+        map.removeLayer('sima-layer');
+        map.removeLayer('sima-borders');
+      }
+      console.log(this.$store.state.simaData.map01)
+      const vm = this
+      if (this.$store.state.simaData[this.mapName]) {
+        setTimeout(function() {
+          simaToGeoJSON(vm.$store.state.simaData[vm.mapName], map, vm.$store.state.simaZahyokei[vm.mapName])
+        },2000)
+      }
     },
     mw5AddLayers(map,mapName) {
       if (!this.s_selectedLayers[mapName].find(v => v.id === 'oh-mw5')) {

@@ -215,6 +215,14 @@ export default createStore({
       map01: 20,
       map02: 20
     },
+    simaData: {
+      map01: '',
+      map02: ''
+    },
+    simaZahyokei: {
+      map01: '',
+      map02: ''
+    },
     //------------------------
   },
   getters: {
@@ -345,6 +353,12 @@ export default createStore({
             if (payload.order === 1) {
               variable = 'tokijyoColor'
             }
+            if (payload.order === 2) {
+              variable = 'simaData'
+            }
+            if (payload.order === 3) {
+              variable = 'simaZahyokei'
+            }
             break
           case 'extZeni':
             if (payload.order === 0) {
@@ -354,7 +368,7 @@ export default createStore({
         }
         console.log(payload.mapName,payload.name,payload.value,variable,variable2)
         if (!variable2) {
-          console.log(variable)
+          console.log(payload.mapName)
           state[variable][payload.mapName] = payload.value
         } else {
           // alert()

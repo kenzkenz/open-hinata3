@@ -7,6 +7,7 @@ import muni from "@/js/muni";
 import pyramid from "@/js/pyramid";
 import * as turf from '@turf/turf'
 import {queryFGBWithPolygon} from "@/js/downLoad";
+import {feature} from "@turf/turf";
 const popups = []
 
 console.log(store.state.selectedLayers)
@@ -266,14 +267,16 @@ export function popup(e,map,mapName,mapFlg) {
     // const coordinates = e.lngLat
 
     // クリックした地物の中からレイヤーIDが"oh-amx-a-fude"かつポリゴンを探す
-    const polygonFeature = features.find(feature =>
-        // feature.layer.id === 'oh-amx-a-fude' &&
-        (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')
-    );
-
-    console.log(queryFGBWithPolygon(polygonFeature))
-
-
+    let featureIndex
+    const polygonFeature = features.find((feature,index) => {
+        featureIndex = index
+        return feature.layer.id === 'oh-amx-a-fude' && (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')
+    });
+    if (polygonFeature) {
+        const chiban = features[featureIndex].properties.地番
+        console.log(chiban)
+        console.log(queryFGBWithPolygon(map,polygonFeature,chiban))
+    }
 
     let PolygonMetrics
     if (polygonFeature) {
@@ -2894,8 +2897,9 @@ export function popup(e,map,mapName,mapFlg) {
                     Object.keys(props).forEach(function (key) {
                         html0 += key + '=' + props[key] + '<br>'
                     })
-                    html0 += '<br><span style="font-size: 14px;">面積:' + PolygonMetrics.area + ' 周長:' + PolygonMetrics.perimeter +
-                        '<br>境界点数:' + PolygonMetrics.vertexCount + '</span>'
+                    // html0 += '<br><span style="font-size: 14px;">面積:' + PolygonMetrics.area + ' 周長:' + PolygonMetrics.perimeter +
+                    //     '<br>境界点数:' + PolygonMetrics.vertexCount + '</span>'
+                    html0 += '<br><span style="font-size: 14px;" class="feature-area"></span>'
                     html0 += '<div>'
                     html += html0
                 }
