@@ -6,6 +6,7 @@ import axios from "axios";
 import muni from "@/js/muni";
 import pyramid from "@/js/pyramid";
 import * as turf from '@turf/turf'
+import {queryFGBWithPolygon} from "@/js/downLoad";
 const popups = []
 
 console.log(store.state.selectedLayers)
@@ -269,6 +270,11 @@ export function popup(e,map,mapName,mapFlg) {
         // feature.layer.id === 'oh-amx-a-fude' &&
         (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')
     );
+
+    console.log(queryFGBWithPolygon(polygonFeature))
+
+
+
     let PolygonMetrics
     if (polygonFeature) {
         // Turf.jsのGeoJSONフォーマットに変換

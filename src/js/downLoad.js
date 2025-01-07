@@ -1786,3 +1786,59 @@ export function saveSimaGaiku (map,layerId) {
     link.click();
     URL.revokeObjectURL(link.href);
 }
+
+export async function queryFGBWithPolygon(polygon) {
+    alert()
+    polygon = polygon.geometry.coordinates[0]
+    console.log(polygon)
+
+    let prefId = String(store.state.prefId).padStart(2, '0');
+    console.log('初期 prefId:', prefId);
+
+    let fgbUrl;
+    function getFgbUrl(prefId) {
+        const specialIds = ['22', '26', '29', '40', '43', '44','45','47'];
+        return specialIds.includes(prefId)
+            ? `https://kenzkenz3.xsrv.jp/fgb/2024/${prefId}.fgb`
+            : `https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_${prefId}.fgb`;
+    }
+    fgbUrl = getFgbUrl(prefId)
+    alert(fgbUrl)
+    try {
+        // BBOXを計算
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+        polygon.forEach(([x, y]) => {
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+        });
+
+        // const bbox = [minX, minY, maxX, maxY];
+
+
+        // 200mのバッファを追加 (約0.002度を加減)
+        const buffer = 0.001; // 緯度経度の簡易バッファ（200m）
+        const bbox = [
+            minX - buffer,
+            minY - buffer,
+            maxX + buffer,
+            maxY + buffer
+        ];
+        alert(bbox)
+
+        // FlatGeobuf ファイルを取得し、GeoJSON 形式で BBOX クエリ
+        const features = [];
+        for await (const feature of window.flatgeobuf.deserialize(fgbUrl, bbox)) {
+            features.push(feature);
+        }
+        alert(11)
+        console.log("取得した地物:", features);
+        console.log(features)
+        return features;
+    } catch (error) {
+        alert(9)
+        console.error("FGBからの地物取得に失敗しました:", error);
+    }
+}
