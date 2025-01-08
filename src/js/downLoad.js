@@ -978,7 +978,8 @@ export function simaToGeoJSON(simaData,map,simaZahyokei) {
                 type: 'geojson',
                 data: geoJSON
             });
-
+        }
+        if (!map.getLayer('sima-layer')) {
             map.addLayer({
                 id: 'sima-layer',
                 type: 'fill',
@@ -989,7 +990,6 @@ export function simaToGeoJSON(simaData,map,simaZahyokei) {
                     'fill-opacity': 0.5
                 }
             });
-
             map.addLayer({
                 id: 'sima-borders',
                 type: 'line',
@@ -1859,22 +1859,22 @@ function calculatePolygonMetrics(polygon) {
     try {
         // 面積の計算
         const area = '約' + turf.area(polygon).toFixed(1) + 'm2'; // Turf.jsで面積を計算
-
         // 周長の計算
         const perimeter = '約' + turf.length(polygon, { units: 'meters' }).toFixed(1) + 'm'; // Turf.jsで周長を計算
-
         // 頂点数の計算 (GeoJSON座標から取得)
         const coordinates = polygon.geometry.coordinates[0]; // 外周の座標を取得
+        console.log(coordinates[0].length)
         let vertexCount = coordinates.length;
-
-        // GeoJSONでは最初と最後の座標が同じなので、閉じたポリゴンの場合は1点減らす
-        if (coordinates[0][0] === coordinates[vertexCount - 1][0] &&
-            coordinates[0][1] === coordinates[vertexCount - 1][1]) {
-            vertexCount -= 1;
+        if (vertexCount === 1) {
+            vertexCount = coordinates[0].length
         }
-
+        // GeoJSONでは最初と最後の座標が同じなので、閉じたポリゴンの場合は1点減らす
+        vertexCount -= 1;
+        // if (coordinates[0][0] === coordinates[vertexCount - 1][0] &&
+        //     coordinates[0][1] === coordinates[vertexCount - 1][1]) {
+        //     vertexCount -= 1;
+        // }
         return '面積：' + area + ' 周長:' + perimeter + '<br>境界点数：' + vertexCount
-
     } catch (error) {
         console.error('面積・周長・頂点数の計算中にエラーが発生しました:', error);
     }

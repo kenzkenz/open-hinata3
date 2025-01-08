@@ -482,9 +482,10 @@ export default {
       console.log(this.$store.state.simaData.map01)
       const vm = this
       if (this.$store.state.simaData[this.mapName]) {
+        // alert(this.mapName + '/' + vm.$store.state.simaZahyokei[vm.mapName] + '/' + this.$store.state.simaData[this.mapName])
         setTimeout(function() {
           simaToGeoJSON(vm.$store.state.simaData[vm.mapName], map, vm.$store.state.simaZahyokei[vm.mapName])
-        },2000)
+        },0)
       }
     },
     mw5AddLayers(map,mapName) {
