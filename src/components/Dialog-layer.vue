@@ -479,7 +479,6 @@ export default {
         map.removeLayer('sima-layer');
         map.removeLayer('sima-borders');
       }
-      console.log(this.$store.state.simaData.map01)
       const vm = this
       // if (this.$store.state.simaData[this.mapName]) {
       //   // alert(this.mapName + '/' + vm.$store.state.simaZahyokei[vm.mapName] + '/' + this.$store.state.simaData[this.mapName])
@@ -487,11 +486,11 @@ export default {
       //     simaToGeoJSON(vm.$store.state.simaData[vm.mapName], map, vm.$store.state.simaZahyokei[vm.mapName])
       //   },0)
       // }
-
       if (this.$store.state.simaText) {
-        const text = JSON.parse(this.$store.state.simaText).text
+        const simaText = JSON.parse(this.$store.state.simaText).text
         const zahyokei = JSON.parse(this.$store.state.simaText).zahyokei
-        simaToGeoJSON(text,map,zahyokei)
+        simaToGeoJSON(simaText,map,zahyokei,false)
+        this.$store.state.snackbar = true
       }
 
     },

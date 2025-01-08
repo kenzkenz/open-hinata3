@@ -2,6 +2,20 @@
   <v-app>
     <v-main>
 
+      <v-snackbar
+          v-model="s_snackbar"
+          :timeout="-1"
+          color="primary"
+          top
+          right
+      >
+        <v-btn color="pink" text @click="simaDl">SIMAダウンロード</v-btn>
+        <template v-slot:actions>
+          <v-btn color="pink" text @click="s_snackbar = false">閉じる</v-btn>
+        </template>
+      </v-snackbar>
+
+
       <v-dialog v-model="dialog" max-width="500px">
         <v-card>
           <v-card-title>
@@ -75,6 +89,7 @@
 import {mouseMoveForPopup, popup} from "@/js/popup";
 import { CompassControl } from 'maplibre-gl-compass'
 import {
+  downloadSimaText,
   handleFileUpload,
   highlightSpecificFeatures,
   highlightSpecificFeaturesCity,
@@ -244,9 +259,18 @@ export default {
     isTracking: false,
     compass: null,
     dialog: false,
+    // snackbar: true,
     // cancelGoToCurrentLocation: false,
   }),
   computed: {
+    s_snackbar: {
+      get() {
+        return this.$store.state.snackbar
+      },
+      set(value) {
+        this.$store.state.snackbar = value
+      }
+    },
     s_terrainLevel: {
       get() {
         return this.$store.state.terrainLevel
@@ -265,6 +289,9 @@ export default {
     },
   },
   methods: {
+    simaDl () {
+      downloadSimaText()
+    },
     share(mapName) {
       if (this.$store.state.dialogs.shareDialog[mapName].style.display === 'none') {
         this.$store.commit('incrDialogMaxZindex')

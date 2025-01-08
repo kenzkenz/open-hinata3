@@ -1893,3 +1893,19 @@ function calculatePolygonMetrics(polygon) {
         console.error('面積・周長・頂点数の計算中にエラーが発生しました:', error);
     }
 }
+
+export function downloadSimaText () {
+    try {
+        const simaText = JSON.parse(store.state.simaText).text;
+        const blob = new Blob([simaText], { type: 'text/plain' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'sima.sim'; // ファイル名を 'sima.sim' に変更
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+    } catch (error) {
+        console.error('Failed to download simaText:', error);
+    }
+}

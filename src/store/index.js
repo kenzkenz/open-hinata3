@@ -80,6 +80,7 @@ export default createStore({
     dialogForSima: false,
     simaText: '',
     simaTextZahyoukei: '',
+    snackbar: false,
     //------------------------
     highwayYear:{
       map01: 2024,
