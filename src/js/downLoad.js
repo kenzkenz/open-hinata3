@@ -1895,17 +1895,29 @@ function calculatePolygonMetrics(polygon) {
 }
 
 export function downloadSimaText () {
-    try {
-        const simaText = JSON.parse(store.state.simaText).text;
-        const blob = new Blob([simaText], { type: 'text/plain' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'sima.sim'; // ファイル名を 'sima.sim' に変更
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
-    } catch (error) {
-        console.error('Failed to download simaText:', error);
-    }
+
+    // try {
+    //     const simaText = JSON.parse(store.state.simaText).text;
+    //     const blob = new Blob([simaText], { type: 'text/plain' });
+    //     const link = document.createElement('a');
+    //     link.href = URL.createObjectURL(blob);
+    //     link.download = 'sima.sim'; // ファイル名を 'sima.sim' に変更
+    //     document.body.appendChild(link);
+    //     link.click();
+    //     document.body.removeChild(link);
+    //     URL.revokeObjectURL(link.href);
+    // } catch (error) {
+    //     console.error('Failed to download simaText:', error);
+    // }
+
+    const simaText = JSON.parse(store.state.simaText).text;
+    const blob = new Blob([simaText], { type: 'application/octet-stream' }); // MIMEタイプを変更
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'sima.sim'; // ファイル名を'sima.sim'に設定
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+
 }
