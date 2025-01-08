@@ -21,7 +21,7 @@
   </v-dialog>
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
-    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog=true">sima保存</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveSimaGaiku">sima保存</v-btn>
     <hr>
     <div v-html="item.attribution"></div>
   </div>

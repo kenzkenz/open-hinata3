@@ -1755,9 +1755,19 @@ export function saveSimaGaiku (map,layerId) {
             } else if (feature.properties['街区点・補助点名称']){
                 name = feature.properties['街区点・補助点名称']
             }
+            let zahyoY, zahyoX
+            if (feature.properties.補正後Y座標) {
+                zahyoY = feature.properties.補正後Y座標
+                zahyoX = feature.properties.補正後X座標
+            } else {
+                zahyoY = feature.properties.Y座標
+                zahyoX = feature.properties.X座標
+            }
             if (!coordinateMap.has(coordinateKey)) {
                 coordinateMap.set(coordinateKey, j);
-                A01Text += 'A01,' + j + ',' + name + ',' + y.toFixed(3) + ',' + x.toFixed(3) + ',\n';
+                A01Text += 'A01,' + j + ',' + name + ',' + zahyoX + ',' + zahyoY + ',\n';
+                // A01Text += 'A01,' + j + ',' + name + ',' + zahyoY + ',' + zahyoX + ',\n';
+                // A01Text += 'A01,' + j + ',' + name + ',' + y.toFixed(3) + ',' + x.toFixed(3) + ',\n';
                 j++;
             }
         } else {
