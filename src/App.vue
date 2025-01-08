@@ -77,7 +77,8 @@ import { CompassControl } from 'maplibre-gl-compass'
 import {
   handleFileUpload,
   highlightSpecificFeatures,
-  highlightSpecificFeaturesCity
+  highlightSpecificFeaturesCity,
+  simaToGeoJSON
 } from '@/js/downLoad'
 
 const popups = []
@@ -210,6 +211,7 @@ import { useGsiTerrainSource } from 'maplibre-gl-gsi-terrain'
 import {monoLayers, monoSources} from "@/js/layers"
 // import {paleLayer, paleSource} from "@/js/layers"
 import muni from '@/js/muni'
+import store from "@/store";
 
 export default {
   name: 'App',
@@ -619,11 +621,14 @@ export default {
         console.log(h)
         chibans.push(h)
       })
-      console.log(chibans)
+      // console.log(chibans)
+      const simaText = this.$store.state.simaText
+      console.log(simaText)
+      // alert(simaText)
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
-      ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}&slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}`
-      // console.log(this.param)
+      ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}&slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}`
+      console.log(this.param)
       // this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
       // window.history.pushState({ lng, lat, zoom }, '', this.permalink)
@@ -669,9 +674,11 @@ export default {
       let params
       if (this.dbparams) {
         params = new URLSearchParams(this.dbparams)
+        console.log(this.dbparams)
       } else {
         params = new URLSearchParams(window.location.search)
       }
+      console.log(params)
       const lng = parseFloat(params.get('lng'))
       const lat = parseFloat(params.get('lat'))
       const zoom = parseFloat(params.get('zoom'))
@@ -683,12 +690,13 @@ export default {
       const terrainLevel = parseFloat(params.get('terrainLevel'))
       const slj = JSON.parse(params.get('slj'))
       const chibans = params.get('chibans')
-      console.log(chibans)
+      const simaText = params.get('simatext')
+      // alert('a' + simaText)
       this.pitch.map01 = pitch01
       this.pitch.map02 = pitch02
       this.bearing = bearing
       this.s_terrainLevel = terrainLevel
-      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans}// 以前のリンクをいかすためpitchを入れている。
+      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText}// 以前のリンクをいかすためpitchを入れている。
     },
     init() {
 
@@ -710,8 +718,6 @@ export default {
       let currentTarget = null;
       let initialScrollTop = 0;
 
-
-
       function watchSelectMenu() {
         const observer = new MutationObserver((mutations) => {
           mutations.forEach((mutation) => {
@@ -732,10 +738,10 @@ export default {
 
 
 
-// Android向けにタッチイベントの挙動を調整
+      // Android向けにタッチイベントの挙動を調整
       const isAndroid = /Android/i.test(navigator.userAgent);
 
-// タッチ開始時の処理
+      // タッチ開始時の処理
       document.addEventListener('touchstart', (e) => {
         const target = e.target.closest('.scrollable-content, .v-overlay-container .v-select__content');
         if (target) {
@@ -747,7 +753,7 @@ export default {
         }
       }, { passive: false });
 
-// タッチ移動時の処理
+      // タッチ移動時の処理
       document.addEventListener('touchmove', (e) => {
         if (!isTouching || !currentTarget) return; // タッチが開始されていなければ処理しない
 
@@ -761,7 +767,7 @@ export default {
         e.preventDefault(); // デフォルトのスクロールを防止
       }, { passive: false });
 
-// タッチ終了時の処理
+      // タッチ終了時の処理
       document.addEventListener('touchend', () => {
         if (currentTarget) {
           currentTarget.style.overflowY = ''; // スクロール設定をリセット
@@ -1058,6 +1064,10 @@ export default {
           // }
           // ----------------------------------------------------------------
 
+          if (params.simaText) {
+            this.$store.state.simaText = params.simaText
+          }
+
           if (params.chibans) {
             console.log(params.chibans)
             JSON.parse(params.chibans).forEach(c => {
@@ -1177,6 +1187,9 @@ export default {
           // console.log(params.slj)
           if (params.slj) this.s_selectedLayers = params.slj
           this.s_selectedLayers.map01 = this.s_selectedLayers.map01.filter(layer => layer.id !== 'oh-konzyaku-layer')
+
+
+
 
 
           // ----------------------------------------------------------------

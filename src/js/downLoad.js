@@ -898,7 +898,7 @@ export function saveCsv(map, layerId, sourceId, fields) {
 }
 
 // SIMAファイルをGeoJSONに変換する関数
-export function simaToGeoJSON(simaData,map,simaZahyokei) {
+export function simaToGeoJSON(simaData,map,simaZahyokei,isFlyto) {
     if (!simaData) return
     console.log(simaData)
     const lines = simaData.split('\n');
@@ -1002,15 +1002,16 @@ export function simaToGeoJSON(simaData,map,simaZahyokei) {
             });
         }
     }
-    // GeoJSONの範囲にフライ (地図を移動)
-    const bounds = new maplibregl.LngLatBounds();
-    geoJSON.features.forEach(feature => {
-        feature.geometry.coordinates[0].forEach(coord => {
-            bounds.extend(coord);
+    if (isFlyto) {
+        // GeoJSONの範囲にフライ (地図を移動)
+        const bounds = new maplibregl.LngLatBounds();
+        geoJSON.features.forEach(feature => {
+            feature.geometry.coordinates[0].forEach(coord => {
+                bounds.extend(coord);
+            });
         });
-    });
-    map.fitBounds(bounds, { padding: 20 });
-
+        map.fitBounds(bounds, { padding: 20 });
+    }
     // GeoJSONをダウンロード
     // const blob = new Blob([JSON.stringify(geoJSON, null, 2)], { type: 'application/json' });
     // const url = URL.createObjectURL(blob);
@@ -1045,9 +1046,12 @@ export function handleFileUpload(event) {
         console.log(store.state.zahyokei)
         store.state.simaZahyokei.map01 = store.state.zahyokei
         store.state.simaData.map01 = simaData
+        store.state.simaText = JSON.stringify({text:simaData,zahyokei:store.state.zahyokei})
+        console.log(store.state.simaText)
+        // alert('読み込み' + store.state.simaText)
         try {
             const map = store.state.map01
-            const geoJSON = simaToGeoJSON(simaData,map);
+            const geoJSON = simaToGeoJSON(simaData,map,null,true);
             console.log(geoJSON);
         } catch (error) {
             console.error(`変換エラー: ${error.message}`);

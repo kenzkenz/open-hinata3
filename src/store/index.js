@@ -78,6 +78,8 @@ export default createStore({
     isRenzoku: true,
     highlightedChibans: new Set(),
     dialogForSima: false,
+    simaText: '',
+    simaTextZahyoukei: '',
     //------------------------
     highwayYear:{
       map01: 2024,
@@ -353,12 +355,12 @@ export default createStore({
             if (payload.order === 1) {
               variable = 'tokijyoColor'
             }
-            if (payload.order === 2) {
-              variable = 'simaData'
-            }
-            if (payload.order === 3) {
-              variable = 'simaZahyokei'
-            }
+            // if (payload.order === 2) {
+            //   variable = 'simaData'
+            // }
+            // if (payload.order === 3) {
+            //   variable = 'simaZahyokei'
+            // }
             break
           case 'extZeni':
             if (payload.order === 0) {

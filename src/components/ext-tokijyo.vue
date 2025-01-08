@@ -191,8 +191,8 @@ export default {
           mapName: this.mapName, id: this.item.id, values: [
             this.s_tokijyoText,
             this.s_tokijyoColor,
-            this.s_simaData,
-            this.s_simaZahyokei
+            // this.s_simaData,
+            // this.s_simaZahyokei
           ]
         })
       } else {
@@ -308,29 +308,6 @@ export default {
     },
   },
   mounted() {
-    const vm = this
-    const map = this.$store.state[this.mapName]
-    // alert(this.s_simaData)
-    if (this.s_simaData) {
-      // setTimeout(function() {
-      //   simaToGeoJSON(vm.s_simaData, map, vm.s_simaZahyokei)
-      // },1000)
-      // setTimeout(function() {
-      //   simaToGeoJSON(vm.s_simaData, map, vm.s_simaZahyokei)
-      // },2000)
-      // setTimeout(function() {
-      //   simaToGeoJSON(vm.s_simaData, map, vm.s_simaZahyokei)
-      // },3000)
-      // setTimeout(function() {
-      //   simaToGeoJSON(vm.s_simaData, map, vm.s_simaZahyokei)
-      // },4000)
-      // setTimeout(function() {
-      //   simaToGeoJSON(vm.s_simaData, map, vm.s_simaZahyokei)
-      // },5000)
-      // setTimeout(function() {
-      //   simaToGeoJSON(vm.s_simaData, map, vm.s_simaZahyokei)
-      // },6000)
-    }
   },
   watch: {
     s_simaData () {
