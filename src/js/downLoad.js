@@ -943,9 +943,13 @@ export function simaToGeoJSON(simaData,map,simaZahyokei,isFlyto) {
         // 区画データ (D00, B01, D99)
         if (type === 'D00') {
             // 新しいフィーチャーの開始
+            // alert(parts[2])
             currentFeature = {
                 type: 'Feature',
-                properties: { id: parts[1].trim() },
+                properties: {
+                    id: parts[1].trim(),
+                    chiban: parts[2].trim()
+                },
                 geometry: {
                     type: 'Polygon',
                     coordinates: [[]]
@@ -999,6 +1003,22 @@ export function simaToGeoJSON(simaData,map,simaZahyokei,isFlyto) {
                     'line-color': '#000',
                     'line-width': 2
                 }
+            });
+            map.addLayer({
+                id: 'sima-label',
+                type: 'symbol',
+                source: 'sima-data',
+                'layout': {
+                    'text-field': ['get', 'chiban'],
+                    'text-font': ['NotoSansJP-Regular'],
+                },
+                'paint': {
+                    'text-color': 'rgba(0, 0, 0, 1)',
+                    'text-halo-color': 'rgba(255,255,255,0.7)',
+                    'text-halo-width': 1.0,
+                },
+                'maxzoom': 24,
+                'minzoom': 17
             });
         }
     }
@@ -1075,7 +1095,6 @@ export function ddSimaUpload(simaData) {
             console.error(`変換エラー: ${error.message}`);
         }
 }
-
 
 function determinePlaneRectangularZone(x, y) {
     let closestZone = null;

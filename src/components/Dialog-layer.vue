@@ -478,6 +478,7 @@ export default {
       if (map.getLayer('sima-layer')) {
         map.removeLayer('sima-layer');
         map.removeLayer('sima-borders');
+        map.removeLayer('sima-label');
       }
       const vm = this
       // if (this.$store.state.simaData[this.mapName]) {
