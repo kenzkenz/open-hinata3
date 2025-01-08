@@ -15,6 +15,26 @@
         </template>
       </v-snackbar>
 
+      <v-dialog v-model="dialogForSima" max-width="500px">
+        <v-card>
+          <v-card-title>
+            座標系選択
+          </v-card-title>
+          <v-card-text>
+            <v-select class="scrollable-content"
+                      v-model="s_zahyokei"
+                      :items="items"
+                      label="選択してください"
+                      outlined
+            ></v-select>
+            <v-btn @click="loadSima">SIMA読込開始</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="dialogForSima = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
 
       <v-dialog v-model="dialog" max-width="500px">
         <v-card>
@@ -89,6 +109,7 @@
 import {mouseMoveForPopup, popup} from "@/js/popup";
 import { CompassControl } from 'maplibre-gl-compass'
 import {
+  ddSimaUpload,
   downloadSimaText,
   handleFileUpload,
   highlightSpecificFeatures,
@@ -259,10 +280,27 @@ export default {
     isTracking: false,
     compass: null,
     dialog: false,
-    // snackbar: true,
-    // cancelGoToCurrentLocation: false,
+    dialogForSima: false,
+    ddSimaText: '',
+    items: [
+      '公共座標1系', '公共座標2系', '公共座標3系',
+      '公共座標4系', '公共座標5系', '公共座標6系',
+      '公共座標7系', '公共座標8系', '公共座標9系',
+      '公共座標10系', '公共座標11系', '公共座標12系',
+      '公共座標13系', '公共座標14系', '公共座標15系',
+      '公共座標16系', '公共座標17系', '公共座標18系',
+      '公共座標19系'
+    ],
   }),
   computed: {
+    s_zahyokei: {
+      get() {
+        return this.$store.state.zahyokei
+      },
+      set(value) {
+        this.$store.state.zahyokei = value
+      }
+    },
     s_snackbar: {
       get() {
         return this.$store.state.snackbar
@@ -289,6 +327,14 @@ export default {
     },
   },
   methods: {
+    loadSima () {
+      if (!this.s_zahyokei) {
+        alert('座標系を選択してください。')
+        return
+      }
+      ddSimaUpload(this.ddSimaText)
+      this.dialogForSima = false
+    },
     simaDl () {
       downloadSimaText()
     },
@@ -1555,10 +1601,15 @@ export default {
               const fileExtension = fileName.split('.').pop().toLowerCase();
 
               if (fileExtension === 'sim') {
-                this.$store.state.dialogForSima = true
                 // const fileInputEvent = { target: { files: [file] } };
-
                 // handleFileUpload(fileInputEvent);
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  this.ddSimaText = e.target.result
+                  this.dialogForSima = true
+                };
+                reader.readAsText(file);
               } else {
                 alert('拡張子が.simのファイルのみ対応しています。');
               }

@@ -1060,6 +1060,23 @@ export function handleFileUpload(event) {
     reader.readAsText(file);
 }
 
+export function ddSimaUpload(simaData) {
+        console.log(store.state.zahyokei)
+        store.state.simaZahyokei.map01 = store.state.zahyokei
+        store.state.simaData.map01 = simaData
+        store.state.simaText = JSON.stringify({text:simaData,zahyokei:store.state.zahyokei})
+        console.log(store.state.simaText)
+        // alert('読み込み' + store.state.simaText)
+        try {
+            const map = store.state.map01
+            const geoJSON = simaToGeoJSON(simaData,map,null,true);
+            console.log(geoJSON);
+        } catch (error) {
+            console.error(`変換エラー: ${error.message}`);
+        }
+}
+
+
 function determinePlaneRectangularZone(x, y) {
     let closestZone = null;
     let minDistance = Number.MAX_VALUE;
@@ -1895,21 +1912,6 @@ function calculatePolygonMetrics(polygon) {
 }
 
 export function downloadSimaText () {
-
-    // try {
-    //     const simaText = JSON.parse(store.state.simaText).text;
-    //     const blob = new Blob([simaText], { type: 'text/plain' });
-    //     const link = document.createElement('a');
-    //     link.href = URL.createObjectURL(blob);
-    //     link.download = 'sima.sim'; // ファイル名を 'sima.sim' に変更
-    //     document.body.appendChild(link);
-    //     link.click();
-    //     document.body.removeChild(link);
-    //     URL.revokeObjectURL(link.href);
-    // } catch (error) {
-    //     console.error('Failed to download simaText:', error);
-    // }
-
     const simaText = JSON.parse(store.state.simaText).text;
     const blob = new Blob([simaText], { type: 'application/octet-stream' }); // MIMEタイプを変更
     const link = document.createElement('a');
@@ -1919,5 +1921,4 @@ export function downloadSimaText () {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
-
 }
