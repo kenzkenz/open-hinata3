@@ -15,7 +15,7 @@
         </template>
       </v-snackbar>
 
-      <v-dialog v-model="dialogForSima" max-width="500px">
+      <v-dialog v-model="s_dialogForSimaApp" max-width="500px">
         <v-card>
           <v-card-title>
             座標系選択
@@ -31,7 +31,7 @@
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="blue-darken-1" text @click="dialogForSima = false">Close</v-btn>
+            <v-btn color="blue-darken-1" text @click="s_dialogForSimaApp = false">Close</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -293,6 +293,14 @@ export default {
     ],
   }),
   computed: {
+    s_dialogForSimaApp: {
+      get() {
+        return this.$store.state.dialogForSimaApp
+      },
+      set(value) {
+        this.$store.state.dialogForSimaApp = value
+      }
+    },
     s_zahyokei: {
       get() {
         return this.$store.state.zahyokei
@@ -332,8 +340,9 @@ export default {
         alert('座標系を選択してください。')
         return
       }
+      // document.querySelector('#simaFileInput').click()
       ddSimaUpload(this.ddSimaText)
-      this.dialogForSima = false
+      this.s_dialogForSimaApp = false
     },
     simaDl () {
       downloadSimaText()
@@ -1607,7 +1616,7 @@ export default {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                   this.ddSimaText = e.target.result
-                  this.dialogForSima = true
+                  this.s_dialogForSimaApp = true
                 };
                 reader.readAsText(file);
               } else {

@@ -958,9 +958,15 @@ export function simaToGeoJSON(simaData,map,simaZahyokei,isFlyto) {
         } else if (type === 'B01' && currentFeature) {
             const coordId = parts[1].trim();
             if (coordinates[coordId]) {
+                // alert(coordinates[coordId])
                 currentFeature.geometry.coordinates[0].push(coordinates[coordId]);
             }
         } else if (type === 'D99' && currentFeature) {
+            // ポリゴンを閉じる（最初の座標を最後に追加）
+            if (currentFeature.geometry.coordinates[0].length > 0) {
+                const firstCoord = currentFeature.geometry.coordinates[0][0];
+                currentFeature.geometry.coordinates[0].push(firstCoord);
+            }
             // フィーチャー終了
             features.push(currentFeature);
             currentFeature = null;

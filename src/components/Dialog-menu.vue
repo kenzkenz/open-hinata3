@@ -3,16 +3,19 @@
     <div class="menu-div">
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
+
+      <v-btn @click="simaLoad">SIMA読み込</v-btn>
+
       <v-switch v-model="s_isPitch" @change="changePitch" label="２画面時に傾きを同期" color="primary" />
       標高を強調します。{{s_terrainLevel}}倍
       <div class="range-div">
         <input type="range" min="1" max="10" step="0.1" class="range" v-model.number="s_terrainLevel" @input="terrainLevelInput"/>
       </div>
-      <hr style="margin-top: 20px">
-      今昔マップ<br>{{konjyakuYear}}年の直近（過去）の地図を表示します。
-      <div class="range-div">
-        <input type="range" min="1890" max="2024" step="1" class="range" v-model.number="konjyakuYear" @change="konjyakuYearInput"/>
-      </div>
+<!--      <hr style="margin-top: 20px">-->
+<!--      今昔マップ<br>{{konjyakuYear}}年の直近（過去）の地図を表示します。-->
+<!--      <div class="range-div">-->
+<!--        <input type="range" min="1890" max="2024" step="1" class="range" v-model.number="konjyakuYear" @change="konjyakuYearInput"/>-->
+<!--      </div>-->
 
     </div>
   </Dialog>
@@ -60,6 +63,9 @@ export default {
     },
   },
   methods: {
+    simaLoad () {
+      this.$store.state.dialogForSimaApp = true
+    },
     konjyakuYearInput () {
       let filterdKonUrls = konUrls.filter(url => {
         // console.log(url.timeStart)
@@ -68,7 +74,7 @@ export default {
         } else if (url.timeEnd <= Number(this.konjyakuYear)) {
           return true
         }
-        // return url.timeStart <= Number(this.konjyakuYear) && url.timeEnd >= Number(this.konjyakuYear)
+        // return url.timeStart <= Number(this.konjyakuYear) && url.timeEnd >= Number(this.konjyakuYear)u
       })
       console.log(JSON.stringify(filterdKonUrls))
 
