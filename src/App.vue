@@ -9,6 +9,7 @@
           top
           right
       >
+        <input type="range" min="0" max="1" step="0.01" class="range" v-model.number="s_simaOpacity" @input="simaOpacityInput"/>
         <v-btn color="pink" text @click="simaDl">SIMAダウンロード</v-btn>
         <template v-slot:actions>
           <v-btn color="pink" text @click="s_snackbar = false">閉じる</v-btn>
@@ -306,6 +307,14 @@ export default {
     s_isAndroid () {
       return this.$store.state.isAndroid
     },
+    s_simaOpacity: {
+      get() {
+        return this.$store.state.simaOpacity
+      },
+      set(value) {
+        this.$store.state.simaOpacity = value
+      }
+    },
     s_dialogForSimaApp: {
       get() {
         return this.$store.state.dialogForSimaApp
@@ -346,8 +355,21 @@ export default {
         this.$store.state.selectedLayers = value
       }
     },
+    s_simaFire () {
+      return this.$store.state.simaFire
+    },
   },
   methods: {
+    simaOpacityInput () {
+      const map1 = this.$store.state.map01
+      const map2 = this.$store.state.map02
+      map1.setPaintProperty('sima-layer', 'fill-opacity', this.s_simaOpacity)
+      map2.setPaintProperty('sima-layer', 'fill-opacity', this.s_simaOpacity)
+      const parsed = JSON.parse(this.$store.state.simaText)
+      parsed['opacity'] = this.s_simaOpacity
+      this.$store.state.simaText = JSON.stringify(parsed)
+      // console.log(this.$store.state.simaText)
+    },
     loadSima () {
       if (!this.s_zahyokei) {
         alert('座標系を選択してください。')
@@ -715,7 +737,7 @@ export default {
       copiedSelectedLayers = removeKeys(copiedSelectedLayers, keysToRemove)
       // console.log(JSON.stringify(copiedSelectedLayers))
       const selectedLayersJson = JSON.stringify(copiedSelectedLayers)
-      console.log(this.$store.state.highlightedChibans)
+      // console.log(this.$store.state.highlightedChibans)
       const chibans = []
       this.$store.state.highlightedChibans.forEach(h => {
         console.log(h)
@@ -723,12 +745,12 @@ export default {
       })
       // console.log(chibans)
       const simaText = this.$store.state.simaText
-      console.log(simaText)
+      // console.log(simaText)
       // alert(simaText)
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
       ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}&slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}`
-      console.log(this.param)
+      // console.log(this.param)
       // this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
       // window.history.pushState({ lng, lat, zoom }, '', this.permalink)
@@ -2079,6 +2101,9 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
+    s_simaFire () {
+      this.simaOpacityInput()
+    },
     s_selectedLayers: {
       handler: function () {
         console.log('変更を検出しました。URLを作成します。')

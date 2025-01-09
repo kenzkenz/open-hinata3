@@ -66,6 +66,7 @@ export default {
     draggable
   },
   data: () => ({
+    counter: 0,
     nodeClicked: false,
     isDragging:false,
     isChecked: true,
@@ -474,17 +475,24 @@ export default {
           // -------------------------------------------------
         }
       }
-      if (map.getLayer('sima-layer')) {
-        map.removeLayer('sima-layer');
-        map.removeLayer('sima-borders');
-        map.removeLayer('sima-label');
+      if (this.counter >= 1) {
+        if (map.getLayer('sima-layer')) {
+          map.removeLayer('sima-layer');
+          map.removeLayer('sima-borders');
+          map.removeLayer('sima-label');
+        }
+        if (this.$store.state.simaText) {
+          const simaText = JSON.parse(this.$store.state.simaText).text
+          const zahyokei = JSON.parse(this.$store.state.simaText).zahyokei
+          const opacity = JSON.parse(this.$store.state.simaText).opacity
+          this.$store.state.simaOpacity = opacity
+          console.log(opacity)
+          simaToGeoJSON(simaText,map,zahyokei,false)
+          this.$store.state.snackbar = true
+          this.$store.state.simaFire = !this.$store.state.simaFire
+        }
       }
-      if (this.$store.state.simaText) {
-        const simaText = JSON.parse(this.$store.state.simaText).text
-        const zahyokei = JSON.parse(this.$store.state.simaText).zahyokei
-        simaToGeoJSON(simaText,map,zahyokei,false)
-        this.$store.state.snackbar = true
-      }
+      this.counter++
     },
     mw5AddLayers(map,mapName) {
       if (!this.s_selectedLayers[mapName].find(v => v.id === 'oh-mw5')) {

@@ -997,7 +997,7 @@ export function simaToGeoJSON(simaData,map,simaZahyokei,isFlyto) {
                 layout: {},
                 paint: {
                     'fill-color': '#088',
-                    'fill-opacity': 0.5
+                    'fill-opacity': 0.7
                 }
             });
             map.addLayer({
@@ -1076,7 +1076,10 @@ export function handleFileUpload(event) {
         console.log(store.state.zahyokei)
         store.state.simaZahyokei.map01 = store.state.zahyokei
         store.state.simaData.map01 = simaData
-        store.state.simaText = JSON.stringify({text:simaData,zahyokei:store.state.zahyokei})
+        store.state.simaText = JSON.stringify({
+            text:simaData,
+            zahyokei:store.state.zahyokei
+        })
         console.log(store.state.simaText)
         // alert('読み込み' + store.state.simaText)
         try {
