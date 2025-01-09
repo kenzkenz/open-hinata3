@@ -340,9 +340,14 @@ export default {
         alert('座標系を選択してください。')
         return
       }
-      // document.querySelector('#simaFileInput').click()
-      ddSimaUpload(this.ddSimaText)
-      this.s_dialogForSimaApp = false
+      if (this.$store.state.isMenu) {
+        document.querySelector('#simaFileInput').click()
+        this.$store.state.isMenu = false
+      } else {
+        ddSimaUpload(this.ddSimaText)
+        this.s_dialogForSimaApp = false
+      }
+
     },
     simaDl () {
       downloadSimaText()
@@ -1614,11 +1619,20 @@ export default {
                 // handleFileUpload(fileInputEvent);
 
                 const reader = new FileReader();
+                // reader.onload = (e) => {
+                //   this.ddSimaText = e.target.result
+                //   this.s_dialogForSimaApp = true
+                // };
                 reader.onload = (e) => {
-                  this.ddSimaText = e.target.result
+                  const arrayBuffer = e.target.result; // ArrayBufferとして読み込む
+                  const text = new TextDecoder("shift-jis").decode(arrayBuffer); // Shift JISをUTF-8に変換
+                  console.log("変換されたテキスト:", text);
+                  this.ddSimaText = text
                   this.s_dialogForSimaApp = true
                 };
-                reader.readAsText(file);
+                reader.readAsArrayBuffer(file);
+                // reader.readAsText(file);
+
               } else {
                 alert('拡張子が.simのファイルのみ対応しています。');
               }

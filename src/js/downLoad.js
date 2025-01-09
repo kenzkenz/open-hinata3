@@ -1067,8 +1067,12 @@ export function handleFileUpload(event) {
     }
 
     const reader = new FileReader();
-    reader.onload = function(e) {
-        const simaData = e.target.result;
+
+    reader.onload = (e) => {
+        const arrayBuffer = e.target.result; // ArrayBufferとして読み込む
+        const text = new TextDecoder("shift-jis").decode(arrayBuffer); // Shift JISをUTF-8に変換
+        console.log("変換されたテキスト:", text)
+        const simaData = text;
         console.log(store.state.zahyokei)
         store.state.simaZahyokei.map01 = store.state.zahyokei
         store.state.simaData.map01 = simaData
@@ -1082,8 +1086,31 @@ export function handleFileUpload(event) {
         } catch (error) {
             console.error(`変換エラー: ${error.message}`);
         }
+
     };
-    reader.readAsText(file);
+    reader.readAsArrayBuffer(file);
+
+
+    // reader.onload = function(e) {
+    //     const simaData = e.target.result;
+    //     console.log(store.state.zahyokei)
+    //     store.state.simaZahyokei.map01 = store.state.zahyokei
+    //     store.state.simaData.map01 = simaData
+    //     store.state.simaText = JSON.stringify({text:simaData,zahyokei:store.state.zahyokei})
+    //     console.log(store.state.simaText)
+    //     // alert('読み込み' + store.state.simaText)
+    //     try {
+    //         const map = store.state.map01
+    //         const geoJSON = simaToGeoJSON(simaData,map,null,true);
+    //         console.log(geoJSON);
+    //     } catch (error) {
+    //         console.error(`変換エラー: ${error.message}`);
+    //     }
+    // };
+    // reader.readAsText(file);
+
+
+
 }
 
 export function ddSimaUpload(simaData) {
@@ -1938,7 +1965,13 @@ function calculatePolygonMetrics(polygon) {
 
 export function downloadSimaText () {
     const simaText = JSON.parse(store.state.simaText).text;
-    const blob = new Blob([simaText], { type: 'application/octet-stream' }); // MIMEタイプを変更
+    // UTF-8で文字列をコードポイントに変換
+    const utf8Array = window.Encoding.stringToCode(simaText);
+    // UTF-8からShift-JISに変換
+    const shiftJISArray = window.Encoding.convert(utf8Array, 'SJIS');
+    // Shift-JISエンコードされたデータをUint8Arrayに格納
+    const uint8Array = new Uint8Array(shiftJISArray);
+    const blob = new Blob([uint8Array], { type: 'application/octet-stream' }); // MIMEタイプを変更
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = 'sima.sim'; // ファイル名を'sima.sim'に設定

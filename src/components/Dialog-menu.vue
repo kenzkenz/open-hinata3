@@ -64,6 +64,7 @@ export default {
   },
   methods: {
     simaLoad () {
+      this.$store.state.isMenu = true
       this.$store.state.dialogForSimaApp = true
     },
     konjyakuYearInput () {
