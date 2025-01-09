@@ -21,12 +21,22 @@
             座標系選択
           </v-card-title>
           <v-card-text>
-            <v-select class="scrollable-content"
-                      v-model="s_zahyokei"
-                      :items="items"
-                      label="選択してください"
-                      outlined
-            ></v-select>
+            <div v-if="s_isAndroid" class="select-container">
+              <select id="selectBox" v-model="s_zahyokei" class="custom-select">
+                <option value="" disabled selected>座標を選択してください。</option>
+                <option v-for="number in 19" :key="number" :value="`公共座標${number}系`">
+                  公共座標{{ number }}系
+                </option>
+              </select>
+            </div>
+            <div v-else>
+              <v-select class="scrollable-content"
+                        v-model="s_zahyokei"
+                        :items="items"
+                        label="選択してください"
+                        outlined
+              ></v-select>
+            </div>
             <v-btn @click="loadSima">SIMA読込開始</v-btn>
           </v-card-text>
           <v-card-actions>
@@ -293,6 +303,9 @@ export default {
     ],
   }),
   computed: {
+    s_isAndroid () {
+      return this.$store.state.isAndroid
+    },
     s_dialogForSimaApp: {
       get() {
         return this.$store.state.dialogForSimaApp
@@ -1978,11 +1991,14 @@ export default {
           visible: false // ボタンを非表示にする
         })
         map.addControl(this.compass)
-
-
         //on load終了----------------------------------------------------------------------------------------------------
       })
     }
+  },
+  created() {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    console.log(/android/i.test(userAgent))
+    this.$store.state.isAndroid = /android/i.test(userAgent);
   },
   mounted() {
     // this.$store.state.highlightedChibans = new Set()
@@ -2496,5 +2512,50 @@ font {
 .box5 { background-color: orange; }
 .swich .v-input__control {
   height: 20px!important;
+}
+.select-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: auto;
+  margin: 20px auto;
+}
+
+.select-label {
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.custom-select {
+  appearance: none; /* ブラウザのデフォルトスタイルを無効化 */
+  background: linear-gradient(to right, #f0f4ff, #e0eaff);
+  border: 1px solid #a0c4ff;
+  border-radius: 8px;
+  padding: 10px 15px;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.custom-select:hover {
+  border-color: #4d94ff;
+}
+
+.custom-select:focus {
+  border-color: #1a73e8;
+  box-shadow: 0 0 5px rgba(26, 115, 232, 0.5);
+}
+
+.custom-select option {
+  padding: 10px;
+}
+
+select {
+  position: relative;
+  z-index: 1000; /* 他の要素の上に表示 */
+  direction: ltr; /* 左から右に展開 */
 }
 </style>

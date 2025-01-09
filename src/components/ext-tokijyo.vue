@@ -5,12 +5,22 @@
         座標系選択
       </v-card-title>
       <v-card-text>
-        <v-select class="scrollable-content"
-            v-model="s_zahyokei"
-            :items="items"
-            label="選択してください"
-            outlined
-        ></v-select>
+        <div v-if="s_isAndroid" class="select-container">
+          <select id="selectBox" v-model="s_zahyokei" class="custom-select">
+            <option value="" disabled selected>座標を選択してください。</option>
+            <option v-for="number in 19" :key="number" :value="`公共座標${number}系`">
+              公共座標{{ number }}系
+            </option>
+          </select>
+        </div>
+        <div v-else>
+          <v-select class="scrollable-content"
+                    v-model="s_zahyokei"
+                    :items="items"
+                    label="選択してください"
+                    outlined
+          ></v-select>
+        </div>
         <v-btn @click="loadSima">SIMA読込開始</v-btn>
       </v-card-text>
       <v-card-actions>
@@ -133,6 +143,9 @@ export default {
     menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'hidden', 'user-select': 'text', 'font-size':'large'}
   }),
   computed: {
+    s_isAndroid () {
+      return this.$store.state.isAndroid
+    },
     s_extFire () {
       return this.$store.state.extFire
     },
@@ -306,6 +319,11 @@ export default {
       filterBy(this.s_tokijyoText)
       this.update()
     },
+  },
+  created() {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    console.log(/android/i.test(userAgent))
+    this.$store.state.isAndroid = /android/i.test(userAgent);
   },
   mounted() {
   },

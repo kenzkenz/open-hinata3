@@ -83,6 +83,7 @@ export default createStore({
     snackbar: false,
     dialogForSimaApp: false,
     isMenu: false,
+    isAndroid: false,
     //------------------------
     highwayYear:{
       map01: 2024,
