@@ -1081,8 +1081,8 @@ export function handleFileUpload(event) {
         // alert('読み込み' + store.state.simaText)
         try {
             const map = store.state.map01
-            const geoJSON = simaToGeoJSON(simaData,map,null,true);
-            console.log(geoJSON);
+            simaToGeoJSON(simaData,map,null,true);
+            store.state.snackbar = true
         } catch (error) {
             console.error(`変換エラー: ${error.message}`);
         }
@@ -1109,8 +1109,6 @@ export function handleFileUpload(event) {
     // };
     // reader.readAsText(file);
 
-
-
 }
 
 export function ddSimaUpload(simaData) {
@@ -1122,8 +1120,8 @@ export function ddSimaUpload(simaData) {
         // alert('読み込み' + store.state.simaText)
         try {
             const map = store.state.map01
-            const geoJSON = simaToGeoJSON(simaData,map,null,true);
-            console.log(geoJSON);
+            simaToGeoJSON(simaData,map,null,true);
+            store.state.snackbar = true
         } catch (error) {
             console.error(`変換エラー: ${error.message}`);
         }

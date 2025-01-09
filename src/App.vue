@@ -343,11 +343,11 @@ export default {
       if (this.$store.state.isMenu) {
         document.querySelector('#simaFileInput').click()
         this.$store.state.isMenu = false
+        this.s_dialogForSimaApp = false
       } else {
         ddSimaUpload(this.ddSimaText)
         this.s_dialogForSimaApp = false
       }
-
     },
     simaDl () {
       downloadSimaText()

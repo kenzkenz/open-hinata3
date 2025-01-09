@@ -474,26 +474,17 @@ export default {
           // -------------------------------------------------
         }
       }
-      // this.$store.state.extFire = !this.$store.state.extFire
       if (map.getLayer('sima-layer')) {
         map.removeLayer('sima-layer');
         map.removeLayer('sima-borders');
         map.removeLayer('sima-label');
       }
-      const vm = this
-      // if (this.$store.state.simaData[this.mapName]) {
-      //   // alert(this.mapName + '/' + vm.$store.state.simaZahyokei[vm.mapName] + '/' + this.$store.state.simaData[this.mapName])
-      //   setTimeout(function() {
-      //     simaToGeoJSON(vm.$store.state.simaData[vm.mapName], map, vm.$store.state.simaZahyokei[vm.mapName])
-      //   },0)
-      // }
       if (this.$store.state.simaText) {
         const simaText = JSON.parse(this.$store.state.simaText).text
         const zahyokei = JSON.parse(this.$store.state.simaText).zahyokei
         simaToGeoJSON(simaText,map,zahyokei,false)
         this.$store.state.snackbar = true
       }
-
     },
     mw5AddLayers(map,mapName) {
       if (!this.s_selectedLayers[mapName].find(v => v.id === 'oh-mw5')) {
