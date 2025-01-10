@@ -907,6 +907,7 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
     let firstCoordinateChecked = false;
     let detectedCRS;
     let code;
+    let hasPolygonData = false; // 区画データの有無を判定
 
     if (!simaZahyokei) {
         code = zahyokei.find(item => item.kei === store.state.zahyokei).code;
@@ -936,39 +937,15 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
                 // 座標系をEPSG:4326に変換 (x, yの順番で指定)
                 const [lon, lat] = proj4(code, 'EPSG:4326', [y, x]);
                 coordinates[id] = [lon, lat];
-
-                // 区画データがない場合にPointを生成
-                features.push({
-                    type: 'Feature',
-                    properties: {
-                        id: id
-                    },
-                    geometry: {
-                        type: 'Point',
-                        coordinates: [lon, lat]
-                    }
-                });
             } catch (error) {
                 console.error(`座標変換エラー: ${error.message}`);
                 coordinates[id] = [x, y]; // 変換失敗時は元の座標を使用
-
-                // 区画データがない場合にPointを生成
-                features.push({
-                    type: 'Feature',
-                    properties: {
-                        id: id
-                    },
-                    geometry: {
-                        type: 'Point',
-                        coordinates: [x, y]
-                    }
-                });
             }
         }
 
         // 区画データ (D00, B01, D99)
         if (type === 'D00') {
-            // 新しいフィーチャーの開始
+            hasPolygonData = true; // 区画データが存在
             currentFeature = {
                 type: 'Feature',
                 properties: {
@@ -996,6 +973,25 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
             currentFeature = null;
         }
     });
+
+    // 区画データがない場合に座標データをポイントとして追加
+    if (!hasPolygonData) {
+        // const parts = lines[0].split(',');
+        // alert(parts[2].trim())
+        Object.keys(coordinates).forEach(id => {
+            features.push({
+                type: 'Feature',
+                properties: {
+                    id: id,
+                    chiban: lines.find(line => line.startsWith(`A01,${id},`))?.split(',')[2]?.trim() || null
+                },
+                geometry: {
+                    type: 'Point',
+                    coordinates: coordinates[id]
+                }
+            });
+        });
+    }
 
     // GeoJSONオブジェクトを生成
     const geoJSON = {
@@ -1040,7 +1036,7 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
                 source: 'sima-data',
                 layout: {
                     'text-field': ['get', 'chiban'],
-                    'text-font': ['NotoSansJP-Regular']
+                    'text-font': ['NotoSansJP-Regular'],
                 },
                 paint: {
                     'text-color': 'rgba(0, 0, 0, 1)',
@@ -1048,7 +1044,40 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
                     'text-halo-width': 1.0
                 },
                 maxzoom: 24,
-                minzoom: 17
+                minzoom: 17,
+                filter: ['==', '$type', 'Polygon']
+            });
+            // ポイント用ラベルレイヤー
+            map.addLayer({
+                id: 'sima-label-point',
+                type: 'symbol',
+                source: 'sima-data',
+                layout: {
+                    'text-field': ['get', 'chiban'],
+                    'text-font': ['NotoSansJP-Regular'],
+                    'text-offset': [0, 1.3], // ラベルを下にずらす
+                },
+                paint: {
+                    'text-color': 'rgba(0, 0, 0, 1)',
+                    'text-halo-color': 'rgba(255,255,255,0.7)',
+                    'text-halo-width': 1.0
+                },
+                maxzoom: 24,
+                minzoom: 14,
+                filter: ['==', '$type', 'Point']
+            });
+            map.addLayer({
+                id: 'sima-polygon-points',
+                type: 'circle',
+                source: 'sima-data',
+                layout: {},
+                paint: {
+                    'circle-radius': 4,
+                    'circle-color': '#f00',
+                    'circle-stroke-width': 1,
+                    'circle-stroke-color': '#000'
+                },
+                filter: ['==', '$type', 'Polygon']
             });
             map.addLayer({
                 id: 'sima-points',
@@ -1056,13 +1085,13 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
                 source: 'sima-data',
                 layout: {},
                 paint: {
-                    'circle-radius': 5,
+                    'circle-radius': 8,
                     'circle-color': '#f00',
                     'circle-stroke-width': 1,
                     'circle-stroke-color': '#000'
-                }
+                },
+                filter: ['==', '$type', 'Point']
             });
-
         }
     }
 
