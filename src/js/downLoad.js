@@ -1030,23 +1030,7 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
                     'line-width': 2
                 }
             });
-            map.addLayer({
-                id: 'sima-label',
-                type: 'symbol',
-                source: 'sima-data',
-                layout: {
-                    'text-field': ['get', 'chiban'],
-                    'text-font': ['NotoSansJP-Regular'],
-                },
-                paint: {
-                    'text-color': 'rgba(0, 0, 0, 1)',
-                    'text-halo-color': 'rgba(255,255,255,0.7)',
-                    'text-halo-width': 1.0
-                },
-                maxzoom: 24,
-                minzoom: 17,
-                filter: ['==', '$type', 'Polygon']
-            });
+
             // ポイント用ラベルレイヤー
             map.addLayer({
                 id: 'sima-label-point',
@@ -1067,19 +1051,6 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
                 filter: ['==', '$type', 'Point']
             });
             map.addLayer({
-                id: 'sima-polygon-points',
-                type: 'circle',
-                source: 'sima-data',
-                layout: {},
-                paint: {
-                    'circle-radius': 4,
-                    'circle-color': '#f00',
-                    'circle-stroke-width': 1,
-                    'circle-stroke-color': '#000'
-                },
-                filter: ['==', '$type', 'Polygon']
-            });
-            map.addLayer({
                 id: 'sima-points',
                 type: 'circle',
                 source: 'sima-data',
@@ -1092,6 +1063,46 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
                 },
                 filter: ['==', '$type', 'Point']
             });
+            // const layers = map.getStyle().layers;
+            // const lastLayerId = layers[layers.length - 1].id;
+            // alert(lastLayerId)
+
+            map.addLayer({
+                id: 'sima-label',
+                type: 'symbol',
+                source: 'sima-data',
+                layout: {
+                    'text-field': ['get', 'chiban'],
+                    'text-font': ['NotoSansJP-Regular'],
+                },
+                paint: {
+                    'text-color': 'rgba(0, 0, 0, 1)',
+                    'text-halo-color': 'rgba(255,255,255,0.7)',
+                    'text-halo-width': 1.0
+                },
+                maxzoom: 24,
+                minzoom: 17,
+                filter: ['==', '$type', 'Polygon']
+            });
+            setTimeout(() => {
+                map.addLayer({
+                    id: 'sima-polygon-points',
+                    type: 'circle',
+                    source: 'sima-data',
+                    layout: {},
+                    paint: {
+                        'circle-radius': [
+                            'interpolate', ['linear'], ['zoom'],
+                            15, 0,
+                            18, 4
+                        ],
+                        'circle-color': '#f00',
+                        // 'circle-stroke-width': 1,
+                        // 'circle-stroke-color': '#000'
+                    },
+                    filter: ['==', '$type', 'Polygon']
+                });
+            },1000)
         }
     }
 

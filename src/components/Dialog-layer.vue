@@ -477,9 +477,12 @@ export default {
       }
       if (this.counter >= 1) {
         if (map.getLayer('sima-layer')) {
-          map.removeLayer('sima-layer');
-          map.removeLayer('sima-borders');
-          map.removeLayer('sima-label');
+          map.removeLayer('sima-layer')
+          map.removeLayer('sima-borders')
+          map.removeLayer('sima-label')
+          map.removeLayer('sima-points')
+          map.removeLayer('sima-label-point')
+          map.removeLayer('sima-polygon-points')
         }
         if (this.$store.state.simaText) {
           const simaText = JSON.parse(this.$store.state.simaText).text
@@ -490,6 +493,51 @@ export default {
           simaToGeoJSON(simaText,map,zahyokei,false)
           this.$store.state.snackbar = true
           this.$store.state.simaFire = !this.$store.state.simaFire
+
+
+
+          // map.removeLayer('sima-label')
+          // map.addLayer({
+          //   id: 'sima-label',
+          //   type: 'symbol',
+          //   source: 'sima-data',
+          //   layout: {
+          //     'text-field': ['get', 'chiban'],
+          //     'text-font': ['NotoSansJP-Regular'],
+          //   },
+          //   paint: {
+          //     'text-color': 'rgba(0, 0, 0, 1)',
+          //     'text-halo-color': 'rgba(255,255,255,0.7)',
+          //     'text-halo-width': 1.0
+          //   },
+          //   maxzoom: 24,
+          //   minzoom: 17,
+          //   filter: ['==', '$type', 'Polygon']
+          // });
+          //
+          // setTimeout(() => {
+          //   map.removeLayer('sima-polygon-points')
+          //   map.addLayer({
+          //     id: 'sima-polygon-points',
+          //     type: 'circle',
+          //     source: 'sima-data',
+          //     layout: {},
+          //     paint: {
+          //       'circle-radius': [
+          //         'interpolate', ['linear'], ['zoom'],
+          //         15, 0,
+          //         18, 4
+          //       ],
+          //       'circle-color': '#f00',
+          //       // 'circle-stroke-width': 1,
+          //       // 'circle-stroke-color': '#000'
+          //     },
+          //     filter: ['==', '$type', 'Polygon']
+          //   });
+          // },1000)
+
+
+
         }
       }
       this.counter++

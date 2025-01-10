@@ -219,6 +219,10 @@ export default createStore({
       map01: 'red',
       map02: 'red'
     },
+    tokijyoCircleColor:{
+      map01: 'red',
+      map02: 'red'
+    },
     zeniKm:{
       map01: 20,
       map02: 20
@@ -361,12 +365,12 @@ export default createStore({
             if (payload.order === 1) {
               variable = 'tokijyoColor'
             }
-            // if (payload.order === 2) {
-            //   variable = 'simaData'
-            // }
-            // if (payload.order === 3) {
-            //   variable = 'simaZahyokei'
-            // }
+            if (payload.order === 2) {
+              variable = 'tokijyoCircleColor'
+            }
+
+
+
             break
           case 'extZeni':
             if (payload.order === 0) {

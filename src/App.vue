@@ -2514,10 +2514,43 @@ font {
   cursor: pointer; /* ポインターアイコン */
   transition: transform 0.1s, box-shadow 0.1s; /* スムーズなアニメーション */
 }
+.color-container .circle {
+  width: 25px;
+  height: 25px;
+  text-align: center;
+  line-height: 50px;
+  font-weight: bold;
+  color: white;
+  border-radius: 25px; /* 角を少し丸く */
+  cursor: pointer; /* ポインターアイコン */
+  transition: transform 0.1s, box-shadow 0.1s; /* スムーズなアニメーション */
+}
 .box:hover {
   filter: brightness(1.2); /* 明るさを少しアップ */
 }
 .box:active {
+  transform: translateY(2px); /* クリック時に少し下がる */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* 影をつける */
+}
+.color-container2 {
+  margin-top: 5px;
+  display: flex;
+  justify-content: space-between; /* 均等に配置 */
+  align-items: center; /* 垂直方向で中央揃え */
+}
+.color-container2 .circle {
+  margin-right: 5px;
+  margin-left: 5px;
+  width: 25px; /* 真円の幅 */
+  height: 25px; /* 真円の高さ */
+  border-radius: 100%; /* 真円にする */
+  cursor: pointer; /* ポインターに変更 */
+  transition: transform 0.1s, box-shadow 0.1s; /* スムーズなアニメーション */
+}
+.circle:hover {
+  filter: brightness(1.2); /* 明るさを少しアップ */
+}
+.circle:active {
   transform: translateY(2px); /* クリック時に少し下がる */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* 影をつける */
 }

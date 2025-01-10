@@ -2318,6 +2318,22 @@ const amxLayerLabel = {
     'maxzoom': 24,
     'minzoom': 17
 }
+const amxLayerVertex = {
+    id: 'oh-amx-vertex',
+    type: 'circle',
+    source: 'amx-a-pmtiles',
+    "source-layer": "fude",
+    paint: {
+        'circle-radius': [
+            'interpolate', ['linear'], ['zoom'],
+            15, 0,
+            18,4
+        ],
+        'circle-color': 'red',
+        // 'circle-stroke-width': 1,
+        // 'circle-stroke-color': 'white'
+    }
+}
 // 幕末近世 --------------------------------------------------------------------------------------------
 const bakumatsuSource = {
     id: "bakumatsu", obj: {
@@ -7193,7 +7209,7 @@ const layers01 = [
         id: 'oh-amx-a-fude',
         label: "登記所備付地図データ",
         source: amxSource,
-        layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel],
+        layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel,amxLayerVertex],
         // source: amx2024Source,amx2024Source,
         // layers:[amx2024Layer,amx2024LayerLine,amxLayerDaihyou,amx2024LayerLabel],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
@@ -7207,7 +7223,7 @@ const layers01 = [
                 id: 'oh-amx-a-fude',
                 label: "登記所備付地図データ",
                 source: amxSource,
-                layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel],
+                layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel,amxLayerVertex],
                 // source: amx2024Source,amx2024Source,
                 // layers:[amx2024Layer,amx2024LayerLine,amxLayerDaihyou,amx2024LayerLabel],
                 attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
@@ -8605,7 +8621,7 @@ const layers01 = [
                 id: 'oh-amx-a-fude',
                 label: "登記所備付地図データ",
                 source: amxSource,
-                layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel],
+                layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel,amxLayerVertex],
                 ext: {name:'extTokijyo'}
             },
         ]

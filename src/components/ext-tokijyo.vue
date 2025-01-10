@@ -72,7 +72,7 @@
       <!-- 3行目 -->
       <div style="display: flex; justify-content: space-between; gap: 10px; padding-right: 17px;">
         <v-btn class="tiny-btn" @click="saveCsv">csv保存</v-btn>
-        <v-btn class="tiny-btn" @click="jww">jww座標ファイル保存</v-btn>
+<!--        <v-btn class="tiny-btn" @click="jww">jww座標ファイル保存</v-btn>-->
       </div>
 
     <hr>
@@ -101,6 +101,13 @@
       <div class="box box3" @click="changeColor('blue')"></div>
       <div class="box box4" @click="changeColor('green')"></div>
       <div class="box box5" @click="changeColor('orange')"></div>
+    </div>
+    <div class="color-container2">
+      <div class="circle box1" @click="changeColorCircle('red')"></div>
+      <div class="circle box2" @click="changeColorCircle('black')"></div>
+      <div class="circle box3" @click="changeColorCircle('blue')"></div>
+      <div class="circle box4" @click="changeColorCircle('green')"></div>
+      <div class="circle box5" @click="changeColorCircle('orange')"></div>
     </div>
 <!--    <v-btn style="margin-top: 10px;margin-left: 100px;width: 50px" class="tiny-btn" @click="info">help</v-btn>-->
 
@@ -179,6 +186,14 @@ export default {
         this.$store.state.tokijyoColor[this.mapName] = value
       }
     },
+    s_tokijyoCircleColor: {
+      get() {
+        return this.$store.state.tokijyoCircleColor[this.mapName]
+      },
+      set(value) {
+        this.$store.state.tokijyoCircleColor[this.mapName] = value
+      }
+    },
     s_zahyokei: {
       get() {
         return this.$store.state.zahyokei
@@ -198,24 +213,19 @@ export default {
   },
   methods: {
     update () {
-      // alert(this.s_simaData)
-      if (this.s_simaData) {
-        this.$store.commit('updateSelectedLayers', {
-          mapName: this.mapName, id: this.item.id, values: [
-            this.s_tokijyoText,
-            this.s_tokijyoColor,
-            // this.s_simaData,
-            // this.s_simaZahyokei
-          ]
-        })
-      } else {
-        this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [
-            this.s_tokijyoText,
-            this.s_tokijyoColor,
-            // this.s_simaData,
-            // this.s_simaZahyokei
-          ]})
-      }
+      this.$store.commit('updateSelectedLayers', {
+        mapName: this.mapName, id: this.item.id, values: [
+          this.s_tokijyoText,
+          this.s_tokijyoColor,
+          this.s_tokijyoCircleColor
+        ]
+      })
+    },
+    changeColorCircle (color) {
+      const map = this.$store.state[this.mapName]
+      map.setPaintProperty('oh-amx-vertex', 'circle-color', color)
+      this.s_tokijyoCircleColor = color
+      this.update()
     },
     changeColor (color) {
       const map = this.$store.state[this.mapName]
@@ -333,12 +343,8 @@ export default {
     },
     s_extFire () {
       this.change()
-      const map = this.$store.state[this.mapName]
-      // if (this.s_simaData) {
-      //   simaToGeoJSON(this.s_simaData, map, this.s_simaZahyokei)
-      // }
-
       this.changeColor(this.s_tokijyoColor)
+      this.changeColorCircle(this.s_tokijyoCircleColor)
     },
   }
 }
