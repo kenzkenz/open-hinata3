@@ -441,7 +441,6 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
                     A01Text += 'A01,' + j + ',' + j + ',' + y.toFixed(3) + ',' + x.toFixed(3) + ',\n';
                     j++;
                 }
-
                 const currentCounter = coordinateMap.get(coordinateKey);
                 if (index === len - 1) {
                     B01Text += 'B01,' + currentCounter + ',' + currentCounter + ',\nD99,\n';
@@ -455,8 +454,10 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
 
         i++;
     });
+    saveSimaGaiku2 (map,j)
 
-    simaData = simaData + A01Text + 'A99\nZ00,区画データ,\n' + B01Text
+    // simaData = simaData + A01Text + 'A99\nZ00,区画データ,\n' + B01Text
+    simaData = simaData + A01Text + saveSimaGaiku2 (map,j) + 'A99\nZ00,区画データ,\n' + B01Text
     // console.log(simaData)
     simaData += 'A99,END,,\n';
 
@@ -1511,11 +1512,11 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
         }
         console.log(isDfx)
         if (!isDfx) {
-            console.log(geojson)
-            if (layerId === 'oh-amx-a-fude') {
-                geojson = extractMatchingFeatures(map,geojson)
-            }
-            console.log(geojson)
+            // console.log(geojson)
+            // if (layerId === 'oh-amx-a-fude') {
+            //     geojson = extractMatchingFeatures(map,geojson)
+            // }
+            // console.log(geojson)
             if (layerId === 'oh-amx-a-fude') {
                 geojson = extractMatchingFeatures(map,geojson)
             }
@@ -2083,6 +2084,89 @@ export function saveSimaGaiku (map,layerId) {
     link.click();
     URL.revokeObjectURL(link.href);
 }
+
+export function saveSimaGaiku2 (map,j) {
+    const layerIds = []
+    if (map.getLayer('oh-gaiku-layer')) {
+        layerIds.push('oh-gaiku-layer')
+    }
+    if (map.getLayer('oh-toshikan-layer')) {
+        layerIds.push('oh-toshikan-layer')
+    }
+    const features = map.queryRenderedFeatures({
+        layers: layerIds // 対象のレイヤー名を指定
+    });
+    if (features.length === 0) {
+        return ''
+    }
+    // GeoJSON形式に変換
+    const geojson = {
+        type: 'FeatureCollection',
+        features: features.map(feature => ({
+            type: 'Feature',
+            geometry: feature.geometry,
+            properties: feature.properties
+        }))
+    };
+    console.log(geojson)
+    console.log(store.state.zahyokei)
+    const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
+    console.log(code)
+
+    let simaData = '';
+    let A01Text = '';
+    // let j = 1;
+
+    // 座標を関連付けるマップ
+    const coordinateMap = new Map();
+
+    geojson.features.forEach((feature) => {
+        if (feature.geometry.type !== 'Point') {
+            console.warn('Unsupported geometry type:', feature.geometry.type);
+            return; // Point以外はスキップ
+        }
+        const coord = feature.geometry.coordinates;
+        if (
+            Array.isArray(coord) &&
+            coord.length === 2 &&
+            Number.isFinite(coord[0]) &&
+            Number.isFinite(coord[1])
+        ) {
+            const [x, y] = proj4('EPSG:4326', code, coord); // 座標系変換
+            const coordinateKey = `${x},${y}`;
+            console.log(feature.properties.基準点等名称)
+            let name = ''
+            if (feature.properties.基準点等名称) {
+                name = feature.properties.基準点等名称
+            } else if (feature.properties['街区点・補助点名称']){
+                name = feature.properties['街区点・補助点名称']
+            }
+            let zahyoY, zahyoX
+            if (feature.properties.補正後Y座標) {
+                zahyoY = feature.properties.補正後Y座標
+                zahyoX = feature.properties.補正後X座標
+            } else {
+                zahyoY = feature.properties.Y座標
+                zahyoX = feature.properties.X座標
+            }
+            if (!coordinateMap.has(coordinateKey)) {
+                coordinateMap.set(coordinateKey, j);
+                A01Text += 'A01,' + j + ',' + name + ',' + zahyoX + ',' + zahyoY + ',\n';
+                // A01Text += 'A01,' + j + ',' + name + ',' + zahyoY + ',' + zahyoX + ',\n';
+                // A01Text += 'A01,' + j + ',' + name + ',' + y.toFixed(3) + ',' + x.toFixed(3) + ',\n';
+                j++;
+            }
+        } else {
+            console.error('Invalid coordinate skipped:', coord);
+        }
+    });
+
+    simaData += A01Text;
+    // simaData += 'A99,END,,\n';
+    console.log(simaData)
+    return simaData
+}
+
 
 export async function queryFGBWithPolygon(map,polygon,chiban) {
     polygon = polygon.geometry.coordinates[0]
