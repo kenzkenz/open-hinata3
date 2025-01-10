@@ -1038,17 +1038,6 @@ export function simaToGeoJSON(simaData,map,simaZahyokei,isFlyto) {
         });
         map.fitBounds(bounds, { padding: 20 });
     }
-    // GeoJSONをダウンロード
-    // const blob = new Blob([JSON.stringify(geoJSON, null, 2)], { type: 'application/json' });
-    // const url = URL.createObjectURL(blob);
-    // const a = document.createElement('a');
-    // a.href = url;
-    // a.download = 'output.geojson';
-    // document.body.appendChild(a);
-    // a.click();
-    // document.body.removeChild(a);
-    // setTimeout(() => URL.revokeObjectURL(url), 1000);
-    //
     // ファイル入力をリセット
     const uploadInput = document.querySelector('#simaFileInput');
     if (uploadInput) {
@@ -1060,14 +1049,11 @@ export function simaToGeoJSON(simaData,map,simaZahyokei,isFlyto) {
 export function handleFileUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
-
     if (!file.name.endsWith('.sim')) {
         alert('SIMAファイル(.sim)をアップロードしてください。');
         return;
     }
-
     const reader = new FileReader();
-
     reader.onload = (e) => {
         const arrayBuffer = e.target.result; // ArrayBufferとして読み込む
         const text = new TextDecoder("shift-jis").decode(arrayBuffer); // Shift JISをUTF-8に変換
@@ -1090,29 +1076,8 @@ export function handleFileUpload(event) {
         } catch (error) {
             console.error(`変換エラー: ${error.message}`);
         }
-
     };
     reader.readAsArrayBuffer(file);
-
-
-    // reader.onload = function(e) {
-    //     const simaData = e.target.result;
-    //     console.log(store.state.zahyokei)
-    //     store.state.simaZahyokei.map01 = store.state.zahyokei
-    //     store.state.simaData.map01 = simaData
-    //     store.state.simaText = JSON.stringify({text:simaData,zahyokei:store.state.zahyokei})
-    //     console.log(store.state.simaText)
-    //     // alert('読み込み' + store.state.simaText)
-    //     try {
-    //         const map = store.state.map01
-    //         const geoJSON = simaToGeoJSON(simaData,map,null,true);
-    //         console.log(geoJSON);
-    //     } catch (error) {
-    //         console.error(`変換エラー: ${error.message}`);
-    //     }
-    // };
-    // reader.readAsText(file);
-
 }
 
 export function ddSimaUpload(simaData) {
