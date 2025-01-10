@@ -1650,14 +1650,7 @@ export default {
               const fileExtension = fileName.split('.').pop().toLowerCase();
 
               if (fileExtension === 'sim') {
-                // const fileInputEvent = { target: { files: [file] } };
-                // handleFileUpload(fileInputEvent);
-
                 const reader = new FileReader();
-                // reader.onload = (e) => {
-                //   this.ddSimaText = e.target.result
-                //   this.s_dialogForSimaApp = true
-                // };
                 reader.onload = (e) => {
                   const arrayBuffer = e.target.result; // ArrayBufferとして読み込む
                   const text = new TextDecoder("shift-jis").decode(arrayBuffer); // Shift JISをUTF-8に変換
@@ -1666,8 +1659,6 @@ export default {
                   this.s_dialogForSimaApp = true
                 };
                 reader.readAsArrayBuffer(file);
-                // reader.readAsText(file);
-
               } else {
                 alert('拡張子が.simのファイルのみ対応しています。');
               }

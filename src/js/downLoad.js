@@ -1077,8 +1077,9 @@ export function handleFileUpload(event) {
         store.state.simaZahyokei.map01 = store.state.zahyokei
         store.state.simaData.map01 = simaData
         store.state.simaText = JSON.stringify({
-            text:simaData,
-            zahyokei:store.state.zahyokei
+            text: simaData,
+            zahyokei: store.state.zahyokei,
+            opacity: 0.7
         })
         console.log(store.state.simaText)
         // alert('読み込み' + store.state.simaText)
@@ -1118,7 +1119,11 @@ export function ddSimaUpload(simaData) {
         console.log(store.state.zahyokei)
         store.state.simaZahyokei.map01 = store.state.zahyokei
         store.state.simaData.map01 = simaData
-        store.state.simaText = JSON.stringify({text:simaData,zahyokei:store.state.zahyokei})
+        store.state.simaText = JSON.stringify({
+            text: simaData,
+            zahyokei: store.state.zahyokei,
+            opacity: 0.7
+        })
         console.log(store.state.simaText)
         // alert('読み込み' + store.state.simaText)
         try {
