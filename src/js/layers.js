@@ -6980,7 +6980,7 @@ const fukuokakenshinrinLayerLine = {
 const gaikuSource = {
     id: "gaiku-source", obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/gaiku/gaiku.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/gaiku/gaiku2.pmtiles",
     }
 }
 const gaikuLayer = {
