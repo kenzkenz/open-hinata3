@@ -108,6 +108,7 @@
       <div class="circle box3" @click="changeColorCircle('blue')"></div>
       <div class="circle box4" @click="changeColorCircle('green')"></div>
       <div class="circle box5" @click="changeColorCircle('orange')"></div>
+      <div class="circle box6" @click="changeColorCircle('rgba(0,0,0,0)')"></div>
     </div>
 <!--    <v-btn style="margin-top: 10px;margin-left: 100px;width: 50px" class="tiny-btn" @click="info">help</v-btn>-->
 

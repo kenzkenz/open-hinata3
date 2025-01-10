@@ -1063,10 +1063,6 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
                 },
                 filter: ['==', '$type', 'Point']
             });
-            // const layers = map.getStyle().layers;
-            // const lastLayerId = layers[layers.length - 1].id;
-            // alert(lastLayerId)
-
             map.addLayer({
                 id: 'sima-label',
                 type: 'symbol',

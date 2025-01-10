@@ -2517,10 +2517,6 @@ font {
 .color-container .circle {
   width: 25px;
   height: 25px;
-  text-align: center;
-  line-height: 50px;
-  font-weight: bold;
-  color: white;
   border-radius: 25px; /* 角を少し丸く */
   cursor: pointer; /* ポインターアイコン */
   transition: transform 0.1s, box-shadow 0.1s; /* スムーズなアニメーション */
@@ -2559,6 +2555,10 @@ font {
 .box3 { background-color: blue; }
 .box4 { background-color: green; }
 .box5 { background-color: orange; }
+.box6 {
+  border: 1px solid #a0c4ff;
+  background-color: rgba(0,0,0,0);
+}
 .swich .v-input__control {
   height: 20px!important;
 }
