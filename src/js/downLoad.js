@@ -2595,3 +2595,53 @@ export async function geoTiffLoad (map,mapName) {
 
     map.fitBounds(flyToBounds, { padding: 20 });
 }
+
+
+export function pngDownload(map) {
+    // 地図のレンダリング完了を待機
+    map.once('idle', () => {
+        const canvas = map.getCanvas();
+        const imageData = canvas.toDataURL("image/png");
+        // 画像をダウンロード
+        const link = document.createElement("a");
+        link.href = imageData;
+        link.download = "map-image.png";
+        link.click();
+
+        // ワールドファイルの生成
+        const bounds = map.getBounds(); // 地図の表示範囲を取得
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+
+        // WGS 84 -> 平面直角座標系2系に変換
+        const topLeft = proj4('EPSG:4326', 'EPSG:2444', [bounds.getWest(), bounds.getNorth()]);
+        const bottomRight = proj4('EPSG:4326', 'EPSG:2444', [bounds.getEast(), bounds.getSouth()]);
+
+        const xMin = topLeft[0];
+        const xMax = bottomRight[0];
+        const yMin = bottomRight[1];
+        const yMax = topLeft[1];
+
+        const pixelWidth = (xMax - xMin) / canvasWidth;
+        const pixelHeight = (yMax - yMin) / canvasHeight;
+
+        const worldFileContent = `
+            ${pixelWidth}
+            0
+            0
+            -${pixelHeight}
+            ${xMin + pixelWidth / 2}
+            ${yMax - pixelHeight / 2}
+            `.trim();
+
+        // ワールドファイルをダウンロード
+        const blob = new Blob([worldFileContent], { type: "text/plain" });
+        const worldFileLink = document.createElement("a");
+        worldFileLink.href = URL.createObjectURL(blob);
+        worldFileLink.download = "map-image.pgw"; // 適切な拡張子
+        worldFileLink.click();
+    });
+    const currentZoom = map.getZoom();
+    // 地図をズームさせる
+    map.zoomTo(currentZoom + 0.001, { duration: 500 }); // 0.1だけズームイン（アニメーション付き）
+}

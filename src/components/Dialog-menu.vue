@@ -5,7 +5,8 @@
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 
-      <v-btn @click="simaLoad">SIMA読み込</v-btn>
+      <v-btn class="tiny-btn" @click="simaLoad">SIMA読み込</v-btn>
+      <v-btn style="margin-left: 5px;" class="tiny-btn" @click="pngDownload">PNGダウンロード</v-btn>
 
       <v-switch v-model="s_isPitch" @change="changePitch" label="２画面時に傾きを同期" color="primary" />
       標高を強調します。{{s_terrainLevel}}倍
@@ -27,6 +28,7 @@ import axios from "axios"
 import maplibregl from 'maplibre-gl'
 import {history} from "@/App";
 import {konUrls} from "@/js/layers";
+import {pngDownload} from "@/js/downLoad";
 export default {
   name: 'Dialog-menu',
   props: ['mapName'],
@@ -64,6 +66,10 @@ export default {
     },
   },
   methods: {
+    pngDownload () {
+      const map01 = this.$store.state.map01
+      pngDownload(map01)
+    },
     simaLoad () {
       this.$store.state.isMenu = true
       this.$store.state.dialogForSimaApp = true
