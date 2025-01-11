@@ -1637,9 +1637,12 @@ export default {
             dropzone.classList.remove('active');
           });
 
-          //---------------------------------------------------------------------------------------------
+          // geotiff---------------------------------------------------------------------------------------------
           dropzone.addEventListener('drop', async (event) => {
             event.preventDefault();
+            this.$store.state.tiffAndWorldFile = Array.from(event.dataTransfer.files);
+
+
 
             const files = Array.from(event.dataTransfer.files);
             let tiffFile = null;
@@ -1658,7 +1661,6 @@ export default {
               // alert('GeoTIFFファイル（.tif）をドラッグ＆ドロップしてください。');
               return;
             }
-
             if (!worldFile) {
               // alert('対応するワールドファイル（.tfw）も必要です。');
               return;
@@ -1701,21 +1703,6 @@ export default {
               [originX, originY + pixelSizeY * height] // 左下
             ].map(coord => proj4('EPSG:2450', 'EPSG:4326', coord));
 
-            console.log('Converted Bounds:', bounds);
-
-            // map.addSource('geotiff', {
-            //   type: 'image',
-            //   url: canvas.toDataURL(),
-            //   coordinates: bounds
-            // });
-            //
-            // map.addLayer({
-            //   id: 'oh-geotiff-layer',
-            //   type: 'raster',
-            //   source: 'geotiff',
-            //   paint: {}
-            // });
-
             const geotiffSource = {
               id:'geotiff-source-' + files[0].name,obj:{
                 type: 'image',
@@ -1741,13 +1728,6 @@ export default {
                   visibility: true,
                 }
             )
-
-
-
-
-
-
-
 
             // 地図の範囲を設定
             const flyToBounds = [

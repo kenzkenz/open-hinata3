@@ -86,6 +86,7 @@ export default createStore({
     isAndroid: false,
     simaOpacity: 0.7,
     simaFire: false,
+    tiffAndWorldFile: null,
     //------------------------
     highwayYear:{
       map01: 2024,
