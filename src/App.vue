@@ -1637,7 +1637,7 @@ export default {
           });
 
 
-          // ドロップ時の処理 SIMA
+          // ドロップ時の処理 SIMA----------------------------------------------------------------------------------------
           dropzone.addEventListener('drop', (event) => {
             event.preventDefault();
             dropzone.style.backgroundColor = '';
@@ -1665,7 +1665,7 @@ export default {
             }
           });
 
-          // ファイルドロップ処理
+          // ファイルドロップ処理--------------------------------------------------------------------------------------------
           document.addEventListener('drop', (event) => {
             event.preventDefault();
             dropzone.classList.remove('active');
