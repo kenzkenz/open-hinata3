@@ -980,12 +980,13 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
 
     // 区画データに含まれていない座標をポイントとして追加
     Object.keys(coordinates).forEach(id => {
+        const chiban = lines.find(line => new RegExp(`A01\\s*,\\s*${id}\\s*,`).test(line))?.split(',')[2]?.trim()
         if (!coordinatesUsedInPolygons.has(id)) {
             features.push({
                 type: 'Feature',
                 properties: {
                     id: id,
-                    chiban: lines.find(line => line.startsWith(`A01,${id},`))?.split(',')[2]?.trim() || null
+                    chiban: chiban
                 },
                 geometry: {
                     type: 'Point',
@@ -1058,8 +1059,8 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
                 source: 'sima-data',
                 layout: {},
                 paint: {
-                    'circle-radius': 8,
-                    'circle-color': '#f00',
+                    'circle-radius': 5,
+                    'circle-color': 'navy',
                     'circle-stroke-width': 1,
                     'circle-stroke-color': '#000'
                 },

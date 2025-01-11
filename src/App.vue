@@ -1849,7 +1849,6 @@ export default {
               const zoneFeature = features[0];
               const zone = zoneFeature.properties.zone;
               this.$store.state.zahyokei = '公共座標' + zone + '系';
-              console.log(this.$store.state.zahyokei);
             } else {
               console.log('画面中心地点は座標系ゾーンに該当しません。');
               this.$store.state.zahyokei = '';

@@ -7291,58 +7291,72 @@ const layers01 = [
                             '<a href="https://hackmd.io/@kenz/SkQ_R21Lkg" target="_blank">24自治体の情報はこちら</a>',
                         ext: {name:'extChibanz2024'}
                     },
-                    // {
-                    //     id: 'oh-iwata',
-                    //     label: "磐田市地番図",
-                    //     source: iwatapolygonSource,
-                    //     layers:[iwatapolygonLayer,iwatapolygonLine],
-                    //     attribution: '<a href="https://www.city.iwata.shizuoka.jp/shiseijouhou/1006207/1002775.html" target="_blank">磐田市オープンデータ</a>',
-                    //     ext: {name:'extIwata'}
-                    // },
-                    // {
-                    //     id: 'oh-narashi',
-                    //     label: "奈良市地番図",
-                    //     source: narashichibanSource,
-                    //     layers:[narashichibanLayer,narashichibanLine],
-                    //     attribution: '<a href="https://www.city.nara.lg.jp/soshiki/14/104605.html" target="_blank">奈良市地番図オープンデータ</a>',
-                    //     ext: {name:'extNarashi'}
-                    // },
-                    // {
-                    //     id: 'oh-fukushimashi',
-                    //     label: "福島市地番図",
-                    //     source: fukushimachibanSource,
-                    //     layers:[fukushimachibanLayer,fukushimachibanLine],
-                    //     attribution: '<a href="https://www.city.fukushima.fukushima.jp/d-kikaku/shise/opendate/machidukuri.html" target="_blank">福島市オープンデータ</a>',
-                    //     ext: {name:'extFukushimashi'}
-                    // },
-                    // {
-                    //     id: 'oh-kitahiroshima',
-                    //     label: "北広島市地番図",
-                    //     source: kitahiroshimachibanSource,
-                    //     layers:[kitahiroshimachibanLayer,kitahiroshimachibanLine],
-                    //     attribution: '<a href="https://www.harp.lg.jp/opendata/dataset/2061.html" target="_blank">北海道オープンデータポータル</a>',
-                    //     ext: {name:'extKitahiroshimashi'}
-                    // },
-                    // {
-                    //     id: 'oh-kunitachishi',
-                    //     label: "国立市地番図",
-                    //     source: kunitachishichibanSource,
-                    //     layers:[kunitachishichibanLayer,kunitachishichibanLine],
-                    //     attribution: '<a href="https://www.city.kunitachi.tokyo.jp/soshiki/Dept01/Div03/Sec01/oshirase/11883.html" target="_blank">地番図の公開について</a>',
-                    //     ext: {name:'extKunitachishi'}
-                    // },
-                    // {
-                    //     id: 'oh-fukuokashi',
-                    //     label: "福岡市市地番図",
-                    //     source: fukuokashichibanSource,
-                    //     layers:[fukuokashichibanLayer,fukuokashichibanLine],
-                    //     attribution: '<a href="https://webmap.city.fukuoka.lg.jp/fukuoka/OpenData?mids=&pno=1" target="_blank">福岡市Webマップ</a>',
-                    //     ext: {name:'extFukuokashi'}
-                    // },
                     ]
             },
 
         ]},
+    {
+        id: 'fudosan',
+        label: "不動産情報",
+        nodes: [
+            {
+                id: 'oh-amx-a-fude',
+                label: "登記所備付地図データ",
+                source: amxSource,
+                layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel,amxLayerVertex],
+                // source: amx2024Source,amx2024Source,
+                // layers:[amx2024Layer,amx2024LayerLine,amxLayerDaihyou,amx2024LayerLabel],
+                attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
+                ext: {name:'extTokijyo'}
+            },
+            {
+                id: 'oh-fude',
+                label: "農地の区画情報(筆ポリゴン)",
+                source: fudeSource,
+                layers:[fudeLayer,fudeLine],
+                attribution: '<a href="https://www.maff.go.jp/j/tokei/porigon/" target="_blank">農地の区画情報（筆ポリゴン）のデータ提供・利用</a>'
+            },
+            {
+                id: 'oh-nogyochiiki',
+                label: "H27農業地域",
+                source: nogyochiikiSource,
+                layers:[nogyochiikiLayer,nogyochiikiLine],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A12.html" target="_blank">国土数値情報</a>'
+                // ext: {name:'extTokijyo'}
+            },
+            {
+                id: 'citychibanzu',
+                label: "市町村地番図",
+                nodes: [
+                    ...chibanzuLayers2,
+                    {
+                        id: 'oh-chibanzu2024',
+                        label: "24自治体地番図",
+                        source: chibanzu2024Source,
+                        layers:[chibanzu2024Layer,chibanzu2024Line],
+                        attribution: '<a href="https://www.geospatial.jp/ckan/dataset/chibanzu_2024/resource/79642df8-0456-4847-97cd-a9934cbee42e">Chibanzu_2024.fgb</a><br>'+
+                            '<a href="https://hackmd.io/@kenz/SkQ_R21Lkg" target="_blank">24自治体の情報はこちら</a>',
+                        ext: {name:'extChibanz2024'}
+                    },
+                ]
+            },
+            {
+                id: 'oh-syochiiki',
+                label: "2020国勢調査小地域人口ピラミッド",
+                source: syochiikiSource,
+                layers: [syochiikiLayer,syochiikLayerLine,syochiikiLayerLabel],
+                attribution: '出典：<a href="https://www.e-stat.go.jp/stat-search/files?page=1&toukei=00200521&tstat=000001136464&cycle=0&tclass1=000001136472" target="_blank">e-Stat</a>',
+                ext: {name:'extSyochiiki'}
+            },
+            {
+                id: 'oh-did',
+                label: "人口集中地区",
+                source: didSource,
+                layers: [didLayer,didLayerLine],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A16-v2_3.html" target="_blank">国土数値情報</a>'
+            },
+        ]
+    },
     {
         id: 1,
         label: "基本地図",

@@ -379,7 +379,7 @@ export default {
             if (!map.getSource(layer.source.id)) map.addSource(layer.source.id, layer.source.obj)
           }
 
-          console.log(layer.layers)
+          // console.log(layer.layers)
           let flyFlg = true
           layer.layers.forEach(layer0 => {
             if (layer0.id === 'oh-mw-dummy') {
