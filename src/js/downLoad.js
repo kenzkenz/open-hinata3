@@ -2499,3 +2499,99 @@ export function downloadSimaText () {
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
 }
+
+export async function geoTiffLoad (map,mapName) {
+    console.log(map)
+    const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
+    const files = store.state.tiffAndWorldFile
+    let tiffFile = null;
+    let worldFile = null;
+
+    // ファイルをペアリング
+    for (const file of files) {
+      if (file.name.endsWith('.tif') || file.name.endsWith('.tiff')) {
+        tiffFile = file;
+      } else if (file.name.endsWith('.tfw') || file.name.endsWith('.wld')) {
+        worldFile = file;
+      }
+    }
+
+    if (!tiffFile) {
+      // alert('GeoTIFFファイル（.tif）をドラッグ＆ドロップしてください。');
+      return;
+    }
+    if (!worldFile) {
+      // alert('対応するワールドファイル（.tfw）も必要です。');
+      return;
+    }
+
+    // ワールドファイルを読み込む
+    const worldFileText = await worldFile.text();
+    const [pixelSizeX, rotationX, rotationY, pixelSizeY, originX, originY] = worldFileText.split('\n').map(Number);
+
+    // GeoTIFF.jsを使用してTIFFファイルを読み込む
+    const arrayBuffer = await tiffFile.arrayBuffer();
+    const tiff = await window.GeoTIFF.fromArrayBuffer(arrayBuffer);
+    const image = await tiff.getImage();
+
+    const width = image.getWidth();
+    const height = image.getHeight();
+    const rasters = await image.readRasters({ samples: [0, 1, 2] }); // RGBバンドを指定
+
+    // Canvasにカラー画像を描画
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.createImageData(width, height);
+
+    for (let i = 0; i < width * height; i++) {
+      imageData.data[i * 4] = rasters[0][i];     // 赤バンド
+      imageData.data[i * 4 + 1] = rasters[1][i]; // 緑バンド
+      imageData.data[i * 4 + 2] = rasters[2][i]; // 青バンド
+      imageData.data[i * 4 + 3] = 255;           // アルファ値（不透明）
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+
+    // 平面直角座標系の範囲を緯度経度に変換
+    let bounds = [
+      [originX, originY], // 左上
+      [originX + pixelSizeX * width, originY], // 右上
+      [originX + pixelSizeX * width, originY + pixelSizeY * height], // 右下
+      [originX, originY + pixelSizeY * height] // 左下
+    ].map(coord => proj4(code, 'EPSG:4326', coord));
+
+    const geotiffSource = {
+      id:'geotiff-source-' + files[0].name,obj:{
+        type: 'image',
+        url: canvas.toDataURL(),
+        coordinates: bounds
+      }
+    }
+
+    const geotiffLayer= {
+      id: 'oh-geotiff-layer-' + files[0].name,
+      type: 'raster',
+      source: 'geotiff-source-' + files[0].name,
+      paint: {}
+    }
+    store.state.selectedLayers[mapName].unshift(
+        {
+          id: 'oh-geotiff-layer-' + files[0].name,
+          label: files[0].name.split('.')[0],
+          source: geotiffSource,
+          layers: [geotiffLayer],
+          opacity: 1,
+          visibility: true,
+        }
+    )
+
+    // 地図の範囲を設定
+    const flyToBounds = [
+      [bounds[0][0], bounds[0][1]], // 左上
+      [bounds[2][0], bounds[2][1]]  // 右下
+    ];
+
+    map.fitBounds(flyToBounds, { padding: 20 });
+}

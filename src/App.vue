@@ -16,6 +16,38 @@
         </template>
       </v-snackbar>
 
+      <v-dialog v-model="s_dialogForGeotiffApp" max-width="500px">
+        <v-card>
+          <v-card-title>
+            座標系選択
+          </v-card-title>
+          <v-card-text>
+            <div v-if="s_isAndroid" class="select-container">
+              <select id="selectBox" v-model="s_zahyokei" class="custom-select">
+                <option value="" disabled selected>座標を選択してください。</option>
+                <option v-for="number in 19" :key="number" :value="`公共座標${number}系`">
+                  公共座標{{ number }}系
+                </option>
+              </select>
+            </div>
+            <div v-else>
+              <v-select class="scrollable-content"
+                        v-model="s_zahyokei"
+                        :items="items"
+                        label="選択してください"
+                        outlined
+              ></v-select>
+            </div>
+            <v-btn @click="geoTiffLoad">geotiff読込開始</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="s_dialogForGeotiffApp = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+
       <v-dialog v-model="s_dialogForSimaApp" max-width="500px">
         <v-card>
           <v-card-title>
@@ -122,6 +154,7 @@ import { CompassControl } from 'maplibre-gl-compass'
 import {
   ddSimaUpload,
   downloadSimaText,
+  geoTiffLoad,
   handleFileUpload,
   highlightSpecificFeatures,
   highlightSpecificFeaturesCity,
@@ -316,6 +349,14 @@ export default {
         this.$store.state.simaOpacity = value
       }
     },
+    s_dialogForGeotiffApp: {
+      get() {
+        return this.$store.state.dialogForGeotiffApp
+      },
+      set(value) {
+        this.$store.state.dialogForGeotiffApp = value
+      }
+    },
     s_dialogForSimaApp: {
       get() {
         return this.$store.state.dialogForSimaApp
@@ -361,6 +402,13 @@ export default {
     },
   },
   methods: {
+    geoTiffLoad () {
+      const map01 = this.$store.state.map01
+      const map02 = this.$store.state.map02
+      geoTiffLoad (map01,'map01')
+      geoTiffLoad (map02,'map02')
+      this.s_dialogForGeotiffApp = false
+    },
     simaOpacityInput () {
       const map1 = this.$store.state.map01
       const map2 = this.$store.state.map02
@@ -1641,101 +1689,101 @@ export default {
           dropzone.addEventListener('drop', async (event) => {
             event.preventDefault();
             this.$store.state.tiffAndWorldFile = Array.from(event.dataTransfer.files);
+            this.s_dialogForGeotiffApp = true
 
 
-
-            const files = Array.from(event.dataTransfer.files);
-            let tiffFile = null;
-            let worldFile = null;
-
-            // ファイルをペアリング
-            for (const file of files) {
-              if (file.name.endsWith('.tif') || file.name.endsWith('.tiff')) {
-                tiffFile = file;
-              } else if (file.name.endsWith('.tfw') || file.name.endsWith('.wld')) {
-                worldFile = file;
-              }
-            }
-
-            if (!tiffFile) {
-              // alert('GeoTIFFファイル（.tif）をドラッグ＆ドロップしてください。');
-              return;
-            }
-            if (!worldFile) {
-              // alert('対応するワールドファイル（.tfw）も必要です。');
-              return;
-            }
-
-            // ワールドファイルを読み込む
-            const worldFileText = await worldFile.text();
-            const [pixelSizeX, rotationX, rotationY, pixelSizeY, originX, originY] = worldFileText.split('\n').map(Number);
-
-            // GeoTIFF.jsを使用してTIFFファイルを読み込む
-            const arrayBuffer = await tiffFile.arrayBuffer();
-            const tiff = await window.GeoTIFF.fromArrayBuffer(arrayBuffer);
-            const image = await tiff.getImage();
-
-            const width = image.getWidth();
-            const height = image.getHeight();
-            const rasters = await image.readRasters({ samples: [0, 1, 2] }); // RGBバンドを指定
-
-            // Canvasにカラー画像を描画
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            const imageData = ctx.createImageData(width, height);
-
-            for (let i = 0; i < width * height; i++) {
-              imageData.data[i * 4] = rasters[0][i];     // 赤バンド
-              imageData.data[i * 4 + 1] = rasters[1][i]; // 緑バンド
-              imageData.data[i * 4 + 2] = rasters[2][i]; // 青バンド
-              imageData.data[i * 4 + 3] = 255;           // アルファ値（不透明）
-            }
-
-            ctx.putImageData(imageData, 0, 0);
-
-            // 平面直角座標系の範囲を緯度経度に変換
-            let bounds = [
-              [originX, originY], // 左上
-              [originX + pixelSizeX * width, originY], // 右上
-              [originX + pixelSizeX * width, originY + pixelSizeY * height], // 右下
-              [originX, originY + pixelSizeY * height] // 左下
-            ].map(coord => proj4('EPSG:2450', 'EPSG:4326', coord));
-
-            const geotiffSource = {
-              id:'geotiff-source-' + files[0].name,obj:{
-                type: 'image',
-                url: canvas.toDataURL(),
-                coordinates: bounds
-              }
-            }
-
-            const geotiffLayer= {
-              id: 'oh-geotiff-layer-' + files[0].name,
-              type: 'raster',
-              source: 'geotiff-source-' + files[0].name,
-              paint: {}
-            }
-
-            this.s_selectedLayers[mapName].unshift(
-                {
-                  id: 'oh-geotiff-layer-' + files[0].name,
-                  label: files[0].name.split('.')[0],
-                  source: geotiffSource,
-                  layers: [geotiffLayer],
-                  opacity: 1,
-                  visibility: true,
-                }
-            )
-
-            // 地図の範囲を設定
-            const flyToBounds = [
-              [bounds[0][0], bounds[0][1]], // 左上
-              [bounds[2][0], bounds[2][1]]  // 右下
-            ];
-
-            map.fitBounds(flyToBounds, { padding: 20 });
+            // const files = Array.from(event.dataTransfer.files);
+            // let tiffFile = null;
+            // let worldFile = null;
+            //
+            // // ファイルをペアリング
+            // for (const file of files) {
+            //   if (file.name.endsWith('.tif') || file.name.endsWith('.tiff')) {
+            //     tiffFile = file;
+            //   } else if (file.name.endsWith('.tfw') || file.name.endsWith('.wld')) {
+            //     worldFile = file;
+            //   }
+            // }
+            //
+            // if (!tiffFile) {
+            //   // alert('GeoTIFFファイル（.tif）をドラッグ＆ドロップしてください。');
+            //   return;
+            // }
+            // if (!worldFile) {
+            //   // alert('対応するワールドファイル（.tfw）も必要です。');
+            //   return;
+            // }
+            //
+            // // ワールドファイルを読み込む
+            // const worldFileText = await worldFile.text();
+            // const [pixelSizeX, rotationX, rotationY, pixelSizeY, originX, originY] = worldFileText.split('\n').map(Number);
+            //
+            // // GeoTIFF.jsを使用してTIFFファイルを読み込む
+            // const arrayBuffer = await tiffFile.arrayBuffer();
+            // const tiff = await window.GeoTIFF.fromArrayBuffer(arrayBuffer);
+            // const image = await tiff.getImage();
+            //
+            // const width = image.getWidth();
+            // const height = image.getHeight();
+            // const rasters = await image.readRasters({ samples: [0, 1, 2] }); // RGBバンドを指定
+            //
+            // // Canvasにカラー画像を描画
+            // const canvas = document.createElement('canvas');
+            // canvas.width = width;
+            // canvas.height = height;
+            // const ctx = canvas.getContext('2d');
+            // const imageData = ctx.createImageData(width, height);
+            //
+            // for (let i = 0; i < width * height; i++) {
+            //   imageData.data[i * 4] = rasters[0][i];     // 赤バンド
+            //   imageData.data[i * 4 + 1] = rasters[1][i]; // 緑バンド
+            //   imageData.data[i * 4 + 2] = rasters[2][i]; // 青バンド
+            //   imageData.data[i * 4 + 3] = 255;           // アルファ値（不透明）
+            // }
+            //
+            // ctx.putImageData(imageData, 0, 0);
+            //
+            // // 平面直角座標系の範囲を緯度経度に変換
+            // let bounds = [
+            //   [originX, originY], // 左上
+            //   [originX + pixelSizeX * width, originY], // 右上
+            //   [originX + pixelSizeX * width, originY + pixelSizeY * height], // 右下
+            //   [originX, originY + pixelSizeY * height] // 左下
+            // ].map(coord => proj4('EPSG:2450', 'EPSG:4326', coord));
+            //
+            // const geotiffSource = {
+            //   id:'geotiff-source-' + files[0].name,obj:{
+            //     type: 'image',
+            //     url: canvas.toDataURL(),
+            //     coordinates: bounds
+            //   }
+            // }
+            //
+            // const geotiffLayer= {
+            //   id: 'oh-geotiff-layer-' + files[0].name,
+            //   type: 'raster',
+            //   source: 'geotiff-source-' + files[0].name,
+            //   paint: {}
+            // }
+            //
+            // this.s_selectedLayers[mapName].unshift(
+            //     {
+            //       id: 'oh-geotiff-layer-' + files[0].name,
+            //       label: files[0].name.split('.')[0],
+            //       source: geotiffSource,
+            //       layers: [geotiffLayer],
+            //       opacity: 1,
+            //       visibility: true,
+            //     }
+            // )
+            //
+            // // 地図の範囲を設定
+            // const flyToBounds = [
+            //   [bounds[0][0], bounds[0][1]], // 左上
+            //   [bounds[2][0], bounds[2][1]]  // 右下
+            // ];
+            //
+            // map.fitBounds(flyToBounds, { padding: 20 });
           });
 
           // ドロップ時の処理 SIMA----------------------------------------------------------------------------------------
