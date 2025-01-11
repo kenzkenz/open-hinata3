@@ -1655,12 +1655,12 @@ export default {
             }
 
             if (!tiffFile) {
-              alert('GeoTIFFファイル（.tif）をドラッグ＆ドロップしてください。');
+              // alert('GeoTIFFファイル（.tif）をドラッグ＆ドロップしてください。');
               return;
             }
 
             if (!worldFile) {
-              alert('対応するワールドファイル（.tfw）も必要です。');
+              // alert('対応するワールドファイル（.tfw）も必要です。');
               return;
             }
 
@@ -1699,22 +1699,55 @@ export default {
               [originX + pixelSizeX * width, originY], // 右上
               [originX + pixelSizeX * width, originY + pixelSizeY * height], // 右下
               [originX, originY + pixelSizeY * height] // 左下
-            ].map(coord => proj4('EPSG:2448', 'EPSG:4326', coord));
+            ].map(coord => proj4('EPSG:2450', 'EPSG:4326', coord));
 
             console.log('Converted Bounds:', bounds);
 
-            map.addSource('geotiff', {
-              type: 'image',
-              url: canvas.toDataURL(),
-              coordinates: bounds
-            });
+            // map.addSource('geotiff', {
+            //   type: 'image',
+            //   url: canvas.toDataURL(),
+            //   coordinates: bounds
+            // });
+            //
+            // map.addLayer({
+            //   id: 'oh-geotiff-layer',
+            //   type: 'raster',
+            //   source: 'geotiff',
+            //   paint: {}
+            // });
 
-            map.addLayer({
-              id: 'geotiff-layer',
+            const geotiffSource = {
+              id:'geotiff-source-' + files[0].name,obj:{
+                type: 'image',
+                url: canvas.toDataURL(),
+                coordinates: bounds
+              }
+            }
+
+            const geotiffLayer= {
+              id: 'oh-geotiff-layer-' + files[0].name,
               type: 'raster',
-              source: 'geotiff',
+              source: 'geotiff-source-' + files[0].name,
               paint: {}
-            });
+            }
+
+            this.s_selectedLayers[mapName].unshift(
+                {
+                  id: 'oh-geotiff-layer-' + files[0].name,
+                  label: files[0].name.split('.')[0],
+                  source: geotiffSource,
+                  layers: [geotiffLayer],
+                  opacity: 1,
+                  visibility: true,
+                }
+            )
+
+
+
+
+
+
+
 
             // 地図の範囲を設定
             const flyToBounds = [
