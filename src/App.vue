@@ -1749,8 +1749,19 @@ export default {
           // geotiff---------------------------------------------------------------------------------------------
           dropzone.addEventListener('drop', async (event) => {
             event.preventDefault();
-            this.$store.state.tiffAndWorldFile = Array.from(event.dataTransfer.files);
-            this.s_dialogForGeotiffApp = true
+            const files = event.dataTransfer.files;
+            console.log(files)
+            if (files.length > 0) {
+              const file = files[0];
+              const fileName = file.name;
+              const fileExtension = fileName.split('.').pop().toLowerCase();
+              if (fileExtension === 'tiff' || fileExtension === 'tif' || fileExtension === 'tfw') {
+                this.$store.state.tiffAndWorldFile = Array.from(event.dataTransfer.files);
+                this.s_dialogForGeotiffApp = true
+              }
+            }
+
+
 
 
             // const files = Array.from(event.dataTransfer.files);
@@ -2189,45 +2200,45 @@ export default {
 
           if (this.$store.state.uploadedImage) {
 
-            async function fetchFile(url) {
-              try {
-                // Fetchリクエストでファイルを取得
-                const response = await fetch(url);
-                // レスポンスが成功したか確認
-                if (!response.ok) {
-                  throw new Error(`HTTPエラー! ステータス: ${response.status}`);
-                }
-                // Blobとしてレスポンスを取得
-                const blob = await response.blob();
-                // BlobをFileオブジェクトに変換
-                const file = new File([blob], "downloaded_file" + mapName, { type: blob.type });
-                console.log("Fileオブジェクトが作成されました:", file);
-                return file;
-              } catch (error) {
-                console.error("ファイルの取得中にエラーが発生しました:", error);
-              }
-            }
-
-            const imageUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).image
-            const worldFileUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).worldFile
-            console.log(imageUrl)
-            console.log(worldFileUrl)
-            // console.log(fetchFile(imageUrl))
-            Promise.all([fetchFile(imageUrl), fetchFile(worldFileUrl)]).then(files => {
-              if (files.every(file => file)) {
-                console.log("両方のファイルが取得されました:", files);
-                const image = files[0]
-                console.log(image)
-                const worldFile = files[1]
-                const code = JSON.parse(this.$store.state.uploadedImage).code
-                // alert(8888)
-                addImageLayer(map, mapName, image, worldFile, code, false)
-              } else {
-                console.warn("一部のファイルが取得できませんでした。");
-              }
-            }).catch(error => {
-              console.error("Promise.allでエラーが発生しました:", error);
-            });
+            // async function fetchFile(url) {
+            //   try {
+            //     // Fetchリクエストでファイルを取得
+            //     const response = await fetch(url);
+            //     // レスポンスが成功したか確認
+            //     if (!response.ok) {
+            //       throw new Error(`HTTPエラー! ステータス: ${response.status}`);
+            //     }
+            //     // Blobとしてレスポンスを取得
+            //     const blob = await response.blob();
+            //     // BlobをFileオブジェクトに変換
+            //     const file = new File([blob], "downloaded_file" + mapName, { type: blob.type });
+            //     console.log("Fileオブジェクトが作成されました:", file);
+            //     return file;
+            //   } catch (error) {
+            //     console.error("ファイルの取得中にエラーが発生しました:", error);
+            //   }
+            // }
+            //
+            // const imageUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).image
+            // const worldFileUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).worldFile
+            // console.log(imageUrl)
+            // console.log(worldFileUrl)
+            // // console.log(fetchFile(imageUrl))
+            // Promise.all([fetchFile(imageUrl), fetchFile(worldFileUrl)]).then(files => {
+            //   if (files.every(file => file)) {
+            //     console.log("両方のファイルが取得されました:", files);
+            //     const image = files[0]
+            //     console.log(image)
+            //     const worldFile = files[1]
+            //     const code = JSON.parse(this.$store.state.uploadedImage).code
+            //     // alert(8888)
+            //     addImageLayer(map, mapName, image, worldFile, code, false)
+            //   } else {
+            //     console.warn("一部のファイルが取得できませんでした。");
+            //   }
+            // }).catch(error => {
+            //   console.error("Promise.allでエラーが発生しました:", error);
+            // });
           }
         })
         // on loadここまで-------------------------------------------------------------

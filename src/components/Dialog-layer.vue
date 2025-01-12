@@ -48,7 +48,7 @@
 </template>
 
 <script>
-import {simaToGeoJSON} from "@/js/downLoad";
+import {addImageLayer, simaToGeoJSON} from "@/js/downLoad";
 
 let infoCount = 0
 import * as Layers from '@/js/layers'
@@ -346,7 +346,6 @@ export default {
       if (layers) {
         for (let i = layers.length - 1; i >= 0; i--) {
           const layerId = layers[i].id
-          // console.log(layers[i].id)
           if (layerId.slice(0,2) === 'oh' ) {
             map.removeLayer(layerId)
           }
@@ -387,7 +386,7 @@ export default {
             } else {
               if (!map.getLayer(layer0.id)) {
                 map.addLayer(layer0)
-                // console.log(layer0)
+                // console.log(layer0.id)
                 if (layer0.position) {
                   console.log(Array.from(layer0.position))
 
@@ -495,15 +494,61 @@ export default {
           this.$store.state.simaFire = !this.$store.state.simaFire
         }
         // ------------------------------------------------------------------
+      }
+
+      if (this.counter === 1) {
         if (this.$store.state.uploadedImage) {
-          // alert(this.$store.state.uploadedImage)
+          if (map.getLayer('oh-geotiff-layer')) {
+            map.removeLayer('oh-geotiff-layer')
+          }
+          async function fetchFile(url) {
+            try {
+              // Fetchリクエストでファイルを取得
+              const response = await fetch(url);
+              // レスポンスが成功したか確認
+              if (!response.ok) {
+                throw new Error(`HTTPエラー! ステータス: ${response.status}`);
+              }
+              // Blobとしてレスポンスを取得
+              const blob = await response.blob();
+              // BlobをFileオブジェクトに変換
+              const file = new File([blob], "downloaded_file", { type: blob.type });
+              console.log("Fileオブジェクトが作成されました:", file);
+              return file;
+            } catch (error) {
+              console.error("ファイルの取得中にエラーが発生しました:", error);
+            }
+          }
 
+          const imageUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).image
+          const worldFileUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).worldFile
+          console.log(imageUrl)
+          console.log(worldFileUrl)
+          // console.log(fetchFile(imageUrl))
 
+          Promise.all([fetchFile(imageUrl), fetchFile(worldFileUrl)]).then(files => {
+            if (files.every(file => file)) {
+              console.log("両方のファイルが取得されました:", files);
+              const image = files[0]
+              console.log(image)
+              const worldFile = files[1]
+              const code = JSON.parse(this.$store.state.uploadedImage).code
+              // alert(0)
 
+              addImageLayer(image, worldFile, code, false)
+
+              // addImageLayer(this.$store.state.map02, 'map02', image, worldFile, code, false)
+            } else {
+              console.warn("一部のファイルが取得できませんでした。");
+            }
+          }).catch(error => {
+            console.error("Promise.allでエラーが発生しました:", error);
+          });
 
 
         }
       }
+      // alert(1)
       this.counter++
     },
     mw5AddLayers(map,mapName) {

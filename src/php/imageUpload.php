@@ -7,7 +7,7 @@ function uploadFile($file, $dir, $baseName = null)
     $file_tmp = $file["tmp_name"];
     $original_name = $file["name"];
     $file_size = $file["size"]; // ファイルサイズを取得
-    $max_size = 10 * 1024 * 1024; // 10MB
+    $max_size = 20 * 1024 * 2024; // 10MB
 
     // ファイルサイズが10MBを超えている場合、エラーを返す
     if ($file_size > $max_size) {

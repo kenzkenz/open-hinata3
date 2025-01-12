@@ -2502,7 +2502,11 @@ export function downloadSimaText () {
     URL.revokeObjectURL(link.href);
 }
 
-export async function addImageLayer (map,mapName,tiffFile,worldFile,code,isFirst) {
+
+export async function addImageLayer (tiffFile,worldFile,code,isFirst) {
+
+    const map = store.state.map01
+    const map2 = store.state.map02
     // ワールドファイルを読み込む
     const worldFileText = await worldFile.text();
     const [pixelSizeX, rotationX, rotationY, pixelSizeY, originX, originY] = worldFileText.split('\n').map(Number);
@@ -2540,26 +2544,42 @@ export async function addImageLayer (map,mapName,tiffFile,worldFile,code,isFirst
         [originX, originY + pixelSizeY * height] // 左下
     ].map(coord => proj4(code, 'EPSG:4326', coord));
 
+    store.state.selectedLayers['map01'] = store.state.selectedLayers['map01'].filter(v => v.id !== 'oh-geotiff-layer')
+    store.state.selectedLayers['map02'] = store.state.selectedLayers['map02'].filter(v => v.id !== 'oh-geotiff-layer')
     geotiffSource.obj.url = canvas.toDataURL()
     geotiffSource.obj.coordinates = bounds
 
-    store.state.selectedLayers['map01'] = store.state.selectedLayers['map01'].filter(v => v.id !== 'oh-geotiff-layer')
-    store.state.selectedLayers['map02'] = store.state.selectedLayers['map02'].filter(v => v.id !== 'oh-geotiff-layer')
+    if (map.getLayer('oh-geotiff-layer')) {
+        map.removeLayer('oh-geotiff-layer')
+        map2.removeLayer('oh-geotiff-layer')
+    }
+    if (map.getSource('geotiff-source')) {
+        map.removeSource('geotiff-source')
+        map2.removeSource('geotiff-source')
+    }
+    store.state.selectedLayers['map01'].unshift(
+        {
+            id: 'oh-geotiff-layer',
+            label: 'geotiff',
+            source: geotiffSource,
+            layers: [geotiffLayer],
+            opacity: 1,
+            visibility: true,
+        }
+    )
 
-    console.log(store.state.selectedLayers[mapName])
+    store.state.selectedLayers['map02'].unshift(
+        {
+            id: 'oh-geotiff-layer',
+            label: 'geotiff',
+            source: geotiffSource,
+            layers: [geotiffLayer],
+            opacity: 1,
+            visibility: true,
+        }
+    )
 
-    setTimeout(function() {
-        store.state.selectedLayers[mapName].unshift(
-            {
-                id: 'oh-geotiff-layer',
-                label: 'geotiff',
-                source: geotiffSource,
-                layers: [geotiffLayer],
-                opacity: 1,
-                visibility: true,
-            }
-        )
-    },1000)
+    const currentZoom = map.getZoom();
 
     // 地図の範囲を設定
     if (isFirst) {
@@ -2567,8 +2587,12 @@ export async function addImageLayer (map,mapName,tiffFile,worldFile,code,isFirst
             [bounds[0][0], bounds[0][1]], // 左上
             [bounds[2][0], bounds[2][1]]  // 右下
         ];
-
-        map.fitBounds(flyToBounds, { padding: 20 });
+        map.fitBounds(flyToBounds, {padding: 20});
+    } else {
+        setTimeout(function() {
+            store.state.map01.zoomTo(currentZoom + 0.01, {duration: 500})
+            store.state.map02.zoomTo(currentZoom + 0.01, {duration: 500})
+        },0)
     }
 }
 
@@ -2597,7 +2621,7 @@ export async function geoTiffLoad (map,mapName,isUpload) {
       return;
     }
 
-    await addImageLayer(map, mapName, tiffFile, worldFile, code, true)
+    await addImageLayer(tiffFile, worldFile, code, true)
 
     // ----------------------------------------------------------------------------------------------------------------
     if (isUpload) {
@@ -2613,7 +2637,7 @@ export async function geoTiffLoad (map,mapName,isUpload) {
             .then(response => {
                 // 成功時の処理
                 if (response.data.error) {
-                    alert('10mbを超えていますので保存できませんでした。')
+                    alert('20mbを超えていますので保存できませんでした。')
                     return
                 }
                 console.log('成功:', response.data.file1);
