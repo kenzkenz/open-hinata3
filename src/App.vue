@@ -16,6 +16,39 @@
         </template>
       </v-snackbar>
 
+
+      <v-dialog v-model="s_dialogForPngApp" max-width="500px">
+        <v-card>
+          <v-card-title>
+            座標系選択
+          </v-card-title>
+          <v-card-text>
+            <div v-if="s_isAndroid" class="select-container">
+              <select id="selectBox" v-model="s_zahyokei" class="custom-select">
+                <option value="" disabled selected>座標を選択してください。</option>
+                <option v-for="number in 19" :key="number" :value="`公共座標${number}系`">
+                  公共座標{{ number }}系
+                </option>
+              </select>
+            </div>
+            <div v-else>
+              <v-select class="scrollable-content"
+                        v-model="s_zahyokei"
+                        :items="items"
+                        label="選択してください"
+                        outlined
+              ></v-select>
+            </div>
+            <p style="margin-bottom: 20px;">PNGとワールドファイル(pgw)をダウンロードします。</p>
+            <v-btn @click="pngDownload">PNGダウンロード開始</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="s_dialogForPngApp = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
       <v-dialog v-model="s_dialogForGeotiffApp" max-width="500px">
         <v-card>
           <v-card-title>
@@ -152,12 +185,14 @@
 import {mouseMoveForPopup, popup} from "@/js/popup";
 import { CompassControl } from 'maplibre-gl-compass'
 import {
+  addImageLayer,
   ddSimaUpload,
   downloadSimaText,
   geoTiffLoad,
   handleFileUpload,
   highlightSpecificFeatures,
   highlightSpecificFeaturesCity,
+  pngDownload,
   simaToGeoJSON
 } from '@/js/downLoad'
 import proj4 from 'proj4'
@@ -349,6 +384,14 @@ export default {
         this.$store.state.simaOpacity = value
       }
     },
+    s_dialogForPngApp: {
+      get() {
+        return this.$store.state.dialogForPngApp
+      },
+      set(value) {
+        this.$store.state.dialogForPngApp = value
+      }
+    },
     s_dialogForGeotiffApp: {
       get() {
         return this.$store.state.dialogForGeotiffApp
@@ -402,11 +445,16 @@ export default {
     },
   },
   methods: {
+    pngDownload () {
+      const map01 = this.$store.state.map01
+      pngDownload(map01)
+      this.$store.state.dialogForPngApp = false
+    },
     geoTiffLoad () {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
-      geoTiffLoad (map01,'map01')
-      geoTiffLoad (map02,'map02')
+      geoTiffLoad (map01,'map01', true)
+      geoTiffLoad (map02,'map02', false)
       this.s_dialogForGeotiffApp = false
     },
     simaOpacityInput () {
@@ -794,11 +842,13 @@ export default {
       })
       // console.log(chibans)
       const simaText = this.$store.state.simaText
-      // console.log(simaText)
-      // alert(simaText)
+      const image = this.$store.state.uploadedImage
+      console.log(image)
+
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
-      ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}&slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}`
+      ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}
+      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}`
       // console.log(this.param)
       // this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
@@ -862,12 +912,13 @@ export default {
       const slj = JSON.parse(params.get('slj'))
       const chibans = params.get('chibans')
       const simaText = params.get('simatext')
+      const image = params.get('image')
       // alert('a' + simaText)
       this.pitch.map01 = pitch01
       this.pitch.map02 = pitch02
       this.bearing = bearing
       this.s_terrainLevel = terrainLevel
-      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText}// 以前のリンクをいかすためpitchを入れている。
+      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image}// 以前のリンクをいかすためpitchを入れている。
     },
     init() {
 
@@ -1235,6 +1286,13 @@ export default {
           // }
           // ----------------------------------------------------------------
 
+          if (params.image) {
+            console.log(params.image)
+            this.$store.state.uploadedImage = JSON.parse(params.image)
+            console.log(this.$store.state.uploadedImage)
+            // alert('1293' + this.$store.state.uploadedImage)
+          }
+
           if (params.simaText) {
             this.$store.state.simaText = params.simaText
           }
@@ -1285,7 +1343,6 @@ export default {
               if (map.getLayer('oh-chibanzu-福山市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-福山市');
             },100)
           }
-
           if (params.slj) {
             const mapNames = ['map01', 'map02']
             mapNames.forEach(mapName => {
@@ -1355,8 +1412,12 @@ export default {
                 }
             )
           }
-          // console.log(params.slj)
-          if (params.slj) this.s_selectedLayers = params.slj
+
+          // alert(params.slj)
+          if (params.slj) {
+            this.s_selectedLayers = params.slj
+          }
+
           this.s_selectedLayers.map01 = this.s_selectedLayers.map01.filter(layer => layer.id !== 'oh-konzyaku-layer')
 
 
@@ -2121,7 +2182,55 @@ export default {
               highlightSpecificFeaturesCity(map,'oh-fukuokashichiban');
             }
           });
+
+          // alert('2217' + this.$store.state.uploadedImage)
+
+          console.log(this.$store.state.uploadedImage)
+
+          if (this.$store.state.uploadedImage) {
+
+            async function fetchFile(url) {
+              try {
+                // Fetchリクエストでファイルを取得
+                const response = await fetch(url);
+                // レスポンスが成功したか確認
+                if (!response.ok) {
+                  throw new Error(`HTTPエラー! ステータス: ${response.status}`);
+                }
+                // Blobとしてレスポンスを取得
+                const blob = await response.blob();
+                // BlobをFileオブジェクトに変換
+                const file = new File([blob], "downloaded_file" + mapName, { type: blob.type });
+                console.log("Fileオブジェクトが作成されました:", file);
+                return file;
+              } catch (error) {
+                console.error("ファイルの取得中にエラーが発生しました:", error);
+              }
+            }
+
+            const imageUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).image
+            const worldFileUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).worldFile
+            console.log(imageUrl)
+            console.log(worldFileUrl)
+            // console.log(fetchFile(imageUrl))
+            Promise.all([fetchFile(imageUrl), fetchFile(worldFileUrl)]).then(files => {
+              if (files.every(file => file)) {
+                console.log("両方のファイルが取得されました:", files);
+                const image = files[0]
+                console.log(image)
+                const worldFile = files[1]
+                const code = JSON.parse(this.$store.state.uploadedImage).code
+                // alert(8888)
+                addImageLayer(map, mapName, image, worldFile, code, false)
+              } else {
+                console.warn("一部のファイルが取得できませんでした。");
+              }
+            }).catch(error => {
+              console.error("Promise.allでエラーが発生しました:", error);
+            });
+          }
         })
+        // on loadここまで-------------------------------------------------------------
         const layers = ['oh-chibanzu-室蘭市', 'oh-chibanzu-ニセコ町', 'oh-chibanzu-音更町',
           'oh-chibanzu-鹿角市', 'oh-chibanzu-舟形町', 'oh-chibanzu-利根町','oh-chibanzu-小平市',
           'oh-chibanzu-町田市','oh-chibanzu-静岡市','oh-chibanzu-磐田市','oh-chibanzu-半田市',
@@ -2151,6 +2260,10 @@ export default {
           visible: false // ボタンを非表示にする
         })
         map.addControl(this.compass)
+
+
+
+
         //on load終了----------------------------------------------------------------------------------------------------
       })
     }

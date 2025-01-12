@@ -4,6 +4,8 @@ import * as turf from '@turf/turf'
 import maplibregl from 'maplibre-gl'
 import proj4 from 'proj4'
 import vuetify from "@/plugins/vuetify";
+import axios from "axios";
+import {geotiffSource,geotiffLayer} from "@/js/layers";
 // 複数のクリックされた地番を強調表示するためのセット
 // export let highlightedChibans = new Set();
 (function() {
@@ -901,7 +903,7 @@ export function saveCsv(map, layerId, sourceId, fields) {
 
 export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
     if (!simaData) return;
-    console.log(simaData);
+    // console.log(simaData);
     const lines = simaData.split('\n');
     let coordinates = {}; // 座標データを格納
     let coordinatesUsedInPolygons = new Set(); // 区画データで使用された座標IDを追跡
@@ -1001,7 +1003,7 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
         type: 'FeatureCollection',
         features: features
     };
-    console.log(JSON.stringify(geoJSON, null, 2));
+    // console.log(JSON.stringify(geoJSON, null, 2));
 
     if (map) {
         if (map.getSource('sima-data')) {
@@ -2500,31 +2502,7 @@ export function downloadSimaText () {
     URL.revokeObjectURL(link.href);
 }
 
-export async function geoTiffLoad (map,mapName) {
-    console.log(map)
-    const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
-    const files = store.state.tiffAndWorldFile
-    let tiffFile = null;
-    let worldFile = null;
-
-    // ファイルをペアリング
-    for (const file of files) {
-      if (file.name.endsWith('.tif') || file.name.endsWith('.tiff')) {
-        tiffFile = file;
-      } else if (file.name.endsWith('.tfw') || file.name.endsWith('.wld')) {
-        worldFile = file;
-      }
-    }
-
-    if (!tiffFile) {
-      // alert('GeoTIFFファイル（.tif）をドラッグ＆ドロップしてください。');
-      return;
-    }
-    if (!worldFile) {
-      // alert('対応するワールドファイル（.tfw）も必要です。');
-      return;
-    }
-
+export async function addImageLayer (map,mapName,tiffFile,worldFile,code,isFirst) {
     // ワールドファイルを読み込む
     const worldFileText = await worldFile.text();
     const [pixelSizeX, rotationX, rotationY, pixelSizeY, originX, originY] = worldFileText.split('\n').map(Number);
@@ -2546,58 +2524,117 @@ export async function geoTiffLoad (map,mapName) {
     const imageData = ctx.createImageData(width, height);
 
     for (let i = 0; i < width * height; i++) {
-      imageData.data[i * 4] = rasters[0][i];     // 赤バンド
-      imageData.data[i * 4 + 1] = rasters[1][i]; // 緑バンド
-      imageData.data[i * 4 + 2] = rasters[2][i]; // 青バンド
-      imageData.data[i * 4 + 3] = 255;           // アルファ値（不透明）
+        imageData.data[i * 4] = rasters[0][i];     // 赤バンド
+        imageData.data[i * 4 + 1] = rasters[1][i]; // 緑バンド
+        imageData.data[i * 4 + 2] = rasters[2][i]; // 青バンド
+        imageData.data[i * 4 + 3] = 255;           // アルファ値（不透明）
     }
 
     ctx.putImageData(imageData, 0, 0);
 
     // 平面直角座標系の範囲を緯度経度に変換
     let bounds = [
-      [originX, originY], // 左上
-      [originX + pixelSizeX * width, originY], // 右上
-      [originX + pixelSizeX * width, originY + pixelSizeY * height], // 右下
-      [originX, originY + pixelSizeY * height] // 左下
+        [originX, originY], // 左上
+        [originX + pixelSizeX * width, originY], // 右上
+        [originX + pixelSizeX * width, originY + pixelSizeY * height], // 右下
+        [originX, originY + pixelSizeY * height] // 左下
     ].map(coord => proj4(code, 'EPSG:4326', coord));
 
-    const geotiffSource = {
-      id:'geotiff-source-' + files[0].name,obj:{
-        type: 'image',
-        url: canvas.toDataURL(),
-        coordinates: bounds
+    geotiffSource.obj.url = canvas.toDataURL()
+    geotiffSource.obj.coordinates = bounds
+
+    store.state.selectedLayers['map01'] = store.state.selectedLayers['map01'].filter(v => v.id !== 'oh-geotiff-layer')
+    store.state.selectedLayers['map02'] = store.state.selectedLayers['map02'].filter(v => v.id !== 'oh-geotiff-layer')
+
+    console.log(store.state.selectedLayers[mapName])
+
+    setTimeout(function() {
+        store.state.selectedLayers[mapName].unshift(
+            {
+                id: 'oh-geotiff-layer',
+                label: 'geotiff',
+                source: geotiffSource,
+                layers: [geotiffLayer],
+                opacity: 1,
+                visibility: true,
+            }
+        )
+    },1000)
+
+    // 地図の範囲を設定
+    if (isFirst) {
+        const flyToBounds = [
+            [bounds[0][0], bounds[0][1]], // 左上
+            [bounds[2][0], bounds[2][1]]  // 右下
+        ];
+
+        map.fitBounds(flyToBounds, { padding: 20 });
+    }
+}
+
+export async function geoTiffLoad (map,mapName,isUpload) {
+    const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
+    const files = store.state.tiffAndWorldFile
+    console.log(files)
+    let tiffFile = null;
+    let worldFile = null;
+
+    // ファイルをペアリング
+    for (const file of files) {
+      if (file.name.endsWith('.tif') || file.name.endsWith('.tiff')) {
+        tiffFile = file;
+      } else if (file.name.endsWith('.tfw') || file.name.endsWith('.wld')) {
+        worldFile = file;
       }
     }
 
-    const geotiffLayer= {
-      id: 'oh-geotiff-layer-' + files[0].name,
-      type: 'raster',
-      source: 'geotiff-source-' + files[0].name,
-      paint: {}
+    if (!tiffFile) {
+      // alert('GeoTIFFファイル（.tif）をドラッグ＆ドロップしてください。');
+      return;
     }
-    store.state.selectedLayers[mapName].unshift(
-        {
-          id: 'oh-geotiff-layer-' + files[0].name,
-          label: files[0].name.split('.')[0],
-          source: geotiffSource,
-          layers: [geotiffLayer],
-          opacity: 1,
-          visibility: true,
-        }
-    )
+    if (!worldFile) {
+      // alert('対応するワールドファイル（.tfw）も必要です。');
+      return;
+    }
 
-    // 地図の範囲を設定
-    const flyToBounds = [
-      [bounds[0][0], bounds[0][1]], // 左上
-      [bounds[2][0], bounds[2][1]]  // 右下
-    ];
+    await addImageLayer(map, mapName, tiffFile, worldFile, code, true)
 
-    map.fitBounds(flyToBounds, { padding: 20 });
+    // ----------------------------------------------------------------------------------------------------------------
+    if (isUpload) {
+        // FormDataを作成
+        const formData = new FormData();
+        formData.append('file_1', tiffFile);
+        formData.append("file_2", worldFile);
+        axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/imageUpload.php', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data', // 必須
+            },
+        })
+            .then(response => {
+                // 成功時の処理
+                if (response.data.error) {
+                    alert('10mbを超えていますので保存できませんでした。')
+                    return
+                }
+                console.log('成功:', response.data.file1);
+                console.log('成功:', response.data.file2);
+                store.state.uploadedImage = JSON.stringify({
+                    image: response.data.file1,
+                    worldFile: response.data.file2,
+                    code: code
+                })
+                console.log(store.state.uploadedImage)
+            })
+            .catch(error => {
+                // エラー時の処理
+                console.error('エラー:', error.response ? error.response.data : error.message);
+                store.state.uploadedImage = ''
+            });
+    }
 }
 
-
 export function pngDownload(map) {
+    const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
     // 地図のレンダリング完了を待機
     map.once('idle', () => {
         const canvas = map.getCanvas();
@@ -2614,8 +2651,8 @@ export function pngDownload(map) {
         const canvasHeight = canvas.height;
 
         // WGS 84 -> 平面直角座標系2系に変換
-        const topLeft = proj4('EPSG:4326', 'EPSG:2444', [bounds.getWest(), bounds.getNorth()]);
-        const bottomRight = proj4('EPSG:4326', 'EPSG:2444', [bounds.getEast(), bounds.getSouth()]);
+        const topLeft = proj4('EPSG:4326', code, [bounds.getWest(), bounds.getNorth()]);
+        const bottomRight = proj4('EPSG:4326', code, [bounds.getEast(), bounds.getSouth()]);
 
         const xMin = topLeft[0];
         const xMax = bottomRight[0];

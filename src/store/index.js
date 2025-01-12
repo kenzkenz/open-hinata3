@@ -83,11 +83,14 @@ export default createStore({
     snackbar: false,
     dialogForSimaApp: false,
     dialogForGeotiffApp: false,
+    dialogForPngApp: false,
+    dialogForApp: false,
     isMenu: false,
     isAndroid: false,
     simaOpacity: 0.7,
     simaFire: false,
     tiffAndWorldFile: null,
+    uploadedImage: '',
     //------------------------
     highwayYear:{
       map01: 2024,

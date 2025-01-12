@@ -2,6 +2,27 @@
 // "text-font": ["NotoSansJP-Regular"],
 import store from '@/store'
 import * as turf from '@turf/turf'
+
+export const geotiffSource = {
+    id:'geotiff-source',obj:{
+        type: 'image',
+        url: '',
+        coordinates: ''
+    }
+}
+
+export const geotiffLayer= {
+    id: 'oh-geotiff-layer',
+    type: 'raster',
+    source: 'geotiff-source',
+    paint: {}
+}
+
+
+
+
+
+
 // 善意の基準局 --------------------------------------------------------------------------------------------
 const zeniSource = {
     id: "zeni-source", obj: {
