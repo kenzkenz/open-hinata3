@@ -1347,6 +1347,7 @@ export default {
             const mapNames = ['map01', 'map02']
             mapNames.forEach(mapName => {
               params.slj[mapName].forEach(slj => {
+                const layerNames = []
                 let count = 0;
                 // レイヤーを探索して必要な情報を取得する関数
                 function traverseLayers(layers, slj) {
@@ -1366,6 +1367,7 @@ export default {
                             slj.attribution = node.attribution
                             slj.info = node.info
                           }
+                          layerNames.push(node.label)
                           count++
                         }
                       });
@@ -1379,6 +1381,7 @@ export default {
                         slj.attribution = layer.attribution
                         slj.info = layer.info
                       }
+                      layerNames.push(layer.label)
                       count++;
                     }
                   });
@@ -1387,6 +1390,9 @@ export default {
                 const layers = Layers.layers[mapName];
                 traverseLayers(layers, slj);
                 // 必要であれば処理結果のログを出力
+                // console.log(layerNames)
+                const uniqueLayerNames = [...new Set(layerNames)]
+                console.log(uniqueLayerNames.join('\n'));
                 console.log(`Processed ${count} layers for map: ${mapName}`);
               });
             });
