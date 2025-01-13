@@ -91,8 +91,8 @@ export default createStore({
     simaFire: false,
     tiffAndWorldFile: null,
     uploadedImage: '',
-    extLayerName: '',
-    extLayer: 'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png',
+    extLayerName: '独自レイヤー',
+    extLayer: '',
     //------------------------
     highwayYear:{
       map01: 2024,

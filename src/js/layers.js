@@ -2,6 +2,17 @@
 // "text-font": ["NotoSansJP-Regular"],
 import store from '@/store'
 import * as turf from '@turf/turf'
+export const extSource = {
+    id: 'ext-source', obj: {
+        type: 'raster',
+        tiles: [],
+    }
+}
+export const extLayer = {
+    'id': 'oh-extLayer',
+    'type': 'raster',
+    'source': 'ext-source',
+}
 
 export const geotiffSource = {
     id:'geotiff-source',obj:{
@@ -10,7 +21,6 @@ export const geotiffSource = {
         coordinates: ''
     }
 }
-
 export const geotiffLayer= {
     id: 'oh-geotiff-layer',
     type: 'raster',

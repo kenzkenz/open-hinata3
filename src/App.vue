@@ -324,7 +324,7 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import maplibregl from 'maplibre-gl'
 import { Protocol } from "pmtiles"
 import { useGsiTerrainSource } from 'maplibre-gl-gsi-terrain'
-import {monoLayers, monoSources} from "@/js/layers"
+import {extLayer, extSource, monoLayers, monoSources} from "@/js/layers"
 // import {paleLayer, paleSource} from "@/js/layers"
 import muni from '@/js/muni'
 import store from "@/store";
@@ -843,12 +843,13 @@ export default {
       // console.log(chibans)
       const simaText = this.$store.state.simaText
       const image = this.$store.state.uploadedImage
+      const extLayer = {layer:this.$store.state.extLayer,name:this.$store.state.extLayerName}
       console.log(image)
 
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
       ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}
-      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}`
+      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}`
       // console.log(this.param)
       // this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
@@ -913,12 +914,13 @@ export default {
       const chibans = params.get('chibans')
       const simaText = params.get('simatext')
       const image = params.get('image')
-      // alert('a' + simaText)
+      const extLayer = params.get('extlayer')
+      // alert('a_' + extLayer)
       this.pitch.map01 = pitch01
       this.pitch.map02 = pitch02
       this.bearing = bearing
       this.s_terrainLevel = terrainLevel
-      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image}// 以前のリンクをいかすためpitchを入れている。
+      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image,extLayer}// 以前のリンクをいかすためpitchを入れている。
     },
     init() {
 
@@ -1285,11 +1287,18 @@ export default {
           //   }
           // }
           // ----------------------------------------------------------------
+          // alert(JSON.parse(params.extLayer))
+          console.log((JSON.parse(params.extLayer)))
+
+          try {
+            this.$store.state.extLayer = JSON.parse(params.extLayer).layer
+            this.$store.state.extLayerName = JSON.parse(params.extLayer).name
+          } catch (e) {
+            console.log(e)
+          }
 
           if (params.image) {
-            console.log(params.image)
             this.$store.state.uploadedImage = JSON.parse(params.image)
-            console.log(this.$store.state.uploadedImage)
             // alert('1293' + this.$store.state.uploadedImage)
           }
 
@@ -1395,18 +1404,16 @@ export default {
                 console.log(uniqueLayerNames.join('\n'));
                 console.log(`Processed ${count} layers for map: ${mapName}`);
               });
+              const result = params.slj[mapName].find(v => v.id === 'oh-extLayer')
+              if (result) {
+                extSource.obj.tiles = [this.$store.state.extLayer]
+                result.sources = [extSource]
+                result.layers = [extLayer]
+                result.label = this.$store.state.extLayerName
+              }
             });
           } else {
             this.s_selectedLayers[mapName].unshift(
-                // {
-                //   id: 'oh-pale-layer',
-                //   label: '淡色地図',
-                //   source: paleSource,
-                //   layers: [paleLayer],
-                //   attribution: '国土地理院',
-                //   opacity: 1,
-                //   visibility: true,
-                // }
                 {
                   id: 'oh-vector-layer-mono',
                   label: '地理院ベクター・モノクロ',

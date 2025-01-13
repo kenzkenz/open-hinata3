@@ -17,7 +17,7 @@
       <div v-if="addLayerDiv">
         <v-text-field label="レイヤー名を記入" v-model="s_extLayerName" style="margin-top: 10px"></v-text-field>
         <v-text-field label="URLを記入" v-model="s_extLayer" style="margin-top: -15px"></v-text-field>
-        <v-btn style="margin-top: -15px;margin-left: 100px;" @click="addLayer">レイヤー追加</v-btn>
+        <v-btn style="margin-top: -15px;margin-left: 100px;" @click="addLayer">レイヤー追加&変更</v-btn>
       </div>
 
 <!--      <hr style="margin-top: 20px">-->
@@ -34,7 +34,7 @@
 import axios from "axios"
 import maplibregl from 'maplibre-gl'
 import {history} from "@/App";
-import {geotiffLayer, geotiffSource, konUrls} from "@/js/layers";
+import {extLayer, extSource, geotiffLayer, geotiffSource, konUrls} from "@/js/layers";
 import {pngDownload} from "@/js/downLoad";
 import store from "@/store";
 export default {
@@ -93,18 +93,7 @@ export default {
   methods: {
     addLayer () {
       const map = this.$store.state.map01
-      const extSource = {
-        id: 'ext-source', obj: {
-          type: 'raster',
-          tiles: [this.s_extLayer],
-        }
-      }
-      const extLayer = {
-        'id': 'oh-extLayer',
-        'type': 'raster',
-        'source': 'ext-source',
-      }
-
+      extSource.obj.tiles = [this.s_extLayer]
       const result = this.$store.state.selectedLayers['map01'].find(v => v.id === 'oh-extLayer')
       if (!result) {
         this.$store.state.selectedLayers['map01'].unshift(
