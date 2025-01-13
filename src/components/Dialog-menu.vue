@@ -1,18 +1,25 @@
 <template>
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div class="menu-div">
-      v0.512<br>
+      v0.513<br>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 
       <v-btn class="tiny-btn" @click="simaLoad">SIMA読み込</v-btn>
       <v-btn style="margin-left: 5px;" class="tiny-btn" @click="pngDownload">PNGダウンロード</v-btn>
 
-      <v-switch v-model="s_isPitch" @change="changePitch" label="２画面時に傾きを同期" color="primary" />
+      <v-switch style="height: 60px;" v-model="s_isPitch" @change="changePitch" label="２画面時に傾きを同期" color="primary" />
       標高を強調します。{{s_terrainLevel}}倍
       <div class="range-div">
         <input type="range" min="1" max="10" step="0.1" class="range" v-model.number="s_terrainLevel" @input="terrainLevelInput"/>
       </div>
+      <v-btn @click="addLayerDiv=!addLayerDiv">レイヤー追加（XYZタイル）</v-btn>
+      <div v-if="addLayerDiv">
+        <v-text-field label="レイヤー名を記入" v-model="s_extLayerName" style="margin-top: 10px"></v-text-field>
+        <v-text-field label="URLを記入" v-model="s_extLayer" style="margin-top: -15px"></v-text-field>
+        <v-btn style="margin-top: -15px;margin-left: 100px;" @click="addLayer">レイヤー追加</v-btn>
+      </div>
+
 <!--      <hr style="margin-top: 20px">-->
 <!--      今昔マップ<br>{{konjyakuYear}}年の直近（過去）の地図を表示します。-->
 <!--      <div class="range-div">-->
@@ -27,16 +34,34 @@
 import axios from "axios"
 import maplibregl from 'maplibre-gl'
 import {history} from "@/App";
-import {konUrls} from "@/js/layers";
+import {geotiffLayer, geotiffSource, konUrls} from "@/js/layers";
 import {pngDownload} from "@/js/downLoad";
+import store from "@/store";
 export default {
   name: 'Dialog-menu',
   props: ['mapName'],
   data: () => ({
     konjyakuYear: '1890',
     address: '',
+    addLayerDiv: false,
   }),
   computed: {
+    s_extLayerName: {
+      get() {
+        return this.$store.state.extLayerName
+      },
+      set(value) {
+        this.$store.state.extLayerName = value
+      }
+    },
+    s_extLayer: {
+      get() {
+        return this.$store.state.extLayer
+      },
+      set(value) {
+        this.$store.state.extLayer = value
+      }
+    },
     s_selectedLayers: {
       get() {
         return this.$store.state.selectedLayers
@@ -66,6 +91,56 @@ export default {
     },
   },
   methods: {
+    addLayer () {
+      const map = this.$store.state.map01
+      const extSource = {
+        id: 'ext-source', obj: {
+          type: 'raster',
+          tiles: [this.s_extLayer],
+        }
+      }
+      const extLayer = {
+        'id': 'oh-extLayer',
+        'type': 'raster',
+        'source': 'ext-source',
+      }
+
+      const result = this.$store.state.selectedLayers['map01'].find(v => v.id === 'oh-extLayer')
+      if (!result) {
+        this.$store.state.selectedLayers['map01'].unshift(
+            {
+              id: 'oh-extLayer',
+              label: this.s_extLayerName,
+              source: extSource,
+              layers: [extLayer],
+              opacity: 1,
+              visibility: true,
+            }
+        )
+      } else {
+        if (map.getLayer('oh-extLayer')) {
+          map.removeLayer('oh-extLayer');
+        }
+        if (map.getSource('ext-source')) {
+          map.removeSource('ext-source');
+        }
+        map.addSource('ext-source', {
+          type: "raster",
+          tiles: [this.s_extLayer],
+        });
+        map.addLayer({
+          id: 'oh-extLayer',
+          type: "raster",
+          source: 'ext-source',
+        });
+        result.label = this.s_extLayerName
+      }
+      const zoom = map.getZoom()
+      setTimeout(() => {
+        map.setZoom(12)
+        map.setZoom(zoom)
+      },1000)
+    },
     pngDownload () {
       this.$store.state.dialogForPngApp = true
     },
