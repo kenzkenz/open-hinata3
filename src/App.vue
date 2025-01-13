@@ -1401,7 +1401,7 @@ export default {
                 // 必要であれば処理結果のログを出力
                 // console.log(layerNames)
                 const uniqueLayerNames = [...new Set(layerNames)]
-                console.log(uniqueLayerNames.join('\n'));
+                // console.log(uniqueLayerNames.join('\n'));
                 console.log(`Processed ${count} layers for map: ${mapName}`);
               });
               const result = params.slj[mapName].find(v => v.id === 'oh-extLayer')

@@ -373,7 +373,7 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
         alert(kei + 'で区画ファイルを作ります。作図範囲は1区画です。ドーナツ形状には対応していません。')
     } else {
         if (kaniFlg) {
-            alert('注!簡易の場合、座標値は暫定です。座標の利用は自己責任でお願いします。' + kei + 'でsimファイルを作ります。')
+            alert('注!簡易の場合、座標値は元データとほんの少し異なります。座標の利用は自己責任でお願いします。' + kei + 'でsimファイルを作ります。')
         } else {
             // alert(kei + 'でsimファイルを作ります。')
         }
@@ -477,12 +477,6 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
     const uint8Array = new Uint8Array(shiftJISArray);
     // Blobを作成（MIMEタイプを変更）
     const blob = new Blob([uint8Array], { type: 'application/octet-stream' });
-
-
-
-    // alert('test')
-
-
 
     // ダウンロード用リンクを作成
     const link = document.createElement('a');
@@ -2274,9 +2268,10 @@ export function saveSimaGaiku (map,layerId) {
                 zahyoY = feature.properties.Y座標
                 zahyoX = feature.properties.X座標
             }
+            const zahyoZ = feature.properties.標高
             if (!coordinateMap.has(coordinateKey)) {
                 coordinateMap.set(coordinateKey, j);
-                A01Text += 'A01,' + j + ',' + name + ',' + zahyoX + ',' + zahyoY + ',\n';
+                A01Text += 'A01,' + j + ',' + name + ',' + zahyoX + ',' + zahyoY + ',' + zahyoZ + ',\n';
                 // A01Text += 'A01,' + j + ',' + name + ',' + zahyoY + ',' + zahyoX + ',\n';
                 // A01Text += 'A01,' + j + ',' + name + ',' + y.toFixed(3) + ',' + x.toFixed(3) + ',\n';
                 j++;
@@ -2383,9 +2378,10 @@ export function saveSimaGaiku2 (map,j) {
                 zahyoY = feature.properties.Y座標
                 zahyoX = feature.properties.X座標
             }
+            const zahyoZ = feature.properties.標高
             if (!coordinateMap.has(coordinateKey)) {
                 coordinateMap.set(coordinateKey, j);
-                A01Text += 'A01,' + j + ',' + name + ',' + zahyoX + ',' + zahyoY + ',\n';
+                A01Text += 'A01,' + j + ',' + name + ',' + zahyoX + ',' + zahyoY + ',' + zahyoZ + ',\n';
                 // A01Text += 'A01,' + j + ',' + name + ',' + zahyoY + ',' + zahyoX + ',\n';
                 // A01Text += 'A01,' + j + ',' + name + ',' + y.toFixed(3) + ',' + x.toFixed(3) + ',\n';
                 j++;
