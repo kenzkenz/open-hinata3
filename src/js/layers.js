@@ -995,8 +995,8 @@ console.log(kirieLayers2)
 // 市町村地番図
 const sicyosonChibanzuUrls = [
     // 北海道
-    {name:'室蘭市', position:[140.99286678768675,42.36472347973418], url:'muroranshi', page:'https://murorancity-opendata-muroran.hub.arcgis.com/datasets/f5a188ea9ae94d7abd68983eb351aeff/explore?layer=3&location=42.368631%2C140.979326%2C12.64'},
-    {name:'ニセコ町', position:[140.68806409835815,42.80495731522012], url:'nisekocyo', page:'https://www.harp.lg.jp/opendata/dataset/1750.html'},
+    {name:'室蘭市', chiban:'地番',position:[140.99286678768675,42.36472347973418], url:'muroranshi', page:'https://murorancity-opendata-muroran.hub.arcgis.com/datasets/f5a188ea9ae94d7abd68983eb351aeff/explore?layer=3&location=42.368631%2C140.979326%2C12.64'},
+    {name:'ニセコ町', chiban:'地番', position:[140.68806409835815,42.80495731522012], url:'nisekocyo', page:'https://www.harp.lg.jp/opendata/dataset/1750.html'},
     {name:'北広島市', position:[141.56311494973653,42.98537981878215], url:'kitahiroshimashi2', page:'https://www.harp.lg.jp/opendata/dataset/2061.html'},
     // 秋田県
     {name:'鹿角市', position:[140.7886727460321,40.21559737412008], url:'kazunoshi', page:'https://www.city.kazuno.lg.jp/soshiki/somu/digital/gyomu/opendata/9788.html'},
@@ -1013,7 +1013,7 @@ const sicyosonChibanzuUrls = [
     {name:'国立市', position:[139.44141245767452,35.68379371055923], url:'kunitachishi3', page:'https://www.city.kunitachi.tokyo.jp/soshiki/Dept01/Div03/Sec01/oshirase/11883.html'},
     // 静岡県
     {name:'静岡市', position:[138.38294267724638,34.974974010631584], url:'shizuokashi', page:'https://dataset.city.shizuoka.jp/dataset/1707986930/resource/4a40cc33-0aef-4426-825e-3b034347812b'},
-    {name:'磐田市', position:[137.85162388532535,34.7178716931619], url:'iwatashi', page:'https://www.city.iwata.shizuoka.jp/shiseijouhou/1006207/1002775.html'},
+    {name:'磐田市', chiban:'TXTCD', position:[137.85162388532535,34.7178716931619], url:'iwatashi', page:'https://www.city.iwata.shizuoka.jp/shiseijouhou/1006207/1002775.html'},
     // 愛知県
     {name:'半田市', position:[136.93819204686196,34.891670467553226], url:'handashi', page:'https://www.city.handa.lg.jp/opendata/1005557/1005561/1004329.html'},
     // 京都府
@@ -1030,7 +1030,7 @@ const sicyosonChibanzuUrls = [
     {name:'坂出市', position:[133.8605011373076,34.3166967696347], url:'sakaideshi', page:'https://www.city.sakaide.lg.jp/soshiki/kouminrenkei/opendata.html'},
     {name:'善通寺市', position:[133.78706908666885,34.22705330992301], url:'zentujishi', page:'https://opendata.pref.kagawa.lg.jp/dataset/701.html'},
     // 福岡県
-    {name:'福岡市', position:[130.40177928836357,33.5897855042562], url:'fukuokashi2', page:'https://webmap.city.fukuoka.lg.jp/fukuoka/OpenData?mids=&pno=1'},
+    {name:'福岡市', chiban:'地番', position:[130.40177928836357,33.5897855042562], url:'fukuokashi2', page:'https://webmap.city.fukuoka.lg.jp/fukuoka/OpenData?mids=&pno=1'},
     // 長崎県
     {name:'長与町', position:[129.87507937301513,32.82524812594376], url:'nagayochyo', page:'https://data.bodik.jp/dataset/423076_tibansankouzu/resource/580da941-74d1-4ddd-a0f0-fb6b88fc793a'}
 ];
@@ -1038,6 +1038,7 @@ const sicyosonChibanzuUrls = [
 const chibanzuSources = []
 const chibanzuLayers = []
 const chibanzuLayerLines = []
+const chibanzuLayerLabel = []
 sicyosonChibanzuUrls.forEach(url => {
     console.log(url.url)
     chibanzuSources.push({
@@ -1075,6 +1076,24 @@ sicyosonChibanzuUrls.forEach(url => {
             ]
         },
     })
+    chibanzuLayerLabel.push({
+        id: 'oh-chibanzu-label-' + url.name,
+        type: "symbol",
+        source: 'oh-chibanzu-' + url.name + '-source',
+        "source-layer": "chibanzu",
+        'layout': {
+            // 'text-field': ['get', url.chiban],
+            'text-field': ['get', url.chiban],
+            'text-font': ['NotoSansJP-Regular'],
+        },
+        'paint': {
+            'text-color': 'navy',
+            'text-halo-color': 'rgba(255,255,255,1)',
+            'text-halo-width': 1.0,
+        },
+        'maxzoom': 24,
+        'minzoom': 17
+    })
 })
 const chibanzuLayers2 = chibanzuLayers.map((layer,i) => {
     const name = layer.id.replace('oh-chibanzu-','') + '地番図'
@@ -1082,7 +1101,7 @@ const chibanzuLayers2 = chibanzuLayers.map((layer,i) => {
         id: layer.id,
         label: name,
         source: chibanzuSources[i],
-        layers:[layer,chibanzuLayerLines[i]],
+        layers:[layer,chibanzuLayerLines[i],chibanzuLayerLabel[i]],
         attribution: '<a href="' + layer.page + '" target="_blank">' + name + '</a>',
         position: layer.position,
         ext: {name:'ext-chibanzu'}

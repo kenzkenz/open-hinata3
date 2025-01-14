@@ -2873,8 +2873,8 @@ export function popup(e,map,mapName,mapFlg) {
                     Object.keys(props).forEach(function (key) {
                         html0 += key + '=' + props[key] + '<br>'
                     })
-                    html0 += '<br><span style="font-size: 14px;">面積:' + PolygonMetrics.area + ' 周長:' + PolygonMetrics.perimeter +
-                        '<br>境界点数:' + PolygonMetrics.vertexCount + '</span>'
+                    // html0 += '<br><span style="font-size: 14px;">面積:' + PolygonMetrics.area + ' 周長:' + PolygonMetrics.perimeter +
+                    //     '<br>境界点数:' + PolygonMetrics.vertexCount + '</span>'
                     html0 += '<div>'
                     html += html0
                 }
