@@ -48,7 +48,7 @@
 </template>
 
 <script>
-import {addImageLayer, simaToGeoJSON} from "@/js/downLoad";
+import {addImageLayer, addImageLayerJpg, simaToGeoJSON} from "@/js/downLoad";
 
 let infoCount = 0
 import * as Layers from '@/js/layers'
@@ -520,10 +520,30 @@ export default {
             }
           }
 
+
+
+          async function checkImageExists(imageUrl) {
+            try {
+              const response = await fetch(imageUrl, { method: 'HEAD' }); // HEADリクエストで存在確認
+              if (response.ok) {
+                console.log('Image exists!');
+                return true;
+              } else {
+                console.log('Image does not exist.');
+                return false;
+              }
+            } catch (error) {
+              console.error('Error checking image:', error);
+              return false;
+            }
+          }
+
           const imageUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).image
           const worldFileUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).worldFile
+          const jpgUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).jpg
           console.log(imageUrl)
           console.log(worldFileUrl)
+          console.log(jpgUrl)
           // console.log(fetchFile(imageUrl))
 
           Promise.all([fetchFile(imageUrl), fetchFile(worldFileUrl)]).then(files => {
@@ -533,11 +553,7 @@ export default {
               console.log(image)
               const worldFile = files[1]
               const code = JSON.parse(this.$store.state.uploadedImage).code
-              // alert(0)
-
               addImageLayer(image, worldFile, code, false)
-
-              // addImageLayer(this.$store.state.map02, 'map02', image, worldFile, code, false)
             } else {
               console.warn("一部のファイルが取得できませんでした。");
             }
@@ -546,6 +562,42 @@ export default {
           });
 
 
+
+          // checkImageExists(jpgUrl).then(exists => {
+          //   if (exists) {
+          //     console.log('jpg画像が存在します。');
+          //     Promise.all([fetchFile(jpgUrl), fetchFile(worldFileUrl)]).then(files => {
+          //       if (files.every(file => file)) {
+          //         console.log("両方のファイルが取得されました:", files);
+          //         const image = files[0]
+          //         console.log(image)
+          //         const worldFile = files[1]
+          //         const code = JSON.parse(this.$store.state.uploadedImage).code
+          //         addImageLayerJpg(image, worldFile, code, false)
+          //       } else {
+          //         console.warn("一部のファイルが取得できませんでした。");
+          //       }
+          //     }).catch(error => {
+          //       console.error("Promise.allでエラーが発生しました:", error);
+          //     });
+          //   } else {
+          //     console.log('jpg画像が存在しません。');
+          //     Promise.all([fetchFile(imageUrl), fetchFile(worldFileUrl)]).then(files => {
+          //       if (files.every(file => file)) {
+          //         console.log("両方のファイルが取得されました:", files);
+          //         const image = files[0]
+          //         console.log(image)
+          //         const worldFile = files[1]
+          //         const code = JSON.parse(this.$store.state.uploadedImage).code
+          //         addImageLayer(image, worldFile, code, false)
+          //       } else {
+          //         console.warn("一部のファイルが取得できませんでした。");
+          //       }
+          //     }).catch(error => {
+          //       console.error("Promise.allでエラーが発生しました:", error);
+          //     });
+          //   }
+          // });
         }
       }
       // alert(1)

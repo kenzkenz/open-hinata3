@@ -2820,6 +2820,7 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-chibanzu-舟形町':
             case 'oh-chibanzu-福山市':
             case 'oh-chibanzu-越谷市':
             case 'oh-chibanzu-福岡市':

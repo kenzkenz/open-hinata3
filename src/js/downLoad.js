@@ -5,7 +5,7 @@ import maplibregl from 'maplibre-gl'
 import proj4 from 'proj4'
 import vuetify from "@/plugins/vuetify";
 import axios from "axios";
-import {geotiffSource,geotiffLayer} from "@/js/layers";
+import {geotiffSource, geotiffLayer, jpgSource, jpgLayer} from "@/js/layers";
 // 複数のクリックされた地番を強調表示するためのセット
 // export let highlightedChibans = new Set();
 (function() {
@@ -2592,6 +2592,88 @@ export async function addImageLayer (tiffFile,worldFile,code,isFirst) {
     }
 }
 
+export async function addImageLayerJpg(jpgFile, worldFile, code, isFirst) {
+    const map = store.state.map01;
+    const map2 = store.state.map02;
+
+    // ワールドファイルを読み込む
+    const worldFileText = await worldFile.text();
+    const [pixelSizeX, rotationX, rotationY, pixelSizeY, originX, originY] = worldFileText.split('\n').map(Number);
+
+    // JPGファイルを読み込む
+    const imageUrl = URL.createObjectURL(jpgFile);
+    const img = new Image();
+    await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = imageUrl;
+    });
+
+    const width = img.width;
+    const height = img.height;
+
+    // 平面直角座標系の範囲を緯度経度に変換
+    let bounds = [
+        [originX, originY], // 左上
+        [originX + pixelSizeX * width, originY], // 右上
+        [originX + pixelSizeX * width, originY + pixelSizeY * height], // 右下
+        [originX, originY + pixelSizeY * height] // 左下
+    ].map(coord => proj4(code, 'EPSG:4326', coord));
+
+    store.state.selectedLayers['map01'] = store.state.selectedLayers['map01'].filter(v => v.id !== 'oh-jpg-layer');
+    store.state.selectedLayers['map02'] = store.state.selectedLayers['map02'].filter(v => v.id !== 'oh-jpg-layer');
+    jpgSource.obj.url = imageUrl
+    jpgSource.obj.coordinates = bounds
+
+    if (map.getLayer('oh-jpg-layer')) {
+        map.removeLayer('oh-jpg-layer')
+        map2.removeLayer('oh-jpg-layer')
+    }
+    if (map.getSource('jpg-source')) {
+        map.removeSource('jpg-source')
+        map2.removeSource('jpg-source')
+    }
+    store.state.selectedLayers['map01'].unshift(
+        {
+            id: 'oh-jpg-layer',
+            label: 'jpg',
+            source: jpgSource,
+            layers: [jpgLayer],
+            opacity: 1,
+            visibility: true,
+        }
+    )
+
+    store.state.selectedLayers['map02'].unshift(
+        {
+            id: 'oh-jpg-layer',
+            label: 'jpg',
+            source: jpgSource,
+            layers: [jpgLayer],
+            opacity: 1,
+            visibility: true,
+        }
+    )
+
+    const currentZoom = map.getZoom();
+
+    // 地図の範囲を設定
+    if (isFirst) {
+        const flyToBounds = [
+            [bounds[0][0], bounds[0][1]], // 左上
+            [bounds[2][0], bounds[2][1]]  // 右下
+        ];
+        map.fitBounds(flyToBounds, { padding: 20 });
+    } else {
+        setTimeout(function () {
+            store.state.map01.zoomTo(currentZoom + 0.01, { duration: 500 });
+            store.state.map02.zoomTo(currentZoom + 0.01, { duration: 500 });
+        }, 0);
+    }
+}
+
+
+
 export async function geoTiffLoad (map,mapName,isUpload) {
     const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
     const files = store.state.tiffAndWorldFile
@@ -2625,7 +2707,7 @@ export async function geoTiffLoad (map,mapName,isUpload) {
         const formData = new FormData();
         formData.append('file_1', tiffFile);
         formData.append("file_2", worldFile);
-        axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/imageUpload.php', formData, {
+        axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/imageUploadtoJpeg.php', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data', // 必須
             },
@@ -2636,11 +2718,14 @@ export async function geoTiffLoad (map,mapName,isUpload) {
                     alert('20mbを超えていますので保存できませんでした。')
                     return
                 }
-                console.log('成功:', response.data.file1);
-                console.log('成功:', response.data.file2);
+                console.log('イメージ保存成功:', response.data.file1);
+                console.log('イメージ保存成功:', response.data.file2);
+                console.log('イメージ保存成功:', response.data.file3);
+                console.log(response)
                 store.state.uploadedImage = JSON.stringify({
                     image: response.data.file1,
                     worldFile: response.data.file2,
+                    jpg: response.data.file3,
                     code: code
                 })
                 console.log(store.state.uploadedImage)

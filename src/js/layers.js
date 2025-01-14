@@ -28,6 +28,19 @@ export const geotiffLayer= {
     paint: {}
 }
 
+export const jpgSource = {
+    id:'jpg-source',obj:{
+        type: 'image',
+        url: '',
+        coordinates: ''
+    }
+}
+export const jpgLayer= {
+    id: 'oh-jpg-layer',
+    type: 'raster',
+    source: 'jpg-source',
+    paint: {}
+}
 
 
 
@@ -995,44 +1008,44 @@ console.log(kirieLayers2)
 // 市町村地番図
 const sicyosonChibanzuUrls = [
     // 北海道
-    {name:'室蘭市', chiban:'地番',position:[140.99286678768675,42.36472347973418], url:'muroranshi', page:'https://murorancity-opendata-muroran.hub.arcgis.com/datasets/f5a188ea9ae94d7abd68983eb351aeff/explore?layer=3&location=42.368631%2C140.979326%2C12.64'},
-    {name:'ニセコ町', chiban:'地番', position:[140.68806409835815,42.80495731522012], url:'nisekocyo', page:'https://www.harp.lg.jp/opendata/dataset/1750.html'},
-    {name:'北広島市', position:[141.56311494973653,42.98537981878215], url:'kitahiroshimashi2', page:'https://www.harp.lg.jp/opendata/dataset/2061.html'},
+    {name:'室蘭市', chiban: ['get', '地番'], position:[140.99286678768675,42.36472347973418], url:'muroranshi', page:'https://murorancity-opendata-muroran.hub.arcgis.com/datasets/f5a188ea9ae94d7abd68983eb351aeff/explore?layer=3&location=42.368631%2C140.979326%2C12.64'},
+    {name:'ニセコ町', chiban: ['get', '地番'], position:[140.68806409835815,42.80495731522012], url:'nisekocyo', page:'https://www.harp.lg.jp/opendata/dataset/1750.html'},
+    {name:'北広島市', chiban: ['concat', ['get', 'Chiban'], '-', ['get', 'Edaban']], position:[141.56311494973653,42.98537981878215], url:'kitahiroshimashi2', page:'https://www.harp.lg.jp/opendata/dataset/2061.html'},
     // 秋田県
-    {name:'鹿角市', position:[140.7886727460321,40.21559737412008], url:'kazunoshi', page:'https://www.city.kazuno.lg.jp/soshiki/somu/digital/gyomu/opendata/9788.html'},
+    {name:'鹿角市', chiban: ['get', '地番'], position:[140.7886727460321,40.21559737412008], url:'kazunoshi', page:'https://www.city.kazuno.lg.jp/soshiki/somu/digital/gyomu/opendata/9788.html'},
     // 山形県
-    {name:'舟形町', position:[140.32022099999745,38.691255021073715], url: 'funagatamachi', page:'https://www.town.funagata.yamagata.jp/s012/opendata/010/010/20230711101613.html'},
+    {name:'舟形町', chiban: ['get', 'TIBAN'], position:[140.32022099999745,38.691255021073715], url: 'funagatamachi', page:'https://www.town.funagata.yamagata.jp/s012/opendata/010/010/20230711101613.html'},
     // 福島県
-    {name:'福島市', position:[140.47460922099737,37.76082999999447], url:'fukushimashi2', page:'https://www.city.fukushima.fukushima.jp/d-kikaku/shise/opendate/machidukuri.html'},
+    {name:'福島市', chiban: ['get', 'TXTCD'], position:[140.47460922099737,37.76082999999447], url:'fukushimashi2', page:'https://www.city.fukushima.fukushima.jp/d-kikaku/shise/opendate/machidukuri.html'},
     // 茨城県
-    {name:'利根町', position:[140.1391729153425,35.85756030920088], url: 'tonechyo', page:'https://www.town.tone.ibaraki.jp/opendata.php'},
+    {name:'利根町', chiban: ['get', '地番'], position:[140.1391729153425,35.85756030920088], url: 'tonechyo', page:'https://www.town.tone.ibaraki.jp/opendata.php'},
     // 埼玉県
-    {name:'越谷市', position:[139.79105245767255,35.890609232668695], url:'koshigayashi', page:'https://www.city.koshigaya.saitama.jp/kurashi_shisei/kurashi/zeikin/koteisisan_tosikeikaku/tibanzu_opendate.html'},
+    {name:'越谷市', chiban: ['concat', ['get', '本番'], '-', ['get', '枝番']], position:[139.79105245767255,35.890609232668695], url:'koshigayashi', page:'https://www.city.koshigaya.saitama.jp/kurashi_shisei/kurashi/zeikin/koteisisan_tosikeikaku/tibanzu_opendate.html'},
     // 東京都
-    {name:'町田市', position:[139.4387823343277,35.546591812173475], url:'machidashi', page:'https://www.city.machida.tokyo.jp/shisei/opendata/chizujoho/chisekizu.html'},
-    {name:'国立市', position:[139.44141245767452,35.68379371055923], url:'kunitachishi3', page:'https://www.city.kunitachi.tokyo.jp/soshiki/Dept01/Div03/Sec01/oshirase/11883.html'},
+    {name:'町田市', chiban: ['get', 'CHIBAN'], position:[139.4387823343277,35.546591812173475], url:'machidashi', page:'https://www.city.machida.tokyo.jp/shisei/opendata/chizujoho/chisekizu.html'},
+    {name:'国立市', chiban: ['get', '表示文字列'], position:[139.44141245767452,35.68379371055923], url:'kunitachishi3', page:'https://www.city.kunitachi.tokyo.jp/soshiki/Dept01/Div03/Sec01/oshirase/11883.html'},
     // 静岡県
     {name:'静岡市', position:[138.38294267724638,34.974974010631584], url:'shizuokashi', page:'https://dataset.city.shizuoka.jp/dataset/1707986930/resource/4a40cc33-0aef-4426-825e-3b034347812b'},
-    {name:'磐田市', chiban:'TXTCD', position:[137.85162388532535,34.7178716931619], url:'iwatashi', page:'https://www.city.iwata.shizuoka.jp/shiseijouhou/1006207/1002775.html'},
+    {name:'磐田市', chiban: ['get', 'TXTCD'], position:[137.85162388532535,34.7178716931619], url:'iwatashi', page:'https://www.city.iwata.shizuoka.jp/shiseijouhou/1006207/1002775.html'},
     // 愛知県
-    {name:'半田市', position:[136.93819204686196,34.891670467553226], url:'handashi', page:'https://www.city.handa.lg.jp/opendata/1005557/1005561/1004329.html'},
+    {name:'半田市', chiban: ['concat', ['get', '番地'], '-', ['get', '枝番'], '-', ['get', '小枝']], position:[136.93819204686196,34.891670467553226], url:'handashi', page:'https://www.city.handa.lg.jp/opendata/1005557/1005561/1004329.html'},
     // 京都府
-    {name:'京都市', position:[135.76794033862097,35.011458104660534], url:'kyotoshi', page:'https://data.city.kyoto.lg.jp/resource/?id=18537'},
+    {name:'京都市', chiban: ['get', 'TIBAN'], position:[135.76794033862097,35.011458104660534], url:'kyotoshi', page:'https://data.city.kyoto.lg.jp/resource/?id=18537'},
     // 大阪府
-    {name:'岸和田市', position:[135.37090737539307,34.46054514396512], url:'kishiwadashi', page:'https://www.city.kishiwada.osaka.jp/soshiki/16/tochi-chibankrnnsakuichiranhyou.html'},
-    {name:'泉南市', position:[135.2734460647299,34.36591222577401], url:'sennanshi', page:'https://www.city.sennan.lg.jp/kakuka/soumu/zeimuka/kazeikakari/zeikin/koteishisan/1505179465186.html'},
+    {name:'岸和田市', chiban: ['get', 'CHIBAN'], position:[135.37090737539307,34.46054514396512], url:'kishiwadashi', page:'https://www.city.kishiwada.osaka.jp/soshiki/16/tochi-chibankrnnsakuichiranhyou.html'},
+    {name:'泉南市', chiban: ['get', '表示文字列'], position:[135.2734460647299,34.36591222577401], url:'sennanshi', page:'https://www.city.sennan.lg.jp/kakuka/soumu/zeimuka/kazeikakari/zeikin/koteishisan/1505179465186.html'},
     // 兵庫県
-    {name:'加古川市', position:[134.84064926983825,34.75678296665963], url:'kakogawashi', page:'https://opendata-api-kakogawa.jp/ckan/dataset/landhouse/resource/c37f9b63-54c8-4094-9e48-8d3817918476'},
-    {name:'佐用町', position:[134.35598183068578,35.004205695261106], url:'sayochyo', page:'https://www.town.sayo.lg.jp/cms-sypher/www/service/detail.jsp?id=9343'},
+    {name:'加古川市', chiban: ['get', 'TXTCODE1'], position:[134.84064926983825,34.75678296665963], url:'kakogawashi', page:'https://opendata-api-kakogawa.jp/ckan/dataset/landhouse/resource/c37f9b63-54c8-4094-9e48-8d3817918476'},
+    {name:'佐用町', chiban: ['get', 'CHIBAN'], position:[134.35598183068578,35.004205695261106], url:'sayochyo', page:'https://www.town.sayo.lg.jp/cms-sypher/www/service/detail.jsp?id=9343'},
     // 奈良県
-    {name:'奈良市', position:[135.80463216931253,34.684824554866864], url:'narashi2', page:'https://www.city.nara.lg.jp/soshiki/14/104605.html'},
+    {name:'奈良市', chiban: ['concat', ['get', '地番本番'], '-', ['get', '地番枝番'], '-', ['get', '地番小枝']], position:[135.80463216931253,34.684824554866864], url:'narashi2', page:'https://www.city.nara.lg.jp/soshiki/14/104605.html'},
     // 香川県
-    {name:'坂出市', position:[133.8605011373076,34.3166967696347], url:'sakaideshi', page:'https://www.city.sakaide.lg.jp/soshiki/kouminrenkei/opendata.html'},
-    {name:'善通寺市', position:[133.78706908666885,34.22705330992301], url:'zentujishi', page:'https://opendata.pref.kagawa.lg.jp/dataset/701.html'},
+    {name:'坂出市', chiban: ['concat', ['get', '所在地番3'], '-', ['get', '所在地番5']], position:[133.8605011373076,34.3166967696347], url:'sakaideshi', page:'https://www.city.sakaide.lg.jp/soshiki/kouminrenkei/opendata.html'},
+    {name:'善通寺市', chiban: ['concat', ['get', '本番'], '-', ['get', '枝番'], '-', ['get', '孫番']],position:[133.78706908666885,34.22705330992301], url:'zentujishi', page:'https://opendata.pref.kagawa.lg.jp/dataset/701.html'},
     // 福岡県
-    {name:'福岡市', chiban:'地番', position:[130.40177928836357,33.5897855042562], url:'fukuokashi2', page:'https://webmap.city.fukuoka.lg.jp/fukuoka/OpenData?mids=&pno=1'},
+    {name:'福岡市', chiban: ['get', '地番'], position:[130.40177928836357,33.5897855042562], url:'fukuokashi2', page:'https://webmap.city.fukuoka.lg.jp/fukuoka/OpenData?mids=&pno=1'},
     // 長崎県
-    {name:'長与町', position:[129.87507937301513,32.82524812594376], url:'nagayochyo', page:'https://data.bodik.jp/dataset/423076_tibansankouzu/resource/580da941-74d1-4ddd-a0f0-fb6b88fc793a'}
+    {name:'長与町', chiban: ['get', 'SAFIELD002'], position:[129.87507937301513,32.82524812594376], url:'nagayochyo', page:'https://data.bodik.jp/dataset/423076_tibansankouzu/resource/580da941-74d1-4ddd-a0f0-fb6b88fc793a'}
 ];
 
 const chibanzuSources = []
@@ -1083,7 +1096,7 @@ sicyosonChibanzuUrls.forEach(url => {
         "source-layer": "chibanzu",
         'layout': {
             // 'text-field': ['get', url.chiban],
-            'text-field': ['get', url.chiban],
+            'text-field': url.chiban,
             'text-font': ['NotoSansJP-Regular'],
         },
         'paint': {
