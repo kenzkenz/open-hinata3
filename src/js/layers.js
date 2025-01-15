@@ -7221,6 +7221,19 @@ const toshikanLayerLabel = {
     'minzoom': 15
 };
 
+// VIRTUAL SHIZUOKA 静岡県 中・西部オルそ---------------------------------------------------------------------------------------------------------
+const shizuokaOrthoSource = {
+    id: 'shizuoka-ortho-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz4.xsrv.jp/ortho/shizuoka/{z}/{x}/{y}.png'],
+    }
+}
+const shizuokaOrthoLayer = {
+    'id': 'shizuoka-ortho-layer',
+    'type': 'raster',
+    'source': 'shizuoka-ortho-source',
+}
+
 // // 地形分類テスト --------------------------------------------------------------------------------------------
 // const chikeibunruiSource2 = {
 //     id: "chikeibunrui-source", obj: {
@@ -7583,6 +7596,13 @@ const layers01 = [
                 source: yokohamaSyashinSource,
                 layers: [yokohamaSyashinLayer]
             },
+            // {
+            //     id: 'oh-yokohama-syashin',
+            //     label: "VIRTUAL SHIZUOKA 静岡県 中・西部",
+            //     source: shizuokaOrthoSource,
+            //     layers: [shizuokaOrthoLayer],
+            //     attribution: '<a href="https://www.geospatial.jp/ckan/dataset/virtual-shizuoka-mw" target="_blank">VIRTUAL SHIZUOKA 静岡県 中・西部 点群データ</a>'
+            // },
             {
                 id: 'oh-miyazaki-syashin',
                 label: "宮崎県航空写真",
