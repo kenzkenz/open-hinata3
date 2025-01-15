@@ -341,7 +341,6 @@ function getFirstPointName(geojson) {
 }
 
 
-
 function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg, zahyokei2, kukaku,jww, kei2) {
     geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
     console.log(geojson)
@@ -450,64 +449,66 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
         let coordinates = [];
         if (feature.geometry.type === 'Polygon') {
             coordinates = feature.geometry.coordinates.map(ring => {
-                // 最後の点が最初の点と同じ場合、最後の点を削除
                 if (
                     ring.length > 1 &&
-                    ring[0][0] === ring[ring.length - 1][0] &&
-                    ring[0][1] === ring[ring.length - 1][1]
+                    (ring[0][0] !== ring[ring.length - 1][0] ||
+                        ring[0][1] !== ring[ring.length - 1][1])
                 ) {
-                    return ring.slice(0, -1);
+                    // 閉じていない場合、始点を終点として追加
+                    ring.push(ring[0]);
                 }
                 return ring;
-            }).flat();
+            });
         } else if (feature.geometry.type === 'MultiPolygon') {
             coordinates = feature.geometry.coordinates.map(polygon =>
                 polygon.map(ring => {
                     if (
                         ring.length > 1 &&
-                        ring[0][0] === ring[ring.length - 1][0] &&
-                        ring[0][1] === ring[ring.length - 1][1]
+                        (ring[0][0] !== ring[ring.length - 1][0] ||
+                            ring[0][1] !== ring[ring.length - 1][1])
                     ) {
-                        return ring.slice(0, -1);
+                        ring.push(ring[0]);
                     }
                     return ring;
-                }).flat()
+                })
             ).flat();
         } else {
             console.warn('Unsupported geometry type:', feature.geometry.type);
             return; // 他のタイプはスキップ
         }
 
-        const len = coordinates.length;
+        coordinates.forEach((ring, ringIndex) => {
+            const len = ring.length;
+            ring.forEach((coord, index) => {
+                if (
+                    Array.isArray(coord) &&
+                    coord.length === 2 &&
+                    Number.isFinite(coord[0]) &&
+                    Number.isFinite(coord[1])
+                ) {
+                    const [x, y] = proj4('EPSG:4326', code, coord); // 座標系変換
+                    const coordinateKey = `${x},${y}`;
 
-        coordinates.forEach((coord, index) => {
-            if (
-                Array.isArray(coord) &&
-                coord.length === 2 &&
-                Number.isFinite(coord[0]) &&
-                Number.isFinite(coord[1])
-            ) {
-                const [x, y] = proj4('EPSG:4326', code, coord); // 座標系変換
-                const coordinateKey = `${x},${y}`;
-
-                if (!coordinateMap.has(coordinateKey)) {
-                    coordinateMap.set(coordinateKey, j);
-                    A01Text += 'A01,' + j + ',' + j + ',' + y.toFixed(3) + ',' + x.toFixed(3) + ',\n';
-                    j++;
-                }
-                const currentCounter = coordinateMap.get(coordinateKey);
-                if (index === len - 1) {
-                    B01Text += 'B01,' + currentCounter + ',' + currentCounter + ',\nD99,\n';
+                    if (!coordinateMap.has(coordinateKey)) {
+                        coordinateMap.set(coordinateKey, j);
+                        A01Text += 'A01,' + j + ',' + j + ',' + y.toFixed(3) + ',' + x.toFixed(3) + ',\n';
+                        j++;
+                    }
+                    const currentCounter = coordinateMap.get(coordinateKey);
+                    if (index === len - 1 && ringIndex === coordinates.length - 1) {
+                        B01Text += 'B01,' + currentCounter + ',' + currentCounter + ',\nD99,\n';
+                    } else {
+                        B01Text += 'B01,' + currentCounter + ',' + currentCounter + ',\n';
+                    }
                 } else {
-                    B01Text += 'B01,' + currentCounter + ',' + currentCounter + ',\n';
+                    console.error('Invalid coordinate skipped:', coord);
                 }
-            } else {
-                console.error('Invalid coordinate skipped:', coord);
-            }
+            });
         });
 
         i++;
     });
+
     saveSimaGaiku2 (map,j)
 
     // simaData = simaData + A01Text + 'A99\nZ00,区画データ,\n' + B01Text
@@ -543,6 +544,211 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
     link.click();
     URL.revokeObjectURL(link.href);
 }
+
+
+
+// function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg, zahyokei2, kukaku,jww, kei2) {
+//     geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
+//     console.log(geojson)
+//     if (!geojson || geojson.type !== 'FeatureCollection') {
+//         throw new Error('無効なGeoJSONデータです。FeatureCollectionが必要です。');
+//     }
+//     let zahyo
+//     console.log(layerId)
+//     if (layerId ==='oh-amx-a-fude') {
+//         for (const feature of geojson.features) {
+//             if (feature.properties && feature.properties.座標系) {
+//                 console.log("Found Coordinate Property:", feature.properties.座標系);
+//                 zahyo = feature.properties.座標系; // 最初に見つけた値を返す
+//             }
+//         }
+//     } else {
+//         zahyo = kei2
+//     }
+//
+//     console.log(zahyokei2)
+//     if (zahyokei2) zahyo = zahyokei2
+//
+//     console.log(zahyo)
+//     // 公共座標系のリスト
+//     const code = zahyokei.find(item => item.kei === zahyo).code
+//     const kei = zahyokei.find(item => item.kei === zahyo).kei
+//     console.log(code,kei)
+//     if (kukaku) {
+//         alert(kei + 'で区画ファイルを作ります。作図範囲は1区画です。ドーナツ形状には対応していません。')
+//     } else {
+//         if (kaniFlg) {
+//             alert('注!簡易の場合、座標値は元データとほんの少し異なります。座標の利用は自己責任でお願いします。' + kei + 'でsimファイルを作ります。')
+//         } else {
+//             // alert(kei + 'でsimファイルを作ります。')
+//         }
+//     }
+//
+//     let simaData = 'G00,01,open-hinata3,\n';
+//     simaData += 'Z00,座標ﾃﾞｰﾀ,,\n';
+//     simaData += 'A00,\n';
+//
+//     let A01Text = '';
+//     let B01Text = '';
+//     let i = 1;
+//     let j = 1;
+//
+//     // 座標とカウンターを関連付けるマップ
+//     const coordinateMap = new Map();
+//     const firstChiban = getChibanAndHoka(geojson).firstChiban
+//     const hoka = getChibanAndHoka(geojson).hoka
+//     geojson.features.forEach((feature) => {
+//         let chiban = feature.properties.地番;
+//         switch (layerId) {
+//             case 'oh-chibanzu-静岡市':
+//             case 'oh-chibanzu-福岡市':
+//             case 'oh-chibanzu-利根町':
+//             case 'oh-chibanzu-鹿角市':
+//             case 'oh-chibanzu-ニセコ町':
+//             case 'oh-chibanzu-室蘭市':
+//                 chiban = feature.properties.地番
+//                 break
+//             case 'oh-chibanzu-北広島市':
+//                 chiban = feature.properties.Chiban + '-'  + feature.properties.Edaban
+//                 break
+//             case 'oh-chibanzu-京都市':
+//             case 'oh-chibanzu-舟形町':
+//                 chiban = feature.properties.TIBAN
+//                 break
+//             case 'oh-chibanzu-磐田市':
+//             case 'oh-chibanzu-福島市':
+//                 chiban = feature.properties.TXTCD
+//                 break
+//             case 'oh-chibanzu-越谷市':
+//                 chiban = feature.properties.本番 + '-'  + feature.properties.枝番
+//                 break
+//             case 'oh-chibanzu-佐用町':
+//             case 'oh-chibanzu-岸和田市':
+//             case 'oh-chibanzu-町田市':
+//                 chiban = feature.properties.CHIBAN
+//                 break
+//             case 'oh-chibanzu-泉南市':
+//             case 'oh-chibanzu-国立市':
+//                 chiban = feature.properties.表示文字列
+//                 break
+//             case 'oh-chibanzu-半田市':
+//                 chiban = feature.properties.番地 + '-' + feature.properties.枝番 + '-' + feature.properties.小枝
+//                 break
+//             case 'oh-chibanzu-加古川市':
+//                 chiban = feature.properties.TXTCODE1
+//                 break
+//             case 'oh-chibanzu-奈良市':
+//                 chiban = feature.properties.地番本番 + '-' + feature.properties.地番枝番 + '-' + feature.properties.地番小枝
+//                 break
+//             case 'oh-chibanzu-坂出市':
+//                 chiban = feature.properties.所在地番3 + '-'  + feature.properties.所在地番5
+//                 break
+//             case 'oh-chibanzu-善通寺市':
+//                 chiban = feature.properties.本番 + '-' + feature.properties.枝番 + '-' + feature.properties.孫番
+//                 break
+//             case 'oh-chibanzu-長与町':
+//                 chiban = feature.properties.SAFIELD002
+//                 break
+//         }
+//
+//         B01Text += 'D00,' + i + ',' + chiban + ',1,\n';
+//         let coordinates = [];
+//         if (feature.geometry.type === 'Polygon') {
+//             coordinates = feature.geometry.coordinates.map(ring => {
+//                 // 最後の点が最初の点と同じ場合、最後の点を削除
+//                 if (
+//                     ring.length > 1 &&
+//                     ring[0][0] === ring[ring.length - 1][0] &&
+//                     ring[0][1] === ring[ring.length - 1][1]
+//                 ) {
+//                     return ring.slice(0, -1);
+//                 }
+//                 return ring;
+//             }).flat();
+//         } else if (feature.geometry.type === 'MultiPolygon') {
+//             coordinates = feature.geometry.coordinates.map(polygon =>
+//                 polygon.map(ring => {
+//                     if (
+//                         ring.length > 1 &&
+//                         ring[0][0] === ring[ring.length - 1][0] &&
+//                         ring[0][1] === ring[ring.length - 1][1]
+//                     ) {
+//                         return ring.slice(0, -1);
+//                     }
+//                     return ring;
+//                 }).flat()
+//             ).flat();
+//         } else {
+//             console.warn('Unsupported geometry type:', feature.geometry.type);
+//             return; // 他のタイプはスキップ
+//         }
+//
+//         const len = coordinates.length;
+//
+//         coordinates.forEach((coord, index) => {
+//             if (
+//                 Array.isArray(coord) &&
+//                 coord.length === 2 &&
+//                 Number.isFinite(coord[0]) &&
+//                 Number.isFinite(coord[1])
+//             ) {
+//                 const [x, y] = proj4('EPSG:4326', code, coord); // 座標系変換
+//                 const coordinateKey = `${x},${y}`;
+//
+//                 if (!coordinateMap.has(coordinateKey)) {
+//                     coordinateMap.set(coordinateKey, j);
+//                     A01Text += 'A01,' + j + ',' + j + ',' + y.toFixed(3) + ',' + x.toFixed(3) + ',\n';
+//                     j++;
+//                 }
+//                 const currentCounter = coordinateMap.get(coordinateKey);
+//                 if (index === len - 1) {
+//                     B01Text += 'B01,' + currentCounter + ',' + currentCounter + ',\nD99,\n';
+//                 } else {
+//                     B01Text += 'B01,' + currentCounter + ',' + currentCounter + ',\n';
+//                 }
+//             } else {
+//                 console.error('Invalid coordinate skipped:', coord);
+//             }
+//         });
+//
+//         i++;
+//     });
+//
+//     saveSimaGaiku2 (map,j)
+//
+//     // simaData = simaData + A01Text + 'A99\nZ00,区画データ,\n' + B01Text
+//     simaData = simaData + A01Text + saveSimaGaiku2 (map,j) + 'A99\nZ00,区画データ,\n' + B01Text
+//     // console.log(simaData)
+//     simaData += 'A99,END,,\n';
+//
+//     if (kukaku || jww) {
+//         simaData = convertSIMtoTXT(simaData)
+//     }
+//
+//     document.querySelector('.loadingImg').style.display = 'none'
+//
+//     // UTF-8で文字列をコードポイントに変換
+//     const utf8Array = window.Encoding.stringToCode(simaData);
+//     // UTF-8からShift-JISに変換
+//     const shiftJISArray = window.Encoding.convert(utf8Array, 'SJIS');
+//     // Shift-JISエンコードされたデータをUint8Arrayに格納
+//     const uint8Array = new Uint8Array(shiftJISArray);
+//     // Blobを作成（MIMEタイプを変更）
+//     const blob = new Blob([uint8Array], { type: 'application/octet-stream' });
+//
+//     // ダウンロード用リンクを作成
+//     const link = document.createElement('a');
+//     link.href = URL.createObjectURL(blob);
+//     if (!kukaku) {
+//         fileName = fileName + kei + firstChiban + hoka + '.sim';
+//     } else {
+//         fileName = fileName + kei + firstChiban + hoka + '.txt';
+//     }
+//     link.download = fileName; // ファイル名を正確に指定
+//     // リンクをクリックしてダウンロード
+//     link.click();
+//     URL.revokeObjectURL(link.href);
+// }
 
 export function saveCima(map, layerId, sourceId, fields, kaniFlg, kei) {
     if (map.getZoom() <= 15) {
