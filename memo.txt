@@ -820,3 +820,16 @@ ogr2ogr -f GeoJSON output_points.geojson amx2024.geojson \
   -sql "SELECT ST_Centroid(geometry) AS geometry, 大字名, 大字コード, 地番, 丁目コード, 小字コード, 市区町村名 FROM input"
 
 ogr2ogr -f FlatGeobuf amx2024_utf8.fgb amx2024_utf8.geojson
+
+tippecanoe -o shizuokashi.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=0 \
+    --layer=chibanzu \
+    shizuokashi_with_chiban.geojson

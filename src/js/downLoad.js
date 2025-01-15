@@ -393,7 +393,59 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
     const firstChiban = getChibanAndHoka(geojson).firstChiban
     const hoka = getChibanAndHoka(geojson).hoka
     geojson.features.forEach((feature) => {
-        const chiban = feature.properties.地番;
+        let chiban = feature.properties.地番;
+        switch (layerId) {
+            case 'oh-chibanzu-静岡市':
+            case 'oh-chibanzu-福岡市':
+            case 'oh-chibanzu-利根町':
+            case 'oh-chibanzu-鹿角市':
+            case 'oh-chibanzu-ニセコ町':
+            case 'oh-chibanzu-室蘭市':
+                chiban = feature.properties.地番
+                break
+            case 'oh-chibanzu-北広島市':
+                chiban = feature.properties.Chiban + '-'  + feature.properties.Edaban
+                break
+            case 'oh-chibanzu-京都市':
+            case 'oh-chibanzu-舟形町':
+                chiban = feature.properties.TIBAN
+                break
+            case 'oh-chibanzu-磐田市':
+            case 'oh-chibanzu-福島市':
+                chiban = feature.properties.TXTCD
+                break
+            case 'oh-chibanzu-越谷市':
+                chiban = feature.properties.本番 + '-'  + feature.properties.枝番
+                break
+            case 'oh-chibanzu-佐用町':
+            case 'oh-chibanzu-岸和田市':
+            case 'oh-chibanzu-町田市':
+                chiban = feature.properties.CHIBAN
+                break
+            case 'oh-chibanzu-泉南市':
+            case 'oh-chibanzu-国立市':
+                chiban = feature.properties.表示文字列
+                break
+            case 'oh-chibanzu-半田市':
+                chiban = feature.properties.番地 + '-' + feature.properties.枝番 + '-' + feature.properties.小枝
+                break
+            case 'oh-chibanzu-加古川市':
+                chiban = feature.properties.TXTCODE1
+                break
+            case 'oh-chibanzu-奈良市':
+                chiban = feature.properties.地番本番 + '-' + feature.properties.地番枝番 + '-' + feature.properties.地番小枝
+                break
+            case 'oh-chibanzu-坂出市':
+                chiban = feature.properties.所在地番3 + '-'  + feature.properties.所在地番5
+                break
+            case 'oh-chibanzu-善通寺市':
+                chiban = feature.properties.本番 + '-' + feature.properties.枝番 + '-' + feature.properties.孫番
+                break
+            case 'oh-chibanzu-長与町':
+                chiban = feature.properties.SAFIELD002
+                break
+        }
+
         B01Text += 'D00,' + i + ',' + chiban + ',1,\n';
         let coordinates = [];
         if (feature.geometry.type === 'Polygon') {
