@@ -2095,7 +2095,8 @@ export default {
             console.log(this.$store.state.highlightedChibans)
             // this.$store.state.highlightedChibans = new Set()
             if (e.features && e.features.length > 0) {
-              const targetId = `${e.features[0].properties['丁目コード']}_${e.features[0].properties['小字コード']}_${e.features[0].properties['地番']}`;
+              // const targetId = `${e.features[0].properties['丁目コード']}_${e.features[0].properties['小字コード']}_${e.features[0].properties['地番']}`;
+              const targetId = `${e.features[0].properties['地番区域']}_${e.features[0].properties['地番']}`;
               console.log(targetId);
               console.log(this.$store.state.highlightedChibans)
               if (this.$store.state.highlightedChibans.has(targetId)) {

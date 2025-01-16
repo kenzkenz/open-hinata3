@@ -342,6 +342,7 @@ function getFirstPointName(geojson) {
 
 
 function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg, zahyokei2, kukaku,jww, kei2) {
+    console.log(geojson)
     geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
     console.log(geojson)
     if (!geojson || geojson.type !== 'FeatureCollection') {
@@ -354,6 +355,7 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
             if (feature.properties && feature.properties.座標系) {
                 console.log("Found Coordinate Property:", feature.properties.座標系);
                 zahyo = feature.properties.座標系; // 最初に見つけた値を返す
+                // alert(zahyo)
             }
         }
     } else {
@@ -1852,7 +1854,7 @@ async function detailGeojson(map, layerId, kukaku) {
     let retryAttempted = false;
 
     function getFgbUrl(prefId) {
-        const specialIds = ['22', '26', '29', '40', '43', '44','45','47'];
+        const specialIds = ['07', '15', '22', '26', '28', '29', '40', '43', '44','45','47'];
         return specialIds.includes(prefId)
             ? `https://kenzkenz3.xsrv.jp/fgb/2024/${prefId}.fgb`
             : `https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_${prefId}.fgb`;
@@ -1924,7 +1926,7 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
     let retryAttempted = false;
     // ここを改修する必要あり。amxと24自治体以外の動きがあやしい。
     function getFgbUrl(prefId) {
-        const specialIds = ['07','22', '26', '29', '40', '43', '44','45','47'];
+        const specialIds = ['07', '15', '22', '26', '28', '29', '40', '43', '44','45','47'];
         switch (layerId) {
             case 'oh-chibanzu2024':
                 return 'https://kenzkenz3.xsrv.jp/fgb/Chibanzu_2024_with_id.fgb'
@@ -1934,6 +1936,8 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
                     : `https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_${prefId}.fgb`
         }
     }
+    // alert(getFgbUrl(prefId))
+    console.log(getFgbUrl(prefId))
 
     function fgBoundingBox() {
         const LngLatBounds = map.getBounds();
@@ -2002,10 +2006,11 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
             // if (layerId === 'oh-amx-a-fude') {
             //     geojson = extractMatchingFeatures(map,geojson)
             // }
-            // console.log(geojson)
+            console.log(geojson)
             if (layerId === 'oh-amx-a-fude') {
                 geojson = extractMatchingFeatures(map,geojson)
             }
+            console.log(geojson)
             convertAndDownloadGeoJSONToSIMA(map, layerId, geojson, '詳細_', false, '', kukaku);
         } else {
             console.log(geojson)
@@ -2090,7 +2095,8 @@ export function highlightSpecificFeatures(map,layerId) {
                 'case',
                 [
                     'in',
-                    ['concat', ['get', '丁目コード'], '_', ['get', '小字コード'], '_', ['get', '地番']],
+                    // ['concat', ['get', '丁目コード'], '_', ['get', '小字コード'], '_', ['get', '地番']],
+                    ['concat', ['get', '地番区域'], '_', ['get', '地番']],
                     ['literal', Array.from(store.state.highlightedChibans)]
                 ],
                 'rgba(255, 0, 0, 0.5)', // クリックされた地番が選択された場合
@@ -2317,6 +2323,22 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
     console.log(geojsonData)
     console.log(layerId)
     console.log(store.state.highlightedChibans)
+    const chiban = []
+    const chyome = []
+    store.state.highlightedChibans.forEach(c => {
+        console.log(c)
+        const lastUnderscoreIndex = c.lastIndexOf("_");
+        // 最後の「_」の次の文字列を取得
+        const result = c.substring(lastUnderscoreIndex + 1);
+        console.log(result)
+        chiban.push(result)
+        chyome.push(c.split('_')[2])
+
+
+    })
+
+    console.log(chiban)
+    console.log(chyome)
     const filteredFeatures = geojsonData.features.filter(feature => {
         let targetId;
         switch (layerId) {
@@ -2324,9 +2346,9 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
                 console.log(feature.properties['id'])
                 targetId = `${feature.properties['id']}`;
                 break;
-            case 'oh-amx-a-fude':
-                targetId = `${feature.properties['丁目コード']}_${feature.properties['小字コード']}_${feature.properties['地番']}`;
-                break;
+            // case 'oh-amx-a-fude':
+            //     targetId = feature.properties['地番'];
+            //     break;
             case 'oh-iwatapolygon':
                 targetId = `${feature.properties['SKSCD']}_${feature.properties['AZACD']}_${feature.properties['TXTCD']}`;
                 break;
@@ -2380,8 +2402,14 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
                 targetId = `${feature.properties['id']}`;
                 break;
         }
-        // console.log(targetId)
-        return store.state.highlightedChibans.has(targetId);
+        console.log(targetId)
+         // amx2024対策
+         if (layerId === 'oh-amx-a-fude') {
+             return chiban.includes(feature.properties['地番'])
+             // return chiban.includes(feature.properties['地番']) && chyome.includes(feature.properties['丁目名'])
+         } else {
+            return store.state.highlightedChibans.has(targetId);
+         }
     });
     let geojson
     if (filteredFeatures.length > 0) {
@@ -2390,7 +2418,9 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
             features: filteredFeatures
         };
     } else {
-        geojson = geojsonData
+        alert('データ取得失敗')
+        return
+        // geojson = geojsonData
     }
     console.log('Extracted GeoJSON from Source:', geojson);
     return geojson;
@@ -2445,16 +2475,16 @@ function extractMatchingFeatures(map,geojson) {
     // 2. 表示中地物のプロパティを収集
     const visiblePropertiesSet = new Set();
     visibleFeatures.forEach(feature => {
-        const { 丁目コード, 小字コード, 地番 } = feature.properties;
-        if (丁目コード && 小字コード && 地番) {
-            visiblePropertiesSet.add(`${丁目コード}_${小字コード}_${地番}`);
+        const { 地番 } = feature.properties;
+        if (地番) {
+            visiblePropertiesSet.add(`${地番}`);
         }
     });
     // 3. GeoJSONから一致する地物を抽出
     const filteredFeatures = geojson.features.filter(feature => {
-        const { 丁目コード, 小字コード, 地番 } = feature.properties || {};
-        return 丁目コード && 小字コード && 地番 &&
-            visiblePropertiesSet.has(`${丁目コード}_${小字コード}_${地番}`);
+        const { 地番} = feature.properties || {};
+        return 地番 &&
+            visiblePropertiesSet.has(`${地番}`);
     });
     // 4. 新しいGeoJSONを生成して返却
     return {
@@ -2665,7 +2695,7 @@ export async function queryFGBWithPolygon(map,polygon,chiban) {
 
     let fgbUrl;
     function getFgbUrl(prefId) {
-        const specialIds = ['22', '26', '29', '40', '43', '44','45','47'];
+        const specialIds = ['07', '15', '22', '26', '28', '29', '40', '43', '44','45','47'];
         return specialIds.includes(prefId)
             ? `https://kenzkenz3.xsrv.jp/fgb/2024/${prefId}.fgb`
             : `https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_${prefId}.fgb`;

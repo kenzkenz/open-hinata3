@@ -2288,6 +2288,22 @@ const amx2024LayerLabel = {
     'maxzoom': 24,
     'minzoom': 15
 }
+const amx2024LayerVertex = {
+    id: 'oh-amx-vertex',
+    type: 'circle',
+    source: 'amx-a-2024-pmtiles',
+    "source-layer": "fude",
+    paint: {
+        'circle-radius': [
+            'interpolate', ['linear'], ['zoom'],
+            15, 0,
+            18,4
+        ],
+        'circle-color': 'red',
+        // 'circle-stroke-width': 1,
+        // 'circle-stroke-color': 'white'
+    }
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const amxSource = {
     id: "amx-a-pmtiles", obj: {
@@ -7069,7 +7085,7 @@ const gaikuLayer = {
             ['zoom'],
             0, 0,
             12,10,
-            16,20
+            16,18
         ]
     }
 }
@@ -7121,14 +7137,14 @@ const gaikuLayerLabel = {
             ['get', '街区点・補助点名称'] // 基準点等名称がない場合はこちらを使用
         ],
         'text-font': ['NotoSansJP-Regular'],
-        'text-offset': [0, 1.5],
+        'text-offset': [0, 1.7],
     },
     'paint': {
         'text-color': 'rgba(0, 0, 0, 1)',
         'text-halo-color': 'rgba(255,255,255,1)',
         'text-halo-width': 1.0,
     },
-    'maxzoom': 24,
+    // 'maxzoom': 24,
     'minzoom': 15
 };
 // 都市部官民基準点--------------------------------------------------------------------------------------------
@@ -7159,7 +7175,7 @@ const toshikanLayer = {
             ['zoom'],
             0, 0,
             12,10,
-            16,20
+            16,18
 
         ]
     }
@@ -7209,14 +7225,14 @@ const toshikanLayerLabel = {
             ['get', '街区点・補助点名称'] // 基準点等名称がない場合はこちらを使用
         ],
         'text-font': ['NotoSansJP-Regular'],
-        'text-offset': [0, 1.5],
+        'text-offset': [0, 1.7],
     },
     'paint': {
         'text-color': 'rgba(0, 0, 0, 1)',
         'text-halo-color': 'rgba(255,255,255,1)',
         'text-halo-width': 1.0,
     },
-    'maxzoom': 24,
+    // 'maxzoom': 24,
     'minzoom': 15
 };
 
@@ -7282,11 +7298,11 @@ const shizuokaOrthoLayer = {
 const layers01 = [
     {
         id: 'oh-amx-a-fude',
-        label: "登記所備付地図データe",
+        label: "登記所備付地図データ",
         // source: amxSource,
         // layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel,amxLayerVertex],
         sources: [amxSource,amx2024Source],
-        layers: [amxLayerDaihyou,amx2024LayerLabel,amx2024Layer,amx2024LayerLine,],
+        layers: [amxLayerDaihyou,amx2024LayerLabel,amx2024Layer,amx2024LayerLine,amx2024LayerVertex],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
         ext: {name:'extTokijyo'}
     },
@@ -7300,7 +7316,7 @@ const layers01 = [
                 // source: amxSource,
                 // layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel,amxLayerVertex],
                 sources: [amxSource,amx2024Source],
-                layers: [amxLayerDaihyou,amx2024LayerLabel,amx2024Layer,amx2024LayerLine,],
+                layers: [amxLayerDaihyou,amx2024LayerLabel,amx2024Layer,amx2024LayerLine,amx2024LayerVertex],
                 attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
                 ext: {name:'extTokijyo'}
             },
@@ -7380,7 +7396,7 @@ const layers01 = [
                 // source: amxSource,
                 // layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel,amxLayerVertex],
                 sources: [amxSource,amx2024Source],
-                layers: [amxLayerDaihyou,amx2024LayerLabel,amx2024Layer,amx2024LayerLine,],
+                layers: [amxLayerDaihyou,amx2024LayerLabel,amx2024Layer,amx2024LayerLine,amx2024LayerVertex],
                 attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
                 ext: {name:'extTokijyo'}
             },
@@ -8712,13 +8728,6 @@ const layers01 = [
                 label: "日本歴史地名大系",
                 source: nihonrekishiSource,
                 layers:[nihonrekishiLayer,nihonrekishiLayerLabel]
-            },
-            {
-                id: 'oh-amx-a-fude',
-                label: "登記所備付地図データ",
-                source: amxSource,
-                layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel,amxLayerVertex],
-                ext: {name:'extTokijyo'}
             },
         ]
     },
