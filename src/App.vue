@@ -11,6 +11,7 @@
       >
         <input type="range" min="0" max="1" step="0.01" class="range" v-model.number="s_simaOpacity" @input="simaOpacityInput"/>
         <v-btn color="pink" text @click="simaDl">SIMAダウンロード</v-btn>
+        <v-btn style="margin-left: 10px;" color="pink" text @click="simaDelete">削除</v-btn>
         <template v-slot:actions>
           <v-btn color="pink" text @click="s_snackbar = false">閉じる</v-btn>
         </template>
@@ -445,6 +446,15 @@ export default {
     },
   },
   methods: {
+    simaDelete () {
+      const geoJSON = {
+        type: 'FeatureCollection',
+        features: []
+      };
+      const map01 = this.$store.state.map01
+      map01.getSource('sima-data').setData(geoJSON)
+      this.$store.state.simaText = ''
+    },
     pngDownload () {
       const map01 = this.$store.state.map01
       pngDownload(map01)
@@ -482,7 +492,9 @@ export default {
       }
     },
     simaDl () {
-      downloadSimaText()
+      if (this.$store.state.simaText) {
+        downloadSimaText()
+      }
     },
     share(mapName) {
       if (this.$store.state.dialogs.shareDialog[mapName].style.display === 'none') {

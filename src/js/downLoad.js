@@ -513,9 +513,7 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
 
     saveSimaGaiku2 (map,j)
 
-    // simaData = simaData + A01Text + 'A99\nZ00,区画データ,\n' + B01Text
     simaData = simaData + A01Text + saveSimaGaiku2 (map,j) + 'A99\nZ00,区画データ,\n' + B01Text
-    // console.log(simaData)
     simaData += 'A99,END,,\n';
 
     if (kukaku || jww) {
@@ -1956,22 +1954,10 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
     let bbox;
     console.log(store.state.highlightedChibans)
     if (store.state.highlightedChibans.size > 0) {
-        // console.log(fgBoundingBox())
-        bbox = getBoundingBoxByLayer(map, layerId);
-        // console.log(bbox)
-        // bboxが画面内にあるかどうかをチェック
-        console.log(bbox.minX)
+        bbox = getBoundingBoxByLayer(map, layerId)
+        // alert(bbox.minX)
+        console.log(bbox)
         if (bbox.minX === Infinity) bbox = fgBoundingBox()
-        // function isBBoxInView(bbox) {
-        //     const mapBounds = map.getBounds();
-        //     return (
-        //         bbox[0][0] >= mapBounds.getWest() && // bboxの西端が画面の西端より右
-        //         bbox[1][0] <= mapBounds.getEast() && // bboxの東端が画面の東端より左
-        //         bbox[0][1] >= mapBounds.getSouth() && // bboxの南端が画面の南端より上
-        //         bbox[1][1] <= mapBounds.getNorth()   // bboxの北端が画面の北端より下
-        //     );
-        // }
-        // if (!isBBoxInView(bbox)) bbox = fgBoundingBox();
     } else {
         bbox = fgBoundingBox();
     }
@@ -2108,7 +2094,6 @@ export function highlightSpecificFeatures(map,layerId) {
 }
 let isFirstRunCity1 = true;
 export function highlightSpecificFeaturesCity(map,layerId) {
-    // alert(store.state.highlightedChibans.size)
     console.log(store.state.highlightedChibans);
     console.log(Array.from(store.state.highlightedChibans))
     console.log(layerId)
@@ -2198,6 +2183,19 @@ export function highlightSpecificFeaturesCity(map,layerId) {
 // 特定のレイヤーから地物を取得し、フィルタリング後にBBOXを計算する関数
 function getBoundingBoxByLayer(map, layerId) {
     // 地物をフィルタリング
+    const chiban = []
+    const chyome = []
+    store.state.highlightedChibans.forEach(c => {
+        console.log(c)
+        const lastUnderscoreIndex = c.lastIndexOf("_");
+        // 最後の「_」の次の文字列を取得
+        const result = c.substring(lastUnderscoreIndex + 1);
+        console.log(result)
+        chiban.push(result)
+        chyome.push(c.split('_')[2])
+    })
+    console.log(chiban)
+    console.log(chyome)
     const filteredFeatures = map.queryRenderedFeatures({
         layers: [layerId] // 対象のレイヤーIDを指定
     }).filter(feature => {
@@ -2207,7 +2205,8 @@ function getBoundingBoxByLayer(map, layerId) {
                 targetId = `${feature.properties['id']}`;
                 break;
             case 'oh-amx-a-fude':
-                targetId = `${feature.properties['丁目コード']}_${feature.properties['小字コード']}_${feature.properties['地番']}`;
+                // targetId = `${feature.properties['丁目コード']}_${feature.properties['小字コード']}_${feature.properties['地番']}`;
+                targetId = `${feature.properties['地番区域']}_${feature.properties['地番']}`;
                 break;
             case 'oh-iwatapolygon':
                 targetId = `${feature.properties['SKSCD']}_${feature.properties['AZACD']}_${feature.properties['TXTCD']}`;
@@ -2255,8 +2254,12 @@ function getBoundingBoxByLayer(map, layerId) {
                 targetId = `${feature.properties['id']}`;
                 break;
         }
-        // console.log(store.state.highlightedChibans)
-        return store.state.highlightedChibans.has(targetId); // 特定のIDセットに含まれているか
+        // amx2024対策
+        // if (layerId === 'oh-amx-a-fude') {
+        //     return chiban.includes(feature.properties['地番'])
+        // } else {
+            return store.state.highlightedChibans.has(targetId);
+        // }
     });
 
     // 抽出結果の確認
@@ -2273,7 +2276,7 @@ function getBoundingBoxByLayer(map, layerId) {
         if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
             const coordinates = feature.geometry.coordinates.flat(Infinity);
             for (let i = 0; i < coordinates.length; i += 2) {
-                console.log(coordinates)
+                // console.log(coordinates)
                 const [x, y] = [coordinates[i], coordinates[i + 1]];
                 if (x < minX) minX = x;
                 if (y < minY) minY = y;
@@ -2301,12 +2304,12 @@ function getBoundingBoxByLayer(map, layerId) {
     // });
 
 
-    console.log({
-        minX,
-        minY,
-        maxX,
-        maxY
-    })
+    // console.log({
+    //     minX,
+    //     minY,
+    //     maxX,
+    //     maxY
+    // })
     return {
         minX,
         minY,
@@ -2333,10 +2336,7 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
         console.log(result)
         chiban.push(result)
         chyome.push(c.split('_')[2])
-
-
     })
-
     console.log(chiban)
     console.log(chyome)
     const filteredFeatures = geojsonData.features.filter(feature => {
