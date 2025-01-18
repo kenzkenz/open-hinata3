@@ -6,6 +6,7 @@ import proj4 from 'proj4'
 import vuetify from "@/plugins/vuetify";
 import axios from "axios";
 import {geotiffSource, geotiffLayer, jpgSource, jpgLayer} from "@/js/layers";
+import {feature} from "@turf/turf";
 // 複数のクリックされた地番を強調表示するためのセット
 // export let highlightedChibans = new Set();
 (function() {
@@ -284,11 +285,20 @@ export function gistUpload (map,layerId,sourceId,fields) {
 }
 
 // geojsonから最小の地番を取得する関数
-function getChibanAndHoka(geojson) {
-    if (!geojson || !geojson.features || geojson.features.length === 0) {
-        console.warn('GeoJSONが無効または空です');
-        return { firstChiban: '', hoka: '' };
+function getChibanAndHoka(geojson,isDxf) {
+
+    if (isDxf) {
+        const filteredFeatures = geojson.features.filter(feature => {
+            const geometryType = feature.geometry?.type;
+            return geometryType === "Polygon" || geometryType === "MultiPolygon";
+        });
+        // 新しいGeoJSONを構築して返す
+        geojson = {
+            type: "FeatureCollection",
+            features: filteredFeatures
+        };
     }
+
     // 地番の最小値を取得
     let firstChiban = geojson.features
         .map(feature => feature.properties?.地番) // 地番を抽出
@@ -965,6 +975,43 @@ function geojsonToDXF(geojson) {
 //     return dxf;
 // }
 
+export function saveDXfGaiku (map,geojson,zahyo) {
+    const layerIds = []
+    if (map.getLayer('oh-gaiku-layer')) {
+        layerIds.push('oh-gaiku-layer')
+    }
+    if (map.getLayer('oh-toshikan-layer')) {
+        layerIds.push('oh-toshikan-layer')
+    }
+    const features = map.queryRenderedFeatures({
+        layers: layerIds // 対象のレイヤー名を指定
+    });
+    if (features.length === 0) {
+        return geojson
+    }
+    // GeoJSON形式に変換
+    const gaikuGeojson = {
+        type: 'FeatureCollection',
+        features: features.map(feature => ({
+            type: 'Feature',
+            geometry: feature.geometry,
+            properties: feature.properties
+        }))
+    };
+    const code = zahyokei.find(item => item.kei === zahyo).code
+    gaikuGeojson.features.forEach(feature => {
+        console.log(proj4('EPSG:4326', code, feature.geometry.coordinates))
+        feature.geometry.coordinates = proj4('EPSG:4326', code, feature.geometry.coordinates)
+    })
+    // 新しいGeoJSONオブジェクトを作成
+    geojson = {
+        type: "FeatureCollection",
+        features: [...geojson.features, ...gaikuGeojson.features] // featuresを結合
+    };
+    return geojson;
+}
+
+
 export function saveDxf (map, layerId, sourceId, fields, detailGeojson, kei2) {
     console.log(detailGeojson)
     let geojson
@@ -1071,6 +1118,46 @@ export function saveDxf (map, layerId, sourceId, fields, detailGeojson, kei2) {
 
     geojson = transformGeoJSON(geojson,code)
 
+    // 各頂点をポイントとして追加
+    function addPolygonVerticesAsPoints(geojson) {
+        const pointFeatures = [];
+
+        geojson.features.forEach(feature => {
+            if (feature.geometry.type === "Polygon" || feature.geometry.type === "MultiPolygon") {
+                const coordinates = feature.geometry.type === "Polygon"
+                    ? [feature.geometry.coordinates]
+                    : feature.geometry.coordinates;
+
+                coordinates.forEach(polygon => {
+                    polygon.forEach(ring => {
+                        ring.forEach(coord => {
+                            pointFeatures.push({
+                                type: "Feature",
+                                geometry: {
+                                    type: "Point",
+                                    coordinates: coord
+                                },
+                                properties: { source: "vertex", parent: feature.properties.name || null }
+                            });
+                        });
+                    });
+                });
+            }
+        });
+
+        return {
+            ...geojson,
+            features: [...geojson.features, ...pointFeatures]
+        };
+    }
+
+    geojson = addPolygonVerticesAsPoints(geojson)
+
+    geojson = saveDXfGaiku (map,geojson,zahyo)
+
+
+
+
     console.log(geojson)
     try {
         const dxfString = geojsonToDXF(geojson);
@@ -1079,8 +1166,8 @@ export function saveDxf (map, layerId, sourceId, fields, detailGeojson, kei2) {
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
 
-        const firstChiban = getChibanAndHoka(geojson).firstChiban
-        const hoka = getChibanAndHoka(geojson).hoka
+        const firstChiban = getChibanAndHoka(geojson,true).firstChiban
+        const hoka = getChibanAndHoka(geojson,true).hoka
         const kei = getKeiByCode(code)
         link.download = kei + firstChiban + hoka + '.dxf';
 
@@ -2021,6 +2108,7 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
         console.log(geojson);
         saveDxf (map, layerId, sourceId, fields, geojson, kei)
     }
+    document.querySelector('.loadingImg').style.display = 'none'
 }
 
 
