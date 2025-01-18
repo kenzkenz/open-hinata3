@@ -3172,10 +3172,10 @@ export function pngDownload(map) {
         const canvas = map.getCanvas();
         const imageData = canvas.toDataURL("image/png");
         // 画像をダウンロード
-        const link = document.createElement("a");
+        let link = document.createElement("a");
         link.href = imageData;
         link.download = "map-image.png";
-        link.click();
+        // link.click();
 
         // ワールドファイルの生成
         const bounds = map.getBounds(); // 地図の表示範囲を取得
@@ -3204,11 +3204,79 @@ export function pngDownload(map) {
             `.trim();
 
         // ワールドファイルをダウンロード
-        const blob = new Blob([worldFileContent], { type: "text/plain" });
+        let blob = new Blob([worldFileContent], { type: "text/plain" });
         const worldFileLink = document.createElement("a");
         worldFileLink.href = URL.createObjectURL(blob);
         worldFileLink.download = "map-image.pgw"; // 適切な拡張子
-        worldFileLink.click();
+        // worldFileLink.click();
+
+        // simaファイル
+        let simaData = 'G00,01,open-hinata3,\n';
+        simaData += 'Z00,座標ﾃﾞｰﾀ,,\n';
+        simaData += 'A00,\n';
+        let A01Text = '';
+        A01Text += 'A01,' + 1 + ',' + 1 + ',' + yMax + ',' + xMin + ',\n';
+        A01Text += 'A01,' + 2 + ',' + 2 + ',' + yMax + ',' + xMax + ',\n';
+        A01Text += 'A01,' + 3 + ',' + 3 + ',' + yMin + ',' + xMin + ',\n';
+        A01Text += 'A01,' + 4 + ',' + 4 + ',' + yMin + ',' + xMax + ',\n';
+        simaData += A01Text + 'A99,END,,\n';
+
+        // UTF-8で文字列をコードポイントに変換
+        const utf8Array = window.Encoding.stringToCode(simaData);
+        // UTF-8からShift-JISに変換
+        const shiftJISArray = window.Encoding.convert(utf8Array, 'SJIS');
+        // Shift-JISエンコードされたデータをUint8Arrayに格納
+        const uint8Array = new Uint8Array(shiftJISArray);
+        // Blobを作成（MIMEタイプを変更）
+        blob = new Blob([uint8Array], { type: 'application/octet-stream' });
+
+        // ダウンロード用リンクを作成
+        link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+
+        link.download = "map-image.sim"; // ファイル名を正確に指定
+        // リンクをクリックしてダウンロード
+        // link.click();
+        URL.revokeObjectURL(link.href);
+
+        // DXFファイル
+        // GeoJSONの初期構造
+        const geojson = {
+            type: "FeatureCollection",
+            features: []
+        };
+        // ポイントを作成する関数
+        function createPoint(x, y) {
+            return {
+                type: "Feature",
+                geometry: {
+                    type: "Point",
+                    coordinates: [x, y]
+                },
+                properties: {} // 必要に応じて属性を追加
+            };
+        }
+        // 4つのポイントの座標を定義
+        const points = [
+            createPoint(xMin, yMin), // 左下
+            createPoint(xMax, yMin), // 右下
+            createPoint(xMin, yMax), // 左上
+            createPoint(xMax, yMax)  // 右上
+        ];
+        // pointsをGeoJSONのfeaturesに追加
+        geojson.features.push(...points);
+        // 結果を表示
+        console.log(JSON.stringify(geojson, null, 2));
+        const dxfString = geojsonToDXF(geojson)
+        // DXFファイルとしてダウンロード
+        blob = new Blob([dxfString], { type: 'application/dxf' });
+        link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = "map-image.dxf";
+
+        link.click();
+
+
     });
     const currentZoom = map.getZoom();
     // 地図をズームさせる
