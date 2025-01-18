@@ -2251,10 +2251,19 @@ const amx2024Layer = {
     source: "amx-a-2024-pmtiles",
     "source-layer": "fude",
     paint: {
-        "fill-color": "rgba(254, 217, 192, 0)",
+        "fill-color": [
+            "case",
+            ["in", "道", ["get", "地番"]],
+            "rgba(192, 192, 192, 0.7)", // 道っぽい灰色
+            ["in", "水", ["get", "地番"]],
+            "rgba(135, 206, 250, 0.7)", // 水っぽい青色
+            "rgba(254, 217, 192, 0)" // それ以外は透明
+        ],
         "fill-outline-color": "rgba(255, 0, 0, 1)",
     },
-}
+};
+
+
 const amx2024LayerLine = {
     id: "oh-amx-a-fude-line",
     type: "line",

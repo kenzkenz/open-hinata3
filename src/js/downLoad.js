@@ -998,11 +998,26 @@ export function saveDXfGaiku (map,geojson,zahyo) {
             properties: feature.properties
         }))
     };
-    const code = zahyokei.find(item => item.kei === zahyo).code
+    // const code = zahyokei.find(item => item.kei === zahyo).code
+    // gaikuGeojson.features.forEach(feature => {
+    //     console.log(proj4('EPSG:4326', code, feature.geometry.coordinates))
+    //     feature.geometry.coordinates = proj4('EPSG:4326', code, feature.geometry.coordinates)
+    // })
+
     gaikuGeojson.features.forEach(feature => {
-        console.log(proj4('EPSG:4326', code, feature.geometry.coordinates))
-        feature.geometry.coordinates = proj4('EPSG:4326', code, feature.geometry.coordinates)
+        console.log(feature.properties)
+        let x,y
+        if (feature.properties.補正後X座標) {
+            x = feature.properties.補正後X座標
+            y = feature.properties.補正後Y座標
+        } else {
+            x = feature.properties.X座標
+            y = feature.properties.Y座標
+        }
+        feature.geometry.coordinates = [y,x]
     })
+
+
     // 新しいGeoJSONオブジェクトを作成
     geojson = {
         type: "FeatureCollection",
@@ -2161,6 +2176,21 @@ export function highlightSpecificFeatures(map,layerId) {
     } else {
         sec = 0
     }
+
+    map.setPaintProperty(
+        layerId,
+        'fill-color',
+        [
+            "case",
+            ["in", "道", ["get", "地番"]],
+            "rgba(192, 192, 192, 0.7)", // 道っぽい灰色
+            ["in", "水", ["get", "地番"]],
+            "rgba(135, 206, 250, 0.7)", // 水っぽい青色
+            "rgba(254, 217, 192, 0)" // それ以外は透明
+        ],
+    );
+
+
     setTimeout(() => {
         map.setPaintProperty(
             layerId,
@@ -2174,7 +2204,15 @@ export function highlightSpecificFeatures(map,layerId) {
                     ['literal', Array.from(store.state.highlightedChibans)]
                 ],
                 'rgba(255, 0, 0, 0.5)', // クリックされた地番が選択された場合
-                'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
+                // 'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
+                [
+                    "case",
+                    ["in", "道", ["get", "地番"]],
+                    "rgba(192, 192, 192, 0.7)", // 道っぽい灰色
+                    ["in", "水", ["get", "地番"]],
+                    "rgba(135, 206, 250, 0.7)", // 水っぽい青色
+                    "rgba(254, 217, 192, 0)" // それ以外は透明
+                ],
             ]
         );
     }, sec)
@@ -2517,10 +2555,23 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
 // 全フィーチャの選択状態をリセットする関数
 export function resetFeatureColors(map,layerId) {
     store.state.highlightedChibans.clear();
+    // map.setPaintProperty(
+    //     layerId,
+    //     'fill-color',
+    //     'rgba(0, 0, 0, 0)' // 全ての地番+丁目コードを透明にリセット
+    // );
+
     map.setPaintProperty(
         layerId,
         'fill-color',
-        'rgba(0, 0, 0, 0)' // 全ての地番+丁目コードを透明にリセット
+        [
+            "case",
+            ["in", "道", ["get", "地番"]],
+            "rgba(192, 192, 192, 0.7)", // 道っぽい灰色
+            ["in", "水", ["get", "地番"]],
+            "rgba(135, 206, 250, 0.7)", // 水っぽい青色
+            "rgba(254, 217, 192, 0)" // それ以外は透明
+        ],
     );
 }
 function convertSIMtoTXT(simText) {
