@@ -424,6 +424,11 @@ export default {
           this.sourceId = 'oh-chibanzu-福山市-source'
           this.fields = ['id']
           break
+        case 'oh-chibanzu-深谷市':
+          this.layerId = 'oh-chibanzu-深谷市'
+          this.sourceId = 'oh-chibanzu-深谷市-source'
+          this.fields = ['id']
+          break
       }
     },
     resetFeatureColors () {

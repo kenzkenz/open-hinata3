@@ -40,7 +40,7 @@
                         outlined
               ></v-select>
             </div>
-            <p style="margin-bottom: 20px;">PNGとワールドファイル(pgw)をダウンロードします。</p>
+<!--            <p style="margin-bottom: 20px;">PNGとワールドファイル(pgw)をダウンロードします。</p>-->
             <v-btn @click="pngDownload">PNGダウンロード開始</v-btn>
           </v-card-text>
           <v-card-actions>
@@ -1362,6 +1362,8 @@ export default {
               if (map.getLayer('oh-chibanzu-福岡市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-福岡市');
               if (map.getLayer('oh-chibanzu-越谷市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-越谷市');
               if (map.getLayer('oh-chibanzu-福山市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-福山市');
+              if (map.getLayer('oh-chibanzu-深谷市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-深谷市');
+
             },100)
           }
           if (params.slj) {
@@ -2275,7 +2277,7 @@ export default {
           'oh-chibanzu-西宮市','oh-chibanzu-加古川市','oh-chibanzu-佐用町','oh-chibanzu-奈良市',
           'oh-chibanzu-坂出市','oh-chibanzu-善通寺市','oh-chibanzu-長与町','oh-chibanzu-福島市',
           'oh-chibanzu-北広島市','oh-chibanzu-国立市','oh-chibanzu-福岡市','oh-chibanzu-越谷市',
-          'oh-chibanzu-福山市'];
+          'oh-chibanzu-福山市','oh-chibanzu-深谷市'];
         layers.forEach(layer => {
           map.on('click', layer, (e) => {
             if (e.features && e.features.length > 0) {

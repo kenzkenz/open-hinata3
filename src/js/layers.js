@@ -1021,6 +1021,7 @@ const sicyosonChibanzuUrls = [
     {name:'利根町', chiban: ['get', '地番'], position:[140.1391729153425,35.85756030920088], url: 'tonechyo', page:'https://www.town.tone.ibaraki.jp/opendata.php'},
     // 埼玉県
     {name:'越谷市', chiban: ['concat', ['get', '本番'], '-', ['get', '枝番']], position:[139.79105245767255,35.890609232668695], url:'koshigayashi', page:'https://www.city.koshigaya.saitama.jp/kurashi_shisei/kurashi/zeikin/koteisisan_tosikeikaku/tibanzu_opendate.html'},
+    {name:'深谷市', chiban: ['concat', ['get', '本番'], '-', ['get', '枝番']], position:[139.281707999998,36.197104580699204], url:'fukayashi', page:'https://opendata.pref.saitama.lg.jp/resources/6204'},
     // 東京都
     {name:'町田市', chiban: ['get', 'CHIBAN'], position:[139.4387823343277,35.546591812173475], url:'machidashi', page:'https://www.city.machida.tokyo.jp/shisei/opendata/chizujoho/chisekizu.html'},
     {name:'国立市', chiban: ['get', '表示文字列'], position:[139.44141245767452,35.68379371055923], url:'kunitachishi3', page:'https://www.city.kunitachi.tokyo.jp/soshiki/Dept01/Div03/Sec01/oshirase/11883.html'},
@@ -7382,16 +7383,16 @@ const layers01 = [
                 label: "市町村地番図",
                 nodes: [
                     ...chibanzuLayers2,
-                    {
-                        id: 'oh-chibanzu2024',
-                        label: "24自治体地番図",
-                        source: chibanzu2024Source,
-                        layers:[chibanzu2024Layer,chibanzu2024Line],
-                        attribution: '<a href="https://www.geospatial.jp/ckan/dataset/chibanzu_2024/resource/79642df8-0456-4847-97cd-a9934cbee42e">Chibanzu_2024.fgb</a><br>'+
-                            '<a href="https://hackmd.io/@kenz/SkQ_R21Lkg" target="_blank">24自治体の情報はこちら</a>',
-                        ext: {name:'extChibanz2024'}
-                    },
-                    ]
+                    // {
+                    //     id: 'oh-chibanzu2024',
+                    //     label: "24自治体地番図",
+                    //     source: chibanzu2024Source,
+                    //     layers:[chibanzu2024Layer,chibanzu2024Line],
+                    //     attribution: '<a href="https://www.geospatial.jp/ckan/dataset/chibanzu_2024/resource/79642df8-0456-4847-97cd-a9934cbee42e">Chibanzu_2024.fgb</a><br>'+
+                    //         '<a href="https://hackmd.io/@kenz/SkQ_R21Lkg" target="_blank">24自治体の情報はこちら</a>',
+                    //     ext: {name:'extChibanz2024'}
+                    // },
+                ]
             },
 
         ]},
