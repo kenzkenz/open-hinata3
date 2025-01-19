@@ -54,24 +54,26 @@
   </v-dialog>
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
-    <v-text-field label="抽出" v-model="s_tokijyoText" @input="change" style="margin-top: 10px"></v-text-field>
+    <v-btn style="width: 100%;" @click="tutorial">使い方説明</v-btn>
+    <hr>
+<!--    <v-text-field label="抽出" v-model="s_tokijyoText" @input="change" style="margin-top: 10px"></v-text-field>-->
 
       <!-- 1行目 -->
-      <div style="display: flex; justify-content: space-between; gap: 10px; padding-right: 30px;">
-        <v-btn class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
-        <v-btn class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>
-      </div>
+<!--      <div style="display: flex; justify-content: space-between; gap: 10px; padding-right: 30px;">-->
+<!--        <v-btn class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>-->
+<!--        <v-btn class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>-->
+<!--      </div>-->
 
       <!-- 2行目 -->
-      <div style="display: flex; justify-content: space-between; gap: 10px; padding-right: 30px;">
-        <v-btn class="tiny-btn" @click="saveSima2">sima保存</v-btn>
-        <v-btn class="tiny-btn" @click="s_dialogForSima = true">sima読込</v-btn>
-        <v-btn class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
+      <div style="margin-top:10px;display: flex; justify-content: space-between; gap: 0px; padding-right: 0px;">
+        <v-btn style="width: 70px;" class="tiny-btn" @click="saveSima2">sima保存</v-btn>
+        <v-btn style="width: 70px;" class="tiny-btn" @click="s_dialogForSima = true">sima読込</v-btn>
+        <v-btn style="width: 70px;" class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
       </div>
 
       <!-- 3行目 -->
       <div style="display: flex; justify-content: space-between; gap: 10px; padding-right: 17px;">
-        <v-btn class="tiny-btn" @click="saveCsv">csv保存</v-btn>
+        <v-btn  style="width: 70px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
 <!--        <v-btn class="tiny-btn" @click="jww">jww座標ファイル保存</v-btn>-->
       </div>
 
@@ -213,6 +215,10 @@ export default {
     },
   },
   methods: {
+    tutorial () {
+      window.open("https://hackmd.io/@kenz/H15Iq49D1g", "_blank");
+      history('チュートリアル',window.location.href)
+    },
     update () {
       this.$store.commit('updateSelectedLayers', {
         mapName: this.mapName, id: this.item.id, values: [
@@ -276,11 +282,13 @@ export default {
     saveCsv () {
       const map = this.$store.state[this.mapName]
       saveCsv(map,'oh-amx-a-fude','amx-a-pmtiles',[])
+      history('CSV保存',window.location.href)
     },
     saveDxf () {
       const map = this.$store.state[this.mapName]
       // saveDxf(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
       saveSima2(map,'oh-amx-a-fude',null,true,'amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
+      history('DXF保存',window.location.href)
     },
     saveSima2 () {
       const map = this.$store.state[this.mapName]

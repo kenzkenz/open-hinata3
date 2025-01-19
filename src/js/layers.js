@@ -1035,8 +1035,10 @@ const sicyosonChibanzuUrls = [
     // 大阪府
     {name:'岸和田市', chiban: ['get', 'CHIBAN'], position:[135.37090737539307,34.46054514396512], url:'kishiwadashi', page:'https://www.city.kishiwada.osaka.jp/soshiki/16/tochi-chibankrnnsakuichiranhyou.html'},
     {name:'泉南市', chiban: ['get', '表示文字列'], position:[135.2734460647299,34.36591222577401], url:'sennanshi', page:'https://www.city.sennan.lg.jp/kakuka/soumu/zeimuka/kazeikakari/zeikin/koteishisan/1505179465186.html'},
+    {name:'豊中市', chiban: ['get', 'TEXTCODE1'], position:[135.4697598501699,34.78130126564767], url:'toyonakashi', page:'https://data.bodik.jp/dataset/272035_chibansanko/resource/c5858297-c312-489f-b244-885074c70daa'},
     // 兵庫県
     {name:'加古川市', chiban: ['get', 'TXTCODE1'], position:[134.84064926983825,34.75678296665963], url:'kakogawashi', page:'https://opendata-api-kakogawa.jp/ckan/dataset/landhouse/resource/c37f9b63-54c8-4094-9e48-8d3817918476'},
+    {name:'伊丹市', chiban: ['get', '所在地番'], position:[135.40037589806093,34.784457867420755], url:'itamishi', page:'https://www.geospatial.jp/ckan/dataset/202401/resource/ec8eb484-66e4-40a7-bf05-248476b0d61d'},
     {name:'佐用町', chiban: ['get', 'CHIBAN'], position:[134.35598183068578,35.004205695261106], url:'sayochyo', page:'https://www.town.sayo.lg.jp/cms-sypher/www/service/detail.jsp?id=9343'},
     // 奈良県
     {name:'奈良市', chiban: ['concat', ['get', '地番本番'], '-', ['get', '地番枝番'], '-', ['get', '地番小枝']], position:[135.80463216931253,34.684824554866864], url:'narashi2', page:'https://www.city.nara.lg.jp/soshiki/14/104605.html'},
