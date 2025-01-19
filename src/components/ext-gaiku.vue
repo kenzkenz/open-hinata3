@@ -21,7 +21,8 @@
   </v-dialog>
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
-    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="saveSimaGaiku">sima保存</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 0px;margin-bottom: 10px;" @click="saveSimaGaiku">sima保存</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 10px;margin-bottom: 10px;" @click="tutorial">説明</v-btn>
     <hr>
     <div v-html="item.attribution"></div>
   </div>
@@ -94,6 +95,10 @@ export default {
     //       this.s_tokijyoText
     //     ]})
     // },
+    tutorial () {
+      window.open("https://hackmd.io/@kenz/S1gKou9wyg", "_blank");
+      history('街区チュートリアル',window.location.href)
+    },
     checkDevice() {
       const userAgent = navigator.userAgent || navigator.vendor || window.opera;
       console.log(/android/i.test(userAgent))
