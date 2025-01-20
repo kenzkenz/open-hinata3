@@ -1319,54 +1319,11 @@ export default {
           }
 
           if (params.chibans) {
-            console.log(params.chibans)
             JSON.parse(params.chibans).forEach(c => {
-              console.log(c)
               this.$store.state.highlightedChibans.add(c)
             })
-            setTimeout(() => {
-              if (map.getLayer('oh-amx-a-fude')) highlightSpecificFeatures(map, 'oh-amx-a-fude');
-              if (map.getLayer('oh-chibanzu2024')) highlightSpecificFeaturesCity(map, 'oh-chibanzu2024');
-              if (map.getLayer('oh-kitahiroshimachiban')) highlightSpecificFeaturesCity(map, 'oh-kitahiroshimachiban');
-              if (map.getLayer('oh-narashichiban')) highlightSpecificFeaturesCity(map, 'oh-narashichiban');
-              if (map.getLayer('oh-iwatapolygon')) highlightSpecificFeaturesCity(map, 'oh-iwatapolygon');
-              if (map.getLayer('oh-fukushimachiban')) highlightSpecificFeaturesCity(map, 'oh-fukushimachiban');
-              if (map.getLayer('oh-kitahiroshimachiban')) highlightSpecificFeaturesCity(map, 'oh-kitahiroshimachiban');
-              if (map.getLayer('oh-kunitachishi')) highlightSpecificFeaturesCity(map, 'oh-kunitachishi');
-              if (map.getLayer('oh-fukuokashichiban')) highlightSpecificFeaturesCity(map, 'oh-fukuokashichiban');
-              if (map.getLayer('oh-chibanzu-室蘭市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-室蘭市');
-              if (map.getLayer('oh-chibanzu-ニセコ町')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-ニセコ町');
-              if (map.getLayer('oh-chibanzu-音更町')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-音更町');
-              if (map.getLayer('oh-chibanzu-鹿角市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-鹿角市');
-              if (map.getLayer('oh-chibanzu-舟形町')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-舟形町');
-              if (map.getLayer('oh-chibanzu-利根町')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-利根町');
-              if (map.getLayer('oh-chibanzu-小平市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-小平市');
-              if (map.getLayer('oh-chibanzu-町田市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-町田市');
-              if (map.getLayer('oh-chibanzu-静岡市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-静岡市');
-              if (map.getLayer('oh-chibanzu-磐田市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-磐田市');
-              if (map.getLayer('oh-chibanzu-半田市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-半田市');
-              if (map.getLayer('oh-chibanzu-京都市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-京都市');
-              if (map.getLayer('oh-chibanzu-長岡京市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-長岡京市');
-              if (map.getLayer('oh-chibanzu-岸和田市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-岸和田市');
-              if (map.getLayer('oh-chibanzu-泉南市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-泉南市');
-              if (map.getLayer('oh-chibanzu-西宮市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-西宮市');
-              if (map.getLayer('oh-chibanzu-加古川市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-加古川市');
-              if (map.getLayer('oh-chibanzu-佐用町')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-佐用町');
-              if (map.getLayer('oh-chibanzu-奈良市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-奈良市');
-              if (map.getLayer('oh-chibanzu-坂出市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-坂出市');
-              if (map.getLayer('oh-chibanzu-善通寺市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-善通寺市');
-              if (map.getLayer('oh-chibanzu-長与町')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-長与町');
-              if (map.getLayer('oh-chibanzu-福島市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-福島市');
-              if (map.getLayer('oh-chibanzu-北広島市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-北広島市');
-              if (map.getLayer('oh-chibanzu-国立市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-国立市');
-              if (map.getLayer('oh-chibanzu-福岡市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-福岡市');
-              if (map.getLayer('oh-chibanzu-越谷市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-越谷市');
-              if (map.getLayer('oh-chibanzu-福山市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-福山市');
-              if (map.getLayer('oh-chibanzu-深谷市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-深谷市');
-              if (map.getLayer('oh-chibanzu-伊丹市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-伊丹市');
-              if (map.getLayer('oh-chibanzu-豊中市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-豊中市');
-            },100)
           }
+
           if (params.slj) {
             const mapNames = ['map01', 'map02']
             mapNames.forEach(mapName => {

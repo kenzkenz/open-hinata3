@@ -3154,6 +3154,7 @@ export async function geoTiffLoad (map,mapName,isUpload) {
             .then(response => {
                 // 成功時の処理
                 if (response.data.error) {
+                    console.log(response.data.error)
                     alert('20mbを超えていますので保存できませんでした。')
                     return
                 }
