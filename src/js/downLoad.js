@@ -1207,7 +1207,8 @@ function downloadGeoJSONAsCSV(geojson, filename = 'data.csv') {
     // 1. 属性のキーを取得（最初のfeatureから）
     const properties = geojson.features[0]?.properties || {};
     const propertyKeys = Object.keys(properties);
-    const headers = ['latitude', 'longitude', ...propertyKeys];
+    // const headers = ['latitude', 'longitude', ...propertyKeys];
+    const headers = propertyKeys;
 
     // 2. 各フィーチャのデータを抽出
     const rows = geojson.features.map(feature => {
