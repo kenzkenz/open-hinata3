@@ -2934,6 +2934,7 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-fukuokakenhazard':
             case 'oh-toshikan-label-layer':
             case 'oh-toshikan-label':
             case 'oh-toshikan-layer':

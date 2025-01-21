@@ -1082,6 +1082,7 @@ export default {
           localIdeographFontFamily: ['sans-serif'], // 日本語を表示するための設定
           center: center,
           zoom: zoom,
+          maxZoom: 50,
           pitch: pitch[mapName],
           bearing:bearing,
           maxPitch: 85, // 最大の傾き85、デフォルトは60

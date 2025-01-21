@@ -7262,6 +7262,47 @@ const shizuokaOrthoLayer = {
     'source': 'shizuoka-ortho-source',
 }
 
+// 福岡県土砂災害-------------------------------------------------------------------------------------------
+const fukuokakenHazardSource = {
+    id: "fukuokakenhazard-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/fukuokakenhazard/fukuokakenhazard.pmtiles",
+    }
+}
+const fukuokakenHazardLayer = {
+    id: "oh-fukuokakenhazard",
+    type: "fill",
+    source: "fukuokakenhazard-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-color': [
+            'match',
+            ['get', 'rinsyu_nam'],
+            '人工林', 'rgba(139, 69, 19, 0.8)', // 茶色（人工林, 透過度0.8）
+            '天然林', 'rgba(34, 139, 34, 0.8)', // 緑色（天然林, 透過度0.8）
+            '伐採跡地', 'rgba(169, 169, 169, 0.8)', // 灰色（伐採跡地, 透過度0.8）
+            '竹林', 'rgba(107, 142, 35, 0.8)', // オリーブ色（竹林, 透過度0.8）
+            'rgba(139, 69, 19, 0.8)' // デフォルト色（透過度0.8）
+        ]
+    }
+};
+const fukuokakenHazardLayerLine = {
+    id: "oh-fukuokakenhazard-line",
+    type: "line",
+    source: "fukuokakenhazard-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            12, 0,
+            16, 2
+        ]
+    },
+}
+
 // // 地形分類テスト --------------------------------------------------------------------------------------------
 // const chikeibunruiSource2 = {
 //     id: "chikeibunrui-source", obj: {
@@ -8634,6 +8675,12 @@ const layers01 = [
                 label: "災害伝承碑",
                 source: densyohiSource,
                 layers: [densyohiLayer,densyohiLayerLabel],
+            },
+            {
+                id: 'oh-fukuokakenhazard',
+                label: "福岡県土砂災害",
+                source: fukuokakenHazardSource,
+                layers: [fukuokakenHazardLayer,fukuokakenHazardLayerLine],
             },
         ]
     },

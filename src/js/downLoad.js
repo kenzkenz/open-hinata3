@@ -1412,7 +1412,6 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
                     'text-halo-color': 'rgba(255,255,255,0.7)',
                     'text-halo-width': 1.0
                 },
-                maxzoom: 24,
                 minzoom: 14,
                 filter: ['==', '$type', 'Point']
             });
@@ -1442,7 +1441,6 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
                     'text-halo-color': 'rgba(255,255,255,0.7)',
                     'text-halo-width': 1.0
                 },
-                maxzoom: 24,
                 minzoom: 17,
                 filter: ['==', '$type', 'Polygon']
             });
@@ -2937,11 +2935,10 @@ export function downloadSimaText () {
     URL.revokeObjectURL(link.href);
 }
 
+export async function addImageLayer(tiffFile, worldFile, code, isFirst) {
 
-export async function addImageLayer (tiffFile,worldFile,code,isFirst) {
-
-    const map = store.state.map01
-    const map2 = store.state.map02
+    const map = store.state.map01;
+    const map2 = store.state.map02;
     // ワールドファイルを読み込む
     const worldFileText = await worldFile.text();
     const [pixelSizeX, rotationX, rotationY, pixelSizeY, originX, originY] = worldFileText.split('\n').map(Number);
@@ -2953,9 +2950,21 @@ export async function addImageLayer (tiffFile,worldFile,code,isFirst) {
 
     const width = image.getWidth();
     const height = image.getHeight();
-    const rasters = await image.readRasters({ samples: [0, 1, 2] }); // RGBバンドを指定
+    let rasters;
+    let isMonochrome = false;
 
-    // Canvasにカラー画像を描画
+    try {
+        rasters = await image.readRasters(); // バンドをすべて読み込む
+        if (rasters.length < 3) {
+            isMonochrome = true;
+            rasters = [rasters[0], rasters[0], rasters[0]]; // グレースケールに変換
+        }
+    } catch (error) {
+        console.error("Failed to read rasters:", error);
+        return;
+    }
+
+    // Canvasに画像を描画
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
@@ -2963,10 +2972,14 @@ export async function addImageLayer (tiffFile,worldFile,code,isFirst) {
     const imageData = ctx.createImageData(width, height);
 
     for (let i = 0; i < width * height; i++) {
-        imageData.data[i * 4] = rasters[0][i];     // 赤バンド
-        imageData.data[i * 4 + 1] = rasters[1][i]; // 緑バンド
-        imageData.data[i * 4 + 2] = rasters[2][i]; // 青バンド
-        imageData.data[i * 4 + 3] = 255;           // アルファ値（不透明）
+        const red = rasters[0][i] !== undefined ? rasters[0][i] : 128; // 赤
+        const green = isMonochrome ? red : (rasters[1][i] !== undefined ? rasters[1][i] : 128); // 緑
+        const blue = isMonochrome ? red : (rasters[2][i] !== undefined ? rasters[2][i] : 128); // 青
+
+        imageData.data[i * 4] = red;
+        imageData.data[i * 4 + 1] = green;
+        imageData.data[i * 4 + 2] = blue;
+        imageData.data[i * 4 + 3] = 255; // アルファ値（不透明）
     }
 
     ctx.putImageData(imageData, 0, 0);
@@ -2979,40 +2992,47 @@ export async function addImageLayer (tiffFile,worldFile,code,isFirst) {
         [originX, originY + pixelSizeY * height] // 左下
     ].map(coord => proj4(code, 'EPSG:4326', coord));
 
-    store.state.selectedLayers['map01'] = store.state.selectedLayers['map01'].filter(v => v.id !== 'oh-geotiff-layer')
-    store.state.selectedLayers['map02'] = store.state.selectedLayers['map02'].filter(v => v.id !== 'oh-geotiff-layer')
-    geotiffSource.obj.url = canvas.toDataURL()
-    geotiffSource.obj.coordinates = bounds
+    let index = 0;
+    const result = store.state.selectedLayers['map01'].find((v, i) => {
+        index = i;
+        return v.id === 'oh-geotiff-layer';
+    });
+
+    store.state.selectedLayers['map01'] = store.state.selectedLayers['map01'].filter(v => v.id !== 'oh-geotiff-layer');
+    store.state.selectedLayers['map02'] = store.state.selectedLayers['map02'].filter(v => v.id !== 'oh-geotiff-layer');
+
+    geotiffSource.obj.url = canvas.toDataURL();
+    geotiffSource.obj.coordinates = bounds;
 
     if (map.getLayer('oh-geotiff-layer')) {
-        map.removeLayer('oh-geotiff-layer')
-        map2.removeLayer('oh-geotiff-layer')
+        map.removeLayer('oh-geotiff-layer');
+        map2.removeLayer('oh-geotiff-layer');
     }
     if (map.getSource('geotiff-source')) {
-        map.removeSource('geotiff-source')
-        map2.removeSource('geotiff-source')
+        map.removeSource('geotiff-source');
+        map2.removeSource('geotiff-source');
     }
-    store.state.selectedLayers['map01'].unshift(
+    store.state.selectedLayers['map01'].splice(index, 0,
         {
             id: 'oh-geotiff-layer',
-            label: 'geotiff',
+            label: 'geotiffレイヤー',
             source: geotiffSource,
             layers: [geotiffLayer],
             opacity: 1,
             visibility: true,
         }
-    )
+    );
 
-    store.state.selectedLayers['map02'].unshift(
+    store.state.selectedLayers['map02'].splice(index, 0,
         {
             id: 'oh-geotiff-layer',
-            label: 'geotiff',
+            label: 'geotiffレイヤー',
             source: geotiffSource,
             layers: [geotiffLayer],
             opacity: 1,
             visibility: true,
         }
-    )
+    );
 
     const currentZoom = map.getZoom();
 
@@ -3022,14 +3042,115 @@ export async function addImageLayer (tiffFile,worldFile,code,isFirst) {
             [bounds[0][0], bounds[0][1]], // 左上
             [bounds[2][0], bounds[2][1]]  // 右下
         ];
-        map.fitBounds(flyToBounds, {padding: 20});
+        map.fitBounds(flyToBounds, { padding: 20 });
     } else {
-        setTimeout(function() {
-            store.state.map01.zoomTo(currentZoom + 0.01, {duration: 500})
-            store.state.map02.zoomTo(currentZoom + 0.01, {duration: 500})
-        },0)
+        setTimeout(function () {
+            store.state.map01.zoomTo(currentZoom + 0.01, { duration: 500 });
+            store.state.map02.zoomTo(currentZoom + 0.01, { duration: 500 });
+        }, 0);
     }
 }
+
+
+// export async function addImageLayer (tiffFile,worldFile,code,isFirst) {
+//
+//     const map = store.state.map01
+//     const map2 = store.state.map02
+//     // ワールドファイルを読み込む
+//     const worldFileText = await worldFile.text();
+//     const [pixelSizeX, rotationX, rotationY, pixelSizeY, originX, originY] = worldFileText.split('\n').map(Number);
+//
+//     // GeoTIFF.jsを使用してTIFFファイルを読み込む
+//     const arrayBuffer = await tiffFile.arrayBuffer();
+//     const tiff = await window.GeoTIFF.fromArrayBuffer(arrayBuffer);
+//     const image = await tiff.getImage();
+//
+//     const width = image.getWidth();
+//     const height = image.getHeight();
+//     const rasters = await image.readRasters({ samples: [0, 1, 2] }); // RGBバンドを指定
+//
+//     // Canvasにカラー画像を描画
+//     const canvas = document.createElement('canvas');
+//     canvas.width = width;
+//     canvas.height = height;
+//     const ctx = canvas.getContext('2d');
+//     const imageData = ctx.createImageData(width, height);
+//
+//     for (let i = 0; i < width * height; i++) {
+//         imageData.data[i * 4] = rasters[0][i];     // 赤バンド
+//         imageData.data[i * 4 + 1] = rasters[1][i]; // 緑バンド
+//         imageData.data[i * 4 + 2] = rasters[2][i]; // 青バンド
+//         imageData.data[i * 4 + 3] = 255;           // アルファ値（不透明）
+//     }
+//
+//     ctx.putImageData(imageData, 0, 0);
+//
+//     // 平面直角座標系の範囲を緯度経度に変換
+//     let bounds = [
+//         [originX, originY], // 左上
+//         [originX + pixelSizeX * width, originY], // 右上
+//         [originX + pixelSizeX * width, originY + pixelSizeY * height], // 右下
+//         [originX, originY + pixelSizeY * height] // 左下
+//     ].map(coord => proj4(code, 'EPSG:4326', coord));
+//
+//     let index = 0
+//     const result = store.state.selectedLayers['map01'].find((v,i) => {
+//         index = i
+//         return v.id === 'oh-geotiff-layer'
+//     })
+//
+//     store.state.selectedLayers['map01'] = store.state.selectedLayers['map01'].filter(v => v.id !== 'oh-geotiff-layer')
+//     store.state.selectedLayers['map02'] = store.state.selectedLayers['map02'].filter(v => v.id !== 'oh-geotiff-layer')
+//
+//     geotiffSource.obj.url = canvas.toDataURL()
+//     geotiffSource.obj.coordinates = bounds
+//
+//     if (map.getLayer('oh-geotiff-layer')) {
+//         map.removeLayer('oh-geotiff-layer')
+//         map2.removeLayer('oh-geotiff-layer')
+//     }
+//     if (map.getSource('geotiff-source')) {
+//         map.removeSource('geotiff-source')
+//         map2.removeSource('geotiff-source')
+//     }
+//     store.state.selectedLayers['map01'].splice(index, 0,
+//         {
+//             id: 'oh-geotiff-layer',
+//             label: 'geotiffレイヤー',
+//             source: geotiffSource,
+//             layers: [geotiffLayer],
+//             opacity: 1,
+//             visibility: true,
+//         }
+//     )
+//
+//     store.state.selectedLayers['map02'].splice(index, 0,
+//         {
+//             id: 'oh-geotiff-layer',
+//             label: 'geotiffレイヤー',
+//             source: geotiffSource,
+//             layers: [geotiffLayer],
+//             opacity: 1,
+//             visibility: true,
+//         }
+//     )
+//
+//     const currentZoom = map.getZoom();
+//
+//     // 地図の範囲を設定
+//     if (isFirst) {
+//         const flyToBounds = [
+//             [bounds[0][0], bounds[0][1]], // 左上
+//             [bounds[2][0], bounds[2][1]]  // 右下
+//         ];
+//         map.fitBounds(flyToBounds, {padding: 20});
+//     } else {
+//         setTimeout(function() {
+//             store.state.map01.zoomTo(currentZoom + 0.01, {duration: 500})
+//             store.state.map02.zoomTo(currentZoom + 0.01, {duration: 500})
+//         },0)
+//     }
+// }
 
 export async function addImageLayerJpg(jpgFile, worldFile, code, isFirst) {
     const map = store.state.map01;
@@ -3059,10 +3180,24 @@ export async function addImageLayerJpg(jpgFile, worldFile, code, isFirst) {
         [originX, originY + pixelSizeY * height] // 左下
     ].map(coord => proj4(code, 'EPSG:4326', coord));
 
-    store.state.selectedLayers['map01'] = store.state.selectedLayers['map01'].filter(v => v.id !== 'oh-jpg-layer');
-    store.state.selectedLayers['map02'] = store.state.selectedLayers['map02'].filter(v => v.id !== 'oh-jpg-layer');
+    let index = 0
+    const result = store.state.selectedLayers['map01'].find((v,i) => {
+        index = i
+        return v.id === 'oh-geotiff-layer'
+    })
+    if (!result) {
+        index = 0
+        store.state.selectedLayers['map01'].find((v,i) => {
+            index = i
+            return v.id === 'oh-jpg-layer'
+        })
+    }
+
     store.state.selectedLayers['map01'] = store.state.selectedLayers['map01'].filter(v => v.id !== 'oh-geotiff-layer')
     store.state.selectedLayers['map02'] = store.state.selectedLayers['map02'].filter(v => v.id !== 'oh-geotiff-layer')
+    store.state.selectedLayers['map01'] = store.state.selectedLayers['map01'].filter(v => v.id !== 'oh-jpg-layer');
+    store.state.selectedLayers['map02'] = store.state.selectedLayers['map02'].filter(v => v.id !== 'oh-jpg-layer');
+
     jpgSource.obj.url = imageUrl
     jpgSource.obj.coordinates = bounds
 
@@ -3074,8 +3209,17 @@ export async function addImageLayerJpg(jpgFile, worldFile, code, isFirst) {
         map.removeSource('jpg-source')
         map2.removeSource('jpg-source')
     }
-
-    store.state.selectedLayers['map01'].unshift(
+    store.state.selectedLayers['map01'].splice(index, 0,
+        {
+            id: 'oh-jpg-layer',
+            label: 'jpgレイヤー',
+            source: jpgSource,
+            layers: [jpgLayer],
+            opacity: 1,
+            visibility: true,
+        }
+    )
+    store.state.selectedLayers['map02'].splice(index, 0,
         {
             id: 'oh-jpg-layer',
             label: 'jpgレイヤー',
@@ -3086,21 +3230,47 @@ export async function addImageLayerJpg(jpgFile, worldFile, code, isFirst) {
         }
     )
 
-    store.state.selectedLayers['map02'].unshift(
-        {
-            id: 'oh-jpg-layer',
-            label: 'jpgレイヤー',
-            source: jpgSource,
-            layers: [jpgLayer],
-            opacity: 1,
-            visibility: true,
-        }
-    )
 
-    // setTimeout(function () {
-    //     map.setLayoutProperty('oh-jpg-layer', 'visibility', 'none');
-    //     map.setLayoutProperty('oh-jpg-layer', 'visibility', 'visible');
-    // },1000)
+
+
+
+
+
+
+
+    // if (map.getLayer('oh-jpg-layer')) {
+    //     map.removeLayer('oh-jpg-layer')
+    //     map2.removeLayer('oh-jpg-layer')
+    // }
+    // if (map.getSource('jpg-source')) {
+    //     map.removeSource('jpg-source')
+    //     map2.removeSource('jpg-source')
+    // }
+    //
+    // store.state.selectedLayers['map01'].unshift(
+    //     {
+    //         id: 'oh-jpg-layer',
+    //         label: 'jpgレイヤー',
+    //         source: jpgSource,
+    //         layers: [jpgLayer],
+    //         opacity: 1,
+    //         visibility: true,
+    //     }
+    // )
+    //
+    // store.state.selectedLayers['map02'].unshift(
+    //     {
+    //         id: 'oh-jpg-layer',
+    //         label: 'jpgレイヤー',
+    //         source: jpgSource,
+    //         layers: [jpgLayer],
+    //         opacity: 1,
+    //         visibility: true,
+    //     }
+    // )
+
+
+
 
 
     const currentZoom = map.getZoom();
