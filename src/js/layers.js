@@ -2243,7 +2243,8 @@ const ryuikiLayer = {
 const amx2024Source = {
     id: "amx-a-2024-pmtiles", obj: {
         type: "vector",
-        url: 'pmtiles://https://data.source.coop/smartmaps/amx-2024-04/MojMap_amx_2024.pmtiles',
+        url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/amx/MojMap_amx_2024.pmtiles'
+        // url: 'pmtiles://https://data.source.coop/smartmaps/amx-2024-04/MojMap_amx_2024.pmtiles',
     },
 
 }
@@ -7311,10 +7312,9 @@ const layers01 = [
     {
         id: 'oh-amx-a-fude',
         label: "登記所備付地図データ",
-        // source: amxSource,
-        // layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel,amxLayerVertex],
         sources: [amxSource,amx2024Source],
         layers: [amxLayerDaihyou,amx2024LayerLabel,amx2024Layer,amx2024LayerLine,amx2024LayerVertex],
+        // layers: [amxLayerDaihyou,amx2024LayerLabel,amx2024Layer,amx2024LayerLine,amx2024LayerVertex],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
         ext: {name:'extTokijyo'}
     },
@@ -7322,16 +7322,16 @@ const layers01 = [
         id: 'hikkai',
         label: "筆界調査データベース",
         nodes: [
-            {
-                id: 'oh-amx-a-fude',
-                label: "登記所備付地図データ",
-                // source: amxSource,
-                // layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel,amxLayerVertex],
-                sources: [amxSource,amx2024Source],
-                layers: [amxLayerDaihyou,amx2024LayerLabel,amx2024Layer,amx2024LayerLine,amx2024LayerVertex],
-                attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
-                ext: {name:'extTokijyo'}
-            },
+            // {
+            //     id: 'oh-amx-a-fude',
+            //     label: "登記所備付地図データ",
+            //     // source: amxSource,
+            //     // layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel,amxLayerVertex],
+            //     sources: [amxSource,amx2024Source],
+            //     layers: [amxLayerDaihyou,amx2024LayerLabel,amx2024Layer,amx2024LayerLine,amx2024LayerVertex],
+            //     attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
+            //     ext: {name:'extTokijyo'}
+            // },
             {
                 id: 'oh-fude',
                 label: "農地の区画情報(筆ポリゴン)",
@@ -7402,16 +7402,16 @@ const layers01 = [
         id: 'fudosan',
         label: "不動産情報",
         nodes: [
-            {
-                id: 'oh-amx-a-fude',
-                label: "登記所備付地図データ",
-                // source: amxSource,
-                // layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel,amxLayerVertex],
-                sources: [amxSource,amx2024Source],
-                layers: [amxLayerDaihyou,amx2024LayerLabel,amx2024Layer,amx2024LayerLine,amx2024LayerVertex],
-                attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
-                ext: {name:'extTokijyo'}
-            },
+            // {
+            //     id: 'oh-amx-a-fude',
+            //     label: "登記所備付地図データ",
+            //     // source: amxSource,
+            //     // layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel,amxLayerVertex],
+            //     sources: [amxSource,amx2024Source],
+            //     layers: [amxLayerDaihyou,amx2024LayerLabel,amx2024Layer,amx2024LayerLine,amx2024LayerVertex],
+            //     attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
+            //     ext: {name:'extTokijyo'}
+            // },
             {
                 id: 'oh-fude',
                 label: "農地の区画情報(筆ポリゴン)",

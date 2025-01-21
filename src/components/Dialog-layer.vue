@@ -525,14 +525,32 @@ export default {
               console.error("ファイルの取得中にエラーが発生しました:", error);
             }
           }
-          async function checkImageExists(imageUrl) {
+          async function checkImageExistsAndWidth(imageUrl) {
             try {
-              const response = await fetch(imageUrl, { method: 'HEAD' }); // HEADリクエストで存在確認
-              if (response.ok) {
-                console.log('Image exists!');
+              // HEADリクエストで存在確認
+              const response = await fetch(imageUrl, { method: 'HEAD' });
+              if (!response.ok) {
+                console.log('Image does not exist.');
+                return false;
+              }
+
+              // Imageオブジェクトで横幅確認
+              const image = new Image();
+              image.src = imageUrl;
+
+              // Promiseでロード完了を待つ
+              const imageLoaded = new Promise((resolve, reject) => {
+                image.onload = () => resolve(image);
+                image.onerror = (error) => reject(error);
+              });
+
+              const loadedImage = await imageLoaded;
+
+              if (loadedImage.width > 200) {
+                console.log('Image exists and width is greater than 200px!');
                 return true;
               } else {
-                console.log('Image does not exist.');
+                console.log('Image exists but width is 200px or less.');
                 return false;
               }
             } catch (error) {
@@ -540,6 +558,7 @@ export default {
               return false;
             }
           }
+
 
           const imageUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).image
           const worldFileUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).worldFile
@@ -549,57 +568,64 @@ export default {
           console.log(jpgUrl)
           // console.log(fetchFile(imageUrl))
 
-          Promise.all([fetchFile(imageUrl), fetchFile(worldFileUrl)]).then(files => {
-            if (files.every(file => file)) {
-              console.log("両方のファイルが取得されました:", files);
-              const image = files[0]
-              console.log(image)
-              const worldFile = files[1]
-              const code = JSON.parse(this.$store.state.uploadedImage).code
-              addImageLayer(image, worldFile, code, false)
-            } else {
-              console.warn("一部のファイルが取得できませんでした。");
-            }
-          }).catch(error => {
-            console.error("Promise.allでエラーが発生しました:", error);
-          });
-          // checkImageExists(jpgUrl).then(exists => {
-          //   if (exists) {
-          //     console.log('jpg画像が存在します。');
-          //     Promise.all([fetchFile(jpgUrl), fetchFile(worldFileUrl)]).then(files => {
-          //       if (files.every(file => file)) {
-          //         console.log("両方のファイルが取得されました:", files);
-          //         const image = files[0]
-          //         console.log(image)
-          //         const worldFile = files[1]
-          //         const code = JSON.parse(this.$store.state.uploadedImage).code
-          //         addImageLayerJpg(image, worldFile, code, false)
-          //       } else {
-          //         console.warn("一部のファイルが取得できませんでした。");
-          //       }
-          //     }).catch(error => {
-          //       console.error("Promise.allでエラーが発生しました:", error);
-          //     });
+          // Promise.all([fetchFile(imageUrl), fetchFile(worldFileUrl)]).then(files => {
+          //   if (files.every(file => file)) {
+          //     console.log("両方のファイルが取得されました:", files);
+          //     const image = files[0]
+          //     console.log(image)
+          //     const worldFile = files[1]
+          //     const code = JSON.parse(this.$store.state.uploadedImage).code
+          //     addImageLayer(image, worldFile, code, false)
           //   } else {
-          //     console.log('jpg画像が存在しません。');
-          //     Promise.all([fetchFile(imageUrl), fetchFile(worldFileUrl)]).then(files => {
-          //       if (files.every(file => file)) {
-          //         console.log("両方のファイルが取得されました:", files);
-          //         const image = files[0]
-          //         console.log(image)
-          //         const worldFile = files[1]
-          //         const code = JSON.parse(this.$store.state.uploadedImage).code
-          //         addImageLayer(image, worldFile, code, false)
-          //       } else {
-          //         console.warn("一部のファイルが取得できませんでした。");
-          //       }
-          //     }).catch(error => {
-          //       console.error("Promise.allでエラーが発生しました:", error);
-          //     });
+          //     console.warn("一部のファイルが取得できませんでした。");
           //   }
+          // }).catch(error => {
+          //   console.error("Promise.allでエラーが発生しました:", error);
           // });
+
+          checkImageExistsAndWidth(jpgUrl).then(exists => {
+            if (exists) {
+              console.log('jpg画像が存在します。');
+              Promise.all([fetchFile(jpgUrl), fetchFile(worldFileUrl)]).then(files => {
+                if (files.every(file => file)) {
+                  console.log("両方のファイルが取得されました:", files);
+                  const image = files[0]
+                  console.log(image)
+                  const worldFile = files[1]
+                  const code = JSON.parse(this.$store.state.uploadedImage).code
+                  addImageLayerJpg(image, worldFile, code, false)
+                  // setTimeout(function () {
+                  //   map.setLayoutProperty('oh-jpg-layer', 'visibility', 'none');
+                  //   // map.setLayoutProperty('oh-jpg-layer', 'visibility', 'visible');
+                  // },1000)
+
+                } else {
+                  console.warn("一部のファイルが取得できませんでした。");
+                }
+              }).catch(error => {
+                console.error("Promise.allでエラーが発生しました:", error);
+              });
+            } else {
+              console.log('jpg画像が存在しません。');
+              Promise.all([fetchFile(imageUrl), fetchFile(worldFileUrl)]).then(files => {
+                if (files.every(file => file)) {
+                  console.log("両方のファイルが取得されました:", files);
+                  const image = files[0]
+                  console.log(image)
+                  const worldFile = files[1]
+                  const code = JSON.parse(this.$store.state.uploadedImage).code
+                  addImageLayer(image, worldFile, code, false)
+                } else {
+                  console.warn("一部のファイルが取得できませんでした。");
+                }
+              }).catch(error => {
+                console.error("Promise.allでエラーが発生しました:", error);
+              });
+            }
+          });
         }
       }
+      map.setLayoutProperty('oh-jpg-layer', 'visibility', 'visible');
 
       if (map.getLayer('oh-amx-a-fude')) highlightSpecificFeatures(map, 'oh-amx-a-fude');
       if (map.getLayer('oh-chibanzu2024')) highlightSpecificFeaturesCity(map, 'oh-chibanzu2024');

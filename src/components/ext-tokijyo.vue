@@ -98,18 +98,18 @@
       </div>
     </div>
     <div class="color-container">
-      <div class="box box1" @click="changeColor('red')"></div>
-      <div class="box box2" @click="changeColor('black')"></div>
-      <div class="box box3" @click="changeColor('blue')"></div>
-      <div class="box box4" @click="changeColor('green')"></div>
-      <div class="box box5" @click="changeColor('orange')"></div>
+      <div class="box box1" @click="changeColor('red',true)"></div>
+      <div class="box box2" @click="changeColor('black',true)"></div>
+      <div class="box box3" @click="changeColor('blue',true)"></div>
+      <div class="box box4" @click="changeColor('green',true)"></div>
+      <div class="box box5" @click="changeColor('orange',true)"></div>
     </div>
     <div class="color-container2">
-      <div class="circle box1" @click="changeColorCircle('red')"></div>
-      <div class="circle box2" @click="changeColorCircle('black')"></div>
-      <div class="circle box3" @click="changeColorCircle('blue')"></div>
-      <div class="circle box4" @click="changeColorCircle('green')"></div>
-      <div class="circle box5" @click="changeColorCircle('orange')"></div>
+      <div class="circle box1" @click="changeColorCircle('red',true)"></div>
+      <div class="circle box2" @click="changeColorCircle('black',true)"></div>
+      <div class="circle box3" @click="changeColorCircle('blue',true)"></div>
+      <div class="circle box4" @click="changeColorCircle('green',true)"></div>
+      <div class="circle box5" @click="changeColorCircle('orange',true)"></div>
       <div class="circle box6" @click="changeColorCircle('rgba(0,0,0,0)')"></div>
     </div>
 <!--    <v-btn style="margin-top: 10px;margin-left: 100px;width: 50px" class="tiny-btn" @click="info">help</v-btn>-->
@@ -228,13 +228,13 @@ export default {
         ]
       })
     },
-    changeColorCircle (color) {
+    changeColorCircle (color,isUpdate) {
       const map = this.$store.state[this.mapName]
       map.setPaintProperty('oh-amx-vertex', 'circle-color', color)
       this.s_tokijyoCircleColor = color
-      this.update()
+      if (isUpdate) this.update()
     },
-    changeColor (color) {
+    changeColor (color,isUpdate) {
       const map = this.$store.state[this.mapName]
       map.setPaintProperty('oh-amx-a-fude-line', 'line-color', color)
       this.s_tokijyoColor = color
@@ -255,7 +255,7 @@ export default {
       //     ]
       // );
 
-      this.update()
+      if (isUpdate) this.update()
     },
     changeMode () {
       this.$store.state.isPopupVisible = !this.$store.state.isPopupVisible
@@ -329,7 +329,7 @@ export default {
           map.setFilter('oh-amx-a-fude-line', matchCondition)
           map.setFilter('oh-amx-label', matchCondition)
           map.setFilter('oh-amx-vertex', matchCondition)
-          // map.setFilter('oh-amx-a-daihyo', matchCondition)
+          map.setFilter('oh-amx-a-daihyo', matchCondition)
         } else {
           map.setFilter('oh-amx-a-fude', null)
           map.setFilter('oh-amx-a-fude-line', null)
@@ -350,11 +350,11 @@ export default {
   mounted() {
   },
   watch: {
-    s_simaData () {
-      this.update()
-    },
+    // s_simaData () {
+    //   this.update()
+    // },
     s_extFire () {
-      this.change()
+      // this.change(false)
       this.changeColor(this.s_tokijyoColor)
       this.changeColorCircle(this.s_tokijyoCircleColor)
     },

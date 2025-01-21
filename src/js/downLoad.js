@@ -3061,6 +3061,8 @@ export async function addImageLayerJpg(jpgFile, worldFile, code, isFirst) {
 
     store.state.selectedLayers['map01'] = store.state.selectedLayers['map01'].filter(v => v.id !== 'oh-jpg-layer');
     store.state.selectedLayers['map02'] = store.state.selectedLayers['map02'].filter(v => v.id !== 'oh-jpg-layer');
+    store.state.selectedLayers['map01'] = store.state.selectedLayers['map01'].filter(v => v.id !== 'oh-geotiff-layer')
+    store.state.selectedLayers['map02'] = store.state.selectedLayers['map02'].filter(v => v.id !== 'oh-geotiff-layer')
     jpgSource.obj.url = imageUrl
     jpgSource.obj.coordinates = bounds
 
@@ -3072,10 +3074,11 @@ export async function addImageLayerJpg(jpgFile, worldFile, code, isFirst) {
         map.removeSource('jpg-source')
         map2.removeSource('jpg-source')
     }
+
     store.state.selectedLayers['map01'].unshift(
         {
             id: 'oh-jpg-layer',
-            label: 'jpg',
+            label: 'jpgレイヤー',
             source: jpgSource,
             layers: [jpgLayer],
             opacity: 1,
@@ -3086,13 +3089,19 @@ export async function addImageLayerJpg(jpgFile, worldFile, code, isFirst) {
     store.state.selectedLayers['map02'].unshift(
         {
             id: 'oh-jpg-layer',
-            label: 'jpg',
+            label: 'jpgレイヤー',
             source: jpgSource,
             layers: [jpgLayer],
             opacity: 1,
             visibility: true,
         }
     )
+
+    // setTimeout(function () {
+    //     map.setLayoutProperty('oh-jpg-layer', 'visibility', 'none');
+    //     map.setLayoutProperty('oh-jpg-layer', 'visibility', 'visible');
+    // },1000)
+
 
     const currentZoom = map.getZoom();
 
@@ -3106,7 +3115,7 @@ export async function addImageLayerJpg(jpgFile, worldFile, code, isFirst) {
     } else {
         setTimeout(function () {
             store.state.map01.zoomTo(currentZoom + 0.01, { duration: 500 });
-            store.state.map02.zoomTo(currentZoom + 0.01, { duration: 500 });
+            // store.state.map02.zoomTo(currentZoom + 0.01, { duration: 500 });
         }, 0);
     }
 }
