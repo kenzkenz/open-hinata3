@@ -2246,7 +2246,6 @@ const amx2024Source = {
         url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/amx/MojMap_amx_2024.pmtiles'
         // url: 'pmtiles://https://data.source.coop/smartmaps/amx-2024-04/MojMap_amx_2024.pmtiles',
     },
-
 }
 // 登記所備付地図データ 間引きなし
 const amx2024Layer = {
@@ -2266,8 +2265,6 @@ const amx2024Layer = {
         "fill-outline-color": "rgba(255, 0, 0, 1)",
     },
 };
-
-
 const amx2024LayerLine = {
     id: "oh-amx-a-fude-line",
     type: "line",
@@ -7251,15 +7248,22 @@ const toshikanLayerLabel = {
 
 // VIRTUAL SHIZUOKA 静岡県 中・西部オルそ---------------------------------------------------------------------------------------------------------
 const shizuokaOrthoSource = {
-    id: 'shizuoka-ortho-source', obj: {
+    id:'shizuoka-ortho-source', obj:{
         type: 'raster',
-        tiles: ['https://kenzkenz4.xsrv.jp/ortho/shizuoka/{z}/{x}/{y}.png'],
+        // tiles: ['https://kenzkenz3.xsrv.jp/tile/virtual-shizuoka/tyuseibu/{z}/{x}/{y}.png'],
+        tiles: ['https://kenzkenz4.xsrv.jp/tile/virtual-shizuoka/tyuseibu/{z}/{x}/{y}.png'],
+        tileSize: 256, // タイルサイズに合わせる
+        maxzoom: 18,   // 適切なズーム範囲を設定
+        minzoom: 1
     }
 }
 const shizuokaOrthoLayer = {
-    'id': 'shizuoka-ortho-layer',
+    'id': 'oh-shizuoka-ortho-layer',
     'type': 'raster',
     'source': 'shizuoka-ortho-source',
+    // paint: {
+    //     'raster-resampling': 'nearest' // シャープな描画に設定
+    // }
 }
 
 // 福岡県土砂災害-------------------------------------------------------------------------------------------
@@ -7277,15 +7281,17 @@ const fukuokakenHazardLayer = {
     paint: {
         'fill-color': [
             'match',
-            ['get', 'rinsyu_nam'],
-            '人工林', 'rgba(139, 69, 19, 0.8)', // 茶色（人工林, 透過度0.8）
-            '天然林', 'rgba(34, 139, 34, 0.8)', // 緑色（天然林, 透過度0.8）
-            '伐採跡地', 'rgba(169, 169, 169, 0.8)', // 灰色（伐採跡地, 透過度0.8）
-            '竹林', 'rgba(107, 142, 35, 0.8)', // オリーブ色（竹林, 透過度0.8）
-            'rgba(139, 69, 19, 0.8)' // デフォルト色（透過度0.8）
+            ['concat', ['get', 'genshoname'], ['get', 'kubun']],
+            '土石流特別警戒区域', 'rgba(255, 0, 0, 0.8)', // 赤（特別警戒区域, 透過度0.8）
+            '土石流警戒区域', 'rgba(255, 255, 0, 0.8)', // 黄色（警戒区域, 透過度0.8）
+            '急傾斜地の崩壊特別警戒区域', 'rgba(255, 100, 0, 0.8)', // 赤（特別警戒区域, 透過度0.8）
+            '急傾斜地の崩壊警戒区域', 'rgba(255, 200, 100, 0.8)', // 黄色（警戒区域, 透過度0.8）
+            '地滑り特別警戒区域', 'rgba(255, 0, 200, 0.8)', // 赤（特別警戒区域, 透過度0.8）
+            '地滑り警戒区域', 'rgba(255, 200, 200, 0.8)', // 黄色（警戒区域, 透過度0.8）
+            'rgba(0, 0, 0, 0.8)' // その他（黒, 透過度0.8）
         ]
     }
-};
+}
 const fukuokakenHazardLayerLine = {
     id: "oh-fukuokakenhazard-line",
     type: "line",
@@ -7597,6 +7603,15 @@ const layers01 = [
                 layers: [seamlessphotoLayer]
             },
             {
+                id: 'oh-virtual-shiazuoka-tobu',
+                label: "VIRTUAL SHIZUOKA 静岡県 中・西部",
+                // source: seamlessphotoSource,
+                // layers: [seamlessphotoLayer],
+                source: shizuokaOrthoSource,
+                layers: [shizuokaOrthoLayer],
+                attribution: '<a href="https://www.geospatial.jp/ckan/dataset/virtual-shizuoka-mw" target="_blank">VIRTUAL SHIZUOKA 静岡県 中・西部 点群データ</a>'
+            },
+            {
                 id: 'oh-sp87',
                 label: "1987~90年航空写真(一部)",
                 source: sp87Source,
@@ -7664,13 +7679,6 @@ const layers01 = [
                 source: yokohamaSyashinSource,
                 layers: [yokohamaSyashinLayer]
             },
-            // {
-            //     id: 'oh-yokohama-syashin',
-            //     label: "VIRTUAL SHIZUOKA 静岡県 中・西部",
-            //     source: shizuokaOrthoSource,
-            //     layers: [shizuokaOrthoLayer],
-            //     attribution: '<a href="https://www.geospatial.jp/ckan/dataset/virtual-shizuoka-mw" target="_blank">VIRTUAL SHIZUOKA 静岡県 中・西部 点群データ</a>'
-            // },
             {
                 id: 'oh-miyazaki-syashin',
                 label: "宮崎県航空写真",

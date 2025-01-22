@@ -6,6 +6,7 @@ import proj4 from 'proj4'
 import axios from "axios";
 import {geotiffSource, geotiffLayer, jpgSource, jpgLayer} from "@/js/layers";
 import JSZip from 'jszip'
+import {history} from "@/App";
 // 複数のクリックされた地番を強調表示するためのセット
 // export let highlightedChibans = new Set();
 (function() {
@@ -1484,7 +1485,6 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
     if (uploadInput) {
         uploadInput.value = '';
     }
-
     return JSON.stringify(geoJSON, null, 2);
 }
 
@@ -3012,27 +3012,53 @@ export async function addImageLayer(tiffFile, worldFile, code, isFirst) {
         map.removeSource('geotiff-source');
         map2.removeSource('geotiff-source');
     }
-    store.state.selectedLayers['map01'].splice(index, 0,
-        {
-            id: 'oh-geotiff-layer',
-            label: 'geotiffレイヤー',
-            source: geotiffSource,
-            layers: [geotiffLayer],
-            opacity: 1,
-            visibility: true,
-        }
-    );
 
-    store.state.selectedLayers['map02'].splice(index, 0,
-        {
-            id: 'oh-geotiff-layer',
-            label: 'geotiffレイヤー',
-            source: geotiffSource,
-            layers: [geotiffLayer],
-            opacity: 1,
-            visibility: true,
-        }
-    );
+
+    if (isFirst) {
+        store.state.selectedLayers['map01'].unshift(
+            {
+                id: 'oh-geotiff-layer',
+                label: 'geotiffレイヤー',
+                source: geotiffSource,
+                layers: [geotiffLayer],
+                opacity: 1,
+                visibility: true,
+            }
+        );
+
+        store.state.selectedLayers['map02'].unshift(
+            {
+                id: 'oh-geotiff-layer',
+                label: 'geotiffレイヤー',
+                source: geotiffSource,
+                layers: [geotiffLayer],
+                opacity: 1,
+                visibility: true,
+            }
+        );
+    } else {
+        store.state.selectedLayers['map01'].splice(index, 0,
+            {
+                id: 'oh-geotiff-layer',
+                label: 'geotiffレイヤー',
+                source: geotiffSource,
+                layers: [geotiffLayer],
+                opacity: 1,
+                visibility: true,
+            }
+        );
+
+        store.state.selectedLayers['map02'].splice(index, 0,
+            {
+                id: 'oh-geotiff-layer',
+                label: 'geotiffレイヤー',
+                source: geotiffSource,
+                layers: [geotiffLayer],
+                opacity: 1,
+                visibility: true,
+            }
+        );
+    }
 
     const currentZoom = map.getZoom();
 
@@ -3049,6 +3075,7 @@ export async function addImageLayer(tiffFile, worldFile, code, isFirst) {
             store.state.map02.zoomTo(currentZoom + 0.01, { duration: 500 });
         }, 0);
     }
+    history('GEOTIFF読込',window.location.href)
 }
 
 
