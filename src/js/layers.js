@@ -8689,6 +8689,7 @@ const layers01 = [
                 label: "福岡県土砂災害",
                 source: fukuokakenHazardSource,
                 layers: [fukuokakenHazardLayer,fukuokakenHazardLayerLine],
+                attribution: '<a href="https://ckan.open-governmentdata.org/dataset/401000_dosyasaigaikeikaikuikitoudata" target="_blank">福岡県　土砂災害警戒区域等のshapeデータ</a>'
             },
         ]
     },

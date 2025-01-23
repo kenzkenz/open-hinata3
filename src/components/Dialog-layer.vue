@@ -63,6 +63,7 @@ import "vue3-tree/dist/style.css"
 import draggable from "vuedraggable"
 import mw5 from '@/js/mw5'
 import * as turf from '@turf/turf'
+import store from "@/store";
 
 export default {
   name: 'Dialog-layer',
@@ -308,6 +309,9 @@ export default {
       this.s_selectedLayers[this.mapName] = this.s_selectedLayers[this.mapName].filter(layer => layer.id !== id)
       this.$store.state.dialogsInfo[this.mapName] = this.$store.state.dialogsInfo[this.mapName].filter(layer => layer.id !== id)
       this.$store.state.watchFlg = true
+      if (id === 'oh-jpg-layer') {
+        this.$store.state.uploadedImage = ''
+      }
       this.zoomOperation(1000)
     },
     onNodeClick (node) {
@@ -407,9 +411,7 @@ export default {
                       });
                     },1000)
                     flyFlg = false
-
                   }
-
                 }
               }
               let opacity
@@ -625,7 +627,7 @@ export default {
           });
         }
       }
-      map.setLayoutProperty('oh-jpg-layer', 'visibility', 'visible');
+      // map.setLayoutProperty('oh-jpg-layer', 'visibility', 'visible');
 
       if (map.getLayer('oh-amx-a-fude')) highlightSpecificFeatures(map, 'oh-amx-a-fude');
       if (map.getLayer('oh-chibanzu2024')) highlightSpecificFeaturesCity(map, 'oh-chibanzu2024');

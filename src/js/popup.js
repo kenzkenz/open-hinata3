@@ -2934,7 +2934,6 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
-            case 'oh-fukuokakenhazard':
             case 'oh-toshikan-label-layer':
             case 'oh-toshikan-label':
             case 'oh-toshikan-layer':
@@ -2962,6 +2961,34 @@ export function popup(e,map,mapName,mapFlg) {
                     })
                  html0 += '<div>'
                     html += html0
+                }
+                break
+            }
+            case 'oh-fukuokakenhazard':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                props = features[0].properties
+                let kuiki
+                if (props.kubun === '特別警戒区域') {
+                    kuiki = '<span style="color: red">' + props.kubun + '</span>'
+                } else {
+                    kuiki = props.kubun
+                }
+                if (html.indexOf('fukuokakenhazard') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="fukuokakenhazard" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:22px;">' + props.genshoname + ' ' + kuiki + '</span><hr>' +
+                        '<span style="font-size:14px;">' + props.shozaichi + '</span><br>' +
+                        '</div>'
                 }
                 break
             }
