@@ -1,14 +1,13 @@
 <template>
     <div :style="menuContentSize">
       <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
-<!--      半径{{s_zeniKm}}km-->
       <div class="input-container">
         <v-btn icon @click="decrease" :disabled="s_zeniKm <= 1" class="expand-btn">−</v-btn>
         <span class="radius-text">半径{{ s_zeniKm }}km</span>
         <v-btn icon @click="increase" :disabled="s_zeniKm >= 50" class="expand-btn">＋</v-btn>
       </div>
       <input class="color-range" type="range" v-model.number="s_zeniKm" @change="update" @input="input" min="1" max="50" step="1"/>
-      <div style="margin-top: 0" class="legend-scale">
+      <div v-if="item.id === 'oh-zeni'" style="margin-top: 0" class="legend-scale">
         <ul class="legend-labels">
           <li><span style="background:red;"></span>公開</li>
           <li><span style="background:blue;"></span>休止</li>
@@ -33,10 +32,18 @@ export default {
     },
     s_zeniKm: {
       get() {
-        return this.$store.state.zeniKm[this.mapName]
+        if (this.item.id === 'oh-zeni') {
+          return this.$store.state.zeniKm[this.mapName]
+        } else {
+          return this.$store.state.ntripKm[this.mapName]
+        }
       },
       set(value) {
-        return this.$store.state.zeniKm[this.mapName] = value
+        if (this.item.id === 'oh-zeni') {
+          return this.$store.state.zeniKm[this.mapName] = value
+        } else {
+          return this.$store.state.ntripKm[this.mapName] = value
+        }
       }
     },
   },
@@ -61,11 +68,17 @@ export default {
     input () {
       console.log((this.s_zeniKm))
       const map = this.$store.state[this.mapName]
+      let geojson
+      if (this.item.id === 'oh-zeni') {
+        geojson = this.$store.state.zeniGeojson
+      } else {
+        geojson = this.$store.state.ntripGeojson
+      }
       const radiusInKm = this.s_zeniKm;
       // 各ポイントごとに円を生成し、プロパティを引き継ぐ
       const circleGeoJSON = {
         type: "FeatureCollection",
-        features: this.$store.state.zeniGeojson.features.map(feature => {
+        features: geojson.features.map(feature => {
           const circle = turf.circle(feature.geometry.coordinates, radiusInKm, {
             steps: 32, // 円の滑らかさ
             units: 'kilometers'
@@ -77,7 +90,11 @@ export default {
           };
         })
       };
-      map.getSource('zeni-circle-source').setData(circleGeoJSON)
+      if (this.item.id === 'oh-zeni') {
+        if (map.getSource('zeni-circle-source')) map.getSource('zeni-circle-source').setData(circleGeoJSON)
+      } else {
+        if (map.getSource('ntrip-circle-source')) map.getSource('ntrip-circle-source').setData(circleGeoJSON)
+      }
       this.update()
     },
   },

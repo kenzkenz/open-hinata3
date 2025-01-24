@@ -75,6 +75,7 @@ export default createStore({
     prefId: '',
     zahyokei: '',
     zeniGeojson: '',
+    ntripGeojson: '',
     isRenzoku: true,
     highlightedChibans: new Set(),
     dialogForSima: false,
@@ -234,6 +235,10 @@ export default createStore({
       map01: 20,
       map02: 20
     },
+    ntripKm:{
+      map01: 20,
+      map02: 20
+    },
     simaData: {
       map01: '',
       map02: ''
@@ -375,13 +380,15 @@ export default createStore({
             if (payload.order === 2) {
               variable = 'tokijyoCircleColor'
             }
-
-
-
             break
           case 'extZeni':
             if (payload.order === 0) {
               variable = 'zeniKm'
+            }
+            break
+          case 'extNtrip':
+            if (payload.order === 0) {
+              variable = 'ntripKm'
             }
             break
         }

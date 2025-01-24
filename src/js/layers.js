@@ -43,7 +43,88 @@ export const jpgLayer= {
 }
 
 
+// ntrip --------------------------------------------------------------------------------------------
+const ntripSource = {
+    id: "ntrip-source", obj: {
+        'type': 'geojson',
+        'data': 'https://kenzkenz3.xsrv.jp/geojson/ntrip/ntrip.geojson',
+    }
+}
+const ntripCenterPointLayer = {
+    id: "oh-ntrip-center",
+    type: "circle",
+    source: "ntrip-source",
+    paint: {
+        'circle-color': 'rgba(255,0,0,1)', // 赤色で中心点を強調
+        'circle-radius': 5, // 固定サイズの点
+        'circle-opacity': 1,
+        'circle-stroke-width': 1,
+        'circle-stroke-color': '#fff'
+    }
+};
+const ntripCircleSource = {
+    id: "ntrip-circle-source", obj: {
+        'type': 'geojson',
+        'data': null,
+    }
+};
+async function convertToGeoJSONforNtrip() {
+    try {
+        // データをフェッチ
+        const response = await fetch('https://kenzkenz3.xsrv.jp/geojson/ntrip/ntrip.geojson');
+        const geojson = await response.json();
 
+        const radiusInKm = 20;
+
+        // 各ポイントごとに円を生成し、プロパティを引き継ぐ
+        const circleGeoJSON = {
+            type: "FeatureCollection",
+            features: geojson.features.map(feature => {
+                const circle = turf.circle(feature.geometry.coordinates, radiusInKm, {
+                    steps: 64, // 円の滑らかさ
+                    units: 'kilometers'
+                });
+                return {
+                    type: "Feature",
+                    properties: feature.properties, // プロパティを引き継ぐ
+                    geometry: circle.geometry
+                };
+            })
+        };
+        ntripCircleSource.obj.data = circleGeoJSON
+        store.state.ntripGeojson = geojson
+        console.log(circleGeoJSON)
+    } catch (error) {
+        console.error('Error converting to GeoJSON:', error);
+    }
+}
+convertToGeoJSONforNtrip()
+// 円形レイヤー
+const ntripCircleLayer = {
+    id: 'oh-ntrip-circle',
+    type: 'fill',
+    source: 'ntrip-circle-source',
+    layout: {},
+    filter: [
+        '!=', ['get', 'status'], '休止' // 'status'が'休止'ではない場合のみ表示
+    ],
+    paint: {
+        'fill-color': 'rgba(255,105,180,0.5)',
+        'fill-outline-color': '#000'
+    }
+};
+const ntripCircleLayerLine = {
+    id: 'oh-ntrip-circle-line',
+    type: 'line',
+    source: 'ntrip-circle-source',
+    filter: [
+        '!=', ['get', 'status'], '休止' // 'status'が'休止'ではない場合のみ表示
+    ],
+    paint: {
+        'line-color': 'rgba(0,0,0,1)',
+        'line-width': 1
+    }
+};
 
 
 // 善意の基準局 --------------------------------------------------------------------------------------------
@@ -53,26 +134,6 @@ const zeniSource = {
         'data': null,
     }
 }
-const zeniPointLayer = {
-    id: "oh-zeni",
-    type: "circle",
-    source: "zeni-source",
-    paint: {
-        'circle-color': 'rgba(0,255,0,0.5)',
-        'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            0, 0.5,   // ズームレベル0では小さな円
-            5, 5,     // ズームレベル5では半径5px
-            10, 50,   // ズームレベル10では半径50px
-            15, 500,  // ズームレベル15では半径500px
-            20, 20000 // ズームレベル20では20,000px（約20km相当）
-        ],
-        'circle-stroke-width': 1,
-        'circle-stroke-color': '#000'
-    }
-};
 const zeniCenterPointLayer = {
     id: "oh-zeni-center",
     type: "circle",
@@ -126,7 +187,7 @@ const zeniCircleLayerLine = {
 };
 
 
-    // eslint-disable-next-line no-unexpected-multiline
+// eslint-disable-next-line no-unexpected-multiline
 async function convertToGeoJSON() {
     try {
         // データをフェッチ
@@ -7394,6 +7455,14 @@ const layers01 = [
                 attribution: '<a href="https://github.com/Bolero-fk/ZeniKijunkyokuChecker" target="_blank">ZeniKijunkyokuChecker</a><br>' +
                     '<a href="https://rtk.silentsystem.jp/" target="_blank">善意の基準局掲示板</a>',
                 ext: {name:'extZeni'}
+            },
+            {
+                id: 'oh-ntrip',
+                label: "その他RTK基準局",
+                sources: [ntripSource, ntripCircleSource],
+                layers:[ntripCircleLayer, ntripCenterPointLayer, ntripCircleLayerLine],
+                attribution: '<a href="http://ntrip1.bizstation.jp:2101/" target="_blank">Ntrip Caster Source table</a>',
+                ext: {name:'extNtrip'}
             },
             {
                 id: 'oh-nogyochiiki',
