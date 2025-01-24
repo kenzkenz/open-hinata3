@@ -2008,7 +2008,7 @@ export default {
 
               } catch (error) {
                 console.error('GeoJSONの読み込みに失敗しました:', error);
-                alert('無効なGeoJSONファイルです');
+                // alert('無効なGeoJSONファイルです');
               }
             };
             reader.readAsText(file);

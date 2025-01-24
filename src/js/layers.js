@@ -7253,7 +7253,7 @@ const shizuokaOrthoSource = {
         // tiles: ['https://kenzkenz3.xsrv.jp/tile/virtual-shizuoka/tyuseibu/{z}/{x}/{y}.png'],
         tiles: ['https://kenzkenz4.xsrv.jp/tile/virtual-shizuoka/tyuseibu/{z}/{x}/{y}.png'],
         tileSize: 256, // タイルサイズに合わせる
-        maxzoom: 18,   // 適切なズーム範囲を設定
+        maxzoom: 19,   // 適切なズーム範囲を設定
         minzoom: 1
     }
 }
