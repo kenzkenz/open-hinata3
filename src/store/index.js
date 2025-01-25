@@ -81,6 +81,7 @@ export default createStore({
     dialogForSima: false,
     simaText: '',
     kmlText: '',
+    geojsonText: '',
     simaTextZahyoukei: '',
     snackbar: false,
     dialogForSimaApp: false,

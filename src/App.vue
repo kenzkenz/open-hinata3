@@ -189,6 +189,7 @@ import {
   addImageLayer,
   ddSimaUpload,
   downloadSimaText,
+  geojsonAddLayer,
   geoTiffLoad,
   handleFileUpload,
   highlightSpecificFeatures,
@@ -855,12 +856,12 @@ export default {
       const image = this.$store.state.uploadedImage
       const extLayer = {layer:this.$store.state.extLayer,name:this.$store.state.extLayerName}
       const kmlText = this.$store.state.kmlText
-      console.log(image)
+      const geojsonText = this.$store.state.geojsonText
 
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
       ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}
-      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}`
+      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}&geojsontext=${geojsonText}`
       // console.log(this.param)
       // this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
@@ -927,11 +928,12 @@ export default {
       const image = params.get('image')
       const extLayer = params.get('extlayer')
       const kmlText = params.get('kmltext')
+      const geojsonText = params.get('geojsontext')
       this.pitch.map01 = pitch01
       this.pitch.map02 = pitch02
       this.bearing = bearing
       this.s_terrainLevel = terrainLevel
-      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image,extLayer,kmlText}// 以前のリンクをいかすためpitchを入れている。
+      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image,extLayer,kmlText,geojsonText}// 以前のリンクをいかすためpitchを入れている。
     },
     init() {
 
@@ -1296,6 +1298,11 @@ export default {
           //   }
           // }
           // ----------------------------------------------------------------
+
+          console.log(params.geojsonText)
+          if (params.geojsonText) {
+            this.$store.state.geojsonText = params.geojsonText
+          }
 
           console.log(params.kmlText)
           if (params.kmlText) {
@@ -1716,16 +1723,13 @@ export default {
           }
 
           // -----------------------------------------------------------------------------------------------------------
-
           // ドラッグ&ドロップ用の要素
           const dropzone = document.getElementById('map00');
-
           // ドラッグイベントのリスナー追加
           document.addEventListener('dragover', (event) => {
             event.preventDefault();
             dropzone.classList.add('active');
           });
-
           document.addEventListener('dragleave', (event) => {
             event.preventDefault();
             dropzone.classList.remove('active');
@@ -1736,266 +1740,240 @@ export default {
             e.preventDefault();
             const files = e.dataTransfer.files;
             if (files.length === 0) return;
-
-            const file = files[0];
-            // if (file.type !== 'application/vnd.google-earth.kml+xml' && file.type !== 'text/xml') {
-            //   alert('KMLファイルを選択してください');
-            //   return;
-            // }
-
+            const file = files[0]
+            const fileName = file.name;
+            const fileExtension = fileName.split('.').pop().toLowerCase();
             const reader = new FileReader();
-            reader.onload = (event) => {
-              if (file.name.split('.')[1] === 'kml') {
-                const parser = new DOMParser();
-                const kmlText = event.target.result
-                console.log(kmlText)
-                this.$store.state.kmlText = kmlText
-                const kmlData = parser.parseFromString(kmlText, 'application/xml');
-                const geojson = kml(kmlData);
-
-                console.log(file)
-
-                kmlAddLayer(map, geojson)
+            switch (fileExtension) {
+              case 'kml':
+              {
+                reader.onload = (event) => {
+                  const parser = new DOMParser();
+                  const kmlText = event.target.result
+                  this.$store.state.kmlText = kmlText
+                  const kmlData = parser.parseFromString(kmlText, 'application/xml');
+                  const geojson = kml(kmlData);
+                  kmlAddLayer(map, geojson,true)
+                }
+                reader.readAsText(file);
+                break
               }
-
-              // if (!map.getSource('kml-source')) {
-              //   map.addSource('kml-source', {
-              //     type: 'geojson',
-              //     data: geojson
-              //   });
-              //   map.addLayer({
-              //     id: 'kml-layer',
-              //     type: 'line',
-              //     source: 'kml-source',
-              //     paint: {
-              //       'line-color': '#FF0000',
-              //       'line-width': 2
-              //     }
-              //   });
-              //   map.addLayer({
-              //     id: 'kml-point-layer',
-              //     type: 'circle',
-              //     source: 'kml-source',
-              //     paint: {
-              //       'circle-color': '#00FF00',
-              //       'circle-radius': 6
-              //     }
-              //   });
-              // } else {
-              //   map.getSource('kml-source').setData(geojson)
-              // }
-              // const bounds = new maplibregl.LngLatBounds();
-              // geojson.features.forEach(feature => {
-              //   const geometry = feature.geometry;
-              //   if (!geometry) return;
-              //
-              //   switch (geometry.type) {
-              //     case 'Point':
-              //       bounds.extend(geometry.coordinates);
-              //       break;
-              //     case 'LineString':
-              //       geometry.coordinates.forEach(coord => bounds.extend(coord));
-              //       break;
-              //     case 'Polygon':
-              //       geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
-              //       break;
-              //     case 'MultiPolygon':
-              //       geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
-              //       break;
-              //   }
-              // });
-              // map.fitBounds(bounds, {
-              //   padding: 50,
-              //   animate: true
-              // });
-            };
-            reader.readAsText(file);
-          });
-          // geotiff---------------------------------------------------------------------------------------------
-          dropzone.addEventListener('drop', async (event) => {
-            event.preventDefault();
-            const files = event.dataTransfer.files;
-            console.log(files)
-            if (files.length > 0) {
-              const file = files[0];
-              const fileName = file.name;
-              const fileExtension = fileName.split('.').pop().toLowerCase();
-              if (fileExtension === 'tiff' || fileExtension === 'tif' || fileExtension === 'tfw') {
-                this.$store.state.tiffAndWorldFile = Array.from(event.dataTransfer.files);
-                this.s_dialogForGeotiffApp = true
-              }
-            }
-          });
-
-          // ドロップ時の処理 SIMA----------------------------------------------------------------------------------------
-          dropzone.addEventListener('drop', (event) => {
-            event.preventDefault();
-            dropzone.style.backgroundColor = '';
-
-            const files = event.dataTransfer.files;
-
-            if (files.length > 0) {
-              const file = files[0];
-              const fileName = file.name;
-              const fileExtension = fileName.split('.').pop().toLowerCase();
-
-              if (fileExtension === 'sim') {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                  const arrayBuffer = e.target.result; // ArrayBufferとして読み込む
+              case 'sim':
+              {
+                reader.onload = (event) => {
+                  const arrayBuffer = event.target.result; // ArrayBufferとして読み込む
                   const text = new TextDecoder("shift-jis").decode(arrayBuffer); // Shift JISをUTF-8に変換
-                  console.log("変換されたテキスト:", text);
                   this.ddSimaText = text
                   this.s_dialogForSimaApp = true
-                };
+                }
                 reader.readAsArrayBuffer(file);
-              } else {
-                // alert('拡張子が.simのファイルのみ対応しています。');
+                break
+              }
+              case 'tiff':
+              case 'tif':
+              case 'tfw':
+              {
+                if (files.length > 0) {
+                  this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
+                  this.s_dialogForGeotiffApp = true
+                }
+                break
+              }
+              case 'geojson':
+              {
+                reader.onload = (event) => {
+                  const geojsonText = event.target.result
+                  this.$store.state.geojsonText = geojsonText
+                  const geojson = JSON.parse(geojsonText);
+                  geojsonAddLayer (map, geojson, true)
+                }
+                reader.readAsText(file);
+                break
               }
             }
           });
+          // geotiff---------------------------------------------------------------------------------------------
+          // dropzone.addEventListener('drop', async (event) => {
+          //   event.preventDefault();
+          //   const files = event.dataTransfer.files;
+          //   console.log(files)
+          //   if (files.length > 0) {
+          //     const file = files[0];
+          //     const fileName = file.name;
+          //     const fileExtension = fileName.split('.').pop().toLowerCase();
+          //     if (fileExtension === 'tiff' || fileExtension === 'tif' || fileExtension === 'tfw') {
+          //       this.$store.state.tiffAndWorldFile = Array.from(event.dataTransfer.files);
+          //       alert(Array.from(event.dataTransfer.files))
+          //       this.s_dialogForGeotiffApp = true
+          //     }
+          //   }
+          // });
+
+          // ドロップ時の処理 SIMA----------------------------------------------------------------------------------------
+          // dropzone.addEventListener('drop', (event) => {
+          //   event.preventDefault();
+          //
+          //   const files = event.dataTransfer.files;
+          //
+          //   if (files.length > 0) {
+          //     const file = files[0];
+          //     const fileName = file.name;
+          //     const fileExtension = fileName.split('.').pop().toLowerCase();
+          //
+          //     if (fileExtension === 'sim') {
+          //       const reader = new FileReader();
+          //       reader.onload = (e) => {
+          //         const arrayBuffer = e.target.result; // ArrayBufferとして読み込む
+          //         const text = new TextDecoder("shift-jis").decode(arrayBuffer); // Shift JISをUTF-8に変換
+          //         console.log("変換されたテキスト:", text);
+          //         this.ddSimaText = text
+          //         this.s_dialogForSimaApp = true
+          //       };
+          //       reader.readAsArrayBuffer(file);
+          //     }
+          //   }
+          // });
 
           // ファイルドロップ処理--------------------------------------------------------------------------------------------
-          document.addEventListener('drop', (event) => {
-            event.preventDefault();
-            dropzone.classList.remove('active');
-
-            const files = event.dataTransfer.files;
-            if (files.length === 0) {
-              // alert('ファイルが選択されていません');
-              return;
-            }
-
-            const file = files[0];
-            if (file.type !== 'application/geo+json' && file.type !== 'application/json') {
-              // alert('GeoJSONファイルを選択してください');
-              return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              try {
-                const geojson = JSON.parse(e.target.result);
-
-                // if (!geojson || !geojson.features) {
-                //   throw new Error('無効なGeoJSONデータです');
-                // }
-
-                const sourceId = 'user-geojson';
-                const pointLayerId = 'user-geojson-points';
-                const lineLayerId = 'user-geojson-lines';
-                const polygonLayerId = 'user-geojson-polygons';
-                const polygonLayerLineId = 'user-geojson-polygons-line';
-
-                    // 既存のレイヤーとソースがある場合は削除
-                [pointLayerId, lineLayerId, polygonLayerId].forEach(layer => {
-                  if (map.getLayer(layer)) {
-                    map.removeLayer(layer);
-                  }
-                });
-                if (map.getSource(sourceId)) {
-                  map.removeSource(sourceId);
-                }
-
-                // GeoJSONをソースとして追加
-                map.addSource(sourceId, {
-                  type: 'geojson',
-                  data: geojson
-                });
-
-                // ポイントレイヤー
-                map.addLayer({
-                  id: pointLayerId,
-                  type: 'circle',
-                  source: sourceId,
-                  filter: ['==', '$type', 'Point'],
-                  paint: {
-                    'circle-radius': 6,
-                    'circle-color': '#ff5722',
-                    'circle-stroke-width': 2,
-                    'circle-stroke-color': '#fff'
-                  }
-                });
-
-                // ラインレイヤー
-                map.addLayer({
-                  id: lineLayerId,
-                  type: 'line',
-                  source: sourceId,
-                  filter: ['==', '$type', 'LineString'],
-                  paint: {
-                    'line-color': '#4caf50',
-                    'line-width': 3
-                  }
-                });
-
-                // ポリゴンレイヤー
-                map.addLayer({
-                  id: polygonLayerId,
-                  type: 'fill',
-                  source: sourceId,
-                  filter: ['==', '$type', 'Polygon'],
-                  paint: {
-                    'fill-color': '#2196f3',
-                    'fill-opacity': 0.5,
-                    'fill-outline-color': '#000'
-                  }
-                });
-
-                // ポリゴンレイヤーライン
-                map.addLayer({
-                  id: polygonLayerLineId,
-                  type: 'line',
-                  source: sourceId,
-                  filter: ['==', '$type', 'Polygon'],
-                  paint: {
-                    'line-color': '##000',
-                    'line-width': '1'
-                  }
-                });
-
-                // 地図をGeoJSONの範囲にズーム
-                const bounds = new maplibregl.LngLatBounds();
-
-                geojson.features.forEach(feature => {
-                  const geometry = feature.geometry;
-                  if (!geometry) return;
-
-                  switch (geometry.type) {
-                    case 'Point':
-                      bounds.extend(geometry.coordinates);
-                      break;
-                    case 'LineString':
-                      geometry.coordinates.forEach(coord => bounds.extend(coord));
-                      break;
-                    case 'Polygon':
-                      geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
-                      break;
-                    case 'MultiPolygon':
-                      geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
-                      break;
-                  }
-                });
-
-                // boundsが有効か確認
-                if (bounds.isEmpty()) {
-                  console.warn('有効な座標範囲が見つかりませんでした。');
-                  return;
-                }
-
-                // fitBoundsを適用
-                map.fitBounds(bounds, {
-                  padding: 50,
-                  animate: true
-                });
-
-              } catch (error) {
-                console.error('GeoJSONの読み込みに失敗しました:', error);
-                // alert('無効なGeoJSONファイルです');
-              }
-            };
-            reader.readAsText(file);
-          });
+          // document.addEventListener('drop', (event) => {
+          //   event.preventDefault();
+          //
+          //   const files = event.dataTransfer.files;
+          //   if (files.length === 0) {
+          //     // alert('ファイルが選択されていません');
+          //     return;
+          //   }
+          //
+          //   const file = files[0];
+          //   if (file.type !== 'application/geo+json' && file.type !== 'application/json') {
+          //     // alert('GeoJSONファイルを選択してください');
+          //     return;
+          //   }
+          //
+          //   const reader = new FileReader();
+          //   reader.onload = (e) => {
+          //     try {
+          //       const geojson = JSON.parse(e.target.result);
+          //
+          //       // if (!geojson || !geojson.features) {
+          //       //   throw new Error('無効なGeoJSONデータです');
+          //       // }
+          //
+          //       const sourceId = 'user-geojson';
+          //       const pointLayerId = 'user-geojson-points';
+          //       const lineLayerId = 'user-geojson-lines';
+          //       const polygonLayerId = 'user-geojson-polygons';
+          //       const polygonLayerLineId = 'user-geojson-polygons-line';
+          //
+          //           // 既存のレイヤーとソースがある場合は削除
+          //       [pointLayerId, lineLayerId, polygonLayerId].forEach(layer => {
+          //         if (map.getLayer(layer)) {
+          //           map.removeLayer(layer);
+          //         }
+          //       });
+          //       if (map.getSource(sourceId)) {
+          //         map.removeSource(sourceId);
+          //       }
+          //
+          //       // GeoJSONをソースとして追加
+          //       map.addSource(sourceId, {
+          //         type: 'geojson',
+          //         data: geojson
+          //       });
+          //
+          //       // ポイントレイヤー
+          //       map.addLayer({
+          //         id: pointLayerId,
+          //         type: 'circle',
+          //         source: sourceId,
+          //         filter: ['==', '$type', 'Point'],
+          //         paint: {
+          //           'circle-radius': 6,
+          //           'circle-color': '#ff5722',
+          //           'circle-stroke-width': 2,
+          //           'circle-stroke-color': '#fff'
+          //         }
+          //       });
+          //
+          //       // ラインレイヤー
+          //       map.addLayer({
+          //         id: lineLayerId,
+          //         type: 'line',
+          //         source: sourceId,
+          //         filter: ['==', '$type', 'LineString'],
+          //         paint: {
+          //           'line-color': '#4caf50',
+          //           'line-width': 3
+          //         }
+          //       });
+          //
+          //       // ポリゴンレイヤー
+          //       map.addLayer({
+          //         id: polygonLayerId,
+          //         type: 'fill',
+          //         source: sourceId,
+          //         filter: ['==', '$type', 'Polygon'],
+          //         paint: {
+          //           'fill-color': '#2196f3',
+          //           'fill-opacity': 0.5,
+          //           'fill-outline-color': '#000'
+          //         }
+          //       });
+          //
+          //       // ポリゴンレイヤーライン
+          //       map.addLayer({
+          //         id: polygonLayerLineId,
+          //         type: 'line',
+          //         source: sourceId,
+          //         filter: ['==', '$type', 'Polygon'],
+          //         paint: {
+          //           'line-color': '##000',
+          //           'line-width': '1'
+          //         }
+          //       });
+          //
+          //       // 地図をGeoJSONの範囲にズーム
+          //       const bounds = new maplibregl.LngLatBounds();
+          //
+          //       geojson.features.forEach(feature => {
+          //         const geometry = feature.geometry;
+          //         if (!geometry) return;
+          //
+          //         switch (geometry.type) {
+          //           case 'Point':
+          //             bounds.extend(geometry.coordinates);
+          //             break;
+          //           case 'LineString':
+          //             geometry.coordinates.forEach(coord => bounds.extend(coord));
+          //             break;
+          //           case 'Polygon':
+          //             geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
+          //             break;
+          //           case 'MultiPolygon':
+          //             geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
+          //             break;
+          //         }
+          //       });
+          //
+          //       // boundsが有効か確認
+          //       if (bounds.isEmpty()) {
+          //         console.warn('有効な座標範囲が見つかりませんでした。');
+          //         return;
+          //       }
+          //
+          //       // fitBoundsを適用
+          //       map.fitBounds(bounds, {
+          //         padding: 50,
+          //         animate: true
+          //       });
+          //
+          //     } catch (error) {
+          //       console.error('GeoJSONの読み込みに失敗しました:', error);
+          //       // alert('無効なGeoJSONファイルです');
+          //     }
+          //   };
+          //   reader.readAsText(file);
+          // });
           // -----------------------------------------------------------------------------------------------------------
           map.addSource('zones-source', {
             type: 'vector',

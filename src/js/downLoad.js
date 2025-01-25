@@ -3606,43 +3606,46 @@ export function pngDownload(map) {
     map.zoomTo(currentZoom + 0.00000000000000000000000000001);
 }
 
-export function kmlAddLayer (map, geojson) {
-    if (!map.getSource('kml-source')) {
-        map.addSource('kml-source', {
-            type: 'geojson',
-            data: geojson
-        });
-        map.addLayer({
-            id: 'kml-polygon-layer',
-            type: 'fill',
-            source: 'kml-source',
-            filter: ["==", "$type", "Polygon"],
-            paint: {
-                'fill-color': '#0000FF',
-                'fill-opacity': 0.5
-            }
-        });
-        map.addLayer({
-            id: 'kml-layer',
-            type: 'line',
-            source: 'kml-source',
-            paint: {
-                'line-color': '#FF0000',
-                'line-width': 2
-            }
-        });
-        map.addLayer({
-            id: 'kml-point-layer',
-            type: 'circle',
-            source: 'kml-source',
-            paint: {
-                'circle-color': '#00FF00',
-                'circle-radius': 6
-            }
-        });
-    } else {
-        map.getSource('kml-source').setData(geojson)
+export function kmlAddLayer (map, geojson, isFitBounds) {
+    if (map.getSource('kml-source')) {
+        map.removeLayer('kml-polygon-layer')
+        map.removeLayer('kml-layer')
+        map.removeLayer('kml-point-layer')
+        map.removeSource('kml-source')
     }
+    map.addSource('kml-source', {
+        type: 'geojson',
+        data: geojson
+    });
+    map.addLayer({
+        id: 'kml-polygon-layer',
+        type: 'fill',
+        source: 'kml-source',
+        filter: ["==", "$type", "Polygon"],
+        paint: {
+            'fill-color': '#0000FF',
+            'fill-opacity': 0.5
+        }
+    });
+    map.addLayer({
+        id: 'kml-layer',
+        type: 'line',
+        source: 'kml-source',
+        paint: {
+            'line-color': '#FF0000',
+            'line-width': 2
+        }
+    });
+    map.addLayer({
+        id: 'kml-point-layer',
+        type: 'circle',
+        source: 'kml-source',
+        filter: ["==", "$type", "Point"],
+        paint: {
+            'circle-color': '#00FF00',
+            'circle-radius': 6
+        }
+    });
     const bounds = new maplibregl.LngLatBounds();
     geojson.features.forEach(feature => {
         const geometry = feature.geometry;
@@ -3663,8 +3666,78 @@ export function kmlAddLayer (map, geojson) {
                 break;
         }
     });
-    map.fitBounds(bounds, {
-        padding: 50,
-        animate: true
+    if (isFitBounds) {
+        map.fitBounds(bounds, {
+            padding: 50,
+            animate: true
+        });
+    }
+}
+
+export function geojsonAddLayer (map, geojson, isFitBounds) {
+    if (map.getSource('geojson-source')) {
+        map.removeLayer('geojson-polygon-layer')
+        map.removeLayer('geojson-layer')
+        map.removeLayer('geojson-point-layer')
+        map.removeSource('geojson-source')
+    }
+    map.addSource('geojson-source', {
+        type: 'geojson',
+        data: geojson
     });
+    map.addLayer({
+        id: 'geojson-polygon-layer',
+        type: 'fill',
+        source: 'geojson-source',
+        filter: ["==", "$type", "Polygon"],
+        paint: {
+            'fill-color': '#0000FF',
+            'fill-opacity': 0.5
+        }
+    });
+    map.addLayer({
+        id: 'geojson-layer',
+        type: 'line',
+        source: 'geojson-source',
+        paint: {
+            'line-color': '#FF0000',
+            'line-width': 2
+        }
+    });
+    map.addLayer({
+        id: 'geojson-point-layer',
+        type: 'circle',
+        source: 'geojson-source',
+        filter: ["==", "$type", "Point"],
+        paint: {
+            'circle-color': '#00FF00',
+            'circle-radius': 6
+        }
+    });
+    const bounds = new maplibregl.LngLatBounds();
+    geojson.features.forEach(feature => {
+        const geometry = feature.geometry;
+        if (!geometry) return;
+
+        switch (geometry.type) {
+            case 'Point':
+                bounds.extend(geometry.coordinates);
+                break;
+            case 'LineString':
+                geometry.coordinates.forEach(coord => bounds.extend(coord));
+                break;
+            case 'Polygon':
+                geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
+                break;
+            case 'MultiPolygon':
+                geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
+                break;
+        }
+    });
+    if (isFitBounds) {
+        map.fitBounds(bounds, {
+            padding: 50,
+            animate: true
+        });
+    }
 }

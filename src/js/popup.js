@@ -3017,6 +3017,8 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'geojson-polygon-layer':
+            case 'geojson-point-layer':
             case 'kml-polygon-layer':
             case 'kml-point-layer':
             {

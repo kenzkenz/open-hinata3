@@ -50,7 +50,7 @@
 <script>
 import {
   addImageLayer,
-  addImageLayerJpg,
+  addImageLayerJpg, geojsonAddLayer,
   highlightSpecificFeatures,
   highlightSpecificFeaturesCity, kmlAddLayer,
   simaToGeoJSON
@@ -497,7 +497,6 @@ export default {
           const zahyokei = JSON.parse(this.$store.state.simaText).zahyokei
           const opacity = JSON.parse(this.$store.state.simaText).opacity
           this.$store.state.simaOpacity = opacity
-          console.log(opacity)
           simaToGeoJSON(simaText,map,zahyokei,false)
           this.$store.state.snackbar = true
           this.$store.state.simaFire = !this.$store.state.simaFire
@@ -508,8 +507,11 @@ export default {
           const kmlText = this.$store.state.kmlText
           const kmlData = parser.parseFromString(kmlText, 'application/xml');
           const geojson = kml(kmlData);
-          // alert(kmlText)
-          kmlAddLayer (map, geojson)
+          kmlAddLayer (map, geojson, false)
+        }
+        if (this.$store.state.geojsonText) {
+          const geojson = JSON.parse(this.$store.state.geojsonText)
+          geojsonAddLayer (map, geojson, false)
         }
       }
 
@@ -569,7 +571,6 @@ export default {
               return false;
             }
           }
-
 
           const imageUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).image
           const worldFileUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).worldFile
