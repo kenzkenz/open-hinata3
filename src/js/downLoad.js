@@ -31,36 +31,8 @@ import {history} from "@/App";
     proj4.defs['EPSG:2459'] = proj4.Proj("+proj=tmerc +lat_0=26 +lon_0=131 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");			//17系
     proj4.defs['EPSG:2460'] = proj4.Proj("+proj=tmerc +lat_0=20 +lon_0=136 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");			//18系
     proj4.defs['EPSG:2461'] = proj4.Proj("+proj=tmerc +lat_0=26 +lon_0=154 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
-
-
-    // proj4.defs([
-    //     ["EPSG:6668", "+proj=tmerc +lat_0=33 +lon_0=129.5 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第1系
-    //     ["EPSG:6669", "+proj=tmerc +lat_0=33 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第2系
-    //     ["EPSG:6670", "+proj=tmerc +lat_0=36 +lon_0=132.1667 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"], // 第3系
-    //     ["EPSG:6671", "+proj=tmerc +lat_0=33 +lon_0=133.5 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第4系
-    //     ["EPSG:6672", "+proj=tmerc +lat_0=36 +lon_0=134.3333 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"], // 第5系
-    //     ["EPSG:6673", "+proj=tmerc +lat_0=36 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第6系
-    //     ["EPSG:6674", "+proj=tmerc +lat_0=36 +lon_0=137.1667 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"], // 第7系
-    //     ["EPSG:6675", "+proj=tmerc +lat_0=36 +lon_0=138.5 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第8系
-    //     // ["EPSG:6676", "+proj=tmerc +lat_0=36 +lon_0=139.8333 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"], // 第9系がおかしい
-    //     // ["EPSG:6676", "+proj=tmerc +lat_0=36 +lon_0=139.833333 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],
-    //     // ["EPSG:6676", "+proj=tmerc +lat_0=36 +lon_0=139.833333 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +x_0=1 +y_0=-0.019 +no_defs"],
-    //     ["EPSG:6677", "+proj=tmerc +lat_0=40 +lon_0=140.8333 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"], // 第10系
-    //     ["EPSG:6678", "+proj=tmerc +lat_0=44 +lon_0=140.25 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],   // 第11系
-    //     ["EPSG:6679", "+proj=tmerc +lat_0=44 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第12系
-    //     ["EPSG:6680", "+proj=tmerc +lat_0=44 +lon_0=144.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第13系
-    //     ["EPSG:6681", "+proj=tmerc +lat_0=26 +lon_0=142.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第14系
-    //     ["EPSG:6682", "+proj=tmerc +lat_0=26 +lon_0=127.5 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第15系
-    //     ["EPSG:6683", "+proj=tmerc +lat_0=26 +lon_0=124.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第16系
-    //     ["EPSG:6684", "+proj=tmerc +lat_0=26 +lon_0=131.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第17系
-    //     ["EPSG:6685", "+proj=tmerc +lat_0=20 +lon_0=136.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"],    // 第18系
-    //     ["EPSG:6686", "+proj=tmerc +lat_0=26 +lon_0=154.0 +k=0.9999 +ellps=GRS80 +datum=JGD2011 +units=m +no_defs"]     // 第19系
-    // ]);
-    // proj4.defs['EPSG:2451'] = proj4.Proj("+proj=tmerc +lat_0=36 +lon_0=139.8333333333333 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");	// 9邉ｻ
-    //
-
 })()
-const zahyokei = [
+export const zahyokei = [
     { kei: '公共座標1系', code: "EPSG:2443" },
     { kei: '公共座標2系', code: "EPSG:2444" },
     { kei: '公共座標3系', code: "EPSG:2445" },
@@ -871,7 +843,7 @@ function geojsonToDXF(geojson) {
                 break;
         }
     });
-
+    document.querySelector('.loadingImg').style.display = 'none'
     dxf += "0\n" +
         "ENDSEC\n" +
         "0\n" +
@@ -3689,7 +3661,7 @@ export function geojsonAddLayer (map, geojson, isFitBounds) {
         source: 'geojson-source',
         filter: ["==", "$type", "Polygon"],
         paint: {
-            'fill-color': '#0000FF',
+            'fill-color': 'blue',
             'fill-opacity': 0.5
         }
     });
@@ -3698,8 +3670,8 @@ export function geojsonAddLayer (map, geojson, isFitBounds) {
         type: 'line',
         source: 'geojson-source',
         paint: {
-            'line-color': '#FF0000',
-            'line-width': 2
+            'line-color': '#000',
+            'line-width': 1
         }
     });
     map.addLayer({
@@ -3716,7 +3688,6 @@ export function geojsonAddLayer (map, geojson, isFitBounds) {
     geojson.features.forEach(feature => {
         const geometry = feature.geometry;
         if (!geometry) return;
-
         switch (geometry.type) {
             case 'Point':
                 bounds.extend(geometry.coordinates);

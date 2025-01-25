@@ -48,11 +48,14 @@
 </template>
 
 <script>
+import DxfParser from 'dxf-parser'
+import {dxfToGeoJSON} from '@/App'
 import {
   addImageLayer,
   addImageLayerJpg, geojsonAddLayer,
   highlightSpecificFeatures,
-  highlightSpecificFeaturesCity, kmlAddLayer,
+  highlightSpecificFeaturesCity, 
+  kmlAddLayer,
   simaToGeoJSON
 } from "@/js/downLoad";
 
@@ -511,6 +514,12 @@ export default {
         }
         if (this.$store.state.geojsonText) {
           const geojson = JSON.parse(this.$store.state.geojsonText)
+          geojsonAddLayer (map, geojson, false)
+        }
+        if (this.$store.state.dxfText) {
+          const parser = new DxfParser();
+          const dxf = parser.parseSync(this.$store.state.dxfText);
+          const geojson = dxfToGeoJSON(dxf);
           geojsonAddLayer (map, geojson, false)
         }
       }

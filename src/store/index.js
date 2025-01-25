@@ -82,6 +82,7 @@ export default createStore({
     simaText: '',
     kmlText: '',
     geojsonText: '',
+    dxfText: '',
     simaTextZahyoukei: '',
     snackbar: false,
     dialogForSimaApp: false,

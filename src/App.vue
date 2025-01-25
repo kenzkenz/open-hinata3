@@ -17,6 +17,36 @@
         </template>
       </v-snackbar>
 
+      <v-dialog v-model="dialogForDxfApp" max-width="500px">
+        <v-card>
+          <v-card-title>
+            座標系選択
+          </v-card-title>
+          <v-card-text>
+            <div v-if="s_isAndroid" class="select-container">
+              <select id="selectBox" v-model="s_zahyokei" class="custom-select">
+                <option value="" disabled selected>座標を選択してください。</option>
+                <option v-for="number in 19" :key="number" :value="`公共座標${number}系`">
+                  公共座標{{ number }}系
+                </option>
+              </select>
+            </div>
+            <div v-else>
+              <v-select class="scrollable-content"
+                        v-model="s_zahyokei"
+                        :items="items"
+                        label="選択してください"
+                        outlined
+              ></v-select>
+            </div>
+            <v-btn @click="dxfLoad">DXF読込開始</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="dialogForDxfApp = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
 
       <v-dialog v-model="s_dialogForPngApp" max-width="500px">
         <v-card>
@@ -40,7 +70,6 @@
                         outlined
               ></v-select>
             </div>
-<!--            <p style="margin-bottom: 20px;">PNGとワールドファイル(pgw)をダウンロードします。</p>-->
             <v-btn @click="pngDownload">PNGダウンロード開始</v-btn>
           </v-card-text>
           <v-card-actions>
@@ -80,7 +109,6 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
-
 
       <v-dialog v-model="s_dialogForSimaApp" max-width="500px">
         <v-card>
@@ -187,6 +215,9 @@ import {mouseMoveForPopup, popup} from "@/js/popup"
 import { CompassControl } from 'maplibre-gl-compass'
 import shp from "shpjs"
 import JSZip from 'jszip'
+import * as turf from '@turf/turf'
+import DxfParser from 'dxf-parser'
+import proj4 from 'proj4'
 import {
   addImageLayer,
   ddSimaUpload,
@@ -197,8 +228,37 @@ import {
   highlightSpecificFeatures,
   highlightSpecificFeaturesCity, kmlAddLayer,
   pngDownload,
-  simaToGeoJSON
+  simaToGeoJSON,
+  zahyokei
 } from '@/js/downLoad'
+
+const transformCoordinates = (coordinates) => {
+  const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
+  return proj4(code, "EPSG:4326", coordinates);
+};
+export function dxfToGeoJSON(dxf) {
+  const features = [];
+  dxf.entities.forEach((entity) => {
+    if (entity.type === 'LINE') {
+      const line = turf.lineString([
+        transformCoordinates([entity.start.x, entity.start.y]),
+        transformCoordinates([entity.end.x, entity.end.y]),
+      ]);
+      features.push(line);
+    } else if (entity.type === 'POINT') {
+      const point = turf.point(transformCoordinates([entity.position.x, entity.position.y]));
+      features.push(point);
+    } else if (entity.type === 'LWPOLYLINE') {
+      const coordinates = entity.vertices.map(vertex => transformCoordinates([vertex.x, vertex.y]));
+      const polyline = turf.lineString(coordinates);
+      features.push(polyline);
+    }
+  });
+  return {
+    type: 'FeatureCollection',
+    features,
+  };
+}
 
 const popups = []
 function closeAllPopups() {
@@ -301,10 +361,8 @@ async function fetchElevationFromImage(imageUrl, lon, lat, zoom) {
 async function fetchElevation(lon, lat, zoom = 15) {
   const baseUrl = "https://tiles.gsj.jp/tiles/elev/mixed/{z}/{y}/{x}.png";
   const { xTile, yTile } = lonLatToTile(lon, lat, zoom);
-
   // y と x を反転してタイルURLを生成
   const tileUrl = baseUrl.replace("{z}", zoom).replace("{x}", xTile).replace("{y}", yTile);
-
   try {
     const elevation = await fetchElevationFromImage(tileUrl, lon, lat, zoom);
     console.log(`標高: ${elevation}m`);
@@ -329,6 +387,7 @@ import { useGsiTerrainSource } from 'maplibre-gl-gsi-terrain'
 import {extLayer, extSource, monoLayers, monoSources} from "@/js/layers"
 import muni from '@/js/muni'
 import { kml } from '@tmcw/togeojson';
+import store from "@/store";
 
 export default {
   name: 'App',
@@ -372,6 +431,7 @@ export default {
       '公共座標16系', '公共座標17系', '公共座標18系',
       '公共座標19系'
     ],
+    dialogForDxfApp: false,
   }),
   computed: {
     s_isAndroid () {
@@ -459,6 +519,16 @@ export default {
       const map01 = this.$store.state.map01
       pngDownload(map01)
       this.$store.state.dialogForPngApp = false
+    },
+    dxfLoad () {
+      const map01 = this.$store.state.map01
+      const map02 = this.$store.state.map02
+      const parser = new DxfParser();
+      const dxf = parser.parseSync(this.$store.state.dxfText);
+      const geojson = dxfToGeoJSON(dxf);
+      geojsonAddLayer (map01, geojson, true)
+      geojsonAddLayer (map02, geojson, true)
+      this.dialogForDxfApp = false
     },
     geoTiffLoad () {
       const map01 = this.$store.state.map01
@@ -858,11 +928,12 @@ export default {
       const extLayer = {layer:this.$store.state.extLayer,name:this.$store.state.extLayerName}
       const kmlText = this.$store.state.kmlText
       const geojsonText = this.$store.state.geojsonText
+      const dxfText = this.$store.state.dxfText
 
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
       ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}
-      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}&geojsontext=${geojsonText}`
+      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}&geojsontext=${geojsonText}&dxftext=${dxfText}`
       // console.log(this.param)
       // this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
@@ -930,11 +1001,12 @@ export default {
       const extLayer = params.get('extlayer')
       const kmlText = params.get('kmltext')
       const geojsonText = params.get('geojsontext')
+      const dxfText = params.get('dxftext')
       this.pitch.map01 = pitch01
       this.pitch.map02 = pitch02
       this.bearing = bearing
       this.s_terrainLevel = terrainLevel
-      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image,extLayer,kmlText,geojsonText}// 以前のリンクをいかすためpitchを入れている。
+      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image,extLayer,kmlText,geojsonText,dxfText}// 以前のリンクをいかすためpitchを入れている。
     },
     init() {
 
@@ -1299,6 +1371,11 @@ export default {
           //   }
           // }
           // ----------------------------------------------------------------
+
+          console.log(params.dxfText)
+          if (params.dxfText) {
+            this.$store.state.dxfText = params.dxfText
+          }
 
           console.log(params.geojsonText)
           if (params.geojsonText) {
@@ -1806,44 +1883,34 @@ export default {
                 reader.readAsText(file);
                 break
               }
-              case 'prj':
-              case 'dbf':
-              case 'shp':
+              case 'zip':
               {
                 const files = e.dataTransfer.files;
                 for (const file of files) {
-                  if (file.name.endsWith(".shp") || file.name.endsWith(".dbf") || file.name.endsWith(".prj")) {
-                    // SHP関連ファイルを直接処理
-                    const fileArrayBuffer = await file.arrayBuffer();
-                    try {
-                      const geojson = await shp.parseShp(fileArrayBuffer); // shpjsでSHPを直接GeoJSONに変換
-                      // GeoJSONデータをMapLibreに追加
-                      map.addSource(file.name, {
-                        type: "geojson",
-                        data: geojson
-                      });
-                      // レイヤーを追加
-                      map.addLayer({
-                        id: file.name,
-                        type: "fill",
-                        source: file.name,
-                        paint: {
-                          "fill-color": "rgba(0, 123, 255, 0.5)",
-                          "fill-outline-color": "rgba(0, 123, 255, 1)"
-                        }
-                      });
-                      console.log(`SHPファイルを表示しました: ${file.name}`);
-                    } catch (err) {
-                      console.error("SHPファイルの読み込みに失敗しました", err);
-                    }
-                  } else {
-                    console.warn("SHPファイルまたは関連ファイル（.shp, .dbf, .prj）のみ対応しています。");
-                  }
+                  const arrayBuffer = await file.arrayBuffer();
+                  const geojson = await shp(arrayBuffer);
+                  geojsonAddLayer (map, geojson, true)
                 }
+                break
+              }
+              case 'dxf':
+              {
+                reader.onload = async (event) => {
+                  const dxfText = event.target.result;
+                  this.$store.state.dxfText = dxfText
+                  this.dialogForDxfApp = true
+                  // const parser = new DxfParser();
+                  // const dxf = parser.parseSync(dxfText);
+                  // DXFをGeoJSONに変換
+                  // const geojson = dxfToGeoJSON(dxf);
+                  // geojsonAddLayer (map, geojson, true)
+                };
+                reader.readAsText(file);
                 break
               }
             }
           });
+
           // geotiff---------------------------------------------------------------------------------------------
           // dropzone.addEventListener('drop', async (event) => {
           //   event.preventDefault();

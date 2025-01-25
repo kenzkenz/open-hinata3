@@ -1,7 +1,7 @@
 <template>
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div class="menu-div">
-      v0.521<br>
+      v0.522<br>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 
@@ -34,9 +34,7 @@
 import axios from "axios"
 import maplibregl from 'maplibre-gl'
 import {history} from "@/App";
-import {extLayer, extSource, geotiffLayer, geotiffSource, konUrls} from "@/js/layers";
-import {pngDownload} from "@/js/downLoad";
-import store from "@/store";
+import {extLayer, extSource, konUrls} from "@/js/layers";
 export default {
   name: 'Dialog-menu',
   props: ['mapName'],
