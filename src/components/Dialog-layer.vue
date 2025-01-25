@@ -52,7 +52,7 @@ import {
   addImageLayer,
   addImageLayerJpg,
   highlightSpecificFeatures,
-  highlightSpecificFeaturesCity,
+  highlightSpecificFeaturesCity, kmlAddLayer,
   simaToGeoJSON
 } from "@/js/downLoad";
 
@@ -64,6 +64,7 @@ import draggable from "vuedraggable"
 import mw5 from '@/js/mw5'
 import * as turf from '@turf/turf'
 import store from "@/store";
+import {kml} from "@tmcw/togeojson";
 
 export default {
   name: 'Dialog-layer',
@@ -502,6 +503,13 @@ export default {
           this.$store.state.simaFire = !this.$store.state.simaFire
         }
         // ------------------------------------------------------------------
+        if (this.$store.state.kmlText) {
+          const parser = new DOMParser();
+          const kmlText = this.$store.state.kmlText
+          const kmlData = parser.parseFromString(kmlText, 'application/xml');
+          const geojson = kml(kmlData);
+          kmlAddLayer (map, geojson)
+        }
       }
 
       if (this.counter === 1) {

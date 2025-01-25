@@ -80,6 +80,7 @@ export default createStore({
     highlightedChibans: new Set(),
     dialogForSima: false,
     simaText: '',
+    kmlText: '',
     simaTextZahyoukei: '',
     snackbar: false,
     dialogForSimaApp: false,

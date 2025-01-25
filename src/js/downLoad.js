@@ -2124,7 +2124,7 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
         console.log(geojson);
         saveDxf (map, layerId, sourceId, fields, geojson, kei)
     }
-    document.querySelector('.loadingImg').style.display = 'none'
+    // document.querySelector('.loadingImg').style.display = 'none'
 }
 
 
@@ -3606,4 +3606,64 @@ export function pngDownload(map) {
     map.zoomTo(currentZoom + 0.00000000000000000000000000001);
 }
 
+export function kmlAddLayer (map, geojson) {
+    if (!map.getSource('kml-source')) {
+        map.addSource('kml-source', {
+            type: 'geojson',
+            data: geojson
+        });
+        map.addLayer({
+            id: 'kml-polygon-layer',
+            type: 'fill',
+            source: 'kml-source',
+            paint: {
+                'fill-color': '#0000FF',
+                'fill-opacity': 0.5
+            }
+        });
+        map.addLayer({
+            id: 'kml-layer',
+            type: 'line',
+            source: 'kml-source',
+            paint: {
+                'line-color': '#FF0000',
+                'line-width': 2
+            }
+        });
+        map.addLayer({
+            id: 'kml-point-layer',
+            type: 'circle',
+            source: 'kml-source',
+            paint: {
+                'circle-color': '#00FF00',
+                'circle-radius': 6
+            }
+        });
+    } else {
+        map.getSource('kml-source').setData(geojson)
+    }
+    const bounds = new maplibregl.LngLatBounds();
+    geojson.features.forEach(feature => {
+        const geometry = feature.geometry;
+        if (!geometry) return;
 
+        switch (geometry.type) {
+            case 'Point':
+                bounds.extend(geometry.coordinates);
+                break;
+            case 'LineString':
+                geometry.coordinates.forEach(coord => bounds.extend(coord));
+                break;
+            case 'Polygon':
+                geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
+                break;
+            case 'MultiPolygon':
+                geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
+                break;
+        }
+    });
+    map.fitBounds(bounds, {
+        padding: 50,
+        animate: true
+    });
+}
