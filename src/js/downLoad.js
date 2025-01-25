@@ -3317,8 +3317,6 @@ export async function addImageLayerJpg(jpgFile, worldFile, code, isFirst) {
     }
 }
 
-
-
 export async function geoTiffLoad (map,mapName,isUpload) {
     const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
     const files = store.state.tiffAndWorldFile
