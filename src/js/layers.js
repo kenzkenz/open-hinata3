@@ -47,7 +47,7 @@ export const jpgLayer= {
 const ntripSource = {
     id: "ntrip-source", obj: {
         'type': 'geojson',
-        'data': 'https://kenzkenz3.xsrv.jp/geojson/ntrip/ntrip.geojson',
+        'data': 'https://kenzkenz3.xsrv.jp/geojson/ntrip/ntrip0.geojson',
     }
 }
 const ntripCenterPointLayer = {
@@ -71,7 +71,7 @@ const ntripCircleSource = {
 async function convertToGeoJSONforNtrip() {
     try {
         // データをフェッチ
-        const response = await fetch('https://kenzkenz3.xsrv.jp/geojson/ntrip/ntrip.geojson');
+        const response = await fetch('https://kenzkenz3.xsrv.jp/geojson/ntrip/ntrip0.geojson');
         const geojson = await response.json();
 
         const radiusInKm = 20;
@@ -7421,7 +7421,7 @@ const layers01 = [
         id: 'oh-amx-a-fude',
         label: "登記所備付地図データ",
         sources: [amxSource,amx2024Source],
-        layers: [amxLayerDaihyou,amx2024LayerLabel,amx2024Layer,amx2024LayerLine,amx2024LayerVertex],
+        layers: [amxLayerDaihyou,amx2024Layer,amx2024LayerLine,amx2024LayerVertex,amx2024LayerLabel],
         // layers: [amxLayerDaihyou,amx2024LayerLabel,amx2024Layer,amx2024LayerLine,amx2024LayerVertex],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
         ext: {name:'extTokijyo'}
@@ -7449,7 +7449,7 @@ const layers01 = [
             },
             {
                 id: 'oh-zeni',
-                label: "善意の基準局",
+                label: "民間等電子基準点",
                 sources: [zeniSource,zeniCircleSource],
                 layers:[zeniCircleLayer,zeniCenterPointLayer,zeniCircleLayerLine],
                 attribution: '<a href="https://github.com/Bolero-fk/ZeniKijunkyokuChecker" target="_blank">ZeniKijunkyokuChecker</a><br>' +
@@ -7461,7 +7461,8 @@ const layers01 = [
                 label: "その他RTK基準局",
                 sources: [ntripSource, ntripCircleSource],
                 layers:[ntripCircleLayer, ntripCenterPointLayer, ntripCircleLayerLine],
-                attribution: '<a href="http://ntrip1.bizstation.jp:2101/" target="_blank">Ntrip Caster Source table</a>',
+                attribution: '<a href="http://ntrip1.bizstation.jp:2101/" target="_blank">Link1</a> ' +
+                             '<a href="http://geortk.jp:2101/" target="_blank">Link2</a><br>',
                 ext: {name:'extNtrip'}
             },
             {

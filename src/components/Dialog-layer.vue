@@ -508,6 +508,7 @@ export default {
           const kmlText = this.$store.state.kmlText
           const kmlData = parser.parseFromString(kmlText, 'application/xml');
           const geojson = kml(kmlData);
+          // alert(kmlText)
           kmlAddLayer (map, geojson)
         }
       }

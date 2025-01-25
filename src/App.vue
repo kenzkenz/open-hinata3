@@ -1745,14 +1745,18 @@ export default {
 
             const reader = new FileReader();
             reader.onload = (event) => {
-              const parser = new DOMParser();
-              const kmlText = event.target.result
-              console.log(kmlText)
-              this.$store.state.kmlText = kmlText
-              const kmlData = parser.parseFromString(kmlText, 'application/xml');
-              const geojson = kml(kmlData);
+              if (file.name.split('.')[1] === 'kml') {
+                const parser = new DOMParser();
+                const kmlText = event.target.result
+                console.log(kmlText)
+                this.$store.state.kmlText = kmlText
+                const kmlData = parser.parseFromString(kmlText, 'application/xml');
+                const geojson = kml(kmlData);
 
-              kmlAddLayer(map,geojson)
+                console.log(file)
+
+                kmlAddLayer(map, geojson)
+              }
 
               // if (!map.getSource('kml-source')) {
               //   map.addSource('kml-source', {

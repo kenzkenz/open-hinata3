@@ -1381,7 +1381,7 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
                 id: 'sima-layer',
                 type: 'fill',
                 source: 'sima-data',
-                layout: {},
+                filter: ["==", "$type", "Polygon"],
                 paint: {
                     'fill-color': '#088',
                     'fill-opacity': 0.7
@@ -3616,6 +3616,7 @@ export function kmlAddLayer (map, geojson) {
             id: 'kml-polygon-layer',
             type: 'fill',
             source: 'kml-source',
+            filter: ["==", "$type", "Polygon"],
             paint: {
                 'fill-color': '#0000FF',
                 'fill-opacity': 0.5
