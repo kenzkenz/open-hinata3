@@ -183,8 +183,10 @@
 </template>
 
 <script>
-import {mouseMoveForPopup, popup} from "@/js/popup";
+import {mouseMoveForPopup, popup} from "@/js/popup"
 import { CompassControl } from 'maplibre-gl-compass'
+import shp from "shpjs"
+import JSZip from 'jszip'
 import {
   addImageLayer,
   ddSimaUpload,
@@ -197,7 +199,6 @@ import {
   pngDownload,
   simaToGeoJSON
 } from '@/js/downLoad'
-import proj4 from 'proj4'
 
 const popups = []
 function closeAllPopups() {
@@ -1735,8 +1736,8 @@ export default {
             dropzone.classList.remove('active');
           });
 
-          // kml--------------------------------------------------------------------------------------------------------
-          dropzone.addEventListener('drop', (e) => {
+          // --------------------------------------------------------------------------------------------------------
+          dropzone.addEventListener('drop', async(e) => {
             e.preventDefault();
             const files = e.dataTransfer.files;
             if (files.length === 0) return;
@@ -1756,6 +1757,21 @@ export default {
                   kmlAddLayer(map, geojson,true)
                 }
                 reader.readAsText(file);
+                break
+              }
+              case 'kmz':
+              {
+                reader.onload = async (event) => {
+                  const zip = await JSZip.loadAsync(event.target.result);
+                  const kmlFile = Object.keys(zip.files).find((name) => name.endsWith('.kml'));
+                  const kmlText = await zip.files[kmlFile].async('text');
+                  this.$store.state.kmlText = kmlText
+                  const parser = new DOMParser();
+                  const kmlData = parser.parseFromString(kmlText, 'application/xml');
+                  const geojson = kml(kmlData);
+                  kmlAddLayer(map, geojson,true)
+                }
+                reader.readAsArrayBuffer(file);
                 break
               }
               case 'sim':
@@ -1788,6 +1804,42 @@ export default {
                   geojsonAddLayer (map, geojson, true)
                 }
                 reader.readAsText(file);
+                break
+              }
+              case 'prj':
+              case 'dbf':
+              case 'shp':
+              {
+                const files = e.dataTransfer.files;
+                for (const file of files) {
+                  if (file.name.endsWith(".shp") || file.name.endsWith(".dbf") || file.name.endsWith(".prj")) {
+                    // SHP関連ファイルを直接処理
+                    const fileArrayBuffer = await file.arrayBuffer();
+                    try {
+                      const geojson = await shp.parseShp(fileArrayBuffer); // shpjsでSHPを直接GeoJSONに変換
+                      // GeoJSONデータをMapLibreに追加
+                      map.addSource(file.name, {
+                        type: "geojson",
+                        data: geojson
+                      });
+                      // レイヤーを追加
+                      map.addLayer({
+                        id: file.name,
+                        type: "fill",
+                        source: file.name,
+                        paint: {
+                          "fill-color": "rgba(0, 123, 255, 0.5)",
+                          "fill-outline-color": "rgba(0, 123, 255, 1)"
+                        }
+                      });
+                      console.log(`SHPファイルを表示しました: ${file.name}`);
+                    } catch (err) {
+                      console.error("SHPファイルの読み込みに失敗しました", err);
+                    }
+                  } else {
+                    console.warn("SHPファイルまたは関連ファイル（.shp, .dbf, .prj）のみ対応しています。");
+                  }
+                }
                 break
               }
             }
