@@ -42,6 +42,77 @@ export const jpgLayer= {
     paint: {}
 }
 
+// 民電 --------------------------------------------------------------------------------------------
+const mindenSource = {
+    id: "minden-source", obj: {
+        'type': 'geojson',
+        'data': 'https://kenzkenz3.xsrv.jp/geojson/ntrip/2025_minden.geojson',
+    }
+}
+const mindenCenterPointLayer = {
+    id: "oh-minden-center",
+    type: "circle",
+    source: "minden-source",
+    paint: {
+        'circle-color': 'rgba(255,0,0,1)', // 赤色で中心点を強調
+        'circle-radius': 5, // 固定サイズの点
+        'circle-opacity': 1,
+        'circle-stroke-width': 1,
+        'circle-stroke-color': '#fff'
+    }
+};
+const mindenCircleSource = {
+    id: "minden-circle-source", obj: {
+        'type': 'geojson',
+        'data': null,
+    }
+};
+async function convertToGeoJSONforMinden() {
+    const response = await fetch('https://kenzkenz3.xsrv.jp/geojson/ntrip/2025_minden.geojson');
+    const geojson = await response.json();
+    console.log(geojson.features[0].geometry.coordinates)
+    const radiusInKm = 20;
+    // 各ポイントごとに円を生成し、プロパティを引き継ぐ
+    const circleGeoJSON = {
+        type: "FeatureCollection",
+        features: geojson.features.map(feature => {
+            if (feature.geometry) {
+                const circle = turf.circle(feature.geometry.coordinates, radiusInKm, {
+                    steps: 64, // 円の滑らかさ
+                    units: 'kilometers'
+                });
+                return {
+                    type: "Feature",
+                    properties: feature.properties, // プロパティを引き継ぐ
+                    geometry: circle.geometry
+                };
+            }
+        })
+    };
+    mindenCircleSource.obj.data = circleGeoJSON
+    store.state.mindenGeojson = geojson
+}
+convertToGeoJSONforMinden()
+
+// 円形レイヤー
+const mindenCircleLayer = {
+    id: 'oh-minden-circle',
+    type: 'fill',
+    source: 'minden-circle-source',
+    paint: {
+        'fill-color': 'rgba(0,105,180,0.5)',
+        'fill-outline-color': '#000'
+    }
+};
+const mindenCircleLayerLine = {
+    id: 'oh-minden-circle-line',
+    type: 'line',
+    source: 'minden-circle-source',
+    paint: {
+        'line-color': 'rgba(0,0,0,1)',
+        'line-width': 1
+    }
+};
 
 // ntrip --------------------------------------------------------------------------------------------
 const ntripSource = {
@@ -73,9 +144,7 @@ async function convertToGeoJSONforNtrip() {
         // データをフェッチ
         const response = await fetch('https://kenzkenz3.xsrv.jp/geojson/ntrip/ntrip0.geojson');
         const geojson = await response.json();
-
         const radiusInKm = 20;
-
         // 各ポイントごとに円を生成し、プロパティを引き継ぐ
         const circleGeoJSON = {
             type: "FeatureCollection",
@@ -125,7 +194,6 @@ const ntripCircleLayerLine = {
         'line-width': 1
     }
 };
-
 
 // 善意の基準局 --------------------------------------------------------------------------------------------
 const zeniSource = {
@@ -7449,12 +7517,20 @@ const layers01 = [
             },
             {
                 id: 'oh-zeni',
-                label: "民間等電子基準点",
+                label: "善意の基準局",
                 sources: [zeniSource,zeniCircleSource],
                 layers:[zeniCircleLayer,zeniCenterPointLayer,zeniCircleLayerLine],
                 attribution: '<a href="https://github.com/Bolero-fk/ZeniKijunkyokuChecker" target="_blank">ZeniKijunkyokuChecker</a><br>' +
                     '<a href="https://rtk.silentsystem.jp/" target="_blank">善意の基準局掲示板</a>',
                 ext: {name:'extZeni'}
+            },
+            {
+                id: 'oh-minden',
+                label: "民間電子基準局",
+                sources: [mindenSource, mindenCircleSource],
+                layers:[mindenCircleLayer, mindenCenterPointLayer, mindenCircleLayerLine],
+                attribution: '<a href="https://sakura.3ku.jp/gnss/private_gnss-based_control_station/minden/" target="_blank">桜町測量 日々是精進</a>' ,
+                ext: {name:'extMinden'}
             },
             {
                 id: 'oh-ntrip',

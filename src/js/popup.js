@@ -3018,9 +3018,25 @@ export function popup(e,map,mapName,mapFlg) {
                 break
             }
             case 'geojson-polygon-layer':
+            case 'geojson-polygon-line-layer':
+            case 'geojson-line-layer':
             case 'geojson-point-layer':
             case 'kml-polygon-layer':
+            case 'kml-polygon-line-layer':
+            case 'kml-line-layer':
             case 'kml-point-layer':
+            case 'dxf-polygon-layer':
+            case 'dxf-polygon-line-layer':
+            case 'dxf-line-layer':
+            case 'dxf-point-layer':
+            case 'gpx-polygon-layer':
+            case 'gpx-polygon-line-layer':
+            case 'gpx-line-layer':
+            case 'gpx-point-layer':
+            case 'zip-polygon-layer':
+            case 'zip-polygon-line-layer':
+            case 'zip-line-layer':
+            case 'zip-point-layer':
             {
                 let features = map.queryRenderedFeatures(
                     map.project(coordinates), {layers: [layerId]}

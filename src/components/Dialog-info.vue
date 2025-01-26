@@ -40,7 +40,7 @@
           ].includes(item.ext.name)"/>
     <extOSM :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extOSM'"/>
     <extTokijyo :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extTokijyo'"/>
-    <extZeni :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extZeni' || item.ext.name === 'extNtrip'"/>
+    <extZeni :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extZeni' || item.ext.name === 'extNtrip' || item.ext.name === 'extMinden'"/>
     <extIwata :item="item" :mapName="mapName" v-else-if="[
         'extIwata',
         'extNarashi',

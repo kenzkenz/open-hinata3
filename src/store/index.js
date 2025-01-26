@@ -76,6 +76,7 @@ export default createStore({
     zahyokei: '',
     zeniGeojson: '',
     ntripGeojson: '',
+    mindenGeojson: '',
     isRenzoku: true,
     highlightedChibans: new Set(),
     dialogForSima: false,
@@ -83,6 +84,7 @@ export default createStore({
     kmlText: '',
     geojsonText: '',
     dxfText: '',
+    gpxText: '',
     simaTextZahyoukei: '',
     snackbar: false,
     dialogForSimaApp: false,
@@ -242,6 +244,10 @@ export default createStore({
       map01: 20,
       map02: 20
     },
+    mindenKm:{
+      map01: 20,
+      map02: 20
+    },
     simaData: {
       map01: '',
       map02: ''
@@ -392,6 +398,11 @@ export default createStore({
           case 'extNtrip':
             if (payload.order === 0) {
               variable = 'ntripKm'
+            }
+            break
+          case 'extMinden':
+            if (payload.order === 0) {
+              variable = 'mindenKm'
             }
             break
         }

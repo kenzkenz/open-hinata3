@@ -218,6 +218,7 @@ import JSZip from 'jszip'
 import * as turf from '@turf/turf'
 import DxfParser from 'dxf-parser'
 import proj4 from 'proj4'
+import { gpx } from '@tmcw/togeojson'
 import {
   addImageLayer,
   ddSimaUpload,
@@ -563,8 +564,8 @@ export default {
       const parser = new DxfParser();
       const dxf = parser.parseSync(this.$store.state.dxfText);
       const geojson = dxfToGeoJSON(dxf);
-      geojsonAddLayer (map01, geojson, true)
-      geojsonAddLayer (map02, geojson, true)
+      geojsonAddLayer (map01, geojson, true, 'dxf')
+      geojsonAddLayer (map02, geojson, true, 'dxf')
       this.dialogForDxfApp = false
     },
     geoTiffLoad () {
@@ -959,18 +960,18 @@ export default {
         console.log(h)
         chibans.push(h)
       })
-      // console.log(chibans)
       const simaText = this.$store.state.simaText
       const image = this.$store.state.uploadedImage
       const extLayer = {layer:this.$store.state.extLayer,name:this.$store.state.extLayerName}
       const kmlText = this.$store.state.kmlText
       const geojsonText = this.$store.state.geojsonText
       const dxfText = this.$store.state.dxfText
+      const gpxText = this.$store.state.gpxText
 
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
       ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}
-      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}&geojsontext=${geojsonText}&dxftext=${dxfText}`
+      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}&geojsontext=${geojsonText}&dxftext=${dxfText}&gpxtext=${gpxText}`
       // console.log(this.param)
       // this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
@@ -1039,11 +1040,12 @@ export default {
       const kmlText = params.get('kmltext')
       const geojsonText = params.get('geojsontext')
       const dxfText = params.get('dxftext')
+      const gpxText = params.get('gpxtext')
       this.pitch.map01 = pitch01
       this.pitch.map02 = pitch02
       this.bearing = bearing
       this.s_terrainLevel = terrainLevel
-      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image,extLayer,kmlText,geojsonText,dxfText}// 以前のリンクをいかすためpitchを入れている。
+      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText}// 以前のリンクをいかすためpitchを入れている。
     },
     init() {
 
@@ -1408,6 +1410,10 @@ export default {
           //   }
           // }
           // ----------------------------------------------------------------
+          console.log(params.gpxText)
+          if (params.gpxText) {
+            this.$store.state.gpxText = params.gpxText
+          }
 
           console.log(params.dxfText)
           if (params.dxfText) {
@@ -1868,7 +1874,7 @@ export default {
                   this.$store.state.kmlText = kmlText
                   const kmlData = parser.parseFromString(kmlText, 'application/xml');
                   const geojson = kml(kmlData);
-                  kmlAddLayer(map, geojson,true)
+                  geojsonAddLayer(map, geojson,true, fileExtension)
                 }
                 reader.readAsText(file);
                 break
@@ -1883,7 +1889,7 @@ export default {
                   const parser = new DOMParser();
                   const kmlData = parser.parseFromString(kmlText, 'application/xml');
                   const geojson = kml(kmlData);
-                  kmlAddLayer(map, geojson,true)
+                  geojsonAddLayer(map, geojson,true, fileExtension)
                 }
                 reader.readAsArrayBuffer(file);
                 break
@@ -1915,7 +1921,7 @@ export default {
                   const geojsonText = event.target.result
                   this.$store.state.geojsonText = geojsonText
                   const geojson = JSON.parse(geojsonText);
-                  geojsonAddLayer (map, geojson, true)
+                  geojsonAddLayer (map, geojson, true, fileExtension)
                 }
                 reader.readAsText(file);
                 break
@@ -1926,7 +1932,7 @@ export default {
                 for (const file of files) {
                   const arrayBuffer = await file.arrayBuffer();
                   const geojson = await shp(arrayBuffer);
-                  geojsonAddLayer (map, geojson, true)
+                  geojsonAddLayer (map, geojson, true, fileExtension)
                 }
                 break
               }
@@ -1938,6 +1944,17 @@ export default {
                   this.dialogForDxfApp = true
                 };
                 reader.readAsText(file);
+                break
+              }
+              case 'gpx':
+              {
+                const file = e.dataTransfer.files[0];
+                const gpxText = await file.text();
+                this.$store.state.gpxText = gpxText
+                const parser = new DOMParser();
+                const gpxDoc = parser.parseFromString(gpxText, 'application/xml');
+                const geojson = gpx(gpxDoc);
+                geojsonAddLayer (map, geojson, true, fileExtension)
                 break
               }
               case 'xml':

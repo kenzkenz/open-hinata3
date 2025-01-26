@@ -34,15 +34,19 @@ export default {
       get() {
         if (this.item.id === 'oh-zeni') {
           return this.$store.state.zeniKm[this.mapName]
-        } else {
+        } else if (this.item.id === 'oh-ntrip') {
           return this.$store.state.ntripKm[this.mapName]
+        } else {
+          return this.$store.state.mindenKm[this.mapName]
         }
       },
       set(value) {
         if (this.item.id === 'oh-zeni') {
           return this.$store.state.zeniKm[this.mapName] = value
-        } else {
+        } else if (this.item.id === 'oh-ntrip') {
           return this.$store.state.ntripKm[this.mapName] = value
+        } else {
+          return this.$store.state.mindenKm[this.mapName] = value
         }
       }
     },
@@ -71,29 +75,35 @@ export default {
       let geojson
       if (this.item.id === 'oh-zeni') {
         geojson = this.$store.state.zeniGeojson
-      } else {
+      } else if (this.item.id === 'oh-ntrip') {
         geojson = this.$store.state.ntripGeojson
+      } else {
+        geojson = this.$store.state.mindenGeojson
       }
       const radiusInKm = this.s_zeniKm;
       // 各ポイントごとに円を生成し、プロパティを引き継ぐ
       const circleGeoJSON = {
         type: "FeatureCollection",
         features: geojson.features.map(feature => {
-          const circle = turf.circle(feature.geometry.coordinates, radiusInKm, {
-            steps: 32, // 円の滑らかさ
-            units: 'kilometers'
-          });
-          return {
-            type: "Feature",
-            properties: feature.properties, // プロパティを引き継ぐ
-            geometry: circle.geometry
-          };
+          if (feature.geometry) {
+            const circle = turf.circle(feature.geometry.coordinates, radiusInKm, {
+              steps: 32, // 円の滑らかさ
+              units: 'kilometers'
+            });
+            return {
+              type: "Feature",
+              properties: feature.properties, // プロパティを引き継ぐ
+              geometry: circle.geometry
+            };
+          }
         })
       };
       if (this.item.id === 'oh-zeni') {
         if (map.getSource('zeni-circle-source')) map.getSource('zeni-circle-source').setData(circleGeoJSON)
-      } else {
+      } else if (this.item.id === 'oh-ntrip') {
         if (map.getSource('ntrip-circle-source')) map.getSource('ntrip-circle-source').setData(circleGeoJSON)
+      } else {
+        if (map.getSource('minden-circle-source')) map.getSource('minden-circle-source').setData(circleGeoJSON)
       }
       this.update()
     },

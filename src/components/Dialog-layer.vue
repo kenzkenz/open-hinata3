@@ -52,10 +52,10 @@ import DxfParser from 'dxf-parser'
 import {dxfToGeoJSON} from '@/App'
 import {
   addImageLayer,
-  addImageLayerJpg, geojsonAddLayer,
+  addImageLayerJpg,
+  geojsonAddLayer,
   highlightSpecificFeatures,
-  highlightSpecificFeaturesCity, 
-  kmlAddLayer,
+  highlightSpecificFeaturesCity,
   simaToGeoJSON
 } from "@/js/downLoad";
 
@@ -67,7 +67,7 @@ import draggable from "vuedraggable"
 import mw5 from '@/js/mw5'
 import * as turf from '@turf/turf'
 import store from "@/store";
-import {kml} from "@tmcw/togeojson";
+import {gpx, kml} from "@tmcw/togeojson";
 
 export default {
   name: 'Dialog-layer',
@@ -510,17 +510,23 @@ export default {
           const kmlText = this.$store.state.kmlText
           const kmlData = parser.parseFromString(kmlText, 'application/xml');
           const geojson = kml(kmlData);
-          kmlAddLayer (map, geojson, false)
+          geojsonAddLayer (map, geojson, false, 'kml')
         }
         if (this.$store.state.geojsonText) {
           const geojson = JSON.parse(this.$store.state.geojsonText)
-          geojsonAddLayer (map, geojson, false)
+          geojsonAddLayer (map, geojson, false, 'geojson')
         }
         if (this.$store.state.dxfText) {
           const parser = new DxfParser();
           const dxf = parser.parseSync(this.$store.state.dxfText);
           const geojson = dxfToGeoJSON(dxf);
-          geojsonAddLayer (map, geojson, false)
+          geojsonAddLayer (map, geojson, false, 'dxf')
+        }
+        if (this.$store.state.gpxText) {
+          const parser = new DOMParser();
+          const gpxDoc = parser.parseFromString(this.$store.state.gpxText, 'application/xml');
+          const geojson = gpx(gpxDoc);
+          geojsonAddLayer (map, geojson, false, 'gpx')
         }
       }
 
