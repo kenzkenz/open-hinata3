@@ -118,7 +118,8 @@ const mindenCircleLayerLine = {
 const ntripSource = {
     id: "ntrip-source", obj: {
         'type': 'geojson',
-        'data': 'https://kenzkenz3.xsrv.jp/geojson/ntrip/ntrip0.geojson',
+        // 'data': 'https://kenzkenz3.xsrv.jp/geojson/ntrip/sonohoka.geojson',
+        // 'data': 'https://kenzkenz3.xsrv.jp/geojson/ntrip/ntrip0.geojson',
     }
 }
 const ntripCenterPointLayer = {
@@ -139,35 +140,71 @@ const ntripCircleSource = {
         'data': null,
     }
 };
-async function convertToGeoJSONforNtrip() {
-    try {
-        // データをフェッチ
-        const response = await fetch('https://kenzkenz3.xsrv.jp/geojson/ntrip/ntrip0.geojson');
-        const geojson = await response.json();
-        const radiusInKm = 20;
-        // 各ポイントごとに円を生成し、プロパティを引き継ぐ
-        const circleGeoJSON = {
-            type: "FeatureCollection",
-            features: geojson.features.map(feature => {
-                const circle = turf.circle(feature.geometry.coordinates, radiusInKm, {
-                    steps: 64, // 円の滑らかさ
-                    units: 'kilometers'
-                });
-                return {
-                    type: "Feature",
-                    properties: feature.properties, // プロパティを引き継ぐ
-                    geometry: circle.geometry
-                };
-            })
-        };
-        ntripCircleSource.obj.data = circleGeoJSON
-        store.state.ntripGeojson = geojson
-        console.log(circleGeoJSON)
-    } catch (error) {
-        console.error('Error converting to GeoJSON:', error);
-    }
+async function convertAndMergeGeoJSON() {
+    // 最初のデータをフェッチ
+    const response1 = await fetch('https://raw.githubusercontent.com/Bolero-fk/ZeniKijunkyokuChecker/main/Viewer/resource/result.json');
+    const data1 = await response1.json();
+
+    // 2つ目のGeoJSONデータをフェッチ
+    const response2 = await fetch('https://kenzkenz3.xsrv.jp/geojson/ntrip/ntrip0.geojson');
+    const data2 = await response2.json();
+
+    // 最初のデータをGeoJSONに変換
+    const geojson1 = {
+        type: "FeatureCollection",
+        features: data1.ReferenceStationData.map(station => ({
+            type: "Feature",
+            properties: {
+                id: station.id,
+                city_name: station.city_name,
+                station_name: station.station_name,
+                geoid_height: parseFloat(station.geoid_height),
+                server_address: station.server_address,
+                port_number: station.port_number,
+                data_type: station.data_type,
+                connection_type: station.connection_type,
+                status: station.status,
+                mail: station.mail,
+                comment: station.comment
+            },
+            geometry: {
+                type: "Point",
+                coordinates: [
+                    parseFloat(station.longitude),
+                    parseFloat(station.latitude)
+                ]
+            }
+        }))
+    };
+
+    // 2つのGeoJSONデータをマージ
+    const mergedGeoJSON = {
+        type: "FeatureCollection",
+        features: [...geojson1.features, ...data2.features]
+    };
+
+    const radiusInKm = 20;
+    // 各ポイントごとに円を生成し、プロパティを引き継ぐ
+    const circleGeoJSON = {
+        type: "FeatureCollection",
+        features: mergedGeoJSON.features.map(feature => {
+            const circle = turf.circle(feature.geometry.coordinates, radiusInKm, {
+                steps: 64, // 円の滑らかさ
+                units: 'kilometers'
+            });
+            return {
+                type: "Feature",
+                properties: feature.properties, // プロパティを引き継ぐ
+                geometry: circle.geometry
+            };
+        })
+    };
+    ntripCircleSource.obj.data = circleGeoJSON;
+    ntripSource.obj.data = mergedGeoJSON;
+    store.state.ntripGeojson = mergedGeoJSON;
 }
-convertToGeoJSONforNtrip()
+convertAndMergeGeoJSON()
+
 // 円形レイヤー
 const ntripCircleLayer = {
     id: 'oh-ntrip-circle',
@@ -195,148 +232,128 @@ const ntripCircleLayerLine = {
     }
 };
 
-// 善意の基準局 --------------------------------------------------------------------------------------------
-const zeniSource = {
-    id: "zeni-source", obj: {
-        'type': 'geojson',
-        'data': null,
-    }
-}
-const zeniCenterPointLayer = {
-    id: "oh-zeni-center",
-    type: "circle",
-    source: "zeni-source",
-    paint: {
-        // 'circle-color': 'rgba(255,0,0,1)', // 赤色で中心点を強調
-        'circle-color': [
-            'match',
-            ['get', 'status'], // 'status'フィールドの値を取得
-            '公開', 'rgba(255,0,0,1)', // 公開の場合は赤色
-            '休止', 'rgba(0,0,255,1)', // 中止の場合は青色
-            'rgba(0,0,0,0)' // その他の場合は透明（黒を指定しても見えないようにする）
-        ],
-        'circle-radius': 5, // 固定サイズの点
-        'circle-opacity': 1,
-        'circle-stroke-width': 1,
-        'circle-stroke-color': '#fff'
-    }
-};
-const zeniCircleSource = {
-    id: "zeni-circle-source", obj: {
-        'type': 'geojson',
-        'data': null,
-    }
-};
-// 円形レイヤー
-const zeniCircleLayer = {
-    id: 'oh-zeni-circle',
-    type: 'fill',
-    source: 'zeni-circle-source',
-    layout: {},
-    filter: [
-        '!=', ['get', 'status'], '休止' // 'status'が'休止'ではない場合のみ表示
-    ],
-    paint: {
-        'fill-color': 'rgba(0,255,0,0.3)',
-        'fill-outline-color': '#000'
-    }
-};
-const zeniCircleLayerLine = {
-    id: 'oh-zeni-circle-line',
-    type: 'line',
-    source: 'zeni-circle-source',
-    filter: [
-        '!=', ['get', 'status'], '休止' // 'status'が'休止'ではない場合のみ表示
-    ],
-    paint: {
-        'line-color': 'rgba(0,0,0,1)',
-        'line-width': 1
-    }
-};
+// // 善意の基準局 --------------------------------------------------------------------------------------------
+// const zeniSource = {
+//     id: "zeni-source", obj: {
+//         'type': 'geojson',
+//         'data': null,
+//     }
+// }
+// const zeniCenterPointLayer = {
+//     id: "oh-zeni-center",
+//     type: "circle",
+//     source: "zeni-source",
+//     paint: {
+//         // 'circle-color': 'rgba(255,0,0,1)', // 赤色で中心点を強調
+//         'circle-color': [
+//             'match',
+//             ['get', 'status'], // 'status'フィールドの値を取得
+//             '公開', 'rgba(255,0,0,1)', // 公開の場合は赤色
+//             '休止', 'rgba(0,0,255,1)', // 中止の場合は青色
+//             'rgba(0,0,0,0)' // その他の場合は透明（黒を指定しても見えないようにする）
+//         ],
+//         'circle-radius': 5, // 固定サイズの点
+//         'circle-opacity': 1,
+//         'circle-stroke-width': 1,
+//         'circle-stroke-color': '#fff'
+//     }
+// };
+// const zeniCircleSource = {
+//     id: "zeni-circle-source", obj: {
+//         'type': 'geojson',
+//         'data': null,
+//     }
+// };
+// // 円形レイヤー
+// const zeniCircleLayer = {
+//     id: 'oh-zeni-circle',
+//     type: 'fill',
+//     source: 'zeni-circle-source',
+//     layout: {},
+//     filter: [
+//         '!=', ['get', 'status'], '休止' // 'status'が'休止'ではない場合のみ表示
+//     ],
+//     paint: {
+//         'fill-color': 'rgba(0,255,0,0.3)',
+//         'fill-outline-color': '#000'
+//     }
+// };
+// const zeniCircleLayerLine = {
+//     id: 'oh-zeni-circle-line',
+//     type: 'line',
+//     source: 'zeni-circle-source',
+//     filter: [
+//         '!=', ['get', 'status'], '休止' // 'status'が'休止'ではない場合のみ表示
+//     ],
+//     paint: {
+//         'line-color': 'rgba(0,0,0,1)',
+//         'line-width': 1
+//     }
+// };
+//
+// // eslint-disable-next-line no-unexpected-multiline
+// async function convertToGeoJSON() {
+//     try {
+//         // データをフェッチ
+//         const response = await fetch('https://raw.githubusercontent.com/Bolero-fk/ZeniKijunkyokuChecker/main/Viewer/resource/result.json');
+//         const data = await response.json();
+//
+//         // GeoJSONフォーマットに変換
+//         const geojson = {
+//             type: "FeatureCollection",
+//             features: data.ReferenceStationData.map(station => ({
+//                 type: "Feature",
+//                 properties: {
+//                     id: station.id,
+//                     city_name: station.city_name,
+//                     station_name: station.station_name,
+//                     geoid_height: parseFloat(station.geoid_height),
+//                     server_address: station.server_address,
+//                     port_number: station.port_number,
+//                     data_type: station.data_type,
+//                     connection_type: station.connection_type,
+//                     status: station.status,
+//                     mail: station.mail,
+//                     comment: station.comment
+//                 },
+//                 geometry: {
+//                     type: "Point",
+//                     coordinates: [
+//                         parseFloat(station.longitude),
+//                         parseFloat(station.latitude)
+//                     ]
+//                 }
+//             }))
+//         };
+//
+//         const radiusInKm = 20;
+//         // 各ポイントごとに円を生成し、プロパティを引き継ぐ
+//         const circleGeoJSON = {
+//             type: "FeatureCollection",
+//             features: geojson.features.map(feature => {
+//                 const circle = turf.circle(feature.geometry.coordinates, radiusInKm, {
+//                     steps: 64, // 円の滑らかさ
+//                     units: 'kilometers'
+//                 });
+//                 return {
+//                     type: "Feature",
+//                     properties: feature.properties, // プロパティを引き継ぐ
+//                     geometry: circle.geometry
+//                 };
+//             })
+//         };
+//         zeniCircleSource.obj.data = circleGeoJSON
+//         zeniSource.obj.data = geojson;
+//         store.state.zeniGeojson = geojson
+//         console.log(JSON.stringify(geojson));
+//         console.log(circleGeoJSON);
+//         return { geojson, circleGeoJSON };
+//     } catch (error) {
+//         console.error('Error converting to GeoJSON:', error);
+//     }
+// }
+// convertToGeoJSON()
 
-
-// eslint-disable-next-line no-unexpected-multiline
-async function convertToGeoJSON() {
-    try {
-        // データをフェッチ
-        const response = await fetch('https://raw.githubusercontent.com/Bolero-fk/ZeniKijunkyokuChecker/main/Viewer/resource/result.json');
-        const data = await response.json();
-
-        // GeoJSONフォーマットに変換
-        const geojson = {
-            type: "FeatureCollection",
-            features: data.ReferenceStationData.map(station => ({
-                type: "Feature",
-                properties: {
-                    id: station.id,
-                    city_name: station.city_name,
-                    station_name: station.station_name,
-                    geoid_height: parseFloat(station.geoid_height),
-                    server_address: station.server_address,
-                    port_number: station.port_number,
-                    data_type: station.data_type,
-                    connection_type: station.connection_type,
-                    status: station.status,
-                    mail: station.mail,
-                    comment: station.comment
-                },
-                geometry: {
-                    type: "Point",
-                    coordinates: [
-                        parseFloat(station.longitude),
-                        parseFloat(station.latitude)
-                    ]
-                }
-            }))
-        };
-
-        const radiusInKm = 20;
-
-        // 各ポイントごとに円を生成し、プロパティを引き継ぐ
-        const circleGeoJSON = {
-            type: "FeatureCollection",
-            features: geojson.features.map(feature => {
-                const circle = turf.circle(feature.geometry.coordinates, radiusInKm, {
-                    steps: 64, // 円の滑らかさ
-                    units: 'kilometers'
-                });
-                return {
-                    type: "Feature",
-                    properties: feature.properties, // プロパティを引き継ぐ
-                    geometry: circle.geometry
-                };
-            })
-        };
-        zeniCircleSource.obj.data = circleGeoJSON
-        zeniSource.obj.data = geojson;
-        store.state.zeniGeojson = geojson
-        console.log(geojson);
-        console.log(circleGeoJSON);
-        return { geojson, circleGeoJSON };
-    } catch (error) {
-        console.error('Error converting to GeoJSON:', error);
-    }
-}
-convertToGeoJSON()
-
-const testSource = {
-    id: 'test-source', obj: {
-        type: 'vector', // GeoJSONタイルなのでvectorタイプを使用
-        tiles: [
-            // テンプレートURLを配列で指定
-            'https://maps.gsi.go.jp/xyz/experimental_landformclassification1/{z}/{x}/{y}.geojson'
-        ],
-    }
-}
-const testLayer = {
-    id: 'test-layer',
-    type: 'fill',
-    source: 'test-source',
-    'source-layer': 'layer',
-    paint: {
-        "fill-color": "red",
-    },
-}
 // import std from '@/assets/json/modified_std.json'
 import fxBasic from '@/assets/json/modified_fx_basic.json'
 import mono from '@/assets/json/modified_mono.json'
@@ -7515,18 +7532,18 @@ const layers01 = [
                 layers:[fudeLayer,fudeLine],
                 attribution: '<a href="https://www.maff.go.jp/j/tokei/porigon/" target="_blank">農地の区画情報（筆ポリゴン）のデータ提供・利用</a>'
             },
-            {
-                id: 'oh-zeni',
-                label: "善意の基準局",
-                sources: [zeniSource,zeniCircleSource],
-                layers:[zeniCircleLayer,zeniCenterPointLayer,zeniCircleLayerLine],
-                attribution: '<a href="https://github.com/Bolero-fk/ZeniKijunkyokuChecker" target="_blank">ZeniKijunkyokuChecker</a><br>' +
-                    '<a href="https://rtk.silentsystem.jp/" target="_blank">善意の基準局掲示板</a>',
-                ext: {name:'extZeni'}
-            },
+            // {
+            //     id: 'oh-zeni',
+            //     label: "善意の基準局",
+            //     sources: [zeniSource,zeniCircleSource],
+            //     layers:[zeniCircleLayer,zeniCenterPointLayer,zeniCircleLayerLine],
+            //     attribution: '<a href="https://github.com/Bolero-fk/ZeniKijunkyokuChecker" target="_blank">ZeniKijunkyokuChecker</a><br>' +
+            //         '<a href="https://rtk.silentsystem.jp/" target="_blank">善意の基準局掲示板</a>',
+            //     ext: {name:'extZeni'}
+            // },
             {
                 id: 'oh-minden',
-                label: "民間電子基準局",
+                label: "民間等電子基準点",
                 sources: [mindenSource, mindenCircleSource],
                 layers:[mindenCircleLayer, mindenCenterPointLayer, mindenCircleLayerLine],
                 attribution: '<a href="https://sakura.3ku.jp/gnss/private_gnss-based_control_station/minden/" target="_blank">桜町測量 日々是精進</a>' ,

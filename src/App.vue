@@ -1864,6 +1864,7 @@ export default {
             const file = files[0]
             const fileName = file.name;
             const fileExtension = fileName.split('.').pop().toLowerCase();
+            history(fileExtension + 'をDD',window.location.href)
             const reader = new FileReader();
             switch (fileExtension) {
               case 'kml':

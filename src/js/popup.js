@@ -2992,6 +2992,7 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-minden-circle':
             case 'oh-ntrip-circle':
             {
                 let features = map.queryRenderedFeatures(
