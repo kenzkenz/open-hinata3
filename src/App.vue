@@ -232,6 +232,43 @@ import {
   zahyokei
 } from '@/js/downLoad'
 
+// XMLデータを解析しGeoJSONを生成して地図に表示
+function xmlToGeojson(map, xmlText) {
+  try {
+    // XMLをパース
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+    // GeoJSONの作成
+    const geojson = {
+      type: "FeatureCollection",
+      features: []
+    };
+    // XML内のポイントデータを抽出
+    const points = xmlDoc.getElementsByTagNameNS("http://www.moj.go.jp/MINJI/tizuzumen", "GM_Point");
+    console.log(points.length)
+    for (const point of points) {
+      console.log(point)
+      const id = point.getAttribute("id");
+      const x = parseFloat(point.getElementsByTagNameNS("http://www.moj.go.jp/MINJI/tizuzumen", "X")[0].textContent);
+      const y = parseFloat(point.getElementsByTagNameNS("http://www.moj.go.jp/MINJI/tizuzumen", "Y")[0].textContent);
+      // GeoJSONのポイントを追加
+      geojson.features.push({
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [x, y]
+        },
+        properties: {
+          id
+        }
+      });
+    }
+    return geojson
+  } catch (error) {
+    console.error("XMLの読み込みまたは表示中にエラーが発生しました:", error);
+  }
+}
+
 const transformCoordinates = (coordinates) => {
   const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
   return proj4(code, "EPSG:4326", coordinates);
@@ -1899,13 +1936,20 @@ export default {
                   const dxfText = event.target.result;
                   this.$store.state.dxfText = dxfText
                   this.dialogForDxfApp = true
-                  // const parser = new DxfParser();
-                  // const dxf = parser.parseSync(dxfText);
-                  // DXFをGeoJSONに変換
-                  // const geojson = dxfToGeoJSON(dxf);
-                  // geojsonAddLayer (map, geojson, true)
                 };
                 reader.readAsText(file);
+                break
+              }
+              case 'xml':
+              {
+                const file = e.dataTransfer.files[0];
+                if (file && file.type === 'text/xml') {
+                  const xmlText = await file.text();
+                  const geojson = xmlToGeojson(map, xmlText);
+                  console.log(geojson)
+                } else {
+                  alert('XMLファイルをドロップしてください');
+                }
                 break
               }
             }
