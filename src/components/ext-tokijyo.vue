@@ -72,8 +72,9 @@
       </div>
 
       <!-- 3行目 -->
-      <div style="display: flex; justify-content: space-between; gap: 10px; padding-right: 17px;">
-        <v-btn  style="width: 70px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
+      <div style="display: flex; justify-content: space-between; gap: 5px; padding-right: 100px;">
+        <v-btn style="width: 70px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
+        <v-btn style="width: 70px;" class="tiny-btn" @click="saveKml">KML保存</v-btn>
 <!--        <v-btn class="tiny-btn" @click="jww">jww座標ファイル保存</v-btn>-->
       </div>
 
@@ -129,7 +130,7 @@ import {
   initializePlaneRectangularCRS,
   saveCsv,
   simaToGeoJSON,
-  resetFeatureColors
+  resetFeatureColors, downloadKML
 } from "@/js/downLoad";
 import {history} from "@/App";
 
@@ -278,6 +279,11 @@ export default {
       }
       document.querySelector('#simaFileInput').click()
       this.dialog = false
+    },
+    saveKml () {
+      const map = this.$store.state[this.mapName]
+      downloadKML(map, 'oh-amx-a-fude')
+      history('KML保存',window.location.href)
     },
     saveCsv () {
       const map = this.$store.state[this.mapName]

@@ -220,56 +220,164 @@ import DxfParser from 'dxf-parser'
 import proj4 from 'proj4'
 import { gpx } from '@tmcw/togeojson'
 import {
-  addImageLayer,
   ddSimaUpload,
   downloadSimaText,
   geojsonAddLayer,
   geoTiffLoad,
   handleFileUpload,
   highlightSpecificFeatures,
-  highlightSpecificFeaturesCity, kmlAddLayer,
-  pngDownload,
-  simaToGeoJSON,
+  highlightSpecificFeaturesCity,
+  pngDownload, transformGeoJSONToEPSG4326,
   zahyokei
 } from '@/js/downLoad'
 
-// XMLデータを解析しGeoJSONを生成して地図に表示
-function xmlToGeojson(map, xmlText) {
-  try {
-    // XMLをパース
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(xmlText, "application/xml");
-    // GeoJSONの作成
-    const geojson = {
-      type: "FeatureCollection",
-      features: []
-    };
-    // XML内のポイントデータを抽出
-    const points = xmlDoc.getElementsByTagNameNS("http://www.moj.go.jp/MINJI/tizuzumen", "GM_Point");
-    console.log(points.length)
-    for (const point of points) {
-      console.log(point)
-      const id = point.getAttribute("id");
-      const x = parseFloat(point.getElementsByTagNameNS("http://www.moj.go.jp/MINJI/tizuzumen", "X")[0].textContent);
-      const y = parseFloat(point.getElementsByTagNameNS("http://www.moj.go.jp/MINJI/tizuzumen", "Y")[0].textContent);
-      // GeoJSONのポイントを追加
-      geojson.features.push({
+function convertXmlToGeoJson(xml) {
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(xml, "application/xml");
+
+  const geoJson = {
+    type: "FeatureCollection",
+    features: []
+  };
+
+  console.log("Parsing XML...");
+
+  // Process GM_Surface as polygons
+  const surfaces = xmlDoc.querySelectorAll("GM_Surface");
+  if (surfaces.length === 0) {
+    console.warn("No GM_Surface elements found.");
+  }
+
+  surfaces.forEach((surface, surfaceIndex) => {
+    console.log(`Processing GM_Surface ${surfaceIndex + 1}...`);
+    const patches = surface.querySelectorAll("GM_Surface.patch");
+    if (patches.length === 0) {
+      console.warn(`No GM_Surface.patch found for GM_Surface ${surfaceIndex + 1}.`);
+      return;
+    }
+
+    const surfaceProperties = extractSurfaceProperties(surface);
+    const multiPolygonCoordinates = [];
+
+    patches.forEach((patch, patchIndex) => {
+      const polygon = patch.querySelector("GM_Polygon");
+      if (!polygon) {
+        console.warn(`No GM_Polygon found in patch ${patchIndex + 1} of GM_Surface ${surfaceIndex + 1}.`);
+        return;
+      }
+
+      const exterior = polygon.querySelector("GM_SurfaceBoundary.exterior > GM_Ring");
+      if (!exterior) {
+        console.warn(`No exterior GM_Ring found in patch ${patchIndex + 1} of GM_Surface ${surfaceIndex + 1}.`);
+        return;
+      }
+
+      const exteriorCoordinates = extractCoordinatesFromRing(exterior, xmlDoc);
+
+      const interiorCoordinates = Array.from(
+          polygon.querySelectorAll("GM_SurfaceBoundary.interior > GM_Ring")
+      )
+          .map(interiorRing => extractCoordinatesFromRing(interiorRing, xmlDoc))
+          .filter(coords => coords.length > 2);
+
+      if (exteriorCoordinates.length > 2) {
+        console.log(
+            `Adding polygon to MultiPolygon for patch ${patchIndex + 1} of GM_Surface ${surfaceIndex + 1}.`
+        );
+        multiPolygonCoordinates.push([exteriorCoordinates, ...interiorCoordinates]);
+      } else {
+        console.warn(
+            `Polygon coordinates are insufficient for a valid feature in patch ${patchIndex + 1} of GM_Surface ${surfaceIndex + 1}.`
+        );
+      }
+    });
+
+    if (multiPolygonCoordinates.length > 0) {
+      geoJson.features.push({
         type: "Feature",
         geometry: {
-          type: "Point",
-          coordinates: [x, y]
+          type: "MultiPolygon",
+          coordinates: multiPolygonCoordinates
         },
-        properties: {
-          id
-        }
+        properties: surfaceProperties
       });
     }
-    return geojson
-  } catch (error) {
-    console.error("XMLの読み込みまたは表示中にエラーが発生しました:", error);
-  }
+  });
+
+  console.log("Conversion complete.");
+  return geoJson;
 }
 
+function extractCoordinatesFromRing(ring, xmlDoc) {
+  console.log("Debugging GM_Ring structure:", ring.outerHTML);
+
+  const generators = ring.querySelectorAll("GM_CompositeCurve.generator");
+  if (generators.length === 0) {
+    console.warn("No GM_CompositeCurve.generator elements found in GM_Ring.");
+    return [];
+  }
+
+  console.log(`Found ${generators.length} generators in GM_Ring.`);
+
+  const coordinates = [];
+  generators.forEach(generator => {
+    const idref = generator.getAttribute("idref");
+    if (!idref) {
+      console.warn("Generator missing idref attribute.");
+      return;
+    }
+
+    const curve = xmlDoc.querySelector(`[id='${idref}']`);
+    if (curve) {
+      const positions = curve.querySelectorAll("GM_Position");
+      positions.forEach(position => {
+        const direct = position.querySelector("GM_Position.direct");
+        const indirect = position.querySelector("GM_Position.indirect > GM_PointRef > GM_PointRef.point");
+
+        if (direct) {
+          const xElement = direct.querySelector("X");
+          const yElement = direct.querySelector("Y");
+          if (xElement && yElement) {
+            coordinates.push([parseFloat(xElement.textContent), parseFloat(yElement.textContent)]);
+          }
+        } else if (indirect) {
+          const pointRef = xmlDoc.querySelector(`[id='${indirect.getAttribute("idref")}']`);
+          if (pointRef) {
+            const xElement = pointRef.querySelector("X");
+            const yElement = pointRef.querySelector("Y");
+            if (xElement && yElement) {
+              coordinates.push([parseFloat(xElement.textContent), parseFloat(yElement.textContent)]);
+            }
+          }
+        }
+      });
+    } else {
+      console.warn(`No curve found for idref ${idref}.`);
+    }
+  });
+
+  // Ensure coordinates form a closed ring
+  if (coordinates.length > 0 && (coordinates[0][0] !== coordinates[coordinates.length - 1][0] || coordinates[0][1] !== coordinates[coordinates.length - 1][1])) {
+    coordinates.push(coordinates[0]);
+  }
+
+  return coordinates;
+}
+
+function extractSurfaceProperties(surface) {
+  const properties = {};
+  const mapName = surface.querySelector("地図名");
+  const cityCode = surface.querySelector("市区町村コード");
+  const cityName = surface.querySelector("市区町村名");
+  const coordinateSystem = surface.querySelector("座標系");
+
+  if (mapName) properties["地図名"] = mapName.textContent;
+  if (cityCode) properties["市区町村コード"] = cityCode.textContent;
+  if (cityName) properties["市区町村名"] = cityName.textContent;
+  if (coordinateSystem) properties["座標系"] = coordinateSystem.textContent;
+
+  return properties;
+}
 const transformCoordinates = (coordinates) => {
   const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
   return proj4(code, "EPSG:4326", coordinates);
@@ -1963,8 +2071,10 @@ export default {
                 const file = e.dataTransfer.files[0];
                 if (file && file.type === 'text/xml') {
                   const xmlText = await file.text();
-                  const geojson = xmlToGeojson(map, xmlText);
+                  let geojson = convertXmlToGeoJson(xmlText);
                   console.log(geojson)
+                  geojson = transformGeoJSONToEPSG4326(geojson)
+                  geojsonAddLayer (map, geojson, true, fileExtension)
                 } else {
                   alert('XMLファイルをドロップしてください');
                 }

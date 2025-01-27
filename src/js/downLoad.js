@@ -7,6 +7,7 @@ import axios from "axios";
 import {geotiffSource, geotiffLayer, jpgSource, jpgLayer} from "@/js/layers";
 import JSZip from 'jszip'
 import {history} from "@/App";
+import tokml from 'tokml'
 // 複数のクリックされた地番を強調表示するためのセット
 // export let highlightedChibans = new Set();
 (function() {
@@ -3694,4 +3695,62 @@ export function geojsonAddLayer (map, geojson, isFitBounds, fileExtension) {
             animate: true
         });
     }
+}
+
+// 現在の表示範囲のGeoJSONを取得
+function getVisibleGeoJSON(map, layerId) {
+    const bounds = map.getBounds(); // 表示範囲を取得
+    const features = map.queryRenderedFeatures(bounds, {
+        layers: [layerId] // 適切なレイヤー名を指定
+    });
+    // GeoJSONを作成
+    const geojson = {
+        type: 'FeatureCollection',
+        features: features.map(feature => feature.toJSON())
+    };
+    return geojson;
+}
+
+// GeoJSONをKMLに変換し、ダウンロード
+export function downloadKML(map, layerId) {
+    let geojson = getVisibleGeoJSON(map, layerId);
+    geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
+    // GeoJSONをKMLに変換
+    const kml = tokml(geojson);
+    // KMLファイルをダウンロード
+    const blob = new Blob([kml], { type: 'application/vnd.google-earth.kml+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const chibanAndHoka = getChibanAndHoka(geojson,false)
+    const firstChiban = chibanAndHoka.firstChiban
+    const hoka = chibanAndHoka.hoka
+    a.download = firstChiban + hoka + '.kml';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+export function transformGeoJSONToEPSG4326(geojson) {
+    // GeoJSONの各座標を変換
+    const transformCoordinates = (coords) => {
+        if (typeof coords[0] === "number" && typeof coords[1] === "number") {
+            return proj4('EPSG:2444', 'EPSG:4326', coords);
+            // return proj4(planeRectangularZone2, wgs84, coords);
+        }
+        return coords.map(transformCoordinates);
+    };
+    // GeoJSON全体を変換
+    const transformedGeoJSON = {
+        ...geojson,
+        features: geojson.features.map((feature) => ({
+            ...feature,
+            geometry: {
+                ...feature.geometry,
+                coordinates: transformCoordinates(feature.geometry.coordinates),
+            },
+        })),
+    };
+    return transformedGeoJSON;
 }
