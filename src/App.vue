@@ -242,119 +242,119 @@ function convertXmlToGeoJson(xml) {
 
   console.log("Parsing XML...");
 
-  // Process GM_Surface as polygons
-  const surfaces = xmlDoc.querySelectorAll("GM_Surface");
-  if (surfaces.length === 0) {
+  const surfaces = xmlDoc.evaluate("//zmn:GM_Surface", xmlDoc, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+  if (surfaces.snapshotLength === 0) {
     console.warn("No GM_Surface elements found.");
   }
 
-  surfaces.forEach((surface, surfaceIndex) => {
-    console.log(`Processing GM_Surface ${surfaceIndex + 1}...`);
-    const patches = surface.querySelectorAll("GM_Surface.patch");
-    if (patches.length === 0) {
-      console.warn(`No GM_Surface.patch found for GM_Surface ${surfaceIndex + 1}.`);
-      return;
+  for (let i = 0; i < surfaces.snapshotLength; i++) {
+    const surface = surfaces.snapshotItem(i);
+    console.log(`Processing GM_Surface ${i + 1}...`);
+    console.log("Debugging GM_Surface structure:", surface.outerHTML);
+
+    const patches = xmlDoc.evaluate(".//zmn:GM_Surface.patch", surface, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    if (patches.snapshotLength === 0) {
+      console.warn(`No GM_Surface.patch found for GM_Surface ${i + 1}.`);
+      continue;
     }
 
-    const surfaceProperties = extractSurfaceProperties(surface);
-    const multiPolygonCoordinates = [];
+    const surfaceProperties = extractSurfaceProperties(xmlDoc, surface);
 
-    patches.forEach((patch, patchIndex) => {
-      const polygon = patch.querySelector("GM_Polygon");
+    for (let j = 0; j < patches.snapshotLength; j++) {
+      const patch = patches.snapshotItem(j);
+      const polygon = xmlDoc.evaluate(".//zmn:GM_Polygon", patch, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
       if (!polygon) {
-        console.warn(`No GM_Polygon found in patch ${patchIndex + 1} of GM_Surface ${surfaceIndex + 1}.`);
-        return;
+        console.warn(`No GM_Polygon found in patch ${j + 1} of GM_Surface ${i + 1}.`);
+        continue;
       }
 
-      const exterior = polygon.querySelector("GM_SurfaceBoundary.exterior > GM_Ring");
+      const exterior = xmlDoc.evaluate(".//zmn:GM_SurfaceBoundary.exterior/zmn:GM_Ring", polygon, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
       if (!exterior) {
-        console.warn(`No exterior GM_Ring found in patch ${patchIndex + 1} of GM_Surface ${surfaceIndex + 1}.`);
-        return;
+        console.warn(`No exterior GM_Ring found in patch ${j + 1} of GM_Surface ${i + 1}.`);
+        continue;
       }
 
-      const exteriorCoordinates = extractCoordinatesFromRing(exterior, xmlDoc);
+      const exteriorCoordinates = extractCoordinatesFromRing(xmlDoc, exterior);
 
-      const interiorCoordinates = Array.from(
-          polygon.querySelectorAll("GM_SurfaceBoundary.interior > GM_Ring")
-      )
-          .map(interiorRing => extractCoordinatesFromRing(interiorRing, xmlDoc))
-          .filter(coords => coords.length > 2);
+      const interiorCoordinates = [];
+      const interiors = xmlDoc.evaluate(".//zmn:GM_SurfaceBoundary.interior/zmn:GM_Ring", polygon, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+      for (let k = 0; k < interiors.snapshotLength; k++) {
+        const interiorRing = interiors.snapshotItem(k);
+        const coords = extractCoordinatesFromRing(xmlDoc, interiorRing);
+        if (coords.length > 2) {
+          interiorCoordinates.push(coords);
+        }
+      }
 
       if (exteriorCoordinates.length > 2) {
-        console.log(
-            `Adding polygon to MultiPolygon for patch ${patchIndex + 1} of GM_Surface ${surfaceIndex + 1}.`
-        );
-        multiPolygonCoordinates.push([exteriorCoordinates, ...interiorCoordinates]);
+        console.log(`Adding polygon to GeoJSON for patch ${j + 1} of GM_Surface ${i + 1}.`);
+        geoJson.features.push({
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
+            coordinates: [exteriorCoordinates, ...interiorCoordinates]
+          },
+          properties: surfaceProperties
+        });
       } else {
-        console.warn(
-            `Polygon coordinates are insufficient for a valid feature in patch ${patchIndex + 1} of GM_Surface ${surfaceIndex + 1}.`
-        );
+        console.warn(`Polygon coordinates are insufficient for a valid feature in patch ${j + 1} of GM_Surface ${i + 1}.`);
       }
-    });
-
-    if (multiPolygonCoordinates.length > 0) {
-      geoJson.features.push({
-        type: "Feature",
-        geometry: {
-          type: "MultiPolygon",
-          coordinates: multiPolygonCoordinates
-        },
-        properties: surfaceProperties
-      });
     }
-  });
+  }
 
   console.log("Conversion complete.");
   return geoJson;
 }
 
-function extractCoordinatesFromRing(ring, xmlDoc) {
+function extractCoordinatesFromRing(xmlDoc, ring) {
   console.log("Debugging GM_Ring structure:", ring.outerHTML);
 
-  const generators = ring.querySelectorAll("GM_CompositeCurve.generator");
-  if (generators.length === 0) {
+  const generators = xmlDoc.evaluate(".//zmn:GM_CompositeCurve.generator", ring, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+  if (generators.snapshotLength === 0) {
     console.warn("No GM_CompositeCurve.generator elements found in GM_Ring.");
     return [];
   }
 
-  console.log(`Found ${generators.length} generators in GM_Ring.`);
+  console.log(`Found ${generators.snapshotLength} generators in GM_Ring.`);
 
   const coordinates = [];
-  generators.forEach(generator => {
+  for (let i = 0; i < generators.snapshotLength; i++) {
+    const generator = generators.snapshotItem(i);
     const idref = generator.getAttribute("idref");
     if (!idref) {
       console.warn("Generator missing idref attribute.");
-      return;
+      continue;
     }
 
-    const curve = xmlDoc.querySelector(`[id='${idref}']`);
+    const curve = xmlDoc.evaluate(`//*[@id='${idref}']`, xmlDoc, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
     if (curve) {
-      const positions = curve.querySelectorAll("GM_Position");
-      positions.forEach(position => {
-        const direct = position.querySelector("GM_Position.direct");
-        const indirect = position.querySelector("GM_Position.indirect > GM_PointRef > GM_PointRef.point");
+      const positions = xmlDoc.evaluate(".//zmn:GM_Position", curve, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+      for (let j = 0; j < positions.snapshotLength; j++) {
+        const position = positions.snapshotItem(j);
+        const direct = xmlDoc.evaluate(".//zmn:GM_Position.direct", position, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+        const indirect = xmlDoc.evaluate(".//zmn:GM_Position.indirect/zmn:GM_PointRef/zmn:GM_PointRef.point", position, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
 
         if (direct) {
-          const xElement = direct.querySelector("X");
-          const yElement = direct.querySelector("Y");
+          const xElement = xmlDoc.evaluate(".//zmn:X", direct, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+          const yElement = xmlDoc.evaluate(".//zmn:Y", direct, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
           if (xElement && yElement) {
             coordinates.push([parseFloat(xElement.textContent), parseFloat(yElement.textContent)]);
           }
         } else if (indirect) {
-          const pointRef = xmlDoc.querySelector(`[id='${indirect.getAttribute("idref")}']`);
+          const pointRef = xmlDoc.evaluate(`//*[@id='${indirect.getAttribute("idref")}]`, xmlDoc, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
           if (pointRef) {
-            const xElement = pointRef.querySelector("X");
-            const yElement = pointRef.querySelector("Y");
+            const xElement = xmlDoc.evaluate(".//zmn:X", pointRef, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+            const yElement = xmlDoc.evaluate(".//zmn:Y", pointRef, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
             if (xElement && yElement) {
               coordinates.push([parseFloat(xElement.textContent), parseFloat(yElement.textContent)]);
             }
           }
         }
-      });
+      }
     } else {
       console.warn(`No curve found for idref ${idref}.`);
     }
-  });
+  }
 
   // Ensure coordinates form a closed ring
   if (coordinates.length > 0 && (coordinates[0][0] !== coordinates[coordinates.length - 1][0] || coordinates[0][1] !== coordinates[coordinates.length - 1][1])) {
@@ -364,12 +364,12 @@ function extractCoordinatesFromRing(ring, xmlDoc) {
   return coordinates;
 }
 
-function extractSurfaceProperties(surface) {
+function extractSurfaceProperties(xmlDoc, surface) {
   const properties = {};
-  const mapName = surface.querySelector("地図名");
-  const cityCode = surface.querySelector("市区町村コード");
-  const cityName = surface.querySelector("市区町村名");
-  const coordinateSystem = surface.querySelector("座標系");
+  const mapName = xmlDoc.evaluate(".//zmn:地図名", surface, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+  const cityCode = xmlDoc.evaluate(".//zmn:市区町村コード", surface, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+  const cityName = xmlDoc.evaluate(".//zmn:市区町村名", surface, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+  const coordinateSystem = xmlDoc.evaluate(".//zmn:座標系", surface, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
 
   if (mapName) properties["地図名"] = mapName.textContent;
   if (cityCode) properties["市区町村コード"] = cityCode.textContent;
@@ -378,6 +378,25 @@ function extractSurfaceProperties(surface) {
 
   return properties;
 }
+
+// Example usage
+function handleFileInput(event) {
+  const file = event.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+
+    reader.onload = function (e) {
+      const xml = e.target.result;
+      const geoJson = convertXmlToGeoJson(xml);
+      console.log(JSON.stringify(geoJson, null, 2));
+      document.getElementById("output").textContent = JSON.stringify(geoJson, null, 2);
+    };
+
+    reader.readAsText(file);
+  }
+}
+
+
 const transformCoordinates = (coordinates) => {
   const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
   return proj4(code, "EPSG:4326", coordinates);
