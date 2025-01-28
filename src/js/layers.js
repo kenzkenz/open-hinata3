@@ -46,7 +46,7 @@ export const jpgLayer= {
 const mindenSource = {
     id: "minden-source", obj: {
         'type': 'geojson',
-        'data': 'https://kenzkenz3.xsrv.jp/geojson/ntrip/2025_minden3.geojson',
+        'data': 'https://kenzkenz3.xsrv.jp/geojson/ntrip/2025_minden5.geojson',
     }
 }
 const mindenCenterPointLayer = {
@@ -68,7 +68,7 @@ const mindenCircleSource = {
     }
 };
 async function convertToGeoJSONforMinden() {
-    const response = await fetch('https://kenzkenz3.xsrv.jp/geojson/ntrip/2025_minden3.geojson');
+    const response = await fetch('https://kenzkenz3.xsrv.jp/geojson/ntrip/2025_minden5.geojson');
     const geojson = await response.json();
     console.log(geojson.features[0].geometry.coordinates)
     const radiusInKm = 20;
