@@ -132,7 +132,6 @@ function dissolveGeoJSONByFields(geojson, fields) {
                 delete feature.properties._combinedField;
             }
         });
-
         return dissolved;
     } catch (error) {
         console.error("GeoJSON処理中にエラーが発生しました:", error);
@@ -3714,17 +3713,42 @@ function getVisibleGeoJSON(map, layerId) {
 // GeoJSONをKMLに変換し、ダウンロード
 export function downloadKML(map, layerId) {
     let geojson = getVisibleGeoJSON(map, layerId);
-    geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
-    // GeoJSONをKMLに変換
-    const kml = tokml(geojson);
+    geojson = extractHighlightedGeoJSONFromSource(geojson, layerId);
+    geojson = dissolveGeoJSONByFields(geojson, ['地番'])
+
+    // GeoJSONをKMLに変換（スタイルを追加）
+    const kml = tokml(geojson, {
+        name: '地番', // KMLで名前に使うフィールド（GeoJSONのプロパティ名）
+        documentName: 'Exported KML',
+        documentDescription: 'This is an exported KML with styles.',
+        simplestyle: true // 簡易スタイルを有効化
+    });
+
+    // スタイルの設定
+    const styledKML = kml.replace(
+        /<Placemark>/g,
+        `<Placemark>
+    <Style>
+        <LineStyle>
+            <color>ff000000</color> <!-- 黒色（ARGB形式で設定） -->
+            <width>2</width> <!-- 枠線の太さ -->
+        </LineStyle>
+        <PolyStyle>
+            <color>4d0000ff</color> <!-- 赤色 (30%透過; ARGB形式: AARRGGBB) -->
+        </PolyStyle>
+    </Style>`
+    );
+
     // KMLファイルをダウンロード
-    const blob = new Blob([kml], { type: 'application/vnd.google-earth.kml+xml' });
+    const blob = new Blob([styledKML], { type: 'application/vnd.google-earth.kml+xml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    const chibanAndHoka = getChibanAndHoka(geojson,false)
-    const firstChiban = chibanAndHoka.firstChiban
-    const hoka = chibanAndHoka.hoka
+
+    const chibanAndHoka = getChibanAndHoka(geojson, false);
+    const firstChiban = chibanAndHoka.firstChiban;
+    const hoka = chibanAndHoka.hoka;
+
     a.download = firstChiban + hoka + '.kml';
     document.body.appendChild(a);
     a.click();

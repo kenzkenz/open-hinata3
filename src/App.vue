@@ -739,7 +739,11 @@ export default {
         if (window.innerWidth < 450) {
           this.$store.state.dialogs.shareDialog[mapName].style.left = '0px'
         } else {
-          this.$store.state.dialogs.shareDialog[mapName].style.left = (window.innerWidth - 360) + 'px'
+          if (this.mapFlg.map02) {
+            this.$store.state.dialogs.shareDialog[mapName].style.left = (window.innerWidth / 2 - 360) + 'px'
+          } else {
+            this.$store.state.dialogs.shareDialog[mapName].style.left = (window.innerWidth - 360) + 'px'
+          }
         }
       } else {
         this.$store.state.dialogs.shareDialog[mapName].style.display = 'none'
