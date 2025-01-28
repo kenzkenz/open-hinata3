@@ -231,30 +231,56 @@ import {
   zahyokei
 } from '@/js/downLoad'
 
+// 名前空間解決関数
+const namespaceResolver = (prefix) => {
+  const namespaces = {
+    zmn: "http://www.opengis.net/gml",
+  };
+  return namespaces[prefix] || null;
+};
+
 function convertXmlToGeoJson(xml) {
   const parser = new DOMParser();
   const xmlDoc = parser.parseFromString(xml, "application/xml");
 
   const geoJson = {
     type: "FeatureCollection",
-    features: []
+    features: [],
   };
 
-  console.log("Parsing XML...");
+  console.log("XMLを解析しています...");
 
-  const surfaces = xmlDoc.evaluate("//zmn:GM_Surface", xmlDoc, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+  // `GM_Surface`を取得
+  const surfaces = xmlDoc.evaluate(
+      "//*[local-name()='GM_Surface']",
+      xmlDoc,
+      namespaceResolver,
+      XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+      null
+  );
+
   if (surfaces.snapshotLength === 0) {
-    console.warn("No GM_Surface elements found.");
+    console.warn("GM_Surface要素が見つかりません。XMLの構造と名前空間を確認してください。");
+    console.log("XMLのルート要素:", xmlDoc.documentElement.nodeName);
+    console.log("XML全体:", new XMLSerializer().serializeToString(xmlDoc));
+    return geoJson;
   }
 
   for (let i = 0; i < surfaces.snapshotLength; i++) {
     const surface = surfaces.snapshotItem(i);
-    console.log(`Processing GM_Surface ${i + 1}...`);
-    console.log("Debugging GM_Surface structure:", surface.outerHTML);
+    console.log(`GM_Surface ${i + 1}を処理中...`);
+    console.log("GM_Surfaceの構造をデバッグ:", surface.outerHTML);
 
-    const patches = xmlDoc.evaluate(".//zmn:GM_Surface.patch", surface, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    const patches = xmlDoc.evaluate(
+        ".//*[local-name()='GM_Surface.patch']",
+        surface,
+        namespaceResolver,
+        XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+        null
+    );
+
     if (patches.snapshotLength === 0) {
-      console.warn(`No GM_Surface.patch found for GM_Surface ${i + 1}.`);
+      console.warn(`GM_Surface ${i + 1}にGM_Surface.patchが見つかりません。`);
       continue;
     }
 
@@ -262,102 +288,213 @@ function convertXmlToGeoJson(xml) {
 
     for (let j = 0; j < patches.snapshotLength; j++) {
       const patch = patches.snapshotItem(j);
-      const polygon = xmlDoc.evaluate(".//zmn:GM_Polygon", patch, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+      const polygon = xmlDoc.evaluate(
+          ".//*[local-name()='GM_Polygon']",
+          patch,
+          namespaceResolver,
+          XPathResult.FIRST_ORDERED_NODE_TYPE,
+          null
+      ).singleNodeValue;
+
       if (!polygon) {
-        console.warn(`No GM_Polygon found in patch ${j + 1} of GM_Surface ${i + 1}.`);
+        console.warn(`GM_Surface ${i + 1}のパッチ ${j + 1}にGM_Polygonが見つかりません。`);
         continue;
       }
 
-      const exterior = xmlDoc.evaluate(".//zmn:GM_SurfaceBoundary.exterior/zmn:GM_Ring", polygon, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+      console.log(`GM_Surface ${i + 1}のパッチ ${j + 1}のポリゴン構造:`, polygon.outerHTML);
+
+      const exterior = xmlDoc.evaluate(
+          ".//*[local-name()='GM_SurfaceBoundary.exterior']/*[local-name()='GM_Ring']",
+          polygon,
+          namespaceResolver,
+          XPathResult.FIRST_ORDERED_NODE_TYPE,
+          null
+      ).singleNodeValue;
+
       if (!exterior) {
-        console.warn(`No exterior GM_Ring found in patch ${j + 1} of GM_Surface ${i + 1}.`);
+        console.warn(`GM_Surface ${i + 1}のパッチ ${j + 1}に外側のGM_Ringが見つかりません。`);
         continue;
       }
 
       const exteriorCoordinates = extractCoordinatesFromRing(xmlDoc, exterior);
 
+      if (exteriorCoordinates.length === 0) {
+        console.warn(`GM_Surface ${i + 1}のパッチ ${j + 1}で外側リングから座標を取得できませんでした。`);
+        continue;
+      }
+
       const interiorCoordinates = [];
-      const interiors = xmlDoc.evaluate(".//zmn:GM_SurfaceBoundary.interior/zmn:GM_Ring", polygon, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+      const interiors = xmlDoc.evaluate(
+          ".//*[local-name()='GM_SurfaceBoundary.interior']/*[local-name()='GM_Ring']",
+          polygon,
+          namespaceResolver,
+          XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+          null
+      );
+
       for (let k = 0; k < interiors.snapshotLength; k++) {
         const interiorRing = interiors.snapshotItem(k);
         const coords = extractCoordinatesFromRing(xmlDoc, interiorRing);
         if (coords.length > 2) {
           interiorCoordinates.push(coords);
+        } else {
+          console.warn(`GM_Surface ${i + 1}のパッチ ${j + 1}の内側リング ${k + 1}の座標が不十分です。`);
         }
       }
 
       if (exteriorCoordinates.length > 2) {
-        console.log(`Adding polygon to GeoJSON for patch ${j + 1} of GM_Surface ${i + 1}.`);
+        console.log(`GM_Surface ${i + 1}のパッチ ${j + 1}にポリゴンをGeoJSONに追加します。`);
         geoJson.features.push({
           type: "Feature",
           geometry: {
             type: "Polygon",
-            coordinates: [exteriorCoordinates, ...interiorCoordinates]
+            coordinates: [exteriorCoordinates, ...interiorCoordinates],
           },
-          properties: surfaceProperties
+          properties: surfaceProperties,
         });
       } else {
-        console.warn(`Polygon coordinates are insufficient for a valid feature in patch ${j + 1} of GM_Surface ${i + 1}.`);
+        console.warn(`GM_Surface ${i + 1}のパッチ ${j + 1}に有効なポリゴン座標がありません。`);
       }
     }
   }
 
-  console.log("Conversion complete.");
+  console.log("変換が完了しました。");
   return geoJson;
 }
 
 function extractCoordinatesFromRing(xmlDoc, ring) {
-  console.log("Debugging GM_Ring structure:", ring.outerHTML);
+  console.log("GM_Ringの構造をデバッグ:", ring.outerHTML);
 
-  const generators = xmlDoc.evaluate(".//zmn:GM_CompositeCurve.generator", ring, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+  const generators = xmlDoc.evaluate(
+      ".//*[local-name()='GM_CompositeCurve.generator']",
+      ring,
+      namespaceResolver,
+      XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+      null
+  );
+
   if (generators.snapshotLength === 0) {
-    console.warn("No GM_CompositeCurve.generator elements found in GM_Ring.");
+    console.warn("GM_RingにGM_CompositeCurve.generator要素が見つかりません。");
     return [];
   }
 
-  console.log(`Found ${generators.snapshotLength} generators in GM_Ring.`);
+  console.log(`GM_Ringに${generators.snapshotLength}個のジェネレーターが見つかりました。`);
 
   const coordinates = [];
   for (let i = 0; i < generators.snapshotLength; i++) {
     const generator = generators.snapshotItem(i);
     const idref = generator.getAttribute("idref");
     if (!idref) {
-      console.warn("Generator missing idref attribute.");
+      console.warn("ジェネレーターにidref属性がありません。");
       continue;
     }
 
-    const curve = xmlDoc.evaluate(`//*[@id='${idref}']`, xmlDoc, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+    const curve = xmlDoc.evaluate(
+        `//*[@id='${idref}']`,
+        xmlDoc,
+        null,
+        XPathResult.FIRST_ORDERED_NODE_TYPE,
+        null
+    ).singleNodeValue;
+
     if (curve) {
-      const positions = xmlDoc.evaluate(".//zmn:GM_Position", curve, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+      const positions = xmlDoc.evaluate(
+          ".//*[local-name()='GM_Position']",
+          curve,
+          namespaceResolver,
+          XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+          null
+      );
+
       for (let j = 0; j < positions.snapshotLength; j++) {
         const position = positions.snapshotItem(j);
-        const direct = xmlDoc.evaluate(".//zmn:GM_Position.direct", position, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-        const indirect = xmlDoc.evaluate(".//zmn:GM_Position.indirect/zmn:GM_PointRef/zmn:GM_PointRef.point", position, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+        const direct = xmlDoc.evaluate(
+            ".//*[local-name()='GM_Position.direct']",
+            position,
+            namespaceResolver,
+            XPathResult.FIRST_ORDERED_NODE_TYPE,
+            null
+        ).singleNodeValue;
+
+        const indirect = xmlDoc.evaluate(
+            ".//*[local-name()='GM_Position.indirect']/*[local-name()='GM_PointRef']/*[local-name()='GM_PointRef.point']",
+            position,
+            namespaceResolver,
+            XPathResult.FIRST_ORDERED_NODE_TYPE,
+            null
+        ).singleNodeValue;
 
         if (direct) {
-          const xElement = xmlDoc.evaluate(".//zmn:X", direct, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-          const yElement = xmlDoc.evaluate(".//zmn:Y", direct, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-          if (xElement && yElement) {
-            coordinates.push([parseFloat(xElement.textContent), parseFloat(yElement.textContent)]);
+          console.log("directノード構造:", new XMLSerializer().serializeToString(direct));
+          const xElement = xmlDoc.evaluate(
+              ".//zmn:X",
+              direct,
+              namespaceResolver,
+              XPathResult.FIRST_ORDERED_NODE_TYPE,
+              null
+          ).singleNodeValue;
+
+          const yElement = xmlDoc.evaluate(
+              ".//zmn:Y",
+              direct,
+              namespaceResolver,
+              XPathResult.FIRST_ORDERED_NODE_TYPE,
+              null
+          ).singleNodeValue;
+
+          if (!xElement || !yElement) {
+            console.warn("zmn:Xまたはzmn:Yがdirectノード内に見つかりませんでした。");
+            continue;
           }
+
+          coordinates.push([parseFloat(xElement.textContent), parseFloat(yElement.textContent)]);
         } else if (indirect) {
-          const pointRef = xmlDoc.evaluate(`//*[@id='${indirect.getAttribute("idref")}]`, xmlDoc, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+          console.log("indirectノード構造:", new XMLSerializer().serializeToString(indirect));
+          const pointRef = xmlDoc.evaluate(
+              `//*[@id='${indirect.getAttribute("idref")}]`,
+              xmlDoc,
+              null,
+              XPathResult.FIRST_ORDERED_NODE_TYPE,
+              null
+          ).singleNodeValue;
+
           if (pointRef) {
-            const xElement = xmlDoc.evaluate(".//zmn:X", pointRef, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-            const yElement = xmlDoc.evaluate(".//zmn:Y", pointRef, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-            if (xElement && yElement) {
-              coordinates.push([parseFloat(xElement.textContent), parseFloat(yElement.textContent)]);
+            const xElement = xmlDoc.evaluate(
+                ".//zmn:X",
+                pointRef,
+                namespaceResolver,
+                XPathResult.FIRST_ORDERED_NODE_TYPE,
+                null
+            ).singleNodeValue;
+
+            const yElement = xmlDoc.evaluate(
+                ".//zmn:Y",
+                pointRef,
+                namespaceResolver,
+                XPathResult.FIRST_ORDERED_NODE_TYPE,
+                null
+            ).singleNodeValue;
+
+            if (!xElement || !yElement) {
+              console.warn("zmn:Xまたはzmn:YがpointRefノード内に見つかりませんでした。");
+              continue;
             }
+
+            coordinates.push([parseFloat(xElement.textContent), parseFloat(yElement.textContent)]);
           }
         }
       }
     } else {
-      console.warn(`No curve found for idref ${idref}.`);
+      console.warn(`idref ${idref}に対応するカーブが見つかりません。`);
     }
   }
 
-  // Ensure coordinates form a closed ring
-  if (coordinates.length > 0 && (coordinates[0][0] !== coordinates[coordinates.length - 1][0] || coordinates[0][1] !== coordinates[coordinates.length - 1][1])) {
+  // 座標が閉じたリングになっているか確認
+  if (
+      coordinates.length > 0 &&
+      (coordinates[0][0] !== coordinates[coordinates.length - 1][0] ||
+          coordinates[0][1] !== coordinates[coordinates.length - 1][1])
+  ) {
     coordinates.push(coordinates[0]);
   }
 
@@ -366,10 +503,37 @@ function extractCoordinatesFromRing(xmlDoc, ring) {
 
 function extractSurfaceProperties(xmlDoc, surface) {
   const properties = {};
-  const mapName = xmlDoc.evaluate(".//zmn:地図名", surface, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-  const cityCode = xmlDoc.evaluate(".//zmn:市区町村コード", surface, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-  const cityName = xmlDoc.evaluate(".//zmn:市区町村名", surface, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-  const coordinateSystem = xmlDoc.evaluate(".//zmn:座標系", surface, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+  const mapName = xmlDoc.evaluate(
+      ".//*[local-name()='地図名']",
+      surface,
+      namespaceResolver,
+      XPathResult.FIRST_ORDERED_NODE_TYPE,
+      null
+  ).singleNodeValue;
+
+  const cityCode = xmlDoc.evaluate(
+      ".//*[local-name()='市区町村コード']",
+      surface,
+      namespaceResolver,
+      XPathResult.FIRST_ORDERED_NODE_TYPE,
+      null
+  ).singleNodeValue;
+
+  const cityName = xmlDoc.evaluate(
+      ".//*[local-name()='市区町村名']",
+      surface,
+      namespaceResolver,
+      XPathResult.FIRST_ORDERED_NODE_TYPE,
+      null
+  ).singleNodeValue;
+
+  const coordinateSystem = xmlDoc.evaluate(
+      ".//*[local-name()='座標系']",
+      surface,
+      namespaceResolver,
+      XPathResult.FIRST_ORDERED_NODE_TYPE,
+      null
+  ).singleNodeValue;
 
   if (mapName) properties["地図名"] = mapName.textContent;
   if (cityCode) properties["市区町村コード"] = cityCode.textContent;
@@ -379,22 +543,160 @@ function extractSurfaceProperties(xmlDoc, surface) {
   return properties;
 }
 
-// Example usage
-function handleFileInput(event) {
-  const file = event.target.files[0];
-  if (file) {
-    const reader = new FileReader();
 
-    reader.onload = function (e) {
-      const xml = e.target.result;
-      const geoJson = convertXmlToGeoJson(xml);
-      console.log(JSON.stringify(geoJson, null, 2));
-      document.getElementById("output").textContent = JSON.stringify(geoJson, null, 2);
-    };
 
-    reader.readAsText(file);
-  }
-}
+
+
+// function convertXmlToGeoJson(xml) {
+//   const parser = new DOMParser();
+//   const xmlDoc = parser.parseFromString(xml, "application/xml");
+//
+//   const geoJson = {
+//     type: "FeatureCollection",
+//     features: []
+//   };
+//
+//   console.log("Parsing XML...");
+//
+//   const surfaces = xmlDoc.evaluate("//zmn:GM_Surface", xmlDoc, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//
+//   if (surfaces.snapshotLength === 0) {
+//     console.warn("No GM_Surface elements found.");
+//   }
+//
+//   for (let i = 0; i < surfaces.snapshotLength; i++) {
+//     const surface = surfaces.snapshotItem(i);
+//     console.log(`Processing GM_Surface ${i + 1}...`);
+//     console.log("Debugging GM_Surface structure:", surface.outerHTML);
+//
+//     const patches = xmlDoc.evaluate(".//zmn:GM_Surface.patch", surface, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//
+//     if (patches.snapshotLength === 0) {
+//       console.warn(`No GM_Surface.patch found for GM_Surface ${i + 1}.`);
+//       continue;
+//     }
+//
+//     const surfaceProperties = extractSurfaceProperties(xmlDoc, surface);
+//
+//     for (let j = 0; j < patches.snapshotLength; j++) {
+//       const patch = patches.snapshotItem(j);
+//       const polygon = xmlDoc.evaluate(".//zmn:GM_Polygon", patch, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+//       if (!polygon) {
+//         console.warn(`No GM_Polygon found in patch ${j + 1} of GM_Surface ${i + 1}.`);
+//         continue;
+//       }
+//
+//       const exterior = xmlDoc.evaluate(".//zmn:GM_SurfaceBoundary.exterior/zmn:GM_Ring", polygon, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+//       if (!exterior) {
+//         console.warn(`No exterior GM_Ring found in patch ${j + 1} of GM_Surface ${i + 1}.`);
+//         continue;
+//       }
+//
+//       const exteriorCoordinates = extractCoordinatesFromRing(xmlDoc, exterior);
+//
+//       const interiorCoordinates = [];
+//       const interiors = xmlDoc.evaluate(".//zmn:GM_SurfaceBoundary.interior/zmn:GM_Ring", polygon, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//       for (let k = 0; k < interiors.snapshotLength; k++) {
+//         const interiorRing = interiors.snapshotItem(k);
+//         const coords = extractCoordinatesFromRing(xmlDoc, interiorRing);
+//         if (coords.length > 2) {
+//           interiorCoordinates.push(coords);
+//         }
+//       }
+//
+//       if (exteriorCoordinates.length > 2) {
+//         console.log(`Adding polygon to GeoJSON for patch ${j + 1} of GM_Surface ${i + 1}.`);
+//         geoJson.features.push({
+//           type: "Feature",
+//           geometry: {
+//             type: "Polygon",
+//             coordinates: [exteriorCoordinates, ...interiorCoordinates]
+//           },
+//           properties: surfaceProperties
+//         });
+//       } else {
+//         console.warn(`Polygon coordinates are insufficient for a valid feature in patch ${j + 1} of GM_Surface ${i + 1}.`);
+//       }
+//     }
+//   }
+//
+//   console.log("Conversion complete.");
+//   return geoJson;
+// }
+//
+// function extractCoordinatesFromRing(xmlDoc, ring) {
+//   console.log("Debugging GM_Ring structure:", ring.outerHTML);
+//
+//   const generators = xmlDoc.evaluate(".//zmn:GM_CompositeCurve.generator", ring, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//   if (generators.snapshotLength === 0) {
+//     console.warn("No GM_CompositeCurve.generator elements found in GM_Ring.");
+//     return [];
+//   }
+//
+//   console.log(`Found ${generators.snapshotLength} generators in GM_Ring.`);
+//
+//   const coordinates = [];
+//   for (let i = 0; i < generators.snapshotLength; i++) {
+//     const generator = generators.snapshotItem(i);
+//     const idref = generator.getAttribute("idref");
+//     if (!idref) {
+//       console.warn("Generator missing idref attribute.");
+//       continue;
+//     }
+//
+//     const curve = xmlDoc.evaluate(`//*[@id='${idref}']`, xmlDoc, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+//     if (curve) {
+//       const positions = xmlDoc.evaluate(".//zmn:GM_Position", curve, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//       for (let j = 0; j < positions.snapshotLength; j++) {
+//         const position = positions.snapshotItem(j);
+//         const direct = xmlDoc.evaluate(".//zmn:GM_Position.direct", position, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+//         const indirect = xmlDoc.evaluate(".//zmn:GM_Position.indirect/zmn:GM_PointRef/zmn:GM_PointRef.point", position, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+//
+//         if (direct) {
+//           const xElement = xmlDoc.evaluate(".//zmn:X", direct, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+//           const yElement = xmlDoc.evaluate(".//zmn:Y", direct, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+//           if (xElement && yElement) {
+//             coordinates.push([parseFloat(xElement.textContent), parseFloat(yElement.textContent)]);
+//           }
+//         } else if (indirect) {
+//           const pointRef = xmlDoc.evaluate(`//*[@id='${indirect.getAttribute("idref")}]`, xmlDoc, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+//           if (pointRef) {
+//             const xElement = xmlDoc.evaluate(".//zmn:X", pointRef, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+//             const yElement = xmlDoc.evaluate(".//zmn:Y", pointRef, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+//             if (xElement && yElement) {
+//               coordinates.push([parseFloat(xElement.textContent), parseFloat(yElement.textContent)]);
+//             }
+//           }
+//         }
+//       }
+//     } else {
+//       console.warn(`No curve found for idref ${idref}.`);
+//     }
+//   }
+//
+//   // Ensure coordinates form a closed ring
+//   if (coordinates.length > 0 && (coordinates[0][0] !== coordinates[coordinates.length - 1][0] || coordinates[0][1] !== coordinates[coordinates.length - 1][1])) {
+//     coordinates.push(coordinates[0]);
+//   }
+//
+//   return coordinates;
+// }
+//
+// function extractSurfaceProperties(xmlDoc, surface) {
+//   const properties = {};
+//   const mapName = xmlDoc.evaluate(".//zmn:地図名", surface, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+//   const cityCode = xmlDoc.evaluate(".//zmn:市区町村コード", surface, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+//   const cityName = xmlDoc.evaluate(".//zmn:市区町村名", surface, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+//   const coordinateSystem = xmlDoc.evaluate(".//zmn:座標系", surface, xmlDoc.createNSResolver(xmlDoc.documentElement), XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+//
+//   if (mapName) properties["地図名"] = mapName.textContent;
+//   if (cityCode) properties["市区町村コード"] = cityCode.textContent;
+//   if (cityName) properties["市区町村名"] = cityName.textContent;
+//   if (coordinateSystem) properties["座標系"] = coordinateSystem.textContent;
+//
+//   return properties;
+// }
+
 
 
 const transformCoordinates = (coordinates) => {
@@ -549,7 +851,7 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import maplibregl from 'maplibre-gl'
 import { Protocol } from "pmtiles"
 import { useGsiTerrainSource } from 'maplibre-gl-gsi-terrain'
-import {extLayer, extSource, monoLayers, monoSources} from "@/js/layers"
+import {extLayer, extSource, monoLayers, monoSources, osmBrightLayers, osmBrightSources} from "@/js/layers"
 import muni from '@/js/muni'
 import { kml } from '@tmcw/togeojson';
 import store from "@/store";
@@ -1645,16 +1947,27 @@ export default {
             });
           } else {
             this.s_selectedLayers[mapName].unshift(
+                // {
+                //   id: 'oh-vector-layer-mono',
+                //   label: '地理院ベクター・モノクロ',
+                //   sources: monoSources,
+                //   layers: monoLayers,
+                //   opacity: 1,
+                //   visibility: true,
+                // }
                 {
-                  id: 'oh-vector-layer-mono',
-                  label: '地理院ベクター・モノクロ',
-                  sources: monoSources,
-                  layers: monoLayers,
-                  attribution: '国土地理院',
+                  id: 'oh-vector-layer-osm-bright',
+                  label: 'OSMベクター',
+                  sources: osmBrightSources,
+                  layers: osmBrightLayers,
                   opacity: 1,
                   visibility: true,
                 }
             )
+
+
+
+
           }
 
           // alert(params.slj)

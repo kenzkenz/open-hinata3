@@ -377,9 +377,8 @@ Object.keys(osmToner.sources).forEach(function(key) {
     })
 })
 //-------------------------------------------------------
-const osmBrightSources = []
-// const osmBrightLayers = osmBright.layers
-const osmBrightLayers = osmBright.layers.map(layer => {
+export const osmBrightSources = []
+export const osmBrightLayers = osmBright.layers.map(layer => {
     return {
         ...layer, // 既存のレイヤー設定を維持
         metadata: {
@@ -7411,6 +7410,25 @@ const shizuokaOrthoLayer = {
     //     'raster-resampling': 'nearest' // シャープな描画に設定
     // }
 }
+//-------------------------------------------------------------------------------------------------------
+const shizuokaOrthoTobuSource = {
+    id:'shizuoka-ortho-tobu-source', obj:{
+        type: 'raster',
+        // tiles: ['https://kenzkenz3.xsrv.jp/tile/virtual-shizuoka/tyuseibu/{z}/{x}/{y}.png'],
+        tiles: ['https://kenzkenz4.xsrv.jp/tile/virtual-shizuoka/tobu/{z}/{x}/{y}.png'],
+        tileSize: 256, // タイルサイズに合わせる
+        maxzoom: 18,   // 適切なズーム範囲を設定
+        minzoom: 1
+    }
+}
+const shizuokaOrthoTobuLayer = {
+    'id': 'oh-shizuoka-ortho-tobu-layer',
+    'type': 'raster',
+    'source': 'shizuoka-ortho-tobu-source',
+    // paint: {
+    //     'raster-resampling': 'nearest' // シャープな描画に設定
+    // }
+}
 
 // 福岡県土砂災害-------------------------------------------------------------------------------------------
 const fukuokakenHazardSource = {
@@ -7772,6 +7790,15 @@ const layers01 = [
                 // layers: [seamlessphotoLayer],
                 source: shizuokaOrthoSource,
                 layers: [shizuokaOrthoLayer],
+                attribution: '<a href="https://www.geospatial.jp/ckan/dataset/virtual-shizuoka-mw" target="_blank">VIRTUAL SHIZUOKA 静岡県 中・西部 点群データ</a>'
+            },
+            {
+                id: 'oh-virtual-shiazuoka-tobu2',
+                label: "VIRTUAL SHIZUOKA 静岡県 東部",
+                // source: seamlessphotoSource,
+                // layers: [seamlessphotoLayer],
+                source: shizuokaOrthoTobuSource,
+                layers: [shizuokaOrthoTobuLayer],
                 attribution: '<a href="https://www.geospatial.jp/ckan/dataset/virtual-shizuoka-mw" target="_blank">VIRTUAL SHIZUOKA 静岡県 中・西部 点群データ</a>'
             },
             {
