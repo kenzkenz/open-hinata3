@@ -7786,8 +7786,6 @@ const layers01 = [
             {
                 id: 'oh-virtual-shiazuoka-tobu',
                 label: "VIRTUAL SHIZUOKA 静岡県 中・西部",
-                // source: seamlessphotoSource,
-                // layers: [seamlessphotoLayer],
                 source: shizuokaOrthoSource,
                 layers: [shizuokaOrthoLayer],
                 attribution: '<a href="https://www.geospatial.jp/ckan/dataset/virtual-shizuoka-mw" target="_blank">VIRTUAL SHIZUOKA 静岡県 中・西部 点群データ</a>'
@@ -7795,8 +7793,6 @@ const layers01 = [
             {
                 id: 'oh-virtual-shiazuoka-tobu2',
                 label: "VIRTUAL SHIZUOKA 静岡県 東部",
-                // source: seamlessphotoSource,
-                // layers: [seamlessphotoLayer],
                 source: shizuokaOrthoTobuSource,
                 layers: [shizuokaOrthoTobuLayer],
                 attribution: '<a href="https://www.geospatial.jp/ckan/dataset/virtual-shizuoka-mw" target="_blank">VIRTUAL SHIZUOKA 静岡県 中・西部 点群データ</a>'
