@@ -1158,6 +1158,43 @@ const kirieLayers2 = kirieLayers.map((layer,i) => {
     }
 })
 console.log(kirieLayers2)
+// 遺跡立体図-----------------------------------------------------------------------------------------------------------
+const isekiurls =[
+    {name:'五色塚（千壺）古墳・小壺古墳（神戸市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/gosikiduka-tile/{z}/{x}/{y}.png', position:[135.0454792120451, 34.62914336740906]},
+    {name:'大坂城石垣石丁場跡 東六甲石丁場跡（西宮市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/osakajyo-tile/{z}/{x}/{y}.png', position:[135.33905603802287 ,34.76983201591138]},
+
+]
+const isekiSources = []
+const isekiLayers = []
+isekiurls.forEach(url => {
+    isekiSources.push({
+        id: 'oh-iseki-' + url.name,
+        obj:{
+            type: 'raster',
+            tiles: [url.url],
+            minzoom: 0,
+            tileSize: 256,
+            maxzoom: 20
+        }
+    })
+    isekiLayers.push({
+        url: url.url,
+        id: 'oh-iseki-' + url.name,
+        source: 'oh-iseki-' + url.name,
+        position: url.position,
+        type: 'raster',
+    })
+})
+const isekiLayers2 = isekiLayers.map((layer,i) => {
+    return {
+        id: layer.id,
+        label: layer.id.replace('oh-iseki-','') + '',
+        source: isekiSources[i],
+        layers:[layer],
+        position: layer.position,
+        attribution: '<a href="https://www.geospatial.jp/ckan/dataset/2021-2022-hyogo-shiseki" target="_blank">兵庫県遺跡立体図</a>'
+    }
+})
 // ---------------------------------------------------------------------------------------------------------------------
 // 市町村地番図
 const sicyosonChibanzuUrls = [
@@ -7426,7 +7463,7 @@ const shizuokaOrthoTobuSource = {
         // tiles: ['https://kenzkenz3.xsrv.jp/tile/virtual-shizuoka/tyuseibu/{z}/{x}/{y}.png'],
         tiles: ['https://kenzkenz4.xsrv.jp/tile/virtual-shizuoka/tobu/{z}/{x}/{y}.png'],
         tileSize: 256, // タイルサイズに合わせる
-        maxzoom: 18,   // 適切なズーム範囲を設定
+        maxzoom: 19,   // 適切なズーム範囲を設定
         minzoom: 1
     }
 }
@@ -8739,6 +8776,11 @@ const layers01 = [
                 source: kyusekkiSource,
                 layers: [kyusekkiLayer,kyusekkiLayerHeatmap],
             },
+            ...isekiLayers2
+
+
+
+
         ]
     },
     {

@@ -3760,7 +3760,7 @@ export function transformGeoJSONToEPSG4326(geojson) {
     // GeoJSONの各座標を変換
     const transformCoordinates = (coords) => {
         if (typeof coords[0] === "number" && typeof coords[1] === "number") {
-            return proj4('EPSG:2444', 'EPSG:4326', coords);
+            return proj4('EPSG:2450', 'EPSG:4326', coords);
             // return proj4(planeRectangularZone2, wgs84, coords);
         }
         return coords.map(transformCoordinates);
