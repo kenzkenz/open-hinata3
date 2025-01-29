@@ -360,7 +360,24 @@ import mono from '@/assets/json/modified_mono.json'
 import fxDark from '@/assets/json/modified_fx-dark.json'
 import osmBright from '@/assets/json/osm_bright.json'
 import osmToner from '@/assets/json/osm_toner.json'
-
+import osm3d from '@/assets/json/osmfj_nopoi.json'
+//-------------------------------------------------------
+export const osm3dSources = []
+export const osm3dLayers = osm3d.layers.map(layer => {
+    return {
+        ...layer, // 既存のレイヤー設定を維持
+        metadata: {
+            group: 'osm-3d' // 新しいmetadataプロパティを追加
+        }
+    }
+})
+Object.keys(osm3d.sources).forEach(function(key) {
+    osm3dSources.push({
+        id: key,
+        obj: osm3d.sources[key]
+    })
+})
+//----------------------------------------------------------
 const osmTonerSources = []
 const osmTonerLayers = osmToner.layers.map(layer => {
     return {
@@ -392,15 +409,7 @@ Object.keys(osmBright.sources).forEach(function(key) {
         obj: osmBright.sources[key]
     })
 })
-// const osmBrightSource = {
-//     id: "openmaptiles", obj:{
-//         type: "vector",
-//         url: "pmtiles://https://tile.openstreetmap.jp/static/planet.pmtiles",
-//         // tiles: ["https://tile.openstreetmap.jp/data/planet/{z}/{x}/{y}.pbf"],
-//         // minzoom: 6,
-//         // maxzoom: 13
-//     }
-// }
+//----------------------------------------------------------
 const overpassSource = {
     id: 'osm-overpass-source', obj: {
         type: 'geojson',
@@ -7701,6 +7710,13 @@ const layers01 = [
                         label: "OSMベクター",
                         sources: osmBrightSources,
                         layers: osmBrightLayers,
+                        attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
+                    },
+                    {
+                        id: 'oh-vector-layer-osm-3d',
+                        label: "OSMベクター3D",
+                        sources: osm3dSources,
+                        layers: osm3dLayers,
                         attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
                     },
                     {

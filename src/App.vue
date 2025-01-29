@@ -1962,12 +1962,9 @@ export default {
                   layers: osmBrightLayers,
                   opacity: 1,
                   visibility: true,
+                  attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
                 }
             )
-
-
-
-
           }
 
           // alert(params.slj)
