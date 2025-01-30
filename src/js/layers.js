@@ -2,6 +2,14 @@
 // "text-font": ["NotoSansJP-Regular"],
 import store from '@/store'
 import * as turf from '@turf/turf'
+function boundsSort (bounds) {
+    function compareFunc(a, b) {
+        return a - b;
+    }
+    bounds.sort(compareFunc);
+    return [bounds[2],bounds[0],bounds[3],bounds[1]]
+}
+
 export const extSource = {
     id: 'ext-source', obj: {
         type: 'raster',
@@ -467,10 +475,6 @@ const overpassLine = {
         ]
     }
 };
-
-
-
-
 
 // const stdSources = []
 // const stdLayers = std.layers
@@ -1160,9 +1164,29 @@ const kirieLayers2 = kirieLayers.map((layer,i) => {
 console.log(kirieLayers2)
 // 遺跡立体図-----------------------------------------------------------------------------------------------------------
 const isekiurls =[
-    {name:'五色塚（千壺）古墳・小壺古墳（神戸市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/gosikiduka-tile/{z}/{x}/{y}.png', position:[135.0454792120451, 34.62914336740906],bounds:[135.04053534197493,34.632079997356385, 135.0502499065675,34.62626646890381]},
-    {name:'大坂城石垣石丁場跡 東六甲石丁場跡（西宮市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/osakajyo-tile/{z}/{x}/{y}.png', position:[135.33905603802287 ,34.76983201591138],bounds:[135.33676493533846,34.77242443397971, 135.3411954120524,34.76741401412228]},
+    {name:'下土井城跡（相生市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/shimodoi-tile', position:[135.05121783654252, 34.7279512281678],bounds:[34.72592306563773, 135.05467449579848, 34.729979390697856, 135.04776117728656]},
+    {name:'柿の木谷城跡（南あわじ市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/kakinokidani-tile', position:[134.80386127544233,34.2586655752813],bounds:[34.256644135691715, 134.80729287997318, 34.260687014870875, 134.8004296709115]},
+    {name:'金鑵城跡（小野市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/kanatsurube-tile', position:[135.05121783654252,34.7279512281678],bounds:[34.72592306563773, 135.05467449579848, 34.729979390697856, 135.04776117728656]},
 
+
+    {name:'吉島古墳（たつの市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/yoshima-tile', position:[134.54688130043553,34.93555770118321],bounds:[34.93271362826281, 134.54932695739282, 34.9384017741036, 134.54443564347824]},
+    {name:'五斗長垣内遺跡（淡路市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/gossakaito-tile', position:[134.90880718822058,34.50434474517985],bounds:[34.49894678660786, 134.91799121828302, 34.50974270375183, 134.8996231581581]},
+    {name:'山陽道野磨駅家（上郡町）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/sanyo-tile', position:[134.32640583497596,34.84832033262013],bounds:[34.8454805283103, 134.32884194702086, 34.85116013692998, 134.32396972293108]},
+    {name:'舟木遺跡（淡路市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/funaki-tile', position:[134.9537192047685,34.54259466043517],bounds:[34.53498964199028, 134.9602463096072, 34.55019967888007, 134.94719209992985]},
+    {name:'書写山圓教寺',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/syosya-tile', position:[134.65541545404145,34.892755659757974],bounds:[34.881371318662566, 134.6652083546048, 34.90414000085338, 134.6456225534781]},
+    {name:'西条古墳群（加古川市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/saijyo-tile', position:[134.88559914036207,34.78296164187521],bounds:[34.777260308076904, 134.89050439085932, 34.78866297567352, 134.88069388986483]},
+    {name:'石の宝殿及び竜山石採石遺跡（高砂市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/ishi-tile', position:[134.79265339372392,34.78044711870095],bounds:[34.77190021051588, 134.8000016945760, 34.78899402688601, 134.7853050928718]},
+    {name:'多田院（川西市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/tadain-tile', position:[135.40334153530273,34.860861365416184],bounds:[34.855426632586166, 135.41259585052342, 34.866296098246195, 135.39408722008207]},
+    {name:'多田銀銅山遺跡（猪名川町）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/tadagin-tile', position:[135.350519435385,34.900806255594716],bounds:[34.88746140289514, 135.36205541443198, 34.91415110829429, 135.338983456338]},
+    {name:'壇場山古墳と播磨国分寺跡（姫路市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/danjyo-tile', position:[134.73310188683377,34.82141913842871],bounds:[34.81872667792709, 134.73770585972392, 34.82411159893032, 134.7284979139435]},
+
+
+
+
+
+    {name:'玉丘古墳群（加西市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/tamaoka-tile', position:[134.8504914852914, 34.921500394087985],bounds:[34.919477654884005, 134.85395175056618, 34.92352313329196, 134.84703122001662]},
+    {name:'五色塚（千壺）古墳・小壺古墳（神戸市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/gosikiduka-tile', position:[135.0454792120451, 34.62914336740906],bounds:[135.04053534197493,34.632079997356385, 135.0502499065675,34.62626646890381]},
+    {name:'大坂城石垣石丁場跡 東六甲石丁場跡（西宮市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/osakajyo-tile', position:[135.33905603802287 ,34.76983201591138],bounds:[135.33676493533846,34.77242443397971, 135.3411954120524,34.76741401412228]},
 ]
 const isekiSources = []
 const isekiLayers = []
@@ -1176,7 +1200,7 @@ isekiurls.forEach(url => {
         id: 'oh-iseki-' + url.name,
         obj:{
             type: 'raster',
-            tiles: [url.url],
+            tiles: [url.url + '/{z}/{x}/{y}.png'],
             tileSize: 256,
             minzoom: 0,
             maxzoom: 20,
@@ -1198,6 +1222,7 @@ const isekiLayers2 = isekiLayers.map((layer,i) => {
         source: isekiSources[i],
         layers:[layer],
         position: layer.position,
+        flyZoom: 17,
         attribution: '<a href="https://www.geospatial.jp/ckan/dataset/2021-2022-hyogo-shiseki" target="_blank">兵庫県遺跡立体図</a>'
     }
 })
@@ -7443,11 +7468,10 @@ const toshikanLayerLabel = {
     'minzoom': 15
 };
 
-// VIRTUAL SHIZUOKA 静岡県 中・西部オルそ---------------------------------------------------------------------------------------------------------
+// VIRTUAL SHIZUOKA 静岡県 中・西部オルソ---------------------------------------------------------------------------------------------------------
 const shizuokaOrthoSource = {
     id:'shizuoka-ortho-source', obj:{
         type: 'raster',
-        // tiles: ['https://kenzkenz3.xsrv.jp/tile/virtual-shizuoka/tyuseibu/{z}/{x}/{y}.png'],
         tiles: ['https://kenzkenz4.xsrv.jp/tile/virtual-shizuoka/tyuseibu/{z}/{x}/{y}.png'],
         tileSize: 256, // タイルサイズに合わせる
         maxzoom: 19,   // 適切なズーム範囲を設定
@@ -7458,15 +7482,27 @@ const shizuokaOrthoLayer = {
     'id': 'oh-shizuoka-ortho-layer',
     'type': 'raster',
     'source': 'shizuoka-ortho-source',
-    // paint: {
-    //     'raster-resampling': 'nearest' // シャープな描画に設定
-    // }
 }
-//-------------------------------------------------------------------------------------------------------
+// VIRTUAL SHIZUOKA 静岡県 伊豆西部オルソ-------------------------------------------------------------------------------------------------------
+const shizuokaOrthoIzuseibuSource = {
+    id:'shizuoka-ortho-izuseibu-source', obj:{
+        type: 'raster',
+        tiles: ['https://kenzkenz4.xsrv.jp/tile/virtual-shizuoka/izuseibu/{z}/{x}/{y}.png'],
+        tileSize: 256, // タイルサイズに合わせる
+        maxzoom: 19,   // 適切なズーム範囲を設定
+        minzoom: 1,
+        bounds: boundsSort([138.6951786465345,35.05418582519269,139.0030710863183,34.556764466321724])
+    }
+}
+const shizuokaOrthoIzuseibuLayer = {
+    'id': 'oh-shizuoka-ortho-izuseibu-layer',
+    'type': 'raster',
+    'source': 'shizuoka-ortho-izuseibu-source',
+}
+// VIRTUAL SHIZUOKA 静岡県 東部オルソ-------------------------------------------------------------------------------------------------------
 const shizuokaOrthoTobuSource = {
     id:'shizuoka-ortho-tobu-source', obj:{
         type: 'raster',
-        // tiles: ['https://kenzkenz3.xsrv.jp/tile/virtual-shizuoka/tyuseibu/{z}/{x}/{y}.png'],
         tiles: ['https://kenzkenz4.xsrv.jp/tile/virtual-shizuoka/tobu/{z}/{x}/{y}.png'],
         tileSize: 256, // タイルサイズに合わせる
         maxzoom: 19,   // 適切なズーム範囲を設定
@@ -7477,11 +7513,7 @@ const shizuokaOrthoTobuLayer = {
     'id': 'oh-shizuoka-ortho-tobu-layer',
     'type': 'raster',
     'source': 'shizuoka-ortho-tobu-source',
-    // paint: {
-    //     'raster-resampling': 'nearest' // シャープな描画に設定
-    // }
 }
-
 // 福岡県土砂災害-------------------------------------------------------------------------------------------
 const fukuokakenHazardSource = {
     id: "fukuokakenhazard-source", obj: {
@@ -7855,6 +7887,13 @@ const layers01 = [
                 source: shizuokaOrthoTobuSource,
                 layers: [shizuokaOrthoTobuLayer],
                 attribution: '<a href="https://www.geospatial.jp/ckan/dataset/virtual-shizuoka-mw" target="_blank">VIRTUAL SHIZUOKA 静岡県 中・西部 点群データ</a>'
+            },
+            {
+                id: 'oh-virtual-shiazuoka-izuseibu',
+                label: "VIRTUAL SHIZUOKA 静岡県 伊豆西部",
+                source: shizuokaOrthoIzuseibuSource,
+                layers: [shizuokaOrthoIzuseibuLayer],
+                attribution: '<a href="https://www.geospatial.jp/ckan/dataset/shizuoka-2020-pointcloud" target="_blank">VIRTUAL SHIZUOKA 静岡県 伊豆西部 点群データ</a>'
             },
             {
                 id: 'oh-sp87',

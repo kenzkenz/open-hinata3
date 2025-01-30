@@ -76,6 +76,7 @@ export default {
     draggable
   },
   data: () => ({
+    flyZoom: 14.5,
     counter: 0,
     nodeClicked: false,
     isDragging:false,
@@ -319,8 +320,9 @@ export default {
     },
     onNodeClick (node) {
       if (node.layers) {
-
-        this.nodeClicked = true
+        console.log(node)
+        if (node.position) this.nodeClicked = true
+        if (node.flyZoom) this.flyZoom = node.flyZoom
         this.$store.state.watchFlg = true
         const map = this.$store.state[this.mapName]
         if(!this.s_selectedLayers[this.mapName].find(layers => layers.id === node.id)) {
@@ -403,7 +405,7 @@ export default {
                     setTimeout(() => {
                       map.flyTo({
                         center: Array.from(layer0.position), // フライ先の座標（経度, 緯度）
-                        zoom: 14.5,                   // ズームレベル（任意）
+                        zoom: this.flyZoom,                   // ズームレベル（任意）
                         speed: 1.2,                 // アニメーション速度（オプション）
                         curve: 1.42,                // アニメーションの曲線効果（オプション）
                         essential: true            // ユーザーがアニメーションを無効化していても実行

@@ -1896,76 +1896,6 @@ function determinePlaneRectangularZone(x, y) {
     return closestZone;
 }
 
-async function detailGeojson(map, layerId, kukaku) {
-    if (map.getZoom() <= 15) {
-        alert('ズーム15以上にしてください。');
-        return;
-    }
-    let prefId = String(store.state.prefId).padStart(2, '0');
-    console.log('初期 prefId:', prefId);
-
-    let fgb_URL;
-    let retryAttempted = false;
-
-    function getFgbUrl(prefId) {
-        const specialIds = ['07', '15', '22', '26', '28', '29', '40', '43', '44','45','47'];
-        return specialIds.includes(prefId)
-            ? `https://kenzkenz3.xsrv.jp/fgb/2024/${prefId}.fgb`
-            : `https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_${prefId}.fgb`;
-    }
-
-    function fgBoundingBox() {
-        const LngLatBounds = map.getBounds();
-        var Lng01 = LngLatBounds.getWest();
-        var Lng02 = LngLatBounds.getEast();
-        var Lat01 = LngLatBounds.getNorth();
-        var Lat02 = LngLatBounds.getSouth();
-        return {
-            minX: Lng01,
-            minY: Lat02,
-            maxX: Lng02,
-            maxY: Lat01,
-        };
-    }
-
-    let bbox;
-    console.log(store.state.highlightedChibans.size);
-    if (store.state.highlightedChibans.size > 0) {
-        bbox = getBoundingBoxByLayer(map, layerId);
-    } else {
-        bbox = fgBoundingBox();
-    }
-
-    async function deserializeAndPrepareGeojson(layerId) {
-        const geojson = { type: 'FeatureCollection', features: [] };
-        console.log('データをデシリアライズ中...');
-        fgb_URL = getFgbUrl(prefId);
-        // alert(fgb_URL)
-        const iter = window.flatgeobuf.deserialize(fgb_URL, bbox);
-
-        for await (const feature of iter) {
-            geojson.features.push(feature);
-        }
-        console.log('取得した地物:', geojson);
-        if (geojson.features.length === 0) {
-            if (prefId !== '43') {
-                console.warn('地物が存在しません。prefIdを43に変更して再試行します。');
-                alert('データが見つかりませんでした。再試行します。')
-                prefId = '43';
-                retryAttempted = true;
-                await deserializeAndPrepareGeojson(layerId);
-            } else {
-                alert('地物が一つもありません。「簡易」で出力します。。');
-                saveCima(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'],true)
-            }
-            return;
-        }
-
-        convertAndDownloadGeoJSONToSIMA(map, layerId, geojson, '詳細_', false,'',kukaku);
-    }
-    deserializeAndPrepareGeojson(layerId);
-}
-
 export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, kei) {
     if (map.getZoom() <= 15) {
         alert('ズーム15以上にしてください。');
@@ -1979,7 +1909,7 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
     let retryAttempted = false;
     // ここを改修する必要あり。amxと24自治体以外の動きがあやしい。
     function getFgbUrl(prefId) {
-        const specialIds = ['07', '15', '22', '26', '28', '29', '40', '43', '44','45','47'];
+        const specialIds = ['07', '15', '22', '26', '28', '29', '30', '40', '43', '44','45','47'];
         switch (layerId) {
             case 'oh-chibanzu2024':
                 return 'https://kenzkenz3.xsrv.jp/fgb/Chibanzu_2024_with_id.fgb'
@@ -2789,7 +2719,7 @@ export async function queryFGBWithPolygon(map,polygon,chiban) {
 
     let fgbUrl;
     function getFgbUrl(prefId) {
-        const specialIds = ['07', '15', '22', '26', '28', '29', '40', '43', '44','45','47'];
+        const specialIds = ['07', '15', '22', '26', '28', '29', '30', '40', '43', '44','45','47'];
         return specialIds.includes(prefId)
             ? `https://kenzkenz3.xsrv.jp/fgb/2024/${prefId}.fgb`
             : `https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_${prefId}.fgb`;
