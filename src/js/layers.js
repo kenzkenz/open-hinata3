@@ -8782,13 +8782,13 @@ const layers01 = [
                 source: kyusekkiSource,
                 layers: [kyusekkiLayer,kyusekkiLayerHeatmap],
             },
-            ...isekiLayers2
-
-
-
-
-        ]
-    },
+            {
+                id: 'isekirittaitizu',
+                label: "兵庫県遺跡立体地図",
+                nodes: [
+                        ...isekiLayers2
+        ]}
+    ]},
     {
         id: 'hazard',
         label: "ハザードマップ等",

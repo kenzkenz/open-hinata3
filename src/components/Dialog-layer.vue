@@ -66,7 +66,6 @@ import "vue3-tree/dist/style.css"
 import draggable from "vuedraggable"
 import mw5 from '@/js/mw5'
 import * as turf from '@turf/turf'
-import store from "@/store";
 import {gpx, kml} from "@tmcw/togeojson";
 
 export default {
@@ -320,6 +319,7 @@ export default {
     },
     onNodeClick (node) {
       if (node.layers) {
+
         this.nodeClicked = true
         this.$store.state.watchFlg = true
         const map = this.$store.state[this.mapName]
@@ -337,7 +337,7 @@ export default {
             visibility: true,
             ext: node.ext,
             info: node.info,
-            position: node.position
+            position: node.position,
           }
           if (!this.s_selectedLayers[this.mapName]?.some(layer => layer.id === 'oh-amx-a-fude')) {
             this.s_selectedLayers[this.mapName].unshift(obj)
@@ -391,8 +391,6 @@ export default {
           if (layer.source) {
             if (!map.getSource(layer.source.id)) map.addSource(layer.source.id, layer.source.obj)
           }
-
-          // console.log(layer.layers)
           let flyFlg = true
           layer.layers.forEach(layer0 => {
             if (layer0.id === 'oh-mw-dummy') {
@@ -400,10 +398,7 @@ export default {
             } else {
               if (!map.getLayer(layer0.id)) {
                 map.addLayer(layer0)
-                // console.log(layer0.id)
                 if (layer0.position) {
-                  console.log(Array.from(layer0.position))
-
                   if (flyFlg && this.nodeClicked) {
                     setTimeout(() => {
                       map.flyTo({
@@ -413,8 +408,9 @@ export default {
                         curve: 1.42,                // アニメーションの曲線効果（オプション）
                         essential: true            // ユーザーがアニメーションを無効化していても実行
                       });
+                      flyFlg = false
+                      this.nodeClicked = false
                     },1000)
-                    flyFlg = false
                   }
                 }
               }
