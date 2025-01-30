@@ -1160,21 +1160,27 @@ const kirieLayers2 = kirieLayers.map((layer,i) => {
 console.log(kirieLayers2)
 // 遺跡立体図-----------------------------------------------------------------------------------------------------------
 const isekiurls =[
-    {name:'五色塚（千壺）古墳・小壺古墳（神戸市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/gosikiduka-tile/{z}/{x}/{y}.png', position:[135.0454792120451, 34.62914336740906]},
-    {name:'大坂城石垣石丁場跡 東六甲石丁場跡（西宮市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/osakajyo-tile/{z}/{x}/{y}.png', position:[135.33905603802287 ,34.76983201591138]},
+    {name:'五色塚（千壺）古墳・小壺古墳（神戸市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/gosikiduka-tile/{z}/{x}/{y}.png', position:[135.0454792120451, 34.62914336740906],bounds:[135.04053534197493,34.632079997356385, 135.0502499065675,34.62626646890381]},
+    {name:'大坂城石垣石丁場跡 東六甲石丁場跡（西宮市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/osakajyo-tile/{z}/{x}/{y}.png', position:[135.33905603802287 ,34.76983201591138],bounds:[135.33676493533846,34.77242443397971, 135.3411954120524,34.76741401412228]},
 
 ]
 const isekiSources = []
 const isekiLayers = []
 isekiurls.forEach(url => {
+    function compareFunc(a, b) {
+        return a - b;
+    }
+    url.bounds.sort(compareFunc);
+    url.bounds = [url.bounds[2],url.bounds[0],url.bounds[3],url.bounds[1]]
     isekiSources.push({
         id: 'oh-iseki-' + url.name,
         obj:{
             type: 'raster',
             tiles: [url.url],
-            minzoom: 0,
             tileSize: 256,
-            maxzoom: 20
+            minzoom: 0,
+            maxzoom: 20,
+            bounds: url.bounds,
         }
     })
     isekiLayers.push({
