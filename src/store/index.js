@@ -195,11 +195,13 @@ export default createStore({
     isPaintCity:{
       map01:{
         t09:true,
+        h12:true,
         r05:true,
         gun:true,
       },
       map02: {
         t09:true,
+        h12:true,
         r05:true,
         gun:true,
       },
@@ -207,11 +209,13 @@ export default createStore({
     cityText:{
       map01:{
         t09:'',
+        h12:'',
         r05:'',
         gun:'',
       },
       map02: {
         t09:'',
+        h12:'',
         r05:'',
         gun:'',
       },
@@ -362,6 +366,7 @@ export default createStore({
             break
           case 'ext-city-gun':
           case 'ext-city-r05':
+          case 'ext-city-h12':
           case 'ext-city-t09':
             if (payload.order === 0) {
               variable = 'isPaintCity'

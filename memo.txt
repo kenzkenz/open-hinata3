@@ -885,3 +885,5 @@ tippecanoe -o fukuokakenhazard.pmtiles \
     --minimum-zoom=0 \
     --layer=polygon \
     fukuokakenhazard.geojson
+
+tippecanoe -l polygon -f -o h12.pmtiles h12.geojson

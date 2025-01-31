@@ -173,10 +173,10 @@ export function exportLayerToGeoJSON(map,layerId,sourceId,fields) {
     }
 }
 export function saveGeojson (map,layerId,sourceId,fields) {
-    if (map.getZoom() <= 15) {
-        alert('ズーム15以上にしてください。')
-        return
-    }
+    // if (map.getZoom() <= 15) {
+    //     alert('ズーム15以上にしてください。')
+    //     return
+    // }
     const geojsonText = JSON.stringify(exportLayerToGeoJSON(map,layerId,sourceId,fields))
     console.log(geojsonText)
     const blob = new Blob([geojsonText], { type: 'application/json' });
@@ -227,10 +227,10 @@ export async function uploadGeoJSONToGist(geojsonText, gistDescription = 'Upload
 }
 
 export function gistUpload (map,layerId,sourceId,fields) {
-    if (map.getZoom() <= 15) {
-        alert('ズーム15以上にしてください。')
-        return
-    }
+    // if (map.getZoom() <= 15) {
+    //     alert('ズーム15以上にしてください。')
+    //     return
+    // }
     const geojsonText = JSON.stringify(exportLayerToGeoJSON(map,layerId,sourceId,fields))
     console.log(geojsonText)
     uploadGeoJSONToGist(geojsonText, 'GeoJSON Dataset Upload');

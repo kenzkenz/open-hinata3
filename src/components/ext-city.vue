@@ -13,6 +13,7 @@
 <script>
 
 import { saveGeojson,gistUpload } from "@/js/downLoad";
+import {history} from "@/App";
 
 export default {
   name: 'ext-city',
@@ -65,6 +66,7 @@ export default {
           fields = ['N03_007']
       }
       saveGeojson(map,this.item.id,this.item.id + '-source',fields)
+      history('cityGeojson保存',window.location.href)
     },
     gistUpload () {
       const map = this.$store.state[this.mapName]
@@ -77,6 +79,7 @@ export default {
           fields = ['N03_007']
       }
       gistUpload(map,this.item.id,this.item.id + '-source',fields)
+      history('cityGist保存',window.location.href)
     },
     changePaint () {
       console.log(this.item)

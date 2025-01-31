@@ -1186,6 +1186,27 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-city-h12-label':
+            case 'oh-city-h12-line':
+            case 'oh-city-h12': {
+                const features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: ['oh-city-h12']}
+                )
+                console.log(features)
+                if (features.length === 0) return;
+                props = features[0].properties
+                const name = props.N03_004
+                const gun = props.N03_003 ? props.N03_003 : ''
+                if (html.indexOf('city-h12') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="city-h12" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:14px;">' + props.N03_001 + gun + '</span><br>' +
+                        '<span style="font-size:20px;">' + name + '</span><br>' +
+                        '</div>'
+                }
+                break
+            }
             case 'oh-tochiriyo-line':
             case 'oh-tochiriyo': {
                 const features = map.queryRenderedFeatures(
