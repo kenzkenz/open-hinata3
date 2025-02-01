@@ -3706,5 +3706,6 @@ export function transformGeoJSONToEPSG4326(geojson) {
             },
         })),
     };
+    console.log(JSON.stringify(transformedGeoJSON))
     return transformedGeoJSON;
 }
