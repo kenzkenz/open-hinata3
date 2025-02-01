@@ -1164,6 +1164,26 @@ const kirieLayers2 = kirieLayers.map((layer,i) => {
 console.log(kirieLayers2)
 // 遺跡立体図-----------------------------------------------------------------------------------------------------------
 const isekiurls =[
+    {name:'摩耶山城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/mayasanjyou', position:[135.20985199593505, 34.72741190512792],bounds:[135.20105045211955,34.73279014407757,135.21883391747724,34.722107316142726]},
+    {name:'滝山城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/takiyamajyou', position:[135.1897115742397, 34.708324634323816],bounds:[135.1811636521441,34.71356094319536,135.1989171157232,34.70295673805569]},
+    {name:'山下城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/yamashitajyou', position:[135.4093350403387, 34.900789307859384],bounds:[135.40595830756104,34.90297874530522,135.41291561094295,34.898833833523184]},
+    {name:'有子山城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/arikoyamajyou', position:[134.87834538212564, 35.45526548044384],bounds:[134.86921146149115,35.46161227722132,134.88782312819717,35.450662087068324]},
+    {name:'八木城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/yagijyou', position:[134.71133629505152, 35.389083335934004],bounds:[134.70144039714773,35.39450401424877,134.72006291468165,35.38357515514262]},
+    {name:'岩尾城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/iwaojyou', position:[134.97477380615132, 35.09959197988046],bounds:[134.97054375114186,35.10349471085739,134.97715122438717,35.09571185635595]},
+    {name:'黒井城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/kuroijyou', position:[135.104463141811, 35.17901861202279],bounds:[135.09125485809108,35.186551363082145,135.11452796371236,35.17272942931801]},
+    {name:'篠山城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/sasayamajyou', position:[135.2176231845597, 35.07313601425689],bounds:[135.21067062750097,35.07723659438874,135.22457719282704,35.06895762382021]},
+    {name:'八上城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/yakamijyou', position:[135.2552485425144, 35.06204731412491],bounds:[135.24767699390202,35.067020572658194,135.26391061635007,35.05735417422389]},
+    {name:'洲本城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/sumotojyou', position:[134.90319944266878, 34.337478918073074],bounds:[134.89626883902872,34.34139875471037,134.90778467141337,34.334485389039344]},
+
+    {name:'白巣城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/shirasujyou', position:[134.8259033029899, 34.38150414125458],bounds:[134.82013715493042,34.3853353447405,134.83166360685556,34.378462801992896]},
+    {name:'由良古城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/yurakojyou', position:[134.9480666440312, 34.2959981627496],bounds:[134.9442422389984,34.29915852698697,134.9512267112732,34.29196133115981]},
+    {name:'炬口城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/takenokuchijyou', position:[134.8898952135649, 34.35267276116555],bounds:[134.8877334397722,34.35487280694649,134.8968472599871,34.34943863860731]},
+    {name:'竹田城・観音寺山城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/takedajyou', position:[134.82901156539475, 35.30050695947483],bounds:[134.82715461493302,35.30456725526851,134.83369077542886,35.29689752045901]},
+    {name:'有岡城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/ariokajyou', position:[135.42095254641023, 34.78123344214727],bounds:[135.4114554147389,34.78669658496949,135.42611879302478,34.771058180218404]},
+
+
+
+
     // {name:'下土井城跡（相生市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/shimodoi-tile', position:[135.05121783654252, 34.7279512281678],bounds:[34.72592306563773, 135.05467449579848, 34.729979390697856, 135.04776117728656]},
     // {name:'柿の木谷城跡（南あわじ市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/kakinokidani-tile', position:[134.80386127544233,34.2586655752813],bounds:[34.256644135691715, 134.80729287997318, 34.260687014870875, 134.8004296709115]},
     // {name:'金鑵城跡（小野市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/kanatsurube-tile', position:[135.05121783654252,34.7279512281678],bounds:[34.72592306563773, 135.05467449579848, 34.729979390697856, 135.04776117728656]},
@@ -7581,6 +7601,24 @@ const shizuokaOrthoFujiLayer = {
     'type': 'raster',
     'source': 'shizuoka-ortho-fuji-source',
 }
+// VIRTUAL SHIZUOKA 静岡県 北部 南アルプス-------------------------------------------------------------------------------------------------------
+const shizuokaOrthoAlpusSource = {
+    id:'shizuoka-ortho-alpus-source', obj:{
+        type: 'raster',
+        tiles: ['https://kenzkenz4.xsrv.jp/tile/virtual-shizuoka/alpus/{z}/{x}/{y}.png'],
+        tileSize: 256, // タイルサイズに合わせる
+        maxzoom: 19,   // 適切なズーム範囲を設定
+        minzoom: 1,
+        bounds: boundsSort([138.0037227785058,35.62288537726742,138.3478132990051,35.077789209561246])
+
+    }
+}
+const shizuokaOrthoAlpusLayer = {
+    'id': 'oh-shizuoka-ortho-alpus-layer',
+    'type': 'raster',
+    'source': 'shizuoka-ortho-alpus-source',
+    // minzoom: 10,
+}
 // 福岡県土砂災害-------------------------------------------------------------------------------------------
 const fukuokakenHazardSource = {
     id: "fukuokakenhazard-source", obj: {
@@ -7942,32 +7980,52 @@ const layers01 = [
                 layers: [seamlessphotoLayer]
             },
             {
-                id: 'oh-virtual-shiazuoka-tobu',
-                label: "VIRTUAL SHIZUOKA 静岡県 中・西部",
-                source: shizuokaOrthoSource,
-                layers: [shizuokaOrthoLayer],
-                attribution: '<a href="https://www.geospatial.jp/ckan/dataset/virtual-shizuoka-mw" target="_blank">VIRTUAL SHIZUOKA 静岡県 中・西部 点群データ</a>'
-            },
-            {
-                id: 'oh-virtual-shiazuoka-tobu2',
-                label: "VIRTUAL SHIZUOKA 静岡県 東部",
-                source: shizuokaOrthoTobuSource,
-                layers: [shizuokaOrthoTobuLayer],
-                attribution: '<a href="https://www.geospatial.jp/ckan/dataset/virtual-shizuoka-mw" target="_blank">VIRTUAL SHIZUOKA 静岡県 中・西部 点群データ</a>'
-            },
-            {
-                id: 'oh-virtual-shiazuoka-izuseibu',
-                label: "VIRTUAL SHIZUOKA 静岡県 伊豆西部",
-                source: shizuokaOrthoIzuseibuSource,
-                layers: [shizuokaOrthoIzuseibuLayer],
-                attribution: '<a href="https://www.geospatial.jp/ckan/dataset/shizuoka-2020-pointcloud" target="_blank">VIRTUAL SHIZUOKA 静岡県 伊豆西部 点群データ</a>'
-            },
-            {
-                id: 'oh-virtual-shiazuoka-fuji',
-                label: "VIRTUAL SHIZUOKA 静岡県 富士",
-                source: shizuokaOrthoFujiSource,
-                layers: [shizuokaOrthoFujiLayer],
-                attribution: '<a href="https://www.geospatial.jp/ckan/dataset/shizuoka-2021-pointcloud" target="_blank">VIRTUAL SHIZUOKA 静岡県 富士山および静岡東部 点群データ</a>'
+                id: 'virtual-shiazuok',
+                label: "VIRTUAL SHIZUOKA 静岡県",
+                nodes: [
+                    {
+                        id: 'oh-virtual-shiazuoka-zenbu',
+                        label: "VIRTUAL SHIZUOKA 静岡県 全部",
+                        sources: [shizuokaOrthoSource,shizuokaOrthoTobuSource,shizuokaOrthoIzuseibuSource,shizuokaOrthoFujiSource,shizuokaOrthoAlpusSource],
+                        layers: [shizuokaOrthoLayer,shizuokaOrthoTobuLayer,shizuokaOrthoIzuseibuLayer,shizuokaOrthoFujiLayer,shizuokaOrthoAlpusLayer],
+                    },
+                    {
+                        id: 'oh-virtual-shiazuoka-tobu',
+                        label: "VIRTUAL SHIZUOKA 静岡県 中・西部",
+                        source: shizuokaOrthoSource,
+                        layers: [shizuokaOrthoLayer],
+                        attribution: '<a href="https://www.geospatial.jp/ckan/dataset/virtual-shizuoka-mw" target="_blank">VIRTUAL SHIZUOKA 静岡県 中・西部 点群データ</a>'
+                    },
+                    {
+                        id: 'oh-virtual-shiazuoka-tobu2',
+                        label: "VIRTUAL SHIZUOKA 静岡県 東部",
+                        source: shizuokaOrthoTobuSource,
+                        layers: [shizuokaOrthoTobuLayer],
+                        attribution: '<a href="https://www.geospatial.jp/ckan/dataset/virtual-shizuoka-mw" target="_blank">VIRTUAL SHIZUOKA 静岡県 中・西部 点群データ</a>'
+                    },
+                    {
+                        id: 'oh-virtual-shiazuoka-izuseibu',
+                        label: "VIRTUAL SHIZUOKA 静岡県 伊豆西部",
+                        source: shizuokaOrthoIzuseibuSource,
+                        layers: [shizuokaOrthoIzuseibuLayer],
+                        attribution: '<a href="https://www.geospatial.jp/ckan/dataset/shizuoka-2020-pointcloud" target="_blank">VIRTUAL SHIZUOKA 静岡県 伊豆西部 点群データ</a>'
+                    },
+                    {
+                        id: 'oh-virtual-shiazuoka-fuji',
+                        label: "VIRTUAL SHIZUOKA 静岡県 富士",
+                        source: shizuokaOrthoFujiSource,
+                        layers: [shizuokaOrthoFujiLayer],
+                        attribution: '<a href="https://www.geospatial.jp/ckan/dataset/shizuoka-2021-pointcloud" target="_blank">VIRTUAL SHIZUOKA 静岡県 富士山および静岡東部 点群データ</a>'
+                    },
+                    {
+                        id: 'oh-virtual-shiazuoka-alpus',
+                        label: "VIRTUAL SHIZUOKA 静岡県 北部",
+                        source: shizuokaOrthoAlpusSource,
+                        layers: [shizuokaOrthoAlpusLayer],
+                        attribution: '<a href="https://www.geospatial.jp/ckan/dataset/shizuoka-2022-pointcloud" target="_blank">VIRTUAL SHIZUOKA 静岡県 北部（南アルプス） 点群データ</a>'
+                    }
+
+                    ]
             },
             {
                 id: 'oh-sp87',

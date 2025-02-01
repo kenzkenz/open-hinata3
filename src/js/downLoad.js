@@ -3554,6 +3554,7 @@ export function geojsonAddLayer (map, geojson, isFitBounds, fileExtension) {
         map.removeLayer(fileExtension + '-line-layer')
         map.removeLayer(fileExtension + '-point-layer')
         map.removeSource(fileExtension + '-source')
+        map.removeSource(fileExtension + '-polygon-points')
     }
     map.addSource(fileExtension + '-source', {
         type: 'geojson',
@@ -3598,6 +3599,20 @@ export function geojsonAddLayer (map, geojson, isFitBounds, fileExtension) {
             'circle-color': '#00FF00',
             'circle-radius': 6
         }
+    });
+    map.addLayer({
+        id: fileExtension + '-polygon-points',
+        type: 'circle',
+        source: fileExtension + '-source',
+        paint: {
+            'circle-radius': [
+                'interpolate', ['linear'], ['zoom'],
+                15, 0,
+                18, 4
+            ],
+            'circle-color': '#f00',
+        },
+        filter: ['==', '$type', 'Polygon']
     });
     if (isFitBounds) {
         const bounds = new maplibregl.LngLatBounds();
