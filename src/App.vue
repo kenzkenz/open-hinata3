@@ -2428,7 +2428,6 @@ export default {
             }
           });
 
-          // alert('2217' + this.$store.state.uploadedImage)
 
           console.log(this.$store.state.uploadedImage)
 

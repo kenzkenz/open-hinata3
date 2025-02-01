@@ -2814,9 +2814,6 @@ export async function addImageLayer(tiffFile, worldFile, code, isFirst) {
 
     const map = store.state.map01;
     const map2 = store.state.map02;
-    // ワールドファイルを読み込む
-    const worldFileText = await worldFile.text();
-    const [pixelSizeX, rotationX, rotationY, pixelSizeY, originX, originY] = worldFileText.split('\n').map(Number);
 
     // GeoTIFF.jsを使用してTIFFファイルを読み込む
     const arrayBuffer = await tiffFile.arrayBuffer();
@@ -2858,14 +2855,26 @@ export async function addImageLayer(tiffFile, worldFile, code, isFirst) {
     }
 
     ctx.putImageData(imageData, 0, 0);
-
-    // 平面直角座標系の範囲を緯度経度に変換
-    let bounds = [
-        [originX, originY], // 左上
-        [originX + pixelSizeX * width, originY], // 右上
-        [originX + pixelSizeX * width, originY + pixelSizeY * height], // 右下
-        [originX, originY + pixelSizeY * height] // 左下
-    ].map(coord => proj4(code, 'EPSG:4326', coord));
+    let bounds
+    if (worldFile) {
+        const worldFileText = await worldFile.text();
+        const [pixelSizeX, rotationX, rotationY, pixelSizeY, originX, originY] = worldFileText.split('\n').map(Number);
+        // 平面直角座標系の範囲を緯度経度に変換
+        bounds = [
+            [originX, originY], // 左上
+            [originX + pixelSizeX * width, originY], // 右上
+            [originX + pixelSizeX * width, originY + pixelSizeY * height], // 右下
+            [originX, originY + pixelSizeY * height] // 左下
+        ].map(coord => proj4(code, 'EPSG:4326', coord));
+    } else {
+        const bbox = image.getBoundingBox(); // [minX, minY, maxX, maxY]
+        bounds = [
+            [bbox[0], bbox[3]], // top-left
+            [bbox[2], bbox[3]], // top-right
+            [bbox[2], bbox[1]], // bottom-right
+            [bbox[0], bbox[1]], // bottom-left
+        ].map(coord => proj4(code, 'EPSG:4326', coord));
+    }
 
     let index = 0;
     const result = store.state.selectedLayers['map01'].find((v, i) => {
