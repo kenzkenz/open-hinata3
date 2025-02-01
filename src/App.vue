@@ -223,7 +223,7 @@ import {
   ddSimaUpload,
   downloadSimaText,
   geojsonAddLayer,
-  geoTiffLoad,
+  geoTiffLoad, geoTiffLoad2,
   handleFileUpload,
   highlightSpecificFeatures,
   highlightSpecificFeaturesCity,
@@ -1266,9 +1266,6 @@ export default {
         // 以前のリンクをいかすため---------------------------------
         // const maptilerApiKey = 'CDedb3rcFcdaYuHkD9zR'
 
-
-
-
         // const gsiTerrainSource = useGsiTerrainSource(maplibregl.addProtocol, {
         //   tileUrl: 'https://mapdata.qchizu2.xyz/03_dem/51_int/all_9999/int_01/{z}/{x}/{y}.png',
         //   // tileUrl: 'https://tiles.gsj.jp/tiles/elev/land/{z}/{y}/{x}.png',
@@ -2013,9 +2010,12 @@ export default {
               case 'tif':
               case 'tfw':
               {
-                if (files.length > 0) {
+                if (files.length > 1) {
                   this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
                   this.s_dialogForGeotiffApp = true
+                } else if (files.length === 1){
+                  this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
+                  geoTiffLoad2 (map,mapName,true)
                 }
                 break
               }

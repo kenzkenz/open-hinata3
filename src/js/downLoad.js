@@ -2888,7 +2888,6 @@ export async function addImageLayer(tiffFile, worldFile, code, isFirst) {
         map2.removeSource('geotiff-source');
     }
 
-
     if (isFirst) {
         store.state.selectedLayers['map01'].unshift(
             {
@@ -2952,107 +2951,6 @@ export async function addImageLayer(tiffFile, worldFile, code, isFirst) {
     }
     history('GEOTIFF読込',window.location.href)
 }
-
-
-// export async function addImageLayer (tiffFile,worldFile,code,isFirst) {
-//
-//     const map = store.state.map01
-//     const map2 = store.state.map02
-//     // ワールドファイルを読み込む
-//     const worldFileText = await worldFile.text();
-//     const [pixelSizeX, rotationX, rotationY, pixelSizeY, originX, originY] = worldFileText.split('\n').map(Number);
-//
-//     // GeoTIFF.jsを使用してTIFFファイルを読み込む
-//     const arrayBuffer = await tiffFile.arrayBuffer();
-//     const tiff = await window.GeoTIFF.fromArrayBuffer(arrayBuffer);
-//     const image = await tiff.getImage();
-//
-//     const width = image.getWidth();
-//     const height = image.getHeight();
-//     const rasters = await image.readRasters({ samples: [0, 1, 2] }); // RGBバンドを指定
-//
-//     // Canvasにカラー画像を描画
-//     const canvas = document.createElement('canvas');
-//     canvas.width = width;
-//     canvas.height = height;
-//     const ctx = canvas.getContext('2d');
-//     const imageData = ctx.createImageData(width, height);
-//
-//     for (let i = 0; i < width * height; i++) {
-//         imageData.data[i * 4] = rasters[0][i];     // 赤バンド
-//         imageData.data[i * 4 + 1] = rasters[1][i]; // 緑バンド
-//         imageData.data[i * 4 + 2] = rasters[2][i]; // 青バンド
-//         imageData.data[i * 4 + 3] = 255;           // アルファ値（不透明）
-//     }
-//
-//     ctx.putImageData(imageData, 0, 0);
-//
-//     // 平面直角座標系の範囲を緯度経度に変換
-//     let bounds = [
-//         [originX, originY], // 左上
-//         [originX + pixelSizeX * width, originY], // 右上
-//         [originX + pixelSizeX * width, originY + pixelSizeY * height], // 右下
-//         [originX, originY + pixelSizeY * height] // 左下
-//     ].map(coord => proj4(code, 'EPSG:4326', coord));
-//
-//     let index = 0
-//     const result = store.state.selectedLayers['map01'].find((v,i) => {
-//         index = i
-//         return v.id === 'oh-geotiff-layer'
-//     })
-//
-//     store.state.selectedLayers['map01'] = store.state.selectedLayers['map01'].filter(v => v.id !== 'oh-geotiff-layer')
-//     store.state.selectedLayers['map02'] = store.state.selectedLayers['map02'].filter(v => v.id !== 'oh-geotiff-layer')
-//
-//     geotiffSource.obj.url = canvas.toDataURL()
-//     geotiffSource.obj.coordinates = bounds
-//
-//     if (map.getLayer('oh-geotiff-layer')) {
-//         map.removeLayer('oh-geotiff-layer')
-//         map2.removeLayer('oh-geotiff-layer')
-//     }
-//     if (map.getSource('geotiff-source')) {
-//         map.removeSource('geotiff-source')
-//         map2.removeSource('geotiff-source')
-//     }
-//     store.state.selectedLayers['map01'].splice(index, 0,
-//         {
-//             id: 'oh-geotiff-layer',
-//             label: 'geotiffレイヤー',
-//             source: geotiffSource,
-//             layers: [geotiffLayer],
-//             opacity: 1,
-//             visibility: true,
-//         }
-//     )
-//
-//     store.state.selectedLayers['map02'].splice(index, 0,
-//         {
-//             id: 'oh-geotiff-layer',
-//             label: 'geotiffレイヤー',
-//             source: geotiffSource,
-//             layers: [geotiffLayer],
-//             opacity: 1,
-//             visibility: true,
-//         }
-//     )
-//
-//     const currentZoom = map.getZoom();
-//
-//     // 地図の範囲を設定
-//     if (isFirst) {
-//         const flyToBounds = [
-//             [bounds[0][0], bounds[0][1]], // 左上
-//             [bounds[2][0], bounds[2][1]]  // 右下
-//         ];
-//         map.fitBounds(flyToBounds, {padding: 20});
-//     } else {
-//         setTimeout(function() {
-//             store.state.map01.zoomTo(currentZoom + 0.01, {duration: 500})
-//             store.state.map02.zoomTo(currentZoom + 0.01, {duration: 500})
-//         },0)
-//     }
-// }
 
 export async function addImageLayerJpg(jpgFile, worldFile, code, isFirst) {
     const map = store.state.map01;
@@ -3132,49 +3030,6 @@ export async function addImageLayerJpg(jpgFile, worldFile, code, isFirst) {
         }
     )
 
-
-
-
-
-
-
-
-
-    // if (map.getLayer('oh-jpg-layer')) {
-    //     map.removeLayer('oh-jpg-layer')
-    //     map2.removeLayer('oh-jpg-layer')
-    // }
-    // if (map.getSource('jpg-source')) {
-    //     map.removeSource('jpg-source')
-    //     map2.removeSource('jpg-source')
-    // }
-    //
-    // store.state.selectedLayers['map01'].unshift(
-    //     {
-    //         id: 'oh-jpg-layer',
-    //         label: 'jpgレイヤー',
-    //         source: jpgSource,
-    //         layers: [jpgLayer],
-    //         opacity: 1,
-    //         visibility: true,
-    //     }
-    // )
-    //
-    // store.state.selectedLayers['map02'].unshift(
-    //     {
-    //         id: 'oh-jpg-layer',
-    //         label: 'jpgレイヤー',
-    //         source: jpgSource,
-    //         layers: [jpgLayer],
-    //         opacity: 1,
-    //         visibility: true,
-    //     }
-    // )
-
-
-
-
-
     const currentZoom = map.getZoom();
 
     // 地図の範囲を設定
@@ -3191,11 +3046,18 @@ export async function addImageLayerJpg(jpgFile, worldFile, code, isFirst) {
         }, 0);
     }
 }
+export async function geoTiffLoad2 (map,mapName,isUpload) {
+    const code = 'EPSG:4326'
+    const files = store.state.tiffAndWorldFile
+    console.log(files)
+    const tiffFile = files[0];
+    const worldFile = null;
+    await addImageLayer(tiffFile, worldFile, code, true)
+}
 
 export async function geoTiffLoad (map,mapName,isUpload) {
     const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
     const files = store.state.tiffAndWorldFile
-    console.log(files)
     let tiffFile = null;
     let worldFile = null;
 
@@ -3257,121 +3119,6 @@ export async function geoTiffLoad (map,mapName,isUpload) {
     }
 }
 
-// export function pngDownload(map) {
-//     const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
-//     // 地図のレンダリング完了を待機
-//     map.once('idle', () => {
-//         const canvas = map.getCanvas();
-//         const imageData = canvas.toDataURL("image/png");
-//         // 画像をダウンロード
-//         let link = document.createElement("a");
-//         link.href = imageData;
-//         link.download = "map-image.png";
-//         // link.click();
-//
-//         // ワールドファイルの生成
-//         const bounds = map.getBounds(); // 地図の表示範囲を取得
-//         const canvasWidth = canvas.width;
-//         const canvasHeight = canvas.height;
-//
-//         // WGS 84 -> 平面直角座標系2系に変換
-//         const topLeft = proj4('EPSG:4326', code, [bounds.getWest(), bounds.getNorth()]);
-//         const bottomRight = proj4('EPSG:4326', code, [bounds.getEast(), bounds.getSouth()]);
-//
-//         const xMin = topLeft[0];
-//         const xMax = bottomRight[0];
-//         const yMin = bottomRight[1];
-//         const yMax = topLeft[1];
-//
-//         const pixelWidth = (xMax - xMin) / canvasWidth;
-//         const pixelHeight = (yMax - yMin) / canvasHeight;
-//
-//         const worldFileContent = `
-//             ${pixelWidth}
-//             0
-//             0
-//             -${pixelHeight}
-//             ${xMin + pixelWidth / 2}
-//             ${yMax - pixelHeight / 2}
-//             `.trim();
-//
-//         // ワールドファイルをダウンロード
-//         let blob = new Blob([worldFileContent], { type: "text/plain" });
-//         const worldFileLink = document.createElement("a");
-//         worldFileLink.href = URL.createObjectURL(blob);
-//         worldFileLink.download = "map-image.pgw"; // 適切な拡張子
-//         // worldFileLink.click();
-//
-//         // simaファイル
-//         let simaData = 'G00,01,open-hinata3,\n';
-//         simaData += 'Z00,座標ﾃﾞｰﾀ,,\n';
-//         simaData += 'A00,\n';
-//         let A01Text = '';
-//         A01Text += 'A01,' + 1 + ',' + 1 + ',' + yMax + ',' + xMin + ',\n';
-//         A01Text += 'A01,' + 2 + ',' + 2 + ',' + yMax + ',' + xMax + ',\n';
-//         A01Text += 'A01,' + 3 + ',' + 3 + ',' + yMin + ',' + xMin + ',\n';
-//         A01Text += 'A01,' + 4 + ',' + 4 + ',' + yMin + ',' + xMax + ',\n';
-//         simaData += A01Text + 'A99,END,,\n';
-//
-//         // UTF-8で文字列をコードポイントに変換
-//         const utf8Array = window.Encoding.stringToCode(simaData);
-//         // UTF-8からShift-JISに変換
-//         const shiftJISArray = window.Encoding.convert(utf8Array, 'SJIS');
-//         // Shift-JISエンコードされたデータをUint8Arrayに格納
-//         const uint8Array = new Uint8Array(shiftJISArray);
-//         // Blobを作成（MIMEタイプを変更）
-//         blob = new Blob([uint8Array], { type: 'application/octet-stream' });
-//
-//         // ダウンロード用リンクを作成
-//         link = document.createElement('a');
-//         link.href = URL.createObjectURL(blob);
-//
-//         link.download = "map-image.sim"; // ファイル名を正確に指定
-//         // リンクをクリックしてダウンロード
-//         // link.click();
-//         URL.revokeObjectURL(link.href);
-//
-//         // DXFファイル
-//         // GeoJSONの初期構造
-//         const geojson = {
-//             type: "FeatureCollection",
-//             features: []
-//         };
-//         // ポイントを作成する関数
-//         function createPoint(x, y) {
-//             return {
-//                 type: "Feature",
-//                 geometry: {
-//                     type: "Point",
-//                     coordinates: [x, y]
-//                 },
-//                 properties: {} // 必要に応じて属性を追加
-//             };
-//         }
-//         // 4つのポイントの座標を定義
-//         const points = [
-//             createPoint(xMin, yMin), // 左下
-//             createPoint(xMax, yMin), // 右下
-//             createPoint(xMin, yMax), // 左上
-//             createPoint(xMax, yMax)  // 右上
-//         ];
-//         // pointsをGeoJSONのfeaturesに追加
-//         geojson.features.push(...points);
-//         // 結果を表示
-//         console.log(JSON.stringify(geojson, null, 2));
-//         const dxfString = geojsonToDXF(geojson)
-//         // DXFファイルとしてダウンロード
-//         blob = new Blob([dxfString], { type: 'application/dxf' });
-//         link = document.createElement('a');
-//         link.href = URL.createObjectURL(blob);
-//         link.download = "map-image.dxf";
-//
-//         link.click();
-//     });
-//     const currentZoom = map.getZoom();
-//     // 地図をズームさせる
-//     map.zoomTo(currentZoom + 0.001, { duration: 500 }); // 0.1だけズームイン（アニメーション付き）
-// }
 
 export function pngDownload(map) {
     const code = zahyokei.find(item => item.kei === store.state.zahyokei).code;
