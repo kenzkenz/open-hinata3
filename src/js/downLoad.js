@@ -3091,7 +3091,6 @@ export async function addImageLayerJpg(jpgFile, worldFile, code, isFirst) {
     // ワールドファイルを読み込む
     const worldFileText = await worldFile.text();
     const [pixelSizeX, rotationX, rotationY, pixelSizeY, originX, originY] = worldFileText.split('\n').map(Number);
-
     // JPGファイルを読み込む
     const imageUrl = URL.createObjectURL(jpgFile);
     const img = new Image();
@@ -3180,8 +3179,6 @@ export async function addImageLayerJpg(jpgFile, worldFile, code, isFirst) {
 }
 
 export async function geoTiffLoad2 (map,mapName,isUpload) {
-    // const code = 'EPSG:4326'
-    // const code = 'EPSG:2450'
     history('GEOTIFF2読込',window.location.href)
     const zahyokei0 = zahyokei.find(item => item.kei === store.state.zahyokei)
     if (!zahyokei0) {
@@ -3215,6 +3212,69 @@ export async function geoTiffLoad2 (map,mapName,isUpload) {
                 })
             })
             .catch(error => {
+                store.state.uploadedImage = ''
+            });
+    }
+}
+
+export async function jpgLoad (map,mapName,isUpload) {
+    const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
+    const files = store.state.tiffAndWorldFile
+    let jpgFile = null;
+    let worldFile = null;
+
+    // ファイルをペアリング
+    for (const file of files) {
+        if (file.name.endsWith('.jpg') || file.name.endsWith('.jpeg')) {
+            jpgFile = file;
+        } else if (file.name.endsWith('.jgw') || file.name.endsWith('.wld')) {
+            worldFile = file;
+        }
+    }
+
+    if (!jpgFile) {
+        // alert('GeoTIFFファイル（.tif）をドラッグ＆ドロップしてください。');
+        return;
+    }
+    if (!worldFile) {
+        // alert('対応するワールドファイル（.tfw）も必要です。');
+        return;
+    }
+
+    await addImageLayerJpg(jpgFile, worldFile, code, true)
+
+    //----------------------------------------------------------------------------------------------------------------
+    if (isUpload) {
+        // FormDataを作成
+        const formData = new FormData();
+        formData.append('file_1', jpgFile);
+        formData.append("file_2", worldFile);
+        axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/imageUploadJpg.php', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data', // 必須
+            },
+        })
+            .then(response => {
+                // 成功時の処理
+                if (response.data.error) {
+                    console.log(response.data.error)
+                    alert(response.data.error)
+                    return
+                }
+                console.log('イメージ保存成功:', response.data.file1);
+                console.log('イメージ保存成功:', response.data.file2);
+                console.log(response)
+                store.state.uploadedImage = JSON.stringify({
+                    image: response.data.file1,
+                    worldFile: response.data.file2,
+                    // jpg: response.data.file3,
+                    code: code
+                })
+                console.log(store.state.uploadedImage)
+            })
+            .catch(error => {
+                // エラー時の処理
+                console.error('エラー:', error.response ? error.response.data : error.message);
                 store.state.uploadedImage = ''
             });
     }

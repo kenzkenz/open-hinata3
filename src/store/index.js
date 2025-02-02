@@ -88,6 +88,7 @@ export default createStore({
     simaTextZahyoukei: '',
     snackbar: false,
     dialogForSimaApp: false,
+    dialogForJpgApp: false,
     dialogForGeotiffApp: false,
     dialogForGeotiff2App: false,
     dialogForPngApp: false,
