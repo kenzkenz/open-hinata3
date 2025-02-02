@@ -34,6 +34,8 @@ import tokml from 'tokml'
     proj4.defs['EPSG:2461'] = proj4.Proj("+proj=tmerc +lat_0=26 +lon_0=154 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
 })()
 export const zahyokei = [
+    { kei: 'WGS84', code: "EPSG:4326" },
+    { kei: 'WGS 84', code: "EPSG:4326" },
     { kei: '公共座標1系', code: "EPSG:2443" },
     { kei: '公共座標2系', code: "EPSG:2444" },
     { kei: '公共座標3系', code: "EPSG:2445" },
@@ -2810,8 +2812,110 @@ export function downloadSimaText () {
     URL.revokeObjectURL(link.href);
 }
 
-export async function addImageLayer(tiffFile, worldFile, code, isFirst) {
+export async function getCRS(tiffFile) {
+    const arrayBuffer = await tiffFile.arrayBuffer();
+    const tiff = await window.GeoTIFF.fromArrayBuffer(arrayBuffer);
+    const image = await tiff.getImage();
+    const metadata = image.getFileDirectory();
 
+    console.log("GeoTIFF Metadata:", metadata);
+
+    // CRSの取得（EPSGコードが含まれている場合）
+    const epsgCode = metadata.ProjectedCSType || metadata.GeographicType;
+
+    // GeoAsciiParamsTag から座標系情報を取得
+    let geoAsciiParams = metadata.GeoAsciiParams;
+
+    if (epsgCode) {
+        console.log("EPSG Code:", epsgCode);
+    } else if (geoAsciiParams) {
+        console.log("GeoAsciiParams (Raw):", geoAsciiParams);
+
+        // 不要な null 文字を削除
+        // geoAsciiParams = geoAsciiParams.replace(/\u0000/g, "").trim();
+
+        // EPSG コードの検索 (EPSG:xxxx 形式)
+        const epsgMatch = geoAsciiParams.match(/EPSG\s*:\s*(\d+)/);
+
+        // 日本の座標系 (JGD2011 / Plane Rectangular CS)
+        const jgdMatch = geoAsciiParams.match(/JGD2011\s*\/\s*Japan\s*Plane\s*Rectangular\s*CS\s*(\w+)/i);
+
+        // もし EPSG コードが見つかったら
+        if (epsgMatch) {
+            console.log("Extracted EPSG Code:", epsgMatch[1]);
+            return null
+        }
+        // もし JGD2011 の平面直角座標系が見つかったら
+        else if (jgdMatch) {
+            console.log("Extracted JGD2011 Zone:", `Japan Plane Rectangular CS Zone ${jgdMatch[1]}`);
+            let zahyokei = null
+            switch(jgdMatch[1]) {
+                case 'I':
+                    zahyokei = '公共座標1系';
+                    break;
+                case 'II':
+                    zahyokei = '公共座標2系';
+                    break;
+                case 'III':
+                    zahyokei = '公共座標3系';
+                    break;
+                case 'IV':
+                    zahyokei = '公共座標4系';
+                    break;
+                case 'V':
+                    zahyokei = '公共座標5系';
+                    break;
+                case 'VI':
+                    zahyokei = '公共座標6系';
+                    break;
+                case 'VII':
+                    zahyokei = '公共座標7系';
+                    break;
+                case 'VIII':
+                    zahyokei = '公共座標8系';
+                    break;
+                case 'IX':
+                    zahyokei = '公共座標9系';
+                    break;
+                case 'X':
+                    zahyokei = '公共座標10系';
+                    break;
+                case 'XI':
+                    zahyokei = '公共座標11系';
+                    break;
+                case 'XII':
+                    zahyokei = '公共座標12系';
+                    break;
+                case 'XIII':
+                    zahyokei = '公共座標13系';
+                    break;
+                case 'XIV':
+                    zahyokei = '公共座標14系';
+                    break;
+                case 'XV':
+                    zahyokei = '公共座標15系';
+                    break;
+            }
+            return zahyokei
+        }
+        // それ以外の座標系名を抽出
+        else {
+            const crsNameMatch = geoAsciiParams.match(/^[^|]+/);
+            if (crsNameMatch) {
+                console.log("Extracted CRS Name:", crsNameMatch[0]);
+                return crsNameMatch[0]
+            } else {
+                console.log("CRS情報を特定できませんでした。");
+                return null
+            }
+        }
+    } else {
+        console.log("CRS情報が見つかりません。");
+        return null
+    }
+}
+
+export async function addImageLayer(tiffFile, worldFile, code, isFirst) {
     const map = store.state.map01;
     const map2 = store.state.map02;
 
@@ -2835,7 +2939,6 @@ export async function addImageLayer(tiffFile, worldFile, code, isFirst) {
         console.error("Failed to read rasters:", error);
         return;
     }
-
     // Canvasに画像を描画
     const canvas = document.createElement('canvas');
     canvas.width = width;
@@ -2843,16 +2946,31 @@ export async function addImageLayer(tiffFile, worldFile, code, isFirst) {
     const ctx = canvas.getContext('2d');
     const imageData = ctx.createImageData(width, height);
 
+    ctx.clearRect(0, 0, width, height); // 背景を透明にする
+
+    const threshold = 5; // 透過する明るさのしきい値（適宜調整）
+
     for (let i = 0; i < width * height; i++) {
-        const red = rasters[0][i] !== undefined ? rasters[0][i] : 128; // 赤
-        const green = isMonochrome ? red : (rasters[1][i] !== undefined ? rasters[1][i] : 128); // 緑
-        const blue = isMonochrome ? red : (rasters[2][i] !== undefined ? rasters[2][i] : 128); // 青
+        const red = rasters[0][i] !== undefined ? rasters[0][i] : 128;
+        const green = isMonochrome ? red : (rasters[1][i] !== undefined ? rasters[1][i] : 128);
+        const blue = isMonochrome ? red : (rasters[2][i] !== undefined ? rasters[2][i] : 128);
+
+        // 明るさ（RGB 平均）
+        const brightness = (red + green + blue) / 3;
+
+        // 透過条件
+        const isTransparent = (red === 255 && green === 255 && blue === 255) || // 白を透過
+            (red === 0 && green === 0 && blue === 0) || // 黒を透過
+            brightness < threshold; // 低輝度を透過
 
         imageData.data[i * 4] = red;
         imageData.data[i * 4 + 1] = green;
         imageData.data[i * 4 + 2] = blue;
-        imageData.data[i * 4 + 3] = 255; // アルファ値（不透明）
+        imageData.data[i * 4 + 3] = isTransparent ? 0 : 255; // 透過処理
     }
+
+    ctx.putImageData(imageData, 0, 0);
+    geotiffSource.obj.url = canvas.toDataURL('image/png'); // 透明部分を保持
 
     ctx.putImageData(imageData, 0, 0);
     let bounds
@@ -2867,13 +2985,18 @@ export async function addImageLayer(tiffFile, worldFile, code, isFirst) {
             [originX, originY + pixelSizeY * height] // 左下
         ].map(coord => proj4(code, 'EPSG:4326', coord));
     } else {
-        const bbox = image.getBoundingBox(); // [minX, minY, maxX, maxY]
-        bounds = [
-            [bbox[0], bbox[3]], // top-left
-            [bbox[2], bbox[3]], // top-right
-            [bbox[2], bbox[1]], // bottom-right
-            [bbox[0], bbox[1]], // bottom-left
-        ].map(coord => proj4(code, 'EPSG:4326', coord));
+        try {
+            const bbox = image.getBoundingBox(); // [minX, minY, maxX, maxY]
+            bounds = [
+                [bbox[0], bbox[3]], // top-left
+                [bbox[2], bbox[3]], // top-right
+                [bbox[2], bbox[1]], // bottom-right
+                [bbox[0], bbox[1]], // bottom-left
+            ].map(coord => proj4(code, 'EPSG:4326', coord));
+        }catch (e) {
+            alert('ワールドファイルが必要です。')
+            return
+        }
     }
 
     let index = 0;
@@ -3055,13 +3178,46 @@ export async function addImageLayerJpg(jpgFile, worldFile, code, isFirst) {
         }, 0);
     }
 }
+
 export async function geoTiffLoad2 (map,mapName,isUpload) {
-    const code = 'EPSG:4326'
+    // const code = 'EPSG:4326'
+    // const code = 'EPSG:2450'
+    history('GEOTIFF2読込',window.location.href)
+    const zahyokei0 = zahyokei.find(item => item.kei === store.state.zahyokei)
+    if (!zahyokei0) {
+        // alert('座標系を選択してください。')
+        return
+    }
+    const code = zahyokei0.code
     const files = store.state.tiffAndWorldFile
-    console.log(files)
     const tiffFile = files[0];
     const worldFile = null;
     await addImageLayer(tiffFile, worldFile, code, true)
+    // ----------------------------------------------------------------------------------------------------------------
+    if (isUpload) {
+        // FormDataを作成
+        const formData = new FormData();
+        formData.append('file', tiffFile);
+        axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/imageUpload.php', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data', // 必須
+            },
+        })
+            .then(response => {
+                // 成功時の処理
+                if (response.data.error) {
+                    alert('20mbを超えていますので保存できませんでした。')
+                    return
+                }
+                store.state.uploadedImage = JSON.stringify({
+                    image: response.data.file,
+                    code: code
+                })
+            })
+            .catch(error => {
+                store.state.uploadedImage = ''
+            });
+    }
 }
 
 export async function geoTiffLoad (map,mapName,isUpload) {
@@ -3127,7 +3283,6 @@ export async function geoTiffLoad (map,mapName,isUpload) {
             });
     }
 }
-
 
 export function pngDownload(map) {
     const code = zahyokei.find(item => item.kei === store.state.zahyokei).code;
@@ -3234,74 +3389,6 @@ export function pngDownload(map) {
     const currentZoom = map.getZoom();
     map.zoomTo(currentZoom + 0.00000000000000000000000000001);
 }
-
-// export function kmlAddLayer (map, geojson, isFitBounds, fileExtension) {
-//     if (map.getSource('kml-source')) {
-//         map.removeLayer('kml-polygon-layer')
-//         map.removeLayer('kml-layer')
-//         map.removeLayer('kml-point-layer')
-//         map.removeSource('kml-source')
-//     }
-//     map.addSource('kml-source', {
-//         type: 'geojson',
-//         data: geojson
-//     });
-//     map.addLayer({
-//         id: 'kml-polygon-layer',
-//         type: 'fill',
-//         source: 'kml-source',
-//         filter: ["==", "$type", "Polygon"],
-//         paint: {
-//             'fill-color': '#0000FF',
-//             'fill-opacity': 0.5
-//         }
-//     });
-//     map.addLayer({
-//         id: 'kml-layer',
-//         type: 'line',
-//         source: 'kml-source',
-//         paint: {
-//             'line-color': '#FF0000',
-//             'line-width': 2
-//         }
-//     });
-//     map.addLayer({
-//         id: 'kml-point-layer',
-//         type: 'circle',
-//         source: 'kml-source',
-//         filter: ["==", "$type", "Point"],
-//         paint: {
-//             'circle-color': '#00FF00',
-//             'circle-radius': 6
-//         }
-//     });
-//     if (isFitBounds) {
-//         const bounds = new maplibregl.LngLatBounds();
-//         geojson.features.forEach(feature => {
-//             const geometry = feature.geometry;
-//             if (!geometry) return;
-//
-//             switch (geometry.type) {
-//                 case 'Point':
-//                     bounds.extend(geometry.coordinates);
-//                     break;
-//                 case 'LineString':
-//                     geometry.coordinates.forEach(coord => bounds.extend(coord));
-//                     break;
-//                 case 'Polygon':
-//                     geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
-//                     break;
-//                 case 'MultiPolygon':
-//                     geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
-//                     break;
-//             }
-//         });
-//         map.fitBounds(bounds, {
-//             padding: 50,
-//             animate: true
-//         });
-//     }
-// }
 
 export function geojsonAddLayer (map, geojson, isFitBounds, fileExtension) {
     if (map.getSource(fileExtension + '-source')) {

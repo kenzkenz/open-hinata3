@@ -89,6 +89,7 @@ export default createStore({
     snackbar: false,
     dialogForSimaApp: false,
     dialogForGeotiffApp: false,
+    dialogForGeotiff2App: false,
     dialogForPngApp: false,
     dialogForApp: false,
     isMenu: false,

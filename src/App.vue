@@ -110,6 +110,37 @@
         </v-card>
       </v-dialog>
 
+      <v-dialog v-model="s_dialogForGeotiff2App" max-width="500px">
+        <v-card>
+          <v-card-title>
+            座標系選択
+          </v-card-title>
+          <v-card-text>
+            <div v-if="s_isAndroid" class="select-container">
+              <select id="selectBox" v-model="s_zahyokei" class="custom-select">
+                <option value="" disabled selected>座標を選択してください。</option>
+                <option v-for="item in items" :key="item" :value="item">
+                  {{item}}
+                </option>
+              </select>
+            </div>
+            <div v-else>
+              <v-select class="scrollable-content"
+                        v-model="s_zahyokei"
+                        :items="items"
+                        label="選択してください"
+                        outlined
+              ></v-select>
+            </div>
+            <v-btn @click="geoTiffLoad2">geotiff読込開始</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="s_dialogForGeotiff2App = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
       <v-dialog v-model="s_dialogForSimaApp" max-width="500px">
         <v-card>
           <v-card-title>
@@ -223,7 +254,7 @@ import {
   ddSimaUpload,
   downloadSimaText,
   geojsonAddLayer,
-  geoTiffLoad, geoTiffLoad2,
+  geoTiffLoad, geoTiffLoad2, getCRS,
   handleFileUpload,
   highlightSpecificFeatures,
   highlightSpecificFeaturesCity,
@@ -552,6 +583,7 @@ export default {
     dialogForSima: false,
     ddSimaText: '',
     items: [
+      'WGS84',
       '公共座標1系', '公共座標2系', '公共座標3系',
       '公共座標4系', '公共座標5系', '公共座標6系',
       '公共座標7系', '公共座標8系', '公共座標9系',
@@ -588,6 +620,14 @@ export default {
       },
       set(value) {
         this.$store.state.dialogForGeotiffApp = value
+      }
+    },
+    s_dialogForGeotiff2App: {
+      get() {
+        return this.$store.state.dialogForGeotiff2App
+      },
+      set(value) {
+        this.$store.state.dialogForGeotiff2App = value
       }
     },
     s_dialogForSimaApp: {
@@ -665,6 +705,13 @@ export default {
       geoTiffLoad (map01,'map01', true)
       geoTiffLoad (map02,'map02', false)
       this.s_dialogForGeotiffApp = false
+    },
+    geoTiffLoad2 () {
+      const map01 = this.$store.state.map01
+      const map02 = this.$store.state.map02
+      geoTiffLoad2 (map01,'map01', true)
+      geoTiffLoad2 (map02,'map02', false)
+      this.s_dialogForGeotiff2App = false
     },
     simaOpacityInput () {
       const map1 = this.$store.state.map01
@@ -2015,7 +2062,14 @@ export default {
                   this.s_dialogForGeotiffApp = true
                 } else if (files.length === 1){
                   this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
-                  geoTiffLoad2 (map,mapName,true)
+                  const zahyokei = await getCRS(Array.from(e.dataTransfer.files)[0])
+                  console.log(zahyokei)
+                  if (zahyokei) {
+                    this.$store.state.zahyokei = zahyokei
+                    this.geoTiffLoad2()
+                  } else {
+                    this.s_dialogForGeotiff2App = true
+                  }
                 }
                 break
               }
