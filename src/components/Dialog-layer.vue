@@ -52,7 +52,7 @@ import DxfParser from 'dxf-parser'
 import {dxfToGeoJSON} from '@/App'
 import {
   addImageLayer,
-  addImageLayerJpg,
+  addImageLayerJpg, addImageLayerPng,
   geojsonAddLayer,
   highlightSpecificFeatures,
   highlightSpecificFeaturesCity,
@@ -655,6 +655,22 @@ export default {
                   const worldFile = files[1]
                   const code = JSON.parse(this.$store.state.uploadedImage).code
                   addImageLayerJpg(image, worldFile, code, false)
+                } else {
+                  console.warn("一部のファイルが取得できませんでした。");
+                }
+              }).catch(error => {
+                console.error("Promise.allでエラーが発生しました:", error);
+              });
+            } else if (JSON.parse(this.$store.state.uploadedImage).worldFile.split('.')[1] === 'pgw' ) {
+              const imageUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).image
+              const worldFileUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).worldFile
+              Promise.all([fetchFile(imageUrl), fetchFile(worldFileUrl)]).then(files => {
+                if (files.every(file => file)) {
+                  console.log("両方のファイルが取得されました:", files);
+                  const image = files[0]
+                  const worldFile = files[1]
+                  const code = JSON.parse(this.$store.state.uploadedImage).code
+                  addImageLayerPng(image, worldFile, code, false)
                 } else {
                   console.warn("一部のファイルが取得できませんでした。");
                 }

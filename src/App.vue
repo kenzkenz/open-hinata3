@@ -172,6 +172,37 @@
         </v-card>
       </v-dialog>
 
+      <v-dialog v-model="s_dialogForPng2App" max-width="500px">
+        <v-card>
+          <v-card-title>
+            座標系選択
+          </v-card-title>
+          <v-card-text>
+            <div v-if="s_isAndroid" class="select-container">
+              <select id="selectBox" v-model="s_zahyokei" class="custom-select">
+                <option value="" disabled selected>座標を選択してください。</option>
+                <option v-for="item in items" :key="item" :value="item">
+                  {{item}}
+                </option>
+              </select>
+            </div>
+            <div v-else>
+              <v-select class="scrollable-content"
+                        v-model="s_zahyokei"
+                        :items="items"
+                        label="選択してください"
+                        outlined
+              ></v-select>
+            </div>
+            <v-btn @click="pngLoad">png読込開始</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="s_dialogForPng2App = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
       <v-dialog v-model="s_dialogForSimaApp" max-width="500px">
         <v-card>
           <v-card-title>
@@ -289,7 +320,7 @@ import {
   handleFileUpload,
   highlightSpecificFeatures,
   highlightSpecificFeaturesCity, jpgLoad,
-  pngDownload, transformGeoJSONToEPSG4326,
+  pngDownload, pngLoad, transformGeoJSONToEPSG4326,
   zahyokei
 } from '@/js/downLoad'
 
@@ -645,6 +676,14 @@ export default {
         this.$store.state.dialogForPngApp = value
       }
     },
+    s_dialogForPng2App: {
+      get() {
+        return this.$store.state.dialogForPng2App
+      },
+      set(value) {
+        this.$store.state.dialogForPng2App = value
+      }
+    },
     s_dialogForJpgApp: {
       get() {
         return this.$store.state.dialogForJpgApp
@@ -737,6 +776,13 @@ export default {
       geojsonAddLayer (map01, geojson, true, 'dxf')
       geojsonAddLayer (map02, geojson, true, 'dxf')
       this.dialogForDxfApp = false
+    },
+    pngLoad () {
+      const map01 = this.$store.state.map01
+      const map02 = this.$store.state.map02
+      pngLoad (map01,'map01', true)
+      pngLoad (map02,'map02', false)
+      this.s_dialogForPng2App = false
     },
     jpgLoad () {
       const map01 = this.$store.state.map01
@@ -2129,6 +2175,18 @@ export default {
                 }
                 break
               }
+              case 'png':
+              case 'pgw':
+              {
+                if (files.length > 1) {
+                  this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
+                  this.s_dialogForPng2App = true
+                } else if (files.length === 1){
+                  alert('ワールドファイルが必要です。')
+                }
+                break
+              }
+
               case 'geojson':
               {
                 reader.onload = (event) => {

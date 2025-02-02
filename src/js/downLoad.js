@@ -4,7 +4,7 @@ import * as turf from '@turf/turf'
 import maplibregl from 'maplibre-gl'
 import proj4 from 'proj4'
 import axios from "axios";
-import {geotiffSource, geotiffLayer, jpgSource, jpgLayer} from "@/js/layers";
+import {geotiffSource, geotiffLayer, jpgSource, jpgLayer, pngSource, pngLayer} from "@/js/layers";
 import JSZip from 'jszip'
 import {history} from "@/App";
 import tokml from 'tokml'
@@ -2915,6 +2915,123 @@ export async function getCRS(tiffFile) {
     }
 }
 
+export async function addImageLayerPng(pngFile, worldFile, code, isFirst) {
+
+    const map = store.state.map01;
+    const map2 = store.state.map02;
+
+    // PNGファイルを読み込む
+    const url = URL.createObjectURL(pngFile);
+    const img = new Image();
+    img.src = url;
+    await new Promise((resolve) => (img.onload = resolve));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+
+    ctx.drawImage(img, 0, 0);
+
+    let bounds;
+    if (worldFile) {
+        const worldFileText = await worldFile.text();
+        const [pixelSizeX, rotationX, rotationY, pixelSizeY, originX, originY] = worldFileText.split('\n').map(Number);
+        bounds = [
+            [originX, originY],
+            [originX + pixelSizeX * img.width, originY],
+            [originX + pixelSizeX * img.width, originY + pixelSizeY * img.height],
+            [originX, originY + pixelSizeY * img.height]
+        ].map(coord => proj4(code, 'EPSG:4326', coord));
+    } else {
+        alert('ワールドファイルが必要です。');
+        return;
+    }
+    let index = 0;
+    const result = store.state.selectedLayers['map01'].find((v, i) => {
+        index = i;
+        return v.id === 'oh-png-layer';
+    });
+
+    store.state.selectedLayers['map01'] = store.state.selectedLayers['map01'].filter(v => v.id !== 'oh-png-layer');
+    store.state.selectedLayers['map02'] = store.state.selectedLayers['map02'].filter(v => v.id !== 'oh-png-layer');
+
+    // const pngSource = {
+    //     type: 'image',
+    //     url: canvas.toDataURL('image/png'),
+    //     coordinates: bounds
+    // };
+
+    pngSource.obj.url = canvas.toDataURL('image/png');
+    pngSource.obj.coordinates = bounds;
+
+    if (map.getLayer('oh-png-layer')) {
+        map.removeLayer('oh-png-layer');
+        map2.removeLayer('oh-png-layer');
+    }
+    if (map.getSource('png-source')) {
+        map.removeSource('png-source');
+        map2.removeSource('png-source');
+    }
+
+    if (isFirst) {
+        store.state.selectedLayers['map01'].unshift(
+            {
+                id: 'oh-png-layer',
+                label: 'pngレイヤー',
+                source: pngSource,
+                layers: [pngLayer],
+                opacity: 1,
+                visibility: true,
+            }
+        );
+
+        store.state.selectedLayers['map02'].unshift(
+            {
+                id: 'oh-png-layer',
+                label: 'pngレイヤー',
+                source: pngSource,
+                layers: [pngLayer],
+                opacity: 1,
+                visibility: true,
+            }
+        );
+    } else {
+        store.state.selectedLayers['map01'].splice(index, 0,
+            {
+                id: 'oh-png-layer',
+                label: 'pngレイヤー',
+                source: pngSource,
+                layers: [pngLayer],
+                opacity: 1,
+                visibility: true,
+            }
+        );
+
+        store.state.selectedLayers['map02'].splice(index, 0,
+            {
+                id: 'oh-png-layer',
+                label: 'pngレイヤー',
+                source: pngSource,
+                layers: [pngLayer],
+                opacity: 1,
+                visibility: true,
+            }
+        );
+    }
+
+    if (isFirst) {
+        const flyToBounds = [
+            [bounds[0][0], bounds[0][1]],
+            [bounds[2][0], bounds[2][1]]
+        ];
+        map.fitBounds(flyToBounds, { padding: 20 });
+    }
+
+    history('PNG読込', window.location.href);
+}
+
+
 export async function addImageLayer(tiffFile, worldFile, code, isFirst) {
     const map = store.state.map01;
     const map2 = store.state.map02;
@@ -3085,6 +3202,7 @@ export async function addImageLayer(tiffFile, worldFile, code, isFirst) {
 }
 
 export async function addImageLayerJpg(jpgFile, worldFile, code, isFirst) {
+
     const map = store.state.map01;
     const map2 = store.state.map02;
 
@@ -3279,6 +3397,70 @@ export async function jpgLoad (map,mapName,isUpload) {
             });
     }
 }
+
+export async function pngLoad (map,mapName,isUpload) {
+    const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
+    const files = store.state.tiffAndWorldFile
+    let pngFile = null;
+    let worldFile = null;
+
+    // ファイルをペアリング
+    for (const file of files) {
+        if (file.name.endsWith('.png')) {
+            pngFile = file;
+        } else if (file.name.endsWith('.pgw') || file.name.endsWith('.wld')) {
+            worldFile = file;
+        }
+    }
+
+    if (!pngFile) {
+        // alert('GeoTIFFファイル（.tif）をドラッグ＆ドロップしてください。');
+        return;
+    }
+    if (!worldFile) {
+        // alert('対応するワールドファイル（.tfw）も必要です。');
+        return;
+    }
+
+    await addImageLayerPng(pngFile, worldFile, code, true)
+
+    //----------------------------------------------------------------------------------------------------------------
+    if (isUpload) {
+        // FormDataを作成
+        const formData = new FormData();
+        formData.append('file_1', pngFile);
+        formData.append("file_2", worldFile);
+        axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/imageUploadJpg.php', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data', // 必須
+            },
+        })
+            .then(response => {
+                // 成功時の処理
+                if (response.data.error) {
+                    console.log(response.data.error)
+                    alert(response.data.error)
+                    return
+                }
+                console.log('イメージ保存成功:', response.data.file1);
+                console.log('イメージ保存成功:', response.data.file2);
+                console.log(response)
+                store.state.uploadedImage = JSON.stringify({
+                    image: response.data.file1,
+                    worldFile: response.data.file2,
+                    // jpg: response.data.file3,
+                    code: code
+                })
+                console.log(store.state.uploadedImage)
+            })
+            .catch(error => {
+                // エラー時の処理
+                console.error('エラー:', error.response ? error.response.data : error.message);
+                store.state.uploadedImage = ''
+            });
+    }
+}
+
 
 export async function geoTiffLoad (map,mapName,isUpload) {
     const code = zahyokei.find(item => item.kei === store.state.zahyokei).code

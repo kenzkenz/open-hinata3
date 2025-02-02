@@ -50,6 +50,19 @@ export const jpgLayer= {
     paint: {}
 }
 
+export const pngSource = {
+    id:'png-source',obj:{
+        type: 'image',
+        url: '',
+        coordinates: ''
+    }
+}
+export const pngLayer= {
+    id: 'oh-png-layer',
+    type: 'raster',
+    source: 'png-source',
+    paint: {}
+}
 // 民電 --------------------------------------------------------------------------------------------
 const mindenSource = {
     id: "minden-source", obj: {
@@ -1162,6 +1175,48 @@ const kirieLayers2 = kirieLayers.map((layer,i) => {
     }
 })
 console.log(kirieLayers2)
+// 兵庫県以外遺跡立体図-----------------------------------------------------------------------------------------------------------
+const isekiurls2 =[
+ {name:'横地城跡（静岡県菊川市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/yokochi-tile', position:[133.9494864960191,34.72801130848333],bounds:[34.725992296143794, 133.9529354877004, 34.73003032082288, 133.9460375043378]},
+]
+const isekiSources2 = []
+const isekiLayers22 = []
+isekiurls2.forEach(url => {
+    function compareFunc(a, b) {
+        return a - b;
+    }
+    url.bounds.sort(compareFunc);
+    url.bounds = [url.bounds[2],url.bounds[0],url.bounds[3],url.bounds[1]]
+    isekiSources2.push({
+        id: 'oh-iseki-' + url.name,
+        obj:{
+            type: 'raster',
+            tiles: [url.url + '/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            minzoom: 0,
+            maxzoom: 20,
+            bounds: url.bounds,
+        }
+    })
+    isekiLayers22.push({
+        url: url.url,
+        id: 'oh-iseki-' + url.name,
+        source: 'oh-iseki-' + url.name,
+        position: url.position,
+        type: 'raster',
+    })
+})
+const isekiLayers222 = isekiLayers22.map((layer,i) => {
+    return {
+        id: layer.id,
+        label: layer.id.replace('oh-iseki-','') + '',
+        source: isekiSources2[i],
+        layers:[layer],
+        position: layer.position,
+        flyZoom: 17,
+        attribution: '<a href="" target="_blank"></a>'
+    }
+})
 // 遺跡立体図-----------------------------------------------------------------------------------------------------------
 const isekiurls =[
     {name:'摩耶山城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/mayasanjyou', position:[135.20985199593505, 34.72741190512792],bounds:[135.20105045211955,34.73279014407757,135.21883391747724,34.722107316142726]},
@@ -1197,10 +1252,31 @@ const isekiurls =[
     {name:'利神城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/rikanjyou', position:[134.37733576935972, 35.04615261130358],bounds:[134.36990790872557,35.049536077045985,134.38151009873025,35.04270684275602]},
 
 
-    // {name:'下土井城跡（相生市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/shimodoi-tile', position:[135.05121783654252, 34.7279512281678],bounds:[34.72592306563773, 135.05467449579848, 34.729979390697856, 135.04776117728656]},
-    // {name:'柿の木谷城跡（南あわじ市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/kakinokidani-tile', position:[134.80386127544233,34.2586655752813],bounds:[34.256644135691715, 134.80729287997318, 34.260687014870875, 134.8004296709115]},
-    // {name:'金鑵城跡（小野市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/kanatsurube-tile', position:[135.05121783654252,34.7279512281678],bounds:[34.72592306563773, 135.05467449579848, 34.729979390697856, 135.04776117728656]},
-
+    {name:'下土井城跡（相生市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/shimodoi-tile', position:[134.43595760697713,34.844884088076114],bounds:[34.84298829198103, 134.43920742120724, 34.846779884171205, 134.43270779274704]},
+    {name:'柿の木谷城跡（南あわじ市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/kakinokidani-tile', position:[134.81087814227217,34.28864064255846],bounds:[34.28527158705211, 134.8165995048252, 34.29200969806482, 134.80515677971914]},
+    {name:'金鑵城跡（小野市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/kanatsurube-tile', position:[134.90708402156795,34.878267704837505],bounds:[34.87683646219006, 134.909530334671, 34.87969894748495, 134.90463770846492]},
+    {name:'光明山城痕（相生市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/komyosan-tile', position:[134.47002262773958,34.84724440558978],bounds:[34.84420930408064, 134.4752239654938, 34.85027950709892, 134.4648212899854]},
+    {name:'恒屋城跡（姫路市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/tsuneya-tile', position:[134.71672996190716,34.947095856521244],bounds:[34.944050440586665, 134.72194647817182, 34.95014127245582, 134.71151344564248]},
+    {name:'志知城跡（南あわじ市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/shichi-tile', position:[134.7455981609756,34.301430075912634],bounds:[34.29874517013217, 134.75016041727295, 34.3041149816931, 134.74103590467826]},
+    {name:'生野城跡（朝来市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/ikuno-tile', position:[134.7998680812666,35.17147382765063],bounds:[35.168615394723496, 134.8047746977891, 35.17433226057776, 134.7949614647441]},
+    {name:'石野氏館跡（三木市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/ishino-tile', position:[134.93306572481305,34.794430883865346],bounds:[34.792521788625066, 134.93632510066152, 34.79633997910562, 134.9298063489645]},
+    {name:'端谷城跡（神戸市西区）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/hashitani-tile', position:[135.05132547119246,34.72790313341303],bounds:[34.726469036009995, 135.05376975799234, 34.729337230816064, 135.04888118439254]},
+    {name:'段ノ城跡下段（築ヶ鼻城跡、多可町）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/dannoshiro-tile', position:[134.89669785467362,35.08019550651794],bounds:[35.078287216606235, 134.899967600773, 35.08210379642965, 134.8934281085742]},
+    {name:'段ノ城跡上段（多可町）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/dannoshiroue-tile', position:[134.89957517736428,35.087081582754834],bounds:[35.08304986605937, 134.90305758574328, 35.0911132994503, 134.89609276898528]},
+    {name:'池谷城跡（神戸市西区）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/iketani-tile', position:[135.02723227922036,34.70878200965534],bounds:[34.7073484770029, 135.02967566398198, 34.710215542307765, 135.0247888944587]},
+    {name:'中の子城跡（南あわじ市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/nakanoko-tile', position:[134.80418245745335,34.25849369387224],bounds:[34.25647225428759, 134.80761405496435, 34.2605151334569, 134.80075085994238]},
+    {name:'猪鼻城跡（洲本市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/inohana-tile', position:[134.87594815753798,34.30572928978148],bounds:[34.303031397066555, 134.88052845603355, 34.3084271824964, 134.8713678590424]},
+    {name:'釣鐘尾城跡（香美町）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/tsuriganeo-tile', position:[134.62478465970315,35.619449661609295],bounds:[35.61773877165105, 134.62774155609276, 35.62116055156755, 134.62182776331358]},
+    {name:'天神山城跡（加古川市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/tenjinyama-tile', position:[134.82501551796724,34.828073336839466],bounds:[34.82521424748591, 134.82990242798698, 34.83093242619302, 134.8201286079475]},
+    {name:'福田城跡（神戸市西区）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/fukuda-tile', position:[135.04239448741896,34.71874514957057],bounds:[34.71731133503643, 135.04483850777535, 34.72017896410472, 135.03995046706257]},
+    {name:'法界寺山ノ上付城・朝日ヶ丘土塁（三木市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/hokaiji-tile', position:[134.96605257482443,34.79175568733935],bounds:[34.78889091018418, 134.97094216259921, 34.794620464494514, 134.96116298704965]},
+    {name:'堀井城跡・河合城跡・小堀城跡（小野市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/horii-tile', position:[134.9246964964473,34.88493901697369],bounds:[34.88064444131104, 134.93203706078467, 34.88923359263633, 134.91735593210993]},
+    {name:'満久城跡（加西市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/maku-tile', position:[134.8802539292252,34.952348916121394],bounds:[34.95044136279089, 134.88351814514985, 34.954256469451906, 134.8769897133006]},
+    {name:'湊城跡（南あわじ市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/minato-tile', position:[134.72839586225896,34.32611965009076],bounds:[34.324100498722835, 134.73182848649716, 34.32813880145868, 134.72496323802076]},
+    {name:'門村構居（多可町）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/kadomura-tile', position:[134.91990599380097,35.126018348978484],bounds:[35.12363252506995, 134.9239960319977, 35.128404172887016, 134.91581595560422]},
+    {name:'養宜館痕（南あわじ市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/yanagikata-tile', position:[134.79506796448158,34.305191677316365],bounds:[34.3022273288832, 134.8001032457949, 34.30815602574953, 134.79003268316828]},
+    {name:'野村城跡（加古川市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/nomura-tile', position:[134.92389188024887,34.787648911997884],bounds:[34.78574019471035, 134.927150529112, 34.78955762928542, 134.92063323138575]},
+    // {name:'',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/-tile', position:[,],bounds:[]},
 
     {name:'吉島古墳（たつの市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/yoshima-tile', position:[134.54688130043553,34.93555770118321],bounds:[34.93271362826281, 134.54932695739282, 34.9384017741036, 134.54443564347824]},
     {name:'玉丘古墳群（加西市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/tamaoka-tile', position:[134.8504914852914, 34.921500394087985],bounds:[34.919477654884005, 134.85395175056618, 34.92352313329196, 134.84703122001662]},
@@ -1217,7 +1293,6 @@ const isekiurls =[
     {name:'壇場山古墳と播磨国分寺跡（姫路市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/danjyo-tile', position:[134.73310188683377,34.82141913842871],bounds:[34.81872667792709, 134.73770585972392, 34.82411159893032, 134.7284979139435]},
     {name:'丁瓢塚古墳（姫路市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/hisago-tile', position:[134.6000101473541,34.818145009745336],bounds:[34.816627691284644, 134.6013135835035, 34.81966232820603, 134.59870671120473]},
     {name:'衣笠城跡（三木市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/kinugasa-tile', position:[135.0428908139503,34.84621030969268],bounds:[34.84429819857235, 135.04615450920315, 34.848122420813006, 135.03962711869744]},
-
 ]
 const isekiSources = []
 const isekiLayers = []
@@ -8978,7 +9053,15 @@ const layers01 = [
                 label: "兵庫県遺跡立体地図",
                 nodes: [
                         ...isekiLayers2
-        ]}
+                ]
+            },
+            // {
+            //     id: 'isekirittaitizu2',
+            //     label: "兵庫県意外遺跡立体地図",
+            //     nodes: [
+            //         ...isekiLayers222
+            //     ]
+            // }
     ]},
     {
         id: 'hazard',

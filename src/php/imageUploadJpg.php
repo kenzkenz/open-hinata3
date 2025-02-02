@@ -24,7 +24,7 @@ function uploadFile($file, $dir, $baseName = null)
     }
 
     // 対応する拡張子の検査
-    if (in_array($extension, ['gif', 'jpg', 'jpeg', 'png', 'tiff', 'tfw', 'tif', 'jgw'])) {
+    if (in_array($extension, ['gif', 'jpg', 'jpeg', 'png', 'tiff', 'tfw', 'tif', 'jgw', 'pgw'])) {
         $image = "$baseName.$extension";
     } else {
         $response = array('error' => '対応していない拡張子です');
