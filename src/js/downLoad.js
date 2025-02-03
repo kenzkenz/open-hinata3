@@ -3337,6 +3337,14 @@ function resizeImage(image, maxSize) {
 
 
 
+
+
+
+
+
+
+
+
 // export async function addImageLayerJpg(jpgFile, worldFile, code, isFirst) {
 //
 //     const map = store.state.map01;
