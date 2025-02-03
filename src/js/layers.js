@@ -1242,7 +1242,7 @@ const isekiurls =[
     {name:'上月城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/koudukijyou', position:[134.32357851200157, 34.97535169002647],bounds:[134.32030338353172,34.97778774733989,134.32729889143042,34.973688782383846]},
     {name:'城山城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/kinoyamajyou', position:[134.52762221800918, 34.89462795246601],bounds:[134.52261448236823,34.90081639479682,134.5309124254295,34.8911684626696]},
     {name:'仁井山城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/niisanjyou', position:[134.33284507693375, 34.9790563824087],bounds:[134.32827254655837,34.98215771605422,134.33763287275258,34.976615080071795]},
-    {name:'赤穂城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/akoujyou', position:[134.3888453601225, 34.74598150175633],bounds:[134.98757740629128,34.657960146713904,134.99606028436813,34.64823710919805]},
+    {name:'赤穂城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/akoujyou', position:[134.3888453601225, 34.74598150175633],bounds:[134.38473699411367,34.751164323898266,134.3914859691194,34.743374620541005]},
     {name:'置塩城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/oshiojyou', position:[134.6830576345791, 34.92332845324563],bounds:[134.67459731119794,34.92625928854153,134.68621715261793,34.91940721541867]},
     {name:'中道子山城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/tyuudoushisanjyou', position:[134.85475696735378, 34.83149611922066],bounds:[134.85120350915133,34.834983695995945,134.8578004701689,34.82725278455213]},
     {name:'播磨高倉山城',url:'https://kenzkenz3.xsrv.jp/hyougoiseki/takakurayamajyou', position:[134.355514070868, 34.978895498696204],bounds:[134.34926770508866,34.982082295662636,134.36098090425196,34.975282668782285]},
@@ -1296,15 +1296,19 @@ const isekiurls =[
 ]
 const isekiSources = []
 const isekiLayers = []
+const isekiGeojsonSources = []
+const isekiGeojsonLayers = []
+const isekiGeojsonLabelLayers = []
 isekiurls.forEach(url => {
     function compareFunc(a, b) {
         return a - b;
     }
+
     url.bounds.sort(compareFunc);
-    url.bounds = [url.bounds[2],url.bounds[0],url.bounds[3],url.bounds[1]]
+    url.bounds = [url.bounds[2], url.bounds[0], url.bounds[3], url.bounds[1]]
     isekiSources.push({
         id: 'oh-iseki-' + url.name,
-        obj:{
+        obj: {
             type: 'raster',
             tiles: [url.url + '/{z}/{x}/{y}.png'],
             tileSize: 256,
@@ -1314,19 +1318,60 @@ isekiurls.forEach(url => {
         }
     })
     isekiLayers.push({
-        url: url.url,
         id: 'oh-iseki-' + url.name,
         source: 'oh-iseki-' + url.name,
         position: url.position,
         type: 'raster',
     })
+
+    const geojson = turf.point(url.position, {name: url.name});
+    
+    isekiGeojsonSources.push({
+        id: 'oh-iseki-geojson-' + url.name,
+        obj: {
+            type: 'geojson',
+            data: geojson
+        }
+    })
+    isekiGeojsonLayers.push({
+        id: 'oh-iseki-geojson-' + url.name,
+        type: "circle",
+        source: 'oh-iseki-geojson-' + url.name,
+        'paint': {
+            'circle-color': 'red',
+            'circle-radius': [
+                'interpolate', // Zoom-based interpolation
+                ['linear'],
+                ['zoom'], // Use the zoom level as the input
+                10, 8,
+                13, 0
+            ]
+        }
+    })
+    isekiGeojsonLabelLayers.push({
+        id: 'oh-iseki-geojson-label-' + url.name,
+        type: "symbol",
+        source: 'oh-iseki-geojson-' + url.name,
+        layout: {
+            'text-field': ['get', 'name'],
+            'text-font': ['NotoSansJP-Regular'],
+            'text-offset': [0, 1],
+        },
+        paint: {
+            'text-color': 'rgba(255, 0, 0, 1)',
+            'text-halo-color': 'rgba(255,255,255,1)',
+            'text-halo-width': 1.0,
+        },
+        minzoom: 6,
+        maxzoom: 13
+    })
 })
-const isekiLayers2 = isekiLayers.map((layer,i) => {
+const isekiLayersMarge = isekiLayers.map((layer,i) => {
     return {
         id: layer.id,
         label: layer.id.replace('oh-iseki-','') + '',
-        source: isekiSources[i],
-        layers:[layer],
+        sources: [isekiSources[i],isekiGeojsonSources[i]],
+        layers:[layer,isekiGeojsonLayers[i],isekiGeojsonLabelLayers[i]],
         position: layer.position,
         flyZoom: 17,
         attribution: '<a href="https://www.geospatial.jp/ckan/dataset/2021-2022-hyogo-shiseki" target="_blank">兵庫県遺跡立体図</a>'
@@ -9052,7 +9097,14 @@ const layers01 = [
                 id: 'isekirittaitizu',
                 label: "兵庫県遺跡立体地図",
                 nodes: [
-                        ...isekiLayers2
+                    {
+                        id: 'oh-hyogo-iseki-all',
+                        label: "全て",
+                        sources: [...isekiSources,...isekiGeojsonSources],
+                        layers: [...isekiLayers,...isekiGeojsonLayers,...isekiGeojsonLabelLayers],
+                        attribution: '<a href="https://www.geospatial.jp/ckan/dataset/2021-2022-hyogo-shiseki" target="_blank">兵庫県遺跡立体図</a>'
+                    },
+                        ...isekiLayersMarge
                 ]
             },
             // {
