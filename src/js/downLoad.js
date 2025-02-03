@@ -9,6 +9,7 @@ import shpwrite from "@mapbox/shp-write"
 import JSZip from 'jszip'
 import {history} from "@/App";
 import tokml from 'tokml'
+import iconv from "iconv-lite";
 // 複数のクリックされた地番を強調表示するためのセット
 // export let highlightedChibans = new Set();
 (function() {
@@ -3965,6 +3966,24 @@ export function transformGeoJSONToEPSG4326(geojson) {
 function geojsonToShapefile(geojson) {
     const firstChiban = getChibanAndHoka(geojson).firstChiban
     const hoka = getChibanAndHoka(geojson).hoka
+    // GeoJSONのプロパティを Shift_JIS に変換
+    geojson = {
+        type: geojson.type,
+        features: geojson.features.map(feature => {
+            const convertedProperties = {};
+            Object.entries(feature.properties).forEach(([key, value]) => {
+                // 列名（フィールド名）と値を Shift_JIS に変換
+                const encodedKey = iconv.encode(key, "Shift_JIS").toString("binary");
+                const encodedValue = typeof value === "string" ? iconv.encode(value, "Shift_JIS").toString("binary") : value;
+                convertedProperties[encodedKey] = encodedValue;
+            });
+            return {
+                ...feature,
+                properties: convertedProperties
+            };
+        })
+    };
+
     console.log(geojson)
     const options = {
         filename: firstChiban + hoka,

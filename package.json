@@ -21,6 +21,7 @@
     "dxf-parser": "^1.1.2",
     "FileSaver": "^0.10.0",
     "flatgeobuf": "^3.36.0",
+    "iconv-lite": "^0.6.3",
     "json-loader": "^0.5.7",
     "jszip": "^3.10.1",
     "maplibre-gl": "^4.7.1",
