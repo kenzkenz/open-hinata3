@@ -1325,7 +1325,7 @@ isekiurls.forEach(url => {
     })
 
     const geojson = turf.point(url.position, {name: url.name});
-    
+
     isekiGeojsonSources.push({
         id: 'oh-iseki-geojson-' + url.name,
         obj: {

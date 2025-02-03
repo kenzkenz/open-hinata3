@@ -75,8 +75,16 @@
       <div style="display: flex; justify-content: space-between; gap: 5px; padding-right: 100px;">
         <v-btn style="width: 70px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
         <v-btn style="width: 70px;" class="tiny-btn" @click="saveKml">KML保存</v-btn>
+        <v-btn style="width: 70px;" class="tiny-btn" @click="saveShape">shape保存</v-btn>
+
 <!--        <v-btn class="tiny-btn" @click="jww">jww座標ファイル保存</v-btn>-->
       </div>
+
+    <!-- 4行目 -->
+    <div style="display: flex; justify-content: space-between; gap: 5px; padding-right: 100px;">
+      <v-btn style="width: 70px; font-size: 8px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
+    </div>
+
 
     <hr>
     <div style="display: flex; align-items: center; gap: 10px;">
@@ -295,6 +303,11 @@ export default {
       // saveDxf(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
       saveSima2(map,'oh-amx-a-fude',null,true,'amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
       history('DXF保存',window.location.href)
+    },
+    saveShape () {
+      const map = this.$store.state[this.mapName]
+      saveSima2(map, 'oh-amx-a-fude', null, false, null, null, null, true)
+      history('SHAPE保存',window.location.href)
     },
     saveSima2 () {
       const map = this.$store.state[this.mapName]

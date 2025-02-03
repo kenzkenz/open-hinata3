@@ -5,6 +5,7 @@ import maplibregl from 'maplibre-gl'
 import proj4 from 'proj4'
 import axios from "axios";
 import {geotiffSource, geotiffLayer, jpgSource, jpgLayer, pngSource, pngLayer} from "@/js/layers";
+import shpwrite from "@mapbox/shp-write"
 import JSZip from 'jszip'
 import {history} from "@/App";
 import tokml from 'tokml'
@@ -1898,7 +1899,7 @@ function determinePlaneRectangularZone(x, y) {
     return closestZone;
 }
 
-export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, kei) {
+export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, kei, isShape) {
     if (map.getZoom() <= 15) {
         alert('ズーム15以上にしてください。');
         return;
@@ -1973,18 +1974,26 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
             }
             return;
         }
-        console.log(isDfx)
-        if (!isDfx) {
-            console.log(geojson)
-            if (layerId === 'oh-amx-a-fude') {
-                geojson = extractMatchingFeatures(map,geojson)
-            }
-            console.log(geojson)
-            convertAndDownloadGeoJSONToSIMA(map, layerId, geojson, '詳細_', false, '', kukaku);
+        if (isShape) {
+            console.log()
+            geojson = extractMatchingFeatures(map,geojson)
+            geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
+            geojsonToShapefile(geojson)
+            document.querySelector('.loadingImg').style.display = 'none'
         } else {
-            console.log(geojson)
-            saveDxf (map, layerId, sourceId, fields, geojson, kei)
+            if (!isDfx) {
+                console.log(geojson)
+                if (layerId === 'oh-amx-a-fude') {
+                    geojson = extractMatchingFeatures(map,geojson)
+                }
+                console.log(geojson)
+                convertAndDownloadGeoJSONToSIMA(map, layerId, geojson, '詳細_', false, '', kukaku);
+            } else {
+                console.log(geojson)
+                saveDxf (map, layerId, sourceId, fields, geojson, kei)
+            }
         }
+
     }
     if (fgb_URL) {
         deserializeAndPrepareGeojson(layerId);
@@ -3950,6 +3959,22 @@ export function transformGeoJSONToEPSG4326(geojson) {
             },
         })),
     };
-    console.log(JSON.stringify(transformedGeoJSON))
     return transformedGeoJSON;
+}
+
+function geojsonToShapefile(geojson) {
+    const firstChiban = getChibanAndHoka(geojson).firstChiban
+    const hoka = getChibanAndHoka(geojson).hoka
+    console.log(geojson)
+    const options = {
+        filename: firstChiban + hoka,
+        outputType: "blob",
+        compression: "DEFLATE",
+        types: {
+            point: "points",
+            polygon: "polygons",
+            polyline: "lines",
+        },
+    };
+    shpwrite.download(geojson,options);
 }
