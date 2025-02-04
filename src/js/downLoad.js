@@ -3140,12 +3140,17 @@ export async function addImageLayer(tiffFile, worldFile, code, isFirst) {
 
     if (map.getLayer('oh-geotiff-layer')) {
         map.removeLayer('oh-geotiff-layer');
-        map2.removeLayer('oh-geotiff-layer');
     }
     if (map.getSource('geotiff-source')) {
         map.removeSource('geotiff-source');
+    }
+    if (map2.getLayer('oh-geotiff-layer')) {
+        map2.removeLayer('oh-geotiff-layer');
+    }
+    if (map2.getSource('geotiff-source')) {
         map2.removeSource('geotiff-source');
     }
+
 
     if (isFirst) {
         store.state.selectedLayers['map01'].unshift(
@@ -3215,67 +3220,54 @@ export async function addImageLayerJpg(jpgFile, worldFile, code, isFirst) {
     const map = store.state.map01;
     const map2 = store.state.map02;
 
-    // WebGL コンテキストを取得（エラー回避）
     let gl = null;
     if (map.painter && map.painter.context) {
         gl = map.painter.context.gl;
     }
-    let maxTextureSize = 4096; // デフォルト値
+    let maxTextureSize = 4096;
     if (gl) {
         maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
         console.log("Max Texture Size:", maxTextureSize);
     }
 
-    // ワールドファイルを読み込む
     const worldFileText = await worldFile.text();
     let [pixelSizeX, rotationX, rotationY, pixelSizeY, originX, originY] = worldFileText.split('\n').map(Number);
-
-    // pixelSizeY が負でない場合、負にする（Android での座標変換問題を防ぐ）
-    if (pixelSizeY > 0) {
-        pixelSizeY = -pixelSizeY;
-    }
-
-    // JPGファイルを Base64 に変換して読み込む（Android の createObjectURL 問題を回避）
-    let imageUrl = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(jpgFile);
-    });
+    if (pixelSizeY > 0) pixelSizeY = -pixelSizeY;
 
     const img = new Image();
     img.crossOrigin = "anonymous";
     await new Promise((resolve, reject) => {
         img.onload = resolve;
         img.onerror = reject;
-        img.src = imageUrl;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(jpgFile);
     });
 
-    // 画像サイズが WebGL の最大サイズを超える場合、縮小
-    if (img.width > maxTextureSize || img.height > maxTextureSize) {
+    const originalWidth = img.width;
+    const originalHeight = img.height;
+
+    let scale = 1;
+    let imageUrl = img.src;
+    if (originalWidth > maxTextureSize || originalHeight > maxTextureSize) {
         console.warn("画像サイズがWebGLの最大テクスチャサイズを超えています。縮小します。");
+        scale = maxTextureSize / Math.max(originalWidth, originalHeight);
         imageUrl = resizeImage(img, maxTextureSize);
     }
 
-    const width = img.width;
-    const height = img.height;
-
-    // 平面直角座標系の範囲を緯度経度に変換
     let bounds = [
         [originX, originY],
-        [originX + pixelSizeX * width, originY],
-        [originX + pixelSizeX * width, originY + pixelSizeY * height],
-        [originX, originY + pixelSizeY * height]
+        [originX + pixelSizeX * originalWidth, originY],
+        [originX + pixelSizeX * originalWidth, originY + pixelSizeY * originalHeight],
+        [originX, originY + pixelSizeY * originalHeight]
     ].map(coord => proj4(code, 'EPSG:4326', coord));
 
     let index = store.state.selectedLayers['map01'].findIndex(v => v.id === 'oh-jpg-layer');
-    if (index === -1) {
-        index = store.state.selectedLayers['map01'].findIndex(v => v.id === 'oh-geotiff-layer');
-    }
-
-    if (index === -1) {
-        index = 0;
-    }
+    if (index === -1) index = store.state.selectedLayers['map01'].findIndex(v => v.id === 'oh-geotiff-layer');
+    if (index === -1) index = 0;
 
     store.state.selectedLayers['map01'] = store.state.selectedLayers['map01'].filter(v => v.id !== 'oh-geotiff-layer' && v.id !== 'oh-jpg-layer');
     store.state.selectedLayers['map02'] = store.state.selectedLayers['map02'].filter(v => v.id !== 'oh-geotiff-layer' && v.id !== 'oh-jpg-layer');
@@ -3323,17 +3315,8 @@ export async function addImageLayerJpg(jpgFile, worldFile, code, isFirst) {
             store.state.map01.zoomTo(currentZoom + 0.01, { duration: 500 });
         }, 0);
     }
-
-    // WebGL のコンテキストをリセット
-    map.once('load', () => {
-        if (map.painter && map.painter.context) {
-            const gl = map.painter.context.gl;
-            if (gl) {
-                gl.getExtension('WEBGL_lose_context')?.loseContext();
-            }
-        }
-    });
 }
+
 
 function resizeImage(image, maxSize) {
     const canvas = document.createElement('canvas');
@@ -3344,6 +3327,147 @@ function resizeImage(image, maxSize) {
     ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
     return canvas.toDataURL("image/jpeg");
 }
+
+
+
+
+
+
+
+
+// export async function addImageLayerJpg(jpgFile, worldFile, code, isFirst) {
+//     const map = store.state.map01;
+//     const map2 = store.state.map02;
+//
+//     // WebGL コンテキストを取得（エラー回避）
+//     let gl = null;
+//     if (map.painter && map.painter.context) {
+//         gl = map.painter.context.gl;
+//     }
+//     let maxTextureSize = 4096; // デフォルト値
+//     if (gl) {
+//         maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+//         console.log("Max Texture Size:", maxTextureSize);
+//     }
+//
+//     // ワールドファイルを読み込む
+//     const worldFileText = await worldFile.text();
+//     let [pixelSizeX, rotationX, rotationY, pixelSizeY, originX, originY] = worldFileText.split('\n').map(Number);
+//
+//     // pixelSizeY が負でない場合、負にする（Android での座標変換問題を防ぐ）
+//     if (pixelSizeY > 0) {
+//         pixelSizeY = -pixelSizeY;
+//     }
+//
+//     // JPGファイルを Base64 に変換して読み込む（Android の createObjectURL 問題を回避）
+//     let imageUrl = await new Promise((resolve, reject) => {
+//         const reader = new FileReader();
+//         reader.onload = () => resolve(reader.result);
+//         reader.onerror = reject;
+//         reader.readAsDataURL(jpgFile);
+//     });
+//
+//     const img = new Image();
+//     img.crossOrigin = "anonymous";
+//     await new Promise((resolve, reject) => {
+//         img.onload = resolve;
+//         img.onerror = reject;
+//         img.src = imageUrl;
+//     });
+//
+//     // 画像サイズが WebGL の最大サイズを超える場合、縮小
+//     if (img.width > maxTextureSize || img.height > maxTextureSize) {
+//         console.warn("画像サイズがWebGLの最大テクスチャサイズを超えています。縮小します。");
+//         imageUrl = resizeImage(img, maxTextureSize);
+//     }
+//
+//     const width = img.width;
+//     const height = img.height;
+//
+//     // 平面直角座標系の範囲を緯度経度に変換
+//     let bounds = [
+//         [originX, originY],
+//         [originX + pixelSizeX * width, originY],
+//         [originX + pixelSizeX * width, originY + pixelSizeY * height],
+//         [originX, originY + pixelSizeY * height]
+//     ].map(coord => proj4(code, 'EPSG:4326', coord));
+//
+//     let index = store.state.selectedLayers['map01'].findIndex(v => v.id === 'oh-jpg-layer');
+//     if (index === -1) {
+//         index = store.state.selectedLayers['map01'].findIndex(v => v.id === 'oh-geotiff-layer');
+//     }
+//
+//     if (index === -1) {
+//         index = 0;
+//     }
+//
+//     store.state.selectedLayers['map01'] = store.state.selectedLayers['map01'].filter(v => v.id !== 'oh-geotiff-layer' && v.id !== 'oh-jpg-layer');
+//     store.state.selectedLayers['map02'] = store.state.selectedLayers['map02'].filter(v => v.id !== 'oh-geotiff-layer' && v.id !== 'oh-jpg-layer');
+//
+//     jpgSource.obj.url = imageUrl;
+//     jpgSource.obj.coordinates = bounds;
+//
+//     if (map.getLayer('oh-jpg-layer')) {
+//         map.removeLayer('oh-jpg-layer');
+//         map2.removeLayer('oh-jpg-layer');
+//     }
+//     if (map.getSource('jpg-source')) {
+//         map.removeSource('jpg-source');
+//         map2.removeSource('jpg-source');
+//     }
+//
+//     store.state.selectedLayers['map01'].splice(index, 0, {
+//         id: 'oh-jpg-layer',
+//         label: 'jpgレイヤー',
+//         source: jpgSource,
+//         layers: [jpgLayer],
+//         opacity: 1,
+//         visibility: true,
+//     });
+//
+//     store.state.selectedLayers['map02'].splice(index, 0, {
+//         id: 'oh-jpg-layer',
+//         label: 'jpgレイヤー',
+//         source: jpgSource,
+//         layers: [jpgLayer],
+//         opacity: 1,
+//         visibility: true,
+//     });
+//
+//     const currentZoom = map.getZoom();
+//
+//     if (isFirst) {
+//         const flyToBounds = [
+//             [bounds[0][0], bounds[0][1]],
+//             [bounds[2][0], bounds[2][1]]
+//         ];
+//         map.fitBounds(flyToBounds, { padding: 20 });
+//     } else {
+//         setTimeout(() => {
+//             store.state.map01.zoomTo(currentZoom + 0.01, { duration: 500 });
+//         }, 0);
+//     }
+//
+//     // WebGL のコンテキストをリセット
+//     map.once('load', () => {
+//         if (map.painter && map.painter.context) {
+//             const gl = map.painter.context.gl;
+//             if (gl) {
+//                 gl.getExtension('WEBGL_lose_context')?.loseContext();
+//             }
+//         }
+//     });
+// }
+//
+// function resizeImage(image, maxSize) {
+//     const canvas = document.createElement('canvas');
+//     const ctx = canvas.getContext('2d');
+//     const scale = maxSize / Math.max(image.width, image.height);
+//     canvas.width = image.width * scale;
+//     canvas.height = image.height * scale;
+//     ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+//     return canvas.toDataURL("image/jpeg");
+// }
 
 
 
@@ -3786,19 +3910,23 @@ export function pngDownload(map) {
     map.zoomTo(currentZoom + 0.00000000000000000000000000001);
 }
 
+// 改修必要あり！！！！！
 export function geojsonAddLayer (map, geojson, isFitBounds, fileExtension) {
+
     if (map.getSource(fileExtension + '-source')) {
         map.removeLayer(fileExtension + '-polygon-layer')
         map.removeLayer(fileExtension + '-layer')
         map.removeLayer(fileExtension + '-line-layer')
         map.removeLayer(fileExtension + '-point-layer')
+        map.removeLayer(fileExtension + '-polygon-points')
         map.removeSource(fileExtension + '-source')
-        map.removeSource(fileExtension + '-polygon-points')
     }
+
     map.addSource(fileExtension + '-source', {
         type: 'geojson',
         data: geojson
     });
+
     map.addLayer({
         id: fileExtension + '-polygon-layer',
         type: 'fill',
@@ -3844,11 +3972,12 @@ export function geojsonAddLayer (map, geojson, isFitBounds, fileExtension) {
         type: 'circle',
         source: fileExtension + '-source',
         paint: {
-            'circle-radius': [
-                'interpolate', ['linear'], ['zoom'],
-                15, 0,
-                18, 4
-            ],
+            'circle-radius': 4,
+            // 'circle-radius': [
+            //     'interpolate', ['linear'], ['zoom'],
+            //     15, 0,
+            //     18, 4
+            // ],
             'circle-color': '#f00',
         },
         filter: ['==', '$type', 'Polygon']
