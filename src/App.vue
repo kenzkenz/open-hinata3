@@ -240,10 +240,7 @@
             open-hinata3 利用規約
           </v-card-title>
           <v-card-text>
-            あ<br>
-            あ<br>
-            あ<br>
-            あ<br>
+
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -928,7 +925,7 @@ export default {
               // 現在位置にマップを移動
               map.flyTo({
                 center: [userLongitude, userLatitude],
-                zoom: 14,
+                zoom: 15.01,
                 essential: true // アニメーションを有効にする
               });
               // flyToアニメーション完了後にユーザー操作を再度有効化
@@ -2235,7 +2232,6 @@ export default {
                 if (file && file.type === 'text/xml') {
                   const xmlText = await file.text();
                   let geojson = xmlToGeojson(xmlText);
-                  console.log(geojson)
                   geojson = transformGeoJSONToEPSG4326(geojson)
                   geojsonAddLayer (map, geojson, true, fileExtension)
                 } else {

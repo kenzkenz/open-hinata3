@@ -74,6 +74,7 @@ export default createStore({
     kei: '',
     prefId: '',
     zahyokei: '',
+    zahyokeiShape: 'WGS84',
     zeniGeojson: '',
     ntripGeojson: '',
     mindenGeojson: '',

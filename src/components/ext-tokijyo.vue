@@ -1,4 +1,28 @@
 <template>
+
+  <v-dialog v-model="dialogForShape" max-width="500px">
+    <v-card>
+      <v-card-title>
+        座標系選択
+      </v-card-title>
+      <v-card-text>
+        <div>
+          <v-select class="scrollable-content"
+                    v-model="s_zahyokeiShape"
+                    :items="items2"
+                    label="選択してください"
+                    outlined
+          ></v-select>
+        </div>
+        <v-btn @click="saveShape">SHAPE保存開始</v-btn>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="blue-darken-1" text @click="dialogForShape = false">Close</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
   <v-dialog v-model="s_dialogForSima" max-width="500px">
     <v-card>
       <v-card-title>
@@ -29,6 +53,7 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+
   <v-dialog v-model="dialogInfo" max-width="400px">
     <v-card>
       <v-card-title>
@@ -75,7 +100,7 @@
       <div style="display: flex; justify-content: space-between; gap: 5px; padding-right: 100px;">
         <v-btn style="width: 70px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
         <v-btn style="width: 70px;" class="tiny-btn" @click="saveKml">KML保存</v-btn>
-        <v-btn style="width: 70px;" class="tiny-btn" @click="saveShape">shape保存</v-btn>
+        <v-btn style="width: 70px;" class="tiny-btn" @click="dialogForShape = true">shape保存</v-btn>
 
 <!--        <v-btn class="tiny-btn" @click="jww">jww座標ファイル保存</v-btn>-->
       </div>
@@ -146,6 +171,7 @@ export default {
   name: 'ext-tokijyo',
   props: ['mapName','item'],
   data: () => ({
+    dialogForShape: false,
     mode: false,
     // dialog: false,
     dialogInfo: false,
@@ -159,6 +185,10 @@ export default {
       '公共座標16系', '公共座標17系', '公共座標18系',
       '公共座標19系'
     ],
+    items2: [
+      'WGS84', '公共座標XX系'
+    ],
+    zahyokei: 'WGS84',
     menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'hidden', 'user-select': 'text', 'font-size':'large'}
   }),
   computed: {
@@ -212,6 +242,14 @@ export default {
       },
       set(value) {
         this.$store.state.zahyokei = value
+      }
+    },
+    s_zahyokeiShape: {
+      get() {
+        return this.$store.state.zahyokeiShape
+      },
+      set(value) {
+        this.$store.state.zahyokeiShape = value
       }
     },
     s_isRenzoku: {
@@ -307,6 +345,7 @@ export default {
     saveShape () {
       const map = this.$store.state[this.mapName]
       saveSima2(map, 'oh-amx-a-fude', null, false, null, null, null, true)
+      this.dialogForShape = false
       history('SHAPE保存',window.location.href)
     },
     saveSima2 () {

@@ -4093,34 +4093,36 @@ export function transformGeoJSONToEPSG4326(geojson) {
 }
 
 function geojsonToShapefile(geojson) {
-    // -----------------------------------------------------------------------
-    let zahyo
-    for (const feature of geojson.features) {
-        if (feature.properties && feature.properties.座標系) {
-            console.log("Found Coordinate Property:", feature.properties.座標系);
-            zahyo = feature.properties.座標系; // 最初に見つけた値を返す
+
+    if (store.state.zahyokeiShape !== 'WGS84') {
+        let zahyo
+        for (const feature of geojson.features) {
+            if (feature.properties && feature.properties.座標系) {
+                console.log("Found Coordinate Property:", feature.properties.座標系);
+                zahyo = feature.properties.座標系; // 最初に見つけた値を返す
+            }
         }
+        const code = zahyokei.find(item => item.kei === zahyo).code
+        // GeoJSONの各座標を変換
+        const transformCoordinates = (coords) => {
+            if (typeof coords[0] === "number" && typeof coords[1] === "number") {
+                return proj4('EPSG:4326', code, coords);
+            }
+            return coords.map(transformCoordinates);
+        };
+        // GeoJSON全体を変換
+        geojson = {
+            ...geojson,
+            features: geojson.features.map((feature) => ({
+                ...feature,
+                geometry: {
+                    ...feature.geometry,
+                    coordinates: transformCoordinates(feature.geometry.coordinates),
+                },
+            })),
+        };
     }
-    const code = zahyokei.find(item => item.kei === zahyo).code
-    // GeoJSONの各座標を変換
-    const transformCoordinates = (coords) => {
-        if (typeof coords[0] === "number" && typeof coords[1] === "number") {
-            return proj4('EPSG:4326', code, coords);
-        }
-        return coords.map(transformCoordinates);
-    };
-    // GeoJSON全体を変換
-    geojson = {
-        ...geojson,
-        features: geojson.features.map((feature) => ({
-            ...feature,
-            geometry: {
-                ...feature.geometry,
-                coordinates: transformCoordinates(feature.geometry.coordinates),
-            },
-        })),
-    };
-    // -----------------------------------------------------------------------
+
     const firstChiban = getChibanAndHoka(geojson).firstChiban
     const hoka = getChibanAndHoka(geojson).hoka
     // GeoJSONのプロパティを Shift_JIS に変換
@@ -4141,7 +4143,6 @@ function geojsonToShapefile(geojson) {
         })
     };
 
-    console.log(geojson)
     const options = {
         filename: firstChiban + hoka,
         outputType: "blob",
