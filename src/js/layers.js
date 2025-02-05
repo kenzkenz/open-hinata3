@@ -1061,6 +1061,15 @@ let urls =[
     {'50on':'ん20',name:'横須賀市',url:'https://kenzkenz3.xsrv.jp/jcp_maps/yokosuka/{z}/{x}/{y}.png',tms:false,bounds: [139.60289262315248, 35.342237358161995, 139.72813703199841, 35.24850065660095]},
     {'50on':'ん21',name:'浦賀',url:'https://kenzkenz3.xsrv.jp/jcp_maps/uraga/{z}/{x}/{y}.png',tms:false,bounds: [139.65567449304083, 35.29220632171602, 139.75966105433923, 35.179361639527656]},
 ]
+// position を計算して追加する
+urls = urls.map(item => {
+    let [minLon, minLat, maxLon, maxLat] = item.bounds;
+    return {
+        ...item,
+        position: [(minLon + maxLon) / 2, (minLat + maxLat) / 2]
+    };
+});
+console.log(urls);
 urls.sort((a, b) => {
     const aValue = a['50on'] || '';
     const bValue = b['50on'] || '';
@@ -1068,6 +1077,9 @@ urls.sort((a, b) => {
 });
 const amsSources = []
 const amsLayers = []
+const amsGeojsonSources = []
+const amsGeojsonLayers = []
+const amsGeojsonLabelLayers = []
 urls.forEach(url => {
     function compareFunc(a, b) {
         return a - b;
@@ -1100,14 +1112,59 @@ urls.forEach(url => {
         id: 'oh-' + url.name,
         source: 'oh-ams-' + url.name,
         type: 'raster',
+        position: url.position,
+    })
+
+    const geojson = turf.point(url.position, {name: url.name});
+
+    amsGeojsonSources.push({
+        id: 'oh-ams-geojson-' + url.name,
+        obj: {
+            type: 'geojson',
+            data: geojson
+        }
+    })
+    amsGeojsonLayers.push({
+        id: 'oh-ams-geojson-' + url.name,
+        type: "circle",
+        source: 'oh-ams-geojson-' + url.name,
+        'paint': {
+            'circle-color': 'red',
+            'circle-radius': [
+                'interpolate', // Zoom-based interpolation
+                ['linear'],
+                ['zoom'], // Use the zoom level as the input
+                10, 8,
+                12, 0
+            ]
+        }
+    })
+    amsGeojsonLabelLayers.push({
+        id: 'oh-ams-geojson-label-' + url.name,
+        type: "symbol",
+        source: 'oh-ams-geojson-' + url.name,
+        layout: {
+            'text-field': ['get', 'name'],
+            'text-font': ['NotoSansJP-Regular'],
+            'text-offset': [0, 1],
+        },
+        paint: {
+            'text-color': 'rgba(255, 0, 0, 1)',
+            'text-halo-color': 'rgba(255,255,255,1)',
+            'text-halo-width': 1.0,
+        },
+        minzoom: 6,
+        maxzoom: 12
     })
 })
 const amsLayers2 = amsLayers.map((layer,i) => {
     return {
         id: layer.id,
         label: layer.id.replace('oh-','') + '戦後米軍地図',
-        source: amsSources[i],
-        layers:[layer]
+        sources: [amsSources[i],amsGeojsonSources[i]],
+        layers:[layer,amsGeojsonLayers[i],amsGeojsonLabelLayers[i]],
+        position: layer.position,
+        flyZoom: 13,
     }
 })
 
@@ -8259,8 +8316,8 @@ const layers01 = [
                     {
                         id: 'oh-ams',
                         label: "戦後の米軍作成地図全て",
-                        sources: amsSources,
-                        layers: amsLayers
+                        sources: [...amsSources,...amsGeojsonSources],
+                        layers: [...amsLayers,...amsGeojsonLayers,...amsGeojsonLabelLayers],
                     },
                     ...amsLayers2,
                 ]
