@@ -8,11 +8,11 @@ import { user } from "@/authState"; // グローバルの認証情報を取得
 
       <div>
         <p v-if="user">ようこそ、{{ user.displayName || "ゲスト" }}さん！</p>
-        <p v-else>ログイン情報を取得中...</p>
+        <p v-else></p>
       </div>
       <hr>
 
-      v0.524<br>
+      v0.525<br>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 
@@ -39,7 +39,7 @@ import { user } from "@/authState"; // グローバルの認証情報を取得
 
       <hr style="margin-top: 10px;">
       <div style="margin-top: 10px;">
-        <v-btn @click="loginDiv=!loginDiv">ログイン</v-btn><v-btn style="margin-left: 10px;" @click="loginDiv=!loginDiv">ログアウト</v-btn>
+        <v-btn @click="loginDiv=!loginDiv">ログイン</v-btn><v-btn style="margin-left: 10px;" @click="logOut">ログアウト</v-btn>
         <div v-if="loginDiv" style="margin-top: 10px;">
           <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
           <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>
@@ -63,12 +63,75 @@ import { user } from "@/authState"; // グローバルの認証情報を取得
 </template>
 
 <script>
+import {user as user2} from "@/authState";
+
+const getFirebaseUid = async () => {
+  if (!user2.value) return;
+
+  try {
+    // **Firebase の認証トークンを取得**
+    const token = await user2.value.getIdToken();
+    console.log("送信するトークン:", token); // **デバッグ用**
+
+    const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/verify_token.php", {
+      method: "POST", // **POST を使う**
+      mode: "cors",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ idToken: token }) // **idToken を送信**
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("エラー:", errorData);
+      return;
+    }
+
+    const data = await response.json();
+    console.log("取得した UID:", data.uid);
+  } catch (error) {
+    console.error("UID 取得エラー:", error);
+  }
+};
+
+
+
+
+
+const createUserDirectory = async () => {
+  if (!user2.value) return;
+  try {
+    // Firebase 認証トークンを取得
+    const token = await user2.value.getIdToken();
+    // create_directory.php にリクエストを送信
+    const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/create_directory.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ idToken: token }),
+    });
+
+    // レスポンスを取得
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("エラー:", data);
+      return;
+    }
+    // alert("ディレクトリ作成成功")
+    console.log("ディレクトリ作成成功:", data);
+  } catch (error) {
+    console.error("ディレクトリ作成エラー:", error);
+  }
+};
 import axios from "axios"
 import maplibregl from 'maplibre-gl'
 import {history} from "@/App";
 import {extLayer, extSource, konUrls} from "@/js/layers";
 import { auth } from "@/firebase";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut } from "firebase/auth";
 
 export default {
   name: 'Dialog-menu',
@@ -130,6 +193,21 @@ export default {
     },
   },
   methods: {
+    createDirectory () {
+      // getFirebaseUid()
+      createUserDirectory()
+    },
+    logOut () {
+      const logout = async () => {
+        try {
+          await signOut(auth); // ここで `auth` を明示的に指定
+          alert("ログアウトしました");
+        } catch (error) {
+          console.error("ログアウトエラー:", error.message);
+        }
+      };
+      logout()
+    },
     signUp () {
       const signup = async () => {
         try {
@@ -141,9 +219,10 @@ export default {
             displayName: this.nickname
           });
           console.log("アカウント作成成功！ユーザー:", user);
+          this.createDirectory()
           alert(`登録成功！ようこそ、${user.displayName} さん！`);
           this.errorMsg = ''
-              this.signUpDiv = false
+          this.signUpDiv = false
         } catch (error) {
           console.error("サインアップ失敗:", error.message);
           // エラーメッセージを表示
@@ -169,13 +248,12 @@ export default {
         try {
           // Firebase の signInWithEmailAndPassword を使ってログイン
           const userCredential = await signInWithEmailAndPassword(auth, this.email, this.password);
-
           // ユーザー情報を取得
           const user = userCredential.user;
           console.log("ログイン成功！", user);
+          this.createDirectory()
           this.errorMsg = 'ログイン成功';
-          // // ホーム画面（例: "/home"）へリダイレクト
-          // router.push("/home");;...................................9
+          this.loginDiv = false
         } catch (error) {
           console.error("ログイン失敗:", error.message);
           // エラーメッセージを表示
