@@ -1219,10 +1219,14 @@ export default {
           })
           .then(function (response) {
             if (response.data.results) {
-              const splitMuni = muni[Number(response.data.results.muniCd)].split(',')
-              vm.address = splitMuni[1] + splitMuni[3] + response.data.results.lv01Nm
-              console.log(splitMuni[0])
-              vm.$store.state.prefId = splitMuni[0]
+              try {
+                const splitMuni = muni[Number(response.data.results.muniCd)].split(',')
+                vm.address = splitMuni[1] + splitMuni[3] + response.data.results.lv01Nm
+                console.log(splitMuni[0])
+                vm.$store.state.prefId = splitMuni[0]
+              }catch (e){
+                console.log(e)
+              }
             }
           })
       history('updatePermalink',window.location.href)

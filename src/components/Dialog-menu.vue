@@ -1,6 +1,17 @@
+<script setup>
+import { user } from "@/authState"; // グローバルの認証情報を取得
+</script>
+
 <template>
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div class="menu-div">
+
+      <div>
+        <p v-if="user">ようこそ、{{ user.displayName || "ゲスト" }}さん！</p>
+        <p v-else>ログイン情報を取得中...</p>
+      </div>
+      <hr>
+
       v0.524<br>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
@@ -26,6 +37,27 @@
 <!--        <input type="range" min="1890" max="2024" step="1" class="range" v-model.number="konjyakuYear" @change="konjyakuYearInput"/>-->
 <!--      </div>-->
 
+      <hr style="margin-top: 10px;">
+      <div style="margin-top: 10px;">
+        <v-btn @click="loginDiv=!loginDiv">ログイン</v-btn><v-btn style="margin-left: 10px;" @click="loginDiv=!loginDiv">ログアウト</v-btn>
+        <div v-if="loginDiv" style="margin-top: 10px;">
+          <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
+          <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>
+          <v-btn @click="login">ログインします</v-btn>
+          <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
+        </div>
+      </div>
+      <hr style="margin-top: 10px;">
+      <div style="margin-top: 10px;">
+        <v-btn @click="signUpDiv=!signUpDiv">新規登録</v-btn>
+        <div v-if="signUpDiv" style="margin-top: 10px;">
+          <v-text-field  v-model="nickname" type="text" placeholder="ニックネーム"></v-text-field>
+          <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
+          <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>
+          <v-btn @click="signUp">新規登録します</v-btn>
+          <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
+        </div>
+      </div>
     </div>
   </Dialog>
 </template>
@@ -35,13 +67,22 @@ import axios from "axios"
 import maplibregl from 'maplibre-gl'
 import {history} from "@/App";
 import {extLayer, extSource, konUrls} from "@/js/layers";
+import { auth } from "@/firebase";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+
 export default {
   name: 'Dialog-menu',
   props: ['mapName'],
   data: () => ({
+    email: '',
+    password: '',
+    nickname: '',
+    errorMsg: '',
     konjyakuYear: '1890',
     address: '',
     addLayerDiv: false,
+    loginDiv: false,
+    signUpDiv: false,
   }),
   computed: {
     s_extLayerName: {
@@ -89,6 +130,72 @@ export default {
     },
   },
   methods: {
+    signUp () {
+      const signup = async () => {
+        try {
+          // Firebase 認証でアカウント作成
+          const userCredential = await createUserWithEmailAndPassword(auth,  this.email, this.password);
+          const user = userCredential.user;
+          // ニックネーム（displayName）を設定
+          await updateProfile(user, {
+            displayName: this.nickname
+          });
+          console.log("アカウント作成成功！ユーザー:", user);
+          alert(`登録成功！ようこそ、${user.displayName} さん！`);
+          this.errorMsg = ''
+              this.signUpDiv = false
+        } catch (error) {
+          console.error("サインアップ失敗:", error.message);
+          // エラーメッセージを表示
+          switch (error.code) {
+            case "auth/user-not-found":
+              this.errorMsg = "ユーザーが見つかりません";
+              break;
+            case "auth/wrong-password":
+              this.errorMsg = "パスワードが違います";
+              break;
+            case "auth/invalid-email":
+              this.errorMsg = "無効なメールアドレスです";
+              break;
+            default:
+              this.errorMsg = "ログインに失敗しました";
+          }
+        }
+      };
+      signup()
+    },
+    login () {
+      const login = async () => {
+        try {
+          // Firebase の signInWithEmailAndPassword を使ってログイン
+          const userCredential = await signInWithEmailAndPassword(auth, this.email, this.password);
+
+          // ユーザー情報を取得
+          const user = userCredential.user;
+          console.log("ログイン成功！", user);
+          this.errorMsg = 'ログイン成功';
+          // // ホーム画面（例: "/home"）へリダイレクト
+          // router.push("/home");;...................................9
+        } catch (error) {
+          console.error("ログイン失敗:", error.message);
+          // エラーメッセージを表示
+          switch (error.code) {
+            case "auth/user-not-found":
+              this.errorMsg = "ユーザーが見つかりません";
+              break;
+            case "auth/wrong-password":
+              this.errorMsg = "パスワードが違います";
+              break;
+            case "auth/invalid-email":
+              this.errorMsg = "無効なメールアドレスです";
+              break;
+            default:
+              this.errorMsg = "ログインに失敗しました";
+          }
+        }
+      };
+      login()
+    },
     addLayer () {
       const map = this.$store.state.map01
       extSource.obj.tiles = [this.s_extLayer]
