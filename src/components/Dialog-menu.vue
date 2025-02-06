@@ -1,5 +1,5 @@
 <script setup>
-import { user } from "@/authState"; // グローバルの認証情報を取得
+import { user as user1 } from "@/authState"; // グローバルの認証情報を取得
 </script>
 
 <template>
@@ -10,15 +10,15 @@ import { user } from "@/authState"; // グローバルの認証情報を取得
       <v-dialog v-model="s_dialogForImage" max-width="500px">
         <v-card>
           <v-card-title>
-            イメージ選択
           </v-card-title>
           <v-card-text>
-            <div>
-
-
-
-
-
+            <div style="margin-bottom: 10px;">
+              <p v-if="user1">ようこそ、{{ user1.displayName }}さん！</p>
+              <div class="image-grid">
+                <div v-for="item in images" :key="item" class="image-container">
+                  <img :src="item" class="gallery-image" @click="handleImageClick(item)" />
+                </div>
+              </div>
 
             </div>
             <v-btn @click="dxfLoad">イメージ読込開始</v-btn>
@@ -36,7 +36,7 @@ import { user } from "@/authState"; // グローバルの認証情報を取得
 
 
       <div>
-        <p v-if="user">ようこそ、{{ user.displayName || "ゲスト" }}さん！</p>
+        <p v-if="user1">ようこそ、{{ user1.displayName || "ゲスト" }}さん！</p>
         <p v-else></p>
       </div>
       <hr>
@@ -92,15 +92,14 @@ import { user } from "@/authState"; // グローバルの認証情報を取得
 </template>
 
 <script>
-import {user as user2} from "@/authState";
 
 
 const getFirebaseUid = async () => {
-  if (!user2.value) return;
+  if (!user.value) return;
 
   try {
     // **Firebase の認証トークンを取得**
-    const token = await user2.value.getIdToken();
+    const token = await user.value.getIdToken();
     console.log("送信するトークン:", token); // **デバッグ用**
 
     const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/verify_token.php", {
@@ -117,7 +116,6 @@ const getFirebaseUid = async () => {
       console.error("エラー:", errorData);
       return;
     }
-
     const data = await response.json();
     console.log("取得した UID:", data.uid);
   } catch (error) {
@@ -125,15 +123,11 @@ const getFirebaseUid = async () => {
   }
 };
 
-
-
-
-
 const createUserDirectory = async () => {
-  if (!user2.value) return;
+  if (!user.value) return;
   try {
     // Firebase 認証トークンを取得
-    const token = await user2.value.getIdToken();
+    const token = await user.value.getIdToken();
     // create_directory.php にリクエストを送信
     const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/create_directory.php", {
       method: "POST",
@@ -156,17 +150,24 @@ const createUserDirectory = async () => {
     console.error("ディレクトリ作成エラー:", error);
   }
 };
+import {user} from "@/authState";
 import axios from "axios"
 import maplibregl from 'maplibre-gl'
 import {history} from "@/App";
 import {extLayer, extSource, konUrls} from "@/js/layers";
 import { auth } from "@/firebase";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut } from "firebase/auth";
+// import MasonryWall from '@yeger/vue-masonry-wall'
 
 export default {
   name: 'Dialog-menu',
   props: ['mapName'],
+  components: {
+    // MasonryWall,
+  },
   data: () => ({
+    uid: null,
+    images: [],
     email: '',
     password: '',
     nickname: '',
@@ -231,6 +232,28 @@ export default {
     },
   },
   methods: {
+    async fetchImages() {
+      try {
+        console.log(this.uid)
+        const url = `https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/${this.uid}/`
+        const response = await fetch(url);
+        const text = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, "text/html");
+        const imageElements = doc.querySelectorAll("a");
+        this.images = Array.from(imageElements)
+            .map(a => a.getAttribute("href"))
+            .filter(href => /\.(jpg|jpeg|tif|tiff)$/i.test(href))
+            .map(href => `${url}${href}`);
+        console.log(this.images)
+      } catch (error) {
+        console.error("画像の取得に失敗しました", error);
+      }
+    },
+    handleImageClick(image) {
+      console.log("クリックした画像:", image);
+      alert(`画像がクリックされました: ${image}`);
+    },
     createDirectory () {
       // getFirebaseUid()
       createUserDirectory()
@@ -467,7 +490,19 @@ export default {
       history('terrainLevelInput',window.location.href)
     }
   },
+  watch: {
+
+  },
   mounted() {
+    // 非同期で user の UID を監視
+    const checkUser = setInterval(() => {
+      if (user && user._rawValue && user._rawValue.uid) {
+        this.uid = user._rawValue.uid;
+        clearInterval(checkUser); // UIDを取得できたら監視を停止
+        this.fetchImages(this.uid); // UIDを取得した後に fetchImages を実行
+      }
+    }, 500); // 0.5秒ごとにチェック
+
     if (localStorage.getItem('terrainLevel')) {
       this.s_terrainLevel = Number(localStorage.getItem('terrainLevel'))
     } else {
@@ -486,6 +521,27 @@ export default {
   font-size: larger;
   color: black;
   background-color: white;
+}
+.image-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.image-container {
+  width: 105px;
+  height: 105px;
+  overflow: hidden;
+  border-radius: 8px;
+}
+.gallery-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+.gallery-image:hover {
+  transform: scale(1.05);
 }
 </style>
 
