@@ -95,6 +95,7 @@ export default createStore({
     dialogForGeotiff2App: false,
     dialogForPngApp: false,
     dialogForApp: false,
+    dialogForImage: false,
     isMenu: false,
     isAndroid: false,
     simaOpacity: 0.7,

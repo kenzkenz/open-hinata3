@@ -6,6 +6,35 @@ import { user } from "@/authState"; // グローバルの認証情報を取得
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div class="menu-div">
 
+
+      <v-dialog v-model="s_dialogForImage" max-width="500px">
+        <v-card>
+          <v-card-title>
+            イメージ選択
+          </v-card-title>
+          <v-card-text>
+            <div>
+
+
+
+
+
+
+            </div>
+            <v-btn @click="dxfLoad">イメージ読込開始</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="s_dialogForImage = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+
+
+
+
+
       <div>
         <p v-if="user">ようこそ、{{ user.displayName || "ゲスト" }}さん！</p>
         <p v-else></p>
@@ -64,6 +93,7 @@ import { user } from "@/authState"; // グローバルの認証情報を取得
 
 <script>
 import {user as user2} from "@/authState";
+
 
 const getFirebaseUid = async () => {
   if (!user2.value) return;
@@ -148,6 +178,14 @@ export default {
     signUpDiv: false,
   }),
   computed: {
+    s_dialogForImage: {
+      get() {
+        return this.$store.state.dialogForImage
+      },
+      set(value) {
+        this.$store.state.dialogForImage = value
+      }
+    },
     s_extLayerName: {
       get() {
         return this.$store.state.extLayerName
