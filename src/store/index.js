@@ -5,7 +5,7 @@ export default createStore({
   state: {
     map01:null,
     map02:null,
-    // changeFlg: false,
+    userId: '',
     storeTest: 'storeTest',
     dialogs: {
       shareDialog:{
@@ -66,6 +66,7 @@ export default createStore({
     secondDivStyle: {'height': '390px', 'overflow': 'auto', 'user-select': 'text'},
     extFire:false,
     osmFire:false,
+    fetchImagesFire:false,
     MESH_ID: '',
     isEstat: true,
     suikeiYear: '',

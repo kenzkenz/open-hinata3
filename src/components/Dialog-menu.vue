@@ -6,8 +6,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div class="menu-div">
 
-
-      <v-dialog v-model="s_dialogForImage" max-width="500px">
+      <v-dialog v-model="s_dialogForImage" :scrim="false" persistent="false" max-width="500px">
         <v-card>
           <v-card-title>
           </v-card-title>
@@ -17,11 +16,11 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <div class="image-grid">
                 <div v-for="item in images" :key="item" class="image-container">
                   <img :src="item" class="gallery-image" @click="handleImageClick(item)" />
+                  <div class="close-button" @click="handleClose(item)">×</div>
                 </div>
               </div>
-
             </div>
-            <v-btn @click="dxfLoad">イメージ読込開始</v-btn>
+<!--            <v-btn @click="dxfLoad">イメージ読込開始</v-btn>-->
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -31,16 +30,33 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
 
-
-
-
-
       <div>
         <p v-if="user1">ようこそ、{{ user1.displayName || "ゲスト" }}さん！</p>
         <p v-else></p>
       </div>
       <hr>
 
+      <div style="margin-top: 10px;">
+        <v-btn @click="loginDiv=!loginDiv">ログイン</v-btn><v-btn style="margin-left: 10px;" @click="logOut">ログアウト</v-btn>
+        <div v-if="loginDiv" style="margin-top: 10px;">
+          <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
+          <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>
+          <v-btn @click="login">ログインします</v-btn>
+          <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
+        </div>
+      </div>
+      <hr style="margin-top: 10px;">
+      <div style="margin-top: 10px;">
+        <v-btn @click="signUpDiv=!signUpDiv">新規登録</v-btn>
+        <div v-if="signUpDiv" style="margin-top: 10px;">
+          <v-text-field  v-model="nickname" type="text" placeholder="ニックネーム"></v-text-field>
+          <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
+          <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>
+          <v-btn @click="signUp">新規登録します</v-btn>
+          <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
+        </div>
+      </div>
+      <hr style="margin-top: 10px;">
       v0.525<br>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
@@ -67,32 +83,15 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 <!--      </div>-->
 
       <hr style="margin-top: 10px;">
-      <div style="margin-top: 10px;">
-        <v-btn @click="loginDiv=!loginDiv">ログイン</v-btn><v-btn style="margin-left: 10px;" @click="logOut">ログアウト</v-btn>
-        <div v-if="loginDiv" style="margin-top: 10px;">
-          <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
-          <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>
-          <v-btn @click="login">ログインします</v-btn>
-          <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
-        </div>
-      </div>
-      <hr style="margin-top: 10px;">
-      <div style="margin-top: 10px;">
-        <v-btn @click="signUpDiv=!signUpDiv">新規登録</v-btn>
-        <div v-if="signUpDiv" style="margin-top: 10px;">
-          <v-text-field  v-model="nickname" type="text" placeholder="ニックネーム"></v-text-field>
-          <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
-          <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>
-          <v-btn @click="signUp">新規登録します</v-btn>
-          <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
-        </div>
-      </div>
+
     </div>
   </Dialog>
 </template>
 
 <script>
 
+
+import {addImageLayer} from "@/js/downLoad";
 
 const getFirebaseUid = async () => {
   if (!user.value) return;
@@ -219,6 +218,9 @@ export default {
         this.$store.state.terrainLevel = value
       }
     },
+    s_fetchImagesFire () {
+      return this.$store.state.fetchImagesFire
+    },
     s_dialogs () {
       return this.$store.state.dialogs.menuDialog
     },
@@ -234,7 +236,6 @@ export default {
   methods: {
     async fetchImages() {
       try {
-        console.log(this.uid)
         const url = `https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/${this.uid}/`
         const response = await fetch(url);
         const text = await response.text();
@@ -243,16 +244,54 @@ export default {
         const imageElements = doc.querySelectorAll("a");
         this.images = Array.from(imageElements)
             .map(a => a.getAttribute("href"))
-            .filter(href => /\.(jpg|jpeg|tif|tiff)$/i.test(href))
+            .filter(href => href.startsWith('thumbnail-') && /\.(jpg|jpeg)$/i.test(href))
             .map(href => `${url}${href}`);
         console.log(this.images)
       } catch (error) {
         console.error("画像の取得に失敗しました", error);
       }
     },
+    handleClose(image) {
+      alert('削除するプログラムを書く予定')
+    },
     handleImageClick(image) {
+      async function fetchFile(url) {
+        try {
+          // Fetchリクエストでファイルを取得
+          const response = await fetch(url);
+          // レスポンスが成功したか確認
+          if (!response.ok) {
+            throw new Error(`HTTPエラー! ステータス: ${response.status}`);
+          }
+          // Blobとしてレスポンスを取得
+          const blob = await response.blob();
+          // BlobをFileオブジェクトに変換
+          const file = new File([blob], "downloaded_file", { type: blob.type });
+          console.log("Fileオブジェクトが作成されました:", file);
+          return file;
+        } catch (error) {
+          console.error("ファイルの取得中にエラーが発生しました:", error);
+        }
+      }
+      const url = image
+      // 正規表現で置換
+      const imageUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.tif');
+      Promise.all([fetchFile(imageUrl)]).then(files => {
+        if (files.every(file => file)) {
+          const image = files[0]
+          const match = url.match(/thumbnail-(.*?)-/);
+          let code = match ? match[1] : null;
+          code = code.replace(/(EPSG)(\d+)/, '$1:$2');
+          addImageLayer(image, null, code, true)
+        } else {
+          console.warn("一部のファイルが取得できませんでした。");
+        }
+      }).catch(error => {
+        console.error("Promise.allでエラーが発生しました:", error);
+      });
+
       console.log("クリックした画像:", image);
-      alert(`画像がクリックされました: ${image}`);
+      // alert(`画像がクリックされました: ${image}`);
     },
     createDirectory () {
       // getFirebaseUid()
@@ -491,17 +530,20 @@ export default {
     }
   },
   watch: {
-
+    s_fetchImagesFire () {
+      this.fetchImages()
+    }
   },
   mounted() {
     // 非同期で user の UID を監視
     const checkUser = setInterval(() => {
       if (user && user._rawValue && user._rawValue.uid) {
         this.uid = user._rawValue.uid;
+        this.$store.state.userId = user._rawValue.uid
         clearInterval(checkUser); // UIDを取得できたら監視を停止
         this.fetchImages(this.uid); // UIDを取得した後に fetchImages を実行
       }
-    }, 500); // 0.5秒ごとにチェック
+    }, 10); // 0.5秒ごとにチェック
 
     if (localStorage.getItem('terrainLevel')) {
       this.s_terrainLevel = Number(localStorage.getItem('terrainLevel'))
@@ -532,6 +574,8 @@ export default {
   height: 105px;
   overflow: hidden;
   border-radius: 8px;
+  position: relative;
+  display: inline-block;
 }
 .gallery-image {
   width: 100%;
@@ -542,6 +586,20 @@ export default {
 }
 .gallery-image:hover {
   transform: scale(1.05);
+}
+.close-button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 </style>
 

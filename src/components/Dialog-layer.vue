@@ -585,7 +585,7 @@ export default {
             }
           }
 
-
+          console.log(JSON.parse(this.$store.state.uploadedImage))
 
           if (JSON.parse(this.$store.state.uploadedImage).worldFile) {
             if (JSON.parse(this.$store.state.uploadedImage).worldFile.split('.')[1] === 'tfw' ) {

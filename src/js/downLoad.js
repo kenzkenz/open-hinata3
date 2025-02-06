@@ -3574,6 +3574,52 @@ function resizeImage(image, maxSize) {
 //     }
 // }
 
+
+export async function geoTiffLoadForUser2 (map,mapName,isUpload) {
+    history('ユーザーGEOTIFF読込',window.location.href)
+    const zahyokei0 = zahyokei.find(item => item.kei === store.state.zahyokei)
+    if (!zahyokei0) {
+        // alert('座標系を選択してください。')
+        return
+    }
+    const code = zahyokei0.code
+    const files = store.state.tiffAndWorldFile
+    const tiffFile = files[0];
+    const worldFile = null;
+    await addImageLayer(tiffFile, worldFile, code, true)
+    // ----------------------------------------------------------------------------------------------------------------
+    if (isUpload) {
+        // FormDataを作成
+        const formData = new FormData();
+        formData.append('file', tiffFile);
+        formData.append('code', code);
+        formData.append('userId', store.state.userId);
+        axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/imageUploadForUserTif0.php', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data', // 必須
+            },
+        })
+            .then(response => {
+                // 成功時の処理
+                // alert('成功')
+                if (response.data.error) {
+                    alert(response.data.error)
+                    return
+                }
+                store.state.uploadedImage = JSON.stringify({
+                    image: response.data.file,
+                    code: code
+                })
+                store.state.fetchImagesFire = !store.state.fetchImagesFire
+                // alert(store.state.uploadedImage)
+            })
+            .catch(error => {
+                alert('失敗')
+                store.state.uploadedImage = ''
+            });
+    }
+}
+
 export async function geoTiffLoad2 (map,mapName,isUpload) {
     history('GEOTIFF2読込',window.location.href)
     const zahyokei0 = zahyokei.find(item => item.kei === store.state.zahyokei)

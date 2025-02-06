@@ -1,5 +1,5 @@
 <script setup>
-import { user } from "@/authState"; // グローバルの認証情報を取得
+import { user as user1 } from "@/authState"; // グローバルの認証情報を取得
 </script>
 
 <template>
@@ -167,7 +167,7 @@ import { user } from "@/authState"; // グローバルの認証情報を取得
                         outlined
               ></v-select>
             </div>
-            <v-btn @click="jpgLoad">jpg読込開始</v-btn>
+            <v-btn @click="jpgLoad0">jpg読込開始</v-btn>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -265,7 +265,7 @@ import { user } from "@/authState"; // グローバルの認証情報を取得
             <v-btn icon @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-menu</v-icon></v-btn>
             <v-btn icon style="margin-left:10px;" @click="btnClickSplit" v-if="mapName === 'map01'"><v-icon>mdi-monitor-multiple</v-icon></v-btn>
             <v-btn icon style="margin-left:10px;" @click="btnClickLayer(mapName)"><v-icon>mdi-layers</v-icon></v-btn>
-            <v-btn v-if="user" icon style="margin-left:10px;" @click="s_dialogForImage = !s_dialogForImage"></v-btn>
+            <v-btn v-if="user1" icon style="margin-left:10px;" @click="s_dialogForImage = !s_dialogForImage"><v-icon v-if="user1">mdi-image</v-icon></v-btn>
           </div>
           <div id="right-top-div">
             <v-btn icon @click="goToCurrentLocation" v-if="mapName === 'map01'"><v-icon>mdi-crosshairs-gps</v-icon></v-btn>
@@ -314,11 +314,12 @@ import * as turf from '@turf/turf'
 import DxfParser from 'dxf-parser'
 import proj4 from 'proj4'
 import { gpx } from '@tmcw/togeojson'
+import { user } from "@/authState"; // グローバルの認証情報を取得
 import {
   ddSimaUpload,
   downloadSimaText,
   geojsonAddLayer,
-  geoTiffLoad, geoTiffLoad2, getCRS,
+  geoTiffLoad, geoTiffLoad2, geoTiffLoadForUser2, getCRS,
   handleFileUpload,
   highlightSpecificFeatures,
   highlightSpecificFeaturesCity, jpgLoad,
@@ -794,7 +795,7 @@ export default {
       pngLoad (map02,'map02', false)
       this.s_dialogForPng2App = false
     },
-    jpgLoad () {
+    jpgLoad0 () {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
       jpgLoad (map01,'map01', true)
@@ -2099,6 +2100,7 @@ export default {
           // -----------------------------------------------------------------------------------------------------------
           // ドラッグ&ドロップ用の要素
           const dropzone = document.getElementById('map00');
+          const dropzone2 = document.querySelector('.v-overlay-container');
           // ドラッグイベントのリスナー追加
           document.addEventListener('dragover', (event) => {
             event.preventDefault();
@@ -2110,7 +2112,8 @@ export default {
           });
 
           // --------------------------------------------------------------------------------------------------------
-          dropzone.addEventListener('drop', async(e) => {
+
+          const handleDrop = async (e) => {
             e.preventDefault();
             const files = e.dataTransfer.files;
             if (files.length === 0) return;
@@ -2171,7 +2174,14 @@ export default {
                   const zahyokei = await getCRS(Array.from(e.dataTransfer.files)[0])
                   if (zahyokei) {
                     this.$store.state.zahyokei = zahyokei
-                    this.geoTiffLoad2()
+                    if (this.$store.state.userId) {
+                      const map01 = this.$store.state.map01
+                      const map02 = this.$store.state.map02
+                      geoTiffLoadForUser2 (map01,'map01', true)
+                      geoTiffLoadForUser2 (map02,'map02', false)
+                    } else {
+                      this.geoTiffLoad2()
+                    }
                   } else {
                     this.s_dialogForGeotiff2App = true
                   }
@@ -2185,7 +2195,7 @@ export default {
                   this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
                   this.s_dialogForJpgApp = true
                 } else if (files.length === 1){
-                    alert('ワールドファイルが必要です。')
+                  alert('ワールドファイルが必要です。')
                 }
                 break
               }
@@ -2257,8 +2267,11 @@ export default {
                 break
               }
             }
-          });
-
+          };
+          if (mapName === 'map01') {
+            dropzone.addEventListener('drop', handleDrop);
+            dropzone2.addEventListener('drop', handleDrop);
+          }
           // geotiff---------------------------------------------------------------------------------------------
           // dropzone.addEventListener('drop', async (event) => {
           //   event.preventDefault();
