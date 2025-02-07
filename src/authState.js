@@ -16,3 +16,4 @@ onAuthStateChanged(auth, (firebaseUser) => {
 });
 
 export { user };
+

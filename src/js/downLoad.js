@@ -3576,6 +3576,7 @@ function resizeImage(image, maxSize) {
 
 
 export async function geoTiffLoadForUser2 (map,mapName,isUpload) {
+    alert(999)
     history('ユーザーGEOTIFF読込',window.location.href)
     const zahyokei0 = zahyokei.find(item => item.kei === store.state.zahyokei)
     if (!zahyokei0) {

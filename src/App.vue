@@ -2192,6 +2192,7 @@ export default {
                       this.geoTiffLoad2()
                     }
                   } else {
+                    alert(1)
                     this.s_dialogForGeotiff2App = true
                   }
                 }
