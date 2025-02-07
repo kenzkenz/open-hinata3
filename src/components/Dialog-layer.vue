@@ -617,6 +617,14 @@ export default {
                   addImageLayerJpg(image, worldFile, code, false)
                 })
                 break
+              case 'png':
+                Promise.all([fetchFile(imageUrl), fetchFile(worldFileUrl)]).then(files => {
+                  const image = files[0]
+                  const worldFile = files[1]
+                  const code = JSON.parse(this.$store.state.uploadedImage).code
+                  addImageLayerPng(image, worldFile, code, false)
+                })
+                break
             }
 
 

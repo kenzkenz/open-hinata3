@@ -324,7 +324,7 @@ import {
   handleFileUpload,
   highlightSpecificFeatures,
   highlightSpecificFeaturesCity, jpgLoad, jpgLoadForUser,
-  pngDownload, pngLoad, transformGeoJSONToEPSG4326,
+  pngDownload, pngLoad, pngLoadForUser, transformGeoJSONToEPSG4326,
   zahyokei
 } from '@/js/downLoad'
 
@@ -800,8 +800,13 @@ export default {
     pngLoad0 () {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
-      pngLoad (map01,'map01', true)
-      pngLoad (map02,'map02', false)
+      if (this.$store.state.userId) {
+        pngLoadForUser (map01,'map01', true)
+        pngLoadForUser (map02,'map02', false)
+      } else {
+        pngLoad (map01,'map01', true)
+        pngLoad (map02,'map02', false)
+      }
       this.s_dialogForPng2App = false
     },
     jpgLoad0 () {
