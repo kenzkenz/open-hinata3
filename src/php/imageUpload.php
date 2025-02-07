@@ -24,10 +24,10 @@ function uploadFile($file, $dir)
     }
 
     // 画像ファイルの検証
-    if (in_array($extension, ['gif', 'jpg', 'jpeg', 'png', 'tiff', 'tif']) && !@exif_imagetype($file_tmp)) {
-        echo json_encode(['error' => '無効な画像ファイルです']);
-        exit;
-    }
+//    if (in_array($extension, ['gif', 'jpg', 'jpeg', 'png', 'tiff', 'tif']) && !@exif_imagetype($file_tmp)) {
+//        echo json_encode(['error' => '無効な画像ファイルです']);
+//        exit;
+//    }
 
     // 新しいファイル名を生成
     $newFileName = uniqid(mt_rand(), false) . "." . $extension;

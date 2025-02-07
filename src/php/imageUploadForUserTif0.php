@@ -1,4 +1,6 @@
 <?php
+
+
 require_once "pwd.php";
 
 // ファイルアップロード処理
@@ -17,15 +19,19 @@ function uploadFile($file, $dir, $code)
 
     $extension = strtolower(pathinfo($original_name, PATHINFO_EXTENSION));
 
-    // 対応する拡張子の検査
-    if (!in_array($extension, ['gif', 'jpg', 'jpeg', 'png', 'tiff', 'tfw', 'tif'])) {
-        echo json_encode(['error' => '対応していない拡張子です']);
-        exit;
+    // TIFFファイルはすべて.tifに統一
+    if (in_array($extension, ['tiff', 'tif'])) {
+        $extension = 'tif';
     }
 
-    // 画像ファイルの検証
-    if (in_array($extension, ['gif', 'jpg', 'jpeg', 'png', 'tiff', 'tif']) && !@exif_imagetype($file_tmp)) {
-        echo json_encode(['error' => '無効な画像ファイルです']);
+    // JPEG系ファイルはすべて.jpgに統一
+    if (in_array($extension, ['jpeg', 'jpg', 'jpj'])) {
+        $extension = 'jpg';
+    }
+
+    // 対応する拡張子の検査
+    if (!in_array($extension, ['gif', 'jpg', 'png', 'tif', 'tfw'])) {
+        echo json_encode(['error' => '対応していない拡張子です']);
         exit;
     }
 
@@ -43,7 +49,7 @@ function uploadFile($file, $dir, $code)
         $response = ['file' => $newFileName];
 
         // TIFFをJPGに変換
-        if (in_array($extension, ['tiff', 'tif'])) {
+        if ($extension === 'tif') {
             $jpgFileName = $dir . 'thumbnail-' . pathinfo($newFileName, PATHINFO_FILENAME) . ".jpg";
             if (convertTiffToJpg($filePath, $jpgFileName)) {
                 $response['thumbnail'] = basename($jpgFileName);
@@ -83,6 +89,7 @@ if (isset($_FILES["file"], $_POST["code"], $_POST["userId"])) {
     echo json_encode(['error' => '必要なパラメータが不足しています']);
 }
 
+
 //require_once "pwd.php";
 //
 //// ファイルアップロード処理
@@ -107,24 +114,53 @@ if (isset($_FILES["file"], $_POST["code"], $_POST["userId"])) {
 //        exit;
 //    }
 //
-//    // 画像ファイルの検証
-//    if (in_array($extension, ['gif', 'jpg', 'jpeg', 'png', 'tiff', 'tif']) && !@exif_imagetype($file_tmp)) {
-//        echo json_encode(['error' => '無効な画像ファイルです']);
-//        exit;
-//    }
+////    // 画像ファイルの検証
+////    if (in_array($extension, ['gif', 'jpg', 'jpeg', 'png', 'tiff', 'tif']) && !@exif_imagetype($file_tmp)) {
+////        echo json_encode(['error' => '無効な画像ファイルです']);
+////        exit;
+////    }
 //
 //    // 新しいファイル名を生成 (code-ランダムID.拡張子)
 //    $newFileName = $code . '-' . uniqid(mt_rand(), false) . "." . $extension;
 //
-//    // ファイルを移動
+//    // アップロード先フォルダを作成
 //    if (!is_dir($dir)) {
 //        mkdir($dir, 0777, true);
 //    }
 //
-//    if (@move_uploaded_file($file_tmp, $dir . $newFileName)) {
-//        echo json_encode(['file' => $newFileName]);
+//    $filePath = $dir . $newFileName;
+//
+//    if (@move_uploaded_file($file_tmp, $filePath)) {
+//        $response = ['file' => $newFileName];
+//
+//        // TIFFをJPGに変換
+//        if (in_array($extension, ['tiff', 'tif'])) {
+//            $jpgFileName = $dir . 'thumbnail-' . pathinfo($newFileName, PATHINFO_FILENAME) . ".jpg";
+//            if (convertTiffToJpg($filePath, $jpgFileName)) {
+//                $response['thumbnail'] = basename($jpgFileName);
+//            } else {
+//                $response['error'] = 'TIFFの変換に失敗しました';
+//            }
+//        }
+//        echo json_encode($response);
 //    } else {
 //        echo json_encode(['error' => 'ファイルの移動に失敗しました']);
+//    }
+//}
+//
+//// TIFFをJPGに変換する関数（Imagick使用）
+//function convertTiffToJpg($inputFile, $outputFile)
+//{
+//    try {
+//        $image = new Imagick($inputFile);
+//        $image->setImageFormat('jpeg');
+//        $image->resizeImage(100, 0, Imagick::FILTER_LANCZOS, 1); // 横100px、アスペクト比維持
+//        $image->setImageCompressionQuality(90);
+//        $image->writeImage($outputFile);
+//        $image->destroy();
+//        return true;
+//    } catch (Exception $e) {
+//        return false;
 //    }
 //}
 //
@@ -137,4 +173,4 @@ if (isset($_FILES["file"], $_POST["code"], $_POST["userId"])) {
 //} else {
 //    echo json_encode(['error' => '必要なパラメータが不足しています']);
 //}
-?>
+//?>

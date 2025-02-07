@@ -594,7 +594,7 @@ export default {
         clearInterval(checkUser); // UIDを取得できたら監視を停止
         this.fetchImages(this.uid); // UIDを取得した後に fetchImages を実行
       }
-    }, 10); // 0.5秒ごとにチェック
+    }, 5);
 
     if (localStorage.getItem('terrainLevel')) {
       this.s_terrainLevel = Number(localStorage.getItem('terrainLevel'))

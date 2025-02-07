@@ -136,7 +136,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                         outlined
               ></v-select>
             </div>
-            <v-btn @click="geoTiffLoad2">geotiff読込開始</v-btn>
+            <v-btn @click="geoTiffLoad20">geotiff読込開始3</v-btn>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -818,11 +818,16 @@ export default {
       geoTiffLoad (map02,'map02', false)
       this.s_dialogForGeotiffApp = false
     },
-    geoTiffLoad2 () {
+    geoTiffLoad20 () {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
-      geoTiffLoad2 (map01,'map01', true)
-      geoTiffLoad2 (map02,'map02', false)
+      if (this.$store.state.userId) {
+        geoTiffLoadForUser2 (map01,'map01', true)
+        geoTiffLoadForUser2 (map02,'map01', false)
+      } else {
+        geoTiffLoad2 (map01,'map01', true)
+        geoTiffLoad2 (map02,'map02', false)
+      }
       this.s_dialogForGeotiff2App = false
     },
     simaOpacityInput () {
@@ -2192,7 +2197,6 @@ export default {
                       this.geoTiffLoad2()
                     }
                   } else {
-                    alert(1)
                     this.s_dialogForGeotiff2App = true
                   }
                 }

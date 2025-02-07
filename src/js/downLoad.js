@@ -3576,7 +3576,6 @@ function resizeImage(image, maxSize) {
 
 
 export async function geoTiffLoadForUser2 (map,mapName,isUpload) {
-    alert(999)
     history('ユーザーGEOTIFF読込',window.location.href)
     const zahyokei0 = zahyokei.find(item => item.kei === store.state.zahyokei)
     if (!zahyokei0) {
@@ -3609,7 +3608,8 @@ export async function geoTiffLoadForUser2 (map,mapName,isUpload) {
                 }
                 store.state.uploadedImage = JSON.stringify({
                     image: response.data.file,
-                    code: code
+                    code: code,
+                    uid: store.state.userId,
                 })
                 store.state.fetchImagesFire = !store.state.fetchImagesFire
                 // alert(store.state.uploadedImage)
@@ -3646,7 +3646,7 @@ export async function geoTiffLoad2 (map,mapName,isUpload) {
             .then(response => {
                 // 成功時の処理
                 if (response.data.error) {
-                    alert('20mbを超えていますので保存できませんでした。')
+                    alert(response.data.error)
                     return
                 }
                 store.state.uploadedImage = JSON.stringify({
