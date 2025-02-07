@@ -887,3 +887,33 @@ tippecanoe -o fukuokakenhazard.pmtiles \
     fukuokakenhazard.geojson
 
 tippecanoe -l polygon -f -o h12.pmtiles h12.geojson
+
+tippecanoe -pk -pf -l polygon -f -o r02suikei1km.pmtiles \
+--include=PTN_2070 \
+--include=PTN_2060 \
+--include=PTN_2050 \
+--include=PTN_2040 \
+--include=PTN_2030 \
+--include=PTN_2020 \
+--include=MESH_ID \
+1km.geojson
+
+tippecanoe -pk -pf -l polygon -f -o r02suikei500m.pmtiles \
+--include=PTN_2070 \
+--include=PTN_2060 \
+--include=PTN_2050 \
+--include=PTN_2040 \
+--include=PTN_2030 \
+--include=PTN_2020 \
+--include=MESH_ID \
+500m.geojson
+
+tippecanoe -pk -pf -l polygon -f -o r02suikei250m.pmtiles \
+--include=PTN_2070 \
+--include=PTN_2060 \
+--include=PTN_2050 \
+--include=PTN_2040 \
+--include=PTN_2030 \
+--include=PTN_2020 \
+--include=MESH_ID \
+250m.geojson

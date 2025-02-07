@@ -587,24 +587,30 @@ export default {
 
           console.log(JSON.parse(this.$store.state.uploadedImage).image)
 
-
           if (JSON.parse(this.$store.state.uploadedImage).uid) {
-
-            // const imageUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/dqyHV8DykbdSVvDXrHc7xweuKT02/' + JSON.parse(this.$store.state.uploadedImage).image
             const imageUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/' + JSON.parse(this.$store.state.uploadedImage).uid + '/' + JSON.parse(this.$store.state.uploadedImage).image
+            const worldFileUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/' + JSON.parse(this.$store.state.uploadedImage).uid + '/' + JSON.parse(this.$store.state.uploadedImage).worldFile
+            const extension = imageUrl.split('.').pop();
+            // alert(extension);
+            switch (extension) {
+              case 'tif':
+                if (worldFileUrl) {
+                  Promise.all([fetchFile(imageUrl), fetchFile(worldFileUrl)]).then(files => {
+                    const image = files[0]
+                    const worldFile = files[1]
+                    const code = JSON.parse(this.$store.state.uploadedImage).code
+                    addImageLayer(image, worldFile, code, false)
+                  })
+                } else {
+                  Promise.all([fetchFile(imageUrl)]).then(files => {
+                    const image = files[0]
+                    const code = JSON.parse(this.$store.state.uploadedImage).code
+                    addImageLayer(image, null, code, false)
+                  })
+                }
+                break
+            }
 
-            Promise.all([fetchFile(imageUrl)]).then(files => {
-              if (files.every(file => file)) {
-                const image = files[0]
-                console.log(image)
-                const code = JSON.parse(this.$store.state.uploadedImage).code
-                addImageLayer(image, null, code, false)
-              } else {
-                console.warn("一部のファイルが取得できませんでした。");
-              }
-            }).catch(error => {
-              console.error("Promise.allでエラーが発生しました:", error);
-            });
 
 
 

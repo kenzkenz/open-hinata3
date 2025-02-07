@@ -1666,6 +1666,84 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-r02suikei250m': {
+                const features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                console.log(features)
+                if (features.length === 0) return;
+                props = features[0].properties
+                const rate = '<span style="font-size:12px;">2070年人口/2020年人口＝</span>' + Math.floor(props.PTN_2070 / props.PTN_2020 * 100) + '%'
+                if (html.indexOf('r02suikei250m') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="r02suikei250m" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span class="popup-address" style="font-size:12px;"></span><br>' +
+                        // '<span style="font-size:12px;">MESH_ID=' + props.MESH_ID + '</span><br>' +
+                        '<span style="font-size:24px;">' + rate + '</span><br>' +
+                        '<span style="font-size:20px;"><span style="font-size:12px;">2070年人口＝</span>' + Math.floor(props.PTN_2070).toLocaleString(0) + '人</span><br>' +
+                        '<span style="font-size:20px;"><span style="font-size:12px;">2020年人口＝</span>' + Math.floor(props.PTN_2020).toLocaleString(0) + '人</span>' +
+                        // '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2050 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2050人口ピラミッド</button><br>' +
+                        // '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2040 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2040人口ピラミッド</button><br>' +
+                        // '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2030 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2030人口ピラミッド</button><br>' +
+                        // '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2020 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2020人口ピラミッド</button><br>' +
+                        // '<button class="suikei1km-jinkosuii pyramid-btn" mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">人口推移</button><br><br>' +
+                        '</div>'
+                }
+                break
+            }
+            case 'oh-r02suikei500m': {
+                const features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                console.log(features)
+                if (features.length === 0) return;
+                props = features[0].properties
+                const rate = '<span style="font-size:12px;">2070年人口/2020年人口＝</span>' + Math.floor(props.PTN_2070 / props.PTN_2020 * 100) + '%'
+                if (html.indexOf('r02suikei500m') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="r02suikei500m" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span class="popup-address" style="font-size:12px;"></span><br>' +
+                        // '<span style="font-size:12px;">MESH_ID=' + props.MESH_ID + '</span><br>' +
+                        '<span style="font-size:24px;">' + rate + '</span><br>' +
+                        '<span style="font-size:20px;"><span style="font-size:12px;">2070年人口＝</span>' + Math.floor(props.PTN_2070).toLocaleString(0) + '人</span><br>' +
+                        '<span style="font-size:20px;"><span style="font-size:12px;">2020年人口＝</span>' + Math.floor(props.PTN_2020).toLocaleString(0) + '人</span>' +
+                        // '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2050 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2050人口ピラミッド</button><br>' +
+                        // '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2040 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2040人口ピラミッド</button><br>' +
+                        // '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2030 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2030人口ピラミッド</button><br>' +
+                        // '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2020 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2020人口ピラミッド</button><br>' +
+                        // '<button class="suikei1km-jinkosuii pyramid-btn" mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">人口推移</button><br><br>' +
+                        '</div>'
+                }
+                break
+            }
+            case 'oh-r02suikei1km': {
+                const features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                console.log(features)
+                if (features.length === 0) return;
+                props = features[0].properties
+                const rate = '<span style="font-size:12px;">2070年人口/2020年人口＝</span>' + Math.floor(props.PTN_2070 / props.PTN_2020 * 100) + '%'
+                if (html.indexOf('r02suikei1km') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="r02suikei1km" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span class="popup-address" style="font-size:12px;"></span><br>' +
+                        // '<span style="font-size:12px;">MESH_ID=' + props.MESH_ID + '</span><br>' +
+                        '<span style="font-size:24px;">' + rate + '</span><br>' +
+                        '<span style="font-size:20px;"><span style="font-size:12px;">2070年人口＝</span>' + Math.floor(props.PTN_2070).toLocaleString(0) + '人</span><br>' +
+                        '<span style="font-size:20px;"><span style="font-size:12px;">2020年人口＝</span>' + Math.floor(props.PTN_2020).toLocaleString(0) + '人</span>' +
+                        // '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2050 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2050人口ピラミッド</button><br>' +
+                        // '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2040 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2040人口ピラミッド</button><br>' +
+                        // '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2030 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2030人口ピラミッド</button><br>' +
+                        // '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2020 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2020人口ピラミッド</button><br>' +
+                        // '<button class="suikei1km-jinkosuii pyramid-btn" mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">人口推移</button><br><br>' +
+                        '</div>'
+                }
+                break
+            }
             case 'oh-suikei1km': {
                 const features = map.queryRenderedFeatures(
                     map.project(coordinates), {layers: [layerId]}
@@ -1688,7 +1766,6 @@ export function popup(e,map,mapName,mapFlg) {
                         '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2030 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2030人口ピラミッド</button><br>' +
                         '<button class="suikei1km-2050 pyramid-btn" suikeiYear=2020 mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">2020人口ピラミッド</button><br>' +
                         '<button class="suikei1km-jinkosuii pyramid-btn" mapname="' + mapName + '" MESH_ID="' + props.MESH_ID + '">人口推移</button><br><br>' +
-
                         '</div>'
                 }
                 break

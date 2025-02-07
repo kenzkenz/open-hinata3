@@ -2,7 +2,7 @@
 require_once "pwd.php";
 
 // ファイルアップロード処理
-function uploadFile($file, $dir, $code)
+function uploadFile($file, $dir, $code, $isSecondary = false, $primaryFileName = "")
 {
     $file_tmp = $file["tmp_name"];
     $original_name = $file["name"];
@@ -23,7 +23,7 @@ function uploadFile($file, $dir, $code)
     }
 
     // JPEG系ファイルはすべて.jpgに統一
-    if (in_array($extension, ['jpeg', 'jpg', 'jpj'])) {
+    if (in_array($extension, ['jpeg', 'jpg'])) {
         $extension = 'jpg';
     }
 
@@ -33,8 +33,12 @@ function uploadFile($file, $dir, $code)
         exit;
     }
 
-    // 新しいファイル名を生成 (code-ランダムID.拡張子)
-    $newFileName = $code . '-' . uniqid(mt_rand(), false) . "." . $extension;
+    // 新しいファイル名を生成
+    if ($isSecondary) {
+        $newFileName = pathinfo($primaryFileName, PATHINFO_FILENAME) . "." . $extension;
+    } else {
+        $newFileName = $code . '-' . uniqid(mt_rand(), false) . "." . $extension;
+    }
 
     // アップロード先フォルダを作成
     if (!is_dir($dir)) {
@@ -55,9 +59,9 @@ function uploadFile($file, $dir, $code)
                 $response['error'] = 'TIFFの変換に失敗しました';
             }
         }
-        echo json_encode($response);
+        return $response;
     } else {
-        echo json_encode(['error' => 'ファイルの移動に失敗しました']);
+        return ['error' => 'ファイルの移動に失敗しました'];
     }
 }
 
@@ -78,12 +82,23 @@ function convertTiffToJpg($inputFile, $outputFile)
 }
 
 // メイン処理
-if (isset($_FILES["file"], $_POST["code"], $_POST["userId"])) {
+if (isset($_FILES["file_1"], $_FILES["file_2"], $_POST["code"], $_POST["userId"])) {
     $code = preg_replace('/[^a-zA-Z0-9_-]/', '', $_POST["code"]); // コードのサニタイズ
     $userId = preg_replace('/[^a-zA-Z0-9_-]/', '', $_POST["userId"]); // ユーザーIDのサニタイズ
     $dir = "./uploads/" . $userId . "/";
-    uploadFile($_FILES["file"], $dir, $code);
+
+    // file_1 のアップロード
+    $file1Response = uploadFile($_FILES["file_1"], $dir, $code);
+
+    if (!isset($file1Response['error'])) {
+        // file_2 のアップロード（file_1の名前をもとにする）
+        $file2Response = uploadFile($_FILES["file_2"], $dir, $code, true, $file1Response['file']);
+    } else {
+        $file2Response = ['error' => 'file_1 のアップロードに失敗しました'];
+    }
+
+    echo json_encode(['file_1' => $file1Response, 'file_2' => $file2Response]);
 } else {
     echo json_encode(['error' => '必要なパラメータが不足しています']);
 }
-?>
+

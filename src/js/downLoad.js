@@ -3151,7 +3151,6 @@ export async function addImageLayer(tiffFile, worldFile, code, isFirst) {
         map2.removeSource('geotiff-source');
     }
 
-
     if (isFirst) {
         store.state.selectedLayers['map01'].unshift(
             {
@@ -3573,7 +3572,71 @@ function resizeImage(image, maxSize) {
 //         }, 0);
 //     }
 // }
+export async function geoTiffLoadForUser1 (map,mapName,isUpload) {
+    const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
+    const files = store.state.tiffAndWorldFile
+    let tiffFile = null;
+    let worldFile = null;
 
+    // ファイルをペアリング
+    for (const file of files) {
+        if (file.name.endsWith('.tif') || file.name.endsWith('.tiff')) {
+            tiffFile = file;
+        } else if (file.name.endsWith('.tfw') || file.name.endsWith('.wld')) {
+            worldFile = file;
+        }
+    }
+
+    if (!tiffFile) {
+        // alert('GeoTIFFファイル（.tif）をドラッグ＆ドロップしてください。');
+        return;
+    }
+    if (!worldFile) {
+        // alert('対応するワールドファイル（.tfw）も必要です。');
+        return;
+    }
+
+    await addImageLayer(tiffFile, worldFile, code, true)
+
+    // ----------------------------------------------------------------------------------------------------------------
+    if (isUpload) {
+        // FormDataを作成
+        const formData = new FormData();
+        formData.append('file_1', tiffFile);
+        formData.append("file_2", worldFile);
+        formData.append('code', code);
+        formData.append('userId', store.state.userId);
+        axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/imageUploadForUserTif1.php', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data', // 必須
+            },
+        })
+            .then(response => {
+
+                // 成功時の処理
+                // alert('成功')
+                if (response.data.error) {
+                    alert(response.data.error)
+                    return
+                }
+                console.log('イメージ保存成功:', response.data);
+                console.log('イメージ保存成功:', response.data.file_1.file);
+                console.log('イメージ保存成功:', response.data.file_2.file);
+                store.state.uploadedImage = JSON.stringify({
+                    image: response.data.file_1.file,
+                    worldFile: response.data.file_2.file,
+                    code: code,
+                    uid: store.state.userId,
+                })
+                store.state.fetchImagesFire = !store.state.fetchImagesFire
+                // alert(store.state.uploadedImage)
+            })
+            .catch(error => {
+                alert('失敗!')
+                store.state.uploadedImage = ''
+            });
+    }
+}
 
 export async function geoTiffLoadForUser2 (map,mapName,isUpload) {
     history('ユーザーGEOTIFF読込',window.location.href)

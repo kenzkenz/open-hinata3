@@ -3496,6 +3496,159 @@ const m500mLayerHeight = {
         ]
     }
 }
+// r02推計人口250m --------------------------------------------------------------------------------------------
+const r02suikei250mSource = {
+    id: "r02suikei250m-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/suikei/r02suikei250m.pmtiles",
+    }
+}
+const r02suikei250mLayer = {
+    id: "oh-r02suikei250m",
+    type: "fill",
+    source: "r02suikei250m-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': [
+            'case',
+            ['==', ['get', 'PTN_2070'], 0],
+            'rgba(196, 253, 187, 0.8)',
+            // 'rgba(0, 0, 255, 0.8)',
+            // Check if PTN_2050 or PTN_2020 is NaN
+            ['any',
+                ['!=', ['typeof', ['get', 'PTN_2070']], 'number'],
+                ['!=', ['typeof', ['get', 'PTN_2020']], 'number']
+            ],
+            'rgba(196, 253, 187, 0.8)', // Color for NaN
+            // 'rgba(0, 0, 255, 0.8)',
+            ['==', ['/', ['get', 'PTN_2070'], ['get', 'PTN_2020']], 0], 'rgba(196, 253, 187, 0.8)',
+            ['>', ['/', ['get', 'PTN_2070'], ['get', 'PTN_2020']], 1.1], 'rgba(255, 0, 0, 0.8)',
+            ['>', ['/', ['get', 'PTN_2070'], ['get', 'PTN_2020']], 1.0], 'rgba(184, 38, 25, 0.8)',
+            ['>', ['/', ['get', 'PTN_2070'], ['get', 'PTN_2020']], 0.7], 'rgba(89, 119, 246, 0.8)',
+            ['>', ['/', ['get', 'PTN_2070'], ['get', 'PTN_2020']], 0.5], 'rgba(97, 197, 250, 0.8)',
+            ['>', ['/', ['get', 'PTN_2070'], ['get', 'PTN_2020']], 0.00000000000001], 'rgba(140, 252, 114, 0.8)',
+            'rgba(0, 0, 0, 0)' // Default color (fully transparent)
+        ]
+    }
+}
+const r02suikei250mLayerLine = {
+    id: "ohr02-suikei250m-line",
+    type: "line",
+    source: "r02suikei250m-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
+// r02推計人口500m --------------------------------------------------------------------------------------------
+const r02suikei500mSource = {
+    id: "r02suikei500m-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/suikei/r02suikei500m.pmtiles",
+    }
+}
+const r02suikei500mLayer = {
+    id: "oh-r02suikei500m",
+    type: "fill",
+    source: "r02suikei500m-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': [
+            'case',
+            ['==', ['get', 'PTN_2070'], 0],
+            'rgba(196, 253, 187, 0.8)',
+            // 'rgba(0, 0, 255, 0.8)',
+            // Check if PTN_2050 or PTN_2020 is NaN
+            ['any',
+                ['!=', ['typeof', ['get', 'PTN_2070']], 'number'],
+                ['!=', ['typeof', ['get', 'PTN_2020']], 'number']
+            ],
+            'rgba(196, 253, 187, 0.8)', // Color for NaN
+            // 'rgba(0, 0, 255, 0.8)',
+            ['==', ['/', ['get', 'PTN_2070'], ['get', 'PTN_2020']], 0], 'rgba(196, 253, 187, 0.8)',
+            ['>', ['/', ['get', 'PTN_2070'], ['get', 'PTN_2020']], 1.1], 'rgba(255, 0, 0, 0.8)',
+            ['>', ['/', ['get', 'PTN_2070'], ['get', 'PTN_2020']], 1.0], 'rgba(184, 38, 25, 0.8)',
+            ['>', ['/', ['get', 'PTN_2070'], ['get', 'PTN_2020']], 0.7], 'rgba(89, 119, 246, 0.8)',
+            ['>', ['/', ['get', 'PTN_2070'], ['get', 'PTN_2020']], 0.5], 'rgba(97, 197, 250, 0.8)',
+            ['>', ['/', ['get', 'PTN_2070'], ['get', 'PTN_2020']], 0.00000000000001], 'rgba(140, 252, 114, 0.8)',
+            'rgba(0, 0, 0, 0)' // Default color (fully transparent)
+        ]
+    }
+}
+const r02suikei500mLayerLine = {
+    id: "ohr02-suikei500m-line",
+    type: "line",
+    source: "r02suikei500m-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
+// r02推計人口1km --------------------------------------------------------------------------------------------
+const r02suikei1kmSource = {
+    id: "r02suikei1km-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/suikei/r02suikei1km.pmtiles",
+    }
+}
+const r02suikei1kmLayer = {
+    id: "oh-r02suikei1km",
+    type: "fill",
+    source: "r02suikei1km-source",
+    "source-layer": "polygon",
+    'paint': {
+        'fill-color': [
+            'case',
+            ['==', ['get', 'PTN_2070'], 0],
+            'rgba(196, 253, 187, 0.8)',
+            // 'rgba(0, 0, 255, 0.8)',
+            // Check if PTN_2050 or PTN_2020 is NaN
+            ['any',
+                ['!=', ['typeof', ['get', 'PTN_2070']], 'number'],
+                ['!=', ['typeof', ['get', 'PTN_2020']], 'number']
+            ],
+            'rgba(196, 253, 187, 0.8)', // Color for NaN
+            // 'rgba(0, 0, 255, 0.8)',
+            ['==', ['/', ['get', 'PTN_2070'], ['get', 'PTN_2020']], 0], 'rgba(196, 253, 187, 0.8)',
+            ['>', ['/', ['get', 'PTN_2070'], ['get', 'PTN_2020']], 1.1], 'rgba(255, 0, 0, 0.8)',
+            ['>', ['/', ['get', 'PTN_2070'], ['get', 'PTN_2020']], 1.0], 'rgba(184, 38, 25, 0.8)',
+            ['>', ['/', ['get', 'PTN_2070'], ['get', 'PTN_2020']], 0.7], 'rgba(89, 119, 246, 0.8)',
+            ['>', ['/', ['get', 'PTN_2070'], ['get', 'PTN_2020']], 0.5], 'rgba(97, 197, 250, 0.8)',
+            ['>', ['/', ['get', 'PTN_2070'], ['get', 'PTN_2020']], 0.00000000000001], 'rgba(140, 252, 114, 0.8)',
+            'rgba(0, 0, 0, 0)' // Default color (fully transparent)
+        ]
+    }
+}
+const r02suikei1kmLayerLine = {
+    id: "ohr02-suikei1km-line",
+    type: "line",
+    source: "r02suikei1km-source",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': '#000',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            12, 0.5
+        ]
+    },
+}
 // 推計人口500mm --------------------------------------------------------------------------------------------
 const suikei500mSource = {
     id: "suikei500m-source", obj: {
@@ -8445,6 +8598,60 @@ const layers01 = [
                 layers: [chiriin250mLayerHeight],
                 attribution: '<a href="" target="_blank"></a>' +
                     '<img width="200px" src="' + require('@/assets/legend/kokusei_population.png') + '">',
+                info: true
+            },
+            {
+                id: 'oh-r02suikei250m',
+                label: "R02-250mメッシュ別将来推計人口",
+                source: r02suikei250mSource,
+                layers: [r02suikei250mLayer,r02suikei250mLayerLine],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-mesh250r6.html" target="_blank">国土数値情報</a>' +
+                    '<div class="legend-scale">' +
+                    '<ul class="legend-labels">' +
+                    '<li><span style="background:rgba(196, 253, 187, 0.8);"></span>無居住化</li>' +
+                    '<li><span style="background:rgba(140, 252, 114, 0.8);"></span>50%以上減少</li>' +
+                    '<li><span style="background:rgba(97, 197, 250, 0.8);"></span>30%以上50%未満減少</li>' +
+                    '<li><span style="background:rgba(89, 119, 246, 0.8);"></span>0%以上30%未満減少</li>' +
+                    '<li><span style="background:rgba(184, 38, 25, 0.8);"></span>増加</li>' +
+                    '<li><span style="background:rgba(255, 0, 0, 0.8);"></span>さらに増加</li>' +
+                    '</ul>' +
+                    '</div>',
+                info: true
+            },
+            {
+                id: 'oh-r02suikei500m',
+                label: "R02-500mメッシュ別将来推計人口",
+                source: r02suikei500mSource,
+                layers: [r02suikei500mLayer,r02suikei500mLayerLine],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-mesh500r6.html" target="_blank">国土数値情報</a>' +
+                    '<div class="legend-scale">' +
+                    '<ul class="legend-labels">' +
+                    '<li><span style="background:rgba(196, 253, 187, 0.8);"></span>無居住化</li>' +
+                    '<li><span style="background:rgba(140, 252, 114, 0.8);"></span>50%以上減少</li>' +
+                    '<li><span style="background:rgba(97, 197, 250, 0.8);"></span>30%以上50%未満減少</li>' +
+                    '<li><span style="background:rgba(89, 119, 246, 0.8);"></span>0%以上30%未満減少</li>' +
+                    '<li><span style="background:rgba(184, 38, 25, 0.8);"></span>増加</li>' +
+                    '<li><span style="background:rgba(255, 0, 0, 0.8);"></span>さらに増加</li>' +
+                    '</ul>' +
+                    '</div>',
+                info: true
+            },
+            {
+                id: 'oh-r02suikei1km',
+                label: "R02-1kmメッシュ別将来推計人口",
+                source: r02suikei1kmSource,
+                layers: [r02suikei1kmLayer,r02suikei1kmLayerLine],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-mesh1000r6.html" target="_blank">国土数値情報</a>' +
+                    '<div class="legend-scale">' +
+                    '<ul class="legend-labels">' +
+                    '<li><span style="background:rgba(196, 253, 187, 0.8);"></span>無居住化</li>' +
+                    '<li><span style="background:rgba(140, 252, 114, 0.8);"></span>50%以上減少</li>' +
+                    '<li><span style="background:rgba(97, 197, 250, 0.8);"></span>30%以上50%未満減少</li>' +
+                    '<li><span style="background:rgba(89, 119, 246, 0.8);"></span>0%以上30%未満減少</li>' +
+                    '<li><span style="background:rgba(184, 38, 25, 0.8);"></span>増加</li>' +
+                    '<li><span style="background:rgba(255, 0, 0, 0.8);"></span>さらに増加</li>' +
+                    '</ul>' +
+                    '</div>',
                 info: true
             },
             {
