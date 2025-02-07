@@ -134,7 +134,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 <script>
 
 
-import {addImageLayer} from "@/js/downLoad";
+import {addImageLayer, addImageLayerJpg} from "@/js/downLoad";
 
 const getFirebaseUid = async () => {
   if (!user.value) return;
@@ -378,6 +378,8 @@ export default {
       const url = image
       const tifUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.tif');
       const tfwUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.tfw');
+      const jpgUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.jpg');
+      const jgwUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.jgw');
       const vm = this
       // tifファイルのとき-------------------------------------------------------
       checkFileExists(tifUrl).then(exists => {
@@ -415,6 +417,25 @@ export default {
                   // alert(`画像がクリックされました: ${image}`);
                 }
               })
+            }
+      })
+      // jpgファイルのとき-------------------------------------------------------
+      checkFileExists(jpgUrl).then(exists => {
+            if (exists) {
+              Promise.all([fetchFile(jpgUrl), fetchFile(jgwUrl)]).then(files => {
+                const image = files[0]
+                const worldFile = files[1]
+                const match = url.match(/thumbnail-(.*?)-/);
+                let code = match ? match[1] : null;
+                code = code.replace(/(EPSG)(\d+)/, '$1:$2');
+                addImageLayerJpg(image, worldFile, code, true)
+                vm.$store.state.uploadedImage = JSON.stringify({
+                  image: jpgUrl.split('/').pop(),
+                  worldFile: jgwUrl.split('/').pop(),
+                  code: code,
+                  uid: vm.$store.state.userId
+                })
+              });
             }
       })
 

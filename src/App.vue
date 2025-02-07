@@ -198,7 +198,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                         outlined
               ></v-select>
             </div>
-            <v-btn @click="pngLoad">png読込開始</v-btn>
+            <v-btn @click="pngLoad0">png読込開始</v-btn>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -323,7 +323,7 @@ import {
   geoTiffLoad, geoTiffLoad2, geoTiffLoadForUser1, geoTiffLoadForUser2, getCRS,
   handleFileUpload,
   highlightSpecificFeatures,
-  highlightSpecificFeaturesCity, jpgLoad,
+  highlightSpecificFeaturesCity, jpgLoad, jpgLoadForUser,
   pngDownload, pngLoad, transformGeoJSONToEPSG4326,
   zahyokei
 } from '@/js/downLoad'
@@ -797,7 +797,7 @@ export default {
       geojsonAddLayer (map02, geojson, true, 'dxf')
       this.dialogForDxfApp = false
     },
-    pngLoad () {
+    pngLoad0 () {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
       pngLoad (map01,'map01', true)
@@ -807,8 +807,13 @@ export default {
     jpgLoad0 () {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
-      jpgLoad (map01,'map01', true)
-      jpgLoad (map02,'map02', false)
+      if (this.$store.state.userId) {
+        jpgLoadForUser (map01,'map01', true)
+        jpgLoadForUser (map02,'map01', false)
+      } else {
+        jpgLoad (map01,'map01', true)
+        jpgLoad (map02,'map02', false)
+      }
       this.s_dialogForJpgApp = false
     },
     geoTiffLoad0 () {

@@ -3572,6 +3572,74 @@ function resizeImage(image, maxSize) {
 //         }, 0);
 //     }
 // }
+
+export async function jpgLoadForUser (map,mapName,isUpload) {
+    const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
+    const files = store.state.tiffAndWorldFile
+    let jpgFile = null;
+    let worldFile = null;
+
+    // ファイルをペアリング
+    for (const file of files) {
+        if (file.name.endsWith('.jpg') || file.name.endsWith('.jpeg')) {
+            jpgFile = file;
+        } else if (file.name.endsWith('.jgw') || file.name.endsWith('.wld')) {
+            worldFile = file;
+        }
+    }
+
+    if (!jpgFile) {
+        // alert('GeoTIFFファイル（.tif）をドラッグ＆ドロップしてください。');
+        return;
+    }
+    if (!worldFile) {
+        // alert('対応するワールドファイル（.tfw）も必要です。');
+        return;
+    }
+
+    await addImageLayerJpg(jpgFile, worldFile, code, true)
+
+    //----------------------------------------------------------------------------------------------------------------
+    if (isUpload) {
+        // FormDataを作成
+        const formData = new FormData();
+        formData.append('file_1', jpgFile);
+        formData.append("file_2", worldFile);
+        formData.append('code', code);
+        formData.append('userId', store.state.userId);
+        axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/imageUploadJpgForUser.php', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data', // 必須
+            },
+        })
+            .then(response => {
+                // 成功時の処理
+                if (response.data.error) {
+                    console.log(response.data.error)
+                    alert(response.data.error)
+                    return
+                }
+                console.log('イメージ保存成功:', response.data.file_1.file);
+                console.log('イメージ保存成功:', response.data.file_2.file);
+                console.log(response)
+                store.state.uploadedImage = JSON.stringify({
+                    image: response.data.file_1.file,
+                    worldFile: response.data.file_2.file,
+                    code: code,
+                    uid: store.state.userId,
+                })
+                store.state.fetchImagesFire = !store.state.fetchImagesFire
+                console.log(store.state.uploadedImage)
+            })
+            .catch(error => {
+                // エラー時の処理
+                console.error('エラー:', error.response ? error.response.data : error.message);
+                store.state.uploadedImage = ''
+            });
+    }
+}
+
+
 export async function geoTiffLoadForUser1 (map,mapName,isUpload) {
     const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
     const files = store.state.tiffAndWorldFile
