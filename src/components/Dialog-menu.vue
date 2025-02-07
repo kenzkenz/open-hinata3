@@ -6,6 +6,49 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div class="menu-div">
 
+
+      <v-dialog v-model="s_dialogForLogin" max-width="500px">
+        <v-card>
+          <v-card-title>
+            <p v-if="user1">ようこそ、{{ user1.displayName }}さん！</p>
+          </v-card-title>
+          <v-card-text>
+
+            <div style="margin-top: 10px;">
+              <v-btn v-if="!user1" @click="loginDiv=!loginDiv,signUpDiv=false">ログイン</v-btn><v-btn v-if="user1" @click="logOut">ログアウト</v-btn>
+              <v-btn style="margin-left: 10px;" v-if="!user1" @click="signUpDiv=!signUpDiv,loginDiv=false">新規登録</v-btn>
+
+              <div v-if="loginDiv" style="margin-top: 10px;">
+                <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
+                <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>
+                <v-btn @click="login">ログインします</v-btn>
+                <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
+              </div>
+            </div>
+            <div style="margin-top: 10px;">
+
+              <div v-if="signUpDiv" style="margin-top: 10px;">
+                <v-text-field  v-model="nickname" type="text" placeholder="ニックネーム"></v-text-field>
+                <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
+                <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>
+                <v-btn @click="signUp">新規登録します</v-btn>
+                <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
+              </div>
+            </div>
+
+
+
+
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="s_dialogForLogin = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+
+
       <v-dialog v-model="s_dialogForImage" :scrim="false" persistent="false" max-width="500px">
         <v-card>
           <v-card-title>
@@ -34,29 +77,29 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <p v-if="user1">ようこそ、{{ user1.displayName || "ゲスト" }}さん！</p>
         <p v-else></p>
       </div>
-      <hr>
+<!--      <hr>-->
 
-      <div style="margin-top: 10px;">
-        <v-btn @click="loginDiv=!loginDiv">ログイン</v-btn><v-btn style="margin-left: 10px;" @click="logOut">ログアウト</v-btn>
-        <div v-if="loginDiv" style="margin-top: 10px;">
-          <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
-          <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>
-          <v-btn @click="login">ログインします</v-btn>
-          <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
-        </div>
-      </div>
-      <hr style="margin-top: 10px;">
-      <div style="margin-top: 10px;">
-        <v-btn @click="signUpDiv=!signUpDiv">新規登録</v-btn>
-        <div v-if="signUpDiv" style="margin-top: 10px;">
-          <v-text-field  v-model="nickname" type="text" placeholder="ニックネーム"></v-text-field>
-          <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
-          <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>
-          <v-btn @click="signUp">新規登録します</v-btn>
-          <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
-        </div>
-      </div>
-      <hr style="margin-top: 10px;">
+<!--      <div style="margin-top: 10px;">-->
+<!--        <v-btn @click="loginDiv=!loginDiv">ログイン</v-btn><v-btn style="margin-left: 10px;" @click="logOut">ログアウト</v-btn>-->
+<!--        <div v-if="loginDiv" style="margin-top: 10px;">-->
+<!--          <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>-->
+<!--          <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>-->
+<!--          <v-btn @click="login">ログインします</v-btn>-->
+<!--          <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--      <hr style="margin-top: 10px;">-->
+<!--      <div style="margin-top: 10px;">-->
+<!--        <v-btn @click="signUpDiv=!signUpDiv">新規登録</v-btn>-->
+<!--        <div v-if="signUpDiv" style="margin-top: 10px;">-->
+<!--          <v-text-field  v-model="nickname" type="text" placeholder="ニックネーム"></v-text-field>-->
+<!--          <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>-->
+<!--          <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>-->
+<!--          <v-btn @click="signUp">新規登録します</v-btn>-->
+<!--          <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--      <hr style="margin-top: 10px;">-->
       v0.525<br>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
@@ -178,6 +221,14 @@ export default {
     signUpDiv: false,
   }),
   computed: {
+    s_dialogForLogin: {
+      get() {
+        return this.$store.state.dialogForLogin
+      },
+      set(value) {
+        this.$store.state.dialogForLogin = value
+      }
+    },
     s_dialogForImage: {
       get() {
         return this.$store.state.dialogForImage

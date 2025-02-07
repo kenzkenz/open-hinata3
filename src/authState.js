@@ -4,7 +4,6 @@ import { onAuthStateChanged } from "firebase/auth";
 
 // ユーザー情報を保存するリアクティブな変数
 const user = ref(null);
-
 // 認証状態を監視する関数
 onAuthStateChanged(auth, (firebaseUser) => {
     if (firebaseUser) {

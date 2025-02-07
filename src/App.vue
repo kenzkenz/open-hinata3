@@ -262,7 +262,8 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
           <div class="center-target"></div>
           <div id="left-top-div">
-            <v-btn icon @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-menu</v-icon></v-btn>
+            <v-btn icon @click="s_dialogForLogin = !s_dialogForLogin" v-if="mapName === 'map01'"><v-icon>mdi-login</v-icon></v-btn>
+            <v-btn icon style="margin-left:10px;" @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-menu</v-icon></v-btn>
             <v-btn icon style="margin-left:10px;" @click="btnClickSplit" v-if="mapName === 'map01'"><v-icon>mdi-monitor-multiple</v-icon></v-btn>
             <v-btn icon style="margin-left:10px;" @click="btnClickLayer(mapName)"><v-icon>mdi-layers</v-icon></v-btn>
             <v-btn v-if="user1" icon style="margin-left:10px;" @click="s_dialogForImage = !s_dialogForImage"><v-icon v-if="user1">mdi-image</v-icon></v-btn>
@@ -677,6 +678,14 @@ export default {
       },
       set(value) {
         this.$store.state.simaOpacity = value
+      }
+    },
+    s_dialogForLogin: {
+      get() {
+        return this.$store.state.dialogForLogin
+      },
+      set(value) {
+        this.$store.state.dialogForLogin = value
       }
     },
     s_dialogForPngApp: {
