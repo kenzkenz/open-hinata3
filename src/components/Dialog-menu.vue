@@ -55,7 +55,8 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
           </v-card-title>
           <v-card-text>
             <div style="margin-bottom: 10px;">
-              <p v-if="user1">ようこそ、{{ user1.displayName }}さん！</p>
+<!--              <p v-if="user1">ようこそ、{{ user1.displayName }}さん！</p>-->
+              <p style="margin-bottom: 10px;">ドラッグ&ドロップされたgeotif,jpg,pngが表示されます。</p>
               <div class="image-grid">
                 <div v-for="item in images" :key="item" class="image-container">
                   <img :src="item" class="gallery-image" @click="handleImageClick(item)" />
@@ -77,30 +78,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <p v-if="user1">ようこそ、{{ user1.displayName || "ゲスト" }}さん！</p>
         <p v-else></p>
       </div>
-<!--      <hr>-->
-
-<!--      <div style="margin-top: 10px;">-->
-<!--        <v-btn @click="loginDiv=!loginDiv">ログイン</v-btn><v-btn style="margin-left: 10px;" @click="logOut">ログアウト</v-btn>-->
-<!--        <div v-if="loginDiv" style="margin-top: 10px;">-->
-<!--          <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>-->
-<!--          <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>-->
-<!--          <v-btn @click="login">ログインします</v-btn>-->
-<!--          <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>-->
-<!--        </div>-->
-<!--      </div>-->
-<!--      <hr style="margin-top: 10px;">-->
-<!--      <div style="margin-top: 10px;">-->
-<!--        <v-btn @click="signUpDiv=!signUpDiv">新規登録</v-btn>-->
-<!--        <div v-if="signUpDiv" style="margin-top: 10px;">-->
-<!--          <v-text-field  v-model="nickname" type="text" placeholder="ニックネーム"></v-text-field>-->
-<!--          <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>-->
-<!--          <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>-->
-<!--          <v-btn @click="signUp">新規登録します</v-btn>-->
-<!--          <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>-->
-<!--        </div>-->
-<!--      </div>-->
-<!--      <hr style="margin-top: 10px;">-->
-      v0.525<br>
+      v0.526<br>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 
