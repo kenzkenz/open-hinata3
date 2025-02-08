@@ -333,7 +333,7 @@ export default {
         const bearing = parseFloat(params.get('bearing'))
         const terrainLevel = parseFloat(params.get('terrainLevel'))
         const chibans = params.get('chibans')
-        const simaJson = JSON.parse(params.get('simatext'))
+        const simaText = params.get('simatext')
         const image = params.get('image')
         const extLayer = params.get('extlayer')
         const kmlText = params.get('kmltext')
@@ -350,12 +350,13 @@ export default {
         } else {
           vm.$store.state.map2Flg = false
         }
-        vm.$store.state.simaText = params.get('simatext')
-        const simaText = simaJson.text
-        const simaZahyokei = simaJson.zahyokei
-        const simaOpacity = simaJson.opacity
-        simaToGeoJSON(simaText, map, simaZahyokei, false)
-
+        vm.$store.state.simaText = simaText
+        if (simaText) {
+          const simaData = JSON.parse(simaText).text
+          const simaZahyokei = JSON.parse(simaText).zahyokei
+          const simaOpacity = JSON.parse(simaText).opacity
+          simaToGeoJSON(simaData, map, simaZahyokei, false)
+        }
 
         const slj0 = JSON.parse(params.get('slj'))
         const mapNames = ['map01', 'map02']
