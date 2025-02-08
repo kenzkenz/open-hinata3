@@ -73,11 +73,8 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         </v-card>
       </v-dialog>
 
-
-
-
-
-      <v-dialog v-model="s_dialogForImage" :scrim="false" persistent="false" max-width="500px">
+      
+      <v-dialog v-model="s_dialogForImage" :scrim="false" persistent="false" max-width="500px" height="300px">
         <v-card>
           <v-card-title>
           </v-card-title>

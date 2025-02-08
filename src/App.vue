@@ -263,20 +263,20 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
           <div class="center-target"></div>
           <!--          左上部メニュー-->
           <div id="left-top-div">
-            <v-btn icon @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-menu</v-icon></v-btn>
-            <v-btn icon style="margin-left:10px;" @click="s_dialogForLogin = !s_dialogForLogin" v-if="mapName === 'map01'"><v-icon>mdi-login</v-icon></v-btn>
-            <v-btn icon style="margin-left:10px;" @click="btnClickSplit" v-if="mapName === 'map01'"><v-icon>mdi-monitor-multiple</v-icon></v-btn>
-            <v-btn v-if="user1 && mapName === 'map01'" icon style="margin-left:10px;" @click="s_dialogForLink = !s_dialogForLink"><v-icon v-if="user1">mdi-link</v-icon></v-btn>
-            <v-btn v-if="user1 && mapName === 'map01'" icon style="margin-left:10px;" @click="s_dialogForImage = !s_dialogForImage"><v-icon v-if="user1">mdi-image</v-icon></v-btn>
-            <v-btn icon style="margin-left:10px;" @click="btnClickLayer(mapName)"><v-icon>mdi-layers</v-icon></v-btn>
+            <v-btn :size="isSmall ? 'small' : 'default'" icon @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-menu</v-icon></v-btn>
+            <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:10px;" @click="s_dialogForLogin = !s_dialogForLogin" v-if="mapName === 'map01'"><v-icon>mdi-login</v-icon></v-btn>
+            <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:10px;" @click="btnClickSplit" v-if="mapName === 'map01'"><v-icon>mdi-monitor-multiple</v-icon></v-btn>
+            <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:10px;" @click="s_dialogForLink = !s_dialogForLink"><v-icon v-if="user1">mdi-link</v-icon></v-btn>
+            <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:10px;" @click="s_dialogForImage = !s_dialogForImage"><v-icon v-if="user1">mdi-image</v-icon></v-btn>
+            <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:10px;" @click="btnClickLayer(mapName)"><v-icon>mdi-layers</v-icon></v-btn>
           </div>
           <!--          右メニュー-->
           <div id="right-top-div">
-            <v-btn icon @click="goToCurrentLocation" v-if="mapName === 'map01'"><v-icon>mdi-crosshairs-gps</v-icon></v-btn>
-            <v-btn class="watch-position" :color="isTracking ? 'green' : undefined" icon @click="toggleWatchPosition" v-if="mapName === 'map01'"><v-icon>mdi-map-marker-radius</v-icon></v-btn>
-            <v-btn class="zoom-in" icon @click="zoomIn" v-if="mapName === 'map01'"><v-icon>mdi-plus</v-icon></v-btn>
-            <v-btn class="zoom-out" icon @click="zoomOut" v-if="mapName === 'map01'"><v-icon>mdi-minus</v-icon></v-btn>
-            <v-btn class="share" icon @click="share(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-share-variant</v-icon></v-btn>
+            <v-btn :size="isSmall ? 'small' : 'default'" icon @click="goToCurrentLocation" v-if="mapName === 'map01'"><v-icon>mdi-crosshairs-gps</v-icon></v-btn>
+            <v-btn :size="isSmall ? 'small' : 'default'" class="watch-position" :color="isTracking ? 'green' : undefined" icon @click="toggleWatchPosition" v-if="mapName === 'map01'"><v-icon>mdi-map-marker-radius</v-icon></v-btn>
+            <v-btn :size="isSmall ? 'small' : 'default'" class="zoom-in" icon @click="zoomIn" v-if="mapName === 'map01'"><v-icon>mdi-plus</v-icon></v-btn>
+            <v-btn :size="isSmall ? 'small' : 'default'" class="zoom-out" icon @click="zoomOut" v-if="mapName === 'map01'"><v-icon>mdi-minus</v-icon></v-btn>
+            <v-btn :size="isSmall ? 'small' : 'default'" class="share" icon @click="share(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-share-variant</v-icon></v-btn>
           </div>
 
           <DialogMenu :mapName=mapName />
@@ -662,8 +662,12 @@ export default {
       '公共座標19系'
     ],
     dialogForDxfApp: false,
+    windowWidth: window.innerWidth,
   }),
   computed: {
+    isSmall() {
+      return this.windowWidth <= 500;
+    },
     s_map2Flg: {
       get() {
         return this.$store.state.map2Flg
@@ -792,6 +796,9 @@ export default {
     },
   },
   methods: {
+    onResize() {
+      this.windowWidth = window.innerWidth;
+    },
     simaDelete () {
       const geoJSON = {
         type: 'FeatureCollection',
@@ -816,34 +823,68 @@ export default {
       geojsonAddLayer (map02, geojson, true, 'dxf')
       this.dialogForDxfApp = false
     },
-    pngLoad () {
+    pngLoad0 () {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
-      pngLoad (map01,'map01', true)
-      pngLoad (map02,'map02', false)
+      if (this.$store.state.userId) {
+        pngLoadForUser (map01,'map01', true)
+        pngLoadForUser (map02,'map02', false)
+      } else {
+        pngLoad (map01,'map01', true)
+        pngLoad (map02,'map02', false)
+      }
       this.s_dialogForPng2App = false
     },
-    jpgLoad () {
+    jpgLoad0 () {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
-      jpgLoad (map01,'map01', true)
-      jpgLoad (map02,'map02', false)
+      if (this.$store.state.userId) {
+        jpgLoadForUser (map01,'map01', true)
+        jpgLoadForUser (map02,'map01', false)
+      } else {
+        jpgLoad (map01,'map01', true)
+        jpgLoad (map02,'map02', false)
+      }
       this.s_dialogForJpgApp = false
     },
-    geoTiffLoad () {
+    geoTiffLoad0 () {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
-      geoTiffLoad (map01,'map01', true)
-      geoTiffLoad (map02,'map02', false)
+      if (this.$store.state.userId) {
+        geoTiffLoadForUser1(map01, 'map01', true)
+        geoTiffLoadForUser1(map02, 'map01', false)
+      } else {
+        geoTiffLoad (map01,'map01', true)
+        geoTiffLoad (map02,'map02', false)
+      }
       this.s_dialogForGeotiffApp = false
     },
-    geoTiffLoad2 () {
+    geoTiffLoad20 () {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
-      geoTiffLoad2 (map01,'map01', true)
-      geoTiffLoad2 (map02,'map02', false)
+      if (this.$store.state.userId) {
+        geoTiffLoadForUser2 (map01,'map01', true)
+        geoTiffLoadForUser2 (map02,'map01', false)
+      } else {
+        geoTiffLoad2 (map01,'map01', true)
+        geoTiffLoad2 (map02,'map02', false)
+      }
       this.s_dialogForGeotiff2App = false
     },
+    // geoTiffLoad () {
+    //   const map01 = this.$store.state.map01
+    //   const map02 = this.$store.state.map02
+    //   geoTiffLoad (map01,'map01', true)
+    //   geoTiffLoad (map02,'map02', false)
+    //   this.s_dialogForGeotiffApp = false
+    // },
+    // geoTiffLoad2 () {
+    //   const map01 = this.$store.state.map01
+    //   const map02 = this.$store.state.map02
+    //   geoTiffLoad2 (map01,'map01', true)
+    //   geoTiffLoad2 (map02,'map02', false)
+    //   this.s_dialogForGeotiff2App = false
+    // },
     simaOpacityInput () {
       const map1 = this.$store.state.map01
       const map2 = this.$store.state.map02
@@ -2200,7 +2241,7 @@ export default {
                   const zahyokei = await getCRS(Array.from(e.dataTransfer.files)[0])
                   if (zahyokei) {
                     this.$store.state.zahyokei = zahyokei
-                    this.geoTiffLoad2()
+                    this.geoTiffLoad20()
                   } else {
                     this.s_dialogForGeotiff2App = true
                   }
@@ -2727,9 +2768,15 @@ export default {
     console.log(/android/i.test(userAgent))
     this.$store.state.isAndroid = /android/i.test(userAgent);
   },
+  beforeUnmount() {
+    window.removeEventListener("resize", this.onResize);
+  },
   mounted() {
     // this.$store.state.highlightedChibans = new Set()
     const vm = this
+
+    window.addEventListener("resize", this.onResize);
+
     // -----------------------------------------------------------------------------------------------------------------
     this.mapNames.forEach(mapName => {
       const myDiv = document.getElementById("terrain-btn-div-" + mapName)
