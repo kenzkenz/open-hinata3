@@ -427,17 +427,9 @@ export default {
         const kmlText = match ? match[1] : null;
         if (kmlText) vm.$store.state.kmlText = kmlText
 
-
-        map.once('moveend', () => {
-          setTimeout(() => {
-            console.log("flyTo完了");
-            const match1 = response.data.match(/dxftext=(.*?)&/s);
-            const dxfText1 = match1 ? match1[1] : null;
-            if (dxfText1) vm.$store.state.dxfText = dxfText1
-          },2000)
-
-        });
-
+        const match1 = response.data.match(/dxftext=(.*?)&/s);
+        const dxfText1 = match1 ? match1[1] : null;
+        if (dxfText1) vm.$store.state.dxfText = dxfText1
 
         if (geojsonText) vm.$store.state.geojsonText = geojsonText
         if (gpxText) vm.$store.state.gpxText = gpxText
