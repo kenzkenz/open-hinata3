@@ -47,16 +47,22 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         </v-card>
       </v-dialog>
 
-
-      <v-dialog v-model="s_dialogForLink" :scrim="false" persistent="false" max-width="500px">
+<!--URL記録-->
+      <v-dialog v-model="s_dialogForLink" :scrim="false" persistent="false" max-width="500px" height="500px">
         <v-card>
           <v-card-title>
           </v-card-title>
           <v-card-text>
             <div style="margin-bottom: 10px;">
-              <v-btn @click="urlSave">URL記憶</v-btn>
-
-
+              <v-text-field  v-model="nickname" type="text" placeholder="ネーム"></v-text-field>
+              <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="urlSave">URL記憶</v-btn>
+              <div v-for="item in jsonData" :key="item.id" class="data-container">
+                <button class="close-btn" @click="removeItem(item.id)">×</button>
+<!--                <strong>ID:</strong> {{ item.id }} <br>-->
+                <strong>Name:</strong> {{ item.name }}
+                <strong>URL:</strong> {{ item.url }}
+<!--                <strong>Date:</strong> {{ item.date }}-->
+              </div>
 
             </div>
           </v-card-text>
@@ -208,6 +214,7 @@ export default {
     // MasonryWall,
   },
   data: () => ({
+    jsonData: null,
     uid: null,
     images: [],
     email: '',
@@ -293,7 +300,57 @@ export default {
     },
   },
   methods: {
+    removeItem (id) {
+      if (!confirm("削除しますか？")) {
+        return
+      }
+      const vm = this
+      async function deleteUserData(id) {
+        try {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userDbDelete.php', {
+            params: { id: id }
+          });
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            console.log('削除成功:', response.data);
+            // vm.urlSelect(vm.$store.state.userId)
+            vm.jsonData = vm.jsonData.filter(item => item.id !== id);
+          }
+        } catch (error) {
+          console.error('通信エラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      deleteUserData(id)
+    },
+    urlSelect (uid) {
+      const vm = this
+      async function fetchUserData(uid) {
+        try {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userDbSelect.php', {
+            params: { uid: uid }
+          });
+
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            console.log('取得データ:', response.data);
+            console.log(JSON.stringify(response.data, null, 2))
+            // alert(`取得成功！\nデータ: ${JSON.stringify(response.data, null, 2)}`);
+            vm.jsonData = response.data
+          }
+        } catch (error) {
+          console.error('通信エラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      fetchUserData(uid)
+    },
     urlSave () {
+      const vm = this
       async function insertUserData(uid, name, url) {
         try {
           const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userDbInsert.php', new URLSearchParams({
@@ -306,7 +363,8 @@ export default {
             alert(`エラー: ${response.data.error}`);
           } else {
             console.log('登録成功:', response.data);
-            alert(`登録成功！\nName: ${response.data.name}\nURL: ${response.data.url}`);
+            // alert(`登録成功！\nid: ${response.data.id}\nuid: ${response.data.uid}\nName: ${response.data.name}\nURL: ${response.data.url}`);
+            vm.urlSelect(vm.$store.state.userId)
           }
         } catch (error) {
           console.error('通信エラー:', error);
@@ -742,6 +800,7 @@ export default {
         this.$store.state.userId = user._rawValue.uid
         clearInterval(checkUser); // UIDを取得できたら監視を停止
         this.fetchImages(this.uid); // UIDを取得した後に fetchImages を実行
+        this.urlSelect(this.uid)
       }
     }, 5);
 
@@ -800,6 +859,22 @@ export default {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+}
+.data-container {
+  padding: 5px;
+  border: 1px solid #ddd;
+  margin-bottom: 5px;
+  position: relative;
+}
+.close-btn {
+  position: absolute;
+  top: -10px;
+  right: 10px;
+  color: black;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 30px;
 }
 </style>
 

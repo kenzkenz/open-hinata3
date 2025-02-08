@@ -24,11 +24,15 @@ try {
         ':uid' => $uid
     ]);
 
+    // 挿入された行のIDを取得
+    $lastId = $pdo->lastInsertId();
+
     // 成功した場合のレスポンス
-    echo json_encode(["name" => $name, "url" => $url, "uid" => $uid]);
+    echo json_encode(["id" => $lastId, "name" => $name, "url" => $url, "uid" => $uid]);
 
 } catch (PDOException $e) {
     echo json_encode(["error" => "データベースエラー: " . $e->getMessage()]);
 }
 ?>
+
 
