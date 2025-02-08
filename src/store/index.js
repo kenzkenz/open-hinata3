@@ -98,6 +98,7 @@ export default createStore({
     dialogForApp: false,
     dialogForImage: false,
     dialogForLogin: false,
+    dialogForLink: false,
     isMenu: false,
     isAndroid: false,
     simaOpacity: 0.7,

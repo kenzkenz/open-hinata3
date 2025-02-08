@@ -48,6 +48,28 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
 
+      <v-dialog v-model="s_dialogForLink" :scrim="false" persistent="false" max-width="500px">
+        <v-card>
+          <v-card-title>
+          </v-card-title>
+          <v-card-text>
+            <div style="margin-bottom: 10px;">
+              <v-btn @click="urlSave">URL記憶</v-btn>
+
+
+
+            </div>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="s_dialogForLink = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+
+
+
 
       <v-dialog v-model="s_dialogForImage" :scrim="false" persistent="false" max-width="500px">
         <v-card>
@@ -55,7 +77,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
           </v-card-title>
           <v-card-text>
             <div style="margin-bottom: 10px;">
-<!--              <p v-if="user1">ようこそ、{{ user1.displayName }}さん！</p>-->
               <p style="margin-bottom: 10px;">ドラッグ&ドロップされたgeotif,jpg,pngが表示されます。</p>
               <div class="image-grid">
                 <div v-for="item in images" :key="item" class="image-container">
@@ -200,6 +221,14 @@ export default {
     signUpDiv: false,
   }),
   computed: {
+    s_dialogForLink: {
+      get() {
+        return this.$store.state.dialogForLink
+      },
+      set(value) {
+        this.$store.state.dialogForLink = value
+      }
+    },
     s_dialogForLogin: {
       get() {
         return this.$store.state.dialogForLogin
@@ -264,6 +293,28 @@ export default {
     },
   },
   methods: {
+    urlSave () {
+      async function insertUserData(uid, name, url) {
+        try {
+          const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userDbInsert.php', new URLSearchParams({
+            uid:uid,
+            name: name,
+            url: url
+          }));
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            console.log('登録成功:', response.data);
+            alert(`登録成功！\nName: ${response.data.name}\nURL: ${response.data.url}`);
+          }
+        } catch (error) {
+          console.error('通信エラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      insertUserData(this.$store.state.userId,'bbb','ccc')
+    },
     async fetchImages() {
       try {
         const url = `https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/${this.uid}/`
