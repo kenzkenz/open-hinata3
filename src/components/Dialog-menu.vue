@@ -135,7 +135,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 <script>
 
 
-import {addImageLayer, addImageLayerJpg, addImageLayerPng, simaToGeoJSON} from "@/js/downLoad";
+import {addImageLayer, addImageLayerJpg, addImageLayerPng, geojsonAddLayer, simaToGeoJSON} from "@/js/downLoad";
 
 const getFirebaseUid = async () => {
   if (!user.value) return;
@@ -202,6 +202,7 @@ import { auth } from "@/firebase";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut } from "firebase/auth";
 import store from "@/store";
 import * as Layers from "@/js/layers";
+import {kml} from "@tmcw/togeojson";
 // import MasonryWall from '@yeger/vue-masonry-wall'
 
 export default {
@@ -299,6 +300,25 @@ export default {
   },
   methods: {
     urlClick (url) {
+      async function fetchFile(url) {
+        try {
+          // Fetchリクエストでファイルを取得
+          const response = await fetch(url);
+          // レスポンスが成功したか確認
+          if (!response.ok) {
+            throw new Error(`HTTPエラー! ステータス: ${response.status}`);
+          }
+          // Blobとしてレスポンスを取得
+          const blob = await response.blob();
+          // BlobをFileオブジェクトに変換
+          const file = new File([blob], "downloaded_file", { type: blob.type });
+          console.log("Fileオブジェクトが作成されました:", file);
+          return file;
+        } catch (error) {
+          console.error("ファイルの取得中にエラーが発生しました:", error);
+        }
+      }
+      //-------------------------------------------------------------------------------------
       const vm = this
       const map = this.$store.state.map01
       const urlid = new URL(url).searchParams.get('s')
@@ -332,7 +352,7 @@ export default {
         const simaText = params.get('simatext')
         const image = params.get('image')
         const extLayer = params.get('extlayer')
-        const kmlText = params.get('kmltext')
+        // let kmlText = params.get('kmltext')
         const geojsonText = params.get('geojsontext')
         const dxfText = params.get('dxftext')
         const gpxText = params.get('gpxtext')
@@ -354,15 +374,52 @@ export default {
           simaToGeoJSON(simaData, map, simaZahyokei, false)
         }
 
-        if (image) {
+        console.log(image)
+        if (image && image != '""') {
+          const uploadImage = JSON.parse(JSON.parse(image))
           vm.$store.state.uploadedImage = JSON.parse(image)
-          console.log(JSON.parse(image))
+          const image0 = uploadImage.image
+          const code = uploadImage.code
+          const uid = uploadImage.uid
+          const worldFile = uploadImage.worldFile
+          const imageUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/' + uid + '/' + image0
+          const worldFileUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/' + uid + '/' + worldFile
+          const extension = imageUrl.split('.').pop();
+          switch (extension) {
+            case 'tif':
+              if (worldFileUrl) {
+                Promise.all([fetchFile(imageUrl), fetchFile(worldFileUrl)]).then(files => {
+                  const image = files[0]
+                  const worldFile = files[1]
+                  addImageLayer(image, worldFile, code, false)
+                })
+              } else {
+                Promise.all([fetchFile(imageUrl)]).then(files => {
+                  const image = files[0]
+                  addImageLayer(image, null, code, false)
+                })
+              }
+              break
+            case 'jpg':
+              Promise.all([fetchFile(imageUrl), fetchFile(worldFileUrl)]).then(files => {
+                const image = files[0]
+                const worldFile = files[1]
+                addImageLayerJpg(image, worldFile, code, false)
+              })
+              break
+            case 'png':
+              Promise.all([fetchFile(imageUrl), fetchFile(worldFileUrl)]).then(files => {
+                const image = files[0]
+                const worldFile = files[1]
+                addImageLayerPng(image, worldFile, code, false)
+              })
+              break
+          }
         }
-
-
-
-
-
+        // 謎の現象を回避するため正規表現でKMLを取得する。
+        const match = response.data.match(/kmltext=(.*?)&geojson/s);
+        const kmlText = match ? match[1] : null;
+        if (kmlText) vm.$store.state.kmlText = kmlText
 
 
 

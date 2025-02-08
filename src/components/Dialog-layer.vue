@@ -663,22 +663,22 @@ export default {
                 // });
 
                 checkImageExistsAndWidth(jpgUrl).then(exists => {
-                  if (exists) {
-                    console.log('jpg画像が存在します。');
-                    Promise.all([fetchFile(jpgUrl), fetchFile(worldFileUrl)]).then(files => {
-                      if (files.every(file => file)) {
-                        console.log("両方のファイルが取得されました:", files);
-                        const image = files[0]
-                        const worldFile = files[1]
-                        const code = JSON.parse(this.$store.state.uploadedImage).code
-                        addImageLayerJpg(image, worldFile, code, false)
-                      } else {
-                        console.warn("一部のファイルが取得できませんでした。");
-                      }
-                    }).catch(error => {
-                      console.error("Promise.allでエラーが発生しました:", error);
-                    });
-                  } else {
+                  // if (exists) {
+                  //   console.log('jpg画像が存在します。');
+                  //   Promise.all([fetchFile(jpgUrl), fetchFile(worldFileUrl)]).then(files => {
+                  //     if (files.every(file => file)) {
+                  //       console.log("両方のファイルが取得されました:", files);
+                  //       const image = files[0]
+                  //       const worldFile = files[1]
+                  //       const code = JSON.parse(this.$store.state.uploadedImage).code
+                  //       addImageLayerJpg(image, worldFile, code, false)
+                  //     } else {
+                  //       console.warn("一部のファイルが取得できませんでした。");
+                  //     }
+                  //   }).catch(error => {
+                  //     console.error("Promise.allでエラーが発生しました:", error);
+                  //   });
+                  // } else {
                     console.log('jpg画像が存在しません。');
                     Promise.all([fetchFile(imageUrl), fetchFile(worldFileUrl)]).then(files => {
                       if (files.every(file => file)) {
@@ -693,7 +693,7 @@ export default {
                     }).catch(error => {
                       console.error("Promise.allでエラーが発生しました:", error);
                     });
-                  }
+                  // }
                 });
               } else if (JSON.parse(this.$store.state.uploadedImage).worldFile.split('.')[1] === 'jgw' ) {
                 const imageUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).image

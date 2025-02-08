@@ -3044,6 +3044,7 @@ export async function addImageLayerPng(pngFile, worldFile, code, isFirst) {
 
 
 export async function addImageLayer(tiffFile, worldFile, code, isFirst) {
+    console.log(tiffFile)
     const map = store.state.map01;
     const map2 = store.state.map02;
 
