@@ -2059,7 +2059,7 @@ export async function saveCima3(map,kei,jww) {
 // クリックされた地番を強調表示する関数
 let isFirstRun = true;
 export function highlightSpecificFeatures(map,layerId) {
-    alert(999999)
+    // alert(999999)
     console.log(store.state.highlightedChibans);
     let sec = 0
     if (isFirstRun) {

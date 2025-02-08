@@ -54,7 +54,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
           </v-card-title>
           <v-card-text>
             <div style="margin-bottom: 10px;">
-              <v-text-field  v-model="nickname" type="text" placeholder="ネーム"></v-text-field>
+              <v-text-field  v-model="urlName" type="text" placeholder="ネーム"></v-text-field>
               <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="urlSave">URL記憶</v-btn>
               <div v-for="item in jsonData" :key="item.id" class="data-container" @click="urlClick(item.url)">
                 <button class="close-btn" @click="removeItem(item.id, $event)">×</button>
@@ -139,7 +139,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 <script>
 
 
-import {addImageLayer, addImageLayerJpg, addImageLayerPng} from "@/js/downLoad";
+import {addImageLayer, addImageLayerJpg, addImageLayerPng, simaToGeoJSON} from "@/js/downLoad";
 
 const getFirebaseUid = async () => {
   if (!user.value) return;
@@ -215,6 +215,7 @@ export default {
     // MasonryWall,
   },
   data: () => ({
+    urlName: '',
     jsonData: null,
     uid: null,
     images: [],
@@ -310,6 +311,16 @@ export default {
           urlid: urlid
         }
       }).then(function (response) {
+
+        // 現在のURLを取得
+        let url = new URL(window.location.href);
+
+        // URLSearchParamsを使ってクエリパラメーターを更新
+        url.searchParams.set('s', urlid);  // 'param1'の値を'newValue'に変更
+
+        // 新しいURLをアドレスバーに反映
+        window.history.pushState({}, '', url);
+
         console.log(response.data)
         const params = new URL('https://dummy/&' + response.data).searchParams
         const lng = parseFloat(params.get('lng'))
@@ -321,12 +332,29 @@ export default {
         const pitch02 = parseFloat(params.get('pitch02'))
         const bearing = parseFloat(params.get('bearing'))
         const terrainLevel = parseFloat(params.get('terrainLevel'))
+        const chibans = params.get('chibans')
+        const simaJson = JSON.parse(params.get('simatext'))
+        const image = params.get('image')
+        const extLayer = params.get('extlayer')
+        const kmlText = params.get('kmltext')
+        const geojsonText = params.get('geojsontext')
+        const dxfText = params.get('dxftext')
+        const gpxText = params.get('gpxtext')
 
         map.jumpTo({
           center: [lng, lat],
           zoom: zoom
         });
-
+        if (split === 'true') {
+          vm.$store.state.map2Flg = true
+        } else {
+          vm.$store.state.map2Flg = false
+        }
+        vm.$store.state.simaText = params.get('simatext')
+        const simaText = simaJson.text
+        const simaZahyokei = simaJson.zahyokei
+        const simaOpacity = simaJson.opacity
+        simaToGeoJSON(simaText, map, simaZahyokei, false)
 
 
         const slj0 = JSON.parse(params.get('slj'))
@@ -439,6 +467,10 @@ export default {
       fetchUserData(uid)
     },
     urlSave () {
+      if (!this.urlName) {
+        alert('ネームを記入してください。')
+        return
+      }
       const vm = this
       async function insertUserData(uid, name, url) {
         try {
@@ -460,7 +492,7 @@ export default {
           alert('通信エラーが発生しました');
         }
       }
-      insertUserData(this.$store.state.userId,'bbb',window.location.href)
+      insertUserData(this.$store.state.userId,this.urlName,window.location.href)
     },
     async fetchImages() {
       try {

@@ -261,7 +261,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
           <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
 
           <div class="center-target"></div>
-<!--          左上部メニュー-->
+          <!--          左上部メニュー-->
           <div id="left-top-div">
             <v-btn icon @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-menu</v-icon></v-btn>
             <v-btn icon style="margin-left:10px;" @click="s_dialogForLogin = !s_dialogForLogin" v-if="mapName === 'map01'"><v-icon>mdi-login</v-icon></v-btn>
@@ -270,7 +270,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
             <v-btn v-if="user1 && mapName === 'map01'" icon style="margin-left:10px;" @click="s_dialogForImage = !s_dialogForImage"><v-icon v-if="user1">mdi-image</v-icon></v-btn>
             <v-btn icon style="margin-left:10px;" @click="btnClickLayer(mapName)"><v-icon>mdi-layers</v-icon></v-btn>
           </div>
-<!--          右メニュー-->
+          <!--          右メニュー-->
           <div id="right-top-div">
             <v-btn icon @click="goToCurrentLocation" v-if="mapName === 'map01'"><v-icon>mdi-crosshairs-gps</v-icon></v-btn>
             <v-btn class="watch-position" :color="isTracking ? 'green' : undefined" icon @click="toggleWatchPosition" v-if="mapName === 'map01'"><v-icon>mdi-map-marker-radius</v-icon></v-btn>
@@ -816,52 +816,32 @@ export default {
       geojsonAddLayer (map02, geojson, true, 'dxf')
       this.dialogForDxfApp = false
     },
-    pngLoad0 () {
+    pngLoad () {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
-      if (this.$store.state.userId) {
-        pngLoadForUser (map01,'map01', true)
-        pngLoadForUser (map02,'map02', false)
-      } else {
-        pngLoad (map01,'map01', true)
-        pngLoad (map02,'map02', false)
-      }
+      pngLoad (map01,'map01', true)
+      pngLoad (map02,'map02', false)
       this.s_dialogForPng2App = false
     },
-    jpgLoad0 () {
+    jpgLoad () {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
-      if (this.$store.state.userId) {
-        jpgLoadForUser (map01,'map01', true)
-        jpgLoadForUser (map02,'map01', false)
-      } else {
-        jpgLoad (map01,'map01', true)
-        jpgLoad (map02,'map02', false)
-      }
+      jpgLoad (map01,'map01', true)
+      jpgLoad (map02,'map02', false)
       this.s_dialogForJpgApp = false
     },
-    geoTiffLoad0 () {
+    geoTiffLoad () {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
-      if (this.$store.state.userId) {
-        geoTiffLoadForUser1(map01, 'map01', true)
-        geoTiffLoadForUser1(map02, 'map01', false)
-      } else {
-        geoTiffLoad (map01,'map01', true)
-        geoTiffLoad (map02,'map02', false)
-      }
+      geoTiffLoad (map01,'map01', true)
+      geoTiffLoad (map02,'map02', false)
       this.s_dialogForGeotiffApp = false
     },
-    geoTiffLoad20 () {
+    geoTiffLoad2 () {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
-      if (this.$store.state.userId) {
-        geoTiffLoadForUser2 (map01,'map01', true)
-        geoTiffLoadForUser2 (map02,'map01', false)
-      } else {
-        geoTiffLoad2 (map01,'map01', true)
-        geoTiffLoad2 (map02,'map02', false)
-      }
+      geoTiffLoad2 (map01,'map01', true)
+      geoTiffLoad2 (map02,'map02', false)
       this.s_dialogForGeotiff2App = false
     },
     simaOpacityInput () {
@@ -998,7 +978,7 @@ export default {
                 map.doubleClickZoom.enable();
               });
               // 現在位置にマーカーを追加
-               this.currentMarker = new maplibregl.Marker()
+              this.currentMarker = new maplibregl.Marker()
                   .setLngLat([userLongitude, userLatitude])
                   // .setPopup(new maplibregl.Popup().setHTML("<strong>現在位置</strong>"))
                   .addTo(map);
@@ -1586,26 +1566,26 @@ export default {
         }
         mapA.on(m, () => {
           // throttle(() => {
-            if (!syncing) {
-              syncing = true
-              mapB.setCenter(mapA.getCenter())
-              mapB.setZoom(mapA.getZoom())
-              mapB.setBearing(mapA.getBearing())
-              if (vm.$store.state.isPitch) mapB.setPitch(mapA.getPitch())
-              syncing = false
-            }
+          if (!syncing) {
+            syncing = true
+            mapB.setCenter(mapA.getCenter())
+            mapB.setZoom(mapA.getZoom())
+            mapB.setBearing(mapA.getBearing())
+            if (vm.$store.state.isPitch) mapB.setPitch(mapA.getPitch())
+            syncing = false
+          }
           // }, 100); // 100msの間隔で発火
         })
         mapB.on(m, () => {
           // throttle(() => {
-            if (!syncing) {
-              syncing = true
-              mapA.setCenter(mapB.getCenter())
-              mapA.setZoom(mapB.getZoom())
-              mapA.setBearing(mapB.getBearing())
-              if (vm.$store.state.isPitch) mapA.setPitch(mapB.getPitch())
-              syncing = false
-            }
+          if (!syncing) {
+            syncing = true
+            mapA.setCenter(mapB.getCenter())
+            mapA.setZoom(mapB.getZoom())
+            mapA.setBearing(mapB.getBearing())
+            if (vm.$store.state.isPitch) mapA.setPitch(mapB.getPitch())
+            syncing = false
+          }
           // }, 100); // 100msの間隔で発火
         })
       }
@@ -1753,7 +1733,6 @@ export default {
                 const layerNames = []
                 let count = 0;
                 // レイヤーを探索して必要な情報を取得する関数
-                // ここを修正するときは一緒にDialog-menu.vueも修正すること。
                 function traverseLayers(layers, slj) {
                   layers.forEach(layer => {
                     if (layer.nodes) {
@@ -1869,8 +1848,8 @@ export default {
           document.querySelector('#' + mapName + ' .terrain-btn-up,terrain-btn-down').addEventListener('mouseover', function() {
             const layers = map.getStyle().layers
             if (!layers.find(layer => {
-              return layer.id.indexOf('height') !== -1
-            }
+                  return layer.id.indexOf('height') !== -1
+                }
             )) {
               map.setTerrain({'source': 'terrain', 'exaggeration': vm.s_terrainLevel})
             } else {
@@ -2136,9 +2115,9 @@ export default {
           if (pitch !== 0) {
             // this.$store.state[mapName].setTerrain({ 'source': 'terrain', 'exaggeration': this.s_terrainLevel })
             if (!this.s_selectedLayers[mapName].find(layer => {
-              // return layer.id === 'oh-bakumatsu-kokudaka-height'
-              return layer.id.indexOf('height') !== -1
-            }
+                  // return layer.id === 'oh-bakumatsu-kokudaka-height'
+                  return layer.id.indexOf('height') !== -1
+                }
             )) {
               this.$store.state[mapName].setTerrain({ 'source': 'terrain', 'exaggeration': this.s_terrainLevel })
             } else {
@@ -2149,7 +2128,6 @@ export default {
           // -----------------------------------------------------------------------------------------------------------
           // ドラッグ&ドロップ用の要素
           const dropzone = document.getElementById('map00');
-          const dropzone2 = document.querySelector('.v-overlay-container');
           // ドラッグイベントのリスナー追加
           document.addEventListener('dragover', (event) => {
             event.preventDefault();
@@ -2161,8 +2139,7 @@ export default {
           });
 
           // --------------------------------------------------------------------------------------------------------
-
-          const handleDrop = async (e) => {
+          dropzone.addEventListener('drop', async(e) => {
             e.preventDefault();
             const files = e.dataTransfer.files;
             if (files.length === 0) return;
@@ -2223,14 +2200,7 @@ export default {
                   const zahyokei = await getCRS(Array.from(e.dataTransfer.files)[0])
                   if (zahyokei) {
                     this.$store.state.zahyokei = zahyokei
-                    if (this.$store.state.userId) {
-                      const map01 = this.$store.state.map01
-                      const map02 = this.$store.state.map02
-                      geoTiffLoadForUser2 (map01,'map01', true)
-                      geoTiffLoadForUser2 (map02,'map02', false)
-                    } else {
-                      this.geoTiffLoad2()
-                    }
+                    this.geoTiffLoad2()
                   } else {
                     this.s_dialogForGeotiff2App = true
                   }
@@ -2316,11 +2286,8 @@ export default {
                 break
               }
             }
-          };
-          if (mapName === 'map01') {
-            dropzone.addEventListener('drop', handleDrop);
-            dropzone2.addEventListener('drop', handleDrop);
-          }
+          });
+
           // geotiff---------------------------------------------------------------------------------------------
           // dropzone.addEventListener('drop', async (event) => {
           //   event.preventDefault();
@@ -2555,7 +2522,6 @@ export default {
           // マップ上でポリゴンをクリックしたときのイベントリスナー
           let highlightCounter = 0;
           map.on('click', 'oh-amx-a-fude', (e) => {
-            alert(1111111)
             console.log(this.$store.state.highlightedChibans)
             // this.$store.state.highlightedChibans = new Set()
             if (e.features && e.features.length > 0) {
@@ -2855,7 +2821,7 @@ export default {
       handler: function () {
         // console.log('変更を検出しました')
         // this.updatePermalink()
-          // this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': this.s_terrainLevel })
+        // this.$store.state.map01.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': this.s_terrainLevel })
       },
       deep: true
     },
