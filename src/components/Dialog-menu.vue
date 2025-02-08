@@ -49,7 +49,8 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 <!--URL記録-->
       <v-dialog v-model="s_dialogForLink" :scrim="false" persistent="false" max-width="500px" height="500px">
         <v-card>
-          <v-card-title>
+          <v-card-title style="text-align: right">
+            <v-icon @click="s_dialogForLink = false">mdi-close</v-icon>
           </v-card-title>
           <v-card-text>
             <div style="margin-bottom: 10px;">
@@ -57,25 +58,23 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="urlSave">URL記憶</v-btn>
               <div v-for="item in jsonData" :key="item.id" class="data-container" @click="urlClick(item.url)">
                 <button class="close-btn" @click="removeItem(item.id, $event)">×</button>
-<!--                <strong>ID:</strong> {{ item.id }} <br>-->
-                <strong>ネーム:</strong> {{ item.name }}
-                <strong>URL:</strong> {{ item.url }}
-<!--                <strong>Date:</strong> {{ item.date }}-->
+                <strong>{{ item.name }}</strong><br>
+                <strong></strong>{{ item.url }}
               </div>
-
             </div>
           </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="blue-darken-1" text @click="s_dialogForLink = false">Close</v-btn>
-          </v-card-actions>
+<!--          <v-card-actions>-->
+<!--            <v-spacer></v-spacer>-->
+<!--            <v-btn color="blue-darken-1" text @click="s_dialogForLink = false">Close</v-btn>-->
+<!--          </v-card-actions>-->
         </v-card>
       </v-dialog>
 
 
       <v-dialog v-model="s_dialogForImage" :scrim="false" persistent="false" max-width="500px" height="300px">
         <v-card>
-          <v-card-title>
+          <v-card-title style="text-align: right">
+            <v-icon @click="s_dialogForImage = false">mdi-close</v-icon>
           </v-card-title>
           <v-card-text>
             <div style="margin-bottom: 10px;">
@@ -89,10 +88,10 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
             </div>
 <!--            <v-btn @click="dxfLoad">イメージ読込開始</v-btn>-->
           </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="blue-darken-1" text @click="s_dialogForImage = false">Close</v-btn>
-          </v-card-actions>
+<!--          <v-card-actions>-->
+<!--            <v-spacer></v-spacer>-->
+<!--            <v-btn color="blue-darken-1" text @click="s_dialogForImage = false">Close</v-btn>-->
+<!--          </v-card-actions>-->
         </v-card>
       </v-dialog>
 
@@ -200,10 +199,8 @@ import {history} from "@/App";
 import {extLayer, extSource, konUrls} from "@/js/layers";
 import { auth } from "@/firebase";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut } from "firebase/auth";
-import store from "@/store";
 import * as Layers from "@/js/layers";
 import {kml} from "@tmcw/togeojson";
-// import MasonryWall from '@yeger/vue-masonry-wall'
 
 export default {
   name: 'Dialog-menu',
@@ -357,10 +354,19 @@ export default {
         const dxfText = params.get('dxftext')
         const gpxText = params.get('gpxtext')
 
-        map.jumpTo({
+        // map.jumpTo({
+        //   center: [lng, lat],
+        //   zoom: zoom
+        // });
+
+        map.flyTo({
           center: [lng, lat],
-          zoom: zoom
+          zoom: zoom,
+          speed: 1.2,
+          curve: 1.42,    // アニメーションの曲線効果（オプション）
+          essential: true
         });
+
         if (split === 'true') {
           vm.$store.state.map2Flg = true
         } else {
@@ -417,12 +423,17 @@ export default {
           }
         }
         // 謎の現象を回避するため正規表現でKMLを取得する。
-        const match = response.data.match(/kmltext=(.*?)&geojson/s);
+        let match = response.data.match(/kmltext=(.*?)&geojson/s);
         const kmlText = match ? match[1] : null;
         if (kmlText) vm.$store.state.kmlText = kmlText
 
+        const match1 = response.data.match(/dxftext=(.*?)&/s);
+        const dxfText1 = match1 ? match1[1] : null;
+        console.log(dxfText1)
+        if (dxfText1) vm.$store.state.dxfText = dxfText1
 
-
+        if (geojsonText) vm.$store.state.geojsonText = geojsonText
+        if (gpxText) vm.$store.state.gpxText = gpxText
 
         const slj0 = JSON.parse(params.get('slj'))
         const mapNames = ['map01', 'map02']
@@ -736,8 +747,6 @@ export default {
       })
 
 
-
-
     },
     createDirectory () {
       // getFirebaseUid()
@@ -976,6 +985,9 @@ export default {
     }
   },
   watch: {
+    s_dialogForLink () {
+      this.urlSelect(this.$store.state.userId)
+    },
     s_fetchImagesFire () {
       this.fetchImages()
     }

@@ -48,8 +48,7 @@
 </template>
 
 <script>
-import DxfParser from 'dxf-parser'
-import {dxfToGeoJSON} from '@/App'
+
 import {
   addImageLayer,
   addImageLayerJpg, addImageLayerPng,
@@ -58,8 +57,6 @@ import {
   highlightSpecificFeaturesCity,
   simaToGeoJSON
 } from "@/js/downLoad";
-
-let infoCount = 0
 import * as Layers from '@/js/layers'
 import Tree from "vue3-tree"
 import "vue3-tree/dist/style.css"
@@ -67,6 +64,10 @@ import draggable from "vuedraggable"
 import mw5 from '@/js/mw5'
 import * as turf from '@turf/turf'
 import {gpx, kml} from "@tmcw/togeojson";
+import DxfParser from 'dxf-parser'
+import {dxfToGeoJSON} from '@/App'
+
+let infoCount = 0
 
 export default {
   name: 'Dialog-layer',
@@ -518,7 +519,8 @@ export default {
         if (this.$store.state.dxfText) {
           const parser = new DxfParser();
           const dxf = parser.parseSync(this.$store.state.dxfText);
-          const geojson = dxfToGeoJSON(dxf);
+          const geojson = dxfToGeoJSON(dxf)
+          // alert(JSON.stringify(geojson))
           geojsonAddLayer (map, geojson, false, 'dxf')
         }
         if (this.$store.state.gpxText) {
