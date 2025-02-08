@@ -255,7 +255,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
       <div id="map00">
         <img class='loadingImg' src="https://kenzkenz.xsrv.jp/open-hinata3/img/icons/loading2.gif">
-        <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="mapFlg[mapName]" @click="btnPosition">
+        <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="(mapName === 'map01'|| mapName === 'map02' && s_map2Flg)" @click="btnPosition">
 
           <div id="pointer1" class="pointer" v-if="mapName === 'map01'"></div>
           <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
@@ -629,7 +629,7 @@ export default {
   },
   data: () => ({
     mapNames: ['map01','map02'],
-    mapFlg: {map01:true, map02:false},
+    // mapFlg: {map01:true, map02:false},
     mapSize: {
       map01: {top: 0, left: 0, width: '100%', height: '100%'},
       map02: {top: 0, right: 0, width: '50%', height: '100%'},
@@ -664,6 +664,14 @@ export default {
     dialogForDxfApp: false,
   }),
   computed: {
+    s_map2Flg: {
+      get() {
+        return this.$store.state.map2Flg
+      },
+      set(value) {
+        this.$store.state.map2Flg = value
+      }
+    },
     s_dialogForLink: {
       get() {
         return this.$store.state.dialogForLink
@@ -893,7 +901,7 @@ export default {
         if (window.innerWidth < 450) {
           this.$store.state.dialogs.shareDialog[mapName].style.left = '0px'
         } else {
-          if (this.mapFlg.map02) {
+          if (this.s_map2Flg) {
             this.$store.state.dialogs.shareDialog[mapName].style.left = (window.innerWidth / 2 - 360) + 'px'
           } else {
             this.$store.state.dialogs.shareDialog[mapName].style.left = (window.innerWidth - 360) + 'px'
@@ -1173,10 +1181,10 @@ export default {
       }
     },
     btnClickSplit () {
-      if (this.mapFlg.map02) {
+      if (this.s_map2Flg) {
         this.mapSize.map01.width = '100%'
         this.mapSize.map01.height = '100%'
-        this.mapFlg.map02 = false
+        this.s_map2Flg = false
       } else {
         if (window.innerWidth > 1000) {
           document.querySelector('.terrain-btn-div').style.left = ''
@@ -1190,7 +1198,7 @@ export default {
           this.mapSize.map02.height = '50%'
           this.mapSize.map02.top = '50%'
         }
-        this.mapFlg.map02 = true
+        this.s_map2Flg = true
         if (popups.length > 0) {
           closeAllPopups()
         }
@@ -1201,7 +1209,7 @@ export default {
       const center = map.getCenter()
       const zoom = map.getZoom()
       const { lng, lat } = center
-      const split = this.mapFlg.map02
+      const split = this.s_map2Flg
       const pitch01 = !isNaN(this.pitch.map01) ? this.pitch.map01: 0
       const pitch02 = !isNaN(this.pitch.map02) ? this.pitch.map02: 0
       let terrainLevel = this.s_terrainLevel
@@ -1425,7 +1433,7 @@ export default {
         // 2画面-----------------------------------------------------------
         if (mapName === 'map02') {
           if (params.split === 'true') {
-            this.mapFlg.map02 = true
+            this.s_map2Flg = true
             if (window.innerWidth > 1000) {
               this.mapSize.map01.width = '50%'
               this.mapSize.map01.height = '100%'
@@ -2077,7 +2085,7 @@ export default {
           //------------------------------------------------------------------------------------------------------------
           // ポップアップ
           map.on('click', (e) => {
-            popup(e,map,mapName,this.mapFlg)
+            popup(e,map,mapName,this.s_map2Flg)
           })
           map.on('mousemove', function (e) {
             mouseMoveForPopup(e,map)
@@ -2547,6 +2555,7 @@ export default {
           // マップ上でポリゴンをクリックしたときのイベントリスナー
           let highlightCounter = 0;
           map.on('click', 'oh-amx-a-fude', (e) => {
+            alert(1111111)
             console.log(this.$store.state.highlightedChibans)
             // this.$store.state.highlightedChibans = new Set()
             if (e.features && e.features.length > 0) {

@@ -7,6 +7,7 @@ export default createStore({
     map02:null,
     userId: '',
     storeTest: 'storeTest',
+    map2Flg: false,
     dialogs: {
       shareDialog:{
         map01:{name:'shareDialog',style: {top: '65px', left: '10px', 'z-index': 1, height: 'auto', 'width': '350px', display: 'none'}},
