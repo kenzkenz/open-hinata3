@@ -6,7 +6,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div class="menu-div">
 
-
       <v-dialog v-model="s_dialogForLogin" max-width="500px">
         <v-card>
           <v-card-title>
@@ -73,7 +72,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         </v-card>
       </v-dialog>
 
-      
+
       <v-dialog v-model="s_dialogForImage" :scrim="false" persistent="false" max-width="500px" height="300px">
         <v-card>
           <v-card-title>
@@ -354,6 +353,19 @@ export default {
           const simaOpacity = JSON.parse(simaText).opacity
           simaToGeoJSON(simaData, map, simaZahyokei, false)
         }
+
+        if (image) {
+          vm.$store.state.uploadedImage = JSON.parse(image)
+          console.log(JSON.parse(image))
+        }
+
+
+
+
+
+
+
+
 
         const slj0 = JSON.parse(params.get('slj'))
         const mapNames = ['map01', 'map02']
