@@ -382,6 +382,7 @@ export default {
       //   }
       // }
       // -------------------------------------------------------------------------------------------
+      console.log(this.s_selectedLayers)
       for (let i = this.s_selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
         const layer = this.s_selectedLayers[this.mapName][i]
         if (layer.layers) {

@@ -1745,6 +1745,7 @@ export default {
                 const layerNames = []
                 let count = 0;
                 // レイヤーを探索して必要な情報を取得する関数
+                // ここを修正するときは一緒にDialog-menu.vueも修正すること。
                 function traverseLayers(layers, slj) {
                   layers.forEach(layer => {
                     if (layer.nodes) {

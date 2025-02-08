@@ -56,10 +56,10 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
             <div style="margin-bottom: 10px;">
               <v-text-field  v-model="nickname" type="text" placeholder="ネーム"></v-text-field>
               <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="urlSave">URL記憶</v-btn>
-              <div v-for="item in jsonData" :key="item.id" class="data-container">
-                <button class="close-btn" @click="removeItem(item.id)">×</button>
+              <div v-for="item in jsonData" :key="item.id" class="data-container" @click="urlClick(item.url)">
+                <button class="close-btn" @click="removeItem(item.id, $event)">×</button>
 <!--                <strong>ID:</strong> {{ item.id }} <br>-->
-                <strong>Name:</strong> {{ item.name }}
+                <strong>ネーム:</strong> {{ item.name }}
                 <strong>URL:</strong> {{ item.url }}
 <!--                <strong>Date:</strong> {{ item.date }}-->
               </div>
@@ -205,6 +205,7 @@ import {extLayer, extSource, konUrls} from "@/js/layers";
 import { auth } from "@/firebase";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut } from "firebase/auth";
 import store from "@/store";
+import * as Layers from "@/js/layers";
 // import MasonryWall from '@yeger/vue-masonry-wall'
 
 export default {
@@ -300,7 +301,95 @@ export default {
     },
   },
   methods: {
-    removeItem (id) {
+    urlClick (url) {
+      const vm = this
+      const map = this.$store.state.map01
+      const urlid = new URL(url).searchParams.get('s')
+      axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrlSelect.php',{
+        params: {
+          urlid: urlid
+        }
+      }).then(function (response) {
+        console.log(response.data)
+        const params = new URL('https://dummy/&' + response.data).searchParams
+        const lng = parseFloat(params.get('lng'))
+        const lat = parseFloat(params.get('lat'))
+        const zoom = parseFloat(params.get('zoom'))
+        const split = params.get('split')
+        const pitch = parseFloat(params.get('pitch'))// 以前のリンクをいかすため---------------------------------
+        const pitch01 = parseFloat(params.get('pitch01'))
+        const pitch02 = parseFloat(params.get('pitch02'))
+        const bearing = parseFloat(params.get('bearing'))
+        const terrainLevel = parseFloat(params.get('terrainLevel'))
+
+        map.jumpTo({
+          center: [lng, lat],
+          zoom: zoom
+        });
+
+
+
+        const slj0 = JSON.parse(params.get('slj'))
+        const mapNames = ['map01', 'map02']
+        mapNames.forEach(mapName => {
+          slj0[mapName].forEach(slj => {
+            const layerNames = []
+            let count = 0;
+            // レイヤーを探索して必要な情報を取得する関数
+            // ここを修正するときは一緒にApp.vueも修正すること。
+            function traverseLayers(layers, slj) {
+              layers.forEach(layer => {
+                if (layer.nodes) {
+                  // 子ノードがある場合は再帰的に処理
+                  layer.nodes.forEach(node => {
+                    if (node.nodes) {
+                      traverseLayers([node], slj); // 再帰処理
+                    } else {
+                      // 子ノードがない場合の処理
+                      if (node.id === slj.id) {
+                        slj.label = node.label
+                        slj.source = node.source
+                        slj.sources = node.sources
+                        slj.layers = node.layers
+                        slj.attribution = node.attribution
+                        slj.info = node.info
+                      }
+                      layerNames.push(node.label)
+                      count++
+                    }
+                  });
+                } else {
+                  // 子ノードがない場合の処理
+                  if (layer.id === slj.id) {
+                    slj.label = layer.label
+                    slj.source = layer.source
+                    slj.sources = layer.sources
+                    slj.layers = layer.layers
+                    slj.attribution = layer.attribution
+                    slj.info = layer.info
+                  }
+                  layerNames.push(layer.label)
+                  count++;
+                }
+              });
+            }
+            // レイヤーの探索を開始
+            const layers = Layers.layers[mapName];
+            traverseLayers(layers, slj);
+          });
+          const result = slj0[mapName].find(v => v.id === 'oh-extLayer')
+          if (result) {
+            extSource.obj.tiles = [vm.$store.state.extLayer]
+            result.sources = [extSource]
+            result.layers = [extLayer]
+            result.label = vm.$store.state.extLayerName
+          }
+          vm.$store.state.selectedLayers = slj0
+        });
+      })
+    },
+    removeItem (id,event) {
+      event.stopPropagation();  // バブリングを止める
       if (!confirm("削除しますか？")) {
         return
       }
@@ -371,7 +460,7 @@ export default {
           alert('通信エラーが発生しました');
         }
       }
-      insertUserData(this.$store.state.userId,'bbb','ccc')
+      insertUserData(this.$store.state.userId,'bbb',window.location.href)
     },
     async fetchImages() {
       try {
@@ -865,6 +954,7 @@ export default {
   border: 1px solid #ddd;
   margin-bottom: 5px;
   position: relative;
+  cursor: pointer;
 }
 .close-btn {
   position: absolute;
