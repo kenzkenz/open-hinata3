@@ -254,6 +254,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <div id="map00">
+
         <img class='loadingImg' src="https://kenzkenz.xsrv.jp/open-hinata3/img/icons/loading2.gif">
         <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="(mapName === 'map01'|| mapName === 'map02' && s_map2Flg)" @click="btnPosition">
 
@@ -261,7 +262,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
           <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
 
           <div class="center-target"></div>
-          <!--          左上部メニュー-->
+          <!--左上部メニュー-->
           <div id="left-top-div">
             <v-btn :size="isSmall ? 'small' : 'default'" icon @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-menu</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="s_dialogForLogin = !s_dialogForLogin" v-if="mapName === 'map01'"><v-icon>mdi-login</v-icon></v-btn>
@@ -270,7 +271,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
             <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForImage = !s_dialogForImage"><v-icon v-if="user1">mdi-image</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickLayer(mapName)"><v-icon>mdi-layers</v-icon></v-btn>
           </div>
-          <!--          右メニュー-->
+          <!--右メニュー-->
           <div id="right-top-div">
             <v-btn :size="isSmall ? 'small' : 'default'" icon @click="goToCurrentLocation" v-if="mapName === 'map01'"><v-icon>mdi-crosshairs-gps</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" class="watch-position" :color="isTracking ? 'green' : undefined" icon @click="toggleWatchPosition" v-if="mapName === 'map01'"><v-icon>mdi-map-marker-radius</v-icon></v-btn>
@@ -319,6 +320,8 @@ import DxfParser from 'dxf-parser'
 import proj4 from 'proj4'
 import { gpx } from '@tmcw/togeojson'
 import { user } from "@/authState"; // グローバルの認証情報を取得
+import { MaplibreTerradrawControl,MaplibreMeasureControl } from '@watergis/maplibre-gl-terradraw';
+import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
 import {
   ddSimaUpload,
   downloadSimaText,
@@ -1565,6 +1568,48 @@ export default {
       const vm = this
       //----------------------------------
 
+
+
+
+
+      // const draw = new MaplibreTerradrawControl({
+      //   modes: ['render', 'point', 'linestring', 'polygon', 'rectangle', 'circle', 'freehand', 'select', 'delete-selection', 'delete']
+      // });
+      // map.addControl(draw, 'bottom-right');
+
+
+
+      const drawControl = new MaplibreMeasureControl({
+        modes: [
+          'render',
+          'linestring',
+          'polygon',
+          'rectangle',
+          'angled-rectangle',
+          'circle',
+          'sector',
+          'sensor',
+          'freehand',
+          'select',
+          'delete-selection',
+          'delete',
+          'download'
+        ],
+        open: false
+      });
+      map.addControl(drawControl, 'bottom-right');
+
+
+
+
+
+
+
+
+
+
+
+
       map.on('click', (e) => {
         const latitude = e.lngLat.lat
         const longitude = e.lngLat.lng
@@ -2657,21 +2702,6 @@ export default {
             source.setData(currentData);
           });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
           // let isCursorOnFeature = false;
           //
           // map.on('mousemove', function (e) {
@@ -3250,8 +3280,8 @@ export default {
 /*3Dのボタン-------------------------------------------------------------*/
 .terrain-btn-expand-div {
   position:absolute;
-  bottom: 20px;
-  right:10px;
+  bottom: 10px;
+  right:45px;
   z-index:2;
   display: none;
 }
@@ -3262,7 +3292,7 @@ export default {
   position:absolute;
   /*top:60%;*/
   bottom: 20px;
-  right:10px;
+  right:45px;
   z-index:2;
   /*display:none;*/
   height:180px;
