@@ -10,6 +10,42 @@ function boundsSort (bounds) {
     return [bounds[2],bounds[0],bounds[3],bounds[1]]
 }
 
+
+// クリックで追加するポイントのGeoJSONソースを作成
+export const clickPointSource ={
+    iD: 'click-points-source', obj: {
+        type: 'geojson',
+        data: {
+            type: 'FeatureCollection',
+            features: [
+                {
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Point',
+                        coordinates: [139.6917, 35.6895] // 東京の座標
+                    },
+                    properties: {}
+                }
+            ]
+        }
+    }
+};
+
+// ポイントを描画するレイヤーを追加
+export const clickPointLayer = {
+    id: 'click-points-layer',
+    type: 'circle',
+    source: 'click-points-source',
+    paint: {
+        'circle-radius': 8,
+        'circle-color': '#ff0000',
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#ffffff'
+    }
+}
+
+
+
 export const extSource = {
     id: 'ext-source', obj: {
         type: 'raster',

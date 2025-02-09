@@ -6,8 +6,9 @@ import axios from "axios";
 import muni from "@/js/muni";
 import pyramid from "@/js/pyramid";
 import * as turf from '@turf/turf'
-import {queryFGBWithPolygon} from "@/js/downLoad";
+import {queryFGBWithPolygon, wsg84ToJgd} from "@/js/downLoad";
 import {feature} from "@turf/turf";
+import {transformCoordinates} from "@/App";
 const popups = []
 
 console.log(store.state.selectedLayers)
@@ -3157,6 +3158,32 @@ export function popup(e,map,mapName,mapFlg) {
                     })
                     html0 += '<div>'
                     html += html0
+                }
+                break
+            }
+            case 'click-points-layer':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(coordinates)
+                if (features.length === 0) return
+                props = features[0].properties
+
+                console.log(wsg84ToJgd(coordinates))
+
+                if (html.indexOf('click-points-layer') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="click-points-layer" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:12px;">経度:' + coordinates[0].toFixed(3) + ' 緯度:' + coordinates[1].toFixed(3) + '</span><hr>' +
+                        '<span style="font-size:12px;">' + store.state.zahyokei + '</span><br>' +
+                        '</div>'
                 }
                 break
             }

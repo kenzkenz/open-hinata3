@@ -461,7 +461,7 @@ function parseThematicAttributes(xmlDoc, namespaceURI) {
   };
 }
 
-const transformCoordinates = (coordinates) => {
+export const transformCoordinates = (coordinates) => {
   const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
   return proj4(code, "EPSG:4326", coordinates);
 };
@@ -2520,6 +2520,279 @@ export default {
           //   };
           //   reader.readAsText(file);
           // });
+          // -----------------------------------------------------------------------------------------------------------
+          // クリックで追加するポイントのGeoJSONソースを作成
+          // map.addSource('click-point', {
+          //   type: 'geojson',
+          //   data: {
+          //     type: 'FeatureCollection',
+          //     features: []
+          //   }
+          // });
+          //
+          // // ポイントを描画するレイヤーを追加
+          // map.addLayer({
+          //   id: 'click-point-layer',
+          //   type: 'circle',
+          //   source: 'click-point',
+          //   paint: {
+          //     'circle-radius': 8,
+          //     'circle-color': '#ff0000',
+          //     'circle-stroke-width': 2,
+          //     'circle-stroke-color': '#ffffff'
+          //   }
+          // });
+
+          // クリック時にポイントを追加
+          // map.on('click', function (e) {
+          //   const coordinates = [e.lngLat.lng, e.lngLat.lat];
+          //   // 現在のGeoJSONデータを取得
+          //   const source = map.getSource('click-points-source');
+          //   if (!source) return;
+          //   const currentData = source._data || { // 既存データがない場合、空のFeatureCollectionを作成
+          //     type: 'FeatureCollection',
+          //     features: []
+          //   };
+          //   // 新しいポイントを追加
+          //   const newFeature = {
+          //     type: 'Feature',
+          //     geometry: {
+          //       type: 'Point',
+          //       coordinates: coordinates
+          //     },
+          //     properties: {}
+          //   };
+          //   // features 配列に新しいポイントを追加
+          //   currentData.features.push(newFeature);
+          //   // GeoJSONデータを更新
+          //   source.setData(currentData);
+          // });
+
+
+
+
+          let isCursorOnFeature = false;
+          let isDragging = false;
+          let draggedFeatureId = null;
+
+          map.on('mousemove', function (e) {
+            const features = map.queryRenderedFeatures(e.point, { layers: ['click-points-layer'] });
+            if (features.length > 0) {
+              isCursorOnFeature = true;
+              map.getCanvas().style.cursor = 'pointer';
+            } else {
+              isCursorOnFeature = false;
+              map.getCanvas().style.cursor = '';
+            }
+          });
+
+          map.on('mousedown', function (e) {
+            const features = map.queryRenderedFeatures(e.point, { layers: ['click-points-layer'] });
+            if (features.length > 0) {
+              isDragging = true;
+              draggedFeatureId = features[0].id;
+              map.getCanvas().style.cursor = 'grabbing';
+              e.preventDefault();
+            }
+          });
+
+          map.on('mousemove', function (e) {
+            if (!isDragging || draggedFeatureId === null) return;
+
+            const source = map.getSource('click-points-source');
+            if (!source) return;
+
+            const currentData = source._data;
+            if (!currentData) return;
+
+            const feature = currentData.features.find(f => f.id === draggedFeatureId);
+            if (feature) {
+              feature.geometry.coordinates = [e.lngLat.lng, e.lngLat.lat];
+              source.setData(currentData);
+            }
+          });
+
+          map.on('mouseup', function () {
+            if (isDragging) {
+              isDragging = false;
+              draggedFeatureId = null;
+              map.getCanvas().style.cursor = 'pointer';
+            }
+          });
+
+          map.on('click', function (e) {
+            if (isDragging) return; // ドラッグ中のクリックを防止
+
+            const source = map.getSource('click-points-source');
+            if (!source) return;
+
+            if (isCursorOnFeature) return;
+
+            const currentData = source._data || {
+              type: 'FeatureCollection',
+              features: []
+            };
+
+            const clickedLng = parseFloat(e.lngLat.lng.toFixed(3));
+            const clickedLat = parseFloat(e.lngLat.lat.toFixed(3));
+
+            const newFeature = {
+              type: 'Feature',
+              id: currentData.features.length,
+              geometry: {
+                type: 'Point',
+                coordinates: [clickedLng, clickedLat]
+              },
+              properties: {}
+            };
+
+            currentData.features.push(newFeature);
+            source.setData(currentData);
+          });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          // let isCursorOnFeature = false;
+          //
+          // map.on('mousemove', function (e) {
+          //   const features = map.queryRenderedFeatures(e.point, { layers: ['click-points-layer'] });
+          //   if (features.length > 0) {
+          //     isCursorOnFeature = true;
+          //     map.getCanvas().style.cursor = 'pointer'; // カーソル変更
+          //   } else {
+          //     isCursorOnFeature = false;
+          //     map.getCanvas().style.cursor = '';
+          //   }
+          // });
+          //
+          // map.on('click', function (e) {
+          //   const source = map.getSource('click-points-source');
+          //   if (!source) return;
+          //
+          //   // カーソルが既存のポイントに当たっている場合は追加しない
+          //   if (isCursorOnFeature) {
+          //     return;
+          //   }
+          //
+          //   // 現在のGeoJSONデータを取得
+          //   const currentData = source._data || {
+          //     type: 'FeatureCollection',
+          //     features: []
+          //   };
+          //
+          //   const clickedLng = parseFloat(e.lngLat.lng.toFixed(3));
+          //   const clickedLat = parseFloat(e.lngLat.lat.toFixed(3));
+          //
+          //   // 新しいポイントを追加（IDを付与）
+          //   const newFeature = {
+          //     type: 'Feature',
+          //     id: currentData.features.length,
+          //     geometry: {
+          //       type: 'Point',
+          //       coordinates: [clickedLng, clickedLat]
+          //     },
+          //     properties: {}
+          //   };
+          //
+          //   currentData.features.push(newFeature);
+          //   source.setData(currentData);
+          //
+          //   // // 追加したポイントにポップアップを表示
+          //   // popup
+          //   //     .setLngLat([clickedLng, clickedLat])
+          //   //     .setHTML(`<p>ポイント ID: ${newFeature.id}</p>`)
+          //   //     .addTo(map);
+          // });
+
+
+
+
+
+
+          // let isDragging = false;
+          // let draggedFeatureId = null;
+          // map.on('click', function (e) {
+          //   const coordinates = [e.lngLat.lng, e.lngLat.lat];
+          //   // 現在のGeoJSONデータを取得
+          //   const source = map.getSource('click-points-source');
+          //   if (!source) return;
+          //   const currentData = source._data || {
+          //     type: 'FeatureCollection',
+          //     features: []
+          //   };
+          //
+          //   const popup = new maplibregl.Popup({ closeButton: true, maxWidth: "350px" })
+          //   .setLngLat(coordinates)
+          //   .setHTML('ssssssss')
+          //   .addTo(map);
+          //
+          //
+          //   // 新しいポイントを追加（IDを付与）
+          //   const newFeature = {
+          //     type: 'Feature',
+          //     id: currentData.features.length, // 一意のID
+          //     geometry: {
+          //       type: 'Point',
+          //       coordinates: coordinates
+          //     },
+          //     properties: {}
+          //   };
+          //   currentData.features.push(newFeature);
+          //   // GeoJSONデータを更新
+          //   source.setData(currentData);
+          // });
+          //
+          // // ドラッグ開始
+          // map.on('mousedown', 'click-points-layer', function (e) {
+          //   e.preventDefault();
+          //   if (!e.features.length) return;
+          //   isDragging = true;
+          //   draggedFeatureId = e.features[0].id;
+          //   map.getCanvas().style.cursor = 'grabbing';
+          // });
+          //
+          // // ドラッグ中
+          // map.on('mousemove', function (e) {
+          //   if (!isDragging || draggedFeatureId === null) return;
+          //   const source = map.getSource('click-points-source');
+          //   if (!source) return;
+          //   const currentData = source._data;
+          //   // 対象のポイントを更新
+          //   const feature = currentData.features.find(f => f.id === draggedFeatureId);
+          //   if (feature) {
+          //     feature.geometry.coordinates = [e.lngLat.lng, e.lngLat.lat];
+          //   }
+          //   // GeoJSONデータを更新
+          //   source.setData(currentData);
+          // });
+          //
+          // // ドラッグ終了
+          // map.on('mouseup', function () {
+          //   if (!isDragging) return;
+          //   isDragging = false;
+          //   draggedFeatureId = null;
+          //   map.getCanvas().style.cursor = '';
+          // });
+
+
+
+
+
+
+
           // -----------------------------------------------------------------------------------------------------------
           map.addSource('zones-source', {
             type: 'vector',

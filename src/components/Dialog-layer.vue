@@ -66,6 +66,7 @@ import * as turf from '@turf/turf'
 import {gpx, kml} from "@tmcw/togeojson";
 import DxfParser from 'dxf-parser'
 import {dxfToGeoJSON} from '@/App'
+import {clickPointLayer, clickPointSource} from "@/js/layers";
 
 let infoCount = 0
 
@@ -401,6 +402,7 @@ export default {
               this.mw5AddLayers(map,this.mapName)
             } else {
               if (!map.getLayer(layer0.id)) {
+                console.log(layer0)
                 map.addLayer(layer0)
                 if (layer0.position) {
                   if (flyFlg && this.nodeClicked) {
@@ -793,8 +795,16 @@ export default {
       if (map.getLayer('oh-chibanzu-深谷市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-深谷市');
       if (map.getLayer('oh-chibanzu-伊丹市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-伊丹市');
       if (map.getLayer('oh-chibanzu-豊中市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-豊中市');
-
       this.counter++
+
+
+      if (map.getSource('click-points-source')) {
+        map.removeLayer('click-points-layer')
+        map.removeSource('click-points-source')
+      }
+      map.addSource('click-points-source', clickPointSource.obj)
+      map.addLayer(clickPointLayer)
+
     },
     mw5AddLayers(map,mapName) {
       if (!this.s_selectedLayers[mapName].find(v => v.id === 'oh-mw5')) {

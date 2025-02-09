@@ -4400,3 +4400,8 @@ function geojsonToShapefile(geojson) {
     };
     shpwrite.download(geojson,options);
 }
+
+export const wsg84ToJgd = (coordinates) => {
+    const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
+    return proj4("EPSG:4326", code, coordinates);
+};
