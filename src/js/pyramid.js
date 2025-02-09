@@ -1,5 +1,7 @@
 import store from '@/store'
 import axios from "axios"
+import * as turf from '@turf/turf'
+import {convertAndDownloadGeoJSONToSIMA} from "@/js/downLoad";
 export let currentIndex = 0
 let kasen
 export default function pyramid () {
@@ -982,6 +984,39 @@ export default function pyramid () {
                 //     currentIndex++;
                 //     updateCarousel();
                 // }
+            }
+        })
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("sima-output"))) {
+                const lon =e.target.getAttribute("lon")
+                const lat =e.target.getAttribute("lat")
+                const zahyokei =e.target.getAttribute("zahyokei")
+                alert(lon + '/' + lat + '/' + zahyokei)
+                const point = turf.point([lon, lat]);
+                const pointGeojson = turf.featureCollection([point]);
+                convertAndDownloadGeoJSONToSIMA(store.state.map01,'', pointGeojson, '', '', zahyokei)
+
+
+
+
+
+                // const carouselImages = document.querySelector('.carousel-images');
+                // const images = document.querySelectorAll('.carousel-images img');
+                // const totalImages = images.length;
+                // function updateCarousel(direction) {
+                //     let offset = 0;
+                //     if (direction === 'next') {
+                //         currentIndex = (currentIndex + 1) % totalImages;
+                //     } else if (direction === 'prev') {
+                //         currentIndex = (currentIndex - 1 + totalImages) % totalImages;
+                //     }
+                //     for (let i = 0; i < currentIndex; i++) {
+                //         offset += images[i].offsetWidth;
+                //     }
+                //     carouselImages.style.transform = `translateX(-${offset}px)`;
+                // }
+                // updateCarousel('next');
             }
         })
 

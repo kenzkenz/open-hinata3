@@ -254,28 +254,31 @@ function getChibanAndHoka(geojson,isDxf) {
             features: filteredFeatures
         };
     }
-
-    // 地番の最小値を取得
-    let firstChiban = geojson.features
-        .map(feature => feature.properties?.地番) // 地番を抽出
-        .filter(chiban => chiban !== undefined && chiban !== null) // undefinedやnullを除外
-        .map(chiban => Number(chiban)) // 数値に変換（地番が数値型である場合）
-        .filter(chiban => !isNaN(chiban)) // NaNを除外
-        .reduce((min, current) => Math.min(min, current), Infinity); // 最小値を取得
-    if (firstChiban === Infinity) {
-        // 有効な地番が見つからない場合、最初の地番を取得
-        firstChiban = geojson.features[0]?.properties?.地番 || '';
-    }
-    // hokaの値を設定
-    let hoka = '';
-    if (firstChiban !== '') {
-        if (geojson.features.length > 1) {
-            hoka = '外' + (geojson.features.length - 1) + '筆';
+    try {
+        // 地番の最小値を取得
+        let firstChiban = geojson.features
+            .map(feature => feature.properties?.地番) // 地番を抽出
+            .filter(chiban => chiban !== undefined && chiban !== null) // undefinedやnullを除外
+            .map(chiban => Number(chiban)) // 数値に変換（地番が数値型である場合）
+            .filter(chiban => !isNaN(chiban)) // NaNを除外
+            .reduce((min, current) => Math.min(min, current), Infinity); // 最小値を取得
+        if (firstChiban === Infinity) {
+            // 有効な地番が見つからない場合、最初の地番を取得
+            firstChiban = geojson.features[0]?.properties?.地番 || '';
         }
-    } else {
-        firstChiban = '';
+        // hokaの値を設定
+        let hoka = '';
+        if (firstChiban !== '') {
+            if (geojson.features.length > 1) {
+                hoka = '外' + (geojson.features.length - 1) + '筆';
+            }
+        } else {
+            firstChiban = '';
+        }
+        return { firstChiban, hoka };
+    }catch (e) {
+        return { firstChiban:'', hoka:'' };
     }
-    return { firstChiban, hoka };
 }
 // GeoJSONから最初に現れる「基準点等名称」または「街区点・補助点名称」を取得する関数
 function getFirstPointName(geojson) {
@@ -307,13 +310,10 @@ function getFirstPointName(geojson) {
 }
 
 
-function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg, zahyokei2, kukaku,jww, kei2) {
+export function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, fileName, kaniFlg, zahyokei2, kukaku,jww, kei2) {
     console.log(geojson)
     geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
     console.log(geojson)
-    if (!geojson || geojson.type !== 'FeatureCollection') {
-        throw new Error('無効なGeoJSONデータです。FeatureCollectionが必要です。');
-    }
     let zahyo
     console.log(layerId)
     if (layerId ==='oh-amx-a-fude') {
@@ -359,6 +359,7 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
     const coordinateMap = new Map();
     const firstChiban = getChibanAndHoka(geojson).firstChiban
     const hoka = getChibanAndHoka(geojson).hoka
+    console.log(geojson)
     geojson.features.forEach((feature) => {
         let chiban = feature.properties.地番;
         switch (layerId) {
@@ -419,7 +420,7 @@ function convertAndDownloadGeoJSONToSIMA(map,layerId,geojson, fileName, kaniFlg,
                 chiban = feature.properties.TEXTCODE1
                 break
         }
-
+// alert(chiban)
         B01Text += 'D00,' + i + ',' + chiban + ',1,\n';
         let coordinates = [];
         if (feature.geometry.type === 'Polygon') {

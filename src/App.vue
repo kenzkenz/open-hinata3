@@ -2623,6 +2623,11 @@ export default {
           map.on('click', function (e) {
             if (isDragging) return; // ドラッグ中のクリックを防止
 
+            const visibility = map.getLayoutProperty('click-points-layer', 'visibility');
+            if (visibility === 'none') {
+              return;
+            }
+
             const source = map.getSource('click-points-source');
             if (!source) return;
 

@@ -108,6 +108,7 @@ export default createStore({
     uploadedImage: '',
     extLayerName: '独自レイヤー',
     extLayer: '',
+    isClickPointsLayer:false,
     //------------------------
     highwayYear:{
       map01: 2024,

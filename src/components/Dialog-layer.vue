@@ -804,6 +804,13 @@ export default {
       }
       map.addSource('click-points-source', clickPointSource.obj)
       map.addLayer(clickPointLayer)
+      if (this.$store.state.isClickPointsLayer) {
+        map.setLayoutProperty("click-points-layer", "visibility", 'visible');
+      } else {
+        map.setLayoutProperty("click-points-layer", "visibility", 'none');
+      }
+
+
 
     },
     mw5AddLayers(map,mapName) {

@@ -3175,14 +3175,18 @@ export function popup(e,map,mapName,mapFlg) {
                 if (features.length === 0) return
                 props = features[0].properties
 
-                console.log(wsg84ToJgd(coordinates))
+                const jgdCoord = wsg84ToJgd(coordinates)
+                console.log(jgdCoord[0])
 
                 if (html.indexOf('click-points-layer') === -1) {
-                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html += '<div class="layer-label-div">' + '座標取得＆SIMA出力' + '</div>'
                     html +=
                         '<div class="click-points-layer" font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size:12px;">経度:' + coordinates[0].toFixed(3) + ' 緯度:' + coordinates[1].toFixed(3) + '</span><hr>' +
                         '<span style="font-size:12px;">' + store.state.zahyokei + '</span><br>' +
+                        '<span style="font-size:12px;">' + jgdCoord[0].toFixed(3) + ', ' + jgdCoord[0].toFixed(3) + '</span><br>' +
+                        '<button class="sima-output pyramid-btn" mapname="' + mapName + '" lon="' + coordinates[0] + '" lat="' + coordinates[1] + '" zahyokei="' + store.state.zahyokei + '">SIMA出力一点</button><br>' +
+                        '<button class="sima-output-all pyramid-btn" mapname="' + '">SIMA出力全部</button><br>' +
                         '</div>'
                 }
                 break

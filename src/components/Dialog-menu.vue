@@ -107,7 +107,10 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       <v-btn class="tiny-btn" @click="simaLoad">SIMA読み込</v-btn>
       <v-btn style="margin-left: 5px;" class="tiny-btn" @click="pngDownload">PNGダウンロード</v-btn>
 
-      <v-switch style="height: 60px;" v-model="s_isPitch" @change="changePitch" label="２画面時に傾きを同期" color="primary" />
+      <v-switch style="height: 40px;" v-model="s_isClickPointsLayer" @change="changeVisible" label="座標取得レイヤー表示" color="primary" />
+
+      <v-switch style="height: 40px;margin-bottom: 20px;" v-model="s_isPitch" @change="changePitch" label="２画面時に傾きを同期" color="primary" />
+
       標高を強調します。{{s_terrainLevel}}倍
       <div class="range-div">
         <input type="range" min="1" max="10" step="0.1" class="range" v-model.number="s_terrainLevel" @input="terrainLevelInput"/>
@@ -286,6 +289,14 @@ export default {
     s_dialogs () {
       return this.$store.state.dialogs.menuDialog
     },
+    s_isClickPointsLayer: {
+      get() {
+        return this.$store.state.isClickPointsLayer
+      },
+      set(value) {
+        this.$store.state.isClickPointsLayer = value
+      }
+    },
     s_isPitch: {
       get() {
         return this.$store.state.isPitch
@@ -296,6 +307,13 @@ export default {
     },
   },
   methods: {
+    changeVisible () {
+      const map01 = this.$store.state.map01
+      const map02 = this.$store.state.map01
+      const visibility = this.s_isClickPointsLayer ? "visible" : "none";
+      map01.setLayoutProperty("click-points-layer", "visibility", visibility);
+      map02.setLayoutProperty("click-points-layer", "visibility", visibility);
+    },
     urlClick (url) {
       async function fetchFile(url) {
         try {
