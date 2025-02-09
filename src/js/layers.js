@@ -18,14 +18,14 @@ export const clickPointSource ={
         data: {
             type: 'FeatureCollection',
             features: [
-                {
-                    type: 'Feature',
-                    geometry: {
-                        type: 'Point',
-                        coordinates: [139.6917, 35.6895] // 東京の座標
-                    },
-                    properties: {}
-                }
+                // {
+                //     type: 'Feature',
+                //     geometry: {
+                //         type: 'Point',
+                //         coordinates: [139.6917, 35.6895] // 東京の座標
+                //     },
+                //     properties: {}
+                // }
             ]
         }
     }

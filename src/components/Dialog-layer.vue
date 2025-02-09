@@ -402,7 +402,6 @@ export default {
               this.mw5AddLayers(map,this.mapName)
             } else {
               if (!map.getLayer(layer0.id)) {
-                console.log(layer0)
                 map.addLayer(layer0)
                 if (layer0.position) {
                   if (flyFlg && this.nodeClicked) {

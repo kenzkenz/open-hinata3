@@ -2638,8 +2638,8 @@ export default {
               features: []
             };
 
-            const clickedLng = parseFloat(e.lngLat.lng.toFixed(3));
-            const clickedLat = parseFloat(e.lngLat.lat.toFixed(3));
+            const clickedLng = e.lngLat.lng
+            const clickedLat = e.lngLat.lat
 
             const newFeature = {
               type: 'Feature',
@@ -2648,7 +2648,9 @@ export default {
                 type: 'Point',
                 coordinates: [clickedLng, clickedLat]
               },
-              properties: {}
+              properties: {
+                id: Math.random().toString().slice(2, 6)
+              }
             };
 
             currentData.features.push(newFeature);

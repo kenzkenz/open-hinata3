@@ -121,7 +121,7 @@ export default {
         layerId = 'oh-gaiku-layer'
       }
       saveSimaGaiku(map,layerId)
-      history('街区SIMA保存',window.location.href)
+      // history('街区SIMA保存',window.location.href)
     },
   },
   created() {

@@ -1,7 +1,9 @@
 import store from '@/store'
 import axios from "axios"
 import * as turf from '@turf/turf'
-import {convertAndDownloadGeoJSONToSIMA} from "@/js/downLoad";
+import {convertAndDownloadGeoJSONToSIMA, savePointSima} from "@/js/downLoad";
+import {feature} from "@turf/turf";
+import {clickPointSource} from "@/js/layers";
 export let currentIndex = 0
 let kasen
 export default function pyramid () {
@@ -978,50 +980,62 @@ export default function pyramid () {
                     carouselImages.style.transform = `translateX(-${offset}px)`;
                 }
                 updateCarousel('next');
-                // currentIndex = (currentIndex + 1) % totalImages;
-                // updateCarousel();
-                // if (currentIndex < totalImages - 1) {
-                //     currentIndex++;
-                //     updateCarousel();
-                // }
             }
         })
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
             if (e.target && (e.target.classList.contains("sima-output"))) {
-                const lon =e.target.getAttribute("lon")
-                const lat =e.target.getAttribute("lat")
+                const lon = Number(e.target.getAttribute("lon"))
+                const lat =Number(e.target.getAttribute("lat"))
                 const zahyokei =e.target.getAttribute("zahyokei")
-                alert(lon + '/' + lat + '/' + zahyokei)
+                // alert(lon + '/' + lat + '/' + zahyokei)
                 const point = turf.point([lon, lat]);
                 const pointGeojson = turf.featureCollection([point]);
-                convertAndDownloadGeoJSONToSIMA(store.state.map01,'', pointGeojson, '', '', zahyokei)
-
-
-
-
-
-                // const carouselImages = document.querySelector('.carousel-images');
-                // const images = document.querySelectorAll('.carousel-images img');
-                // const totalImages = images.length;
-                // function updateCarousel(direction) {
-                //     let offset = 0;
-                //     if (direction === 'next') {
-                //         currentIndex = (currentIndex + 1) % totalImages;
-                //     } else if (direction === 'prev') {
-                //         currentIndex = (currentIndex - 1 + totalImages) % totalImages;
-                //     }
-                //     for (let i = 0; i < currentIndex; i++) {
-                //         offset += images[i].offsetWidth;
-                //     }
-                //     carouselImages.style.transform = `translateX(-${offset}px)`;
-                // }
-                // updateCarousel('next');
+                savePointSima (store.state.map01, pointGeojson, zahyokei)
             }
         })
-
-
-
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("sima-output-all"))) {
+                const zahyokei =e.target.getAttribute("zahyokei")
+                const map = store.state.map01
+                const source = map.getSource('click-points-source');
+                const pointsGeojson = source._data
+                savePointSima (store.state.map01, pointsGeojson, zahyokei)
+            }
+        })
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("point-delete"))) {
+                const id = e.target.getAttribute("id")
+                const map01 = store.state.map01
+                let source01 = map01.getSource('click-points-source');
+                // const map02 = store.state.map02
+                // let source02 = map02.getSource('click-points-source');
+                let pointsGeojson = source01._data
+                // 修正: GeoJSON の全体構造を保持する
+                pointsGeojson = {
+                    type: "FeatureCollection",
+                    features: pointsGeojson.features.filter(feature => {
+                        return String(feature.properties.id) !== String(id)
+                    })
+                }
+                source01.setData(pointsGeojson) // 正しい GeoJSON を設定
+                // source02.setData(pointsGeojson)
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("point-delete-all"))) {
+                const map01 = store.state.map01
+                let source01 = map01.getSource('click-points-source');
+                // 空のGeoJSON FeatureCollectionを設定する
+                source01.setData({
+                    type: "FeatureCollection",
+                    features: []
+                });
+            }
+        });
     })
 }
 
