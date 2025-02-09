@@ -351,7 +351,7 @@ export default {
         const extLayer = params.get('extlayer')
         // let kmlText = params.get('kmltext')
         const geojsonText = params.get('geojsontext')
-        const dxfText = params.get('dxftext')
+        // const dxfText = params.get('dxftext')
         const gpxText = params.get('gpxtext')
 
         // map.jumpTo({
@@ -427,9 +427,12 @@ export default {
         const kmlText = match ? match[1] : null;
         if (kmlText) vm.$store.state.kmlText = kmlText
 
-        const match1 = response.data.match(/dxftext=(.*?)&/s);
-        const dxfText1 = match1 ? match1[1] : null;
-        if (dxfText1) vm.$store.state.dxfText = dxfText1
+        match = response.data.match(/dxftext=(.*?)&/s);
+        let dxfText = match ? match[1] : null;
+        dxfText = JSON.parse(dxfText)
+        const zahyokei = dxfText.zahyokei
+        vm.$store.state.zahyokei = zahyokei
+        if (dxfText) vm.$store.state.dxfText = dxfText
 
         if (geojsonText) vm.$store.state.geojsonText = geojsonText
         if (gpxText) vm.$store.state.gpxText = gpxText

@@ -518,7 +518,9 @@ export default {
         }
         if (this.$store.state.dxfText) {
           const parser = new DxfParser();
-          const dxf = parser.parseSync(this.$store.state.dxfText);
+          console.log(this.$store.state.dxfText)
+          this.$store.state.zahyokei = this.$store.state.dxfText.zahyokei
+          const dxf = parser.parseSync(this.$store.state.dxfText.text);
           const geojson = dxfToGeoJSON(dxf)
           // alert(JSON.stringify(geojson))
           geojsonAddLayer (map, geojson, false, 'dxf')

@@ -817,7 +817,8 @@ export default {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
       const parser = new DxfParser();
-      const dxf = parser.parseSync(this.$store.state.dxfText);
+      this.$store.state.dxfText.zahyokei = this.$store.state.zahyokei
+      const dxf = parser.parseSync(this.$store.state.dxfText.text);
       const geojson = dxfToGeoJSON(dxf);
       geojsonAddLayer (map01, geojson, true, 'dxf')
       geojsonAddLayer (map02, geojson, true, 'dxf')
@@ -1279,7 +1280,9 @@ export default {
       const extLayer = {layer:this.$store.state.extLayer,name:this.$store.state.extLayerName}
       const kmlText = this.$store.state.kmlText
       const geojsonText = this.$store.state.geojsonText
-      const dxfText = this.$store.state.dxfText
+      // const dxfText = JSON.stringify({text: this.$store.state.dxfText.text})
+      const dxfText = JSON.stringify(this.$store.state.dxfText)
+      console.log(dxfText)
       const gpxText = this.$store.state.gpxText
 
       // パーマリンクの生成
@@ -1358,6 +1361,7 @@ export default {
       const kmlText = params.get('kmltext')
       const geojsonText = params.get('geojsontext')
       const dxfText = params.get('dxftext')
+      console.log(dxfText)
       const gpxText = params.get('gpxtext')
       this.pitch.map01 = pitch01
       this.pitch.map02 = pitch02
@@ -1732,7 +1736,8 @@ export default {
 
           console.log(params.dxfText)
           if (params.dxfText) {
-            this.$store.state.dxfText = params.dxfText
+            console.log(params.dxfText)
+            this.$store.state.dxfText = JSON.parse(params.dxfText)
           }
 
           console.log(params.geojsonText)
@@ -2296,7 +2301,11 @@ export default {
               {
                 reader.onload = async (event) => {
                   const dxfText = event.target.result;
-                  this.$store.state.dxfText = dxfText
+                  // this.$store.state.dxfText = dxfText
+                  this.$store.state.dxfText = {
+                    text: dxfText,
+                    zahyokei: ''
+                  }
                   this.dialogForDxfApp = true
                 };
                 reader.readAsText(file);
