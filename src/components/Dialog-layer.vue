@@ -809,8 +809,20 @@ export default {
         map.setLayoutProperty("click-points-layer", "visibility", 'none');
       }
 
+      // if (this.$store.state.drawGeojsonText) {
 
+      alert(0)
 
+    //   setTimeout(() => {
+    //
+    //     console.log(map.getStyle().layers)
+    //     alert(1)
+    //     const terradrawLayers = map.getStyle().layers.filter(layer => layer.id.startsWith('terradraw-'));
+    //     map.getStyle().layers.forEach(layer => {
+    //       console.log(layer.id)
+    //       map.moveLayer(layer.id)
+    //     })
+    //   },10000)
     },
     mw5AddLayers(map,mapName) {
       if (!this.s_selectedLayers[mapName].find(v => v.id === 'oh-mw5')) {

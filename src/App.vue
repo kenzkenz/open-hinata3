@@ -668,6 +668,14 @@ export default {
     windowWidth: window.innerWidth,
   }),
   computed: {
+    s_drawGeojsonText: {
+      get() {
+        return this.$store.state.drawGeojsonText
+      },
+      set(value) {
+        this.$store.state.drawGeojsonText = value
+      }
+    },
     isSmall() {
       return this.windowWidth <= 500;
     },
@@ -1275,7 +1283,6 @@ export default {
       // console.log(this.$store.state.highlightedChibans)
       const chibans = []
       this.$store.state.highlightedChibans.forEach(h => {
-        console.log(h)
         chibans.push(h)
       })
       const simaText = this.$store.state.simaText
@@ -1283,15 +1290,14 @@ export default {
       const extLayer = {layer:this.$store.state.extLayer,name:this.$store.state.extLayerName}
       const kmlText = this.$store.state.kmlText
       const geojsonText = this.$store.state.geojsonText
-      // const dxfText = JSON.stringify({text: this.$store.state.dxfText.text})
       const dxfText = JSON.stringify(this.$store.state.dxfText)
-      console.log(dxfText)
       const gpxText = this.$store.state.gpxText
+      const drawGeojsonText = this.$store.state.drawGeojsonText
 
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
       ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}
-      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}&geojsontext=${geojsonText}&dxftext=${dxfText}&gpxtext=${gpxText}`
+      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}&geojsontext=${geojsonText}&dxftext=${dxfText}&gpxtext=${gpxText}&drawgeojsontext=${drawGeojsonText}`
       // console.log(this.param)
       // this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
@@ -1366,11 +1372,12 @@ export default {
       const dxfText = params.get('dxftext')
       console.log(dxfText)
       const gpxText = params.get('gpxtext')
+      const drawGeojsonText = params.get('drawgeojsontext')
       this.pitch.map01 = pitch01
       this.pitch.map02 = pitch02
       this.bearing = bearing
       this.s_terrainLevel = terrainLevel
-      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText}// 以前のリンクをいかすためpitchを入れている。
+      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText,drawGeojsonText}// 以前のリンクをいかすためpitchを入れている。
     },
     init() {
 
@@ -1579,30 +1586,23 @@ export default {
           'point',
           'linestring',
           'polygon',
-          'rectangle',
-          'angled-rectangle',
           'circle',
-          'sector',
-          'sensor',
           'freehand',
           'select',
           'delete-selection',
           'delete',
           'download'
         ],
-        open: true // 初期状態で有効化
+        open: false
       });
       map.addControl(drawControl, 'bottom-right');
       const drawInstance = drawControl.getTerraDrawInstance()
       drawInstance.on('finish', (e) => {
         const snapshot = drawInstance.getSnapshot();
-        const geojson = JSON.stringify(snapshot, null, 2); // フォーマットを整えるためにnull, 2を追加
-        console.log('GeoJSON:', geojson);
-        alert(geojson)
+        const geojsonText = JSON.stringify(snapshot, null, 2); // フォーマットを整えるためにnull, 2を追加
+        // console.log('GeoJSON:', geojsonText);
+        this.$store.state.drawGeojsonText = geojsonText
       });
-
-
-
 
 
 
@@ -1772,23 +1772,25 @@ export default {
           //   }
           // }
           // ----------------------------------------------------------------
-          console.log(params.gpxText)
+          if (params.drawGeojsonText) {
+            this.$store.state.drawGeojsonText = params.drawGeojsonText
+            const geojson = JSON.parse(this.$store.state.drawGeojsonText);
+            drawInstance.addFeatures(geojson);
+                const terradrawLayers = map.getStyle().layers.filter(layer => layer.id.startsWith('terradraw-'));
+          }
+
           if (params.gpxText) {
             this.$store.state.gpxText = params.gpxText
           }
 
-          console.log(params.dxfText)
           if (params.dxfText) {
-            console.log(params.dxfText)
             this.$store.state.dxfText = JSON.parse(params.dxfText)
           }
 
-          console.log(params.geojsonText)
           if (params.geojsonText) {
             this.$store.state.geojsonText = params.geojsonText
           }
 
-          console.log(params.kmlText)
           if (params.kmlText) {
             this.$store.state.kmlText = params.kmlText
           }
@@ -1802,7 +1804,6 @@ export default {
 
           if (params.image) {
             this.$store.state.uploadedImage = JSON.parse(params.image)
-            // alert('1293' + this.$store.state.uploadedImage)
           }
 
           if (params.simaText) {
