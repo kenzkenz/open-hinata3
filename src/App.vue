@@ -323,8 +323,6 @@ import { user } from "@/authState"; // グローバルの認証情報を取得
 import { MaplibreTerradrawControl,MaplibreMeasureControl } from '@watergis/maplibre-gl-terradraw';
 import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
 
-import Terradraw from '@watergis/maplibre-gl-terradraw';
-
 import {
   ddSimaUpload,
   downloadSimaText,
@@ -1603,8 +1601,8 @@ export default {
       this.$store.state.drawInstance = drawInstance
       drawInstance.on('finish', (e) => {
         const snapshot = drawInstance.getSnapshot();
-        const geojsonText = JSON.stringify(snapshot, null, 2); // フォーマットを整えるためにnull, 2を追加
-        this.$store.state.drawGeojsonText = geojsonText
+        const geojsonText = JSON.stringify(snapshot, null, 2);
+        // this.$store.state.drawGeojsonText = geojsonText
       });
 
 
@@ -2386,239 +2384,6 @@ export default {
             }
           });
 
-          // geotiff---------------------------------------------------------------------------------------------
-          // dropzone.addEventListener('drop', async (event) => {
-          //   event.preventDefault();
-          //   const files = event.dataTransfer.files;
-          //   console.log(files)
-          //   if (files.length > 0) {
-          //     const file = files[0];
-          //     const fileName = file.name;
-          //     const fileExtension = fileName.split('.').pop().toLowerCase();
-          //     if (fileExtension === 'tiff' || fileExtension === 'tif' || fileExtension === 'tfw') {
-          //       this.$store.state.tiffAndWorldFile = Array.from(event.dataTransfer.files);
-          //       alert(Array.from(event.dataTransfer.files))
-          //       this.s_dialogForGeotiffApp = true
-          //     }
-          //   }
-          // });
-
-          // ドロップ時の処理 SIMA----------------------------------------------------------------------------------------
-          // dropzone.addEventListener('drop', (event) => {
-          //   event.preventDefault();
-          //
-          //   const files = event.dataTransfer.files;
-          //
-          //   if (files.length > 0) {
-          //     const file = files[0];
-          //     const fileName = file.name;
-          //     const fileExtension = fileName.split('.').pop().toLowerCase();
-          //
-          //     if (fileExtension === 'sim') {
-          //       const reader = new FileReader();
-          //       reader.onload = (e) => {
-          //         const arrayBuffer = e.target.result; // ArrayBufferとして読み込む
-          //         const text = new TextDecoder("shift-jis").decode(arrayBuffer); // Shift JISをUTF-8に変換
-          //         console.log("変換されたテキスト:", text);
-          //         this.ddSimaText = text
-          //         this.s_dialogForSimaApp = true
-          //       };
-          //       reader.readAsArrayBuffer(file);
-          //     }
-          //   }
-          // });
-
-          // ファイルドロップ処理--------------------------------------------------------------------------------------------
-          // document.addEventListener('drop', (event) => {
-          //   event.preventDefault();
-          //
-          //   const files = event.dataTransfer.files;
-          //   if (files.length === 0) {
-          //     // alert('ファイルが選択されていません');
-          //     return;
-          //   }
-          //
-          //   const file = files[0];
-          //   if (file.type !== 'application/geo+json' && file.type !== 'application/json') {
-          //     // alert('GeoJSONファイルを選択してください');
-          //     return;
-          //   }
-          //
-          //   const reader = new FileReader();
-          //   reader.onload = (e) => {
-          //     try {
-          //       const geojson = JSON.parse(e.target.result);
-          //
-          //       // if (!geojson || !geojson.features) {
-          //       //   throw new Error('無効なGeoJSONデータです');
-          //       // }
-          //
-          //       const sourceId = 'user-geojson';
-          //       const pointLayerId = 'user-geojson-points';
-          //       const lineLayerId = 'user-geojson-lines';
-          //       const polygonLayerId = 'user-geojson-polygons';
-          //       const polygonLayerLineId = 'user-geojson-polygons-line';
-          //
-          //           // 既存のレイヤーとソースがある場合は削除
-          //       [pointLayerId, lineLayerId, polygonLayerId].forEach(layer => {
-          //         if (map.getLayer(layer)) {
-          //           map.removeLayer(layer);
-          //         }
-          //       });
-          //       if (map.getSource(sourceId)) {
-          //         map.removeSource(sourceId);
-          //       }
-          //
-          //       // GeoJSONをソースとして追加
-          //       map.addSource(sourceId, {
-          //         type: 'geojson',
-          //         data: geojson
-          //       });
-          //
-          //       // ポイントレイヤー
-          //       map.addLayer({
-          //         id: pointLayerId,
-          //         type: 'circle',
-          //         source: sourceId,
-          //         filter: ['==', '$type', 'Point'],
-          //         paint: {
-          //           'circle-radius': 6,
-          //           'circle-color': '#ff5722',
-          //           'circle-stroke-width': 2,
-          //           'circle-stroke-color': '#fff'
-          //         }
-          //       });
-          //
-          //       // ラインレイヤー
-          //       map.addLayer({
-          //         id: lineLayerId,
-          //         type: 'line',
-          //         source: sourceId,
-          //         filter: ['==', '$type', 'LineString'],
-          //         paint: {
-          //           'line-color': '#4caf50',
-          //           'line-width': 3
-          //         }
-          //       });
-          //
-          //       // ポリゴンレイヤー
-          //       map.addLayer({
-          //         id: polygonLayerId,
-          //         type: 'fill',
-          //         source: sourceId,
-          //         filter: ['==', '$type', 'Polygon'],
-          //         paint: {
-          //           'fill-color': '#2196f3',
-          //           'fill-opacity': 0.5,
-          //           'fill-outline-color': '#000'
-          //         }
-          //       });
-          //
-          //       // ポリゴンレイヤーライン
-          //       map.addLayer({
-          //         id: polygonLayerLineId,
-          //         type: 'line',
-          //         source: sourceId,
-          //         filter: ['==', '$type', 'Polygon'],
-          //         paint: {
-          //           'line-color': '##000',
-          //           'line-width': '1'
-          //         }
-          //       });
-          //
-          //       // 地図をGeoJSONの範囲にズーム
-          //       const bounds = new maplibregl.LngLatBounds();
-          //
-          //       geojson.features.forEach(feature => {
-          //         const geometry = feature.geometry;
-          //         if (!geometry) return;
-          //
-          //         switch (geometry.type) {
-          //           case 'Point':
-          //             bounds.extend(geometry.coordinates);
-          //             break;
-          //           case 'LineString':
-          //             geometry.coordinates.forEach(coord => bounds.extend(coord));
-          //             break;
-          //           case 'Polygon':
-          //             geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
-          //             break;
-          //           case 'MultiPolygon':
-          //             geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
-          //             break;
-          //         }
-          //       });
-          //
-          //       // boundsが有効か確認
-          //       if (bounds.isEmpty()) {
-          //         console.warn('有効な座標範囲が見つかりませんでした。');
-          //         return;
-          //       }
-          //
-          //       // fitBoundsを適用
-          //       map.fitBounds(bounds, {
-          //         padding: 50,
-          //         animate: true
-          //       });
-          //
-          //     } catch (error) {
-          //       console.error('GeoJSONの読み込みに失敗しました:', error);
-          //       // alert('無効なGeoJSONファイルです');
-          //     }
-          //   };
-          //   reader.readAsText(file);
-          // });
-          // -----------------------------------------------------------------------------------------------------------
-          // クリックで追加するポイントのGeoJSONソースを作成
-          // map.addSource('click-point', {
-          //   type: 'geojson',
-          //   data: {
-          //     type: 'FeatureCollection',
-          //     features: []
-          //   }
-          // });
-          //
-          // // ポイントを描画するレイヤーを追加
-          // map.addLayer({
-          //   id: 'click-point-layer',
-          //   type: 'circle',
-          //   source: 'click-point',
-          //   paint: {
-          //     'circle-radius': 8,
-          //     'circle-color': '#ff0000',
-          //     'circle-stroke-width': 2,
-          //     'circle-stroke-color': '#ffffff'
-          //   }
-          // });
-
-          // クリック時にポイントを追加
-          // map.on('click', function (e) {
-          //   const coordinates = [e.lngLat.lng, e.lngLat.lat];
-          //   // 現在のGeoJSONデータを取得
-          //   const source = map.getSource('click-points-source');
-          //   if (!source) return;
-          //   const currentData = source._data || { // 既存データがない場合、空のFeatureCollectionを作成
-          //     type: 'FeatureCollection',
-          //     features: []
-          //   };
-          //   // 新しいポイントを追加
-          //   const newFeature = {
-          //     type: 'Feature',
-          //     geometry: {
-          //       type: 'Point',
-          //       coordinates: coordinates
-          //     },
-          //     properties: {}
-          //   };
-          //   // features 配列に新しいポイントを追加
-          //   currentData.features.push(newFeature);
-          //   // GeoJSONデータを更新
-          //   source.setData(currentData);
-          // });
-
-
-
-
           let isCursorOnFeature = false;
           let isDragging = false;
           let draggedFeatureId = null;
@@ -2644,7 +2409,7 @@ export default {
             }
           });
 
-          map.on('mousemove', function (e) {
+          map.on('mousemove', async function (e) {
             if (!isDragging || draggedFeatureId === null) return;
 
             const source = map.getSource('click-points-source');
@@ -2653,9 +2418,12 @@ export default {
             const currentData = source._data;
             if (!currentData) return;
 
+            let elevation = await fetchElevation(e.lngLat.lng, e.lngLat.lat);
+            if (!elevation) elevation = 0
+
             const feature = currentData.features.find(f => f.id === draggedFeatureId);
             if (feature) {
-              feature.geometry.coordinates = [e.lngLat.lng, e.lngLat.lat];
+              feature.geometry.coordinates = [e.lngLat.lng, e.lngLat.lat, elevation];
               source.setData(currentData);
               map.getCanvas().style.cursor = 'grabbing';
             }
@@ -2669,170 +2437,39 @@ export default {
             }
           });
 
-          map.on('click', function (e) {
+          map.on('click', async function (e) {
             if (isDragging) return; // ドラッグ中のクリックを防止
-
             const visibility = map.getLayoutProperty('click-points-layer', 'visibility');
             if (visibility === 'none') {
               return;
             }
-
             const source = map.getSource('click-points-source');
             if (!source) return;
-
             if (isCursorOnFeature) return;
-
             const currentData = source._data || {
               type: 'FeatureCollection',
               features: []
             };
-
             const clickedLng = e.lngLat.lng
             const clickedLat = e.lngLat.lat
+
+            let elevation = await fetchElevation(e.lngLat.lng, e.lngLat.lat);
+            if (!elevation) elevation = 0
 
             const newFeature = {
               type: 'Feature',
               id: currentData.features.length,
               geometry: {
                 type: 'Point',
-                coordinates: [clickedLng, clickedLat]
+                coordinates: [clickedLng, clickedLat, elevation]
               },
               properties: {
-                id: Math.random().toString().slice(2, 6)
+                id: Math.random().toString().slice(2, 6),
               }
             };
-
             currentData.features.push(newFeature);
             source.setData(currentData);
           });
-
-          // let isCursorOnFeature = false;
-          //
-          // map.on('mousemove', function (e) {
-          //   const features = map.queryRenderedFeatures(e.point, { layers: ['click-points-layer'] });
-          //   if (features.length > 0) {
-          //     isCursorOnFeature = true;
-          //     map.getCanvas().style.cursor = 'pointer'; // カーソル変更
-          //   } else {
-          //     isCursorOnFeature = false;
-          //     map.getCanvas().style.cursor = '';
-          //   }
-          // });
-          //
-          // map.on('click', function (e) {
-          //   const source = map.getSource('click-points-source');
-          //   if (!source) return;
-          //
-          //   // カーソルが既存のポイントに当たっている場合は追加しない
-          //   if (isCursorOnFeature) {
-          //     return;
-          //   }
-          //
-          //   // 現在のGeoJSONデータを取得
-          //   const currentData = source._data || {
-          //     type: 'FeatureCollection',
-          //     features: []
-          //   };
-          //
-          //   const clickedLng = parseFloat(e.lngLat.lng.toFixed(3));
-          //   const clickedLat = parseFloat(e.lngLat.lat.toFixed(3));
-          //
-          //   // 新しいポイントを追加（IDを付与）
-          //   const newFeature = {
-          //     type: 'Feature',
-          //     id: currentData.features.length,
-          //     geometry: {
-          //       type: 'Point',
-          //       coordinates: [clickedLng, clickedLat]
-          //     },
-          //     properties: {}
-          //   };
-          //
-          //   currentData.features.push(newFeature);
-          //   source.setData(currentData);
-          //
-          //   // // 追加したポイントにポップアップを表示
-          //   // popup
-          //   //     .setLngLat([clickedLng, clickedLat])
-          //   //     .setHTML(`<p>ポイント ID: ${newFeature.id}</p>`)
-          //   //     .addTo(map);
-          // });
-
-
-
-
-
-
-          // let isDragging = false;
-          // let draggedFeatureId = null;
-          // map.on('click', function (e) {
-          //   const coordinates = [e.lngLat.lng, e.lngLat.lat];
-          //   // 現在のGeoJSONデータを取得
-          //   const source = map.getSource('click-points-source');
-          //   if (!source) return;
-          //   const currentData = source._data || {
-          //     type: 'FeatureCollection',
-          //     features: []
-          //   };
-          //
-          //   const popup = new maplibregl.Popup({ closeButton: true, maxWidth: "350px" })
-          //   .setLngLat(coordinates)
-          //   .setHTML('ssssssss')
-          //   .addTo(map);
-          //
-          //
-          //   // 新しいポイントを追加（IDを付与）
-          //   const newFeature = {
-          //     type: 'Feature',
-          //     id: currentData.features.length, // 一意のID
-          //     geometry: {
-          //       type: 'Point',
-          //       coordinates: coordinates
-          //     },
-          //     properties: {}
-          //   };
-          //   currentData.features.push(newFeature);
-          //   // GeoJSONデータを更新
-          //   source.setData(currentData);
-          // });
-          //
-          // // ドラッグ開始
-          // map.on('mousedown', 'click-points-layer', function (e) {
-          //   e.preventDefault();
-          //   if (!e.features.length) return;
-          //   isDragging = true;
-          //   draggedFeatureId = e.features[0].id;
-          //   map.getCanvas().style.cursor = 'grabbing';
-          // });
-          //
-          // // ドラッグ中
-          // map.on('mousemove', function (e) {
-          //   if (!isDragging || draggedFeatureId === null) return;
-          //   const source = map.getSource('click-points-source');
-          //   if (!source) return;
-          //   const currentData = source._data;
-          //   // 対象のポイントを更新
-          //   const feature = currentData.features.find(f => f.id === draggedFeatureId);
-          //   if (feature) {
-          //     feature.geometry.coordinates = [e.lngLat.lng, e.lngLat.lat];
-          //   }
-          //   // GeoJSONデータを更新
-          //   source.setData(currentData);
-          // });
-          //
-          // // ドラッグ終了
-          // map.on('mouseup', function () {
-          //   if (!isDragging) return;
-          //   isDragging = false;
-          //   draggedFeatureId = null;
-          //   map.getCanvas().style.cursor = '';
-          // });
-
-
-
-
-
-
 
           // -----------------------------------------------------------------------------------------------------------
           map.addSource('zones-source', {

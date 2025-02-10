@@ -3171,7 +3171,6 @@ export function popup(e,map,mapName,mapFlg) {
                         map.project(e.lngLat), {layers: [layerId]}
                     )
                 }
-                console.log(coordinates)
                 if (features.length === 0) return
                 props = features[0].properties
 
@@ -3184,8 +3183,8 @@ export function popup(e,map,mapName,mapFlg) {
                         '<span style="font-size:16px;">経度:' + coordinates[0].toFixed(3) + ' 緯度:' + coordinates[1].toFixed(3) + '</span><hr>' +
                         '<span style="font-size:16px;">' + store.state.zahyokei + '</span><br>' +
                         '<span style="font-size:16px;">' + jgdCoord[0].toFixed(3) + ', ' + jgdCoord[1].toFixed(3) + '</span><hr>' +
-                        '<button class="sima-output pyramid-btn" mapname="' + mapName + '" lon="' + coordinates[0] + '" lat="' + coordinates[1] + '" zahyokei="' + store.state.zahyokei + '">SIMA出力一点</button><br>' +
-                        '<button class="sima-output-all pyramid-btn" mapname="' + '" zahyokei="' + store.state.zahyokei + '">SIMA出力全部</button><br>' +
+                        '<button class="sima-output pyramid-btn" id="' + props.id  + '" zahyokei="' + store.state.zahyokei + '">SIMA出力一点</button><br>' +
+                        '<button class="sima-output-all pyramid-btn" zahyokei="' + store.state.zahyokei + '">SIMA出力全部</button><br>' +
                         '<button class="point-delete pyramid-btn" id="' + props.id + '">このポイントを削除</button><br>' +
                         '<button class="point-delete-all pyramid-btn">ポイントを全て削除</button><br>' +
                         '</div>'

@@ -1434,7 +1434,11 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
                 });
             }
         });
-        map.fitBounds(bounds, { padding: 20 });
+        if (geoJSON.features.length === 1 && geoJSON.features[0].geometry.type === 'Point') {
+            map.fitBounds(bounds, { padding: 20, maxZoom: 18 });
+        } else {
+            map.fitBounds(bounds, { padding: 20 });
+        }
     }
 
     // ファイル入力をリセット
@@ -2558,19 +2562,22 @@ export function savePointSima (map,geojson,zahyokei0) {
         const coord = feature.geometry.coordinates;
         if (
             Array.isArray(coord) &&
-            coord.length === 2 &&
             Number.isFinite(coord[0]) &&
             Number.isFinite(coord[1])
         ) {
-            const [x, y] = proj4('EPSG:4326', code, coord); // 座標系変換
+            const [x, y] = proj4('EPSG:4326', code, [coord[0],coord[1]]); // 座標系変換
             const coordinateKey = `${x},${y}`;
             const name = ''
             const zahyoY = y
             const zahyoX = x
-
+            const zahyoZ = coord[2]
+            console.log(zahyoY)
+            console.log(zahyoX)
+            console.log(coord[2])
             if (!coordinateMap.has(coordinateKey)) {
                 coordinateMap.set(coordinateKey, j);
-                A01Text += 'A01,' + j + ',' + j + ',' + zahyoY + ',' + zahyoX + ',\n';
+                A01Text += 'A01,' + j + ',' + j + ',' + zahyoY + ',' + zahyoX + ',' + zahyoZ + ',\n';
+                // A01Text += 'A01,' + j + ',' + j + ',' + zahyoY + ',' + zahyoX + ',\n';
                 j++;
             }
         } else {

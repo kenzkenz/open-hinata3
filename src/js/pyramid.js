@@ -985,12 +985,20 @@ export default function pyramid () {
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
             if (e.target && (e.target.classList.contains("sima-output"))) {
-                const lon = Number(e.target.getAttribute("lon"))
-                const lat =Number(e.target.getAttribute("lat"))
+                const id = e.target.getAttribute("id")
                 const zahyokei =e.target.getAttribute("zahyokei")
-                // alert(lon + '/' + lat + '/' + zahyokei)
-                const point = turf.point([lon, lat]);
-                const pointGeojson = turf.featureCollection([point]);
+                const map = store.state.map01
+                const source = map.getSource('click-points-source');
+                const pointsGeojson = source._data
+                console.log(pointsGeojson)
+                // find の戻り値がオブジェクトなので配列に包む
+                const foundFeature = pointsGeojson.features.find(feature =>
+                    String(feature.properties.id) === String(id)
+                );
+                const pointGeojson = {
+                    type: "FeatureCollection",
+                    features: [foundFeature]// 配列にする
+                };
                 savePointSima (store.state.map01, pointGeojson, zahyokei)
             }
         })
