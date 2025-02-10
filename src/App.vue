@@ -322,6 +322,9 @@ import { gpx } from '@tmcw/togeojson'
 import { user } from "@/authState"; // グローバルの認証情報を取得
 import { MaplibreTerradrawControl,MaplibreMeasureControl } from '@watergis/maplibre-gl-terradraw';
 import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
+
+import Terradraw from '@watergis/maplibre-gl-terradraw';
+
 import {
   ddSimaUpload,
   downloadSimaText,
@@ -1593,17 +1596,16 @@ export default {
           'delete',
           'download'
         ],
-        open: false
+        open: false,
       });
       map.addControl(drawControl, 'bottom-right');
       const drawInstance = drawControl.getTerraDrawInstance()
+      this.$store.state.drawInstance = drawInstance
       drawInstance.on('finish', (e) => {
         const snapshot = drawInstance.getSnapshot();
         const geojsonText = JSON.stringify(snapshot, null, 2); // フォーマットを整えるためにnull, 2を追加
-        // console.log('GeoJSON:', geojsonText);
         this.$store.state.drawGeojsonText = geojsonText
       });
-
 
 
 
@@ -1776,7 +1778,7 @@ export default {
             this.$store.state.drawGeojsonText = params.drawGeojsonText
             const geojson = JSON.parse(this.$store.state.drawGeojsonText);
             drawInstance.addFeatures(geojson);
-                const terradrawLayers = map.getStyle().layers.filter(layer => layer.id.startsWith('terradraw-'));
+            const terradrawLayers = map.getStyle().layers.filter(layer => layer.id.startsWith('terradraw-'));
           }
 
           if (params.gpxText) {
@@ -2130,6 +2132,7 @@ export default {
 
           //------------------------------------------------------------------------------------------------------------
           map.on('mousemove', (e) => {
+            // console.log(e)
             // クリック可能なすべてのレイヤーからフィーチャーを取得
             const features = map.queryRenderedFeatures(e.point);
             if (features.length) {
@@ -2146,6 +2149,7 @@ export default {
                 }
               }
             } else {
+              map.getCanvas().style.cursor = 'default';
               if (map.getCanvas().style.cursor !== 'wait') {
                 map.getCanvas().style.cursor = 'default';
               }

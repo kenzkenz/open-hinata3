@@ -809,9 +809,16 @@ export default {
         map.setLayoutProperty("click-points-layer", "visibility", 'none');
       }
 
+
+
+
       // if (this.$store.state.drawGeojsonText) {
 
-      alert(0)
+      // alert(1)
+      //
+      // const geojson = JSON.parse(this.$store.state.drawGeojsonText);
+      // this.$store.state.drawInstance.addFeatures(geojson);
+
 
     //   setTimeout(() => {
     //
