@@ -1568,20 +1568,15 @@ export default {
       const vm = this
       //----------------------------------
 
-
-
-
-
       // const draw = new MaplibreTerradrawControl({
       //   modes: ['render', 'point', 'linestring', 'polygon', 'rectangle', 'circle', 'freehand', 'select', 'delete-selection', 'delete']
       // });
       // map.addControl(draw, 'bottom-right');
 
-
-
       const drawControl = new MaplibreMeasureControl({
         modes: [
           'render',
+          'point',
           'linestring',
           'polygon',
           'rectangle',
@@ -1595,14 +1590,42 @@ export default {
           'delete',
           'download'
         ],
-        open: false
+        open: true // 初期状態で有効化
       });
       map.addControl(drawControl, 'bottom-right');
 
+// 現在の描画モードをログに出力
+//       console.log('Current Mode:', drawControl.getMode());
+
+// マウスの動きを監視
+//       map.on('mousemove', (e) => {
+//         console.log('Mouse move:', e.lngLat);
+//       });
+
+// 描画モードの手動設定
+//       setTimeout(() => {
+//         drawControl.setMode('polygon');
+//         console.log('Set Mode:', drawControl.getMode());
+//       }, 1000);
+
+// イベント発火の確認
+      map.on('load', function() {
+
+        map.on('draw.create', (e) => {
+          alert()
+          console.log('Draw event fired:', e);
+          setTimeout(() => {
+            const geojson = drawControl.getAll();
+            console.log('GeoJSON:', JSON.stringify(geojson, null, 2));
+          }, 100);
+        });
+      })
 
 
 
-
+// コントロールが正しく追加されているか確認
+      console.log('Draw Control:', drawControl);
+      console.log('Map Controls:', map._controls);
 
 
 
