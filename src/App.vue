@@ -2630,7 +2630,7 @@ export default {
               map.getCanvas().style.cursor = 'pointer';
             } else {
               isCursorOnFeature = false;
-              map.getCanvas().style.cursor = '';
+              // map.getCanvas().style.cursor = '';
             }
           });
 
@@ -2657,6 +2657,7 @@ export default {
             if (feature) {
               feature.geometry.coordinates = [e.lngLat.lng, e.lngLat.lat];
               source.setData(currentData);
+              map.getCanvas().style.cursor = 'grabbing';
             }
           });
 
