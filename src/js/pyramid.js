@@ -1030,6 +1030,7 @@ export default function pyramid () {
                 }
                 source01.setData(pointsGeojson) // 正しい GeoJSON を設定
                 // source02.setData(pointsGeojson)
+                store.state.clickGeojsonText = JSON.stringify(pointsGeojson)
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1042,6 +1043,7 @@ export default function pyramid () {
                     type: "FeatureCollection",
                     features: []
                 });
+                store.state.clickGeojsonText = ''
             }
         });
     })

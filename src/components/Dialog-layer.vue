@@ -794,6 +794,7 @@ export default {
       if (map.getLayer('oh-chibanzu-深谷市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-深谷市');
       if (map.getLayer('oh-chibanzu-伊丹市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-伊丹市');
       if (map.getLayer('oh-chibanzu-豊中市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-豊中市');
+      if (map.getLayer('oh-chibanzu-姫路市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-姫路市');
       this.counter++
 
 
@@ -801,6 +802,11 @@ export default {
         map.removeLayer('click-points-layer')
         map.removeSource('click-points-source')
       }
+
+      if (this.$store.state.clickGeojsonText) {
+        clickPointSource.obj.data = JSON.parse(this.$store.state.clickGeojsonText)
+      }
+
       map.addSource('click-points-source', clickPointSource.obj)
       map.addLayer(clickPointLayer)
       if (this.$store.state.isClickPointsLayer) {

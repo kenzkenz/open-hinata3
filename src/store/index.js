@@ -110,7 +110,7 @@ export default createStore({
     extLayer: '',
     isClickPointsLayer:false,
     drawGeojsonText: '',
-    drawInstance: null,
+    clickGeojsonText: '',
     //------------------------
     highwayYear:{
       map01: 2024,

@@ -1294,11 +1294,11 @@ export default {
       const dxfText = JSON.stringify(this.$store.state.dxfText)
       const gpxText = this.$store.state.gpxText
       const drawGeojsonText = this.$store.state.drawGeojsonText
-
+      const clickGeojsonText = this.$store.state.clickGeojsonText
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
       ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}
-      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}&geojsontext=${geojsonText}&dxftext=${dxfText}&gpxtext=${gpxText}&drawgeojsontext=${drawGeojsonText}`
+      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}&geojsontext=${geojsonText}&dxftext=${dxfText}&gpxtext=${gpxText}&drawgeojsontext=${drawGeojsonText}&clickgeojsontext=${clickGeojsonText}`
       // console.log(this.param)
       // this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
@@ -1374,11 +1374,12 @@ export default {
       console.log(dxfText)
       const gpxText = params.get('gpxtext')
       const drawGeojsonText = params.get('drawgeojsontext')
+      const clickGeojsonText = params.get('clickgeojsontext')
       this.pitch.map01 = pitch01
       this.pitch.map02 = pitch02
       this.bearing = bearing
       this.s_terrainLevel = terrainLevel
-      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText,drawGeojsonText}// 以前のリンクをいかすためpitchを入れている。
+      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText,drawGeojsonText,clickGeojsonText}// 以前のリンクをいかすためpitchを入れている。
     },
     init() {
 
@@ -1772,6 +1773,10 @@ export default {
           //   }
           // }
           // ----------------------------------------------------------------
+          if (params.clickGeojsonText) {
+            this.$store.state.clickGeojsonText = params.clickGeojsonText
+          }
+
           if (params.drawGeojsonText) {
             this.$store.state.drawGeojsonText = params.drawGeojsonText
             const geojson = JSON.parse(this.$store.state.drawGeojsonText);
@@ -2426,6 +2431,7 @@ export default {
               feature.geometry.coordinates = [e.lngLat.lng, e.lngLat.lat, elevation];
               source.setData(currentData);
               map.getCanvas().style.cursor = 'grabbing';
+              vm.$store.state.clickGeojsonText = JSON.stringify(currentData)
             }
           });
 
@@ -2469,6 +2475,7 @@ export default {
             };
             currentData.features.push(newFeature);
             source.setData(currentData);
+            vm.$store.state.clickGeojsonText = JSON.stringify(currentData)
           });
 
           // -----------------------------------------------------------------------------------------------------------
