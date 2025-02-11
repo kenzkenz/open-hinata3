@@ -8101,16 +8101,15 @@ const layers01 = [
         id: 'hikkai',
         label: "筆界調査データベース",
         nodes: [
-            // {
-            //     id: 'oh-amx-a-fude',
-            //     label: "登記所備付地図データ",
-            //     // source: amxSource,
-            //     // layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel,amxLayerVertex],
-            //     sources: [amxSource,amx2024Source],
-            //     layers: [amxLayerDaihyou,amx2024LayerLabel,amx2024Layer,amx2024LayerLine,amx2024LayerVertex],
-            //     attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
-            //     ext: {name:'extTokijyo'}
-            // },
+            {
+                id: 'oh-amx-a-fude',
+                label: "登記所備付地図データ",
+                sources: [amxSource,amx2024Source],
+                layers: [amxLayerDaihyou,amx2024Layer,amx2024LayerLine,amx2024LayerVertex,amx2024LayerLabel],
+                // layers: [amxLayerDaihyou,amx2024LayerLabel,amx2024Layer,amx2024LayerLine,amx2024LayerVertex],
+                attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
+                ext: {name:'extTokijyo'}
+            },
             {
                 id: 'oh-fude',
                 label: "農地の区画情報(筆ポリゴン)",
@@ -8198,16 +8197,221 @@ const layers01 = [
         id: 'fudosan',
         label: "不動産情報",
         nodes: [
-            // {
-            //     id: 'oh-amx-a-fude',
-            //     label: "登記所備付地図データ",
-            //     // source: amxSource,
-            //     // layers:[amxLayer,amxLayerLine,amxLayerDaihyou,amxLayerLabel,amxLayerVertex],
-            //     sources: [amxSource,amx2024Source],
-            //     layers: [amxLayerDaihyou,amx2024LayerLabel,amx2024Layer,amx2024LayerLine,amx2024LayerVertex],
-            //     attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
-            //     ext: {name:'extTokijyo'}
-            // },
+            {
+                id: 'oh-koji',
+                label: "公示価格（R06）",
+                source: kojiSource,
+                layers:[kojiLayerPoint,kojiLayerLabel],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-L01-2024.html" target="_blank">国土数値情報</a>'
+            },
+            {
+                id: 'oh-koji-3d',
+                label: "公示価格（R06）3D",
+                source: kojiSource,
+                layers:[kojilayerheight],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-L01-2024.html" target="_blank">国土数値情報</a>' +
+                    '<div class="legend-scale">' +
+                    '<ul class="legend-labels">' +
+                    '<li><span style="background:rgb(225, 49, 33);"></span>1000万円以上</li>' +
+                    '<li><span style="background:rgb(225, 61, 35);"></span>100万円ー1000万円</li>' +
+                    '<li><span style="background:rgb(226, 84, 39);"></span>75万円ー100万円</li>' +
+                    '<li><span style="background:rgb(231, 145, 52);"></span>50万円ー75万円</li>' +
+                    '<li><span style="background:rgb(235, 178, 61);"></span>25万円ー50万円</li>' +
+                    '<li><span style="background:rgb(239, 211, 71);"></span>10万円ー25万円</li>' +
+                    '<li><span style="background:rgb(245, 245, 81);"></span>10万円未満</li>' +
+                    '</ul>' +
+                    '</div>',
+                info: true
+            },
+            {
+                id: 'oh-chika',
+                label: "都道府県地価調査（R06）3D",
+                source: chikaSource3d,
+                layers:[chikalayerheight],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-L02-2024.html" target="_blank">国土数値情報</a>' +
+                    '<div class="legend-scale">' +
+                    '<ul class="legend-labels">' +
+                    '<li><span style="background:rgb(225, 49, 33);"></span>1000万円以上</li>' +
+                    '<li><span style="background:rgb(225, 61, 35);"></span>100万円ー1000万円</li>' +
+                    '<li><span style="background:rgb(226, 84, 39);"></span>75万円ー100万円</li>' +
+                    '<li><span style="background:rgb(231, 145, 52);"></span>50万円ー75万円</li>' +
+                    '<li><span style="background:rgb(235, 178, 61);"></span>25万円ー50万円</li>' +
+                    '<li><span style="background:rgb(239, 211, 71);"></span>10万円ー25万円</li>' +
+                    '<li><span style="background:rgb(245, 245, 81);"></span>10万円未満</li>' +
+                    '</ul>' +
+                    '</div>',
+                info: true
+            },
+            {
+                id: 'oh-amx-a-fude',
+                label: "登記所備付地図データ",
+                sources: [amxSource,amx2024Source],
+                layers: [amxLayerDaihyou,amx2024Layer,amx2024LayerLine,amx2024LayerVertex,amx2024LayerLabel],
+                // layers: [amxLayerDaihyou,amx2024LayerLabel,amx2024Layer,amx2024LayerLine,amx2024LayerVertex],
+                attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
+                ext: {name:'extTokijyo'}
+            },
+            {
+                id: 'citychibanzu',
+                label: "市町村地番図",
+                nodes: [
+                    ...chibanzuLayers2,
+                ]
+            },
+            {
+                id: 'hazard',
+                label: "ハザードマップ等",
+                nodes: [
+                    {
+                        id: 'hinanbasyo',
+                        label: "指定緊急避難場所",
+                        nodes: [
+                            {
+                                id: 'oh-hinanjyo-kozui',
+                                label: "指定緊急避難場所(洪水)",
+                                source: hinanjyoKozuiSource,
+                                layers: [hinanjyoKozuiLayer,hinanjyoKozuiLayerLabel],
+                            },
+                            {
+                                id: 'oh-tsunami-kozui',
+                                label: "指定緊急避難場所(津波)",
+                                source: hinanjyoTsunamiSource,
+                                layers: [hinanjyoTsunamiLayer,hinanjyoTsunamiLayerLabel],
+                            },
+                            {
+                                id: 'oh-hinanjyo-dosekiryu',
+                                label: "指定緊急避難場所(崖崩れ等)",
+                                source: hinanjyoDosekiryuSource,
+                                layers: [hinanjyoDosekiryuLayer,hinanjyoDosekiryuLayerLabel],
+                                attribution: '指定緊急避難場所(崖崩れ、土石流及び地滑り)'
+                            },
+                        ]
+                    },
+                    {
+                        id: 'oh-kozui-saidai',
+                        label: "洪水浸水想定（想定最大規模）",
+                        source: kozuiSaidaiSource,
+                        layers: [kozuiSaidaiLayer],
+                        attribution: '<a href="https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/opendata.html" target="_blank">ハザードマップポータルサイト</a><br><br>' +
+                            '<img src="' + require('@/assets/legend/shinsui_legend3.png') + '">'
+                    },
+                    {
+                        id: 'oh-keikaku-saidai',
+                        label: "洪水浸水想定（計画規模）",
+                        source: kozuikeikskuSource,
+                        layers: [kozuiKeikskuLayer],
+                        attribution: '<a href="https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/opendata.html" target="_blank">ハザードマップポータルサイト</a><br><br>' +
+                            '<img src="' + require('@/assets/legend/shinsui_legend3.png') + '">'
+                    },
+                    {
+                        id: 'oh-tsunami',
+                        label: "津波浸水想定",
+                        source: tsunamiSource,
+                        layers: [tsunamiLayer],
+                        attribution: '<a href="https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/opendata.html" target="_blank">ハザードマップポータルサイト</a><br><br>' +
+                            '<img src="' + require('@/assets/legend/shinsui_legend3.png') + '">'
+                    },
+                    {
+                        id: 'oh-tameike',
+                        label: "ため池決壊による浸水想定",
+                        source: tameikeSource,
+                        layers: [tameikeLayer],
+                        attribution: '<a href="https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/opendata.html" target="_blank">ハザードマップポータルサイト</a>'
+                    },
+                    {
+                        id: 'oh-dosya',
+                        label: "土砂災害警戒区域",
+                        source: dosyaSource,
+                        layers: [dosyaLayer],
+                        attribution: '<a href="https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/opendata.html" target="_blank">ハザードマップポータルサイト</a>'
+                    },
+                    {
+                        id: 'oh-dosekiryu',
+                        label: "土石流危険渓流",
+                        source: dosekiryuSource,
+                        layers: [dosekiryuLayer],
+                        attribution: '<a href="https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/opendata.html" target="_blank">ハザードマップポータルサイト</a>'
+                    },
+                    {
+                        id: 'oh-kyukeisya',
+                        label: "急傾斜地崩壊危険箇所",
+                        source: kyukeisyaSource,
+                        layers: [kyukeisyaLayer],
+                        attribution: '<a href="https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/opendata.html" target="_blank">ハザードマップポータルサイト</a>'
+                    },
+                    {
+                        id: 'oh-jisuberi',
+                        label: "地すべり危険箇所",
+                        source: jisuberiSource,
+                        layers: [jisuberiLayer],
+                        attribution: '<a href="https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/opendata.html" target="_blank">ハザードマップポータルサイト</a>'
+                    },
+                    {
+                        id: 'oh-kansui',
+                        label: "道路冠水想定箇所（アンダーパス等",
+                        source: kansuiSource,
+                        layers: [kansuiLayer,kansuiLayerLabel],
+                    },
+                    {
+                        id: 'oh-tsunami-height',
+                        label: "津波浸水想定3D",
+                        source: tsunamiSource2,
+                        layers: [tsunamiLayerHeight],
+                        attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A40-2023.html" target="_blank">国土数値情報</a>'
+
+                    },
+                    {
+                        id: 'oh-nantora-height',
+                        label: "宮崎県南海トラフ津波浸水想定3D",
+                        source: nantoraSource,
+                        layers: [nantoraLayerHeight],
+                    },
+                    {
+                        id: 'oh-hokkaidotsunami-height',
+                        label: "北海道津波浸水想定3D",
+                        source: hokkaidotsunamiSource,
+                        layers: [hokkaidotsunamiLayerHeight],
+                    },
+                    {
+                        id: 'oh-zosei',
+                        label: "R05大規模盛土造成地",
+                        source: zoseiSource,
+                        layers: [zoseiLayer,zoseiLayerLine,zoseiLayerLabel],
+                        attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A54-2023.html" target="_blank">国土数値情報</a>'
+                    },
+                    {
+                        id: 'oh-tokyojishin',
+                        label: "地震に関する危険度一覧(東京都)",
+                        source: tokyojishinSource,
+                        layers: [tokyojishinLayerSogo,tokyojishinLayerLine,tokyojishinLayerLabel],
+                    },
+                    {
+                        id: 'oh-tokyojishin3d',
+                        label: "地震に関する危険度一覧(東京都)3D",
+                        source: tokyojishinSource,
+                        layers: [tokyojishinLayerSogo,tokyojishinLayerLine,tokyojishinLayerLabel,tokyojishinheightSogo],
+                    },
+                    // {
+                    //     id: 'oh-tokyojishin',
+                    //     label: "地震に関する危険度一覧(東京都)",
+                    //     source: tokyojishinSource,
+                    //     layers: [tokyojishinLayer,tokyojishinLayerLine,tokyojishinLayerLabel,tokyojishinheight],
+                    // },
+                    {
+                        id: 'oh-densyohi',
+                        label: "災害伝承碑",
+                        source: densyohiSource,
+                        layers: [densyohiLayer,densyohiLayerLabel],
+                    },
+                    {
+                        id: 'oh-fukuokakenhazard',
+                        label: "福岡県土砂災害",
+                        source: fukuokakenHazardSource,
+                        layers: [fukuokakenHazardLayer,fukuokakenHazardLayerLine],
+                        attribution: '<a href="https://ckan.open-governmentdata.org/dataset/401000_dosyasaigaikeikaikuikitoudata" target="_blank">福岡県　土砂災害警戒区域等のshapeデータ</a>'
+                    },
+                ]
+            },
             {
                 id: 'oh-fude',
                 label: "農地の区画情報(筆ポリゴン)",
@@ -8224,22 +8428,6 @@ const layers01 = [
                 // ext: {name:'extTokijyo'}
             },
             {
-                id: 'citychibanzu',
-                label: "市町村地番図",
-                nodes: [
-                    ...chibanzuLayers2,
-                    {
-                        id: 'oh-chibanzu2024',
-                        label: "24自治体地番図",
-                        source: chibanzu2024Source,
-                        layers:[chibanzu2024Layer,chibanzu2024Line],
-                        attribution: '<a href="https://www.geospatial.jp/ckan/dataset/chibanzu_2024/resource/79642df8-0456-4847-97cd-a9934cbee42e">Chibanzu_2024.fgb</a><br>'+
-                            '<a href="https://hackmd.io/@kenz/SkQ_R21Lkg" target="_blank">24自治体の情報はこちら</a>',
-                        ext: {name:'extChibanz2024'}
-                    },
-                ]
-            },
-            {
                 id: 'oh-syochiiki',
                 label: "2020国勢調査小地域人口ピラミッド",
                 source: syochiikiSource,
@@ -8253,6 +8441,164 @@ const layers01 = [
                 source: didSource,
                 layers: [didLayer,didLayerLine],
                 attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A16-v2_3.html" target="_blank">国土数値情報</a>'
+            },
+            {
+                id: 'oh-bus',
+                label: "R04バスルートと停留所",
+                sources: [busSource,busteiSource],
+                layers: [busLayer,busteiLayer,busteiLayerLabel],
+                attribution: "<a href='https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N07-v2_0.html' target='_blank'>国土数値情報</a>",
+                ext: {name:'extBus',parameters:[]}
+            },
+            {
+                id: 'oh-tetsudo',
+                label: "鉄道（廃線は赤色）",
+                source: tetsudoSource,
+                layers: [tetsudoLayerRed,tetsudoLayerBlue,tetsudoLayerPointRed,tetsudoLayerPointBlue],
+            },
+            {
+                id: 'oh-ekibetsukyaku',
+                label: "駅別乗降客数",
+                sources: [ekibetsukyakuSource],
+                layers: [ekibetsukyakuLine,ekibetsukyakuLabel],
+                attribution: "<a href='https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-S12-2022.html' target='_blank'>国土数値情報</a>",
+            },
+            {
+                id: 'oh-ekibetsukyaku-3d',
+                label: "駅別乗降客数３D",
+                sources: [ekibetsukyakuSource3d,tetsudo2Source],
+                layers: [tetsudoLine,ekibetsukyakuHeight],
+                ext: {name:'extKyakusu'},
+                attribution: "<a href='https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-S12-2022.html' target='_blank'>国土数値情報</a>" +
+                    '<div class="legend-scale">' +
+                    '<ul class="legend-labels">' +
+                    '<li><span style="background:hsl(240, 100%, 50%);"></span>0 - 99人</li>' +
+                    '<li><span style="background:hsl(230, 100%, 55%);"></span>100 - 299人</li>' +
+                    '<li><span style="background:hsl(220, 100%, 60%);"></span>300 - 499人</li>' +
+                    '<li><span style="background:hsl(210, 100%, 65%);"></span>500 - 999人</li>' +
+                    '<li><span style="background:hsl(200, 100%, 70%);"></span>1000 - 4999人</li>' +
+                    '<li><span style="background:hsl(180, 100%, 50%);"></span>5000 - 19999人</li>' +
+                    '<li><span style="background:hsl(150, 100%, 50%);"></span>20000 - 99999人</li>' +
+                    '<li><span style="background:hsl(120, 100%, 50%);"></span>100000 - 499999人</li>' +
+                    '<li><span style="background:hsl(60, 100%, 50%);"></span>500000 - 1199999人</li>' +
+                    '<li><span style="background:hsl(0, 100%, 50%);"></span>1200000人+</li>' +
+                    '</ul>' +
+                    '</div>',
+                // info:true
+            },
+            {
+                id: 'oh-yochien',
+                label: "幼稚園・保育園等（R0２）",
+                source: yochienSource,
+                layers: [yochienLayer,yochienLayerLabel]
+            },
+            {
+                id: 'oh-syogakkoR05',
+                label: "小学校（R05）",
+                source: syogakkoR05Source,
+                layers: [syogakkoR05Layer,syogakkoR05LayerLine,syogakkoR05LayerLabel,syogakkoR05LayerPoint],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A27-2023.html" target="_blank">国土数値情報</a>'
+
+            },
+            {
+                id: 'oh-cyugakuR05',
+                label: "中学校（R05）",
+                source: cyugakuR05Source,
+                layers: [cyugakuR05Layer,cyugakuR05LayerLine,cyugakuR05LayerLabel,cyugakuR05LayerPoint],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A32-2023.html" target="_blank">国土数値情報</a>'
+
+            },
+            {
+                id: 'oh-iryokikan',
+                label: "医療機関（R02）",
+                source: iryokikanSource,
+                layers: [iryokikanLayer,iryokikanLayerLabel],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P04-2020.html" target="_blank">国土数値情報</a>'
+            },
+            {
+                id: 'oh-city-h12',
+                label: "H12市町村",
+                source: cityH12Source,
+                layers: [cityH12Layer,cityH12LayerLine,cityH12LayerLabel],
+                ext: {name:'ext-city-h12'},
+            },
+            {
+                id: 'oh-city-r05',
+                label: "R05市町村",
+                source: cityR05Source,
+                layers: [cityR05Layer,cityR05LayerLine,cityR05LayerLabel],
+                ext: {name:'ext-city-r05'},
+            },
+            {
+                id: 'oh-yotochiikiP',
+                label: "用途地域",
+                source: yotochiikiPSource,
+                layers: [yotochiikiPLayer,yotochiikiPLayerLine],
+                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A55-2022.html" target="_blank">国土数値情報</a>'
+            },
+            {
+                id: 'oh-tokei',
+                label: "都市計画区域",
+                source: tokeiSource,
+                layers: [tokeiLayer,tokeiLayerLine],
+                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A55-2022.html" target="_blank">国土数値情報</a>'
+            },
+            {
+                id: 'oh-kuikikubun',
+                label: "市街化調整区域",
+                source: kuikikubunSource,
+                layers: [kuikikubunLayer,kuikikubunLayerLine],
+                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A55-2022.html" target="_blank">国土数値情報</a>'
+            },
+            {
+                id: 'oh-tkbt',
+                label: "特別用途地区",
+                source: tkbtSource,
+                layers: [tkbtLayer,tkbtLayerLine],
+                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A55-2022.html" target="_blank">国土数値情報</a>'
+            },
+            {
+                id: 'oh-inei',
+                label: "陰影起伏図",
+                source: ineiSource,
+                layers: [ineiLayer]
+            },
+            {
+                id: 'oh-jinkochikei',
+                label: "人工地形",
+                source: jinkochikeiSource,
+                layers: [jinkochikeiLayer],
+                attribution: '<a href="https://github.com/gsi-cyberjapan/experimental_landformclassification" target="_blank">国土地理院ベクトルタイル提供実験（地形分類）</a>'
+            },
+            {
+                id: 'oh-teii',
+                label: "低位地帯",
+                source: teiiSource,
+                layers: [teiiLayer],
+                attribution: '<div style="width: 200px;"><a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-G08-2015.html" target="_blank">国土数値情報</a><br>' +
+                    '本データは、周辺部よりも標高が低く、排水が困難である地帯（低位地帯）を整備したものである。<br>' +
+                    '<img src="' + require('@/assets/legend/shinsui_legend3.png') + '"></div>',
+                info: true
+            },
+            {
+                id: 'oh-kosyo',
+                label: "湖沼",
+                source: kosyoSource,
+                layers: [kosyoLayer,kosyoLine],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-W09-2005.html" target="_blank">国土数値情報</a>'
+            },
+            {
+                id: 'oh-danso',
+                label: "都市圏活断層図",
+                source: dansoSource,
+                layers: [dansoLayer],
+                attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html#afm" target="_blank">地理院タイル</a>'
+            },
+            {
+                id: 'oh-kyusekki',
+                label: "全国旧石器遺跡",
+                source: kyusekkiSource,
+                layers: [kyusekkiLayer,kyusekkiLayerHeatmap],
             },
         ]
     },
@@ -8819,7 +9165,6 @@ const layers01 = [
                     '</ul>' +
                     '</div>',
                 // info:true
-
             },
             {
                 id: 'oh-highway',
