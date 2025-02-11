@@ -2535,6 +2535,18 @@ const kanagawaSekisyokuLayer = {
     'type': 'raster',
     'source': 'kanagawa-sekisyoku-source',
 }
+// 神奈川県相模原市立体図------------------------------------------------------------------------------------------------------
+const sagamiharaSekisyokuSource = {
+    id: 'sagamihara-sekisyoku-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz4.xsrv.jp/tile/sekisyoku/sagamihara/{z}/{x}/{y}.png'],
+    }
+}
+const sagamiharaSekisyokuLayer = {
+    'id': 'oh-sagamihara-sekisyoku-layer',
+    'type': 'raster',
+    'source': 'sagamihara-sekisyoku-source',
+}
 // 多摩地域赤色立体地図------------------------------------------------------------------------------------------------------
 const tamaSekisyokuSource = {
     id: 'tamaSekisyokuSource', obj: {
@@ -9496,10 +9508,19 @@ const layers01 = [
                     },
                     {
                         id: 'oh-kanagawa-sekisyoku-layer',
-                        label: "神奈川県赤色立体地図",
+                        label: "神奈川県県央部県赤色立体地図",
                         source: kanagawaSekisyokuSource,
                         layers: [kanagawaSekisyokuLayer],
+                        bounds: boundsSort([139.09766500655184,35.624094342992194, 139.46201634577034,35.315414497020726]),
                         attribution:'<a href="https://www.geospatial.jp/ckan/dataset/kanagawa-2020-1-pointcloud" target="_blank">G空間情報センター</a>'
+                    },
+                    {
+                        id: 'oh-sagamihara-sekisyoku-layer',
+                        label: "神奈川県相模原市赤色立体地図",
+                        source: sagamiharaSekisyokuSource,
+                        layers: [sagamiharaSekisyokuLayer],
+                        bounds: boundsSort([139.04848994843064,35.68660597218647, 139.34747849259207,35.468439520826834]),
+                        attribution:'<a href="https://www.geospatial.jp/ckan/dataset/kanagawa-2020-2-pointcloud" target="_blank">G空間情報センター</a>'
                     },
                     {
                         id: 'oh-tosyo-sekisyoku-layer',

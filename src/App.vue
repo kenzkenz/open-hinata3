@@ -324,7 +324,7 @@ import { MaplibreTerradrawControl,MaplibreMeasureControl } from '@watergis/mapli
 import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
 
 import {
-  ddSimaUpload,
+  ddSimaUpload, downloadKML,
   downloadSimaText,
   geojsonAddLayer,
   geoTiffLoad, geoTiffLoad2, geoTiffLoadForUser1, geoTiffLoadForUser2, getCRS,
@@ -1599,7 +1599,42 @@ export default {
       });
       map.addControl(drawControl, 'bottom-right');
       const drawInstance = drawControl.getTerraDrawInstance()
-      this.$store.state.drawInstance = drawInstance
+
+      function observeToolbar() {
+        const observer = new MutationObserver(() => {
+          const toolbarContainer = document.querySelector(".maplibregl-ctrl-bottom-right");
+          if (toolbarContainer) {
+            const toolbar = toolbarContainer.querySelector(".maplibregl-ctrl-group");
+            if (toolbar && !toolbar.querySelector(".custom-button")) {
+              observer.disconnect(); // 一度検出したら監視を停止
+              addCustomButton(toolbar);
+            }
+          }
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+      }
+
+      function addCustomButton(toolbar) {
+        const customButton = document.createElement("button");
+        customButton.className = "custom-button maplibregl-terradraw-add-control hidden maplibregl-terradraw-download-button";
+        customButton.title = 'KML-Download'
+        customButton.setAttribute("type", "button");
+        customButton.innerHTML = '';
+        customButton.onclick = () => {
+          const features = drawInstance.getSnapshot();
+          const geojson = {
+            "type": "FeatureCollection",
+            "features": features
+          }
+          downloadKML(null, null, geojson)
+        };
+        toolbar.appendChild(customButton);
+      }
+      // MapLibre のロード完了後に監視開始
+      map.on("load", observeToolbar);
+
+
       drawInstance.on('finish', (e) => {
         const snapshot = drawInstance.getSnapshot();
         const geojsonText = JSON.stringify(snapshot, null, 2);

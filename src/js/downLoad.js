@@ -4359,10 +4359,16 @@ function getVisibleGeoJSON(map, layerId) {
 }
 
 // GeoJSONをKMLに変換し、ダウンロード
-export function downloadKML(map, layerId) {
-    let geojson = getVisibleGeoJSON(map, layerId);
-    geojson = extractHighlightedGeoJSONFromSource(geojson, layerId);
-    geojson = dissolveGeoJSONByFields(geojson, ['地番'])
+export function downloadKML(map, layerId, drawGeojson) {
+    let geojson
+
+    if (drawGeojson) {
+        geojson = drawGeojson
+    } else {
+        geojson = getVisibleGeoJSON(map, layerId);
+        geojson = extractHighlightedGeoJSONFromSource(geojson, layerId);
+        geojson = dissolveGeoJSONByFields(geojson, ['地番'])
+    }
 
     // GeoJSONをKMLに変換（スタイルを追加）
     const kml = tokml(geojson, {
@@ -4394,10 +4400,13 @@ export function downloadKML(map, layerId) {
     a.href = url;
 
     const chibanAndHoka = getChibanAndHoka(geojson, false);
-    const firstChiban = chibanAndHoka.firstChiban;
-    const hoka = chibanAndHoka.hoka;
-
-    a.download = firstChiban + hoka + '.kml';
+    if (drawGeojson) {
+        a.download = 'draw.kml';
+    } else {
+        const firstChiban = chibanAndHoka.firstChiban;
+        const hoka = chibanAndHoka.hoka;
+        a.download = firstChiban + hoka + '.kml';
+    }
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
