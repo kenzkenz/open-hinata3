@@ -917,3 +917,16 @@ tippecanoe -pk -pf -l polygon -f -o r02suikei250m.pmtiles \
 --include=PTN_2020 \
 --include=MESH_ID \
 250m.geojson
+
+tippecanoe -o himejishi.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=0 \
+    --layer=chibanzu \
+    himejishi.geojson

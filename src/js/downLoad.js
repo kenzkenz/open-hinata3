@@ -377,6 +377,7 @@ export function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, fileName, 
             case 'oh-chibanzu-舟形町':
                 chiban = feature.properties.TIBAN
                 break
+            case 'oh-chibanzu-姫路市':
             case 'oh-chibanzu-磐田市':
             case 'oh-chibanzu-福島市':
                 chiban = feature.properties.TXTCD
@@ -2151,6 +2152,7 @@ export function highlightSpecificFeaturesCity(map,layerId) {
             case 'oh-fukuokashichiban':
                 fields = ['concat', ['get', 'id']]
                 break
+            case 'oh-chibanzu-姫路市':
             case 'oh-chibanzu-豊中市':
             case 'oh-chibanzu-伊丹市':
             case 'oh-chibanzu-深谷市':
@@ -2249,6 +2251,7 @@ function getBoundingBoxByLayer(map, layerId) {
             case 'oh-fukuokashichiban':
                 targetId = `${feature.properties['id']}`;
                 break;
+            case 'oh-chibanzu-姫路市':
             case 'oh-chibanzu-豊中市':
             case 'oh-chibanzu-伊丹市':
             case 'oh-chibanzu-深谷市':
@@ -2400,6 +2403,7 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
             case 'oh-fukuokashichiban':
                 targetId = `${feature.properties['id']}`;
                 break;
+            case 'oh-chibanzu-姫路市':
             case 'oh-chibanzu-豊中市':
             case 'oh-chibanzu-伊丹市':
             case 'oh-chibanzu-深谷市':
