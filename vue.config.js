@@ -1,5 +1,16 @@
 const { defineConfig } = require('@vue/cli-service')
 module.exports = defineConfig({
+    pwa: {
+        iconPaths: {
+            favicon32: 'favicon.ico',
+        },
+        workboxPluginMode: "InjectManifest", // カスタム Service Worker を使用
+        workboxOptions: {
+            swSrc: "./src/service-worker.js", // カスタム Service Worker のソースファイル
+            swDest: "service-worker.js", // ビルド後の出力先
+            exclude: [/_redirects/], // キャッシュから除外するファイル
+        },
+    },
     configureWebpack: {
         module: {
             rules: [
@@ -8,11 +19,6 @@ module.exports = defineConfig({
                     loader: 'json-loader'
                 }
             ]
-        }
-    },
-    pwa: {
-        iconPaths: {
-            favicon32: 'favicon.ico',
         }
     },
     publicPath: process.env.NODE_ENV === 'production' ? '' : '',

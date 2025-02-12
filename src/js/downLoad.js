@@ -3217,7 +3217,6 @@ export async function addImageLayer(tiffFile, worldFile, code, isFirst) {
             return
         }
     }
-
     let index = 0;
     const result = store.state.selectedLayers['map01'].find((v, i) => {
         index = i;
@@ -3229,6 +3228,10 @@ export async function addImageLayer(tiffFile, worldFile, code, isFirst) {
 
     geotiffSource.obj.url = canvas.toDataURL();
     geotiffSource.obj.coordinates = bounds;
+    // geotiffSource.obj.bounds = [
+    //     [bounds[0][0], bounds[0][1]], // 左上
+    //     [bounds[2][0], bounds[2][1]]  // 右下
+    // ]
 
     if (map.getLayer('oh-geotiff-layer')) {
         map.removeLayer('oh-geotiff-layer');

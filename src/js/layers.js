@@ -62,14 +62,17 @@ export const geotiffSource = {
     id:'geotiff-source',obj:{
         type: 'image',
         url: '',
-        coordinates: ''
+        coordinates: '',
     }
 }
 export const geotiffLayer= {
     id: 'oh-geotiff-layer',
     type: 'raster',
     source: 'geotiff-source',
-    paint: {}
+    paint: {
+        'raster-resampling': 'nearest', // タイル境界の補間方式を変更
+        // 'raster-padding': 5 // 境界パディングを追加
+    },
 }
 
 export const jpgSource = {
@@ -2535,7 +2538,7 @@ const kanagawaSekisyokuLayer = {
     'type': 'raster',
     'source': 'kanagawa-sekisyoku-source',
 }
-// 神奈川県相模原市立体図------------------------------------------------------------------------------------------------------
+// 神奈川県相模原市赤色立体地図------------------------------------------------------------------------------------------------------
 const sagamiharaSekisyokuSource = {
     id: 'sagamihara-sekisyoku-source', obj: {
         type: 'raster',
@@ -2546,6 +2549,18 @@ const sagamiharaSekisyokuLayer = {
     'id': 'oh-sagamihara-sekisyoku-layer',
     'type': 'raster',
     'source': 'sagamihara-sekisyoku-source',
+}
+// 神奈川西部赤色立体地図------------------------------------------------------------------------------------------------------
+const kanagawakenseibuSekisyokuSource = {
+    id: 'kanagawakenseibu-sekisyoku-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz4.xsrv.jp/tile/sekisyoku/kanagawakenseibu/{z}/{x}/{y}.png'],
+    }
+}
+const kanagawakenseibuSekisyokuLayer = {
+    'id': 'oh-kanagawakenseibu-sekisyoku-layer',
+    'type': 'raster',
+    'source': 'kanagawakenseibu-sekisyoku-source',
 }
 // 多摩地域赤色立体地図------------------------------------------------------------------------------------------------------
 const tamaSekisyokuSource = {
@@ -9503,8 +9518,8 @@ const layers01 = [
                     {
                         id: 'oh-sekisyoku-layer-all',
                         label: "赤色立体地図全部",
-                        sources: [sagamiharaSekisyokuSource,kanagawaSekisyokuSource,tamaSekisyokuSource,tokyo23SekisyokuSource,tosyo01SekisyokuSource,tosyo02SekisyokuSource,tosyo03SekisyokuSource,tosyo04SekisyokuSource,tosyo05SekisyokuSource,tosyo06SekisyokuSource,kochiSekisyokuSource],
-                        layers: [sagamiharaSekisyokuLayer,kanagawaSekisyokuLayer,tamaSekisyokuLayer,tokyo23SekisyokuLayer,tosyo02SekisyokuLayer,tosyo03SekisyokuLayer,tosyo04SekisyokuLayer,tosyo05SekisyokuLayer,tosyo06SekisyokuLayer,tosyo01SekisyokuLayer,kochiSekisyokuLayer],
+                        sources: [kanagawakenseibuSekisyokuSource,sagamiharaSekisyokuSource,kanagawaSekisyokuSource,tamaSekisyokuSource,tokyo23SekisyokuSource,tosyo01SekisyokuSource,tosyo02SekisyokuSource,tosyo03SekisyokuSource,tosyo04SekisyokuSource,tosyo05SekisyokuSource,tosyo06SekisyokuSource,kochiSekisyokuSource],
+                        layers: [kanagawakenseibuSekisyokuLayer,sagamiharaSekisyokuLayer,kanagawaSekisyokuLayer,tamaSekisyokuLayer,tokyo23SekisyokuLayer,tosyo02SekisyokuLayer,tosyo03SekisyokuLayer,tosyo04SekisyokuLayer,tosyo05SekisyokuLayer,tosyo06SekisyokuLayer,tosyo01SekisyokuLayer,kochiSekisyokuLayer],
                     },
                     {
                         id: 'oh-kanagawa-sekisyoku-layer',
@@ -9521,6 +9536,14 @@ const layers01 = [
                         layers: [sagamiharaSekisyokuLayer],
                         bounds: boundsSort([139.04848994843064,35.68660597218647, 139.34747849259207,35.468439520826834]),
                         attribution:'<a href="https://www.geospatial.jp/ckan/dataset/kanagawa-2020-2-pointcloud" target="_blank">G空間情報センター</a>'
+                    },
+                    {
+                        id: 'oh-kanagawakenseibu-sekisyoku-layer',
+                        label: "神奈川県西部赤色立体地図",
+                        source: kanagawakenseibuSekisyokuSource,
+                        layers: [kanagawakenseibuSekisyokuLayer],
+                        bounds: boundsSort([138.9251684590787,35.52398114822313, 139.25907181711648,35.10840903088935]),
+                        attribution:'<a href="https://www.geospatial.jp/ckan/dataset/kanagawa-2019-pointcloud" target="_blank">G空間情報センター</a>'
                     },
                     {
                         id: 'oh-tosyo-sekisyoku-layer',

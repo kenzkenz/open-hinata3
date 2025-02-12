@@ -1619,7 +1619,7 @@ export default {
         customButton.className = "custom-button maplibregl-terradraw-add-control hidden maplibregl-terradraw-download-button";
         customButton.title = 'KML-Download'
         customButton.setAttribute("type", "button");
-        customButton.innerHTML = '';
+        customButton.innerHTML = '<p style="margin-top: -18px;">KML</p>';
         customButton.onclick = () => {
           const features = drawInstance.getSnapshot();
           const geojson = {
@@ -1633,14 +1633,11 @@ export default {
       // MapLibre のロード完了後に監視開始
       map.on("load", observeToolbar);
 
-
       drawInstance.on('finish', (e) => {
         const snapshot = drawInstance.getSnapshot();
         const geojsonText = JSON.stringify(snapshot, null, 2);
         // this.$store.state.drawGeojsonText = geojsonText
       });
-
-
 
 
       map.on('click', (e) => {
@@ -1936,7 +1933,6 @@ export default {
                 }
             )
           }
-
           // alert(params.slj)
           if (params.slj) {
             this.s_selectedLayers = params.slj
