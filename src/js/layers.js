@@ -9503,8 +9503,8 @@ const layers01 = [
                     {
                         id: 'oh-sekisyoku-layer-all',
                         label: "赤色立体地図全部",
-                        sources: [kanagawaSekisyokuSource,tamaSekisyokuSource,tokyo23SekisyokuSource,tosyo01SekisyokuSource,tosyo02SekisyokuSource,tosyo03SekisyokuSource,tosyo04SekisyokuSource,tosyo05SekisyokuSource,tosyo06SekisyokuSource,kochiSekisyokuSource],
-                        layers: [kanagawaSekisyokuLayer,tamaSekisyokuLayer,tokyo23SekisyokuLayer,tosyo02SekisyokuLayer,tosyo03SekisyokuLayer,tosyo04SekisyokuLayer,tosyo05SekisyokuLayer,tosyo06SekisyokuLayer,tosyo01SekisyokuLayer,kochiSekisyokuLayer],
+                        sources: [sagamiharaSekisyokuSource,kanagawaSekisyokuSource,tamaSekisyokuSource,tokyo23SekisyokuSource,tosyo01SekisyokuSource,tosyo02SekisyokuSource,tosyo03SekisyokuSource,tosyo04SekisyokuSource,tosyo05SekisyokuSource,tosyo06SekisyokuSource,kochiSekisyokuSource],
+                        layers: [sagamiharaSekisyokuLayer,kanagawaSekisyokuLayer,tamaSekisyokuLayer,tokyo23SekisyokuLayer,tosyo02SekisyokuLayer,tosyo03SekisyokuLayer,tosyo04SekisyokuLayer,tosyo05SekisyokuLayer,tosyo06SekisyokuLayer,tosyo01SekisyokuLayer,kochiSekisyokuLayer],
                     },
                     {
                         id: 'oh-kanagawa-sekisyoku-layer',
