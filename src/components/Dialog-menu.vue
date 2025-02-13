@@ -71,7 +71,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
 
-      <v-dialog v-model="s_dialogForImage" :scrim="false" persistent="false" max-width="500px" height="300px">
+      <v-dialog v-model="s_dialogForImage" :scrim="false" persistent="false" max-width="500px" height="500px">
         <v-card>
           <v-card-title style="text-align: right">
             <v-icon @click="s_dialogForImage = false">mdi-close</v-icon>

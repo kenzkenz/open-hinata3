@@ -1970,17 +1970,17 @@ export default {
           const vm = this
           if (isNaN(vm.s_terrainLevel)) vm.s_terrainLevel = 1
 
-          document.querySelector('#' + mapName + ' .terrain-btn-up,terrain-btn-down').addEventListener('mouseover', function() {
-            const layers = map.getStyle().layers
-            if (!layers.find(layer => {
-                  return layer.id.indexOf('height') !== -1
-                }
-            )) {
-              map.setTerrain({'source': 'terrain', 'exaggeration': vm.s_terrainLevel})
-            } else {
-              map.setTerrain(null)
-            }
-          }, false);
+          // document.querySelector('#' + mapName + ' .terrain-btn-up,terrain-btn-down').addEventListener('mouseover', function() {
+          //   const layers = map.getStyle().layers
+          //   if (!layers.find(layer => {
+          //         return layer.id.indexOf('height') !== -1
+          //       }
+          //   )) {
+          //     map.setTerrain({'source': 'terrain', 'exaggeration': vm.s_terrainLevel})
+          //   } else {
+          //     map.setTerrain(null)
+          //   }
+          // }, false);
           document.querySelector('#' + mapName + ' .terrain-btn-up,terrain-btn-down').addEventListener('pointerdown', function() {
             const layers = map.getStyle().layers
             if (!layers.find(layer => {
