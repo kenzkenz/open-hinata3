@@ -3192,6 +3192,32 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'sima-layer':
+            case 'sima-points':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                if (features.length === 0) return
+                props = features[0].properties
+
+                // const jgdCoord = wsg84ToJgd(coordinates)
+
+                if (html.indexOf('sima-points') === -1) {
+                    html += '<div class="layer-label-div">' + 'SIMA' + '</div>'
+                    html +=
+                        '<div class="sima-points" font-weight: normal; color: #333;line-height: 25px;">' +
+                        // '<span style="font-size:16px;">' + props.chiban + '</span><br>' +
+                        // '<span style="font-size:16px;">' + store.state.zahyokei + '</span><br>' +
+                        '</div>'
+                }
+                break
+            }
         }
     })
 
