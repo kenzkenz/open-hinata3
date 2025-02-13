@@ -78,13 +78,36 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
           </v-card-title>
           <v-card-text>
             <div style="margin-bottom: 10px;">
-              <p style="margin-bottom: 10px;">ドラッグ&ドロップされたgeotif,jpg,pngが表示されます。</p>
-              <div class="image-grid">
-                <div v-for="item in images" :key="item" class="image-container">
-                  <img :src="item" class="gallery-image" @click="handleImageClick(item)" />
-                  <div class="close-button" @click="handleClose(item)">×</div>
-                </div>
-              </div>
+
+              <v-tabs v-model="tab">
+                <v-tab value="one">画像</v-tab>
+                <v-tab value="two">KML(KMZ)</v-tab>
+              </v-tabs>
+
+              <v-window v-model="tab">
+                <v-window-item value="one">
+                  <v-card>
+                  <v-card-text style="margin-bottom: 10px;">ドラッグ&ドロップされたgeotif,jpg,pngが表示されます。</v-card-text>
+                  <div class="image-grid">
+                    <div v-for="item in images" :key="item" class="image-container">
+                      <img :src="item" class="gallery-image" @click="handleImageClick(item)" />
+                      <div class="close-button" @click="handleClose(item)">×</div>
+                    </div>
+                  </div>
+                  </v-card>
+
+                </v-window-item>
+                <v-window-item value="two">
+                  <v-card>
+                    <v-card-text>タブ2の内容</v-card-text>
+                  </v-card>
+                </v-window-item>
+                <v-window-item value="three">
+                  <v-card>
+                    <v-card-text>タブ3の内容</v-card-text>
+                  </v-card>
+                </v-window-item>
+              </v-window>
             </div>
 <!--            <v-btn @click="dxfLoad">イメージ読込開始</v-btn>-->
           </v-card-text>
@@ -212,6 +235,7 @@ export default {
     // MasonryWall,
   },
   data: () => ({
+    tab: 'one',
     urlName: '',
     jsonData: null,
     uid: null,
