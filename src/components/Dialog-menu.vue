@@ -35,9 +35,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               </div>
             </div>
 
-
-
-
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -63,10 +60,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               </div>
             </div>
           </v-card-text>
-<!--          <v-card-actions>-->
-<!--            <v-spacer></v-spacer>-->
-<!--            <v-btn color="blue-darken-1" text @click="s_dialogForLink = false">Close</v-btn>-->
-<!--          </v-card-actions>-->
         </v-card>
       </v-dialog>
 
@@ -81,7 +74,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
               <v-tabs v-model="tab">
                 <v-tab value="one">画像</v-tab>
-                <v-tab value="two">KML(KMZ)</v-tab>
+                <v-tab value="two">KMZ</v-tab>
               </v-tabs>
 
               <v-window v-model="tab">
@@ -99,7 +92,20 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 </v-window-item>
                 <v-window-item value="two">
                   <v-card>
-                    <v-card-text>タブ2の内容</v-card-text>
+                    <v-card-text>作成中です。</v-card-text>
+
+<!--                    <v-card-text>-->
+<!--                      <div style="margin-bottom: 10px;">-->
+<!--                        <div v-for="item in jsonData" :key="item.id" class="data-container" @click="urlClick(item.url)">-->
+<!--                          <button class="close-btn" @click="removeItem(item.id, $event)">×</button>-->
+<!--                          <strong>{{ item.name }}</strong><br>-->
+<!--                          <strong></strong>{{ item.url }}-->
+<!--                        </div>-->
+<!--                      </div>-->
+<!--                    </v-card-text>-->
+
+
+
                   </v-card>
                 </v-window-item>
                 <v-window-item value="three">
@@ -109,15 +115,9 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 </v-window-item>
               </v-window>
             </div>
-<!--            <v-btn @click="dxfLoad">イメージ読込開始</v-btn>-->
           </v-card-text>
-<!--          <v-card-actions>-->
-<!--            <v-spacer></v-spacer>-->
-<!--            <v-btn color="blue-darken-1" text @click="s_dialogForImage = false">Close</v-btn>-->
-<!--          </v-card-actions>-->
         </v-card>
       </v-dialog>
-
 
       <div>
         <p v-if="user1">ようこそ、{{ user1.displayName || "ゲスト" }}さん！</p>
@@ -227,6 +227,7 @@ import { auth } from "@/firebase";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut } from "firebase/auth";
 import * as Layers from "@/js/layers";
 import {kml} from "@tmcw/togeojson";
+import JSZip from "jszip";
 
 export default {
   name: 'Dialog-menu',
@@ -238,6 +239,7 @@ export default {
     tab: 'one',
     urlName: '',
     jsonData: null,
+    jsonDataVector: null,
     uid: null,
     images: [],
     email: '',
@@ -395,6 +397,7 @@ export default {
         const geojsonText = params.get('geojsontext')
         // const dxfText = params.get('dxftext')
         const gpxText = params.get('gpxtext')
+        const vector0 = params.get('vector')
 
         // map.jumpTo({
         //   center: [lng, lat],
@@ -422,7 +425,31 @@ export default {
           simaToGeoJSON(simaData, map, simaZahyokei, false)
         }
 
-        console.log(image)
+        if (vector0 && vector0 != '""') {
+          const uploadVector = JSON.parse(JSON.parse(vector0))
+          vm.$store.state.uploadedVector = JSON.parse(vector0)
+          const vector = uploadVector.image
+          const uid = uploadVector.uid
+          const vectorUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/' + uid + '/' + vector
+          const extension = vectorUrl.split('.').pop();
+          switch (extension) {
+            case 'kmz':
+              Promise.all([fetchFile(vectorUrl)]).then(files => {
+                async function load () {
+                  const zip = await JSZip.loadAsync(files[0]);
+                  const kmlFile = Object.keys(zip.files).find((name) => name.endsWith('.kml'));
+                  const kmlText = await zip.files[kmlFile].async('text');
+                  const parser = new DOMParser();
+                  const kmlData = parser.parseFromString(kmlText, 'application/xml');
+                  const geojson = kml(kmlData);
+                  geojsonAddLayer(map, geojson, true, 'kml')
+                }
+                load()
+              })
+              break
+          }
+        }
+
         if (image && image != '""') {
           const uploadImage = JSON.parse(JSON.parse(image))
           vm.$store.state.uploadedImage = JSON.parse(image)

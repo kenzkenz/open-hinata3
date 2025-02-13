@@ -106,6 +106,7 @@ export default createStore({
     simaFire: false,
     tiffAndWorldFile: null,
     uploadedImage: '',
+    uploadedVector: '',
     extLayerName: '独自レイヤー',
     extLayer: '',
     isClickPointsLayer:false,

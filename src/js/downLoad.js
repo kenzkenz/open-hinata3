@@ -3734,6 +3734,48 @@ export async function pngLoadForUser (map,mapName,isUpload) {
     }
 }
 
+export async function kmzLoadForUser (map,isUpload,geojson) {
+
+    const files = store.state.tiffAndWorldFile
+    const zipFile = files[0];
+
+    await geojsonAddLayer(map, geojson,true, 'kml')
+
+    //----------------------------------------------------------------------------------------------------------------
+    if (isUpload) {
+        // FormDataを作成
+        const formData = new FormData();
+        formData.append('file_1', zipFile);
+        formData.append('userId', store.state.userId);
+
+        axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/imageUploadKmzForUser.php', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data', // 必須
+            },
+        })
+            .then(response => {
+                // 成功時の処理
+                if (response.data.error) {
+                    console.log(response.data.error)
+                    alert(response.data.error)
+                    return
+                }
+                console.log('イメージ保存成功:', response.data.file_1.file);
+                console.log(response)
+                store.state.uploadedVector = JSON.stringify({
+                    image: response.data.file_1.file,
+                    uid: store.state.userId,
+                })
+                store.state.fetchImagesFire = !store.state.fetchImagesFire
+            })
+            .catch(error => {
+                // エラー時の処理
+                console.error('エラー:', error.response ? error.response.data : error.message);
+                store.state.uploadedImage = ''
+            });
+    }
+}
+
 export async function jpgLoadForUser (map,mapName,isUpload) {
     const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
     const files = store.state.tiffAndWorldFile
@@ -3913,6 +3955,7 @@ export async function geoTiffLoadForUser2 (map,mapName,isUpload) {
 }
 
 export async function geoTiffLoad2 (map,mapName,isUpload) {
+    alert()
     history('GEOTIFF2読込',window.location.href)
     const zahyokei0 = zahyokei.find(item => item.kei === store.state.zahyokei)
     if (!zahyokei0) {

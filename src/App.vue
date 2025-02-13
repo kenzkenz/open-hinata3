@@ -330,7 +330,7 @@ import {
   geoTiffLoad, geoTiffLoad2, geoTiffLoadForUser1, geoTiffLoadForUser2, getCRS,
   handleFileUpload,
   highlightSpecificFeatures,
-  highlightSpecificFeaturesCity, jpgLoad, jpgLoadForUser,
+  highlightSpecificFeaturesCity, jpgLoad, jpgLoadForUser, kmzLoadForUser,
   pngDownload, pngLoad, pngLoadForUser, transformGeoJSONToEPSG4326,
   zahyokei
 } from '@/js/downLoad'
@@ -865,7 +865,7 @@ export default {
       const map02 = this.$store.state.map02
       if (this.$store.state.userId) {
         geoTiffLoadForUser1(map01, 'map01', true)
-        geoTiffLoadForUser1(map02, 'map01', false)
+        geoTiffLoadForUser1(map02, 'map02', false)
       } else {
         geoTiffLoad (map01,'map01', true)
         geoTiffLoad (map02,'map02', false)
@@ -877,7 +877,7 @@ export default {
       const map02 = this.$store.state.map02
       if (this.$store.state.userId) {
         geoTiffLoadForUser2 (map01,'map01', true)
-        geoTiffLoadForUser2 (map02,'map01', false)
+        geoTiffLoadForUser2 (map02,'map02', false)
       } else {
         geoTiffLoad2 (map01,'map01', true)
         geoTiffLoad2 (map02,'map02', false)
@@ -1295,10 +1295,11 @@ export default {
       const gpxText = this.$store.state.gpxText
       const drawGeojsonText = this.$store.state.drawGeojsonText
       const clickGeojsonText = this.$store.state.clickGeojsonText
+      const vector = this.$store.state.uploadedVector
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
       ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}
-      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}&geojsontext=${geojsonText}&dxftext=${dxfText}&gpxtext=${gpxText}&drawgeojsontext=${drawGeojsonText}&clickgeojsontext=${clickGeojsonText}`
+      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}&geojsontext=${geojsonText}&dxftext=${dxfText}&gpxtext=${gpxText}&drawgeojsontext=${drawGeojsonText}&clickgeojsontext=${clickGeojsonText}&vector=${JSON.stringify(vector)}`
       // console.log(this.param)
       // this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
@@ -1371,15 +1372,15 @@ export default {
       const kmlText = params.get('kmltext')
       const geojsonText = params.get('geojsontext')
       const dxfText = params.get('dxftext')
-      console.log(dxfText)
       const gpxText = params.get('gpxtext')
       const drawGeojsonText = params.get('drawgeojsontext')
       const clickGeojsonText = params.get('clickgeojsontext')
+      const vector = params.get('vector')
       this.pitch.map01 = pitch01
       this.pitch.map02 = pitch02
       this.bearing = bearing
       this.s_terrainLevel = terrainLevel
-      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText,drawGeojsonText,clickGeojsonText}// 以前のリンクをいかすためpitchを入れている。
+      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText,drawGeojsonText,clickGeojsonText,vector}// 以前のリンクをいかすためpitchを入れている。
     },
     init() {
 
@@ -1804,6 +1805,10 @@ export default {
           //   }
           // }
           // ----------------------------------------------------------------
+          if (params.vector) {
+            this.$store.state.uploadedVector = JSON.parse(params.vector)
+          }
+
           if (params.clickGeojsonText) {
             this.$store.state.clickGeojsonText = params.clickGeojsonText
           }
@@ -2266,158 +2271,178 @@ export default {
           });
 
           // --------------------------------------------------------------------------------------------------------
-          dropzone.addEventListener('drop', async(e) => {
-            e.preventDefault();
-            const files = e.dataTransfer.files;
-            if (files.length === 0) return;
-            const file = files[0]
-            const fileName = file.name;
-            const fileExtension = fileName.split('.').pop().toLowerCase();
-            history(fileExtension + 'をDD',window.location.href)
-            const reader = new FileReader();
-            switch (fileExtension) {
-              case 'kml':
-              {
-                reader.onload = (event) => {
-                  const parser = new DOMParser();
-                  const kmlText = event.target.result
-                  this.$store.state.kmlText = kmlText
-                  const kmlData = parser.parseFromString(kmlText, 'application/xml');
-                  const geojson = kml(kmlData);
-                  geojsonAddLayer(map, geojson,true, fileExtension)
+          if (mapName === 'map01') {
+            dropzone.addEventListener('drop', async(e) => {
+              e.preventDefault();
+              const files = e.dataTransfer.files;
+              if (files.length === 0) return;
+              const file = files[0]
+              const fileName = file.name;
+              const fileExtension = fileName.split('.').pop().toLowerCase();
+              history(fileExtension + 'をDD',window.location.href)
+              const reader = new FileReader();
+              switch (fileExtension) {
+                case 'kml':
+                {
+                  reader.onload = (event) => {
+                    const parser = new DOMParser();
+                    const kmlText = event.target.result
+                    this.$store.state.kmlText = kmlText
+                    const kmlData = parser.parseFromString(kmlText, 'application/xml');
+                    const geojson = kml(kmlData);
+                    geojsonAddLayer(map, geojson,true, fileExtension)
+                  }
+                  reader.readAsText(file);
+                  break
                 }
-                reader.readAsText(file);
-                break
-              }
-              case 'kmz':
-              {
-                reader.onload = async (event) => {
-                  const zip = await JSZip.loadAsync(event.target.result);
-                  const kmlFile = Object.keys(zip.files).find((name) => name.endsWith('.kml'));
-                  const kmlText = await zip.files[kmlFile].async('text');
-                  this.$store.state.kmlText = kmlText
-                  const parser = new DOMParser();
-                  const kmlData = parser.parseFromString(kmlText, 'application/xml');
-                  const geojson = kml(kmlData);
-                  geojsonAddLayer(map, geojson,true, fileExtension)
-                }
-                reader.readAsArrayBuffer(file);
-                break
-              }
-              case 'sim':
-              {
-                reader.onload = (event) => {
-                  const arrayBuffer = event.target.result; // ArrayBufferとして読み込む
-                  const text = new TextDecoder("shift-jis").decode(arrayBuffer); // Shift JISをUTF-8に変換
-                  this.ddSimaText = text
-                  this.s_dialogForSimaApp = true
-                }
-                reader.readAsArrayBuffer(file);
-                break
-              }
-              case 'tiff':
-              case 'tif':
-              case 'tfw':
-              {
-                if (files.length > 1) {
-                  this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
-                  this.s_dialogForGeotiffApp = true
-                } else if (files.length === 1){
-                  this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
-                  const zahyokei = await getCRS(Array.from(e.dataTransfer.files)[0])
-                  if (zahyokei) {
-                    this.$store.state.zahyokei = zahyokei
-                    this.geoTiffLoad20()
+                case 'kmz':
+                {
+                  if (this.$store.state.userId) {
+                    const map01 = this.$store.state.map01
+                    const map02 = this.$store.state.map02
+                    this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
+                    reader.onload = async (event) => {
+                      const zip = await JSZip.loadAsync(event.target.result);
+                      const kmlFile = Object.keys(zip.files).find((name) => name.endsWith('.kml'));
+                      const kmlText = await zip.files[kmlFile].async('text');
+                      const parser = new DOMParser();
+                      const kmlData = parser.parseFromString(kmlText, 'application/xml');
+                      const geojson = kml(kmlData);
+                      kmzLoadForUser (map01, true, geojson)
+                      kmzLoadForUser (map02, false, geojson)
+                    }
+                    reader.readAsArrayBuffer(file);
                   } else {
-                    this.s_dialogForGeotiff2App = true
+                    reader.onload = async (event) => {
+                      const zip = await JSZip.loadAsync(event.target.result);
+                      const kmlFile = Object.keys(zip.files).find((name) => name.endsWith('.kml'));
+                      const kmlText = await zip.files[kmlFile].async('text');
+                      const parser = new DOMParser();
+                      const kmlData = parser.parseFromString(kmlText, 'application/xml');
+                      const geojson = kml(kmlData);
+                      this.$store.state.kmlText = kmlText
+                      geojsonAddLayer(map, geojson, true, fileExtension)
+                    }
+                    reader.readAsArrayBuffer(file);
                   }
+                  break
                 }
-                break
-              }
-              case 'jpg':
-              case 'jgw':
-              {
-                if (files.length > 1) {
-                  this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
-                  this.s_dialogForJpgApp = true
-                } else if (files.length === 1){
-                  alert('ワールドファイルが必要です。')
+                case 'sim':
+                {
+                  reader.onload = (event) => {
+                    const arrayBuffer = event.target.result; // ArrayBufferとして読み込む
+                    const text = new TextDecoder("shift-jis").decode(arrayBuffer); // Shift JISをUTF-8に変換
+                    this.ddSimaText = text
+                    this.s_dialogForSimaApp = true
+                  }
+                  reader.readAsArrayBuffer(file);
+                  break
                 }
-                break
-              }
-              case 'png':
-              case 'pgw':
-              {
-                if (files.length > 1) {
-                  this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
-                  this.s_dialogForPng2App = true
-                } else if (files.length === 1){
-                  alert('ワールドファイルが必要です。')
+                case 'tiff':
+                case 'tif':
+                case 'tfw':
+                {
+                  if (files.length > 1) {
+                    this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
+                    this.s_dialogForGeotiffApp = true
+                  } else if (files.length === 1){
+                    this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
+                    const zahyokei = await getCRS(Array.from(e.dataTransfer.files)[0])
+                    if (zahyokei) {
+                      this.$store.state.zahyokei = zahyokei
+                      this.geoTiffLoad20()
+                    } else {
+                      this.s_dialogForGeotiff2App = true
+                    }
+                  }
+                  break
                 }
-                break
-              }
+                case 'jpg':
+                case 'jgw':
+                {
+                  if (files.length > 1) {
+                    this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
+                    this.s_dialogForJpgApp = true
+                  } else if (files.length === 1){
+                    alert('ワールドファイルが必要です。')
+                  }
+                  break
+                }
+                case 'png':
+                case 'pgw':
+                {
+                  if (files.length > 1) {
+                    this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
+                    this.s_dialogForPng2App = true
+                  } else if (files.length === 1){
+                    alert('ワールドファイルが必要です。')
+                  }
+                  break
+                }
 
-              case 'geojson':
-              {
-                reader.onload = (event) => {
-                  const geojsonText = event.target.result
-                  this.$store.state.geojsonText = geojsonText
-                  const geojson = JSON.parse(geojsonText);
-                  geojsonAddLayer (map, geojson, true, fileExtension)
-                }
-                reader.readAsText(file);
-                break
-              }
-              case 'zip':
-              {
-                const files = e.dataTransfer.files;
-                for (const file of files) {
-                  const arrayBuffer = await file.arrayBuffer();
-                  const geojson = await shp(arrayBuffer);
-                  geojsonAddLayer (map, geojson, true, fileExtension)
-                }
-                break
-              }
-              case 'dxf':
-              {
-                reader.onload = async (event) => {
-                  const dxfText = event.target.result;
-                  // this.$store.state.dxfText = dxfText
-                  this.$store.state.dxfText = {
-                    text: dxfText,
-                    zahyokei: ''
+                case 'geojson':
+                {
+                  reader.onload = (event) => {
+                    const geojsonText = event.target.result
+                    this.$store.state.geojsonText = geojsonText
+                    const geojson = JSON.parse(geojsonText);
+                    geojsonAddLayer (map, geojson, true, fileExtension)
                   }
-                  this.dialogForDxfApp = true
-                };
-                reader.readAsText(file);
-                break
-              }
-              case 'gpx':
-              {
-                const file = e.dataTransfer.files[0];
-                const gpxText = await file.text();
-                this.$store.state.gpxText = gpxText
-                const parser = new DOMParser();
-                const gpxDoc = parser.parseFromString(gpxText, 'application/xml');
-                const geojson = gpx(gpxDoc);
-                geojsonAddLayer (map, geojson, true, fileExtension)
-                break
-              }
-              case 'xml':
-              {
-                const file = e.dataTransfer.files[0];
-                if (file && file.type === 'text/xml') {
-                  const xmlText = await file.text();
-                  let geojson = xmlToGeojson(xmlText);
-                  geojson = transformGeoJSONToEPSG4326(geojson)
-                  geojsonAddLayer (map, geojson, true, fileExtension)
-                } else {
-                  alert('XMLファイルをドロップしてください');
+                  reader.readAsText(file);
+                  break
                 }
-                break
+                case 'zip':
+                {
+                  const files = e.dataTransfer.files;
+                  for (const file of files) {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const geojson = await shp(arrayBuffer);
+                    geojsonAddLayer (map, geojson, true, fileExtension)
+                  }
+                  break
+                }
+                case 'dxf':
+                {
+                  reader.onload = async (event) => {
+                    const dxfText = event.target.result;
+                    // this.$store.state.dxfText = dxfText
+                    this.$store.state.dxfText = {
+                      text: dxfText,
+                      zahyokei: ''
+                    }
+                    this.dialogForDxfApp = true
+                  };
+                  reader.readAsText(file);
+                  break
+                }
+                case 'gpx':
+                {
+                  const file = e.dataTransfer.files[0];
+                  const gpxText = await file.text();
+                  this.$store.state.gpxText = gpxText
+                  const parser = new DOMParser();
+                  const gpxDoc = parser.parseFromString(gpxText, 'application/xml');
+                  const geojson = gpx(gpxDoc);
+                  geojsonAddLayer (map, geojson, true, fileExtension)
+                  break
+                }
+                case 'xml':
+                {
+                  const file = e.dataTransfer.files[0];
+                  if (file && file.type === 'text/xml') {
+                    const xmlText = await file.text();
+                    let geojson = xmlToGeojson(xmlText);
+                    geojson = transformGeoJSONToEPSG4326(geojson)
+                    geojsonAddLayer (map, geojson, true, fileExtension)
+                  } else {
+                    alert('XMLファイルをドロップしてください');
+                  }
+                  break
+                }
               }
-            }
-          });
+            });
+          }
+
 
           let isCursorOnFeature = false;
           let isDragging = false;

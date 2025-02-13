@@ -67,6 +67,7 @@ import {gpx, kml} from "@tmcw/togeojson";
 import DxfParser from 'dxf-parser'
 import {dxfToGeoJSON} from '@/App'
 import {clickPointLayer, clickPointSource} from "@/js/layers";
+import JSZip from "jszip";
 
 let infoCount = 0
 
@@ -534,28 +535,53 @@ export default {
         }
       }
 
+      async function fetchFile(url) {
+        try {
+          // Fetchリクエストでファイルを取得
+          const response = await fetch(url);
+          // レスポンスが成功したか確認
+          if (!response.ok) {
+            throw new Error(`HTTPエラー! ステータス: ${response.status}`);
+          }
+          // Blobとしてレスポンスを取得
+          const blob = await response.blob();
+          // BlobをFileオブジェクトに変換
+          const file = new File([blob], "downloaded_file", { type: blob.type });
+          console.log("Fileオブジェクトが作成されました:", file);
+          return file;
+        } catch (error) {
+          console.error("ファイルの取得中にエラーが発生しました:", error);
+        }
+      }
+
       if (this.counter === 1) {
+
+        if (this.$store.state.uploadedVector) {
+          if (JSON.parse(this.$store.state.uploadedVector).uid) {
+            const vectorUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/' + JSON.parse(this.$store.state.uploadedVector).uid + '/' + JSON.parse(this.$store.state.uploadedVector).image
+            const extension = vectorUrl.split('.').pop();
+            switch (extension) {
+              case 'kmz':
+                Promise.all([fetchFile(vectorUrl)]).then(files => {
+                  async function load () {
+                    const zip = await JSZip.loadAsync(files[0]);
+                    const kmlFile = Object.keys(zip.files).find((name) => name.endsWith('.kml'));
+                    const kmlText = await zip.files[kmlFile].async('text');
+                    const parser = new DOMParser();
+                    const kmlData = parser.parseFromString(kmlText, 'application/xml');
+                    const geojson = kml(kmlData);
+                    geojsonAddLayer(map, geojson, false, 'kml')
+                  }
+                  load()
+                })
+                break
+            }
+          }
+        }
+
         if (this.$store.state.uploadedImage) {
           if (map.getLayer('oh-geotiff-layer')) {
             map.removeLayer('oh-geotiff-layer')
-          }
-          async function fetchFile(url) {
-            try {
-              // Fetchリクエストでファイルを取得
-              const response = await fetch(url);
-              // レスポンスが成功したか確認
-              if (!response.ok) {
-                throw new Error(`HTTPエラー! ステータス: ${response.status}`);
-              }
-              // Blobとしてレスポンスを取得
-              const blob = await response.blob();
-              // BlobをFileオブジェクトに変換
-              const file = new File([blob], "downloaded_file", { type: blob.type });
-              console.log("Fileオブジェクトが作成されました:", file);
-              return file;
-            } catch (error) {
-              console.error("ファイルの取得中にエラーが発生しました:", error);
-            }
           }
           async function checkImageExistsAndWidth(imageUrl) {
             try {
@@ -565,19 +591,15 @@ export default {
                 console.log('Image does not exist.');
                 return false;
               }
-
               // Imageオブジェクトで横幅確認
               const image = new Image();
               image.src = imageUrl;
-
               // Promiseでロード完了を待つ
               const imageLoaded = new Promise((resolve, reject) => {
                 image.onload = () => resolve(image);
                 image.onerror = (error) => reject(error);
               });
-
               const loadedImage = await imageLoaded;
-
               if (loadedImage.width > 200) {
                 console.log('Image exists and width is greater than 200px!');
                 return true;
@@ -591,13 +613,10 @@ export default {
             }
           }
 
-          console.log(JSON.parse(this.$store.state.uploadedImage).image)
-
           if (JSON.parse(this.$store.state.uploadedImage).uid) {
             const imageUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/' + JSON.parse(this.$store.state.uploadedImage).uid + '/' + JSON.parse(this.$store.state.uploadedImage).image
             const worldFileUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/' + JSON.parse(this.$store.state.uploadedImage).uid + '/' + JSON.parse(this.$store.state.uploadedImage).worldFile
             const extension = imageUrl.split('.').pop();
-            // alert(extension);
             switch (extension) {
               case 'tif':
                 if (worldFileUrl) {
@@ -633,13 +652,6 @@ export default {
                 break
             }
 
-
-
-
-
-
-
-
           } else {
 
             if (JSON.parse(this.$store.state.uploadedImage).worldFile) {
@@ -647,9 +659,7 @@ export default {
                 const imageUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).image
                 const worldFileUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).worldFile
                 const jpgUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).jpg
-                console.log(imageUrl)
-                console.log(worldFileUrl)
-                console.log(jpgUrl)
+
                 // console.log(fetchFile(imageUrl))
 
                 // Promise.all([fetchFile(imageUrl), fetchFile(worldFileUrl)]).then(files => {
