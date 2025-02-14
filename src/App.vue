@@ -868,11 +868,15 @@ export default {
         geoTiffLoadForUser1(map02, 'map02', false)
 
         // -------------------------------------------------------------------------------------------------
-        async function generateTiles(filePath, srsCode = "2450") {
+        async function generateTiles(filePath, srsCode = "2450", dir) {
           let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ file: filePath, srs: srsCode })
+            body: JSON.stringify({
+              file: filePath, 
+              srs: srsCode,
+              dir: dir
+            })
           });
           let result = await response.json();
           if (result.success) {
@@ -897,7 +901,7 @@ export default {
         const formData = new FormData();
         formData.append("file", tifFile);
         formData.append("tfw", tfwFile);
-
+        formData.append("dir", this.$store.state.userId); // 指定したフォルダにアップロード
         fetch("https://kenzkenz.duckdns.org/myphp/upload.php", {
           method: "POST",
           body: formData
@@ -907,7 +911,7 @@ export default {
               if (data.success) {
                 console.log("アップロード成功:", data);
                 // alert("アップロード成功!")
-                generateTiles(data.file, srsCode);
+                generateTiles(data.file, srsCode, this.$store.state.userId);
               } else {
                 console.error("アップロード失敗:", data);
                 alert("アップロードエラー: " + data.error);

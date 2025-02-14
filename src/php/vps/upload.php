@@ -1,13 +1,27 @@
 <?php
 
+
 ob_clean(); // 出力バッファをクリア
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 
-$uploadDir = "/var/www/html/public_html/uploads/";
+// ベースのアップロードディレクトリ
+$baseUploadDir = "/var/www/html/public_html/uploads/";
 
-if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+// JSON データの取得 (ディレクトリ名取得)
+$subDir = isset($_POST["dir"]) ? preg_replace('/[^a-zA-Z0-9_-]/', '', $_POST["dir"]) : "default"; // 安全なディレクトリ名に変換
+
+// フルパスのアップロードディレクトリ
+$uploadDir = $baseUploadDir . $subDir . "/";
+
+// ディレクトリがない場合は作成
+if (!is_dir($uploadDir)) {
+    if (!mkdir($uploadDir, 0777, true)) {
+        echo json_encode(["error" => "ディレクトリの作成に失敗しました: " . $uploadDir]);
+        exit;
+    }
+}
 
 // TIFF & TFW のチェック
 if (!isset($_FILES["file"]) || !isset($_FILES["tfw"])) {
@@ -33,62 +47,43 @@ if (!move_uploaded_file($_FILES["tfw"]["tmp_name"], $tfwPath)) {
     exit;
 }
 
-echo json_encode(["success" => true, "file" => $tiffPath, "tfw" => $tfwPath]);
+echo json_encode(["success" => true, "file" => $tiffPath, "tfw" => $tfwPath, "dir" => $subDir]);
 
 
+//
+//ob_clean(); // 出力バッファをクリア
 //header("Access-Control-Allow-Origin: *");
 //header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 //header("Access-Control-Allow-Headers: Content-Type");
 //
-//// アップロードディレクトリ
 //$uploadDir = "/var/www/html/public_html/uploads/";
 //
-//// `uploads` ディレクトリがない場合は作成
-//if (!is_dir($uploadDir)) {
-//    if (!mkdir($uploadDir, 0777, true)) {
-//        error_log("エラー: アップロードディレクトリの作成に失敗", 3, $uploadDir . "/error_log.txt");
-//        echo json_encode(["error" => "アップロードディレクトリの作成に失敗しました"]);
-//        exit;
-//    }
-//}
+//if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 //
-//// ファイルが送信されているか確認
-//if (!isset($_FILES["file"])) {
-//    error_log("エラー: ファイルが送信されていません", 3, $uploadDir . "/error_log.txt");
-//    echo json_encode(["error" => "ファイルが送信されていません"]);
+//// TIFF & TFW のチェック
+//if (!isset($_FILES["file"]) || !isset($_FILES["tfw"])) {
+//    echo json_encode(["error" => "TIFF と TFW の両方をアップロードしてください"]);
 //    exit;
 //}
 //
-//// アップロードエラーの確認
-//if ($_FILES["file"]["error"] != UPLOAD_ERR_OK) {
-//    error_log("アップロードエラー: " . $_FILES["file"]["error"], 3, $uploadDir . "/error_log.txt");
-//    echo json_encode(["error" => "ファイルアップロードに失敗しました (エラーコード: " . $_FILES["file"]["error"] . ")"]);
+//// 一意のファイル名を作成
+//$fileBaseName = uniqid();
+//$tiffPath = $uploadDir . $fileBaseName . ".tif";
+//$tfwPath = $uploadDir . $fileBaseName . ".tfw";
+//
+//// TIFF ファイルの保存
+//if (!move_uploaded_file($_FILES["file"]["tmp_name"], $tiffPath)) {
+//    echo json_encode(["error" => "TIFF の保存に失敗しました"]);
 //    exit;
 //}
 //
-//// MIME タイプの確認
-//$fileMimeType = mime_content_type($_FILES["file"]["tmp_name"]);
-//if ($fileMimeType !== "image/tiff") {
-//    error_log("エラー: 許可されていない MIME タイプ - " . $fileMimeType, 3, $uploadDir . "/error_log.txt");
-//    echo json_encode(["error" => "許可されていないファイル形式です (TIFF のみ許可)"]);
+//// TFW ファイルの保存
+//if (!move_uploaded_file($_FILES["tfw"]["tmp_name"], $tfwPath)) {
+//    unlink($tiffPath); // TIFF を削除
+//    echo json_encode(["error" => "TFW の保存に失敗しました"]);
 //    exit;
 //}
 //
-//// ファイル名の決定
-//$fileExt = strtolower(pathinfo($_FILES["file"]["name"], PATHINFO_EXTENSION));
-//$fileName = uniqid() . "." . $fileExt;
-//$filePath = $uploadDir . $fileName;
+//echo json_encode(["success" => true, "file" => $tiffPath, "tfw" => $tfwPath]);
 //
-//// `move_uploaded_file()` の実行とエラーログの記録
-//if (!move_uploaded_file($_FILES["file"]["tmp_name"], $filePath)) {
-//    error_log("エラー: move_uploaded_file() 失敗 - " . $_FILES["file"]["tmp_name"] . " → " . $filePath, 3, $uploadDir . "/error_log.txt");
-//    echo json_encode(["error" => "ファイルの保存に失敗しました"]);
-//    exit;
-//}
-//
-//// アップロード成功
-//chmod($filePath, 0644);
-//error_log("ファイルアップロード成功: " . $filePath, 3, $uploadDir . "/error_log.txt");
-//echo json_encode(["success" => true, "file" => $filePath]);
-
 ?>
