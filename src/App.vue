@@ -617,7 +617,15 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import maplibregl from 'maplibre-gl'
 import { Protocol } from "pmtiles"
 import { useGsiTerrainSource } from 'maplibre-gl-gsi-terrain'
-import {extLayer, extSource, monoLayers, monoSources, osmBrightLayers, osmBrightSources} from "@/js/layers"
+import {
+  extLayer,
+  extSource, geotiffLayer,
+  geotiffSource,
+  monoLayers,
+  monoSources,
+  osmBrightLayers,
+  osmBrightSources, vpsTileLayer, vpsTileSource
+} from "@/js/layers"
 import muni from '@/js/muni'
 import { kml } from '@tmcw/togeojson';
 import store from "@/store";
@@ -864,8 +872,9 @@ export default {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
       if (this.$store.state.userId) {
-        geoTiffLoadForUser1(map01, 'map01', true)
-        geoTiffLoadForUser1(map02, 'map02', false)
+
+        // geoTiffLoadForUser1(map01, 'map01', true)
+        // geoTiffLoadForUser1(map02, 'map02', false)
 
         // -------------------------------------------------------------------------------------------------
         async function generateTiles(filePath, srsCode = "2450", dir) {
@@ -873,17 +882,39 @@ export default {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              file: filePath, 
+              file: filePath,
               srs: srsCode,
               dir: dir
             })
           });
           let result = await response.json();
           if (result.success) {
-            alert("タイル生成完了！");
-
+            console.log(result.tiles_url, result.bbox)
+            addTileLayer(result.tiles_url, result.bbox)
+            // alert("タイル生成完了！");
           } else {
             alert("タイル生成に失敗しました！");
+          }
+        }
+
+        function addTileLayer(tileURL,bbox) {
+          vpsTileSource.obj.tiles = [tileURL]
+          store.state.selectedLayers['map01'].unshift(
+              {
+                id: 'oh-vpstile-layer',
+                label: 'テストレイヤー',
+                source: vpsTileSource,
+                layers: [vpsTileLayer],
+                opacity: 1,
+                visibility: true,
+              }
+          );
+
+          if (bbox) {
+            map01.fitBounds([
+              [bbox[0], bbox[1]], // minX, minY
+              [bbox[2], bbox[3]]  // maxX, maxY
+            ], { padding: 20 });
           }
         }
 

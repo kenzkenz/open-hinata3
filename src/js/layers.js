@@ -102,6 +102,22 @@ export const pngLayer= {
     source: 'png-source',
     paint: {}
 }
+
+export const vpsTileSource = {
+    id:'vpstile-source',obj:{
+        type: 'raster',
+        tiles: [],
+    }
+}
+export const vpsTileLayer= {
+    id: 'oh-vpstile-layer',
+    type: 'raster',
+    source: 'vpstile-source',
+    paint: {}
+}
+
+
+
 // 民電 --------------------------------------------------------------------------------------------
 const mindenSource = {
     id: "minden-source", obj: {

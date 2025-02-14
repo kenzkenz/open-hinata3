@@ -655,7 +655,7 @@ export default {
             .map(a => a.getAttribute("href"))
             .filter(href => href.startsWith('thumbnail-') && /\.(jpg|jpeg)$/i.test(href))
             .map(href => `${url}${href}`);
-        console.log(this.images)
+        // console.log(this.images)
       } catch (error) {
         console.error("画像の取得に失敗しました", error);
       }
