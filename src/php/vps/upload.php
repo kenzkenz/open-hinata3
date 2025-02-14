@@ -1,7 +1,5 @@
 <?php
 
-
-ob_clean(); // 出力バッファをクリア
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
@@ -29,7 +27,14 @@ if (!isset($_FILES["file"]) || !isset($_FILES["tfw"])) {
     exit;
 }
 
-// 一意のファイル名を作成
+// アップロードされたファイルの拡張子を確認
+$fileExt = strtolower(pathinfo($_FILES["file"]["name"], PATHINFO_EXTENSION));
+if (!in_array($fileExt, ["tif", "tiff"])) {
+    echo json_encode(["error" => "許可されていないファイル形式です (TIFF のみ許可)"]);
+    exit;
+}
+
+// 一意のファイル名を作成（保存時は `.tif` に統一）
 $fileBaseName = uniqid();
 $tiffPath = $uploadDir . $fileBaseName . ".tif";
 $tfwPath = $uploadDir . $fileBaseName . ".tfw";
@@ -49,41 +54,4 @@ if (!move_uploaded_file($_FILES["tfw"]["tmp_name"], $tfwPath)) {
 
 echo json_encode(["success" => true, "file" => $tiffPath, "tfw" => $tfwPath, "dir" => $subDir]);
 
-
-//
-//ob_clean(); // 出力バッファをクリア
-//header("Access-Control-Allow-Origin: *");
-//header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
-//header("Access-Control-Allow-Headers: Content-Type");
-//
-//$uploadDir = "/var/www/html/public_html/uploads/";
-//
-//if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
-//
-//// TIFF & TFW のチェック
-//if (!isset($_FILES["file"]) || !isset($_FILES["tfw"])) {
-//    echo json_encode(["error" => "TIFF と TFW の両方をアップロードしてください"]);
-//    exit;
-//}
-//
-//// 一意のファイル名を作成
-//$fileBaseName = uniqid();
-//$tiffPath = $uploadDir . $fileBaseName . ".tif";
-//$tfwPath = $uploadDir . $fileBaseName . ".tfw";
-//
-//// TIFF ファイルの保存
-//if (!move_uploaded_file($_FILES["file"]["tmp_name"], $tiffPath)) {
-//    echo json_encode(["error" => "TIFF の保存に失敗しました"]);
-//    exit;
-//}
-//
-//// TFW ファイルの保存
-//if (!move_uploaded_file($_FILES["tfw"]["tmp_name"], $tfwPath)) {
-//    unlink($tiffPath); // TIFF を削除
-//    echo json_encode(["error" => "TFW の保存に失敗しました"]);
-//    exit;
-//}
-//
-//echo json_encode(["success" => true, "file" => $tiffPath, "tfw" => $tfwPath]);
-//
 ?>

@@ -331,7 +331,7 @@ import {
   handleFileUpload,
   highlightSpecificFeatures,
   highlightSpecificFeaturesCity, jpgLoad, jpgLoadForUser, kmzLoadForUser,
-  pngDownload, pngLoad, pngLoadForUser, transformGeoJSONToEPSG4326,
+  pngDownload, pngLoad, pngLoadForUser, tileGenerateForUser, transformGeoJSONToEPSG4326,
   zahyokei
 } from '@/js/downLoad'
 
@@ -876,81 +876,84 @@ export default {
         // geoTiffLoadForUser1(map01, 'map01', true)
         // geoTiffLoadForUser1(map02, 'map02', false)
 
-        // -------------------------------------------------------------------------------------------------
-        async function generateTiles(filePath, srsCode = "2450", dir) {
-          let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              file: filePath,
-              srs: srsCode,
-              dir: dir
-            })
-          });
-          let result = await response.json();
-          if (result.success) {
-            console.log(result.tiles_url, result.bbox)
-            addTileLayer(result.tiles_url, result.bbox)
-            // alert("タイル生成完了！");
-          } else {
-            alert("タイル生成に失敗しました！");
-          }
-        }
+        tileGenerateForUser(map01, 'map01')
+        tileGenerateForUser(map02, 'map02')
 
-        function addTileLayer(tileURL,bbox) {
-          vpsTileSource.obj.tiles = [tileURL]
-          store.state.selectedLayers['map01'].unshift(
-              {
-                id: 'oh-vpstile-layer',
-                label: 'テストレイヤー',
-                source: vpsTileSource,
-                layers: [vpsTileLayer],
-                opacity: 1,
-                visibility: true,
-              }
-          );
-
-          if (bbox) {
-            map01.fitBounds([
-              [bbox[0], bbox[1]], // minX, minY
-              [bbox[2], bbox[3]]  // maxX, maxY
-            ], { padding: 20 });
-          }
-        }
-
-        const srsCode = zahyokei.find(item => item.kei === store.state.zahyokei).code
-        const files = store.state.tiffAndWorldFile
-        let tifFile = null, tfwFile = null;
-        for (const file of files) {
-          if (file.name.endsWith(".tif")) tifFile = file;
-          if (file.name.endsWith(".tfw")) tfwFile = file;
-        }
-        if (!tifFile || !tfwFile) {
-          alert("TIFF と TFW の両方をアップロードしてください！");
-          return;
-        }
-        const formData = new FormData();
-        formData.append("file", tifFile);
-        formData.append("tfw", tfwFile);
-        formData.append("dir", this.$store.state.userId); // 指定したフォルダにアップロード
-        fetch("https://kenzkenz.duckdns.org/myphp/upload.php", {
-          method: "POST",
-          body: formData
-        })
-            .then(response => response.json())
-            .then(data => {
-              if (data.success) {
-                console.log("アップロード成功:", data);
-                // alert("アップロード成功!")
-                generateTiles(data.file, srsCode, this.$store.state.userId);
-              } else {
-                console.error("アップロード失敗:", data);
-                alert("アップロードエラー: " + data.error);
-              }
-            })
-            .catch(error => console.error("エラー:", error));
-        // -------------------------------------------------------------------------------------------------
-
+        // // -------------------------------------------------------------------------------------------------
+        // async function generateTiles(filePath, srsCode = "2450", dir) {
+        //   let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
+        //     method: "POST",
+        //     headers: { "Content-Type": "application/json" },
+        //     body: JSON.stringify({
+        //       file: filePath,
+        //       srs: srsCode,
+        //       dir: dir
+        //     })
+        //   });
+        //   let result = await response.json();
+        //   if (result.success) {
+        //     console.log(result.tiles_url, result.bbox)
+        //     addTileLayer(result.tiles_url, result.bbox)
+        //     // alert("タイル生成完了！");
+        //   } else {
+        //     alert("タイル生成に失敗しました！");
+        //   }
+        // }
+        //
+        // function addTileLayer(tileURL,bbox) {
+        //   vpsTileSource.obj.tiles = [tileURL]
+        //   store.state.selectedLayers['map01'].unshift(
+        //       {
+        //         id: 'oh-vpstile-layer',
+        //         label: 'テストレイヤー',
+        //         source: vpsTileSource,
+        //         layers: [vpsTileLayer],
+        //         opacity: 1,
+        //         visibility: true,
+        //       }
+        //   );
+        //
+        //   if (bbox) {
+        //     map01.fitBounds([
+        //       [bbox[0], bbox[1]], // minX, minY
+        //       [bbox[2], bbox[3]]  // maxX, maxY
+        //     ], { padding: 20 });
+        //   }
+        // }
+        //
+        // const srsCode = zahyokei.find(item => item.kei === store.state.zahyokei).code
+        // const files = store.state.tiffAndWorldFile
+        // let tifFile = null, tfwFile = null;
+        // for (const file of files) {
+        //   if (file.name.endsWith(".tif")) tifFile = file;
+        //   if (file.name.endsWith(".tfw")) tfwFile = file;
+        // }
+        // if (!tifFile || !tfwFile) {
+        //   alert("TIFF と TFW の両方をアップロードしてください！");
+        //   return;
+        // }
+        // const formData = new FormData();
+        // formData.append("file", tifFile);
+        // formData.append("tfw", tfwFile);
+        // formData.append("dir", this.$store.state.userId); // 指定したフォルダにアップロード
+        // fetch("https://kenzkenz.duckdns.org/myphp/upload.php", {
+        //   method: "POST",
+        //   body: formData
+        // })
+        //     .then(response => response.json())
+        //     .then(data => {
+        //       if (data.success) {
+        //         console.log("アップロード成功:", data);
+        //         // alert("アップロード成功!")
+        //         generateTiles(data.file, srsCode, this.$store.state.userId);
+        //       } else {
+        //         console.error("アップロード失敗:", data);
+        //         alert("アップロードエラー: " + data.error);
+        //       }
+        //     })
+        //     .catch(error => console.error("エラー:", error));
+        // // -------------------------------------------------------------------------------------------------
+        //
 
       } else {
         geoTiffLoad (map01,'map01', true)

@@ -107,6 +107,7 @@ export const vpsTileSource = {
     id:'vpstile-source',obj:{
         type: 'raster',
         tiles: [],
+        bounds: null
     }
 }
 export const vpsTileLayer= {

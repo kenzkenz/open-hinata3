@@ -51,7 +51,7 @@
 
 import {
   addImageLayer,
-  addImageLayerJpg, addImageLayerPng,
+  addImageLayerJpg, addImageLayerPng, addTileLayer,
   geojsonAddLayer,
   highlightSpecificFeatures,
   highlightSpecificFeaturesCity,
@@ -611,6 +611,13 @@ export default {
               return false;
             }
           }
+
+          if (JSON.parse(this.$store.state.uploadedImage).tile) {
+            addTileLayer (map)
+          }
+
+
+
 
           if (JSON.parse(this.$store.state.uploadedImage).uid) {
             const imageUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/' + JSON.parse(this.$store.state.uploadedImage).uid + '/' + JSON.parse(this.$store.state.uploadedImage).image
