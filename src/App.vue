@@ -866,6 +866,57 @@ export default {
       if (this.$store.state.userId) {
         geoTiffLoadForUser1(map01, 'map01', true)
         geoTiffLoadForUser1(map02, 'map02', false)
+
+        // -------------------------------------------------------------------------------------------------
+        async function generateTiles(filePath, srsCode = "2450") {
+          let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ file: filePath, srs: srsCode })
+          });
+          let result = await response.json();
+          if (result.success) {
+            alert("タイル生成完了！");
+
+          } else {
+            alert("タイル生成に失敗しました！");
+          }
+        }
+
+        const srsCode = zahyokei.find(item => item.kei === store.state.zahyokei).code
+        const files = store.state.tiffAndWorldFile
+        let tifFile = null, tfwFile = null;
+        for (const file of files) {
+          if (file.name.endsWith(".tif")) tifFile = file;
+          if (file.name.endsWith(".tfw")) tfwFile = file;
+        }
+        if (!tifFile || !tfwFile) {
+          alert("TIFF と TFW の両方をアップロードしてください！");
+          return;
+        }
+        const formData = new FormData();
+        formData.append("file", tifFile);
+        formData.append("tfw", tfwFile);
+
+        fetch("https://kenzkenz.duckdns.org/myphp/upload.php", {
+          method: "POST",
+          body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                console.log("アップロード成功:", data);
+                // alert("アップロード成功!")
+                generateTiles(data.file, srsCode);
+              } else {
+                console.error("アップロード失敗:", data);
+                alert("アップロードエラー: " + data.error);
+              }
+            })
+            .catch(error => console.error("エラー:", error));
+        // -------------------------------------------------------------------------------------------------
+
+
       } else {
         geoTiffLoad (map01,'map01', true)
         geoTiffLoad (map02,'map02', false)
@@ -2271,21 +2322,24 @@ export default {
           });
 
           // -----------------------------------------------------------------------------------------------------------
-          async function generateTiles(filePath) {
-            let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ file: filePath })
-            });
-
-            let result = await response.json();
-            if (result.success) {
-              alert("タイル生成完了！");
-
-            } else {
-              alert("タイル生成に失敗しました！");
-            }
-          }
+          // async function generateTiles(filePath) {
+          //   let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
+          //     method: "POST",
+          //     headers: { "Content-Type": "application/json" },
+          //     body: JSON.stringify({ file: filePath })
+          //   });
+          //
+          //   let result = await response.json();
+          //
+          //   console.log(result)
+          //
+          //   if (result.success) {
+          //     alert("タイル生成完了！");
+          //
+          //   } else {
+          //     alert("タイル生成に失敗しました！");
+          //   }
+          // }
 
           if (mapName === 'map01') {
             dropzone.addEventListener('drop', async(e) => {
@@ -2361,34 +2415,50 @@ export default {
                   if (files.length > 1) {
                     this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
                     this.s_dialogForGeotiffApp = true
+
+
+
+                    // // -------------------------------------------------------------------------------------------------
+                    // const files = e.dataTransfer.files;
+                    // let tifFile = null, tfwFile = null;
+                    // for (const file of files) {
+                    //   if (file.name.endsWith(".tif")) tifFile = file;
+                    //   if (file.name.endsWith(".tfw")) tfwFile = file;
+                    // }
+                    // if (!tifFile || !tfwFile) {
+                    //   alert("TIFF と TFW の両方をアップロードしてください！");
+                    //   return;
+                    // }
+                    // const formData = new FormData();
+                    // formData.append("file", tifFile);
+                    // formData.append("tfw", tfwFile);
+                    //
+                    // fetch("https://kenzkenz.duckdns.org/myphp/upload.php", {
+                    //   method: "POST",
+                    //   body: formData
+                    // })
+                    //     .then(response => response.json())
+                    //     .then(data => {
+                    //       if (data.success) {
+                    //         console.log("アップロード成功:", data);
+                    //         generateTiles(data.file);
+                    //       } else {
+                    //         console.error("アップロード失敗:", data);
+                    //         alert("アップロードエラー: " + data.error);
+                    //       }
+                    //     })
+                    //     .catch(error => console.error("エラー:", error));
+                    // // -------------------------------------------------------------------------------------------------
+
+
+
+
                   } else if (files.length === 1){
                     this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
                     const zahyokei = await getCRS(Array.from(e.dataTransfer.files)[0])
                     if (zahyokei) {
                       this.$store.state.zahyokei = zahyokei
                       this.geoTiffLoad20()
-
-
-                      // let formData = new FormData();
-                      // formData.append("file", file);
-                      //
-                      // // VPS にファイルをアップロード
-                      // let response = await fetch("https://kenzkenz.duckdns.org/myphp/upload.php", {
-                      //   method: "POST",
-                      //   body: formData
-                      // });
-                      //
-                      // let result = await response.json();
-                      // if (result.success) {
-                      //   alert("アップロード成功！タイルを生成します...");
-                      //   await generateTiles(result.file);
-                      // } else {
-                      //   alert("アップロード失敗！");
-                      // }
-
-
-
-
                     } else {
                       this.s_dialogForGeotiff2App = true
                     }

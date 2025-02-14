@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+    <TileMap version="1.0.0" tilemapservice="http://tms.osgeo.org/1.0.0">
+      <Title>67af27e528539.tif</Title>
+      <Abstract></Abstract>
+      <SRS>PROJCS["JGD2011 / Japan Plane Rectangular CS II",GEOGCS["JGD2011",DATUM["Japanese_Geodetic_Datum_2011",SPHEROID["GRS 1980",6378137,298.257222101004,AUTHORITY["EPSG","7019"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","1128"]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","6668"]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",33],PARAMETER["central_meridian",131],PARAMETER["scale_factor",0.9999],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH],AUTHORITY["EPSG","6670"]]</SRS>
+      <BoundingBox minx="-26702.93679237169999" miny="-19875.44716993240218" maxx="-26580.53679237169854" maxy="-19733.74716993240145"/>
+      <Origin x="-26702.93679237169999" y="-19875.44716993240218"/>
+      <TileFormat width="256" height="256" mime-type="image/png" extension="png"/>
+      <TileSets profile="raster">
+        <TileSet href="5" units-per-pixel="0.02500000000000" order="5"/>
+        <TileSet href="6" units-per-pixel="0.01250000000000" order="6"/>
+        <TileSet href="7" units-per-pixel="0.00625000000000" order="7"/>
+        <TileSet href="8" units-per-pixel="0.00312500000000" order="8"/>
+        <TileSet href="9" units-per-pixel="0.00156250000000" order="9"/>
+        <TileSet href="10" units-per-pixel="0.00078125000000" order="10"/>
+        <TileSet href="11" units-per-pixel="0.00039062500000" order="11"/>
+        <TileSet href="12" units-per-pixel="0.00019531250000" order="12"/>
+        <TileSet href="13" units-per-pixel="0.00009765625000" order="13"/>
+        <TileSet href="14" units-per-pixel="0.00004882812500" order="14"/>
+        <TileSet href="15" units-per-pixel="0.00002441406250" order="15"/>
+      </TileSets>
+    </TileMap>
+    

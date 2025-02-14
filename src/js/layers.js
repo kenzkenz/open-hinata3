@@ -9552,11 +9552,11 @@ const layers01 = [
                     },
                     {
                         id: 'oh-yokophama-sekisyoku-layer',
-                        label: "神奈川県横浜市南部赤色立体地図",
+                        label: "神奈川県横浜南部赤色立体地図",
                         source: kanagawakenyokohamaSekisyokuSource,
                         layers: [kanagawakenyokohamaSekisyokuLayer],
                         bounds: boundsSort([139.1460674051824,35.47387830775729, 139.77576139218593,35.09494646110994]),
-                        attribution:'<a href="https://www.geospatial.jp/ckan/dataset/kanagawa-2020-2-pointcloud" target="_blank">G空間情報センター</a>'
+                        attribution:'<a href="https://www.geospatial.jp/ckan/dataset/kanagawa-2021-pointcloud" target="_blank">G空間情報センター</a>'
                     },
                     {
                         id: 'oh-kanagawakenseibu-sekisyoku-layer',

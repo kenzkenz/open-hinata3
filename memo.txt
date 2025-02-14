@@ -930,3 +930,14 @@ tippecanoe -o himejishi.pmtiles \
     --minimum-zoom=0 \
     --layer=chibanzu \
     himejishi.geojson
+
+ gdalbuildvrt nomura.vrt nomura/*.tiff
+ gdal2tiles -z 1-20 --s_srs EPSG:2447 -a "0,0,0" --xyz --processes=16 nomura.vrt nomura-tile
+
+  gdalbuildvrt test.vrt test/*.tif
+  gdal2tiles -z 1-20 --s_srs EPSG:2450 -a "0,0,0" --xyz --processes=4 test.vrt test-tile
+    gdal2tiles -z 1-20 --s_srs EPSG:2450 -a "0,0,0" --xyz --processes=4 test/test.tif test-tile
+
+gdal2tiles.py -z 0-19 --s_srs EPSG:2450 -a "0,0,0" --xyz --processes=4 \
+/var/www/html/public_html/uploads/test.tif \
+/var/www/html/public_html/tiles/test_tiles
