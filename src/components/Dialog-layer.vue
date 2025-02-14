@@ -553,7 +553,6 @@ export default {
           console.error("ファイルの取得中にエラーが発生しました:", error);
         }
       }
-
       if (this.counter === 1) {
 
         if (this.$store.state.uploadedVector) {
@@ -807,7 +806,6 @@ export default {
       if (map.getLayer('oh-chibanzu-姫路市')) highlightSpecificFeaturesCity(map, 'oh-chibanzu-姫路市');
       this.counter++
 
-
       if (map.getSource('click-points-source')) {
         map.removeLayer('click-points-layer')
         map.removeSource('click-points-source')
@@ -825,27 +823,14 @@ export default {
         map.setLayoutProperty("click-points-layer", "visibility", 'none');
       }
 
-
-
-
-      // if (this.$store.state.drawGeojsonText) {
-
-      // alert(1)
-      //
-      // const geojson = JSON.parse(this.$store.state.drawGeojsonText);
-      // this.$store.state.drawInstance.addFeatures(geojson);
-
-
-    //   setTimeout(() => {
-    //
-    //     console.log(map.getStyle().layers)
-    //     alert(1)
-    //     const terradrawLayers = map.getStyle().layers.filter(layer => layer.id.startsWith('terradraw-'));
-    //     map.getStyle().layers.forEach(layer => {
-    //       console.log(layer.id)
-    //       map.moveLayer(layer.id)
-    //     })
-    //   },10000)
+      const fileExtension = 'kml'
+      if (map.getLayer(fileExtension + '-layer')) {
+        map.moveLayer(fileExtension + '-polygon-layer')
+        map.moveLayer(fileExtension + '-layer')
+        map.moveLayer(fileExtension + '-line-layer')
+        map.moveLayer(fileExtension + '-point-layer')
+        // map.addLayer(fileExtension + '-polygon-points')
+      }
     },
     mw5AddLayers(map,mapName) {
       if (!this.s_selectedLayers[mapName].find(v => v.id === 'oh-mw5')) {

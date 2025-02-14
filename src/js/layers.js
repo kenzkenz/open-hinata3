@@ -2562,6 +2562,18 @@ const kanagawakenseibuSekisyokuLayer = {
     'type': 'raster',
     'source': 'kanagawakenseibu-sekisyoku-source',
 }
+// 神奈川横浜市南部赤色立体地図------------------------------------------------------------------------------------------------------
+const kanagawakenyokohamaSekisyokuSource = {
+    id: 'kanagawakenyokohama-sekisyoku-source', obj: {
+        type: 'raster',
+        tiles: ['https://kenzkenz4.xsrv.jp/tile/sekisyoku/yokohamananbu/{z}/{x}/{y}.png'],
+    }
+}
+const kanagawakenyokohamaSekisyokuLayer = {
+    'id': 'oh-kanagawakenyokohama-sekisyoku-layer',
+    'type': 'raster',
+    'source': 'kanagawakenyokohama-sekisyoku-source',
+}
 // 多摩地域赤色立体地図------------------------------------------------------------------------------------------------------
 const tamaSekisyokuSource = {
     id: 'tamaSekisyokuSource', obj: {
@@ -9518,8 +9530,9 @@ const layers01 = [
                     {
                         id: 'oh-sekisyoku-layer-all',
                         label: "赤色立体地図全部",
-                        sources: [kanagawakenseibuSekisyokuSource,sagamiharaSekisyokuSource,kanagawaSekisyokuSource,tamaSekisyokuSource,tokyo23SekisyokuSource,tosyo01SekisyokuSource,tosyo02SekisyokuSource,tosyo03SekisyokuSource,tosyo04SekisyokuSource,tosyo05SekisyokuSource,tosyo06SekisyokuSource,kochiSekisyokuSource],
-                        layers: [kanagawakenseibuSekisyokuLayer,sagamiharaSekisyokuLayer,kanagawaSekisyokuLayer,tamaSekisyokuLayer,tokyo23SekisyokuLayer,tosyo02SekisyokuLayer,tosyo03SekisyokuLayer,tosyo04SekisyokuLayer,tosyo05SekisyokuLayer,tosyo06SekisyokuLayer,tosyo01SekisyokuLayer,kochiSekisyokuLayer],
+                        sources: [kanagawakenyokohamaSekisyokuSource,
+                            kanagawakenseibuSekisyokuSource,sagamiharaSekisyokuSource,kanagawaSekisyokuSource,tamaSekisyokuSource,tokyo23SekisyokuSource,tosyo01SekisyokuSource,tosyo02SekisyokuSource,tosyo03SekisyokuSource,tosyo04SekisyokuSource,tosyo05SekisyokuSource,tosyo06SekisyokuSource,kochiSekisyokuSource],
+                        layers: [kanagawakenyokohamaSekisyokuLayer,kanagawakenseibuSekisyokuLayer,sagamiharaSekisyokuLayer,kanagawaSekisyokuLayer,tamaSekisyokuLayer,tokyo23SekisyokuLayer,tosyo02SekisyokuLayer,tosyo03SekisyokuLayer,tosyo04SekisyokuLayer,tosyo05SekisyokuLayer,tosyo06SekisyokuLayer,tosyo01SekisyokuLayer,kochiSekisyokuLayer],
                     },
                     {
                         id: 'oh-kanagawa-sekisyoku-layer',
@@ -9535,6 +9548,14 @@ const layers01 = [
                         source: sagamiharaSekisyokuSource,
                         layers: [sagamiharaSekisyokuLayer],
                         bounds: boundsSort([139.04848994843064,35.68660597218647, 139.34747849259207,35.468439520826834]),
+                        attribution:'<a href="https://www.geospatial.jp/ckan/dataset/kanagawa-2020-2-pointcloud" target="_blank">G空間情報センター</a>'
+                    },
+                    {
+                        id: 'oh-yokophama-sekisyoku-layer',
+                        label: "神奈川県横浜市南部赤色立体地図",
+                        source: kanagawakenyokohamaSekisyokuSource,
+                        layers: [kanagawakenyokohamaSekisyokuLayer],
+                        bounds: boundsSort([139.1460674051824,35.47387830775729, 139.77576139218593,35.09494646110994]),
                         attribution:'<a href="https://www.geospatial.jp/ckan/dataset/kanagawa-2020-2-pointcloud" target="_blank">G空間情報センター</a>'
                     },
                     {
