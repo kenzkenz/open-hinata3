@@ -2270,7 +2270,23 @@ export default {
             dropzone.classList.remove('active');
           });
 
-          // --------------------------------------------------------------------------------------------------------
+          // -----------------------------------------------------------------------------------------------------------
+          async function generateTiles(filePath) {
+            let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ file: filePath })
+            });
+
+            let result = await response.json();
+            if (result.success) {
+              alert("タイル生成完了！");
+
+            } else {
+              alert("タイル生成に失敗しました！");
+            }
+          }
+
           if (mapName === 'map01') {
             dropzone.addEventListener('drop', async(e) => {
               e.preventDefault();
@@ -2351,6 +2367,28 @@ export default {
                     if (zahyokei) {
                       this.$store.state.zahyokei = zahyokei
                       this.geoTiffLoad20()
+
+
+                      // let formData = new FormData();
+                      // formData.append("file", file);
+                      //
+                      // // VPS にファイルをアップロード
+                      // let response = await fetch("https://kenzkenz.duckdns.org/myphp/upload.php", {
+                      //   method: "POST",
+                      //   body: formData
+                      // });
+                      //
+                      // let result = await response.json();
+                      // if (result.success) {
+                      //   alert("アップロード成功！タイルを生成します...");
+                      //   await generateTiles(result.file);
+                      // } else {
+                      //   alert("アップロード失敗！");
+                      // }
+
+
+
+
                     } else {
                       this.s_dialogForGeotiff2App = true
                     }
