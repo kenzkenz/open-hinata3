@@ -343,7 +343,7 @@ import {
   pngLoad,
   pngLoadForUser,
   tileGenerateForUser,
-  tileGenerateForUser1file,
+  tileGenerateForUser1file, tileGenerateForUserJpg,
   tileGenerateForUserTfw,
   transformGeoJSONToEPSG4326,
   zahyokei
@@ -874,8 +874,9 @@ export default {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
       if (this.$store.state.userId) {
-        jpgLoadForUser (map01,'map01', true)
-        jpgLoadForUser (map02,'map01', false)
+        // jpgLoadForUser (map01,'map01', true)
+        // jpgLoadForUser (map02,'map01', false)
+        tileGenerateForUserJpg()
       } else {
         jpgLoad (map01,'map01', true)
         jpgLoad (map02,'map02', false)
@@ -2354,7 +2355,6 @@ export default {
                   if (files.length > 1) {
                     this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
                     this.s_dialogForGeotiffApp = true
-
                   } else if (files.length === 1){
                     this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
                     const zahyokei = await getCRS(Array.from(e.dataTransfer.files)[0])

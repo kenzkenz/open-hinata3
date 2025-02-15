@@ -3705,6 +3705,103 @@ export function addTileLayer (map) {
     // }
 }
 
+
+export async function tileGenerateForUserJpg () {
+    // -------------------------------------------------------------------------------------------------
+    async function generateTiles(filePath, srsCode = "2450", dir) {
+        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                file: filePath,
+                srs: srsCode,
+                dir: dir
+            })
+        });
+        let result = await response.json();
+        if (result.success) {
+            console.log(result.tiles_url, result.bbox)
+            addTileLayer(result.tiles_url, result.bbox)
+            // alert("タイル生成完了！");
+            document.querySelector('.loadingImg').style.display = 'none'
+        } else {
+            console.log(result)
+            document.querySelector('.loadingImg').style.display = 'none'
+            alert("タイル生成に失敗しました！" + result.error);
+        }
+    }
+
+    function addTileLayer(tileURL, bbox) {
+        vpsTileSource.obj.tiles = [tileURL]
+        vpsTileSource.obj.bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
+        const mapNames = ['map01', 'map02']
+        mapNames.forEach(mapName => {
+            store.state.selectedLayers[mapName].unshift(
+                {
+                    id: 'oh-vpstile-layer',
+                    label: fileName,
+                    source: vpsTileSource,
+                    layers: [vpsTileLayer],
+                    opacity: 1,
+                    visibility: true,
+                }
+            );
+        })
+
+        const map = store.state.map01
+        if (bbox) {
+            map.fitBounds([
+                [bbox[0], bbox[1]], // minX, minY
+                [bbox[2], bbox[3]]  // maxX, maxY
+            ], {padding: 20});
+        }
+
+        store.state.uploadedImage = JSON.stringify({
+            tile: tileURL,
+            bbox: bbox,
+            fileName: fileName,
+            uid: store.state.userId,
+        })
+    }
+    // -------------------------------------------------------------------------------------------------
+    document.querySelector('.loadingImg').style.display = 'block'
+    const srsCode = zahyokei.find(item => item.kei === store.state.zahyokei).code
+    const files = store.state.tiffAndWorldFile
+    let jpgFile = null, jgwFile = null;
+    for (const file of files) {
+        const fileName = file.name.toLowerCase();
+        if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) jpgFile = file;
+        if (fileName.endsWith(".jgw")) jgwFile = file;
+    }
+    if (!jpgFile || !jgwFile) {
+        alert(" JPGと JGW の両方をアップロードしてください！");
+        return;
+    }
+    let fileName = jpgFile.name;
+    fileName = fileName.slice(0, fileName.lastIndexOf('.'))
+    const formData = new FormData();
+    formData.append("file", jpgFile);
+    formData.append("worldfile", jgwFile);
+    formData.append("dir", store.state.userId); // 指定したフォルダにアップロード
+    fetch("https://kenzkenz.duckdns.org/myphp/upload.php", {
+        method: "POST",
+        body: formData
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log("アップロード成功:", data);
+                // alert("アップロード成功!")
+                generateTiles(data.file, srsCode, store.state.userId);
+            } else {
+                console.error("アップロード失敗:", data);
+                alert("アップロードエラー: " + data.error);
+            }
+        })
+        .catch(error => console.error("エラー:", error));
+    // -------------------------------------------------------------------------------------------------
+}
+
 export async function tileGenerateForUser1file () {
     // -------------------------------------------------------------------------------------------------
     async function generateTiles(filePath, srsCode = "2450", dir) {
@@ -3866,7 +3963,7 @@ export async function tileGenerateForUserTfw () {
     fileName = fileName.slice(0, fileName.lastIndexOf('.'))
     const formData = new FormData();
     formData.append("file", tifFile);
-    formData.append("tfw", tfwFile);
+    formData.append("worldfile", tfwFile);
     formData.append("dir", store.state.userId); // 指定したフォルダにアップロード
     fetch("https://kenzkenz.duckdns.org/myphp/upload.php", {
         method: "POST",
