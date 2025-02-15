@@ -3687,7 +3687,7 @@ export function addTileLayerForImage (tileURL,jsonData) {
     store.state.selectedLayers[mapName] = store.state.selectedLayers[mapName].filter(v => v.id !== 'oh-vpstile-layer');
     vpsTileSource.obj.tiles = [tileURL]
     vpsTileSource.obj.bounds = bounds
-    
+
     if (map01.getLayer('oh-vpstile-layer')) {
         map01.removeLayer('oh-vpstile-layer');
     }
@@ -3715,33 +3715,30 @@ export function addTileLayerForImage (tileURL,jsonData) {
 }
 
 export function addTileLayer (map) {
-    const mapName = map.getContainer().id
-    const tileURL = JSON.parse(store.state.uploadedImage).tile
-    const bbox = JSON.parse(store.state.uploadedImage).bbox
-    const fileName = JSON.parse(store.state.uploadedImage).fileName
-    const index = store.state.selectedLayers[mapName].findIndex(v => v.id === 'oh-vpstile-layer');
-    const opacity = store.state.selectedLayers[mapName].find(v => v.id === 'oh-vpstile-layer').opacity
-    store.state.selectedLayers[mapName] = store.state.selectedLayers[mapName].filter(v => v.id !== 'oh-vpstile-layer');
-    vpsTileSource.obj.tiles = [tileURL]
-    vpsTileSource.obj.bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
-    store.state.selectedLayers[mapName].splice(index, 0,
-        {
-            id: 'oh-vpstile-layer',
-            label: fileName,
-            source: vpsTileSource,
-            layers: [vpsTileLayer],
-            opacity: opacity,
-            visibility: true,
-        }
-    );
-    // if (bbox) {
-    //     map.fitBounds([
-    //         [bbox[0], bbox[1]], // minX, minY
-    //         [bbox[2], bbox[3]]  // maxX, maxY
-    //     ], { padding: 20 });
-    // }
+    try {
+        const mapName = map.getContainer().id
+        const tileURL = JSON.parse(store.state.uploadedImage).tile
+        const bbox = JSON.parse(store.state.uploadedImage).bbox
+        const fileName = JSON.parse(store.state.uploadedImage).fileName
+        const index = store.state.selectedLayers[mapName].findIndex(v => v.id === 'oh-vpstile-layer');
+        const opacity = store.state.selectedLayers[mapName].find(v => v.id === 'oh-vpstile-layer').opacity
+        store.state.selectedLayers[mapName] = store.state.selectedLayers[mapName].filter(v => v.id !== 'oh-vpstile-layer');
+        vpsTileSource.obj.tiles = [tileURL]
+        vpsTileSource.obj.bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
+        store.state.selectedLayers[mapName].splice(index, 0,
+            {
+                id: 'oh-vpstile-layer',
+                label: fileName,
+                source: vpsTileSource,
+                layers: [vpsTileLayer],
+                opacity: opacity,
+                visibility: true,
+            }
+        );
+    }catch (e) {
+        console.log(e)
+    }
 }
-
 
 export async function tileGenerateForUserJpg () {
     // -------------------------------------------------------------------------------------------------
@@ -3772,6 +3769,15 @@ export async function tileGenerateForUserJpg () {
     function addTileLayer(tileURL, bbox) {
         vpsTileSource.obj.tiles = [tileURL]
         vpsTileSource.obj.bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
+
+        const map01 = store.state.map01
+        if (map01.getLayer('oh-vpstile-layer')) {
+            map01.removeLayer('oh-vpstile-layer');
+        }
+        if (map01.getSource('vpstile-source')) {
+            map01.removeSource('vpstile-source');
+        }
+
         const mapNames = ['map01', 'map02']
         mapNames.forEach(mapName => {
             store.state.selectedLayers[mapName].unshift(
@@ -3786,9 +3792,8 @@ export async function tileGenerateForUserJpg () {
             );
         })
 
-        const map = store.state.map01
         if (bbox) {
-            map.fitBounds([
+            map01.fitBounds([
                 [bbox[0], bbox[1]], // minX, minY
                 [bbox[2], bbox[3]]  // maxX, maxY
             ], {padding: 20});
@@ -3800,6 +3805,7 @@ export async function tileGenerateForUserJpg () {
             fileName: fileName,
             uid: store.state.userId,
         })
+        store.state.fetchImagesFire = !store.state.fetchImagesFire
     }
     // -------------------------------------------------------------------------------------------------
     document.querySelector('.loadingImg').style.display = 'block'
@@ -3868,6 +3874,15 @@ export async function tileGenerateForUser1file () {
     function addTileLayer(tileURL,bbox) {
         vpsTileSource.obj.tiles = [tileURL]
         vpsTileSource.obj.bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
+
+        const map01 = store.state.map01
+        if (map01.getLayer('oh-vpstile-layer')) {
+            map01.removeLayer('oh-vpstile-layer');
+        }
+        if (map01.getSource('vpstile-source')) {
+            map01.removeSource('vpstile-source');
+        }
+
         const mapNames = ['map01', 'map02']
         mapNames.forEach(mapName => {
             store.state.selectedLayers[mapName].unshift(
@@ -3882,9 +3897,8 @@ export async function tileGenerateForUser1file () {
             );
         })
 
-        const map = store.state.map01
         if (bbox) {
-            map.fitBounds([
+            map01.fitBounds([
                 [bbox[0], bbox[1]], // minX, minY
                 [bbox[2], bbox[3]]  // maxX, maxY
             ], { padding: 20 });
@@ -3896,6 +3910,7 @@ export async function tileGenerateForUser1file () {
             fileName: fileName,
             uid: store.state.userId,
         })
+        store.state.fetchImagesFire = !store.state.fetchImagesFire
     }
     // -------------------------------------------------------------------------------------------------
     document.querySelector('.loadingImg').style.display = 'block'
@@ -3956,6 +3971,15 @@ export async function tileGenerateForUserTfw () {
     function addTileLayer(tileURL,bbox) {
         vpsTileSource.obj.tiles = [tileURL]
         vpsTileSource.obj.bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
+
+        const map01 = store.state.map01
+        if (map01.getLayer('oh-vpstile-layer')) {
+            map01.removeLayer('oh-vpstile-layer');
+        }
+        if (map01.getSource('vpstile-source')) {
+            map01.removeSource('vpstile-source');
+        }
+
         const mapNames = ['map01', 'map02']
         mapNames.forEach(mapName => {
             store.state.selectedLayers[mapName].unshift(
@@ -3970,9 +3994,8 @@ export async function tileGenerateForUserTfw () {
             );
         })
 
-        const map = store.state.map01
         if (bbox) {
-            map.fitBounds([
+            map01.fitBounds([
                 [bbox[0], bbox[1]], // minX, minY
                 [bbox[2], bbox[3]]  // maxX, maxY
             ], { padding: 20 });
@@ -3984,6 +4007,7 @@ export async function tileGenerateForUserTfw () {
             fileName: fileName,
             uid: store.state.userId,
         })
+        store.state.fetchImagesFire = !store.state.fetchImagesFire
     }
     // -------------------------------------------------------------------------------------------------
     document.querySelector('.loadingImg').style.display = 'block'

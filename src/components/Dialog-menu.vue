@@ -80,7 +80,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-window v-model="tab">
                 <v-window-item value="one">
                   <v-card>
-                  <v-card-text style="margin-bottom: 10px;">ドラッグ&ドロップされたgeotif,jpg,pngが表示されます。</v-card-text>
+                  <v-card-text style="margin-bottom: 10px;">ドラッグ&ドロップされたgeotif,jpgが表示されます。</v-card-text>
                   <div class="image-grid">
                     <div v-for="item in images" :key="item" class="image-container">
                       <img :src="item" class="gallery-image" @click="handleImageClick(item)" />
@@ -103,8 +103,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 <!--                        </div>-->
 <!--                      </div>-->
 <!--                    </v-card-text>-->
-
-
 
                   </v-card>
                 </v-window-item>
@@ -133,6 +131,14 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       <v-switch style="height: 40px;" v-model="s_isClickPointsLayer" @change="changeVisible" label="座標取得レイヤー表示" color="primary" />
 
       <v-switch style="height: 40px;margin-bottom: 20px;" v-model="s_isPitch" @change="changePitch" label="２画面時に傾きを同期" color="primary" />
+
+      <v-select class="scrollable-content"
+                v-model="s_resolution"
+                :items="zoomItems"
+                label="画像取込最大解像度"
+                outlined
+                v-if="user1"
+      ></v-select>
 
       標高を強調します。{{s_terrainLevel}}倍
       <div class="range-div">
@@ -243,6 +249,8 @@ export default {
     // MasonryWall,
   },
   data: () => ({
+    zoom: 19,
+    zoomItems: [13,14,15,16,17,18,19,20,21,22,23,24,25],
     tab: 'one',
     urlName: '',
     jsonData: null,
@@ -260,6 +268,15 @@ export default {
     signUpDiv: false,
   }),
   computed: {
+    s_resolution: {
+      get() {
+        return this.$store.state.resolution
+      },
+      set(value) {
+        this.$store.state.resolution = value
+        localStorage.setItem('resolution',value)
+      }
+    },
     s_dialogForLink: {
       get() {
         return this.$store.state.dialogForLink
@@ -651,65 +668,98 @@ export default {
       insertUserData(this.$store.state.userId,this.urlName,window.location.href)
     },
     async fetchImages() {
-      // try {
-        // const url = `https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/${this.uid}/`
-        const url = `https://kenzkenz.duckdns.org/uploads/${this.uid}/`
-        console.log(url)
-        const response = await fetch(url);
-        const text = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(text, "text/html");
-        const imageElements = doc.querySelectorAll("a");
-        this.images = Array.from(imageElements)
-            .map(a => a.getAttribute("href"))
-            .filter(href => href.startsWith('thumbnail-') && /\.(jpg|jpeg)$/i.test(href))
-            .map(href => `${url}${href}`);
-        // console.log(this.images)
-      // } catch (error) {
-      //   console.error("画像の取得に失敗しました", error);
-      // }
+      // const url = `https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/${this.uid}/`
+      const url = `https://kenzkenz.duckdns.org/uploads/${this.uid}/`
+      console.log(url)
+      const response = await fetch(url);
+      const text = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, "text/html");
+      const imageElements = doc.querySelectorAll("a");
+      this.images = Array.from(imageElements)
+          .map(a => a.getAttribute("href"))
+          .filter(href => href.startsWith('thumbnail-') && /\.(jpg|jpeg)$/i.test(href))
+          .map(href => `${url}${href}`);
     },
     handleClose(url) {
       if (!confirm("削除しますか？")) {
         return
       }
-      const dirMatch = url.match(/^(.*)\/thumbnail-/);
-      const targetMatch = url.match(/thumbnail-(.*?)\./);
-      if (dirMatch && targetMatch) {
-        const dir = dirMatch[1];  // `thumbnail-` の前の部分を取得
-        const target = targetMatch[1];
-        console.log(`ディレクトリ: ${dir}`);
-        console.log(`ターゲット文字列: ${target}`);
-        fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/delete-files.php", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ dir: dir, keyword: target })
+      let regex = /uploads\/(.*?)\/thumbnail-/;
+      let match = url.match(regex);
+      const dir0 = match[1]
+      regex = /thumbnail-(.*?)\./;
+      match = url.match(regex);
+      const dir1 = match[1]
+      const tileUrl = 'https://kenzkenz.duckdns.org/tiles/' + dir0 + '/' + dir1
+
+      // alert("/var/www/html/public_html/tiles/" + dir0 + '/' + dir1)
+
+      fetch("https://kenzkenz.duckdns.org/myphp/delete_dirs.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          dir: "/var/www/html/public_html/tiles/" + dir0 + '/' + dir1,
+          dir2: "/var/www/html/public_html/uploads/" + dir0,
+          string: dir1
         })
-            .then(response => response.json())
-            .then(data => {
-              console.log(data.message, data.deleted_files);
-              this.fetchImages(); // 正常終了後に実行
-              const map01 = this.$store.state.map01
-              const map02 = this.$store.state.map02
-              if (map01.getLayer('oh-geotiff-layer')) {
-                map01.removeLayer('oh-geotiff-layer');
-              }
-              if (map01.getSource('geotiff-source')) {
-                map01.removeSource('geotiff-source');
-              }
-              if (map02.getLayer('oh-geotiff-layer')) {
-                map02.removeLayer('oh-geotiff-layer');
-              }
-              if (map02.getSource('geotiff-source')) {
-                map02.removeSource('geotiff-source');
-              }
-            })
-            .catch(error => console.error("エラー:", error));
-      } else {
-        console.log("適切な形式のURLではありません");
-      }
+      })
+          .then(response => response.json())
+          .then(data => {
+            // alert('削除成功')
+            this.fetchImages(); // 正常終了後に実行
+            const map01 = this.$store.state.map01
+            if (map01.getLayer('oh-vpstile-layer')) {
+              map01.removeLayer('oh-vpstile-layer');
+            }
+            if (map01.getSource('vpstile-source')) {
+              map01.removeSource('vpstile-source');
+            }
+            console.log(data)
+          })
+          .catch(error => console.error("エラー:", error));
+
+
+
+      // const dirMatch = url.match(/^(.*)\/thumbnail-/);
+      // const targetMatch = url.match(/thumbnail-(.*?)\./);
+      // if (dirMatch && targetMatch) {
+      //   const dir = dirMatch[1];  // `thumbnail-` の前の部分を取得
+      //   const target = targetMatch[1];
+      //   console.log(`ディレクトリ: ${dir}`);
+      //   console.log(`ターゲット文字列: ${target}`);
+      //   fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/delete-files.php", {
+      //     method: "POST",
+      //     headers: {
+      //       "Content-Type": "application/json"
+      //     },
+      //     body: JSON.stringify({ dir: dir, keyword: target })
+      //   })
+      //       .then(response => response.json())
+      //       .then(data => {
+      //         console.log(data.message, data.deleted_files);
+      //         this.fetchImages(); // 正常終了後に実行
+      //         const map01 = this.$store.state.map01
+      //         const map02 = this.$store.state.map02
+      //         if (map01.getLayer('oh-geotiff-layer')) {
+      //           map01.removeLayer('oh-geotiff-layer');
+      //         }
+      //         if (map01.getSource('geotiff-source')) {
+      //           map01.removeSource('geotiff-source');
+      //         }
+      //         if (map02.getLayer('oh-geotiff-layer')) {
+      //           map02.removeLayer('oh-geotiff-layer');
+      //         }
+      //         if (map02.getSource('geotiff-source')) {
+      //           map02.removeSource('geotiff-source');
+      //         }
+      //       })
+      //       .catch(error => console.error("エラー:", error));
+      // } else {
+      //   console.log("適切な形式のURLではありません");
+      // }
     },
     handleImageClick(url) {
       async function fetchJson(jsonUrl) {
@@ -1112,6 +1162,9 @@ export default {
       this.s_terrainLevel = 1
     }
     this.s_isPitch = JSON.parse(localStorage.getItem('isPitch'))
+    if (localStorage.getItem('resolution')) {
+      this.s_resolution = localStorage.getItem('resolution')
+    }
   }
 }
 </script>

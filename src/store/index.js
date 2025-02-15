@@ -112,6 +112,7 @@ export default createStore({
     isClickPointsLayer:false,
     drawGeojsonText: '',
     clickGeojsonText: '',
+    resolution: 19,
     //------------------------
     highwayYear:{
       map01: 2024,
