@@ -3751,6 +3751,7 @@ export async function tileGenerateForUserJpg () {
                 srs: srsCode,
                 dir: dir,
                 fileName: fileName,
+                resolution: store.state.resolution
             })
         });
         let result = await response.json();
@@ -3857,6 +3858,7 @@ export async function tileGenerateForUser1file () {
                 srs: srsCode,
                 dir: dir,
                 fileName: fileName,
+                resolution: store.state.resolution
             })
         });
         let result = await response.json();
@@ -3953,6 +3955,7 @@ export async function tileGenerateForUserTfw () {
                 srs: srsCode,
                 dir: dir,
                 fileName: fileName,
+                resolution: store.state.resolution
             })
         });
         let result = await response.json();
