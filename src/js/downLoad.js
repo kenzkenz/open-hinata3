@@ -3677,6 +3677,43 @@ function resizeImage(image, maxSize) {
 //     }
 // }
 
+
+export function addTileLayerForImage (tileURL,jsonData) {
+    const map01 = store.state.map01
+    const mapName = map01.getContainer().id
+    const bounds = jsonData.bounds
+    const fileName = jsonData.fileName
+    const index = store.state.selectedLayers[mapName].findIndex(v => v.id === 'oh-vpstile-layer');
+    store.state.selectedLayers[mapName] = store.state.selectedLayers[mapName].filter(v => v.id !== 'oh-vpstile-layer');
+    vpsTileSource.obj.tiles = [tileURL]
+    vpsTileSource.obj.bounds = bounds
+    
+    if (map01.getLayer('oh-vpstile-layer')) {
+        map01.removeLayer('oh-vpstile-layer');
+    }
+    if (map01.getSource('vpstile-source')) {
+        map01.removeSource('vpstile-source');
+    }
+
+    store.state.selectedLayers[mapName].splice(index, 0,
+        {
+            id: 'oh-vpstile-layer',
+            label: fileName,
+            source: vpsTileSource,
+            layers: [vpsTileLayer],
+            opacity: 1,
+            visibility: true,
+        }
+    );
+
+    if (bounds) {
+        map01.fitBounds([
+            [bounds[0], bounds[1]], // minX, minY
+            [bounds[2], bounds[3]]  // maxX, maxY
+        ], { padding: 20 });
+    }
+}
+
 export function addTileLayer (map) {
     const mapName = map.getContainer().id
     const tileURL = JSON.parse(store.state.uploadedImage).tile
@@ -3715,7 +3752,8 @@ export async function tileGenerateForUserJpg () {
             body: JSON.stringify({
                 file: filePath,
                 srs: srsCode,
-                dir: dir
+                dir: dir,
+                fileName: fileName,
             })
         });
         let result = await response.json();
@@ -3811,7 +3849,8 @@ export async function tileGenerateForUser1file () {
             body: JSON.stringify({
                 file: filePath,
                 srs: srsCode,
-                dir: dir
+                dir: dir,
+                fileName: fileName,
             })
         });
         let result = await response.json();
@@ -3897,7 +3936,8 @@ export async function tileGenerateForUserTfw () {
             body: JSON.stringify({
                 file: filePath,
                 srs: srsCode,
-                dir: dir
+                dir: dir,
+                fileName: fileName,
             })
         });
         let result = await response.json();

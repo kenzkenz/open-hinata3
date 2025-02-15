@@ -160,7 +160,14 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 <script>
 
 
-import {addImageLayer, addImageLayerJpg, addImageLayerPng, geojsonAddLayer, simaToGeoJSON} from "@/js/downLoad";
+import {
+  addImageLayer,
+  addImageLayerJpg,
+  addImageLayerPng,
+  addTileLayerForImage,
+  geojsonAddLayer,
+  simaToGeoJSON
+} from "@/js/downLoad";
 
 const getFirebaseUid = async () => {
   if (!user.value) return;
@@ -644,8 +651,10 @@ export default {
       insertUserData(this.$store.state.userId,this.urlName,window.location.href)
     },
     async fetchImages() {
-      try {
-        const url = `https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/${this.uid}/`
+      // try {
+        // const url = `https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/${this.uid}/`
+        const url = `https://kenzkenz.duckdns.org/uploads/${this.uid}/`
+        console.log(url)
         const response = await fetch(url);
         const text = await response.text();
         const parser = new DOMParser();
@@ -656,9 +665,9 @@ export default {
             .filter(href => href.startsWith('thumbnail-') && /\.(jpg|jpeg)$/i.test(href))
             .map(href => `${url}${href}`);
         // console.log(this.images)
-      } catch (error) {
-        console.error("画像の取得に失敗しました", error);
-      }
+      // } catch (error) {
+      //   console.error("画像の取得に失敗しました", error);
+      // }
     },
     handleClose(url) {
       if (!confirm("削除しますか？")) {
@@ -702,122 +711,144 @@ export default {
         console.log("適切な形式のURLではありません");
       }
     },
-    handleImageClick(image) {
-      async function fetchFile(url) {
+    handleImageClick(url) {
+      async function fetchJson(jsonUrl) {
         try {
-          // Fetchリクエストでファイルを取得
-          const response = await fetch(url);
-          // レスポンスが成功したか確認
-          if (!response.ok) {
-            throw new Error(`HTTPエラー! ステータス: ${response.status}`);
-          }
-          // Blobとしてレスポンスを取得
-          const blob = await response.blob();
-          // BlobをFileオブジェクトに変換
-          const file = new File([blob], "downloaded_file", { type: blob.type });
-          console.log("Fileオブジェクトが作成されました:", file);
-          return file;
+          const response = await fetch(jsonUrl);
+          if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+          return await response.json();
         } catch (error) {
-          console.error("ファイルの取得中にエラーが発生しました:", error);
+          console.error("Error fetching JSON:", error);
         }
       }
-      // ---------------------------------------------------------------------
-      async function checkFileExists(filename) {
-        try {
-          const response = await fetch(filename, { method: 'HEAD' });
-          return response.ok;
-        } catch (error) {
-          console.error('Error checking file:', error);
-          return false;
+      let regex = /uploads\/(.*?)\/thumbnail-/;
+      let match = url.match(regex);
+      const dir0 = match[1]
+      regex = /thumbnail-(.*?)\./;
+      match = url.match(regex);
+      const dir1 = match[1]
+      const tileUrl = 'https://kenzkenz.duckdns.org/tiles/' + dir0 + '/' + dir1 + '/{z}/{x}/{y}.png'
+      const jsonUrl = 'https://kenzkenz.duckdns.org/tiles/' + dir0 + '/' + dir1 + '/layer.json'
+      fetchJson(jsonUrl).then(jsonData => {
+        if (jsonData) {
+          addTileLayerForImage(tileUrl,jsonData)
         }
-      }
-      // ----------------------------------------------------------------------
-      const url = image
-      const tifUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.tif');
-      const tfwUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.tfw');
-      const jpgUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.jpg');
-      const jgwUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.jgw');
-      const pngUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.png');
-      const pgwUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.pgw');
-      const vm = this
-      // tifファイルのとき-------------------------------------------------------
-      checkFileExists(tifUrl).then(exists => {
-            if (exists) {
-              checkFileExists(tfwUrl).then(exists => {
-                if (exists) {
-                  Promise.all([fetchFile(tifUrl), fetchFile(tfwUrl)]).then(files => {
-                    const image = files[0]
-                    const worldFile = files[1]
-                    const match = url.match(/thumbnail-(.*?)-/);
-                    let code = match ? match[1] : null;
-                    code = code.replace(/(EPSG)(\d+)/, '$1:$2');
-                    addImageLayer(image, worldFile, code, true)
-                    vm.$store.state.uploadedImage = JSON.stringify({
-                      image: tifUrl.split('/').pop(),
-                      worldFile: tfwUrl.split('/').pop(),
-                      code: code,
-                      uid: vm.$store.state.userId
-                    })
-                  });
-                } else {
-                  Promise.all([fetchFile(tifUrl)]).then(files => {
-                    const image = files[0]
-                    const match = url.match(/thumbnail-(.*?)-/);
-                    let code = match ? match[1] : null;
-                    code = code.replace(/(EPSG)(\d+)/, '$1:$2');
-                    addImageLayer(image, null, code, true)
-                    vm.$store.state.uploadedImage = JSON.stringify({
-                      image: tifUrl.split('/').pop(),
-                      code: code,
-                      uid: vm.$store.state.userId
-                    })
-                  });
-                  console.log("クリックした画像:", image);
-                  // alert(`画像がクリックされました: ${image}`);
-                }
-              })
-            }
-      })
-      // jpgファイルのとき-------------------------------------------------------
-      checkFileExists(jpgUrl).then(exists => {
-            if (exists) {
-              Promise.all([fetchFile(jpgUrl), fetchFile(jgwUrl)]).then(files => {
-                const image = files[0]
-                const worldFile = files[1]
-                const match = url.match(/thumbnail-(.*?)-/);
-                let code = match ? match[1] : null;
-                code = code.replace(/(EPSG)(\d+)/, '$1:$2');
-                addImageLayerJpg(image, worldFile, code, true)
-                vm.$store.state.uploadedImage = JSON.stringify({
-                  image: jpgUrl.split('/').pop(),
-                  worldFile: jgwUrl.split('/').pop(),
-                  code: code,
-                  uid: vm.$store.state.userId
-                })
-              });
-            }
-      })
-      // pngファイルのとき-------------------------------------------------------
-      checkFileExists(pngUrl).then(exists => {
-        if (exists) {
-          Promise.all([fetchFile(pngUrl), fetchFile(pgwUrl)]).then(files => {
-            const image = files[0]
-            const worldFile = files[1]
-            const match = url.match(/thumbnail-(.*?)-/);
-            let code = match ? match[1] : null;
-            code = code.replace(/(EPSG)(\d+)/, '$1:$2');
-            addImageLayerPng(image, worldFile, code, true)
-            vm.$store.state.uploadedImage = JSON.stringify({
-              image: pngUrl.split('/').pop(),
-              worldFile: pgwUrl.split('/').pop(),
-              code: code,
-              uid: vm.$store.state.userId
-            })
-          });
-        }
-      })
+      });
 
 
+      // async function fetchFile(url) {
+      //   try {
+      //     // Fetchリクエストでファイルを取得
+      //     const response = await fetch(url);
+      //     // レスポンスが成功したか確認
+      //     if (!response.ok) {
+      //       throw new Error(`HTTPエラー! ステータス: ${response.status}`);
+      //     }
+      //     // Blobとしてレスポンスを取得
+      //     const blob = await response.blob();
+      //     // BlobをFileオブジェクトに変換
+      //     const file = new File([blob], "downloaded_file", { type: blob.type });
+      //     console.log("Fileオブジェクトが作成されました:", file);
+      //     return file;
+      //   } catch (error) {
+      //     console.error("ファイルの取得中にエラーが発生しました:", error);
+      //   }
+      // }
+      // // ---------------------------------------------------------------------
+      // async function checkFileExists(filename) {
+      //   try {
+      //     const response = await fetch(filename, { method: 'HEAD' });
+      //     return response.ok;
+      //   } catch (error) {
+      //     console.error('Error checking file:', error);
+      //     return false;
+      //   }
+      // }
+      // // ----------------------------------------------------------------------
+      // const url = image
+      // const tifUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.tif');
+      // const tfwUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.tfw');
+      // const jpgUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.jpg');
+      // const jgwUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.jgw');
+      // const pngUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.png');
+      // const pgwUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.pgw');
+      // const vm = this
+      // // tifファイルのとき-------------------------------------------------------
+      // checkFileExists(tifUrl).then(exists => {
+      //       if (exists) {
+      //         checkFileExists(tfwUrl).then(exists => {
+      //           if (exists) {
+      //             Promise.all([fetchFile(tifUrl), fetchFile(tfwUrl)]).then(files => {
+      //               const image = files[0]
+      //               const worldFile = files[1]
+      //               const match = url.match(/thumbnail-(.*?)-/);
+      //               let code = match ? match[1] : null;
+      //               code = code.replace(/(EPSG)(\d+)/, '$1:$2');
+      //               addImageLayer(image, worldFile, code, true)
+      //               vm.$store.state.uploadedImage = JSON.stringify({
+      //                 image: tifUrl.split('/').pop(),
+      //                 worldFile: tfwUrl.split('/').pop(),
+      //                 code: code,
+      //                 uid: vm.$store.state.userId
+      //               })
+      //             });
+      //           } else {
+      //             Promise.all([fetchFile(tifUrl)]).then(files => {
+      //               const image = files[0]
+      //               const match = url.match(/thumbnail-(.*?)-/);
+      //               let code = match ? match[1] : null;
+      //               code = code.replace(/(EPSG)(\d+)/, '$1:$2');
+      //               addImageLayer(image, null, code, true)
+      //               vm.$store.state.uploadedImage = JSON.stringify({
+      //                 image: tifUrl.split('/').pop(),
+      //                 code: code,
+      //                 uid: vm.$store.state.userId
+      //               })
+      //             });
+      //             console.log("クリックした画像:", image);
+      //             // alert(`画像がクリックされました: ${image}`);
+      //           }
+      //         })
+      //       }
+      // })
+      // // jpgファイルのとき-------------------------------------------------------
+      // checkFileExists(jpgUrl).then(exists => {
+      //       if (exists) {
+      //         Promise.all([fetchFile(jpgUrl), fetchFile(jgwUrl)]).then(files => {
+      //           const image = files[0]
+      //           const worldFile = files[1]
+      //           const match = url.match(/thumbnail-(.*?)-/);
+      //           let code = match ? match[1] : null;
+      //           code = code.replace(/(EPSG)(\d+)/, '$1:$2');
+      //           addImageLayerJpg(image, worldFile, code, true)
+      //           vm.$store.state.uploadedImage = JSON.stringify({
+      //             image: jpgUrl.split('/').pop(),
+      //             worldFile: jgwUrl.split('/').pop(),
+      //             code: code,
+      //             uid: vm.$store.state.userId
+      //           })
+      //         });
+      //       }
+      // })
+      // // pngファイルのとき-------------------------------------------------------
+      // checkFileExists(pngUrl).then(exists => {
+      //   if (exists) {
+      //     Promise.all([fetchFile(pngUrl), fetchFile(pgwUrl)]).then(files => {
+      //       const image = files[0]
+      //       const worldFile = files[1]
+      //       const match = url.match(/thumbnail-(.*?)-/);
+      //       let code = match ? match[1] : null;
+      //       code = code.replace(/(EPSG)(\d+)/, '$1:$2');
+      //       addImageLayerPng(image, worldFile, code, true)
+      //       vm.$store.state.uploadedImage = JSON.stringify({
+      //         image: pngUrl.split('/').pop(),
+      //         worldFile: pgwUrl.split('/').pop(),
+      //         code: code,
+      //         uid: vm.$store.state.userId
+      //       })
+      //     });
+      //   }
+      // })
     },
     createDirectory () {
       // getFirebaseUid()
