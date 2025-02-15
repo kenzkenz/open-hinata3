@@ -3705,8 +3705,93 @@ export function addTileLayer (map) {
     // }
 }
 
+export async function tileGenerateForUser1file () {
+    // -------------------------------------------------------------------------------------------------
+    async function generateTiles(filePath, srsCode = "2450", dir) {
+        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                file: filePath,
+                srs: srsCode,
+                dir: dir
+            })
+        });
+        let result = await response.json();
+        if (result.success) {
+            addTileLayer(result.tiles_url, result.bbox)
+            document.querySelector('.loadingImg').style.display = 'none'
+            // alert("タイル生成完了！");
+        } else {
+            console.log(result)
+            document.querySelector('.loadingImg').style.display = 'none'
+            alert("タイル生成に失敗しました！" + result.error);
+        }
+    }
 
-export async function tileGenerateForUser (map,mapName) {
+    function addTileLayer(tileURL,bbox) {
+        vpsTileSource.obj.tiles = [tileURL]
+        vpsTileSource.obj.bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
+        const mapNames = ['map01', 'map02']
+        mapNames.forEach(mapName => {
+            store.state.selectedLayers[mapName].unshift(
+                {
+                    id: 'oh-vpstile-layer',
+                    label: fileName,
+                    source: vpsTileSource,
+                    layers: [vpsTileLayer],
+                    opacity: 1,
+                    visibility: true,
+                }
+            );
+        })
+
+        const map = store.state.map01
+        if (bbox) {
+            map.fitBounds([
+                [bbox[0], bbox[1]], // minX, minY
+                [bbox[2], bbox[3]]  // maxX, maxY
+            ], { padding: 20 });
+        }
+
+        store.state.uploadedImage = JSON.stringify({
+            tile: tileURL,
+            bbox: bbox,
+            fileName: fileName,
+            uid: store.state.userId,
+        })
+    }
+    // -------------------------------------------------------------------------------------------------
+    document.querySelector('.loadingImg').style.display = 'block'
+    const srsCode = zahyokei.find(item => item.kei === store.state.zahyokei).code
+    const files = store.state.tiffAndWorldFile
+    let tifFile = files[0]
+
+    let fileName = tifFile.name;
+    fileName = fileName.slice(0, fileName.lastIndexOf('.'))
+    const formData = new FormData();
+    formData.append("file", tifFile);
+    formData.append("dir", store.state.userId); // 指定したフォルダにアップロード
+    fetch("https://kenzkenz.duckdns.org/myphp/upload1file.php", {
+        method: "POST",
+        body: formData
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log("アップロード成功:", data);
+                // alert("アップロード成功!")
+                generateTiles(data.file, srsCode, store.state.userId);
+            } else {
+                console.error("アップロード失敗:", data);
+                alert("アップロードエラー: " + data.error);
+            }
+        })
+        .catch(error => console.error("エラー:", error));
+    // -------------------------------------------------------------------------------------------------
+}
+
+export async function tileGenerateForUserTfw () {
     // -------------------------------------------------------------------------------------------------
     async function generateTiles(filePath, srsCode = "2450", dir) {
         let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
@@ -3723,25 +3808,32 @@ export async function tileGenerateForUser (map,mapName) {
             console.log(result.tiles_url, result.bbox)
             addTileLayer(result.tiles_url, result.bbox)
             // alert("タイル生成完了！");
+            document.querySelector('.loadingImg').style.display = 'none'
         } else {
-            alert("タイル生成に失敗しました！");
+            console.log(result)
+            document.querySelector('.loadingImg').style.display = 'none'
+            alert("タイル生成に失敗しました！" + result.error);
         }
     }
 
     function addTileLayer(tileURL,bbox) {
         vpsTileSource.obj.tiles = [tileURL]
         vpsTileSource.obj.bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
-        store.state.selectedLayers[mapName].unshift(
-            {
-                id: 'oh-vpstile-layer',
-                label: fileName,
-                source: vpsTileSource,
-                layers: [vpsTileLayer],
-                opacity: 1,
-                visibility: true,
-            }
-        );
+        const mapNames = ['map01', 'map02']
+        mapNames.forEach(mapName => {
+            store.state.selectedLayers[mapName].unshift(
+                {
+                    id: 'oh-vpstile-layer',
+                    label: fileName,
+                    source: vpsTileSource,
+                    layers: [vpsTileLayer],
+                    opacity: 1,
+                    visibility: true,
+                }
+            );
+        })
 
+        const map = store.state.map01
         if (bbox) {
             map.fitBounds([
                 [bbox[0], bbox[1]], // minX, minY
@@ -3757,12 +3849,14 @@ export async function tileGenerateForUser (map,mapName) {
         })
     }
     // -------------------------------------------------------------------------------------------------
+    document.querySelector('.loadingImg').style.display = 'block'
     const srsCode = zahyokei.find(item => item.kei === store.state.zahyokei).code
     const files = store.state.tiffAndWorldFile
     let tifFile = null, tfwFile = null;
     for (const file of files) {
-        if (file.name.endsWith(".tif")) tifFile = file;
-        if (file.name.endsWith(".tfw")) tfwFile = file;
+        const fileName = file.name.toLowerCase();
+        if (fileName.endsWith(".tif") || fileName.endsWith(".tiff")) tifFile = file;
+        if (fileName.endsWith(".tfw")) tfwFile = file;
     }
     if (!tifFile || !tfwFile) {
         alert("TIFF と TFW の両方をアップロードしてください！");
