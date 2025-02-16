@@ -1,5 +1,6 @@
 <?php
 
+
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
@@ -95,21 +96,15 @@ if (!is_dir($tileDir)) {
 
 $tileURL = $BASE_URL . $subDir . "/" . $fileBaseName . "/{z}/{x}/{y}.png";
 
-$fileExt = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-$warpedFilePath = $tileDir . "warped.tif";
-if (in_array($fileExt, ["tif", "tiff"])) {
-    $warpCommand = "gdalwarp -dstalpha " . escapeshellarg($filePath) . " " . escapeshellarg($warpedFilePath);
-    exec($warpCommand . " 2>&1", $warpOutput, $warpReturnVar);
-    if ($warpReturnVar !== 0) {
-        echo json_encode(["error" => "gdalwarp で透過処理に失敗しました", "output" => $warpOutput]);
-        exit;
-    }
-} else {
-    $warpedFilePath = $filePath;
-}
+$tempGrayPath = $tileDir . "temp_gray.tif";
+$outputTifPath = $tileDir . "output.tif";
+
+exec("gdal_translate -expand gray " . escapeshellarg($filePath) . " " . escapeshellarg($tempGrayPath));
+exec("gdal_translate -co TILED=YES -co COMPRESS=DEFLATE " . escapeshellarg($tempGrayPath) . " " . escapeshellarg($outputTifPath));
+exec("gdaladdo --config COMPRESS_OVERVIEW DEFLATE -r average " . escapeshellarg($outputTifPath) . " 2 4 8 16");
 
 $escapedTileDir = escapeshellarg($tileDir);
-$tileCommand = "gdal2tiles.py -z 0-$max_zoom --s_srs EPSG:$sourceEPSG --xyz --processes=4 " . escapeshellarg($warpedFilePath) . " $escapedTileDir";
+$tileCommand = "gdal2tiles.py -z 0-$max_zoom --s_srs EPSG:$sourceEPSG --xyz --processes=4 " . escapeshellarg($outputTifPath) . " $escapedTileDir";
 exec($tileCommand . " 2>&1", $tileOutput, $tileReturnVar);
 
 $layerJsonPath = $tileDir . "layer.json";
@@ -118,6 +113,11 @@ file_put_contents($layerJsonPath, $layerData);
 
 echo json_encode(["success" => true, "tiles_url" => $tileURL, "bbox" => $bbox4326, "area_km2" => $area_km2, "max_zoom" => $max_zoom]);
 
+
+
+//
+//
+//
 //
 //header("Access-Control-Allow-Origin: *");
 //header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
@@ -145,6 +145,7 @@ echo json_encode(["success" => true, "tiles_url" => $tileURL, "bbox" => $bbox432
 //}
 //
 //$fileName = isset($data["fileName"]) ? trim($data["fileName"]) : "";
+//$resolution = isset($data["resolution"]) ? intval($data["resolution"]) : 22;
 //
 //$gdalInfoCommand = "gdalinfo -json " . escapeshellarg($filePath);
 //exec($gdalInfoCommand, $gdalOutput, $gdalReturnVar);
@@ -202,7 +203,7 @@ echo json_encode(["success" => true, "tiles_url" => $tileURL, "bbox" => $bbox432
 //$height_km = haversineDistance($minCoord[1], $minCoord[0], $maxCoord[1], $minCoord[0]);
 //$area_km2 = $width_km * $height_km;
 //
-//$max_zoom = ($area_km2 > $max_area_km2) ? 15 : 22;
+//$max_zoom = ($resolution <= 15 || $area_km2 <= $max_area_km2) ? $resolution : 15;
 //
 //$subDir = isset($data["dir"]) ? preg_replace('/[^a-zA-Z0-9_-]/', '', $data["dir"]) : "default";
 //$fileBaseName = pathinfo($filePath, PATHINFO_FILENAME);
@@ -236,4 +237,4 @@ echo json_encode(["success" => true, "tiles_url" => $tileURL, "bbox" => $bbox432
 //
 //echo json_encode(["success" => true, "tiles_url" => $tileURL, "bbox" => $bbox4326, "area_km2" => $area_km2, "max_zoom" => $max_zoom]);
 //
-?>
+//?>

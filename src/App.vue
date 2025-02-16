@@ -83,6 +83,45 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         </v-card>
       </v-dialog>
 
+      <v-dialog v-model="dialogForGeotiffApp1file" max-width="500px">
+        <v-card>
+          <v-card-title>
+            画像取込最大解像度選択
+          </v-card-title>
+          <v-card-text>
+            <div v-if="s_isAndroid" class="select-container">
+              <select id="selectBox" v-model="s_zahyokei" class="custom-select">
+                <option value="" disabled selected>座標を選択してください。</option>
+                <option v-for="item in items" :key="item" :value="item">
+                  {{item}}
+                </option>
+              </select>
+            </div>
+            <div v-else>
+<!--              <v-select class="scrollable-content"-->
+<!--                        v-model="s_zahyokei"-->
+<!--                        :items="items"-->
+<!--                        label="選択してください"-->
+<!--                        outlined-->
+<!--              ></v-select>-->
+              <v-select class="scrollable-content"
+                        v-model="s_resolution"
+                        :items="resolutions"
+                        label="画像取込最大解像度"
+                        outlined
+                        v-if="user1"
+              ></v-select>
+            </div>
+            <v-btn @click="geoTifLoad1file">geotif読込開始</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="dialogForGeotiffApp1file = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+
       <v-dialog v-model="s_dialogForGeotiffApp" max-width="500px">
         <v-card>
           <v-card-title>
@@ -103,6 +142,13 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                         :items="items"
                         label="選択してください"
                         outlined
+              ></v-select>
+              <v-select class="scrollable-content"
+                        v-model="s_resolution"
+                        :items="resolutions"
+                        label="画像取込最大解像度"
+                        outlined
+                        v-if="user1"
               ></v-select>
             </div>
             <v-btn @click="geoTiffLoad0">geotiff読込開始</v-btn>
@@ -135,6 +181,13 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                         label="選択してください"
                         outlined
               ></v-select>
+              <v-select class="scrollable-content"
+                        v-model="s_resolution"
+                        :items="resolutions"
+                        label="画像取込最大解像度"
+                        outlined
+                        v-if="user1"
+              ></v-select>
             </div>
             <v-btn @click="geoTiffLoad20">geotiff読込開始</v-btn>
           </v-card-text>
@@ -165,6 +218,13 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                         :items="items"
                         label="選択してください"
                         outlined
+              ></v-select>
+              <v-select class="scrollable-content"
+                        v-model="s_resolution"
+                        :items="resolutions"
+                        label="画像取込最大解像度"
+                        outlined
+                        v-if="user1"
               ></v-select>
             </div>
             <v-btn @click="jpgLoad0">jpg読込開始</v-btn>
@@ -322,7 +382,6 @@ import { gpx } from '@tmcw/togeojson'
 import { user } from "@/authState"; // グローバルの認証情報を取得
 import { MaplibreTerradrawControl,MaplibreMeasureControl } from '@watergis/maplibre-gl-terradraw';
 import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
-
 import {
   ddSimaUpload,
   downloadKML,
@@ -655,7 +714,6 @@ export default {
   },
   data: () => ({
     mapNames: ['map01','map02'],
-    // mapFlg: {map01:true, map02:false},
     mapSize: {
       map01: {top: 0, left: 0, width: '100%', height: '100%'},
       map02: {top: 0, right: 0, width: '50%', height: '100%'},
@@ -689,8 +747,19 @@ export default {
     ],
     dialogForDxfApp: false,
     windowWidth: window.innerWidth,
+    resolutions: [13,14,15,16,17,18,19,20,21,22,23,24,25],
+    dialogForGeotiffApp1file: false,
   }),
   computed: {
+    s_resolution: {
+      get() {
+        return this.$store.state.resolution
+      },
+      set(value) {
+        this.$store.state.resolution = value
+        localStorage.setItem('resolution',value)
+      }
+    },
     s_drawGeojsonText: {
       get() {
         return this.$store.state.drawGeojsonText
@@ -896,19 +965,30 @@ export default {
       }
       this.s_dialogForGeotiffApp = false
     },
-    geoTiffLoad20 () {
+    geoTifLoad1file () {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
       if (this.$store.state.userId) {
-        // geoTiffLoadForUser2 (map01,'map01', true)
-        // geoTiffLoadForUser2 (map02,'map02', false)
         tileGenerateForUser1file()
       } else {
         geoTiffLoad2 (map01,'map01', true)
         geoTiffLoad2 (map02,'map02', false)
       }
-      this.s_dialogForGeotiff2App = false
+      this.dialogForGeotiffApp1file = false
     },
+    // geoTiffLoad20 () {
+    //   const map01 = this.$store.state.map01
+    //   const map02 = this.$store.state.map02
+    //   if (this.$store.state.userId) {
+    //     // geoTiffLoadForUser2 (map01,'map01', true)
+    //     // geoTiffLoadForUser2 (map02,'map02', false)
+    //     tileGenerateForUser1file()
+    //   } else {
+    //     geoTiffLoad2 (map01,'map01', true)
+    //     geoTiffLoad2 (map02,'map02', false)
+    //   }
+    //   this.s_dialogForGeotiff2App = false
+    // },
     simaOpacityInput () {
       const map1 = this.$store.state.map01
       const map2 = this.$store.state.map02
@@ -2360,7 +2440,8 @@ export default {
                     const zahyokei = await getCRS(Array.from(e.dataTransfer.files)[0])
                     if (zahyokei) {
                       this.$store.state.zahyokei = zahyokei
-                      this.geoTiffLoad20()
+                      this.dialogForGeotiffApp1file = true
+                      // this.geoTiffLoad20()
                     } else {
                       this.s_dialogForGeotiff2App = true
                     }
@@ -2883,6 +2964,9 @@ export default {
       const url = new URL(window.location.href) // URLを取得
       window.history.replaceState(null, '', url.pathname + window.location.hash) //パラメータを削除 FB対策
     })
+    if (localStorage.getItem('resolution')) {
+      this.s_resolution = localStorage.getItem('resolution')
+    }
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {

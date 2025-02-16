@@ -121,7 +121,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <p v-if="user1">ようこそ、{{ user1.displayName || "ゲスト" }}さん！</p>
         <p v-else></p>
       </div>
-      v0.526<br>
+      v0.530<br>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 
@@ -132,13 +132,13 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
       <v-switch style="height: 40px;margin-bottom: 20px;" v-model="s_isPitch" @change="changePitch" label="２画面時に傾きを同期" color="primary" />
 
-      <v-select class="scrollable-content"
-                v-model="s_resolution"
-                :items="zoomItems"
-                label="画像取込最大解像度"
-                outlined
-                v-if="user1"
-      ></v-select>
+<!--      <v-select class="scrollable-content"-->
+<!--                v-model="s_resolution"-->
+<!--                :items="zoomItems"-->
+<!--                label="画像取込最大解像度"-->
+<!--                outlined-->
+<!--                v-if="user1"-->
+<!--      ></v-select>-->
 
       標高を強調します。{{s_terrainLevel}}倍
       <div class="range-div">
@@ -249,8 +249,7 @@ export default {
     // MasonryWall,
   },
   data: () => ({
-    zoom: 19,
-    zoomItems: [13,14,15,16,17,18,19,20,21,22,23,24,25],
+    // zoomItems: [13,14,15,16,17,18,19,20,21,22,23,24,25],
     tab: 'one',
     urlName: '',
     jsonData: null,
@@ -474,9 +473,20 @@ export default {
           }
         }
 
+        async function fetchJson(jsonUrl) {
+          try {
+            const response = await fetch(jsonUrl);
+            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+            return await response.json();
+          } catch (error) {
+            console.error("Error fetching JSON:", error);
+          }
+        }
+
         if (image && image != '""') {
           const uploadImage = JSON.parse(JSON.parse(image))
           vm.$store.state.uploadedImage = JSON.parse(image)
+          console.log(vm.$store.state.uploadedImage)
           const image0 = uploadImage.image
           const code = uploadImage.code
           const uid = uploadImage.uid
@@ -484,6 +494,18 @@ export default {
           const imageUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/' + uid + '/' + image0
           const worldFileUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/' + uid + '/' + worldFile
           const extension = imageUrl.split('.').pop();
+          const tile = uploadImage.tile
+          // alert(tile)
+          const match = tile.match(/tiles\/(.*?)\/\{z\}\//);
+          const dir0 = match[1].split('/')[0]
+          const dir1 = match[1].split('/')[1]
+          const tileUrl = 'https://kenzkenz.duckdns.org/tiles/' + dir0 + '/' + dir1 + '/{z}/{x}/{y}.png'
+          const jsonUrl = 'https://kenzkenz.duckdns.org/tiles/' + dir0 + '/' + dir1 + '/layer.json'
+          fetchJson(jsonUrl).then(jsonData => {
+            if (jsonData) {
+              addTileLayerForImage(tileUrl,jsonData,false)
+            }
+          });
           switch (extension) {
             case 'tif':
               if (worldFileUrl) {
@@ -781,7 +803,7 @@ export default {
       const jsonUrl = 'https://kenzkenz.duckdns.org/tiles/' + dir0 + '/' + dir1 + '/layer.json'
       fetchJson(jsonUrl).then(jsonData => {
         if (jsonData) {
-          addTileLayerForImage(tileUrl,jsonData)
+          addTileLayerForImage(tileUrl,jsonData,true)
         }
       });
 

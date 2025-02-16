@@ -72,22 +72,44 @@ function isAllowedDirectory($dir, $allowedBaseDirs)
     return false;
 }
 
-if (!isAllowedDirectory($dir, $allowedBaseDirs) || !isAllowedDirectory($dir2, $allowedBaseDirs)) {
+$dirAllowed = isAllowedDirectory($dir, $allowedBaseDirs);
+$dir2Allowed = isAllowedDirectory($dir2, $allowedBaseDirs);
+
+if (!$dirAllowed && !$dir2Allowed) {
     echo json_encode(["error" => "許可されていないディレクトリへのアクセス"]);
     exit;
 }
 
-// **指定された文字列を含むファイルの削除処理**
-$filesDeleted = deleteFilesContainingString($dir2, $string);
+// **削除結果格納用**
+$response = [];
 
-// **ディレクトリ削除処理**
-$deleted = deleteDirectory($dir);
+// **tiles ディレクトリ削除**
+if ($dirAllowed) {
+    $deletedTiles = deleteDirectory($dir);
+    $response["dirDeleted"] = $deletedTiles;
+    if (!$deletedTiles) {
+        $response["error_tiles"] = "tiles ディレクトリの削除に失敗";
+    }
+}
 
-echo json_encode([
-    "filesDeleted" => $filesDeleted,
-    "dirDeleted" => $deleted,
-    "message" => ($filesDeleted && $deleted) ? "ファイルとディレクトリの削除成功" : "削除の一部または全部が失敗"
-]);
+// **uploads のファイル削除**
+if ($dir2Allowed) {
+    $filesDeletedUploads = deleteFilesContainingString($dir2, $string);
+    $response["filesDeleted"] = $filesDeletedUploads;
+    if (!$filesDeletedUploads) {
+        $response["error_uploads"] = "uploads のファイル削除に失敗";
+    }
+}
+
+// **メッセージの作成**
+if (!isset($response["error_tiles"]) && !isset($response["error_uploads"])) {
+    $response["message"] = "ファイルとディレクトリの削除成功";
+} else {
+    $response["message"] = "削除の一部または全部が失敗";
+}
+
+// **結果を JSON で返す**
+echo json_encode($response);
 
 
 //
@@ -102,7 +124,8 @@ echo json_encode([
 //];
 //
 //// **ディレクトリ削除関数**
-//function deleteDirectory($dir) {
+//function deleteDirectory($dir)
+//{
 //    if (!is_dir($dir)) {
 //        return false;
 //    }
@@ -121,38 +144,61 @@ echo json_encode([
 //    return rmdir($dir); // ディレクトリ削除
 //}
 //
+//// **特定の文字列を含むファイルを削除する関数**
+//function deleteFilesContainingString($dir, $string)
+//{
+//    if (!is_dir($dir)) {
+//        return false;
+//    }
+//
+//    $files = array_diff(scandir($dir), array('.', '..'));
+//    foreach ($files as $file) {
+//        $filePath = $dir . DIRECTORY_SEPARATOR . $file;
+//        if (is_file($filePath) && strpos($file, $string) !== false) {
+//            unlink($filePath); // ファイル削除
+//        }
+//    }
+//    return true;
+//}
+//
 //// **JSON データの取得**
 //$data = json_decode(file_get_contents("php://input"), true);
 //
-//if (!isset($data["dir"])) {
-//    echo json_encode(["error" => "削除するディレクトリが指定されていません"]);
+//if (!isset($data["dir"]) || !isset($data["dir2"]) || !isset($data["string"])) {
+//    echo json_encode(["error" => "必要なパラメータが不足しています"]);
 //    exit;
 //}
 //
-//// **削除対象のディレクトリを取得**
 //$dir = realpath($data["dir"]);
+//$dir2 = realpath($data["dir2"]);
+//$string = $data["string"];
 //
 //// **セキュリティ対策: 指定されたディレクトリが許可されたディレクトリの中にあるか確認**
-//function isAllowedDirectory($dir, $allowedBaseDirs) {
+//function isAllowedDirectory($dir, $allowedBaseDirs)
+//{
 //    foreach ($allowedBaseDirs as $baseDir) {
-//        if (strpos($dir, $baseDir) === 0) {
+//        if ($dir !== false && strpos($dir, $baseDir) === 0) {
 //            return true;
 //        }
 //    }
 //    return false;
 //}
 //
-//if (!isAllowedDirectory($dir, $allowedBaseDirs)) {
+//if (!isAllowedDirectory($dir, $allowedBaseDirs) || !isAllowedDirectory($dir2, $allowedBaseDirs)) {
 //    echo json_encode(["error" => "許可されていないディレクトリへのアクセス"]);
 //    exit;
 //}
+//
+//// **指定された文字列を含むファイルの削除処理**
+//$filesDeleted = deleteFilesContainingString($dir2, $string);
 //
 //// **ディレクトリ削除処理**
 //$deleted = deleteDirectory($dir);
 //
 //echo json_encode([
-//    "success" => $deleted,
-//    "message" => $deleted ? "削除成功" : "削除失敗"
+//    "filesDeleted" => $filesDeleted,
+//    "dirDeleted" => $deleted,
+//    "message" => ($filesDeleted && $deleted) ? "ファイルとディレクトリの削除成功" : "削除の一部または全部が失敗"
 //]);
 //
 ?>

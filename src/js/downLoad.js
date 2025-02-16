@@ -3677,8 +3677,7 @@ function resizeImage(image, maxSize) {
 //     }
 // }
 
-
-export function addTileLayerForImage (tileURL,jsonData) {
+export function addTileLayerForImage (tileURL,jsonData, isFit) {
     const map01 = store.state.map01
     const mapName = map01.getContainer().id
     const bounds = jsonData.bounds
@@ -3706,7 +3705,14 @@ export function addTileLayerForImage (tileURL,jsonData) {
         }
     );
 
-    if (bounds) {
+    store.state.uploadedImage = JSON.stringify({
+        tile: tileURL,
+        bbox: bounds,
+        fileName: fileName,
+        uid: store.state.userId,
+    })
+
+    if (isFit) {
         map01.fitBounds([
             [bounds[0], bounds[1]], // minX, minY
             [bounds[2], bounds[3]]  // maxX, maxY
