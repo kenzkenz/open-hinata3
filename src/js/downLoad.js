@@ -3979,7 +3979,7 @@ export async function tileGenerateForUser1file () {
         if (result.success) {
             addTileLayer(result.tiles_url, result.bbox)
             document.querySelector('.loadingImg').style.display = 'none'
-            alert("タイル生成完了！");
+            // alert("タイル生成完了！");
         } else {
             console.log(result)
             document.querySelector('.loadingImg').style.display = 'none'

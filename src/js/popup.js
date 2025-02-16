@@ -3205,15 +3205,35 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 if (features.length === 0) return
                 props = features[0].properties
-
-                // const jgdCoord = wsg84ToJgd(coordinates)
-
                 if (html.indexOf('sima-points') === -1) {
                     html += '<div class="layer-label-div">' + 'SIMA' + '</div>'
                     html +=
                         '<div class="sima-points" font-weight: normal; color: #333;line-height: 25px;">' +
-                        // '<span style="font-size:16px;">' + props.chiban + '</span><br>' +
-                        // '<span style="font-size:16px;">' + store.state.zahyokei + '</span><br>' +
+                        '</div>'
+                }
+                break
+            }
+            case 'oh-fj-ekijyoka-layer':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(features)
+                if (features.length === 0) return
+                props = features[0].properties
+                let html0 = ''
+                if (html.indexOf('ekijyoka') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="ekijyoka" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:16px;">' + props.topographic_classification_name_ja + '</span><br>' +
+                        '<span style="font-size:16px;">液状化発生傾向=' + props.liquefaction_tendency_level + '</span><br>' +
+                        '<span style="font-size:16px;">' + props.note + '</span><br>' +
                         '</div>'
                 }
                 break

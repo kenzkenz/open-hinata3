@@ -126,6 +126,9 @@ if ($isGray) {
     }
     $outputFilePath = $warpedFilePath;
 }
+
+$outputFilePath = file_exists("$filePath.output.tif") ? "$filePath.output.tif" : "$filePath";
+
 $tileCommand = "gdal2tiles.py -z 0-$max_zoom --s_srs EPSG:$sourceEPSG --xyz --processes=4 " . escapeshellarg($outputFilePath) . " $escapedTileDir";
 exec($tileCommand . " 2>&1", $tileOutput, $tileReturnVar);
 
@@ -133,6 +136,37 @@ $layerJsonPath = $tileDir . "layer.json";
 $layerData = json_encode(["fileName" => $fileName, "bounds" => $bbox4326], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 file_put_contents($layerJsonPath, $layerData);
 
+if ($tileReturnVar === 0) {
+    // タイル化成功後、元データと中間データを削除（ただし `thumbnail-` を除く）
+    deleteSourceAndTempFiles($filePath);
+}
+
+if ($tileReturnVar !== 0) {
+    echo json_encode(["error" => "gdal2tiles でタイル生成に失敗しました", "details" => $tileOutput]);
+    exit;
+}
+
 echo json_encode(["success" => true, "tiles_url" => $tileURL, "bbox" => $bbox4326, "area_km2" => $area_km2, "max_zoom" => $max_zoom]);
+
+/**
+ * uploads 内の元データと中間データを削除（thumbnail- で始まるファイルは除外）
+ */
+function deleteSourceAndTempFiles($filePath)
+{
+    $dir = dirname($filePath);
+    $fileBaseName = pathinfo($filePath, PATHINFO_FILENAME);
+
+    foreach (scandir($dir) as $file) {
+        if ($file === '.' || $file === '..' || strpos($file, 'thumbnail-') === 0) {
+            continue;
+        }
+
+        $fullPath = $dir . DIRECTORY_SEPARATOR . $file;
+        // `fileBaseName` に関連するファイル（temp_gray.tif, output.tif など）を削除 warped.tifも削除
+        if (strpos($file, $fileBaseName) === 0 || $file === 'warped.tif') {
+            unlink($fullPath);
+        }
+    }
+}
 
 ?>

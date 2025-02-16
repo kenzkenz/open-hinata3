@@ -117,6 +117,52 @@ export const vpsTileLayer= {
     paint: {}
 }
 
+const fjEkijyokaSourse = {
+    id:'fj-ekijyoka-source',obj:{
+        type: "vector",
+        tiles: [
+            "https://kenzkenz.duckdns.org/myphp/proxy.php?api=XKT025&z={z}&x={x}&y={y}"
+        ],
+        minzoom: 11,
+        maxzoom: 15
+    }
+}
+
+const fjEkijyokatLayer = {
+    id: "oh-fj-ekijyoka-layer",
+    type: "fill",
+    source: "fj-ekijyoka-source",
+    'source-layer': 'hits',
+    paint: {
+        "fill-color": [
+            "match",
+            ["get", "liquefaction_tendency_level"],
+            1, "rgba(8, 64, 129, 0.8)",  // 反転: 濃い色
+            2, "rgba(8, 104, 172, 0.8)",
+            3, "rgba(67, 162, 202, 0.8)",
+            4, "rgba(123, 204, 196, 0.8)",
+            5, "rgba(204, 235, 197, 0.8)",
+            6, "rgba(247, 252, 240, 0.8)",  // 反転: 薄い色
+            "rgba(136, 136, 136, 0.8)"   // デフォルト
+        ],
+    }
+}
+const fjEkijyokatLayerLine = {
+    id: "oh-fj-ekijyoka-layer-line",
+    type: "line",
+    source: "fj-ekijyoka-source",
+    'source-layer': 'hits',
+    paint: {
+        'line-color': 'gray',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            11, 0,
+            15, 1
+        ]
+    },
+}
 
 
 // 民電 --------------------------------------------------------------------------------------------
@@ -9995,6 +10041,13 @@ const layers01 = [
                 layers: [fukuokakenHazardLayer,fukuokakenHazardLayerLine],
                 attribution: '<a href="https://ckan.open-governmentdata.org/dataset/401000_dosyasaigaikeikaikuikitoudata" target="_blank">福岡県　土砂災害警戒区域等のshapeデータ</a>'
             },
+            {
+                id: 'oh-fj-ekijyoka',
+                label: "液状化発生傾向（不動産情報ライブラリ）",
+                sources: [fjEkijyokaSourse],
+                layers: [fjEkijyokatLayer, fjEkijyokatLayerLine],
+                attribution: '<a href="https://www.reinfolib.mlit.go.jp/help/apiManual/#titleApi30" target="_blank">不動産情報ライブラリ</a>'
+            },
         ]
     },
     {
@@ -10107,12 +10160,12 @@ const layers01 = [
         id: 'test',
         label: "テスト",
         nodes: [
-            // {
-            //     id: 'oh-test2',
-            //     label: "test",
-            //     sources: [paleSource,dosyaSource],
-            //     layers: [aaa]
-            // },
+            {
+                id: 'oh-test2',
+                label: "test",
+                sources: [fjEkijyokaSourse],
+                layers: [fjEkijyokatLayer, fjEkijyokatLayerLine]
+            },
             {
                 id: 'oh-jinjya',
                 label: "延喜式神名帳式内社(神社)",
