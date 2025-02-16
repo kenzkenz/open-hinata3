@@ -113,6 +113,8 @@ export default createStore({
     drawGeojsonText: '',
     clickGeojsonText: '',
     resolution: 19,
+    loading: false,
+    loading2: false,
     //------------------------
     highwayYear:{
       map01: 2024,

@@ -507,7 +507,7 @@ export function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, fileName, 
         simaData = convertSIMtoTXT(simaData)
     }
 
-    document.querySelector('.loadingImg').style.display = 'none'
+    store.state.loading = false
 
     // UTF-8で文字列をコードポイントに変換
     const utf8Array = window.Encoding.stringToCode(simaData);
@@ -841,7 +841,7 @@ function geojsonToDXF(geojson) {
                 break;
         }
     });
-    document.querySelector('.loadingImg').style.display = 'none'
+    store.state.loading = false
     dxf += "0\n" +
         "ENDSEC\n" +
         "0\n" +
@@ -1923,7 +1923,7 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
         alert('ズーム15以上にしてください。');
         return;
     }
-    document.querySelector('.loadingImg').style.display = 'block'
+    store.state.loading = true
     let prefId = String(store.state.prefId).padStart(2, '0');
     console.log('初期 prefId:', prefId);
 
@@ -1998,7 +1998,7 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
             geojson = extractMatchingFeatures(map,geojson)
             geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
             geojsonToShapefile(geojson)
-            document.querySelector('.loadingImg').style.display = 'none'
+            store.state.loading = false
         } else {
             if (!isDfx) {
                 console.log(geojson)
@@ -2032,7 +2032,6 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
         console.log(geojson);
         saveDxf (map, layerId, sourceId, fields, geojson, kei)
     }
-    // document.querySelector('.loadingImg').style.display = 'none'
 }
 
 export async function saveCima3(map,kei,jww) {
@@ -3749,6 +3748,7 @@ export function addTileLayer (map) {
 export async function tileGenerateForUserPng () {
     // -------------------------------------------------------------------------------------------------
     async function generateTiles(filePath, srsCode = "2450", dir) {
+        store.state.loading2 = true
         let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
@@ -3765,10 +3765,10 @@ export async function tileGenerateForUserPng () {
             console.log(result.tiles_url, result.bbox)
             addTileLayer(result.tiles_url, result.bbox)
             // alert("タイル生成完了！");
-            document.querySelector('.loadingImg').style.display = 'none'
+            store.state.loading2 = false
         } else {
             console.log(result)
-            document.querySelector('.loadingImg').style.display = 'none'
+            store.state.loading2 = false
             alert("タイル生成に失敗しました！" + result.error);
         }
     }
@@ -3815,7 +3815,7 @@ export async function tileGenerateForUserPng () {
         store.state.fetchImagesFire = !store.state.fetchImagesFire
     }
     // -------------------------------------------------------------------------------------------------
-    document.querySelector('.loadingImg').style.display = 'block'
+    store.state.loading = true
     const srsCode = zahyokei.find(item => item.kei === store.state.zahyokei).code
     const files = store.state.tiffAndWorldFile
     let pngFile = null
@@ -3844,9 +3844,11 @@ export async function tileGenerateForUserPng () {
             if (data.success) {
                 console.log("アップロード成功:", data);
                 // alert("アップロード成功!")
+                store.state.loading = false
                 generateTiles(data.file, srsCode, store.state.userId);
             } else {
                 console.error("アップロード失敗:", data);
+                store.state.loading = false
                 alert("アップロードエラー: " + data.error);
             }
         })
@@ -3857,6 +3859,7 @@ export async function tileGenerateForUserPng () {
 export async function tileGenerateForUserJpg () {
     // -------------------------------------------------------------------------------------------------
     async function generateTiles(filePath, srsCode = "2450", dir) {
+        store.state.loading2 = true
         let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
@@ -3873,10 +3876,10 @@ export async function tileGenerateForUserJpg () {
             console.log(result.tiles_url, result.bbox)
             addTileLayer(result.tiles_url, result.bbox)
             // alert("タイル生成完了！");
-            document.querySelector('.loadingImg').style.display = 'none'
+            store.state.loading2 = false
         } else {
             console.log(result)
-            document.querySelector('.loadingImg').style.display = 'none'
+            store.state.loading2 = false
             alert("タイル生成に失敗しました！" + result.error);
         }
     }
@@ -3923,7 +3926,7 @@ export async function tileGenerateForUserJpg () {
         store.state.fetchImagesFire = !store.state.fetchImagesFire
     }
     // -------------------------------------------------------------------------------------------------
-    document.querySelector('.loadingImg').style.display = 'block'
+    store.state.loading = true
     const srsCode = zahyokei.find(item => item.kei === store.state.zahyokei).code
     const files = store.state.tiffAndWorldFile
     let jpgFile = null, jgwFile = null;
@@ -3951,9 +3954,11 @@ export async function tileGenerateForUserJpg () {
             if (data.success) {
                 console.log("アップロード成功:", data);
                 // alert("アップロード成功!")
+                store.state.loading = false
                 generateTiles(data.file, srsCode, store.state.userId);
             } else {
                 console.error("アップロード失敗:", data);
+                store.state.loading = false
                 alert("アップロードエラー: " + data.error);
             }
         })
@@ -3964,6 +3969,7 @@ export async function tileGenerateForUserJpg () {
 export async function tileGenerateForUser1file () {
     // -------------------------------------------------------------------------------------------------
     async function generateTiles(filePath, srsCode = "2450", dir) {
+        store.state.loading2 = true
         let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -3978,11 +3984,11 @@ export async function tileGenerateForUser1file () {
         let result = await response.json();
         if (result.success) {
             addTileLayer(result.tiles_url, result.bbox)
-            document.querySelector('.loadingImg').style.display = 'none'
+            store.state.loading2 = false
             // alert("タイル生成完了！");
         } else {
             console.log(result)
-            document.querySelector('.loadingImg').style.display = 'none'
+            store.state.loading2 = false
             alert("タイル生成に失敗しました！" + result.error);
         }
     }
@@ -4029,7 +4035,7 @@ export async function tileGenerateForUser1file () {
         store.state.fetchImagesFire = !store.state.fetchImagesFire
     }
     // -------------------------------------------------------------------------------------------------
-    document.querySelector('.loadingImg').style.display = 'block'
+    store.state.loading = true
     const srsCode = zahyokei.find(item => item.kei === store.state.zahyokei).code
     const files = store.state.tiffAndWorldFile
     let tifFile = files[0]
@@ -4048,9 +4054,11 @@ export async function tileGenerateForUser1file () {
             if (data.success) {
                 console.log("アップロード成功:", data);
                 // alert("アップロード成功!")
+                store.state.loading = false
                 generateTiles(data.file, srsCode, store.state.userId);
             } else {
                 console.error("アップロード失敗:", data);
+                store.state.loading = false
                 alert("アップロードエラー: " + data.error);
             }
         })
@@ -4061,6 +4069,7 @@ export async function tileGenerateForUser1file () {
 export async function tileGenerateForUserTfw () {
     // -------------------------------------------------------------------------------------------------
     async function generateTiles(filePath, srsCode = "2450", dir) {
+        store.state.loading2 = true
         let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -4077,10 +4086,10 @@ export async function tileGenerateForUserTfw () {
             console.log(result.tiles_url, result.bbox)
             addTileLayer(result.tiles_url, result.bbox)
             // alert("タイル生成完了！");
-            document.querySelector('.loadingImg').style.display = 'none'
+            store.state.loading2 = false
         } else {
             console.log(result)
-            document.querySelector('.loadingImg').style.display = 'none'
+            store.state.loading2 = false
             alert("タイル生成に失敗しました！" + result.error);
         }
     }
@@ -4127,7 +4136,7 @@ export async function tileGenerateForUserTfw () {
         store.state.fetchImagesFire = !store.state.fetchImagesFire
     }
     // -------------------------------------------------------------------------------------------------
-    document.querySelector('.loadingImg').style.display = 'block'
+    store.state.loading = true
     const srsCode = zahyokei.find(item => item.kei === store.state.zahyokei).code
     const files = store.state.tiffAndWorldFile
     let tifFile = null, tfwFile = null;
@@ -4155,9 +4164,11 @@ export async function tileGenerateForUserTfw () {
             if (data.success) {
                 console.log("アップロード成功:", data);
                 // alert("アップロード成功!")
+                store.state.loading = false
                 generateTiles(data.file, srsCode, store.state.userId);
             } else {
                 console.error("アップロード失敗:", data);
+                store.state.loading = false
                 alert("アップロードエラー: " + data.error);
             }
         })

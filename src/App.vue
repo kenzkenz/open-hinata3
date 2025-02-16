@@ -325,6 +325,9 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <img class='loadingImg' src="https://kenzkenz.xsrv.jp/open-hinata3/img/icons/loading2.gif">
         <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="(mapName === 'map01'|| mapName === 'map02' && s_map2Flg)" @click="btnPosition">
 
+          <v-progress-linear  v-if="s_loading" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
+          <v-progress-linear  v-if="s_loading2" style="z-index: 1" indeterminate color="green"></v-progress-linear>
+
           <div id="pointer1" class="pointer" v-if="mapName === 'map01'"></div>
           <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
 
@@ -758,6 +761,22 @@ export default {
     dialogForGeotiffApp1file: false,
   }),
   computed: {
+    s_loading2: {
+      get() {
+        return this.$store.state.loading2
+      },
+      set(value) {
+        this.$store.state.loading2 = value
+      }
+    },
+    s_loading: {
+      get() {
+        return this.$store.state.loading
+      },
+      set(value) {
+        this.$store.state.loading = value
+      }
+    },
     s_resolution: {
       get() {
         return this.$store.state.resolution
