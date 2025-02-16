@@ -98,16 +98,23 @@ $tileURL = $BASE_URL . $subDir . "/" . $fileBaseName . "/{z}/{x}/{y}.png";
 
 $escapedTileDir = escapeshellarg($tileDir);
 
+function isGrayscale($filePath)
+{
+    exec("gdalinfo -json " . escapeshellarg($filePath), $infoOutput, $infoReturnVar);
+    $infoJson = json_decode(implode("\n", $infoOutput), true);
+    return isset($infoJson["bands"]) && count($infoJson["bands"]) === 1;
+}
+
+$isGray = isGrayscale($filePath);
 $grayFilePath = "$filePath.temp_gray.tif";
 $outputFilePath = "$filePath.output.tif";
-
-exec("gdal_translate -expand gray " . escapeshellarg($filePath) . " " . escapeshellarg($grayFilePath), $gdalTranslateOutput, $gdalTranslateReturn);
-exec("gdal_translate -co TILED=YES -co COMPRESS=DEFLATE " . escapeshellarg($grayFilePath) . " " . escapeshellarg($outputFilePath), $gdalCompressOutput, $gdalCompressReturn);
-exec("gdaladdo --config COMPRESS_OVERVIEW DEFLATE -r average " . escapeshellarg($outputFilePath) . " 2 4 8 16", $gdalAddoOutput, $gdalAddoReturn);
-
-
-
-
+if ($isGray) {
+    exec("gdal_translate -expand gray " . escapeshellarg($filePath) . " " . escapeshellarg($grayFilePath), $gdalTranslateOutput, $gdalTranslateReturn);
+    exec("gdal_translate -co TILED=YES -co COMPRESS=DEFLATE " . escapeshellarg($grayFilePath) . " " . escapeshellarg($outputFilePath), $gdalCompressOutput, $gdalCompressReturn);
+    exec("gdaladdo --config COMPRESS_OVERVIEW DEFLATE -r average " . escapeshellarg($outputFilePath) . " 2 4 8 16", $gdalAddoOutput, $gdalAddoReturn);
+} else {
+    $outputFilePath = $filePath;
+}
 $tileCommand = "gdal2tiles.py -z 0-$max_zoom --s_srs EPSG:$sourceEPSG --xyz --processes=4 " . escapeshellarg($outputFilePath) . " $escapedTileDir";
 exec($tileCommand . " 2>&1", $tileOutput, $tileReturnVar);
 
