@@ -80,7 +80,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-window v-model="tab">
                 <v-window-item value="one">
                   <v-card>
-                  <v-card-text style="margin-bottom: 10px;">ドラッグ&ドロップされたgeotif,jpgが表示されます。</v-card-text>
+                  <v-card-text style="margin-bottom: 10px;">ドラッグ&ドロップされたgeotif,jpg,pngが表示されます。</v-card-text>
                   <div class="image-grid">
                     <div v-for="item in images" :key="item" class="image-container">
                       <img :src="item" class="gallery-image" @click="handleImageClick(item)" />

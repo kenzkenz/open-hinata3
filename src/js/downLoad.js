@@ -3746,6 +3746,114 @@ export function addTileLayer (map) {
     }
 }
 
+export async function tileGenerateForUserPng () {
+    // -------------------------------------------------------------------------------------------------
+    async function generateTiles(filePath, srsCode = "2450", dir) {
+        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                file: filePath,
+                srs: srsCode,
+                dir: dir,
+                fileName: fileName,
+                resolution: store.state.resolution
+            })
+        });
+        let result = await response.json();
+        if (result.success) {
+            console.log(result.tiles_url, result.bbox)
+            addTileLayer(result.tiles_url, result.bbox)
+            // alert("タイル生成完了！");
+            document.querySelector('.loadingImg').style.display = 'none'
+        } else {
+            console.log(result)
+            document.querySelector('.loadingImg').style.display = 'none'
+            alert("タイル生成に失敗しました！" + result.error);
+        }
+    }
+
+    function addTileLayer(tileURL, bbox) {
+        vpsTileSource.obj.tiles = [tileURL]
+        vpsTileSource.obj.bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
+
+        const map01 = store.state.map01
+        if (map01.getLayer('oh-vpstile-layer')) {
+            map01.removeLayer('oh-vpstile-layer');
+        }
+        if (map01.getSource('vpstile-source')) {
+            map01.removeSource('vpstile-source');
+        }
+
+        const mapNames = ['map01', 'map02']
+        mapNames.forEach(mapName => {
+            store.state.selectedLayers[mapName].unshift(
+                {
+                    id: 'oh-vpstile-layer',
+                    label: fileName,
+                    source: vpsTileSource,
+                    layers: [vpsTileLayer],
+                    opacity: 1,
+                    visibility: true,
+                }
+            );
+        })
+
+        if (bbox) {
+            map01.fitBounds([
+                [bbox[0], bbox[1]], // minX, minY
+                [bbox[2], bbox[3]]  // maxX, maxY
+            ], {padding: 20});
+        }
+
+        store.state.uploadedImage = JSON.stringify({
+            tile: tileURL,
+            bbox: bbox,
+            fileName: fileName,
+            uid: store.state.userId,
+        })
+        store.state.fetchImagesFire = !store.state.fetchImagesFire
+    }
+    // -------------------------------------------------------------------------------------------------
+    document.querySelector('.loadingImg').style.display = 'block'
+    const srsCode = zahyokei.find(item => item.kei === store.state.zahyokei).code
+    const files = store.state.tiffAndWorldFile
+    let pngFile = null
+    let pgwFile = null
+    for (const file of files) {
+        const fileName = file.name.toLowerCase();
+        if (fileName.endsWith(".png")) pngFile = file;
+        if (fileName.endsWith(".pgw")) pgwFile = file;
+    }
+    if (!pngFile || !pgwFile) {
+        alert(" PNGと PGW の両方をアップロードしてください！");
+        return;
+    }
+    let fileName = pngFile.name;
+    fileName = fileName.slice(0, fileName.lastIndexOf('.'))
+    const formData = new FormData();
+    formData.append("file", pngFile);
+    formData.append("worldfile", pgwFile);
+    formData.append("dir", store.state.userId); // 指定したフォルダにアップロード
+    fetch("https://kenzkenz.duckdns.org/myphp/upload.php", {
+        method: "POST",
+        body: formData
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log("アップロード成功:", data);
+                // alert("アップロード成功!")
+                generateTiles(data.file, srsCode, store.state.userId);
+            } else {
+                console.error("アップロード失敗:", data);
+                alert("アップロードエラー: " + data.error);
+            }
+        })
+        .catch(error => console.error("エラー:", error));
+    // -------------------------------------------------------------------------------------------------
+}
+
 export async function tileGenerateForUserJpg () {
     // -------------------------------------------------------------------------------------------------
     async function generateTiles(filePath, srsCode = "2450", dir) {
@@ -3871,7 +3979,7 @@ export async function tileGenerateForUser1file () {
         if (result.success) {
             addTileLayer(result.tiles_url, result.bbox)
             document.querySelector('.loadingImg').style.display = 'none'
-            // alert("タイル生成完了！");
+            alert("タイル生成完了！");
         } else {
             console.log(result)
             document.querySelector('.loadingImg').style.display = 'none'

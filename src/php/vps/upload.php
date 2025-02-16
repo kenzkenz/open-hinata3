@@ -33,13 +33,19 @@ if (!isset($_FILES["file"])) {
 
 // アップロードされたファイルの拡張子を確認
 $fileExt = strtolower(pathinfo($_FILES["file"]["name"], PATHINFO_EXTENSION));
-if (!in_array($fileExt, ["tif", "tiff", "jpg", "jpeg"])) {
-    echo json_encode(["error" => "許可されていないファイル形式です (TIFF, JPEG のみ許可)"]);
+if (!in_array($fileExt, ["tif", "tiff", "jpg", "jpeg", "png"])) {
+    echo json_encode(["error" => "許可されていないファイル形式です (TIFF, JPEG, PNG のみ許可)"]);
     exit;
 }
 
-// ワールドファイルのチェック (`.tfw` または `.jgw`)
-$worldFileExt = ($fileExt === "tif" || $fileExt === "tiff") ? "tfw" : "jgw";
+// ワールドファイルのチェック (`.tfw`, `.jgw`, `.pgw`)
+$worldFileExt = match ($fileExt) {
+    "tif", "tiff" => "tfw",
+    "jpg", "jpeg" => "jgw",
+    "png" => "pgw",
+    default => null
+};
+
 if (!isset($_FILES["worldfile"])) {
     echo json_encode(["error" => "ワールドファイル (.$worldFileExt) をアップロードしてください"]);
     exit;
@@ -71,7 +77,7 @@ if (!move_uploaded_file($_FILES["worldfile"]["tmp_name"], $worldFilePath)) {
 // **JPEG サムネイルの作成 (100px幅にリサイズ)**
 $jpegThumbnailPath = $uploadDir . "thumbnail-" . $fileBaseName . ".jpg";
 
-if ($fileExt === "tif" || $fileExt === "tiff") {
+if ($fileExt === "tif" || $fileExt === "tiff"|| $fileExt === "png") {
     // GDAL を使用して TIFF から JPEG サムネイルを作成
     $gdalCommand = "gdal_translate -of JPEG -co PAM=NO -outsize 100 0 " . escapeshellarg($imagePath) . " " . escapeshellarg($jpegThumbnailPath);
     exec($gdalCommand . " 2>&1", $output, $returnVar);

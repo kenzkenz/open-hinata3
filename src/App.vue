@@ -257,6 +257,13 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                         label="選択してください"
                         outlined
               ></v-select>
+              <v-select class="scrollable-content"
+                        v-model="s_resolution"
+                        :items="resolutions"
+                        label="画像取込最大解像度"
+                        outlined
+                        v-if="user1"
+              ></v-select>
             </div>
             <v-btn @click="pngLoad0">png読込開始</v-btn>
           </v-card-text>
@@ -402,7 +409,7 @@ import {
   pngLoad,
   pngLoadForUser,
   tileGenerateForUser,
-  tileGenerateForUser1file, tileGenerateForUserJpg,
+  tileGenerateForUser1file, tileGenerateForUserJpg, tileGenerateForUserPng,
   tileGenerateForUserTfw,
   transformGeoJSONToEPSG4326,
   zahyokei
@@ -931,8 +938,9 @@ export default {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
       if (this.$store.state.userId) {
-        pngLoadForUser (map01,'map01', true)
-        pngLoadForUser (map02,'map02', false)
+        // pngLoadForUser (map01,'map01', true)
+        // pngLoadForUser (map02,'map02', false)
+        tileGenerateForUserPng()
       } else {
         pngLoad (map01,'map01', true)
         pngLoad (map02,'map02', false)
