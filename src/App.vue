@@ -1951,7 +1951,8 @@ export default {
           // }
           // ----------------------------------------------------------------
           if (params.isWindow) {
-            this.$store.state.isWindow = JSON.parse(params.isWindow)
+            // this.$store.state.isWindow = JSON.parse(params.isWindow)
+            this.$store.state.isWindow2 = JSON.parse(params.isWindow)
           }
           if (params.vector) {
             this.$store.state.uploadedVector = JSON.parse(params.vector)

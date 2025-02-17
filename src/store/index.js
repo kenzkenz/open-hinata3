@@ -116,6 +116,7 @@ export default createStore({
     loading: false,
     loading2: false,
     isWindow: true,
+    isWindow2: true,
     isSmartPhone: false,
     //------------------------
     highwayYear:{

@@ -478,9 +478,9 @@ export default {
                   })
                 })
               }
-              // ここを改修する。
+
               if (this.counter <= 1) {
-                if (this.$store.state.isWindow) this.infoOpen(layer, false)
+                if (this.$store.state.isWindow2) this.infoOpen(layer, false)
               } else {
                 this.infoOpen(layer, false)
               }
