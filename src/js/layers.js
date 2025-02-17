@@ -124,7 +124,7 @@ const fjEkijyokaSourse = {
         tiles: [
             "https://kenzkenz.duckdns.org/myphp/proxy.php?api=XKT025&z={z}&x={x}&y={y}"
         ],
-        minzoom: 11,
+        minzoom: 10,
         maxzoom: 15
     }
 }
@@ -146,7 +146,9 @@ const fjEkijyokatLayer = {
             6, "rgba(247, 252, 240, 0.8)",  // 薄い色
             "rgba(136, 136, 136, 0.8)"   // デフォルト
         ],
-    }
+    },
+    minzoom: 9,
+    maxzoom: 15
 }
 const fjEkijyokatLayerLine = {
     id: "oh-fj-ekijyoka-layer-line",
@@ -171,7 +173,7 @@ const fjRicchitekiseiksSourse = {
         tiles: [
             "https://kenzkenz.duckdns.org/myphp/proxy.php?api=XKT003&z={z}&x={x}&y={y}"
         ],
-        minzoom: 11,
+        minzoom: 10,
         maxzoom: 15
     }
 }
@@ -190,7 +192,9 @@ const fjRicchitekiseikaLayer = {
             32, "rgba(6, 162, 2, 0.8)",// 都市機能誘導区域
             "rgba(0, 0, 0, 0.8)"   // デフォルト
         ],
-    }
+    },
+    minzoom: 9,
+    maxzoom: 15
 }
 const fjRicchitekiseikaLayerLine = {
     id: "oh-fj-ricchitekiseika-layer-line",
