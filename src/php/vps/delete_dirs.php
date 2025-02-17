@@ -1,6 +1,5 @@
 <?php
 
-
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
@@ -75,11 +74,6 @@ function isAllowedDirectory($dir, $allowedBaseDirs)
 $dirAllowed = isAllowedDirectory($dir, $allowedBaseDirs);
 $dir2Allowed = isAllowedDirectory($dir2, $allowedBaseDirs);
 
-if (!$dirAllowed && !$dir2Allowed) {
-    echo json_encode(["error" => "許可されていないディレクトリへのアクセス"]);
-    exit;
-}
-
 // **削除結果格納用**
 $response = [];
 
@@ -102,16 +96,21 @@ if ($dir2Allowed) {
 }
 
 // **メッセージの作成**
-if (!isset($response["error_tiles"]) && !isset($response["error_uploads"])) {
-    $response["message"] = "ファイルとディレクトリの削除成功";
+if ($dirAllowed || $dir2Allowed) {
+    if (!isset($response["error_tiles"]) && !isset($response["error_uploads"])) {
+        $response["message"] = "ファイルとディレクトリの削除成功";
+    } else {
+        $response["message"] = "削除の一部または全部が失敗";
+    }
 } else {
-    $response["message"] = "削除の一部または全部が失敗";
+    $response["error"] = "許可されていないディレクトリへのアクセス";
 }
 
 // **結果を JSON で返す**
 echo json_encode($response);
 
 
+//
 //
 //header("Access-Control-Allow-Origin: *");
 //header("Access-Control-Allow-Methods: POST, DELETE, OPTIONS");
@@ -184,21 +183,43 @@ echo json_encode($response);
 //    return false;
 //}
 //
-//if (!isAllowedDirectory($dir, $allowedBaseDirs) || !isAllowedDirectory($dir2, $allowedBaseDirs)) {
+//$dirAllowed = isAllowedDirectory($dir, $allowedBaseDirs);
+//$dir2Allowed = isAllowedDirectory($dir2, $allowedBaseDirs);
+//
+//if (!$dirAllowed && !$dir2Allowed) {
 //    echo json_encode(["error" => "許可されていないディレクトリへのアクセス"]);
 //    exit;
 //}
 //
-//// **指定された文字列を含むファイルの削除処理**
-//$filesDeleted = deleteFilesContainingString($dir2, $string);
+//// **削除結果格納用**
+//$response = [];
 //
-//// **ディレクトリ削除処理**
-//$deleted = deleteDirectory($dir);
+//// **tiles ディレクトリ削除**
+//if ($dirAllowed) {
+//    $deletedTiles = deleteDirectory($dir);
+//    $response["dirDeleted"] = $deletedTiles;
+//    if (!$deletedTiles) {
+//        $response["error_tiles"] = "tiles ディレクトリの削除に失敗";
+//    }
+//}
 //
-//echo json_encode([
-//    "filesDeleted" => $filesDeleted,
-//    "dirDeleted" => $deleted,
-//    "message" => ($filesDeleted && $deleted) ? "ファイルとディレクトリの削除成功" : "削除の一部または全部が失敗"
-//]);
+//// **uploads のファイル削除**
+//if ($dir2Allowed) {
+//    $filesDeletedUploads = deleteFilesContainingString($dir2, $string);
+//    $response["filesDeleted"] = $filesDeletedUploads;
+//    if (!$filesDeletedUploads) {
+//        $response["error_uploads"] = "uploads のファイル削除に失敗";
+//    }
+//}
 //
-?>
+//// **メッセージの作成**
+//if (!isset($response["error_tiles"]) && !isset($response["error_uploads"])) {
+//    $response["message"] = "ファイルとディレクトリの削除成功";
+//} else {
+//    $response["message"] = "削除の一部または全部が失敗";
+//}
+//
+//// **結果を JSON で返す**
+//echo json_encode($response);
+//
+//?>

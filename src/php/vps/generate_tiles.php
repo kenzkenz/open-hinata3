@@ -84,7 +84,8 @@ $width_km = haversineDistance($minCoord[1], $minCoord[0], $minCoord[1], $maxCoor
 $height_km = haversineDistance($minCoord[1], $minCoord[0], $maxCoord[1], $minCoord[0]);
 $area_km2 = $width_km * $height_km;
 
-$max_zoom = ($resolution <= 15 || $area_km2 <= $max_area_km2) ? $resolution : 15;
+//$max_zoom = ($resolution <= 15 || $area_km2 <= $max_area_km2) ? $resolution : 15;
+$max_zoom = $resolution;
 
 $subDir = isset($data["dir"]) ? preg_replace('/[^a-zA-Z0-9_-]/', '', $data["dir"]) : "default";
 $fileBaseName = pathinfo($filePath, PATHINFO_FILENAME);

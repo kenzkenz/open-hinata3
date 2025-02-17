@@ -6,6 +6,13 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
   <v-app>
     <v-main>
 
+      <v-snackbar v-model="loadingSnackbar"
+                  :timeout="-1"
+                  color="primary">
+        <p v-if="s_loading">処理中です。</p>
+        <p v-if="s_loading2">地図タイル作成中です。</p>
+      </v-snackbar>
+
       <v-snackbar
           v-model="s_snackbar"
           :timeout="-1"
@@ -487,7 +494,6 @@ function parseSurfaceCoordinates(surface, xmlDoc, namespaceURI) {
   return [];
 }
 
-
 function parseRing(ring, xmlDoc, namespaceURI) {
   if (!ring) return [];
 
@@ -757,8 +763,9 @@ export default {
     ],
     dialogForDxfApp: false,
     windowWidth: window.innerWidth,
-    resolutions: [13,14,15,16,17,18,19,20,21,22,23,24,25],
+    resolutions: [13,14,15,16,17,18,19,20,21,22,23,24,25,26],
     dialogForGeotiffApp1file: false,
+    loadingSnackbar: false,
   }),
   computed: {
     s_loading2: {
@@ -925,6 +932,9 @@ export default {
     },
   },
   methods: {
+    updateSnackbar() {
+      this.loadingSnackbar = this.s_loading || this.s_loading2;
+    },
     onResize() {
       this.windowWidth = window.innerWidth;
     },
@@ -938,8 +948,7 @@ export default {
       this.$store.state.simaText = ''
     },
     pngDownload () {
-      const map01 = this.$store.state.map01
-      pngDownload(map01)
+      pngDownload()
       this.$store.state.dialogForPngApp = false
     },
     dxfLoad () {
@@ -2997,6 +3006,12 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
+    s_loading(val) {
+      this.updateSnackbar();
+    },
+    s_loading2(val) {
+      this.updateSnackbar();
+    },
     s_simaFire () {
       this.simaOpacityInput()
     },

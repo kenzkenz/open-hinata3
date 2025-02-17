@@ -4694,20 +4694,21 @@ export async function geoTiffLoad (map,mapName,isUpload) {
     }
 }
 
-export function pngDownload(map) {
+export function pngDownload() {
+    const map01 = store.state.map01
     const code = zahyokei.find(item => item.kei === store.state.zahyokei).code;
     // 地図のレンダリング完了を待機
-    map.once('idle', async () => {
+    map01.once('idle', async () => {
         const zip = new JSZip();
 
-        const canvas = map.getCanvas();
+        const canvas = map01.getCanvas();
         const imageData = canvas.toDataURL("image/png");
         // PNGファイルを追加
         const pngBlob = await fetch(imageData).then(res => res.blob());
         zip.file("map-image.png", pngBlob);
 
         // ワールドファイルの生成
-        const bounds = map.getBounds(); // 表示範囲を取得
+        const bounds = map01.getBounds(); // 表示範囲を取得
         const canvasWidth = canvas.width;
         const canvasHeight = canvas.height;
 
@@ -4796,8 +4797,8 @@ export function pngDownload(map) {
         URL.revokeObjectURL(zipLink.href);
     });
 
-    const currentZoom = map.getZoom();
-    map.zoomTo(currentZoom + 0.00000000000000000000000000001);
+    const currentZoom = map01.getZoom();
+    map01.zoomTo(currentZoom + 0.00000000000000000000000000001);
 }
 
 // 改修必要あり！！！！！

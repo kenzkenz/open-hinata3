@@ -107,7 +107,8 @@ export const vpsTileSource = {
     id:'vpstile-source',obj:{
         type: 'raster',
         tiles: [],
-        bounds: null
+        bounds: null,
+        maxzoom: 26
     }
 }
 export const vpsTileLayer= {
