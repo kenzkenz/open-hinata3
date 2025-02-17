@@ -115,6 +115,8 @@ export default createStore({
     resolution: 19,
     loading: false,
     loading2: false,
+    isWindow: true,
+    isSmartPhone: false,
     //------------------------
     highwayYear:{
       map01: 2024,

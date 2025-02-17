@@ -768,6 +768,22 @@ export default {
     loadingSnackbar: false,
   }),
   computed: {
+    s_isSmartPhone: {
+      get() {
+        return this.$store.state.isSmartPhone
+      },
+      set(value) {
+        this.$store.state.isSmartPhone = value
+      }
+    },
+    s_isWindow: {
+      get() {
+        return this.$store.state.isWindow
+      },
+      set(value) {
+        this.$store.state.isWindow = value
+      }
+    },
     s_loading2: {
       get() {
         return this.$store.state.loading2
@@ -1423,10 +1439,11 @@ export default {
       const drawGeojsonText = this.$store.state.drawGeojsonText
       const clickGeojsonText = this.$store.state.clickGeojsonText
       const vector = this.$store.state.uploadedVector
+      const isWindow = this.$store.state.isWindow
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
       ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}
-      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}&geojsontext=${geojsonText}&dxftext=${dxfText}&gpxtext=${gpxText}&drawgeojsontext=${drawGeojsonText}&clickgeojsontext=${clickGeojsonText}&vector=${JSON.stringify(vector)}`
+      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}&geojsontext=${geojsonText}&dxftext=${dxfText}&gpxtext=${gpxText}&drawgeojsontext=${drawGeojsonText}&clickgeojsontext=${clickGeojsonText}&vector=${JSON.stringify(vector)}&iswindow=${JSON.stringify(isWindow)}`
       // console.log(this.param)
       // this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
@@ -1503,11 +1520,12 @@ export default {
       const drawGeojsonText = params.get('drawgeojsontext')
       const clickGeojsonText = params.get('clickgeojsontext')
       const vector = params.get('vector')
+      const isWindow = params.get('iswindow')
       this.pitch.map01 = pitch01
       this.pitch.map02 = pitch02
       this.bearing = bearing
       this.s_terrainLevel = terrainLevel
-      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText,drawGeojsonText,clickGeojsonText,vector}// 以前のリンクをいかすためpitchを入れている。
+      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText,drawGeojsonText,clickGeojsonText,vector,isWindow}// 以前のリンクをいかすためpitchを入れている。
     },
     init() {
 
@@ -1932,6 +1950,9 @@ export default {
           //   }
           // }
           // ----------------------------------------------------------------
+          if (params.isWindow) {
+            this.$store.state.isWindow = JSON.parse(params.isWindow)
+          }
           if (params.vector) {
             this.$store.state.uploadedVector = JSON.parse(params.vector)
           }
@@ -2927,6 +2948,12 @@ export default {
 
     window.addEventListener("resize", this.onResize);
 
+    if (window.innerWidth < 500) {
+      this.s_isSmartPhone = true
+      this.terrainBtnClos()
+    }
+
+
     // -----------------------------------------------------------------------------------------------------------------
     this.mapNames.forEach(mapName => {
       const myDiv = document.getElementById("terrain-btn-div-" + mapName)
@@ -3006,6 +3033,13 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
+    s_isWindow () {
+      try {
+        this.updatePermalink()
+      }catch (e) {
+        console.log(e)
+      }
+    },
     s_loading(val) {
       this.updateSnackbar();
     },

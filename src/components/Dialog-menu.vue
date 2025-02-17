@@ -130,15 +130,9 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
       <v-switch style="height: 40px;" v-model="s_isClickPointsLayer" @change="changeVisible" label="座標取得レイヤー表示" color="primary" />
 
-      <v-switch style="height: 40px;margin-bottom: 20px;" v-model="s_isPitch" @change="changePitch" label="２画面時に傾きを同期" color="primary" />
+      <v-switch style="height: 40px;" v-model="s_isPitch" @change="changePitch" label="２画面時に傾きを同期" color="primary" />
 
-<!--      <v-select class="scrollable-content"-->
-<!--                v-model="s_resolution"-->
-<!--                :items="zoomItems"-->
-<!--                label="画像取込最大解像度"-->
-<!--                outlined-->
-<!--                v-if="user1"-->
-<!--      ></v-select>-->
+      <v-switch style="height: 40px;margin-bottom: 20px;" v-model="s_isWindow" label="ウインドウ復帰" color="primary" />
 
       標高を強調します。{{s_terrainLevel}}倍
       <div class="range-div">
@@ -267,6 +261,15 @@ export default {
     signUpDiv: false,
   }),
   computed: {
+    s_isWindow: {
+      get() {
+        return this.$store.state.isWindow
+      },
+      set(value) {
+        this.$store.state.isWindow = value
+        localStorage.setItem('window',value)
+      }
+    },
     s_resolution: {
       get() {
         return this.$store.state.resolution
@@ -1186,6 +1189,9 @@ export default {
     this.s_isPitch = JSON.parse(localStorage.getItem('isPitch'))
     if (localStorage.getItem('resolution')) {
       this.s_resolution = localStorage.getItem('resolution')
+    }
+    if (localStorage.getItem('window')) {
+      this.s_isWindow = JSON.parse(localStorage.getItem('window'))
     }
   }
 }

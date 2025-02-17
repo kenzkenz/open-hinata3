@@ -479,7 +479,11 @@ export default {
                 })
               }
               // ここを改修する。
-              this.infoOpen(layer,false)
+              if (this.counter <= 1) {
+                if (this.$store.state.isWindow) this.infoOpen(layer, false)
+              } else {
+                this.infoOpen(layer, false)
+              }
               this.$store.state.extFire = !this.$store.state.extFire
             }
           }
