@@ -3238,6 +3238,40 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-fj-ricchitekiseika-layer':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(features)
+                if (features.length === 0) return
+                props = features[0].properties
+                let html0 = ''
+                if (html.indexOf('ricchitekiseika') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="ricchitekiseika" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">区域名＝' + props.kubun_name_ja + '</span><br>' +
+                        '<span style="font-size:16px;">都道府県名＝' + props.prefecture + '</span><br>' +
+                        '<span style="font-size:16px;">行政区域コード=' + props.city_code + '</span><br>' +
+                        '<span style="font-size:16px;">市町村名＝' + props.city_name + '</span><br>' +
+                        '<span style="font-size:16px;">区域設定年月日＝' + props.decision_date + '</span><br>' +
+                        '<span style="font-size:16px;">設定区分＝' + props.decision_classification + '</span><br>' +
+                        '<span style="font-size:16px;">設定者名＝' + props.decision_maker + '</span><br>' +
+                        '<span style="font-size:16px;">告示番号＝' + props.notice_number + '</span><br>' +
+                        '<span style="font-size:16px;">区域コード＝' + props.kubun_id + '</span><br>' +
+                        '<span style="font-size:16px;">区域区分＝' + props.area_classification_ja + '</span><br>' +
+                        '<span style="font-size:16px;">当初決定日＝' + props.first_decision_date + '</span><br>' +
+                        '<span style="font-size:16px;">告示番号S＝' + props.notice_number_s + '</span><br>' +
+                        '</div>'
+                }
+                break
+            }
         }
     })
 

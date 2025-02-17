@@ -13,7 +13,7 @@
               </div>
 
               <div class="handle-div"><i class="fa-solid fa-up-down fa-lg handle-icon hover"></i></div>
-              <div class="info-div" @click="infoOpen(element,true)">
+              <div class="info-div" @click="infoOpen(element,true, true)">
                 <v-icon v-if="element.ext">mdi-cog</v-icon>
                 <v-icon v-if="!element.ext">mdi-information</v-icon>
               </div>
@@ -174,7 +174,7 @@ export default {
         map.moveLayer('sima-layer',lastLayerId);
       }
     },
-    infoOpen (element,isNew) {
+    infoOpen (element,isNew,isBlock) {
       this.$store.commit('incrDialogMaxZindex')
       const result = this.s_dialogsINfo[this.mapName].find(el => el.id === element.id)
       const dialogEl = document.querySelector('#dialog-div-layerDialog-' + this.mapName)
@@ -189,6 +189,12 @@ export default {
       if (top === '0px') {
         top = '100px'
         left = '10px'
+      }
+      let display
+      if (isBlock) {
+        display = 'block'
+      } else {
+        display = 'none'
       }
 
       const dialogDivs = document.querySelectorAll(".dialog-info-div")
@@ -213,9 +219,9 @@ export default {
               attribution: element.attribution,
               ext: element.ext,
               style: {
-                // width: '200px',
                 width: 'auto',
-                display: 'block',
+                // display: 'block',
+                display: display,
                 top: top,
                 left: left,
                 'z-index': this.$store.state.dialogMaxZindex
@@ -480,15 +486,19 @@ export default {
               }
 
               if (this.counter <= 1) {
-                if (this.$store.state.isWindow2) this.infoOpen(layer, false)
+                if (this.$store.state.isWindow2) {
+                  this.infoOpen(layer, false, true)
+                } else {
+                  this.infoOpen(layer, false, false)
+                }
               } else {
-                this.infoOpen(layer, false)
+                this.infoOpen(layer, false, true)
               }
               this.$store.state.extFire = !this.$store.state.extFire
             }
           }
           // -------------------------------------------------
-          if (layer.info) this.infoOpen(layer,false)
+          if (layer.info) this.infoOpen(layer,false, true)
           // -------------------------------------------------
         }
       }
@@ -1033,7 +1043,7 @@ export default {
   height:40px;
   font-size:larger;
   color:white;
-  background-color: rgba(157,157,193,1);
+  background-color: rgba(132,163,213,1);
   border-bottom: #fff 1px solid;
 }
 .trash-div{

@@ -117,7 +117,7 @@ export const vpsTileLayer= {
     source: 'vpstile-source',
     paint: {}
 }
-
+// 液状化（不動産情報ライブラリ）---------------------------------------------------------------------------------------------
 const fjEkijyokaSourse = {
     id:'fj-ekijyoka-source',obj:{
         type: "vector",
@@ -164,9 +164,52 @@ const fjEkijyokatLayerLine = {
         ]
     },
 }
+// 立地適正化計画（不動産情報ライブラリ）---------------------------------------------------------------------------------------------
+const fjRicchitekiseiksSourse = {
+    id:'fj-ricchitekiseika-source',obj:{
+        type: "vector",
+        tiles: [
+            "https://kenzkenz.duckdns.org/myphp/proxy.php?api=XKT003&z={z}&x={x}&y={y}"
+        ],
+        minzoom: 11,
+        maxzoom: 15
+    }
+}
 
+const fjRicchitekiseikaLayer = {
+    id: "oh-fj-ricchitekiseika-layer",
+    type: "fill",
+    source: "fj-ricchitekiseika-source",
+    'source-layer': 'hits',
+    paint: {
+        "fill-color": [
+            "match",
+            ["get", "kubun_id"],
+            0, "rgba(8, 64, 129, 0.8)",  // 立地適正化計画区域
+            31, "rgba(0, 255, 0, 0.8)", // 居住誘導区域
+            32, "rgba(6, 162, 2, 0.8)",// 都市機能誘導区域
+            "rgba(0, 0, 0, 0.8)"   // デフォルト
+        ],
+    }
+}
+const fjRicchitekiseikaLayerLine = {
+    id: "oh-fj-ricchitekiseika-layer-line",
+    type: "line",
+    source: "fj-ricchitekiseika-source",
+    'source-layer': 'hits',
+    paint: {
+        'line-color': 'gray',
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            11, 0,
+            15, 1
+        ]
+    },
+}
 
-// 民電 --------------------------------------------------------------------------------------------
+// 民電 -----------------------------------------------------------------------------------------------------------------
 const mindenSource = {
     id: "minden-source", obj: {
         'type': 'geojson',
@@ -10047,6 +10090,13 @@ const layers01 = [
                 label: "液状化発生傾向（不動産情報ライブラリ）",
                 sources: [fjEkijyokaSourse],
                 layers: [fjEkijyokatLayer, fjEkijyokatLayerLine],
+                attribution: '<a href="https://www.reinfolib.mlit.go.jp/help/apiManual/#titleApi30" target="_blank">不動産情報ライブラリ</a>'
+            },
+            {
+                id: 'oh-fj-ricchitekiseika',
+                label: "立地適正化計画（不動産情報ライブラリ）",
+                sources: [fjRicchitekiseiksSourse],
+                layers: [fjRicchitekiseikaLayer, fjRicchitekiseikaLayerLine],
                 attribution: '<a href="https://www.reinfolib.mlit.go.jp/help/apiManual/#titleApi30" target="_blank">不動産情報ライブラリ</a>'
             },
         ]
