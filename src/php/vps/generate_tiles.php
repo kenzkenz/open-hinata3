@@ -163,8 +163,8 @@ function deleteSourceAndTempFiles($filePath)
         }
 
         $fullPath = $dir . DIRECTORY_SEPARATOR . $file;
-        // `fileBaseName` に関連するファイル（temp_gray.tif, output.tif など）を削除 warped.tifも削除
-        if (strpos($file, $fileBaseName) === 0 || $file === 'warped.tif') {
+        // `fileBaseName` に関連するファイル（temp_gray.tif, output.tif など）を削除、さらに warped.tif と cropped_ で始まるファイルも削除
+        if (strpos($file, $fileBaseName) === 0 || $file === 'warped.tif' || strpos($file, 'cropped_') === 0) {
             unlink($fullPath);
         }
     }

@@ -98,18 +98,6 @@ $tileURL = $BASE_URL . $subDir . "/" . $fileBaseName . "/{z}/{x}/{y}.png";
 
 $escapedTileDir = escapeshellarg($tileDir);
 
-//$georeferencedFile = "$filePath.georef.tif";
-//if (!isset($gdalOutputJson["coordinateSystem"])) {
-//    // If no coordinate system is found, add EPSG:2450
-//    exec("gdal_translate -a_srs EPSG:$sourceEPSG " . escapeshellarg($filePath) . " " . escapeshellarg($georeferencedFile), $translateOutput, $translateReturn);
-//    if ($translateReturn !== 0) {
-//        echo json_encode(["error" => "座標系の付与に失敗しました", "details" => $translateOutput]);
-//        exit;
-//    }
-//    $filePath = $georeferencedFile;
-//}
-
-
 
 function isGrayscale($filePath)
 {
@@ -122,38 +110,94 @@ $isGray = isGrayscale($filePath);
 $grayFilePath = "$filePath.temp_gray.tif";
 $outputFilePath = "$filePath.output.tif";
 if ($isGray) {
+    // グレースケール画像の場合
     exec("gdal_translate -expand gray " . escapeshellarg($filePath) . " " . escapeshellarg($grayFilePath), $gdalTranslateOutput, $gdalTranslateReturn);
+    if ($gdalTranslateReturn !== 0) {
+        echo json_encode(["error" => "gdal_translate (expand gray) に失敗しました", "output" => $gdalTranslateOutput]);
+        exit;
+    }
+
     exec("gdal_translate -co TILED=YES -co COMPRESS=DEFLATE " . escapeshellarg($grayFilePath) . " " . escapeshellarg($outputFilePath), $gdalCompressOutput, $gdalCompressReturn);
+    if ($gdalCompressReturn !== 0) {
+        echo json_encode(["error" => "gdal_translate (compress) に失敗しました", "output" => $gdalCompressOutput]);
+        exit;
+    }
+
     exec("gdaladdo --config COMPRESS_OVERVIEW DEFLATE -r average " . escapeshellarg($outputFilePath) . " 2 4 8 16", $gdalAddoOutput, $gdalAddoReturn);
+    if ($gdalAddoReturn !== 0) {
+        echo json_encode(["error" => "gdaladdo に失敗しました", "output" => $gdalAddoOutput]);
+        exit;
+    }
 } else {
+    // カラー画像の場合
     $fileExt = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
     $warpedFilePath = $tileDir . "warped.tif";
+
+    // _alpha.tif に変換
+    $alphaFilePath = preg_replace('/\.tif$/i', '_alpha.tif', $warpedFilePath);
+
     if (in_array($fileExt, ["tif", "tiff"])) {
-        $warpCommand = "gdalwarp -t_srs EPSG:3857 -co COMPRESS=DEFLATE -dstalpha " . escapeshellarg($filePath) . " " . escapeshellarg($warpedFilePath);
+        $warpCommand = "gdalwarp -t_srs EPSG:3857 -co COMPRESS=DEFLATE -dstalpha -srcnodata '255 255 255' " .
+            escapeshellarg($filePath) . " " . escapeshellarg($warpedFilePath);
         exec($warpCommand . " 2>&1", $warpOutput, $warpReturnVar);
         if ($warpReturnVar !== 0) {
             echo json_encode(["error" => "gdalwarp で透過処理に失敗しました", "output" => $warpOutput]);
             exit;
         }
+
+        $gdalInfoCmd = "gdalinfo -json " . escapeshellarg($warpedFilePath);
+        exec($gdalInfoCmd, $gdalInfoOutput, $gdalInfoReturn);
+        $gdalInfoJson = json_decode(implode("\n", $gdalInfoOutput), true);
+
+        $hasAlpha = false;
+        if (isset($gdalInfoJson["bands"])) {
+            foreach ($gdalInfoJson["bands"] as $band) {
+                if (isset($band["colorInterpretation"]) && $band["colorInterpretation"] === "Alpha") {
+                    $hasAlpha = true;
+                    break;
+                }
+            }
+        }
+
+       // _alpha.tif に変換
+        $alphaFilePath = preg_replace('/\.tif$/i', '_alpha.tif', $warpedFilePath);
+
+       // 近い白（250,250,250 以上）も透過する処理
+        $calcOutputFile = escapeshellarg($alphaFilePath);
+
+        if ($hasAlpha) {
+            // 4バンド (RGBA) の場合
+            $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
+                "--outfile=" . $calcOutputFile . " " .
+                "--calc=\"((A>255)*(B>255)*(C>255))*0 + ((A<=255)*(B<=255)*(C<=255))*D\" " .
+                "-A " . escapeshellarg($warpedFilePath) . " -B " . escapeshellarg($warpedFilePath) .
+                " -C " . escapeshellarg($warpedFilePath) . " -D " . escapeshellarg($warpedFilePath) . " --NoDataValue=0";
+        } else {
+            // 3バンド (RGB) の場合
+            $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
+                "--outfile=" . $calcOutputFile . " " .
+                "--calc=\"(A>255)*(B>255)*(C>255)*0 + (A<=255)*(B<=255)*(C<=255)*A\" " .
+                "-A " . escapeshellarg($warpedFilePath) . " --NoDataValue=0";
+        }
+
+        exec($calcCommand . " 2>&1", $calcOutput, $calcReturnVar);
+
+        if ($calcReturnVar !== 0) {
+            echo json_encode([
+                "error" => "gdal_calc.py で透過処理に失敗しました",
+                "output" => implode("\n", $calcOutput),
+                "command" => $calcCommand
+            ]);
+            exit;
+        }
+
+        $outputFilePath = $alphaFilePath;
     } else {
-        $warpedFilePath = $filePath;
+        // TIF 以外のファイルはそのまま使用
+        $outputFilePath = $filePath;
     }
-    $outputFilePath = $warpedFilePath;
+
 }
-
-$outputFilePath = file_exists("$filePath.output.tif") ? "$filePath.output.tif" : "$filePath";
-
-
-//$command = "gdal2tiles.py -z 0-$max_zoom --s_srs EPSG:$sourceEPSG --xyz --processes=4 " . escapeshellarg($outputFilePath) . " $escapedTileDir";
-//
-//echo json_encode([
-//    "コマンド" => $command,
-//], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-//exit;
-
-
-
-
 
 $tileCommand = "gdal2tiles.py -z 0-$max_zoom --s_srs EPSG:$sourceEPSG --xyz --processes=4 " . escapeshellarg($outputFilePath) . " $escapedTileDir";
 exec($tileCommand . " 2>&1", $tileOutput, $tileReturnVar);
@@ -188,8 +232,8 @@ function deleteSourceAndTempFiles($filePath)
         }
 
         $fullPath = $dir . DIRECTORY_SEPARATOR . $file;
-        // `fileBaseName` に関連するファイル（temp_gray.tif, output.tif など）を削除 warped.tifも削除
-        if (strpos($file, $fileBaseName) === 0 || $file === 'warped.tif') {
+        // `fileBaseName` に関連するファイル（temp_gray.tif, output.tif など）を削除、さらに warped.tif と cropped_ で始まるファイルも削除
+        if (strpos($file, $fileBaseName) === 0 || $file === 'warped.tif' || strpos($file, 'cropped_') === 0) {
             unlink($fullPath);
         }
     }

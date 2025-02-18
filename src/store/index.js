@@ -115,6 +115,7 @@ export default createStore({
     resolution: 19,
     loading: false,
     loading2: false,
+    loadingMessage: '',
     isWindow: true,
     isWindow2: true,
     isSmartPhone: false,

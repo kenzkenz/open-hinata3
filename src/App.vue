@@ -10,7 +10,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   :timeout="-1"
                   color="primary">
         <p v-if="s_loading">処理中です。</p>
-        <p v-if="s_loading2">地図タイル作成中です。</p>
+        <p v-if="s_loading2">{{s_loadingMessage}}</p>
       </v-snackbar>
 
       <v-snackbar
@@ -803,6 +803,14 @@ export default {
     loadingSnackbar: false,
   }),
   computed: {
+    s_loadingMessage: {
+      get() {
+        return this.$store.state.loadingMessage
+      },
+      set(value) {
+        this.$store.state.loadingMessage = value
+      }
+    },
     s_isSmartPhone: {
       get() {
         return this.$store.state.isSmartPhone

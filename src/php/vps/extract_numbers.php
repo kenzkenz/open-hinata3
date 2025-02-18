@@ -27,7 +27,7 @@ $worldFile = $dirPath . "/" . pathinfo($filePath, PATHINFO_FILENAME) . ".tfw";
 
 // **PDFをPNGに変換**
 $outputBase = $dirPath . "/" . pathinfo($filePath, PATHINFO_FILENAME);
-exec("pdftoppm -png -r 300 " . escapeshellarg($filePath) . " " . escapeshellarg($outputBase));
+exec("pdftoppm -png -r 600 " . escapeshellarg($filePath) . " " . escapeshellarg($outputBase));
 
 // **変換後のファイル名 (`-1.png` を削除)**
 $expectedOutputPng = $outputBase . "-1.png";
@@ -46,9 +46,6 @@ if (file_exists($expectedOutputPng)) {
     echo json_encode(["error" => "pdftoppm による画像変換に失敗しました", "expected_output" => $expectedOutputPng], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     exit;
 }
-
-
-
 
 // **画像の読み込み**
 $img = new Imagick($finalOutputPng);
@@ -105,19 +102,18 @@ $leftVerticalImg->destroy();
 $img->destroy();
 
 // **手動で設定するクロップ範囲 (ピクセル)**
-$cropX = 270;   // 左から100ピクセル
-$cropY = 445;   // 上から200ピクセル
-$cropWidth =    2900;  // 幅 500 ピクセル
-$cropHeight =   2950; // 高さ 300 ピクセル
+$cropX = 560;   // 左から100ピクセル
+$cropY = 890;   // 上から200ピクセル
+$cropWidth =    5900;  // 幅 500 ピクセル
+$cropHeight =   5950; // 高さ 300 ピクセル
 
 // **PDFをTIFFに変換**
 //exec("pdftoppm -tiff -r 300 " . "-x {$cropX} -y {$cropY} -W {$cropWidth} -H {$cropHeight} " . escapeshellarg($filePath) . " " . escapeshellarg($outputBase));
-exec("pdftoppm -tiff -r 300 " . "-x {$cropX} -y {$cropY} -W {$cropWidth} -H {$cropHeight} " . escapeshellarg($filePath) . " " . escapeshellarg($outputBase));
+exec("pdftoppm -tiff -r 600 " . "-x {$cropX} -y {$cropY} -W {$cropWidth} -H {$cropHeight} " . escapeshellarg($filePath) . " " . escapeshellarg($outputBase));
 // **変換後のファイル名 (`-1.png` を削除)**
 $expectedOutputTif = $outputBase . "-1.tif";
 $finalOutputTif = $outputBase . ".tif";
 rename($expectedOutputTif, $finalOutputTif);
-
 
 // **OCR処理関数**
 function extract_numbers($filePath)
@@ -126,18 +122,6 @@ function extract_numbers($filePath)
     preg_match('/-?\d+\.\d+/', $ocrResult, $matches);
     return $matches[0] ?? "認識失敗";
 }
-
-
-
-
-
-
-
-//$pdftoppmCommand = "pdftoppm -tiff -r 300 " . "-x {$cropX} -y {$cropY} -W {$cropWidth} -H {$cropHeight} " . escapeshellarg($filePath) . " " . escapeshellarg($dirPath . "/cropped_output");
-
-
-
-
 
 // **OCRの実行**
 $rightHorizontalNumber = extract_numbers($croppedRightHorizontalPng);
@@ -164,7 +148,6 @@ $pixelSizeX = ($rightHorizontalNumber - $leftHorizontalNumber) / $width;
 $pixelSizeY = ($leftVerticalNumber - $rightVerticalNumber) / $height;
 
 // ワールドファイルの作成
-//$worldFile = $dirPath . "/cropped_output.tfw";
 $pgwContent = sprintf("%f\n0.000000\n0.000000\n%f\n%f\n%f\n",
     $pixelSizeX,   // X方向のピクセル解像度
     $pixelSizeY,  // Y方向のピクセル解像度（負の値）
@@ -172,8 +155,6 @@ $pgwContent = sprintf("%f\n0.000000\n0.000000\n%f\n%f\n%f\n",
     $rightVerticalNumber   // 左上Y座標
 );
 $result = file_put_contents($worldFile, $pgwContent);
-
-
 
 // **ワールドファイルを生成**
 //$pixelSizeX = ($rightHorizontalNumber - $leftHorizontalNumber) / $width;

@@ -3749,6 +3749,7 @@ export async function tileGenerateForUserPdf () {
     // -------------------------------------------------------------------------------------------------
     async function extractNumbers(filePath, dir) {
         store.state.loading2 = true
+        store.state.loadingMessage = 'OCR処理中です。'
         let response = await fetch("https://kenzkenz.duckdns.org/myphp/extract_numbers.php", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
@@ -3771,6 +3772,7 @@ export async function tileGenerateForUserPdf () {
 
     async function generateTiles(filePath, srsCode = "2450", dir) {
         store.state.loading2 = true
+        store.state.loadingMessage = '地図タイル作成中です。'
         let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles2.php", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
@@ -3886,6 +3888,7 @@ export async function tileGenerateForUserPng () {
     // -------------------------------------------------------------------------------------------------
     async function generateTiles(filePath, srsCode = "2450", dir) {
         store.state.loading2 = true
+        store.state.loadingMessage = '地図タイル作成中です。'
         let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
@@ -3997,6 +4000,7 @@ export async function tileGenerateForUserJpg () {
     // -------------------------------------------------------------------------------------------------
     async function generateTiles(filePath, srsCode = "2450", dir) {
         store.state.loading2 = true
+        store.state.loadingMessage = '地図タイル作成中です。'
         let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
@@ -4107,6 +4111,7 @@ export async function tileGenerateForUser1file () {
     // -------------------------------------------------------------------------------------------------
     async function generateTiles(filePath, srsCode = "2450", dir) {
         store.state.loading2 = true
+        store.state.loadingMessage = '地図タイル作成中です。'
         let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
