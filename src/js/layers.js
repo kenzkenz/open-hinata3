@@ -108,7 +108,8 @@ export const vpsTileSource = {
         type: 'raster',
         tiles: [],
         bounds: null,
-        maxzoom: 26
+        maxzoom: 26,
+        // scheme: 'tms',
     }
 }
 export const vpsTileLayer= {

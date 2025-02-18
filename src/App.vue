@@ -90,6 +90,46 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         </v-card>
       </v-dialog>
 
+      <v-dialog v-model="dialogForPdfApp" max-width="500px">
+        <v-card>
+          <v-card-title>
+            座標系選択
+          </v-card-title>
+          <v-card-text>
+            <div v-if="s_isAndroid" class="select-container">
+              <select id="selectBox" v-model="s_zahyokei" class="custom-select">
+                <option value="" disabled selected>座標を選択してください。</option>
+                <option v-for="number in 19" :key="number" :value="`公共座標${number}系`">
+                  公共座標{{ number }}系
+                </option>
+              </select>
+            </div>
+            <div v-else>
+              <v-select class="scrollable-content"
+                        v-model="s_zahyokei"
+                        :items="items"
+                        label="選択してください"
+                        outlined
+              ></v-select>
+              <v-select class="scrollable-content"
+                        v-model="s_resolution"
+                        :items="resolutions"
+                        label="画像取込最大解像度"
+                        outlined
+                        v-if="user1"
+              ></v-select>
+            </div>
+            <v-btn @click="pdfLoad">PDF読込開始</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="dialogForPdfApp = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+
+
       <v-dialog v-model="dialogForGeotiffApp1file" max-width="500px">
         <v-card>
           <v-card-title>
@@ -105,12 +145,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               </select>
             </div>
             <div v-else>
-<!--              <v-select class="scrollable-content"-->
-<!--                        v-model="s_zahyokei"-->
-<!--                        :items="items"-->
-<!--                        label="選択してください"-->
-<!--                        outlined-->
-<!--              ></v-select>-->
               <v-select class="scrollable-content"
                         v-model="s_resolution"
                         :items="resolutions"
@@ -419,7 +453,7 @@ import {
   pngLoad,
   pngLoadForUser,
   tileGenerateForUser,
-  tileGenerateForUser1file, tileGenerateForUserJpg, tileGenerateForUserPng,
+  tileGenerateForUser1file, tileGenerateForUserJpg, tileGenerateForUserPdf, tileGenerateForUserPng,
   tileGenerateForUserTfw,
   transformGeoJSONToEPSG4326,
   zahyokei
@@ -765,6 +799,7 @@ export default {
     windowWidth: window.innerWidth,
     resolutions: [13,14,15,16,17,18,19,20,21,22,23,24,25,26],
     dialogForGeotiffApp1file: false,
+    dialogForPdfApp: false,
     loadingSnackbar: false,
   }),
   computed: {
@@ -977,6 +1012,14 @@ export default {
       geojsonAddLayer (map01, geojson, true, 'dxf')
       geojsonAddLayer (map02, geojson, true, 'dxf')
       this.dialogForDxfApp = false
+    },
+    pdfLoad () {
+      if (this.$store.state.userId) {
+        tileGenerateForUserPdf()
+        this.dialogForPdfApp = false
+      } else {
+        alert('ログイン専用です。')
+      }
     },
     pngLoad0 () {
       const map01 = this.$store.state.map01
@@ -2294,6 +2337,11 @@ export default {
           //   previousBounds = currentBounds;
           // });
 
+          // スマートフォンのとき
+          if (this.s_isSmartPhone) {
+            map.dragRotate.disable()
+            map.touchZoomRotate.disableRotation()
+          }
 
           map.on('move', async () => {
             const center = map.getCenter(); // マップの中心座標を取得
@@ -2526,6 +2574,12 @@ export default {
                   } else if (files.length === 1){
                     alert('ワールドファイルが必要です。')
                   }
+                  break
+                }
+                case 'pdf':
+                {
+                  this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
+                  this.dialogForPdfApp = true
                   break
                 }
 

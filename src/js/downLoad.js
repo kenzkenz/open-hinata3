@@ -3745,6 +3745,143 @@ export function addTileLayer (map) {
     }
 }
 
+export async function tileGenerateForUserPdf () {
+    // -------------------------------------------------------------------------------------------------
+    async function extractNumbers(filePath, dir) {
+        store.state.loading2 = true
+        let response = await fetch("https://kenzkenz.duckdns.org/myphp/extract_numbers.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                file: filePath,
+                dir: dir,
+            })
+        });
+        let result = await response.json();
+        if (result.success) {
+            // alert("ワールドファイル生成完了！");
+            generateTiles(dataFile.replace(/\.pdf$/, '.tif'), srsCode, store.state.userId);
+            // store.state.loading2 = false
+        } else {
+            console.log(result)
+            store.state.loading2 = false
+            alert("ワールドファイル生成に失敗しました！" + result.error);
+        }
+    }
+
+    async function generateTiles(filePath, srsCode = "2450", dir) {
+        store.state.loading2 = true
+        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles2.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                file: filePath,
+                srs: srsCode,
+                dir: dir,
+                fileName: fileName,
+                resolution: store.state.resolution
+            })
+        });
+        let result = await response.json();
+        if (result.success) {
+            console.log(result.tiles_url, result.bbox)
+            addTileLayer(result.tiles_url, result.bbox)
+            // alert("タイル生成完了！");
+            store.state.loading2 = false
+        } else {
+            console.log(result)
+            store.state.loading2 = false
+            alert("タイル生成に失敗しました！" + result.error);
+        }
+    }
+
+    function addTileLayer(tileURL, bbox) {
+        vpsTileSource.obj.tiles = [tileURL]
+        vpsTileSource.obj.bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
+
+        const map01 = store.state.map01
+        if (map01.getLayer('oh-vpstile-layer')) {
+            map01.removeLayer('oh-vpstile-layer');
+        }
+        if (map01.getSource('vpstile-source')) {
+            map01.removeSource('vpstile-source');
+        }
+
+        const mapNames = ['map01', 'map02']
+        mapNames.forEach(mapName => {
+            store.state.selectedLayers[mapName].unshift(
+                {
+                    id: 'oh-vpstile-layer',
+                    label: fileName,
+                    source: vpsTileSource,
+                    layers: [vpsTileLayer],
+                    opacity: 1,
+                    visibility: true,
+                }
+            );
+        })
+
+        if (bbox) {
+            map01.fitBounds([
+                [bbox[0], bbox[1]], // minX, minY
+                [bbox[2], bbox[3]]  // maxX, maxY
+            ], {padding: 20});
+        }
+
+        store.state.uploadedImage = JSON.stringify({
+            tile: tileURL,
+            bbox: bbox,
+            fileName: fileName,
+            uid: store.state.userId,
+        })
+        store.state.fetchImagesFire = !store.state.fetchImagesFire
+    }
+    // -------------------------------------------------------------------------------------------------
+    store.state.loading = true
+    const srsCode = zahyokei.find(item => item.kei === store.state.zahyokei).code
+    const files = store.state.tiffAndWorldFile
+    let pdfFile = null
+    for (const file of files) {
+        const fileName = file.name.toLowerCase();
+        if (fileName.endsWith(".pdf")) pdfFile = file;
+    }
+    if (!pdfFile) {
+        alert(" PDFをアップロードしてください！");
+        return;
+    }
+    let fileName = pdfFile.name;
+    let dataFile
+    fileName = fileName.slice(0, fileName.lastIndexOf('.'))
+    const formData = new FormData();
+    formData.append("file", pdfFile);
+    formData.append("dir", store.state.userId); // 指定したフォルダにアップロード
+    fetch("https://kenzkenz.duckdns.org/myphp/upload.php", {
+        method: "POST",
+        body: formData
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log("アップロード成功:", data);
+                // alert("アップロード成功!")
+                store.state.loading = false
+                dataFile = data.file
+                // alert(data.file)
+                extractNumbers(data.file, store.state.userId)
+
+
+                // generateTiles(data.file, srsCode, store.state.userId);
+            } else {
+                console.error("アップロード失敗:", data);
+                store.state.loading = false
+                alert("アップロードエラー: " + data.error);
+            }
+        })
+        .catch(error => console.error("エラー:", error));
+    // -------------------------------------------------------------------------------------------------
+}
+
+
 export async function tileGenerateForUserPng () {
     // -------------------------------------------------------------------------------------------------
     async function generateTiles(filePath, srsCode = "2450", dir) {
