@@ -133,70 +133,110 @@ if ($isGray) {
 
 }
 
-$fileExt = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-$alphaFilePath = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_alpha.tif';
-$finalAlphaTiff = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_final_alpha.tif';
+//$fileExt = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+//$alphaFilePath = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_alpha.tif';
+//$finalAlphaTiff = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_final_alpha.tif';
+//
+//if (in_array($fileExt, ["tif", "tiff"])) {
+//    // 1. TIFF を `Byte` 型に統一しつつ、色を変更せずに処理
+//    $translateCommand = "gdal_translate -ot Byte -co COMPRESS=DEFLATE -co PHOTOMETRIC=RGB " .
+//        escapeshellarg($filePath) . " " . escapeshellarg($alphaFilePath);
+//
+//    exec($translateCommand . " 2>&1", $translateOutput, $translateReturnVar);
+//
+//    if ($translateReturnVar !== 0) {
+//        echo json_encode([
+//            "error" => "gdal_translate で TIFF 変換に失敗しました",
+//            "output" => implode("\n", $translateOutput),
+//            "command" => $translateCommand
+//        ]);
+//        exit;
+//    }
+//
+//    // 2. gdal_calc.py で白を透明にする（色は変更せずに適用）
+//    $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
+//        "--outfile=" . escapeshellarg($alphaFilePath) . " " .
+//        "--calc=\"numpy.where((A>=250) & (B>=250) & (C>=250), 0, 255)\" " . // 色は変更せずに白だけ透明化
+//        "-A " . escapeshellarg($filePath) . " --A_band=1 " .
+//        "-B " . escapeshellarg($filePath) . " --B_band=2 " .
+//        "-C " . escapeshellarg($filePath) . " --B_band=3 " .
+//        "--NoDataValue=None";
+//
+//    exec($calcCommand . " 2>&1", $calcOutput, $calcReturnVar);
+//
+//    if ($calcReturnVar !== 0) {
+//        echo json_encode([
+//            "error" => "gdal_calc.py で透過処理に失敗しました",
+//            "output" => implode("\n", $calcOutput),
+//            "command" => $calcCommand
+//        ]);
+//        exit;
+//    }
+//
+//    // 3. gdalwarp で確実にアルファチャンネルを適用し、色を保持
+//    $warpCommand = "gdalwarp -srcalpha -dstalpha " . escapeshellarg($alphaFilePath) . " " . escapeshellarg($finalAlphaTiff);
+//    exec($warpCommand . " 2>&1", $warpOutput, $warpReturnVar);
+//
+//    if ($warpReturnVar !== 0) {
+//        echo json_encode([
+//            "error" => "gdalwarp で透過処理に失敗しました",
+//            "output" => implode("\n", $warpOutput),
+//            "command" => $warpCommand
+//        ]);
+//        exit;
+//    }
+//
+//    $outputFilePath = $finalAlphaTiff;
+//} else {
+//    $outputFilePath = $filePath;
+//}
+//
 
-if (in_array($fileExt, ["tif", "tiff"])) {
-    // 1. TIFF を `Byte` 型に統一しつつ、色を変更せずに処理
-    $translateCommand = "gdal_translate -ot Byte -co COMPRESS=DEFLATE -co PHOTOMETRIC=RGB " .
-        escapeshellarg($filePath) . " " . escapeshellarg($alphaFilePath);
 
-    exec($translateCommand . " 2>&1", $translateOutput, $translateReturnVar);
+//$inputFile = $filePath;
+//$outputFile = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_final.png';
+//$command = "convert " . escapeshellarg($inputFile) . " -transparent white " . escapeshellarg($outputFile);
+//exec($command, $output, $returnVar);
+//if ($returnVar !== 0) {
+//    echo "Error: " . implode("\n", $output);
+//} else {
+//    echo "Successfully converted to transparent PNG: " . $outputFile;
+//}
 
-    if ($translateReturnVar !== 0) {
-        echo json_encode([
-            "error" => "gdal_translate で TIFF 変換に失敗しました",
-            "output" => implode("\n", $translateOutput),
-            "command" => $translateCommand
-        ]);
-        exit;
-    }
 
-    // 2. gdal_calc.py で白を透明にする（色は変更せずに適用）
-    $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
-        "--outfile=" . escapeshellarg($alphaFilePath) . " " .
-        "--calc=\"numpy.where((A>=250) & (B>=250) & (C>=250), 0, 255)\" " . // 色は変更せずに白だけ透明化
-        "-A " . escapeshellarg($filePath) . " --A_band=1 " .
-        "-B " . escapeshellarg($filePath) . " --B_band=2 " .
-        "-C " . escapeshellarg($filePath) . " --B_band=3 " .
-        "--NoDataValue=None";
+$outputFile = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_final.png';
 
-    exec($calcCommand . " 2>&1", $calcOutput, $calcReturnVar);
+$convertCmd = "convert " . $filePath . " -transparent white " . $outputFile;
 
-    if ($calcReturnVar !== 0) {
-        echo json_encode([
-            "error" => "gdal_calc.py で透過処理に失敗しました",
-            "output" => implode("\n", $calcOutput),
-            "command" => $calcCommand
-        ]);
-        exit;
-    }
-
-    // 3. gdalwarp で確実にアルファチャンネルを適用し、色を保持
-    $warpCommand = "gdalwarp -srcalpha -dstalpha " . escapeshellarg($alphaFilePath) . " " . escapeshellarg($finalAlphaTiff);
-    exec($warpCommand . " 2>&1", $warpOutput, $warpReturnVar);
-
-    if ($warpReturnVar !== 0) {
-        echo json_encode([
-            "error" => "gdalwarp で透過処理に失敗しました",
-            "output" => implode("\n", $warpOutput),
-            "command" => $warpCommand
-        ]);
-        exit;
-    }
-
-    $outputFilePath = $finalAlphaTiff;
-} else {
-    $outputFilePath = $filePath;
+exec($convertCmd . " 2>&1", $convertOutput, $convertReturnVar);
+if ($convertReturnVar !== 0) {
+    echo json_encode([
+        "error" => "ImageMagick で失敗しました",
+        "command" => $convertCmd
+    ]);
+    exit;
 }
 
+$tempTIF = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_rgba.tif';
+
+// gdal_translate を使って RGBA TIFF を作成
+$gdalTranslateCmd = "gdal_translate -of GTiff -expand rgba " . escapeshellarg($outputFile) . " " . escapeshellarg($tempTIF);
+exec($gdalTranslateCmd . " 2>&1", $translateOutput, $translateReturnVar);
+
+if ($translateReturnVar !== 0) {
+    echo json_encode([
+        "error" => "gdal_translate で失敗しました",
+        "command" => $gdalTranslateCmd
+    ]);
+    exit;
+}
+
+// gdal2tiles の実行（temp.tif を入力ファイルとして使用）
+$tileCommand = "gdal2tiles.py -z 0-$max_zoom --s_srs EPSG:$sourceEPSG --xyz --processes=4 " . escapeshellarg($tempTIF) . " $escapedTileDir";
+exec($tileCommand . " 2>&1", $tileOutput, $tileReturnVar);
 
 
 
-
-//$outputFilePath = $filePath;
-$tileCommand = "gdal2tiles.py -z 0-$max_zoom --s_srs EPSG:$sourceEPSG --xyz --processes=4 " . escapeshellarg($outputFilePath) . " $escapedTileDir";
 
 //    echo json_encode([
 //        "error" => "ImageMagick で赤色変換に失敗しました",

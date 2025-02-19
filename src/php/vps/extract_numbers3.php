@@ -25,6 +25,7 @@ $dirPath = dirname($filePath);
 // **ワールドファイルの出力パス**
 $worldFile = $dirPath . "/" . pathinfo($filePath, PATHINFO_FILENAME) . ".tfw";
 $worldFile2 = $dirPath . "/" . pathinfo($filePath, PATHINFO_FILENAME) . "_red.tfw";
+$worldFile3 = $dirPath . "/" . pathinfo($filePath, PATHINFO_FILENAME) . "_red_rgba.tfw";
 
 // **PDFをPNGに変換**
 $outputBase = $dirPath . "/" . pathinfo($filePath, PATHINFO_FILENAME);
@@ -262,7 +263,14 @@ $pgwContent = sprintf("%f\n0.000000\n0.000000\n%f\n%f\n%f\n",
 );
 $result = file_put_contents($worldFile2, $pgwContent);
 
-
+// ワールドファイルの作成
+$pgwContent = sprintf("%f\n0.000000\n0.000000\n%f\n%f\n%f\n",
+    $pixelSizeX,   // X方向のピクセル解像度
+    $pixelSizeY,  // Y方向のピクセル解像度（負の値）
+    $leftHorizontalNumber,  // 左上X座標
+    $rightVerticalNumber   // 左上Y座標
+);
+$result = file_put_contents($worldFile3, $pgwContent);
 
 if ($result === false) {
     echo json_encode(["error" => "ワールドファイルの書き込みに失敗しました: {$worldFile}"], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
