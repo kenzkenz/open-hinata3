@@ -244,21 +244,6 @@ function urlByLayerId (layerId) {
 }
 export function popup(e,map,mapName,mapFlg) {
 
-    // if (map.getLayer('oh-amx-a-fude') || map.getLayer('oh-chibanzu2024')
-    //     || map.getLayer('oh-kunitachishi') || map.getLayer('oh-kitahiroshimachiban') || map.getLayer('oh-fukuokashichiban')
-    //     || map.getLayer('oh-fukushimachiban') || map.getLayer('oh-narashichiban') || map.getLayer('oh-iwatapolygon')
-    //     || map.getLayer('oh-chibanzu-室蘭市')|| map.getLayer('oh-chibanzu-ニセコ町')|| map.getLayer('oh-chibanzu-音更町')
-    //     || map.getLayer('oh-chibanzu-鹿角市')|| map.getLayer('oh-chibanzu-利根町')|| map.getLayer('oh-chibanzu-町田市')
-    //     || map.getLayer('oh-chibanzu-静岡市')|| map.getLayer('oh-chibanzu-磐田市')|| map.getLayer('oh-chibanzu-半田市')
-    //     || map.getLayer('oh-chibanzu-京都市')|| map.getLayer('oh-chibanzu-長岡京市')|| map.getLayer('oh-chibanzu-岸和田市')
-    //     || map.getLayer('oh-chibanzu-泉南市')|| map.getLayer('oh-chibanzu-西宮市')|| map.getLayer('oh-chibanzu-加古川市')
-    //     || map.getLayer('oh-chibanzu-佐用町')|| map.getLayer('oh-chibanzu-奈良市')|| map.getLayer('oh-chibanzu-坂出市')
-    //     || map.getLayer('oh-chibanzu-善通寺市')|| map.getLayer('oh-chibanzu-長与町')|| map.getLayer('oh-chibanzu-福島市')
-    //     || map.getLayer('oh-chibanzu-北広島市')|| map.getLayer('oh-chibanzu-国立市')|| map.getLayer('oh-chibanzu-福岡市')
-    //     || map.getLayer('oh-chibanzu-越谷市')|| map.getLayer('oh-chibanzu-福山市')) {
-    //     if (store.state.isRenzoku) return
-    // }
-
     let html = ''
     let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
     console.log(features[0])
@@ -2979,6 +2964,85 @@ export function popup(e,map,mapName,mapFlg) {
                     //     '<br>境界点数:' + PolygonMetrics.vertexCount + '</span>'
                     html0 += '<div>'
                     html += html0
+                }
+                break
+            }
+            case 'oh-amx-vertex': {
+                if (store.state.isRenzoku) return
+                const features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: ['oh-amx-a-fude']}
+                )
+                console.log(features[0].geometry.coordinates)
+                console.log([coordinates.lng,coordinates.lat])
+
+
+                function getNearestCoordinate(targetCoord, featureCoords) {
+                    if (!Array.isArray(featureCoords) || featureCoords.length === 0) {
+                        console.error("Invalid featureCoords:", featureCoords);
+                        return null;
+                    }
+
+                    // ネストされた配列を展開（Polygon に対応）
+                    let flatCoords = featureCoords.flat(1).filter(coord =>
+                        Array.isArray(coord) && coord.length >= 2 &&
+                        typeof coord[0] === "number" && typeof coord[1] === "number"
+                    );
+
+                    if (flatCoords.length === 0) {
+                        console.error("No valid coordinates found in featureCoords.");
+                        return null;
+                    }
+
+                    let minDistance = Infinity;
+                    let nearestCoord = null;
+
+                    flatCoords.forEach(coord => {
+                        let distance = getDistance(targetCoord, coord);
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            nearestCoord = coord;
+                        }
+                    });
+
+                    return nearestCoord;
+                }
+
+                // Haversine 公式を使用した距離計算
+                function getDistance(coord1, coord2) {
+                    const toRad = (deg) => (deg * Math.PI) / 180;
+                    const R = 6371e3; // 地球の半径（メートル）
+
+                    const lat1 = toRad(coord1[1]);
+                    const lat2 = toRad(coord2[1]);
+                    const deltaLat = toRad(coord2[1] - coord1[1]);
+                    const deltaLon = toRad(coord2[0] - coord1[0]);
+
+                    const a =
+                        Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+                        Math.cos(lat1) * Math.cos(lat2) *
+                        Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+                    return R * c; // メートル単位
+                }
+
+                const featureCoords = features[0].geometry.coordinates
+                const targetCoord = [coordinates.lng,coordinates.lat]
+
+                const nearest = getNearestCoordinate(targetCoord, featureCoords);
+                console.log("Nearest Coordinate:", nearest);
+
+                if (features.length === 0) return
+                props = features[0].properties
+                if (html.indexOf('amx-a-fude') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="amx-a-fude" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:16px;">座標はおおよそです。</span><hr>' +
+                        '<span style="font-size:18px;">座標＝' + nearest[0].toFixed(5)  + ', ' + nearest[1].toFixed(5)  + '</span><hr>' +
+                        '<span style="font-size:18px;">' + store.state.zahyokei  + '</span><br>' +
+                        '<span style="font-size:18px;">座標＝' + wsg84ToJgd(nearest)[0].toFixed(3)  + ', ' + wsg84ToJgd(nearest)[1].toFixed(3)  + '</span><br>' +
+                        '</div>'
                 }
                 break
             }
