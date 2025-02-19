@@ -119,6 +119,7 @@ export default createStore({
     isWindow: true,
     isWindow2: true,
     isSmartPhone: false,
+    isTransparent: true,
     //------------------------
     highwayYear:{
       map01: 2024,

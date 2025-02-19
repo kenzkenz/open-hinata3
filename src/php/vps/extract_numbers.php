@@ -102,9 +102,9 @@ $leftVerticalImg->destroy();
 $img->destroy();
 
 // **手動で設定するクロップ範囲 (ピクセル)**
-$cropX = 560;   // 左から100ピクセル
-$cropY = 890;   // 上から200ピクセル
-$cropWidth =    5900;  // 幅 500 ピクセル
+$cropX = 555;   // 左から100ピクセル
+$cropY = 895;   // 上から200ピクセル
+$cropWidth =    5905;  // 幅 500 ピクセル
 $cropHeight =   5950; // 高さ 300 ピクセル
 
 // **PDFをTIFFに変換**

@@ -153,22 +153,23 @@ if ($isGray) {
 
         // 近い白（255 だけ）を透過する処理
         $calcOutputFile = escapeshellarg($alphaFilePath);
+        if ($data["transparent"] === true) {
+            $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
+                "--outfile=" . $calcOutputFile . " " .
+                "--calc=\"(A==255)*(B==255)*(C==255)*0 + (A<255)*(B<255)*(C<255)*A\" " .
+                "-A " . escapeshellarg($rgbFilePath) . " --A_band=1 " .
+                "-B " . escapeshellarg($rgbFilePath) . " --B_band=2 " .
+                "-C " . escapeshellarg($rgbFilePath) . " --C_band=3 " .
+                "--NoDataValue=0";
+        } else {
+            $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
+                "--outfile=" . $calcOutputFile . " " .
+                "--calc=\"A\" " .
+                "-A " . escapeshellarg($rgbFilePath) . " --A_band=1 " .
+                "--NoDataValue=None";
+        }
 
-//        $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
-//            "--outfile=" . $calcOutputFile . " " .
-//            "--calc=\"(A==255)*(B==255)*(C==255)*0 + (A<255)*(B<255)*(C<255)*255\" " .
-//            "-A " . escapeshellarg($rgbFilePath) . " --A_band=1 " .
-//            "-B " . escapeshellarg($rgbFilePath) . " --B_band=2 " .
-//            "-C " . escapeshellarg($rgbFilePath) . " --C_band=3 " .
-//            "--NoDataValue=0";
 
-        $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
-            "--outfile=" . $calcOutputFile . " " .
-            "--calc=\"(A==255)*(B==255)*(C==255)*0 + (A<255)*(B<255)*(C<255)*A\" " .
-            "-A " . escapeshellarg($rgbFilePath) . " --A_band=1 " .
-            "-B " . escapeshellarg($rgbFilePath) . " --B_band=2 " .
-            "-C " . escapeshellarg($rgbFilePath) . " --C_band=3 " .
-            "--NoDataValue=0";
 
 
 

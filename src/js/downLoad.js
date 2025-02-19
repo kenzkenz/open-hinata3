@@ -3781,7 +3781,8 @@ export async function tileGenerateForUserPdf () {
                 srs: srsCode,
                 dir: dir,
                 fileName: fileName,
-                resolution: store.state.resolution
+                resolution: store.state.resolution,
+                transparent: store.state.isTransparent,
             })
         });
         let result = await response.json();

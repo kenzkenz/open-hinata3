@@ -118,6 +118,11 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                         outlined
                         v-if="user1"
               ></v-select>
+
+              <v-switch style="height: 40px;margin-bottom: 20px;" v-model="s_isTransparent" label="透過処理" color="primary" />
+
+
+
             </div>
             <v-btn @click="pdfLoad">PDF読込開始</v-btn>
           </v-card-text>
@@ -803,6 +808,14 @@ export default {
     loadingSnackbar: false,
   }),
   computed: {
+    s_isTransparent: {
+      get() {
+        return this.$store.state.isTransparent
+      },
+      set(value) {
+        this.$store.state.isTransparent = value
+      }
+    },
     s_loadingMessage: {
       get() {
         return this.$store.state.loadingMessage
