@@ -1,8 +1,14 @@
 <?php
 
+
+
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
+
+putenv('GDAL_DATA=/usr/share/gdal');
+ini_set('memory_limit', '-1');
+set_time_limit(0);
 
 $BASE_URL = "https://kenzkenz.duckdns.org/tiles/";
 $max_area_km2 = 1.0;
@@ -98,106 +104,67 @@ $tileURL = $BASE_URL . $subDir . "/" . $fileBaseName . "/{z}/{x}/{y}.png";
 
 $escapedTileDir = escapeshellarg($tileDir);
 
-
-function isGrayscale($filePath)
-{
-    exec("gdalinfo -json " . escapeshellarg($filePath), $infoOutput, $infoReturnVar);
-    $infoJson = json_decode(implode("\n", $infoOutput), true);
-    return isset($infoJson["bands"]) && count($infoJson["bands"]) === 1;
-}
-
-$isGray = isGrayscale($filePath);
-$grayFilePath = "$filePath.temp_gray.tif";
 $outputFilePath = "$filePath.output.tif";
-if ($isGray) {
-    // グレースケール画像の場合
-    exec("gdal_translate -expand gray " . escapeshellarg($filePath) . " " . escapeshellarg($grayFilePath), $gdalTranslateOutput, $gdalTranslateReturn);
-    if ($gdalTranslateReturn !== 0) {
-        echo json_encode(["error" => "gdal_translate (expand gray) に失敗しました", "output" => $gdalTranslateOutput]);
-        exit;
-    }
 
-    exec("gdal_translate -co TILED=YES -co COMPRESS=DEFLATE " . escapeshellarg($grayFilePath) . " " . escapeshellarg($outputFilePath), $gdalCompressOutput, $gdalCompressReturn);
-    if ($gdalCompressReturn !== 0) {
-        echo json_encode(["error" => "gdal_translate (compress) に失敗しました", "output" => $gdalCompressOutput]);
-        exit;
-    }
-
-    exec("gdaladdo --config COMPRESS_OVERVIEW DEFLATE -r average " . escapeshellarg($outputFilePath) . " 2 4 8 16", $gdalAddoOutput, $gdalAddoReturn);
-    if ($gdalAddoReturn !== 0) {
-        echo json_encode(["error" => "gdaladdo に失敗しました", "output" => $gdalAddoOutput]);
-        exit;
-    }
-} else {
 // カラー画像の場合
-    $fileExt = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-    $rgbFilePath = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_rgb.tif';
-    $alphaFilePath = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_alpha.tif';
+$fileExt = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+$rgbFilePath = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_rgb.tif';
+$alphaFilePath = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_alpha.tif';
 
-    if (in_array($fileExt, ["tif", "tiff"])) {
+if (in_array($fileExt, ["tif", "tiff"])) {
 
-        // 1バンド (グレースケール) の場合、RGB に変換
-        $translateCommand = "gdal_translate -b 1 -b 1 -b 1 -co PHOTOMETRIC=RGB -co COMPRESS=DEFLATE " .
-            escapeshellarg($filePath) . " " . escapeshellarg($rgbFilePath);
+    // 1バンド (グレースケール) の場合、RGB に変換
+    $translateCommand = "gdal_translate -b 1 -b 1 -b 1 -co PHOTOMETRIC=RGB -co COMPRESS=DEFLATE " .
+        escapeshellarg($filePath) . " " . escapeshellarg($rgbFilePath);
 
-        exec($translateCommand . " 2>&1", $translateOutput, $translateReturnVar);
+    exec($translateCommand . " 2>&1", $translateOutput, $translateReturnVar);
 
-        if ($translateReturnVar !== 0) {
-            echo json_encode([
-                "error" => "gdal_translate で RGB 変換に失敗しました",
-                "output" => implode("\n", $translateOutput),
-                "command" => $translateCommand
-            ]);
-            exit;
-        }
-
-        // 近い白（255 だけ）を透過する処理
-        $calcOutputFile = escapeshellarg($alphaFilePath);
-        if ($data["transparent"] === true) {
-
-            $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
-                "--outfile=" . $calcOutputFile . " " .
-                "--calc=\"(A==255)*(B==255)*(C==255)*0 + (A<255)*(B<255)*(C<255)*(A*0.6)\" " .
-                "-A " . escapeshellarg($rgbFilePath) . " --A_band=1 " .
-                "-B " . escapeshellarg($rgbFilePath) . " --B_band=2 " .
-                "-C " . escapeshellarg($rgbFilePath) . " --C_band=3 " .
-                "--NoDataValue=0";
-
-//            $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
-//                "--outfile=" . $calcOutputFile . " " .
-//                "--calc=\"(A==255)*(B==255)*(C==255)*0 + (A<255)*(B<255)*(C<255)*A\" " .
-//                "-A " . escapeshellarg($rgbFilePath) . " --A_band=1 " .
-//                "-B " . escapeshellarg($rgbFilePath) . " --B_band=2 " .
-//                "-C " . escapeshellarg($rgbFilePath) . " --C_band=3 " .
-//                "--NoDataValue=0";
-        } else {
-            $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
-                "--outfile=" . $calcOutputFile . " " .
-                "--calc=\"A\" " .
-                "-A " . escapeshellarg($rgbFilePath) . " --A_band=1 " .
-                "--NoDataValue=None";
-        }
-        exec($calcCommand . " 2>&1", $calcOutput, $calcReturnVar);
-
-        if ($calcReturnVar !== 0) {
-            echo json_encode([
-                "error" => "gdal_calc.py で透過処理に失敗しました",
-                "output" => implode("\n", $calcOutput),
-                "command" => $calcCommand
-            ]);
-            exit;
-        }
-
-        $outputFilePath = $alphaFilePath;
-    } else {
-        // TIF 以外のファイルはそのまま使用
-        $outputFilePath = $filePath;
+    if ($translateReturnVar !== 0) {
+        echo json_encode([
+            "error" => "gdal_translate で RGB 変換に失敗しました",
+            "output" => implode("\n", $translateOutput),
+            "command" => $translateCommand
+        ]);
+        exit;
     }
 
+    // 近い白（255 だけ）を透過する処理
+    $calcOutputFile = escapeshellarg($alphaFilePath);
+    if ($data["transparent"] === true) {
 
+        $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
+            "--outfile=" . $calcOutputFile . " " .
+            "--calc=\"(A==255)*(B==255)*(C==255)*0 + (A<255)*(B<255)*(C<255)*(A*0.6)\" " .
+            "-A " . escapeshellarg($rgbFilePath) . " --A_band=1 " .
+            "-B " . escapeshellarg($rgbFilePath) . " --B_band=2 " .
+            "-C " . escapeshellarg($rgbFilePath) . " --C_band=3 " .
+            "--NoDataValue=0";
+
+    } else {
+        $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
+            "--outfile=" . $calcOutputFile . " " .
+            "--calc=\"A\" " .
+            "-A " . escapeshellarg($rgbFilePath) . " --A_band=1 " .
+            "--NoDataValue=None";
+    }
+    exec($calcCommand . " 2>&1", $calcOutput, $calcReturnVar);
+
+    if ($calcReturnVar !== 0) {
+        echo json_encode([
+            "error" => "gdal_calc.py で透過処理に失敗しました",
+            "output" => implode("\n", $calcOutput),
+            "command" => $calcCommand
+        ]);
+        exit;
+    }
+
+    $outputFilePath = $alphaFilePath;
+} else {
+    // TIF 以外のファイルはそのまま使用
+    $outputFilePath = $filePath;
 }
 
-$tileCommand = "gdal2tiles.py -z 0-$max_zoom --s_srs EPSG:$sourceEPSG --xyz --processes=4 " . escapeshellarg($outputFilePath) . " $escapedTileDir";
+$tileCommand = "gdal2tiles.py --resampling=lanczos -z 0-$max_zoom --s_srs EPSG:$sourceEPSG --xyz --processes=8 " . escapeshellarg($outputFilePath) . " $escapedTileDir";
 exec($tileCommand . " 2>&1", $tileOutput, $tileReturnVar);
 
 $layerJsonPath = $tileDir . "layer.json";
@@ -221,21 +188,6 @@ echo json_encode(["success" => true, "tiles_url" => $tileURL, "bbox" => $bbox432
  */
 function deleteSourceAndTempFiles($filePath)
 {
-//    $dir = dirname($filePath);
-//    $fileBaseName = pathinfo($filePath, PATHINFO_FILENAME);
-//
-//    foreach (scandir($dir) as $file) {
-//        if ($file === '.' || $file === '..' || strpos($file, 'thumbnail-') === 0) {
-//            continue;
-//        }
-//
-//        $fullPath = $dir . DIRECTORY_SEPARATOR . $file;
-//        // `fileBaseName` に関連するファイル（temp_gray.tif, output.tif など）を削除、さらに warped.tif と cropped_ で始まるファイルも削除
-//        if (strpos($file, $fileBaseName) === 0 || $file === 'warped.tif' || strpos($file, 'cropped_') === 0) {
-//            unlink($fullPath);
-//        }
-//    }
-//
     $dir = dirname($filePath);
     foreach (scandir($dir) as $file) {
         // カレントディレクトリ (`.`) と 親ディレクトリ (`..`) をスキップ

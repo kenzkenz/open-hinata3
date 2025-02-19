@@ -140,9 +140,13 @@ if ($data["transparent"] === true) {
 } else {
     $tempTIF = $filePath;
 }
+//$finalOutput = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_final.tif';
+//
+//$tileCommand = "gdalwarp -t_srs EPSG:3857 -r bilinear -of GTiff -co COMPRESS=JPEG -co TILED=YES " . $tempTIF . " " .  $finalOutput;
+
 
 // gdal2tiles の実行（temp.tif を入力ファイルとして使用）
-$tileCommand = "gdal2tiles.py -z 0-$max_zoom --s_srs EPSG:$sourceEPSG --xyz --processes=4 " . escapeshellarg($tempTIF) . " $escapedTileDir";
+$tileCommand = "gdal2tiles.py --resampling=lanczos -z 0-$max_zoom --s_srs EPSG:$sourceEPSG --xyz --processes=8 " . escapeshellarg($tempTIF) . " $escapedTileDir";
 exec($tileCommand . " 2>&1", $tileOutput, $tileReturnVar);
 //    echo json_encode([
 //        "error" => "ImageMagick で赤色変換に失敗しました",
