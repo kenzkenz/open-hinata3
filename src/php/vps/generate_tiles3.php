@@ -90,99 +90,60 @@ $max_zoom = $resolution;
 $subDir = isset($data["dir"]) ? preg_replace('/[^a-zA-Z0-9_-]/', '', $data["dir"]) : "default";
 $fileBaseName = pathinfo($filePath, PATHINFO_FILENAME);
 $tileDir = "/var/www/html/public_html/tiles/" . $subDir . "/" . $fileBaseName . "/";
-if (!is_dir($tileDir)) {
-    mkdir($tileDir, 0777, true);
-}
+//if (!is_dir($tileDir)) {
+//    mkdir($tileDir, 0777, true);
+//}
 
 $tileURL = $BASE_URL . $subDir . "/" . str_replace('_red', '', $fileBaseName) . "/{z}/{x}/{y}.png";
-
-//$escapedTileDir = escapeshellarg($tileDir);
 
 $tileDir = str_replace('_red', '', $tileDir);
 $escapedTileDir = escapeshellarg($tileDir);
 
+if ($data["transparent"] === true) {
+    $outputFile = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_final.png';
+    // 赤の強調: 赤チャンネルのコントラストを調整
+    $convertCmd = "convert " . escapeshellarg($filePath) . " -channel R -gamma 1.5 -transparent white " . escapeshellarg($outputFile);
+    exec($convertCmd . " 2>&1", $convertOutput, $convertReturnVar);
 
-function isGrayscale($filePath)
-{
-    exec("gdalinfo -json " . escapeshellarg($filePath), $infoOutput, $infoReturnVar);
-    $infoJson = json_decode(implode("\n", $infoOutput), true);
-    return isset($infoJson["bands"]) && count($infoJson["bands"]) === 1;
-}
-
-$isGray = isGrayscale($filePath);
-$grayFilePath = "$filePath.temp_gray.tif";
-$outputFilePath = "$filePath.output.tif";
-if ($isGray) {
-    // グレースケール画像の場合
-    exec("gdal_translate -expand gray " . escapeshellarg($filePath) . " " . escapeshellarg($grayFilePath), $gdalTranslateOutput, $gdalTranslateReturn);
-    if ($gdalTranslateReturn !== 0) {
-        echo json_encode(["error" => "gdal_translate (expand gray) に失敗しました", "output" => $gdalTranslateOutput]);
+    if ($convertReturnVar !== 0) {
+        echo json_encode([
+            "error" => "ImageMagick で失敗しました",
+            "command" => $convertCmd
+        ]);
         exit;
     }
 
-    exec("gdal_translate -co TILED=YES -co COMPRESS=DEFLATE " . escapeshellarg($grayFilePath) . " " . escapeshellarg($outputFilePath), $gdalCompressOutput, $gdalCompressReturn);
-    if ($gdalCompressReturn !== 0) {
-        echo json_encode(["error" => "gdal_translate (compress) に失敗しました", "output" => $gdalCompressOutput]);
+    $convertCmd = "convert " . $filePath . " -transparent white " . $outputFile;
+    exec($convertCmd . " 2>&1", $convertOutput, $convertReturnVar);
+    if ($convertReturnVar !== 0) {
+        echo json_encode([
+            "error" => "ImageMagick で失敗しました",
+            "command" => $convertCmd
+        ]);
         exit;
     }
 
-    exec("gdaladdo --config COMPRESS_OVERVIEW DEFLATE -r average " . escapeshellarg($outputFilePath) . " 2 4 8 16", $gdalAddoOutput, $gdalAddoReturn);
-    if ($gdalAddoReturn !== 0) {
-        echo json_encode(["error" => "gdaladdo に失敗しました", "output" => $gdalAddoOutput]);
+    $tempTIF = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_rgba.tif';
+
+    // gdal_translate を使って RGBA TIFF を作成
+    $gdalTranslateCmd = "gdal_translate -of GTiff -expand rgba " . escapeshellarg($outputFile) . " " . escapeshellarg($tempTIF);
+    exec($gdalTranslateCmd . " 2>&1", $translateOutput, $translateReturnVar);
+
+    if ($translateReturnVar !== 0) {
+        echo json_encode([
+            "error" => "gdal_translate で失敗しました",
+            "command" => $gdalTranslateCmd
+        ]);
         exit;
     }
+
 } else {
-
-
-}
-
-
-$outputFile = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_final.png';
-
-
-// 赤の強調: 赤チャンネルのコントラストを調整
-$convertCmd = "convert " . escapeshellarg($filePath) . " -channel R -gamma 1.5 -transparent white " . escapeshellarg($outputFile);
-exec($convertCmd . " 2>&1", $convertOutput, $convertReturnVar);
-
-if ($convertReturnVar !== 0) {
-    echo json_encode([
-        "error" => "ImageMagick で失敗しました",
-        "command" => $convertCmd
-    ]);
-    exit;
-}
-
-$convertCmd = "convert " . $filePath . " -transparent white " . $outputFile;
-exec($convertCmd . " 2>&1", $convertOutput, $convertReturnVar);
-if ($convertReturnVar !== 0) {
-    echo json_encode([
-        "error" => "ImageMagick で失敗しました",
-        "command" => $convertCmd
-    ]);
-    exit;
-}
-
-$tempTIF = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_rgba.tif';
-
-// gdal_translate を使って RGBA TIFF を作成
-$gdalTranslateCmd = "gdal_translate -of GTiff -expand rgba " . escapeshellarg($outputFile) . " " . escapeshellarg($tempTIF);
-exec($gdalTranslateCmd . " 2>&1", $translateOutput, $translateReturnVar);
-
-if ($translateReturnVar !== 0) {
-    echo json_encode([
-        "error" => "gdal_translate で失敗しました",
-        "command" => $gdalTranslateCmd
-    ]);
-    exit;
+    $tempTIF = $filePath;
 }
 
 // gdal2tiles の実行（temp.tif を入力ファイルとして使用）
 $tileCommand = "gdal2tiles.py -z 0-$max_zoom --s_srs EPSG:$sourceEPSG --xyz --processes=4 " . escapeshellarg($tempTIF) . " $escapedTileDir";
 exec($tileCommand . " 2>&1", $tileOutput, $tileReturnVar);
-
-
-
-
 //    echo json_encode([
 //        "error" => "ImageMagick で赤色変換に失敗しました",
 //        "command" => $tileCommand
@@ -198,7 +159,7 @@ file_put_contents($layerJsonPath, $layerData);
 
 if ($tileReturnVar === 0) {
     // タイル化成功後、元データと中間データを削除（ただし `thumbnail-` を除く）
-//    deleteSourceAndTempFiles($filePath);
+    deleteSourceAndTempFiles($filePath);
 }
 
 if ($tileReturnVar !== 0) {
