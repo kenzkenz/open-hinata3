@@ -94,8 +94,11 @@ if (!is_dir($tileDir)) {
     mkdir($tileDir, 0777, true);
 }
 
-$tileURL = $BASE_URL . $subDir . "/" . $fileBaseName . "/{z}/{x}/{y}.png";
+$tileURL = $BASE_URL . $subDir . "/" . str_replace('_red', '', $fileBaseName) . "/{z}/{x}/{y}.png";
 
+//$escapedTileDir = escapeshellarg($tileDir);
+
+$tileDir = str_replace('_red', '', $tileDir);
 $escapedTileDir = escapeshellarg($tileDir);
 
 
