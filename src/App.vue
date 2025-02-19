@@ -93,7 +93,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       <v-dialog v-model="dialogForPdfApp" max-width="500px">
         <v-card>
           <v-card-title>
-            座標系選択
+            登記情報提供サービスより取得した公図PDF
           </v-card-title>
           <v-card-text>
             <div v-if="s_isAndroid" class="select-container">
@@ -372,7 +372,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="(mapName === 'map01'|| mapName === 'map02' && s_map2Flg)" @click="btnPosition">
 
           <v-progress-linear  v-if="s_loading" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
-          <v-progress-linear  v-if="s_loading2" style="z-index: 1" indeterminate color="green"></v-progress-linear>
+          <v-progress-linear  v-if="s_loading2" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
 
           <div id="pointer1" class="pointer" v-if="mapName === 'map01'"></div>
           <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
