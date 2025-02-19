@@ -116,9 +116,50 @@ $expectedOutputTif = $outputBase . "-1.tif";
 $finalOutputTif = $outputBase . ".tif";
 rename($expectedOutputTif, $finalOutputTif);
 
+//// TIFF画像を読み込む
+//$tiff = new Imagick($filePath);
+//$tiff->setImageAlphaChannel(Imagick::ALPHACHANNEL_SET); // 透過チャンネルを有効化
+//
+//foreach ($tiff as $frame) {
+//    $width = $frame->getImageWidth();
+//    $height = $frame->getImageHeight();
+//
+//    // グレースケール画像を取得（黒文字部分を検出）
+//    $gray = clone $frame;
+//    $gray->setImageType(Imagick::IMGTYPE_GRAYSCALE);
+//    $gray->negateImage(true); // 黒文字を白、背景を黒に
+//    $gray->thresholdImage(50 * 65535 / 100); // 文字部分を強調（コントラストを上げる）
+//
+//    // 赤色レイヤーを作成
+//    $redLayer = new Imagick();
+//    $redLayer->newImage($width, $height, new ImagickPixel("rgba(255, 0, 0, 0)"), "png"); // 完全に透明なレイヤー
+//    $redLayer->compositeImage($gray, Imagick::COMPOSITE_COPYOPACITY, 0, 0); // 黒文字部分だけを透明度調整
+//
+//    // 元の画像に赤色レイヤーを適用（黒文字部分だけ赤くする）
+//    $frame->compositeImage($redLayer, Imagick::COMPOSITE_OVER, 0, 0);
+//
+//    // 白い部分を透明にするためのアルファマスク作成
+//    $alphaMask = clone $frame;
+//    $alphaMask->setImageType(Imagick::IMGTYPE_GRAYSCALE);
+//    $alphaMask->thresholdImage(50 * 65535 / 100); // 白と黒を分離
+//    $alphaMask->negateImage(false); // 白を透明（黒）にする
+//
+//    // 画像にアルファチャンネルを適用（白を透明に）
+//    $frame->compositeImage($alphaMask, Imagick::COMPOSITE_COPYOPACITY, 0, 0);
+//}
+//
+//// 赤文字+白透明のTIFFを保存
+//$redFilePath = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_red.tif';
+//$tiff->setImageFormat('tiff');
+//$tiff->setImageAlphaChannel(Imagick::ALPHACHANNEL_ACTIVATE); // 透過を適用
+//$tiff->writeImages($redFilePath, true);
+
+
+
+
+
 // TIFF画像を読み込む
-$tiff = new Imagick($filePath);
-$tiff->setImageAlphaChannel(Imagick::ALPHACHANNEL_SET); // 透過チャンネルを有効化
+$tiff = new Imagick($finalOutputTif);
 
 // 各フレームを処理
 foreach ($tiff as $frame) {
@@ -134,60 +175,16 @@ foreach ($tiff as $frame) {
     // 赤色レイヤーを作成
     $redLayer = new Imagick();
     $redLayer->newImage($width, $height, new ImagickPixel('red'), 'png');
-    $redLayer->setImageAlphaChannel(Imagick::ALPHACHANNEL_SET); // 透過有効化
+    $redLayer->compositeImage($gray, Imagick::COMPOSITE_COPYOPACITY, 0, 0);
 
-    // 黒文字部分だけを赤色に適用
-    $redLayer->compositeImage($gray, Imagick::COMPOSITE_DSTIN, 0, 0);
-
-    // 赤色レイヤーを元の画像に適用
+    // 変換した画像を適用
     $frame->compositeImage($redLayer, Imagick::COMPOSITE_OVER, 0, 0);
-
-    // 白い部分を透明にするためのアルファマスク作成
-    $alphaMask = clone $frame;
-    $alphaMask->setImageType(Imagick::IMGTYPE_GRAYSCALE);
-    $alphaMask->thresholdImage(50 * 65535 / 100); // 白と黒を分離
-    $alphaMask->negateImage(false); // 白を透明（黒）にする
-
-    // 画像にアルファチャンネルを適用
-    $frame->compositeImage($alphaMask, Imagick::COMPOSITE_COPYOPACITY, 0, 0);
 }
 
-// 赤文字+白透明のTIFFを保存
+// 赤文字付きのTIFFを保存
 $redFilePath = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_red.tif';
 $tiff->setImageFormat('tiff');
-$tiff->setImageAlphaChannel(Imagick::ALPHACHANNEL_ACTIVATE); // 透過を適用
 $tiff->writeImages($redFilePath, true);
-
-
-
-
-// TIFF画像を読み込む
-//$tiff = new Imagick($finalOutputTif);
-
-//// 各フレームを処理
-//foreach ($tiff as $frame) {
-//    $width = $frame->getImageWidth();
-//    $height = $frame->getImageHeight();
-//
-//    // グレースケール画像を取得（黒文字部分を検出）
-//    $gray = clone $frame;
-//    $gray->setImageType(Imagick::IMGTYPE_GRAYSCALE);
-//    $gray->negateImage(true);
-//    $gray->thresholdImage(50 * 65535 / 100);
-//
-//    // 赤色レイヤーを作成
-//    $redLayer = new Imagick();
-//    $redLayer->newImage($width, $height, new ImagickPixel('red'), 'png');
-//    $redLayer->compositeImage($gray, Imagick::COMPOSITE_COPYOPACITY, 0, 0);
-//
-//    // 変換した画像を適用
-//    $frame->compositeImage($redLayer, Imagick::COMPOSITE_OVER, 0, 0);
-//}
-//
-//// 赤文字付きのTIFFを保存
-//$redFilePath = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_red.tif';
-//$tiff->setImageFormat('tiff');
-//$tiff->writeImages($redFilePath, true);
 
 
 

@@ -129,77 +129,82 @@ if ($isGray) {
         exit;
     }
 } else {
-    // カラー画像の場合
-
-
-    $fileExt = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-    $rgbFilePath = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_rgb.tif';
-    $alphaFilePath = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_alpha.tif';
-
-    if (in_array($fileExt, ["tif", "tiff"])) {
-
-        // 1バンド (グレースケール) の場合、RGB に変換
-        $translateCommand = "gdal_translate -b 1 -b 1 -b 1 -co PHOTOMETRIC=RGB -co COMPRESS=DEFLATE " .
-            escapeshellarg($filePath) . " " . escapeshellarg($rgbFilePath);
-
-        exec($translateCommand . " 2>&1", $translateOutput, $translateReturnVar);
-
-        if ($translateReturnVar !== 0) {
-            echo json_encode([
-                "error" => "gdal_translate で RGB 変換に失敗しました",
-                "output" => implode("\n", $translateOutput),
-                "command" => $translateCommand
-            ]);
-            exit;
-        }
-
-        // 近い白（255 だけ）を透過する処理
-        $calcOutputFile = escapeshellarg($alphaFilePath);
-        if ($data["transparent"] === true) {
-
-            $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
-                "--outfile=" . $calcOutputFile . " " .
-                "--calc=\"(A==255)*(B==255)*(C==255)*0 + (A<255)*(B<255)*(C<255)*(A*0.6)\" " .
-                "-A " . escapeshellarg($rgbFilePath) . " --A_band=1 " .
-                "-B " . escapeshellarg($rgbFilePath) . " --B_band=2 " .
-                "-C " . escapeshellarg($rgbFilePath) . " --C_band=3 " .
-                "--NoDataValue=0";
-
-//            $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
-//                "--outfile=" . $calcOutputFile . " " .
-//                "--calc=\"(A==255)*(B==255)*(C==255)*0 + (A<255)*(B<255)*(C<255)*A\" " .
-//                "-A " . escapeshellarg($rgbFilePath) . " --A_band=1 " .
-//                "-B " . escapeshellarg($rgbFilePath) . " --B_band=2 " .
-//                "-C " . escapeshellarg($rgbFilePath) . " --C_band=3 " .
-//                "--NoDataValue=0";
-        } else {
-            $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
-                "--outfile=" . $calcOutputFile . " " .
-                "--calc=\"A\" " .
-                "-A " . escapeshellarg($rgbFilePath) . " --A_band=1 " .
-                "--NoDataValue=None";
-        }
-        exec($calcCommand . " 2>&1", $calcOutput, $calcReturnVar);
-
-        if ($calcReturnVar !== 0) {
-            echo json_encode([
-                "error" => "gdal_calc.py で透過処理に失敗しました",
-                "output" => implode("\n", $calcOutput),
-                "command" => $calcCommand
-            ]);
-            exit;
-        }
-
-        $outputFilePath = $alphaFilePath;
-    } else {
-        // TIF 以外のファイルはそのまま使用
-        $outputFilePath = $filePath;
-    }
 
 
 }
-$outputFilePath = $filePath;
+
+$fileExt = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+$alphaFilePath = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_alpha.tif';
+$finalAlphaTiff = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_final_alpha.tif';
+
+if (in_array($fileExt, ["tif", "tiff"])) {
+    // 1. TIFF を `Byte` 型に統一しつつ、色を変更せずに処理
+    $translateCommand = "gdal_translate -ot Byte -co COMPRESS=DEFLATE -co PHOTOMETRIC=RGB " .
+        escapeshellarg($filePath) . " " . escapeshellarg($alphaFilePath);
+
+    exec($translateCommand . " 2>&1", $translateOutput, $translateReturnVar);
+
+    if ($translateReturnVar !== 0) {
+        echo json_encode([
+            "error" => "gdal_translate で TIFF 変換に失敗しました",
+            "output" => implode("\n", $translateOutput),
+            "command" => $translateCommand
+        ]);
+        exit;
+    }
+
+    // 2. gdal_calc.py で白を透明にする（色は変更せずに適用）
+    $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
+        "--outfile=" . escapeshellarg($alphaFilePath) . " " .
+        "--calc=\"numpy.where((A>=250) & (B>=250) & (C>=250), 0, 255)\" " . // 色は変更せずに白だけ透明化
+        "-A " . escapeshellarg($filePath) . " --A_band=1 " .
+        "-B " . escapeshellarg($filePath) . " --B_band=2 " .
+        "-C " . escapeshellarg($filePath) . " --B_band=3 " .
+        "--NoDataValue=None";
+
+    exec($calcCommand . " 2>&1", $calcOutput, $calcReturnVar);
+
+    if ($calcReturnVar !== 0) {
+        echo json_encode([
+            "error" => "gdal_calc.py で透過処理に失敗しました",
+            "output" => implode("\n", $calcOutput),
+            "command" => $calcCommand
+        ]);
+        exit;
+    }
+
+    // 3. gdalwarp で確実にアルファチャンネルを適用し、色を保持
+    $warpCommand = "gdalwarp -srcalpha -dstalpha " . escapeshellarg($alphaFilePath) . " " . escapeshellarg($finalAlphaTiff);
+    exec($warpCommand . " 2>&1", $warpOutput, $warpReturnVar);
+
+    if ($warpReturnVar !== 0) {
+        echo json_encode([
+            "error" => "gdalwarp で透過処理に失敗しました",
+            "output" => implode("\n", $warpOutput),
+            "command" => $warpCommand
+        ]);
+        exit;
+    }
+
+    $outputFilePath = $finalAlphaTiff;
+} else {
+    $outputFilePath = $filePath;
+}
+
+
+
+
+
+//$outputFilePath = $filePath;
 $tileCommand = "gdal2tiles.py -z 0-$max_zoom --s_srs EPSG:$sourceEPSG --xyz --processes=4 " . escapeshellarg($outputFilePath) . " $escapedTileDir";
+
+//    echo json_encode([
+//        "error" => "ImageMagick で赤色変換に失敗しました",
+//        "command" => $tileCommand
+//    ]);
+//    exit;
+
+
 exec($tileCommand . " 2>&1", $tileOutput, $tileReturnVar);
 
 $layerJsonPath = $tileDir . "layer.json";
@@ -208,7 +213,7 @@ file_put_contents($layerJsonPath, $layerData);
 
 if ($tileReturnVar === 0) {
     // タイル化成功後、元データと中間データを削除（ただし `thumbnail-` を除く）
-    deleteSourceAndTempFiles($filePath);
+//    deleteSourceAndTempFiles($filePath);
 }
 
 if ($tileReturnVar !== 0) {
