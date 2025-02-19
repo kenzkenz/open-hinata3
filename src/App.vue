@@ -2599,8 +2599,12 @@ export default {
                 }
                 case 'pdf':
                 {
-                  this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
-                  this.dialogForPdfApp = true
+                  if (this.$store.state.userId) {
+                    this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
+                    this.dialogForPdfApp = true
+                  } else {
+                    alert('ログイン専用です。')
+                  }
                   break
                 }
 

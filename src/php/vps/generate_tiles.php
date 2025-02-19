@@ -154,20 +154,33 @@ echo json_encode(["success" => true, "tiles_url" => $tileURL, "bbox" => $bbox432
  */
 function deleteSourceAndTempFiles($filePath)
 {
+//    $dir = dirname($filePath);
+//    $fileBaseName = pathinfo($filePath, PATHINFO_FILENAME);
+//
+//    foreach (scandir($dir) as $file) {
+//        if ($file === '.' || $file === '..' || strpos($file, 'thumbnail-') === 0) {
+//            continue;
+//        }
+//
+//        $fullPath = $dir . DIRECTORY_SEPARATOR . $file;
+//        // `fileBaseName` に関連するファイル（temp_gray.tif, output.tif など）を削除、さらに warped.tif と cropped_ で始まるファイルも削除
+//        if (strpos($file, $fileBaseName) === 0 || $file === 'warped.tif' || strpos($file, 'cropped_') === 0) {
+//            unlink($fullPath);
+//        }
+//    }
     $dir = dirname($filePath);
-    $fileBaseName = pathinfo($filePath, PATHINFO_FILENAME);
-
     foreach (scandir($dir) as $file) {
-        if ($file === '.' || $file === '..' || strpos($file, 'thumbnail-') === 0) {
+        // カレントディレクトリ (`.`) と 親ディレクトリ (`..`) をスキップ
+        if ($file === '.' || $file === '..') {
             continue;
         }
 
         $fullPath = $dir . DIRECTORY_SEPARATOR . $file;
-        // `fileBaseName` に関連するファイル（temp_gray.tif, output.tif など）を削除、さらに warped.tif と cropped_ で始まるファイルも削除
-        if (strpos($file, $fileBaseName) === 0 || $file === 'warped.tif' || strpos($file, 'cropped_') === 0) {
+
+        // `thumbnail-` で始まるファイルを除外し、それ以外は全削除
+        if (strpos($file, 'thumbnail-') !== 0) {
             unlink($fullPath);
         }
     }
 }
-
 ?>

@@ -7430,9 +7430,9 @@ const fudeLayer = {
     'paint': {
         'fill-color': [
             'case',
-            ['==', ['get', 'land_type'], 100], 'green', // land_type が 100 の場合は緑色
-            ['==', ['get', 'land_type'], 200], 'red',   // land_type が 200 の場合は赤色
-            'white' // それ以外の場合は白色
+            ['==', ['get', 'land_type'], 100], 'rgba(0, 128, 0, 0.8)',  // 緑色 (透明度 0.8)
+            ['==', ['get', 'land_type'], 200], 'rgba(255, 0, 0, 0.8)',  // 赤色 (透明度 0.8)
+            'rgba(255, 255, 255, 0.8)' // 白色 (透明度 0.8)
         ]
     }
 }

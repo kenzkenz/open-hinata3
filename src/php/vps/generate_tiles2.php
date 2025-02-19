@@ -154,13 +154,22 @@ if ($isGray) {
         // 近い白（255 だけ）を透過する処理
         $calcOutputFile = escapeshellarg($alphaFilePath);
         if ($data["transparent"] === true) {
+
             $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
                 "--outfile=" . $calcOutputFile . " " .
-                "--calc=\"(A==255)*(B==255)*(C==255)*0 + (A<255)*(B<255)*(C<255)*A\" " .
+                "--calc=\"(A==255)*(B==255)*(C==255)*0 + (A<255)*(B<255)*(C<255)*(A*0.6)\" " .
                 "-A " . escapeshellarg($rgbFilePath) . " --A_band=1 " .
                 "-B " . escapeshellarg($rgbFilePath) . " --B_band=2 " .
                 "-C " . escapeshellarg($rgbFilePath) . " --C_band=3 " .
                 "--NoDataValue=0";
+
+//            $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
+//                "--outfile=" . $calcOutputFile . " " .
+//                "--calc=\"(A==255)*(B==255)*(C==255)*0 + (A<255)*(B<255)*(C<255)*A\" " .
+//                "-A " . escapeshellarg($rgbFilePath) . " --A_band=1 " .
+//                "-B " . escapeshellarg($rgbFilePath) . " --B_band=2 " .
+//                "-C " . escapeshellarg($rgbFilePath) . " --C_band=3 " .
+//                "--NoDataValue=0";
         } else {
             $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
                 "--outfile=" . $calcOutputFile . " " .
@@ -168,11 +177,6 @@ if ($isGray) {
                 "-A " . escapeshellarg($rgbFilePath) . " --A_band=1 " .
                 "--NoDataValue=None";
         }
-
-
-
-
-
         exec($calcCommand . " 2>&1", $calcOutput, $calcReturnVar);
 
         if ($calcReturnVar !== 0) {
@@ -217,20 +221,34 @@ echo json_encode(["success" => true, "tiles_url" => $tileURL, "bbox" => $bbox432
  */
 function deleteSourceAndTempFiles($filePath)
 {
+//    $dir = dirname($filePath);
+//    $fileBaseName = pathinfo($filePath, PATHINFO_FILENAME);
+//
+//    foreach (scandir($dir) as $file) {
+//        if ($file === '.' || $file === '..' || strpos($file, 'thumbnail-') === 0) {
+//            continue;
+//        }
+//
+//        $fullPath = $dir . DIRECTORY_SEPARATOR . $file;
+//        // `fileBaseName` に関連するファイル（temp_gray.tif, output.tif など）を削除、さらに warped.tif と cropped_ で始まるファイルも削除
+//        if (strpos($file, $fileBaseName) === 0 || $file === 'warped.tif' || strpos($file, 'cropped_') === 0) {
+//            unlink($fullPath);
+//        }
+//    }
+//
     $dir = dirname($filePath);
-    $fileBaseName = pathinfo($filePath, PATHINFO_FILENAME);
-
     foreach (scandir($dir) as $file) {
-        if ($file === '.' || $file === '..' || strpos($file, 'thumbnail-') === 0) {
+        // カレントディレクトリ (`.`) と 親ディレクトリ (`..`) をスキップ
+        if ($file === '.' || $file === '..') {
             continue;
         }
 
         $fullPath = $dir . DIRECTORY_SEPARATOR . $file;
-        // `fileBaseName` に関連するファイル（temp_gray.tif, output.tif など）を削除、さらに warped.tif と cropped_ で始まるファイルも削除
-        if (strpos($file, $fileBaseName) === 0 || $file === 'warped.tif' || strpos($file, 'cropped_') === 0) {
+
+        // `thumbnail-` で始まるファイルを除外し、それ以外は全削除
+        if (strpos($file, 'thumbnail-') !== 0) {
             unlink($fullPath);
         }
     }
 }
-
 ?>
