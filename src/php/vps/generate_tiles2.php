@@ -129,56 +129,48 @@ if ($isGray) {
         exit;
     }
 } else {
-    // カラー画像の場合
+// カラー画像の場合
     $fileExt = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-    $warpedFilePath = $tileDir . "warped.tif";
-
-    // _alpha.tif に変換
-    $alphaFilePath = preg_replace('/\.tif$/i', '_alpha.tif', $warpedFilePath);
+    $rgbFilePath = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_rgb.tif';
+    $alphaFilePath = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_alpha.tif';
 
     if (in_array($fileExt, ["tif", "tiff"])) {
-        $warpCommand = "gdalwarp -t_srs EPSG:3857 -co COMPRESS=DEFLATE -dstalpha -srcnodata '255 255 255' " .
-            escapeshellarg($filePath) . " " . escapeshellarg($warpedFilePath);
-        exec($warpCommand . " 2>&1", $warpOutput, $warpReturnVar);
-        if ($warpReturnVar !== 0) {
-            echo json_encode(["error" => "gdalwarp で透過処理に失敗しました", "output" => $warpOutput]);
+
+        // 1バンド (グレースケール) の場合、RGB に変換
+        $translateCommand = "gdal_translate -b 1 -b 1 -b 1 -co PHOTOMETRIC=RGB -co COMPRESS=DEFLATE " .
+            escapeshellarg($filePath) . " " . escapeshellarg($rgbFilePath);
+
+        exec($translateCommand . " 2>&1", $translateOutput, $translateReturnVar);
+
+        if ($translateReturnVar !== 0) {
+            echo json_encode([
+                "error" => "gdal_translate で RGB 変換に失敗しました",
+                "output" => implode("\n", $translateOutput),
+                "command" => $translateCommand
+            ]);
             exit;
         }
 
-        $gdalInfoCmd = "gdalinfo -json " . escapeshellarg($warpedFilePath);
-        exec($gdalInfoCmd, $gdalInfoOutput, $gdalInfoReturn);
-        $gdalInfoJson = json_decode(implode("\n", $gdalInfoOutput), true);
-
-        $hasAlpha = false;
-        if (isset($gdalInfoJson["bands"])) {
-            foreach ($gdalInfoJson["bands"] as $band) {
-                if (isset($band["colorInterpretation"]) && $band["colorInterpretation"] === "Alpha") {
-                    $hasAlpha = true;
-                    break;
-                }
-            }
-        }
-
-       // _alpha.tif に変換
-        $alphaFilePath = preg_replace('/\.tif$/i', '_alpha.tif', $warpedFilePath);
-
-       // 近い白（250,250,250 以上）も透過する処理
+        // 近い白（255 だけ）を透過する処理
         $calcOutputFile = escapeshellarg($alphaFilePath);
 
-        if ($hasAlpha) {
-            // 4バンド (RGBA) の場合
-            $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
-                "--outfile=" . $calcOutputFile . " " .
-                "--calc=\"((A>255)*(B>255)*(C>255))*0 + ((A<=255)*(B<=255)*(C<=255))*D\" " .
-                "-A " . escapeshellarg($warpedFilePath) . " -B " . escapeshellarg($warpedFilePath) .
-                " -C " . escapeshellarg($warpedFilePath) . " -D " . escapeshellarg($warpedFilePath) . " --NoDataValue=0";
-        } else {
-            // 3バンド (RGB) の場合
-            $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
-                "--outfile=" . $calcOutputFile . " " .
-                "--calc=\"(A>255)*(B>255)*(C>255)*0 + (A<=255)*(B<=255)*(C<=255)*A\" " .
-                "-A " . escapeshellarg($warpedFilePath) . " --NoDataValue=0";
-        }
+//        $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
+//            "--outfile=" . $calcOutputFile . " " .
+//            "--calc=\"(A==255)*(B==255)*(C==255)*0 + (A<255)*(B<255)*(C<255)*255\" " .
+//            "-A " . escapeshellarg($rgbFilePath) . " --A_band=1 " .
+//            "-B " . escapeshellarg($rgbFilePath) . " --B_band=2 " .
+//            "-C " . escapeshellarg($rgbFilePath) . " --C_band=3 " .
+//            "--NoDataValue=0";
+
+        $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
+            "--outfile=" . $calcOutputFile . " " .
+            "--calc=\"(A==255)*(B==255)*(C==255)*0 + (A<255)*(B<255)*(C<255)*A\" " .
+            "-A " . escapeshellarg($rgbFilePath) . " --A_band=1 " .
+            "-B " . escapeshellarg($rgbFilePath) . " --B_band=2 " .
+            "-C " . escapeshellarg($rgbFilePath) . " --C_band=3 " .
+            "--NoDataValue=0";
+
+
 
         exec($calcCommand . " 2>&1", $calcOutput, $calcReturnVar);
 
@@ -196,6 +188,7 @@ if ($isGray) {
         // TIF 以外のファイルはそのまま使用
         $outputFilePath = $filePath;
     }
+
 
 }
 
