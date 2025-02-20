@@ -693,19 +693,35 @@ export default {
       insertUserData(this.$store.state.userId,this.urlName,window.location.href)
     },
     async fetchImages() {
-      // const url = `https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/${this.uid}/`
-      const url = `https://kenzkenz.duckdns.org/uploads/${this.uid}/`
-      console.log(url)
-      const response = await fetch(url);
-      const text = await response.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(text, "text/html");
-      const imageElements = doc.querySelectorAll("a");
-      this.images = Array.from(imageElements)
-          .map(a => a.getAttribute("href"))
-          .filter(href => href.startsWith('thumbnail-') && /\.(jpg|jpeg)$/i.test(href))
-          .map(href => `${url}${href}`);
+      const uid = this.uid;
+      const url = `https://kenzkenz.duckdns.org/myphp/list.php?dir=/var/www/html/public_html/uploads/${uid}`;
+      console.log(url);
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const imageList = await response.json();
+        this.images = imageList.map(file => `https://kenzkenz.duckdns.org/uploads/${uid}/${file}`);
+      } catch (error) {
+        console.error("Error fetching images:", error);
+      }
     },
+    // async fetchImages() {
+    //   const url = `https://kenzkenz.duckdns.org/uploads/${this.uid}/`
+    //   console.log(url)
+    //   const response = await fetch(url);
+    //   const text = await response.text();
+    //   const parser = new DOMParser();
+    //   const doc = parser.parseFromString(text, "text/html");
+    //   const imageElements = doc.querySelectorAll("a");
+    //   this.images = Array.from(imageElements)
+    //       .map(a => a.getAttribute("href"))
+    //       .filter(href => href.startsWith('thumbnail-') && /\.(jpg|jpeg)$/i.test(href))
+    //       .map(href => `${url}${href}`);
+    // },
     handleClose(url) {
       if (!confirm("削除しますか？")) {
         return

@@ -120,6 +120,7 @@ export default createStore({
     isWindow2: true,
     isSmartPhone: false,
     isTransparent: true,
+    shpPropertieName: '',
     //------------------------
     highwayYear:{
       map01: 2024,

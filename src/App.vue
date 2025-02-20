@@ -28,6 +28,33 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         </template>
       </v-snackbar>
 
+      <v-dialog v-model="dialogForShpApp" max-width="500px">
+        <v-card>
+          <v-card-title>
+            地番選択
+          </v-card-title>
+          <v-card-text>
+            <div v-if="s_isAndroid" class="select-container">
+
+            </div>
+            <div v-else>
+              <v-select class="scrollable-content"
+                        v-model="s_shpPropertieName"
+                        :items="shpPropaties"
+                        label="選択してください"
+                        outlined
+              ></v-select>
+            </div>
+            <v-btn @click="shpLoad">shape読込開始</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="dialogForShpApp = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+
       <v-dialog v-model="dialogForDxfApp" max-width="500px">
         <v-card>
           <v-card-title>
@@ -121,8 +148,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
               <v-switch style="height: 40px;margin-bottom: 20px;" v-model="s_isTransparent" label="透過処理" color="primary" />
 
-
-
             </div>
             <v-btn @click="pdfLoad">PDF読込開始</v-btn>
           </v-card-text>
@@ -166,7 +191,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
           </v-card-actions>
         </v-card>
       </v-dialog>
-
 
       <v-dialog v-model="s_dialogForGeotiffApp" max-width="500px">
         <v-card>
@@ -805,9 +829,20 @@ export default {
     resolutions: [13,14,15,16,17,18,19,20,21,22,23,24,25,26],
     dialogForGeotiffApp1file: false,
     dialogForPdfApp: false,
+    dialogForShpApp: false,
+    shpPropaties: [],
+    shpGeojson: [],
     loadingSnackbar: false,
   }),
   computed: {
+    s_shpPropertieName: {
+      get() {
+        return this.$store.state.shpPropertieName
+      },
+      set(value) {
+        this.$store.state.shpPropertieName = value
+      }
+    },
     s_isTransparent: {
       get() {
         return this.$store.state.isTransparent
@@ -1033,6 +1068,10 @@ export default {
       geojsonAddLayer (map01, geojson, true, 'dxf')
       geojsonAddLayer (map02, geojson, true, 'dxf')
       this.dialogForDxfApp = false
+    },
+    shpLoad () {
+      const map01 = this.$store.state.map01
+      geojsonAddLayer (map01, this.shpGeojson, true, 'zip')
     },
     pdfLoad () {
       if (this.$store.state.userId) {
@@ -2623,9 +2662,18 @@ export default {
                 {
                   const files = e.dataTransfer.files;
                   for (const file of files) {
+                    this.loadingSnackbar = true
+                    this.s_loading = true
                     const arrayBuffer = await file.arrayBuffer();
                     const geojson = await shp(arrayBuffer);
-                    geojsonAddLayer (map, geojson, true, fileExtension)
+                    this.shpGeojson = geojson
+                    const firstFeature = geojson.features[0];
+                    console.log(Object.keys(firstFeature.properties))
+                    this.shpPropaties = Object.keys(firstFeature.properties)
+                    this.loadingSnackbar = false
+                    this.s_loading = false
+                    this.dialogForShpApp = true
+                    // geojsonAddLayer (map, geojson, true, fileExtension)
                   }
                   break
                 }

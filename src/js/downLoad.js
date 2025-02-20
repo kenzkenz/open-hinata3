@@ -3750,7 +3750,7 @@ export async function tileGenerateForUserPdf () {
     async function extractNumbers(filePath, dir) {
         store.state.loading2 = true
         store.state.loadingMessage = 'OCR処理中です。'
-        let response = await fetch("https://kenzkenz.duckdns.org/myphp/extract_numbers.php", {
+        let response = await fetch("https://kenzkenz.duckdns.org/myphp/extract_numbers4.php", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({
@@ -3774,7 +3774,7 @@ export async function tileGenerateForUserPdf () {
     async function generateTiles(filePath, srsCode = "2450", dir) {
         store.state.loading2 = true
         store.state.loadingMessage = '地図タイル作成中です。'
-        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles2.php", {
+        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles4.php", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({
@@ -4942,7 +4942,6 @@ export function pngDownload() {
         zipLink.click();
         URL.revokeObjectURL(zipLink.href);
     });
-
     const currentZoom = map01.getZoom();
     map01.zoomTo(currentZoom + 0.00000000000000000000000000001);
 }
@@ -4955,6 +4954,7 @@ export function geojsonAddLayer (map, geojson, isFitBounds, fileExtension) {
         map.removeLayer(fileExtension + '-layer')
         map.removeLayer(fileExtension + '-line-layer')
         map.removeLayer(fileExtension + '-point-layer')
+        map.removeLayer(fileExtension + '-label')
         // map.removeLayer(fileExtension + '-polygon-points')
         map.removeSource(fileExtension + '-source')
     }
@@ -4968,7 +4968,7 @@ export function geojsonAddLayer (map, geojson, isFitBounds, fileExtension) {
         id: fileExtension + '-polygon-layer',
         type: 'fill',
         source: fileExtension + '-source',
-        filter: ["==", "$type", "Polygon"],
+        // filter: ["==", "$type", "Polygon"],
         paint: {
             'fill-color': 'blue',
             'fill-opacity': 0.5
@@ -5003,6 +5003,22 @@ export function geojsonAddLayer (map, geojson, isFitBounds, fileExtension) {
             'circle-color': '#00FF00',
             'circle-radius': 6
         }
+    })
+    map.addLayer({
+        id: fileExtension + '-label',
+        type: 'symbol',
+        source: fileExtension + '-source',
+        'layout': {
+            'text-field': ['get', store.state.shpPropertieName],
+            'text-font': ['NotoSansJP-Regular'],
+        },
+        'paint': {
+            'text-color': 'rgba(255, 0, 0, 1)',
+            'text-halo-color': 'rgba(255,255,255,0.7)',
+            'text-halo-width': 1.0,
+        },
+        'maxzoom': 24,
+        'minzoom': 17
     });
     // map.addLayer({
     //     id: fileExtension + '-polygon-points',
