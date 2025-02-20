@@ -112,19 +112,11 @@ $alphaFilePath = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePat
 $tempFile = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_temp.tif';  // 一時ファイルのパス
 
 if (in_array($fileExt, ["tif", "tiff"])) {
-
+    // 文字を膨張、強調する。
     $command = "python3 /var/www/html/public_html/myphp/opencv_dilate.py " . escapeshellarg($filePath) . " " . escapeshellarg($ocvFilePath);
     exec($command, $output, $returnCode);
-//    if ($returnCode === 0) {
-//        echo json_encode([
-//            "error" => "python3で失敗しました",
-//            "command" => $command
-//        ]);
-//        exit;
-//    }
 
-
-    // 1バンド (グレースケール) の場合、RGB に変換
+    // 1バンド (グレースケール) を、RGB に変換
     $translateCommand = "gdal_translate -b 1 -b 1 -b 1 -co PHOTOMETRIC=RGB -co COMPRESS=DEFLATE " .
         escapeshellarg($ocvFilePath) . " " . escapeshellarg($rgbFilePath);
 
@@ -149,7 +141,6 @@ if (in_array($fileExt, ["tif", "tiff"])) {
             mkdir($outputDir, 0777, true);
         }
 
-        // 1. gdal_translate を実行（白を透明に）
         $translateCommand = "gdal_translate -a_srs EPSG:4326 -b 1 -b 2 -b 3 -co COMPRESS=DEFLATE " .
             escapeshellarg($rgbFilePath) . " " . escapeshellarg($tempFile);
         exec($translateCommand, $translateOutput, $translateReturn);
@@ -162,7 +153,7 @@ if (in_array($fileExt, ["tif", "tiff"])) {
             exit;
         }
 
-//        $command = "convert " . escapeshellarg($tempFile) . " -transparent white " . escapeshellarg($alphaFilePath);
+        //　$command = "convert " . escapeshellarg($tempFile) . " -transparent white " . escapeshellarg($alphaFilePath);
         $command = "convert " . escapeshellarg($tempFile) . " -transparent white -fill red -opaque black " . escapeshellarg($alphaFilePath);
         exec($command, $output, $returnVar);
 
@@ -173,13 +164,6 @@ if (in_array($fileExt, ["tif", "tiff"])) {
             ]);
             exit;
         }
-
-        //  透明に白文字
-//        $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
-//            "--outfile=" . $calcOutputFile . " " .
-//            "--calc=\"((A==255)*0) + ((A<245)*(A>30)*0) + ((A<=30)*255)\" " .  // 背景を透明に、文字と線を黒に
-//            "-A " . escapeshellarg($rgbFilePath) . " --A_band=1 " .
-//            "--NoDataValue=0";
 
     } else {
         $calcCommand = "gdal_calc.py --overwrite --co COMPRESS=DEFLATE --type=Byte " .
@@ -198,20 +182,12 @@ if (in_array($fileExt, ["tif", "tiff"])) {
         }
     }
 
-
     $outputFilePath = $alphaFilePath;
 } else {
     // TIF 以外のファイルはそのまま使用
     $outputFilePath = $filePath;
 }
 
-//echo json_encode([
-//    "error" => "gdal2tiles.pyで失敗しました",
-////    "command" => $tileCommand
-//]);
-//exit;
-
-//--resampling=lanczos
 
 $tileCommand = "gdal2tiles.py --resampling=lanczos --tiledriver=PNG -z 0-$max_zoom --s_srs EPSG:$sourceEPSG --xyz --processes=8 " . escapeshellarg($outputFilePath) . " $escapedTileDir";
 exec($tileCommand . " 2>&1", $tileOutput, $tileReturnVar);
