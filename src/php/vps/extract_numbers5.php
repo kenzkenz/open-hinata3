@@ -112,34 +112,6 @@ $finalOutputTif = $outputBase . ".tif";
 rename($expectedOutputTif, $finalOutputTif);
 
 
-// TIFF画像を読み込む
-$tiff = new Imagick($finalOutputTif);
-
-// 各フレームを処理
-foreach ($tiff as $frame) {
-    $width = $frame->getImageWidth();
-    $height = $frame->getImageHeight();
-
-    // グレースケール画像を取得（黒文字部分を検出）
-    $gray = clone $frame;
-    $gray->setImageType(Imagick::IMGTYPE_GRAYSCALE);
-    $gray->negateImage(true);
-    $gray->thresholdImage(50 * 65535 / 100);
-
-    // 赤色レイヤーを作成
-    $redLayer = new Imagick();
-    $redLayer->newImage($width, $height, new ImagickPixel('red'), 'png');
-    $redLayer->compositeImage($gray, Imagick::COMPOSITE_COPYOPACITY, 0, 0);
-
-    // 変換した画像を適用
-    $frame->compositeImage($redLayer, Imagick::COMPOSITE_OVER, 0, 0);
-}
-
-// 赤文字付きのTIFFを保存
-$redFilePath = pathinfo($filePath, PATHINFO_DIRNAME) . '/' . pathinfo($filePath, PATHINFO_FILENAME) . '_red.tif';
-$tiff->setImageFormat('tiff');
-$tiff->writeImages($redFilePath, true);
-
 // **OCR処理関数**
 function extract_numbers($filePath)
 {
