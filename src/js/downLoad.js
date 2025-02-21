@@ -3750,6 +3750,7 @@ export async function tileGenerateForUserPdf () {
     async function extractNumbers(filePath, dir) {
         store.state.loading2 = true
         store.state.loadingMessage = 'OCR処理中です。'
+
         let response = await fetch("https://kenzkenz.duckdns.org/myphp/extract_numbers5.php", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
