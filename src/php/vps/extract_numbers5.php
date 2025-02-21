@@ -29,24 +29,48 @@ $worldFile3 = $dirPath . "/" . pathinfo($filePath, PATHINFO_FILENAME) . "_red_rg
 $worldFile4 = $dirPath . "/" . pathinfo($filePath, PATHINFO_FILENAME) . "_alpha.tfw";
 
 // **PDFをPNGに変換**
+//$outputBase = $dirPath . "/" . pathinfo($filePath, PATHINFO_FILENAME);
+//exec("pdftoppm -png -r 600 " . escapeshellarg($filePath) . " " . escapeshellarg($outputBase));
 $outputBase = $dirPath . "/" . pathinfo($filePath, PATHINFO_FILENAME);
-exec("pdftoppm -png -r 600 " . escapeshellarg($filePath) . " " . escapeshellarg($outputBase));
+$pngFile = $dirPath . "/" . pathinfo($filePath, PATHINFO_FILENAME). ".png";
+$cmd = "gs -dNOPAUSE -dBATCH -dSAFER -sDEVICE=png16m -r600 -o $pngFile " . escapeshellarg($filePath);
+exec($cmd);
 
-// **変換後のファイル名 (`-1.png` を削除)**
-$expectedOutputPng = $outputBase . "-1.png";
-$finalOutputPng = $outputBase . ".png";
+$finalOutputPng = $pngFile;
 
-if (file_exists($expectedOutputPng)) {
-    rename($expectedOutputPng, $finalOutputPng);
-} else {
-    echo json_encode(["error" => "pdftoppm による画像変換に失敗しました", "expected_output" => $expectedOutputPng], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    exit;
-}
+
+//echo json_encode([
+//    "テスト" => $cmd
+//]);
+//exit;
+
+
+//// **変換後のファイル名 (`-1.png` を削除)**
+//$expectedOutputPng = $outputBase . "-1.png";
+//$finalOutputPng = $outputBase . ".png";
+
+//if (file_exists($expectedOutputPng)) {
+//    rename($expectedOutputPng, $finalOutputPng);
+//} else {
+//    echo json_encode(["error" => "pdftoppm による画像変換に失敗しました", "expected_output" => $expectedOutputPng], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+//    exit;
+//}
+
+
+
+//echo json_encode([
+//    "テスト" => 'テスト'
+//]);
+//exit;
+
+
 
 // **画像の読み込み**
 $img = new Imagick($finalOutputPng);
 $width = $img->getImageWidth();
 $height = $img->getImageHeight();
+
+
 
 // **OCR対象の領域をクロップ**
 $croppedRightHorizontalPng = $dirPath . "/cropped_right_horizontal.png";
@@ -57,6 +81,10 @@ $croppedLeftVerticalPng = $dirPath . "/cropped_left_vertical.png";
 // 右上横書き
 $rightHorizontalImg = clone $img;
 $rightHorizontalImg->cropImage($width * 0.3, $height * 0.2, $width * 0.7, 0);
+//$rightHorizontalImg->cropImage($width * 0.05,  // 幅（全体の5%）
+//    $height * 0.02, // 高さ（全体の2%）
+//    $width * 0.75,  // X座標（全体の75%）
+//    $height * 0.05);// Y座標（全体の5%）
 $rightHorizontalImg->setImageFormat('png');
 $rightHorizontalImg->writeImage($croppedRightHorizontalPng);
 $rightHorizontalImg->destroy();
@@ -103,14 +131,13 @@ $cropY = 895;   // 上から200ピクセル
 $cropWidth =    5905;  // 幅 500 ピクセル
 $cropHeight =   5950; // 高さ 300 ピクセル
 
+
 // **PDFをTIFFに変換**
-//exec("pdftoppm -tiff -r 300 " . "-x {$cropX} -y {$cropY} -W {$cropWidth} -H {$cropHeight} " . escapeshellarg($filePath) . " " . escapeshellarg($outputBase));
 exec("pdftoppm -tiff -r 600 " . "-x {$cropX} -y {$cropY} -W {$cropWidth} -H {$cropHeight} " . escapeshellarg($filePath) . " " . escapeshellarg($outputBase));
 // **変換後のファイル名 (`-1.png` を削除)**
 $expectedOutputTif = $outputBase . "-1.tif";
 $finalOutputTif = $outputBase . ".tif";
 rename($expectedOutputTif, $finalOutputTif);
-
 
 // **OCR処理関数**
 function extract_numbers($filePath)
@@ -126,12 +153,22 @@ $rightVerticalNumber = extract_numbers($croppedRightVerticalPng);
 $leftHorizontalNumber = extract_numbers($croppedLeftHorizontalPng);
 $leftVerticalNumber = extract_numbers($croppedLeftVerticalPng);
 
-//// **数値チェック**
+////// **数値チェック**
 if (!is_numeric($rightHorizontalNumber) || !is_numeric($rightVerticalNumber) ||
     !is_numeric($leftHorizontalNumber) || !is_numeric($leftVerticalNumber)) {
     echo json_encode(["error" => "OCRに失敗しました"], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     exit;
 }
+
+//echo json_encode([
+//    "右上横書き数値" => $rightHorizontalNumber,
+//    "右上縦書き数値" => $rightVerticalNumber,
+//    "左下横書き数値" => $leftHorizontalNumber,
+//    "左下縦書き数値" => $leftVerticalNumber,
+//]);
+//exit;
+
+
 
 // TIFF の画像サイズを取得
 $img = new Imagick($finalOutputTif);
@@ -151,24 +188,6 @@ $pgwContent = sprintf("%f\n0.000000\n0.000000\n%f\n%f\n%f\n",
     $rightVerticalNumber   // 左上Y座標
 );
 $result = file_put_contents($worldFile, $pgwContent);
-
-// ワールドファイルの作成
-$pgwContent = sprintf("%f\n0.000000\n0.000000\n%f\n%f\n%f\n",
-    $pixelSizeX,   // X方向のピクセル解像度
-    $pixelSizeY,  // Y方向のピクセル解像度（負の値）
-    $leftHorizontalNumber,  // 左上X座標
-    $rightVerticalNumber   // 左上Y座標
-);
-$result = file_put_contents($worldFile2, $pgwContent);
-
-// ワールドファイルの作成
-$pgwContent = sprintf("%f\n0.000000\n0.000000\n%f\n%f\n%f\n",
-    $pixelSizeX,   // X方向のピクセル解像度
-    $pixelSizeY,  // Y方向のピクセル解像度（負の値）
-    $leftHorizontalNumber,  // 左上X座標
-    $rightVerticalNumber   // 左上Y座標
-);
-$result = file_put_contents($worldFile3, $pgwContent);
 $result = file_put_contents($worldFile4, $pgwContent);
 
 if ($result === false) {
