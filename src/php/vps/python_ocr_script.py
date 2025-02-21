@@ -48,7 +48,7 @@ def extract_text_from_image(image_path):
     if processed_image is None:
         return {"success": False, "error": "Failed to process image"}
     
-    ocr_result = pytesseract.image_to_string(processed_image, config="--oem 1 --psm 6", lang="jpn")
+    ocr_result = pytesseract.image_to_string(processed_image, config="--oem 1 --psm 6 --dpi 1000", lang="jpn")
     ocr_text = correct_six_misrecognition(ocr_result.strip().replace('|', ''))
     
     lines = [line for line in ocr_text.split('\n') if line]

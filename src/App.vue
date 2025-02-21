@@ -28,6 +28,40 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         </template>
       </v-snackbar>
 
+
+      <v-dialog v-model="dialogForImagePng" max-width="500px">
+        <v-card>
+          <v-card-title>
+            座標系選択
+          </v-card-title>
+          <v-card-text>
+            <div v-if="s_isAndroid" class="select-container">
+              <select id="selectBox" v-model="s_zahyokei" class="custom-select">
+                <option value="" disabled selected>座標を選択してください。</option>
+                <option v-for="number in 19" :key="number" :value="`公共座標${number}系`">
+                  公共座標{{ number }}系
+                </option>
+              </select>
+            </div>
+            <div v-else>
+              <v-select class="scrollable-content"
+                        v-model="s_zahyokei"
+                        :items="items"
+                        label="選択してください"
+                        outlined
+              ></v-select>
+            </div>
+            <v-btn @click="imagePngLoad">png読込開始</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="dialogForImagePng = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+
+
       <v-dialog v-model="dialogForShpApp" max-width="500px">
         <v-card>
           <v-card-title>
@@ -831,6 +865,7 @@ export default {
     dialogForGeotiffApp1file: false,
     dialogForPdfApp: false,
     dialogForShpApp: false,
+    dialogForImagePng: false,
     shpPropaties: [],
     shpGeojson: [],
     loadingSnackbar: false,
@@ -1073,6 +1108,10 @@ export default {
     shpLoad () {
       const map01 = this.$store.state.map01
       geojsonAddLayer (map01, this.shpGeojson, true, 'zip')
+    },
+    imagePngLoad () {
+      csvGenerateForUserPng()
+      this.dialogForImagePng = false
     },
     pdfLoad () {
       if (this.$store.state.userId) {
@@ -2635,7 +2674,8 @@ export default {
                   } else if (files.length === 1){
 
                     this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
-                    csvGenerateForUserPng()
+                    this.dialogForImagePng = true
+                    // csvGenerateForUserPng()
 
 
 
