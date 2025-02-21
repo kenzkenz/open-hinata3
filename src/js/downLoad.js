@@ -2659,31 +2659,36 @@ export function saveSimaImage (data) {
     });
 
     simaData += A01Text + 'A99\n';
-    simaData += 'A99,END,,\n';
+    simaData += 'A99,END';
     console.log(simaData)
 
-    // UTF-8で文字列をコードポイントに変換
-    const utf8Array = window.Encoding.stringToCode(simaData);
-    // UTF-8からShift-JISに変換
-    const shiftJISArray = window.Encoding.convert(utf8Array, 'SJIS');
-    // Shift-JISエンコードされたデータをUint8Arrayに格納
-    const uint8Array = new Uint8Array(shiftJISArray);
-    // Blobを作成（MIMEタイプを変更）
-    const blob = new Blob([uint8Array], { type: 'application/octet-stream' });
+    store.state.simaText = JSON.stringify({
+        text: simaData,
+        zahyokei: store.state.zahyokei,
+        opacity: 0.7
+    })
 
-    // ダウンロード用リンクを作成
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
+    simaToGeoJSON(simaData, store.state.map01, null, true)
 
-    const fileName = 'aaa.sim'
-
-    link.download = fileName; // ファイル名を正確に指定
-    // リンクをクリックしてダウンロード
-    link.click();
-    URL.revokeObjectURL(link.href);
-
-
-
+    // // UTF-8で文字列をコードポイントに変換
+    // const utf8Array = window.Encoding.stringToCode(simaData);
+    // // UTF-8からShift-JISに変換
+    // const shiftJISArray = window.Encoding.convert(utf8Array, 'SJIS');
+    // // Shift-JISエンコードされたデータをUint8Arrayに格納
+    // const uint8Array = new Uint8Array(shiftJISArray);
+    // // Blobを作成（MIMEタイプを変更）
+    // const blob = new Blob([uint8Array], { type: 'application/octet-stream' });
+    //
+    // // ダウンロード用リンクを作成
+    // const link = document.createElement('a');
+    // link.href = URL.createObjectURL(blob);
+    //
+    // const fileName = 'aaa.sim'
+    //
+    // link.download = fileName; // ファイル名を正確に指定
+    // // リンクをクリックしてダウンロード
+    // link.click();
+    // URL.revokeObjectURL(link.href);
 
 }
 
@@ -3827,6 +3832,7 @@ export async function csvGenerateForUserPng () {
             // alert("データ生成完了！");
             saveSimaImage(result.structured_data)
             store.state.loading2 = false
+
 
         } else {
             console.log(result)

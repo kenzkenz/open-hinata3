@@ -5,9 +5,18 @@ import numpy as np
 import pytesseract
 import re
 
+
+
 def preprocess_image(image_path):
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     _, binary = cv2.threshold(image, 128, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+
+    # コントラスト強調
+    image = cv2.equalizeHist(image)
+    
+    # ガウシアンブラーでノイズ除去
+    image = cv2.GaussianBlur(image, (3, 3), 0)
+
     horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (40, 1))
     detected_lines = cv2.morphologyEx(binary, cv2.MORPH_OPEN, horizontal_kernel, iterations=2)
     binary = cv2.subtract(binary, detected_lines)

@@ -2675,12 +2675,6 @@ export default {
 
                     this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
                     this.dialogForImagePng = true
-                    // csvGenerateForUserPng()
-
-
-
-
-                    // alert(9999)
                   }
                   break
                 }
