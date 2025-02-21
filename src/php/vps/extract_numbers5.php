@@ -32,36 +32,10 @@ $worldFile4 = $dirPath . "/" . pathinfo($filePath, PATHINFO_FILENAME) . "_alpha.
 //exec("pdftoppm -png -r 600 " . escapeshellarg($filePath) . " " . escapeshellarg($outputBase));
 $outputBase = $dirPath . "/" . pathinfo($filePath, PATHINFO_FILENAME);
 $pngFile = $dirPath . "/" . pathinfo($filePath, PATHINFO_FILENAME). ".png";
-$cmd = "gs -dNOPAUSE -dBATCH -dSAFER -sDEVICE=png16m -r600 -o $pngFile " . escapeshellarg($filePath);
+$cmd = "gs -dNOPAUSE -dBATCH -dSAFER -sDEVICE=png16m -r300 -o $pngFile " . escapeshellarg($filePath);
 exec($cmd);
 
 $finalOutputPng = $pngFile;
-
-
-//echo json_encode([
-//    "テスト" => $cmd
-//]);
-//exit;
-
-
-//// **変換後のファイル名 (`-1.png` を削除)**
-//$expectedOutputPng = $outputBase . "-1.png";
-//$finalOutputPng = $outputBase . ".png";
-
-//if (file_exists($expectedOutputPng)) {
-//    rename($expectedOutputPng, $finalOutputPng);
-//} else {
-//    echo json_encode(["error" => "pdftoppm による画像変換に失敗しました", "expected_output" => $expectedOutputPng], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-//    exit;
-//}
-
-
-
-//echo json_encode([
-//    "テスト" => 'テスト'
-//]);
-//exit;
-
 
 
 // **画像の読み込み**
@@ -130,7 +104,6 @@ $cropY = 895;   // 上から200ピクセル
 $cropWidth =    5905;  // 幅 500 ピクセル
 $cropHeight =   5950; // 高さ 300 ピクセル
 
-
 // **PDFをTIFFに変換**
 exec("pdftoppm -tiff -r 600 " . "-x {$cropX} -y {$cropY} -W {$cropWidth} -H {$cropHeight} " . escapeshellarg($filePath) . " " . escapeshellarg($outputBase));
 // **変換後のファイル名 (`-1.png` を削除)**
@@ -139,18 +112,43 @@ $finalOutputTif = $outputBase . ".tif";
 rename($expectedOutputTif, $finalOutputTif);
 
 // **OCR処理関数**
-function extract_numbers($filePath)
+function extract_numbers_parallel($filePaths)
 {
-    $ocrResult = shell_exec("tesseract " . escapeshellarg($filePath) . " stdout -l eng --psm 6 -c tessedit_char_whitelist=-0123456789.");
-    preg_match('/-?\d+\.\d+/', $ocrResult, $matches);
-    return $matches[0] ?? "認識失敗";
+    $processes = [];
+    $pipes = [];
+
+    foreach ($filePaths as $key => $filePath) {
+        $cmd = "tesseract " . escapeshellarg($filePath) . " stdout -l eng --psm 6 -c tessedit_char_whitelist=-0123456789.";
+        $descriptorspec = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
+        $processes[$key] = proc_open($cmd, $descriptorspec, $pipes[$key]);
+    }
+
+    $results = [];
+    foreach ($processes as $key => $process) {
+        if (is_resource($process)) {
+            $results[$key] = stream_get_contents($pipes[$key][1]);
+            fclose($pipes[$key][1]);
+            proc_close($process);
+        }
+    }
+
+    return array_map(fn($text) => preg_match('/-?\d+\.\d+/', $text, $matches) ? $matches[0] : "認識失敗", $results);
 }
 
-// **OCRの実行**
-$rightHorizontalNumber = extract_numbers($croppedRightHorizontalPng);
-$rightVerticalNumber = extract_numbers($croppedRightVerticalPng);
-$leftHorizontalNumber = extract_numbers($croppedLeftHorizontalPng);
-$leftVerticalNumber = extract_numbers($croppedLeftVerticalPng);
+// **OCRの並列実行**
+$filePaths = [
+    'rightHorizontal' => $croppedRightHorizontalPng,
+    'rightVertical'   => $croppedRightVerticalPng,
+    'leftHorizontal'  => $croppedLeftHorizontalPng,
+    'leftVertical'    => $croppedLeftVerticalPng,
+];
+
+$results = extract_numbers_parallel($filePaths);
+
+$rightHorizontalNumber = $results['rightHorizontal'];
+$rightVerticalNumber = $results['rightVertical'];
+$leftHorizontalNumber = $results['leftHorizontal'];
+$leftVerticalNumber = $results['leftVertical'];
 
 ////// **数値チェック**
 if (!is_numeric($rightHorizontalNumber) || !is_numeric($rightVerticalNumber) ||
@@ -159,21 +157,14 @@ if (!is_numeric($rightHorizontalNumber) || !is_numeric($rightVerticalNumber) ||
     exit;
 }
 
-//echo json_encode([
-//    "右上横書き数値" => $rightHorizontalNumber,
-//    "右上縦書き数値" => $rightVerticalNumber,
-//    "左下横書き数値" => $leftHorizontalNumber,
-//    "左下縦書き数値" => $leftVerticalNumber,
-//]);
-//exit;
-
-
-
 // TIFF の画像サイズを取得
 $img = new Imagick($finalOutputTif);
 $width = $img->getImageWidth();
 $height = $img->getImageHeight();
 $img->destroy();
+
+//echo json_encode(["error" => "指定されたファイルが存在しません"]);
+//exit;
 
 // ワールドファイルの計算
 $pixelSizeX = ($rightHorizontalNumber - $leftHorizontalNumber) / $width;

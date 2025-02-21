@@ -463,6 +463,7 @@ import { user } from "@/authState"; // グローバルの認証情報を取得
 import { MaplibreTerradrawControl,MaplibreMeasureControl } from '@watergis/maplibre-gl-terradraw';
 import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
 import {
+  csvGenerateForUserPng,
   ddSimaUpload,
   downloadKML,
   downloadSimaText,
@@ -2632,7 +2633,14 @@ export default {
                     this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
                     this.s_dialogForPng2App = true
                   } else if (files.length === 1){
-                    alert('ワールドファイルが必要です。')
+
+                    this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
+                    csvGenerateForUserPng()
+
+
+
+
+                    // alert(9999)
                   }
                   break
                 }

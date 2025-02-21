@@ -2622,9 +2622,70 @@ export function savePointSima (map,geojson,zahyokei0) {
     URL.revokeObjectURL(link.href);
 }
 
+export function saveSimaImage (data) {
+    // 配列からGeoJSONを作成する関数
+    function createGeoJSON(dataArray) {
+        const features = dataArray.map(([name, lon, lat]) => {
+            return turf.point([lon, lat], { name });
+        });
+        return turf.featureCollection(features);
+    }
+    // GeoJSONを作成
+    const geojson = createGeoJSON(data);
+
+    let simaData = 'G00,01,open-hinata3,\n';
+    simaData += 'Z00,座標ﾃﾞｰﾀ,,\n';
+    simaData += 'A00,\n';
+
+    let A01Text = '';
+    let j = 1;
+
+    // 座標を関連付けるマップ
+    const coordinateMap = new Map();
+
+    geojson.features.forEach((feature) => {
+        const coord = feature.geometry.coordinates;
+        const [x, y] = coord
+        const z = 0
+        const coordinateKey = `${x},${y}`;
+        console.log(feature.properties.name)
+        const name = feature.properties.name
+        // const zahyoZ = feature.properties.標高
+        if (!coordinateMap.has(coordinateKey)) {
+            coordinateMap.set(coordinateKey, j);
+            A01Text += 'A01,' + j + ',' + name + ',' + x + ',' + y + ',' + z + ',\n';
+            j++;
+        }
+    });
+
+    simaData += A01Text + 'A99\n';
+    simaData += 'A99,END,,\n';
+    console.log(simaData)
+
+    // UTF-8で文字列をコードポイントに変換
+    const utf8Array = window.Encoding.stringToCode(simaData);
+    // UTF-8からShift-JISに変換
+    const shiftJISArray = window.Encoding.convert(utf8Array, 'SJIS');
+    // Shift-JISエンコードされたデータをUint8Arrayに格納
+    const uint8Array = new Uint8Array(shiftJISArray);
+    // Blobを作成（MIMEタイプを変更）
+    const blob = new Blob([uint8Array], { type: 'application/octet-stream' });
+
+    // ダウンロード用リンクを作成
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+
+    const fileName = 'aaa.sim'
+
+    link.download = fileName; // ファイル名を正確に指定
+    // リンクをクリックしてダウンロード
+    link.click();
+    URL.revokeObjectURL(link.href);
 
 
 
+
+}
 
 
 
@@ -3744,6 +3805,67 @@ export function addTileLayer (map) {
         console.log(e)
     }
 }
+
+export async function csvGenerateForUserPng () {
+    // -------------------------------------------------------------------------------------------------
+    async function generateCsv(filePath, dir) {
+        store.state.loading2 = true
+        store.state.loadingMessage = 'データ作成中です。'
+
+        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_csv.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                image_path: filePath,
+            })
+        });
+        let result = await response.json();
+        if (result.success) {
+            console.log(result)
+            console.log(result.raw_output)
+            console.log(result.structured_data)
+            // alert("データ生成完了！");
+            saveSimaImage(result.structured_data)
+            store.state.loading2 = false
+
+        } else {
+            console.log(result)
+            store.state.loading2 = false
+            alert("データ生成に失敗しました！" + result.error);
+        }
+    }
+    // -------------------------------------------------------------------------------------------------
+    store.state.loading = true
+    const files = store.state.tiffAndWorldFile
+    let pngFile = files[0]
+    let fileName = pngFile.name;
+    let dataFile
+    fileName = fileName.slice(0, fileName.lastIndexOf('.'))
+    const formData = new FormData();
+    formData.append("file", pngFile);
+    formData.append("dir", store.state.userId); // 指定したフォルダにアップロード
+    fetch("https://kenzkenz.duckdns.org/myphp/uploadPng.php", {
+        method: "POST",
+        body: formData
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log("アップロード成功:", data);
+                // alert("アップロード成功!")
+                store.state.loading = false
+                dataFile = data.file
+                generateCsv(data.file, store.state.userId)
+            } else {
+                console.error("アップロード失敗:", data);
+                store.state.loading = false
+                alert("アップロードエラー: " + data.error);
+            }
+        })
+        .catch(error => console.error("エラー:", error));
+    // -------------------------------------------------------------------------------------------------
+}
+
 
 export async function tileGenerateForUserPdf () {
     // -------------------------------------------------------------------------------------------------
