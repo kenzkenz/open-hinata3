@@ -121,6 +121,7 @@ export default createStore({
     isSmartPhone: false,
     isTransparent: true,
     shpPropertieName: '',
+    ocrAccuracy: 1,
     //------------------------
     highwayYear:{
       map01: 2024,

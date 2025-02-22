@@ -32,7 +32,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       <v-dialog v-model="dialogForImagePng" max-width="500px">
         <v-card>
           <v-card-title>
-            座標系選択
+            求積表からSIMA作成
           </v-card-title>
           <v-card-text>
             <div v-if="s_isAndroid" class="select-container">
@@ -47,7 +47,13 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-select class="scrollable-content"
                         v-model="s_zahyokei"
                         :items="items"
-                        label="選択してください"
+                        label="座標系を選択してください"
+                        outlined
+              ></v-select>
+              <v-select class="scrollable-content"
+                        v-model="s_ocrAccuracy"
+                        :items="[1,2,4]"
+                        label="OCR精度を選択してください"
                         outlined
               ></v-select>
             </div>
@@ -1036,6 +1042,14 @@ export default {
       },
       set(value) {
         this.$store.state.dialogForSimaApp = value
+      }
+    },
+    s_ocrAccuracy: {
+      get() {
+        return this.$store.state.ocrAccuracy
+      },
+      set(value) {
+        this.$store.state.ocrAccuracy = value
       }
     },
     s_zahyokei: {

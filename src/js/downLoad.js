@@ -3819,11 +3819,12 @@ export async function csvGenerateForUserPng () {
         store.state.loading2 = true
         store.state.loadingMessage = 'データ作成中です。'
 
-        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_csv.php", {
+        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_csv2.php", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({
                 image_path: filePath,
+                scale: store.state.ocrAccuracy,
             })
         });
         let result = await response.json();
