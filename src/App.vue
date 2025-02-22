@@ -42,6 +42,12 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   公共座標{{ number }}系
                 </option>
               </select>
+              <v-select class="scrollable-content"
+                        v-model="s_ocrAccuracy"
+                        :items="[1,2,4]"
+                        label="OCR精度を選択してください。通常は1です。"
+                        outlined
+              ></v-select>
             </div>
             <div v-else>
               <v-select class="scrollable-content"
@@ -1939,9 +1945,9 @@ export default {
       drawInstance.on('finish', (e) => {
         const snapshot = drawInstance.getSnapshot();
         const geojsonText = JSON.stringify(snapshot, null, 2);
-        // this.$store.state.drawGeojsonText = geojsonText
+        this.$store.state.drawGeojsonText = geojsonText
+        this.updatePermalink()
       });
-
 
       map.on('click', (e) => {
         const latitude = e.lngLat.lat
@@ -2123,7 +2129,7 @@ export default {
             this.$store.state.drawGeojsonText = params.drawGeojsonText
             const geojson = JSON.parse(this.$store.state.drawGeojsonText);
             drawInstance.addFeatures(geojson);
-            const terradrawLayers = map.getStyle().layers.filter(layer => layer.id.startsWith('terradraw-'));
+            drawControl.recalc()
           }
 
           if (params.gpxText) {

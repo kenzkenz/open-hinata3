@@ -247,6 +247,7 @@ export function popup(e,map,mapName,mapFlg) {
     let html = ''
     let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
     console.log(features[0])
+    console.log(map.getStyle().layers)
     if (features.length> 20) {
         features = features.slice(0, 20);
     }

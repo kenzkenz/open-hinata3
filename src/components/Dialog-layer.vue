@@ -850,8 +850,19 @@ export default {
         map.moveLayer(fileExtension + '-layer')
         map.moveLayer(fileExtension + '-line-layer')
         map.moveLayer(fileExtension + '-point-layer')
-        // map.addLayer(fileExtension + '-polygon-points')
+        // map.moveLayer(fileExtension + '-polygon-points')
       }
+      if (map.getLayer('td-linestring')) {
+        map.moveLayer( 'td-linestring')
+        map.moveLayer( 'td-polygon')
+        map.moveLayer( 'td-polygon-outline')
+        map.moveLayer( 'td-point')
+        map.moveLayer( 'terradraw-measure-polygon-label')
+        map.moveLayer( 'terradraw-measure-line-label"')
+        map.moveLayer( 'terradraw-measure-line-node"')
+      }
+
+
     },
     mw5AddLayers(map,mapName) {
       if (!this.s_selectedLayers[mapName].find(v => v.id === 'oh-mw5')) {
