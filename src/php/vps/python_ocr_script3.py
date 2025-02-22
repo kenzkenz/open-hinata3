@@ -91,31 +91,16 @@ def correct_misrecognized_numbers(text):
 
 def extract_text_from_cells(image, cells):
     """ 各セルのOCR結果を取得 """
-    """ 各セルのOCR結果を取得（1段階目のみ） """
-    structured_data = []
-    row = []
-    last_y = None
     raw_output_list = []  # 生データ用リスト
-    first_stage_data = []  # 1段階目のデータのみ保持
     
     for x, y, w, h in cells:
-        if last_y is not None and abs(y - last_y) > 20:
-            first_stage_data.append(row)  # 1段階目のデータを保存
-            row = []
-
         cell_image = image[y:y+h, x:x+w]
         cell_image = cv2.bitwise_not(cell_image)  # 反転してOCRしやすく
         ocr_result = pytesseract.image_to_string(cell_image, config="--oem 1 --psm 6 -c tessedit_char_whitelist=-0123456789.", lang="jpn").strip()
-        row.append(ocr_result)  # OCR結果をそのまま追加
         raw_output_list.append(ocr_result)  # 生データに追加
-        last_y = y
-
-    if row:
-        first_stage_data.append(row)  # 1段階目のデータを保存
 
     raw_output = "\n".join(raw_output_list)  # すべてのOCR結果を結合
-    
-    return first_stage_data, raw_output  # 1段階目のデータのみ返す
+    return raw_output
 
 def extract_table_from_image(image_path, scale=2):
     """ 画像から表データを抽出 """
@@ -123,10 +108,7 @@ def extract_table_from_image(image_path, scale=2):
     horizontal_lines, vertical_lines = enhance_lines(binary)  # 罫線を強調
     cells = extract_cells(binary, horizontal_lines, vertical_lines)  # 罫線を使ってセルを抽出
     binary_no_lines = remove_lines(binary, horizontal_lines, vertical_lines)  # OCRのために罫線を削除
-    extracted_text, raw_output = extract_text_from_cells(binary_no_lines, cells)  # OCR処理
-
-
-
+    raw_output = extract_text_from_cells(binary_no_lines, cells)  # OCR処理
 
     # 空白で区切って配列化し、数値の末尾の . を削除し、マイナス記号の誤認識(-- を - に変換)
     test_data = [[re.sub(r'\.$', '', re.sub(r'--', '-', item)) for item in re.split(r'\s+', line.strip())] for line in raw_output.split('\n') if line.strip()]
@@ -135,7 +117,7 @@ def extract_table_from_image(image_path, scale=2):
     filtered_data = filter_numeric_rows(test_data)
 
     # 一行目の2列目をchiban_dataとして取得
-    chiban_data = extracted_text[0][2] if len(extracted_text) > 0 and len(extracted_text[0]) > 1 else ""
+    chiban_data = test_data[0][2] if len(test_data) > 0 and len(test_data[0]) > 1 else ""
 
     return {
         "success": True,
