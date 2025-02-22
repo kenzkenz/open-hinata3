@@ -3833,6 +3833,7 @@ export async function csvGenerateForUserPng () {
             console.log(result.chiban_data)
             console.log(result.raw_output)
             console.log(result.structured_data)
+            console.log(result.test_data)
             // alert("データ生成完了！");
             saveSimaImage(result.chiban_data,result.structured_data)
             store.state.loading2 = false
