@@ -53,7 +53,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-select class="scrollable-content"
                         v-model="s_ocrAccuracy"
                         :items="[1,2,4]"
-                        label="OCR精度を選択してください"
+                        label="OCR精度を選択してください。通常は1です。"
                         outlined
               ></v-select>
             </div>
