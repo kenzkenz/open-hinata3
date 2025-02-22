@@ -2622,7 +2622,7 @@ export function savePointSima (map,geojson,zahyokei0) {
     URL.revokeObjectURL(link.href);
 }
 
-export function saveSimaImage (data) {
+export function saveSimaImage (chiban,data) {
     // 配列からGeoJSONを作成する関数
     function createGeoJSON(dataArray) {
         const features = dataArray.map(([name, lon, lat]) => {
@@ -2638,7 +2638,8 @@ export function saveSimaImage (data) {
     simaData += 'A00,\n';
 
     let A01Text = '';
-    let j = 1;
+    let B01Text = '';
+    let i = 1;
 
     // 座標を関連付けるマップ
     const coordinateMap = new Map();
@@ -2650,15 +2651,15 @@ export function saveSimaImage (data) {
         const coordinateKey = `${x},${y}`;
         console.log(feature.properties.name)
         const name = feature.properties.name
-        // const zahyoZ = feature.properties.標高
         if (!coordinateMap.has(coordinateKey)) {
-            coordinateMap.set(coordinateKey, j);
-            A01Text += 'A01,' + j + ',' + name + ',' + x + ',' + y + ',' + z + ',\n';
-            j++;
+            coordinateMap.set(coordinateKey, i);
+            A01Text += 'A01,' + i + ',' + name + ',' + x + ',' + y + ',' + z + ',\n';
+            B01Text += 'B01,' + i + ',' + name + ',\n';
+            i++;
         }
     });
-
-    simaData += A01Text + 'A99\n';
+    // simaData += A01Text + 'A99\n';
+    simaData += A01Text + 'A99\nZ00,区画データ,\nD00,1,' + chiban + ',1,\n' + B01Text + 'D99,\n'
     simaData += 'A99,END';
     console.log(simaData)
 
@@ -2669,6 +2670,7 @@ export function saveSimaImage (data) {
     })
 
     simaToGeoJSON(simaData, store.state.map01, null, true)
+    store.state.snackbar = true
 
     // // UTF-8で文字列をコードポイントに変換
     // const utf8Array = window.Encoding.stringToCode(simaData);
@@ -3827,10 +3829,11 @@ export async function csvGenerateForUserPng () {
         let result = await response.json();
         if (result.success) {
             console.log(result)
+            console.log(result.chiban_data)
             console.log(result.raw_output)
             console.log(result.structured_data)
             // alert("データ生成完了！");
-            saveSimaImage(result.structured_data)
+            saveSimaImage(result.chiban_data,result.structured_data)
             store.state.loading2 = false
 
 
