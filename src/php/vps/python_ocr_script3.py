@@ -97,6 +97,8 @@ def extract_text_from_cells(image, cells):
         cell_image = image[y:y+h, x:x+w]
         cell_image = cv2.bitwise_not(cell_image)  # 反転してOCRしやすく
         ocr_result = pytesseract.image_to_string(cell_image, config="--oem 1 --psm 6 -c tessedit_char_whitelist=-0123456789.", lang="jpn").strip()
+                # '-123.456-789.012' のような数値が連続する場合に分割
+        ocr_result = re.sub(r'(-?\d+\.\d+)(-\d+\.\d+)', r'\1 \2', ocr_result)
         raw_output_list.append(ocr_result)  # 生データに追加
 
     raw_output = "\n".join(raw_output_list)  # すべてのOCR結果を結合
