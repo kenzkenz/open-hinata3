@@ -71,7 +71,6 @@ def filter_numeric_rows(data):
 
 def correct_misrecognized_numbers(text):
     """ OCR誤認識を補正 """
-    corrected_text = re.sub(r'[|｜]', '', text).strip()  # 半角・全角罫線文字を削除し、前後の空白をトリム
     corrected_text = re.sub(r'(?<=\d)e(?=\d)', '6', text)
     corrected_text = corrected_text.replace('ー', '-')
     corrected_text = corrected_text.replace('一', '-')
@@ -116,10 +115,14 @@ def extract_table_from_image(image_path, scale=2):
     # 2列目と3列目が数値の行のみを抽出
     filtered_data = filter_numeric_rows(extracted_text)
 
+    # 一行目の2列目をchiban_dataとして取得
+    chiban_data = extracted_text[0][2] if len(extracted_text) > 0 and len(extracted_text[0]) > 1 else ""
+
     return {
         "success": True,
         "structured_data": filtered_data,
-        "raw_output": raw_output
+        "raw_output": raw_output,
+        "chiban_data": chiban_data
     }
 
 if __name__ == "__main__":
