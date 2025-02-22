@@ -51,11 +51,12 @@ def extract_cells(binary, horizontal_lines, vertical_lines):
     cells = sorted(cells, key=lambda c: (c[1] // 10, c[0]))  # `// 10` で近い値をまとめる
 
     return cells
-
+    
 def is_number(value):
     """ 文字列が数値（整数または小数）かどうかを判定 """
     try:
-        float(value)
+        cleaned_value = value.replace(' ', '')  # 空白を削除
+        float(cleaned_value)
         return True
     except ValueError:
         return False
@@ -70,6 +71,7 @@ def filter_numeric_rows(data):
 
 def correct_misrecognized_numbers(text):
     """ OCR誤認識を補正 """
+    corrected_text = re.sub(r'[|｜]', '', text).strip()  # 半角・全角罫線文字を削除し、前後の空白をトリム
     corrected_text = re.sub(r'(?<=\d)e(?=\d)', '6', text)
     corrected_text = corrected_text.replace('ー', '-')
     corrected_text = corrected_text.replace('一', '-')
@@ -91,25 +93,25 @@ def extract_text_from_cells(image, cells):
         cell_image = cv2.bitwise_not(cell_image)  # 反転してOCRしやすく
         ocr_result = pytesseract.image_to_string(cell_image, config="--oem 1 --psm 6", lang="jpn").strip()
         corrected_text = correct_misrecognized_numbers(ocr_result)
-
-        row.append(corrected_text)
+        row.append(corrected_text)  # '|' とスペースを削除したテキストを追加
         raw_output_list.append(ocr_result)  # 生データに追加
         last_y = y
 
     if row:
         structured_data.append(row)
 
+    structured_data = [[cell.replace('|', '').replace('｜', '').replace(' ', '') for cell in row] for row in structured_data]
     raw_output = "\n".join(raw_output_list)  # すべてのOCR結果を結合
     return structured_data, raw_output
+
 
 def extract_table_from_image(image_path, scale=2):
     """ 画像から表データを抽出 """
     binary = preprocess_image(image_path, scale)
-    horizontal_lines, vertical_lines = enhance_lines(binary)
-    binary_no_lines = remove_lines(binary, horizontal_lines, vertical_lines)
-    cells = extract_cells(binary, horizontal_lines, vertical_lines)
-
-    extracted_text, raw_output = extract_text_from_cells(binary_no_lines, cells)
+    horizontal_lines, vertical_lines = enhance_lines(binary)  # 罫線を強調
+    cells = extract_cells(binary, horizontal_lines, vertical_lines)  # 罫線を使ってセルを抽出
+    binary_no_lines = remove_lines(binary, horizontal_lines, vertical_lines)  # OCRのために罫線を削除
+    extracted_text, raw_output = extract_text_from_cells(binary_no_lines, cells)  # OCR処理
 
     # 2列目と3列目が数値の行のみを抽出
     filtered_data = filter_numeric_rows(extracted_text)
@@ -128,6 +130,144 @@ if __name__ == "__main__":
     image_path = sys.argv[1]
     result = extract_table_from_image(image_path)
     print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+
+# import sys
+# import json
+# import cv2
+# import numpy as np
+# import pytesseract
+# import re
+
+# def preprocess_image(image_path, scale=2):
+#     """ 画像の前処理（グレースケール変換、二値化、ノイズ除去） """
+#     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    
+#     # 拡大処理
+#     height, width = image.shape[:2]
+#     image = cv2.resize(image, (int(width * scale), int(height * scale)), interpolation=cv2.INTER_CUBIC)
+
+#     # 二値化（適応的閾値処理）
+#     binary = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 15, 10)
+
+#     return binary
+
+# def enhance_lines(binary):
+#     """ 罫線を強調する処理 """
+#     horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (40, 1))
+#     horizontal_lines = cv2.morphologyEx(binary, cv2.MORPH_OPEN, horizontal_kernel, iterations=2)
+#     horizontal_lines = cv2.dilate(horizontal_lines, horizontal_kernel, iterations=1)
+
+#     vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 40))
+#     vertical_lines = cv2.morphologyEx(binary, cv2.MORPH_OPEN, vertical_kernel, iterations=2)
+#     vertical_lines = cv2.dilate(vertical_lines, vertical_kernel, iterations=1)
+
+#     return horizontal_lines, vertical_lines
+
+# def remove_lines(binary, horizontal_lines, vertical_lines):
+#     """ 罫線を削除し、OCR用の画像を作成 """
+#     mask = cv2.add(horizontal_lines, vertical_lines)  # 水平線と垂直線を合成
+#     binary_no_lines = cv2.bitwise_and(binary, cv2.bitwise_not(mask))
+#     return binary_no_lines
+
+# def extract_cells(binary, horizontal_lines, vertical_lines):
+#     """ 罫線からセルを抽出する """
+#     table_structure = cv2.add(horizontal_lines, vertical_lines)
+#     contours, _ = cv2.findContours(table_structure, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+#     cells = []
+#     for cnt in contours:
+#         x, y, w, h = cv2.boundingRect(cnt)
+#         if w > 30 and h > 20:  # 小さすぎる領域は無視
+#             cells.append((x, y, w, h))
+
+#     # 上から順にソート（行単位でグループ化）
+#     cells = sorted(cells, key=lambda c: (c[1] // 10, c[0]))  # `// 10` で近い値をまとめる
+
+#     return cells
+
+# def is_number(value):
+#     """ 文字列が数値（整数または小数）かどうかを判定 """
+#     try:
+#         float(value)
+#         return True
+#     except ValueError:
+#         return False
+
+# def filter_numeric_rows(data):
+#     """ 2列目と3列目が数値の行のみを抽出 """
+#     filtered_data = []
+#     for row in data:
+#         if len(row) >= 3 and is_number(row[1]) and is_number(row[2]):
+#             filtered_data.append(row)
+#     return filtered_data
+
+# def correct_misrecognized_numbers(text):
+#     """ OCR誤認識を補正 """
+#     corrected_text = re.sub(r'(?<=\d)e(?=\d)', '6', text)
+#     corrected_text = corrected_text.replace('ー', '-')
+#     corrected_text = corrected_text.replace('一', '-')
+#     return corrected_text
+
+# def extract_text_from_cells(image, cells):
+#     """ 各セルのOCR結果を取得 """
+#     structured_data = []
+#     row = []
+#     last_y = None
+#     raw_output_list = []  # 生データ用リスト
+    
+#     for x, y, w, h in cells:
+#         if last_y is not None and abs(y - last_y) > 20:
+#             structured_data.append(row)
+#             row = []
+
+#         cell_image = image[y:y+h, x:x+w]
+#         cell_image = cv2.bitwise_not(cell_image)  # 反転してOCRしやすく
+#         ocr_result = pytesseract.image_to_string(cell_image, config="--oem 1 --psm 6", lang="jpn").strip()
+#         corrected_text = correct_misrecognized_numbers(ocr_result)
+
+#         row.append(corrected_text)
+#         raw_output_list.append(ocr_result)  # 生データに追加
+#         last_y = y
+
+#     if row:
+#         structured_data.append(row)
+
+#     raw_output = "\n".join(raw_output_list)  # すべてのOCR結果を結合
+#     return structured_data, raw_output
+
+# def extract_table_from_image(image_path, scale=2):
+#     """ 画像から表データを抽出 """
+#     binary = preprocess_image(image_path, scale)
+#     horizontal_lines, vertical_lines = enhance_lines(binary)
+#     binary_no_lines = remove_lines(binary, horizontal_lines, vertical_lines)
+#     cells = extract_cells(binary, horizontal_lines, vertical_lines)
+
+#     extracted_text, raw_output = extract_text_from_cells(binary_no_lines, cells)
+
+#     # 2列目と3列目が数値の行のみを抽出
+#     filtered_data = filter_numeric_rows(extracted_text)
+
+#     return {
+#         "success": True,
+#         "structured_data": filtered_data,
+#         "raw_output": raw_output
+#     }
+
+# if __name__ == "__main__":
+#     if len(sys.argv) < 2:
+#         print(json.dumps({"success": False, "error": "Missing image path"}))
+#         sys.exit(1)
+
+#     image_path = sys.argv[1]
+#     result = extract_table_from_image(image_path)
+#     print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+
+
+
 
 
 
