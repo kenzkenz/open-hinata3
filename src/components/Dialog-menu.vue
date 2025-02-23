@@ -43,22 +43,50 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         </v-card>
       </v-dialog>
 
-<!--URL記録-->
+      <!--URL記録-->
       <v-dialog v-model="s_dialogForLink" :scrim="false" persistent="false" max-width="500px" height="500px">
         <v-card>
           <v-card-title style="text-align: right">
             <v-icon @click="s_dialogForLink = false">mdi-close</v-icon>
           </v-card-title>
           <v-card-text>
-            <div style="margin-bottom: 10px;">
-              <v-text-field  v-model="urlName" type="text" placeholder="ネーム"></v-text-field>
-              <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="urlSave">URL記憶</v-btn>
-              <div v-for="item in jsonData" :key="item.id" class="data-container" @click="urlClick(item.url)">
-                <button class="close-btn" @click="removeItem(item.id, $event)">×</button>
-                <strong>{{ item.name }}</strong><br>
-                <strong></strong>{{ item.url }}
-              </div>
-            </div>
+
+            <v-tabs v-model="tab" style="margin-bottom: 10px;">
+              <v-tab value="one">URL記憶</v-tab>
+              <v-tab value="two">地図タイル記憶</v-tab>
+            </v-tabs>
+
+            <v-window v-model="tab">
+              <v-window-item value="one">
+                <v-card>
+                  <div style="margin-bottom: 10px;">
+                    <v-text-field  v-model="urlName" type="text" placeholder="ネーム"></v-text-field>
+                    <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="urlSave">URL記憶</v-btn>
+                    <div v-for="item in jsonData" :key="item.id" class="data-container" @click="urlClick(item.url)">
+                      <button class="close-btn" @click="removeItem(item.id, $event)">×</button>
+                      <strong>{{ item.name }}</strong><br>
+                      <strong></strong>{{ item.url }}
+                    </div>
+                  </div>
+                </v-card>
+              </v-window-item>
+              <v-window-item value="two">
+                <v-card>
+                  <div style="margin-bottom: 10px;">
+                    <v-text-field  v-model="tileName" type="text" placeholder="ネーム"></v-text-field>
+                    <v-text-field  v-model="tileUrl" type="text" placeholder="タイルURL"></v-text-field>
+                    <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="tileSave">地図タイル記憶</v-btn>
+                    <div v-for="item in jsonDataTile" :key="item.id" class="data-container" @click="urlClick(item.url)">
+                      <button class="close-btn" @click="removeItemTile(item.id, $event)">×</button>
+                      <strong>{{ item.name }}</strong><br>
+                      <strong></strong>{{ item.url }}
+                    </div>
+                  </div>
+
+                </v-card>
+              </v-window-item>
+            </v-window>
+
           </v-card-text>
         </v-card>
       </v-dialog>
@@ -93,16 +121,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 <v-window-item value="two">
                   <v-card>
                     <v-card-text>作成中です。</v-card-text>
-
-<!--                    <v-card-text>-->
-<!--                      <div style="margin-bottom: 10px;">-->
-<!--                        <div v-for="item in jsonData" :key="item.id" class="data-container" @click="urlClick(item.url)">-->
-<!--                          <button class="close-btn" @click="removeItem(item.id, $event)">×</button>-->
-<!--                          <strong>{{ item.name }}</strong><br>-->
-<!--                          <strong></strong>{{ item.url }}-->
-<!--                        </div>-->
-<!--                      </div>-->
-<!--                    </v-card-text>-->
 
                   </v-card>
                 </v-window-item>
@@ -245,8 +263,11 @@ export default {
   data: () => ({
     // zoomItems: [13,14,15,16,17,18,19,20,21,22,23,24,25],
     tab: 'one',
+    tileUrl: '',
+    tileName: '',
     urlName: '',
     jsonData: null,
+    jsonDataTile: null,
     jsonDataVector: null,
     uid: null,
     images: [],
@@ -640,6 +661,32 @@ export default {
       }
       deleteUserData(id)
     },
+    removeItemTile (id,event) {
+      event.stopPropagation();  // バブリングを止める
+      if (!confirm("削除しますか？")) {
+        return
+      }
+      const vm = this
+      async function deleteUserData(id) {
+        try {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userTileDelete.php', {
+            params: { id: id }
+          });
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            console.log('削除成功:', response.data);
+            // vm.urlSelect(vm.$store.state.userId)
+            vm.jsonDataTile = vm.jsonDataTile.filter(item => item.id !== id);
+          }
+        } catch (error) {
+          console.error('通信エラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      deleteUserData(id)
+    },
     urlSelect (uid) {
       const vm = this
       async function fetchUserData(uid) {
@@ -663,6 +710,58 @@ export default {
         }
       }
       fetchUserData(uid)
+    },
+    tileSelect (uid) {
+      const vm = this
+      async function fetchUserData(uid) {
+        try {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userTileSelect.php', {
+            params: { uid: uid }
+          });
+
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            console.log('取得データ:', response.data);
+            console.log(JSON.stringify(response.data, null, 2))
+            // alert(`取得成功！\nデータ: ${JSON.stringify(response.data, null, 2)}`);
+            vm.jsonDataTile = response.data
+          }
+        } catch (error) {
+          console.error('通信エラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      fetchUserData(uid)
+    },
+    tileSave () {
+      if (!this.tileName || !this.tileUrl) {
+        alert('ネーム、タイルURLを記入してください。')
+        return
+      }
+      const vm = this
+      async function insertUserData(uid, name, url) {
+        try {
+          const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userTileInsert.php', new URLSearchParams({
+            uid:uid,
+            name: name,
+            url: url
+          }));
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            console.log('登録成功:', response.data);
+            // alert(`登録成功！\nid: ${response.data.id}\nuid: ${response.data.uid}\nName: ${response.data.name}\nURL: ${response.data.url}`);
+            vm.tileSelect(vm.$store.state.userId)
+          }
+        } catch (error) {
+          console.error('通信エラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      insertUserData(this.$store.state.userId,this.tileName,this.tileUrl)
     },
     urlSave () {
       if (!this.urlName) {
@@ -709,19 +808,6 @@ export default {
         console.error("Error fetching images:", error);
       }
     },
-    // async fetchImages() {
-    //   const url = `https://kenzkenz.duckdns.org/uploads/${this.uid}/`
-    //   console.log(url)
-    //   const response = await fetch(url);
-    //   const text = await response.text();
-    //   const parser = new DOMParser();
-    //   const doc = parser.parseFromString(text, "text/html");
-    //   const imageElements = doc.querySelectorAll("a");
-    //   this.images = Array.from(imageElements)
-    //       .map(a => a.getAttribute("href"))
-    //       .filter(href => href.startsWith('thumbnail-') && /\.(jpg|jpeg)$/i.test(href))
-    //       .map(href => `${url}${href}`);
-    // },
     handleClose(url) {
       if (!confirm("削除しますか？")) {
         return
@@ -733,8 +819,6 @@ export default {
       match = url.match(regex);
       const dir1 = match[1]
       const tileUrl = 'https://kenzkenz.duckdns.org/tiles/' + dir0 + '/' + dir1
-
-      // alert("/var/www/html/public_html/tiles/" + dir0 + '/' + dir1)
 
       fetch("https://kenzkenz.duckdns.org/myphp/delete_dirs.php", {
         method: "POST",
@@ -761,46 +845,6 @@ export default {
             console.log(data)
           })
           .catch(error => console.error("エラー:", error));
-
-
-
-      // const dirMatch = url.match(/^(.*)\/thumbnail-/);
-      // const targetMatch = url.match(/thumbnail-(.*?)\./);
-      // if (dirMatch && targetMatch) {
-      //   const dir = dirMatch[1];  // `thumbnail-` の前の部分を取得
-      //   const target = targetMatch[1];
-      //   console.log(`ディレクトリ: ${dir}`);
-      //   console.log(`ターゲット文字列: ${target}`);
-      //   fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/delete-files.php", {
-      //     method: "POST",
-      //     headers: {
-      //       "Content-Type": "application/json"
-      //     },
-      //     body: JSON.stringify({ dir: dir, keyword: target })
-      //   })
-      //       .then(response => response.json())
-      //       .then(data => {
-      //         console.log(data.message, data.deleted_files);
-      //         this.fetchImages(); // 正常終了後に実行
-      //         const map01 = this.$store.state.map01
-      //         const map02 = this.$store.state.map02
-      //         if (map01.getLayer('oh-geotiff-layer')) {
-      //           map01.removeLayer('oh-geotiff-layer');
-      //         }
-      //         if (map01.getSource('geotiff-source')) {
-      //           map01.removeSource('geotiff-source');
-      //         }
-      //         if (map02.getLayer('oh-geotiff-layer')) {
-      //           map02.removeLayer('oh-geotiff-layer');
-      //         }
-      //         if (map02.getSource('geotiff-source')) {
-      //           map02.removeSource('geotiff-source');
-      //         }
-      //       })
-      //       .catch(error => console.error("エラー:", error));
-      // } else {
-      //   console.log("適切な形式のURLではありません");
-      // }
     },
     handleImageClick(url) {
       async function fetchJson(jsonUrl) {
@@ -825,121 +869,6 @@ export default {
           addTileLayerForImage(tileUrl,jsonData,true)
         }
       });
-
-
-      // async function fetchFile(url) {
-      //   try {
-      //     // Fetchリクエストでファイルを取得
-      //     const response = await fetch(url);
-      //     // レスポンスが成功したか確認
-      //     if (!response.ok) {
-      //       throw new Error(`HTTPエラー! ステータス: ${response.status}`);
-      //     }
-      //     // Blobとしてレスポンスを取得
-      //     const blob = await response.blob();
-      //     // BlobをFileオブジェクトに変換
-      //     const file = new File([blob], "downloaded_file", { type: blob.type });
-      //     console.log("Fileオブジェクトが作成されました:", file);
-      //     return file;
-      //   } catch (error) {
-      //     console.error("ファイルの取得中にエラーが発生しました:", error);
-      //   }
-      // }
-      // // ---------------------------------------------------------------------
-      // async function checkFileExists(filename) {
-      //   try {
-      //     const response = await fetch(filename, { method: 'HEAD' });
-      //     return response.ok;
-      //   } catch (error) {
-      //     console.error('Error checking file:', error);
-      //     return false;
-      //   }
-      // }
-      // // ----------------------------------------------------------------------
-      // const url = image
-      // const tifUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.tif');
-      // const tfwUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.tfw');
-      // const jpgUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.jpg');
-      // const jgwUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.jgw');
-      // const pngUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.png');
-      // const pgwUrl = url.replace(/thumbnail-(.*)\.jpg/, '$1.pgw');
-      // const vm = this
-      // // tifファイルのとき-------------------------------------------------------
-      // checkFileExists(tifUrl).then(exists => {
-      //       if (exists) {
-      //         checkFileExists(tfwUrl).then(exists => {
-      //           if (exists) {
-      //             Promise.all([fetchFile(tifUrl), fetchFile(tfwUrl)]).then(files => {
-      //               const image = files[0]
-      //               const worldFile = files[1]
-      //               const match = url.match(/thumbnail-(.*?)-/);
-      //               let code = match ? match[1] : null;
-      //               code = code.replace(/(EPSG)(\d+)/, '$1:$2');
-      //               addImageLayer(image, worldFile, code, true)
-      //               vm.$store.state.uploadedImage = JSON.stringify({
-      //                 image: tifUrl.split('/').pop(),
-      //                 worldFile: tfwUrl.split('/').pop(),
-      //                 code: code,
-      //                 uid: vm.$store.state.userId
-      //               })
-      //             });
-      //           } else {
-      //             Promise.all([fetchFile(tifUrl)]).then(files => {
-      //               const image = files[0]
-      //               const match = url.match(/thumbnail-(.*?)-/);
-      //               let code = match ? match[1] : null;
-      //               code = code.replace(/(EPSG)(\d+)/, '$1:$2');
-      //               addImageLayer(image, null, code, true)
-      //               vm.$store.state.uploadedImage = JSON.stringify({
-      //                 image: tifUrl.split('/').pop(),
-      //                 code: code,
-      //                 uid: vm.$store.state.userId
-      //               })
-      //             });
-      //             console.log("クリックした画像:", image);
-      //             // alert(`画像がクリックされました: ${image}`);
-      //           }
-      //         })
-      //       }
-      // })
-      // // jpgファイルのとき-------------------------------------------------------
-      // checkFileExists(jpgUrl).then(exists => {
-      //       if (exists) {
-      //         Promise.all([fetchFile(jpgUrl), fetchFile(jgwUrl)]).then(files => {
-      //           const image = files[0]
-      //           const worldFile = files[1]
-      //           const match = url.match(/thumbnail-(.*?)-/);
-      //           let code = match ? match[1] : null;
-      //           code = code.replace(/(EPSG)(\d+)/, '$1:$2');
-      //           addImageLayerJpg(image, worldFile, code, true)
-      //           vm.$store.state.uploadedImage = JSON.stringify({
-      //             image: jpgUrl.split('/').pop(),
-      //             worldFile: jgwUrl.split('/').pop(),
-      //             code: code,
-      //             uid: vm.$store.state.userId
-      //           })
-      //         });
-      //       }
-      // })
-      // // pngファイルのとき-------------------------------------------------------
-      // checkFileExists(pngUrl).then(exists => {
-      //   if (exists) {
-      //     Promise.all([fetchFile(pngUrl), fetchFile(pgwUrl)]).then(files => {
-      //       const image = files[0]
-      //       const worldFile = files[1]
-      //       const match = url.match(/thumbnail-(.*?)-/);
-      //       let code = match ? match[1] : null;
-      //       code = code.replace(/(EPSG)(\d+)/, '$1:$2');
-      //       addImageLayerPng(image, worldFile, code, true)
-      //       vm.$store.state.uploadedImage = JSON.stringify({
-      //         image: pngUrl.split('/').pop(),
-      //         worldFile: pgwUrl.split('/').pop(),
-      //         code: code,
-      //         uid: vm.$store.state.userId
-      //       })
-      //     });
-      //   }
-      // })
     },
     createDirectory () {
       // getFirebaseUid()
@@ -1180,6 +1109,7 @@ export default {
   watch: {
     s_dialogForLink () {
       this.urlSelect(this.$store.state.userId)
+      this.tileSelect(this.$store.state.userId)
     },
     s_fetchImagesFire () {
       this.fetchImages()
@@ -1194,6 +1124,7 @@ export default {
         clearInterval(checkUser); // UIDを取得できたら監視を停止
         this.fetchImages(this.uid); // UIDを取得した後に fetchImages を実行
         this.urlSelect(this.uid)
+        this.tileSelect(this.uid)
       }
     }, 5);
 
