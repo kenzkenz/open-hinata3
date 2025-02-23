@@ -42,12 +42,12 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   公共座標{{ number }}系
                 </option>
               </select>
-              <v-select class="scrollable-content"
-                        v-model="s_ocrAccuracy"
-                        :items="[1,2,4]"
-                        label="OCR精度を選択してください。通常は1です。"
-                        outlined
-              ></v-select>
+<!--              <v-select class="scrollable-content"-->
+<!--                        v-model="s_ocrAccuracy"-->
+<!--                        :items="[1,2,4]"-->
+<!--                        label="OCR精度を選択してください。通常は1です。"-->
+<!--                        outlined-->
+<!--              ></v-select>-->
             </div>
             <div v-else>
               <v-select class="scrollable-content"
@@ -56,12 +56,12 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                         label="座標系を選択してください"
                         outlined
               ></v-select>
-              <v-select class="scrollable-content"
-                        v-model="s_ocrAccuracy"
-                        :items="[1,2,4]"
-                        label="OCR精度を選択してください。通常は1です。"
-                        outlined
-              ></v-select>
+<!--              <v-select class="scrollable-content"-->
+<!--                        v-model="s_ocrAccuracy"-->
+<!--                        :items="[1,2,4]"-->
+<!--                        label="OCR精度を選択してください。通常は1です。"-->
+<!--                        outlined-->
+<!--              ></v-select>-->
             </div>
             <v-btn @click="imagePngLoad">png読込開始</v-btn>
           </v-card-text>

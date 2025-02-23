@@ -5102,7 +5102,7 @@ export function geojsonAddLayer (map, geojson, isFitBounds, fileExtension) {
         id: fileExtension + '-polygon-layer',
         type: 'fill',
         source: fileExtension + '-source',
-        // filter: ["==", "$type", "Polygon"],
+        filter: ["==", "$type", "Polygon"],
         paint: {
             'fill-color': 'blue',
             'fill-opacity': 0.5

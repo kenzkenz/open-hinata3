@@ -61,6 +61,8 @@ def correct_misrecognized_characters(text):
 
     text = text.replace('ー', '-')
     text = text.replace('一', '-')
+    # 連続したマイナス(--)以上を単一のマイナス(-)に修正
+    text = re.sub(r'-{2,}', '-', text)
 
     # 指定された文字を削除
     text = re.sub(r'[|ー、。「]', '', text)
