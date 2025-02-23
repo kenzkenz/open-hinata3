@@ -76,17 +76,15 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                     <v-text-field  v-model="tileName" type="text" placeholder="ネーム"></v-text-field>
                     <v-text-field  v-model="tileUrl" type="text" placeholder="タイルURL"></v-text-field>
                     <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="tileSave">地図タイル記憶</v-btn>
-                    <div v-for="item in jsonDataTile" :key="item.id" class="data-container" @click="urlClick(item.url)">
+                    <div v-for="item in jsonDataTile" :key="item.id" class="data-container" @click="tileClick(item.name,item.url,item.id)">
                       <button class="close-btn" @click="removeItemTile(item.id, $event)">×</button>
                       <strong>{{ item.name }}</strong><br>
                       <strong></strong>{{ item.url }}
                     </div>
                   </div>
-
                 </v-card>
               </v-window-item>
             </v-window>
-
           </v-card-text>
         </v-card>
       </v-dialog>
@@ -156,12 +154,12 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       <div class="range-div">
         <input type="range" min="1" max="10" step="0.1" class="range" v-model.number="s_terrainLevel" @input="terrainLevelInput"/>
       </div>
-      <v-btn @click="addLayerDiv=!addLayerDiv">レイヤー追加（XYZタイル）</v-btn>
-      <div v-if="addLayerDiv">
-        <v-text-field label="レイヤー名を記入" v-model="s_extLayerName" style="margin-top: 10px"></v-text-field>
-        <v-text-field label="URLを記入" v-model="s_extLayer" style="margin-top: -15px"></v-text-field>
-        <v-btn style="margin-top: -15px;margin-left: 100px;" @click="addLayer">レイヤー追加&変更</v-btn>
-      </div>
+<!--      <v-btn @click="addLayerDiv=!addLayerDiv">レイヤー追加（XYZタイル）</v-btn>-->
+<!--      <div v-if="addLayerDiv">-->
+<!--        <v-text-field label="レイヤー名を記入" v-model="s_extLayerName" style="margin-top: 10px"></v-text-field>-->
+<!--        <v-text-field label="URLを記入" v-model="s_extLayer" style="margin-top: -15px"></v-text-field>-->
+<!--        <v-btn style="margin-top: -15px;margin-left: 100px;" @click="addLayer">レイヤー追加&変更</v-btn>-->
+<!--      </div>-->
 
 <!--      <hr style="margin-top: 20px">-->
 <!--      今昔マップ<br>{{konjyakuYear}}年の直近（過去）の地図を表示します。-->
@@ -169,7 +167,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 <!--        <input type="range" min="1890" max="2024" step="1" class="range" v-model.number="konjyakuYear" @change="konjyakuYearInput"/>-->
 <!--      </div>-->
 
-      <hr style="margin-top: 10px;">
+<!--      <hr style="margin-top: 10px;">-->
 
     </div>
   </Dialog>
@@ -184,7 +182,7 @@ import {
   addImageLayerPng,
   addTileLayerForImage,
   geojsonAddLayer,
-  simaToGeoJSON
+  simaToGeoJSON, userTileSet
 } from "@/js/downLoad";
 
 const getFirebaseUid = async () => {
@@ -386,6 +384,9 @@ export default {
       const visibility = this.s_isClickPointsLayer ? "visible" : "none";
       map01.setLayoutProperty("click-points-layer", "visibility", visibility);
       map02.setLayoutProperty("click-points-layer", "visibility", visibility);
+    },
+    tileClick (name,url,id) {
+      userTileSet(name,url,id)
     },
     urlClick (url) {
       async function fetchFile(url) {

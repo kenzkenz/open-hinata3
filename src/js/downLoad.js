@@ -5356,3 +5356,31 @@ export const wsg84ToJgd = (coordinates) => {
     const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
     return proj4("EPSG:4326", code, coordinates);
 };
+
+export function userTileSet(name,url,id) {
+    const map = store.state.map01
+    const sopurce = {
+        id: name + '-source',obj: {
+            type: 'raster',
+            tiles: [url]
+        }
+    };
+    const layer = {
+        id: 'oh-' + name + '-layer',
+        type: 'raster',
+        source: name + '-source',
+    }
+
+    store.state.selectedLayers.map01.unshift(
+        {
+            id: 'oh-usertile-' + id + '-' + name + '-layer',
+            label: name,
+            source: sopurce,
+            layers: [layer],
+            opacity: 1,
+            visibility: true,
+        }
+    );
+
+
+}

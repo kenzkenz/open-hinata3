@@ -2250,16 +2250,103 @@ export default {
                 }
             )
           }
-          // alert(params.slj)
-          if (params.slj) {
-            this.s_selectedLayers = params.slj
+
+          console.log(params.slj)
+
+          // params.slj.map01.forEach(v => {
+          //   console.log(v.id)
+          //   if (v.id.includes('usertile')) {
+          //     const layerId = v.id.split('-')[2]
+          //     async function fetchUserLayer(layerId) {
+          //       const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userTileSelectById.php', {
+          //         params: {id: layerId}
+          //       });
+          //       if (response.data.error) {
+          //         console.error('エラー:', response.data.error);
+          //         alert(`エラー: ${response.data.error}`);
+          //       } else {
+          //         console.log('取得データ:', response.data);
+          //         console.log(JSON.stringify(response.data, null, 2))
+          //         alert(response.data[0].name)
+          //         const sopurce = {
+          //           id: response.data[0].name + '-source', obj: {
+          //             type: 'raster',
+          //             tiles: [response.data[0].url]
+          //           }
+          //         };
+          //         const layer = {
+          //           id: 'oh-' + response.data[0].name + '-layer',
+          //           type: 'raster',
+          //           source: response.data[0].name + '-source',
+          //         }
+          //         v.sources = [sopurce]
+          //         v.layers = [layer]
+          //         v.label = response.data[0].name
+          //         // if (params.slj) {
+          //         //   this.s_selectedLayers = params.slj
+          //         // }
+          //       }
+          //     }
+          //     fetchUserLayer(layerId)
+          //   } else {
+          //     // if (params.slj) {
+          //     //   this.s_selectedLayers = params.slj
+          //     // }
+          //   }
+          // })
+          let fetchFlg = false
+          async function fetchAllUserLayers() {
+            const promises = params.slj.map01.map(async (v) => {
+              console.log(v.id);
+              if (v.id.includes('usertile')) {
+                fetchFlg = true
+                const layerId = v.id.split('-')[2];
+                try {
+                  const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userTileSelectById.php', {
+                    params: { id: layerId }
+                  });
+
+                  if (response.data.error) {
+                    console.error('エラー:', response.data.error);
+                    alert(`エラー: ${response.data.error}`);
+                  } else {
+                    console.log('取得データ:', response.data);
+                    console.log(JSON.stringify(response.data, null, 2));
+                    const source = {
+                      id: response.data[0].name + '-source',
+                      obj: {
+                        type: 'raster',
+                        tiles: [response.data[0].url]
+                      }
+                    };
+
+                    const layer = {
+                      id: 'oh-' + response.data[0].name + '-layer',
+                      type: 'raster',
+                      source: response.data[0].name + '-source',
+                    };
+
+                    v.sources = [source];
+                    v.layers = [layer];
+                    v.label = response.data[0].name;
+                  }
+                } catch (error) {
+                  console.error('フェッチエラー:', error);
+                }
+              }
+            });
+            // すべての fetchUserLayer の実行が完了するのを待つ
+            await Promise.all(promises);
+            // すべての非同期処理が完了したら次を実行
+            vm.s_selectedLayers = params.slj
           }
+          // 非同期関数を実行
+          if (params.slj) fetchAllUserLayers();
 
+          if (params.slj) {
+            if (!fetchFlg) this.s_selectedLayers = params.slj
+          }
           this.s_selectedLayers.map01 = this.s_selectedLayers.map01.filter(layer => layer.id !== 'oh-konzyaku-layer')
-
-
-
-
 
           // ----------------------------------------------------------------
 
