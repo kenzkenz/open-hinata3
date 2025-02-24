@@ -5384,7 +5384,7 @@ export function userTileSet(name,url,id) {
     );
 }
 
-export async function pmtilesGenerateForUser (geojsonFile) {
+export async function pmtilesGenerateForUser (geojsonBlob) {
     // -------------------------------------------------------------------------------------------------
     async function extractNumbers(filePath, dir) {
         store.state.loading2 = true
@@ -5481,10 +5481,11 @@ export async function pmtilesGenerateForUser (geojsonFile) {
     //     store.state.fetchImagesFire = !store.state.fetchImagesFire
     // }
     // -------------------------------------------------------------------------------------------------
-    store.state.loading = true
+    store.state.loading2 = true
+    store.state.loadingMessage = 'アップロード中です。'
 
     const formData = new FormData();
-    formData.append("file", geojsonFile,"data.geojson");
+    formData.append("file", geojsonBlob,"data.geojson");
     formData.append("dir", store.state.userId); // 指定したフォルダにアップロード
     fetch("https://kenzkenz.duckdns.org/myphp/uploadGeojson.php", {
         method: "POST",
@@ -5495,7 +5496,7 @@ export async function pmtilesGenerateForUser (geojsonFile) {
             if (data.success) {
                 console.log("アップロード成功:", data);
                 alert("アップロード成功!")
-                store.state.loading = false
+                store.state.loading2 = false
                 // dataFile = data.file
                 // // alert(data.file)
                 // extractNumbers(data.file, store.state.userId)
