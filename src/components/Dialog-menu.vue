@@ -125,7 +125,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 </v-window-item>
                 <v-window-item value="three">
                   <v-card>
-                    <div v-for="item in jsonDataPmtile" :key="item.id" class="data-container" @click="tileClick(item.name,item.url,item.id)">
+                    <div v-for="item in jsonDataPmtile" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban)">
                       <button class="close-btn" @click="removeItemTile(item.id, $event)">×</button>
                       <strong>{{ item.name }}</strong><br>
                       <strong></strong>{{ item.url }}
@@ -187,7 +187,7 @@ import {
   addImageLayerPng,
   addTileLayerForImage,
   geojsonAddLayer,
-  simaToGeoJSON, userTileSet
+  simaToGeoJSON, userPmileSet, userPmtileSet, userTileSet
 } from "@/js/downLoad";
 
 const getFirebaseUid = async () => {
@@ -390,6 +390,9 @@ export default {
       const visibility = this.s_isClickPointsLayer ? "visible" : "none";
       map01.setLayoutProperty("click-points-layer", "visibility", visibility);
       map02.setLayoutProperty("click-points-layer", "visibility", visibility);
+    },
+    pmtileClick (name,url,id, chiban) {
+      userPmtileSet(name,url,id, chiban)
     },
     tileClick (name,url,id) {
       userTileSet(name,url,id)
@@ -1196,6 +1199,7 @@ export default {
     },
     s_fetchImagesFire () {
       this.fetchImages()
+      this.pmtileSelect(this.$store.state.userId)
     }
   },
   mounted() {

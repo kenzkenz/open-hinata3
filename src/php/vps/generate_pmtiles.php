@@ -7,8 +7,6 @@ header("Access-Control-Allow-Headers: Content-Type");
 ini_set('memory_limit', '-1');
 set_time_limit(0);
 
-//$BASE_URL = "https://kenzkenz.duckdns.org/tiles/";
-
 // ---- ここでWeb上のベースURLを指定 ----
 $WEB_BASE_URL = "https://kenzkenz.duckdns.org/uploads/";
 
@@ -37,9 +35,8 @@ $fileBaseName = pathinfo($filePath, PATHINFO_FILENAME);
 $pmtilesPath = $geojsonDir . "/" . $fileBaseName . ".pmtiles";
 
 $tippecanoeCmd = sprintf(
-    "tippecanoe -o %s --generate-ids --no-feature-limit --no-tile-size-limit --force --drop-densest-as-needed --coalesce-densest-as-needed --simplification=2 --simplify-only-low-zooms --maximum-zoom=16 --minimum-zoom=0 --layer=%s %s 2>&1",
+    "tippecanoe -o %s --generate-ids --no-feature-limit --no-tile-size-limit --force --drop-densest-as-needed --coalesce-densest-as-needed --simplification=2 --simplify-only-low-zooms --maximum-zoom=16 --minimum-zoom=0 --layer=oh3 %s 2>&1",
     escapeshellarg($pmtilesPath),
-    escapeshellarg($fileBaseName), // layer名をGeoJSONのファイル名にする
     escapeshellarg($filePath)
 );
 
@@ -52,6 +49,10 @@ if ($returnVar !== 0) {
     exit;
 }
 
+if ($returnVar === 0) {
+    deleteSourceAndTempFiles($filePath);
+}
+
 // 正常終了
 echo json_encode([
     "success" => true,
@@ -59,6 +60,26 @@ echo json_encode([
     "pmtiles_file" => $pmtilesPath,   // ローカルの保存先パス
     "tippecanoeCmd" => $tippecanoeCmd
 ]);
+
+/**
+ * uploads 内の元データと中間データを削除（thumbnail- で始まるファイルは除外）
+ */
+function deleteSourceAndTempFiles($filePath)
+{
+    $dir = dirname($filePath);
+    foreach (scandir($dir) as $file) {
+        // カレントディレクトリ (`.`) と 親ディレクトリ (`..`) をスキップ
+        if ($file === '.' || $file === '..') {
+            continue;
+        }
+        $fullPath = $dir . DIRECTORY_SEPARATOR . $file;
+        // .pmtiles ファイルは削除しない
+        if (pathinfo($fullPath, PATHINFO_EXTENSION) === 'pmtiles') {
+            continue;
+        }
+        unlink($fullPath);
+    }
+}
 
 ?>
 

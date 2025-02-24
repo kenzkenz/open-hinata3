@@ -8,27 +8,30 @@ try {
     $name = $_POST['name'] ?? null;
     $url = $_POST['url'] ?? null;
     $uid = $_POST['uid'] ?? null;
+    $uid = $_POST['uid'] ?? null;
+    $chiban = $_POST['chiban'] ?? null;
 
     // バリデーション: 空チェック
-    if (empty($name) || empty($url) || empty($uid)) {
-        echo json_encode(["error" => "name, url, uidは必須です"]);
+    if (empty($name) || empty($url) || empty($uid) || empty($chiban)) {
+        echo json_encode(["error" => "name, url, uid, chibanは必須です"]);
         exit;
     }
 
     // SQL: userdbに新規挿入
-    $sql = "INSERT INTO userpmtiles (name, url, uid) VALUES (:name, :url, :uid)";
+    $sql = "INSERT INTO userpmtiles (name, url, uid, chiban) VALUES (:name, :url, :uid, :chiban)";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ':name' => $name,
         ':url' => $url,
-        ':uid' => $uid
+        ':uid' => $uid,
+        ':chiban' => $chiban
     ]);
 
     // 挿入された行のIDを取得
     $lastId = $pdo->lastInsertId();
 
     // 成功した場合のレスポンス
-    echo json_encode(["id" => $lastId, "name" => $name, "url" => $url, "uid" => $uid]);
+    echo json_encode(["id" => $lastId, "name" => $name, "url" => $url, "uid" => $uid, "chiban" => $chiban]);
 
 } catch (PDOException $e) {
     echo json_encode(["error" => "データベースエラー: " . $e->getMessage()]);

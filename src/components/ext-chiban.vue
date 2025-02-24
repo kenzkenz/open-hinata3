@@ -445,6 +445,11 @@ export default {
           this.fields = ['id']
           break
       }
+      if(/^oh-chiban-/.test(id)) {
+        this.layerId = id
+        this.sourceId = id.split('-')[3] + '-source'
+        this.fields = ['oh3id']
+      }
     },
     resetFeatureColors () {
       const map = this.$store.state[this.mapName]
@@ -500,6 +505,11 @@ export default {
       const map = this.$store.state[this.mapName]
       this.idForLayerId(this.item.id)
       // saveCima(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'],true)
+      console.log(this.layerId)
+      console.log(this.sourceId)
+      console.log(this.fields)
+      console.log(this.s_zahyokei)
+
       saveCima(map,this.layerId,this.sourceId,this.fields,true,this.s_zahyokei)
     },
     saveGeojson () {

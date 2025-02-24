@@ -28,7 +28,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         </template>
       </v-snackbar>
 
-
       <v-dialog v-model="dialogForImagePng" max-width="500px">
         <v-card>
           <v-card-title>
@@ -84,10 +83,11 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
             </div>
             <div v-else>
+              <v-text-field v-model="s_pmtilesName" type="email" placeholder="地番図名" ></v-text-field>
               <v-select class="scrollable-content"
-                        v-model="s_shpPropertieName"
+                        v-model="s_pmtilesPropertieName"
                         :items="shpPropaties"
-                        label="選択してください"
+                        label="地番にあたるフィールドを選択してください"
                         outlined
               ></v-select>
             </div>
@@ -883,6 +883,22 @@ export default {
     loadingSnackbar: false,
   }),
   computed: {
+    s_pmtilesName: {
+      get() {
+        return this.$store.state.pmtilesName
+      },
+      set(value) {
+        this.$store.state.pmtilesName = value
+      }
+    },
+    s_pmtilesPropertieName: {
+      get() {
+        return this.$store.state.pmtilesPropertieName
+      },
+      set(value) {
+        this.$store.state.pmtilesPropertieName = value
+      }
+    },
     s_shpPropertieName: {
       get() {
         return this.$store.state.shpPropertieName
@@ -1126,13 +1142,21 @@ export default {
       this.dialogForDxfApp = false
     },
     shpLoad () {
-      const map01 = this.$store.state.map01
-      // geojsonAddLayer (map01, this.shpGeojson, true, 'zip')
-
+      if (!this.s_pmtilesName || !this.s_pmtilesPropertieName) {
+        alert("入力されていません。")
+        return
+      }
+      this.shpGeojson.features.forEach((feature, index) => {
+        if (!feature.properties) {
+          feature.properties = {};
+        }
+        feature.properties.oh3id = index;
+        feature.properties.chiban = store.state.pmtilesPropertieName;
+      });
       const geojsonString = JSON.stringify(this.shpGeojson, null, 2);
       const geojsonBlob = new Blob([geojsonString], { type: "application/json" });
       pmtilesGenerateForUser (geojsonBlob)
-
+      this.dialogForShpApp = false
     },
     imagePngLoad () {
       csvGenerateForUserPng()
@@ -2777,20 +2801,14 @@ export default {
                     this.s_loading = true
                     const arrayBuffer = await file.arrayBuffer();
                     const geojson = await shp(arrayBuffer);
+                    console.log(geojson)
                     const firstFeature = geojson.features[0];
                     console.log(Object.keys(firstFeature.properties))
                     this.shpPropaties = Object.keys(firstFeature.properties)
-                    geojson.features.forEach((feature, index) => {
-                      if (!feature.properties) {
-                        feature.properties = {};
-                      }
-                      feature.properties.oh3id = index;
-                    });
                     this.shpGeojson = geojson
                     this.loadingSnackbar = false
                     this.s_loading = false
                     this.dialogForShpApp = true
-                    // geojsonAddLayer (map, geojson, true, fileExtension)
                   }
                   break
                 }
@@ -3166,6 +3184,37 @@ export default {
             }
           });
         });
+
+        map.on('sourcedata', (e) => {
+          console.log(77777777777777777)
+          // if (e.sourceId && map.getStyle().layers) {
+          //   const targetLayers = map.getStyle().layers
+          //       .filter(layer => layer.id.startsWith('oh-chiban-') && !registeredLayers.has(layer.id))
+          //       .map(layer => layer.id);
+          //   console.log(targetLayers)
+          //   targetLayers.forEach(layer => {
+          //     console.log(`Adding click event to layer: ${layer}`);
+          //     map.on('click', layer, (e) => {
+          //       console.log(6666666666)
+          //       if (e.features && e.features.length > 0) {
+          //         console.log(555555555)
+          //         const targetId = `${e.features[0].properties['oh3id']}`;
+          //         console.log('Clicked ID', targetId);
+          //         if (this.$store.state.highlightedChibans.has(targetId)) {
+          //           // すでに選択されている場合は解除
+          //           this.$store.state.highlightedChibans.delete(targetId);
+          //         } else {
+          //           // 新しいIDを追加
+          //           this.$store.state.highlightedChibans.add(targetId);
+          //         }
+          //         highlightSpecificFeaturesCity(map, layer);
+          //       }
+          //     });
+          //   });
+          // }
+        });
+      // すでに登録されたレイヤーを追跡するセット
+        const registeredLayers = new Set();
 
         this.compass = new CompassControl({
           visible: false // ボタンを非表示にする

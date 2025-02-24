@@ -122,7 +122,8 @@ export default createStore({
     isTransparent: true,
     shpPropertieName: '',
     ocrAccuracy: 1,
-    pmtilesName: '名無し',
+    pmtilesName: '',
+    pmtilesPropertieName: '',
     //------------------------
     highwayYear:{
       map01: 2024,

@@ -428,6 +428,9 @@ export function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, fileName, 
             case 'oh-chibanzu-豊中市':
                 chiban = feature.properties.TEXTCODE1
                 break
+            case /^oh-chiban-/.test(layerId): // 'oh-chiban-' で始まる場合
+                chiban = feature.properties[feature.properties.chiban]
+                break;
         }
 // alert(chiban)
         B01Text += 'D00,' + i + ',' + chiban + ',1,\n';
@@ -738,10 +741,10 @@ export function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, fileName, 
 // }
 
 export function saveCima(map, layerId, sourceId, fields, kaniFlg, kei) {
-    if (map.getZoom() <= 15) {
-        alert('ズーム15以上にしてください。')
-        return
-    }
+    // if (map.getZoom() <= 15) {
+    //     alert('ズーム15以上にしてください。')
+    //     return
+    // }
     const geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields);
     console.log(geojson)
     convertAndDownloadGeoJSONToSIMA(map,layerId,geojson,'簡易_',kaniFlg,kei);
@@ -2124,6 +2127,7 @@ export function highlightSpecificFeatures(map,layerId) {
     }, sec)
     isFirstRun = false
 }
+
 let isFirstRunCity1 = true;
 export function highlightSpecificFeaturesCity(map,layerId) {
     console.log(store.state.highlightedChibans);
@@ -2194,8 +2198,13 @@ export function highlightSpecificFeaturesCity(map,layerId) {
             case 'oh-chibanzu-室蘭市':
                 fields = ['concat', ['get', 'id']]
                 break
-
         }
+
+        if(/^oh-chiban-/.test(layerId)) {
+            fields = ['concat', ['get', 'oh3id']]
+            console.log(999999999)
+        }
+
         console.log(layerId)
         console.log(fields)
         console.log(Array.from(store.state.highlightedChibans))
@@ -2294,6 +2303,13 @@ function getBoundingBoxByLayer(map, layerId) {
                 targetId = `${feature.properties['id']}`;
                 break;
         }
+        if(/^oh-chiban-/.test(layerId)) {
+            targetId = `${feature.properties['oh3id']}`;
+            console.log(88888888888888)
+        }
+
+
+
         // amx2024対策
         // if (layerId === 'oh-amx-a-fude') {
         //     return chiban.includes(feature.properties['地番'])
@@ -2445,6 +2461,10 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
             case 'oh-chibanzu-室蘭市':
                 targetId = `${feature.properties['id']}`;
                 break;
+        }
+        if(/^oh-chiban-/.test(layerId)) {
+            targetId = `${feature.properties['oh3id']}`;
+            console.log(999999999)
         }
         console.log(targetId)
          // amx2024対策
@@ -5358,6 +5378,106 @@ export const wsg84ToJgd = (coordinates) => {
     return proj4("EPSG:4326", code, coordinates);
 };
 
+export function userPmtileSet(name,url,id, chiban) {
+    const map = store.state.map01
+    const sopurce = {
+        id: name + '-source',obj: {
+            type: 'vector',
+            url: "pmtiles://" + url
+        }
+    };
+    const polygonLayer = {
+        id: 'oh-chiban-' + id + '-' + name + '-layer',
+        type: 'fill',
+        source: name + '-source',
+        "source-layer": 'oh3',
+        'paint': {
+            'fill-color': 'rgba(0,0,0,0.1)',
+        },
+    }
+    const lineLayer = {
+        id: 'oh-chiban-' + name + '-line-layer',
+        source: name + '-source',
+        type: 'line',
+        "source-layer": "oh3",
+        paint: {
+            'line-color': 'navy',
+            'line-width': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                1, 0.1,
+                16, 2
+            ]
+        },
+    }
+    const labelLayer = {
+        id: 'oh-chiban-' + name + '-label-layer',
+        type: "symbol",
+        source: name + '-source',
+        "source-layer": "oh3",
+        'layout': {
+            'text-field': ['get', chiban],
+            'text-font': ['NotoSansJP-Regular'],
+        },
+        'paint': {
+            'text-color': 'navy',
+            'text-halo-color': 'rgba(255,255,255,1)',
+            'text-halo-width': 1.0,
+        },
+        // 'maxzoom': 24,
+        // 'minzoom': 17
+    }
+
+
+    store.state.selectedLayers.map01.unshift(
+        {
+            id: 'oh-chiban-' + id + '-' + name + '-layer',
+            label: name,
+            source: sopurce,
+            layers: [polygonLayer,lineLayer,labelLayer],
+            opacity: 1,
+            visibility: true,
+            ext: {name:'ext-chibanzu'}
+        }
+    );
+
+    setTimeout(() => {
+        console.log(map.getStyle().layers)
+        const targetLayers = map.getStyle().layers
+            .filter(layer => layer.id.startsWith('oh-chiban-') && !registeredLayers.has(layer.id))
+            .map(layer => layer.id);
+        console.log(targetLayers)
+        targetLayers.forEach(layer => {
+            console.log(`Adding click event to layer: ${layer}`);
+            map.on('click', layer, (e) => {
+                console.log(6666666666)
+                if (e.features && e.features.length > 0) {
+                    console.log(555555555)
+                    const targetId = `${e.features[0].properties['oh3id']}`;
+                    console.log('Clicked ID', targetId);
+                    if (store.state.highlightedChibans.has(targetId)) {
+                        // すでに選択されている場合は解除
+                        store.state.highlightedChibans.delete(targetId);
+                    } else {
+                        // 新しいIDを追加
+                        store.state.highlightedChibans.add(targetId);
+                    }
+                    highlightSpecificFeaturesCity(map, layer);
+                }
+            });
+        });
+    },100)
+    const registeredLayers = new Set();
+
+
+
+
+
+}
+
+
+
 export function userTileSet(name,url,id) {
     const map = store.state.map01
     const sopurce = {
@@ -5428,7 +5548,7 @@ export async function pmtilesGenerateForUser (geojsonBlob) {
             // addTileLayer(result.tiles_url, result.bbox)
             console.log(result.tippecanoeCmd)
             const webUrl = 'https://kenzkenz.duckdns.org/' + result.pmtiles_file.replace('/var/www/html/public_html/','')
-            insertPmtilesData(store.state.userId , store.state.pmtilesName, webUrl)
+            insertPmtilesData(store.state.userId , store.state.pmtilesName, webUrl, store.state.pmtilesPropertieName)
             console.log('pmtiles作成完了')
             store.state.loading2 = false
 
@@ -5439,20 +5559,21 @@ export async function pmtilesGenerateForUser (geojsonBlob) {
         }
     }
 
-    async function insertPmtilesData(uid, name, url) {
+    async function insertPmtilesData(uid, name, url, chiban) {
         try {
             const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesInsert.php', new URLSearchParams({
-                uid:uid,
+                uid: uid,
                 name: name,
-                url: url
+                url: url,
+                chiban: chiban
             }));
             if (response.data.error) {
                 console.error('エラー:', response.data.error);
                 alert(`エラー: ${response.data.error}`);
             } else {
                 console.log('登録成功:', response.data);
-                // alert(`登録成功！\nid: ${response.data.id}\nuid: ${response.data.uid}\nName: ${response.data.name}\nURL: ${response.data.url}`);
-                // vm.tileSelect(vm.$store.state.userId)
+                userPmtileSet(name,url,response.data.id, chiban)
+                store.state.fetchImagesFire = !store.state.fetchImagesFire
             }
         } catch (error) {
             console.error('通信エラー:', error);
