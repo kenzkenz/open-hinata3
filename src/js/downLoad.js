@@ -1912,7 +1912,7 @@ function determinePlaneRectangularZone(x, y) {
                 closestZone = i + 1;
             }
         } catch (error) {
-            console.warn(`系 ${i + 1} の変換でエラー:`, error);
+            // console.warn(`系 ${i + 1} の変換でエラー:`, error);
         }
     }
     return closestZone;
@@ -3834,6 +3834,7 @@ export async function csvGenerateForUserPng () {
             console.log(result.raw_output)
             console.log(result.structured_data)
             console.log(result.test_data)
+            // console.log(result.tables)
             // alert("データ生成完了！");
             saveSimaImage(result.chiban_data,result.structured_data)
             store.state.loading2 = false
