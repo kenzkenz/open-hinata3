@@ -524,7 +524,7 @@ import {
   highlightSpecificFeaturesCity,
   jpgLoad,
   jpgLoadForUser,
-  kmzLoadForUser,
+  kmzLoadForUser, pmtilesGenerateForUser,
   pngDownload,
   pngLoad,
   pngLoadForUser,
@@ -1127,7 +1127,23 @@ export default {
     },
     shpLoad () {
       const map01 = this.$store.state.map01
-      geojsonAddLayer (map01, this.shpGeojson, true, 'zip')
+      // geojsonAddLayer (map01, this.shpGeojson, true, 'zip')
+
+      const geojsonString = JSON.stringify(this.shpGeojson, null, 2);
+
+
+
+      // Blobを作成
+      const geojsonBlob = new Blob([geojsonString], { type: "application/json" });
+      // FormDataを作成
+      const formData = new FormData();
+      formData.append("file", geojsonBlob, "data.geojson");
+
+
+      pmtilesGenerateForUser (geojsonBlob)
+
+
+
     },
     imagePngLoad () {
       csvGenerateForUserPng()
