@@ -625,6 +625,57 @@ export default {
             const layers = Layers.layers[mapName];
             traverseLayers(layers, slj);
           });
+
+          let fetchFlg = false
+          async function fetchAllUserLayers() {
+            const promises = slj0.map01.map(async (v) => {
+              console.log(v.id);
+              if (v.id.includes('usertile')) {
+                fetchFlg = true
+                const layerId = v.id.split('-')[2];
+                try {
+                  const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userTileSelectById.php', {
+                    params: { id: layerId }
+                  });
+
+                  if (response.data.error) {
+                    console.error('エラー:', response.data.error);
+                    alert(`エラー: ${response.data.error}`);
+                  } else {
+                    console.log('取得データ:', response.data);
+                    console.log(JSON.stringify(response.data, null, 2));
+                    const source = {
+                      id: response.data[0].name + '-source',
+                      obj: {
+                        type: 'raster',
+                        tiles: [response.data[0].url]
+                      }
+                    };
+
+                    const layer = {
+                      id: 'oh-' + response.data[0].name + '-layer',
+                      type: 'raster',
+                      source: response.data[0].name + '-source',
+                    };
+
+                    v.sources = [source];
+                    v.layers = [layer];
+                    v.label = response.data[0].name;
+
+                  }
+                } catch (error) {
+                  console.error('フェッチエラー:', error);
+                }
+              }
+            });
+            // すべての fetchUserLayer の実行が完了するのを待つ
+            await Promise.all(promises);
+            // すべての非同期処理が完了したら次を実行
+            console.log(slj0)
+            vm.$store.state.selectedLayers = slj0
+          }
+          fetchAllUserLayers()
+
           const result = slj0[mapName].find(v => v.id === 'oh-extLayer')
           if (result) {
             extSource.obj.tiles = [vm.$store.state.extLayer]
@@ -632,7 +683,7 @@ export default {
             result.layers = [extLayer]
             result.label = vm.$store.state.extLayerName
           }
-          vm.$store.state.selectedLayers = slj0
+          if (!fetchFlg) vm.$store.state.selectedLayers = slj0
         });
       })
     },
