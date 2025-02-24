@@ -5411,33 +5411,57 @@ export async function pmtilesGenerateForUser (geojsonBlob) {
         }
     }
 
-    // async function generateTiles(filePath, srsCode = "2450", dir) {
-    //     store.state.loading2 = true
-    //     store.state.loadingMessage = '地図タイル作成中です。'
-    //     let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles4.php", {
-    //         method: "POST",
-    //         headers: {"Content-Type": "application/json"},
-    //         body: JSON.stringify({
-    //             file: filePath,
-    //             srs: srsCode,
-    //             dir: dir,
-    //             fileName: fileName,
-    //             resolution: store.state.resolution,
-    //             transparent: store.state.isTransparent,
-    //         })
-    //     });
-    //     let result = await response.json();
-    //     if (result.success) {
-    //         console.log(result.tiles_url, result.bbox)
-    //         addTileLayer(result.tiles_url, result.bbox)
-    //         // alert("タイル生成完了！");
-    //         store.state.loading2 = false
-    //     } else {
-    //         console.log(result)
-    //         store.state.loading2 = false
-    //         alert("タイル生成に失敗しました！" + result.error);
-    //     }
-    // }
+    async function generatePmtiles(filePath) {
+        store.state.loading2 = true
+        store.state.loadingMessage = 'pmtiles作成中です。'
+        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                file: filePath,
+                // dir: dir,
+                // fileName: fileName,
+            })
+        });
+        let result = await response.json();
+        if (result.success) {
+            // addTileLayer(result.tiles_url, result.bbox)
+            console.log(result.tippecanoeCmd)
+            const webUrl = 'https://kenzkenz.duckdns.org/' + result.pmtiles_file.replace('/var/www/html/public_html/','')
+            insertPmtilesData(store.state.userId , store.state.pmtilesName, webUrl)
+            console.log('pmtiles作成完了')
+            store.state.loading2 = false
+
+        } else {
+            console.log(result)
+            store.state.loading2 = false
+            alert("タイル生成に失敗しました！" + result.error);
+        }
+    }
+
+    async function insertPmtilesData(uid, name, url) {
+        try {
+            const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesInsert.php', new URLSearchParams({
+                uid:uid,
+                name: name,
+                url: url
+            }));
+            if (response.data.error) {
+                console.error('エラー:', response.data.error);
+                alert(`エラー: ${response.data.error}`);
+            } else {
+                console.log('登録成功:', response.data);
+                // alert(`登録成功！\nid: ${response.data.id}\nuid: ${response.data.uid}\nName: ${response.data.name}\nURL: ${response.data.url}`);
+                // vm.tileSelect(vm.$store.state.userId)
+            }
+        } catch (error) {
+            console.error('通信エラー:', error);
+            alert('通信エラーが発生しました');
+        }
+    }
+
+
+
     //
     // function addTileLayer(tileURL, bbox) {
     //     vpsTileSource.obj.tiles = [tileURL]
@@ -5486,7 +5510,7 @@ export async function pmtilesGenerateForUser (geojsonBlob) {
 
     const formData = new FormData();
     formData.append("file", geojsonBlob,"data.geojson");
-    formData.append("dir", store.state.userId); // 指定したフォルダにアップロード
+    formData.append("dir", store.state.userId + '/pmtiles'); // 指定したフォルダにアップロード
     fetch("https://kenzkenz.duckdns.org/myphp/uploadGeojson.php", {
         method: "POST",
         body: formData
@@ -5495,14 +5519,17 @@ export async function pmtilesGenerateForUser (geojsonBlob) {
         .then(data => {
             if (data.success) {
                 console.log("アップロード成功:", data);
-                alert("アップロード成功!")
+                // alert("アップロード成功!")
                 store.state.loading2 = false
+                // alert(data.file)
+                generatePmtiles(data.file);
+
                 // dataFile = data.file
                 // // alert(data.file)
                 // extractNumbers(data.file, store.state.userId)
 
 
-                // generateTiles(data.file, srsCode, store.state.userId);
+                //
             } else {
                 console.error("アップロード失敗:", data);
                 store.state.loading = false

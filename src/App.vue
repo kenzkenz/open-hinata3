@@ -2777,10 +2777,16 @@ export default {
                     this.s_loading = true
                     const arrayBuffer = await file.arrayBuffer();
                     const geojson = await shp(arrayBuffer);
-                    this.shpGeojson = geojson
                     const firstFeature = geojson.features[0];
                     console.log(Object.keys(firstFeature.properties))
                     this.shpPropaties = Object.keys(firstFeature.properties)
+                    geojson.features.forEach((feature, index) => {
+                      if (!feature.properties) {
+                        feature.properties = {};
+                      }
+                      feature.properties.oh3id = index;
+                    });
+                    this.shpGeojson = geojson
                     this.loadingSnackbar = false
                     this.s_loading = false
                     this.dialogForShpApp = true

@@ -101,6 +101,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-tabs v-model="tab">
                 <v-tab value="one">画像</v-tab>
                 <v-tab value="two">KMZ</v-tab>
+                <v-tab value="three">地番図</v-tab>
               </v-tabs>
 
               <v-window v-model="tab">
@@ -124,7 +125,11 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 </v-window-item>
                 <v-window-item value="three">
                   <v-card>
-                    <v-card-text>タブ3の内容</v-card-text>
+                    <div v-for="item in jsonDataPmtile" :key="item.id" class="data-container" @click="tileClick(item.name,item.url,item.id)">
+                      <button class="close-btn" @click="removeItemTile(item.id, $event)">×</button>
+                      <strong>{{ item.name }}</strong><br>
+                      <strong></strong>{{ item.url }}
+                    </div>
                   </v-card>
                 </v-window-item>
               </v-window>
@@ -266,6 +271,7 @@ export default {
     urlName: '',
     jsonData: null,
     jsonDataTile: null,
+    jsonDataPmtile: null,
     jsonDataVector: null,
     uid: null,
     images: [],
@@ -763,6 +769,30 @@ export default {
       }
       fetchUserData(uid)
     },
+    pmtileSelect (uid) {
+      const vm = this
+      async function fetchUserData(uid) {
+        try {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtileSelect.php', {
+            params: { uid: uid }
+          });
+
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            console.log('取得データ:', response.data);
+            console.log(JSON.stringify(response.data, null, 2))
+            // alert(`取得成功！\nデータ: ${JSON.stringify(response.data, null, 2)}`);
+            vm.jsonDataPmtile = response.data
+          }
+        } catch (error) {
+          console.error('通信エラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      fetchUserData(uid)
+    },
     tileSelect (uid) {
       const vm = this
       async function fetchUserData(uid) {
@@ -1162,6 +1192,7 @@ export default {
     s_dialogForLink () {
       this.urlSelect(this.$store.state.userId)
       this.tileSelect(this.$store.state.userId)
+      this.pmtileSelect(this.$store.state.userId)
     },
     s_fetchImagesFire () {
       this.fetchImages()
@@ -1177,6 +1208,7 @@ export default {
         this.fetchImages(this.uid); // UIDを取得した後に fetchImages を実行
         this.urlSelect(this.uid)
         this.tileSelect(this.uid)
+        this.pmtileSelect(this.uid)
       }
     }, 5);
 
