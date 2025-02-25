@@ -52,12 +52,14 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
           <v-card-text>
 
             <v-tabs v-model="tab" style="margin-bottom: 10px;">
-              <v-tab value="one">URL記憶</v-tab>
-              <v-tab value="two">地図タイル記憶</v-tab>
+              <v-tab value="1">URL記憶</v-tab>
+              <v-tab value="2">タイル記憶</v-tab>
+              <v-tab value="3">地番図</v-tab>
+              <v-tab value="4">画像</v-tab>
             </v-tabs>
 
             <v-window v-model="tab">
-              <v-window-item value="one">
+              <v-window-item value="1">
                 <v-card>
                   <div style="margin-bottom: 10px;">
                     <v-text-field  v-model="urlName" type="text" placeholder="ネーム"></v-text-field>
@@ -70,7 +72,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   </div>
                 </v-card>
               </v-window-item>
-              <v-window-item value="two">
+              <v-window-item value="2">
                 <v-card>
                   <div style="margin-bottom: 10px;">
                     <v-text-field  v-model="tileName" type="text" placeholder="ネーム"></v-text-field>
@@ -84,29 +86,17 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   </div>
                 </v-card>
               </v-window-item>
-            </v-window>
-          </v-card-text>
-        </v-card>
-      </v-dialog>
-
-
-      <v-dialog v-model="s_dialogForImage" :scrim="false" persistent="false" max-width="500px" height="500px">
-        <v-card>
-          <v-card-title style="text-align: right">
-            <v-icon @click="s_dialogForImage = false">mdi-close</v-icon>
-          </v-card-title>
-          <v-card-text>
-            <div style="margin-bottom: 10px;">
-
-              <v-tabs v-model="tab">
-                <v-tab value="one">画像</v-tab>
-                <v-tab value="two">KMZ</v-tab>
-                <v-tab value="three">地番図</v-tab>
-              </v-tabs>
-
-              <v-window v-model="tab">
-                <v-window-item value="one">
-                  <v-card>
+              <v-window-item value="3">
+                <v-card>
+                  <div v-for="item in jsonDataPmtile" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban)">
+                    <button class="close-btn" @click="removeItemPmtiles(item.id,item.url2,$event)">×</button>
+                    <strong>{{ item.name }}</strong><br>
+                    <strong></strong>{{ item.url }}
+                  </div>
+                </v-card>
+              </v-window-item>
+              <v-window-item value="4">
+                <v-card>
                   <v-card-text style="margin-bottom: 10px;">ドラッグ&ドロップされたgeotif,jpg,pngが表示されます。</v-card-text>
                   <div class="image-grid">
                     <div v-for="item in images" :key="item" class="image-container">
@@ -114,26 +104,9 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                       <div class="close-button" @click="handleClose(item)">×</div>
                     </div>
                   </div>
-                  </v-card>
-
-                </v-window-item>
-                <v-window-item value="two">
-                  <v-card>
-                    <v-card-text>作成中です。</v-card-text>
-
-                  </v-card>
-                </v-window-item>
-                <v-window-item value="three">
-                  <v-card>
-                    <div v-for="item in jsonDataPmtile" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban)">
-                      <button class="close-btn" @click="removeItemPmtiles(item.id,item.url2,$event)">×</button>
-                      <strong>{{ item.name }}</strong><br>
-                      <strong></strong>{{ item.url }}
-                    </div>
-                  </v-card>
-                </v-window-item>
-              </v-window>
-            </div>
+                </v-card>
+              </v-window-item>
+            </v-window>
           </v-card-text>
         </v-card>
       </v-dialog>
