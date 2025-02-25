@@ -4,9 +4,6 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 
-ini_set('memory_limit', '-1');
-set_time_limit(0);
-
 // ---- ここでWeb上のベースURLを指定 ----
 $WEB_BASE_URL = "https://kenzkenz.duckdns.org/uploads/";
 
