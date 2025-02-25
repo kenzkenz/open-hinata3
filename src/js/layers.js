@@ -8192,7 +8192,42 @@ const fukuokakenHazardLayerLine = {
         ]
     },
 }
-
+// 佐賀県基準点 -----------------------------------------------------------------------------------------------------------------
+const sagakijyuntenSource = {
+    id: "saga-kijyunten-source", obj: {
+        'type': 'geojson',
+        'data': 'https://kenzkenz3.xsrv.jp/geojson/sagakijyunten.geojson',
+    }
+}
+const sagakijyuntenPointLayer = {
+    id: "oh-saga-kijyunten-point",
+    type: "circle",
+    source: "saga-kijyunten-source",
+    paint: {
+        'circle-color': 'rgba(255,0,0,1)', // 赤色で中心点を強調
+        'circle-radius': 5, // 固定サイズの点
+        'circle-opacity': 1,
+        'circle-stroke-width': 1,
+        'circle-stroke-color': '#fff'
+    }
+};
+const sagakijyuntenLabelLayer = {
+    id: "oh-saga-kijyunten-label",
+    type: "symbol",
+    source: "saga-kijyunten-source",
+    'layout': {
+        'text-field': ['get', '点名'],
+        'text-font': ['NotoSansJP-Regular'],
+        'text-offset': [0, 1],
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 9
+}
 // // 地形分類テスト --------------------------------------------------------------------------------------------
 // const chikeibunruiSource2 = {
 //     id: "chikeibunrui-source", obj: {
@@ -8326,6 +8361,14 @@ const layers01 = [
                 layers:[gaikuLayer,gaikuLayerLabel,gaikuLabelLayer],
                 attribution: '<a href="https://gaikuchosa.mlit.go.jp/gaiku/system/download.phtml" target="_blank">街区基準点</a>',
                 ext: {name:'extGaiku'}
+            },
+            {
+                id: 'oh-saga-kijyunten',
+                label: "佐賀県基準点",
+                source: sagakijyuntenSource,
+                layers:[sagakijyuntenPointLayer, sagakijyuntenLabelLayer],
+                attribution: '<a href="http://www.sagakoushoku.com/toukikijyunten/" target="_blank">佐賀県公共嘱託登記土地家屋調査士協会</a>',
+                // ext: {name:'extGaiku'}
             },
             {
                 id: 'citychibanzu',

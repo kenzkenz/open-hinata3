@@ -1343,6 +1343,17 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
     };
     // console.log(JSON.stringify(geoJSON, null, 2));
 
+
+    // const blob = new Blob([JSON.stringify(geoJSON, null, 2)], { type: 'application/dxf' });
+    // const link = document.createElement('a');
+    // link.href = URL.createObjectURL(blob);
+    // link.download = 'test.geojson';
+    // link.click();
+
+
+
+
+
     if (map) {
         if (map.getSource('sima-data')) {
             map.getSource('sima-data').setData(geoJSON);
@@ -5516,7 +5527,7 @@ export async function pmtilesGenerateForUser (geojsonBlob,bbox) {
     async function generatePmtiles(filePath) {
         store.state.loading2 = true
         store.state.loadingMessage = 'pmtiles作成中です。'
-        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles.php", {
+        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles2.php", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({

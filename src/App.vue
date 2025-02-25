@@ -3306,36 +3306,36 @@ export default {
           });
         });
 
-        map.on('sourcedata', (e) => {
-          console.log(77777777777777777)
-          // if (e.sourceId && map.getStyle().layers) {
-          //   const targetLayers = map.getStyle().layers
-          //       .filter(layer => layer.id.startsWith('oh-chiban-') && !registeredLayers.has(layer.id))
-          //       .map(layer => layer.id);
-          //   console.log(targetLayers)
-          //   targetLayers.forEach(layer => {
-          //     console.log(`Adding click event to layer: ${layer}`);
-          //     map.on('click', layer, (e) => {
-          //       console.log(6666666666)
-          //       if (e.features && e.features.length > 0) {
-          //         console.log(555555555)
-          //         const targetId = `${e.features[0].properties['oh3id']}`;
-          //         console.log('Clicked ID', targetId);
-          //         if (this.$store.state.highlightedChibans.has(targetId)) {
-          //           // すでに選択されている場合は解除
-          //           this.$store.state.highlightedChibans.delete(targetId);
-          //         } else {
-          //           // 新しいIDを追加
-          //           this.$store.state.highlightedChibans.add(targetId);
-          //         }
-          //         highlightSpecificFeaturesCity(map, layer);
-          //       }
-          //     });
-          //   });
-          // }
-        });
-      // すでに登録されたレイヤーを追跡するセット
-        const registeredLayers = new Set();
+      //   map.on('sourcedata', (e) => {
+      //     console.log(77777777777777777)
+      //     // if (e.sourceId && map.getStyle().layers) {
+      //     //   const targetLayers = map.getStyle().layers
+      //     //       .filter(layer => layer.id.startsWith('oh-chiban-') && !registeredLayers.has(layer.id))
+      //     //       .map(layer => layer.id);
+      //     //   console.log(targetLayers)
+      //     //   targetLayers.forEach(layer => {
+      //     //     console.log(`Adding click event to layer: ${layer}`);
+      //     //     map.on('click', layer, (e) => {
+      //     //       console.log(6666666666)
+      //     //       if (e.features && e.features.length > 0) {
+      //     //         console.log(555555555)
+      //     //         const targetId = `${e.features[0].properties['oh3id']}`;
+      //     //         console.log('Clicked ID', targetId);
+      //     //         if (this.$store.state.highlightedChibans.has(targetId)) {
+      //     //           // すでに選択されている場合は解除
+      //     //           this.$store.state.highlightedChibans.delete(targetId);
+      //     //         } else {
+      //     //           // 新しいIDを追加
+      //     //           this.$store.state.highlightedChibans.add(targetId);
+      //     //         }
+      //     //         highlightSpecificFeaturesCity(map, layer);
+      //     //       }
+      //     //     });
+      //     //   });
+      //     // }
+      //   });
+      // // すでに登録されたレイヤーを追跡するセット
+      //   const registeredLayers = new Set();
 
         this.compass = new CompassControl({
           visible: false // ボタンを非表示にする
