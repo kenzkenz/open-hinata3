@@ -88,10 +88,10 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               </v-window-item>
               <v-window-item value="3">
                 <v-card>
-                  <div v-for="item in jsonDataPmtile" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban)">
+                  <div v-for="item in jsonDataPmtile" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban,item.bbox)">
                     <button class="close-btn" @click="removeItemPmtiles(item.id,item.url2,$event)">×</button>
                     <strong>{{ item.name }}</strong><br>
-                    <strong></strong>{{ item.url }}
+<!--                    <strong></strong>{{ item.url }}-->
                   </div>
                 </v-card>
               </v-window-item>
@@ -115,7 +115,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <p v-if="user1">ようこそ、{{ user1.displayName || "ゲスト" }}さん！</p>
         <p v-else></p>
       </div>
-      v0.530<br>
+      v0.540<br>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 
@@ -159,7 +159,7 @@ import {
   addImageLayerJpg,
   addImageLayerPng,
   addTileLayerForImage,
-  geojsonAddLayer,
+  geojsonAddLayer, highlightSpecificFeaturesCity,
   simaToGeoJSON, userPmileSet, userPmtileSet, userTileSet
 } from "@/js/downLoad";
 
@@ -229,6 +229,7 @@ import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfi
 import * as Layers from "@/js/layers";
 import {kml} from "@tmcw/togeojson";
 import JSZip from "jszip";
+import store from "@/store";
 
 export default {
   name: 'Dialog-menu',
@@ -364,8 +365,8 @@ export default {
       map01.setLayoutProperty("click-points-layer", "visibility", visibility);
       map02.setLayoutProperty("click-points-layer", "visibility", visibility);
     },
-    pmtileClick (name,url,id, chiban) {
-      userPmtileSet(name,url,id, chiban)
+    pmtileClick (name,url,id, chiban, bbox) {
+      userPmtileSet(name,url,id, chiban, JSON.parse(bbox))
     },
     tileClick (name,url,id) {
       userTileSet(name,url,id)
@@ -662,9 +663,6 @@ export default {
                   } else {
                     console.log('取得データ:', response.data);
                     console.log(JSON.stringify(response.data, null, 2));
-
-                    console.log()
-
                     const name = response.data[0].name
                     const id = response.data[0].id
                     const url = response.data[0].url
@@ -682,11 +680,11 @@ export default {
                       source: 'oh-chiban-' + id + '-' + name + + '-source',
                       "source-layer": 'oh3',
                       'paint': {
-                        'fill-color': 'rgba(0,0,0,0.1)',
+                        'fill-color': 'rgba(0,0,0,0)',
                       },
                     }
                     const lineLayer = {
-                      id: 'oh-chiban-' + name + '-line-layer',
+                      id: 'oh-chibanL-' + name + '-line-layer',
                       source: 'oh-chiban-' + id + '-' + name + + '-source',
                       type: 'line',
                       "source-layer": "oh3",
@@ -702,7 +700,7 @@ export default {
                       },
                     }
                     const labelLayer = {
-                      id: 'oh-chiban-' + name + '-label-layer',
+                      id: 'oh-chibanL-' + name + '-label-layer',
                       type: "symbol",
                       source: 'oh-chiban-' + id + '-' + name + + '-source',
                       "source-layer": "oh3",
@@ -744,6 +742,34 @@ export default {
           }
           if (!fetchFlg) vm.$store.state.selectedLayers = slj0
         });
+
+        setTimeout(() => {
+          console.log(map.getStyle().layers)
+          const targetLayers = map.getStyle().layers
+              .filter(layer => layer.id.startsWith('oh-chiban-') && !registeredLayers.has(layer.id))
+              .map(layer => layer.id);
+          console.log(targetLayers)
+          targetLayers.forEach(layer => {
+            console.log(`Adding click event to layer: ${layer}`);
+            map.on('click', layer, (e) => {
+              if (e.features && e.features.length > 0) {
+                const targetId = `${e.features[0].properties['oh3id']}`;
+                console.log('Clicked ID', targetId);
+                if (store.state.highlightedChibans.has(targetId)) {
+                  // すでに選択されている場合は解除
+                  store.state.highlightedChibans.delete(targetId);
+                } else {
+                  // 新しいIDを追加
+                  store.state.highlightedChibans.add(targetId);
+                }
+                highlightSpecificFeaturesCity(map, layer);
+              }
+            });
+          });
+        },500)
+        const registeredLayers = new Set();
+
+
       })
     },
     removeItem (id,event) {

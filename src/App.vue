@@ -71,8 +71,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         </v-card>
       </v-dialog>
 
-
-
       <v-dialog v-model="dialogForShpApp" max-width="500px">
         <v-card>
           <v-card-title>
@@ -91,7 +89,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                         outlined
               ></v-select>
             </div>
-            <v-btn @click="shpLoad">shape読込開始</v-btn>
+            <v-btn @click="shpLoad">読込開始</v-btn>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -1153,9 +1151,11 @@ export default {
         feature.properties.oh3id = index;
         feature.properties.chiban = store.state.pmtilesPropertieName;
       });
+      const bbox = turf.bbox(this.shpGeojson)
+      console.log(bbox)
       const geojsonString = JSON.stringify(this.shpGeojson, null, 2);
       const geojsonBlob = new Blob([geojsonString], { type: "application/json" });
-      pmtilesGenerateForUser (geojsonBlob)
+      pmtilesGenerateForUser (geojsonBlob,bbox)
       this.dialogForShpApp = false
     },
     imagePngLoad () {
@@ -2332,31 +2332,29 @@ export default {
                     console.log('取得データ:', response.data);
                     console.log(JSON.stringify(response.data, null, 2));
 
-                    console.log()
-
                     const name = response.data[0].name
                     const id = response.data[0].id
                     const url = response.data[0].url
                     const chiban = response.data[0].chiban
 
                     const source = {
-                      id: 'oh-chiban-' + id + '-' + name + + '-source',obj: {
+                      id: 'oh-chiban-' + id + '-' + name + '-source',obj: {
                         type: 'vector',
                         url: "pmtiles://" + url
                       }
                     };
                     const polygonLayer = {
-                      id: 'oh-chiban-' + id + '-' + name + '-layer',
+                      id: 'oh-chibanL-' + id + '-' + name + '-layer',
                       type: 'fill',
-                      source: 'oh-chiban-' + id + '-' + name + + '-source',
+                      source: 'oh-chiban-' + id + '-' + name + '-source',
                       "source-layer": 'oh3',
                       'paint': {
-                        'fill-color': 'rgba(0,0,0,0.1)',
+                        'fill-color': 'rgba(0,0,0,0)',
                       },
                     }
                     const lineLayer = {
-                      id: 'oh-chiban-' + name + '-line-layer',
-                      source: 'oh-chiban-' + id + '-' + name + + '-source',
+                      id: 'oh-chibanL-' + name + '-line-layer',
+                      source: 'oh-chiban-' + id + '-' + name + '-source',
                       type: 'line',
                       "source-layer": "oh3",
                       paint: {
@@ -2371,9 +2369,9 @@ export default {
                       },
                     }
                     const labelLayer = {
-                      id: 'oh-chiban-' + name + '-label-layer',
+                      id: 'oh-chibanL-' + name + '-label-layer',
                       type: "symbol",
-                      source: 'oh-chiban-' + id + '-' + name + + '-source',
+                      source: 'oh-chiban-' + id + '-' + name + '-source',
                       "source-layer": "oh3",
                       'layout': {
                         'text-field': ['get', chiban],
@@ -2861,9 +2859,16 @@ export default {
                 {
                   reader.onload = (event) => {
                     const geojsonText = event.target.result
-                    this.$store.state.geojsonText = geojsonText
                     const geojson = JSON.parse(geojsonText);
-                    geojsonAddLayer (map, geojson, true, fileExtension)
+                    if (this.$store.state.userId) {
+                      const firstFeature = geojson.features[0];
+                      this.shpPropaties = Object.keys(firstFeature.properties)
+                      this.shpGeojson = geojson
+                      this.dialogForShpApp = true
+                    } else {
+                      this.$store.state.geojsonText = geojsonText
+                      geojsonAddLayer (map, geojson, true, fileExtension)
+                    }
                   }
                   reader.readAsText(file);
                   break
@@ -2872,18 +2877,22 @@ export default {
                 {
                   const files = e.dataTransfer.files;
                   for (const file of files) {
-                    this.loadingSnackbar = true
-                    this.s_loading = true
-                    const arrayBuffer = await file.arrayBuffer();
-                    const geojson = await shp(arrayBuffer);
-                    console.log(geojson)
-                    const firstFeature = geojson.features[0];
-                    console.log(Object.keys(firstFeature.properties))
-                    this.shpPropaties = Object.keys(firstFeature.properties)
-                    this.shpGeojson = geojson
-                    this.loadingSnackbar = false
-                    this.s_loading = false
-                    this.dialogForShpApp = true
+                    try {
+                      this.loadingSnackbar = true
+                      this.s_loading = true
+                      const arrayBuffer = await file.arrayBuffer();
+                      const geojson = await shp(arrayBuffer);
+                      const firstFeature = geojson.features[0];
+                      this.shpPropaties = Object.keys(firstFeature.properties)
+                      this.shpGeojson = geojson
+                      this.loadingSnackbar = false
+                      this.s_loading = false
+                      this.dialogForShpApp = true
+                    }catch (e) {
+                      alert('シェイプファイルをgeojsonに変換できませんでした。')
+                      this.loadingSnackbar = false
+                      this.s_loading = false
+                    }
                   }
                   break
                 }

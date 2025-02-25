@@ -446,8 +446,11 @@ export default {
           break
       }
       if(/^oh-chiban-/.test(id)) {
+        // alert(id)
+        // alert(id.replace('-layer','-source'))
         this.layerId = id
-        this.sourceId = id.split('-')[3] + '-source'
+        // this.sourceId = id.split('-')[3] + '-source'
+        this.sourceId = id.replace('-layer','-source')
         this.fields = ['oh3id']
       }
     },
@@ -509,8 +512,8 @@ export default {
       console.log(this.sourceId)
       console.log(this.fields)
       console.log(this.s_zahyokei)
-
       saveCima(map,this.layerId,this.sourceId,this.fields,true,this.s_zahyokei)
+      this.dialog5 = false
     },
     saveGeojson () {
       const map = this.$store.state[this.mapName]
