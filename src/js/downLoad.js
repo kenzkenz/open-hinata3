@@ -5381,7 +5381,7 @@ export const wsg84ToJgd = (coordinates) => {
 export function userPmtileSet(name,url,id, chiban) {
     const map = store.state.map01
     const sopurce = {
-        id: name + '-source',obj: {
+        id: 'oh-chiban-' + id + '-' + name + + '-source',obj: {
             type: 'vector',
             url: "pmtiles://" + url
         }
@@ -5389,7 +5389,7 @@ export function userPmtileSet(name,url,id, chiban) {
     const polygonLayer = {
         id: 'oh-chiban-' + id + '-' + name + '-layer',
         type: 'fill',
-        source: name + '-source',
+        source: 'oh-chiban-' + id + '-' + name + + '-source',
         "source-layer": 'oh3',
         'paint': {
             'fill-color': 'rgba(0,0,0,0.1)',
@@ -5397,7 +5397,7 @@ export function userPmtileSet(name,url,id, chiban) {
     }
     const lineLayer = {
         id: 'oh-chiban-' + name + '-line-layer',
-        source: name + '-source',
+        source: 'oh-chiban-' + id + '-' + name + + '-source',
         type: 'line',
         "source-layer": "oh3",
         paint: {
@@ -5414,7 +5414,7 @@ export function userPmtileSet(name,url,id, chiban) {
     const labelLayer = {
         id: 'oh-chiban-' + name + '-label-layer',
         type: "symbol",
-        source: name + '-source',
+        source: 'oh-chiban-' + id + '-' + name + + '-source',
         "source-layer": "oh3",
         'layout': {
             'text-field': ['get', chiban],
@@ -5548,7 +5548,8 @@ export async function pmtilesGenerateForUser (geojsonBlob) {
             // addTileLayer(result.tiles_url, result.bbox)
             console.log(result.tippecanoeCmd)
             const webUrl = 'https://kenzkenz.duckdns.org/' + result.pmtiles_file.replace('/var/www/html/public_html/','')
-            insertPmtilesData(store.state.userId , store.state.pmtilesName, webUrl, store.state.pmtilesPropertieName)
+            console.log(result.pmtiles_file)
+            insertPmtilesData(store.state.userId , store.state.pmtilesName, webUrl, result.pmtiles_file, store.state.pmtilesPropertieName)
             console.log('pmtiles作成完了')
             store.state.loading2 = false
 
@@ -5559,12 +5560,13 @@ export async function pmtilesGenerateForUser (geojsonBlob) {
         }
     }
 
-    async function insertPmtilesData(uid, name, url, chiban) {
+    async function insertPmtilesData(uid, name, url, url2,  chiban) {
         try {
             const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesInsert.php', new URLSearchParams({
                 uid: uid,
                 name: name,
                 url: url,
+                url2: url2,
                 chiban: chiban
             }));
             if (response.data.error) {
@@ -5642,15 +5644,7 @@ export async function pmtilesGenerateForUser (geojsonBlob) {
                 console.log("アップロード成功:", data);
                 // alert("アップロード成功!")
                 store.state.loading2 = false
-                // alert(data.file)
                 generatePmtiles(data.file);
-
-                // dataFile = data.file
-                // // alert(data.file)
-                // extractNumbers(data.file, store.state.userId)
-
-
-                //
             } else {
                 console.error("アップロード失敗:", data);
                 store.state.loading = false

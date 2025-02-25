@@ -7,22 +7,23 @@ try {
     // POSTからname, url, uidを取得
     $name = $_POST['name'] ?? null;
     $url = $_POST['url'] ?? null;
-    $uid = $_POST['uid'] ?? null;
+    $url2 = $_POST['url2'] ?? null;
     $uid = $_POST['uid'] ?? null;
     $chiban = $_POST['chiban'] ?? null;
 
     // バリデーション: 空チェック
-    if (empty($name) || empty($url) || empty($uid) || empty($chiban)) {
-        echo json_encode(["error" => "name, url, uid, chibanは必須です"]);
+    if (empty($name) || empty($url) || empty($uid) || empty($chiban) || empty($url2)) {
+        echo json_encode(["error" => "name, url, url2, uid, chibanは必須です"]);
         exit;
     }
 
     // SQL: userdbに新規挿入
-    $sql = "INSERT INTO userpmtiles (name, url, uid, chiban) VALUES (:name, :url, :uid, :chiban)";
+    $sql = "INSERT INTO userpmtiles (name, url, url2, uid, chiban) VALUES (:name, :url, :url2, :uid, :chiban)";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ':name' => $name,
         ':url' => $url,
+        ':url2' => $url2,
         ':uid' => $uid,
         ':chiban' => $chiban
     ]);

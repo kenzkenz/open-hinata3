@@ -2291,7 +2291,6 @@ export default {
                   const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userTileSelectById.php', {
                     params: { id: layerId }
                   });
-
                   if (response.data.error) {
                     console.error('エラー:', response.data.error);
                     alert(`エラー: ${response.data.error}`);
@@ -2305,15 +2304,91 @@ export default {
                         tiles: [response.data[0].url]
                       }
                     };
-
                     const layer = {
                       id: 'oh-' + response.data[0].name + '-layer',
                       type: 'raster',
                       source: response.data[0].name + '-source',
                     };
-
                     v.sources = [source];
                     v.layers = [layer];
+                    v.label = response.data[0].name;
+                  }
+                } catch (error) {
+                  console.error('フェッチエラー:', error);
+                }
+              }
+
+              if (v.id.includes('oh-chiban-')) {
+                fetchFlg = true
+                const layerId = v.id.split('-')[2];
+                try {
+                  const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesSelectById.php', {
+                    params: { id: layerId }
+                  });
+                  if (response.data.error) {
+                    console.error('エラー:', response.data.error);
+                    alert(`エラー: ${response.data.error}`);
+                  } else {
+                    console.log('取得データ:', response.data);
+                    console.log(JSON.stringify(response.data, null, 2));
+
+                    console.log()
+
+                    const name = response.data[0].name
+                    const id = response.data[0].id
+                    const url = response.data[0].url
+                    const chiban = response.data[0].chiban
+
+                    const source = {
+                      id: 'oh-chiban-' + id + '-' + name + + '-source',obj: {
+                        type: 'vector',
+                        url: "pmtiles://" + url
+                      }
+                    };
+                    const polygonLayer = {
+                      id: 'oh-chiban-' + id + '-' + name + '-layer',
+                      type: 'fill',
+                      source: 'oh-chiban-' + id + '-' + name + + '-source',
+                      "source-layer": 'oh3',
+                      'paint': {
+                        'fill-color': 'rgba(0,0,0,0.1)',
+                      },
+                    }
+                    const lineLayer = {
+                      id: 'oh-chiban-' + name + '-line-layer',
+                      source: 'oh-chiban-' + id + '-' + name + + '-source',
+                      type: 'line',
+                      "source-layer": "oh3",
+                      paint: {
+                        'line-color': 'navy',
+                        'line-width': [
+                          'interpolate',
+                          ['linear'],
+                          ['zoom'],
+                          1, 0.1,
+                          16, 2
+                        ]
+                      },
+                    }
+                    const labelLayer = {
+                      id: 'oh-chiban-' + name + '-label-layer',
+                      type: "symbol",
+                      source: 'oh-chiban-' + id + '-' + name + + '-source',
+                      "source-layer": "oh3",
+                      'layout': {
+                        'text-field': ['get', chiban],
+                        'text-font': ['NotoSansJP-Regular'],
+                      },
+                      'paint': {
+                        'text-color': 'navy',
+                        'text-halo-color': 'rgba(255,255,255,1)',
+                        'text-halo-width': 1.0,
+                      },
+                      // 'maxzoom': 24,
+                      // 'minzoom': 17
+                    }
+                    v.sources = [source];
+                    v.layers = [polygonLayer,lineLayer,labelLayer];
                     v.label = response.data[0].name;
                   }
                 } catch (error) {

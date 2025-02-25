@@ -126,7 +126,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 <v-window-item value="three">
                   <v-card>
                     <div v-for="item in jsonDataPmtile" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban)">
-                      <button class="close-btn" @click="removeItemTile(item.id, $event)">×</button>
+                      <button class="close-btn" @click="removeItemPmtiles(item.id,item.url2,$event)">×</button>
                       <strong>{{ item.name }}</strong><br>
                       <strong></strong>{{ item.url }}
                     </div>
@@ -676,6 +676,83 @@ export default {
                   console.error('フェッチエラー:', error);
                 }
               }
+              if (v.id.includes('oh-chiban-')) {
+                fetchFlg = true
+                const layerId = v.id.split('-')[2];
+                try {
+                  const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesSelectById.php', {
+                    params: { id: layerId }
+                  });
+                  if (response.data.error) {
+                    console.error('エラー:', response.data.error);
+                    alert(`エラー: ${response.data.error}`);
+                  } else {
+                    console.log('取得データ:', response.data);
+                    console.log(JSON.stringify(response.data, null, 2));
+
+                    console.log()
+
+                    const name = response.data[0].name
+                    const id = response.data[0].id
+                    const url = response.data[0].url
+                    const chiban = response.data[0].chiban
+
+                    const source = {
+                      id: 'oh-chiban-' + id + '-' + name + + '-source',obj: {
+                        type: 'vector',
+                        url: "pmtiles://" + url
+                      }
+                    };
+                    const polygonLayer = {
+                      id: 'oh-chiban-' + id + '-' + name + '-layer',
+                      type: 'fill',
+                      source: 'oh-chiban-' + id + '-' + name + + '-source',
+                      "source-layer": 'oh3',
+                      'paint': {
+                        'fill-color': 'rgba(0,0,0,0.1)',
+                      },
+                    }
+                    const lineLayer = {
+                      id: 'oh-chiban-' + name + '-line-layer',
+                      source: 'oh-chiban-' + id + '-' + name + + '-source',
+                      type: 'line',
+                      "source-layer": "oh3",
+                      paint: {
+                        'line-color': 'navy',
+                        'line-width': [
+                          'interpolate',
+                          ['linear'],
+                          ['zoom'],
+                          1, 0.1,
+                          16, 2
+                        ]
+                      },
+                    }
+                    const labelLayer = {
+                      id: 'oh-chiban-' + name + '-label-layer',
+                      type: "symbol",
+                      source: 'oh-chiban-' + id + '-' + name + + '-source',
+                      "source-layer": "oh3",
+                      'layout': {
+                        'text-field': ['get', chiban],
+                        'text-font': ['NotoSansJP-Regular'],
+                      },
+                      'paint': {
+                        'text-color': 'navy',
+                        'text-halo-color': 'rgba(255,255,255,1)',
+                        'text-halo-width': 1.0,
+                      },
+                      // 'maxzoom': 24,
+                      // 'minzoom': 17
+                    }
+                    v.sources = [source];
+                    v.layers = [polygonLayer,lineLayer,labelLayer];
+                    v.label = response.data[0].name;
+                  }
+                } catch (error) {
+                  console.error('フェッチエラー:', error);
+                }
+              }
             });
             // すべての fetchUserLayer の実行が完了するのを待つ
             await Promise.all(promises);
@@ -717,6 +794,52 @@ export default {
           }
         } catch (error) {
           console.error('通信エラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      deleteUserData(id)
+    },
+    removeItemPmtiles (id,url2,event) {
+      event.stopPropagation();  // バブリングを止める
+      if (!confirm("削除しますか？")) {
+        return
+      }
+      const vm = this
+      console.log(url2)
+      async function deleteUserPmtiles(url2) {
+        try {
+          const response = await axios.post('https://kenzkenz.duckdns.org/myphp/pmtiles_unlink.php', {
+            url2: url2
+          });
+
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            console.log('削除成功:', response.data);
+            // vm.jsonDataPmtile = vm.jsonDataPmtile.filter(item => item.id !== id);
+          }
+        } catch (error) {
+          console.error('リクエストエラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      deleteUserPmtiles(url2)
+
+      async function deleteUserData(id) {
+        try {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtileDelete.php', {
+            params: { id: id }
+          });
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            console.log('削除成功:', response.data);
+            vm.jsonDataPmtile = vm.jsonDataPmtile.filter(item => item.id !== id);
+          }
+        } catch (error) {
+          console.error('通信エラー2:', error);
           alert('通信エラーが発生しました');
         }
       }
