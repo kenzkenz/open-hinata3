@@ -432,6 +432,12 @@ export function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, fileName, 
                 chiban = feature.properties[feature.properties.chiban]
                 break;
         }
+
+        if(/^oh-chiban-/.test(layerId)) {
+            chiban = feature.properties[feature.properties.chiban]
+            console.log(999999999)
+        }
+
 // alert(chiban)
         B01Text += 'D00,' + i + ',' + chiban + ',1,\n';
         let coordinates = [];
@@ -5428,8 +5434,7 @@ export function userPmtileSet(name,url,id, chiban, bbox) {
             'text-halo-color': 'rgba(255,255,255,1)',
             'text-halo-width': 1.0,
         },
-        // 'maxzoom': 24,
-        // 'minzoom': 17
+        'minzoom': 17
     }
 
     store.state.selectedLayers.map01.unshift(

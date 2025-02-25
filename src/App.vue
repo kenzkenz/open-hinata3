@@ -2344,7 +2344,7 @@ export default {
                       }
                     };
                     const polygonLayer = {
-                      id: 'oh-chibanL-' + id + '-' + name + '-layer',
+                      id: 'oh-chiban-' + id + '-' + name + '-layer',
                       type: 'fill',
                       source: 'oh-chiban-' + id + '-' + name + '-source',
                       "source-layer": 'oh3',
@@ -2382,8 +2382,7 @@ export default {
                         'text-halo-color': 'rgba(255,255,255,1)',
                         'text-halo-width': 1.0,
                       },
-                      // 'maxzoom': 24,
-                      // 'minzoom': 17
+                      'minzoom': 17
                     }
                     v.sources = [source];
                     v.layers = [polygonLayer,lineLayer,labelLayer];

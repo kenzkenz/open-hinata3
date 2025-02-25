@@ -3338,6 +3338,31 @@ export function popup(e,map,mapName,mapFlg) {
                 break
             }
         }
+
+        if(/^oh-chiban-/.test(layerId)) {
+            if (store.state.isRenzoku) return
+            let features = map.queryRenderedFeatures(
+                map.project(coordinates), {layers: [layerId]}
+            )
+            if (features.length === 0) {
+                features = map.queryRenderedFeatures(
+                    map.project(e.lngLat), {layers: [layerId]}
+                )
+            }
+            console.log(features)
+            if (features.length === 0) return
+            props = features[0].properties
+            let html0 = ''
+            if (html.indexOf('oh-chiban-') === -1) {
+                html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                html0 += '<div class="oh-chiban-" font-weight: normal; color: #333;line-height: 25px;">'
+                Object.keys(props).forEach(function (key) {
+                    html0 += key + '=' + props[key] + '<br>'
+                })
+                html0 += '<div>'
+                html += html0
+            }
+        }
     })
 
     if (mapFlg.map02) {
