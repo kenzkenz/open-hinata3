@@ -5632,7 +5632,7 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban) {
     store.state.loading2 = true
     store.state.loadingMessage = 'pmtiles作成中です。'
 
-    let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles2.php", {
+    let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles3.php", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
@@ -5687,10 +5687,10 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban) {
 
 export function saveDxfForChiriin (map) {
     const allLayers = map.getStyle().layers;
-    // "oh-vector-mono" で始まるレイヤーIDを抽出
+    // "oh-vector-" で始まるレイヤーIDを抽出
     const filteredLayerIds = allLayers
         .map(layer => layer.id) // レイヤーのIDのみ取得
-        .filter(id => id.startsWith("oh-vector-mono")); // 先頭が "oh-vector-mono" のみ
+        .filter(id => id.startsWith("oh-vector-")); // 先頭が "oh-vector-" のみ
     function getGeoJSONFromLayers(map, layerIds) {
         let allFeatures = [];
         layerIds.forEach(layerId => {
@@ -5698,8 +5698,6 @@ export function saveDxfForChiriin (map) {
             const features = map.queryRenderedFeatures(bounds, {
                 layers: [layerId] // 適切なレイヤー名を指定
             });
-            // const features = map.queryRenderedFeatures(layerId);
-            console.log(features)
             if (features.length > 0) {
                 allFeatures = allFeatures.concat(features);
             }
@@ -5709,26 +5707,14 @@ export function saveDxfForChiriin (map) {
             "features": allFeatures
         };
     }
-    console.log(filteredLayerIds)
     const geojson = getGeoJSONFromLayers(map, filteredLayerIds)
-    console.log(geojson)
-
-    // const layerIds = ["layer-1", "layer-2", "layer-3"]; // 対象のレイヤーIDを指定
-    // const geojson = getGeoJSONFromLayers(map, layerIds);
-    // console.log(JSON.stringify(geojson, null, 2));
-
-
-
-    console.log(geojson)
     try {
         const dxfString = geojsonToDXF(geojson);
         // DXFファイルとしてダウンロード
         const blob = new Blob([dxfString], { type: 'application/dxf' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-
-        link.download = 'test.dxf';
-
+        link.download = 'vector.dxf';
         link.click();
     } catch (error) {
         console.error('GeoJSONの解析中にエラーが発生しました:', error);

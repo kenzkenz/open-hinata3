@@ -19,11 +19,12 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
-    <v-btn style="margin-top: 0px;margin-left: 0px;margin-bottom: 10px;" @click="saveSimaGaiku">sima保存</v-btn>
+<!--    <v-btn style="margin-top: 0px;margin-left: 0px;margin-bottom: 10px;" @click="saveSimaGaiku">sima保存</v-btn>-->
     <v-btn style="margin-top: 0px;margin-left: 0px;margin-bottom: 10px;" @click="saveDxf">dxf保存</v-btn>
-    <hr>
+<!--    <hr>-->
     <div v-html="item.attribution"></div>
   </div>
 </template>
@@ -69,6 +70,9 @@ export default {
     menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'hidden', 'user-select': 'text', 'font-size':'large'}
   }),
   computed: {
+    s_userId () {
+      return this.$store.state.userId
+    },
     s_extFire () {
       return this.$store.state.extFire
     },
