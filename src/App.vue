@@ -522,7 +522,7 @@ import {
   highlightSpecificFeaturesCity,
   jpgLoad,
   jpgLoadForUser,
-  kmzLoadForUser, pmtilesGenerateForUser,
+  kmzLoadForUser, pmtilesGenerateForUser, pmtilesGenerateForUser2,
   pngDownload,
   pngLoad,
   pngLoadForUser,
@@ -1144,56 +1144,23 @@ export default {
         alert("入力されていません。")
         return
       }
-      /**
-       * * 文字列が UTF-8 かを判定する
-       *  * @param {string} text - 判定する文字列
-       *  * @returns {boolean} - UTF-8 の場合 true、Shift_JIS の場合 false
-       */
-      function isUTF8(text) {
-        try {
-          // UTF-8 → バイナリ → UTF-8 に戻したときに同じなら UTF-8
-          const utf8Bytes = new TextEncoder().encode(text);
-          const decodedText = new TextDecoder('utf-8', { fatal: true }).decode(utf8Bytes);
-          return text === decodedText;
-        } catch (e) {
-          return false; // デコードに失敗すれば UTF-8 ではない（Shift_JIS の可能性）
-        }
-      }
-      /**
-       * GeoJSONオブジェクト内のShift_JIS（CP932）文字列をUTF-8に変換
-       * @param {Object} geojson - Shift_JISエンコードの可能性があるGeoJSON
-       * @returns {Object} - UTF-8 に変換後のGeoJSON
-       */
-      function convertGeoJSONToUTF8(geojson) {
-        function deepConvert(obj) {
-          if (typeof obj === "string") {
-            // 文字列を Shift_JIS のバイナリデータとして変換
-            const sjisArray = window.Encoding.stringToCode(obj, 'SJIS'); // Shift_JIS のバイト配列を取得
-            const utf8String = window.Encoding.convert(sjisArray, { to: 'UNICODE', from: 'SJIS', type: 'string' });
-            return utf8String;
-          } else if (Array.isArray(obj)) {
-            return obj.map(deepConvert);
-          } else if (typeof obj === "object" && obj !== null) {
-            return Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, deepConvert(value)]));
-          }
-          return obj;
-        }
-        return deepConvert(geojson);
-      }
-      // this.shpGeojson = convertGeoJSONToUTF8(this.shpGeojson)
 
-      this.shpGeojson.features.forEach((feature, index) => {
-        if (!feature.properties) {
-          feature.properties = {};
-        }
-        feature.properties.oh3id = index;
-        feature.properties.chiban = store.state.pmtilesPropertieName;
-      });
+      // this.shpGeojson.features.forEach((feature, index) => {
+      //   if (!feature.properties) {
+      //     feature.properties = {};
+      //   }
+      //   feature.properties.oh3id = index;
+      //   feature.properties.chiban = store.state.pmtilesPropertieName;
+      // });
+      // const bbox = turf.bbox(this.shpGeojson)
+      // console.log(bbox)
+      // const geojsonString = JSON.stringify(this.shpGeojson, null, 2);
+      // const geojsonBlob = new Blob([geojsonString], { type: "application/json" });
+      // pmtilesGenerateForUser (geojsonBlob,bbox)
+
       const bbox = turf.bbox(this.shpGeojson)
-      console.log(bbox)
-      const geojsonString = JSON.stringify(this.shpGeojson, null, 2);
-      const geojsonBlob = new Blob([geojsonString], { type: "application/json" });
-      pmtilesGenerateForUser (geojsonBlob,bbox)
+      alert(bbox)
+      pmtilesGenerateForUser2 (this.shpGeojson,bbox,store.state.pmtilesPropertieName)
       this.dialogForShpApp = false
     },
     imagePngLoad () {

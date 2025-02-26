@@ -5603,3 +5603,112 @@ export async function pmtilesGenerateForUser (geojsonBlob,bbox) {
         .catch(error => console.error("エラー:", error));
     // -------------------------------------------------------------------------------------------------
 }
+export async function pmtilesGenerateForUser2 (geojson,bbox,chiban) {
+    async function generatePmtiles(filePath) {
+        store.state.loading2 = true
+        store.state.loadingMessage = 'pmtiles作成中です。'
+        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles2.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                file: filePath,
+                // dir: dir,
+                // fileName: fileName,
+            })
+        });
+        let result = await response.json();
+        if (result.success) {
+            // addTileLayer(result.tiles_url, result.bbox)
+            console.log(result.tippecanoeCmd)
+            const webUrl = 'https://kenzkenz.duckdns.org/' + result.pmtiles_file.replace('/var/www/html/public_html/','')
+            console.log(result.pmtiles_file)
+            insertPmtilesData(store.state.userId , store.state.pmtilesName, webUrl, result.pmtiles_file, store.state.pmtilesPropertieName)
+            console.log('pmtiles作成完了')
+            store.state.loading2 = false
+        } else {
+            console.log(result)
+            store.state.loading2 = false
+            alert("タイル生成に失敗しました！" + result.error);
+        }
+    }
+
+    async function insertPmtilesData(uid, name, url, url2,  chiban) {
+        try {
+            const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesInsert.php', new URLSearchParams({
+                uid: uid,
+                name: name,
+                url: url,
+                url2: url2,
+                chiban: chiban,
+                bbox: JSON.stringify(bbox)
+            }));
+            if (response.data.error) {
+                console.error('エラー:', response.data.error);
+                alert(`エラー: ${response.data.error}`);
+            } else {
+                console.log('登録成功:', response.data);
+                userPmtileSet(name,url,response.data.id, chiban, bbox)
+                store.state.fetchImagesFire = !store.state.fetchImagesFire
+            }
+        } catch (error) {
+            console.error('通信エラー:', error);
+            alert('通信エラーが発生しました');
+        }
+    }
+    // -------------------------------------------------------------------------------------------------
+
+
+    store.state.loading2 = true
+    store.state.loadingMessage = 'pmtiles作成中です。'
+    let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles2.php", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            geojson: geojson,
+            dir: store.state.userId + '/pmtiles',
+            chiban: chiban,
+        })
+    });
+    let result = await response.json();
+    if (result.success) {
+        store.state.loading2 = false
+        // addTileLayer(result.tiles_url, result.bbox)
+        console.log(result.tippecanoeCmd)
+        const webUrl = 'https://kenzkenz.duckdns.org/' + result.pmtiles_file.replace('/var/www/html/public_html/','')
+        console.log(result.pmtiles_file)
+        insertPmtilesData(store.state.userId , store.state.pmtilesName, webUrl, result.pmtiles_file, store.state.pmtilesPropertieName)
+        console.log('pmtiles作成完了')
+
+    } else {
+        console.log(result)
+        store.state.loading2 = false
+        alert("タイル生成に失敗しました！" + result.error);
+    }
+
+
+
+    // store.state.loading2 = true
+    // store.state.loadingMessage = 'アップロード中です。'
+    // const formData = new FormData();
+    // formData.append("file", geojsonBlob,"data.geojson");
+    // formData.append("dir", store.state.userId + '/pmtiles'); // 指定したフォルダにアップロード
+    // fetch("https://kenzkenz.duckdns.org/myphp/uploadGeojson.php", {
+    //     method: "POST",
+    //     body: formData
+    // })
+    //     .then(response => response.json())
+    //     .then(data => {
+    //         if (data.success) {
+    //             console.log("アップロード成功:", data);
+    //             // alert("アップロード成功!")
+    //             store.state.loading2 = false
+    //             generatePmtiles(data.file);
+    //         } else {
+    //             console.error("アップロード失敗:", data);
+    //             store.state.loading = false
+    //             alert("アップロードエラー: " + data.error);
+    //         }
+    //     })
+    //     .catch(error => console.error("エラー:", error));
+    // -------------------------------------------------------------------------------------------------
+}
