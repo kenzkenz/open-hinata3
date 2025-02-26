@@ -5399,6 +5399,7 @@ export const wsg84ToJgd = (coordinates) => {
 };
 
 export function userPmtileSet(name,url,id, chiban, bbox) {
+
     const map = store.state.map01
     const sopurce = {
         id: 'oh-chiban-' + id + '-' + name + '-source',obj: {
@@ -5604,34 +5605,6 @@ export async function pmtilesGenerateForUser (geojsonBlob,bbox) {
     // -------------------------------------------------------------------------------------------------
 }
 export async function pmtilesGenerateForUser2 (geojson,bbox,chiban) {
-    async function generatePmtiles(filePath) {
-        store.state.loading2 = true
-        store.state.loadingMessage = 'pmtiles作成中です。'
-        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles2.php", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({
-                file: filePath,
-                // dir: dir,
-                // fileName: fileName,
-            })
-        });
-        let result = await response.json();
-        if (result.success) {
-            // addTileLayer(result.tiles_url, result.bbox)
-            console.log(result.tippecanoeCmd)
-            const webUrl = 'https://kenzkenz.duckdns.org/' + result.pmtiles_file.replace('/var/www/html/public_html/','')
-            console.log(result.pmtiles_file)
-            insertPmtilesData(store.state.userId , store.state.pmtilesName, webUrl, result.pmtiles_file, store.state.pmtilesPropertieName)
-            console.log('pmtiles作成完了')
-            store.state.loading2 = false
-        } else {
-            console.log(result)
-            store.state.loading2 = false
-            alert("タイル生成に失敗しました！" + result.error);
-        }
-    }
-
     async function insertPmtilesData(uid, name, url, url2,  chiban, bbox) {
         try {
             const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesInsert.php', new URLSearchParams({
@@ -5656,8 +5629,6 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban) {
         }
     }
     // -------------------------------------------------------------------------------------------------
-
-
     store.state.loading2 = true
     store.state.loadingMessage = 'pmtiles作成中です。'
     let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles2.php", {
@@ -5667,7 +5638,7 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban) {
             geojson: geojson,
             dir: store.state.userId + '/pmtiles',
             chiban: chiban,
-        })
+        }),
     });
     let result = await response.json();
     if (result.success) {

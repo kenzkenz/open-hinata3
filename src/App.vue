@@ -1144,22 +1144,6 @@ export default {
         alert("入力されていません。")
         return
       }
-
-      // this.shpGeojson.features.forEach((feature, index) => {
-      //   if (!feature.properties) {
-      //     feature.properties = {};
-      //   }
-      //   feature.properties.oh3id = index;
-      //   feature.properties.chiban = store.state.pmtilesPropertieName;
-      // });
-      // const bbox = turf.bbox(this.shpGeojson)
-      // console.log(bbox)
-      // const geojsonString = JSON.stringify(this.shpGeojson, null, 2);
-      // const geojsonBlob = new Blob([geojsonString], { type: "application/json" });
-      // pmtilesGenerateForUser (geojsonBlob,bbox)
-
-      // const bbox = turf.bbox(this.shpGeojson)
-      // alert(bbox)
       pmtilesGenerateForUser2 (this.shpGeojson,'',store.state.pmtilesPropertieName)
       this.dialogForShpApp = false
     },
