@@ -1158,9 +1158,9 @@ export default {
       // const geojsonBlob = new Blob([geojsonString], { type: "application/json" });
       // pmtilesGenerateForUser (geojsonBlob,bbox)
 
-      const bbox = turf.bbox(this.shpGeojson)
-      alert(bbox)
-      pmtilesGenerateForUser2 (this.shpGeojson,bbox,store.state.pmtilesPropertieName)
+      // const bbox = turf.bbox(this.shpGeojson)
+      // alert(bbox)
+      pmtilesGenerateForUser2 (this.shpGeojson,'',store.state.pmtilesPropertieName)
       this.dialogForShpApp = false
     },
     imagePngLoad () {

@@ -26,9 +26,13 @@ if (!isset($data["geojson"])) {
 }
 
 // 各地物に oh3id プロパティを追加
+$bbox = [INF, INF, -INF, -INF];
 foreach ($data["geojson"]["features"] as $index => &$feature) {
     $feature["properties"]["oh3id"] = $index;
     $feature["properties"]["chiban"] = $data["chiban"];
+    if (isset($feature["geometry"]["coordinates"])) {
+        updateBBOX($feature["geometry"]["coordinates"], $bbox);
+    }
 }
 unset($feature); // 参照解除
 
@@ -37,8 +41,9 @@ $baseUploadDir = "/var/www/html/public_html/uploads/";
 // ディレクトリ名取得
 $subDir = $data["dir"];
 // フルパスのアップロードディレクトリ
-$uploadDir = $baseUploadDir . $subDir . "/";
-$tempFilePath = $uploadDir . ".geojson";
+$fileBaseName = uniqid();
+$tempFilePath = $baseUploadDir . $subDir . '/' . $fileBaseName. ".geojson";
+//$tempFilePath = $uploadDir . ".geojson";
 
 //echo json_encode([
 //    "error" => "エラーシミュレート",
@@ -80,7 +85,8 @@ echo json_encode([
     "success" => true,
     "message" => "PMTilesファイルが作成されました",
     "pmtiles_file" => $pmtilesPath,   // ローカルの保存先パス
-    "tippecanoeCmd" => $tippecanoeCmd
+    "tippecanoeCmd" => $tippecanoeCmd,
+    "bbox" => $bbox
 ]);
 exit;
 
@@ -106,7 +112,21 @@ function deleteSourceAndTempFiles($filePath)
         unlink($fullPath);
     }
 }
-
+/**
+ * GeoJSON の BBOX を更新
+ */
+function updateBBOX($coordinates, &$bbox) {
+    if (!is_array($coordinates[0])) {
+        $bbox[0] = min($bbox[0], $coordinates[0]);
+        $bbox[1] = min($bbox[1], $coordinates[1]);
+        $bbox[2] = max($bbox[2], $coordinates[0]);
+        $bbox[3] = max($bbox[3], $coordinates[1]);
+    } else {
+        foreach ($coordinates as $coord) {
+            updateBBOX($coord, $bbox);
+        }
+    }
+}
 
 
 

@@ -5632,7 +5632,7 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban) {
         }
     }
 
-    async function insertPmtilesData(uid, name, url, url2,  chiban) {
+    async function insertPmtilesData(uid, name, url, url2,  chiban, bbox) {
         try {
             const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesInsert.php', new URLSearchParams({
                 uid: uid,
@@ -5676,7 +5676,7 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban) {
         console.log(result.tippecanoeCmd)
         const webUrl = 'https://kenzkenz.duckdns.org/' + result.pmtiles_file.replace('/var/www/html/public_html/','')
         console.log(result.pmtiles_file)
-        insertPmtilesData(store.state.userId , store.state.pmtilesName, webUrl, result.pmtiles_file, store.state.pmtilesPropertieName)
+        insertPmtilesData(store.state.userId , store.state.pmtilesName, webUrl, result.pmtiles_file, store.state.pmtilesPropertieName, result.bbox)
         console.log('pmtiles作成完了')
 
     } else {
