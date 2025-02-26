@@ -5631,6 +5631,7 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban) {
     // -------------------------------------------------------------------------------------------------
     store.state.loading2 = true
     store.state.loadingMessage = 'pmtiles作成中です。'
+
     let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles2.php", {
         method: "POST",
         headers: {"Content-Type": "application/json"},

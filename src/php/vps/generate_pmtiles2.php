@@ -9,6 +9,13 @@ ini_set('memory_limit', '-1');
 set_time_limit(0);
 ini_set('max_execution_time', 0);
 
+//echo json_encode([
+//    "error" => "エラーシミュレート",
+////    'path' => $tempFilePath
+//]);
+//exit;
+
+
 // ---- ここでWeb上のベースURLを指定 ----
 $WEB_BASE_URL = "https://kenzkenz.duckdns.org/uploads/";
 
@@ -70,7 +77,7 @@ $pmtilesPath = $geojsonDir . "/" . $fileBaseName . ".pmtiles";
 
 // Tippecanoeコマンドの実行
 $tippecanoeCmd = sprintf(
-    "tippecanoe -o %s --generate-ids --no-feature-limit --no-tile-size-limit --force --drop-densest-as-needed --coalesce-densest-as-needed --simplification=2 --simplify-only-low-zooms --maximum-zoom=14 --minimum-zoom=0 --layer=oh3 %s 2>&1",
+    "tippecanoe -o %s --generate-ids --no-feature-limit --no-tile-size-limit --force --drop-densest-as-needed --coalesce-densest-as-needed --simplification=2 --simplify-only-low-zooms --maximum-zoom=16 --minimum-zoom=0 --layer=oh3 %s 2>&1",
     escapeshellarg($pmtilesPath),
     escapeshellarg($tempFilePath)
 );
