@@ -5684,3 +5684,50 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban) {
     //     .catch(error => console.error("エラー:", error));
     // -------------------------------------------------------------------------------------------------
 }
+
+export function saveDxfForChiriin (map) {
+    const allLayers = map.getStyle().layers;
+    // "oh-vector-mono" で始まるレイヤーIDを抽出
+    const filteredLayerIds = allLayers
+        .map(layer => layer.id) // レイヤーのIDのみ取得
+        .filter(id => id.startsWith("oh-vector-mono")); // 先頭が "oh-vector-mono" のみ
+    function getGeoJSONFromLayers(map, layerIds) {
+        let allFeatures = [];
+        layerIds.forEach(layerId => {
+            const features = map.querySourceFeatures(layerId);
+            console.log(features)
+            if (features.length > 0) {
+                allFeatures = allFeatures.concat(features);
+            }
+        });
+        return {
+            "type": "FeatureCollection",
+            "features": allFeatures
+        };
+    }
+    console.log(filteredLayerIds)
+    const geojson = getGeoJSONFromLayers(map, filteredLayerIds)
+    console.log(geojson)
+
+    // const layerIds = ["layer-1", "layer-2", "layer-3"]; // 対象のレイヤーIDを指定
+    // const geojson = getGeoJSONFromLayers(map, layerIds);
+    // console.log(JSON.stringify(geojson, null, 2));
+
+
+
+    console.log(geojson)
+    try {
+        const dxfString = geojsonToDXF(geojson);
+        // DXFファイルとしてダウンロード
+        const blob = new Blob([dxfString], { type: 'application/dxf' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+
+        link.download = 'test.dxf';
+
+        link.click();
+    } catch (error) {
+        console.error('GeoJSONの解析中にエラーが発生しました:', error);
+        alert('有効なGeoJSONを入力してください。');
+    }
+}

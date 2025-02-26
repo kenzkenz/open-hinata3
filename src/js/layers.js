@@ -8846,7 +8846,8 @@ const layers01 = [
                 id: 'oh-vector-layer-mono',
                 label: "地理院ベクター・モノクロ",
                 sources: monoSources,
-                layers: monoLayers
+                layers: monoLayers,
+                ext: {name:'extChiriin'}
             },
             {
                 id: 'oh-vector-layer-fx-dark',
