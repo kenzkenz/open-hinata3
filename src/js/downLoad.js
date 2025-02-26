@@ -5694,7 +5694,11 @@ export function saveDxfForChiriin (map) {
     function getGeoJSONFromLayers(map, layerIds) {
         let allFeatures = [];
         layerIds.forEach(layerId => {
-            const features = map.querySourceFeatures(layerId);
+            const bounds = map.getBounds(); // 表示範囲を取得
+            const features = map.queryRenderedFeatures(bounds, {
+                layers: [layerId] // 適切なレイヤー名を指定
+            });
+            // const features = map.queryRenderedFeatures(layerId);
             console.log(features)
             if (features.length > 0) {
                 allFeatures = allFeatures.concat(features);
