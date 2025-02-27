@@ -2867,9 +2867,12 @@ export default {
                     this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
                     this.s_dialogForPng2App = true
                   } else if (files.length === 1){
-
-                    this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
-                    this.dialogForImagePng = true
+                    if (this.$store.state.userId) {
+                      this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
+                      this.dialogForImagePng = true
+                    } else {
+                      alert('ログイン専用です。')
+                    }
                   }
                   break
                 }
