@@ -451,7 +451,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
             <v-btn :size="isSmall ? 'small' : 'default'" icon @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-menu</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="s_dialogForLogin = !s_dialogForLogin" v-if="mapName === 'map01'"><v-icon>mdi-login</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickSplit" v-if="mapName === 'map01'"><v-icon>mdi-monitor-multiple</v-icon></v-btn>
-            <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForLink = !s_dialogForLink"><v-icon v-if="user1">mdi-link</v-icon></v-btn>
+            <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="myRoom"><v-icon v-if="user1">mdi-link</v-icon></v-btn>
 <!--            <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForImage = !s_dialogForImage"><v-icon v-if="user1">mdi-image</v-icon></v-btn>-->
             <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickLayer(mapName)"><v-icon>mdi-layers</v-icon></v-btn>
           </div>
@@ -1109,6 +1109,50 @@ export default {
     },
   },
   methods: {
+    myRoom () {
+      this.s_dialogForLink = !this.s_dialogForLink
+      let startY;
+      let isTouching = false;
+      let currentTarget = null;
+      let initialScrollTop = 0;
+      document.addEventListener('touchstart', (e) => {
+        const target = e.target.closest('.scrollable-content, .v-overlay-container .v-select__content');
+        if (target) {
+          startY = e.touches[0].clientY; // タッチ開始位置を記録
+          initialScrollTop = target.scrollTop; // 初期スクロール位置を記録
+          isTouching = true;
+          currentTarget = target;
+          target.style.overflowY = 'auto'; // スクロールを強制的に有効化
+          target.style.touchAction = 'manipulation';
+          // **イベント伝播を防ぐ**
+          e.stopPropagation();
+        }
+      }, { passive: true, capture: true });
+
+      // タッチ移動時の処理
+      document.addEventListener('touchmove', (e) => {
+        if (!isTouching || !currentTarget) return; // タッチが開始されていなければ処理しない
+        const moveY = e.touches[0].clientY;
+        const deltaY = startY - moveY; // 移動量を計算
+        // スクロール位置を更新
+        currentTarget.scrollTop += deltaY;
+        startY = moveY; // 開始位置を現在の位置に更新
+        // **Android でスクロールが無視されないようにする**
+        e.preventDefault();
+        e.stopPropagation();
+
+      }, { passive: true, capture: true });
+
+      // タッチ終了時の処理
+      document.addEventListener('touchend', () => {
+        if (currentTarget) {
+          currentTarget.style.overflowY = ''; // スクロール設定をリセット
+        }
+        currentTarget = null; // 現在のターゲットをリセット
+        isTouching = false; // タッチ中フラグをOFF
+        initialScrollTop = 0; // 初期スクロール位置をリセット
+      });
+    },
     updateSnackbar() {
       this.loadingSnackbar = this.s_loading || this.s_loading2;
     },
@@ -1763,13 +1807,10 @@ export default {
       // タッチ移動時の処理
       document.addEventListener('touchmove', (e) => {
         if (!isTouching || !currentTarget) return; // タッチが開始されていなければ処理しない
-
         const moveY = e.touches[0].clientY;
         const deltaY = startY - moveY; // 移動量を計算
-
         // スクロール位置を更新
         currentTarget.scrollTop += deltaY;
-
         startY = moveY; // 開始位置を現在の位置に更新
         e.preventDefault(); // デフォルトのスクロールを防止
       }, { passive: false });

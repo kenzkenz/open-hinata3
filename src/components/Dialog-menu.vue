@@ -44,13 +44,12 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <!--URL記録-->
-      <v-dialog v-model="s_dialogForLink" :scrim="false" persistent="false" max-width="500px" height="500px" class="scrollable-content">
+      <v-dialog attach="body" v-model="s_dialogForLink" :scrim="false" persistent="false" max-width="500px" height="500px" content-class="scrollable-dialog" class="scrollable-content">
         <v-card>
           <v-card-title style="text-align: right">
             <v-icon @click="s_dialogForLink = false">mdi-close</v-icon>
           </v-card-title>
           <v-card-text>
-
             <v-tabs v-model="tab" style="margin-bottom: 10px;">
               <v-tab value="1">URL記憶</v-tab>
               <v-tab value="2">タイル記憶</v-tab>
@@ -115,7 +114,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <p v-if="user1">ようこそ、{{ user1.displayName || "ゲスト" }}さん！</p>
         <p v-else></p>
       </div>
-      v0.541<br>
+      v0.544<br>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 
@@ -1415,6 +1414,10 @@ export default {
   cursor: pointer;
   padding: 5px;
   font-size: 30px;
+}
+.scrollable-dialog {
+  overflow-y: auto !important;
+  touch-action: auto !important;
 }
 </style>
 
