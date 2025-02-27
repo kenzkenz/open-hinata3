@@ -14,7 +14,7 @@ try {
     }
 
     // SQL: 指定されたuidのデータを取得
-    $sql = "SELECT * FROM usertile WHERE uid = :uid";
+    $sql = "SELECT * FROM usertile WHERE uid = :uid ORDER BY id DESC";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':uid' => $uid]);
 
