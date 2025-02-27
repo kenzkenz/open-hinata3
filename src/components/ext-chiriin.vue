@@ -61,8 +61,7 @@
 
 <script>
 import {
-  resetFeatureColors,
-  saveSimaGaiku, saveDxfForChiriin
+  saveDxfForChiriin
 } from "@/js/downLoad";
 
 export default {
@@ -72,14 +71,7 @@ export default {
     layerVisibility: {},
     filteredLayerIds: [],
     dialogForDxf: false,
-    fields: '',
-    sourceId: '',
     layerId: '',
-    dialog: false,
-    dialog2: false,
-    dialog3: false,
-    dialog4: false,
-    dialog5: false,
     selectedItem: null,
     isAndroid: false,
     items: [
@@ -134,12 +126,6 @@ export default {
       console.log(/android/i.test(userAgent))
       this.isAndroid = /android/i.test(userAgent);
     },
-    resetFeatureColors () {
-      const map = this.$store.state[this.mapName]
-      this.idForLayerId(this.item.id)
-      console.log(this.layerId)
-      resetFeatureColors(map,this.layerId)
-    },
     allon () {
       this.filteredLayerIds.forEach((id) => {
         this.layerVisibility[id] = true;
@@ -169,18 +155,6 @@ export default {
       const layerIds = getTrueKeys(this.layerVisibility)
       const map = this.$store.state[this.mapName]
       saveDxfForChiriin(map,layerIds)
-    },
-    saveSimaGaiku () {
-      const map = this.$store.state[this.mapName]
-      console.log(this.item.id)
-      let layerId
-      if (this.item.id === 'oh-toshikan') {
-        layerId = 'oh-toshikan-layer'
-      } else {
-        layerId = 'oh-gaiku-layer'
-      }
-      saveSimaGaiku(map,layerId)
-      // history('街区SIMA保存',window.location.href)
     },
   },
   created() {
