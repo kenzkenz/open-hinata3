@@ -8837,21 +8837,21 @@ const layers01 = [
                     // },
                 ]},
             {
-                id: 'oh-vector-layer-fx-basic',
+                id: 'oh-vector-fx-basic',
                 label: "地理院ベクター",
                 sources: fxBasicSources,
                 layers: fxBasicLayers,
                 ext: {name:'extChiriin'}
             },
             {
-                id: 'oh-vector-layer-mono',
+                id: 'oh-vector-mono',
                 label: "地理院ベクター・モノクロ",
                 sources: monoSources,
                 layers: monoLayers,
                 ext: {name:'extChiriinMono'}
             },
             {
-                id: 'oh-vector-layer-fx-dark',
+                id: 'oh-vector-fx-dark',
                 label: "地理院ベクター・ダーク",
                 sources: fxDarkSources,
                 layers: fxDarkLayers,

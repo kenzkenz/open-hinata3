@@ -20,10 +20,40 @@
     </v-card>
   </v-dialog>
 
+  <v-dialog v-model="dialogForDxf" max-width="500px">
+    <v-card>
+      <v-card-title style="text-align: right">
+        <v-icon @click="dialogForDxf = false">mdi-close</v-icon>
+      </v-card-title>
+      <v-card-text>
+        <p style="margin-bottom: 10px;">レイヤーを選択してください。</p>
+        <v-btn @click="saveDxf1">出力開始</v-btn>
+        <v-btn style="margin-left: 10px;" @click="allon">全てオン</v-btn>
+        <v-btn style="margin-left: 10px;" @click="alloff">全てオフ</v-btn>
+        <div style="margin-bottom: 20px;">
+          <div v-for="layerId in filteredLayerIds" :key="layerId">
+            <v-switch style="height: 40px; width: 90%;" color="primary"
+                      v-model="layerVisibility[layerId]"
+                      :label="layerId.split('-')[3]"
+                      @change="toggleLayer(layerId)"
+            ></v-switch>
+          </div>
+        </div>
+        <v-btn @click="saveDxf1">出力開始</v-btn>
+        <v-btn style="margin-left: 10px;" @click="allon">全てオン</v-btn>
+        <v-btn style="margin-left: 10px;" @click="alloff">全てオフ</v-btn>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="blue-darken-1" text @click="dialogForDxf = false">Close</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
 <!--    <v-btn style="margin-top: 0px;margin-left: 0px;margin-bottom: 10px;" @click="saveSimaGaiku">sima保存</v-btn>-->
-    <v-btn style="margin-top: 0px;margin-left: 0px;margin-bottom: 10px;" @click="saveDxf">dxf保存</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 0px;margin-bottom: 10px;" @click="saveDxf0">dxf保存</v-btn>
 <!--    <hr>-->
     <div v-html="item.attribution"></div>
   </div>
@@ -31,22 +61,17 @@
 
 <script>
 import {
-  saveGeojson,
-  gistUpload,
-  saveCima,
-  saveCima3,
-  saveDxf,
-  saveCsv,
-  simaToGeoJSON,
   resetFeatureColors,
-  saveSima2,
   saveSimaGaiku, saveDxfForChiriin
 } from "@/js/downLoad";
 
 export default {
-  name: 'ext-gaiku',
+  name: 'ext-chiriin',
   props: ['mapName','item'],
   data: () => ({
+    layerVisibility: {},
+    filteredLayerIds: [],
+    dialogForDxf: false,
     fields: '',
     sourceId: '',
     layerId: '',
@@ -99,6 +124,11 @@ export default {
     //       this.s_tokijyoText
     //     ]})
     // },
+    toggleLayer(layerId) {
+      console.log(`Layer ${layerId} visibility: ${this.layerVisibility[layerId]}`);
+      // MapLibre のレイヤー表示切り替えを実装
+      // map.setLayoutProperty(layerId, "visibility", this.layerVisibility[layerId] ? "visible" : "none");
+    },
     checkDevice() {
       const userAgent = navigator.userAgent || navigator.vendor || window.opera;
       console.log(/android/i.test(userAgent))
@@ -110,9 +140,35 @@ export default {
       console.log(this.layerId)
       resetFeatureColors(map,this.layerId)
     },
-    saveDxf () {
+    allon () {
+      this.filteredLayerIds.forEach((id) => {
+        this.layerVisibility[id] = true;
+      });
+    },
+    alloff () {
+      this.filteredLayerIds.forEach((id) => {
+        this.layerVisibility[id] = false;
+      });
+    },
+    saveDxf0 () {
       const map = this.$store.state[this.mapName]
-      saveDxfForChiriin(map)
+      const allLayers = map.getStyle().layers;
+      this.filteredLayerIds = allLayers
+          .map(layer => layer.id) // レイヤーのIDのみ取得
+          .filter(id => id.startsWith(this.item.id));
+      // 初期状態をすべて true に設定
+      this.filteredLayerIds.forEach((id) => {
+        this.layerVisibility[id] = true;
+      });
+      this.dialogForDxf = true
+    },
+    saveDxf1 () {
+      function getTrueKeys(obj) {
+        return Object.keys(obj).filter(key => obj[key] === true);
+      }
+      const layerIds = getTrueKeys(this.layerVisibility)
+      const map = this.$store.state[this.mapName]
+      saveDxfForChiriin(map,layerIds)
     },
     saveSimaGaiku () {
       const map = this.$store.state[this.mapName]

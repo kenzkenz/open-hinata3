@@ -5685,12 +5685,7 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban) {
     // -------------------------------------------------------------------------------------------------
 }
 
-export function saveDxfForChiriin (map) {
-    const allLayers = map.getStyle().layers;
-    // "oh-vector-" で始まるレイヤーIDを抽出
-    const filteredLayerIds = allLayers
-        .map(layer => layer.id) // レイヤーのIDのみ取得
-        .filter(id => id.startsWith("oh-vector-")); // 先頭が "oh-vector-" のみ
+export function saveDxfForChiriin (map,layerIds) {
     function getGeoJSONFromLayers(map, layerIds) {
         let allFeatures = [];
         layerIds.forEach(layerId => {
@@ -5707,7 +5702,7 @@ export function saveDxfForChiriin (map) {
             "features": allFeatures
         };
     }
-    const geojson = getGeoJSONFromLayers(map, filteredLayerIds)
+    const geojson = getGeoJSONFromLayers(map, layerIds)
     try {
         const dxfString = geojsonToDXF(geojson);
         // DXFファイルとしてダウンロード
