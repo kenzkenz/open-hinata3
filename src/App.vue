@@ -2847,15 +2847,20 @@ export default {
                 {
                   reader.onload = (event) => {
                     const geojsonText = event.target.result
-                    const geojson = JSON.parse(geojsonText);
-                    if (this.$store.state.userId) {
-                      const firstFeature = geojson.features[0];
-                      this.shpPropaties = Object.keys(firstFeature.properties)
-                      this.shpGeojson = geojson
-                      this.dialogForShpApp = true
-                    } else {
-                      this.$store.state.geojsonText = geojsonText
-                      geojsonAddLayer (map, geojson, true, fileExtension)
+                    try {
+                      const geojson = JSON.parse(geojsonText);
+                      if (this.$store.state.userId) {
+                        const firstFeature = geojson.features[0];
+                        this.shpPropaties = Object.keys(firstFeature.properties)
+                        this.shpGeojson = geojson
+                        this.dialogForShpApp = true
+                      } else {
+                        this.$store.state.geojsonText = geojsonText
+                        geojsonAddLayer (map, geojson, true, fileExtension)
+                      }
+                    }catch (e) {
+                      console.log(e)
+                      alert('失敗しました。' + e)
                     }
                   }
                   reader.readAsText(file);
@@ -2922,6 +2927,8 @@ export default {
                   }
                   break
                 }
+                default:
+                  alert(fileExtension + 'は対応していません。')
               }
             });
           }

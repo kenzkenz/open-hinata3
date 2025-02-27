@@ -5637,7 +5637,7 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban) {
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
             geojson: geojson,
-            dir: store.state.userId + '/pmtiles',
+            dir: store.state.userId,
             chiban: chiban,
         }),
     });

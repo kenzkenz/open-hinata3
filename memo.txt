@@ -941,3 +941,16 @@ tippecanoe -o himejishi.pmtiles \
 gdal2tiles.py -z 0-19 --s_srs EPSG:2450 -a "0,0,0" --xyz --processes=4 \
 /var/www/html/public_html/uploads/test.tif \
 /var/www/html/public_html/tiles/test_tiles
+
+tippecanoe -o 浜松市.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=0 \
+    --layer=chibanzu \
+    浜松市.geojson
