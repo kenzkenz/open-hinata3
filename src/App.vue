@@ -1111,47 +1111,49 @@ export default {
   methods: {
     myRoom () {
       this.s_dialogForLink = !this.s_dialogForLink
-      let startY;
-      let isTouching = false;
-      let currentTarget = null;
-      let initialScrollTop = 0;
-      document.addEventListener('touchstart', (e) => {
-        const target = e.target.closest('.scrollable-content, .v-overlay-container .v-select__content');
-        if (target) {
-          startY = e.touches[0].clientY; // タッチ開始位置を記録
-          initialScrollTop = target.scrollTop; // 初期スクロール位置を記録
-          isTouching = true;
-          currentTarget = target;
-          target.style.overflowY = 'auto'; // スクロールを強制的に有効化
-          target.style.touchAction = 'manipulation';
-          // **イベント伝播を防ぐ**
+      if (this.s_isAndroid){
+        let startY;
+        let isTouching = false;
+        let currentTarget = null;
+        let initialScrollTop = 0;
+        document.addEventListener('touchstart', (e) => {
+          const target = e.target.closest('.scrollable-content, .v-overlay-container .v-select__content');
+          if (target) {
+            startY = e.touches[0].clientY; // タッチ開始位置を記録
+            initialScrollTop = target.scrollTop; // 初期スクロール位置を記録
+            isTouching = true;
+            currentTarget = target;
+            target.style.overflowY = 'auto'; // スクロールを強制的に有効化
+            target.style.touchAction = 'manipulation';
+            // **イベント伝播を防ぐ**
+            e.stopPropagation();
+          }
+        }, { passive: true, capture: true });
+
+        // タッチ移動時の処理
+        document.addEventListener('touchmove', (e) => {
+          if (!isTouching || !currentTarget) return; // タッチが開始されていなければ処理しない
+          const moveY = e.touches[0].clientY;
+          const deltaY = startY - moveY; // 移動量を計算
+          // スクロール位置を更新
+          currentTarget.scrollTop += deltaY;
+          startY = moveY; // 開始位置を現在の位置に更新
+          // **Android でスクロールが無視されないようにする**
+          e.preventDefault();
           e.stopPropagation();
-        }
-      }, { passive: true, capture: true });
 
-      // タッチ移動時の処理
-      document.addEventListener('touchmove', (e) => {
-        if (!isTouching || !currentTarget) return; // タッチが開始されていなければ処理しない
-        const moveY = e.touches[0].clientY;
-        const deltaY = startY - moveY; // 移動量を計算
-        // スクロール位置を更新
-        currentTarget.scrollTop += deltaY;
-        startY = moveY; // 開始位置を現在の位置に更新
-        // **Android でスクロールが無視されないようにする**
-        e.preventDefault();
-        e.stopPropagation();
+        }, { passive: true, capture: true });
 
-      }, { passive: true, capture: true });
-
-      // タッチ終了時の処理
-      document.addEventListener('touchend', () => {
-        if (currentTarget) {
-          currentTarget.style.overflowY = ''; // スクロール設定をリセット
-        }
-        currentTarget = null; // 現在のターゲットをリセット
-        isTouching = false; // タッチ中フラグをOFF
-        initialScrollTop = 0; // 初期スクロール位置をリセット
-      });
+        // タッチ終了時の処理
+        document.addEventListener('touchend', () => {
+          if (currentTarget) {
+            currentTarget.style.overflowY = ''; // スクロール設定をリセット
+          }
+          currentTarget = null; // 現在のターゲットをリセット
+          isTouching = false; // タッチ中フラグをOFF
+          initialScrollTop = 0; // 初期スクロール位置をリセット
+        });
+      }
     },
     updateSnackbar() {
       this.loadingSnackbar = this.s_loading || this.s_loading2;
