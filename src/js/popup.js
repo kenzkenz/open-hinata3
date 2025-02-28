@@ -3364,8 +3364,10 @@ export function popup(e,map,mapName,mapFlg) {
             }
         }
 
-        if(/^oh-chiban-/.test(layerId)) {
-            if (store.state.isRenzoku) return
+        // alert(/^oh-chibanL-/.test(layerId))
+        // alert(layerId)
+
+        if(/^oh-chiban-/.test(layerId) || /^oh-chibanL-/.test(layerId)) {
             let features = map.queryRenderedFeatures(
                 map.project(coordinates), {layers: [layerId]}
             )
@@ -3374,13 +3376,14 @@ export function popup(e,map,mapName,mapFlg) {
                     map.project(e.lngLat), {layers: [layerId]}
                 )
             }
-            console.log(features)
+            console.log(features[0].geometry.type)
+            if (store.state.isRenzoku && features[0].geometry.type === 'Polygon') return
             if (features.length === 0) return
             props = features[0].properties
             let html0 = ''
-            if (html.indexOf('oh-chiban-') === -1) {
+            if (html.indexOf(layerId) === -1) {
                 html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
-                html0 += '<div class="oh-chiban-" font-weight: normal; color: #333;line-height: 25px;">'
+                html0 += '<div class=' + layerId + ' font-weight: normal; color: #333;line-height: 25px;">'
                 Object.keys(props).forEach(function (key) {
                     html0 += key + '=' + props[key] + '<br>'
                 })

@@ -2107,15 +2107,16 @@ export function highlightSpecificFeatures(map,layerId) {
 
     map.setPaintProperty(
         layerId,
-        'fill-color',
-        [
-            "case",
-            ["in", "道", ["get", "地番"]],
-            "rgba(192, 192, 192, 0.7)", // 道っぽい灰色
-            ["in", "水", ["get", "地番"]],
-            "rgba(135, 206, 250, 0.7)", // 水っぽい青色
-            "rgba(254, 217, 192, 0)" // それ以外は透明
-        ],
+        // 'fill-color',
+        // [
+        //     "case",
+        //     ["in", "道", ["get", "地番"]],
+        //     "rgba(192, 192, 192, 0.7)", // 道っぽい灰色
+        //     ["in", "水", ["get", "地番"]],
+        //     "rgba(135, 206, 250, 0.7)", // 水っぽい青色
+        //     "rgba(254, 217, 192, 0)" // それ以外は透明
+        // ],
+        "fill-color", "rgba(0, 0, 0, 0)",
     );
     setTimeout(() => {
         map.setPaintProperty(
@@ -2130,15 +2131,15 @@ export function highlightSpecificFeatures(map,layerId) {
                     ['literal', Array.from(store.state.highlightedChibans)]
                 ],
                 'rgba(255, 0, 0, 0.5)', // クリックされた地番が選択された場合
-                // 'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
-                [
-                    "case",
-                    ["in", "道", ["get", "地番"]],
-                    "rgba(192, 192, 192, 0.7)", // 道っぽい灰色
-                    ["in", "水", ["get", "地番"]],
-                    "rgba(135, 206, 250, 0.7)", // 水っぽい青色
-                    "rgba(254, 217, 192, 0)" // それ以外は透明
-                ],
+                'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
+                // [
+                //     "case",
+                //     ["in", "道", ["get", "地番"]],
+                //     "rgba(192, 192, 192, 0.7)", // 道っぽい灰色
+                //     ["in", "水", ["get", "地番"]],
+                //     "rgba(135, 206, 250, 0.7)", // 水っぽい青色
+                //     "rgba(254, 217, 192, 0)" // それ以外は透明
+                // ],
             ]
         );
     }, sec)
@@ -2521,15 +2522,16 @@ export function resetFeatureColors(map,layerId) {
 
     map.setPaintProperty(
         layerId,
-        'fill-color',
-        [
-            "case",
-            ["in", "道", ["get", "地番"]],
-            "rgba(192, 192, 192, 0.7)", // 道っぽい灰色
-            ["in", "水", ["get", "地番"]],
-            "rgba(135, 206, 250, 0.7)", // 水っぽい青色
-            "rgba(254, 217, 192, 0)" // それ以外は透明
-        ],
+        // 'fill-color',
+        // [
+        //     "case",
+        //     ["in", "道", ["get", "地番"]],
+        //     "rgba(192, 192, 192, 0.7)", // 道っぽい灰色
+        //     ["in", "水", ["get", "地番"]],
+        //     "rgba(135, 206, 250, 0.7)", // 水っぽい青色
+        //     "rgba(254, 217, 192, 0)" // それ以外は透明
+        // ],
+        "fill-color", "rgba(0, 0, 0, 0)",
     );
 }
 function convertSIMtoTXT(simText) {
@@ -5452,6 +5454,7 @@ export function userPmtileSet(name,url,id, chiban, bbox) {
         id: 'oh-chibanL-' + name + '-point-layer',
         type: "circle",
         source: 'oh-chiban-' + id + '-' + name + '-source',
+        filter: ["==", "$type", "Point"],
         "source-layer": "oh3",        paint: {
             'circle-color': 'rgba(255,0,0,1)', // 赤色で中心点を強調
             'circle-radius': 5, // 固定サイズの点

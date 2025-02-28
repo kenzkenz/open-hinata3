@@ -718,6 +718,7 @@ export default {
                       id: 'oh-chibanL-' + name + '-point-layer',
                       type: "circle",
                       source: 'oh-chiban-' + id + '-' + name + '-source',
+                      filter: ["==", "$type", "Point"],
                       "source-layer": "oh3",        paint: {
                         'circle-color': 'rgba(255,0,0,1)', // 赤色で中心点を強調
                         'circle-radius': 5, // 固定サイズの点
