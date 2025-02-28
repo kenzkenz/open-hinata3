@@ -714,8 +714,20 @@ export default {
                       },
                       'minzoom': 17
                     }
+                    const pointLayer = {
+                      id: 'oh-chibanL-' + name + '-point-layer',
+                      type: "circle",
+                      source: 'oh-chiban-' + id + '-' + name + '-source',
+                      "source-layer": "oh3",        paint: {
+                        'circle-color': 'rgba(255,0,0,1)', // 赤色で中心点を強調
+                        'circle-radius': 5, // 固定サイズの点
+                        'circle-opacity': 1,
+                        'circle-stroke-width': 1,
+                        'circle-stroke-color': '#fff'
+                      }
+                    };
                     v.sources = [source];
-                    v.layers = [polygonLayer,lineLayer,labelLayer];
+                    v.layers = [polygonLayer,lineLayer,labelLayer,pointLayer];
                     v.label = response.data[0].name;
                   }
                 } catch (error) {

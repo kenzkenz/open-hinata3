@@ -5448,13 +5448,25 @@ export function userPmtileSet(name,url,id, chiban, bbox) {
         },
         'minzoom': 17
     }
+    const pointLayer = {
+        id: 'oh-chibanL-' + name + '-point-layer',
+        type: "circle",
+        source: 'oh-chiban-' + id + '-' + name + '-source',
+        "source-layer": "oh3",        paint: {
+            'circle-color': 'rgba(255,0,0,1)', // 赤色で中心点を強調
+            'circle-radius': 5, // 固定サイズの点
+            'circle-opacity': 1,
+            'circle-stroke-width': 1,
+            'circle-stroke-color': '#fff'
+        }
+    };
 
     store.state.selectedLayers.map01.unshift(
         {
             id: 'oh-chiban-' + id + '-' + name + '-layer',
             label: name,
             source: sopurce,
-            layers: [polygonLayer,lineLayer,labelLayer],
+            layers: [polygonLayer,lineLayer,labelLayer,pointLayer],
             opacity: 1,
             visibility: true,
             ext: {name:'ext-chibanzu'}

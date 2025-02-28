@@ -1,24 +1,4 @@
 <template>
-  <v-dialog v-model="dialog" max-width="500px">
-    <v-card>
-      <v-card-title>
-        座標系選択
-      </v-card-title>
-      <v-card-text>
-        <v-select class="scrollable-content"
-                  v-model="s_zahyokei"
-                  :items="items"
-                  label="座標系を選択してください"
-                  outlined
-        ></v-select>
-        <v-btn @click="saveSimaGaiku">SIMA保存</v-btn>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn color="blue-darken-1" text @click="dialog = false">Close</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
 
   <v-dialog v-model="dialogForDxf" max-width="500px">
     <v-card>
@@ -35,7 +15,6 @@
             <v-switch style="height: 40px; width: 90%;" color="primary"
                       v-model="layerVisibility[layerId]"
                       :label="layerId.split('-')[3]"
-                      @change="toggleLayer(layerId)"
             ></v-switch>
           </div>
         </div>
@@ -116,11 +95,6 @@ export default {
     //       this.s_tokijyoText
     //     ]})
     // },
-    toggleLayer(layerId) {
-      console.log(`Layer ${layerId} visibility: ${this.layerVisibility[layerId]}`);
-      // MapLibre のレイヤー表示切り替えを実装
-      // map.setLayoutProperty(layerId, "visibility", this.layerVisibility[layerId] ? "visible" : "none");
-    },
     checkDevice() {
       const userAgent = navigator.userAgent || navigator.vendor || window.opera;
       console.log(/android/i.test(userAgent))
@@ -171,51 +145,6 @@ export default {
 }
 </script>
 <style scoped>
-.select-container {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: auto;
-  margin: 20px auto;
-}
-
-.select-label {
-  font-size: 14px;
-  font-weight: bold;
-  margin-bottom: 4px;
-}
-
-.custom-select {
-  appearance: none; /* ブラウザのデフォルトスタイルを無効化 */
-  background: linear-gradient(to right, #f0f4ff, #e0eaff);
-  border: 1px solid #a0c4ff;
-  border-radius: 8px;
-  padding: 10px 15px;
-  font-size: 14px;
-  cursor: pointer;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  outline: none;
-  transition: border-color 0.3s, box-shadow 0.3s;
-}
-
-.custom-select:hover {
-  border-color: #4d94ff;
-}
-
-.custom-select:focus {
-  border-color: #1a73e8;
-  box-shadow: 0 0 5px rgba(26, 115, 232, 0.5);
-}
-
-.custom-select option {
-  padding: 10px;
-}
-
-select {
-  position: relative;
-  z-index: 1000; /* 他の要素の上に表示 */
-  direction: ltr; /* 左から右に展開 */
-}
 
 </style>
 
