@@ -2798,6 +2798,18 @@ const kochiSekisyokuLayer = {
     'type': 'raster',
     'source': 'kochi-sekisyoku-source',
 }
+// 富山県赤色立体地図------------------------------------------------------------------------------------------------------
+const toyamaSekisyokuSource = {
+    id: 'toyama-sekisyoku-source', obj: {
+        type: 'raster',
+        tiles: ['https://rinya-toyama.geospatial.jp/tile/rinya/2024/rrimap/{z}/{x}/{y}.png'],
+    }
+}
+const toyamaSekisyokuLayer = {
+    'id': 'oh-toyama-sekisyoku-layer',
+    'type': 'raster',
+    'source': 'toyama-sekisyoku-source',
+}
 // 東京都23区CS立体図------------------------------------------------------------------------------------------------------
 const tokyo23CsSource = {
     id: 'tokyo23-cs-source', obj: {
@@ -9689,9 +9701,9 @@ const layers01 = [
                     {
                         id: 'oh-sekisyoku-layer-all',
                         label: "赤色立体地図全部",
-                        sources: [kanagawakenyokohamaSekisyokuSource,
+                        sources: [toyamaSekisyokuSource,kanagawakenyokohamaSekisyokuSource,
                             kanagawakenseibuSekisyokuSource,sagamiharaSekisyokuSource,kanagawaSekisyokuSource,tamaSekisyokuSource,tokyo23SekisyokuSource,tosyo01SekisyokuSource,tosyo02SekisyokuSource,tosyo03SekisyokuSource,tosyo04SekisyokuSource,tosyo05SekisyokuSource,tosyo06SekisyokuSource,kochiSekisyokuSource],
-                        layers: [kanagawakenyokohamaSekisyokuLayer,kanagawakenseibuSekisyokuLayer,sagamiharaSekisyokuLayer,kanagawaSekisyokuLayer,tamaSekisyokuLayer,tokyo23SekisyokuLayer,tosyo02SekisyokuLayer,tosyo03SekisyokuLayer,tosyo04SekisyokuLayer,tosyo05SekisyokuLayer,tosyo06SekisyokuLayer,tosyo01SekisyokuLayer,kochiSekisyokuLayer],
+                        layers: [toyamaSekisyokuLayer,kanagawakenyokohamaSekisyokuLayer,kanagawakenseibuSekisyokuLayer,sagamiharaSekisyokuLayer,kanagawaSekisyokuLayer,tamaSekisyokuLayer,tokyo23SekisyokuLayer,tosyo02SekisyokuLayer,tosyo03SekisyokuLayer,tosyo04SekisyokuLayer,tosyo05SekisyokuLayer,tosyo06SekisyokuLayer,tosyo01SekisyokuLayer,kochiSekisyokuLayer],
                     },
                     {
                         id: 'oh-kanagawa-sekisyoku-layer',
@@ -9745,7 +9757,13 @@ const layers01 = [
                         layers: [kochiSekisyokuLayer],
                         attribution:'<a href="https://www.geospatial.jp/ckan/dataset/sekisyoku" target="_blank">G空間情報センター</a>'
                     },
-
+                    {
+                        id: 'oh-toyama-sekisyoku-layer',
+                        label: "富山県赤色立体地図",
+                        sources: [toyamaSekisyokuSource],
+                        layers: [toyamaSekisyokuLayer],
+                        attribution:'<a href="https://www.geospatial.jp/ckan/dataset/rrimap" target="_blank">G空間情報センター</a>'
+                    },
                 ]},
             {
                 id: 'oh-shitchi',

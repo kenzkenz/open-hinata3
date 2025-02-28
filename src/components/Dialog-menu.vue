@@ -87,10 +87,11 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               </v-window-item>
               <v-window-item value="3">
                 <v-card>
+                  <v-text-field  v-model="pmtilesRename" type="text" placeholder="リネーム"></v-text-field>
+                  <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="pmtilesRenameBtn">リネーム</v-btn>
                   <div v-for="item in jsonDataPmtile" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban,item.bbox)">
                     <button class="close-btn" @click="removeItemPmtiles(item.id,item.url2,$event)">×</button>
                     <strong>{{ item.name }}</strong><br>
-<!--                    <strong></strong>{{ item.url }}-->
                   </div>
                 </v-card>
               </v-window-item>
@@ -237,7 +238,9 @@ export default {
     // MasonryWall,
   },
   data: () => ({
-    // zoomItems: [13,14,15,16,17,18,19,20,21,22,23,24,25],
+    id: '',
+    name: '',
+    pmtilesRename: '',
     tab: 'one',
     tileUrl: '',
     tileName: '',
@@ -357,6 +360,20 @@ export default {
     },
   },
   methods: {
+    pmtilesRenameBtn () {
+      const vm = this
+      if (!this.pmtilesRename) return
+      // alert(this.id + '/' + this.pmtilesRename)
+      axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesUpdate.php',{
+        params: {
+          id: this.id,
+          name: this.pmtilesRename
+        }
+      }).then(function (response) {
+        console.log(response)
+        vm.pmtileSelect(vm.$store.state.userId)
+      })
+    },
     changeVisible () {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map01
@@ -365,6 +382,9 @@ export default {
       map02.setLayoutProperty("click-points-layer", "visibility", visibility);
     },
     pmtileClick (name,url,id, chiban, bbox) {
+      this.pmtilesRename = name
+      this.id = id
+      this.name = name
       userPmtileSet(name,url,id, chiban, JSON.parse(bbox))
     },
     tileClick (name,url,id) {
