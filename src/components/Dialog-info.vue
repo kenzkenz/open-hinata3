@@ -58,6 +58,7 @@
         'extChiriinMono',
         'extChiriinDark',
           ].includes(item.ext.name)"/>
+    <extSaga :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extSaga'"/>
   </div>
 </template>
 
@@ -81,6 +82,8 @@ import extZeni from "@/components/ext-zeni"
 import extIwata from "@/components/ext-chiban"
 import extGaiku from "@/components/ext-gaiku"
 import extChiriin from "@/components/ext-chiriin"
+import extSaga from "@/components/ext-saga"
+
 
 export default {
   name: "dialog-info",
@@ -103,7 +106,8 @@ export default {
     extZeni,
     extGaiku,
     extIwata,
-    extChiriin
+    extChiriin,
+    extSaga
   },
   props: ['mapName'],
   data: () => ({

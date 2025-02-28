@@ -2592,6 +2592,88 @@ function extractMatchingFeatures(map,geojson) {
     };
 }
 
+export function savePointSimaForSaga (map) {
+    const code = 'EPSG:2444'
+    console.log(code)
+
+    const features = map.queryRenderedFeatures({
+        layers: ['oh-saga-kijyunten-point'] // 対象のレイヤー名を指定
+    });
+    // GeoJSON形式に変換
+    const geojson = {
+        type: 'FeatureCollection',
+        features: features.map(feature => ({
+            type: 'Feature',
+            geometry: feature.geometry,
+            properties: feature.properties
+        }))
+    };
+
+    let simaData = 'G00,01,open-hinata3,\n';
+    simaData += 'Z00,座標ﾃﾞｰﾀ,,\n';
+    simaData += 'A00,\n';
+
+    let A01Text = '';
+    let j = 1;
+
+    // 座標を関連付けるマップ
+    const coordinateMap = new Map();
+
+    geojson.features.forEach((feature) => {
+        if (feature.geometry.type !== 'Point') {
+            console.warn('Unsupported geometry type:', feature.geometry.type);
+            return; // Point以外はスキップ
+        }
+
+        const coord = feature.geometry.coordinates;
+        if (
+            Array.isArray(coord) &&
+            Number.isFinite(coord[0]) &&
+            Number.isFinite(coord[1])
+        ) {
+            // const [x, y] = proj4('EPSG:4326', code, [coord[0],coord[1]]); // 座標系変換
+            const [x, y] = [feature.properties.Y, feature.properties.X]
+            const coordinateKey = `${x},${y}`;
+            const name = feature.properties.点名
+            const zahyoY = y
+            const zahyoX = x
+            const zahyoZ = feature.properties.標高
+            console.log(zahyoY)
+            console.log(zahyoX)
+            console.log(coord[2])
+            if (!coordinateMap.has(coordinateKey)) {
+                coordinateMap.set(coordinateKey, j);
+                A01Text += 'A01,' + j + ',' + name + ',' + zahyoY + ',' + zahyoX + ',' + zahyoZ + ',\n';
+                // A01Text += 'A01,' + j + ',' + j + ',' + zahyoY + ',' + zahyoX + ',\n';
+                j++;
+            }
+        } else {
+            console.error('Invalid coordinate skipped:', coord);
+        }
+    });
+
+    simaData += A01Text + 'A99\n';
+    simaData += 'A99,END,,\n';
+    console.log(simaData)
+
+    // UTF-8で文字列をコードポイントに変換
+    const utf8Array = window.Encoding.stringToCode(simaData);
+    // UTF-8からShift-JISに変換
+    const shiftJISArray = window.Encoding.convert(utf8Array, 'SJIS');
+    // Shift-JISエンコードされたデータをUint8Arrayに格納
+    const uint8Array = new Uint8Array(shiftJISArray);
+    // Blobを作成（MIMEタイプを変更）
+    const blob = new Blob([uint8Array], { type: 'application/octet-stream' });
+    // ダウンロード用リンクを作成
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    const fileName = 'saga.sim'
+    link.download = fileName; // ファイル名を正確に指定
+    // リンクをクリックしてダウンロード
+    link.click();
+    URL.revokeObjectURL(link.href);
+}
+
 export function savePointSima (map,geojson,zahyokei0) {
     console.log(zahyokei0)
     const code = zahyokei.find(item => item.kei === zahyokei0).code
@@ -2651,13 +2733,10 @@ export function savePointSima (map,geojson,zahyokei0) {
     const uint8Array = new Uint8Array(shiftJISArray);
     // Blobを作成（MIMEタイプを変更）
     const blob = new Blob([uint8Array], { type: 'application/octet-stream' });
-
     // ダウンロード用リンクを作成
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-
     const fileName = 'point.sim'
-
     link.download = fileName; // ファイル名を正確に指定
     // リンクをクリックしてダウンロード
     link.click();

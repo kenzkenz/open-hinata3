@@ -8369,7 +8369,7 @@ const layers01 = [
                 source: sagakijyuntenSource,
                 layers:[sagakijyuntenPointLayer, sagakijyuntenLabelLayer],
                 attribution: '<a href="http://www.sagakoushoku.com/toukikijyunten/" target="_blank">佐賀県公共嘱託登記土地家屋調査士協会</a>',
-                // ext: {name:'extGaiku'}
+                ext: {name:'extSaga'}
             },
             {
                 id: 'citychibanzu',
