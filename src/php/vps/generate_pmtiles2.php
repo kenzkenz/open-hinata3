@@ -55,7 +55,6 @@ $subDir = $data["dir"];
 // フルパスのアップロードディレクトリ
 $fileBaseName = uniqid();
 $tempFilePath = $baseUploadDir . $subDir . '/' . $fileBaseName. ".geojson";
-//$tempFilePath = $uploadDir . ".geojson";
 
 //echo json_encode([
 //    "error" => "エラーシミュレート",
@@ -64,7 +63,6 @@ $tempFilePath = $baseUploadDir . $subDir . '/' . $fileBaseName. ".geojson";
 //exit;
 
 //// 一時ファイルを作成
-//$tempFilePath = sys_get_temp_dir() . "/" . uniqid("geojson_", true) . ".geojson";
 if (file_put_contents($tempFilePath, json_encode($data["geojson"])) === false) {
     echo json_encode(["error" => "一時ファイルの作成に失敗しました"]);
     exit;
