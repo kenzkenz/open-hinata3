@@ -50,7 +50,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
             <v-icon @click="s_dialogForLink = false">mdi-close</v-icon>
           </v-card-title>
           <v-card-text>
-            <v-tabs v-model="tab" style="margin-bottom: 10px;">
+            <v-tabs mobile-breakpoint="0" v-model="tab" style="margin-bottom: 10px;">
               <v-tab value="1">URL記憶</v-tab>
               <v-tab value="2">タイル記憶</v-tab>
               <v-tab value="3">地番図</v-tab>
