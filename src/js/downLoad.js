@@ -4149,6 +4149,7 @@ export async function tileGenerateForUserPdf () {
 
 export async function tileGenerateForUserPng () {
     // -------------------------------------------------------------------------------------------------
+    let thumbnail = ''
     async function generateTiles(filePath, srsCode = "2450", dir) {
         store.state.loading2 = true
         store.state.loadingMessage = '地図タイル作成中です。'
@@ -4169,6 +4170,8 @@ export async function tileGenerateForUserPng () {
             addTileLayer(result.tiles_url, result.bbox)
             // alert("タイル生成完了！");
             store.state.loading2 = false
+            const loclUrl = '/var/www/html/public_html/' + result.tiles_url.replace('https://kenzkenz.duckdns.org/','').replace('/{z}/{x}/{y}.png','')
+            insertXyztileData(store.state.userId, fileName, result.tiles_url, loclUrl, thumbnail, '[' + result.bbox + ']')
         } else {
             console.log(result)
             store.state.loading2 = false
@@ -4248,6 +4251,7 @@ export async function tileGenerateForUserPng () {
                 console.log("アップロード成功:", data);
                 // alert("アップロード成功!")
                 store.state.loading = false
+                thumbnail = data.thumbnail
                 generateTiles(data.file, srsCode, store.state.userId);
             } else {
                 console.error("アップロード失敗:", data);
@@ -4261,6 +4265,7 @@ export async function tileGenerateForUserPng () {
 
 export async function tileGenerateForUserJpg () {
     // -------------------------------------------------------------------------------------------------
+    let thumbnail = ''
     async function generateTiles(filePath, srsCode = "2450", dir) {
         store.state.loading2 = true
         store.state.loadingMessage = '地図タイル作成中です。'
@@ -4281,6 +4286,8 @@ export async function tileGenerateForUserJpg () {
             addTileLayer(result.tiles_url, result.bbox)
             // alert("タイル生成完了！");
             store.state.loading2 = false
+            const loclUrl = '/var/www/html/public_html/' + result.tiles_url.replace('https://kenzkenz.duckdns.org/','').replace('/{z}/{x}/{y}.png','')
+            insertXyztileData(store.state.userId, fileName, result.tiles_url, loclUrl, thumbnail, '[' + result.bbox + ']')
         } else {
             console.log(result)
             store.state.loading2 = false
@@ -4359,6 +4366,7 @@ export async function tileGenerateForUserJpg () {
                 console.log("アップロード成功:", data);
                 // alert("アップロード成功!")
                 store.state.loading = false
+                thumbnail = data.thumbnail
                 generateTiles(data.file, srsCode, store.state.userId);
             } else {
                 console.error("アップロード失敗:", data);
@@ -4369,9 +4377,31 @@ export async function tileGenerateForUserJpg () {
         .catch(error => console.error("エラー:", error));
     // -------------------------------------------------------------------------------------------------
 }
-
+async function insertXyztileData(uid, name, url, url2, url3, bbox) {
+    try {
+        const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userXyztileInsert.php', new URLSearchParams({
+            uid: uid,
+            name: name,
+            url: url,
+            url2: url2,
+            url3: url3,
+            bbox: bbox
+        }));
+        if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+        } else {
+            console.log('登録成功:', response.data);
+            // store.state.fetchImagesFire = !store.state.fetchImagesFire
+        }
+    } catch (error) {
+        console.error('通信エラー:', error);
+        alert('通信エラーが発生しました');
+    }
+}
 export async function tileGenerateForUser1file () {
     // -------------------------------------------------------------------------------------------------
+    let thumbnail = ''
     async function generateTiles(filePath, srsCode = "2450", dir) {
         store.state.loading2 = true
         store.state.loadingMessage = '地図タイル作成中です。'
@@ -4390,6 +4420,9 @@ export async function tileGenerateForUser1file () {
         if (result.success) {
             addTileLayer(result.tiles_url, result.bbox)
             store.state.loading2 = false
+            console.log(result)
+            const loclUrl = '/var/www/html/public_html/' + result.tiles_url.replace('https://kenzkenz.duckdns.org/','').replace('/{z}/{x}/{y}.png','')
+            insertXyztileData(store.state.userId, fileName, result.tiles_url, loclUrl, thumbnail, '[' + result.bbox + ']')
             // alert("タイル生成完了！");
         } else {
             console.log(result)
@@ -4460,6 +4493,7 @@ export async function tileGenerateForUser1file () {
                 console.log("アップロード成功:", data);
                 // alert("アップロード成功!")
                 store.state.loading = false
+                thumbnail = data.thumbnail
                 generateTiles(data.file, srsCode, store.state.userId);
             } else {
                 console.error("アップロード失敗:", data);
@@ -4473,6 +4507,7 @@ export async function tileGenerateForUser1file () {
 
 export async function tileGenerateForUserTfw () {
     // -------------------------------------------------------------------------------------------------
+    let thumbnail = ''
     async function generateTiles(filePath, srsCode = "2450", dir) {
         store.state.loading2 = true
         let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
@@ -4492,6 +4527,8 @@ export async function tileGenerateForUserTfw () {
             addTileLayer(result.tiles_url, result.bbox)
             // alert("タイル生成完了！");
             store.state.loading2 = false
+            const loclUrl = '/var/www/html/public_html/' + result.tiles_url.replace('https://kenzkenz.duckdns.org/','').replace('/{z}/{x}/{y}.png','')
+            insertXyztileData(store.state.userId, fileName, result.tiles_url, loclUrl, thumbnail, '[' + result.bbox + ']')
         } else {
             console.log(result)
             store.state.loading2 = false
@@ -4570,6 +4607,7 @@ export async function tileGenerateForUserTfw () {
                 console.log("アップロード成功:", data);
                 // alert("アップロード成功!")
                 store.state.loading = false
+                thumbnail = data.thumbnail
                 generateTiles(data.file, srsCode, store.state.userId);
             } else {
                 console.error("アップロード失敗:", data);
@@ -5652,7 +5690,6 @@ export async function pmtilesGenerateForUser (geojsonBlob,bbox) {
             alert("タイル生成に失敗しました！" + result.error);
         }
     }
-
     async function insertPmtilesData(uid, name, url, url2,  chiban) {
         try {
             const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesInsert.php', new URLSearchParams({

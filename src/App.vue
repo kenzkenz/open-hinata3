@@ -1222,8 +1222,6 @@ export default {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
       if (this.$store.state.userId) {
-        // jpgLoadForUser (map01,'map01', true)
-        // jpgLoadForUser (map02,'map01', false)
         tileGenerateForUserJpg()
       } else {
         jpgLoad (map01,'map01', true)
@@ -1235,8 +1233,6 @@ export default {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
       if (this.$store.state.userId) {
-        // geoTiffLoadForUser1(map01, 'map01', true)
-        // geoTiffLoadForUser1(map02, 'map02', false)
         tileGenerateForUserTfw()
       } else {
         geoTiffLoad (map01,'map01', true)
