@@ -104,7 +104,7 @@ if ($returnVar !== 0) {
 }
 
 // 成功時に不要なファイルを削除
-//deleteSourceAndTempFiles($tempFilePath);
+deleteSourceAndTempFiles($tempFilePath);
 
 // 正常終了
 echo json_encode([
