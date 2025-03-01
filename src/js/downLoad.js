@@ -5876,6 +5876,24 @@ export function saveDxfForChiriin (map,layerIds) {
 }
 
 export async function iko() {
+    async function insert (uid,name,url,url2,url3,bbox) {
+        const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userXyztileInsert.php', new URLSearchParams({
+            uid: uid,
+            name: name,
+            url: url,
+            url2: url2,
+            url3: url3,
+            bbox: bbox
+        }));
+        if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+        } else {
+            console.log('登録成功:', response.data);
+            // store.state.fetchImagesFire = !store.state.fetchImagesFire
+        }
+    }
+
     store.state.loading2 = true
     store.state.loadingMessage = ''
     let response = await fetch("https://kenzkenz.duckdns.org/myphp/iko.php", {
@@ -5887,7 +5905,12 @@ export async function iko() {
     if (result.success) {
         store.state.loading2 = false
         console.log(result)
-        alert("成功！");
+        result.directories.forEach(directorie => {
+            const webUrl = 'https://kenzkenz.duckdns.org/' + directorie.path.replace('/var/www/html/public_html/','') + '/{z}/{x}/{y}.png'
+            const thumbnail = 'thumbnail'
+            insert (store.state.userId,directorie.fileName,webUrl,directorie.path,thumbnail,directorie.bounds)
+        })
+        alert("登録成功！");
     } else {
         console.log(result)
         store.state.loading2 = false

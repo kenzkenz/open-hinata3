@@ -98,12 +98,16 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               </v-window-item>
               <v-window-item value="4">
                 <v-card>
-                  <v-card-text style="margin-bottom: 10px;">ドラッグ&ドロップされたgeotif,jpg,pngが表示されます。</v-card-text>
-                  <div class="image-grid">
-                    <div v-for="item in images" :key="item" class="image-container">
-                      <img :src="item" class="gallery-image" @click="handleImageClick(item)" />
-                      <div class="close-button" @click="handleClose(item)">×</div>
-                    </div>
+<!--                  <v-card-text style="margin-bottom: 10px;">ドラッグ&ドロップされたgeotif,jpg,pngが表示されます。</v-card-text>-->
+<!--                  <div class="image-grid">-->
+<!--                    <div v-for="item in images" :key="item" class="image-container">-->
+<!--                      <img :src="item" class="gallery-image" @click="handleImageClick(item)" />-->
+<!--                      <div class="close-button" @click="handleClose(item)">×</div>-->
+<!--                    </div>-->
+<!--                  </div>-->
+                  <div v-for="item in jsonDataxyztile" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.chiban,item.bbox)">
+                    <button class="close-btn" @click="removeItemxyzile(item.id,item.url2,$event)">×</button>
+                    <strong>{{ item.name }}</strong><br>
                   </div>
                 </v-card>
               </v-window-item>
