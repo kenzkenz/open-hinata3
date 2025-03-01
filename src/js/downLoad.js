@@ -5740,7 +5740,7 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban) {
     if (result.success) {
         store.state.loading2 = false
         // addTileLayer(result.tiles_url, result.bbox)
-        console.log(result.tippecanoeCmd)
+        console.log(result)
         const webUrl = 'https://kenzkenz.duckdns.org/' + result.pmtiles_file.replace('/var/www/html/public_html/','')
         console.log(result.pmtiles_file)
         insertPmtilesData(store.state.userId , store.state.pmtilesName, webUrl, result.pmtiles_file, store.state.pmtilesPropertieName, result.bbox)

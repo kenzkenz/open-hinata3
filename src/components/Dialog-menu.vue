@@ -937,8 +937,8 @@ export default {
             console.error('エラー:', response.data.error);
             alert(`エラー: ${response.data.error}`);
           } else {
-            console.log('取得データ:', response.data);
-            console.log(JSON.stringify(response.data, null, 2))
+            // console.log('取得データ:', response.data);
+            // console.log(JSON.stringify(response.data, null, 2))
             // alert(`取得成功！\nデータ: ${JSON.stringify(response.data, null, 2)}`);
             vm.jsonDataPmtile = response.data
           }

@@ -78,7 +78,7 @@ $geojsonDir = dirname($tempFilePath);
 $fileBaseName = pathinfo($tempFilePath, PATHINFO_FILENAME);
 $pmtilesPath = $geojsonDir . "/" . $fileBaseName . ".pmtiles";
 
-isFirstFeaturePoint($data["geojson"]);
+$isPoint = isFirstFeaturePoint($data["geojson"]);
 
 // Tippecanoeコマンドの実行
 $tippecanoeCmd = sprintf(
@@ -103,7 +103,8 @@ echo json_encode([
     "message" => "PMTilesファイルが作成されました",
     "pmtiles_file" => $pmtilesPath,   // ローカルの保存先パス
     "tippecanoeCmd" => $tippecanoeCmd,
-    "bbox" => $bbox
+    "bbox" => $bbox,
+    "isPoint" => $isPoint
 ]);
 exit;
 
