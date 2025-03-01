@@ -115,7 +115,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <p v-if="user1">ようこそ、{{ user1.displayName || "ゲスト" }}さん！</p>
         <p v-else></p>
       </div>
-      v0.545<br>
+      v0.546<br>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 
@@ -913,8 +913,8 @@ export default {
             console.error('エラー:', response.data.error);
             alert(`エラー: ${response.data.error}`);
           } else {
-            console.log('取得データ:', response.data);
-            console.log(JSON.stringify(response.data, null, 2))
+            // console.log('取得データ:', response.data);
+            // console.log(JSON.stringify(response.data, null, 2))
             // alert(`取得成功！\nデータ: ${JSON.stringify(response.data, null, 2)}`);
             vm.jsonData = response.data
           }

@@ -2175,7 +2175,6 @@ export default {
           // }
           // ----------------------------------------------------------------
           if (params.isWindow) {
-            // this.$store.state.isWindow = JSON.parse(params.isWindow)
             this.$store.state.isWindow2 = JSON.parse(params.isWindow)
           }
           if (params.vector) {
@@ -2316,9 +2315,12 @@ export default {
           async function fetchAllUserLayers() {
             const promises = params.slj.map01.map(async (v) => {
               console.log(v.id);
+              // -----------------------------------------------------------------------------------------------------------
               if (v.id.includes('usertile')) {
+                // alert(v.id)
                 fetchFlg = true
                 const layerId = v.id.split('-')[2];
+                // alert(layerId)
                 try {
                   const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userTileSelectById.php', {
                     params: { id: layerId }
@@ -2349,7 +2351,7 @@ export default {
                   console.error('フェッチエラー:', error);
                 }
               }
-
+              // -----------------------------------------------------------------------------------------------------------
               if (v.id.includes('oh-chiban-')) {
                 fetchFlg = true
                 const layerId = v.id.split('-')[2];
@@ -2444,11 +2446,14 @@ export default {
             vm.s_selectedLayers = params.slj
           }
           // 非同期関数を実行
-          if (params.slj) fetchAllUserLayers();
-
+          // 逃げのコード。用修正
+          setTimeout(() => {
+            if (params.slj) fetchAllUserLayers();
+          },1000)
           if (params.slj) {
             if (!fetchFlg) this.s_selectedLayers = params.slj
           }
+
           this.s_selectedLayers.map01 = this.s_selectedLayers.map01.filter(layer => layer.id !== 'oh-konzyaku-layer')
 
           // ----------------------------------------------------------------
