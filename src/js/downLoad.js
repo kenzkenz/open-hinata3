@@ -19,6 +19,7 @@ import JSZip from 'jszip'
 import {history} from "@/App";
 import tokml from 'tokml'
 import iconv from "iconv-lite";
+import pako from "pako";
 // 複数のクリックされた地番を強調表示するためのセット
 // export let highlightedChibans = new Set();
 (function() {
@@ -5726,7 +5727,7 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban) {
     store.state.loading2 = true
     store.state.loadingMessage = 'pmtiles作成中です。'
 
-    let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles3.php", {
+    let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles5.php", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
@@ -5750,6 +5751,25 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban) {
         store.state.loading2 = false
         alert("タイル生成に失敗しました！" + result.error);
     }
+
+    // const dir = store.state.userId
+    // console.log("GeoJSON を gzip 圧縮中...");
+    // const compressedGeojson = pako.gzip(JSON.stringify({
+    //     geojson: geojson,
+    //     dir: dir,
+    //     chiban: chiban }));
+    //
+    // let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles4.php", {
+    //     method: "POST",
+    //     headers: {
+    //         "Content-Type": "application/json",
+    //         "Content-Encoding": "gzip",
+    //     },
+    //     body: compressedGeojson,
+    // });
+
+
+
 
 
 
