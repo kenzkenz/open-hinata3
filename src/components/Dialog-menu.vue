@@ -46,8 +46,8 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       <!--URL記録-->
       <v-dialog attach="body" v-model="s_dialogForLink" :scrim="false" persistent="false" max-width="500px" height="500px" content-class="scrollable-dialog" class="scrollable-content">
         <v-card>
-          <v-card-title style="text-align: right">
-            <v-icon @click="s_dialogForLink = false">mdi-close</v-icon>
+          <v-card-title style="text-align: right;background: rgb(50,101,186)">
+            <v-icon @click="s_dialogForLink = false" style="color: white">mdi-close</v-icon>
           </v-card-title>
           <v-card-text>
             <v-tabs mobile-breakpoint="0" v-model="tab" style="margin-bottom: 10px;">
@@ -56,7 +56,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-tab value="3">地番図</v-tab>
               <v-tab value="4">画像</v-tab>
             </v-tabs>
-
             <v-window v-model="tab">
               <v-window-item value="1">
                 <v-card>
@@ -1437,6 +1436,7 @@ export default {
   margin-bottom: 5px;
   position: relative;
   cursor: pointer;
+  background-color: rgba(132,163,213,0.3);
 }
 .close-btn {
   position: absolute;

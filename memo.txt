@@ -954,3 +954,5 @@ tippecanoe -o 浜松市.pmtiles \
     --minimum-zoom=0 \
     --layer=chibanzu \
     浜松市.geojson
+
+tippecanoe -rg -pk -pf -l oh3 -f -o hamamatushi.pmtiles merged.geojson
