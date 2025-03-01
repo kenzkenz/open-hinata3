@@ -106,7 +106,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 <!--                    </div>-->
 <!--                  </div>-->
                   <div v-for="item in jsonDataxyztile" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.chiban,item.bbox)">
-                    <button class="close-btn" @click="removeItemxyzile(item.id,item.url2,$event)">×</button>
+                    <button class="close-btn" @click="removeItemxyztile(item.id,item.url2,$event)">×</button>
                     <strong>{{ item.name }}</strong><br>
                   </div>
                 </v-card>
@@ -259,6 +259,7 @@ export default {
     jsonDataTile: null,
     jsonDataPmtile: null,
     jsonDataVector: null,
+    jsonDataxyztile: null,
     uid: null,
     images: [],
     email: '',
@@ -819,7 +820,6 @@ export default {
         },500)
         const registeredLayers = new Set();
 
-
       })
     },
     removeItem (id,event) {
@@ -936,6 +936,30 @@ export default {
             // console.log(JSON.stringify(response.data, null, 2))
             // alert(`取得成功！\nデータ: ${JSON.stringify(response.data, null, 2)}`);
             vm.jsonData = response.data
+          }
+        } catch (error) {
+          console.error('通信エラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      fetchUserData(uid)
+    },
+    xyztileSelect (uid) {
+      const vm = this
+      async function fetchUserData(uid) {
+        try {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userXyztileSelect.php', {
+            params: { uid: uid }
+          });
+
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            // console.log('取得データ:', response.data);
+            // console.log(JSON.stringify(response.data, null, 2))
+            // alert(`取得成功！\nデータ: ${JSON.stringify(response.data, null, 2)}`);
+            vm.jsonDataxyztile = response.data
           }
         } catch (error) {
           console.error('通信エラー:', error);
@@ -1368,6 +1392,7 @@ export default {
       this.urlSelect(this.$store.state.userId)
       this.tileSelect(this.$store.state.userId)
       this.pmtileSelect(this.$store.state.userId)
+      this.xyztileSelect(this.$store.state.userId)
     },
     s_fetchImagesFire () {
       this.fetchImages()
@@ -1385,6 +1410,7 @@ export default {
         this.urlSelect(this.uid)
         this.tileSelect(this.uid)
         this.pmtileSelect(this.uid)
+        this.xyztileSelect(this.uid)
       }
     }, 5);
 
