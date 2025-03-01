@@ -81,11 +81,20 @@ $pmtilesPath = $geojsonDir . "/" . $fileBaseName . ".pmtiles";
 $isPoint = isFirstFeaturePoint($data["geojson"]);
 
 // Tippecanoeコマンドの実行
-$tippecanoeCmd = sprintf(
-    "tippecanoe -o %s --generate-ids --no-feature-limit --no-tile-size-limit --force --drop-densest-as-needed --coalesce-densest-as-needed --simplification=2 --simplify-only-low-zooms --maximum-zoom=14 --minimum-zoom=0 --layer=oh3 %s 2>&1",
-    escapeshellarg($pmtilesPath),
-    escapeshellarg($tempFilePath)
-);
+if (!$isPoint) {
+    $tippecanoeCmd = sprintf(
+        "tippecanoe -o %s --generate-ids --no-feature-limit --no-tile-size-limit --force --drop-densest-as-needed --coalesce-densest-as-needed --simplification=2 --simplify-only-low-zooms --maximum-zoom=14 --minimum-zoom=0 --layer=oh3 %s 2>&1",
+        escapeshellarg($pmtilesPath),
+        escapeshellarg($tempFilePath)
+    );
+} else {
+    $tippecanoeCmd = sprintf(
+        "tippecanoe -rg -pk -pf --layer=oh3 -f -o %s %s 2>&1",
+        escapeshellarg($pmtilesPath),
+        escapeshellarg($tempFilePath)
+    );
+}
+
 exec($tippecanoeCmd, $output, $returnVar);
 // エラーハンドリング
 if ($returnVar !== 0) {
@@ -95,7 +104,7 @@ if ($returnVar !== 0) {
 }
 
 // 成功時に不要なファイルを削除
-deleteSourceAndTempFiles($tempFilePath);
+//deleteSourceAndTempFiles($tempFilePath);
 
 // 正常終了
 echo json_encode([
