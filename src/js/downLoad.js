@@ -5874,3 +5874,23 @@ export function saveDxfForChiriin (map,layerIds) {
         alert('有効なGeoJSONを入力してください。');
     }
 }
+
+export async function iko() {
+    store.state.loading2 = true
+    store.state.loadingMessage = ''
+    let response = await fetch("https://kenzkenz.duckdns.org/myphp/iko.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+    });
+    let result = await response.json();
+
+    if (result.success) {
+        store.state.loading2 = false
+        console.log(result)
+        alert("成功！");
+    } else {
+        console.log(result)
+        store.state.loading2 = false
+        alert("失敗しました！");
+    }
+}

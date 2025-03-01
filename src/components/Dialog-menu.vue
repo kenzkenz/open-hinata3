@@ -10,6 +10,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <v-card>
           <v-card-title>
             <p v-if="user1">ようこそ、{{ user1.displayName }}さん！</p>
+<!--            <p v-if="user1">ようこそ、{{s_userId}}さん！</p>-->
           </v-card-title>
           <v-card-text>
 
@@ -55,6 +56,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-tab value="2">タイル記憶</v-tab>
               <v-tab value="3">地番図</v-tab>
               <v-tab value="4">画像</v-tab>
+              <v-tab v-if="isAdministrator" value="5">管理者用</v-tab>
             </v-tabs>
             <v-window v-model="tab">
               <v-window-item value="1">
@@ -103,6 +105,11 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                       <div class="close-button" @click="handleClose(item)">×</div>
                     </div>
                   </div>
+                </v-card>
+              </v-window-item>
+              <v-window-item value="5">
+                <v-card>
+                  <v-btn @click="iko">移行</v-btn>
                 </v-card>
               </v-window-item>
             </v-window>
@@ -158,7 +165,7 @@ import {
   addImageLayerJpg,
   addImageLayerPng,
   addTileLayerForImage,
-  geojsonAddLayer, highlightSpecificFeaturesCity,
+  geojsonAddLayer, highlightSpecificFeaturesCity, iko,
   simaToGeoJSON, userPmileSet, userPmtileSet, userTileSet
 } from "@/js/downLoad";
 
@@ -261,6 +268,12 @@ export default {
     signUpDiv: false,
   }),
   computed: {
+    isAdministrator () {
+      return this.s_userId === 'dqyHV8DykbdSVvDXrHc7xweuKT02'
+    },
+    s_userId () {
+      return this.$store.state.userId
+    },
     s_isWindow: {
       get() {
         return this.$store.state.isWindow
@@ -359,6 +372,9 @@ export default {
     },
   },
   methods: {
+    iko () {
+      iko()
+    },
     pmtilesRenameBtn () {
       const vm = this
       if (!this.pmtilesRename) return
