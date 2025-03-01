@@ -2446,10 +2446,7 @@ export default {
             vm.s_selectedLayers = params.slj
           }
           // 非同期関数を実行
-          // 逃げのコード。用修正
-          setTimeout(() => {
-            if (params.slj) fetchAllUserLayers();
-          },1000)
+          if (params.slj) fetchAllUserLayers();
           if (params.slj) {
             if (!fetchFlg) this.s_selectedLayers = params.slj
           }

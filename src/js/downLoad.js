@@ -3910,6 +3910,10 @@ export function addTileLayerForImage (tileURL,jsonData, isFit) {
 }
 
 export function addTileLayer (map) {
+    if (map.getLayer('oh-vpstile-layer')) {
+        return
+    }
+
     try {
         const mapName = map.getContainer().id
         const tileURL = JSON.parse(store.state.uploadedImage).tile
@@ -5745,6 +5749,9 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban) {
         console.log(result.pmtiles_file)
         insertPmtilesData(store.state.userId , store.state.pmtilesName, webUrl, result.pmtiles_file, store.state.pmtilesPropertieName, result.bbox)
         console.log('pmtiles作成完了')
+        if (!result.bbox) {
+            alert('座標系が間違えているかもしれません。geojson化するときはEPSG:4326に設定してください。')
+        }
 
     } else {
         console.log(result)

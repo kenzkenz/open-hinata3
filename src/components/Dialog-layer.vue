@@ -568,8 +568,19 @@ export default {
           console.error("ファイルの取得中にエラーが発生しました:", error);
         }
       }
-      if (this.counter === 1) {
 
+      // 逃げのコード。様改修
+      if (this.counter <= 4) {
+        try {
+          if (JSON.parse(this.$store.state.uploadedImage).tile) {
+            addTileLayer(map)
+          }
+        } catch (e) {
+          console.log(e)
+        }
+      }
+
+      if (this.counter === 1) {
         if (this.$store.state.uploadedVector) {
           if (JSON.parse(this.$store.state.uploadedVector).uid) {
             const vectorUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/' + JSON.parse(this.$store.state.uploadedVector).uid + '/' + JSON.parse(this.$store.state.uploadedVector).image
