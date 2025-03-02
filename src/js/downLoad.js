@@ -4007,6 +4007,7 @@ export async function csvGenerateForUserPng () {
 
 export async function tileGenerateForUserPdf () {
     // -------------------------------------------------------------------------------------------------
+    let thumbnail = ''
     async function extractNumbers(filePath, dir) {
         store.state.loading2 = true
         store.state.loadingMessage = 'OCR処理中です。'
@@ -4022,9 +4023,7 @@ export async function tileGenerateForUserPdf () {
         let result = await response.json();
         if (result.success) {
             // alert("ワールドファイル生成完了！");
-            // generateTiles(dataFile.replace(/\.pdf$/, '_red.tif'), srsCode, store.state.userId);
             generateTiles(dataFile.replace(/\.pdf$/, '.tif'), srsCode, store.state.userId);
-            // store.state.loading2 = false
         } else {
             console.log(result)
             store.state.loading2 = false
@@ -4053,6 +4052,8 @@ export async function tileGenerateForUserPdf () {
             addTileLayer(result.tiles_url, result.bbox)
             // alert("タイル生成完了！");
             store.state.loading2 = false
+            const loclUrl = '/var/www/html/public_html/' + result.tiles_url.replace('https://kenzkenz.duckdns.org/','').replace('/{z}/{x}/{y}.png','')
+            insertXyztileData(store.state.userId, fileName, result.tiles_url, loclUrl, thumbnail, '[' + result.bbox + ']')
         } else {
             console.log(result)
             store.state.loading2 = false
@@ -4131,11 +4132,8 @@ export async function tileGenerateForUserPdf () {
                 // alert("アップロード成功!")
                 store.state.loading = false
                 dataFile = data.file
-                // alert(data.file)
+                thumbnail = data.thumbnail
                 extractNumbers(data.file, store.state.userId)
-
-
-                // generateTiles(data.file, srsCode, store.state.userId);
             } else {
                 console.error("アップロード失敗:", data);
                 store.state.loading = false

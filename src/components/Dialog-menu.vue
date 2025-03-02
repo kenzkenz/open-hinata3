@@ -105,6 +105,8 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 <!--                      <div class="close-button" @click="handleClose(item)">×</div>-->
 <!--                    </div>-->
 <!--                  </div>-->
+                  <v-text-field  v-model="xyztileRename" type="text" placeholder="リネーム"></v-text-field>
+                  <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="xyztileRenameBtn">リネーム</v-btn>
                   <div v-for="item in jsonDataxyztile" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox)">
                     <button class="close-btn" @click="removeItemxyztile(item.id,item.url2,$event)">×</button>
                     <strong>{{ item.name }}</strong><br>
@@ -125,7 +127,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <p v-if="user1">ようこそ、{{ user1.displayName || "ゲスト" }}さん！</p>
         <p v-else></p>
       </div>
-      v0.546<br>
+      v0.550<br>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 
@@ -252,6 +254,7 @@ export default {
     name: '',
     tileRename: '',
     pmtilesRename: '',
+    xyztileRename: '',
     tab: 'one',
     tileUrl: '',
     tileName: '',
@@ -381,6 +384,20 @@ export default {
     iko () {
       iko()
     },
+    xyztileRenameBtn () {
+      const vm = this
+      if (!this.xyztileRename) return
+      // alert(this.id + '/' + this.xyztileRename)
+      axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userXyztileUpdate.php',{
+        params: {
+          id: this.id,
+          name: this.xyztileRename
+        }
+      }).then(function (response) {
+        console.log(response)
+        vm.xyztileSelect(vm.$store.state.userId)
+      })
+    },
     pmtilesRenameBtn () {
       const vm = this
       if (!this.pmtilesRename) return
@@ -404,7 +421,7 @@ export default {
     },
     xyztileClick (name,url,id, bbox) {
       console.log(bbox)
-      this.tilesRename = name
+      this.xyztileRename = name
       this.id = id
       this.name = name
       userXyztileSet(name,url,id,JSON.parse(bbox))
