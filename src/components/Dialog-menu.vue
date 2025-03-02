@@ -856,6 +856,50 @@ export default {
       }
       deleteUserData(id)
     },
+    removeItemxyztile  (id,url2,event) {
+      event.stopPropagation();  // バブリングを止める
+      if (!confirm("削除しますか？")) {
+        return
+      }
+      const vm = this
+      console.log(url2)
+      async function deleteUserXyztile(url2) {
+        try {
+          const response = await axios.post('https://kenzkenz.duckdns.org/myphp/xyztile_unlink.php', {
+            url2: url2
+          });
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            console.log('削除成功:', response.data);
+          }
+        } catch (error) {
+          console.error('リクエストエラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      deleteUserXyztile(url2)
+
+      async function deleteUserData(id) {
+        try {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userXyztileDelete.php', {
+            params: { id: id }
+          });
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            console.log('削除成功:', response.data);
+            vm.jsonDataxyztile = vm.jsonDataxyztile.filter(item => item.id !== id);
+          }
+        } catch (error) {
+          console.error('通信エラー2:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      deleteUserData(id)
+    },
     removeItemPmtiles (id,url2,event) {
       event.stopPropagation();  // バブリングを止める
       if (!confirm("削除しますか？")) {
