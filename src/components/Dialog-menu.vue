@@ -45,7 +45,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <!--URL記録-->
-      <v-dialog attach="body" v-model="s_dialogForLink" :scrim="false" persistent="false" max-width="500px" height="500px" content-class="scrollable-dialog" class="scrollable-content">
+      <v-dialog attach="body" v-model="s_dialogForLink" :scrim="false" persistent="false" max-width="600px" height="600px" content-class="scrollable-dialog" class="scrollable-content">
         <v-card>
           <v-card-title style="text-align: right;background: rgb(50,101,186)">
             <v-icon @click="s_dialogForLink = false" style="color: white">mdi-close</v-icon>
