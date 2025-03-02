@@ -132,7 +132,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <p v-if="user1">ようこそ、{{ user1.displayName || "ゲスト" }}さん！</p>
         <p v-else></p>
       </div>
-      v0.552<br>
+      v0.553<br>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 
@@ -728,6 +728,50 @@ export default {
                   console.error('フェッチエラー:', error);
                 }
               }
+              // -----------------------------------------------------------------------------------------------------------
+              if (v.id.includes('oh-vpstile-')) {
+                // alert(v.id)
+                fetchFlg = true
+                const layerId = v.id.split('-')[2];
+                try {
+                  const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userXyztileSelectById.php', {
+                    params: { id: layerId }
+                  });
+                  if (response.data.error) {
+                    console.error('エラー:', response.data.error);
+                    alert(`エラー: ${response.data.error}`);
+                  } else {
+                    console.log('取得データ:', response.data);
+                    console.log(JSON.stringify(response.data, null, 2));
+
+                    const name = response.data[0].name
+                    const id = response.data[0].id
+                    const url = response.data[0].url
+                    const bbox = JSON.parse(response.data[0].bbox)
+                    const bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
+                    console.log(bbox)
+                    const source = {
+                      id: 'oh-vpstile-' + id + '-' + name + '-source',obj: {
+                        type: 'raster',
+                        tiles: [url],
+                        bounds: bounds,
+                        maxzoom: 26,
+                      }
+                    };
+                    const layer = {
+                      id: 'oh-vpstile-' + id + '-' + name + '-layer',
+                      type: 'raster',
+                      source: 'oh-vpstile-' + id + '-' + name  + '-source',
+                    }
+                    v.sources = [source];
+                    v.layers = [layer];
+                    v.label = response.data[0].name;
+                  }
+                } catch (error) {
+                  console.error('フェッチエラー:', error);
+                }
+              }
+              // -----------------------------------------------------------------------------------------------------------
               if (v.id.includes('oh-chiban-')) {
                 fetchFlg = true
                 const layerId = v.id.split('-')[2];
@@ -1260,7 +1304,6 @@ export default {
       const logout = async () => {
         try {
           await signOut(auth); // ここで `auth` を明示的に指定
-          this.s_fetchImagesFire = !this.s_fetchImagesFire
           alert("ログアウトしました");
         } catch (error) {
           console.error("ログアウトエラー:", error.message);
