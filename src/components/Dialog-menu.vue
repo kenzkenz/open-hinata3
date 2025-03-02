@@ -146,19 +146,15 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 <!--        </v-card>-->
 <!--      </v-dialog>-->
 
-
-
-
-
-
-
-
       <v-dialog attach="body" v-model="s_dialogForLink" :scrim="false" persistent="false" max-width="600px" height="600px" content-class="scrollable-dialog" class="scrollable-content">
         <v-card>
-          <v-card-title style="text-align: right;background: rgb(50,101,186)">
+          <!-- ヘッダーを固定 -->
+          <v-card-title style="text-align: right; background: rgb(50,101,186); position: sticky; top: 0; z-index: 10;">
             <v-icon @click="s_dialogForLink = false" style="color: white">mdi-close</v-icon>
           </v-card-title>
-          <v-card-text>
+
+          <!-- スクロール可能なコンテンツ -->
+          <v-card-text style="overflow-y: auto; max-height: 530px; padding-top: 10px;">
             <v-tabs mobile-breakpoint="0" v-model="tab" style="margin-bottom: 10px;">
               <v-tab value="1">URL記憶</v-tab>
               <v-tab value="2">タイル記憶</v-tab>
@@ -166,14 +162,15 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-tab value="4">画像</v-tab>
               <v-tab v-if="isAdministrator" value="5">管理者用</v-tab>
             </v-tabs>
+
             <v-window v-model="tab">
               <v-window-item value="1">
                 <v-card>
                   <div style="margin-bottom: 10px;">
-                    <v-text-field  v-model="urlName" type="text" placeholder="ネーム"></v-text-field>
-                    <v-btn style="margin-top: -10px;margin-bottom: 10px;" @click="urlSave">URL記憶</v-btn>
-                    <v-btn style="margin-top: -10px;margin-bottom: 10px; margin-left: 10px" @click="urlRenameBtn">リネーム</v-btn>
-                    <div v-for="item in jsonData" :key="item.id" class="data-container" @click="urlClick(item.name,item.url,item.id)">
+                    <v-text-field v-model="urlName" type="text" placeholder="ネーム"></v-text-field>
+                    <v-btn style="margin-top: -10px; margin-bottom: 10px;" @click="urlSave">URL記憶</v-btn>
+                    <v-btn style="margin-top: -10px; margin-bottom: 10px; margin-left: 10px" @click="urlRenameBtn">リネーム</v-btn>
+                    <div v-for="item in jsonData" :key="item.id" class="data-container" @click="urlClick(item.name, item.url, item.id)">
                       <button class="close-btn" @click="removeItem(item.id, $event)">×</button>
                       <strong>{{ item.name }}</strong><br>
                       <strong></strong>{{ item.url }}
@@ -181,13 +178,14 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   </div>
                 </v-card>
               </v-window-item>
+
               <v-window-item value="2">
                 <v-card>
                   <div style="margin-bottom: 10px;">
-                    <v-text-field  v-model="tileName" type="text" placeholder="ネーム"></v-text-field>
-                    <v-text-field  v-model="tileUrl" type="text" placeholder="タイルURL"></v-text-field>
-                    <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="tileSave">地図タイル記憶</v-btn>
-                    <div v-for="item in jsonDataTile" :key="item.id" class="data-container" @click="tileClick(item.name,item.url,item.id)">
+                    <v-text-field v-model="tileName" type="text" placeholder="ネーム"></v-text-field>
+                    <v-text-field v-model="tileUrl" type="text" placeholder="タイルURL"></v-text-field>
+                    <v-btn style="margin-top: -10px; margin-bottom: 10px" @click="tileSave">地図タイル記憶</v-btn>
+                    <div v-for="item in jsonDataTile" :key="item.id" class="data-container" @click="tileClick(item.name, item.url, item.id)">
                       <button class="close-btn" @click="removeItemTile(item.id, $event)">×</button>
                       <strong>{{ item.name }}</strong><br>
                       <strong></strong>{{ item.url }}
@@ -207,13 +205,13 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               </v-window-item>
               <v-window-item value="4">
                 <v-card>
-<!--                  <v-card-text style="margin-bottom: 10px;">ドラッグ&ドロップされたgeotif,jpg,pngが表示されます。</v-card-text>-->
-<!--                  <div class="image-grid">-->
-<!--                    <div v-for="item in images" :key="item" class="image-container">-->
-<!--                      <img :src="item" class="gallery-image" @click="handleImageClick(item)" />-->
-<!--                      <div class="close-button" @click="handleClose(item)">×</div>-->
-<!--                    </div>-->
-<!--                  </div>-->
+                  <!--                  <v-card-text style="margin-bottom: 10px;">ドラッグ&ドロップされたgeotif,jpg,pngが表示されます。</v-card-text>-->
+                  <!--                  <div class="image-grid">-->
+                  <!--                    <div v-for="item in images" :key="item" class="image-container">-->
+                  <!--                      <img :src="item" class="gallery-image" @click="handleImageClick(item)" />-->
+                  <!--                      <div class="close-button" @click="handleClose(item)">×</div>-->
+                  <!--                    </div>-->
+                  <!--                  </div>-->
                   <v-text-field v-model="xyztileRename" type="text" placeholder="リネーム"></v-text-field>
                   <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="xyztileRenameBtn">リネーム</v-btn>
                   <div v-for="item in jsonDataxyztile" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox)">
@@ -226,7 +224,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 <v-card>
                   <v-btn @click="iko">移行</v-btn>
                   <div v-for="item in jsonDataxyztileAll" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox)">
-<!--                    <button class="close-btn" @click="removeItemxyztile(item.id,item.url2,$event)">×</button>-->
                     <strong>{{ item.name }}</strong><br>
                   </div>
                 </v-card>
@@ -240,7 +237,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <p v-if="user1">ようこそ、{{ user1.displayName || "ゲスト" }}さん！</p>
         <p v-else></p>
       </div>
-      v0.556<br>
+      v0.557<br>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 <!--      <v-btn class="tiny-btn" @click="openDialog">テスト</v-btn>-->
