@@ -569,16 +569,16 @@ export default {
         }
       }
 
-      // 逃げのコード。様改修
-      if (this.counter <= 5) {
-        try {
-          if (JSON.parse(this.$store.state.uploadedImage).tile) {
-            addTileLayer(map)
-          }
-        } catch (e) {
-          console.log(e)
-        }
-      }
+      // 逃げのコード。用改修
+      // if (this.counter <= 5) {
+      //   try {
+      //     if (JSON.parse(this.$store.state.uploadedImage).tile) {
+      //       addTileLayer(map)
+      //     }
+      //   } catch (e) {
+      //     console.log(e)
+      //   }
+      // }
 
       if (this.counter === 1) {
         if (this.$store.state.uploadedVector) {

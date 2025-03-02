@@ -285,6 +285,7 @@ export default createStore({
       map01: '',
       map02: ''
     },
+    isDialogVisible: false,
     //------------------------
   },
   getters: {

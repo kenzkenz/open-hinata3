@@ -3924,16 +3924,16 @@ export function addTileLayer (map) {
         store.state.selectedLayers[mapName] = store.state.selectedLayers[mapName].filter(v => v.id !== 'oh-vpstile-layer');
         vpsTileSource.obj.tiles = [tileURL]
         vpsTileSource.obj.bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
-        store.state.selectedLayers[mapName].splice(index, 0,
-            {
-                id: 'oh-vpstile-layer',
-                label: fileName,
-                source: vpsTileSource,
-                layers: [vpsTileLayer],
-                opacity: opacity,
-                visibility: true,
-            }
-        );
+        // store.state.selectedLayers[mapName].splice(index, 0,
+        //     {
+        //         id: 'oh-vpstile-layer',
+        //         label: fileName,
+        //         source: vpsTileSource,
+        //         layers: [vpsTileLayer],
+        //         opacity: opacity,
+        //         visibility: true,
+        //     }
+        // );
     }catch (e) {
         console.log(e)
     }
