@@ -5908,7 +5908,7 @@ export async function iko() {
         result.directories.forEach(directorie => {
             const webUrl = 'https://kenzkenz.duckdns.org/' + directorie.path.replace('/var/www/html/public_html/','') + '/{z}/{x}/{y}.png'
             const thumbnail = 'thumbnail'
-            insert (store.state.userId,directorie.fileName,webUrl,directorie.path,thumbnail,directorie.bounds)
+            insert (directorie.uid,directorie.fileName,webUrl,directorie.path,thumbnail,directorie.bounds)
         })
         alert("登録成功！");
     } else {

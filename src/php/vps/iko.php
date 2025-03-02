@@ -27,6 +27,7 @@ function listDirectories($baseDir, $maxDepth = 2, $currentDepth = 0) {
                     if ($jsonContent && isset($jsonContent['fileName']) && isset($jsonContent['bounds'])) {
                         $directories[] = [
                             "path" => $fullPath,
+                            "uid" => extractBetweenTiles($fullPath),
                             "fileName" => $jsonContent['fileName'],
                             "bounds" => $jsonContent['bounds']
                         ];
@@ -49,7 +50,13 @@ echo json_encode([
     "directories" => $directories
 ]);
 
-
+function extractBetweenTiles($url) {
+    $pattern = '/tiles\/(.*?)\//';
+    if (preg_match($pattern, $url, $matches)) {
+        return $matches[1];
+    }
+    return null;
+}
 
 
 //

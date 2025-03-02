@@ -945,21 +945,20 @@ export default {
       fetchUserData(uid)
     },
     xyztileSelect (uid) {
+      // alert(uid)
       const vm = this
       async function fetchUserData(uid) {
         try {
           const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userXyztileSelect.php', {
             params: { uid: uid }
           });
-
           if (response.data.error) {
             console.error('エラー:', response.data.error);
+            console.error(response.data)
             alert(`エラー: ${response.data.error}`);
           } else {
-            // console.log('取得データ:', response.data);
-            // console.log(JSON.stringify(response.data, null, 2))
-            // alert(`取得成功！\nデータ: ${JSON.stringify(response.data, null, 2)}`);
-            vm.jsonDataxyztile = response.data
+            console.error(response)
+            vm.jsonDataxyztile = response.data.result
           }
         } catch (error) {
           console.error('通信エラー:', error);

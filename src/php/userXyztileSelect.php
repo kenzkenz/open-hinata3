@@ -4,17 +4,20 @@ require_once "pwd.php"; // DB接続情報を含むファイル
 header("Content-Type: application/json");
 
 try {
-    // POSTからuidを取得
+    // GETからuidを取得
     $uid = $_GET['uid'] ?? null;
 
     // バリデーション: 空チェック
     if (empty($uid)) {
-        echo json_encode(["error" => "uidは必須です"]);
+        echo json_encode([
+            "error" => "uidは必須です",
+            "uid" => $uid
+        ]);
         exit;
     }
 
     // SQL: 指定されたuidのデータを取得
-    $sql = "SELECT * FROM userxyztile WHERE uid = :uid ORDER BY id DESC";
+    $sql = "SELECT * FROM userxyztile WHERE uid LIKE :uid ORDER BY id DESC";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':uid' => $uid]);
 
@@ -22,7 +25,11 @@ try {
     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // 結果をJSONで返す
-    echo json_encode($result);
+    echo json_encode([
+        "success" => true,
+        'result' => $result,
+        "uid" => $uid
+    ]);
 } catch (PDOException $e) {
     echo json_encode(["error" => "データベースエラー: " . $e->getMessage()]);
 }
