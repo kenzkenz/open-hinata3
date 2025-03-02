@@ -116,6 +116,11 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-window-item value="5">
                 <v-card>
                   <v-btn @click="iko">移行</v-btn>
+                  <div v-for="item in jsonDataxyztileAll" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox)">
+<!--                    <button class="close-btn" @click="removeItemxyztile(item.id,item.url2,$event)">×</button>-->
+                    <strong>{{ item.name }}</strong><br>
+                  </div>
+
                 </v-card>
               </v-window-item>
             </v-window>
@@ -127,7 +132,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <p v-if="user1">ようこそ、{{ user1.displayName || "ゲスト" }}さん！</p>
         <p v-else></p>
       </div>
-      v0.550<br>
+      v0.551<br>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 
@@ -264,6 +269,7 @@ export default {
     jsonDataPmtile: null,
     jsonDataVector: null,
     jsonDataxyztile: null,
+    jsonDataxyztileAll: null,
     uid: null,
     images: [],
     email: '',
@@ -382,6 +388,9 @@ export default {
   },
   methods: {
     iko () {
+      if (!confirm("実行しますか？")) {
+        return
+      }
       iko()
     },
     xyztileRenameBtn () {
@@ -1013,6 +1022,27 @@ export default {
       }
       fetchUserData(uid)
     },
+    xyztileSelectAll (uid) {
+      // alert(uid)
+      const vm = this
+      async function fetchUserData(uid) {
+        try {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userXyztileSelectAll.php', {
+            params: { uid: uid }
+          });
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            vm.jsonDataxyztileAll = response.data.result
+          }
+        } catch (error) {
+          console.error('通信エラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      fetchUserData(uid)
+    },
     xyztileSelect (uid) {
       // alert(uid)
       const vm = this
@@ -1459,6 +1489,7 @@ export default {
       this.tileSelect(this.$store.state.userId)
       this.pmtileSelect(this.$store.state.userId)
       this.xyztileSelect(this.$store.state.userId)
+      this.xyztileSelectAll()
     },
     s_fetchImagesFire () {
       this.fetchImages()
@@ -1466,6 +1497,7 @@ export default {
       this.tileSelect(this.$store.state.userId)
       this.pmtileSelect(this.$store.state.userId)
       this.xyztileSelect(this.$store.state.userId)
+      this.xyztileSelectAll()
     }
   },
   mounted() {
@@ -1480,6 +1512,8 @@ export default {
         this.tileSelect(this.uid)
         this.pmtileSelect(this.uid)
         this.xyztileSelect(this.uid)
+        this.xyztileSelectAll()
+
       }
     }, 5);
 

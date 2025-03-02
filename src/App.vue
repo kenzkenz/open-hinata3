@@ -1251,19 +1251,6 @@ export default {
       }
       this.dialogForGeotiffApp1file = false
     },
-    // geoTiffLoad20 () {
-    //   const map01 = this.$store.state.map01
-    //   const map02 = this.$store.state.map02
-    //   if (this.$store.state.userId) {
-    //     // geoTiffLoadForUser2 (map01,'map01', true)
-    //     // geoTiffLoadForUser2 (map02,'map02', false)
-    //     tileGenerateForUser1file()
-    //   } else {
-    //     geoTiffLoad2 (map01,'map01', true)
-    //     geoTiffLoad2 (map02,'map02', false)
-    //   }
-    //   this.s_dialogForGeotiff2App = false
-    // },
     simaOpacityInput () {
       const map1 = this.$store.state.map01
       const map2 = this.$store.state.map02
@@ -2349,6 +2336,7 @@ export default {
               }
               // -----------------------------------------------------------------------------------------------------------
               if (v.id.includes('oh-vpstile-')) {
+                // alert(v.id)
                 fetchFlg = true
                 const layerId = v.id.split('-')[2];
                 try {

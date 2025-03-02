@@ -4164,59 +4164,21 @@ export async function tileGenerateForUserPng () {
         });
         let result = await response.json();
         if (result.success) {
-            console.log(result.tiles_url, result.bbox)
-            addTileLayer(result.tiles_url, result.bbox)
-            // alert("タイル生成完了！");
-            store.state.loading2 = false
             const loclUrl = '/var/www/html/public_html/' + result.tiles_url.replace('https://kenzkenz.duckdns.org/','').replace('/{z}/{x}/{y}.png','')
-            insertXyztileData(store.state.userId, fileName, result.tiles_url, loclUrl, thumbnail, '[' + result.bbox + ']')
+            const dbResult = await insertXyztileData(store.state.userId, fileName, result.tiles_url, loclUrl, thumbnail, '[' + result.bbox + ']')
+            addXyztileLayer(dbResult.id,dbResult.name, result.tiles_url, result.bbox)
+            store.state.loading2 = false
+            // console.log(result.tiles_url, result.bbox)
+            // addTileLayer(result.tiles_url, result.bbox)
+            // // alert("タイル生成完了！");
+            // store.state.loading2 = false
+            // const loclUrl = '/var/www/html/public_html/' + result.tiles_url.replace('https://kenzkenz.duckdns.org/','').replace('/{z}/{x}/{y}.png','')
+            // insertXyztileData(store.state.userId, fileName, result.tiles_url, loclUrl, thumbnail, '[' + result.bbox + ']')
         } else {
             console.log(result)
             store.state.loading2 = false
             alert("タイル生成に失敗しました！" + result.error);
         }
-    }
-
-    function addTileLayer(tileURL, bbox) {
-        vpsTileSource.obj.tiles = [tileURL]
-        vpsTileSource.obj.bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
-
-        const map01 = store.state.map01
-        if (map01.getLayer('oh-vpstile-layer')) {
-            map01.removeLayer('oh-vpstile-layer');
-        }
-        if (map01.getSource('vpstile-source')) {
-            map01.removeSource('vpstile-source');
-        }
-
-        const mapNames = ['map01', 'map02']
-        mapNames.forEach(mapName => {
-            store.state.selectedLayers[mapName].unshift(
-                {
-                    id: 'oh-vpstile-layer',
-                    label: fileName,
-                    source: vpsTileSource,
-                    layers: [vpsTileLayer],
-                    opacity: 1,
-                    visibility: true,
-                }
-            );
-        })
-
-        if (bbox) {
-            map01.fitBounds([
-                [bbox[0], bbox[1]], // minX, minY
-                [bbox[2], bbox[3]]  // maxX, maxY
-            ], {padding: 20});
-        }
-
-        store.state.uploadedImage = JSON.stringify({
-            tile: tileURL,
-            bbox: bbox,
-            fileName: fileName,
-            uid: store.state.userId,
-        })
-        store.state.fetchImagesFire = !store.state.fetchImagesFire
     }
     // -------------------------------------------------------------------------------------------------
     store.state.loading = true
@@ -4280,59 +4242,21 @@ export async function tileGenerateForUserJpg () {
         });
         let result = await response.json();
         if (result.success) {
-            console.log(result.tiles_url, result.bbox)
-            addTileLayer(result.tiles_url, result.bbox)
-            // alert("タイル生成完了！");
-            store.state.loading2 = false
             const loclUrl = '/var/www/html/public_html/' + result.tiles_url.replace('https://kenzkenz.duckdns.org/','').replace('/{z}/{x}/{y}.png','')
-            insertXyztileData(store.state.userId, fileName, result.tiles_url, loclUrl, thumbnail, '[' + result.bbox + ']')
+            const dbResult = await insertXyztileData(store.state.userId, fileName, result.tiles_url, loclUrl, thumbnail, '[' + result.bbox + ']')
+            addXyztileLayer(dbResult.id,dbResult.name, result.tiles_url, result.bbox)
+            store.state.loading2 = false
+            // console.log(result.tiles_url, result.bbox)
+            // addTileLayer(result.tiles_url, result.bbox)
+            // // alert("タイル生成完了！");
+            // store.state.loading2 = false
+            // const loclUrl = '/var/www/html/public_html/' + result.tiles_url.replace('https://kenzkenz.duckdns.org/','').replace('/{z}/{x}/{y}.png','')
+            // insertXyztileData(store.state.userId, fileName, result.tiles_url, loclUrl, thumbnail, '[' + result.bbox + ']')
         } else {
             console.log(result)
             store.state.loading2 = false
             alert("タイル生成に失敗しました！" + result.error);
         }
-    }
-
-    function addTileLayer(tileURL, bbox) {
-        vpsTileSource.obj.tiles = [tileURL]
-        vpsTileSource.obj.bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
-
-        const map01 = store.state.map01
-        if (map01.getLayer('oh-vpstile-layer')) {
-            map01.removeLayer('oh-vpstile-layer');
-        }
-        if (map01.getSource('vpstile-source')) {
-            map01.removeSource('vpstile-source');
-        }
-
-        const mapNames = ['map01', 'map02']
-        mapNames.forEach(mapName => {
-            store.state.selectedLayers[mapName].unshift(
-                {
-                    id: 'oh-vpstile-layer',
-                    label: fileName,
-                    source: vpsTileSource,
-                    layers: [vpsTileLayer],
-                    opacity: 1,
-                    visibility: true,
-                }
-            );
-        })
-
-        if (bbox) {
-            map01.fitBounds([
-                [bbox[0], bbox[1]], // minX, minY
-                [bbox[2], bbox[3]]  // maxX, maxY
-            ], {padding: 20});
-        }
-
-        store.state.uploadedImage = JSON.stringify({
-            tile: tileURL,
-            bbox: bbox,
-            fileName: fileName,
-            uid: store.state.userId,
-        })
-        store.state.fetchImagesFire = !store.state.fetchImagesFire
     }
     // -------------------------------------------------------------------------------------------------
     store.state.loading = true
@@ -4390,12 +4314,50 @@ async function insertXyztileData(uid, name, url, url2, url3, bbox) {
             alert(`エラー: ${response.data.error}`);
         } else {
             console.log('登録成功:', response.data);
+            return response.data
             // store.state.fetchImagesFire = !store.state.fetchImagesFire
         }
     } catch (error) {
         console.error('通信エラー:', error);
         alert('通信エラーが発生しました');
     }
+}
+function addXyztileLayer(id,name,url,bbox) {
+    const map01 = store.state.map01
+    const bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
+    const source = {
+        id: 'oh-vpstile-' + id + '-' + name + '-source',obj: {
+            type: 'raster',
+            tiles: [url],
+            bounds: bounds,
+            maxzoom: 26,
+        }
+    };
+    const layer = {
+        id: 'oh-vpstile-' + id + '-' + name + '-layer',
+        type: 'raster',
+        source: 'oh-vpstile-' + id + '-' + name  + '-source',
+    }
+    const mapNames = ['map01', 'map02']
+    mapNames.forEach(mapName => {
+        store.state.selectedLayers[mapName].unshift(
+            {
+                id: 'oh-vpstile-' + id + '-' + name + '-layer',
+                label: name,
+                source: source,
+                layers: [layer],
+                opacity: 1,
+                visibility: true,
+            }
+        );
+    })
+    if (bbox) {
+        map01.fitBounds([
+            [bbox[0], bbox[1]], // minX, minY
+            [bbox[2], bbox[3]]  // maxX, maxY
+        ], { padding: 20 });
+    }
+    store.state.fetchImagesFire = !store.state.fetchImagesFire
 }
 export async function tileGenerateForUser1file () {
     // -------------------------------------------------------------------------------------------------
@@ -4416,59 +4378,20 @@ export async function tileGenerateForUser1file () {
         });
         let result = await response.json();
         if (result.success) {
-            addTileLayer(result.tiles_url, result.bbox)
+            const loclUrl = '/var/www/html/public_html/' + result.tiles_url.replace('https://kenzkenz.duckdns.org/','').replace('/{z}/{x}/{y}.png','')
+            const dbResult = await insertXyztileData(store.state.userId, fileName, result.tiles_url, loclUrl, thumbnail, '[' + result.bbox + ']')
+            console.log(dbResult)
+            addXyztileLayer(dbResult.id,dbResult.name, result.tiles_url, result.bbox)
             store.state.loading2 = false
             console.log(result)
-            const loclUrl = '/var/www/html/public_html/' + result.tiles_url.replace('https://kenzkenz.duckdns.org/','').replace('/{z}/{x}/{y}.png','')
-            insertXyztileData(store.state.userId, fileName, result.tiles_url, loclUrl, thumbnail, '[' + result.bbox + ']')
+            // const loclUrl = '/var/www/html/public_html/' + result.tiles_url.replace('https://kenzkenz.duckdns.org/','').replace('/{z}/{x}/{y}.png','')
+            // insertXyztileData(store.state.userId, fileName, result.tiles_url, loclUrl, thumbnail, '[' + result.bbox + ']')
             // alert("タイル生成完了！");
         } else {
             console.log(result)
             store.state.loading2 = false
             alert("タイル生成に失敗しました！" + result.error);
         }
-    }
-
-    function addTileLayer(tileURL,bbox) {
-        vpsTileSource.obj.tiles = [tileURL]
-        vpsTileSource.obj.bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
-
-        const map01 = store.state.map01
-        if (map01.getLayer('oh-vpstile-layer')) {
-            map01.removeLayer('oh-vpstile-layer');
-        }
-        if (map01.getSource('vpstile-source')) {
-            map01.removeSource('vpstile-source');
-        }
-
-        const mapNames = ['map01', 'map02']
-        mapNames.forEach(mapName => {
-            store.state.selectedLayers[mapName].unshift(
-                {
-                    id: 'oh-vpstile-layer',
-                    label: fileName,
-                    source: vpsTileSource,
-                    layers: [vpsTileLayer],
-                    opacity: 1,
-                    visibility: true,
-                }
-            );
-        })
-
-        if (bbox) {
-            map01.fitBounds([
-                [bbox[0], bbox[1]], // minX, minY
-                [bbox[2], bbox[3]]  // maxX, maxY
-            ], { padding: 20 });
-        }
-
-        store.state.uploadedImage = JSON.stringify({
-            tile: tileURL,
-            bbox: bbox,
-            fileName: fileName,
-            uid: store.state.userId,
-        })
-        store.state.fetchImagesFire = !store.state.fetchImagesFire
     }
     // -------------------------------------------------------------------------------------------------
     store.state.loading = true
@@ -4508,6 +4431,7 @@ export async function tileGenerateForUserTfw () {
     let thumbnail = ''
     async function generateTiles(filePath, srsCode = "2450", dir) {
         store.state.loading2 = true
+        store.state.loadingMessage = '地図タイル作成中です。'
         let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -4521,12 +4445,10 @@ export async function tileGenerateForUserTfw () {
         });
         let result = await response.json();
         if (result.success) {
-            console.log(result.tiles_url, result.bbox)
-            addTileLayer(result.tiles_url, result.bbox)
-            // alert("タイル生成完了！");
-            store.state.loading2 = false
             const loclUrl = '/var/www/html/public_html/' + result.tiles_url.replace('https://kenzkenz.duckdns.org/','').replace('/{z}/{x}/{y}.png','')
-            insertXyztileData(store.state.userId, fileName, result.tiles_url, loclUrl, thumbnail, '[' + result.bbox + ']')
+            const dbResult = await insertXyztileData(store.state.userId, fileName, result.tiles_url, loclUrl, thumbnail, '[' + result.bbox + ']')
+            addXyztileLayer(dbResult.id,dbResult.name, result.tiles_url, result.bbox)
+            store.state.loading2 = false
         } else {
             console.log(result)
             store.state.loading2 = false
@@ -4534,47 +4456,7 @@ export async function tileGenerateForUserTfw () {
         }
     }
 
-    function addTileLayer(tileURL,bbox) {
-        vpsTileSource.obj.tiles = [tileURL]
-        vpsTileSource.obj.bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
 
-        const map01 = store.state.map01
-        if (map01.getLayer('oh-vpstile-layer')) {
-            map01.removeLayer('oh-vpstile-layer');
-        }
-        if (map01.getSource('vpstile-source')) {
-            map01.removeSource('vpstile-source');
-        }
-
-        const mapNames = ['map01', 'map02']
-        mapNames.forEach(mapName => {
-            store.state.selectedLayers[mapName].unshift(
-                {
-                    id: 'oh-vpstile-layer',
-                    label: fileName,
-                    source: vpsTileSource,
-                    layers: [vpsTileLayer],
-                    opacity: 1,
-                    visibility: true,
-                }
-            );
-        })
-
-        if (bbox) {
-            map01.fitBounds([
-                [bbox[0], bbox[1]], // minX, minY
-                [bbox[2], bbox[3]]  // maxX, maxY
-            ], { padding: 20 });
-        }
-
-        store.state.uploadedImage = JSON.stringify({
-            tile: tileURL,
-            bbox: bbox,
-            fileName: fileName,
-            uid: store.state.userId,
-        })
-        store.state.fetchImagesFire = !store.state.fetchImagesFire
-    }
     // -------------------------------------------------------------------------------------------------
     store.state.loading = true
     const srsCode = zahyokei.find(item => item.kei === store.state.zahyokei).code
@@ -5523,7 +5405,6 @@ export const wsg84ToJgd = (coordinates) => {
 export function userXyztileSet(name,url,id, bbox) {
     const map = store.state.map01
     const bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
-
     const source = {
         id: 'oh-vpstile-' + id + '-' + name + '-source',obj: {
             type: 'raster',
