@@ -105,7 +105,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 <!--                      <div class="close-button" @click="handleClose(item)">×</div>-->
 <!--                    </div>-->
 <!--                  </div>-->
-                  <v-text-field  v-model="xyztileRename" type="text" placeholder="リネーム"></v-text-field>
+                  <v-text-field v-model="xyztileRename" type="text" placeholder="リネーム"></v-text-field>
                   <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="xyztileRenameBtn">リネーム</v-btn>
                   <div v-for="item in jsonDataxyztile" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox)">
                     <button class="close-btn" @click="removeItemxyztile(item.id,item.url2,$event)">×</button>
@@ -132,7 +132,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <p v-if="user1">ようこそ、{{ user1.displayName || "ゲスト" }}さん！</p>
         <p v-else></p>
       </div>
-      v0.551<br>
+      v0.552<br>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 
@@ -363,8 +363,13 @@ export default {
         this.$store.state.terrainLevel = value
       }
     },
-    s_fetchImagesFire () {
-      return this.$store.state.fetchImagesFire
+    s_fetchImagesFire : {
+      get() {
+        return this.$store.state.fetchImagesFire
+      },
+      set(value) {
+        this.$store.state.fetchImagesFire = value
+      }
     },
     s_dialogs () {
       return this.$store.state.dialogs.menuDialog
@@ -1255,6 +1260,7 @@ export default {
       const logout = async () => {
         try {
           await signOut(auth); // ここで `auth` を明示的に指定
+          this.s_fetchImagesFire = !this.s_fetchImagesFire
           alert("ログアウトしました");
         } catch (error) {
           console.error("ログアウトエラー:", error.message);
@@ -1308,6 +1314,8 @@ export default {
           this.createDirectory()
           this.errorMsg = 'ログイン成功';
           this.loginDiv = false
+          this.$store.state.userId = user._rawValue.uid
+          this.s_fetchImagesFire = !this.s_fetchImagesFire
         } catch (error) {
           console.error("ログイン失敗:", error.message);
           // エラーメッセージを表示
@@ -1323,6 +1331,8 @@ export default {
               break;
             default:
               this.errorMsg = "ログインに失敗しました";
+              this.$store.state.userId = user._rawValue.uid
+              this.s_fetchImagesFire = !this.s_fetchImagesFire
           }
         }
       };
