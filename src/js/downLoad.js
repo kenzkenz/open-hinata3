@@ -5522,8 +5522,58 @@ export const wsg84ToJgd = (coordinates) => {
     return proj4("EPSG:4326", code, coordinates);
 };
 
-export function userPmtileSet(name,url,id, chiban, bbox) {
+export function userXyztileSet(name,url,id, bbox) {
+    alert()
+    const map = store.state.map01
 
+    // vpsTileSource.obj.tiles = [tileURL]
+    // vpsTileSource.obj.bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
+    // store.state.selectedLayers[mapName].splice(index, 0,
+    //     {
+    //         id: 'oh-vpstile-layer',
+    //         label: fileName,
+    //         source: vpsTileSource,
+    //         layers: [vpsTileLayer],
+    //         opacity: opacity,
+    //         visibility: true,
+    //     }
+    // );
+
+    const bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
+
+    const source = {
+        id: 'oh-vpstile-' + id + '-' + name + '-source',obj: {
+            type: 'raster',
+            tiles: [url],
+            bounds: bounds,
+            maxzoom: 26,
+        }
+    };
+    const layer = {
+        id: 'oh-vpstile-' + id + '-' + name + '-layer',
+        type: 'raster',
+        source: 'oh-vpstile-' + id + '-' + name  + '-source',
+    }
+
+    store.state.selectedLayers.map01.unshift(
+        {
+            id: 'oh-vpstile-' + id + '-' + name + '-layer',
+            label: name,
+            source: source,
+            layers: [layer],
+            opacity: 1,
+            visibility: true,
+        }
+    );
+    if (bbox) {
+        map.fitBounds([
+            [bbox[0], bbox[1]], // minX, minY
+            [bbox[2], bbox[3]]  // maxX, maxY
+        ], { padding: 20 });
+    }
+}
+
+export function userPmtileSet(name,url,id, chiban, bbox) {
     const map = store.state.map01
     const sopurce = {
         id: 'oh-chiban-' + id + '-' + name + '-source',obj: {
@@ -5908,7 +5958,7 @@ export async function iko() {
         result.directories.forEach(directorie => {
             const webUrl = 'https://kenzkenz.duckdns.org/' + directorie.path.replace('/var/www/html/public_html/','') + '/{z}/{x}/{y}.png'
             const thumbnail = 'thumbnail'
-            insert (directorie.uid,directorie.fileName,webUrl,directorie.path,thumbnail,directorie.bounds)
+            insert (directorie.uid,directorie.fileName,webUrl,directorie.path,thumbnail,'[' + directorie.bounds + ']')
         })
         alert("登録成功！");
     } else {

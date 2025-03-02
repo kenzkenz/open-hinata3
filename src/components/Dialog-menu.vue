@@ -105,7 +105,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 <!--                      <div class="close-button" @click="handleClose(item)">×</div>-->
 <!--                    </div>-->
 <!--                  </div>-->
-                  <div v-for="item in jsonDataxyztile" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.chiban,item.bbox)">
+                  <div v-for="item in jsonDataxyztile" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox)">
                     <button class="close-btn" @click="removeItemxyztile(item.id,item.url2,$event)">×</button>
                     <strong>{{ item.name }}</strong><br>
                   </div>
@@ -170,7 +170,7 @@ import {
   addImageLayerPng,
   addTileLayerForImage,
   geojsonAddLayer, highlightSpecificFeaturesCity, iko,
-  simaToGeoJSON, userPmileSet, userPmtileSet, userTileSet
+  simaToGeoJSON, userPmileSet, userPmtileSet, userTileSet, userXyztileSet
 } from "@/js/downLoad";
 
 const getFirebaseUid = async () => {
@@ -250,6 +250,7 @@ export default {
   data: () => ({
     id: '',
     name: '',
+    tileRename: '',
     pmtilesRename: '',
     tab: 'one',
     tileUrl: '',
@@ -400,6 +401,13 @@ export default {
       const visibility = this.s_isClickPointsLayer ? "visible" : "none";
       map01.setLayoutProperty("click-points-layer", "visibility", visibility);
       map02.setLayoutProperty("click-points-layer", "visibility", visibility);
+    },
+    xyztileClick (name,url,id, bbox) {
+      console.log(bbox)
+      this.tilesRename = name
+      this.id = id
+      this.name = name
+      userXyztileSet(name,url,id,JSON.parse(bbox))
     },
     pmtileClick (name,url,id, chiban, bbox) {
       this.pmtilesRename = name
@@ -954,10 +962,8 @@ export default {
           });
           if (response.data.error) {
             console.error('エラー:', response.data.error);
-            console.error(response.data)
             alert(`エラー: ${response.data.error}`);
           } else {
-            console.error(response)
             vm.jsonDataxyztile = response.data.result
           }
         } catch (error) {
@@ -1395,7 +1401,10 @@ export default {
     },
     s_fetchImagesFire () {
       this.fetchImages()
+      this.urlSelect(this.$store.state.userId)
+      this.tileSelect(this.$store.state.userId)
       this.pmtileSelect(this.$store.state.userId)
+      this.xyztileSelect(this.$store.state.userId)
     }
   },
   mounted() {
