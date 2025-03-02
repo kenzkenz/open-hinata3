@@ -153,7 +153,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
 
 
-            <v-dialog attach="body" v-model="s_dialogForLink" :scrim="false" persistent="false" max-width="600px" height="600px" content-class="scrollable-dialog" class="scrollable-content">
+      <v-dialog attach="body" v-model="s_dialogForLink" :scrim="false" persistent="false" max-width="600px" height="600px" content-class="scrollable-dialog" class="scrollable-content">
         <v-card>
           <v-card-title style="text-align: right;background: rgb(50,101,186)">
             <v-icon @click="s_dialogForLink = false" style="color: white">mdi-close</v-icon>
@@ -171,8 +171,9 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 <v-card>
                   <div style="margin-bottom: 10px;">
                     <v-text-field  v-model="urlName" type="text" placeholder="ネーム"></v-text-field>
-                    <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="urlSave">URL記憶</v-btn>
-                    <div v-for="item in jsonData" :key="item.id" class="data-container" @click="urlClick(item.url)">
+                    <v-btn style="margin-top: -10px;margin-bottom: 10px;" @click="urlSave">URL記憶</v-btn>
+                    <v-btn style="margin-top: -10px;margin-bottom: 10px; margin-left: 10px" @click="urlRenameBtn">リネーム</v-btn>
+                    <div v-for="item in jsonData" :key="item.id" class="data-container" @click="urlClick(item.name,item.url,item.id)">
                       <button class="close-btn" @click="removeItem(item.id, $event)">×</button>
                       <strong>{{ item.name }}</strong><br>
                       <strong></strong>{{ item.url }}
@@ -239,10 +240,10 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <p v-if="user1">ようこそ、{{ user1.displayName || "ゲスト" }}さん！</p>
         <p v-else></p>
       </div>
-      v0.555<br>
+      v0.556<br>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
-      <v-btn class="tiny-btn" @click="openDialog">テスト</v-btn>
+<!--      <v-btn class="tiny-btn" @click="openDialog">テスト</v-btn>-->
       <v-btn class="tiny-btn" @click="simaLoad">SIMA読み込</v-btn>
       <v-btn style="margin-left: 5px;" class="tiny-btn" @click="pngDownload">PNGダウンロード</v-btn>
 
@@ -542,6 +543,20 @@ export default {
       }
       iko()
     },
+    urlRenameBtn () {
+      const vm = this
+      if (!this.urlName) return
+      // alert(this.id + '/' + this.urlName)
+      axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userUrlUpdate.php',{
+        params: {
+          id: this.id,
+          name: this.urlName
+        }
+      }).then(function (response) {
+        console.log(response)
+        vm.urlSelect(vm.$store.state.userId)
+      })
+    },
     xyztileRenameBtn () {
       const vm = this
       if (!this.xyztileRename) return
@@ -593,7 +608,10 @@ export default {
     tileClick (name,url,id) {
       userTileSet(name,url,id)
     },
-    urlClick (url) {
+    urlClick (name,url,id) {
+      this.urlName = name
+      this.id = id
+      this.name = name
       async function fetchFile(url) {
         try {
           // Fetchリクエストでファイルを取得
