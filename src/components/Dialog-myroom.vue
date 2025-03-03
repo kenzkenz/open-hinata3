@@ -21,6 +21,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   <div style="margin-bottom: 10px;">
                     <v-text-field v-model="urlName" type="text" placeholder="ネーム"></v-text-field>
                     <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="urlSave">URL記憶</v-btn>
+                    <v-btn style="margin-top: -10px; margin-bottom: 10px; margin-left: 10px" @click="urlRenameBtn">リネーム</v-btn>
                     <div v-for="item in jsonData" :key="item.id" class="data-container" @click="urlClick(item.name, item.url, item.id)">
                       <button class="close-btn" @click="removeItem(item.id, $event)">×</button>
                       <strong>{{ item.name }}</strong><br>
@@ -65,14 +66,13 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               </v-window-item>
               <v-window-item value="5">
                 <v-card>
-                  <v-btn @click="iko">移行</v-btn>
+<!--                  <v-btn style="margin-bottom: 10px;" @click="iko">移行</v-btn>-->
                   <div v-for="item in jsonDataxyztileAll" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox)">
                     <!--                    <button class="close-btn" @click="removeItemxyztile(item.id,item.url2,$event)">×</button>-->
                     <strong>{{ item.name }}</strong><br>
                   </div>
                 </v-card>
               </v-window-item>
-
             </v-window>
           </v-card-text>
         </v-card>
@@ -88,7 +88,7 @@ import {
   addImageLayerPng,
   addTileLayerForImage,
   geojsonAddLayer, highlightSpecificFeaturesCity, iko,
-  simaToGeoJSON, userPmileSet, userPmtileSet, userTileSet, userXyztileSet
+  simaToGeoJSON, userPmtileSet, userTileSet, userXyztileSet
 } from "@/js/downLoad";
 
 const getFirebaseUid = async () => {
@@ -318,6 +318,12 @@ export default {
     },
   },
   methods: {
+    iko () {
+      if (!confirm("実行しますか？")) {
+        return
+      }
+      iko()
+    },
     urlRenameBtn () {
       const vm = this
       if (!this.urlName) return
@@ -445,18 +451,18 @@ export default {
         const gpxText = params.get('gpxtext')
         const vector0 = params.get('vector')
 
-        // map.jumpTo({
-        //   center: [lng, lat],
-        //   zoom: zoom
-        // });
-
-        map.flyTo({
+        map.jumpTo({
           center: [lng, lat],
-          zoom: zoom,
-          speed: 1.2,
-          curve: 1.42,    // アニメーションの曲線効果（オプション）
-          essential: true
+          zoom: zoom
         });
+
+        // map.flyTo({
+        //   center: [lng, lat],
+        //   zoom: zoom,
+        //   speed: 1.2,
+        //   curve: 1.42,    // アニメーションの曲線効果（オプション）
+        //   essential: true
+        // });
 
         if (split === 'true') {
           vm.$store.state.map2Flg = true
@@ -1271,6 +1277,9 @@ export default {
   position: relative;
   cursor: pointer;
   background-color: rgba(132,163,213,0.3);
+}
+.data-container:hover {
+  background-color: #f0f8ff;
 }
 .close-btn {
   position: absolute;

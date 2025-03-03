@@ -2778,7 +2778,11 @@ const tosyo06SekisyokuSource = {
     id: 'tosyo06-sekisyoku-source', obj: {
         type: 'raster',
         tiles: ['https://kenzkenz2.xsrv.jp/tokyo/tousyosekisyoku06/{z}/{x}/{y}.png'],
-        scheme: 'tms'
+        scheme: 'tms',
+        tileSize: 256, // タイルサイズに合わせる
+        maxzoom: 18,   // 適切なズーム範囲を設定
+        minzoom: 1,
+        bounds: boundsSort([139.74046773079067,32.48017775032204,139.78740051701084,32.439009913129155])
     }
 }
 const tosyo06SekisyokuLayer = {
@@ -8154,7 +8158,6 @@ const shizuokaOrthoAlpusSource = {
         maxzoom: 19,   // 適切なズーム範囲を設定
         minzoom: 1,
         bounds: boundsSort([138.0037227785058,35.62288537726742,138.3478132990051,35.077789209561246])
-
     }
 }
 const shizuokaOrthoAlpusLayer = {

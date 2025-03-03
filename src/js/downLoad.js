@@ -5433,7 +5433,7 @@ export function userXyztileSet(name,url,id, bbox) {
         map.fitBounds([
             [bbox[0], bbox[1]], // minX, minY
             [bbox[2], bbox[3]]  // maxX, maxY
-        ], { padding: 20 });
+        ], { padding: 20, animate: false });
     }
 }
 
@@ -5515,7 +5515,7 @@ export function userPmtileSet(name,url,id, chiban, bbox) {
         map.fitBounds([
             [bbox[0], bbox[1]], // minX, minY
             [bbox[2], bbox[3]]  // maxX, maxY
-        ], { padding: 20 });
+        ], { padding: 20, animate: false  });
     }
 
     setTimeout(() => {
