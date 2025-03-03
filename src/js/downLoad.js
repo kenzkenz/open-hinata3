@@ -4246,12 +4246,6 @@ export async function tileGenerateForUserJpg () {
             const dbResult = await insertXyztileData(store.state.userId, fileName, result.tiles_url, loclUrl, thumbnail, '[' + result.bbox + ']')
             addXyztileLayer(dbResult.id,dbResult.name, result.tiles_url, result.bbox)
             store.state.loading2 = false
-            // console.log(result.tiles_url, result.bbox)
-            // addTileLayer(result.tiles_url, result.bbox)
-            // // alert("タイル生成完了！");
-            // store.state.loading2 = false
-            // const loclUrl = '/var/www/html/public_html/' + result.tiles_url.replace('https://kenzkenz.duckdns.org/','').replace('/{z}/{x}/{y}.png','')
-            // insertXyztileData(store.state.userId, fileName, result.tiles_url, loclUrl, thumbnail, '[' + result.bbox + ']')
         } else {
             console.log(result)
             store.state.loading2 = false
@@ -4328,7 +4322,7 @@ function addXyztileLayer(id,name,url,bbox) {
     const source = {
         id: 'oh-vpstile-' + id + '-' + name + '-source',obj: {
             type: 'raster',
-            tiles: [url],
+            tiles: ['transparentBlack://' + url],
             bounds: bounds,
             maxzoom: 26,
         }
