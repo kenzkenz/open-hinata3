@@ -4,69 +4,9 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
 <template>
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
-    <div class="menu-div">
-
-      <div max-width="500px">
+    <div class="myroom-div">
         <v-card>
-          <v-card-title>
-            <p v-if="user1">ようこそ、{{ user1.displayName }}さん！</p>
-<!--            <p v-if="user1">ようこそ、{{s_userId}}さん！</p>-->
-          </v-card-title>
-          <v-card-text>
-
-            <div style="margin-top: 10px;">
-              <v-btn v-if="!user1" @click="loginDiv=!loginDiv,signUpDiv=false">ログイン</v-btn><v-btn v-if="user1" @click="logOut">ログアウト</v-btn>
-              <v-btn style="margin-left: 10px;" v-if="!user1" @click="signUpDiv=!signUpDiv,loginDiv=false">新規登録</v-btn>
-
-              <div v-if="loginDiv" style="margin-top: 10px;">
-                <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
-                <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>
-                <v-btn @click="login">ログインします</v-btn>
-                <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
-              </div>
-            </div>
-            <div style="margin-top: 10px;">
-
-              <div v-if="signUpDiv" style="margin-top: 10px;">
-                <v-text-field  v-model="nickname" type="text" placeholder="ニックネーム"></v-text-field>
-                <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
-                <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>
-                <v-btn @click="signUp">新規登録します</v-btn>
-                <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
-              </div>
-            </div>
-
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="blue-darken-1" text @click="s_dialogForLogin = false">Close</v-btn>
-          </v-card-actions>
-        </v-card>
-      </div>
-
-      <!--URL記録-->
-
-      <v-dialog
-          v-model="isDialogVisible"
-          attach="body"
-          persistent
-          :scrim="false"
-          max-width="600px"
-          height="600px"
-          content-class="scrollable-dialog"
-          class="scrollable-content"
-          ref="draggableDialog"
-          :style="{ top: dialogTop + 'px', left: dialogLeft + 'px', position: 'absolute' }"
-      >
-        <v-card>
-          <!-- ドラッグ可能なタイトルバー -->
-          <v-card-title style="text-align: right; background: rgb(50,101,186); position: sticky; top: 0; z-index: 10;cursor: grab;"
-                        @mousedown="startDrag"
-          >
-            <v-icon @click="closeDialog" style="color: white">mdi-close</v-icon>
-          </v-card-title>
-
-          <v-card-text style="overflow-y: auto; max-height: 530px; padding-top: 10px;">
+          <v-card-text :style="mayroomStyle">
             <v-tabs mobile-breakpoint="0" v-model="tab" style="margin-bottom: 10px;">
               <v-tab value="1">URL記憶</v-tab>
               <v-tab value="2">タイル記憶</v-tab>
@@ -136,88 +76,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
             </v-window>
           </v-card-text>
         </v-card>
-      </v-dialog>
-
-<!--      <v-dialog attach="body" v-model="s_dialogForLink" :scrim="false" persistent="false" max-width="600px" height="600px" content-class="scrollable-dialog" class="scrollable-content">-->
-<!--        <v-card>-->
-<!--          &lt;!&ndash; ヘッダーを固定 &ndash;&gt;-->
-<!--          <v-card-title style="text-align: right; background: rgb(50,101,186); position: sticky; top: 0; z-index: 10;">-->
-<!--            <v-icon @click="s_dialogForLink = false" style="color: white">mdi-close</v-icon>-->
-<!--          </v-card-title>-->
-
-<!--          &lt;!&ndash; スクロール可能なコンテンツ &ndash;&gt;-->
-<!--          <v-card-text style="overflow-y: auto; max-height: 530px; padding-top: 10px;">-->
-<!--            <v-tabs mobile-breakpoint="0" v-model="tab" style="margin-bottom: 10px;">-->
-<!--              <v-tab value="1">URL記憶</v-tab>-->
-<!--              <v-tab value="2">タイル記憶</v-tab>-->
-<!--              <v-tab value="3">地番図</v-tab>-->
-<!--              <v-tab value="4">画像</v-tab>-->
-<!--              <v-tab v-if="isAdministrator" value="5">管理者用</v-tab>-->
-<!--            </v-tabs>-->
-
-<!--            <v-window v-model="tab">-->
-<!--              <v-window-item value="1">-->
-<!--                <v-card>-->
-<!--                  <div style="margin-bottom: 10px;">-->
-<!--                    <v-text-field v-model="urlName" type="text" placeholder="ネーム"></v-text-field>-->
-<!--                    <v-btn style="margin-top: -10px; margin-bottom: 10px;" @click="urlSave">URL記憶</v-btn>-->
-<!--                    <v-btn style="margin-top: -10px; margin-bottom: 10px; margin-left: 10px" @click="urlRenameBtn">リネーム</v-btn>-->
-<!--                    <div v-for="item in jsonData" :key="item.id" class="data-container" @click="urlClick(item.name, item.url, item.id)">-->
-<!--                      <button class="close-btn" @click="removeItem(item.id, $event)">×</button>-->
-<!--                      <strong>{{ item.name }}</strong><br>-->
-<!--                      <strong></strong>{{ item.url }}-->
-<!--                    </div>-->
-<!--                  </div>-->
-<!--                </v-card>-->
-<!--              </v-window-item>-->
-
-<!--              <v-window-item value="2">-->
-<!--                <v-card>-->
-<!--                  <div style="margin-bottom: 10px;">-->
-<!--                    <v-text-field v-model="tileName" type="text" placeholder="ネーム"></v-text-field>-->
-<!--                    <v-text-field v-model="tileUrl" type="text" placeholder="タイルURL"></v-text-field>-->
-<!--                    <v-btn style="margin-top: -10px; margin-bottom: 10px" @click="tileSave">地図タイル記憶</v-btn>-->
-<!--                    <div v-for="item in jsonDataTile" :key="item.id" class="data-container" @click="tileClick(item.name, item.url, item.id)">-->
-<!--                      <button class="close-btn" @click="removeItemTile(item.id, $event)">×</button>-->
-<!--                      <strong>{{ item.name }}</strong><br>-->
-<!--                      <strong></strong>{{ item.url }}-->
-<!--                    </div>-->
-<!--                  </div>-->
-<!--                </v-card>-->
-<!--              </v-window-item>-->
-<!--              <v-window-item value="3">-->
-<!--                <v-card>-->
-<!--                  <v-text-field  v-model="pmtilesRename" type="text" placeholder="リネーム"></v-text-field>-->
-<!--                  <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="pmtilesRenameBtn">リネーム</v-btn>-->
-<!--                  <div v-for="item in jsonDataPmtile" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban,item.bbox)">-->
-<!--                    <button class="close-btn" @click="removeItemPmtiles(item.id,item.url2,$event)">×</button>-->
-<!--                    <strong>{{ item.name }}</strong><br>-->
-<!--                  </div>-->
-<!--                </v-card>-->
-<!--              </v-window-item>-->
-<!--              <v-window-item value="4">-->
-<!--                <v-card>-->
-<!--                  <v-text-field v-model="xyztileRename" type="text" placeholder="リネーム"></v-text-field>-->
-<!--                  <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="xyztileRenameBtn">リネーム</v-btn>-->
-<!--                  <div v-for="item in jsonDataxyztile" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox)">-->
-<!--                    <button class="close-btn" @click="removeItemxyztile(item.id,item.url2,$event)">×</button>-->
-<!--                    <strong>{{ item.name }}</strong><br>-->
-<!--                  </div>-->
-<!--                </v-card>-->
-<!--              </v-window-item>-->
-<!--              <v-window-item value="5">-->
-<!--                <v-card>-->
-<!--                  <v-btn @click="iko">移行</v-btn>-->
-<!--                  <div v-for="item in jsonDataxyztileAll" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox)">-->
-<!--                    <strong>{{ item.name }}</strong><br>-->
-<!--                  </div>-->
-<!--                </v-card>-->
-<!--              </v-window-item>-->
-<!--            </v-window>-->
-<!--          </v-card-text>-->
-<!--        </v-card>-->
-<!--      </v-dialog>-->
-
     </div>
   </Dialog>
 </template>
@@ -340,6 +198,7 @@ export default {
     isDragging: false,
     dragStartX: 0,
     dragStartY: 0,
+    mayroomStyle: {"overflow-y": "auto", "max-height": "530px", "padding-top": "10px"}
   }),
   computed: {
     s_isDialogVisible: {
@@ -439,7 +298,7 @@ export default {
       }
     },
     s_dialogs () {
-      return this.$store.state.dialogs.menuDialog
+      return this.$store.state.dialogs.myroomDialog
     },
     s_isClickPointsLayer: {
       get() {
@@ -459,36 +318,6 @@ export default {
     },
   },
   methods: {
-    openDialog() {
-      this.isDialogVisible = true;
-    },
-    closeDialog() {
-      this.isDialogVisible = false;
-    },
-    startDrag(event) {
-      this.openDialog(); // ダイアログを表示
-      this.isDragging = true;
-      this.dragStartX = event.clientX - this.dialogLeft;
-      this.dragStartY = event.clientY - this.dialogTop;
-      document.addEventListener("mousemove", this.onDrag);
-      document.addEventListener("mouseup", this.stopDrag);
-    },
-    onDrag(event) {
-      if (!this.isDragging) return;
-      this.dialogLeft = event.clientX - this.dragStartX;
-      this.dialogTop = event.clientY - this.dragStartY;
-    },
-    stopDrag() {
-      this.isDragging = false;
-      document.removeEventListener("mousemove", this.onDrag);
-      document.removeEventListener("mouseup", this.stopDrag);
-    },
-    iko () {
-      if (!confirm("実行しますか？")) {
-        return
-      }
-      iko()
-    },
     urlRenameBtn () {
       const vm = this
       if (!this.urlName) return
@@ -1338,11 +1167,6 @@ export default {
     },
   },
   watch: {
-    // s_dialogForLink(val) {
-    //   if (val) {
-    //     this.openDialog(val);
-    //   }
-    // }
     s_dialogForLink () {
       this.openDialog();
       try {
@@ -1366,6 +1190,30 @@ export default {
     }
   },
   mounted() {
+    document.querySelector('#drag-handle-myroomDialog-map01').innerHTML = '<span style="font-size: large;">myroom</span>'
+    // -------------------------------------------------------------------
+    let maxHeight
+    if (window.innerWidth <= 500) {
+      maxHeight = (window.innerHeight) + 'px'
+    } else {
+      maxHeight = (window.innerHeight - 150) + 'px'
+    }
+    this.mayroomStyle["max-height"] = maxHeight
+    // 非同期で user の UID を監視
+    // -------------------------------------------------------------------
+    const checkUser = setInterval(() => {
+      if (user && user._rawValue && user._rawValue.uid) {
+        this.uid = user._rawValue.uid;
+        this.$store.state.userId = user._rawValue.uid
+        clearInterval(checkUser); // UIDを取得できたら監視を停止
+        this.fetchImages(this.uid); // UIDを取得した後に fetchImages を実行
+        this.urlSelect(this.uid)
+        this.tileSelect(this.uid)
+        this.pmtileSelect(this.uid)
+        this.xyztileSelect(this.uid)
+        this.xyztileSelectAll()
+      }
+    }, 5);
   }
 }
 </script>

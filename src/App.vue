@@ -451,7 +451,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
             <v-btn :size="isSmall ? 'small' : 'default'" icon @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-menu</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="s_dialogForLogin = !s_dialogForLogin" v-if="mapName === 'map01'"><v-icon>mdi-login</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickSplit" v-if="mapName === 'map01'"><v-icon>mdi-monitor-multiple</v-icon></v-btn>
-            <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="myRoom"><v-icon v-if="user1">mdi-link</v-icon></v-btn>
+            <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="btnClickMyroom (mapName)"><v-icon v-if="user1">mdi-home</v-icon></v-btn>
 <!--            <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForImage = !s_dialogForImage"><v-icon v-if="user1">mdi-image</v-icon></v-btn>-->
             <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickLayer(mapName)"><v-icon>mdi-layers</v-icon></v-btn>
           </div>
@@ -465,6 +465,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
           </div>
 
           <DialogMenu :mapName=mapName />
+          <DialogMyroom :mapName=mapName />
           <DialogLayer :mapName=mapName />
           <dialog-info :mapName=mapName />
           <dialog2 :mapName=mapName />
@@ -804,6 +805,7 @@ async function fetchElevation(lon, lat, zoom = 15) {
 
 import axios from "axios"
 import DialogMenu from '@/components/Dialog-menu'
+import DialogMyroom from '@/components/Dialog-myroom'
 import DialogLayer from '@/components/Dialog-layer'
 import DialogInfo from '@/components/Dialog-info'
 import Dialog2 from '@/components/Dialog2'
@@ -832,6 +834,7 @@ export default {
   components: {
     DialogLayer,
     DialogMenu,
+    DialogMyroom,
     DialogInfo,
     Dialog2,
     DialogShare,
@@ -1548,6 +1551,15 @@ export default {
         }
       }
       pitch()
+    },
+    btnClickMyroom (mapName) {
+      if (this.$store.state.dialogs.myroomDialog[mapName].style.display === 'none') {
+        this.$store.commit('incrDialogMaxZindex')
+        this.$store.state.dialogs.myroomDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
+        this.$store.state.dialogs.myroomDialog[mapName].style.display = 'block'
+      } else {
+        this.$store.state.dialogs.myroomDialog[mapName].style.display = 'none'
+      }
     },
     btnClickMenu (mapName) {
       if (this.$store.state.dialogs.menuDialog[mapName].style.display === 'none') {
