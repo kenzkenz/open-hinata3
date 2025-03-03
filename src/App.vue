@@ -1926,7 +1926,62 @@ export default {
           }
         });
       });
+      maplibregl.addProtocol("transparentWhite", (params) => {
+        return new Promise((resolve, reject) => {
+          try {
+            const url = params.url.replace("transparentWhite://", "");
+            fetch(url)
+                .then(response => {
+                  if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                  }
+                  return response.blob();
+                })
+                .then(blob => createImageBitmap(blob))
+                .then(image => {
+                  const canvas = document.createElement("canvas");
+                  canvas.width = image.width;
+                  canvas.height = image.height;
+                  const ctx = canvas.getContext("2d");
 
+                  ctx.drawImage(image, 0, 0);
+                  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                  const data = imgData.data;
+
+                  for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i];
+                    const g = data[i + 1];
+                    const b = data[i + 2];
+                    if (r === 255 && g === 255 && b === 255) {
+                      data[i + 3] = 0; // アルファ値を0にして透過
+                    }
+                  }
+                  ctx.putImageData(imgData, 0, 0);
+
+                  canvas.toBlob((blob) => {
+                    if (!blob) {
+                      reject(new Error("Blob creation failed"));
+                      return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = function () {
+                      resolve({ data: reader.result, contentType: "image/png" });
+                    };
+                    reader.onerror = function () {
+                      reject(new Error("FileReader error while reading blob"));
+                    };
+                    reader.readAsArrayBuffer(blob);
+                  }, "image/png");
+                })
+                .catch(error => {
+                  reject(new Error(`Processing error: ${error.message}`));
+                });
+          } catch (error) {
+            reject(new Error(`Unexpected error: ${error.message}`));
+          }
+        });
+      });
 
 
 

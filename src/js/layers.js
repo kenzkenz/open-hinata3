@@ -2806,7 +2806,7 @@ const kochiSekisyokuLayer = {
 const toyamaSekisyokuSource = {
     id: 'toyama-sekisyoku-source', obj: {
         type: 'raster',
-        tiles: ['https://rinya-toyama.geospatial.jp/tile/rinya/2024/rrimap/{z}/{x}/{y}.png'],
+        tiles: ['transparentWhite://https://rinya-toyama.geospatial.jp/tile/rinya/2024/rrimap/{z}/{x}/{y}.png'],
     }
 }
 const toyamaSekisyokuLayer = {
