@@ -1865,8 +1865,6 @@ export default {
         initialScrollTop = 0; // 初期スクロール位置をリセット
       });
 
-
-
       // ======================================================================
 
       let protocol = new Protocol();
@@ -1874,50 +1872,61 @@ export default {
       // protocol.setCacheSize(50) // タイルキャッシュサイズを設定（単位: タイル数）
       maplibregl.addProtocol("transparentBlack", (params) => {
         return new Promise((resolve, reject) => {
-          const url = params.url.replace("transparentBlack://", "");
-          fetch(url)
-              .then(response => response.blob())
-              .then(blob => createImageBitmap(blob))
-              .then(image => {
-                // Canvas に描画
-                const canvas = document.createElement("canvas");
-                canvas.width = image.width;
-                canvas.height = image.height;
-                const ctx = canvas.getContext("2d");
-
-                ctx.drawImage(image, 0, 0);
-                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const data = imgData.data;
-
-                // 真っ黒 (#000000) のピクセルを透過
-                for (let i = 0; i < data.length; i += 4) {
-                  const r = data[i];
-                  const g = data[i + 1];
-                  const b = data[i + 2];
-
-                  if (r === 0 && g === 0 && b === 0) {
-                    data[i + 3] = 0; // アルファ値を 0 にする（完全透過）
+          try {
+            const url = params.url.replace("transparentBlack://", "");
+            fetch(url)
+                .then(response => {
+                  if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
                   }
-                }
+                  return response.blob();
+                })
+                .then(blob => createImageBitmap(blob))
+                .then(image => {
+                  const canvas = document.createElement("canvas");
+                  canvas.width = image.width;
+                  canvas.height = image.height;
+                  const ctx = canvas.getContext("2d");
 
-                ctx.putImageData(imgData, 0, 0);
+                  ctx.drawImage(image, 0, 0);
+                  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                  const data = imgData.data;
 
-                // 透過画像を取得
-                canvas.toBlob((blob) => {
-                  if (!blob) {
-                    reject(new Error("Blob creation failed"));
-                    return;
+                  for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i];
+                    const g = data[i + 1];
+                    const b = data[i + 2];
+                    if (r === 0 && g === 0 && b === 0) {
+                      data[i + 3] = 0;
+                    }
                   }
-                  const reader = new FileReader();
-                  reader.onload = function () {
-                    resolve({ data: reader.result, contentType: "image/png" });
-                  };
-                  reader.readAsArrayBuffer(blob);
-                }, "image/png");
-              })
-              .catch(error => reject(error));
+                  ctx.putImageData(imgData, 0, 0);
+
+                  canvas.toBlob((blob) => {
+                    if (!blob) {
+                      reject(new Error("Blob creation failed"));
+                      return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = function () {
+                      resolve({ data: reader.result, contentType: "image/png" });
+                    };
+                    reader.onerror = function () {
+                      reject(new Error("FileReader error while reading blob"));
+                    };
+                    reader.readAsArrayBuffer(blob);
+                  }, "image/png");
+                })
+                .catch(error => {
+                  reject(new Error(`Processing error: ${error.message}`));
+                });
+          } catch (error) {
+            reject(new Error(`Unexpected error: ${error.message}`));
+          }
         });
       });
+
 
 
 
@@ -2468,7 +2477,7 @@ export default {
                     const source = {
                       id: 'oh-vpstile-' + id + '-' + name + '-source',obj: {
                         type: 'raster',
-                        tiles: [url],
+                        tiles: ['transparentBlack://' +url],
                         bounds: bounds,
                         maxzoom: 26,
                       }
