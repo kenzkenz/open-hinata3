@@ -1872,9 +1872,63 @@ export default {
       let protocol = new Protocol();
       maplibregl.addProtocol("pmtiles",protocol.tile)
       // protocol.setCacheSize(50) // タイルキャッシュサイズを設定（単位: タイル数）
+      maplibregl.addProtocol("transparentBlack", (params) => {
+        return new Promise((resolve, reject) => {
+          const url = params.url.replace("transparentBlack://", "");
+          fetch(url)
+              .then(response => response.blob())
+              .then(blob => createImageBitmap(blob))
+              .then(image => {
+                // Canvas に描画
+                const canvas = document.createElement("canvas");
+                canvas.width = image.width;
+                canvas.height = image.height;
+                const ctx = canvas.getContext("2d");
+
+                ctx.drawImage(image, 0, 0);
+                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imgData.data;
+
+                // 真っ黒 (#000000) のピクセルを透過
+                for (let i = 0; i < data.length; i += 4) {
+                  const r = data[i];
+                  const g = data[i + 1];
+                  const b = data[i + 2];
+
+                  if (r === 0 && g === 0 && b === 0) {
+                    data[i + 3] = 0; // アルファ値を 0 にする（完全透過）
+                  }
+                }
+
+                ctx.putImageData(imgData, 0, 0);
+
+                // 透過画像を取得
+                canvas.toBlob((blob) => {
+                  if (!blob) {
+                    reject(new Error("Blob creation failed"));
+                    return;
+                  }
+                  const reader = new FileReader();
+                  reader.onload = function () {
+                    resolve({ data: reader.result, contentType: "image/png" });
+                  };
+                  reader.readAsArrayBuffer(blob);
+                }, "image/png");
+              })
+              .catch(error => reject(error));
+        });
+      });
+
+
+
+
+
+
+
+
+
       const params = this.parseUrlParams()
       this.mapNames.forEach(mapName => {
-
         // 2画面-----------------------------------------------------------
         if (mapName === 'map02') {
           if (params.split === 'true') {

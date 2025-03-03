@@ -5408,7 +5408,7 @@ export function userXyztileSet(name,url,id, bbox) {
     const source = {
         id: 'oh-vpstile-' + id + '-' + name + '-source',obj: {
             type: 'raster',
-            tiles: [url],
+            tiles: ['transparentBlack://' + url],
             bounds: bounds,
             maxzoom: 26,
         }

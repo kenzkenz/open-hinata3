@@ -374,7 +374,6 @@ export default {
       map02.setLayoutProperty("click-points-layer", "visibility", visibility);
     },
     xyztileClick (name,url,id, bbox) {
-      console.log(bbox)
       this.xyztileRename = name
       this.id = id
       this.name = name
