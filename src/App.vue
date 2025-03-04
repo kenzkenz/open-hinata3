@@ -1896,7 +1896,7 @@ export default {
                     const r = data[i];
                     const g = data[i + 1];
                     const b = data[i + 2];
-                    if (r === 0 && g === 0 && b === 0) {
+                    if ((r === 0 && g === 0 && b === 0) || (r === 0 && g === 0 && b >= 254) || (r === 255 && g === 255 && b === 255)) {
                       data[i + 3] = 0;
                     }
                   }
@@ -1926,6 +1926,7 @@ export default {
           }
         });
       });
+
       maplibregl.addProtocol("transparentWhite", (params) => {
         return new Promise((resolve, reject) => {
           try {

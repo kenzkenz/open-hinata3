@@ -3137,7 +3137,9 @@ export async function getCRS(tiffFile) {
         const epsgMatch = geoAsciiParams.match(/EPSG\s*:\s*(\d+)/);
 
         // 日本の座標系 (JGD2011 / Plane Rectangular CS)
-        const jgdMatch = geoAsciiParams.match(/JGD2011\s*\/\s*Japan\s*Plane\s*Rectangular\s*CS\s*(\w+)/i);
+        // const jgdMatch = geoAsciiParams.match(/JGD2011\s*\/\s*Japan\s*Plane\s*Rectangular\s*CS\s*(\w+)/i);
+        const jgdMatch = geoAsciiParams.match(/JGD(?:2000|2011)\s*\/\s*Japan\s*Plane\s*Rectangular\s*CS\s*(\w+)/i);
+        // JGD2000 / Japan Plane Rectangular CS XII|JGD2000
 
         // もし EPSG コードが見つかったら
         if (epsgMatch) {
