@@ -1,6 +1,8 @@
 <template>
     <div :style="menuContentSize">
+      <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
       <v-text-field label="抽出" v-model="s_sekibutsuText" @input="input()" style="margin-top: 10px"></v-text-field>
+      <div v-html="item.attribution"></div>
     </div>
 </template>
 
