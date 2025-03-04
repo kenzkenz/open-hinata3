@@ -150,6 +150,7 @@
     <br>
     <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog4=true">dxf保存</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveKml">kml保存</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog3=true" v-if="item.id === 'oh-chibanzu2024'">jww座標ファイル</v-btn>
     <hr>
     <div style="display: flex; align-items: center; gap: 10px;">
@@ -185,7 +186,7 @@ import {
   saveDxf,
   saveCsv,
   simaToGeoJSON,
-  resetFeatureColors, saveSima2
+  resetFeatureColors, saveSima2, saveKml
 } from "@/js/downLoad";
 
 export default {
@@ -446,10 +447,7 @@ export default {
           break
       }
       if(/^oh-chiban-/.test(id)) {
-        // alert(id)
-        // alert(id.replace('-layer','-source'))
         this.layerId = id
-        // this.sourceId = id.split('-')[3] + '-source'
         this.sourceId = id.replace('-layer','-source')
         this.fields = ['oh3id']
       }
@@ -492,6 +490,13 @@ export default {
       document.querySelector('#simaFileInput').click()
       this.dialog = false
     },
+    saveKml () {
+      const map = this.$store.state[this.mapName]
+      this.idForLayerId(this.item.id)
+      console.log(this.layerId,this.sourceId)
+      // saveCsv(map,'oh-iwatapolygon','iwatapolygon-source',[])
+      saveKml(map,this.layerId,this.sourceId,this.fields,[])
+    },
     saveCsv () {
       const map = this.$store.state[this.mapName]
       this.idForLayerId(this.item.id)
@@ -499,7 +504,6 @@ export default {
       // saveCsv(map,'oh-iwatapolygon','iwatapolygon-source',[])
       saveCsv(map,this.layerId,this.sourceId,this.fields,[])
     },
-
     saveSima3 () {
       const map = this.$store.state[this.mapName]
       saveCima3(map)

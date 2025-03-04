@@ -1229,6 +1229,16 @@ function downloadGeoJSONAsCSV(geojson, filename = 'data.csv') {
     document.body.removeChild(link);
 }
 
+export function saveKml(map, layerId, sourceId, fields) {
+    if (map.getZoom() <= 15) {
+        alert('ズーム15以上にしてください。')
+        return
+    }
+    // const geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields);
+    // console.log(geojson)
+    downloadKML(map, layerId, null,fields)
+}
+
 export function saveCsv(map, layerId, sourceId, fields) {
     if (map.getZoom() <= 15) {
         alert('ズーム15以上にしてください。')
@@ -1238,7 +1248,6 @@ export function saveCsv(map, layerId, sourceId, fields) {
     console.log(geojson)
     downloadGeoJSONAsCSV(geojson)
 }
-
 
 export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
     if (!simaData) return;
@@ -2486,9 +2495,8 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
         }
         if(/^oh-chiban-/.test(layerId)) {
             targetId = `${feature.properties['oh3id']}`;
-            console.log(999999999)
         }
-        console.log(targetId)
+        // console.log(targetId)
          // amx2024対策
          if (layerId === 'oh-amx-a-fude') {
              return chiban.includes(feature.properties['地番'])
@@ -5252,20 +5260,29 @@ function getVisibleGeoJSON(map, layerId) {
 }
 
 // GeoJSONをKMLに変換し、ダウンロード
-export function downloadKML(map, layerId, drawGeojson) {
+export function downloadKML(map, layerId, drawGeojson, fields) {
     let geojson
-
+    let chiban
     if (drawGeojson) {
         geojson = drawGeojson
     } else {
         geojson = getVisibleGeoJSON(map, layerId);
         geojson = extractHighlightedGeoJSONFromSource(geojson, layerId);
-        geojson = dissolveGeoJSONByFields(geojson, ['地番'])
+        if (fields) {
+            geojson = dissolveGeoJSONByFields(geojson, fields)
+            chiban = geojson.features[0].properties.chiban
+        } else if (geojson.features[0].properties.地番) {
+            geojson = dissolveGeoJSONByFields(geojson, ['地番'])
+            chiban = '地番'
+        } else {
+            // ここを改修する。
+            chiban = geojson.features[0].properties.chiban
+        }
     }
 
     // GeoJSONをKMLに変換（スタイルを追加）
     const kml = tokml(geojson, {
-        name: '地番', // KMLで名前に使うフィールド（GeoJSONのプロパティ名）
+        name: chiban, // KMLで名前に使うフィールド（GeoJSONのプロパティ名）
         documentName: 'Exported KML',
         documentDescription: 'This is an exported KML with styles.',
         simplestyle: true // 簡易スタイルを有効化
@@ -5295,10 +5312,12 @@ export function downloadKML(map, layerId, drawGeojson) {
     const chibanAndHoka = getChibanAndHoka(geojson, false);
     if (drawGeojson) {
         a.download = 'draw.kml';
-    } else {
+    } else if (chibanAndHoka.firstChiban) {
         const firstChiban = chibanAndHoka.firstChiban;
         const hoka = chibanAndHoka.hoka;
         a.download = firstChiban + hoka + '.kml';
+    } else {
+        a.download = geojson.features[0].properties[chiban] + '.kml';
     }
     document.body.appendChild(a);
     a.click();
