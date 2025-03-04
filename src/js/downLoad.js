@@ -5495,18 +5495,34 @@ export function userPmtileSet(name,url,id, chiban, bbox) {
             'circle-stroke-color': '#fff'
         }
     };
+    const maps = [store.state.selectedLayers.map01, store.state.selectedLayers.map02]
+    maps.forEach(map => {
+        map.unshift(
+            {
+                id: 'oh-chiban-' + id + '-' + name + '-layer',
+                label: name,
+                source: sopurce,
+                layers: [polygonLayer,lineLayer,labelLayer,pointLayer],
+                opacity: 1,
+                visibility: true,
+                ext: {name:'ext-chibanzu'}
+            }
+        );
+    })
+    // store.state.selectedLayers.map01.unshift(
+    //     {
+    //         id: 'oh-chiban-' + id + '-' + name + '-layer',
+    //         label: name,
+    //         source: sopurce,
+    //         layers: [polygonLayer,lineLayer,labelLayer,pointLayer],
+    //         opacity: 1,
+    //         visibility: true,
+    //         ext: {name:'ext-chibanzu'}
+    //     }
+    // );
 
-    store.state.selectedLayers.map01.unshift(
-        {
-            id: 'oh-chiban-' + id + '-' + name + '-layer',
-            label: name,
-            source: sopurce,
-            layers: [polygonLayer,lineLayer,labelLayer,pointLayer],
-            opacity: 1,
-            visibility: true,
-            ext: {name:'ext-chibanzu'}
-        }
-    );
+
+
     if (bbox) {
         map.fitBounds([
             [bbox[0], bbox[1]], // minX, minY
