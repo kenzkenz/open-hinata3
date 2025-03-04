@@ -58,7 +58,16 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 <v-card>
                   <v-text-field v-model="xyztileRename" type="text" placeholder="リネーム"></v-text-field>
                   <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="xyztileRenameBtn">リネーム</v-btn>
-                  <div v-for="item in jsonDataxyztile" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox)">
+                  <div v-for="item in jsonDataxyztile" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox,item.transparent)">
+                    <v-checkbox
+                        class="transparent-chk"
+                        v-model="item.transparent"
+                        true-value=1
+                        false-value=0
+                        @change="transparentChk(item.id, item.transparent)"
+                        @mousedown.stop
+                        @click.stop
+                    />
                     <button class="close-btn" @click="removeItemxyztile(item.id,item.url2,$event)">×</button>
                     <strong>{{ item.name }}</strong><br>
                   </div>
@@ -67,7 +76,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-window-item value="5">
                 <v-card>
 <!--                  <v-btn style="margin-bottom: 10px;" @click="iko">移行</v-btn>-->
-                  <div v-for="item in jsonDataxyztileAll" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox)">
+                  <div v-for="item in jsonDataxyztileAll" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox,item.transparent)">
                     <!--                    <button class="close-btn" @click="removeItemxyztile(item.id,item.url2,$event)">×</button>-->
                     <strong>{{ item.name }}</strong><br>
                   </div>
@@ -373,11 +382,11 @@ export default {
       map01.setLayoutProperty("click-points-layer", "visibility", visibility);
       map02.setLayoutProperty("click-points-layer", "visibility", visibility);
     },
-    xyztileClick (name,url,id, bbox) {
+    xyztileClick (name,url,id,bbox,transparent) {
       this.xyztileRename = name
       this.id = id
       this.name = name
-      userXyztileSet(name,url,id,JSON.parse(bbox))
+      userXyztileSet(name,url,id,JSON.parse(bbox),JSON.parse(transparent))
     },
     pmtileClick (name,url,id, chiban, bbox) {
       this.pmtilesRename = name
@@ -873,6 +882,17 @@ export default {
       }
       deleteUserData(id)
     },
+    transparentChk (id,transparent) {
+      axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userXyztileUpdateTransparent.php',{
+        params: {
+          id: id,
+          transparent: transparent
+        }
+      }).then(function (response) {
+        console.log(response)
+        // vm.xyztileSelect(vm.$store.state.userId)
+      })
+    },
     removeItemxyztile  (id,url2,event) {
       event.stopPropagation();  // バブリングを止める
       if (!confirm("削除しますか？")) {
@@ -1279,6 +1299,16 @@ export default {
 }
 .data-container:hover {
   background-color: #f0f8ff;
+}
+.transparent-chk {
+  position: absolute;
+  top: -15px;
+  right: 20px;
+  color: rgb(50,101,186);
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 12px;
 }
 .close-btn {
   position: absolute;

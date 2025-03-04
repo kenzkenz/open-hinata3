@@ -5398,13 +5398,22 @@ export const wsg84ToJgd = (coordinates) => {
     return proj4("EPSG:4326", code, coordinates);
 };
 
-export function userXyztileSet(name,url,id, bbox) {
+export function userXyztileSet(name,url,id,bbox,transparent) {
     const map = store.state.map01
     const bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
+    let tile = ''
+    if (transparent !== 0) {
+        tile = 'transparentBlack://' + url
+    } else {
+        tile = url
+    }
+    if (map.getSource('oh-vpstile-' + id + '-' + name + '-source')) {
+        map.getSource('oh-vpstile-' + id + '-' + name + '-source').setTiles([tile])
+    }
     const source = {
         id: 'oh-vpstile-' + id + '-' + name + '-source',obj: {
             type: 'raster',
-            tiles: ['transparentBlack://' + url],
+            tiles: [tile],
             bounds: bounds,
             maxzoom: 26,
         }
