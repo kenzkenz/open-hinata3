@@ -5407,8 +5407,9 @@ export function userXyztileSet(name,url,id,bbox,transparent) {
     } else {
         tile = url
     }
-    if (map.getSource('oh-vpstile-' + id + '-' + name + '-source')) {
+    if (map.getLayer('oh-vpstile-' + id + '-' + name + '-layer')) {
         map.getSource('oh-vpstile-' + id + '-' + name + '-source').setTiles([tile])
+        return
     }
     const source = {
         id: 'oh-vpstile-' + id + '-' + name + '-source',obj: {
