@@ -95,6 +95,14 @@ export default {
     // menuContentSize: {'height': 'auto','margin': '10px', 'user-select': 'text','overflow-y': 'auto'},
   }),
   computed: {
+    filteredSelectedLayers() {
+      return this.s_selectedLayers.map01.map(layer => ({
+        id: layer.id, // 監視対象のプロパティ
+        label: layer.label, // 監視対象のプロパティ
+        opacity: layer.opacity,
+        visibility: layer.visibility
+      }));
+    },
     s_watchFlg () {
       return this.$store.state.watchFlg
     },
@@ -377,6 +385,7 @@ export default {
           }
         }
       }
+
       // -----------------------------------------
       // if (this.s_selectedLayers[this.mapName]?.some(layer => layer.id === 'oh-amx-a-fude')) {
       //   this.$store.state.watchFlg = false
@@ -393,6 +402,11 @@ export default {
       // }
       // -------------------------------------------------------------------------------------------
       console.log(this.s_selectedLayers)
+
+      function isObject(value) {
+        return value !== null && typeof value === 'object' && !Array.isArray(value);
+      }
+
       for (let i = this.s_selectedLayers[this.mapName].length - 1; i >= 0 ; i--){
         const layer = this.s_selectedLayers[this.mapName][i]
         if (layer.layers) {
@@ -402,8 +416,25 @@ export default {
             })
           }
           if (layer.source) {
-            if (!map.getSource(layer.source.id)) map.addSource(layer.source.id, layer.source.obj)
+            if (isObject(layer.source)) {
+              if (!map.getSource(layer.source.id)) {
+                map.addSource(layer.source.id, layer.source.obj)
+              }
+            } else {
+              if (!map.getSource(layer.source.id)) {
+                const source = this.$store.state.geojsonSources.find(source => {
+                  // alert(source.sourceId + '//////' + layer.source)
+                  return source.sourceId === layer.source
+                })
+                if (source) {
+                  if (!map.getSource(source.sourceId)) {
+                    map.addSource(source.sourceId, source.source.obj)
+                  }
+                }
+              }
+            }
           }
+
           let flyFlg = true
           layer.layers.forEach(layer0 => {
             if (layer0.id === 'oh-mw-dummy') {
@@ -1044,27 +1075,52 @@ export default {
       },
       deep: true
     },
-    s_selectedLayers: {
-      handler: function(val){
-        console.log('変更を検出しました',this.$store.state.watchFlg,val)
-        // ------------------------------------------------------------------
-        const map01 = this.$store.state.map01
-        const bounds = map01.getBounds()
-        // 南西端と北東端の座標を取得
-        const sw = bounds.getSouthWest()
-        const ne = bounds.getNorthEast()
-        this.$store.state.lngRange = [sw.lng,ne.lng]
-        this.$store.state.latRange = [sw.lat,ne.lat]
-        // ------------------------------------------------------------------
-        this.addLayers()
-        // 突貫で修正。ここを改修する必要あり。
-        // setTimeout(() => {
-        //   this.$store.state.watchFlg = true
-        //   this.isDragging = true
-        // },2000)
+
+    filteredSelectedLayers: {
+      handler: function (val) {
+        console.log('変更を検出しました。Dialog-layer.vue', this.$store.state.watchFlg, val);
+
+        // // IDのみを比較して変更がある場合のみ処理を実行
+        // const newIds = val.map(layer => layer.id);
+        // if (JSON.stringify(newIds) === JSON.stringify(this.lastSelectedIds)) {
+        //   return; // 変更がない場合はスキップ
+        // }
+        // this.lastSelectedIds = newIds; // 更新を記録
+
+        try {
+          const map01 = this.$store.state.map01;
+          const bounds = map01.getBounds();
+          const sw = bounds.getSouthWest();
+          const ne = bounds.getNorthEast();
+          this.$store.state.lngRange = [sw.lng, ne.lng];
+          this.$store.state.latRange = [sw.lat, ne.lat];
+
+          this.addLayers();
+        } catch (e) {
+          console.log(e)
+        }
+
       },
-      deep: true
+      deep: false, // computed の結果なので deep: true は不要
+      immediate: true
     },
+    //
+    // s_selectedLayers: {
+    //   handler: function(val){
+    //     console.log('変更を検出しました',this.$store.state.watchFlg,val)
+    //     // ------------------------------------------------------------------
+    //     const map01 = this.$store.state.map01
+    //     const bounds = map01.getBounds()
+    //     // 南西端と北東端の座標を取得
+    //     const sw = bounds.getSouthWest()
+    //     const ne = bounds.getNorthEast()
+    //     this.$store.state.lngRange = [sw.lng,ne.lng]
+    //     this.$store.state.latRange = [sw.lat,ne.lat]
+    //     // ------------------------------------------------------------------
+    //     this.addLayers()
+    //   },
+    //   deep: true
+    // },
   },
 }
 </script>

@@ -290,6 +290,7 @@ export default createStore({
       map02: ''
     },
     isDialogVisible: false,
+    geojsonSources: []
     //------------------------
   },
   getters: {

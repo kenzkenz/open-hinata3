@@ -530,7 +530,7 @@ import {
   tileGenerateForUser,
   tileGenerateForUser1file, tileGenerateForUserJpg, tileGenerateForUserPdf, tileGenerateForUserPng,
   tileGenerateForUserTfw,
-  transformGeoJSONToEPSG4326,
+  transformGeoJSONToEPSG4326, userKmzSet,
   zahyokei
 } from '@/js/downLoad'
 
@@ -823,7 +823,7 @@ import {
   monoLayers,
   monoSources,
   osmBrightLayers,
-  osmBrightSources, vpsTileLayer, vpsTileSource
+  osmBrightSources
 } from "@/js/layers"
 import muni from '@/js/muni'
 import { kml } from '@tmcw/togeojson';
@@ -2502,6 +2502,37 @@ export default {
                 }
               }
 
+              if (v.id.includes('oh-kmz-')) {
+                fetchFlg = true;
+                const layerId = v.id.split('-')[2];
+                try {
+                  const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userKmzSelectById.php', {
+                    params: { id: layerId }
+                  });
+                  if (response.data.error) {
+                    console.error('エラー:', response.data.error);
+                    alert(`エラー: ${response.data.error}`);
+                  } else {
+                    const name = response.data[0].name;
+                    const id = response.data[0].id;
+                    const url = response.data[0].url;
+                    async function aaa() {
+                      const sourceAndLayers = await userKmzSet(name, url, id)
+                      store.state.geojsonSources.push({
+                        sourceId: sourceAndLayers.source.id,
+                        source: sourceAndLayers.source
+                      })
+                      v.source = sourceAndLayers.source.id;
+                      v.layers = sourceAndLayers.layers;
+                      v.label = name;
+                    }
+                    await aaa()
+                  }
+                } catch (error) {
+                  console.error('フェッチエラー:', error);
+                }
+              }
+
               if (v.id.includes('oh-vpstile-')) {
                 fetchFlg = true;
                 const layerId = v.id.split('-')[2];
@@ -3191,14 +3222,14 @@ export default {
                     const map02 = this.$store.state.map02
                     this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
                     reader.onload = async (event) => {
-                      const zip = await JSZip.loadAsync(event.target.result);
-                      const kmlFile = Object.keys(zip.files).find((name) => name.endsWith('.kml'));
-                      const kmlText = await zip.files[kmlFile].async('text');
-                      const parser = new DOMParser();
-                      const kmlData = parser.parseFromString(kmlText, 'application/xml');
-                      const geojson = kml(kmlData);
-                      kmzLoadForUser (map01, true, geojson)
-                      kmzLoadForUser (map02, false, geojson)
+                      // const zip = await JSZip.loadAsync(event.target.result);
+                      // const kmlFile = Object.keys(zip.files).find((name) => name.endsWith('.kml'));
+                      // const kmlText = await zip.files[kmlFile].async('text');
+                      // const parser = new DOMParser();
+                      // const kmlData = parser.parseFromString(kmlText, 'application/xml');
+                      // const geojson = kml(kmlData);
+                      kmzLoadForUser (map01, true)
+                      kmzLoadForUser (map02, false)
                     }
                     reader.readAsArrayBuffer(file);
                   } else {
@@ -3866,11 +3897,11 @@ export default {
     },
     s_selectedLayers: {
       handler: function () {
-        console.log('変更を検出しました。URLを作成します。')
+        console.log('変更を検出しました。URLを作成します。App.vue')
         this.updatePermalink()
         history('selectedLayers',window.location.href)
       },
-      deep: true
+      deep: false
     },
     pitch: {
       handler: function () {

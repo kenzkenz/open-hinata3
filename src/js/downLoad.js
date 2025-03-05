@@ -20,6 +20,7 @@ import {history} from "@/App";
 import tokml from 'tokml'
 import iconv from "iconv-lite";
 import pako from "pako";
+import {kml} from "@tmcw/togeojson";
 // 複数のクリックされた地番を強調表示するためのセット
 // export let highlightedChibans = new Set();
 (function() {
@@ -4570,40 +4571,125 @@ export async function pngLoadForUser (map,mapName,isUpload) {
     }
 }
 
-export async function kmzLoadForUser (map,isUpload,geojson) {
+async function fetchFile(url) {
+    try {
+        // Fetchリクエストでファイルを取得
+        const response = await fetch(url);
+        // レスポンスが成功したか確認
+        if (!response.ok) {
+            throw new Error(`HTTPエラー! ステータス: ${response.status}`);
+        }
+        // Blobとしてレスポンスを取得
+        const blob = await response.blob();
+        // BlobをFileオブジェクトに変換
+        const file = new File([blob], "downloaded_file", { type: blob.type });
+        console.log("Fileオブジェクトが作成されました:", file);
+        return file;
+    } catch (error) {
+        console.error("ファイルの取得中にエラーが発生しました:", error);
+    }
+}
 
+export async function kmzLoadForUser (map,isUpload) {
+
+    async function insertKmzData(uid, name, url, url2) {
+        try {
+            const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userKmzInsert.php', new URLSearchParams({
+                uid: uid,
+                name: name,
+                url: url,
+                url2: url2,
+            }));
+            if (response.data.error) {
+                console.error('エラー:', response.data.error);
+                alert(`エラー: ${response.data.error}`);
+            } else {
+                console.log('登録成功:', response.data);
+                store.state.fetchImagesFire = !store.state.fetchImagesFire
+                async function aaa() {
+                    const id = response.data.lastId
+                    const sourceAndLayers = await userKmzSet(name, response.data.url, id)
+                    console.log(sourceAndLayers)
+                    store.state.geojsonSources.push({
+                        sourceId: sourceAndLayers.source.id,
+                        source: sourceAndLayers.source
+                    })
+                    console.log(store.state.geojsonSources)
+                    store.state.selectedLayers.map01.unshift(
+                        {
+                            id: 'oh-kmz-' + id + '-' + name + '-layer',
+                            label: name,
+                            source: sourceAndLayers.source.id,
+                            layers: sourceAndLayers.layers,
+                            opacity: 1,
+                            visibility: true,
+                        }
+                    );
+                    console.log(store.state.selectedLayers.map01)
+                    const bounds = new maplibregl.LngLatBounds();
+                    sourceAndLayers.geojson.features.forEach(feature => {
+                        const geometry = feature.geometry;
+                        if (!geometry) return;
+                        switch (geometry.type) {
+                            case 'Point':
+                                bounds.extend(geometry.coordinates);
+                                break;
+                            case 'LineString':
+                                geometry.coordinates.forEach(coord => bounds.extend(coord));
+                                break;
+                            case 'Polygon':
+                                geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
+                                break;
+                            case 'MultiPolygon':
+                                geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
+                                break;
+                        }
+                    });
+                    map.fitBounds(bounds, {
+                        padding: 50,
+                        animate: true
+                    });
+                }
+                aaa()
+            }
+        } catch (error) {
+            console.error('通信エラー:', error);
+            alert('通信エラーが発生しました');
+        }
+    }
+
+    store.state.loading2 = true
+    store.state.loadingMessage = 'アップロード中です。'
     const files = store.state.tiffAndWorldFile
     const zipFile = files[0];
-
-    console.log(geojson)
-
-    await geojsonAddLayer(map, geojson,true, 'kml')
-
+    // console.log(geojson)
+    // await geojsonAddLayer(map, geojson,true, 'kml')
+    store.state.loading2 = false
     //----------------------------------------------------------------------------------------------------------------
     if (isUpload) {
+        store.state.loading2 = true
         // FormDataを作成
         const formData = new FormData();
-        formData.append('file_1', zipFile);
-        formData.append('userId', store.state.userId);
-
-        axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/imageUploadKmzForUser.php', formData, {
+        formData.append('file', zipFile);
+        formData.append('dir', store.state.userId);
+        axios.post('https://kenzkenz.duckdns.org/myphp/upload_kmz.php', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data', // 必須
             },
         })
             .then(response => {
+                store.state.loading2 = false
                 // 成功時の処理
                 if (response.data.error) {
                     console.log(response.data.error)
                     alert(response.data.error)
                     return
                 }
-                console.log('イメージ保存成功:', response.data.file_1.file);
+                console.log('KMZ保存成功:', response.data.kmzPath);
                 console.log(response)
-                store.state.uploadedVector = JSON.stringify({
-                    image: response.data.file_1.file,
-                    uid: store.state.userId,
-                })
+                const webUrl = 'https://kenzkenz.duckdns.org/' + response.data.kmzPath.replace('/var/www/html/public_html/','')
+                const name = response.data.kmzName.replace('.kmz','')
+                insertKmzData(store.state.userId, name, webUrl, response.data.kmzPath)
                 store.state.fetchImagesFire = !store.state.fetchImagesFire
             })
             .catch(error => {
@@ -4613,6 +4699,53 @@ export async function kmzLoadForUser (map,isUpload,geojson) {
             });
     }
 }
+
+
+
+
+// export async function kmzLoadForUser (map,isUpload,geojson) {
+//
+//     const files = store.state.tiffAndWorldFile
+//     const zipFile = files[0];
+//
+//     console.log(geojson)
+//
+//     await geojsonAddLayer(map, geojson,true, 'kml')
+//
+//     //----------------------------------------------------------------------------------------------------------------
+//     if (isUpload) {
+//         // FormDataを作成
+//         const formData = new FormData();
+//         formData.append('file_1', zipFile);
+//         formData.append('userId', store.state.userId);
+//
+//         axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/imageUploadKmzForUser.php', formData, {
+//             headers: {
+//                 'Content-Type': 'multipart/form-data', // 必須
+//             },
+//         })
+//             .then(response => {
+//                 // 成功時の処理
+//                 if (response.data.error) {
+//                     console.log(response.data.error)
+//                     alert(response.data.error)
+//                     return
+//                 }
+//                 console.log('イメージ保存成功:', response.data.file_1.file);
+//                 console.log(response)
+//                 store.state.uploadedVector = JSON.stringify({
+//                     image: response.data.file_1.file,
+//                     uid: store.state.userId,
+//                 })
+//                 store.state.fetchImagesFire = !store.state.fetchImagesFire
+//             })
+//             .catch(error => {
+//                 // エラー時の処理
+//                 console.error('エラー:', error.response ? error.response.data : error.message);
+//                 store.state.uploadedImage = ''
+//             });
+//     }
+// }
 
 export async function jpgLoadForUser (map,mapName,isUpload) {
     const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
@@ -5416,6 +5549,159 @@ export const wsg84ToJgd = (coordinates) => {
     const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
     return proj4("EPSG:4326", code, coordinates);
 };
+
+export async function userKmzSet(name, url, id) {
+    const map = store.state.map01;
+
+    try {
+        const files = await Promise.all([fetchFile(url)]);
+        const zip = await JSZip.loadAsync(files[0]);
+        const kmlFile = Object.keys(zip.files).find((name) => name.endsWith('.kml'));
+        if (!kmlFile) {
+            throw new Error("KML file not found in KMZ.");
+        }
+        const kmlText = await zip.files[kmlFile].async('text');
+        const parser = new DOMParser();
+        const kmlData = parser.parseFromString(kmlText, 'application/xml');
+        const geojson = kml(kmlData);
+        return createSourceAndLayers(geojson);
+    } catch (error) {
+        console.error("Error loading KMZ file:", error);
+        return null;
+    }
+
+    function createSourceAndLayers(geojson) {
+        if (map.getLayer('oh-kmz-' + id + '-' + name + '-layer')) {
+            return null;
+        }
+        const sourceId = 'oh-kmz-' + id + '-' + name + '-source';
+        const source = {
+            id: sourceId,
+            obj: {
+                type: 'geojson',
+                data: geojson
+            }
+        };
+        const polygonLayer = {
+            id: 'oh-kmz-' + id + '-' + name + 'polygon-layer',
+            type: 'fill',
+            source: sourceId,
+            filter: ["==", "$type", "Polygon"],
+            paint: {
+                'fill-color': 'blue',
+                'fill-opacity': 0.5
+            }
+        };
+        const lineLayer = {
+            id: 'oh-kmz-' + id + '-' + name + 'line-layer',
+            type: 'line',
+            source: sourceId,
+            filter: ["==", "$type", "LineString"],
+            paint: {
+                'line-color': ['get', 'stroke'],
+                'line-width': ["*", ["get", "stroke-width"], 2],
+            }
+        };
+        return { source, layers: [polygonLayer, lineLayer], geojson: geojson };
+    }
+}
+
+
+
+
+
+// export async function userKmzSet(name,url,id) {
+//     const map = store.state.map01
+//     Promise.all([fetchFile(url)]).then(files => {
+//         async function load () {
+//             const zip = await JSZip.loadAsync(files[0]);
+//             const kmlFile = Object.keys(zip.files).find((name) => name.endsWith('.kml'));
+//             const kmlText = await zip.files[kmlFile].async('text');
+//             const parser = new DOMParser();
+//             const kmlData = parser.parseFromString(kmlText, 'application/xml');
+//             const geojson = kml(kmlData);
+//             // geojsonAddLayer(map, geojson, false, 'kml')
+//             return createSourceAndLayers (geojson)
+//         }
+//         load()
+//     })
+
+
+    // function createSourceAndLayers (geojson) {
+    //     alert(999)
+    //     if (map.getLayer('oh-kmz-' + id + '-' + name + '-layer')) {
+    //         return
+    //     }
+    //     const source = {
+    //         id: 'oh-kmz-' + id + '-' + name + '-source',obj: {
+    //             type: 'geojson',
+    //             data: geojson
+    //         }
+    //     };
+    //     const polygonLayer = {
+    //         id: 'oh-kmz-' + id + '-' + name + 'polygon-layer',
+    //         type: 'fill',
+    //         source: 'oh-kmz-' + id + '-' + name  + '-source',
+    //         filter: ["==", "$type", "Polygon"],
+    //         paint: {
+    //             'fill-color': 'blue',
+    //             'fill-opacity': 0.5
+    //         }
+    //     }
+    //     const lineLayer = {
+    //         id: 'oh-kmz-' + id + '-' + name + 'line-layer',
+    //         type: 'line',
+    //         source: 'oh-kmz-' + id + '-' + name  + '-source',
+    //         filter: ["==", "$type", "LineString"],
+    //         paint: {
+    //             'line-color': ['get', 'stroke'],
+    //             'line-width': ["*", ["get", "stroke-width"], 2],
+    //         }
+    //     }
+    //     const layers = [polygonLayer,lineLayer]
+    //     return {source:source,layers:layers}
+    // }
+
+
+
+
+    // store.state.selectedLayers.map01.unshift(
+    //     {
+    //         id: 'oh-kmz-' + id + '-' + name + '-layer',
+    //         label: name,
+    //         source: source,
+    //         layers: layers,
+    //         opacity: 1,
+    //         visibility: true,
+    //     }
+    // );
+    // if (this.isFirst) {
+    //     const bounds = new maplibregl.LngLatBounds();
+    //     geojson.features.forEach(feature => {
+    //         const geometry = feature.geometry;
+    //         if (!geometry) return;
+    //         switch (geometry.type) {
+    //             case 'Point':
+    //                 bounds.extend(geometry.coordinates);
+    //                 break;
+    //             case 'LineString':
+    //                 geometry.coordinates.forEach(coord => bounds.extend(coord));
+    //                 break;
+    //             case 'Polygon':
+    //                 geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
+    //                 break;
+    //             case 'MultiPolygon':
+    //                 geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
+    //                 break;
+    //         }
+    //     });
+    //     map.fitBounds(bounds, {
+    //         padding: 50,
+    //         animate: true
+    //     });
+    // }
+    // return {source:source,layes:layers}
+// }
 
 export function userXyztileSet(name,url,id,bbox,transparent) {
     const map = store.state.map01

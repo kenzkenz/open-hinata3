@@ -12,7 +12,8 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-tab value="2">タイル記憶</v-tab>
               <v-tab value="3">地番図</v-tab>
               <v-tab value="4">画像</v-tab>
-              <v-tab v-if="isAdministrator" value="5">管理者用</v-tab>
+              <v-tab value="5">kmz</v-tab>
+              <v-tab v-if="isAdministrator" value="6">管理者用</v-tab>
             </v-tabs>
 
             <v-window v-model="tab">
@@ -75,9 +76,18 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               </v-window-item>
               <v-window-item value="5">
                 <v-card>
-<!--                  <v-btn style="margin-bottom: 10px;" @click="iko">移行</v-btn>-->
+                  <v-text-field v-model="kmzRename" type="text" placeholder="リネーム"></v-text-field>
+                  <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="kmzRenameBtn">リネーム</v-btn>
+                  <div v-for="item in jsonDataKmz" :key="item.id" class="data-container" @click="kmzClick(item.name,item.url,item.id)">
+                    <button class="close-btn" @click="removeKmz(item.id,item.url2,$event)">×</button>
+                    <strong>{{ item.name }}</strong><br>
+                  </div>
+                </v-card>
+              </v-window-item>
+              <v-window-item value="6">
+                <v-card>
+                  <!--                  <v-btn style="margin-bottom: 10px;" @click="iko">移行</v-btn>-->
                   <div v-for="item in jsonDataxyztileAll" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox,item.transparent)">
-                    <!--                    <button class="close-btn" @click="removeItemxyztile(item.id,item.url2,$event)">×</button>-->
                     <strong>{{ item.name }}</strong><br>
                   </div>
                 </v-card>
@@ -97,7 +107,7 @@ import {
   addImageLayerPng,
   addTileLayerForImage,
   geojsonAddLayer, highlightSpecificFeaturesCity, iko,
-  simaToGeoJSON, userPmtileSet, userTileSet, userXyztileSet
+  simaToGeoJSON, userKmzSet, userPmtileSet, userTileSet, userXyztileSet
 } from "@/js/downLoad";
 
 const getFirebaseUid = async () => {
@@ -180,6 +190,7 @@ export default {
     tileRename: '',
     pmtilesRename: '',
     xyztileRename: '',
+    kmzRename: '',
     tab: 'one',
     tileUrl: '',
     tileName: '',
@@ -190,6 +201,7 @@ export default {
     jsonDataVector: null,
     jsonDataxyztile: null,
     jsonDataxyztileAll: null,
+    jsonDataKmz: null,
     uid: null,
     images: [],
     email: '',
@@ -347,6 +359,20 @@ export default {
         vm.urlSelect(vm.$store.state.userId)
       })
     },
+    kmzRenameBtn () {
+      const vm = this
+      if (!this.kmzRename) return
+      // alert(this.id + '/' + this.xyztileRename)
+      axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userKmzUpdate.php',{
+        params: {
+          id: this.id,
+          name: this.kmzRename
+        }
+      }).then(function (response) {
+        console.log(response)
+        vm.kmzSelect(vm.$store.state.userId)
+      })
+    },
     xyztileRenameBtn () {
       const vm = this
       if (!this.xyztileRename) return
@@ -381,6 +407,57 @@ export default {
       const visibility = this.s_isClickPointsLayer ? "visible" : "none";
       map01.setLayoutProperty("click-points-layer", "visibility", visibility);
       map02.setLayoutProperty("click-points-layer", "visibility", visibility);
+    },
+    kmzClick (name,url,id) {
+      const vm = this
+      this.kmzRename = name
+      this.id = id
+      this.name = name
+      async function aaa() {
+        const id = vm.id
+        const sourceAndLayers = await userKmzSet(name, url, id)
+        console.log(sourceAndLayers)
+        store.state.geojsonSources.push({
+          sourceId: sourceAndLayers.source.id,
+          source: sourceAndLayers.source
+        })
+        console.log(store.state.geojsonSources)
+        store.state.selectedLayers.map01.unshift(
+            {
+              id: 'oh-kmz-' + id + '-' + name + '-layer',
+              label: name,
+              source: sourceAndLayers.source.id,
+              layers: sourceAndLayers.layers,
+              opacity: 1,
+              visibility: true,
+            }
+        );
+        console.log(store.state.selectedLayers.map01)
+        const bounds = new maplibregl.LngLatBounds();
+        sourceAndLayers.geojson.features.forEach(feature => {
+          const geometry = feature.geometry;
+          if (!geometry) return;
+          switch (geometry.type) {
+            case 'Point':
+              bounds.extend(geometry.coordinates);
+              break;
+            case 'LineString':
+              geometry.coordinates.forEach(coord => bounds.extend(coord));
+              break;
+            case 'Polygon':
+              geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
+              break;
+            case 'MultiPolygon':
+              geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
+              break;
+          }
+        });
+        vm.$store.state.map01.fitBounds(bounds, {
+          padding: 50,
+          animate: false
+        });
+      }
+      aaa()
     },
     xyztileClick (name,url,id,bbox,transparent) {
       this.xyztileRename = name
@@ -680,6 +757,38 @@ export default {
                 }
               }
               // -----------------------------------------------------------------------------------------------------------
+              if (v.id.includes('oh-kmz-')) {
+                fetchFlg = true;
+                const layerId = v.id.split('-')[2];
+                try {
+                  const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userKmzSelectById.php', {
+                    params: { id: layerId }
+                  });
+                  if (response.data.error) {
+                    console.error('エラー:', response.data.error);
+                    alert(`エラー: ${response.data.error}`);
+                  } else {
+                    const name = response.data[0].name;
+                    const id = response.data[0].id;
+                    const url = response.data[0].url;
+                    async function aaa() {
+                      const sourceAndLayers = await userKmzSet(name, url, id)
+                      store.state.geojsonSources.push({
+                        sourceId: sourceAndLayers.source.id,
+                        source: sourceAndLayers.source
+                      })
+                      v.source = sourceAndLayers.source.id;
+                      v.layers = sourceAndLayers.layers;
+                      v.label = name;
+                      alert(sourceAndLayers.layers[0].id)
+                    }
+                    await aaa()
+                  }
+                } catch (error) {
+                  console.error('フェッチエラー:', error);
+                }
+              }
+              // -----------------------------------------------------------------------------------------------------------
               if (v.id.includes('oh-vpstile-')) {
                 // alert(v.id)
                 fetchFlg = true
@@ -893,6 +1002,50 @@ export default {
         // vm.xyztileSelect(vm.$store.state.userId)
       })
     },
+    removeKmz (id,url2,event) {
+      event.stopPropagation();  // バブリングを止める
+      if (!confirm("削除しますか？")) {
+        return
+      }
+      const vm = this
+      console.log(url2)
+      async function deleteUserKmz(url2) {
+        try {
+          const response = await axios.post('https://kenzkenz.duckdns.org/myphp/kmz_unlink.php', {
+            url2: url2
+          });
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            console.log('削除成功:', response.data);
+          }
+        } catch (error) {
+          console.error('リクエストエラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      deleteUserKmz(url2)
+
+      async function deleteUserData(id) {
+        try {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userKmzDelete.php', {
+            params: { id: id }
+          });
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            console.log('削除成功:', response.data);
+            vm.jsonDataKmz = vm.jsonDataKmz.filter(item => item.id !== id);
+          }
+        } catch (error) {
+          console.error('通信エラー2:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      deleteUserData(id)
+    },
     removeItemxyztile  (id,url2,event) {
       event.stopPropagation();  // バブリングを止める
       if (!confirm("削除しますか？")) {
@@ -1022,6 +1175,26 @@ export default {
             alert(`エラー: ${response.data.error}`);
           } else {
             vm.jsonData = response.data
+          }
+        } catch (error) {
+          console.error('通信エラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      fetchUserData(uid)
+    },
+    kmzSelect (uid) {
+      const vm = this
+      async function fetchUserData(uid) {
+        try {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userKmzSelect.php', {
+            params: { uid: uid }
+          });
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            vm.jsonDataKmz = response.data.result
           }
         } catch (error) {
           console.error('通信エラー:', error);
@@ -1203,6 +1376,7 @@ export default {
       this.tileSelect(this.$store.state.userId)
       this.pmtileSelect(this.$store.state.userId)
       this.xyztileSelect(this.$store.state.userId)
+      this.kmzSelect(this.$store.state.userId)
       this.xyztileSelectAll()
     },
     s_fetchImagesFire () {
@@ -1211,6 +1385,7 @@ export default {
       this.tileSelect(this.$store.state.userId)
       this.pmtileSelect(this.$store.state.userId)
       this.xyztileSelect(this.$store.state.userId)
+      this.kmzSelect(this.$store.state.userId)
       this.xyztileSelectAll()
     }
   },
@@ -1236,6 +1411,7 @@ export default {
         this.tileSelect(this.uid)
         this.pmtileSelect(this.uid)
         this.xyztileSelect(this.uid)
+        this.kmzSelect(this.uid)
         this.xyztileSelectAll()
       }
     }, 5);

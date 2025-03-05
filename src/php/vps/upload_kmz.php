@@ -11,7 +11,7 @@ $baseUploadDir = "/var/www/html/public_html/uploads/";
 $subDir = isset($_POST["dir"]) ? preg_replace('/[^a-zA-Z0-9_-]/', '', $_POST["dir"]) : "default";
 
 // フルパスのアップロードディレクトリ
-$uploadDir = $baseUploadDir . $subDir . "/";
+$uploadDir = $baseUploadDir . $subDir . "/kmz/";
 
 // ディレクトリがない場合は作成
 if (!is_dir($uploadDir)) {
