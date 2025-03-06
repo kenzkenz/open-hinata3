@@ -409,10 +409,13 @@ export default {
       map02.setLayoutProperty("click-points-layer", "visibility", visibility);
     },
     kmzClick (name,url,id) {
+      store.state.loading2 = true
+      store.state.loadingMessage = 'KMZ読み込み中です。'
       const vm = this
       this.kmzRename = name
       this.id = id
       this.name = name
+      vm.s_selectedLayers.map01 = vm.s_selectedLayers.map01.filter(layer => layer.id !== 'oh-kmz-' + id + '-' + name + '-layer')
       async function aaa() {
         const id = vm.id
         const sourceAndLayers = await userKmzSet(name, url, id)
@@ -422,17 +425,21 @@ export default {
           source: sourceAndLayers.source
         })
         console.log(store.state.geojsonSources)
-        store.state.selectedLayers.map01.unshift(
-            {
-              id: 'oh-kmz-' + id + '-' + name + '-layer',
-              label: name,
-              source: sourceAndLayers.source.id,
-              layers: sourceAndLayers.layers,
-              opacity: 1,
-              visibility: true,
-            }
-        );
-        console.log(store.state.selectedLayers.map01)
+        const map01 = store.state.selectedLayers.map01
+        const map02 = store.state.selectedLayers.map02
+        const maps = [map01, map02]
+        maps.forEach(map => {
+          map.unshift(
+              {
+                id: 'oh-kmz-' + id + '-' + name + '-layer',
+                label: name,
+                source: sourceAndLayers.source.id,
+                layers: sourceAndLayers.layers,
+                opacity: 1,
+                visibility: true,
+              }
+          );
+        })
         const bounds = new maplibregl.LngLatBounds();
         sourceAndLayers.geojson.features.forEach(feature => {
           const geometry = feature.geometry;
@@ -456,6 +463,7 @@ export default {
           padding: 50,
           animate: false
         });
+        store.state.loading2 = false
       }
       aaa()
     },

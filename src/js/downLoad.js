@@ -4649,6 +4649,7 @@ export async function kmzLoadForUser (map,isUpload) {
                         padding: 50,
                         animate: true
                     });
+                    store.state.loading2 = false
                 }
                 aaa()
             }
@@ -4662,9 +4663,6 @@ export async function kmzLoadForUser (map,isUpload) {
     store.state.loadingMessage = 'アップロード中です。'
     const files = store.state.tiffAndWorldFile
     const zipFile = files[0];
-    // console.log(geojson)
-    // await geojsonAddLayer(map, geojson,true, 'kml')
-    store.state.loading2 = false
     //----------------------------------------------------------------------------------------------------------------
     if (isUpload) {
         store.state.loading2 = true
@@ -4678,7 +4676,6 @@ export async function kmzLoadForUser (map,isUpload) {
             },
         })
             .then(response => {
-                store.state.loading2 = false
                 // 成功時の処理
                 if (response.data.error) {
                     console.log(response.data.error)
