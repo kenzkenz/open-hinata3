@@ -22,7 +22,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       >
         <input type="range" min="0" max="1" step="0.01" class="range" v-model.number="s_simaOpacity" @input="simaOpacityInput"/>
         <v-btn color="pink" text @click="simaDl">SIMAダウンロード</v-btn>
-        <v-btn style="margin-left: 10px;" color="pink" text @click="simaDelete">削除</v-btn>
+        <v-btn v-if="!user1" style="margin-left: 10px;" color="pink" text @click="simaDelete">削除</v-btn>
         <template v-slot:actions>
           <v-btn color="pink" text @click="s_snackbar = false">閉じる</v-btn>
         </template>
@@ -526,11 +526,11 @@ import {
   kmzLoadForUser, pmtilesGenerateForUser, pmtilesGenerateForUser2,
   pngDownload,
   pngLoad,
-  pngLoadForUser,
+  pngLoadForUser, simaLoadForUser,
   tileGenerateForUser,
   tileGenerateForUser1file, tileGenerateForUserJpg, tileGenerateForUserPdf, tileGenerateForUserPng,
   tileGenerateForUserTfw,
-  transformGeoJSONToEPSG4326, userKmzSet,
+  transformGeoJSONToEPSG4326, userKmzSet, userSimaSet,
   zahyokei
 } from '@/js/downLoad'
 
@@ -1257,12 +1257,26 @@ export default {
     simaOpacityInput () {
       const map1 = this.$store.state.map01
       const map2 = this.$store.state.map02
-      map1.setPaintProperty('sima-layer', 'fill-opacity', this.s_simaOpacity)
-      map2.setPaintProperty('sima-layer', 'fill-opacity', this.s_simaOpacity)
-      const parsed = JSON.parse(this.$store.state.simaText)
-      parsed['opacity'] = this.s_simaOpacity
-      this.$store.state.simaText = JSON.stringify(parsed)
-      // console.log(this.$store.state.simaText)
+      const maps = [map1, map2]
+      if (this.$store.state.simaText) {
+        map1.setPaintProperty('sima-layer', 'fill-opacity', this.s_simaOpacity)
+        map2.setPaintProperty('sima-layer', 'fill-opacity', this.s_simaOpacity)
+        const parsed = JSON.parse(this.$store.state.simaText)
+        parsed['opacity'] = this.s_simaOpacity
+        this.$store.state.simaText = JSON.stringify(parsed)
+      }
+      if (this.$store.state.simaTextForUser) {
+        maps.forEach(map => {
+          map.getStyle().layers.forEach(layer => {
+            if (layer.id.includes('-sima-') && layer.id.includes('polygon')) {
+              map1.setPaintProperty(layer.id, 'fill-opacity', this.s_simaOpacity)
+            }
+          })
+        })
+        const parsed = JSON.parse(this.$store.state.simaTextForUser)
+        parsed['opacity'] = this.s_simaOpacity
+        this.$store.state.simaTextForUser = JSON.stringify(parsed)
+      }
     },
     loadSima () {
       if (!this.s_zahyokei) {
@@ -1274,13 +1288,21 @@ export default {
         this.$store.state.isMenu = false
         this.s_dialogForSimaApp = false
       } else {
-        ddSimaUpload(this.ddSimaText)
+        if (this.$store.state.userId) {
+          const map1 = this.$store.state.map01
+          simaLoadForUser (map1,true, this.ddSimaText)
+        } else {
+          ddSimaUpload(this.ddSimaText)
+        }
         this.s_dialogForSimaApp = false
       }
     },
     simaDl () {
       if (this.$store.state.simaText) {
-        downloadSimaText()
+        downloadSimaText(false)
+      }
+      if (this.$store.state.simaTextForUser) {
+        downloadSimaText(true)
       }
     },
     share(mapName) {
@@ -2502,6 +2524,49 @@ export default {
                 }
               }
 
+              if (v.id.includes('oh-sima-')) {
+                fetchFlg = true;
+                const layerId = v.id.split('-')[2];
+                try {
+                  const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userSimaSelectById.php', {
+                    params: { id: layerId }
+                  });
+                  if (response.data.error) {
+                    console.error('エラー:', response.data.error);
+                    alert(`エラー: ${response.data.error}`);
+                  } else {
+                    const name = response.data[0].name;
+                    const id = response.data[0].id;
+                    const url = response.data[0].url;
+                    const zahyokei = response.data[0].zahyokei;
+                    const simaText = response.data[0].simatext;
+                    try {
+                      vm.$store.state.simaTextForUser = JSON.stringify({
+                        text: simaText,
+                        opacity: 0.1
+                      })
+                      vm.$store.state.snackbar = true
+                    } catch (e) {
+                      console.log(e)
+                    }
+                    async function aaa() {
+                      const sourceAndLayers = await userSimaSet(name, url, id, zahyokei)
+                      store.state.geojsonSources.push({
+                        sourceId: sourceAndLayers.source.id,
+                        source: sourceAndLayers.source
+                      })
+                      console.log(sourceAndLayers.layers)
+                      v.source = sourceAndLayers.source.id;
+                      v.layers = sourceAndLayers.layers;
+                      v.label = name;
+                    }
+                    await aaa()
+                  }
+                } catch (error) {
+                  console.error('フェッチエラー:', error);
+                }
+              }
+
               if (v.id.includes('oh-kmz-')) {
                 fetchFlg = true;
                 const layerId = v.id.split('-')[2];
@@ -3249,9 +3314,12 @@ export default {
                 }
                 case 'sim':
                 {
+                  this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
+                  console.log(this.$store.state.tiffAndWorldFile)
                   reader.onload = (event) => {
                     const arrayBuffer = event.target.result; // ArrayBufferとして読み込む
                     const text = new TextDecoder("shift-jis").decode(arrayBuffer); // Shift JISをUTF-8に変換
+                    // if (!this.$store.state.userId) this.ddSimaText = text
                     this.ddSimaText = text
                     this.s_dialogForSimaApp = true
                   }

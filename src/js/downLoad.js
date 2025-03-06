@@ -1250,7 +1250,7 @@ export function saveCsv(map, layerId, sourceId, fields) {
     downloadGeoJSONAsCSV(geojson)
 }
 
-export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
+export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto, isGeojson) {
     if (!simaData) return;
     // console.log(simaData);
     const lines = simaData.split('\n');
@@ -1352,18 +1352,10 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
         type: 'FeatureCollection',
         features: features
     };
-    // console.log(JSON.stringify(geoJSON, null, 2));
 
-
-    // const blob = new Blob([JSON.stringify(geoJSON, null, 2)], { type: 'application/dxf' });
-    // const link = document.createElement('a');
-    // link.href = URL.createObjectURL(blob);
-    // link.download = 'test.geojson';
-    // link.click();
-
-
-
-
+    if (isGeojson) {
+        return geoJSON
+    }
 
     if (map) {
         if (map.getSource('sima-data')) {
@@ -3102,8 +3094,13 @@ function calculatePolygonMetrics(polygon) {
     }
 }
 
-export function downloadSimaText () {
-    const simaText = JSON.parse(store.state.simaText).text;
+export function downloadSimaText (isUser) {
+    let simaText
+    if (isUser) {
+        simaText = JSON.parse(store.state.simaTextForUser).text;
+    } else {
+        simaText = JSON.parse(store.state.simaText).text;
+    }
     // UTF-8で文字列をコードポイントに変換
     const utf8Array = window.Encoding.stringToCode(simaText);
     // UTF-8からShift-JISに変換
@@ -4590,8 +4587,120 @@ async function fetchFile(url) {
     }
 }
 
-export async function kmzLoadForUser (map,isUpload) {
+export async function simaLoadForUser (map,isUpload,simaText) {
+    async function insertSimaData(uid, name, url, url2, simaText, zahyokei) {
+        try {
+            const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userSimaInsert.php', new URLSearchParams({
+                uid: uid,
+                name: name,
+                url: url,
+                url2: url2,
+                simatext: simaText,
+                zahyokei: zahyokei
+            }));
+            if (response.data.error) {
+                console.error('エラー:', response.data.error);
+                alert(`エラー: ${response.data.error}`);
+            } else {
+                console.log('登録成功:', response.data);
+                // alert('登録成功')
+                store.state.fetchImagesFire = !store.state.fetchImagesFire
+                async function aaa() {
+                    const id = response.data.lastId
+                    const sourceAndLayers = await userSimaSet(name, url, id)
+                    console.log(sourceAndLayers)
+                    store.state.geojsonSources.push({
+                        sourceId: sourceAndLayers.source.id,
+                        source: sourceAndLayers.source
+                    })
+                    console.log(store.state.geojsonSources)
+                    store.state.selectedLayers.map01.unshift(
+                        {
+                            id: 'oh-sima-' + id + '-' + name + '-layer',
+                            label: name,
+                            source: sourceAndLayers.source.id,
+                            layers: sourceAndLayers.layers,
+                            opacity: 1,
+                            visibility: true,
+                        }
+                    );
+                    console.log(store.state.selectedLayers.map01)
+                    const bounds = new maplibregl.LngLatBounds();
+                    sourceAndLayers.geojson.features.forEach(feature => {
+                        const geometry = feature.geometry;
+                        if (!geometry) return;
+                        switch (geometry.type) {
+                            case 'Point':
+                                bounds.extend(geometry.coordinates);
+                                break;
+                            case 'LineString':
+                                geometry.coordinates.forEach(coord => bounds.extend(coord));
+                                break;
+                            case 'Polygon':
+                                geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
+                                break;
+                            case 'MultiPolygon':
+                                geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
+                                break;
+                        }
+                    });
+                    map.fitBounds(bounds, {
+                        padding: 50,
+                        animate: true
+                    });
+                    store.state.snackbar = true
+                    store.state.loading2 = false
+                }
+                aaa()
+            }
+        } catch (error) {
+            console.error('通信エラー:', error);
+            alert('通信エラーが発生しました');
+        }
+    }
 
+    store.state.loading2 = true
+    store.state.loadingMessage = 'アップロード中です。'
+    const files = store.state.tiffAndWorldFile
+    const file = files[0];
+    console.log(file)
+    //----------------------------------------------------------------------------------------------------------------
+    if (isUpload) {
+        store.state.loading2 = true
+        // FormDataを作成
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('dir', store.state.userId);
+        axios.post('https://kenzkenz.duckdns.org/myphp/upload_sima.php', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data', // 必須
+            },
+        })
+            .then(response => {
+                // 成功時の処理
+                if (response.data.error) {
+                    console.log(response.data.error)
+                    alert(response.data.error)
+                    return
+                }
+                // alert('成功')
+                console.log('sima保存成功:', response.data.simaPath);
+                console.log(response)
+                // alert(store.state.zahyokei)
+                const webUrl = 'https://kenzkenz.duckdns.org/' + response.data.simaPath.replace('/var/www/html/public_html/','')
+                const name = response.data.simaName.replace('.sim','')
+                insertSimaData(store.state.userId, name, webUrl, response.data.simaPath,simaText,store.state.zahyokei)
+                store.state.fetchImagesFire = !store.state.fetchImagesFire
+            })
+            .catch(error => {
+                // エラー時の処理
+                console.error('エラー:', error.response ? error.response.data : error.message);
+                store.state.uploadedImage = ''
+            });
+    }
+}
+
+export async function kmzLoadForUser (map,isUpload) {
     async function insertKmzData(uid, name, url, url2) {
         try {
             const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userKmzInsert.php', new URLSearchParams({
@@ -5547,6 +5656,95 @@ export const wsg84ToJgd = (coordinates) => {
     return proj4("EPSG:4326", code, coordinates);
 };
 
+export async function userSimaSet(name, url, id, zahyokei) {
+    const map = store.state.map01;
+    try {
+        const files = await Promise.all([fetchFile(url)]);
+        const file = files[0];
+        if (!file) {
+            throw new Error("SIMAファイルがありません。");
+        }
+        // FileReaderをPromiseでラップ
+        const simaText = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const arrayBuffer = event.target.result; // ArrayBufferとして読み込む
+                    const text = new TextDecoder("shift-jis").decode(arrayBuffer); // Shift JISをUTF-8に変換
+                    resolve(text);
+                } catch (error) {
+                    reject(new Error(`エンコーディング変換エラー: ${error.message}`));
+                }
+            };
+            reader.onerror = (error) => reject(error);
+            reader.readAsArrayBuffer(file);
+        });
+        // alert(simaText)
+        store.state.simaTextForUser = JSON.stringify({
+            text: simaText,
+            zahyokei: store.state.zahyokei,
+            opacity: 0.7
+        })
+        const geojson = simaToGeoJSON(simaText, map, zahyokei, false, true);
+        console.log(geojson)
+        return createSourceAndLayers(geojson);
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+
+    function createSourceAndLayers(geojson) {
+        if (map.getLayer('oh-sima-' + id + '-' + name + '-layer')) {
+            return null;
+        }
+        const sourceId = 'oh-sima-' + id + '-' + name + '-source';
+        const source = {
+            id: sourceId,
+            obj: {
+                type: 'geojson',
+                data: geojson
+            }
+        };
+        const polygonLayer = {
+            id: 'oh-sima-' + id + '-' + name + '-polygon-layer',
+            type: 'fill',
+            source: sourceId,
+            filter: ["==", "$type", "Polygon"],
+            paint: {
+                'fill-color': '#088',
+                'fill-opacity': 0.7
+            }
+        };
+        const lineLayer = {
+            id: 'oh-sima-' + id + '-' + name + '-line-layer',
+            type: 'line',
+            source: sourceId,
+            filter: ["==", "$type", "Polygon"],
+            paint: {
+                'line-color': '#000',
+                'line-width': 2
+            }
+        };
+        const labelLayer = {
+            id: 'oh-sima-' + id + '-' + name + '-label-layer',
+            type: 'symbol',
+            source: sourceId,
+            layout: {
+                'text-field': ['get', 'chiban'],
+                'text-font': ['NotoSansJP-Regular'],
+            },
+            paint: {
+                'text-color': 'rgba(0, 0, 0, 1)',
+                'text-halo-color': 'rgba(255,255,255,0.7)',
+                'text-halo-width': 1.0
+            },
+            minzoom: 17,
+            filter: ['==', '$type', 'Polygon']
+        }
+        return { source, layers: [polygonLayer, lineLayer, labelLayer], geojson: geojson };
+    }
+}
+
 export async function userKmzSet(name, url, id) {
     const map = store.state.map01;
 
@@ -5602,103 +5800,6 @@ export async function userKmzSet(name, url, id) {
         return { source, layers: [polygonLayer, lineLayer], geojson: geojson };
     }
 }
-
-
-
-
-
-// export async function userKmzSet(name,url,id) {
-//     const map = store.state.map01
-//     Promise.all([fetchFile(url)]).then(files => {
-//         async function load () {
-//             const zip = await JSZip.loadAsync(files[0]);
-//             const kmlFile = Object.keys(zip.files).find((name) => name.endsWith('.kml'));
-//             const kmlText = await zip.files[kmlFile].async('text');
-//             const parser = new DOMParser();
-//             const kmlData = parser.parseFromString(kmlText, 'application/xml');
-//             const geojson = kml(kmlData);
-//             // geojsonAddLayer(map, geojson, false, 'kml')
-//             return createSourceAndLayers (geojson)
-//         }
-//         load()
-//     })
-
-
-    // function createSourceAndLayers (geojson) {
-    //     alert(999)
-    //     if (map.getLayer('oh-kmz-' + id + '-' + name + '-layer')) {
-    //         return
-    //     }
-    //     const source = {
-    //         id: 'oh-kmz-' + id + '-' + name + '-source',obj: {
-    //             type: 'geojson',
-    //             data: geojson
-    //         }
-    //     };
-    //     const polygonLayer = {
-    //         id: 'oh-kmz-' + id + '-' + name + 'polygon-layer',
-    //         type: 'fill',
-    //         source: 'oh-kmz-' + id + '-' + name  + '-source',
-    //         filter: ["==", "$type", "Polygon"],
-    //         paint: {
-    //             'fill-color': 'blue',
-    //             'fill-opacity': 0.5
-    //         }
-    //     }
-    //     const lineLayer = {
-    //         id: 'oh-kmz-' + id + '-' + name + 'line-layer',
-    //         type: 'line',
-    //         source: 'oh-kmz-' + id + '-' + name  + '-source',
-    //         filter: ["==", "$type", "LineString"],
-    //         paint: {
-    //             'line-color': ['get', 'stroke'],
-    //             'line-width': ["*", ["get", "stroke-width"], 2],
-    //         }
-    //     }
-    //     const layers = [polygonLayer,lineLayer]
-    //     return {source:source,layers:layers}
-    // }
-
-
-
-
-    // store.state.selectedLayers.map01.unshift(
-    //     {
-    //         id: 'oh-kmz-' + id + '-' + name + '-layer',
-    //         label: name,
-    //         source: source,
-    //         layers: layers,
-    //         opacity: 1,
-    //         visibility: true,
-    //     }
-    // );
-    // if (this.isFirst) {
-    //     const bounds = new maplibregl.LngLatBounds();
-    //     geojson.features.forEach(feature => {
-    //         const geometry = feature.geometry;
-    //         if (!geometry) return;
-    //         switch (geometry.type) {
-    //             case 'Point':
-    //                 bounds.extend(geometry.coordinates);
-    //                 break;
-    //             case 'LineString':
-    //                 geometry.coordinates.forEach(coord => bounds.extend(coord));
-    //                 break;
-    //             case 'Polygon':
-    //                 geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
-    //                 break;
-    //             case 'MultiPolygon':
-    //                 geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
-    //                 break;
-    //         }
-    //     });
-    //     map.fitBounds(bounds, {
-    //         padding: 50,
-    //         animate: true
-    //     });
-    // }
-    // return {source:source,layes:layers}
-// }
 
 export function userXyztileSet(name,url,id,bbox,transparent) {
     const map = store.state.map01

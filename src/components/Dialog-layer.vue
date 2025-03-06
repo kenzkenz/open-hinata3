@@ -287,7 +287,7 @@ export default {
           if (layer0.type === 'raster') {
             map.setPaintProperty(layer0.id, 'raster-opacity', opacity)
           } else if (layer0.type === 'fill') {
-            if (layer0.metadata.group === 'osm-bright' || layer0.metadata.group === 'osm-3d') {
+            if (layer0.metadata && (layer0.metadata.group === 'osm-bright' || layer0.metadata.group === 'osm-3d')) {
               if (typeof layer0.paint['fill-opacity'] === 'number') {
                 map.setPaintProperty(layer0.id, 'fill-opacity', layer0.paint['fill-opacity'] * opacity)
               } else {
@@ -933,6 +933,13 @@ export default {
         },100)
         const registeredLayers = new Set();
       }
+
+      map.getStyle().layers.forEach(layer => {
+        if (layer.id.includes('-sima-') && layer.id.includes('polygon')) {
+          map.setPaintProperty(layer.id, 'fill-opacity', 0.1)
+        }
+      })
+
     },
     mw5AddLayers(map,mapName) {
       if (!this.s_selectedLayers[mapName].find(v => v.id === 'oh-mw5')) {

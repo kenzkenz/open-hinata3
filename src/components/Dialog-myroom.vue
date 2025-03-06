@@ -8,6 +8,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <v-card>
           <v-card-text :style="mayroomStyle">
             <v-tabs mobile-breakpoint="0" v-model="tab" style="margin-bottom: 10px;">
+              <v-tab value="0">SIMA</v-tab>
               <v-tab value="1">URL記憶</v-tab>
               <v-tab value="2">タイル記憶</v-tab>
               <v-tab value="3">地番図</v-tab>
@@ -17,6 +18,16 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
             </v-tabs>
 
             <v-window v-model="tab">
+              <v-window-item value="0">
+                <v-card>
+                  <v-text-field v-model="simaRename" type="text" placeholder="リネーム"></v-text-field>
+                  <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="simaRenameBtn">リネーム</v-btn>
+                  <div v-for="item in jsonDataSima" :key="item.id" class="data-container" @click="simaClick(item.name,item.url,item.id,item.simatext,item.zahyokei)">
+                    <button class="close-btn" @click="removeSima(item.id,item.url2,$event)">×</button>
+                    <strong>{{ item.name }}</strong><br>
+                  </div>
+                </v-card>
+              </v-window-item>
               <v-window-item value="1">
                 <v-card>
                   <div style="margin-bottom: 10px;">
@@ -107,7 +118,7 @@ import {
   addImageLayerPng,
   addTileLayerForImage,
   geojsonAddLayer, highlightSpecificFeaturesCity, iko,
-  simaToGeoJSON, userKmzSet, userPmtileSet, userTileSet, userXyztileSet
+  simaToGeoJSON, userKmzSet, userPmtileSet, userSimaSet, userTileSet, userXyztileSet
 } from "@/js/downLoad";
 
 const getFirebaseUid = async () => {
@@ -191,6 +202,7 @@ export default {
     pmtilesRename: '',
     xyztileRename: '',
     kmzRename: '',
+    simaRename: '',
     tab: 'one',
     tileUrl: '',
     tileName: '',
@@ -202,6 +214,7 @@ export default {
     jsonDataxyztile: null,
     jsonDataxyztileAll: null,
     jsonDataKmz: null,
+    jsonDataSima: null,
     uid: null,
     images: [],
     email: '',
@@ -348,7 +361,6 @@ export default {
     urlRenameBtn () {
       const vm = this
       if (!this.urlName) return
-      // alert(this.id + '/' + this.urlName)
       axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userUrlUpdate.php',{
         params: {
           id: this.id,
@@ -359,10 +371,22 @@ export default {
         vm.urlSelect(vm.$store.state.userId)
       })
     },
+    simaRenameBtn () {
+      const vm = this
+      if (!this.simaRename) return
+      axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userSimaUpdate.php',{
+        params: {
+          id: this.id,
+          name: this.simaRename
+        }
+      }).then(function (response) {
+        console.log(response)
+        vm.simaSelect(vm.$store.state.userId)
+      })
+    },
     kmzRenameBtn () {
       const vm = this
       if (!this.kmzRename) return
-      // alert(this.id + '/' + this.xyztileRename)
       axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userKmzUpdate.php',{
         params: {
           id: this.id,
@@ -407,6 +431,72 @@ export default {
       const visibility = this.s_isClickPointsLayer ? "visible" : "none";
       map01.setLayoutProperty("click-points-layer", "visibility", visibility);
       map02.setLayoutProperty("click-points-layer", "visibility", visibility);
+    },
+    simaClick (name,url,id,simaText,zahyokei) {
+      store.state.loading2 = true
+      store.state.loadingMessage = 'SIMA読み込み中です。'
+      const vm = this
+      this.simaRename = name
+      this.id = id
+      this.name = name
+      vm.s_selectedLayers.map01 = vm.s_selectedLayers.map01.filter(layer => layer.id !== 'oh-sima-' + id + '-' + name + '-layer')
+      vm.s_selectedLayers.map02 = vm.s_selectedLayers.map02.filter(layer => layer.id !== 'oh-sima-' + id + '-' + name + '-layer')
+      async function aaa() {
+        const map01 = store.state.selectedLayers.map01
+        const map02 = store.state.selectedLayers.map02
+        const maps = [map01, map02]
+        const id = vm.id
+        const sourceAndLayers = await userSimaSet(name, url, id, zahyokei)
+        console.log(sourceAndLayers)
+        store.state.geojsonSources.push({
+          sourceId: sourceAndLayers.source.id,
+          source: sourceAndLayers.source
+        })
+        console.log(store.state.geojsonSources)
+        maps.forEach(map => {
+          map.unshift(
+              {
+                id: 'oh-sima-' + id + '-' + name + '-layer',
+                label: name,
+                source: sourceAndLayers.source.id,
+                layers: sourceAndLayers.layers,
+                opacity: 1,
+                visibility: true,
+              }
+          );
+        })
+        const bounds = new maplibregl.LngLatBounds();
+        sourceAndLayers.geojson.features.forEach(feature => {
+          const geometry = feature.geometry;
+          if (!geometry) return;
+          switch (geometry.type) {
+            case 'Point':
+              bounds.extend(geometry.coordinates);
+              break;
+            case 'LineString':
+              geometry.coordinates.forEach(coord => bounds.extend(coord));
+              break;
+            case 'Polygon':
+              geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
+              break;
+            case 'MultiPolygon':
+              geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
+              break;
+          }
+        });
+        vm.$store.state.map01.fitBounds(bounds, {
+          padding: 50,
+          animate: false
+        });
+        store.state.simaTextForUser = JSON.stringify({
+          text: simaText,
+          zahyokei: store.state.zahyokei,
+          opacity: 0.7
+        })
+        store.state.snackbar = true
+        store.state.loading2 = false
+      }
+      aaa()
     },
     kmzClick (name,url,id) {
       store.state.loading2 = true
@@ -766,6 +856,39 @@ export default {
                 }
               }
               // -----------------------------------------------------------------------------------------------------------
+              if (v.id.includes('oh-sima-')) {
+                fetchFlg = true;
+                const layerId = v.id.split('-')[2];
+                try {
+                  const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userSimaSelectById.php', {
+                    params: { id: layerId }
+                  });
+                  if (response.data.error) {
+                    console.error('エラー:', response.data.error);
+                    alert(`エラー: ${response.data.error}`);
+                  } else {
+                    const name = response.data[0].name;
+                    const id = response.data[0].id;
+                    const url = response.data[0].url;
+                    const zahyokei = response.data[0].zahyokei;
+                    async function aaa() {
+                      const sourceAndLayers = await userSimaSet(name, url, id, zahyokei)
+                      store.state.geojsonSources.push({
+                        sourceId: sourceAndLayers.source.id,
+                        source: sourceAndLayers.source
+                      })
+                      console.log(sourceAndLayers.layers)
+                      v.source = sourceAndLayers.source.id;
+                      v.layers = sourceAndLayers.layers;
+                      v.label = name;
+                    }
+                    await aaa()
+                  }
+                } catch (error) {
+                  console.error('フェッチエラー:', error);
+                }
+              }
+              // -----------------------------------------------------------------------------------------------------------
               if (v.id.includes('oh-kmz-')) {
                 fetchFlg = true;
                 const layerId = v.id.split('-')[2];
@@ -1011,6 +1134,50 @@ export default {
         // vm.xyztileSelect(vm.$store.state.userId)
       })
     },
+    removeSima (id,url2,event) {
+      event.stopPropagation();  // バブリングを止める
+      if (!confirm("削除しますか？")) {
+        return
+      }
+      const vm = this
+      console.log(url2)
+      async function deleteUserSima(url2) {
+        try {
+          const response = await axios.post('https://kenzkenz.duckdns.org/myphp/sima_unlink.php', {
+            url2: url2
+          });
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            console.log('削除成功:', response.data);
+          }
+        } catch (error) {
+          console.error('リクエストエラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      deleteUserSima(url2)
+
+      async function deleteUserData(id) {
+        try {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userSimaDelete.php', {
+            params: { id: id }
+          });
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            console.log('削除成功:', response.data);
+            vm.jsonDataSima = vm.jsonDataSima.filter(item => item.id !== id);
+          }
+        } catch (error) {
+          console.error('通信エラー2:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      deleteUserData(id)
+    },
     removeKmz (id,url2,event) {
       event.stopPropagation();  // バブリングを止める
       if (!confirm("削除しますか？")) {
@@ -1184,6 +1351,26 @@ export default {
             alert(`エラー: ${response.data.error}`);
           } else {
             vm.jsonData = response.data
+          }
+        } catch (error) {
+          console.error('通信エラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      fetchUserData(uid)
+    },
+    simaSelect (uid) {
+      const vm = this
+      async function fetchUserData(uid) {
+        try {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userSimaSelect.php', {
+            params: { uid: uid }
+          });
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            vm.jsonDataSima = response.data.result
           }
         } catch (error) {
           console.error('通信エラー:', error);
@@ -1386,6 +1573,7 @@ export default {
       this.pmtileSelect(this.$store.state.userId)
       this.xyztileSelect(this.$store.state.userId)
       this.kmzSelect(this.$store.state.userId)
+      this.simaSelect(this.$store.state.userId)
       this.xyztileSelectAll()
     },
     s_fetchImagesFire () {
@@ -1395,6 +1583,7 @@ export default {
       this.pmtileSelect(this.$store.state.userId)
       this.xyztileSelect(this.$store.state.userId)
       this.kmzSelect(this.$store.state.userId)
+      this.simaSelect(this.$store.state.userId)
       this.xyztileSelectAll()
     }
   },
@@ -1421,6 +1610,7 @@ export default {
         this.pmtileSelect(this.uid)
         this.xyztileSelect(this.uid)
         this.kmzSelect(this.uid)
+        this.simaSelect(this.uid)
         this.xyztileSelectAll()
       }
     }, 5);
