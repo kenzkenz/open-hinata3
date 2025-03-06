@@ -1276,6 +1276,7 @@ export default {
         const parsed = JSON.parse(this.$store.state.simaTextForUser)
         parsed['opacity'] = this.s_simaOpacity
         this.$store.state.simaTextForUser = JSON.stringify(parsed)
+        console.log(this.$store.state.simaTextForUser)
       }
     },
     loadSima () {
@@ -1727,10 +1728,11 @@ export default {
       const clickGeojsonText = this.$store.state.clickGeojsonText
       const vector = this.$store.state.uploadedVector
       const isWindow = this.$store.state.isWindow
+      const simaTextForUser = this.$store.state.simaTextForUser
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
       ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}
-      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}&geojsontext=${geojsonText}&dxftext=${dxfText}&gpxtext=${gpxText}&drawgeojsontext=${drawGeojsonText}&clickgeojsontext=${clickGeojsonText}&vector=${JSON.stringify(vector)}&iswindow=${JSON.stringify(isWindow)}`
+      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}&geojsontext=${geojsonText}&dxftext=${dxfText}&gpxtext=${gpxText}&drawgeojsontext=${drawGeojsonText}&clickgeojsontext=${clickGeojsonText}&vector=${JSON.stringify(vector)}&iswindow=${JSON.stringify(isWindow)}&simatextforuser=${simaTextForUser}`
       // console.log(this.param)
       // this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
@@ -1808,11 +1810,12 @@ export default {
       const clickGeojsonText = params.get('clickgeojsontext')
       const vector = params.get('vector')
       const isWindow = params.get('iswindow')
+      const simaTextForUser = params.get('simatextforuser')
       this.pitch.map01 = pitch01
       this.pitch.map02 = pitch02
       this.bearing = bearing
       this.s_terrainLevel = terrainLevel
-      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText,drawGeojsonText,clickGeojsonText,vector,isWindow}// 以前のリンクをいかすためpitchを入れている。
+      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText,drawGeojsonText,clickGeojsonText,vector,isWindow,simaTextForUser}// 以前のリンクをいかすためpitchを入れている。
     },
     init() {
 
@@ -2353,6 +2356,10 @@ export default {
           //   }
           // }
           // ----------------------------------------------------------------
+          if (params.simaTextForUser) {
+            this.$store.state.simaTextForUser = params.simaTextForUser
+          }
+
           if (params.isWindow) {
             this.$store.state.isWindow2 = JSON.parse(params.isWindow)
           }
@@ -2540,15 +2547,6 @@ export default {
                     const url = response.data[0].url;
                     const zahyokei = response.data[0].zahyokei;
                     const simaText = response.data[0].simatext;
-                    try {
-                      vm.$store.state.simaTextForUser = JSON.stringify({
-                        text: simaText,
-                        opacity: 0.1
-                      })
-                      vm.$store.state.snackbar = true
-                    } catch (e) {
-                      console.log(e)
-                    }
                     async function aaa() {
                       const sourceAndLayers = await userSimaSet(name, url, id, zahyokei)
                       store.state.geojsonSources.push({
@@ -2559,6 +2557,12 @@ export default {
                       v.source = sourceAndLayers.source.id;
                       v.layers = sourceAndLayers.layers;
                       v.label = name;
+                      vm.$store.state.simaTextForUser = JSON.stringify({
+                        text: simaText,
+                        opacity:JSON.parse(vm.$store.state.simaTextForUser).opacity
+                      })
+                      vm.s_simaOpacity = JSON.parse(vm.$store.state.simaTextForUser).opacity
+                      vm.$store.state.snackbar = true
                     }
                     await aaa()
                   }

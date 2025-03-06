@@ -5682,11 +5682,10 @@ export async function userSimaSet(name, url, id, zahyokei) {
         // alert(simaText)
         store.state.simaTextForUser = JSON.stringify({
             text: simaText,
-            zahyokei: store.state.zahyokei,
-            opacity: 0.7
+            opacity: 0
         })
+        store.state.simaOpacity = 0
         const geojson = simaToGeoJSON(simaText, map, zahyokei, false, true);
-        console.log(geojson)
         return createSourceAndLayers(geojson);
     } catch (error) {
         console.error(error);
@@ -5712,7 +5711,7 @@ export async function userSimaSet(name, url, id, zahyokei) {
             filter: ["==", "$type", "Polygon"],
             paint: {
                 'fill-color': '#088',
-                'fill-opacity': 0.7
+                'fill-opacity': 0
             }
         };
         const lineLayer = {
@@ -5741,7 +5740,22 @@ export async function userSimaSet(name, url, id, zahyokei) {
             minzoom: 17,
             filter: ['==', '$type', 'Polygon']
         }
-        return { source, layers: [polygonLayer, lineLayer, labelLayer], geojson: geojson };
+        const vertexLayer = {
+            id: 'oh-sima-' + id + '-' + name + '-vertex-layer',
+            type: 'circle',
+            source: sourceId,
+            layout: {},
+            paint: {
+                'circle-radius': [
+                    'interpolate', ['linear'], ['zoom'],
+                    15, 0,
+                    18, 4
+                ],
+                'circle-color': '#f00',
+            },
+            filter: ['==', '$type', 'Polygon']
+        };
+        return { source, layers: [polygonLayer, lineLayer, labelLayer, vertexLayer], geojson: geojson };
     }
 }
 

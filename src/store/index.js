@@ -88,7 +88,7 @@ export default createStore({
     highlightedChibans: new Set(),
     dialogForSima: false,
     simaText: '',
-    simaTextForUser: [],
+    simaTextForUser: '',
     kmlText: '',
     geojsonText: '',
     dxfText: '',

@@ -675,9 +675,6 @@ export default {
             addTileLayer (map)
           }
 
-
-
-
           if (JSON.parse(this.$store.state.uploadedImage).uid) {
             const imageUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/' + JSON.parse(this.$store.state.uploadedImage).uid + '/' + JSON.parse(this.$store.state.uploadedImage).image
             const worldFileUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/uploads/' + JSON.parse(this.$store.state.uploadedImage).uid + '/' + JSON.parse(this.$store.state.uploadedImage).worldFile
@@ -934,9 +931,9 @@ export default {
         const registeredLayers = new Set();
       }
 
-      map.getStyle().layers.forEach(layer => {
+      this.$store.state.map01.getStyle().layers.forEach(layer => {
         if (layer.id.includes('-sima-') && layer.id.includes('polygon')) {
-          map.setPaintProperty(layer.id, 'fill-opacity', 0.1)
+          this.$store.state.map01.setPaintProperty(layer.id, 'fill-opacity', JSON.parse(this.$store.state.simaTextForUser).opacity)
         }
       })
 

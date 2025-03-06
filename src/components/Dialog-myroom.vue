@@ -7,7 +7,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
     <div class="myroom-div">
         <v-card>
           <v-card-text :style="mayroomStyle">
-            <v-tabs mobile-breakpoint="0" v-model="tab" style="margin-bottom: 10px;">
+            <v-tabs mobile-breakpoint="0" v-model="tab" class="custom-tabs">
               <v-tab value="0">SIMA</v-tab>
               <v-tab value="1">URL記憶</v-tab>
               <v-tab value="2">タイル記憶</v-tab>
@@ -488,10 +488,15 @@ export default {
           padding: 50,
           animate: false
         });
+        let opacity
+        if (vm.$store.state.simaTextForUser) {
+          opacity = JSON.parse(vm.$store.state.simaTextForUser).opacity
+        } else {
+          opacity = 0
+        }
         store.state.simaTextForUser = JSON.stringify({
           text: simaText,
-          zahyokei: store.state.zahyokei,
-          opacity: 0.7
+          opacity: opacity
         })
         store.state.snackbar = true
         store.state.loading2 = false
@@ -871,6 +876,7 @@ export default {
                     const id = response.data[0].id;
                     const url = response.data[0].url;
                     const zahyokei = response.data[0].zahyokei;
+                    const simaText = response.data[0].simatext;
                     async function aaa() {
                       const sourceAndLayers = await userSimaSet(name, url, id, zahyokei)
                       store.state.geojsonSources.push({
@@ -881,6 +887,13 @@ export default {
                       v.source = sourceAndLayers.source.id;
                       v.layers = sourceAndLayers.layers;
                       v.label = name;
+                      // alert(JSON.parse(vm.$store.state.simaTextForUser).opacity)
+                      vm.$store.state.simaTextForUser = JSON.stringify({
+                        text: simaText,
+                        opacity:JSON.parse(vm.$store.state.simaTextForUser).opacity
+                      })
+                      vm.s_simaOpacity = JSON.parse(vm.$store.state.simaTextForUser).opacity
+                      vm.$store.state.snackbar = true
                     }
                     await aaa()
                   }
@@ -912,7 +925,7 @@ export default {
                       v.source = sourceAndLayers.source.id;
                       v.layers = sourceAndLayers.layers;
                       v.label = name;
-                      alert(sourceAndLayers.layers[0].id)
+                      // alert(sourceAndLayers.layers[0].id)
                     }
                     await aaa()
                   }
@@ -1698,6 +1711,18 @@ export default {
 .scrollable-dialog {
   overflow-y: auto !important;
   touch-action: auto !important;
+}
+.custom-tabs {
+  min-width: auto;
+  width: fit-content;
+  max-width: 100%;
+  margin-bottom: 10px;
+}
+
+.custom-tabs .v-tab {
+  min-width: 60px; /* タブの最小幅を狭く */
+  padding: 5px 8px; /* 余白を小さく */
+  font-size: 14px; /* フォントサイズを小さく */
 }
 </style>
 
