@@ -6,6 +6,7 @@ header("Content-Type: application/json");
 try {
     // POSTからuidを取得
     $uid = $_GET['uid'] ?? null;
+    $isAll = $_GET['isAll'] ?? null;
 
     // バリデーション: 空チェック
     if (empty($uid)) {
@@ -13,10 +14,15 @@ try {
         exit;
     }
 
-    // SQL: 指定されたuidのデータを取得
-    $sql = "SELECT * FROM userdb WHERE uid = :uid ORDER BY id DESC";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([':uid' => $uid]);
+    if ($isAll === "true") {
+        $sql = "SELECT * FROM userdb ORDER BY id DESC";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([]);
+    } else {
+        $sql = "SELECT * FROM userdb WHERE uid = :uid ORDER BY id DESC";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':uid' => $uid]);
+    }
 
     // 結果を取得
     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);

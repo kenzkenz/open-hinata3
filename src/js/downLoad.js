@@ -5755,7 +5755,18 @@ export async function userSimaSet(name, url, id, zahyokei) {
             },
             filter: ['==', '$type', 'Polygon']
         };
-        return { source, layers: [polygonLayer, lineLayer, labelLayer, vertexLayer], geojson: geojson };
+        const pointLayer = {
+            id: 'oh-sima-' + id + '-' + name + '-point-layer',
+            type: 'circle',
+            source: sourceId,
+            layout: {},
+            paint: {
+                'circle-radius': 8,
+                'circle-color': 'navy',
+            },
+            filter: ['==', '$type', 'Point']
+        };
+        return { source, layers: [polygonLayer, lineLayer, labelLayer, vertexLayer, pointLayer], geojson: geojson };
     }
 }
 

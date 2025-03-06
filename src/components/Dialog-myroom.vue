@@ -23,7 +23,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   <v-text-field v-model="simaRename" type="text" placeholder="リネーム"></v-text-field>
                   <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="simaRenameBtn">リネーム</v-btn>
                   <div v-for="item in jsonDataSima" :key="item.id" class="data-container" @click="simaClick(item.name,item.url,item.id,item.simatext,item.zahyokei)">
-                    <button class="close-btn" @click="removeSima(item.id,item.url2,$event)">×</button>
+                    <button v-if="!isAll" class="close-btn" @click="removeSima(item.id,item.url2,$event)">×</button>
                     <strong>{{ item.name }}</strong><br>
                   </div>
                 </v-card>
@@ -35,7 +35,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                     <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="urlSave">URL記憶</v-btn>
                     <v-btn style="margin-top: -10px; margin-bottom: 10px; margin-left: 10px" @click="urlRenameBtn">リネーム</v-btn>
                     <div v-for="item in jsonData" :key="item.id" class="data-container" @click="urlClick(item.name, item.url, item.id)">
-                      <button class="close-btn" @click="removeItem(item.id, $event)">×</button>
+                      <button v-if="!isAll" class="close-btn" @click="removeItem(item.id, $event)">×</button>
                       <strong>{{ item.name }}</strong><br>
                       <strong></strong>{{ item.url }}
                     </div>
@@ -49,7 +49,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                     <v-text-field  v-model="tileUrl" type="text" placeholder="タイルURL"></v-text-field>
                     <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="tileSave">地図タイル記憶</v-btn>
                     <div v-for="item in jsonDataTile" :key="item.id" class="data-container" @click="tileClick(item.name,item.url,item.id)">
-                      <button class="close-btn" @click="removeItemTile(item.id, $event)">×</button>
+                      <button v-if="!isAll" class="close-btn" @click="removeItemTile(item.id, $event)">×</button>
                       <strong>{{ item.name }}</strong><br>
                       <strong></strong>{{ item.url }}
                     </div>
@@ -61,7 +61,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   <v-text-field  v-model="pmtilesRename" type="text" placeholder="リネーム"></v-text-field>
                   <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="pmtilesRenameBtn">リネーム</v-btn>
                   <div v-for="item in jsonDataPmtile" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban,item.bbox)">
-                    <button class="close-btn" @click="removeItemPmtiles(item.id,item.url2,$event)">×</button>
+                    <button v-if="!isAll" class="close-btn" @click="removeItemPmtiles(item.id,item.url2,$event)">×</button>
                     <strong>{{ item.name }}</strong><br>
                   </div>
                 </v-card>
@@ -72,6 +72,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="xyztileRenameBtn">リネーム</v-btn>
                   <div v-for="item in jsonDataxyztile" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox,item.transparent)">
                     <v-checkbox
+                        v-if="!isAll"
                         class="transparent-chk"
                         v-model="item.transparent"
                         true-value=1
@@ -80,7 +81,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                         @mousedown.stop
                         @click.stop
                     />
-                    <button class="close-btn" @click="removeItemxyztile(item.id,item.url2,$event)">×</button>
+                    <button v-if="!isAll" class="close-btn" @click="removeItemxyztile(item.id,item.url2,$event)">×</button>
                     <strong>{{ item.name }}</strong><br>
                   </div>
                 </v-card>
@@ -90,17 +91,20 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   <v-text-field v-model="kmzRename" type="text" placeholder="リネーム"></v-text-field>
                   <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="kmzRenameBtn">リネーム</v-btn>
                   <div v-for="item in jsonDataKmz" :key="item.id" class="data-container" @click="kmzClick(item.name,item.url,item.id)">
-                    <button class="close-btn" @click="removeKmz(item.id,item.url2,$event)">×</button>
+                    <button v-if="!isAll" class="close-btn" @click="removeKmz(item.id,item.url2,$event)">×</button>
                     <strong>{{ item.name }}</strong><br>
                   </div>
                 </v-card>
               </v-window-item>
               <v-window-item value="6">
                 <v-card>
+<!--                  <v-btn style="margin-bottom: 10px;" @click="isAllBtn">全表示</v-btn>-->
+                  <v-switch style="height: 40px;" v-model="isAll" @change="isAllSwitch" label="全表示" color="primary" />
+
                   <!--                  <v-btn style="margin-bottom: 10px;" @click="iko">移行</v-btn>-->
-                  <div v-for="item in jsonDataxyztileAll" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox,item.transparent)">
-                    <strong>{{ item.name }}</strong><br>
-                  </div>
+<!--                  <div v-for="item in jsonDataxyztileAll" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox,item.transparent)">-->
+<!--                    <strong>{{ item.name }}</strong><br>-->
+<!--                  </div>-->
                 </v-card>
               </v-window-item>
             </v-window>
@@ -182,8 +186,6 @@ import axios from "axios"
 import maplibregl from 'maplibre-gl'
 import {history} from "@/App";
 import {extLayer, extSource, konUrls} from "@/js/layers";
-import { auth } from "@/firebase";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut } from "firebase/auth";
 import * as Layers from "@/js/layers";
 import {kml} from "@tmcw/togeojson";
 import JSZip from "jszip";
@@ -196,6 +198,7 @@ export default {
     // MasonryWall,
   },
   data: () => ({
+    isAll: false,
     id: '',
     name: '',
     tileRename: '',
@@ -232,7 +235,7 @@ export default {
     isDragging: false,
     dragStartX: 0,
     dragStartY: 0,
-    mayroomStyle: {"overflow-y": "auto", "max-height": "530px", "padding-top": "10px"}
+    mayroomStyle: {"overflow-y": "auto", "max-height": "530px", "max-width": "600px", "padding-top": "10px"}
   }),
   computed: {
     s_isDialogVisible: {
@@ -352,6 +355,12 @@ export default {
     },
   },
   methods: {
+    isAllSwitch () {
+      this.s_fetchImagesFire = !this.s_fetchImagesFire
+    },
+    isAllBtn () {
+      this.isAll = !this.isAll
+    },
     iko () {
       if (!confirm("実行しますか？")) {
         return
@@ -536,29 +545,33 @@ export default {
               }
           );
         })
-        const bounds = new maplibregl.LngLatBounds();
-        sourceAndLayers.geojson.features.forEach(feature => {
-          const geometry = feature.geometry;
-          if (!geometry) return;
-          switch (geometry.type) {
-            case 'Point':
-              bounds.extend(geometry.coordinates);
-              break;
-            case 'LineString':
-              geometry.coordinates.forEach(coord => bounds.extend(coord));
-              break;
-            case 'Polygon':
-              geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
-              break;
-            case 'MultiPolygon':
-              geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
-              break;
-          }
-        });
-        vm.$store.state.map01.fitBounds(bounds, {
-          padding: 50,
-          animate: false
-        });
+        try {
+          const bounds = new maplibregl.LngLatBounds();
+          sourceAndLayers.geojson.features.forEach(feature => {
+            const geometry = feature.geometry;
+            if (!geometry) return;
+            switch (geometry.type) {
+              case 'Point':
+                bounds.extend(geometry.coordinates);
+                break;
+              case 'LineString':
+                geometry.coordinates.forEach(coord => bounds.extend(coord));
+                break;
+              case 'Polygon':
+                geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
+                break;
+              case 'MultiPolygon':
+                geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
+                break;
+            }
+          });
+          vm.$store.state.map01.fitBounds(bounds, {
+            padding: 50,
+            animate: false
+          });
+        } catch (e) {
+          console.log(e)
+        }
         store.state.loading2 = false
       }
       aaa()
@@ -1356,7 +1369,7 @@ export default {
       async function fetchUserData(uid) {
         try {
           const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userDbSelect.php', {
-            params: { uid: uid }
+            params: { uid: uid, isAll: vm.isAll }
           });
 
           if (response.data.error) {
@@ -1374,10 +1387,11 @@ export default {
     },
     simaSelect (uid) {
       const vm = this
+      // alert(vm.isAll)
       async function fetchUserData(uid) {
         try {
           const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userSimaSelect.php', {
-            params: { uid: uid }
+            params: { uid: uid, isAll: vm.isAll}
           });
           if (response.data.error) {
             console.error('エラー:', response.data.error);
@@ -1397,7 +1411,7 @@ export default {
       async function fetchUserData(uid) {
         try {
           const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userKmzSelect.php', {
-            params: { uid: uid }
+            params: { uid: uid, isAll: vm.isAll }
           });
           if (response.data.error) {
             console.error('エラー:', response.data.error);
@@ -1434,12 +1448,11 @@ export default {
       fetchUserData(uid)
     },
     xyztileSelect (uid) {
-      // alert(uid)
       const vm = this
       async function fetchUserData(uid) {
         try {
           const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userXyztileSelect.php', {
-            params: { uid: uid }
+            params: { uid: uid, isAll: vm.isAll }
           });
           if (response.data.error) {
             console.error('エラー:', response.data.error);
@@ -1459,7 +1472,7 @@ export default {
       async function fetchUserData(uid) {
         try {
           const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtileSelect.php', {
-            params: { uid: uid }
+            params: { uid: uid, isAll: vm.isAll }
           });
 
           if (response.data.error) {
@@ -1480,7 +1493,7 @@ export default {
       async function fetchUserData(uid) {
         try {
           const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userTileSelect.php', {
-            params: { uid: uid }
+            params: { uid: uid, isAll: vm.isAll }
           });
 
           if (response.data.error) {
