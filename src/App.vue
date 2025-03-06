@@ -3271,7 +3271,6 @@ export default {
                     if (zahyokei) {
                       this.$store.state.zahyokei = zahyokei
                       this.dialogForGeotiffApp1file = true
-                      // this.geoTiffLoad20()
                     } else {
                       this.s_dialogForGeotiff2App = true
                     }
