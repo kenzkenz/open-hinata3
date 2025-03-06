@@ -5711,8 +5711,8 @@ export function userXyztileSet(name,url,id,bbox,transparent) {
     }
     if (map.getLayer('oh-vpstile-' + id + '-' + name + '-layer')) {
         map.getSource('oh-vpstile-' + id + '-' + name + '-source').setTiles([tile])
-        return
     }
+    store.state.selectedLayers.map01 = store.state.selectedLayers.map01.filter(layer => layer.id !== 'oh-vpstile-' + id + '-' + name + '-layer')
     const source = {
         id: 'oh-vpstile-' + id + '-' + name + '-source',obj: {
             type: 'raster',

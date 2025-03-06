@@ -416,7 +416,11 @@ export default {
       this.id = id
       this.name = name
       vm.s_selectedLayers.map01 = vm.s_selectedLayers.map01.filter(layer => layer.id !== 'oh-kmz-' + id + '-' + name + '-layer')
+      vm.s_selectedLayers.map02 = vm.s_selectedLayers.map02.filter(layer => layer.id !== 'oh-kmz-' + id + '-' + name + '-layer')
       async function aaa() {
+        const map01 = store.state.selectedLayers.map01
+        const map02 = store.state.selectedLayers.map02
+        const maps = [map01, map02]
         const id = vm.id
         const sourceAndLayers = await userKmzSet(name, url, id)
         console.log(sourceAndLayers)
@@ -425,9 +429,6 @@ export default {
           source: sourceAndLayers.source
         })
         console.log(store.state.geojsonSources)
-        const map01 = store.state.selectedLayers.map01
-        const map02 = store.state.selectedLayers.map02
-        const maps = [map01, map02]
         maps.forEach(map => {
           map.unshift(
               {
