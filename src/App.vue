@@ -2547,8 +2547,9 @@ export default {
                     const url = response.data[0].url;
                     const zahyokei = response.data[0].zahyokei;
                     const simaText = response.data[0].simatext;
+                    // alert(simaText)
                     async function aaa() {
-                      const sourceAndLayers = await userSimaSet(name, url, id, zahyokei)
+                      const sourceAndLayers = await userSimaSet(name, url, id, zahyokei, simaText)
                       store.state.geojsonSources.push({
                         sourceId: sourceAndLayers.source.id,
                         source: sourceAndLayers.source

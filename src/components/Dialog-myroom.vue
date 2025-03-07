@@ -455,7 +455,7 @@ export default {
         const map02 = store.state.selectedLayers.map02
         const maps = [map01, map02]
         const id = vm.id
-        const sourceAndLayers = await userSimaSet(name, url, id, zahyokei)
+        const sourceAndLayers = await userSimaSet(name, url, id, zahyokei, simaText)
         console.log(sourceAndLayers)
         store.state.geojsonSources.push({
           sourceId: sourceAndLayers.source.id,
@@ -891,7 +891,7 @@ export default {
                     const zahyokei = response.data[0].zahyokei;
                     const simaText = response.data[0].simatext;
                     async function aaa() {
-                      const sourceAndLayers = await userSimaSet(name, url, id, zahyokei)
+                      const sourceAndLayers = await userSimaSet(name, url, id, zahyokei, simaText)
                       store.state.geojsonSources.push({
                         sourceId: sourceAndLayers.source.id,
                         source: sourceAndLayers.source

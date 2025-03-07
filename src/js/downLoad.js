@@ -5695,34 +5695,38 @@ export const wsg84ToJgd = (coordinates) => {
     return proj4("EPSG:4326", code, coordinates);
 };
 
-export async function userSimaSet(name, url, id, zahyokei) {
+export async function userSimaSet(name, url, id, zahyokei, simaText) {
     const map = store.state.map01;
     try {
-        const files = await Promise.all([fetchFile(url)]);
-        const file = files[0];
-        if (!file) {
-            throw new Error("SIMAファイルがありません。");
+        if (!simaText) {
+            const files = await Promise.all([fetchFile(url)]);
+            const file = files[0];
+            if (!file) {
+                throw new Error("SIMAファイルがありません。");
+            }
+            // FileReaderをPromiseでラップ
+            simaText = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const arrayBuffer = event.target.result; // ArrayBufferとして読み込む
+                        const text = new TextDecoder("shift-jis").decode(arrayBuffer); // Shift JISをUTF-8に変換
+                        resolve(text);
+                    } catch (error) {
+                        reject(new Error(`エンコーディング変換エラー: ${error.message}`));
+                    }
+                };
+                reader.onerror = (error) => reject(error);
+                reader.readAsArrayBuffer(file);
+            });
         }
-        // FileReaderをPromiseでラップ
-        const simaText = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const arrayBuffer = event.target.result; // ArrayBufferとして読み込む
-                    const text = new TextDecoder("shift-jis").decode(arrayBuffer); // Shift JISをUTF-8に変換
-                    resolve(text);
-                } catch (error) {
-                    reject(new Error(`エンコーディング変換エラー: ${error.message}`));
-                }
-            };
-            reader.onerror = (error) => reject(error);
-            reader.readAsArrayBuffer(file);
-        });
+
         // alert(simaText)
         store.state.simaTextForUser = JSON.stringify({
             text: simaText,
             opacity: 0
         })
+
         store.state.simaOpacity = 0
         const geojson = simaToGeoJSON(simaText, map, zahyokei, false, true);
         return createSourceAndLayers(geojson);
@@ -5750,7 +5754,7 @@ export async function userSimaSet(name, url, id, zahyokei) {
             source: sourceId,
             filter: ["==", "$type", "Polygon"],
             paint: {
-                'fill-color': '#088',
+                'fill-color': 'rgb(50,101,186)',
                 'fill-opacity': 0
             }
         };
