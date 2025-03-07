@@ -1348,7 +1348,7 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto, isGeojson) {
         }
     });
 
-    if (isGeojson) {
+    // if (isGeojson) {
         // 区画データの頂点をポイントとして追加
         Object.keys(coordinates).forEach(id => {
             const chiban = lines.find(line => new RegExp(`A01\\s*,\\s*${id}\\s*,`).test(line))?.split(',')[2]?.trim()
@@ -1367,7 +1367,7 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto, isGeojson) {
                 });
             }
         });
-    }
+    // }
 
     // GeoJSONオブジェクトを生成
     const geoJSON = {
@@ -1378,6 +1378,8 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto, isGeojson) {
     if (isGeojson) {
         return geoJSON
     }
+
+    console.log(geoJSON)
 
     if (map) {
         if (map.getSource('sima-data')) {
@@ -1439,7 +1441,22 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto, isGeojson) {
                     'circle-stroke-width': 1,
                     'circle-stroke-color': '#000'
                 },
-                filter: ['==', '$type', 'Point']
+                filter: ['==', ['get', 'type'], 'point']
+            });
+            map.addLayer ({
+                id: 'sima-Vertex',
+                type: 'circle',
+                source: 'sima-data',
+                layout: {},
+                paint: {
+                    'circle-radius': [
+                        'interpolate', ['linear'], ['zoom'],
+                        15, 0,
+                        18, 4
+                    ],
+                    'circle-color': '#f00',
+                },
+                filter: ['==', ['get', 'type'], 'vertex']
             });
             map.addLayer({
                 id: 'sima-label',
