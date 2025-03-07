@@ -107,7 +107,7 @@ export default createStore({
     dialogForLink: false,
     isMenu: false,
     isAndroid: false,
-    simaOpacity: 0.7,
+    simaOpacity: 0,
     simaFire: false,
     tiffAndWorldFile: null,
     uploadedImage: '',

@@ -4646,7 +4646,7 @@ export async function simaLoadForUser (map,isUpload,simaText) {
                 store.state.fetchImagesFire = !store.state.fetchImagesFire
                 async function aaa() {
                     const id = response.data.lastId
-                    const sourceAndLayers = await userSimaSet(name, url, id)
+                    const sourceAndLayers = await userSimaSet(name, url, id, null, simaText, isUpload)
                     console.log(sourceAndLayers)
                     store.state.geojsonSources.push({
                         sourceId: sourceAndLayers.source.id,
@@ -5695,7 +5695,7 @@ export const wsg84ToJgd = (coordinates) => {
     return proj4("EPSG:4326", code, coordinates);
 };
 
-export async function userSimaSet(name, url, id, zahyokei, simaText) {
+export async function userSimaSet(name, url, id, zahyokei, simaText, isFirst) {
     const map = store.state.map01;
     try {
         if (!simaText) {
@@ -5720,14 +5720,20 @@ export async function userSimaSet(name, url, id, zahyokei, simaText) {
                 reader.readAsArrayBuffer(file);
             });
         }
+        if (isFirst) {
+            let opacity
+            if (store.state.simaTextForUser) {
+                opacity = JSON.parse(store.state.simaTextForUser).opacity
+            } else {
+                opacity = 0
+            }
+            store.state.simaTextForUser = JSON.stringify({
+                text: simaText,
+                opacity: opacity
+            })
+            store.state.simaOpacity = opacity
+        }
 
-        // alert(simaText)
-        store.state.simaTextForUser = JSON.stringify({
-            text: simaText,
-            opacity: 0
-        })
-
-        store.state.simaOpacity = 0
         const geojson = simaToGeoJSON(simaText, map, zahyokei, false, true);
         return createSourceAndLayers(geojson);
     } catch (error) {
