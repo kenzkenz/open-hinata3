@@ -1337,7 +1337,8 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto, isGeojson) {
                 type: 'Feature',
                 properties: {
                     id: id,
-                    chiban: chiban
+                    chiban: chiban,
+                    type: 'point'
                 },
                 geometry: {
                     type: 'Point',
@@ -1346,6 +1347,27 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto, isGeojson) {
             });
         }
     });
+
+    if (isGeojson) {
+        // 区画データの頂点をポイントとして追加
+        Object.keys(coordinates).forEach(id => {
+            const chiban = lines.find(line => new RegExp(`A01\\s*,\\s*${id}\\s*,`).test(line))?.split(',')[2]?.trim()
+            if (coordinatesUsedInPolygons.has(id)) {
+                features.push({
+                    type: 'Feature',
+                    properties: {
+                        id: id,
+                        chiban: chiban,
+                        type: 'vertex'
+                    },
+                    geometry: {
+                        type: 'Point',
+                        coordinates: coordinates[id]
+                    }
+                });
+            }
+        });
+    }
 
     // GeoJSONオブジェクトを生成
     const geoJSON = {
@@ -5693,6 +5715,7 @@ export async function userSimaSet(name, url, id, zahyokei) {
     }
 
     function createSourceAndLayers(geojson) {
+        console.log(geojson)
         if (map.getLayer('oh-sima-' + id + '-' + name + '-layer')) {
             return null;
         }
@@ -5753,7 +5776,7 @@ export async function userSimaSet(name, url, id, zahyokei) {
                 ],
                 'circle-color': '#f00',
             },
-            filter: ['==', '$type', 'Polygon']
+            filter: ['==', ['get', 'type'], 'vertex']
         };
         const pointLayer = {
             id: 'oh-sima-' + id + '-' + name + '-point-layer',
@@ -5761,12 +5784,29 @@ export async function userSimaSet(name, url, id, zahyokei) {
             source: sourceId,
             layout: {},
             paint: {
-                'circle-radius': 8,
+                'circle-radius': 6,
                 'circle-color': 'navy',
             },
-            filter: ['==', '$type', 'Point']
+            filter: ['==', ['get', 'type'], 'point']
         };
-        return { source, layers: [polygonLayer, lineLayer, labelLayer, vertexLayer, pointLayer], geojson: geojson };
+        const pointLabelLayer = {
+            id: 'oh-sima-' + id + '-' + name + '-point-label-layer',
+            type: 'symbol',
+            source: sourceId,
+            layout: {
+                'text-field': ['get', 'chiban'],
+                'text-font': ['NotoSansJP-Regular'],
+                'text-offset': [0, 1.3], // ラベルを下にずらす
+            },
+            paint: {
+                'text-color': 'rgba(0, 0, 0, 1)',
+                'text-halo-color': 'rgba(255,255,255,0.7)',
+                'text-halo-width': 1.0
+            },
+            minzoom: 14,
+            filter: ['==', '$type', 'Point']
+        }
+        return { source, layers: [polygonLayer, lineLayer, labelLayer, vertexLayer, pointLayer, pointLabelLayer], geojson: geojson };
     }
 }
 
