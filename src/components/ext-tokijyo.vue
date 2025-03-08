@@ -110,25 +110,31 @@
       <v-btn style="width: 145px;" @click="tutorial">使い方説明</v-btn>
     </div>
 
-
     <hr>
     <div style="display: flex; align-items: center; gap: 10px;">
       <v-btn style="height: 40px; line-height: 40px; margin-left: 0px;margin-top: 10px;" class="tiny-btn" @click="resetFeatureColors">
         選択解除
       </v-btn>
       <div class="swich">
-      <v-tooltip top>
-        <template v-slot:activator="{ props }">
-          <v-switch
-              v-model="s_isRenzoku"
-              label="連続選択"
-              color="primary"
-              style="height: 20px; margin-top: -30px;padding-bottom: 30px"
-              v-bind="props"
-          />
-        </template>
-        <span>オフにするとポップアップします。</span>
-      </v-tooltip>
+        <v-switch
+            v-model="s_isRenzoku"
+            label="連続選択"
+            color="primary"
+            style="height: 20px; margin-top: -30px;padding-bottom: 30px"
+            v-bind="props"
+        />
+<!--      <v-tooltip top>-->
+<!--        <template v-slot:activator="{ props }">-->
+<!--          <v-switch-->
+<!--              v-model="s_isRenzoku"-->
+<!--              label="連続選択"-->
+<!--              color="primary"-->
+<!--              style="height: 20px; margin-top: -30px;padding-bottom: 30px"-->
+<!--              v-bind="props"-->
+<!--          />-->
+<!--        </template>-->
+<!--        <span>オフにするとポップアップします。</span>-->
+<!--      </v-tooltip>-->
       </div>
     </div>
     <div class="color-container">

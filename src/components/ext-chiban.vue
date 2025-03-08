@@ -141,6 +141,9 @@
   </v-dialog>
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
+
+    <v-text-field label="地番で抽出" v-model="s_chibanText" @input="change" style="margin-top: 0px"></v-text-field>
+
 <!--    <v-btn style="margin-top: 0px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>-->
 <!--    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>-->
     <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog5=true" v-if="item.id !== 'oh-chibanzu2024'">sima保存（簡易）</v-btn>
@@ -190,7 +193,7 @@ import {
 } from "@/js/downLoad";
 
 export default {
-  name: 'ext-iwate',
+  name: 'ext-chibanzu',
   props: ['mapName','item'],
   data: () => ({
     fields: '',
@@ -235,6 +238,30 @@ export default {
         this.$store.state.isRenzoku = value
       }
     },
+    s_chibanText: {
+      get() {
+        return this.$store.state.chibanText[this.mapName]
+      },
+      set(value) {
+        this.$store.state.chibanText[this.mapName] = value
+      }
+    },
+    s_chibanColor: {
+      get() {
+        return this.$store.state.chibanColor[this.mapName]
+      },
+      set(value) {
+        this.$store.state.chibanColor[this.mapName] = value
+      }
+    },
+    s_chibanCircleColor: {
+      get() {
+        return this.$store.state.chibanCircleColor[this.mapName]
+      },
+      set(value) {
+        this.$store.state.chibanCircleColor[this.mapName] = value
+      }
+    },
   },
   methods: {
     // update () {
@@ -242,6 +269,15 @@ export default {
     //       this.s_tokijyoText
     //     ]})
     // },
+    update () {
+      this.$store.commit('updateSelectedLayers', {
+        mapName: this.mapName, id: this.item.id, values: [
+          this.s_chibanText,
+          this.s_chibanColor,
+          this.s_chibanCircleColor
+        ]
+      })
+    },
     checkDevice() {
       const userAgent = navigator.userAgent || navigator.vendor || window.opera;
       console.log(/android/i.test(userAgent))
@@ -582,8 +618,8 @@ export default {
           // map.setFilter('oh-amx-a-daihyo', null)
         }
       }
-      filterBy(this.s_tokijyoText)
-      // this.update()
+      // filterBy(this.s_tokijyoText)
+      this.update()
     },
   },
   created() {
@@ -593,8 +629,13 @@ export default {
 
   },
   watch: {
+    // s_simaData () {
+    //   this.update()
+    // },
     s_extFire () {
       // this.change()
+      // this.changeColor(this.s_chibanColor)
+      // this.changeColorCircle(this.s_chibanCircleColor)
     },
   }
 }

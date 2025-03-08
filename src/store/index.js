@@ -270,6 +270,18 @@ export default createStore({
       map01: 'red',
       map02: 'red'
     },
+    chibanText:{
+      map01: '',
+      map02: ''
+    },
+    chibanColor:{
+      map01: 'red',
+      map02: 'red'
+    },
+    chibanCircleColor:{
+      map01: 'red',
+      map02: 'red'
+    },
     zeniKm:{
       map01: 20,
       map02: 20
@@ -425,6 +437,17 @@ export default createStore({
             }
             if (payload.order === 2) {
               variable = 'tokijyoCircleColor'
+            }
+            break
+          case 'ext-chibanzu':
+            if (payload.order === 0) {
+              variable = 'chibanText'
+            }
+            if (payload.order === 1) {
+              variable = 'chibanColor'
+            }
+            if (payload.order === 2) {
+              variable = 'chibanCircleColor'
             }
             break
           case 'extZeni':
