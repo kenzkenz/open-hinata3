@@ -80,8 +80,7 @@
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
 
-    <hr>
-<!--    <v-text-field label="抽出" v-model="s_tokijyoText" @input="change" style="margin-top: 10px"></v-text-field>-->
+    <v-text-field label="抽出" v-model="s_tokijyoText" @input="change" style="margin-top: 0px"></v-text-field>
 
       <!-- 1行目 -->
 <!--      <div style="display: flex; justify-content: space-between; gap: 10px; padding-right: 30px;">-->
@@ -90,7 +89,7 @@
 <!--      </div>-->
 
       <!-- 2行目 -->
-      <div style="margin-top:10px;display: flex; justify-content: space-between; gap: 0px; padding-right: 0px;">
+      <div style="margin-top:0px;display: flex; justify-content: space-between; gap: 0px; padding-right: 0px;">
         <v-btn style="width: 70px;" class="tiny-btn" @click="saveSima2">sima保存</v-btn>
         <v-btn style="width: 70px;" class="tiny-btn" @click="s_dialogForSima = true">sima読込</v-btn>
         <v-btn style="width: 70px;" class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
@@ -414,6 +413,7 @@ export default {
     // },
     s_extFire () {
       // this.change(false)
+      this.change()
       this.changeColor(this.s_tokijyoColor)
       this.changeColorCircle(this.s_tokijyoCircleColor)
     },
