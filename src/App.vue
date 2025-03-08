@@ -2710,15 +2710,15 @@ export default {
                       id: 'oh-chibanL-' + name + '-point-layer',
                       type: "circle",
                       source: 'oh-chiban-' + id + '-' + name + '-source',
-                      filter: ["==", "$type", "Point"],
                       "source-layer": "oh3",
+                      filter: ["==", "$type", "Point"],
                       paint: {
-                        'circle-color': 'rgba(255,0,0,1)', // 赤色で中心点を強調
-                        'circle-radius': 5, // 固定サイズの点
+                        'circle-color': 'rgba(255,0,0,1)',
+                        'circle-radius': 5,
                         'circle-opacity': 1,
                         'circle-stroke-width': 1,
                         'circle-stroke-color': '#fff'
-                      }
+                      },
                     };
                     const vertexLayer = {
                       id: 'oh-chibanL-' + name + '-vertex-layer',
