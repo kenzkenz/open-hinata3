@@ -1904,6 +1904,34 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto, isGeojson) {
 //     }
 //     return JSON.stringify(geoJSON, null, 2);
 // }
+
+export function simaFileUpload(event) {
+    store.state.tiffAndWorldFile = event.target.files
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!file.name.endsWith('.sim')) {
+        alert('SIMAファイル(.sim)をアップロードしてください。');
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const arrayBuffer = e.target.result; // ArrayBufferとして読み込む
+        const text = new TextDecoder("shift-jis").decode(arrayBuffer); // Shift JISをUTF-8に変換
+        console.log("変換されたテキスト:", text)
+        const simaData = text;
+        if (store.state.userId) {
+            const map1 = store.state.map01
+            simaLoadForUser (map1,true, simaData)
+        } else {
+            ddSimaUpload(simaData)
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+
+
+
 // ファイルアップロード処理
 export function handleFileUpload(event) {
     const file = event.target.files[0];
@@ -6346,5 +6374,52 @@ export async function iko() {
         console.log(result)
         store.state.loading2 = false
         alert("失敗しました！");
+    }
+}
+
+export function scrollForAndroid (className) {
+    if (store.state.isAndroid) {
+        // alert('テスト２')
+        let startY;
+        let isTouching = false;
+        let currentTarget = null;
+        let initialScrollTop = 0;
+        document.addEventListener('touchstart', (e) => {
+            const target = e.target.closest(className);
+            if (target) {
+                startY = e.touches[0].clientY; // タッチ開始位置を記録
+                initialScrollTop = target.scrollTop; // 初期スクロール位置を記録
+                isTouching = true;
+                currentTarget = target;
+                target.style.overflowY = 'auto'; // スクロールを強制的に有効化
+                target.style.touchAction = 'manipulation';
+                // **イベント伝播を防ぐ**
+                e.stopPropagation();
+            }
+        }, {passive: true, capture: true});
+
+        // タッチ移動時の処理
+        document.addEventListener('touchmove', (e) => {
+            if (!isTouching || !currentTarget) return; // タッチが開始されていなければ処理しない
+            const moveY = e.touches[0].clientY;
+            const deltaY = startY - moveY; // 移動量を計算
+            // スクロール位置を更新
+            currentTarget.scrollTop += deltaY;
+            startY = moveY; // 開始位置を現在の位置に更新
+            // **Android でスクロールが無視されないようにする**
+            e.preventDefault();
+            e.stopPropagation();
+
+        }, {passive: true, capture: true});
+
+        // タッチ終了時の処理
+        document.addEventListener('touchend', () => {
+            if (currentTarget) {
+                currentTarget.style.overflowY = ''; // スクロール設定をリセット
+            }
+            currentTarget = null; // 現在のターゲットをリセット
+            isTouching = false; // タッチ中フラグをOFF
+            initialScrollTop = 0; // 初期スクロール位置をリセット
+        });
     }
 }

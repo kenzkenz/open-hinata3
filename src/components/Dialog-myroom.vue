@@ -206,7 +206,7 @@ export default {
     xyztileRename: '',
     kmzRename: '',
     simaRename: '',
-    tab: 'one',
+    tab: '0',
     tileUrl: '',
     tileName: '',
     urlName: '',
