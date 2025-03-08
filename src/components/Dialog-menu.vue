@@ -111,7 +111,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <p v-if="user1">ようこそ、{{ user1.displayName || "ゲスト" }}さん！</p>
         <p v-else></p>
       </div>
-      v0.586<br>
+      <p style="margin-bottom: 10px">v0.587</p>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 

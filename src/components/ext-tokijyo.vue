@@ -80,7 +80,7 @@
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
 
-    <v-text-field label="抽出" v-model="s_tokijyoText" @input="change" style="margin-top: 0px"></v-text-field>
+    <v-text-field label="地番で抽出" v-model="s_tokijyoText" @input="change" style="margin-top: 0px"></v-text-field>
 
       <!-- 1行目 -->
 <!--      <div style="display: flex; justify-content: space-between; gap: 10px; padding-right: 30px;">-->
@@ -379,7 +379,7 @@ export default {
          // const combinedFields = ["concat", ["get", "大字名"], " ", ["get", "大字コード"], " ", ["get", "地番"], " ", ["get", "丁目コード"],
          //   " ", ["get", "小字コード"], " ", ["get", "市区町村名"]];
 
-          // "_" を削除するための処理
+          // "_" を削除するための処理 ここを改修する必要がある。
           const cleanedField = ["format", ["get", "地番区域"], { "text-replace": ["_", ""] }];
 
           // 複数フィールドを結合する
