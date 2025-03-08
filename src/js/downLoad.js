@@ -440,7 +440,7 @@ export function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, fileName, 
             console.log(999999999)
         }
 
-// alert(chiban)
+       // alert(chiban)
         B01Text += 'D00,' + i + ',' + chiban + ',1,\n';
         let coordinates = [];
         if (feature.geometry.type === 'Polygon') {
@@ -4682,26 +4682,112 @@ async function insertSimaData(uid, name, url, url2, simaText, zahyokei) {
 }
 
 export async function simaLoadForUser (map,isUpload,simaText) {
-    async function insertSimaData(uid, name, url, url2, simaText, zahyokei) {
-        try {
-            const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userSimaInsert.php', new URLSearchParams({
-                uid: uid,
-                name: name,
-                url: url,
-                url2: url2,
-                simatext: simaText,
-                zahyokei: zahyokei
-            }));
-            if (response.data.error) {
-                console.error('エラー:', response.data.error);
-                alert(`エラー: ${response.data.error}`);
-            } else {
-                console.log('登録成功:', response.data);
-                // alert('登録成功')
+    // async function insertSimaData(uid, name, url, url2, simaText, zahyokei) {
+    //     try {
+    //         const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userSimaInsert.php', new URLSearchParams({
+    //             uid: uid,
+    //             name: name,
+    //             url: url,
+    //             url2: url2,
+    //             simatext: simaText,
+    //             zahyokei: zahyokei
+    //         }));
+    //         if (response.data.error) {
+    //             console.error('エラー:', response.data.error);
+    //             alert(`エラー: ${response.data.error}`);
+    //         } else {
+    //             console.log('登録成功:', response.data);
+    //             // alert('登録成功')
+    //             store.state.fetchImagesFire = !store.state.fetchImagesFire
+    //             async function aaa() {
+    //                 const id = response.data.lastId
+    //                 const sourceAndLayers = await userSimaSet(name, url, id, null, simaText, isUpload)
+    //                 console.log(sourceAndLayers)
+    //                 store.state.geojsonSources.push({
+    //                     sourceId: sourceAndLayers.source.id,
+    //                     source: sourceAndLayers.source
+    //                 })
+    //                 console.log(store.state.geojsonSources)
+    //                 store.state.selectedLayers.map01.unshift(
+    //                     {
+    //                         id: 'oh-sima-' + id + '-' + name + '-layer',
+    //                         label: name,
+    //                         source: sourceAndLayers.source.id,
+    //                         layers: sourceAndLayers.layers,
+    //                         opacity: 1,
+    //                         visibility: true,
+    //                     }
+    //                 );
+    //                 console.log(store.state.selectedLayers.map01)
+    //                 const bounds = new maplibregl.LngLatBounds();
+    //                 sourceAndLayers.geojson.features.forEach(feature => {
+    //                     const geometry = feature.geometry;
+    //                     if (!geometry) return;
+    //                     switch (geometry.type) {
+    //                         case 'Point':
+    //                             bounds.extend(geometry.coordinates);
+    //                             break;
+    //                         case 'LineString':
+    //                             geometry.coordinates.forEach(coord => bounds.extend(coord));
+    //                             break;
+    //                         case 'Polygon':
+    //                             geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
+    //                             break;
+    //                         case 'MultiPolygon':
+    //                             geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
+    //                             break;
+    //                     }
+    //                 });
+    //                 map.fitBounds(bounds, {
+    //                     padding: 50,
+    //                     animate: true
+    //                 });
+    //                 store.state.snackbar = true
+    //                 store.state.loading2 = false
+    //             }
+    //             aaa()
+    //         }
+    //     } catch (error) {
+    //         console.error('通信エラー:', error);
+    //         alert('通信エラーが発生しました');
+    //     }
+    // }
+
+    store.state.loading2 = true
+    store.state.loadingMessage = 'アップロード中です。'
+    const files = store.state.tiffAndWorldFile
+    const file = files[0];
+    console.log(file)
+    //----------------------------------------------------------------------------------------------------------------
+    if (isUpload) {
+        store.state.loading2 = true
+        // FormDataを作成
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('dir', store.state.userId);
+        axios.post('https://kenzkenz.duckdns.org/myphp/upload_sima.php', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data', // 必須
+            },
+        })
+            .then(response => {
+                // 成功時の処理
+                if (response.data.error) {
+                    console.log(response.data.error)
+                    alert(response.data.error)
+                    return
+                }
+                // alert('成功')
+                console.log('sima保存成功:', response.data.simaPath);
+                console.log(response)
+                // alert(store.state.zahyokei)
+                const webUrl = 'https://kenzkenz.duckdns.org/' + response.data.simaPath.replace('/var/www/html/public_html/','')
+                const name = response.data.simaName.replace('.sim','')
+                insertSimaData(store.state.userId, name, webUrl, response.data.simaPath,simaText,store.state.zahyokei)
                 store.state.fetchImagesFire = !store.state.fetchImagesFire
                 async function aaa() {
                     const id = response.data.lastId
-                    const sourceAndLayers = await userSimaSet(name, url, id, null, simaText, isUpload)
+                    const sourceAndLayers = await userSimaSet(name, webUrl, id, null, simaText, isUpload)
                     console.log(sourceAndLayers)
                     store.state.geojsonSources.push({
                         sourceId: sourceAndLayers.source.id,
@@ -4746,44 +4832,6 @@ export async function simaLoadForUser (map,isUpload,simaText) {
                     store.state.loading2 = false
                 }
                 aaa()
-            }
-        } catch (error) {
-            console.error('通信エラー:', error);
-            alert('通信エラーが発生しました');
-        }
-    }
-
-    store.state.loading2 = true
-    store.state.loadingMessage = 'アップロード中です。'
-    const files = store.state.tiffAndWorldFile
-    const file = files[0];
-    console.log(file)
-    //----------------------------------------------------------------------------------------------------------------
-    if (isUpload) {
-        store.state.loading2 = true
-        // FormDataを作成
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('dir', store.state.userId);
-        axios.post('https://kenzkenz.duckdns.org/myphp/upload_sima.php', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data', // 必須
-            },
-        })
-            .then(response => {
-                // 成功時の処理
-                if (response.data.error) {
-                    console.log(response.data.error)
-                    alert(response.data.error)
-                    return
-                }
-                // alert('成功')
-                console.log('sima保存成功:', response.data.simaPath);
-                console.log(response)
-                // alert(store.state.zahyokei)
-                const webUrl = 'https://kenzkenz.duckdns.org/' + response.data.simaPath.replace('/var/www/html/public_html/','')
-                const name = response.data.simaName.replace('.sim','')
-                insertSimaData(store.state.userId, name, webUrl, response.data.simaPath,simaText,store.state.zahyokei)
                 store.state.fetchImagesFire = !store.state.fetchImagesFire
             })
             .catch(error => {
