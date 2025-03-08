@@ -571,29 +571,8 @@ export default {
     },
     change () {
       console.log(this.item)
-      // const vm = this
+      const vm = this
       const map = this.$store.state[this.mapName]
-      // if (!this.s_isPaintCity) {
-      //   map.setPaintProperty(this.item.id, 'fill-color', 'rgba(0, 0, 0, 0)')
-      //   map.setPaintProperty(this.item.id + '-line', 'line-color', 'black')
-      //   map.setPaintProperty(this.item.id + '-line', 'line-width',  [
-      //     'interpolate',
-      //     ['linear'],
-      //     ['zoom'],
-      //     7, 1,
-      //     11, 4
-      //   ]);
-      // } else {
-      //   map.setPaintProperty(this.item.id, 'fill-color', ['get', 'random_color'])
-      //   map.setPaintProperty(this.item.id + '-line', 'line-color', 'black')
-      //   map.setPaintProperty(this.item.id + '-line', 'line-width', [
-      //     'interpolate',
-      //     ['linear'],
-      //     ['zoom'],
-      //     7, 0,
-      //     11, 0.5
-      //   ]);
-      // }
       //-------------------------------------------------------------------------
       function filterBy(text) {
         if (text) {
@@ -601,24 +580,31 @@ export default {
           searchString = searchString.replace(/\u3000/g,' ').trim()
           const words = searchString.split(" ")
           // 複数フィールドを結合する
-          const combinedFields = ["concat", ["get", "大字名"], " ", ["get", "大字コード"], " ", ["get", "地番"], " ", ["get", "丁目コード"],
-            " ", ["get", "小字コード"], " ", ["get", "市区町村名"]];
+          const combinedFields = ["concat", ["get", "地番"], " ", ["get", "Chiban"], " ", ["get", "TIBAN"], " ", ["get", "TXTCD"],
+            " ", ["get", "本番"], " ", ["get", "CHIBAN"], " ", ["get", "表示文字列"], " ", ["get", "番地"], " ", ["get", "TXTCODE1"],
+            " ", ["get", "地番本番"], " ", ["get", "SAFIELD002"], " ", ["get", "所在地番"], " ", ["get", "TEXTCODE1"], " ", ["get", "chiban"]];
           // 各単語に対して、結合したフィールドに対する index-of チェックを実行
           const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);
           // いずれかの単語が含まれる場合の条件を作成 (OR条件)
           const matchCondition = ["any", ...filterConditions]
-          map.setFilter('oh-amx-a-fude', matchCondition)
-          map.setFilter('oh-amx-a-fude-line', matchCondition)
-          map.setFilter('oh-amx-label', matchCondition)
-          // map.setFilter('oh-amx-a-daihyo', matchCondition)
+
+          map.getStyle().layers.forEach(layer => {
+            if (layer.id.includes('oh-chibanzu-')) {
+              map.setFilter(layer.id, matchCondition)
+            }
+          })
+
         } else {
-          map.setFilter('oh-amx-a-fude', null)
-          map.setFilter('oh-amx-a-fude-line', null)
-          map.setFilter('oh-amx-label', null)
-          // map.setFilter('oh-amx-a-daihyo', null)
+
+          map.getStyle().layers.forEach(layer => {
+            if (layer.id.includes('oh-chibanzu-')) {
+              map.setFilter(layer.id, null)
+            }
+          })
+
         }
       }
-      // filterBy(this.s_tokijyoText)
+      filterBy(this.s_chibanText)
       this.update()
     },
   },
@@ -633,7 +619,7 @@ export default {
     //   this.update()
     // },
     s_extFire () {
-      // this.change()
+      this.change()
       // this.changeColor(this.s_chibanColor)
       // this.changeColorCircle(this.s_chibanCircleColor)
     },
