@@ -378,7 +378,16 @@ export default {
           // 複数フィールドを結合する
          // const combinedFields = ["concat", ["get", "大字名"], " ", ["get", "大字コード"], " ", ["get", "地番"], " ", ["get", "丁目コード"],
          //   " ", ["get", "小字コード"], " ", ["get", "市区町村名"]];
-          const combinedFields = ["concat", ["get", "地番区域"], " ", ["get", "地番"]];
+
+          // "_" を削除するための処理
+          const cleanedField = ["format", ["get", "地番区域"], { "text-replace": ["_", ""] }];
+
+          // 複数フィールドを結合する
+          const combinedFields = ["concat", cleanedField, " ", ["get", "地番"]];
+
+
+          // const combinedFields = ["concat", ["get", "地番区域"], " ", ["get", "地番"]];
+
           // 各単語に対して、結合したフィールドに対する index-of チェックを実行
           const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);
           // いずれかの単語が含まれる場合の条件を作成 (OR条件)
