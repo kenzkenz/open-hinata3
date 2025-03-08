@@ -79,7 +79,7 @@
   </v-dialog>
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
-    <v-btn style="width: 100%;" @click="tutorial">使い方説明</v-btn>
+
     <hr>
 <!--    <v-text-field label="抽出" v-model="s_tokijyoText" @input="change" style="margin-top: 10px"></v-text-field>-->
 
@@ -106,8 +106,9 @@
       </div>
 
     <!-- 4行目 -->
-    <div style="display: flex; justify-content: space-between; gap: 5px; padding-right: 100px;">
+    <div style="display: flex; justify-content: space-between; gap: 0px; padding-right: 0px;">
       <v-btn style="width: 70px; font-size: 8px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
+      <v-btn style="width: 145px;" @click="tutorial">使い方説明</v-btn>
     </div>
 
 
