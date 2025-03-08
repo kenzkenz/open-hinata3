@@ -275,12 +275,12 @@ export default createStore({
       map02: ''
     },
     chibanColor:{
-      map01: 'red',
-      map02: 'red'
+      map01: 'blue',
+      map02: 'blue'
     },
     chibanCircleColor:{
-      map01: 'red',
-      map02: 'red'
+      map01: 'blue',
+      map02: 'blue'
     },
     zeniKm:{
       map01: 20,

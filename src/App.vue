@@ -2719,8 +2719,23 @@ export default {
                         'circle-stroke-color': '#fff'
                       }
                     };
+                    const vertexLayer = {
+                      id: 'oh-chibanL-' + name + '-vertex-layer',
+                      type: "circle",
+                      source: 'oh-chiban-' + id + '-' + name + '-source',
+                      filter: ["==", "$type", "Polygon"],
+                      "source-layer": "oh3",
+                      paint: {
+                        'circle-radius': [
+                          'interpolate', ['linear'], ['zoom'],
+                          15, 0,
+                          18,4
+                        ],
+                        'circle-color': 'red',
+                      }
+                    };
                     v.sources = [source];
-                    v.layers = [polygonLayer,lineLayer,labelLayer,pointLayer];
+                    v.layers = [polygonLayer,lineLayer,labelLayer,pointLayer,vertexLayer];
                     v.label = response.data[0].name;
                   }
                 } catch (error) {
@@ -4361,6 +4376,7 @@ font {
   display: none!important;
 }
 .color-container {
+  margin-top: 15px;
   display: flex; /* 横並びにする */
   gap: 10px; /* ボックス間の余白 */
   height: 25px;
@@ -4392,6 +4408,7 @@ font {
 }
 .color-container2 {
   margin-top: 5px;
+  margin-bottom: 10px;
   display: flex;
   justify-content: space-between; /* 均等に配置 */
   align-items: center; /* 垂直方向で中央揃え */

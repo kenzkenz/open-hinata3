@@ -1637,6 +1637,7 @@ const chibanzuSources = []
 const chibanzuLayers = []
 const chibanzuLayerLines = []
 const chibanzuLayerLabel = []
+const chibanzuLayerVertex = []
 sicyosonChibanzuUrls.forEach(url => {
     console.log(url.url)
     chibanzuSources.push({
@@ -1692,6 +1693,20 @@ sicyosonChibanzuUrls.forEach(url => {
         'maxzoom': 24,
         'minzoom': 17
     })
+    chibanzuLayerVertex.push({
+        id: 'oh-chibanzu-vertex-' + url.name,
+        type: "circle",
+        source: 'oh-chibanzu-' + url.name + '-source',
+        "source-layer": "chibanzu",
+        paint: {
+            'circle-radius': [
+                'interpolate', ['linear'], ['zoom'],
+                15, 0,
+                18,4
+            ],
+            'circle-color': 'red',
+        }
+    })
 })
 const chibanzuLayers2 = chibanzuLayers.map((layer,i) => {
     const name = layer.id.replace('oh-chibanzu-','') + '地番図'
@@ -1699,7 +1714,7 @@ const chibanzuLayers2 = chibanzuLayers.map((layer,i) => {
         id: layer.id,
         label: name,
         source: chibanzuSources[i],
-        layers:[layer,chibanzuLayerLines[i],chibanzuLayerLabel[i]],
+        layers:[layer,chibanzuLayerLines[i],chibanzuLayerLabel[i],chibanzuLayerVertex[i]],
         attribution: '<a href="' + layer.page + '" target="_blank">' + name + '</a>',
         position: layer.position,
         ext: {name:'ext-chibanzu'}
@@ -2945,8 +2960,6 @@ const amx2024LayerVertex = {
             18,4
         ],
         'circle-color': 'red',
-        // 'circle-stroke-width': 1,
-        // 'circle-stroke-color': 'white'
     }
 }
 // ---------------------------------------------------------------------------------------------------------------------

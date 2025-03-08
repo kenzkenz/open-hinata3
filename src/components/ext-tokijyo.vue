@@ -292,22 +292,6 @@ export default {
       map.setPaintProperty('oh-amx-a-fude-line', 'line-color', color)
       this.s_tokijyoColor = color
 
-      // map.setPaintProperty(
-      //     'oh-amx-a-daihyo', // レイヤID
-      //     'heatmap-color',   // プロパティ
-      //     [
-      //       'interpolate',
-      //       ['linear'],
-      //       ['heatmap-density'],
-      //       0,
-      //       'rgba(255, 255, 255, 0)', // 透明
-      //       0.5,
-      //       'rgba(144, 238, 144, 0.5)', // 薄い緑
-      //       1,
-      //       'rgba(0, 100, 0, 0.8)' // 濃い緑
-      //     ]
-      // );
-
       if (isUpdate) this.update()
     },
     changeMode () {

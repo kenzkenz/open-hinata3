@@ -160,22 +160,29 @@
       <v-btn style="height: 40px; line-height: 40px; margin-left: 0px;margin-top: 10px;" class="tiny-btn" @click="resetFeatureColors">
         選択解除
       </v-btn>
-<!--      <v-switch v-model="s_isRenzoku" label="連続選択" color="primary" style="height: 40px;margin-top: -15px;"/>-->
-      <v-tooltip top>
-        <template v-slot:activator="{ props }">
-          <v-switch
-              v-model="s_isRenzoku"
-              label="連続選択"
-              color="primary"
-              style="height: 40px; margin-top: -15px;"
-              v-bind="props"
-          />
-        </template>
-        <span>オフにするとポップアップします。</span>
-      </v-tooltip>
-
+      <v-switch
+          v-model="s_isRenzoku"
+          label="連続選択"
+          color="primary"
+          style="height: 40px; margin-top: -15px;"
+          v-bind="props"
+      />
     </div>
-    <hr>
+    <div class="color-container">
+      <div class="box box1" @click="changeColor('red',true)"></div>
+      <div class="box box2" @click="changeColor('black',true)"></div>
+      <div class="box box3" @click="changeColor('blue',true)"></div>
+      <div class="box box4" @click="changeColor('green',true)"></div>
+      <div class="box box5" @click="changeColor('orange',true)"></div>
+    </div>
+    <div class="color-container2">
+      <div class="circle box1" @click="changeColorCircle('red',true)"></div>
+      <div class="circle box2" @click="changeColorCircle('black',true)"></div>
+      <div class="circle box3" @click="changeColorCircle('blue',true)"></div>
+      <div class="circle box4" @click="changeColorCircle('green',true)"></div>
+      <div class="circle box5" @click="changeColorCircle('orange',true)"></div>
+      <div class="circle box6" @click="changeColorCircle('rgba(0,0,0,0)')"></div>
+    </div>
     <div v-html="item.attribution"></div>
   </div>
 </template>
@@ -264,11 +271,6 @@ export default {
     },
   },
   methods: {
-    // update () {
-    //   this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [
-    //       this.s_tokijyoText
-    //     ]})
-    // },
     update () {
       this.$store.commit('updateSelectedLayers', {
         mapName: this.mapName, id: this.item.id, values: [
@@ -277,6 +279,32 @@ export default {
           this.s_chibanCircleColor
         ]
       })
+    },
+    changeColorCircle (color,isUpdate) {
+      const map = this.$store.state[this.mapName]
+      map.getStyle().layers.forEach(layer => {
+        if (layer.id.includes('oh-chibanzu-vertex')) {
+          map.setPaintProperty(layer.id, 'circle-color', color)
+        }
+        if (layer.id.includes('oh-chibanL-') && layer.id.includes('vertex')) {
+          map.setPaintProperty(layer.id, 'circle-color', color)
+        }
+      })
+      this.s_chibanCircleColor = color
+      if (isUpdate) this.update()
+    },
+    changeColor (color,isUpdate) {
+      const map = this.$store.state[this.mapName]
+      map.getStyle().layers.forEach(layer => {
+        if (layer.id.includes('oh-chibanzu-line')) {
+          map.setPaintProperty(layer.id, 'line-color', color)
+        }
+        if (layer.id.includes('oh-chibanL-') && layer.id.includes('line')) {
+          map.setPaintProperty(layer.id, 'line-color', color)
+        }
+      })
+      this.s_chibanColor = color
+      if (isUpdate) this.update()
     },
     checkDevice() {
       const userAgent = navigator.userAgent || navigator.vendor || window.opera;
@@ -582,7 +610,7 @@ export default {
           // 複数フィールドを結合する
           const combinedFields = ["concat", ["get", "地番"], " ", ["get", "Chiban"], " ", ["get", "TIBAN"], " ", ["get", "TXTCD"],
             " ", ["get", "本番"], " ", ["get", "CHIBAN"], " ", ["get", "表示文字列"], " ", ["get", "番地"], " ", ["get", "TXTCODE1"],
-            " ", ["get", "地番本番"], " ", ["get", "SAFIELD002"], " ", ["get", "所在地番"], " ", ["get", "TEXTCODE1"], " ", ["get", "chiban"]];
+            " ", ["get", "地番本番"], " ", ["get", "SAFIELD002"], " ", ["get", "所在地番"], " ", ["get", "TEXTCODE1"], " ", ["get", "TXTCD"]];
           // 各単語に対して、結合したフィールドに対する index-of チェックを実行
           const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);
           // いずれかの単語が含まれる場合の条件を作成 (OR条件)
@@ -592,12 +620,18 @@ export default {
             if (layer.id.includes('oh-chibanzu-')) {
               map.setFilter(layer.id, matchCondition)
             }
+            if (layer.id.includes('oh-chiban-') || layer.id.includes('oh-chibanL-')) {
+              map.setFilter(layer.id, matchCondition)
+            }
           })
 
         } else {
 
           map.getStyle().layers.forEach(layer => {
             if (layer.id.includes('oh-chibanzu-')) {
+              map.setFilter(layer.id, null)
+            }
+            if (layer.id.includes('oh-chiban-') || layer.id.includes('oh-chibanL-')) {
               map.setFilter(layer.id, null)
             }
           })
@@ -620,8 +654,8 @@ export default {
     // },
     s_extFire () {
       this.change()
-      // this.changeColor(this.s_chibanColor)
-      // this.changeColorCircle(this.s_chibanCircleColor)
+      this.changeColor(this.s_chibanColor)
+      this.changeColorCircle(this.s_chibanCircleColor)
     },
   }
 }

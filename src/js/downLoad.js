@@ -437,7 +437,6 @@ export function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, fileName, 
 
         if(/^oh-chiban-/.test(layerId)) {
             chiban = feature.properties[feature.properties.chiban]
-            console.log(999999999)
         }
 
        // alert(chiban)
@@ -2295,7 +2294,6 @@ export function highlightSpecificFeaturesCity(map,layerId) {
 
         if(/^oh-chiban-/.test(layerId)) {
             fields = ['concat', ['get', 'oh3id']]
-            console.log(999999999)
         }
 
         console.log(layerId)
@@ -2401,10 +2399,7 @@ function getBoundingBoxByLayer(map, layerId) {
         }
         if(/^oh-chiban-/.test(layerId)) {
             targetId = `${feature.properties['oh3id']}`;
-            console.log(88888888888888)
         }
-
-
 
         // amx2024対策
         // if (layerId === 'oh-amx-a-fude') {
@@ -6095,12 +6090,28 @@ export function userPmtileSet(name,url,id, chiban, bbox) {
         type: "circle",
         source: 'oh-chiban-' + id + '-' + name + '-source',
         filter: ["==", "$type", "Point"],
-        "source-layer": "oh3",        paint: {
+        "source-layer": "oh3",
+        paint: {
             'circle-color': 'rgba(255,0,0,1)', // 赤色で中心点を強調
             'circle-radius': 5, // 固定サイズの点
             'circle-opacity': 1,
             'circle-stroke-width': 1,
             'circle-stroke-color': '#fff'
+        }
+    };
+    const vertexLayer = {
+        id: 'oh-chibanL-' + name + '-vertex-layer',
+        type: "circle",
+        source: 'oh-chiban-' + id + '-' + name + '-source',
+        filter: ["==", "$type", "Polygon"],
+        "source-layer": "oh3",
+        paint: {
+            'circle-radius': [
+                'interpolate', ['linear'], ['zoom'],
+                15, 0,
+                18,4
+            ],
+            'circle-color': 'red',
         }
     };
     const maps = [store.state.selectedLayers.map01, store.state.selectedLayers.map02]
@@ -6110,7 +6121,7 @@ export function userPmtileSet(name,url,id, chiban, bbox) {
                 id: 'oh-chiban-' + id + '-' + name + '-layer',
                 label: name,
                 source: sopurce,
-                layers: [polygonLayer,lineLayer,labelLayer,pointLayer],
+                layers: [polygonLayer,lineLayer,labelLayer,pointLayer,vertexLayer],
                 opacity: 1,
                 visibility: true,
                 ext: {name:'ext-chibanzu'}
