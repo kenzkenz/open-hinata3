@@ -541,6 +541,11 @@ export function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, fileName, 
     // リンクをクリックしてダウンロード
     link.click();
     URL.revokeObjectURL(link.href);
+
+    insertSimaData(store.state.userId, fileName.split('.')[0], 'dummy', 'dummy', simaData, store.state.zahyokei)
+        .then(r  => {
+            store.state.fetchImagesFire = !store.state.fetchImagesFire
+        })
 }
 
 
@@ -4651,6 +4656,28 @@ async function fetchFile(url) {
         return file;
     } catch (error) {
         console.error("ファイルの取得中にエラーが発生しました:", error);
+    }
+}
+
+async function insertSimaData(uid, name, url, url2, simaText, zahyokei) {
+    try {
+        const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userSimaInsert.php', new URLSearchParams({
+            uid: uid,
+            name: name,
+            url: url,
+            url2: url2,
+            simatext: simaText,
+            zahyokei: zahyokei
+        }));
+        if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+        } else {
+            console.log('登録成功:', response.data);
+        }
+    } catch (error) {
+        console.error('通信エラー:', error);
+        alert('通信エラーが発生しました');
     }
 }
 

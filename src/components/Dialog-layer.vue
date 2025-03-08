@@ -933,7 +933,11 @@ export default {
 
       this.$store.state.map01.getStyle().layers.forEach(layer => {
         if (layer.id.includes('-sima-') && layer.id.includes('polygon')) {
-          this.$store.state.map01.setPaintProperty(layer.id, 'fill-opacity', JSON.parse(this.$store.state.simaTextForUser).opacity)
+          if (this.$store.state.simaTextForUser) {
+            this.$store.state.map01.setPaintProperty(layer.id, 'fill-opacity', JSON.parse(this.$store.state.simaTextForUser).opacity)
+          } else {
+            this.$store.state.map01.setPaintProperty(layer.id, 'fill-opacity', 0)
+          }
         }
       })
 

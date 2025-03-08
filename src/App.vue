@@ -3288,12 +3288,6 @@ export default {
                     const map02 = this.$store.state.map02
                     this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
                     reader.onload = async (event) => {
-                      // const zip = await JSZip.loadAsync(event.target.result);
-                      // const kmlFile = Object.keys(zip.files).find((name) => name.endsWith('.kml'));
-                      // const kmlText = await zip.files[kmlFile].async('text');
-                      // const parser = new DOMParser();
-                      // const kmlData = parser.parseFromString(kmlText, 'application/xml');
-                      // const geojson = kml(kmlData);
                       kmzLoadForUser (map01, true)
                       kmzLoadForUser (map02, false)
                     }

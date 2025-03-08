@@ -1174,7 +1174,7 @@ export default {
           });
           if (response.data.error) {
             console.error('エラー:', response.data.error);
-            alert(`エラー: ${response.data.error}`);
+            // alert(`エラー: ${response.data.error}`);
           } else {
             console.log('削除成功:', response.data);
           }
