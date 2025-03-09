@@ -472,7 +472,7 @@ export default {
               } else if (layer0.type === 'fill') {
                 if ((layer0.metadata && layer0.metadata.group === 'osm-bright') || (layer0.metadata && layer0.metadata.group === 'osm-3d')) {
                   if (typeof layer0.paint['fill-opacity'] === 'number') {
-                    console.log(layer0.paint['fill-opacity'])
+                    // console.log(layer0.paint['fill-opacity'])
                     map.setPaintProperty(layer0.id, 'fill-opacity', layer0.paint['fill-opacity'] * opacity)
                   } else {
                     map.setPaintProperty(layer0.id, 'fill-opacity', opacity)

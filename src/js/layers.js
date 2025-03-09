@@ -1638,6 +1638,7 @@ const chibanzuLayers = []
 const chibanzuLayerLines = []
 const chibanzuLayerLabel = []
 const chibanzuLayerVertex = []
+const chibanzuLayerPoint = []
 sicyosonChibanzuUrls.forEach(url => {
     console.log(url.url)
     chibanzuSources.push({
@@ -1704,7 +1705,21 @@ sicyosonChibanzuUrls.forEach(url => {
                 15, 0,
                 18,4
             ],
-            'circle-color': 'red',
+            'circle-color': 'blue',
+        }
+    })
+    chibanzuLayerPoint.push({
+        id: 'oh-chibanzu-point-' + url.name,
+        type: "circle",
+        source: 'oh-chibanzu-' + url.name + '-source',
+        "source-layer": "chibanzu",
+        paint: {
+            'circle-radius': [
+                'interpolate', ['linear'], ['zoom'],
+                15, 0,
+                18,4
+            ],
+            'circle-color': 'blue',
         }
     })
 })
@@ -1714,7 +1729,7 @@ const chibanzuLayers2 = chibanzuLayers.map((layer,i) => {
         id: layer.id,
         label: name,
         source: chibanzuSources[i],
-        layers:[layer,chibanzuLayerLines[i],chibanzuLayerLabel[i],chibanzuLayerVertex[i]],
+        layers:[layer,chibanzuLayerLines[i],chibanzuLayerLabel[i],chibanzuLayerVertex[i],chibanzuLayerPoint[i]],
         attribution: '<a href="' + layer.page + '" target="_blank">' + name + '</a>',
         position: layer.position,
         ext: {name:'ext-chibanzu'}

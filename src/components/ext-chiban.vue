@@ -598,7 +598,6 @@ export default {
       gistUpload(map,this.layerId,this.sourceId,this.fields)
     },
     change () {
-      console.log(this.item)
       const vm = this
       const map = this.$store.state[this.mapName]
       //-------------------------------------------------------------------------
@@ -630,9 +629,18 @@ export default {
           map.getStyle().layers.forEach(layer => {
             if (layer.id.includes('oh-chibanzu-')) {
               map.setFilter(layer.id, null)
+              if (layer.id.includes('-vertex-')) {
+                map.setFilter(layer.id, ["==", "$type", "Polygon"])
+              }
             }
             if (layer.id.includes('oh-chiban-') || layer.id.includes('oh-chibanL-')) {
               map.setFilter(layer.id, null)
+              if (layer.id.includes('-vertex-')) {
+                map.setFilter(layer.id, ["==", "$type", "Polygon"])
+              }
+              if (layer.id.includes('-point-')) {
+                map.setFilter(layer.id, ["==", "$type", "Point"])
+              }
             }
           })
 

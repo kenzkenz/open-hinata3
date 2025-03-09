@@ -6121,7 +6121,7 @@ export function userPmtileSet(name,url,id, chiban, bbox) {
                 id: 'oh-chiban-' + id + '-' + name + '-layer',
                 label: name,
                 source: sopurce,
-                layers: [polygonLayer,lineLayer,labelLayer,vertexLayer],
+                layers: [polygonLayer,lineLayer,labelLayer,vertexLayer,pointLayer],
                 opacity: 1,
                 visibility: true,
                 ext: {name:'ext-chibanzu'}
