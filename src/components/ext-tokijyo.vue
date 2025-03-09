@@ -371,7 +371,6 @@ export default {
 
           // "_" を削除するための処理 ここを改修する必要がある。
           const cleanedField = ["format", ["get", "地番区域"], { "text-replace": ["_", ""] }];
-
           // 複数フィールドを結合する
           const combinedFields = ["concat", cleanedField, " ", ["get", "地番"]];
 
@@ -386,7 +385,7 @@ export default {
           map.setFilter('oh-amx-a-fude-line', matchCondition)
           map.setFilter('oh-amx-label', matchCondition)
           map.setFilter('oh-amx-vertex', matchCondition)
-          map.setFilter('oh-amx-a-daihyo', matchCondition)
+          // map.setFilter('oh-amx-a-daihyo', matchCondition)
         } else {
           map.setFilter('oh-amx-a-fude', null)
           map.setFilter('oh-amx-a-fude-line', null)
@@ -411,7 +410,6 @@ export default {
     //   this.update()
     // },
     s_extFire () {
-      // this.change(false)
       this.change()
       this.changeColor(this.s_tokijyoColor)
       this.changeColorCircle(this.s_tokijyoCircleColor)
