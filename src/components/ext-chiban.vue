@@ -142,7 +142,7 @@
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
 
-    <v-text-field label="地番で抽出" v-model="s_chibanText" @input="change" style="margin-top: 0px"></v-text-field>
+    <v-text-field label="地番で抽出(数値を入力)" v-model="s_chibanText" @input="change" style="margin-top: 0px"></v-text-field>
 
 <!--    <v-btn style="margin-top: 0px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>-->
 <!--    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>-->

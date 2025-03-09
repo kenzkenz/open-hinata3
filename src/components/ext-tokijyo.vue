@@ -80,7 +80,7 @@
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
 
-    <v-text-field label="地番で抽出" v-model="s_tokijyoText" @input="change" style="margin-top: 0px"></v-text-field>
+    <v-text-field label="地番で抽出（数値を入力）" v-model="s_tokijyoText" @input="change" style="margin-top: 0px"></v-text-field>
 
       <!-- 1行目 -->
 <!--      <div style="display: flex; justify-content: space-between; gap: 10px; padding-right: 30px;">-->
