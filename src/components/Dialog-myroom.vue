@@ -1058,9 +1058,10 @@ export default {
                     const pointLayer = {
                       id: 'oh-chibanL-' + name + '-point-layer',
                       type: "circle",
-                      source: 'oh-chiban-' + id + '-' + name + '-source',
+                      source: 'oh-chiban-' + id + '-' + name + + '-source',
                       filter: ["==", "$type", "Point"],
-                      "source-layer": "oh3",        paint: {
+                      "source-layer": "oh3",
+                      paint: {
                         'circle-color': 'rgba(255,0,0,1)', // 赤色で中心点を強調
                         'circle-radius': 5, // 固定サイズの点
                         'circle-opacity': 1,
@@ -1071,7 +1072,7 @@ export default {
                     const vertexLayer = {
                       id: 'oh-chibanL-' + name + '-vertex-layer',
                       type: "circle",
-                      source: 'oh-chiban-' + id + '-' + name + '-source',
+                      source: 'oh-chiban-' + id + '-' + name + + '-source',
                       filter: ["==", "$type", "Polygon"],
                       "source-layer": "oh3",
                       paint: {
@@ -1084,7 +1085,7 @@ export default {
                       }
                     };
                     v.sources = [source];
-                    v.layers = [polygonLayer,lineLayer,labelLayer,vertexLayer];
+                    v.layers = [polygonLayer,lineLayer,labelLayer,vertexLayer,pointLayer];
                     v.label = response.data[0].name;
                   }
                 } catch (error) {

@@ -112,7 +112,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <p v-else></p>
       </div>
       <p style="margin-bottom: 10px">
-        v0.592
+        v0.593
       </p>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
