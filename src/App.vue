@@ -98,7 +98,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         </v-card>
       </v-dialog>
 
-
       <v-dialog v-model="dialogForDxfApp" max-width="500px">
         <v-card>
           <v-card-title>
@@ -201,8 +200,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
           </v-card-actions>
         </v-card>
       </v-dialog>
-
-
 
       <v-dialog v-model="dialogForGeotiffApp1file" max-width="500px">
         <v-card>
@@ -2321,6 +2318,13 @@ export default {
       //   syncing = false
       // })
 
+      map.on("zoom", () => {
+        if (map.getZoom() <= 4.5) {
+          document.querySelector('#map00').style.backgroundColor = 'black'
+        } else {
+          document.querySelector('#map00').style.backgroundColor = 'rgb(194,210,251)'
+        }
+      });
       // -----------------------------------------------------------------------------------------------------------------
       // on load
       this.mapNames.forEach(mapName => {
@@ -4033,6 +4037,7 @@ export default {
 <style scoped>
 #map00 {
   background-color: rgb(194,210,251);
+  /*background-color: black;*/
   height: 100%;
 }
 #map01 {
