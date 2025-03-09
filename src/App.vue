@@ -2327,7 +2327,45 @@ export default {
         const map = this.$store.state[mapName]
         const params = this.parseUrlParams()
         map.on('load', () => {
-          // map.setProjection({"type": "globe"})
+
+          // map.on("mousemove", "oh-amx-a-fude", (e) => {
+          //   if (e.features.length > 0) {
+          //     let feature = e.features[0];
+          //     let newProperties = {};
+          //
+          //     Object.keys(feature.properties).forEach(key => {
+          //       console.log(key,feature.properties[key].replace(/_/gi, ""))
+          //       newProperties[key] = feature.properties[key].replace(/_/gi, "");
+          //     });
+          //
+          //     // feature.id がない場合、プロパティのハッシュを一意キーとして使用
+          //     let featureKey = JSON.stringify(feature.properties);
+          //
+          //     console.log("Feature Key:", featureKey); // 取得されたキーを確認
+          //
+          //     map.setFeatureState(
+          //         { source: "amx-a-2024-pmtiles", sourceLayer: "fude", id: featureKey },
+          //         newProperties
+          //     );
+          //     // 確認用: 状態が適用されたか取得する
+          //     setTimeout(() => {
+          //       let state = map.getFeatureState({
+          //         source: "amx-a-2024-pmtiles",
+          //         sourceLayer: "fude",
+          //         id: featureKey
+          //       });
+          //       console.log("Updated Feature State:", state);
+          //     }, 100); // 少し待ってから取得
+          //   }
+          // });
+          //
+          // map.on("mouseleave", "oh-amx-a-fude", () => {
+          //   map.removeFeatureState({ source: "amx-a-2024-pmtiles", sourceLayer: "fude" });
+          // });
+
+
+
+          map.setProjection({"type": "globe"})
           map.resize()
 
           // const attributionButton = document.querySelector('#' + mapName +' .maplibregl-ctrl-attrib-button');

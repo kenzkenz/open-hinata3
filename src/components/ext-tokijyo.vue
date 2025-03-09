@@ -370,12 +370,83 @@ export default {
          //   " ", ["get", "小字コード"], " ", ["get", "市区町村名"]];
 
           // "_" を削除するための処理 ここを改修する必要がある。
-          const cleanedField = ["format", ["get", "地番区域"], { "text-replace": ["_", ""] }];
-          // 複数フィールドを結合する
-          const combinedFields = ["concat", cleanedField, " ", ["get", "地番"]];
+          // const splitField = ["split", ["get", "地番区域"], "_"];
+          // const joinedField = ["join", "", splitField]; // "宮崎市生目台" を生成
+          // const combinedFields = ["concat", joinedField, " ", ["get", "地番"]];
 
 
-          // const combinedFields = ["concat", ["get", "地番区域"], " ", ["get", "地番"]];
+          // const cleanedFieldWithSpace = ["format", ["get", "地番区域"], { "text-replace": ["_", " "] }];
+          // const cleanedFieldNoSpace = ["format", ["get", "地番区域"], { "text-replace": ["_", ""] }];
+          //
+          // const combinedFields = ["concat", cleanedFieldWithSpace, " ", cleanedFieldNoSpace, " ", ["get", "地番"]];
+
+
+          // const cleanedField = ["format", ["get", "地番区域"], { "text-replace": ["_", ""] }];
+          // // 複数フィールドを結合する
+          // const combinedFields = ["concat", cleanedField, " ", ["get", "地番"]];
+
+
+          // フィルターを更新する関数（featureKey なし）
+          // function updateFilter() {
+          //   let features = map.queryRenderedFeatures({ layers: ["oh-amx-a-fude"] });
+          //
+          //   if (!features.length) return;
+          //
+          //   let filterConditions = ["any"];
+          //
+          //   features.forEach(feature => {
+          //     let state = map.getFeatureState({
+          //       source: "amx-a-2024-pmtiles",
+          //       sourceLayer: "fude",
+          //       id: JSON.stringify(feature.properties)
+          //     });
+          //
+          //     if (state && state["地番区域"] && state["地番"]) {
+          //       filterConditions.push(
+          //           ["all",
+          //             ["==", ["get", "地番区域"], state["地番区域"]],
+          //             ["==", ["get", "地番"], state["地番"]]
+          //           ]
+          //       );
+          //     }
+          //   });
+          //
+          //   // if (filterConditions.length > 1) {
+          //   //   map.setFilter("oh-amx-a-fude", filterConditions);
+          //   // }
+          //
+          //   return filterConditions
+          // }
+          // const combinedFields = updateFilter()
+
+          // function updateFilter() {
+          //   let filterConditions = ["any"];
+          //
+          //   let features = map.queryRenderedFeatures({ layers: ["oh-amx-a-fude"] });
+          //
+          //   features.forEach(feature => {
+          //     if (feature.properties["地番区域"] && feature.properties["地番"]) {
+          //       let cleanedChibanArea = feature.properties["地番区域"].replace(/_/g, "");
+          //       let cleanedChiban = feature.properties["地番"].replace(/_/g, "");
+          //
+          //       filterConditions.push(
+          //           ["all",
+          //             [">=", ["index-of", cleanedChibanArea, ["get", "地番区域"]], 0],
+          //             [">=", ["index-of", cleanedChiban, ["get", "地番"]], 0]
+          //           ]
+          //       );
+          //     }
+          //   });
+          //   return
+          //   // if (filterConditions.length > 1) {
+          //   //   map.setFilter("oh-amx-a-fude", filterConditions);
+          //   // }
+          // }
+          // const combinedFields = updateFilter()
+
+
+
+          const combinedFields = ["concat", ["get", "地番区域"], " ", ["get", "地番"]];
 
           // 各単語に対して、結合したフィールドに対する index-of チェックを実行
           const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);
