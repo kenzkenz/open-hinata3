@@ -2884,8 +2884,6 @@ export function saveSimaImage (chiban,data) {
 
 }
 
-
-
 export function saveSimaGaiku (map,layerId) {
     if (map.getZoom() <= 12) {
         alert('ズーム12以上にしてください。')
@@ -2993,6 +2991,11 @@ export function saveSimaGaiku (map,layerId) {
     // リンクをクリックしてダウンロード
     link.click();
     URL.revokeObjectURL(link.href);
+
+    insertSimaData(store.state.userId, fileName.split('.')[0], 'dummy', 'dummy', simaData, store.state.zahyokei)
+        .then(r  => {
+            store.state.fetchImagesFire = !store.state.fetchImagesFire
+        })
 }
 
 export function saveSimaGaiku2 (map,j) {

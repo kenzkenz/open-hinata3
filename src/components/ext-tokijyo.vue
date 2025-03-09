@@ -385,13 +385,11 @@ export default {
           map.setFilter('oh-amx-a-fude-line', matchCondition)
           map.setFilter('oh-amx-label', matchCondition)
           map.setFilter('oh-amx-vertex', matchCondition)
-          // map.setFilter('oh-amx-a-daihyo', matchCondition)
         } else {
           map.setFilter('oh-amx-a-fude', null)
           map.setFilter('oh-amx-a-fude-line', null)
           map.setFilter('oh-amx-label', null)
           map.setFilter('oh-amx-vertex', null)
-          // map.setFilter('oh-amx-a-daihyo', null)
         }
       }
       filterBy(this.s_tokijyoText)
@@ -406,9 +404,6 @@ export default {
   mounted() {
   },
   watch: {
-    // s_simaData () {
-    //   this.update()
-    // },
     s_extFire () {
       this.change()
       this.changeColor(this.s_tokijyoColor)

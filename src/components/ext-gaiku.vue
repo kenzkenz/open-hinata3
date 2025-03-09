@@ -22,7 +22,7 @@
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
     <v-btn style="margin-top: 0px;margin-left: 0px;margin-bottom: 10px;" @click="saveSimaGaiku">sima保存</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 10px;margin-bottom: 10px;" @click="tutorial">説明</v-btn>
+<!--    <v-btn style="margin-top: 0px;margin-left: 10px;margin-bottom: 10px;" @click="tutorial">説明</v-btn>-->
     <hr>
     <div v-html="item.attribution"></div>
   </div>
@@ -110,7 +110,6 @@ export default {
       console.log(this.layerId)
       resetFeatureColors(map,this.layerId)
     },
-
     saveSimaGaiku () {
       const map = this.$store.state[this.mapName]
       console.log(this.item.id)
