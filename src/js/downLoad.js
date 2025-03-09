@@ -541,10 +541,13 @@ export function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, fileName, 
     link.click();
     URL.revokeObjectURL(link.href);
 
-    insertSimaData(store.state.userId, fileName.split('.')[0], 'dummy', 'dummy', simaData, store.state.zahyokei)
-        .then(r  => {
-            store.state.fetchImagesFire = !store.state.fetchImagesFire
-        })
+    if (store.state.userId) {
+        insertSimaData(store.state.userId, fileName.split('.')[0], 'dummy', 'dummy', simaData, store.state.zahyokei)
+            .then(r => {
+                store.state.fetchImagesFire = !store.state.fetchImagesFire
+            })
+    }
+
 }
 
 
@@ -2992,10 +2995,12 @@ export function saveSimaGaiku (map,layerId) {
     link.click();
     URL.revokeObjectURL(link.href);
 
-    insertSimaData(store.state.userId, fileName.split('.')[0], 'dummy', 'dummy', simaData, store.state.zahyokei)
-        .then(r  => {
-            store.state.fetchImagesFire = !store.state.fetchImagesFire
-        })
+    if (store.state.userId) {
+        insertSimaData(store.state.userId, fileName.split('.')[0], 'dummy', 'dummy', simaData, store.state.zahyokei)
+            .then(r => {
+                store.state.fetchImagesFire = !store.state.fetchImagesFire
+            })
+    }
 }
 
 export function saveSimaGaiku2 (map,j) {
