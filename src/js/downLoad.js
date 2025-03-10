@@ -4677,6 +4677,7 @@ async function insertSimaData(uid, name, url, url2, simaText, zahyokei) {
             alert(`エラー: ${response.data.error}`);
         } else {
             console.log('登録成功:', response.data);
+            return response.data
         }
     } catch (error) {
         console.error('通信エラー:', error);
@@ -4786,56 +4787,62 @@ export async function simaLoadForUser (map,isUpload,simaText) {
                 // alert(store.state.zahyokei)
                 const webUrl = 'https://kenzkenz.duckdns.org/' + response.data.simaPath.replace('/var/www/html/public_html/','')
                 const name = response.data.simaName.replace('.sim','')
-                insertSimaData(store.state.userId, name, webUrl, response.data.simaPath,simaText,store.state.zahyokei)
-                store.state.fetchImagesFire = !store.state.fetchImagesFire
-                async function aaa() {
-                    const id = response.data.lastId
-                    const sourceAndLayers = await userSimaSet(name, webUrl, id, null, simaText, isUpload)
-                    console.log(sourceAndLayers)
-                    store.state.geojsonSources.push({
-                        sourceId: sourceAndLayers.source.id,
-                        source: sourceAndLayers.source
-                    })
-                    console.log(store.state.geojsonSources)
-                    store.state.selectedLayers.map01.unshift(
-                        {
-                            id: 'oh-sima-' + id + '-' + name + '-layer',
-                            label: name,
-                            source: sourceAndLayers.source.id,
-                            layers: sourceAndLayers.layers,
-                            opacity: 1,
-                            visibility: true,
-                        }
-                    );
-                    console.log(store.state.selectedLayers.map01)
-                    const bounds = new maplibregl.LngLatBounds();
-                    sourceAndLayers.geojson.features.forEach(feature => {
-                        const geometry = feature.geometry;
-                        if (!geometry) return;
-                        switch (geometry.type) {
-                            case 'Point':
-                                bounds.extend(geometry.coordinates);
-                                break;
-                            case 'LineString':
-                                geometry.coordinates.forEach(coord => bounds.extend(coord));
-                                break;
-                            case 'Polygon':
-                                geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
-                                break;
-                            case 'MultiPolygon':
-                                geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
-                                break;
-                        }
-                    });
-                    map.fitBounds(bounds, {
-                        padding: 50,
-                        animate: true
-                    });
-                    store.state.snackbar = true
-                    store.state.loading2 = false
+                let id
+                async function bbb () {
+                    const res = await insertSimaData(store.state.userId, name, webUrl, response.data.simaPath, simaText, store.state.zahyokei)
+                    id = res.lastId
                 }
-                aaa()
-                store.state.fetchImagesFire = !store.state.fetchImagesFire
+                bbb().then(() => {
+                    store.state.fetchImagesFire = !store.state.fetchImagesFire
+                    async function aaa() {
+                        console.log(response)
+                        const sourceAndLayers = await userSimaSet(name, webUrl, id, null, simaText, isUpload)
+                        console.log(sourceAndLayers)
+                        store.state.geojsonSources.push({
+                            sourceId: sourceAndLayers.source.id,
+                            source: sourceAndLayers.source
+                        })
+                        console.log(store.state.geojsonSources)
+                        store.state.selectedLayers.map01.unshift(
+                            {
+                                id: 'oh-sima-' + id + '-' + name + '-layer',
+                                label: name,
+                                source: sourceAndLayers.source.id,
+                                layers: sourceAndLayers.layers,
+                                opacity: 1,
+                                visibility: true,
+                            }
+                        );
+                        console.log(store.state.selectedLayers.map01)
+                        const bounds = new maplibregl.LngLatBounds();
+                        sourceAndLayers.geojson.features.forEach(feature => {
+                            const geometry = feature.geometry;
+                            if (!geometry) return;
+                            switch (geometry.type) {
+                                case 'Point':
+                                    bounds.extend(geometry.coordinates);
+                                    break;
+                                case 'LineString':
+                                    geometry.coordinates.forEach(coord => bounds.extend(coord));
+                                    break;
+                                case 'Polygon':
+                                    geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
+                                    break;
+                                case 'MultiPolygon':
+                                    geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
+                                    break;
+                            }
+                        });
+                        map.fitBounds(bounds, {
+                            padding: 50,
+                            animate: true
+                        });
+                        store.state.snackbar = true
+                        store.state.loading2 = false
+                    }
+                    aaa()
+                    store.state.fetchImagesFire = !store.state.fetchImagesFire
+                })
             })
             .catch(error => {
                 // エラー時の処理
