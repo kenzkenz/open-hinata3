@@ -1109,7 +1109,7 @@ export default {
     simaClose () {
       this.s_snackbar = false
       // ここを修正
-      this.$store.state.simaTextForUser = ''
+      // this.$store.state.simaTextForUser = ''
     },
     myRoom () {
       this.s_dialogForLink = !this.s_dialogForLink
@@ -2622,6 +2622,7 @@ export default {
               }
 
               if (v.id.includes('oh-sima-')) {
+                store.state.snackbar = true
                 fetchFlg = true;
                 const layerId = v.id.split('-')[2];
                 try {
