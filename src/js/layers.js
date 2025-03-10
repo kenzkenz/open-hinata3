@@ -2907,6 +2907,7 @@ const ryuikiLayer = {
 const amx2024Source = {
     id: "amx-a-2024-pmtiles", obj: {
         type: "vector",
+        // url: 'cleanpmtiles://https://kenzkenz3.xsrv.jp/pmtiles/amx/MojMap_amx_2024.pmtiles'
         url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/amx/MojMap_amx_2024.pmtiles'
         // url: 'pmtiles://https://data.source.coop/smartmaps/amx-2024-04/MojMap_amx_2024.pmtiles',
     },

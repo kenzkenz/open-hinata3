@@ -1883,11 +1883,64 @@ export default {
         initialScrollTop = 0; // 初期スクロール位置をリセット
       });
 
-      // ======================================================================
 
+      // ======================================================================
       let protocol = new Protocol();
       maplibregl.addProtocol("pmtiles",protocol.tile)
       // protocol.setCacheSize(50) // タイルキャッシュサイズを設定（単位: タイル数）
+      // ======================================================================
+
+      // maplibregl.addProtocol('cleanpmtiles', async (params, callback) => {
+      //   params.url = params.url.replace('cleanpmtiles://', 'pmtiles://');
+      //   try {
+      //     const result = await protocol.tile(params, params.tile);
+      //     callback(null, result.data, result.cacheControl, result.expires);
+      //   } catch (error) {
+      //     callback(error);
+      //   }
+      // });
+
+
+
+
+      // class CleanProtocol extends Protocol {
+      //   constructor() {
+      //     super();
+      //   }
+      //
+      //   async tile(params, callback) {
+      //     super.tile(params, (error, data, cacheControl, expires) => {
+      //       if (error) {
+      //         callback(error);
+      //         return;
+      //       }
+      //
+      //       const modifiedData = data;
+      //
+      //       if (modifiedData && modifiedData.data && modifiedData.data.features) {
+      //         modifiedData.data.features = modifiedData.data.features.map((feature) => {
+      //           const newProperties = {};
+      //           for (const key in feature.properties) {
+      //             const value = feature.properties[key];
+      //             newProperties[key] = typeof value === 'string' ? value.replace(/_/g, '') : value;
+      //           }
+      //           return {
+      //             ...feature,
+      //             properties: newProperties,
+      //           };
+      //         });
+      //       }
+      //
+      //       callback(null, modifiedData, cacheControl, expires);
+      //     });
+      //   }
+      // }
+      //
+      // const cleanProtocol = new CleanProtocol();
+      // maplibregl.addProtocol("cleanpmtiles", cleanProtocol.tile.bind(cleanProtocol));
+
+      // ======================================================================
+
       maplibregl.addProtocol("transparentBlack", (params) => {
         return new Promise((resolve, reject) => {
           try {
@@ -2001,13 +2054,6 @@ export default {
           }
         });
       });
-
-
-
-
-
-
-
 
 
       const params = this.parseUrlParams()
@@ -2789,187 +2835,6 @@ export default {
             return Promise.all(promises);
           }
 
-
-
-
-          // let fetchFlg = false
-          // async function fetchAllUserLayers() {
-          //   const promises = params.slj.map01.map(async (v) => {
-          //     console.log(v.id);
-          //     // -----------------------------------------------------------------------------------------------------------
-          //     if (v.id.includes('usertile')) {
-          //       // alert(v.id)
-          //       fetchFlg = true
-          //       const layerId = v.id.split('-')[2];
-          //       // alert(layerId)
-          //       try {
-          //         const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userTileSelectById.php', {
-          //           params: { id: layerId }
-          //         });
-          //         if (response.data.error) {
-          //           console.error('エラー:', response.data.error);
-          //           alert(`エラー: ${response.data.error}`);
-          //         } else {
-          //           console.log('取得データ:', response.data);
-          //           console.log(JSON.stringify(response.data, null, 2));
-          //           const source = {
-          //             id: response.data[0].name + '-source',
-          //             obj: {
-          //               type: 'raster',
-          //               tiles: [response.data[0].url]
-          //             }
-          //           };
-          //           const layer = {
-          //             id: 'oh-' + response.data[0].name + '-layer',
-          //             type: 'raster',
-          //             source: response.data[0].name + '-source',
-          //           };
-          //           v.sources = [source];
-          //           v.layers = [layer];
-          //           v.label = response.data[0].name;
-          //         }
-          //       } catch (error) {
-          //         console.error('フェッチエラー:', error);
-          //       }
-          //     }
-          //     // -----------------------------------------------------------------------------------------------------------
-          //     if (v.id.includes('oh-vpstile-')) {
-          //       // alert(v.id)
-          //       fetchFlg = true
-          //       const layerId = v.id.split('-')[2];
-          //       try {
-          //         const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userXyztileSelectById.php', {
-          //           params: { id: layerId }
-          //         });
-          //         if (response.data.error) {
-          //           console.error('エラー:', response.data.error);
-          //           alert(`エラー: ${response.data.error}`);
-          //         } else {
-          //           console.log('取得データ:', response.data);
-          //           console.log(JSON.stringify(response.data, null, 2));
-          //
-          //           const name = response.data[0].name
-          //           const id = response.data[0].id
-          //           const url = response.data[0].url
-          //           const bbox = JSON.parse(response.data[0].bbox)
-          //           const bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
-          //           console.log(bbox)
-          //           const source = {
-          //             id: 'oh-vpstile-' + id + '-' + name + '-source',obj: {
-          //               type: 'raster',
-          //               tiles: ['transparentBlack://' +url],
-          //               bounds: bounds,
-          //               maxzoom: 26,
-          //             }
-          //           };
-          //           const layer = {
-          //             id: 'oh-vpstile-' + id + '-' + name + '-layer',
-          //             type: 'raster',
-          //             source: 'oh-vpstile-' + id + '-' + name  + '-source',
-          //           }
-          //           v.sources = [source];
-          //           v.layers = [layer];
-          //           v.label = response.data[0].name;
-          //         }
-          //       } catch (error) {
-          //         console.error('フェッチエラー:', error);
-          //       }
-          //     }
-          //     if (v.id.includes('oh-chiban-')) {
-          //       fetchFlg = true
-          //       const layerId = v.id.split('-')[2];
-          //       try {
-          //         const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesSelectById.php', {
-          //           params: { id: layerId }
-          //         });
-          //         if (response.data.error) {
-          //           console.error('エラー:', response.data.error);
-          //           alert(`エラー: ${response.data.error}`);
-          //         } else {
-          //           console.log('取得データ:', response.data);
-          //           console.log(JSON.stringify(response.data, null, 2));
-          //
-          //           const name = response.data[0].name
-          //           const id = response.data[0].id
-          //           const url = response.data[0].url
-          //           const chiban = response.data[0].chiban
-          //
-          //           const source = {
-          //             id: 'oh-chiban-' + id + '-' + name + '-source',obj: {
-          //               type: 'vector',
-          //               url: "pmtiles://" + url
-          //             }
-          //           };
-          //           const polygonLayer = {
-          //             id: 'oh-chiban-' + id + '-' + name + '-layer',
-          //             type: 'fill',
-          //             source: 'oh-chiban-' + id + '-' + name + '-source',
-          //             "source-layer": 'oh3',
-          //             'paint': {
-          //               'fill-color': 'rgba(0,0,0,0)',
-          //             },
-          //           }
-          //           const lineLayer = {
-          //             id: 'oh-chibanL-' + name + '-line-layer',
-          //             source: 'oh-chiban-' + id + '-' + name + '-source',
-          //             type: 'line',
-          //             "source-layer": "oh3",
-          //             paint: {
-          //               'line-color': 'navy',
-          //               'line-width': [
-          //                 'interpolate',
-          //                 ['linear'],
-          //                 ['zoom'],
-          //                 1, 0.1,
-          //                 16, 2
-          //               ]
-          //             },
-          //           }
-          //           const labelLayer = {
-          //             id: 'oh-chibanL-' + name + '-label-layer',
-          //             type: "symbol",
-          //             source: 'oh-chiban-' + id + '-' + name + '-source',
-          //             "source-layer": "oh3",
-          //             'layout': {
-          //               'text-field': ['get', chiban],
-          //               'text-font': ['NotoSansJP-Regular'],
-          //             },
-          //             'paint': {
-          //               'text-color': 'navy',
-          //               'text-halo-color': 'rgba(255,255,255,1)',
-          //               'text-halo-width': 1.0,
-          //             },
-          //             'minzoom': 17
-          //           }
-          //           const pointLayer = {
-          //             id: 'oh-chibanL-' + name + '-point-layer',
-          //             type: "circle",
-          //             source: 'oh-chiban-' + id + '-' + name + '-source',
-          //             filter: ["==", "$type", "Point"],
-          //             "source-layer": "oh3",        paint: {
-          //               'circle-color': 'rgba(255,0,0,1)', // 赤色で中心点を強調
-          //               'circle-radius': 5, // 固定サイズの点
-          //               'circle-opacity': 1,
-          //               'circle-stroke-width': 1,
-          //               'circle-stroke-color': '#fff'
-          //             }
-          //           };
-          //           v.sources = [source];
-          //           v.layers = [polygonLayer,lineLayer,labelLayer,pointLayer];
-          //           v.label = response.data[0].name;
-          //         }
-          //       } catch (error) {
-          //         console.error('フェッチエラー:', error);
-          //       }
-          //     }
-          //   });
-          //   // すべての fetchUserLayer の実行が完了するのを待つ
-          //   await Promise.all(promises);
-          //   // すべての非同期処理が完了したら次を実行
-          //   vm.s_selectedLayers = params.slj
-          // }
-
-
           async function fetchAllUserLayers() {
             await Promise.all([
               processUserLayers(params.slj.map01),
@@ -2977,9 +2842,6 @@ export default {
             ]);
             vm.s_selectedLayers = params.slj;
           }
-
-
-
 
           // 非同期関数を実行
           if (params.slj) fetchAllUserLayers();
