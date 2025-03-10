@@ -1594,6 +1594,9 @@ const sicyosonChibanzuUrls = [
     {name:'北広島市', chiban: ['concat', ['get', 'Chiban'], '-', ['get', 'Edaban']], position:[141.56311494973653,42.98537981878215], url:'kitahiroshimashi2', page:'https://www.harp.lg.jp/opendata/dataset/2061.html'},
     // 秋田県
     {name:'鹿角市', chiban: ['get', '地番'], position:[140.7886727460321,40.21559737412008], url:'kazunoshi', page:'https://www.city.kazuno.lg.jp/soshiki/somu/digital/gyomu/opendata/9788.html'},
+    // 宮城県
+    {name:'仙台市', chiban: ['get', 'DNO'], position:[140.86946408465997,38.26816199999661], url:'sendaishi', page:'https://www.geospatial.jp/ckan/dataset/chibanzu'},
+
     // 山形県
     {name:'舟形町', chiban: ['get', 'TIBAN'], position:[140.32022099999745,38.691255021073715], url: 'funagatamachi', page:'https://www.town.funagata.yamagata.jp/s012/opendata/010/010/20230711101613.html'},
     // 福島県

@@ -509,6 +509,11 @@ export default {
           this.sourceId = 'oh-chibanzu-姫路市-source'
           this.fields = ['id']
           break
+        case 'oh-chibanzu-仙台市':
+          this.layerId = 'oh-chibanzu-仙台市'
+          this.sourceId = 'oh-chibanzu-仙台市-source'
+          this.fields = ['id']
+          break
       }
       if(/^oh-chiban-/.test(id)) {
         this.layerId = id
@@ -598,6 +603,7 @@ export default {
       gistUpload(map,this.layerId,this.sourceId,this.fields)
     },
     change () {
+      // alert(this.item.id)
       const vm = this
       const map = this.$store.state[this.mapName]
       //-------------------------------------------------------------------------
@@ -607,10 +613,15 @@ export default {
           searchString = searchString.replace(/\u3000/g,' ').trim()
           const words = searchString.split(" ")
           // 複数フィールドを結合する
+          // const combinedFields = ["concat", ["get", "地番"], " ", ["get", "Chiban"], " ", ["get", "TIBAN"], " ", ["get", "TXTCD"],
+          //   " ", ["get", "本番"], " ", ["get", "CHIBAN"], " ", ["get", "表示文字列"], " ", ["get", "番地"], " ", ["get", "TXTCODE1"],
+          //   " ", ["get", "地番本番"], " ", ["get", "SAFIELD002"], " ", ["get", "所在地番"], " ", ["get", "TEXTCODE1"], " ", ["get", ["get", "chiban"]]];
+          // 各単語に対して、結合したフィールドに対する index-of チェックを実行
+
           const combinedFields = ["concat", ["get", "地番"], " ", ["get", "Chiban"], " ", ["get", "TIBAN"], " ", ["get", "TXTCD"],
             " ", ["get", "本番"], " ", ["get", "CHIBAN"], " ", ["get", "表示文字列"], " ", ["get", "番地"], " ", ["get", "TXTCODE1"],
-            " ", ["get", "地番本番"], " ", ["get", "SAFIELD002"], " ", ["get", "所在地番"], " ", ["get", "TEXTCODE1"], " ", ["get", ["get", "chiban"]]];
-          // 各単語に対して、結合したフィールドに対する index-of チェックを実行
+            " ", ["get", "地番本番"], " ", ["get", "SAFIELD002"], " ", ["get", "所在地番"], " ", ["get", "TEXTCODE1"], " ", ["get", "DNO"]];
+
           const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);
           // いずれかの単語が含まれる場合の条件を作成 (OR条件)
           const matchCondition = ["any", ...filterConditions]

@@ -2905,7 +2905,10 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-chibanzu-仙台市':
             case 'oh-chibanzu-姫路市':
+            case 'oh-chibanzu-豊中市':
+            case 'oh-chibanzu-伊丹市市':
             case 'oh-chibanzu-深谷市':
             case 'oh-chibanzu-舟形町':
             case 'oh-chibanzu-福山市':

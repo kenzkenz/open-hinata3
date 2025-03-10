@@ -956,3 +956,16 @@ tippecanoe -o 浜松市.pmtiles \
     浜松市.geojson
 
 tippecanoe -rg -pk -pf -l oh3 -f -o hamamatushi.pmtiles merged.geojson
+
+tippecanoe -o sendaishi.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=0 \
+    --layer=chibanzu \
+    sendaishi.geojson

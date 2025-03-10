@@ -430,6 +430,9 @@ export function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, fileName, 
             case 'oh-chibanzu-豊中市':
                 chiban = feature.properties.TEXTCODE1
                 break
+            case 'oh-chibanzu-仙台市':
+                chiban = feature.properties.DNO
+                break
             case /^oh-chiban-/.test(layerId): // 'oh-chiban-' で始まる場合
                 chiban = feature.properties[feature.properties.chiban]
                 break;
@@ -2259,6 +2262,7 @@ export function highlightSpecificFeaturesCity(map,layerId) {
             case 'oh-fukuokashichiban':
                 fields = ['concat', ['get', 'id']]
                 break
+            case 'oh-chibanzu-仙台市':
             case 'oh-chibanzu-姫路市':
             case 'oh-chibanzu-豊中市':
             case 'oh-chibanzu-伊丹市':
@@ -2365,6 +2369,7 @@ function getBoundingBoxByLayer(map, layerId) {
             case 'oh-fukuokashichiban':
                 targetId = `${feature.properties['id']}`;
                 break;
+            case 'oh-chibanzu-仙台市':
             case 'oh-chibanzu-姫路市':
             case 'oh-chibanzu-豊中市':
             case 'oh-chibanzu-伊丹市':
@@ -2521,6 +2526,7 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
             case 'oh-fukuokashichiban':
                 targetId = `${feature.properties['id']}`;
                 break;
+            case 'oh-chibanzu-仙台市':
             case 'oh-chibanzu-姫路市':
             case 'oh-chibanzu-豊中市':
             case 'oh-chibanzu-伊丹市':
@@ -4839,9 +4845,9 @@ export async function simaLoadForUser (map,isUpload,simaText) {
                         });
                         store.state.snackbar = true
                         store.state.loading2 = false
+                        store.state.fetchImagesFire = !store.state.fetchImagesFire
                     }
                     aaa()
-                    store.state.fetchImagesFire = !store.state.fetchImagesFire
                 })
             })
             .catch(error => {

@@ -24,7 +24,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <v-btn color="pink" text @click="simaDl">SIMAダウンロード</v-btn>
         <v-btn v-if="!user1" style="margin-left: 10px;" color="pink" text @click="simaDelete">削除</v-btn>
         <template v-slot:actions>
-          <v-btn color="pink" text @click="s_snackbar = false">閉じる</v-btn>
+          <v-btn color="pink" text @click="simaClose">閉じる</v-btn>
         </template>
       </v-snackbar>
 
@@ -702,7 +702,8 @@ export function history (event,url) {
           screen: width + ' x ' + height,
           ua: ua,
           referrer:referrer,
-          url: url
+          url: url,
+          uid: store.state.userId
         }
       })
 }
@@ -1105,6 +1106,11 @@ export default {
     },
   },
   methods: {
+    simaClose () {
+      this.s_snackbar = false
+      // ここを修正
+      this.$store.state.simaTextForUser = ''
+    },
     myRoom () {
       this.s_dialogForLink = !this.s_dialogForLink
       if (this.s_isAndroid){
@@ -3388,7 +3394,6 @@ export default {
             });
           }
 
-
           let isCursorOnFeature = false;
           let isDragging = false;
           let draggedFeatureId = null;
@@ -3701,7 +3706,7 @@ export default {
           'oh-chibanzu-坂出市','oh-chibanzu-善通寺市','oh-chibanzu-長与町','oh-chibanzu-福島市',
           'oh-chibanzu-北広島市','oh-chibanzu-国立市','oh-chibanzu-福岡市','oh-chibanzu-越谷市',
           'oh-chibanzu-福山市','oh-chibanzu-深谷市','oh-chibanzu-伊丹市','oh-chibanzu-豊中市',
-          'oh-chibanzu-姫路市'];
+          'oh-chibanzu-姫路市','oh-chibanzu-仙台市'];
         layers.forEach(layer => {
           map.on('click', layer, (e) => {
             if (e.features && e.features.length > 0) {
