@@ -1592,17 +1592,19 @@ const sicyosonChibanzuUrls = [
     {name:'室蘭市', chiban: ['get', '地番'], position:[140.99286678768675,42.36472347973418], url:'muroranshi', page:'https://murorancity-opendata-muroran.hub.arcgis.com/datasets/f5a188ea9ae94d7abd68983eb351aeff/explore?layer=3&location=42.368631%2C140.979326%2C12.64'},
     {name:'ニセコ町', chiban: ['get', '地番'], position:[140.68806409835815,42.80495731522012], url:'nisekocyo', page:'https://www.harp.lg.jp/opendata/dataset/1750.html'},
     {name:'北広島市', chiban: ['concat', ['get', 'Chiban'], '-', ['get', 'Edaban']], position:[141.56311494973653,42.98537981878215], url:'kitahiroshimashi2', page:'https://www.harp.lg.jp/opendata/dataset/2061.html'},
-    // 秋田県
-    {name:'鹿角市', chiban: ['get', '地番'], position:[140.7886727460321,40.21559737412008], url:'kazunoshi', page:'https://www.city.kazuno.lg.jp/soshiki/somu/digital/gyomu/opendata/9788.html'},
     // 宮城県
     {name:'仙台市', chiban: ['get', 'DNO'], position:[140.86946408465997,38.26816199999661], url:'sendaishi', page:'https://www.geospatial.jp/ckan/dataset/chibanzu'},
-
+    // 秋田県
+    {name:'鹿角市', chiban: ['get', '地番'], position:[140.7886727460321,40.21559737412008], url:'kazunoshi', page:'https://www.city.kazuno.lg.jp/soshiki/somu/digital/gyomu/opendata/9788.html'},
     // 山形県
     {name:'舟形町', chiban: ['get', 'TIBAN'], position:[140.32022099999745,38.691255021073715], url: 'funagatamachi', page:'https://www.town.funagata.yamagata.jp/s012/opendata/010/010/20230711101613.html'},
     // 福島県
     {name:'福島市', chiban: ['get', 'TXTCD'], position:[140.47460922099737,37.76082999999447], url:'fukushimashi2', page:'https://www.city.fukushima.fukushima.jp/d-kikaku/shise/opendate/machidukuri.html'},
     // 茨城県
     {name:'利根町', chiban: ['get', '地番'], position:[140.1391729153425,35.85756030920088], url: 'tonechyo', page:'https://www.town.tone.ibaraki.jp/opendata.php'},
+    // 群馬県
+    {name:'高崎市', chiban: ['get', '地番_地番図_label'], position:[139.00336683069094,36.32182569208747], url:'takasakishi', page:'https://www.city.takasaki.gunma.jp/page/3130.html'},
+
     // 埼玉県
     {name:'越谷市', chiban: ['concat', ['get', '本番'], '-', ['get', '枝番']], position:[139.79105245767255,35.890609232668695], url:'koshigayashi', page:'https://www.city.koshigaya.saitama.jp/kurashi_shisei/kurashi/zeikin/koteisisan_tosikeikaku/tibanzu_opendate.html'},
     {name:'深谷市', chiban: ['concat', ['get', '本番'], '-', ['get', '枝番']], position:[139.281707999998,36.197104580699204], url:'fukayashi', page:'https://opendata.pref.saitama.lg.jp/resources/6204'},
@@ -1643,7 +1645,13 @@ const chibanzuLayerLabel = []
 const chibanzuLayerVertex = []
 const chibanzuLayerPoint = []
 sicyosonChibanzuUrls.forEach(url => {
-    // console.log(url.url)
+    // console.log(url.name)
+    let sourceLayer
+    if (url.name === '高崎市') {
+        sourceLayer = 'oh3'
+    } else {
+        sourceLayer = 'chibanzu'
+    }
     chibanzuSources.push({
         id: 'oh-chibanzu-' + url.name + '-source',
         obj: {
@@ -1656,7 +1664,7 @@ sicyosonChibanzuUrls.forEach(url => {
         id: 'oh-chibanzu-' + url.name,
         source: 'oh-chibanzu-' + url.name + '-source',
         type: 'fill',
-        "source-layer": "chibanzu",
+        "source-layer": sourceLayer,
         'paint': {
             'fill-color': 'rgba(0,0,0,0)',
         },
@@ -1667,7 +1675,7 @@ sicyosonChibanzuUrls.forEach(url => {
         id: 'oh-chibanzu-line-' + url.name,
         source: 'oh-chibanzu-' + url.name + '-source',
         type: 'line',
-        "source-layer": "chibanzu",
+        "source-layer": sourceLayer,
         paint: {
             'line-color': 'navy',
             'line-width': [
@@ -1683,7 +1691,7 @@ sicyosonChibanzuUrls.forEach(url => {
         id: 'oh-chibanzu-label-' + url.name,
         type: "symbol",
         source: 'oh-chibanzu-' + url.name + '-source',
-        "source-layer": "chibanzu",
+        "source-layer": sourceLayer,
         'layout': {
             // 'text-field': ['get', url.chiban],
             'text-field': url.chiban,
@@ -1701,7 +1709,7 @@ sicyosonChibanzuUrls.forEach(url => {
         id: 'oh-chibanzu-vertex-' + url.name,
         type: "circle",
         source: 'oh-chibanzu-' + url.name + '-source',
-        "source-layer": "chibanzu",
+        "source-layer": sourceLayer,
         paint: {
             'circle-radius': [
                 'interpolate', ['linear'], ['zoom'],
@@ -1715,7 +1723,7 @@ sicyosonChibanzuUrls.forEach(url => {
         id: 'oh-chibanzu-point-' + url.name,
         type: "circle",
         source: 'oh-chibanzu-' + url.name + '-source',
-        "source-layer": "chibanzu",
+        "source-layer": sourceLayer,
         paint: {
             'circle-radius': [
                 'interpolate', ['linear'], ['zoom'],

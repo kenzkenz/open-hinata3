@@ -1275,7 +1275,7 @@ export default {
         const parsed = JSON.parse(this.$store.state.simaTextForUser)
         parsed['opacity'] = this.s_simaOpacity
         this.$store.state.simaTextForUser = JSON.stringify(parsed)
-        console.log(this.$store.state.simaTextForUser)
+        // console.log(this.$store.state.simaTextForUser)
       }
     },
     loadSima () {
@@ -3707,11 +3707,16 @@ export default {
           'oh-chibanzu-坂出市','oh-chibanzu-善通寺市','oh-chibanzu-長与町','oh-chibanzu-福島市',
           'oh-chibanzu-北広島市','oh-chibanzu-国立市','oh-chibanzu-福岡市','oh-chibanzu-越谷市',
           'oh-chibanzu-福山市','oh-chibanzu-深谷市','oh-chibanzu-伊丹市','oh-chibanzu-豊中市',
-          'oh-chibanzu-姫路市','oh-chibanzu-仙台市'];
+          'oh-chibanzu-姫路市','oh-chibanzu-仙台市','oh-chibanzu-高崎市'];
         layers.forEach(layer => {
           map.on('click', layer, (e) => {
             if (e.features && e.features.length > 0) {
-              const targetId = `${e.features[0].properties['id']}`;
+              let targetId
+              if (e.features[0].properties['id'] !== undefined) {
+                targetId = `${e.features[0].properties['id']}`;
+              } else {
+                targetId = `${e.features[0].properties['oh3id']}`;
+              }
               console.log('Clicked ID', targetId);
               if (this.$store.state.highlightedChibans.has(targetId)) {
                 // すでに選択されている場合は解除

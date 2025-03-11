@@ -433,6 +433,9 @@ export function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, fileName, 
             case 'oh-chibanzu-仙台市':
                 chiban = feature.properties.DNO
                 break
+            case 'oh-chibanzu-高崎市':
+                chiban = feature.properties.地番_地番図_label
+                break
             case /^oh-chiban-/.test(layerId): // 'oh-chiban-' で始まる場合
                 chiban = feature.properties[feature.properties.chiban]
                 break;
@@ -2297,6 +2300,9 @@ export function highlightSpecificFeaturesCity(map,layerId) {
             case 'oh-chibanzu-室蘭市':
                 fields = ['concat', ['get', 'id']]
                 break
+            case 'oh-chibanzu-高崎市':
+                fields = ['concat', ['get', 'oh3id']]
+                break
         }
 
         if(/^oh-chiban-/.test(layerId)) {
@@ -2404,6 +2410,9 @@ function getBoundingBoxByLayer(map, layerId) {
             case 'oh-chibanzu-室蘭市':
                 targetId = `${feature.properties['id']}`;
                 break;
+            case 'oh-chibanzu-高崎市':
+                targetId = `${feature.properties['oh3id']}`;
+                break
         }
         if(/^oh-chiban-/.test(layerId)) {
             targetId = `${feature.properties['oh3id']}`;
@@ -2560,6 +2569,9 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
             case 'oh-chibanzu-ニセコ町':
             case 'oh-chibanzu-室蘭市':
                 targetId = `${feature.properties['id']}`;
+                break;
+            case 'oh-chibanzu-高崎市':
+                targetId = `${feature.properties['oh3id']}`;
                 break;
         }
         if(/^oh-chiban-/.test(layerId)) {
