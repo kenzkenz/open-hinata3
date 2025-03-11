@@ -2878,7 +2878,7 @@ const kawadakeSource = {
     id: 'kawadake-source', obj: {
         type: 'raster',
         // tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://www.gridscapes.net/AllRivers/1.0.0/t/{z}/{x}/{y}.png'],
-        tiles: ['https://kenzkenz.xsrv.jp/kawadake/{z}/{x}/{y}.png'],
+        tiles: ['transparentWhite://https://kenzkenz.xsrv.jp/kawadake/{z}/{x}/{y}.png'],
         tileSize: 256,
         // scheme: 'tms',
         'maxzoom': 14,
