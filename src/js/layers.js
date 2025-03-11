@@ -1604,7 +1604,6 @@ const sicyosonChibanzuUrls = [
     {name:'利根町', chiban: ['get', '地番'], position:[140.1391729153425,35.85756030920088], url: 'tonechyo', page:'https://www.town.tone.ibaraki.jp/opendata.php'},
     // 群馬県
     {name:'高崎市', chiban: ['get', '地番_地番図_label'], position:[139.00336683069094,36.32182569208747], url:'takasakishi', page:'https://www.city.takasaki.gunma.jp/page/3130.html'},
-
     // 埼玉県
     {name:'越谷市', chiban: ['concat', ['get', '本番'], '-', ['get', '枝番']], position:[139.79105245767255,35.890609232668695], url:'koshigayashi', page:'https://www.city.koshigaya.saitama.jp/kurashi_shisei/kurashi/zeikin/koteisisan_tosikeikaku/tibanzu_opendate.html'},
     {name:'深谷市', chiban: ['concat', ['get', '本番'], '-', ['get', '枝番']], position:[139.281707999998,36.197104580699204], url:'fukayashi', page:'https://opendata.pref.saitama.lg.jp/resources/6204'},
@@ -10324,6 +10323,12 @@ const layers01 = [
         id: 'test',
         label: "テスト",
         nodes: [
+            {
+                id: 'oh-chibans-all',
+                label: "全国地番図",
+                sources: chibanzuSources,
+                layers: [...chibanzuLayers,...chibanzuLayerLines,...chibanzuLayerLabel,...chibanzuLayerVertex,...chibanzuLayerPoint],
+            },
             {
                 id: 'oh-vector-layer-mono',
                 label: "地理院ベクター・モノクロ",
