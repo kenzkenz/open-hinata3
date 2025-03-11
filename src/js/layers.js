@@ -1643,7 +1643,7 @@ const chibanzuLayerLabel = []
 const chibanzuLayerVertex = []
 const chibanzuLayerPoint = []
 sicyosonChibanzuUrls.forEach(url => {
-    console.log(url.url)
+    // console.log(url.url)
     chibanzuSources.push({
         id: 'oh-chibanzu-' + url.name + '-source',
         obj: {
@@ -10316,6 +10316,12 @@ const layers01 = [
         id: 'test',
         label: "テスト",
         nodes: [
+            {
+                id: 'oh-vector-layer-mono',
+                label: "地理院ベクター・モノクロ",
+                sources: monoSources,
+                layers: monoLayers,
+            },
             {
                 id: 'oh-test2',
                 label: "test",

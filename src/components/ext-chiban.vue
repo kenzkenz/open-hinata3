@@ -618,7 +618,7 @@ export default {
           //   " ", ["get", "地番本番"], " ", ["get", "SAFIELD002"], " ", ["get", "所在地番"], " ", ["get", "TEXTCODE1"], " ", ["get", ["get", "chiban"]]];
           // 各単語に対して、結合したフィールドに対する index-of チェックを実行
 
-          const combinedFields = ["concat", ["get", "地番"], " ", ["get", "Chiban"], " ", ["get", "TIBAN"], " ", ["get", "TXTCD"],
+          const combinedFields = ["concat", ["get", "TEXT"], " ", ["get", "地番"], " ", ["get", "Chiban"], " ", ["get", "TIBAN"], " ", ["get", "TXTCD"],
             " ", ["get", "本番"], " ", ["get", "CHIBAN"], " ", ["get", "表示文字列"], " ", ["get", "番地"], " ", ["get", "TXTCODE1"],
             " ", ["get", "地番本番"], " ", ["get", "SAFIELD002"], " ", ["get", "所在地番"], " ", ["get", "TEXTCODE1"], " ", ["get", "DNO"]];
 
