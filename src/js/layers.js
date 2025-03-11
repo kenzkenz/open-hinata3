@@ -1220,7 +1220,7 @@ urls = urls.map(item => {
         position: [(minLon + maxLon) / 2, (minLat + maxLat) / 2]
     };
 });
-console.log(urls);
+// console.log(urls);
 urls.sort((a, b) => {
     const aValue = a['50on'] || '';
     const bValue = b['50on'] || '';
