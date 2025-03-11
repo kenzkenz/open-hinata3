@@ -603,7 +603,6 @@ export default {
       gistUpload(map,this.layerId,this.sourceId,this.fields)
     },
     change () {
-      // alert(this.item.id)
       const vm = this
       const map = this.$store.state[this.mapName]
       //-------------------------------------------------------------------------
@@ -630,10 +629,17 @@ export default {
               map.setFilter(layer.id, matchCondition)
             }
             if (layer.id.includes('oh-chiban-') || layer.id.includes('oh-chibanL-')) {
-              map.setFilter(layer.id, matchCondition)
+              const combinedFilter = ["all", matchCondition];
+              // 条件を追加
+              // if (layer.id.includes('-vertex-')) {
+              //   combinedFilter.push(["==", "$type", "Polygon"]);
+              // }
+              if (layer.id.includes('-point-')) {
+                combinedFilter.push(["==", "$type", "Point"]);
+              }
+              map.setFilter(layer.id, combinedFilter)
             }
           })
-
         } else {
 
           map.getStyle().layers.forEach(layer => {
