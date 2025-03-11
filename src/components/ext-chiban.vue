@@ -519,6 +519,11 @@ export default {
           this.sourceId = 'oh-chibanzu-高崎市-source'
           this.fields = ['oh3id']
           break
+        case 'oh-chibanzu-all':
+          this.layerId = 'oh-chibanzu-all'
+          this.sourceId = 'oh-chibanzu-all-source'
+          this.fields = ['id']
+          break
       }
       if(/^oh-chiban-/.test(id)) {
         this.layerId = id

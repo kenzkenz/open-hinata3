@@ -1109,7 +1109,7 @@ export default {
     //
     s_selectedLayers: {
       handler: function(val){
-        console.log('変更を検出しました',this.$store.state.watchFlg,val)
+        // console.log('変更を検出しました',this.$store.state.watchFlg,val)
         // ------------------------------------------------------------------
         const map01 = this.$store.state.map01
         const bounds = map01.getBounds()

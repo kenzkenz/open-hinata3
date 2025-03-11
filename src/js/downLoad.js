@@ -12,7 +12,7 @@ import {
     pngSource,
     pngLayer,
     vpsTileSource,
-    vpsTileLayer
+    vpsTileLayer, chibanzuLayers0, chibanzuLayers, chibanzuSources
 } from "@/js/layers";
 import shpwrite from "@mapbox/shp-write"
 import JSZip from 'jszip'
@@ -173,6 +173,11 @@ export function exportLayerToGeoJSON(map,layerId,sourceId,fields) {
             features: features.map(f => f.toJSON())
         };
         console.log(geojson)
+        // alert(JSON.stringify(geojson))
+        if (geojson.features.length === 0) {
+            return null
+        }
+
         if (fields.length === 0) {
             geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
             console.log(geojson)
@@ -435,6 +440,10 @@ export function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, fileName, 
                 break
             case 'oh-chibanzu-高崎市':
                 chiban = feature.properties.地番_地番図_label
+                break
+            case 'oh-chibanzu-all':
+                // とりあえずidにする。
+                chiban = feature.properties.id
                 break
             case /^oh-chiban-/.test(layerId): // 'oh-chiban-' で始まる場合
                 chiban = feature.properties[feature.properties.chiban]
@@ -762,11 +771,41 @@ export function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, fileName, 
 // }
 
 export function saveCima(map, layerId, sourceId, fields, kaniFlg, kei) {
-    // if (map.getZoom() <= 15) {
-    //     alert('ズーム15以上にしてください。')
-    //     return
-    // }
-    const geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields);
+    if (map.getZoom() <= 15) {
+        alert('ズーム15以上にしてください。')
+        return
+    }
+    let geojson
+    const geojsons = []
+    if (layerId === 'oh-chibanzu-all') {
+        console.log(chibanzuLayers)
+        chibanzuLayers.forEach((layer,i) => {
+            console.log(layer)
+            const layerId = layer.id
+            const sourceId = chibanzuSources[i].id
+            let fields
+            if (layerId === 'oh-chibanzu-高崎市') {
+                fields = ['oh3id']
+            } else {
+                fields = ['id']
+            }
+            console.log(layerId,sourceId,fields)
+            console.log(sourceId)
+            const geojson0 = exportLayerToGeoJSON(map, layerId, sourceId, fields)
+            if (geojson0) {
+                // alert(JSON.stringify(geojson0))
+                geojsons.push(geojson0)
+            }
+        })
+        console.log(geojsons)
+        geojson = {
+            type: "FeatureCollection",
+            features: geojsons.flatMap(geojson => geojson.features)
+        }
+    } else {
+        console.log(layerId,sourceId,fields)
+        geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields);
+    }
     console.log(geojson)
     convertAndDownloadGeoJSONToSIMA(map,layerId,geojson,'簡易_',kaniFlg,kei);
 }
@@ -2303,6 +2342,9 @@ export function highlightSpecificFeaturesCity(map,layerId) {
             case 'oh-chibanzu-高崎市':
                 fields = ['concat', ['get', 'oh3id']]
                 break
+            case 'oh-chibanzu-all':
+                fields = ['concat', ['get', 'id']]
+                break
         }
 
         if(/^oh-chiban-/.test(layerId)) {
@@ -2413,6 +2455,9 @@ function getBoundingBoxByLayer(map, layerId) {
             case 'oh-chibanzu-高崎市':
                 targetId = `${feature.properties['oh3id']}`;
                 break
+            case 'oh-chibanzu-all':
+                targetId = `${feature.properties['id']}`;
+                break;
         }
         if(/^oh-chiban-/.test(layerId)) {
             targetId = `${feature.properties['oh3id']}`;
@@ -2573,18 +2618,27 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
             case 'oh-chibanzu-高崎市':
                 targetId = `${feature.properties['oh3id']}`;
                 break;
+            case 'oh-chibanzu-all':
+                if (feature.properties['id']) {
+                    targetId = `${feature.properties['id']}`
+                } else {
+                    targetId = `${feature.properties['oh3id']}`
+                }
+                break;
         }
+        console.log(layerId)
         if(/^oh-chiban-/.test(layerId)) {
             targetId = `${feature.properties['oh3id']}`;
         }
         // console.log(targetId)
-         // amx2024対策
-         if (layerId === 'oh-amx-a-fude') {
-             return chiban.includes(feature.properties['地番'])
-             // return chiban.includes(feature.properties['地番']) && chyome.includes(feature.properties['丁目名'])
-         } else {
+        // amx2024対策
+        if (layerId === 'oh-amx-a-fude') {
+            return chiban.includes(feature.properties['地番'])
+            // return chiban.includes(feature.properties['地番']) && chyome.includes(feature.properties['丁目名'])
+        } else {
+            console.log(targetId)
             return store.state.highlightedChibans.has(targetId);
-         }
+        }
     });
     let geojson
     if (filteredFeatures.length > 0) {
@@ -2593,7 +2647,7 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
             features: filteredFeatures
         };
     } else {
-        alert('データ取得失敗')
+        alert('データ取得失敗!')
         return
         // geojson = geojsonData
     }
@@ -5873,7 +5927,6 @@ export async function userSimaSet(name, url, id, zahyokei, simaText, isFirst) {
     }
 
     function createSourceAndLayers(geojson) {
-        console.log(geojson)
         if (map.getLayer('oh-sima-' + id + '-' + name + '-layer')) {
             return null;
         }

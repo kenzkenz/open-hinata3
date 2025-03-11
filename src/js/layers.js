@@ -1637,12 +1637,13 @@ const sicyosonChibanzuUrls = [
     {name:'長与町', chiban: ['get', 'SAFIELD002'], position:[129.87507937301513,32.82524812594376], url:'nagayochyo', page:'https://data.bodik.jp/dataset/423076_tibansankouzu/resource/580da941-74d1-4ddd-a0f0-fb6b88fc793a'}
 ];
 
-const chibanzuSources = []
-const chibanzuLayers = []
+export const chibanzuSources = []
+export const chibanzuLayers = []
 const chibanzuLayerLines = []
 const chibanzuLayerLabel = []
 const chibanzuLayerVertex = []
 const chibanzuLayerPoint = []
+// export const chibanzuLayers0 = [...chibanzuLayers,...chibanzuLayerLines,...chibanzuLayerLabel,...chibanzuLayerVertex,...chibanzuLayerPoint]
 sicyosonChibanzuUrls.forEach(url => {
     // console.log(url.name)
     let sourceLayer
@@ -1745,6 +1746,8 @@ const chibanzuLayers2 = chibanzuLayers.map((layer,i) => {
         ext: {name:'ext-chibanzu'}
     }
 })
+const chibanzuLayers0 = [...chibanzuLayers,...chibanzuLayerLines,...chibanzuLayerLabel,...chibanzuLayerVertex,...chibanzuLayerPoint]
+
 console.log(chibanzuLayers2)
 // 古地図----------------------------------------------------------------------------------------------------------------
 // 戦前の旧版地形図
@@ -8429,6 +8432,13 @@ const layers01 = [
                 id: 'citychibanzu',
                 label: "市町村地番図",
                 nodes: [
+                    {
+                        id: 'oh-chibanzu-all',
+                        label: "全国地番図",
+                        sources: chibanzuSources,
+                        layers: chibanzuLayers0,
+                        ext: {name:'ext-chibanzu'}
+                    },
                     ...chibanzuLayers2,
                     // {
                     //     id: 'oh-chibanzu2024',
@@ -10323,12 +10333,6 @@ const layers01 = [
         id: 'test',
         label: "テスト",
         nodes: [
-            {
-                id: 'oh-chibans-all',
-                label: "全国地番図",
-                sources: chibanzuSources,
-                layers: [...chibanzuLayers,...chibanzuLayerLines,...chibanzuLayerLabel,...chibanzuLayerVertex,...chibanzuLayerPoint],
-            },
             {
                 id: 'oh-vector-layer-mono',
                 label: "地理院ベクター・モノクロ",

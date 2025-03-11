@@ -348,7 +348,7 @@ export default createStore({
         }
         state.color[payload.mapName][target][target2] = Number(payload.value)
       } else {
-        console.log(payload.name)
+        // console.log(payload.name)
         switch (payload.name) {
           case 'extHighway':
             variable = 'highwayYear'
@@ -466,9 +466,9 @@ export default createStore({
             }
             break
         }
-        console.log(payload.mapName,payload.name,payload.value,variable,variable2)
+        // console.log(payload.mapName,payload.name,payload.value,variable,variable2)
         if (!variable2) {
-          console.log(payload.mapName)
+          // console.log(payload.mapName)
           state[variable][payload.mapName] = payload.value
         } else {
           // alert()
@@ -481,7 +481,7 @@ export default createStore({
     },
     updateSelectedLayers (state, payload) {
       const result = state.selectedLayers[payload.mapName].find(el => el.id === payload.id);
-      console.log(result,payload.values)
+      // console.log(result,payload.values)
       state.watchFlg = false
       result.ext.values = payload.values
     },
