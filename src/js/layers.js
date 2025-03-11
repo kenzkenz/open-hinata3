@@ -1695,7 +1695,7 @@ sicyosonChibanzuUrls.forEach(url => {
             'text-halo-width': 1.0,
         },
         'maxzoom': 24,
-        'minzoom': 17
+        'minzoom': 15
     })
     chibanzuLayerVertex.push({
         id: 'oh-chibanzu-vertex-' + url.name,
