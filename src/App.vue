@@ -2779,9 +2779,10 @@ export default {
                     const id = response.data[0].id
                     const url = response.data[0].url
                     const chiban = response.data[0].chiban
+                    const length = response.data[0].length
 
                     const source = {
-                      id: 'oh-chiban-' + id + '-' + name + '-source',obj: {
+                      id: 'oh-chiban-' + id + '-' + name + '-source', obj: {
                         type: 'vector',
                         url: "pmtiles://" + url
                       }
@@ -2811,6 +2812,14 @@ export default {
                         ]
                       },
                     }
+                    let minZoom
+                    if (!length) {
+                      minZoom = 17
+                    } else if (length < 10000) {
+                      minZoom = 0
+                    } else {
+                      minZoom = 17
+                    }
                     const labelLayer = {
                       id: 'oh-chibanL-' + name + '-label-layer',
                       type: "symbol",
@@ -2825,7 +2834,7 @@ export default {
                         'text-halo-color': 'rgba(255,255,255,1)',
                         'text-halo-width': 1.0,
                       },
-                      'minzoom': 17
+                      'minzoom': minZoom
                     }
                     const pointLayer = {
                       id: 'oh-chibanL-' + name + '-point-layer',

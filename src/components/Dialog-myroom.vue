@@ -61,7 +61,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 <v-card>
                   <v-text-field  v-model="pmtilesRename" type="text" placeholder="リネーム"></v-text-field>
                   <v-btn v-if="!isAll" style="margin-top: -10px;margin-bottom: 10px" @click="pmtilesRenameBtn">リネーム</v-btn>
-                  <div v-for="item in jsonDataPmtile" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban,item.bbox)">
+                  <div v-for="item in jsonDataPmtile" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban,item.bbox,item.length)">
                     <button v-if="!isAll" class="close-btn" @click="removeItemPmtiles(item.id,item.url2,$event)">×</button>
                     <strong>{{ item.name }}</strong><br>
                   </div>
@@ -596,11 +596,11 @@ export default {
       this.name = name
       userXyztileSet(name,url,id,JSON.parse(bbox),JSON.parse(transparent))
     },
-    pmtileClick (name,url,id, chiban, bbox) {
+    pmtileClick (name,url,id, chiban, bbox, length) {
       this.pmtilesRename = name
       this.id = id
       this.name = name
-      userPmtileSet(name,url,id, chiban, JSON.parse(bbox))
+      userPmtileSet(name,url,id, chiban, JSON.parse(bbox), length)
     },
     tileClick (name,url,id) {
       userTileSet(name,url,id)
@@ -1021,7 +1021,7 @@ export default {
                     const id = response.data[0].id
                     const url = response.data[0].url
                     const chiban = response.data[0].chiban
-
+                    const length = response.data[0].length
                     const source = {
                       id: 'oh-chiban-' + id + '-' + name + + '-source',obj: {
                         type: 'vector',
@@ -1053,6 +1053,14 @@ export default {
                         ]
                       },
                     }
+                    let minZoom
+                    if (!length) {
+                      minZoom = 17
+                    } else if (length < 10000) {
+                      minZoom = 0
+                    } else {
+                      minZoom = 17
+                    }
                     const labelLayer = {
                       id: 'oh-chibanL-' + name + '-label-layer',
                       type: "symbol",
@@ -1067,7 +1075,7 @@ export default {
                         'text-halo-color': 'rgba(255,255,255,1)',
                         'text-halo-width': 1.0,
                       },
-                      'minzoom': 17
+                      'minzoom': minZoom
                     }
                     const pointLayer = {
                       id: 'oh-chibanL-' + name + '-point-layer',
