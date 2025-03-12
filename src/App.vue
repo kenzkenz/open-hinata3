@@ -2857,7 +2857,7 @@ export default {
                       }
                     };
                     v.sources = [source];
-                    v.layers = [polygonLayer,lineLayer,labelLayer,vertexLayer,pointLayer]
+                    v.layers = [polygonLayer,lineLayer,labelLayer,pointLayer,vertexLayer]
                     v.label = name;
                   }
                 } catch (error) {

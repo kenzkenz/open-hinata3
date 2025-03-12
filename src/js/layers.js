@@ -1742,7 +1742,7 @@ const chibanzuLayers2 = chibanzuLayers.map((layer,i) => {
         id: layer.id,
         label: name,
         source: chibanzuSources[i],
-        layers:[layer,chibanzuLayerLines[i],chibanzuLayerLabel[i],chibanzuLayerVertex[i],chibanzuLayerPoint[i]],
+        layers:[layer,chibanzuLayerLines[i],chibanzuLayerLabel[i],chibanzuLayerPoint[i],chibanzuLayerVertex[i]],
         attribution: '<a href="' + layer.page + '" target="_blank">' + name + '</a>',
         position: layer.position,
         ext: {name:'ext-chibanzu'}
