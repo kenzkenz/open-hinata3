@@ -939,8 +939,26 @@ export default {
             this.$store.state.map01.setPaintProperty(layer.id, 'fill-opacity', 0)
           }
         }
+        if (layer.id.includes('oh-chibanL-') && layer.id.includes('-label-layer')) {
+          // ソース名からソースレイヤー名の一覧を取得する関数
+          function getSourceLayersFromSource(sourceName) {
+            return map.getStyle().layers
+                .filter(layer => layer.source === sourceName && layer['source-layer'])
+                .map(layer => layer['source-layer']);
+          }
+          const layerId = layer.id
+          const sourceName = map.getLayer(layerId).source
+          setTimeout(() => {
+            const features = map.querySourceFeatures(sourceName, {
+              sourceLayer: 'oh3',
+            });
+            if (features.length != 0 && features.length < 2000 && map.getZoom() < 15) {
+              // minzoomを解除する。
+              map.setLayerZoomRange(layerId, 0, undefined)
+            }
+          },3000)
+        }
       })
-
     },
     mw5AddLayers(map,mapName) {
       if (!this.s_selectedLayers[mapName].find(v => v.id === 'oh-mw5')) {

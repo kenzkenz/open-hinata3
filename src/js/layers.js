@@ -1719,11 +1719,13 @@ sicyosonChibanzuUrls.forEach(url => {
             'circle-color': 'blue',
         }
     })
+    // ここの filter: ['==', '$type', 'Point']が効いたり効かなかったり。様修正
     chibanzuLayerPoint.push({
         id: 'oh-chibanzu-point-' + url.name,
         type: "circle",
         source: 'oh-chibanzu-' + url.name + '-source',
         "source-layer": sourceLayer,
+        filter: ['==', '$type', 'Point'],
         paint: {
             'circle-radius': [
                 'interpolate', ['linear'], ['zoom'],
@@ -1746,7 +1748,8 @@ const chibanzuLayers2 = chibanzuLayers.map((layer,i) => {
         ext: {name:'ext-chibanzu'}
     }
 })
-const chibanzuLayers0 = [...chibanzuLayers,...chibanzuLayerLines,...chibanzuLayerLabel,...chibanzuLayerVertex,...chibanzuLayerPoint]
+// 並びを様修正
+const chibanzuLayers0 = [...chibanzuLayers,...chibanzuLayerLines,...chibanzuLayerLabel,...chibanzuLayerPoint,...chibanzuLayerVertex]
 
 console.log(chibanzuLayers2)
 // 古地図----------------------------------------------------------------------------------------------------------------

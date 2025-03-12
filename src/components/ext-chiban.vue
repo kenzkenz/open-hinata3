@@ -285,6 +285,7 @@ export default {
       map.getStyle().layers.forEach(layer => {
         if (layer.id.includes('oh-chibanzu-vertex')) {
           map.setPaintProperty(layer.id, 'circle-color', color)
+          console.log(map.getPaintProperty(layer.id,'circle-color'))
         }
         if (layer.id.includes('oh-chibanL-') && layer.id.includes('vertex')) {
           map.setPaintProperty(layer.id, 'circle-color', color)

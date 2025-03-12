@@ -130,11 +130,15 @@ export default {
     },
     dialogMouseDown (item) {
       this.$store.commit('incrDialogMaxZindex')
-      const result = this.$store.state.dialogsInfo[this.mapName].find(el => el.id === item.id)
-      const elm = document.querySelector('#dialog-info-' + item.id)
-      result.style.top = elm.style.top
-      result.style.left = elm.style.left
-      result.style['z-index'] = this.$store.state.dialogMaxZindex
+      try {
+        const result = this.$store.state.dialogsInfo[this.mapName].find(el => el.id === item.id)
+        const elm = document.querySelector('#dialog-info-' + item.id)
+        result.style.top = elm.style.top
+        result.style.left = elm.style.left
+        result.style['z-index'] = this.$store.state.dialogMaxZindex
+      } catch (e) {
+        console.log(e)
+      }
     }
   },
   watch: {

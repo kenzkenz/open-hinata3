@@ -1169,7 +1169,11 @@ export default {
         features: []
       };
       const map01 = this.$store.state.map01
-      map01.getSource('sima-data').setData(geoJSON)
+      if (map01.getSource('sima-data')) {
+        map01.getSource('sima-data').setData(geoJSON)
+      } else {
+        alert('レイヤーから削除してください。')
+      }
       this.$store.state.simaText = ''
     },
     pngDownload () {
@@ -2622,7 +2626,6 @@ export default {
               }
 
               if (v.id.includes('oh-sima-')) {
-                store.state.snackbar = true
                 fetchFlg = true;
                 const layerId = v.id.split('-')[2];
                 try {
