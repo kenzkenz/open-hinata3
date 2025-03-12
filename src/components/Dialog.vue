@@ -162,16 +162,6 @@ export default {
   height: 600px;
   -webkit-overflow-scrolling: touch;
 }
-
-/* スマホ用のスタイル */
-@media screen and (max-width: 500px) {
-  .dialog-div {
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left:0;
-  }
-}
 .drag-handle{
   height: 30px;
   padding: 5px;
@@ -197,5 +187,20 @@ export default {
 }
 .hover-white:hover{
   color: white;
+}
+/* スマホ用のスタイル */
+@media screen and (max-width: 500px) {
+  .dialog-div {
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left:0;
+  }
+  .close-btn-div{
+    font-size:4em;
+  }
+  .drag-handle{
+    height: 50px;
+  }
 }
 </style>
