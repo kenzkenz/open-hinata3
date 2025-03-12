@@ -524,7 +524,7 @@ import {
   tileGenerateForUser1file, tileGenerateForUserJpg, tileGenerateForUserPdf, tileGenerateForUserPng,
   tileGenerateForUserTfw,
   transformGeoJSONToEPSG4326, userKmzSet, userSimaSet,
-  zahyokei
+  zahyokei, zipDownloadSimaText
 } from '@/js/downLoad'
 
 function xmlToGeojson(xmlString) {
@@ -1304,10 +1304,34 @@ export default {
     simaDl () {
       if (this.$store.state.simaText) {
         downloadSimaText(false)
+      } else {
+        const map01 = this.$store.state.map01
+        let ids = []
+        map01.getStyle().layers.forEach(layer => {
+          if (layer.id.includes('-sima-')) {
+            ids.push(layer.id.split('-')[2])
+          }
+        })
+        ids = [...new Set(ids)]
+        const params = new URLSearchParams({ ids: ids });
+        ids.forEach(id => params.append('ids[]', id));
+        fetch(`https://kenzkenz.xsrv.jp/open-hinata3/php/userSimaSelectByIds.php?${params}`, {
+          method: "GET"
+        })
+            .then(response => response.json())
+            .then(datanum => {
+              const simaTexts = datanum.map(data => {
+                return {simaText:data.simatext,name:data.name}
+              })
+              zipDownloadSimaText (simaTexts)
+            });
       }
-      if (this.$store.state.simaTextForUser) {
-        downloadSimaText(true)
-      }
+      // if (this.$store.state.simaText) {
+      //   downloadSimaText(false)
+      // }
+      // if (this.$store.state.simaTextForUser) {
+      //   downloadSimaText(true)
+      // }
     },
     share(mapName) {
       if (this.$store.state.dialogs.shareDialog[mapName].style.display === 'none') {
@@ -2641,7 +2665,6 @@ export default {
                     const url = response.data[0].url;
                     const zahyokei = response.data[0].zahyokei;
                     const simaText = response.data[0].simatext;
-                    // alert(simaText)
                     async function aaa() {
                       const sourceAndLayers = await userSimaSet(name, url, id, zahyokei, simaText)
                       store.state.geojsonSources.push({
@@ -2835,7 +2858,7 @@ export default {
                     };
                     v.sources = [source];
                     v.layers = [polygonLayer,lineLayer,labelLayer,vertexLayer,pointLayer]
-                    v.label = response.data[0].name;
+                    v.label = name;
                   }
                 } catch (error) {
                   console.error('フェッチエラー:', error);

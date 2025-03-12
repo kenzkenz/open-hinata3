@@ -3238,6 +3238,39 @@ function calculatePolygonMetrics(polygon) {
     }
 }
 
+export async function zipDownloadSimaText (simaTexts) {
+    const zip = new JSZip();
+    // UTF-8で文字列をコードポイントに変換
+    let blob
+    simaTexts.forEach((simaText) => {
+        const utf8Array = window.Encoding.stringToCode(simaText.simaText);
+        // UTF-8からShift-JISに変換
+        const shiftJISArray = window.Encoding.convert(utf8Array, 'SJIS');
+        // Shift-JISエンコードされたデータをUint8Arrayに格納
+        const uint8Array = new Uint8Array(shiftJISArray);
+        blob = new Blob([uint8Array], { type: 'application/octet-stream' }); // MIMEタイプを変更
+        zip.file(simaText.name + ".sim", blob);
+    })
+
+    if (simaTexts.length > 1) {
+        // ZIPファイルを生成してダウンロード
+        const zipBlob = await zip.generateAsync({type: "blob"});
+        const zipLink = document.createElement("a");
+        zipLink.href = URL.createObjectURL(zipBlob);
+        zipLink.download = "sim.zip";
+        zipLink.click();
+        URL.revokeObjectURL(zipLink.href);
+    } else {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = simaTexts[0].name + '.sim'; // ファイル名を'sima.sim'に設定
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+    }
+}
+
 export function downloadSimaText (isUser) {
     let simaText
     if (isUser) {
