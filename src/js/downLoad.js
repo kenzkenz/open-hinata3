@@ -3257,13 +3257,13 @@ export async function zipDownloadSimaText (simaTexts) {
         const zipBlob = await zip.generateAsync({type: "blob"});
         const zipLink = document.createElement("a");
         zipLink.href = URL.createObjectURL(zipBlob);
-        zipLink.download = "sim.zip";
+        zipLink.download = "simzip.zip";
         zipLink.click();
         URL.revokeObjectURL(zipLink.href);
     } else {
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = simaTexts[0].name + '.sim'; // ファイル名を'sima.sim'に設定
+        link.download = simaTexts[0].name + '.sim'
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -6293,8 +6293,6 @@ export function userPmtileSet(name,url,id, chiban, bbox) {
     },100)
     const registeredLayers = new Set();
 }
-
-
 
 export function userTileSet(name,url,id) {
     const map = store.state.map01
