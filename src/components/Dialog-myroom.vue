@@ -504,10 +504,13 @@ export default {
               break;
           }
         });
-        vm.$store.state.map01.fitBounds(bounds, {
-          padding: 50,
-          animate: false
-        });
+        // 様修正
+        if (sourceAndLayers.geojson.features.length > 1) {
+          vm.$store.state.map01.fitBounds(bounds, {
+            padding: 50,
+            animate: false
+          });
+        }
         let opacity
         if (vm.$store.state.simaTextForUser) {
           opacity = JSON.parse(vm.$store.state.simaTextForUser).opacity
