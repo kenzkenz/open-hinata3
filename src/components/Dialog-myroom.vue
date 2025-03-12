@@ -20,8 +20,9 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
             <v-window v-model="tab">
               <v-window-item value="0">
                 <v-card>
-                  <v-text-field v-model="simaRename" type="text" placeholder="リネーム"></v-text-field>
-                  <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="simaRenameBtn">リネーム</v-btn>
+                  <v-text-field v-model="simaRename" type="text" placeholder="リネームまたは検索"></v-text-field>
+                  <v-btn v-if="!isAll" style="margin-top: -10px;margin-bottom: 10px" @click="simaRenameBtn">リネーム</v-btn>
+                  <v-btn style="margin-top: -10px;margin-bottom: 10px;margin-left: 10px;" @click="simaSerchBtn">検索</v-btn>
                   <div v-for="item in jsonDataSima" :key="item.id" class="data-container" @click="simaClick(item.name,item.url,item.id,item.simatext,item.zahyokei)">
                     <button v-if="!isAll" class="close-btn" @click="removeSima(item.id,item.url2,$event)">×</button>
                     <strong>{{ item.name }}</strong><br>
@@ -32,8 +33,8 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 <v-card>
                   <div style="margin-bottom: 10px;">
                     <v-text-field v-model="urlName" type="text" placeholder="ネーム"></v-text-field>
-                    <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="urlSave">URL記憶</v-btn>
-                    <v-btn style="margin-top: -10px; margin-bottom: 10px; margin-left: 10px" @click="urlRenameBtn">リネーム</v-btn>
+                    <v-btn v-if="!isAll" style="margin-top: -10px;margin-bottom: 10px" @click="urlSave">URL記憶</v-btn>
+                    <v-btn v-if="!isAll" style="margin-top: -10px; margin-bottom: 10px; margin-left: 10px" @click="urlRenameBtn">リネーム</v-btn>
                     <div v-for="item in jsonData" :key="item.id" class="data-container" @click="urlClick(item.name, item.url, item.id)">
                       <button v-if="!isAll" class="close-btn" @click="removeItem(item.id, $event)">×</button>
                       <strong>{{ item.name }}</strong><br>
@@ -47,7 +48,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   <div style="margin-bottom: 10px;">
                     <v-text-field  v-model="tileName" type="text" placeholder="ネーム"></v-text-field>
                     <v-text-field  v-model="tileUrl" type="text" placeholder="タイルURL"></v-text-field>
-                    <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="tileSave">地図タイル記憶</v-btn>
+                    <v-btn v-if="!isAll" style="margin-top: -10px;margin-bottom: 10px" @click="tileSave">地図タイル記憶</v-btn>
                     <div v-for="item in jsonDataTile" :key="item.id" class="data-container" @click="tileClick(item.name,item.url,item.id)">
                       <button v-if="!isAll" class="close-btn" @click="removeItemTile(item.id, $event)">×</button>
                       <strong>{{ item.name }}</strong><br>
@@ -59,7 +60,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-window-item value="3">
                 <v-card>
                   <v-text-field  v-model="pmtilesRename" type="text" placeholder="リネーム"></v-text-field>
-                  <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="pmtilesRenameBtn">リネーム</v-btn>
+                  <v-btn v-if="!isAll" style="margin-top: -10px;margin-bottom: 10px" @click="pmtilesRenameBtn">リネーム</v-btn>
                   <div v-for="item in jsonDataPmtile" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban,item.bbox)">
                     <button v-if="!isAll" class="close-btn" @click="removeItemPmtiles(item.id,item.url2,$event)">×</button>
                     <strong>{{ item.name }}</strong><br>
@@ -69,7 +70,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-window-item value="4">
                 <v-card>
                   <v-text-field v-model="xyztileRename" type="text" placeholder="リネーム"></v-text-field>
-                  <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="xyztileRenameBtn">リネーム</v-btn>
+                  <v-btn v-if="!isAll" style="margin-top: -10px;margin-bottom: 10px" @click="xyztileRenameBtn">リネーム</v-btn>
                   <div v-for="item in jsonDataxyztile" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox,item.transparent)">
                     <v-checkbox
                         v-if="!isAll"
@@ -89,7 +90,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-window-item value="5">
                 <v-card>
                   <v-text-field v-model="kmzRename" type="text" placeholder="リネーム"></v-text-field>
-                  <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="kmzRenameBtn">リネーム</v-btn>
+                  <v-btn v-if="!isAll" style="margin-top: -10px;margin-bottom: 10px" @click="kmzRenameBtn">リネーム</v-btn>
                   <div v-for="item in jsonDataKmz" :key="item.id" class="data-container" @click="kmzClick(item.name,item.url,item.id)">
                     <button v-if="!isAll" class="close-btn" @click="removeKmz(item.id,item.url2,$event)">×</button>
                     <strong>{{ item.name }}</strong><br>
@@ -1410,6 +1411,26 @@ export default {
         }
       }
       fetchUserData(uid)
+    },
+    simaSerchBtn () {
+      const vm = this
+      async function fetchUserData(uid) {
+        try {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userSimaSerch.php', {
+            params: { uid: uid, isAll: vm.isAll, name: vm.simaRename}
+          });
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            vm.jsonDataSima = response.data.result
+          }
+        } catch (error) {
+          console.error('通信エラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      fetchUserData(this.s_userId)
     },
     simaSelect (uid) {
       const vm = this
