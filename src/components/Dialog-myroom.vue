@@ -100,11 +100,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 <v-card>
 <!--                  <v-btn style="margin-bottom: 10px;" @click="isAllBtn">全表示</v-btn>-->
                   <v-switch style="height: 40px;" v-model="isAll" @change="isAllSwitch" label="全表示" color="primary" />
-
-                  <!--                  <v-btn style="margin-bottom: 10px;" @click="iko">移行</v-btn>-->
-<!--                  <div v-for="item in jsonDataxyztileAll" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox,item.transparent)">-->
-<!--                    <strong>{{ item.name }}</strong><br>-->
-<!--                  </div>-->
                 </v-card>
               </v-window-item>
             </v-window>
@@ -368,6 +363,9 @@ export default {
       iko()
     },
     urlRenameBtn () {
+      if (!confirm("リネームしますか？")) {
+        return
+      }
       const vm = this
       if (!this.urlName) return
       axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userUrlUpdate.php',{
@@ -381,6 +379,9 @@ export default {
       })
     },
     simaRenameBtn () {
+      if (!confirm("リネームしますか？")) {
+        return
+      }
       const vm = this
       if (!this.simaRename) return
       axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userSimaUpdate.php',{
@@ -394,6 +395,9 @@ export default {
       })
     },
     kmzRenameBtn () {
+      if (!confirm("リネームしますか？")) {
+        return
+      }
       const vm = this
       if (!this.kmzRename) return
       axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userKmzUpdate.php',{
@@ -407,6 +411,9 @@ export default {
       })
     },
     xyztileRenameBtn () {
+      if (!confirm("リネームしますか？")) {
+        return
+      }
       const vm = this
       if (!this.xyztileRename) return
       // alert(this.id + '/' + this.xyztileRename)
@@ -421,6 +428,9 @@ export default {
       })
     },
     pmtilesRenameBtn () {
+      if (!confirm("リネームしますか？")) {
+        return
+      }
       const vm = this
       if (!this.pmtilesRename) return
       // alert(this.id + '/' + this.pmtilesRename)
