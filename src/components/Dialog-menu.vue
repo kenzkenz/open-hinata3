@@ -112,7 +112,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <p v-else></p>
       </div>
       <p style="margin-top: 10px;margin-bottom: 10px;">
-        v0.620
+        v0.622
       </p>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
@@ -695,6 +695,12 @@ export default {
 }
 .my-v-window {
   margin-top: 20px;
+}
+/* スマホ用のスタイル */
+@media screen and (max-width: 500px) {
+  .menu-div {
+    padding: 20px;
+  }
 }
 </style>
 

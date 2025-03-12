@@ -2305,9 +2305,10 @@ export default {
       let syncing = false
       function syncMaps(mapA, mapB) {
         // iphoneのtきmoveではフリーズする。moveendではフリーズしない。
+        // その後フリーズしなくなったのでmoveに統一。
         let m = 'move'
         if (window.innerWidth < 1000) {
-          m = 'moveend'
+          m = 'move'
         }
         mapA.on(m, () => {
           // throttle(() => {
