@@ -980,5 +980,5 @@ tippecanoe -o hamamatushi.pmtiles \
     --simplify-only-low-zooms \
     --maximum-zoom=16 \
     --minimum-zoom=0 \
-    --layer=chibanzu \
+    --layer=oh3 \
     merged.geojson
