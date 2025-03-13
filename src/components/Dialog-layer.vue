@@ -1279,7 +1279,7 @@ input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
   margin-top: -7.5px;
 }
-@media screen and (max-width:480px) {
+@media screen and (max-width:500px) {
   input[type=range]::-webkit-slider-thumb {
     height: 23px;
     width: 30px;
@@ -1352,13 +1352,16 @@ input[type=range]:focus::-ms-fill-upper {
 }
 /*スライダーここまで*/
 
-/* スマホ用のスタイル */
-/*@media screen and (max-width: 768px) {*/
-/*  .container-div {*/
-/*    height: 100px;*/
-/*  }*/
-/*}*/
+/*スマホ用のスタイル*/
+@media screen and (max-width: 500px) {
+  .drag-item {
+    height: 50px!important;
+    font-size: 16px!important;
 
-
+  }
+  .tree-row-item {
+    font-size: large!important;
+  }
+}
 </style>
 
