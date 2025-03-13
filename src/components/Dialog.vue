@@ -165,13 +165,14 @@ export default {
 .drag-handle{
   height: 30px;
   padding: 5px;
-  /*background-color: rgba(0,60,136,0.5);*/
   background-color: rgb(50,101,186);
   border-top-left-radius: 4px;
   border-top-right-radius: 4px;
   cursor: grab;
   color: white;
-  /*width: 50px;*/
+  display: flex;
+  /*justify-content: center; !* 水平方向の中央揃え *!*/
+  align-items: center; /* 垂直方向の中央揃え */
 }
 .close-btn-div{
   position: absolute;

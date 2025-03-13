@@ -80,6 +80,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
             <div style="margin-top: 10px;">
               <v-btn v-if="!user1" @click="loginDiv=!loginDiv,signUpDiv=false">ログイン</v-btn><v-btn v-if="user1" @click="logOut">ログアウト</v-btn>
               <v-btn style="margin-left: 10px;" v-if="!user1" @click="signUpDiv=!signUpDiv,loginDiv=false">新規登録</v-btn>
+              <span v-if="!user1" style="margin-left: 20px;">新規登録は無料です。</span>
 
               <div v-if="loginDiv" style="margin-top: 10px;">
                 <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
@@ -112,7 +113,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <p v-else></p>
       </div>
       <p style="margin-top: 10px;margin-bottom: 10px;">
-        v0.624
+        v0.626
       </p>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
@@ -421,6 +422,10 @@ export default {
       logout()
     },
     signUp () {
+      if (!(this.email && this.password &&this.nickname)) {
+        alert('入力されていません。')
+        return
+      }
       const signup = async () => {
         try {
           // Firebase 認証でアカウント作成
