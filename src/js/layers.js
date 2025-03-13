@@ -2648,7 +2648,7 @@ const csNotoLayer = {
 const csShizuokaSource = {
     id: 'csShizuokaSource', obj: {
         type: 'raster',
-        tiles: ['https://kenzkenz.xsrv.jp/open-hinata3/php/proxy.php?url=https://kenzkenz3.xsrv.jp/cs/shizuoka/{z}/{x}/{y}.png'],
+        tiles: ['transparentWhite://https://kenzkenz3.xsrv.jp/cs/shizuoka/{z}/{x}/{y}.png'],
         tileSize: 256,
     }
 }
