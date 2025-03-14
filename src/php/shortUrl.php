@@ -16,7 +16,7 @@ $parameters = $_POST['parameters'];
 //$parameters = 1;
 for ($i = 1; $i <= 20; $i++) {
     //ユニークID生成
-    $newurlid = makeRandStr(6);
+    $newurlid = makeRandStr(7);
 //    $newurlid = 9;
 //    $pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
     $mysql = "SELECT parameters FROM shorturl WHERE id = ?";
