@@ -27,7 +27,7 @@ $length = count($data["geojson"]["features"]);
 $bbox = [INF, INF, -INF, -INF];
 foreach ($data["geojson"]["features"] as $index => &$feature) {
     $feature["properties"]["oh3id"] = $index;
-    $feature["properties"]["chiban"] = $data["chiban"];
+//    $feature["properties"]["chiban"] = $data["chiban"];
     if (isset($feature["geometry"]["coordinates"])) {
         updateBBOX($feature["geometry"]["coordinates"], $bbox);
     }

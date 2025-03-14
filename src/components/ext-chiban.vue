@@ -617,7 +617,14 @@ export default {
       const vm = this
       const map = this.$store.state[this.mapName]
       //-------------------------------------------------------------------------
-      function filterBy(text) {
+
+      async function fetchData(id) {
+        const response = await fetch(`https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesSelectById.php?id=${id}`);
+        const data = await response.json();
+        return data;
+      }
+
+      async function filterBy(text) {
         if (text) {
           let searchString = text
           searchString = searchString.replace(/\u3000/g,' ').trim()
@@ -629,7 +636,10 @@ export default {
               " ", ["get", "本番"], " ", ["get", "CHIBAN"], " ", ["get", "表示文字列"], " ", ["get", "番地"], " ", ["get", "TXTCODE1"],
               " ", ["get", "地番本番"], " ", ["get", "SAFIELD002"], " ", ["get", "所在地番"], " ", ["get", "TEXTCODE1"], " ", ["get", "DNO"]];
           } else {
-            combinedFields = ["get", ["get", "chiban"]]
+            let chibanPropatie = await fetchData(vm.item.id.split('-')[2])
+            chibanPropatie = chibanPropatie[0].chiban
+            combinedFields = ["get", chibanPropatie]
+            // combinedFields = ["get", ["get", "chiban"]]
           }
           const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);
           // いずれかの単語が含まれる場合の条件を作成 (OR条件)

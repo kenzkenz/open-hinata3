@@ -325,7 +325,13 @@ function getFirstPointName(geojson) {
     return { pointName, hoka };
 }
 
-export function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, fileName, kaniFlg, zahyokei2, kukaku,jww, kei2) {
+async function fetchData(id) {
+    const response = await fetch(`https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesSelectById.php?id=${id}`);
+    const data = await response.json();
+    return data;
+}
+
+export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, fileName, kaniFlg, zahyokei2, kukaku,jww, kei2) {
     console.log(geojson)
     geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
     console.log(geojson)
@@ -360,6 +366,13 @@ export function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, fileName, 
             // alert(kei + 'でsimファイルを作ります。')
         }
     }
+
+    let chibanPropatie
+    if(/^oh-chiban-/.test(layerId)) {
+        chibanPropatie = await fetchData(layerId.split('-')[2])
+        chibanPropatie = chibanPropatie[0].chiban
+    }
+    // alert(chibanPropatie)
 
     let simaData = 'G00,01,open-hinata3,\n';
     simaData += 'Z00,座標ﾃﾞｰﾀ,,\n';
@@ -445,16 +458,12 @@ export function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, fileName, 
                 // とりあえずidにする。
                 chiban = feature.properties.id
                 break
-            case /^oh-chiban-/.test(layerId): // 'oh-chiban-' で始まる場合
-                chiban = feature.properties[feature.properties.chiban]
-                break;
         }
 
         if(/^oh-chiban-/.test(layerId)) {
-            chiban = feature.properties[feature.properties.chiban]
+            chiban = feature.properties[chibanPropatie]
         }
 
-       // alert(chiban)
         B01Text += 'D00,' + i + ',' + chiban + ',1,\n';
         let coordinates = [];
         if (feature.geometry.type === 'Polygon') {
