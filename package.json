@@ -12,6 +12,7 @@
     "@mapbox/mapbox-gl-draw": "^1.4.3",
     "@mapbox/shp-write": "^0.4.3",
     "@mdi/font": "5.9.55",
+    "@tensorflow/tfjs": "^4.22.0",
     "@tmcw/togeojson": "^6.0.0",
     "@turf/turf": "^7.1.0",
     "@yeger/vue-masonry-wall": "^5.0.18",
