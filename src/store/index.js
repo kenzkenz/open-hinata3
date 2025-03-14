@@ -129,6 +129,7 @@ export default createStore({
     ocrAccuracy: 1,
     pmtilesName: '',
     pmtilesPropertieName: '',
+    address: '',
     //------------------------
     highwayYear:{
       map01: 2024,

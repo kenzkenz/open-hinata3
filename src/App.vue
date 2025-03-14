@@ -484,7 +484,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
           <div class="zoom-div">
             zoom={{zoom.toFixed(2)}} {{elevation}}<br>
-            {{address}}
+            {{s_address}}
           </div>
         </div>
       </div>
@@ -695,6 +695,7 @@ export function history (event,url) {
   const width = window.screen.width
   const height = window.screen.height
   const referrer = document.referrer
+  // alert(store.state.address)
   axios
       .get('https://kenzkenz.xsrv.jp/open-hinata3/php/history.php',{
         params: {
@@ -703,7 +704,8 @@ export function history (event,url) {
           ua: ua,
           referrer:referrer,
           url: url,
-          uid: store.state.userId
+          uid: store.state.userId,
+          address: store.state.address
         }
       })
 }
@@ -846,7 +848,6 @@ export default {
     pitch:{map01:0,map02:0},
     bearing:0,
     zoom:0,
-    address:'',
     elevation:'',
     watchId: null,
     centerMarker: null,
@@ -878,6 +879,14 @@ export default {
     loadingSnackbar: false,
   }),
   computed: {
+    s_address: {
+      get() {
+        return this.$store.state.address
+      },
+      set(value) {
+        this.$store.state.address = value
+      }
+    },
     s_pmtilesName: {
       get() {
         return this.$store.state.pmtilesName
@@ -1778,7 +1787,7 @@ export default {
             if (response.data.results) {
               try {
                 const splitMuni = muni[Number(response.data.results.muniCd)].split(',')
-                vm.address = splitMuni[1] + splitMuni[3] + response.data.results.lv01Nm
+                vm.s_address = splitMuni[1] + splitMuni[3] + response.data.results.lv01Nm
                 console.log(splitMuni[0])
                 vm.$store.state.prefId = splitMuni[0]
               }catch (e){
