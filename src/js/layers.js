@@ -8031,13 +8031,14 @@ const gaikuLayerLabel = {
         ],
         'text-font': ['NotoSansJP-Regular'],
         'text-offset': [0, 1.7],
+        'text-allow-overlap': true // サークルとテキストの重なりを許可
     },
     'paint': {
         'text-color': 'rgba(0, 0, 0, 1)',
         'text-halo-color': 'rgba(255,255,255,1)',
         'text-halo-width': 1.0,
     },
-    // 'maxzoom': 24,
+    // 'maxzoom': 25,
     'minzoom': 15
 };
 // 都市部官民基準点--------------------------------------------------------------------------------------------
