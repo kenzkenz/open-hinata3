@@ -2624,12 +2624,10 @@ export default {
                 }
             )
           }
-
+          // -----------------------------------------------------------------------------------------------------------
           let fetchFlg = false;
-          async function processUserLayers(mapArray) {
-            const promises = mapArray.map(async (v) => {
-              console.log(v.id);
-
+          async function processUserLayers(slj,mapName) {
+            const promises = slj.map(async (v) => {
               if (v.id.includes('usertile')) {
                 fetchFlg = true;
                 const layerId = v.id.split('-')[2];
@@ -2670,6 +2668,7 @@ export default {
                     console.error('エラー:', response.data.error);
                     alert(`エラー: ${response.data.error}`);
                   } else {
+                    console.log(response.data[0])
                     const name = response.data[0].name;
                     const id = response.data[0].id;
                     const url = response.data[0].url;
@@ -2690,7 +2689,9 @@ export default {
                         opacity:JSON.parse(vm.$store.state.simaTextForUser).opacity
                       })
                       vm.s_simaOpacity = JSON.parse(vm.$store.state.simaTextForUser).opacity
-                      vm.$store.state.snackbar = true
+                      if (mapName === 'map01') {
+                        vm.$store.state.snackbar = true
+                      }
                     }
                     await aaa()
                   }
@@ -2887,10 +2888,12 @@ export default {
             return Promise.all(promises);
           }
 
+          // console.log(params.slj.map01)
+
           async function fetchAllUserLayers() {
             await Promise.all([
-              processUserLayers(params.slj.map01),
-              processUserLayers(params.slj.map02)
+              processUserLayers(params.slj.map01,'map01'),
+              processUserLayers(params.slj.map02,'map02')
             ]);
             vm.s_selectedLayers = params.slj;
           }

@@ -328,7 +328,9 @@ export default {
       },timeOut)
     },
     removeLayer(id){
+      console.log(this.s_selectedLayers[this.mapName])
       this.s_selectedLayers[this.mapName] = this.s_selectedLayers[this.mapName].filter(layer => layer.id !== id)
+      console.log(this.s_selectedLayers[this.mapName])
       this.$store.state.dialogsInfo[this.mapName] = this.$store.state.dialogsInfo[this.mapName].filter(layer => layer.id !== id)
       this.$store.state.watchFlg = true
       if (id === 'oh-jpg-layer') {
