@@ -21,6 +21,7 @@ import tokml from 'tokml'
 import iconv from "iconv-lite";
 import pako from "pako";
 import {kml} from "@tmcw/togeojson";
+import * as GeoTIFF from 'geotiff';
 // 複数のクリックされた地番を強調表示するためのセット
 // export let highlightedChibans = new Set();
 (function() {
@@ -3305,7 +3306,7 @@ export function downloadSimaText (isUser) {
 
 export async function getCRS(tiffFile) {
     const arrayBuffer = await tiffFile.arrayBuffer();
-    const tiff = await window.GeoTIFF.fromArrayBuffer(arrayBuffer);
+    const tiff = await GeoTIFF.fromArrayBuffer(arrayBuffer);
     const image = await tiff.getImage();
     const metadata = image.getFileDirectory();
 
@@ -3532,7 +3533,7 @@ export async function addImageLayer(tiffFile, worldFile, code, isFirst) {
 
     // GeoTIFF.jsを使用してTIFFファイルを読み込む
     const arrayBuffer = await tiffFile.arrayBuffer();
-    const tiff = await window.GeoTIFF.fromArrayBuffer(arrayBuffer);
+    const tiff = await GeoTIFF.fromArrayBuffer(arrayBuffer);
     const image = await tiff.getImage();
 
     const width = image.getWidth();
