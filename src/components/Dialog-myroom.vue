@@ -14,7 +14,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-tab value="3">地番図</v-tab>
               <v-tab value="4">画像</v-tab>
               <v-tab value="5">kmz</v-tab>
-              <v-tab v-if="isAdministrator" value="6">復帰</v-tab>
+              <v-tab value="6">復帰</v-tab>
               <v-tab v-if="isAdministrator" value="7">管理者用</v-tab>
             </v-tabs>
 
@@ -100,10 +100,11 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               </v-window-item>
               <v-window-item value="6">
                 <v-card>
-                  <v-btn style="margin-bottom: 30px;" @click="windows">Windowsでの最後</v-btn>
-                  <v-btn style="margin-left: 10px;margin-bottom: 30px;" @click="mac">Macでの最後</v-btn><br>
-                  <v-btn style="margin-bottom: 10px;" @click="android">Androidでの最後</v-btn>
-                  <v-btn style="margin-left: 10px;margin-bottom: 10px;" @click="iphone">iPhoneでの最後</v-btn>
+                  <p style="margin-bottom: 30px;">各デバイスの最後に開いた画面に復帰します。ただいま試験運用中です。</p>
+                  <v-btn style="margin-bottom: 30px; width: 180px;" @click="device('Windows')">Windowsでの最後</v-btn>
+                  <v-btn style="margin-left: 10px;margin-bottom: 30px; width: 180px" @click="device('Macintosh')">Macでの最後</v-btn><br>
+                  <v-btn style="margin-bottom: 10px; width: 180px" @click="device('Android')">Androidでの最後</v-btn>
+                  <v-btn style="margin-left: 10px;margin-bottom: 10px; width: 180px" @click="device('iPhone')">iPhoneでの最後</v-btn>
                 </v-card>
               </v-window-item>
               <v-window-item value="7">
@@ -360,14 +361,21 @@ export default {
     },
   },
   methods: {
-    mac () {
-      axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userUrlUpdate.php',{
+    device (device) {
+      const vm = this
+      axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userHystorySelect.php',{
         params: {
           uid: this.uid,
-          device: 'mac'
+          device: device
         }
       }).then(function (response) {
         console.log(response)
+        history('device復帰/' + device, window.location.href)
+        if (response.data.length > 0) {
+          vm.urlClick('', response.data[0].url, '')
+        } else {
+          alert('履歴が一件もありません。')
+        }
       })
     },
     isAllSwitch () {
@@ -649,6 +657,7 @@ export default {
       //-------------------------------------------------------------------------------------
       const vm = this
       const map = this.$store.state.map01
+      // alert(url)
       const urlid = new URL(url).searchParams.get('s')
       axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrlSelect.php',{
         params: {
