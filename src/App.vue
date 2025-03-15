@@ -2684,11 +2684,11 @@ export default {
                       v.source = sourceAndLayers.source.id;
                       v.layers = sourceAndLayers.layers;
                       v.label = name;
-                      vm.$store.state.simaTextForUser = JSON.stringify({
-                        text: simaText,
-                        opacity:JSON.parse(vm.$store.state.simaTextForUser).opacity
-                      })
-                      vm.s_simaOpacity = JSON.parse(vm.$store.state.simaTextForUser).opacity
+                      // vm.$store.state.simaTextForUser = JSON.stringify({
+                      //   text: simaText,
+                      //   opacity:JSON.parse(vm.$store.state.simaTextForUser).opacity
+                      // })
+                      // vm.s_simaOpacity = JSON.parse(vm.$store.state.simaTextForUser).opacity
                       if (mapName === 'map01') {
                         vm.$store.state.snackbar = true
                       }
