@@ -14,7 +14,8 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-tab value="3">地番図</v-tab>
               <v-tab value="4">画像</v-tab>
               <v-tab value="5">kmz</v-tab>
-              <v-tab v-if="isAdministrator" value="6">管理者用</v-tab>
+              <v-tab v-if="isAdministrator" value="6">復帰</v-tab>
+              <v-tab v-if="isAdministrator" value="7">管理者用</v-tab>
             </v-tabs>
 
             <v-window v-model="tab">
@@ -99,7 +100,15 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               </v-window-item>
               <v-window-item value="6">
                 <v-card>
-<!--                  <v-btn style="margin-bottom: 10px;" @click="isAllBtn">全表示</v-btn>-->
+                  <v-btn style="margin-bottom: 30px;" @click="windows">Windowsでの最後</v-btn>
+                  <v-btn style="margin-left: 10px;margin-bottom: 30px;" @click="mac">Macでの最後</v-btn><br>
+                  <v-btn style="margin-bottom: 10px;" @click="android">Androidでの最後</v-btn>
+                  <v-btn style="margin-left: 10px;margin-bottom: 10px;" @click="iphone">iPhoneでの最後</v-btn>
+                </v-card>
+              </v-window-item>
+              <v-window-item value="7">
+                <v-card>
+                  <!-- <v-btn style="margin-bottom: 10px;" @click="isAllBtn">全表示</v-btn>-->
                   <v-switch style="height: 40px;" v-model="isAll" @change="isAllSwitch" label="全表示" color="primary" />
                 </v-card>
               </v-window-item>
@@ -351,6 +360,16 @@ export default {
     },
   },
   methods: {
+    mac () {
+      axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userUrlUpdate.php',{
+        params: {
+          uid: this.uid,
+          device: 'mac'
+        }
+      }).then(function (response) {
+        console.log(response)
+      })
+    },
     isAllSwitch () {
       this.s_fetchImagesFire = !this.s_fetchImagesFire
     },
