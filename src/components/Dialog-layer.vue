@@ -403,7 +403,7 @@ export default {
       //   }
       // }
       // -------------------------------------------------------------------------------------------
-      console.log(this.s_selectedLayers)
+      console.log('selectedLayers',this.s_selectedLayers)
 
       function isObject(value) {
         return value !== null && typeof value === 'object' && !Array.isArray(value);

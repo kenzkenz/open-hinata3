@@ -2691,11 +2691,13 @@ export default {
                       // vm.s_simaOpacity = JSON.parse(vm.$store.state.simaTextForUser).opacity
                       if (mapName === 'map01') {
                         vm.$store.state.snackbar = true
+                        vm.$store.state.simaText = ''
                       }
                     }
                     await aaa()
                   }
                 } catch (error) {
+                  vm.$store.state.snackbar = false
                   console.error('フェッチエラー:', error);
                 }
               }
