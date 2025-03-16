@@ -6642,3 +6642,11 @@ export function scrollForAndroid (className) {
         });
     }
 }
+
+export function getLayersById(map, targetId) {
+    const mapName = map.getContainer().id
+    // `map01` の配列を検索
+    const mapEntry = store.state.selectedLayers[mapName].find(entry => entry.id === targetId);
+    // 対応するエントリがあれば layers を返し、なければ null
+    return mapEntry ? mapEntry.layers : null;
+}

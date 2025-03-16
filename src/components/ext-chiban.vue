@@ -196,7 +196,7 @@ import {
   saveDxf,
   saveCsv,
   simaToGeoJSON,
-  resetFeatureColors, saveSima2, saveKml
+  resetFeatureColors, saveSima2, saveKml, getLayersById
 } from "@/js/downLoad";
 
 export default {
@@ -261,7 +261,22 @@ export default {
         this.$store.state.chibanColor[this.mapName] = value
       }
     },
-    s_chibanCircleColor: {
+    s_chibanColors: {
+      get() {
+        return this.$store.state.chibanColors[this.mapName]
+      },
+      set(value) {
+        this.$store.state.chibanColors[this.mapName] = value
+      }
+    },
+    s_chibanColorsString: {
+      get() {
+        return this.$store.state.chibanColorsString[this.mapName]
+      },
+      set(value) {
+        this.$store.state.chibanColorsString[this.mapName] = value
+      }
+    },    s_chibanCircleColor: {
       get() {
         return this.$store.state.chibanCircleColor[this.mapName]
       },
@@ -272,10 +287,16 @@ export default {
   },
   methods: {
     update () {
+      // if (this.$store.state.chibanColors.map01) {
+      //   console.log(JSON.parse(this.$store.state.chibanColors.map01))
+      // }
+      // alert(this.s_chibanColorsString)
+      console.log(this.s_chibanColorsString)
       this.$store.commit('updateSelectedLayers', {
         mapName: this.mapName, id: this.item.id, values: [
           this.s_chibanText,
-          this.s_chibanColor,
+          // this.s_chibanColors,
+          this.s_chibanColorsString,
           this.s_chibanCircleColor
         ]
       })
@@ -601,16 +622,60 @@ export default {
       if (isUpdate) this.update()
     },
     changeColor (color,isUpdate) {
+      // const map = this.$store.state[this.mapName]
+      // map.getStyle().layers.forEach(layer => {
+      //   if (layer.id.includes('oh-chibanzu-line')) {
+      //     map.setPaintProperty(layer.id, 'line-color', color)
+      //   }
+      //   if (layer.id.includes('oh-chibanL-') && layer.id.includes('line')) {
+      //     map.setPaintProperty(layer.id, 'line-color', color)
+      //   }
+      // })
+      // alert(this.item.id)
+
+      let lineColor
+      console.log(this.s_chibanColorsString)
+      let result
+      if (this.s_chibanColorsString) {
+        result = JSON.parse(this.s_chibanColorsString).find(v => v.layerId = this.item.id)
+        if (result) {
+          if (color) {
+            lineColor = color
+          } else {
+            lineColor = result.color
+          }
+        }
+      } else {
+        lineColor = 'blue'
+      }
+
+      console.log(result)
+      console.log(lineColor)
       const map = this.$store.state[this.mapName]
-      map.getStyle().layers.forEach(layer => {
-        if (layer.id.includes('oh-chibanzu-line')) {
-          map.setPaintProperty(layer.id, 'line-color', color)
+      const layers = getLayersById(map,this.item.id)
+      const lineLayerId = layers.find(v => v.id.includes('line')).id
+      map.setPaintProperty(lineLayerId, 'line-color', lineColor)
+
+      if (result) {
+        this.$store.state.chibanColors = JSON.parse(this.s_chibanColorsString)
+        console.log(this.s_chibanColorsString)
+        const result1 = this.$store.state.chibanColors.find(v => v.layerId === this.item.id)
+        if (result1) {
+          result1.color = lineColor
+          this.s_chibanColorsString = JSON.stringify(this.$store.state.chibanColors)
         }
-        if (layer.id.includes('oh-chibanL-') && layer.id.includes('line')) {
-          map.setPaintProperty(layer.id, 'line-color', color)
+
+      } else {
+        if (color) {
+          map.setPaintProperty(lineLayerId, 'line-color', color)
+          this.$store.state.chibanColors.push({
+            layerId: this.item.id,
+            color: color
+          })
+          console.log(this.$store.state.chibanColors)
+          this.s_chibanColorsString = JSON.stringify(this.$store.state.chibanColors)
         }
-      })
-      this.s_chibanColor = color
+      }
       if (isUpdate) this.update()
     },
     change () {
@@ -689,12 +754,12 @@ export default {
     this.checkDevice();
   },
   mounted() {
-
+    console.log(this.s_chibanColorsString)
   },
   watch: {
     s_extFire () {
       this.change()
-      this.changeColor(this.s_chibanColor)
+      this.changeColor()
       this.changeColorCircle(this.s_chibanCircleColor)
     },
   }
