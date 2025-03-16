@@ -149,7 +149,7 @@
     <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog5=true" v-if="item.id !== 'oh-chibanzu2024'">sima保存（簡易）</v-btn>
 <!--    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveSima3" v-if="item.id === 'oh-chibanzu2024'">sima保存</v-btn>-->
     <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog2=true" v-if="item.id === 'oh-chibanzu2024'">sima保存</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="dialog=true">sima読込</v-btn>
+    <v-btn style="margin-top: 0px;margin-left: 5px;width: 72px;" class="tiny-btn" @click="dialog=true">sima読込</v-btn>
     <br>
     <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog4=true">dxf保存</v-btn>
     <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
