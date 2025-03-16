@@ -2688,7 +2688,7 @@ const csHyogoLayer = {
 const kanagawaSekisyokuSource = {
     id: 'kanagawa-sekisyoku-source', obj: {
         type: 'raster',
-        tiles: ['https://kenzkenz3.xsrv.jp/sekisyoku/kanagawa/{z}/{x}/{y}.png'],
+        tiles: ['transparentWhite://https://kenzkenz3.xsrv.jp/sekisyoku/kanagawa/{z}/{x}/{y}.png'],
     }
 }
 const kanagawaSekisyokuLayer = {
@@ -2700,7 +2700,7 @@ const kanagawaSekisyokuLayer = {
 const sagamiharaSekisyokuSource = {
     id: 'sagamihara-sekisyoku-source', obj: {
         type: 'raster',
-        tiles: ['https://kenzkenz4.xsrv.jp/tile/sekisyoku/sagamihara/{z}/{x}/{y}.png'],
+        tiles: ['transparentWhite://https://kenzkenz4.xsrv.jp/tile/sekisyoku/sagamihara/{z}/{x}/{y}.png'],
     }
 }
 const sagamiharaSekisyokuLayer = {
@@ -2712,7 +2712,7 @@ const sagamiharaSekisyokuLayer = {
 const kanagawakenseibuSekisyokuSource = {
     id: 'kanagawakenseibu-sekisyoku-source', obj: {
         type: 'raster',
-        tiles: ['https://kenzkenz4.xsrv.jp/tile/sekisyoku/kanagawakenseibu/{z}/{x}/{y}.png'],
+        tiles: ['transparentWhite://https://kenzkenz4.xsrv.jp/tile/sekisyoku/kanagawakenseibu/{z}/{x}/{y}.png'],
     }
 }
 const kanagawakenseibuSekisyokuLayer = {
@@ -2724,7 +2724,7 @@ const kanagawakenseibuSekisyokuLayer = {
 const kanagawakenyokohamaSekisyokuSource = {
     id: 'kanagawakenyokohama-sekisyoku-source', obj: {
         type: 'raster',
-        tiles: ['https://kenzkenz4.xsrv.jp/tile/sekisyoku/yokohamananbu/{z}/{x}/{y}.png'],
+        tiles: ['transparentWhite://https://kenzkenz4.xsrv.jp/tile/sekisyoku/yokohamananbu/{z}/{x}/{y}.png'],
     }
 }
 const kanagawakenyokohamaSekisyokuLayer = {
