@@ -280,33 +280,6 @@ export default {
         ]
       })
     },
-    changeColorCircle (color,isUpdate) {
-      const map = this.$store.state[this.mapName]
-      map.getStyle().layers.forEach(layer => {
-        if (layer.id.includes('oh-chibanzu-vertex')) {
-          map.setPaintProperty(layer.id, 'circle-color', color)
-          console.log(map.getPaintProperty(layer.id,'circle-color'))
-        }
-        if (layer.id.includes('oh-chibanL-') && layer.id.includes('vertex')) {
-          map.setPaintProperty(layer.id, 'circle-color', color)
-        }
-      })
-      this.s_chibanCircleColor = color
-      if (isUpdate) this.update()
-    },
-    changeColor (color,isUpdate) {
-      const map = this.$store.state[this.mapName]
-      map.getStyle().layers.forEach(layer => {
-        if (layer.id.includes('oh-chibanzu-line')) {
-          map.setPaintProperty(layer.id, 'line-color', color)
-        }
-        if (layer.id.includes('oh-chibanL-') && layer.id.includes('line')) {
-          map.setPaintProperty(layer.id, 'line-color', color)
-        }
-      })
-      this.s_chibanColor = color
-      if (isUpdate) this.update()
-    },
     checkDevice() {
       const userAgent = navigator.userAgent || navigator.vendor || window.opera;
       console.log(/android/i.test(userAgent))
@@ -613,17 +586,42 @@ export default {
       // gistUpload(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'])
       gistUpload(map,this.layerId,this.sourceId,this.fields)
     },
+    changeColorCircle (color,isUpdate) {
+      const map = this.$store.state[this.mapName]
+      map.getStyle().layers.forEach(layer => {
+        if (layer.id.includes('oh-chibanzu-vertex')) {
+          map.setPaintProperty(layer.id, 'circle-color', color)
+          console.log(map.getPaintProperty(layer.id,'circle-color'))
+        }
+        if (layer.id.includes('oh-chibanL-') && layer.id.includes('vertex')) {
+          map.setPaintProperty(layer.id, 'circle-color', color)
+        }
+      })
+      this.s_chibanCircleColor = color
+      if (isUpdate) this.update()
+    },
+    changeColor (color,isUpdate) {
+      const map = this.$store.state[this.mapName]
+      map.getStyle().layers.forEach(layer => {
+        if (layer.id.includes('oh-chibanzu-line')) {
+          map.setPaintProperty(layer.id, 'line-color', color)
+        }
+        if (layer.id.includes('oh-chibanL-') && layer.id.includes('line')) {
+          map.setPaintProperty(layer.id, 'line-color', color)
+        }
+      })
+      this.s_chibanColor = color
+      if (isUpdate) this.update()
+    },
     change () {
       const vm = this
       const map = this.$store.state[this.mapName]
       //-------------------------------------------------------------------------
-
       async function fetchData(id) {
         const response = await fetch(`https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesSelectById.php?id=${id}`);
         const data = await response.json();
         return data;
       }
-
       async function filterBy(text) {
         if (text) {
           let searchString = text
@@ -694,9 +692,6 @@ export default {
 
   },
   watch: {
-    // s_simaData () {
-    //   this.update()
-    // },
     s_extFire () {
       this.change()
       this.changeColor(this.s_chibanColor)
