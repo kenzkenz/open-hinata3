@@ -472,8 +472,9 @@ export default createStore({
             }
             break
         }
-        console.log(payload.mapName,payload.name,payload.value,variable,variable2)
-        console.log(payload.value,variable)
+        // console.log(payload.mapName,payload.name,payload.value,variable,variable2)
+        // console.log(payload.value)
+        // if (variable === 'chibanColorsString') alert(payload.order + '///' + payload.value)
         if (!variable2) {
           // console.log(payload.mapName)
           state[variable][payload.mapName] = payload.value
@@ -488,7 +489,7 @@ export default createStore({
     },
     updateSelectedLayers (state, payload) {
       const result = state.selectedLayers[payload.mapName].find(el => el.id === payload.id);
-      console.log(result,payload.values)
+      // console.log(result,payload.values)
       state.watchFlg = false
       result.ext.values = payload.values
     },

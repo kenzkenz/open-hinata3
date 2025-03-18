@@ -510,16 +510,24 @@ export default {
           // -------------------------------------------------
           if(!this.isDragging) {
             if (layer.ext) {
-              if (layer.ext.values) {
-                layer.ext.values.forEach((v,i) => {
-                  this.$store.commit('updateParam', {
-                    name: layer.ext.name,
-                    mapName: this.mapName,
-                    value: String(v),
-                    order: i
+                if (layer.ext.values) {
+                  console.log(this.counter, layer.ext.values)
+                  layer.ext.values.forEach((v,i) => {
+
+                    if (i === 1) {
+                      alert(layer.id + '///' + String(v))
+                      // this.$store.state.extFire = !this.$store.state.extFire
+                    }
+
+                    this.$store.commit('updateParam', {
+                      name: layer.ext.name,
+                      mapName: this.mapName,
+                      value: String(v),
+                      order: i
+                    })
                   })
-                })
-              }
+                }
+
 
               if (this.counter <= 1) {
                 if (this.$store.state.isWindow2) {

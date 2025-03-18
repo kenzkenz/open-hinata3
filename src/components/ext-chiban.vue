@@ -276,7 +276,8 @@ export default {
       set(value) {
         this.$store.state.chibanColorsString[this.mapName] = value
       }
-    },    s_chibanCircleColor: {
+    },
+    s_chibanCircleColor: {
       get() {
         return this.$store.state.chibanCircleColor[this.mapName]
       },
@@ -287,10 +288,7 @@ export default {
   },
   methods: {
     update () {
-      // if (this.$store.state.chibanColors.map01) {
-      //   console.log(JSON.parse(this.$store.state.chibanColors.map01))
-      // }
-      // alert(this.s_chibanColorsString)
+
       console.log(this.s_chibanColorsString)
       this.$store.commit('updateSelectedLayers', {
         mapName: this.mapName, id: this.item.id, values: [
@@ -633,11 +631,17 @@ export default {
       // })
       // alert(this.item.id)
 
-      let lineColor
       console.log(this.s_chibanColorsString)
+
+      let lineColor
       let result
+      console.log(this.item.id)
       if (this.s_chibanColorsString) {
-        result = JSON.parse(this.s_chibanColorsString).find(v => v.layerId = this.item.id)
+        console.log(JSON.parse(this.s_chibanColorsString))
+        result = JSON.parse(this.s_chibanColorsString).find(v => {
+          return v.layerId === this.item.id}
+        )
+        // if (result) alert(result.layerId)
         if (result) {
           if (color) {
             lineColor = color
@@ -648,15 +652,18 @@ export default {
       } else {
         lineColor = 'blue'
       }
-
-      console.log(result)
-      console.log(lineColor)
       const map = this.$store.state[this.mapName]
       const layers = getLayersById(map,this.item.id)
       const lineLayerId = layers.find(v => v.id.includes('line')).id
-      map.setPaintProperty(lineLayerId, 'line-color', lineColor)
+      if (lineColor) {
+        map.setPaintProperty(lineLayerId, 'line-color', lineColor)
+      } else {
+        map.setPaintProperty(lineLayerId, 'line-color', 'orange')
+      }
 
       if (result) {
+        console.log(this.item.id)
+
         this.$store.state.chibanColors = JSON.parse(this.s_chibanColorsString)
         console.log(this.s_chibanColorsString)
         const result1 = this.$store.state.chibanColors.find(v => v.layerId === this.item.id)
@@ -672,10 +679,10 @@ export default {
             layerId: this.item.id,
             color: color
           })
-          console.log(this.$store.state.chibanColors)
           this.s_chibanColorsString = JSON.stringify(this.$store.state.chibanColors)
         }
       }
+      console.log(this.s_chibanColorsString)
       if (isUpdate) this.update()
     },
     change () {
@@ -754,6 +761,7 @@ export default {
     this.checkDevice();
   },
   mounted() {
+    // alert(this.s_chibanColorsString)
     console.log(this.s_chibanColorsString)
   },
   watch: {

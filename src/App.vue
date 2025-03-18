@@ -1800,6 +1800,7 @@ export default {
     createShortUrl() {
       let params = new URLSearchParams()
       params.append('parameters', this.param)
+      console.log(this.param)
       axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrl.php', params)
           .then(response => {
             window.history.pushState(null, 'map', "?s=" + response.data.urlid)
