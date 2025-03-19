@@ -196,7 +196,7 @@ import {
   saveDxf,
   saveCsv,
   simaToGeoJSON,
-  resetFeatureColors, saveSima2, saveKml, getLayersById
+  resetFeatureColors, saveSima2, saveKml, getLayersById, getParentIdByLayerId
 } from "@/js/downLoad";
 
 export default {
@@ -288,16 +288,26 @@ export default {
   },
   methods: {
     update () {
-
-      console.log(this.s_chibanColorsString)
-      this.$store.commit('updateSelectedLayers', {
-        mapName: this.mapName, id: this.item.id, values: [
-          this.s_chibanText,
-          // this.s_chibanColors,
-          this.s_chibanColorsString,
-          this.s_chibanCircleColor
-        ]
+      const map = this.$store.state[this.mapName]
+      map.getStyle().layers.forEach(layer => {
+        if (layer.id.includes('oh-chibanzu-line') || (layer.id.includes('oh-chibanL-') && layer.id.includes('line'))) {
+          // console.log(getParentIdByLayerId(layer.id))
+          this.$store.commit('updateSelectedLayers', {
+            mapName: this.mapName, id: getParentIdByLayerId(layer.id), values: [
+              this.s_chibanText,
+              this.s_chibanColorsString,
+              this.s_chibanCircleColor
+            ]
+          })
+        }
       })
+      // this.$store.commit('updateSelectedLayers', {
+      //   mapName: this.mapName, id: this.item.id, values: [
+      //     this.s_chibanText,
+      //     this.s_chibanColorsString,
+      //     this.s_chibanCircleColor
+      //   ]
+      // })
     },
     checkDevice() {
       const userAgent = navigator.userAgent || navigator.vendor || window.opera;
@@ -631,13 +641,11 @@ export default {
       // })
       // alert(this.item.id)
 
-      console.log(this.s_chibanColorsString)
 
       let lineColor
       let result
-      console.log(this.item.id)
+      console.log(this.s_chibanColorsString)
       if (this.s_chibanColorsString) {
-        console.log(JSON.parse(this.s_chibanColorsString))
         result = JSON.parse(this.s_chibanColorsString).find(v => {
           return v.layerId === this.item.id}
         )
@@ -657,15 +665,10 @@ export default {
       const lineLayerId = layers.find(v => v.id.includes('line')).id
       if (lineColor) {
         map.setPaintProperty(lineLayerId, 'line-color', lineColor)
-      } else {
-        map.setPaintProperty(lineLayerId, 'line-color', 'orange')
       }
 
       if (result) {
-        console.log(this.item.id)
-
         this.$store.state.chibanColors = JSON.parse(this.s_chibanColorsString)
-        console.log(this.s_chibanColorsString)
         const result1 = this.$store.state.chibanColors.find(v => v.layerId === this.item.id)
         if (result1) {
           result1.color = lineColor
@@ -682,7 +685,6 @@ export default {
           this.s_chibanColorsString = JSON.stringify(this.$store.state.chibanColors)
         }
       }
-      console.log(this.s_chibanColorsString)
       if (isUpdate) this.update()
     },
     change () {

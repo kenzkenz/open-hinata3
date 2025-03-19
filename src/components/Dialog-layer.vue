@@ -514,10 +514,9 @@ export default {
                   console.log(this.counter, layer.ext.values)
                   layer.ext.values.forEach((v,i) => {
 
-                    if (i === 1) {
-                      alert(layer.id + '///' + String(v))
-                      // this.$store.state.extFire = !this.$store.state.extFire
-                    }
+                    // if (i === 1) {
+                    //   alert(layer.id + '///' + String(v))
+                    // }
 
                     this.$store.commit('updateParam', {
                       name: layer.ext.name,

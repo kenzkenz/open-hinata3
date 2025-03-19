@@ -1071,7 +1071,7 @@ export default {
                       type: 'line',
                       "source-layer": "oh3",
                       paint: {
-                        'line-color': 'navy',
+                        'line-color': 'blue',
                         'line-width': [
                           'interpolate',
                           ['linear'],

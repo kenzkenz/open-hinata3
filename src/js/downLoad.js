@@ -6185,7 +6185,7 @@ export function userPmtileSet(name,url,id, chiban, bbox, length) {
         type: 'line',
         "source-layer": "oh3",
         paint: {
-            'line-color': 'navy',
+            'line-color': 'blue',
             'line-width': [
                 'interpolate',
                 ['linear'],
@@ -6262,19 +6262,6 @@ export function userPmtileSet(name,url,id, chiban, bbox, length) {
             }
         );
     })
-    // store.state.selectedLayers.map01.unshift(
-    //     {
-    //         id: 'oh-chiban-' + id + '-' + name + '-layer',
-    //         label: name,
-    //         source: sopurce,
-    //         layers: [polygonLayer,lineLayer,labelLayer,pointLayer],
-    //         opacity: 1,
-    //         visibility: true,
-    //         ext: {name:'ext-chibanzu'}
-    //     }
-    // );
-
-
 
     if (bbox) {
         map.fitBounds([
@@ -6649,4 +6636,16 @@ export function getLayersById(map, targetId) {
     const mapEntry = store.state.selectedLayers[mapName].find(entry => entry.id === targetId);
     // 対応するエントリがあれば layers を返し、なければ null
     return mapEntry ? mapEntry.layers : null;
+}
+
+export function getParentIdByLayerId(targetLayerId) {
+    const data = store.state.selectedLayers
+    for (const mapKey in data) {
+        for (const item of data[mapKey]) {
+            if (item.layers.some(layer => layer.id === targetLayerId)) {
+                return item.id;
+            }
+        }
+    }
+    return null;
 }

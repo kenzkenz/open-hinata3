@@ -1677,7 +1677,7 @@ sicyosonChibanzuUrls.forEach(url => {
         type: 'line',
         "source-layer": sourceLayer,
         paint: {
-            'line-color': 'navy',
+            'line-color': 'blue',
             'line-width': [
                 'interpolate',
                 ['linear'],
