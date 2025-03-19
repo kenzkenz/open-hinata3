@@ -2640,10 +2640,26 @@ export default {
                     console.error('エラー:', response.data.error);
                     alert(`エラー: ${response.data.error}`);
                   } else {
-                    const source = {
-                      id: response.data[0].name + '-source',
-                      obj: { type: 'raster', tiles: [response.data[0].url] }
-                    };
+                    let url = response.data[0].url
+                    let source
+                    if (url.includes('{-y}')) {
+                      url = url.replace(/{-y}/,'{y}')
+                      source = {
+                        id: response.data[0].name + '-source',
+                        obj: { type: 'raster', tiles: [url], scheme: 'tms' }
+                      }
+                    } else {
+                      source = {
+                        id: name + '-source',obj: {
+                          id: response.data[0].name + '-source',
+                          obj: { type: 'raster', tiles: [url]}
+                        }
+                      }
+                    }
+                    // source = {
+                    //   id: response.data[0].name + '-source',
+                    //   obj: { type: 'raster', tiles: [response.data[0].url] }
+                    // };
                     const layer = {
                       id: 'oh-' + response.data[0].name + '-layer',
                       type: 'raster',

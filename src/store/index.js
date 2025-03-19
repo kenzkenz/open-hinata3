@@ -117,7 +117,7 @@ export default createStore({
     isClickPointsLayer:false,
     drawGeojsonText: '',
     clickGeojsonText: '',
-    resolution: 19,
+    resolution: 23,
     loading: false,
     loading2: false,
     loadingMessage: '',

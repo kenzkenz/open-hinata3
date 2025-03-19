@@ -6300,13 +6300,25 @@ export function userPmtileSet(name,url,id, chiban, bbox, length) {
 }
 
 export function userTileSet(name,url,id) {
-    const map = store.state.map01
-    const sopurce = {
-        id: name + '-source',obj: {
-            type: 'raster',
-            tiles: [url]
+    let sopurce
+    if (url.includes('{-y}')) {
+        url = url.replace(/{-y}/,'{y}')
+        sopurce = {
+            id: name + '-source',obj: {
+                type: 'raster',
+                tiles: [url],
+                scheme: 'tms',
+            }
         }
-    };
+    } else {
+        sopurce = {
+            id: name + '-source',obj: {
+                type: 'raster',
+                tiles: [url],
+            }
+        }
+    }
+
     const layer = {
         id: 'oh-' + name + '-layer',
         type: 'raster',
