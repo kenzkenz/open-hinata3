@@ -3397,6 +3397,7 @@ export function popup(e,map,mapName,mapFlg) {
         }
 
         if(/^oh-sima-/.test(layerId)) {
+            // const streetViewHref = "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=" + coordinates.lat + "," + coordinates.lng + "&hl=ja"
             let features = map.queryRenderedFeatures(
                 map.project(coordinates), {layers: [layerId]}
             )
@@ -3412,11 +3413,11 @@ export function popup(e,map,mapName,mapFlg) {
                 html +=
                     '<div class="oh-sima" font-weight: normal; color: #333;line-height: 25px;">' +
                     '<span style="font-size:16px;">' + props.chiban + '</span><br>' +
+                    // '<img src="' + streetViewHref + '">' +
+                    // '<iframe src="' + streetViewHref + '" width="600" height="400"></iframe>' +
                     '</div>'
             }
         }
-
-
     })
 
     if (mapFlg.map02) {
@@ -3537,6 +3538,7 @@ export function popup(e,map,mapName,mapFlg) {
 function createPopup(map, coordinates, htmlContent, mapName) {
     // ストリートビューとGoogleマップへのリンクを追加
     const [lng, lat] = coordinates;
+    console.log(lng)
     const streetView =
         '<hr>' +
         '<div style="text-align: center;">' +
