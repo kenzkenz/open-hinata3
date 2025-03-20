@@ -3395,6 +3395,28 @@ export function popup(e,map,mapName,mapFlg) {
                 html += html0
             }
         }
+
+        if(/^oh-sima-/.test(layerId)) {
+            let features = map.queryRenderedFeatures(
+                map.project(coordinates), {layers: [layerId]}
+            )
+            if (features.length === 0) {
+                features = map.queryRenderedFeatures(
+                    map.project(e.lngLat), {layers: [layerId]}
+                )
+            }
+            if (features.length === 0) return
+            props = features[0].properties
+            if (html.indexOf("oh-sima") === -1) {
+                html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                html +=
+                    '<div class="oh-sima" font-weight: normal; color: #333;line-height: 25px;">' +
+                    '<span style="font-size:16px;">' + props.chiban + '</span><br>' +
+                    '</div>'
+            }
+        }
+
+
     })
 
     if (mapFlg.map02) {
