@@ -3408,11 +3408,17 @@ export function popup(e,map,mapName,mapFlg) {
             }
             if (features.length === 0) return
             props = features[0].properties
+            let propName
+            if (props.type && props.type === 'vertex') {
+                propName = '筆界点'
+            } else {
+                propName = '地番'
+            }
             if (html.indexOf("oh-sima") === -1) {
                 html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                 html +=
                     '<div class="oh-sima" font-weight: normal; color: #333;line-height: 25px;">' +
-                    '<span style="font-size:16px;">' + props.chiban + '</span><br>' +
+                    '<span style="font-size:18px;">' + propName + '=' + props.chiban + '</span><br>' +
                     // '<img src="' + streetViewHref + '">' +
                     // '<iframe src="' + streetViewHref + '" width="600" height="400"></iframe>' +
                     '</div>'
