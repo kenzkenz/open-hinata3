@@ -34,10 +34,10 @@ foreach ($geojson['features'] as &$feature) {
     $citycode = $feature['properties']['N03_007'] ?? null;
     if ($citycode !== null) {
         foreach ($cities as $city) {
-            if ($city['citycode'] === $citycode) {
-                $feature['properties']['public'] = 1;
-                $feature['properties']['pmtilesurl'] = $city['pmtilesurl'];
-                break;
+            if (str_pad($city['citycode'], 5, '0', STR_PAD_LEFT) === str_pad($citycode, 5, '0', STR_PAD_LEFT)) {
+            $feature['properties']['public'] = $city['public'];
+            $feature['properties']['pmtilesurl'] = $city['pmtilesurl'];
+            break;
             }
         }
     }

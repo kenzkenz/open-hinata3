@@ -246,7 +246,7 @@ import {user} from "@/authState";
 import axios from "axios"
 import maplibregl from 'maplibre-gl'
 import {history} from "@/App";
-import {cityGeojsonSource, extLayer, extSource, konUrls} from "@/js/layers";
+import {cityGeojsonSource, extLayer, extSource, konUrls, sicyosonChibanzuUrls} from "@/js/layers";
 import * as Layers from "@/js/layers";
 import {kml} from "@tmcw/togeojson";
 import JSZip from "jszip";
@@ -1361,6 +1361,8 @@ export default {
       deleteUserData(id)
     },
     publicChk (id,public0) {
+      store.state.loading2 = true
+      store.state.loadingMessage = '処理中です。'
       const vm = this
       axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesUpdatePublic.php',{
         params: {
@@ -1370,10 +1372,27 @@ export default {
       }).then(function (response) {
         vm.pmtileSelectPublic()
         console.log(response)
-        const cities = response.data.publics.map(v => {
-          return {citycode:v.citycode,pmtilesurl:v.url}
+        let cities = response.data.publics.map(v => {
+          return {
+            citycode:v.citycode,
+            pmtilesurl:v.url,
+            public: 1
+          }
         })
         console.log(cities)
+        const cities2 = []
+        sicyosonChibanzuUrls.forEach(v => {
+          if (v.code) {
+            cities2.push({
+              citycode:v.code,
+              pmtilesurl:'999',
+              public: 2
+            })
+          }
+        })
+        console.log(cities2)
+        cities = [...cities, ...cities2];
+
         async function cityGeojson() {
           try {
             const response1 = await axios.post('https://kenzkenz.duckdns.org/myphp/city_geojson.php', {
@@ -1391,6 +1410,9 @@ export default {
               } else {
                 cityGeojsonSource.obj.data = 'https://kenzkenz.duckdns.org//original-data/city.geojson?nocache=' + Date.now()
               }
+              setTimeout(() => {
+                store.state.loading2 = false
+              },3000)
             }
           } catch (error) {
             console.error('リクエストエラー:', error);
