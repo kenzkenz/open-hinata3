@@ -65,12 +65,36 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               </v-window-item>
               <v-window-item value="3">
                 <v-card>
-                  <v-text-field  v-model="pmtilesRename" type="text" placeholder="リネーム"></v-text-field>
+                  <v-row>
+                    <v-col cols=5 class="px-1">
+                      <v-text-field dense v-model="pmtilesRename" type="text" placeholder="地番図名"></v-text-field>
+                    </v-col>
+                    <v-col cols="3" class="px-1">
+                      <v-select
+                          v-model="selectedPrefCode"
+                          :items="prefItems"
+                          item-title="prefName"
+                          item-value="prefCode"
+                          label="都道府県を選択してください"
+                          outlined
+                      ></v-select>
+                    </v-col>
+                    <v-col cols="4" class="px-1">
+                      <v-select
+                          v-model="selectedCityCode"
+                          :items="cityItems"
+                          item-title="cityName"
+                          item-value="cityCode"
+                          label="市区町村名を選択してください"
+                          outlined
+                      ></v-select>
+                    </v-col>
+                  </v-row>
                   <v-btn v-if="!isAll" style="margin-top: -10px;margin-bottom: 10px" @click="pmtilesRenameBtn">リネーム</v-btn>
                   <div style="height: 20px">
                     <p v-if="!isAll && isOh3Team" style="position: absolute;right:30px;">公開</p>
                   </div>
-                  <div v-for="item in jsonDataPmtile" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban,item.bbox,item.length)">
+                  <div v-for="item in jsonDataPmtile" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban,item.bbox,item.length,item.prefcode,item.citycode)">
                     <v-checkbox
                         v-if="!isAll && isOh3Team"
                         class="transparent-chk"
@@ -90,7 +114,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 <v-card>
                   <v-text-field v-model="pmtilesSerch" type="text" placeholder="検索"></v-text-field>
                   <v-btn style="margin-top: -10px;margin-bottom: 10px;margin-left: 0px;" @click="pmtilesSerchBtn">検索</v-btn>
-                  <div v-for="item in jsonDataPmtilePubilc" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban,item.bbox,item.length)">
+                  <div v-for="item in jsonDataPmtilePubilc" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban,item.bbox,item.length,item.prefcode,item.citycode)">
                     <strong>{{ item.name }}</strong><br>
                   </div>
                 </v-card>
@@ -160,6 +184,7 @@ import {
   geojsonAddLayer, highlightSpecificFeaturesCity, iko,
   simaToGeoJSON, userKmzSet, userPmtileSet, userSimaSet, userTileSet, userXyztileSet
 } from "@/js/downLoad";
+import muni from '@/js/muni'
 
 const getFirebaseUid = async () => {
   if (!user.value) return;
@@ -234,6 +259,8 @@ export default {
     // MasonryWall,
   },
   data: () => ({
+    selectedPrefCode: '',
+    selectedCityCode: '',
     isAll: false,
     id: '',
     name: '',
@@ -276,6 +303,30 @@ export default {
     mayroomStyle: {"overflow-y": "auto", "max-height": "530px", "max-width": "600px", "padding-top": "10px"}
   }),
   computed: {
+    cityItems() {
+      const filteredCities = Object.entries(muni)
+          .filter(([_, value]) => value.startsWith(`${this.selectedPrefCode.padStart(2, '0')},`))
+          .map(([cityCode, value]) => {
+            const parts = value.split(',');
+            return { prefCode: parts[0].padStart(5, '0'), cityCode: parts[2], cityName: parts[3] };
+          });
+      return filteredCities
+      // return []
+    },
+    prefItems() {
+      // 都道府県を重複なく抽出
+      const prefsSet = new Set();
+      Object.values(muni).forEach(item => {
+        const [prefCode, prefName] = item.split(',');
+        prefsSet.add(`${prefCode},${prefName}`);
+      });
+      // 配列を作成
+      const result = Array.from(prefsSet).map(item => {
+        const [prefCode, prefName] = item.split(',');
+        return { prefCode: prefCode.padStart(2, '0'), prefName };
+      });
+      return result
+    },
     s_isDialogVisible: {
       get() {
         return this.$store.state.isDialogVisible
@@ -536,11 +587,12 @@ export default {
       }
       const vm = this
       if (!this.pmtilesRename) return
-      // alert(this.id + '/' + this.pmtilesRename)
       axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesUpdate.php',{
         params: {
           id: this.id,
-          name: this.pmtilesRename
+          name: this.pmtilesRename,
+          prefcode: this.selectedPrefCode,
+          citycode: this.selectedCityCode
         }
       }).then(function (response) {
         console.log(response)
@@ -698,10 +750,12 @@ export default {
       this.name = name
       userXyztileSet(name,url,id,JSON.parse(bbox),JSON.parse(transparent))
     },
-    pmtileClick (name,url,id, chiban, bbox, length) {
+    pmtileClick (name,url,id, chiban, bbox, length, prefCode, cityCode) {
       this.pmtilesRename = name
       this.id = id
       this.name = name
+      this.selectedPrefCode = prefCode
+      this.selectedCityCode = cityCode
       userPmtileSet(name,url,id, chiban, JSON.parse(bbox), length)
     },
     tileClick (name,url,id) {

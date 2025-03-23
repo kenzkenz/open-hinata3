@@ -7,6 +7,8 @@ try {
     // POSTからid, nameを取得
     $id = $_GET['id'] ?? null;
     $name = $_GET['name'] ?? null;
+    $prefcode = $_GET['prefcode'] ?? null;
+    $citycode = $_GET['citycode'] ?? null;
 
     // バリデーション: 空チェック
     if (empty($id) || empty($name)) {
@@ -15,16 +17,18 @@ try {
     }
 
     // SQL: userpmtiles の指定した id の name を更新
-    $sql = "UPDATE userpmtiles SET name = :name WHERE id LIKE :id";
+    $sql = "UPDATE userpmtiles SET name = :name, prefcode = :prefcode, citycode = :citycode WHERE id LIKE :id";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ':id' => $id,
         ':name' => $name,
+        ':prefcode' => $prefcode,
+        ':citycode' => $citycode,
     ]);
 
     // 更新された行数を取得
     if ($stmt->rowCount() > 0) {
-        echo json_encode(["success" => true, "id" => $id, "name" => $name]);
+        echo json_encode(["success" => true, "id" => $id, "name" => $name, "prefcode" => $prefcode, "citycode" => $citycode]);
     } else {
         echo json_encode([
             "error" => "指定されたIDのレコードが見つからないか、更新する必要がありません",
