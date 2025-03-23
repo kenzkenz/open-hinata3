@@ -30,6 +30,10 @@ try {
         ':cityname' => $cityname,
     ]);
 
+
+
+
+    
     // 更新された行数を取得
     if ($stmt->rowCount() > 0) {
         echo json_encode(["success" => true, "id" => $id, "name" => $name, "prefcode" => $prefcode, "citycode" => $citycode]);

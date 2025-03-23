@@ -571,7 +571,6 @@ export default {
       }
       const vm = this
       if (!this.xyztileRename) return
-      // alert(this.id + '/' + this.xyztileRename)
       axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userXyztileUpdate.php',{
         params: {
           id: this.id,
@@ -1370,8 +1369,27 @@ export default {
         }
       }).then(function (response) {
         vm.pmtileSelectPublic()
-        console.log(response)
 
+        async function cityGeojson() {
+          try {
+            const response1 = await axios.post('https://kenzkenz.duckdns.org/myphp/city_geojson.php', {
+              cities: [
+                {citycode:'45201',pmtilesurl:'9999'}
+              ]
+            });
+            console.log(response1)
+            if (response1.data.error) {
+              console.error('エラー:', response1.data.error);
+              // alert(`エラー: ${response.data.error}`);
+            } else {
+              console.log('成功:', response1.data);
+            }
+          } catch (error) {
+            console.error('リクエストエラー:', error);
+            alert('通信エラーが発生しました');
+          }
+        }
+        cityGeojson()
       })
     },
     transparentChk (id,transparent) {

@@ -22,6 +22,7 @@ import iconv from "iconv-lite";
 import pako from "pako";
 import {kml} from "@tmcw/togeojson";
 import * as GeoTIFF from 'geotiff';
+import muni from "@/js/muni";
 // 複数のクリックされた地番を強調表示するためのセット
 // export let highlightedChibans = new Set();
 (function() {
@@ -6416,9 +6417,23 @@ export function userTileSet(name,url,id) {
 //         .catch(error => console.error("エラー:", error));
 //     // -------------------------------------------------------------------------------------------------
 // }
-export async function pmtilesGenerateForUser2 (geojson,bbox,chiban) {
-    async function insertPmtilesData(uid, name, url, url2,  chiban, bbox, length) {
+export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,citycode) {
+    async function insertPmtilesData(uid, name, url, url2,  chiban, bbox, length, prefcode, citycode) {
         try {
+            const prefCode = String(Number(prefcode)).padStart(2, '0')
+            let result = Object.entries(muni).find(([key, _]) => {
+                if (key.padStart(5, '0').slice(0,2) === prefCode) {
+                    return key
+                }
+            });
+            const prefName = result[1].split(',')[1]
+            const cityCode = String(Number(citycode)).padStart(5, '0')
+            result = Object.entries(muni).find(([key, _]) => {
+                if (key.padStart(5, '0') === cityCode) {
+                    return key
+                }
+            });
+            const cityName = result[1].split(',')[3]
             const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesInsert.php', new URLSearchParams({
                 uid: uid,
                 name: name,
@@ -6426,7 +6441,12 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban) {
                 url2: url2,
                 chiban: chiban,
                 bbox: JSON.stringify(bbox),
-                length: length
+                length: length,
+                prefcode: prefcode,
+                citycode: citycode,
+                prefname: prefName,
+                cityname: cityName
+
             }));
             if (response.data.error) {
                 console.error('エラー:', response.data.error);
@@ -6461,7 +6481,7 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban) {
         console.log(result)
         const webUrl = 'https://kenzkenz.duckdns.org/' + result.pmtiles_file.replace('/var/www/html/public_html/','')
         console.log(result.pmtiles_file)
-        insertPmtilesData(store.state.userId , store.state.pmtilesName, webUrl, result.pmtiles_file, store.state.pmtilesPropertieName, result.bbox, result.length)
+        insertPmtilesData(store.state.userId , store.state.pmtilesName, webUrl, result.pmtiles_file, store.state.pmtilesPropertieName, result.bbox, result.length, prefcode, citycode)
         console.log('pmtiles作成完了')
         if (!result.bbox) {
             alert('座標系が間違えているかもしれません。geojson化するときはEPSG:4326に設定してください。')
@@ -6472,52 +6492,6 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban) {
         store.state.loading2 = false
         alert("タイル生成に失敗しました！" + result.error);
     }
-
-    // const dir = store.state.userId
-    // console.log("GeoJSON を gzip 圧縮中...");
-    // const compressedGeojson = pako.gzip(JSON.stringify({
-    //     geojson: geojson,
-    //     dir: dir,
-    //     chiban: chiban }));
-    //
-    // let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles4.php", {
-    //     method: "POST",
-    //     headers: {
-    //         "Content-Type": "application/json",
-    //         "Content-Encoding": "gzip",
-    //     },
-    //     body: compressedGeojson,
-    // });
-
-
-
-
-
-
-    // store.state.loading2 = true
-    // store.state.loadingMessage = 'アップロード中です。'
-    // const formData = new FormData();
-    // formData.append("file", geojsonBlob,"data.geojson");
-    // formData.append("dir", store.state.userId + '/pmtiles'); // 指定したフォルダにアップロード
-    // fetch("https://kenzkenz.duckdns.org/myphp/uploadGeojson.php", {
-    //     method: "POST",
-    //     body: formData
-    // })
-    //     .then(response => response.json())
-    //     .then(data => {
-    //         if (data.success) {
-    //             console.log("アップロード成功:", data);
-    //             // alert("アップロード成功!")
-    //             store.state.loading2 = false
-    //             generatePmtiles(data.file);
-    //         } else {
-    //             console.error("アップロード失敗:", data);
-    //             store.state.loading = false
-    //             alert("アップロードエラー: " + data.error);
-    //         }
-    //     })
-    //     .catch(error => console.error("エラー:", error));
-    // -------------------------------------------------------------------------------------------------
 }
 
 export function saveDxfForChiriin (map,layerIds) {

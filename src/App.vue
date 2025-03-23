@@ -74,7 +74,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       <v-dialog v-model="dialogForShpApp" max-width="500px">
         <v-card>
           <v-card-title>
-            地番選択
+            地番図アップロード
           </v-card-title>
           <v-card-text>
             <div v-if="s_isAndroid" class="select-container">
@@ -88,6 +88,25 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                         label="地番にあたるフィールドを選択してください"
                         outlined
               ></v-select>
+
+              <v-select
+                  v-model="selectedPrefCode"
+                  :items="prefItems"
+                  item-title="prefName"
+                  item-value="prefCode"
+                  label="都道府県を選択してください"
+                  outlined
+              ></v-select>
+
+              <v-select
+                  v-model="selectedCityCode"
+                  :items="cityItems"
+                  item-title="cityName"
+                  item-value="cityCode"
+                  label="市区町村名を選択してください"
+                  outlined
+              ></v-select>
+
             </div>
             <v-btn @click="shpLoad">読込開始</v-btn>
           </v-card-text>
@@ -877,8 +896,33 @@ export default {
     shpPropaties: [],
     shpGeojson: [],
     loadingSnackbar: false,
+    selectedPrefCode: '',
+    selectedCityCode: '',
   }),
   computed: {
+    cityItems() {
+      const filteredCities = Object.entries(muni)
+          .filter(([_, value]) => value.startsWith(`${this.selectedPrefCode.padStart(2, '0')},`))
+          .map(([cityCode, value]) => {
+            const parts = value.split(',');
+            return { prefCode: parts[0].padStart(5, '0'), cityCode: parts[2], cityName: parts[3] };
+          });
+      return filteredCities
+    },
+    prefItems() {
+      // 都道府県を重複なく抽出
+      const prefsSet = new Set();
+      Object.values(muni).forEach(item => {
+        const [prefCode, prefName] = item.split(',');
+        prefsSet.add(`${prefCode},${prefName}`);
+      });
+      // 配列を作成
+      const result = Array.from(prefsSet).map(item => {
+        const [prefCode, prefName] = item.split(',');
+        return { prefCode: prefCode.padStart(2, '0'), prefName };
+      });
+      return result
+    },
     s_address: {
       get() {
         return this.$store.state.address
@@ -1205,7 +1249,7 @@ export default {
         alert("入力されていません。")
         return
       }
-      pmtilesGenerateForUser2 (this.shpGeojson,'',store.state.pmtilesPropertieName)
+      pmtilesGenerateForUser2 (this.shpGeojson,'',store.state.pmtilesPropertieName,this.selectedPrefCode,this.selectedCityCode)
       this.dialogForShpApp = false
     },
     imagePngLoad () {
