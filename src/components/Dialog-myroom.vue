@@ -12,6 +12,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-tab value="1">URL記憶</v-tab>
               <v-tab value="2">タイル記憶</v-tab>
               <v-tab value="3">地番図</v-tab>
+              <v-tab v-if="isOh3Team"  value="31">地番図公開</v-tab>
               <v-tab value="4">画像</v-tab>
               <v-tab value="5">kmz</v-tab>
               <v-tab value="6">復帰</v-tab>
@@ -66,8 +67,30 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 <v-card>
                   <v-text-field  v-model="pmtilesRename" type="text" placeholder="リネーム"></v-text-field>
                   <v-btn v-if="!isAll" style="margin-top: -10px;margin-bottom: 10px" @click="pmtilesRenameBtn">リネーム</v-btn>
+                  <div style="height: 20px">
+                    <p v-if="!isAll && isOh3Team" style="position: absolute;right:30px;">公開</p>
+                  </div>
                   <div v-for="item in jsonDataPmtile" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban,item.bbox,item.length)">
+                    <v-checkbox
+                        v-if="!isAll && isOh3Team"
+                        class="transparent-chk"
+                        v-model="item.public"
+                        true-value=1
+                        false-value=0
+                        @change="publicChk(item.id, item.public)"
+                        @mousedown.stop
+                        @click.stop
+                    />
                     <button v-if="!isAll" class="close-btn" @click="removeItemPmtiles(item.id,item.url2,$event)">×</button>
+                    <strong>{{ item.name }}</strong><br>
+                  </div>
+                </v-card>
+              </v-window-item>
+              <v-window-item value="31">
+                <v-card>
+                  <v-text-field v-model="pmtilesSerch" type="text" placeholder="検索"></v-text-field>
+                  <v-btn style="margin-top: -10px;margin-bottom: 10px;margin-left: 0px;" @click="pmtilesSerchBtn">検索</v-btn>
+                  <div v-for="item in jsonDataPmtilePubilc" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban,item.bbox,item.length)">
                     <strong>{{ item.name }}</strong><br>
                   </div>
                 </v-card>
@@ -76,6 +99,9 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 <v-card>
                   <v-text-field v-model="xyztileRename" type="text" placeholder="リネーム"></v-text-field>
                   <v-btn v-if="!isAll" style="margin-top: -10px;margin-bottom: 10px" @click="xyztileRenameBtn">リネーム</v-btn>
+                  <div style="height: 20px">
+                    <p v-if="!isAll && isOh3Team" style="position: absolute;right:30px;">透過</p>
+                  </div>
                   <div v-for="item in jsonDataxyztile" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox,item.transparent)">
                     <v-checkbox
                         v-if="!isAll"
@@ -214,6 +240,7 @@ export default {
     tileRename: '',
     pmtilesRename: '',
     xyztileRename: '',
+    pmtilesSerch: '',
     kmzRename: '',
     simaRename: '',
     tab: '0',
@@ -223,6 +250,7 @@ export default {
     jsonData: null,
     jsonDataTile: null,
     jsonDataPmtile: null,
+    jsonDataPmtilePubilc: null,
     jsonDataVector: null,
     jsonDataxyztile: null,
     jsonDataxyztileAll: null,
@@ -255,6 +283,16 @@ export default {
       set(value) {
         this.$store.state.isDialogVisible = value
       }
+    },
+    isOh3Team () {
+      const oh3Team = ['dqyHV8DykbdSVvDXrHc7xweuKT02',
+        'GwWbXVuGL7SZuVp3o1wztDYZSVa2',
+        'SSQgPmV42EVDSSHHMhlp7IeLdOf1',
+        'tb3jBL4qEPdNseETkgGkj9MmsJ42',
+        'C3N0zX1NdRSIJNjoQh54ForwFnW2',
+        'oi4f1BDMg3WjZXLRV44jOb9Q5VK2',
+      ]
+      return oh3Team.includes(this.s_userId)
     },
     isAdministrator () {
       return this.s_userId === 'dqyHV8DykbdSVvDXrHc7xweuKT02'
@@ -1252,6 +1290,19 @@ export default {
       }
       deleteUserData(id)
     },
+    publicChk (id,public0) {
+      const vm = this
+      axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesUpdatePublic.php',{
+        params: {
+          id: id,
+          public: public0
+        }
+      }).then(function (response) {
+        vm.pmtileSelectPublic()
+        console.log(response)
+
+      })
+    },
     transparentChk (id,transparent) {
       axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userXyztileUpdateTransparent.php',{
         params: {
@@ -1260,7 +1311,6 @@ export default {
         }
       }).then(function (response) {
         console.log(response)
-        // vm.xyztileSelect(vm.$store.state.userId)
       })
     },
     removeSima (id,url2,event) {
@@ -1413,7 +1463,6 @@ export default {
             alert(`エラー: ${response.data.error}`);
           } else {
             console.log('削除成功:', response.data);
-            // vm.jsonDataPmtile = vm.jsonDataPmtile.filter(item => item.id !== id);
           }
         } catch (error) {
           console.error('リクエストエラー:', error);
@@ -1487,6 +1536,26 @@ export default {
         }
       }
       fetchUserData(uid)
+    },
+    pmtilesSerchBtn () {
+      const vm = this
+      async function fetchUserData(uid) {
+        try {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesSerch.php', {
+            params: {name: vm.pmtilesSerch}
+          });
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            vm.jsonDataPmtilePubilc = response.data.result
+          }
+        } catch (error) {
+          console.error('通信エラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      fetchUserData(this.s_userId)
     },
     simaSerchBtn () {
       const vm = this
@@ -1589,6 +1658,27 @@ export default {
         }
       }
       fetchUserData(uid)
+    },
+    pmtileSelectPublic () {
+      const vm = this
+      async function fetchUserData(uid) {
+        try {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtileSelectPublic.php', {
+            params: {}
+          });
+
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            vm.jsonDataPmtilePubilc = response.data
+          }
+        } catch (error) {
+          console.error('通信エラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      fetchUserData()
     },
     pmtileSelect (uid) {
       const vm = this
@@ -1726,6 +1816,7 @@ export default {
       this.kmzSelect(this.$store.state.userId)
       this.simaSelect(this.$store.state.userId)
       this.xyztileSelectAll()
+      this.pmtileSelectPublic()
     },
     s_fetchImagesFire () {
       this.fetchImages()
@@ -1736,6 +1827,7 @@ export default {
       this.kmzSelect(this.$store.state.userId)
       this.simaSelect(this.$store.state.userId)
       this.xyztileSelectAll()
+      this.pmtileSelectPublic()
     }
   },
   mounted() {
@@ -1763,6 +1855,7 @@ export default {
         this.kmzSelect(this.uid)
         this.simaSelect(this.uid)
         this.xyztileSelectAll()
+        this.pmtileSelectPublic()
       }
     }, 5);
   }

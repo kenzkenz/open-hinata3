@@ -644,7 +644,7 @@ export default {
 
       let lineColor
       let result
-      console.log(this.s_chibanColorsString)
+      // console.log(this.s_chibanColorsString)
       if (this.s_chibanColorsString) {
         result = JSON.parse(this.s_chibanColorsString).find(v => {
           return v.layerId === this.item.id}
