@@ -6,9 +6,6 @@ header("Content-Type: application/json");
 try {
     $name = $_GET['name'] ?? null;
 
-
-    $sql = "SELECT * FROM userpmtiles WHERE public = 1 AND name LIKE :name ORDER BY prefcode, citycode, name";
-
     $sql = "SELECT * FROM userpmtiles 
         WHERE public = 1 
         AND CONCAT(prefname, cityname, name) LIKE :name 
@@ -18,10 +15,6 @@ try {
     $stmt->execute([
         ':name' => '%' . $name . '%'  // 部分一致検索（曖昧検索）
     ]);
-
-
-
-
 
     // 結果を取得
     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);

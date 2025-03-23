@@ -246,7 +246,7 @@ import {user} from "@/authState";
 import axios from "axios"
 import maplibregl from 'maplibre-gl'
 import {history} from "@/App";
-import {extLayer, extSource, konUrls} from "@/js/layers";
+import {cityGeojsonSource, extLayer, extSource, konUrls} from "@/js/layers";
 import * as Layers from "@/js/layers";
 import {kml} from "@tmcw/togeojson";
 import JSZip from "jszip";
@@ -1369,13 +1369,16 @@ export default {
         }
       }).then(function (response) {
         vm.pmtileSelectPublic()
-
+        console.log(response)
+        const cities = response.data.publics.map(v => {
+          return {citycode:v.citycode,pmtilesurl:v.url}
+        })
+        console.log(cities)
         async function cityGeojson() {
           try {
             const response1 = await axios.post('https://kenzkenz.duckdns.org/myphp/city_geojson.php', {
-              cities: [
-                {citycode:'45201',pmtilesurl:'9999'}
-              ]
+              cities: cities
+              // cities: [{citycode:'45201',pmtilesurl:'9999'}]
             });
             console.log(response1)
             if (response1.data.error) {
@@ -1383,6 +1386,11 @@ export default {
               // alert(`エラー: ${response.data.error}`);
             } else {
               console.log('成功:', response1.data);
+              if (vm.$store.state.map01.getSource('city-geojson-source')) {
+                vm.$store.state.map01.getSource('city-geojson-source').setData('https://kenzkenz.duckdns.org//original-data/city.geojson?nocache=' + Date.now())
+              } else {
+                cityGeojsonSource.obj.data = 'https://kenzkenz.duckdns.org//original-data/city.geojson?nocache=' + Date.now()
+              }
             }
           } catch (error) {
             console.error('リクエストエラー:', error);

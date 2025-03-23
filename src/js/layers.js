@@ -10,6 +10,56 @@ function boundsSort (bounds) {
     return [bounds[2],bounds[0],bounds[3],bounds[1]]
 }
 
+export const cityGeojsonSource = {
+    id: 'city-geojson-source', obj: {
+        'type': 'geojson',
+        'data': 'https://kenzkenz.duckdns.org//original-data/city.geojson?nocache=' + Date.now()
+    }
+}
+const cityGeojsonPolygonLayer = {
+    id: 'oh-city-geojson-poligon-layer',
+    type: 'fill',
+    source: 'city-geojson-source',
+    paint: {
+        'fill-color': [
+            'case',
+            ['==', ['get', 'public'], 1],
+            'blue', // public が "1" のとき
+            'rgba(0,0,0,0)' // それ以外のとき透明
+        ],
+    },
+}
+const cityGeojsonLineLayer = {
+    id: 'oh-city-geojson-line-layer',
+    source: 'city-geojson-source',
+    type: 'line',
+    paint: {
+        'line-color': 'black',
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            1, 0.1,
+            16, 2
+        ]
+    },
+}
+const cityGeojsonLabelLayer = {
+    id: 'oh-city-geojson-label-layer',
+    type: 'symbol',
+    source: 'city-geojson-source',
+    layout: {
+        'text-field': ['get', 'N03_004'],
+        'text-font': ['NotoSansJP-Regular'],
+        'text-offset': [0, 1],
+    },
+    paint: {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    minzoom: 7
+}
 
 // クリックで追加するポイントのGeoJSONソースを作成
 export const clickPointSource ={
@@ -43,8 +93,6 @@ export const clickPointLayer = {
         'circle-stroke-color': '#ffffff'
     }
 }
-
-
 
 export const extSource = {
     id: 'ext-source', obj: {
@@ -8342,9 +8390,14 @@ const layers01 = [
         label: "登記所備付地図データ",
         sources: [amxSource,amx2024Source],
         layers: [amxLayerDaihyou,amx2024Layer,amx2024LayerLine,amx2024LayerVertex,amx2024LayerLabel],
-        // layers: [amxLayerDaihyou,amx2024LayerLabel,amx2024Layer,amx2024LayerLine,amx2024LayerVertex],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
         ext: {name:'extTokijyo'}
+    },
+    {
+        id: 'oh-city-geojson',
+        label: "地番図公開マップ",
+        sources: [cityGeojsonSource],
+        layers: [cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
     },
     {
         id: 'hikkai',
