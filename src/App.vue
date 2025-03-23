@@ -811,10 +811,10 @@ async function fetchElevation(lon, lat, zoom = 15) {
   const tileUrl = baseUrl.replace("{z}", zoom).replace("{x}", xTile).replace("{y}", yTile);
   try {
     const elevation = await fetchElevationFromImage(tileUrl, lon, lat, zoom);
-    console.log(`標高: ${elevation}m`);
+    // console.log(`標高: ${elevation}m`);
     return elevation;
   } catch (error) {
-    console.error("エラー:", error);
+    // console.error("エラー:", error);
   }
 }
 

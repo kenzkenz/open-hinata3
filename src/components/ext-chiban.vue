@@ -627,6 +627,7 @@ export default {
         }
       })
       this.s_chibanCircleColor = color
+
       if (isUpdate) this.update()
     },
     changeColor (color,isUpdate) {
@@ -685,6 +686,11 @@ export default {
           this.s_chibanColorsString = JSON.stringify(this.$store.state.chibanColors)
         }
       }
+      //----------------------------------------------------------------------------------------------------------------
+      getLayersById(map,'oh-chibanzu-all').filter(v => v.id.includes('line')).forEach(v => {
+        map.setPaintProperty(v.id, 'line-color', lineColor)
+      })
+      //----------------------------------------------------------------------------------------------------------------
       if (isUpdate) this.update()
     },
     change () {
