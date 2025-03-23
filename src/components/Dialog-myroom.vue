@@ -587,13 +587,29 @@ export default {
         return
       }
       const vm = this
+      const prefCode = String(Number(this.selectedPrefCode)).padStart(2, '0')
+      let result = Object.entries(muni).find(([key, _]) => {
+        if (key.padStart(5, '0').slice(0,2) === prefCode) {
+         return key
+        }
+      });
+      const prefName = result[1].split(',')[1]
+      const cityCode = String(Number(this.selectedCityCode)).padStart(5, '0')
+      result = Object.entries(muni).find(([key, _]) => {
+        if (key.padStart(5, '0') === cityCode) {
+          return key
+        }
+      });
+      const cityName = result[1].split(',')[3]
       if (!this.pmtilesRename) return
       axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesUpdate.php',{
         params: {
           id: this.id,
           name: this.pmtilesRename,
           prefcode: this.selectedPrefCode,
-          citycode: this.selectedCityCode
+          citycode: this.selectedCityCode,
+          prefname: prefName,
+          cityname: cityName
         }
       }).then(function (response) {
         console.log(response)
@@ -1593,18 +1609,6 @@ export default {
       fetchUserData(uid)
     },
     pmtilesSerchBtn () {
-
-      // function getPrefectureCode(prefectureName) {
-      //   for (const key in muni) {
-      //     const parts = muni[key].split(",");
-      //     if (parts[1] === prefectureName) {
-      //       return parts[0].padStart(2, "0"); // 2桁に揃える
-      //     }
-      //   }
-      //   return ''; // 該当しない場合
-      // }
-
-      console.log(muni)
       const vm = this
       async function fetchUserData() {
         try {

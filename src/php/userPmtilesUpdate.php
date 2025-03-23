@@ -9,6 +9,8 @@ try {
     $name = $_GET['name'] ?? null;
     $prefcode = $_GET['prefcode'] ?? null;
     $citycode = $_GET['citycode'] ?? null;
+    $prefname = $_GET['prefname'] ?? null;
+    $cityname = $_GET['cityname'] ?? null;
 
     // バリデーション: 空チェック
     if (empty($id) || empty($name)) {
@@ -17,13 +19,15 @@ try {
     }
 
     // SQL: userpmtiles の指定した id の name を更新
-    $sql = "UPDATE userpmtiles SET name = :name, prefcode = :prefcode, citycode = :citycode WHERE id LIKE :id";
+    $sql = "UPDATE userpmtiles SET name = :name, prefcode = :prefcode, citycode = :citycode, prefname = :prefname, cityname = :cityname WHERE id LIKE :id";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ':id' => $id,
         ':name' => $name,
         ':prefcode' => $prefcode,
         ':citycode' => $citycode,
+        ':prefname' => $prefname,
+        ':cityname' => $cityname,
     ]);
 
     // 更新された行数を取得
