@@ -7,7 +7,7 @@ try {
     $name = $_GET['name'] ?? null;
 
 
-    $sql = "SELECT * FROM userpmtiles WHERE public = 1 AND name LIKE :name ORDER BY name";
+    $sql = "SELECT * FROM userpmtiles WHERE public = 1 AND name LIKE :name ORDER BY prefcode, citycode, name";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ':name' => '%' . $name . '%'  // 部分一致検索（曖昧検索）

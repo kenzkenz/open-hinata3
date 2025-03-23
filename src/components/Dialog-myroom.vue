@@ -259,6 +259,8 @@ export default {
     // MasonryWall,
   },
   data: () => ({
+    selectedPrefName: '',
+    selectedCityName: '',
     selectedPrefCode: '',
     selectedCityCode: '',
     isAll: false,
@@ -311,7 +313,6 @@ export default {
             return { prefCode: parts[0].padStart(5, '0'), cityCode: parts[2], cityName: parts[3] };
           });
       return filteredCities
-      // return []
     },
     prefItems() {
       // 都道府県を重複なく抽出
@@ -1592,11 +1593,25 @@ export default {
       fetchUserData(uid)
     },
     pmtilesSerchBtn () {
+
+      // function getPrefectureCode(prefectureName) {
+      //   for (const key in muni) {
+      //     const parts = muni[key].split(",");
+      //     if (parts[1] === prefectureName) {
+      //       return parts[0].padStart(2, "0"); // 2桁に揃える
+      //     }
+      //   }
+      //   return ''; // 該当しない場合
+      // }
+
+      console.log(muni)
       const vm = this
-      async function fetchUserData(uid) {
+      async function fetchUserData() {
         try {
           const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesSerch.php', {
-            params: {name: vm.pmtilesSerch}
+            params: {
+              name: vm.pmtilesSerch
+            }
           });
           if (response.data.error) {
             console.error('エラー:', response.data.error);
