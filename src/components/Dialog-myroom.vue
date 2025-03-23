@@ -50,6 +50,10 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                     <v-text-field  v-model="tileName" type="text" placeholder="ネーム"></v-text-field>
                     <v-text-field  v-model="tileUrl" type="text" placeholder="タイルURL"></v-text-field>
                     <v-btn v-if="!isAll" style="margin-top: -10px;margin-bottom: 10px" @click="tileSave">地図タイル記憶</v-btn>
+                    <v-btn v-if="!isAll" style="margin-top: -10px;margin-bottom: 10px; margin-left: 10px;" @click="scrapeLinks">微地形表現図追加</v-btn>
+                    <span style="margin-left: 5px;">
+                      <a href="https://forestgeo.info/%e5%be%ae%e5%9c%b0%e5%bd%a2%e8%a1%a8%e7%8f%be%e5%9b%b3%e3%83%9e%e3%83%83%e3%83%97%e3%82%bf%e3%82%a4%e3%83%ab%e4%b8%80%e8%a6%a7/" target="_blank">微地形表現図</a>
+                    </span>
                     <div v-for="item in jsonDataTile" :key="item.id" class="data-container" @click="tileClick(item.name,item.url,item.id)">
                       <button v-if="!isAll" class="close-btn" @click="removeItemTile(item.id, $event)">×</button>
                       <strong>{{ item.name }}</strong><br>
@@ -361,6 +365,39 @@ export default {
     },
   },
   methods: {
+    scrapeLinks () {
+      let count = 0
+      const vm = this
+      async function scrapeLinks() {
+        const response = await fetch('https://forestgeo.info/%e5%be%ae%e5%9c%b0%e5%bd%a2%e8%a1%a8%e7%8f%be%e5%9b%b3%e3%83%9e%e3%83%83%e3%83%97%e3%82%bf%e3%82%a4%e3%83%ab%e4%b8%80%e8%a6%a7/');
+        const html = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const data = [];
+        doc.querySelectorAll('p a[href$=".png"], p a[href$=".webp"]').forEach(link => {
+          const p = link.closest('p');
+          const text = p.innerHTML.split('<br>')[0].replace(/<[^>]+>/g, '').trim();
+          data.push({ tileUrl: decodeURIComponent(link.href), tileName: text });
+        });
+        console.log(JSON.stringify(data, null, 2))
+        data.forEach(v => {
+          if (!vm.jsonDataTile.find(v2 => v2.name === v.tileName)) {
+            vm.tileName = v.tileName
+            vm.tileUrl = v.tileUrl
+            vm.tileSave(true)
+            count++
+          }
+        })
+        vm.tileName = null
+        vm.tileUrl = null
+        if (count > 0) {
+          alert(count + '件追加しました。')
+        } else {
+          alert('既に全件追加されています。')
+        }
+      }
+      scrapeLinks ()
+    },
     device (device) {
       const vm = this
       axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userHystorySelect.php',{
@@ -1598,10 +1635,12 @@ export default {
       }
       fetchUserData(uid)
     },
-    tileSave () {
-      if (!this.tileName || !this.tileUrl) {
-        alert('ネーム、タイルURLを記入してください。')
-        return
+    tileSave (isScrape) {
+      if (!isScrape) {
+        if (!this.tileName || !this.tileUrl) {
+          alert('ネーム、タイルURLを記入してください。')
+          return
+        }
       }
       const vm = this
       async function insertUserData(uid, name, url) {
