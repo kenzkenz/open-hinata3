@@ -8493,21 +8493,19 @@ const layers01 = [
                 nodes: [
                     {
                         id: 'oh-chibanzu-all',
-                        label: "全国地番図",
+                        label: "全国地番図（オープンデータ）",
                         sources: chibanzuSources,
                         layers: chibanzuLayers0,
                         ext: {name:'ext-chibanzu'}
                     },
+                    {
+                        id: 'oh-chibanzu-all2',
+                        label: "全国地番図（オープンデータ＋開示請求）",
+                        sources: [...chibanzuSources],
+                        layers: [...chibanzuLayers0],
+                        ext: {name:'ext-chibanzu'}
+                    },
                     ...chibanzuLayers2,
-                    // {
-                    //     id: 'oh-chibanzu2024',
-                    //     label: "24自治体地番図",
-                    //     source: chibanzu2024Source,
-                    //     layers:[chibanzu2024Layer,chibanzu2024Line],
-                    //     attribution: '<a href="https://www.geospatial.jp/ckan/dataset/chibanzu_2024/resource/79642df8-0456-4847-97cd-a9934cbee42e">Chibanzu_2024.fgb</a><br>'+
-                    //         '<a href="https://hackmd.io/@kenz/SkQ_R21Lkg" target="_blank">24自治体の情報はこちら</a>',
-                    //     ext: {name:'extChibanz2024'}
-                    // },
                 ]
             },
 
