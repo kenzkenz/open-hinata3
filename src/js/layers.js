@@ -10,6 +10,28 @@ function boundsSort (bounds) {
     return [bounds[2],bounds[0],bounds[3],bounds[1]]
 }
 
+async function fetchUserData(uid) {
+    try {
+        const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtileSelectPublic.php', {
+            params: {}
+        });
+
+        if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+        } else {
+            // vm.jsonDataPmtilePubilc = response.data
+            console.log(response.data)
+            return response.data
+        }
+    } catch (error) {
+        console.error('通信エラー:', error);
+        alert('通信エラーが発生しました');
+    }
+}
+const aaa = await fetchUserData()
+console.log(aaa)
+
 export const cityGeojsonSource = {
     id: 'city-geojson-source', obj: {
         'type': 'geojson',
@@ -583,6 +605,7 @@ import fxDark from '@/assets/json/modified_fx-dark.json'
 import osmBright from '@/assets/json/osm_bright.json'
 import osmToner from '@/assets/json/osm_toner.json'
 import osm3d from '@/assets/json/osmfj_nopoi.json'
+import axios from "axios";
 //-------------------------------------------------------
 export const osm3dSources = []
 export const osm3dLayers = osm3d.layers.map(layer => {

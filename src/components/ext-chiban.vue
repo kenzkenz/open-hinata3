@@ -687,9 +687,11 @@ export default {
         }
       }
       //----------------------------------------------------------------------------------------------------------------
-      getLayersById(map,'oh-chibanzu-all').filter(v => v.id.includes('line')).forEach(v => {
-        map.setPaintProperty(v.id, 'line-color', lineColor)
-      })
+      if (this.item.id === 'oh-chibanzu-all') {
+        getLayersById(map,'oh-chibanzu-all').filter(v => v.id.includes('line')).forEach(v => {
+          map.setPaintProperty(v.id, 'line-color', lineColor)
+        })
+      }
       //----------------------------------------------------------------------------------------------------------------
       if (isUpdate) this.update()
     },
