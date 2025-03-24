@@ -141,6 +141,9 @@
   </v-dialog>
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
+    <div v-if="item.id === 'oh-chibanzu-all2'" style="font-size: small">
+      オープンデータは赤、開示請求は青
+    </div>
 
     <v-text-field label="表示地番検索（例）5-7" v-model="s_chibanText" @input="change" style="margin-top: 0px"></v-text-field>
 

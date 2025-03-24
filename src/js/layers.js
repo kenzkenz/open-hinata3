@@ -8548,7 +8548,7 @@ const layers01 = [
     },
     {
         id: 'oh-chibanzu-all2',
-        label: "全国地番図(オープンデータ(赤)＋開示請求（青））",
+        label: "全国地番図公開マップ",
         sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
         layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
         ext: {name:'ext-chibanzu'}
@@ -8656,13 +8656,13 @@ const layers01 = [
                     //     layers: chibanzuLayers0,
                     //     ext: {name:'ext-chibanzu'}
                     // },
-                    // {
-                    //     id: 'oh-chibanzu-all2',
-                    //     label: "全国地番図(オープンデータ(赤)＋開示請求（青））",
-                    //     sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
-                    //     layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
-                    //     ext: {name:'ext-chibanzu'}
-                    // },
+                    {
+                        id: 'oh-chibanzu-all2',
+                        label: "全国地番図公開マップ",
+                        sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
+                        layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
+                        ext: {name:'ext-chibanzu'}
+                    },
                     ...chibanzuLayers2,
                 ]
             },

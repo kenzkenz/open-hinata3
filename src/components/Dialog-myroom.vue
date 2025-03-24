@@ -96,7 +96,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   </div>
                   <div v-for="item in jsonDataPmtile" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban,item.bbox,item.length,item.prefcode,item.citycode)">
                     <v-checkbox
-                        v-if="!isAll && isOh3Team"
+                        v-if="!isAll"
                         class="transparent-chk"
                         v-model="item.public"
                         true-value=1
