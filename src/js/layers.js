@@ -53,6 +53,7 @@ pablicDatas.forEach(v => {
         'paint': {
             'fill-color': 'rgba(0,0,0,0)',
         },
+        minZoom: 11
     })
     publicLineLayers.push({
         id: 'oh-chibanL-' + v.id + '-' + v.name + '-line-layer',
@@ -69,6 +70,7 @@ pablicDatas.forEach(v => {
                 16, 2
             ]
         },
+        minZoom: 11
     })
     let minZoom
     if (!v.length) {
@@ -106,7 +108,8 @@ pablicDatas.forEach(v => {
             'circle-opacity': 1,
             'circle-stroke-width': 1,
             'circle-stroke-color': '#fff'
-        }
+        },
+        minZoom: 11
     })
     publicVertexLayers.push({
         id: 'oh-chibanL-' + v.id + '-' + v.name + '-vertex-layer',
@@ -121,7 +124,8 @@ pablicDatas.forEach(v => {
                 18,4
             ],
             'circle-color': 'red',
-        }
+        },
+        minZoom: 11
     })
 })
 const publicLayers = publicPolygonLayers.map((layer,i) => {
@@ -134,11 +138,7 @@ const publicLayers = publicPolygonLayers.map((layer,i) => {
         ext: {name:'ext-chibanzu'}
     }
 })
-
-
-
-
-
+const publicLayers0 = [...publicPolygonLayers,...publicLineLayers,...publicLabelLayers,...publicPointLayers,...publicVertexLayers]
 
 export const cityGeojsonSource = {
     id: 'city-geojson-source', obj: {
@@ -160,6 +160,7 @@ const cityGeojsonPolygonLayer = {
             'rgba(0,0,0,0.1)' // それ以外のときは透明
         ],
     },
+    maxzoom: 11.5
 }
 const cityGeojsonLineLayer = {
     id: 'oh-city-geojson-line-layer',
@@ -1821,10 +1822,10 @@ export const sicyosonChibanzuUrls = [
 export const chibanzuSources = []
 export const chibanzuLayers = []
 const chibanzuLayerLines = []
+const chibanzuLayerLinesRed = []
 const chibanzuLayerLabel = []
 const chibanzuLayerVertex = []
 const chibanzuLayerPoint = []
-// export const chibanzuLayers0 = [...chibanzuLayers,...chibanzuLayerLines,...chibanzuLayerLabel,...chibanzuLayerVertex,...chibanzuLayerPoint]
 sicyosonChibanzuUrls.forEach(url => {
     // console.log(url.name)
     let sourceLayer
@@ -1867,6 +1868,23 @@ sicyosonChibanzuUrls.forEach(url => {
                 16, 2
             ]
         },
+    })
+    chibanzuLayerLinesRed.push({
+        id: 'oh-chibanzu-line-' + url.name,
+        source: 'oh-chibanzu-' + url.name + '-source',
+        type: 'line',
+        "source-layer": sourceLayer,
+        paint: {
+            'line-color': 'red',
+            'line-width': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                1, 0.1,
+                16, 2
+            ]
+        },
+        minzoom: 11
     })
     chibanzuLayerLabel.push({
         id: 'oh-chibanzu-label-' + url.name,
@@ -1931,6 +1949,7 @@ const chibanzuLayers2 = chibanzuLayers.map((layer,i) => {
 })
 // 並びを様修正
 const chibanzuLayers0 = [...chibanzuLayers,...chibanzuLayerLines,...chibanzuLayerLabel,...chibanzuLayerPoint,...chibanzuLayerVertex]
+const chibanzuLayers1 = [...chibanzuLayers,...chibanzuLayerLinesRed,...chibanzuLayerLabel,...chibanzuLayerPoint,...chibanzuLayerVertex]
 
 console.log(chibanzuLayers2)
 // 古地図----------------------------------------------------------------------------------------------------------------
@@ -8527,11 +8546,18 @@ const layers01 = [
         ext: {name:'extTokijyo'}
     },
     {
-        id: 'oh-city-geojson',
-        label: "地番図公開マップ",
-        sources: [cityGeojsonSource],
-        layers: [cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
+        id: 'oh-chibanzu-all2',
+        label: "全国地番図(オープンデータ(赤)＋開示請求（青））",
+        sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
+        layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
+        ext: {name:'ext-chibanzu'}
     },
+    // {
+    //     id: 'oh-city-geojson',
+    //     label: "地番図公開マップ",
+    //     sources: [cityGeojsonSource],
+    //     layers: [cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
+    // },
     {
         id: 'hikkai',
         label: "筆界調査データベース",
@@ -8622,24 +8648,23 @@ const layers01 = [
                 id: 'citychibanzu',
                 label: "市町村地番図",
                 nodes: [
-                    {
-                        id: 'oh-chibanzu-all',
-                        label: "全国地番図（オープンデータ）",
-                        sources: chibanzuSources,
-                        layers: chibanzuLayers0,
-                        ext: {name:'ext-chibanzu'}
-                    },
+                    // {
+                    //     id: 'oh-chibanzu-all',
+                    //     label: "全国地番図（オープンデータ）",
+                    //     sources: chibanzuSources,
+                    //     layers: chibanzuLayers0,
+                    //     ext: {name:'ext-chibanzu'}
+                    // },
                     {
                         id: 'oh-chibanzu-all2',
-                        label: "全国地番図（オープンデータ＋開示請求）",
-                        sources: [...chibanzuSources],
-                        layers: [...chibanzuLayers0],
+                        label: "全国地番図(オープンデータ(赤)＋開示請求（青））",
+                        sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
+                        layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
                         ext: {name:'ext-chibanzu'}
                     },
                     ...chibanzuLayers2,
                 ]
             },
-
         ]},
     {
         id: 'fudosan',
