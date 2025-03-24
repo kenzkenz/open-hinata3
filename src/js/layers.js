@@ -30,7 +30,6 @@ async function publicData() {
     }
 }
 const pablicDatas = await publicData()
-console.log(pablicDatas)
 const publicSources = []
 const publicPolygonLayers = []
 const publicLineLayers = []
@@ -43,7 +42,8 @@ pablicDatas.forEach(v => {
         obj: {
             type: 'vector',
             url: "pmtiles://" + v.url
-        }
+        },
+        minZoom: 11
     })
     publicPolygonLayers.push({
         id: 'oh-chiban-' + v.id + '-' + v.name + '-layer',
@@ -66,7 +66,7 @@ pablicDatas.forEach(v => {
                 'interpolate',
                 ['linear'],
                 ['zoom'],
-                1, 0.1,
+                0, 0.1,
                 16, 2
             ]
         },
@@ -157,11 +157,12 @@ const cityGeojsonPolygonLayer = {
             'blue', // public が 1 のとき
             ['==', ['get', 'public'], 2],
             'red', // public が 2 のとき
-            'rgba(0,0,0,0.1)' // それ以外のときは透明
+            'rgba(0,0,0,0.1)' // それ以外のときは半透明の黒
         ],
     },
     maxzoom: 11.5
-}
+};
+
 const cityGeojsonLineLayer = {
     id: 'oh-city-geojson-line-layer',
     source: 'city-geojson-source',
@@ -8655,13 +8656,13 @@ const layers01 = [
                     //     layers: chibanzuLayers0,
                     //     ext: {name:'ext-chibanzu'}
                     // },
-                    {
-                        id: 'oh-chibanzu-all2',
-                        label: "全国地番図(オープンデータ(赤)＋開示請求（青））",
-                        sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
-                        layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
-                        ext: {name:'ext-chibanzu'}
-                    },
+                    // {
+                    //     id: 'oh-chibanzu-all2',
+                    //     label: "全国地番図(オープンデータ(赤)＋開示請求（青））",
+                    //     sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
+                    //     layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
+                    //     ext: {name:'ext-chibanzu'}
+                    // },
                     ...chibanzuLayers2,
                 ]
             },

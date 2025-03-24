@@ -3379,10 +3379,20 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 if (features.length === 0) return
                 props = features[0].properties
+                let publicType
+                switch (props.public) {
+                    case 1:
+                        publicType = '開示請求'
+                        break
+                    case 2:
+                        publicType = 'オープンデータ'
+                        break
+                }
                 if (html.indexOf('oh-city-geojson-poligon-layer') === -1) {
                     html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                     html +=
                         '<div class="oh-city-geojson-poligon-layer" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:22px;">入手方法＝' + publicType + '</span><hr>' +
                         '<span style="font-size:22px;">' + props.N03_001 + props.N03_004 + '</span>' +
                         '</div>'
                 }

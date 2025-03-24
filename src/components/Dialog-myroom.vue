@@ -115,6 +115,16 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   <v-text-field v-model="pmtilesSerch" type="text" placeholder="検索"></v-text-field>
                   <v-btn style="margin-top: -10px;margin-bottom: 10px;margin-left: 0px;" @click="pmtilesSerchBtn">検索</v-btn>
                   <div v-for="item in jsonDataPmtilePubilc" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban,item.bbox,item.length,item.prefcode,item.citycode)">
+                    <v-checkbox
+                        v-if="!isAll && isOh3Team"
+                        class="transparent-chk"
+                        v-model="item.public"
+                        true-value=1
+                        false-value=0
+                        @change="publicChk(item.id, item.public)"
+                        @mousedown.stop
+                        @click.stop
+                    />
                     <strong>{{ item.name }}</strong><br>
                   </div>
                 </v-card>
@@ -1410,6 +1420,15 @@ export default {
               } else {
                 cityGeojsonSource.obj.data = 'https://kenzkenz.duckdns.org//original-data/city.geojson?nocache=' + Date.now()
               }
+              // alert(id)
+              const maps = [vm.$store.state.map01,vm.$store.state.map02]
+              maps.forEach(map => {
+                map.getStyle().layers.forEach(layer => {
+                  if (layer.id.includes('oh-chibanL-') && layer.id.includes(id)) {
+                    map.removeLayer(layer.id)
+                  }
+                })
+              })
               setTimeout(() => {
                 store.state.loading2 = false
               },3000)
