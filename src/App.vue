@@ -88,16 +88,14 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                         label="地番にあたるフィールドを選択してください"
                         outlined
               ></v-select>
-
               <v-select
                   v-model="selectedPrefCode"
                   :items="prefItems"
                   item-title="prefName"
                   item-value="prefCode"
-                  label="都道府県を選択してください"
+                  label="都道府県名を選択してください"
                   outlined
               ></v-select>
-
               <v-select
                   v-model="selectedCityCode"
                   :items="cityItems"
@@ -106,7 +104,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   label="市区町村名を選択してください"
                   outlined
               ></v-select>
-
+              <v-switch style="height: 40px;margin-top: -20px;margin-bottom: 20px;" v-model="isPublic" @change="isPublicSwitch" label="公開" color="primary" />
             </div>
             <v-btn @click="shpLoad">読込開始</v-btn>
           </v-card-text>
@@ -898,6 +896,7 @@ export default {
     loadingSnackbar: false,
     selectedPrefCode: '',
     selectedCityCode: '',
+    isPublic: false,
   }),
   computed: {
     cityItems() {
@@ -1159,6 +1158,9 @@ export default {
     },
   },
   methods: {
+    isPublicSwitch () {
+
+    },
     simaClose () {
       this.s_snackbar = false
       // ここを修正
@@ -1249,7 +1251,7 @@ export default {
         alert("入力されていません。")
         return
       }
-      pmtilesGenerateForUser2 (this.shpGeojson,'',store.state.pmtilesPropertieName,this.selectedPrefCode,this.selectedCityCode)
+      pmtilesGenerateForUser2 (this.shpGeojson,'',store.state.pmtilesPropertieName,this.selectedPrefCode,this.selectedCityCode,this.isPublic)
       this.dialogForShpApp = false
     },
     imagePngLoad () {

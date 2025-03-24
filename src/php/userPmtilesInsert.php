@@ -15,6 +15,7 @@ try {
     $citycode = $_POST['citycode'] ?? null;
     $prefname = $_POST['prefname'] ?? null;
     $cityname = $_POST['cityname'] ?? null;
+    $public = $_POST['public'] ?? null;
 
     // バリデーション: 空チェック
     if (empty($name) || empty($url) || empty($uid) || empty($chiban) || empty($url2) || empty($bbox) || empty($length)) {
@@ -23,7 +24,7 @@ try {
     }
 
     // SQL: userdbに新規挿入
-    $sql = "INSERT INTO userpmtiles (name, url, url2, uid, chiban, bbox, length, prefcode, citycode, prefname, cityname) VALUES (:name, :url, :url2, :uid, :chiban, :bbox, :length, :prefcode, :citycode, :prefname, :cityname)";
+    $sql = "INSERT INTO userpmtiles (name, url, url2, uid, chiban, bbox, length, prefcode, citycode, prefname, cityname, public) VALUES (:name, :url, :url2, :uid, :chiban, :bbox, :length, :prefcode, :citycode, :prefname, :cityname, :public)";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ':name' => $name,
@@ -36,7 +37,8 @@ try {
         ':prefcode' => $prefcode,
         ':citycode' => $citycode,
         ':prefname' => $prefname,
-        ':cityname' => $cityname
+        ':cityname' => $cityname,
+        ':public' => $public,
     ]);
 
     // 挿入された行のIDを取得
