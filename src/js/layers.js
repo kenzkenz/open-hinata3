@@ -49,7 +49,7 @@ const cityGeojsonPolygonLayer = {
             'blue', // public が 1 のとき
             ['==', ['get', 'public'], 2],
             'red', // public が 2 のとき
-            'rgba(0,0,0,0)' // それ以外のときは透明
+            'rgba(0,0,0,0.1)' // それ以外のときは透明
         ],
     },
 }
