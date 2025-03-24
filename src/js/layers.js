@@ -10,7 +10,7 @@ function boundsSort (bounds) {
     return [bounds[2],bounds[0],bounds[3],bounds[1]]
 }
 
-async function fetchUserData(uid) {
+async function publicData() {
     try {
         const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtileSelectPublic.php', {
             params: {}
@@ -29,8 +29,116 @@ async function fetchUserData(uid) {
         alert('通信エラーが発生しました');
     }
 }
-const aaa = await fetchUserData()
-console.log(aaa)
+const pablicDatas = await publicData()
+console.log(pablicDatas)
+const publicSources = []
+const publicPolygonLayers = []
+const publicLineLayers = []
+const publicLabelLayers = []
+const publicPointLayers = []
+const publicVertexLayers = []
+pablicDatas.forEach(v => {
+    publicSources.push({
+        id: 'oh-chiban-' + v.id + '-' + v.name + '-source',
+        obj: {
+            type: 'vector',
+            url: "pmtiles://" + v.url
+        }
+    })
+    publicPolygonLayers.push({
+        id: 'oh-chiban-' + v.id + '-' + v.name + '-layer',
+        type: 'fill',
+        source: 'oh-chiban-' + v.id + '-' + v.name + '-source',
+        "source-layer": 'oh3',
+        'paint': {
+            'fill-color': 'rgba(0,0,0,0)',
+        },
+    })
+    publicLineLayers.push({
+        id: 'oh-chibanL-' + v.id + '-' + v.name + '-line-layer',
+        source: 'oh-chiban-' + v.id + '-' + v.name + '-source',
+        type: 'line',
+        "source-layer": "oh3",
+        paint: {
+            'line-color': 'blue',
+            'line-width': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                1, 0.1,
+                16, 2
+            ]
+        },
+    })
+    let minZoom
+    if (!v.length) {
+        minZoom = 17
+    } else if (v.length < 10000) {
+        minZoom = 0
+    } else {
+        minZoom = 17
+    }
+    publicLabelLayers.push({
+        id: 'oh-chibanL-' + v.id + '-' + v.name + '-label-layer',
+        type: "symbol",
+        source: 'oh-chiban-' + v.id + '-' + v.name + '-source',
+        "source-layer": "oh3",
+        'layout': {
+            'text-field': ['get', v.chiban],
+            'text-font': ['NotoSansJP-Regular'],
+        },
+        'paint': {
+            'text-color': 'navy',
+            'text-halo-color': 'rgba(255,255,255,1)',
+            'text-halo-width': 1.0,
+        },
+        'minzoom': minZoom
+    })
+    publicPointLayers.push({
+        id: 'oh-chibanL-' + v.id + '-' + v.name + '-point-layer',
+        type: "circle",
+        source: 'oh-chiban-' + v.id + '-' + v.name + '-source',
+        filter: ["==", "$type", "Point"],
+        "source-layer": "oh3",
+        paint: {
+            'circle-color': 'rgba(255,0,0,1)', // 赤色で中心点を強調
+            'circle-radius': 5, // 固定サイズの点
+            'circle-opacity': 1,
+            'circle-stroke-width': 1,
+            'circle-stroke-color': '#fff'
+        }
+    })
+    publicVertexLayers.push({
+        id: 'oh-chibanL-' + v.id + '-' + v.name + '-vertex-layer',
+        type: "circle",
+        source: 'oh-chiban-' + v.id + '-' + v.name + '-source',
+        filter: ["==", "$type", "Polygon"],
+        "source-layer": "oh3",
+        paint: {
+            'circle-radius': [
+                'interpolate', ['linear'], ['zoom'],
+                15, 0,
+                18,4
+            ],
+            'circle-color': 'red',
+        }
+    })
+})
+const publicLayers = publicPolygonLayers.map((layer,i) => {
+    return {
+        id: layer.id,
+        label: layer.name,
+        source: publicSources[i],
+        layers:[layer,publicLineLayers[i],publicLabelLayers[i],publicPointLayers[i],publicVertexLayers[i]],
+        // attribution: '<a href="' + layer.page + '" target="_blank">' + name + '</a>',
+        ext: {name:'ext-chibanzu'}
+    }
+})
+
+
+
+
+
 
 export const cityGeojsonSource = {
     id: 'city-geojson-source', obj: {
