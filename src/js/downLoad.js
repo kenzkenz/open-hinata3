@@ -408,6 +408,7 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
             case 'oh-chibanzu-舟形町':
                 chiban = feature.properties.TIBAN
                 break
+            case 'oh-chibanzu-西宮市':
             case 'oh-chibanzu-東村山市':
             case 'oh-chibanzu-姫路市':
             case 'oh-chibanzu-磐田市':

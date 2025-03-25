@@ -1073,3 +1073,16 @@ tippecanoe -o oyamasakichyo.pmtiles \
     --minimum-zoom=0 \
     --layer=chibanzu \
     oyamasakichyo.geojson
+
+tippecanoe -o nishinomiyashi.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=0 \
+    --layer=chibanzu \
+    nishinomiyashi.geojson
