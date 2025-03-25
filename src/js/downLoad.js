@@ -393,6 +393,7 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
     geojson.features.forEach((feature) => {
         let chiban = feature.properties.地番;
         switch (layerId) {
+            case 'oh-chibanzu-直方市':
             case 'oh-chibanzu-静岡市':
             case 'oh-chibanzu-福岡市':
             case 'oh-chibanzu-利根町':
@@ -433,6 +434,7 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
             case 'oh-chibanzu-半田市':
                 chiban = feature.properties.番地 + '-' + feature.properties.枝番 + '-' + feature.properties.小枝
                 break
+            case 'oh-chibanzu-川西市':
             case 'oh-chibanzu-加古川市':
                 chiban = feature.properties.TXTCODE1
                 break
@@ -466,6 +468,12 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
             case 'oh-chibanzu-城陽市':
             case 'oh-chibanzu-音更町':
                 chiban = feature.properties.chiban
+                break
+            case 'oh-chibanzu-香芝市':
+                chiban = feature.properties.地番名称
+                break
+            case 'oh-chibanzu-福山市':
+                chiban = feature.properties.小字名
                 break
             case 'oh-chibanzu-all':
                 // とりあえずidにする。
@@ -2323,6 +2331,9 @@ export function highlightSpecificFeaturesCity(map,layerId) {
             case 'oh-fukuokashichiban':
                 fields = ['concat', ['get', 'id']]
                 break
+            case 'oh-chibanzu-直方市':
+            case 'oh-chibanzu-香芝市':
+            case 'oh-chibanzu-川西市':
             case 'oh-chibanzu-大山崎町':
             case 'oh-chibanzu-城陽市':
             case 'oh-chibanzu-東村山市':
@@ -2440,6 +2451,9 @@ function getBoundingBoxByLayer(map, layerId) {
             case 'oh-fukuokashichiban':
                 targetId = `${feature.properties['id']}`;
                 break;
+            case 'oh-chibanzu-直方市':
+            case 'oh-chibanzu-香芝市':
+            case 'oh-chibanzu-川西市':
             case 'oh-chibanzu-大山崎町':
             case 'oh-chibanzu-城陽市':
             case 'oh-chibanzu-東村山市':
@@ -2607,6 +2621,9 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
             case 'oh-fukuokashichiban':
                 targetId = `${feature.properties['id']}`;
                 break;
+            case 'oh-chibanzu-直方市':
+            case 'oh-chibanzu-香芝市':
+            case 'oh-chibanzu-川西市':
             case 'oh-chibanzu-大山崎町':
             case 'oh-chibanzu-城陽市':
             case 'oh-chibanzu-東村山市':

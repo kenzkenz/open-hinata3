@@ -2172,6 +2172,9 @@ export default {
         if (params.lng) {
           center = [params.lng,params.lat]
           zoom = params.zoom
+          if (zoom < 4.5 ) {
+            document.querySelector('#map00').style.backgroundColor = 'black'
+          }
           pitch = {map01:params.pitch01,map02:params.pitch02}
           bearing = params.bearing
         }
@@ -3821,7 +3824,8 @@ export default {
           'oh-chibanzu-北広島市','oh-chibanzu-国立市','oh-chibanzu-福岡市','oh-chibanzu-越谷市',
           'oh-chibanzu-福山市','oh-chibanzu-深谷市','oh-chibanzu-伊丹市','oh-chibanzu-豊中市',
           'oh-chibanzu-姫路市','oh-chibanzu-仙台市','oh-chibanzu-高崎市','oh-chibanzu-旭川市',
-          'oh-chibanzu-東村山市','oh-chibanzu-城陽市','oh-chibanzu-大山崎町'];
+          'oh-chibanzu-東村山市','oh-chibanzu-城陽市','oh-chibanzu-大山崎町','oh-chibanzu-川西市',
+          'oh-chibanzu-香芝市','oh-chibanzu-直方市'];
         layers.forEach(layer => {
           map.on('click', layer, (e) => {
             if (e.features && e.features.length > 0) {

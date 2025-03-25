@@ -1881,14 +1881,21 @@ export const sicyosonChibanzuUrls = [
     {code:'28204', name:'西宮市', chiban: ['get', 'TXTCD'], position:[135.34190737301537,34.73766946698089], url:'nishinomiyashi', page:'https://opendata.nishi.or.jp/opendata/ResultDetail.php?id=69'},
     {code:'28207', name:'伊丹市', chiban: ['get', '所在地番'], position:[135.40037589806093,34.784457867420755], url:'itamishi', page:'https://www.geospatial.jp/ckan/dataset/202401/resource/ec8eb484-66e4-40a7-bf05-248476b0d61d'},
     {code:'28210', name:'加古川市', chiban: ['get', 'TXTCODE1'], position:[134.84064926983825,34.75678296665963], url:'kakogawashi', page:'https://opendata-api-kakogawa.jp/ckan/dataset/landhouse/resource/c37f9b63-54c8-4094-9e48-8d3817918476'},
+    {code:'28217', name:'川西市', chiban: ['get', 'TXTCODE1'], position:[135.4173282883612,34.82989631871767], url:'kawanishishi', page:'https://www.city.kawanishi.hyogo.jp/opendata/1017548/1009883/1016648.html'},
+
     {code:'28501', name:'佐用町', chiban: ['get', 'CHIBAN'], position:[134.35598183068578,35.004205695261106], url:'sayochyo', page:'https://www.town.sayo.lg.jp/cms-sypher/www/service/detail.jsp?id=9343'},
     // 奈良県
     {code:'29201', name:'奈良市', chiban: ['concat', ['get', '地番本番'], '-', ['get', '地番枝番'], '-', ['get', '地番小枝']], position:[135.80463216931253,34.684824554866864], url:'narashi2', page:'https://www.city.nara.lg.jp/soshiki/14/104605.html'},
+    {code:'29210', name:'香芝市', chiban: ['get', '地番名称'], position:[135.69894062698785,34.5410982491169], url:'kashibashi', page:'https://www.city.kashiba.lg.jp/soshiki/5/31946.html'},
+    // 広島県
+    {code:'34207', name:'福山市', chiban: ['get', '小字名'], position:[133.36252445767389,34.485761252632884], url:'hukuyamashi', page:'https://data.city.fukuyama.hiroshima.jp/dataset/digital_numbers_map/resource/93328fe8-64fb-4321-9964-84eab4f68fcd'},
     // 香川県
     {code:'37203', name:'坂出市', chiban: ['concat', ['get', '所在地番3'], '-', ['get', '所在地番5']], position:[133.8605011373076,34.3166967696347], url:'sakaideshi', page:'https://www.city.sakaide.lg.jp/soshiki/kouminrenkei/opendata.html'},
     {code:'37204', name:'善通寺市', chiban: ['concat', ['get', '本番'], '-', ['get', '枝番'], '-', ['get', '孫番']],position:[133.78706908666885,34.22705330992301], url:'zentujishi', page:'https://opendata.pref.kagawa.lg.jp/dataset/701.html'},
     // 福岡県
     {code:'40130', name:'福岡市', chiban: ['get', '地番'], position:[130.40177928836357,33.5897855042562], url:'fukuokashi2', page:'https://webmap.city.fukuoka.lg.jp/fukuoka/OpenData?mids=&pno=1'},
+    {code:'40204', name:'直方市', chiban: ['get', '地番'], position:[130.72966337301625,33.743983314699236], url:'nogatashi', page:'https://data.bodik.jp/dataset/402044_land_lot_correspondence_map/resource/3e57cf4e-a84b-4a6a-adba-fd27013531c7'},
+
     // 長崎県
     {code:'42307', name:'長与町', chiban: ['get', 'SAFIELD002'], position:[129.87507937301513,32.82524812594376], url:'nagayochyo', page:'https://data.bodik.jp/dataset/423076_tibansankouzu/resource/580da941-74d1-4ddd-a0f0-fb6b88fc793a'}
 ];
