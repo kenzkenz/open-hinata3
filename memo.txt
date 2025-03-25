@@ -982,3 +982,29 @@ tippecanoe -o hamamatushi.pmtiles \
     --minimum-zoom=0 \
     --layer=oh3 \
     merged.geojson
+
+tippecanoe -o asahikawashi.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=0 \
+    --layer=chibanzu \
+    asahikawashi.geojson
+
+tippecanoe -o otohukechyo.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=0 \
+    --layer=chibanzu \
+    otohukechyo.geojson

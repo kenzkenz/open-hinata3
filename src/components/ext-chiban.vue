@@ -142,7 +142,7 @@
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
     <div v-if="item.id === 'oh-chibanzu-all2'" style="font-size: small">
-      オープンデータは赤、開示請求は青
+      オープンデータは緑、開示請求は青
     </div>
 
     <v-text-field label="表示地番検索（例）5-7" v-model="s_chibanText" @input="change" style="margin-top: 0px"></v-text-field>
@@ -520,6 +520,11 @@ export default {
           this.sourceId = 'oh-chibanzu-仙台市-source'
           this.fields = ['id']
           break
+        case 'oh-chibanzu-旭川市':
+          this.layerId = 'oh-chibanzu-旭川市'
+          this.sourceId = 'oh-chibanzu-旭川市-source'
+          this.fields = ['id']
+          break
         case 'oh-chibanzu-高崎市':
           this.layerId = 'oh-chibanzu-高崎市'
           this.sourceId = 'oh-chibanzu-高崎市-source'
@@ -528,6 +533,11 @@ export default {
         case 'oh-chibanzu-all':
           this.layerId = 'oh-chibanzu-all'
           this.sourceId = 'oh-chibanzu-all-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-all2':
+          this.layerId = 'oh-chibanzu-all2'
+          this.sourceId = 'oh-chibanzu-all2-source'
           this.fields = ['id']
           break
       }
@@ -594,9 +604,14 @@ export default {
       saveCima3(map)
     },
     saveSima () {
+      if (this.item.id === 'oh-chibanzu-all2') {
+        alert('まだこのレイヤーでは機能しません。')
+        return
+      }
       const map = this.$store.state[this.mapName]
       this.idForLayerId(this.item.id)
       // saveCima(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'],true)
+      console.log(this.item.id)
       console.log(this.layerId)
       console.log(this.sourceId)
       console.log(this.fields)

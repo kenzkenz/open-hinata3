@@ -3820,7 +3820,7 @@ export default {
           'oh-chibanzu-坂出市','oh-chibanzu-善通寺市','oh-chibanzu-長与町','oh-chibanzu-福島市',
           'oh-chibanzu-北広島市','oh-chibanzu-国立市','oh-chibanzu-福岡市','oh-chibanzu-越谷市',
           'oh-chibanzu-福山市','oh-chibanzu-深谷市','oh-chibanzu-伊丹市','oh-chibanzu-豊中市',
-          'oh-chibanzu-姫路市','oh-chibanzu-仙台市','oh-chibanzu-高崎市'];
+          'oh-chibanzu-姫路市','oh-chibanzu-仙台市','oh-chibanzu-高崎市','oh-chibanzu-旭川市'];
         layers.forEach(layer => {
           map.on('click', layer, (e) => {
             if (e.features && e.features.length > 0) {

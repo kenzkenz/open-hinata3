@@ -12,7 +12,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-tab value="1">URL記憶</v-tab>
               <v-tab value="2">タイル記憶</v-tab>
               <v-tab value="3">地番図</v-tab>
-              <v-tab v-if="isOh3Team"  value="31">地番図公開</v-tab>
+              <v-tab value="31">公開地番図</v-tab>
               <v-tab value="4">画像</v-tab>
               <v-tab value="5">kmz</v-tab>
               <v-tab value="6">復帰</v-tab>
@@ -114,17 +114,20 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 <v-card>
                   <v-text-field v-model="pmtilesSerch" type="text" placeholder="検索"></v-text-field>
                   <v-btn style="margin-top: -10px;margin-bottom: 10px;margin-left: 0px;" @click="pmtilesSerchBtn">検索</v-btn>
+                  <div style="margin-left: 0px;margin-bottom:10px;font-size: small;">
+                    ユーザーが公開した地番図です。既にオープンデータ化されているものは含まれません。
+                  </div>
                   <div v-for="item in jsonDataPmtilePubilc" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban,item.bbox,item.length,item.prefcode,item.citycode)">
-                    <v-checkbox
-                        v-if="!isAll && isOh3Team"
-                        class="transparent-chk"
-                        v-model="item.public"
-                        true-value=1
-                        false-value=0
-                        @change="publicChk(item.id, item.public)"
-                        @mousedown.stop
-                        @click.stop
-                    />
+<!--                    <v-checkbox-->
+<!--                        v-if="!isAll"-->
+<!--                        class="transparent-chk"-->
+<!--                        v-model="item.public"-->
+<!--                        true-value=1-->
+<!--                        false-value=0-->
+<!--                        @change="publicChk(item.id, item.public)"-->
+<!--                        @mousedown.stop-->
+<!--                        @click.stop-->
+<!--                    />-->
                     <strong>{{ item.name }}</strong><br>
                   </div>
                 </v-card>

@@ -46,6 +46,7 @@ pablicDatas.forEach(v => {
         minZoom: 11
     })
     publicPolygonLayers.push({
+        name: v.name,
         id: 'oh-chiban-' + v.id + '-' + v.name + '-layer',
         type: 'fill',
         source: 'oh-chiban-' + v.id + '-' + v.name + '-source',
@@ -53,7 +54,7 @@ pablicDatas.forEach(v => {
         'paint': {
             'fill-color': 'rgba(0,0,0,0)',
         },
-        minZoom: 11
+        minzoom: 11
     })
     publicLineLayers.push({
         id: 'oh-chibanL-' + v.id + '-' + v.name + '-line-layer',
@@ -70,7 +71,7 @@ pablicDatas.forEach(v => {
                 16, 2
             ]
         },
-        minZoom: 11
+        minzoom: 11
     })
     let minZoom
     if (!v.length) {
@@ -109,7 +110,7 @@ pablicDatas.forEach(v => {
             'circle-stroke-width': 1,
             'circle-stroke-color': '#fff'
         },
-        minZoom: 11
+        minzoom: 11
     })
     publicVertexLayers.push({
         id: 'oh-chibanL-' + v.id + '-' + v.name + '-vertex-layer',
@@ -125,7 +126,7 @@ pablicDatas.forEach(v => {
             ],
             'circle-color': 'red',
         },
-        minZoom: 11
+        minzoom: 11
     })
 })
 const publicLayers = publicPolygonLayers.map((layer,i) => {
@@ -138,6 +139,7 @@ const publicLayers = publicPolygonLayers.map((layer,i) => {
         ext: {name:'ext-chibanzu'}
     }
 })
+console.log(publicLayers)
 const publicLayers0 = [...publicPolygonLayers,...publicLineLayers,...publicLabelLayers,...publicPointLayers,...publicVertexLayers]
 
 export const cityGeojsonSource = {
@@ -156,8 +158,8 @@ const cityGeojsonPolygonLayer = {
             ['==', ['get', 'public'], 1],
             'blue', // public が 1 のとき
             ['==', ['get', 'public'], 2],
-            'red', // public が 2 のとき
-            'rgba(0,0,0,0.1)' // それ以外のときは半透明の黒
+            'green', // public が 2 のとき
+            'rgba(255,255,255,0.1)'
         ],
     },
     maxzoom: 11.5
@@ -173,7 +175,8 @@ const cityGeojsonLineLayer = {
             'interpolate',
             ['linear'],
             ['zoom'],
-            1, 0.1,
+            5, 0,
+            9, 1,
             16, 2
         ]
     },
@@ -1773,8 +1776,11 @@ const isekiLayersMarge = isekiLayers.map((layer,i) => {
 export const sicyosonChibanzuUrls = [
     // 北海道
     {code:'01205', name:'室蘭市', chiban: ['get', '地番'], position:[140.99286678768675,42.36472347973418], url:'muroranshi', page:'https://murorancity-opendata-muroran.hub.arcgis.com/datasets/f5a188ea9ae94d7abd68983eb351aeff/explore?layer=3&location=42.368631%2C140.979326%2C12.64'},
-    {code:'01395', name:'ニセコ町', chiban: ['get', '地番'], position:[140.68806409835815,42.80495731522012], url:'nisekocyo', page:'https://www.harp.lg.jp/opendata/dataset/1750.html'},
     {code:'01234', name:'北広島市', chiban: ['concat', ['get', 'Chiban'], '-', ['get', 'Edaban']], position:[141.56311494973653,42.98537981878215], url:'kitahiroshimashi2', page:'https://www.harp.lg.jp/opendata/dataset/2061.html'},
+    {code:'01204', name:'旭川市', chiban: ['get', 'TXTCD'], position:[142.36538083068262,43.77140401060319], url:'asahikawashi', page:'https://www.city.asahikawa.hokkaido.jp/kurashi/112/113/116/d080184.html'},
+    {code:'01395', name:'ニセコ町', chiban: ['get', '地番'], position:[140.68806409835815,42.80495731522012], url:'nisekocyo', page:'https://www.harp.lg.jp/opendata/dataset/1750.html'},
+    {code:'01631', name:'音更町', chiban: ['get', 'chiban'], position:[143.19816291534738,42.99393583189044], url:'otohukechyo', page:'https://www.harp.lg.jp/opendata/dataset/2035.html'},
+
     // 宮城県
     {code:'04100', name:'仙台市', chiban: ['get', 'DNO'], position:[140.86946408465997,38.26816199999661], url:'sendaishi', page:'https://www.geospatial.jp/ckan/dataset/chibanzu'},
     // 秋田県
@@ -1876,7 +1882,7 @@ sicyosonChibanzuUrls.forEach(url => {
         type: 'line',
         "source-layer": sourceLayer,
         paint: {
-            'line-color': 'red',
+            'line-color': 'green',
             'line-width': [
                 'interpolate',
                 ['linear'],
@@ -8664,6 +8670,7 @@ const layers01 = [
                         ext: {name:'ext-chibanzu'}
                     },
                     ...chibanzuLayers2,
+                    ...publicLayers,
                 ]
             },
         ]},
