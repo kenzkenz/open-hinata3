@@ -525,6 +525,21 @@ export default {
           this.sourceId = 'oh-chibanzu-旭川市-source'
           this.fields = ['id']
           break
+        case 'oh-chibanzu-東村山市':
+          this.layerId = 'oh-chibanzu-東村山市'
+          this.sourceId = 'oh-chibanzu-東村山市-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-城陽市':
+          this.layerId = 'oh-chibanzu-城陽市'
+          this.sourceId = 'oh-chibanzu-城陽市-source'
+          this.fields = ['id']
+          break
+        case 'oh-chibanzu-大山崎町':
+          this.layerId = 'oh-chibanzu-大山崎町'
+          this.sourceId = 'oh-chibanzu-大山崎町-source'
+          this.fields = ['id']
+          break
         case 'oh-chibanzu-高崎市':
           this.layerId = 'oh-chibanzu-高崎市'
           this.sourceId = 'oh-chibanzu-高崎市-source'

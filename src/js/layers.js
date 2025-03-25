@@ -142,12 +142,74 @@ const publicLayers = publicPolygonLayers.map((layer,i) => {
 console.log(publicLayers)
 const publicLayers0 = [...publicPolygonLayers,...publicLineLayers,...publicLabelLayers,...publicPointLayers,...publicVertexLayers]
 
+export const cityPmtilesSource = {
+    id: 'city-pmtiles-source', obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz.duckdns.org//original-data/city.pmtiles?nocache=" + Date.now(),
+    }
+}
+
+const cityPmtilesPolygonLayer = {
+    id: 'oh-city-pmtiles-poligon-layer',
+    type: 'fill',
+    source: 'city-pmtiles-source',
+    'source-layer': "oh3",
+    paint: {
+        'fill-color': [
+            'case',
+            ['==', ['get', 'public'], 1],
+            'blue', // public が 1 のとき
+            ['==', ['get', 'public'], 2],
+            'green', // public が 2 のとき
+            'rgba(255,255,255,0.1)'
+        ],
+    },
+    maxzoom: 11.5
+};
+
+const cityPmtilesLineLayer = {
+    id: 'oh-city-pmtiles-line-layer',
+    source: 'city-pmtiles-source',
+    'source-layer': "oh3",
+    type: 'line',
+    paint: {
+        'line-color': 'black',
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            5, 0,
+            9, 1,
+            16, 2
+        ]
+    },
+}
+const cityPmtilesLabelLayer = {
+    id: 'oh-city-pmtiles-label-layer',
+    type: 'symbol',
+    source: 'city-pmtiles-source',
+    'source-layer': "oh3",
+    layout: {
+        'text-field': ['get', 'N03_004'],
+        'text-font': ['NotoSansJP-Regular'],
+        'text-offset': [0, 1],
+    },
+    paint: {
+        'text-color': 'rgba(255, 255, 255, 1)',
+        'text-halo-color': 'rgba(0,0,0,1)',
+        'text-halo-width': 1.0,
+    },
+    minzoom: 7
+}
+
+
 export const cityGeojsonSource = {
     id: 'city-geojson-source', obj: {
         'type': 'geojson',
         'data': 'https://kenzkenz.duckdns.org//original-data/city.geojson?nocache=' + Date.now()
     }
 }
+
 const cityGeojsonPolygonLayer = {
     id: 'oh-city-geojson-poligon-layer',
     type: 'fill',
@@ -1780,7 +1842,6 @@ export const sicyosonChibanzuUrls = [
     {code:'01204', name:'旭川市', chiban: ['get', 'TXTCD'], position:[142.36538083068262,43.77140401060319], url:'asahikawashi', page:'https://www.city.asahikawa.hokkaido.jp/kurashi/112/113/116/d080184.html'},
     {code:'01395', name:'ニセコ町', chiban: ['get', '地番'], position:[140.68806409835815,42.80495731522012], url:'nisekocyo', page:'https://www.harp.lg.jp/opendata/dataset/1750.html'},
     {code:'01631', name:'音更町', chiban: ['get', 'chiban'], position:[143.19816291534738,42.99393583189044], url:'otohukechyo', page:'https://www.harp.lg.jp/opendata/dataset/2035.html'},
-
     // 宮城県
     {code:'04100', name:'仙台市', chiban: ['get', 'DNO'], position:[140.86946408465997,38.26816199999661], url:'sendaishi', page:'https://www.geospatial.jp/ckan/dataset/chibanzu'},
     // 秋田県
@@ -1798,6 +1859,8 @@ export const sicyosonChibanzuUrls = [
     {code:'11218', name:'深谷市', chiban: ['concat', ['get', '本番'], '-', ['get', '枝番']], position:[139.281707999998,36.197104580699204], url:'fukayashi', page:'https://opendata.pref.saitama.lg.jp/resources/6204'},
     // 東京都
     {code:'13209', name:'町田市', chiban: ['get', 'CHIBAN'], position:[139.4387823343277,35.546591812173475], url:'machidashi', page:'https://www.city.machida.tokyo.jp/shisei/opendata/chizujoho/chisekizu.html'},
+    {code:'13211', name:'小平市', chiban: ['get', '表示地番'], position:[139.47753045767575,35.728369484747276], url:'kodairashi', page:'https://www.city.kodaira.tokyo.jp/kurashi/111/111978.html'},
+    {code:'13213', name:'東村山市', chiban: ['get', 'TXTCD'], position:[139.4687322037018,35.75465000000037], url:'higashimurayamashi', page:'https://catalog.data.metro.tokyo.lg.jp/dataset/t132136d0000000005'},
     {code:'13215', name:'国立市', chiban: ['get', '表示文字列'], position:[139.44141245767452,35.68379371055923], url:'kunitachishi3', page:'https://www.city.kunitachi.tokyo.jp/soshiki/Dept01/Div03/Sec01/oshirase/11883.html'},
     // 静岡県
     {code:'22100', name:'静岡市', chiban: ['get', '地番'], position:[138.38294267724638,34.974974010631584], url:'shizuokashi', page:'https://dataset.city.shizuoka.jp/dataset/1707986930/resource/4a40cc33-0aef-4426-825e-3b034347812b'},
@@ -1806,14 +1869,17 @@ export const sicyosonChibanzuUrls = [
     {code:'23205', name:'半田市', chiban: ['concat', ['get', '番地'], '-', ['get', '枝番'], '-', ['get', '小枝']], position:[136.93819204686196,34.891670467553226], url:'handashi', page:'https://www.city.handa.lg.jp/opendata/1005557/1005561/1004329.html'},
     // 京都府
     {code:'26100', name:'京都市', chiban: ['get', 'TIBAN'], position:[135.76794033862097,35.011458104660534], url:'kyotoshi', page:'https://data.city.kyoto.lg.jp/resource/?id=18537'},
+    {code:'26207', name:'城陽市', chiban: ['get', 'chiban'], position:[135.7800419153457,34.85309321719859], url:'jyoyoshi', page:'https://data.bodik.jp/dataset/262072_koteishisanzeichibanzu/resource/8f5c8de3-f574-45b4-9291-3791ffa41407'},
+    {code:'26209', name:'長岡京市', chiban: ['get', '表示文字列'], position:[135.69535828836183,34.926424814234565], url:'nagaokakyoshi', page:'https://www.city.nagaokakyo.lg.jp/0000012991.html'},
+    {code:'26303', name:'大山崎町', chiban: ['get', '所在'], position:[135.68867837302201,34.902743804081595], url:'oyamasakichyo', page:'https://www.town.oyamazaki.kyoto.jp/annai/zeijyuminka/zeimukakari/chozei/koteisisanzei/5857.html'},
     // 大阪府
     {code:'27202', name:'岸和田市', chiban: ['get', 'CHIBAN'], position:[135.37090737539307,34.46054514396512], url:'kishiwadashi', page:'https://www.city.kishiwada.osaka.jp/soshiki/16/tochi-chibankrnnsakuichiranhyou.html'},
     {code:'27228', name:'泉南市', chiban: ['get', '表示文字列'], position:[135.2734460647299,34.36591222577401], url:'sennanshi', page:'https://www.city.sennan.lg.jp/kakuka/soumu/zeimuka/kazeikakari/zeikin/koteishisan/1505179465186.html'},
     {code:'27203', name:'豊中市', chiban: ['get', 'TEXTCODE1'], position:[135.4697598501699,34.78130126564767], url:'toyonakashi', page:'https://data.bodik.jp/dataset/272035_chibansanko/resource/c5858297-c312-489f-b244-885074c70daa'},
     // 兵庫県
     // {code:'28201, name:'姫路市', chiban: ['get', 'TXTCD'], position:[134.68545471163947,34.815118449686565], url:'himejishi', page:''},
-    {code:'28210', name:'加古川市', chiban: ['get', 'TXTCODE1'], position:[134.84064926983825,34.75678296665963], url:'kakogawashi', page:'https://opendata-api-kakogawa.jp/ckan/dataset/landhouse/resource/c37f9b63-54c8-4094-9e48-8d3817918476'},
     {code:'28207', name:'伊丹市', chiban: ['get', '所在地番'], position:[135.40037589806093,34.784457867420755], url:'itamishi', page:'https://www.geospatial.jp/ckan/dataset/202401/resource/ec8eb484-66e4-40a7-bf05-248476b0d61d'},
+    {code:'28210', name:'加古川市', chiban: ['get', 'TXTCODE1'], position:[134.84064926983825,34.75678296665963], url:'kakogawashi', page:'https://opendata-api-kakogawa.jp/ckan/dataset/landhouse/resource/c37f9b63-54c8-4094-9e48-8d3817918476'},
     {code:'28501', name:'佐用町', chiban: ['get', 'CHIBAN'], position:[134.35598183068578,35.004205695261106], url:'sayochyo', page:'https://www.town.sayo.lg.jp/cms-sypher/www/service/detail.jsp?id=9343'},
     // 奈良県
     {code:'29201', name:'奈良市', chiban: ['concat', ['get', '地番本番'], '-', ['get', '地番枝番'], '-', ['get', '地番小枝']], position:[135.80463216931253,34.684824554866864], url:'narashi2', page:'https://www.city.nara.lg.jp/soshiki/14/104605.html'},
@@ -8555,8 +8621,10 @@ const layers01 = [
     {
         id: 'oh-chibanzu-all2',
         label: "全国地番図公開マップ",
-        sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
-        layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
+        // sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
+        // layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
+        sources: [cityPmtilesSource,...chibanzuSources,...publicSources],
+        layers: [...chibanzuLayers1,...publicLayers0,cityPmtilesPolygonLayer,cityPmtilesLineLayer,cityPmtilesLabelLayer],
         ext: {name:'ext-chibanzu'}
     },
     // {
@@ -8665,8 +8733,10 @@ const layers01 = [
                     {
                         id: 'oh-chibanzu-all2',
                         label: "全国地番図公開マップ",
-                        sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
-                        layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
+                        // sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
+                        // layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
+                        sources: [cityPmtilesSource,...chibanzuSources,...publicSources],
+                        layers: [...chibanzuLayers1,...publicLayers0,cityPmtilesPolygonLayer,cityPmtilesLineLayer,cityPmtilesLabelLayer],
                         ext: {name:'ext-chibanzu'}
                     },
                     ...chibanzuLayers2,

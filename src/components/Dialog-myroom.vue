@@ -1418,11 +1418,11 @@ export default {
               // alert(`エラー: ${response.data.error}`);
             } else {
               console.log('成功:', response1.data);
-              if (vm.$store.state.map01.getSource('city-geojson-source')) {
-                vm.$store.state.map01.getSource('city-geojson-source').setData('https://kenzkenz.duckdns.org//original-data/city.geojson?nocache=' + Date.now())
-              } else {
-                cityGeojsonSource.obj.data = 'https://kenzkenz.duckdns.org//original-data/city.geojson?nocache=' + Date.now()
-              }
+              // if (vm.$store.state.map01.getSource('city-geojson-source')) {
+              //   vm.$store.state.map01.getSource('city-geojson-source').setData('https://kenzkenz.duckdns.org//original-data/city.geojson?nocache=' + Date.now())
+              // } else {
+              //   cityGeojsonSource.obj.data = 'https://kenzkenz.duckdns.org//original-data/city.geojson?nocache=' + Date.now()
+              // }
               // alert(id)
               const maps = [vm.$store.state.map01,vm.$store.state.map02]
               maps.forEach(map => {
@@ -1434,6 +1434,7 @@ export default {
               })
               setTimeout(() => {
                 store.state.loading2 = false
+                alert('設定を反映するには再読み込みしてください。')
               },3000)
             }
           } catch (error) {

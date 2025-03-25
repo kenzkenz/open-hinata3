@@ -1008,3 +1008,68 @@ tippecanoe -o otohukechyo.pmtiles \
     --minimum-zoom=0 \
     --layer=chibanzu \
     otohukechyo.geojson
+
+tippecanoe -o kodairashi.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=0 \
+    --layer=chibanzu \
+    kodairashi.geojson
+
+tippecanoe -o higashimurayamashi.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=0 \
+    --layer=chibanzu \
+    higashimurayamashi.geojson
+
+tippecanoe -o jyoyoshi.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=0 \
+    --layer=chibanzu \
+    jyoyoshi.geojson
+
+tippecanoe -o nagaokakyoshi.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=0 \
+    --layer=chibanzu \
+    nagaokakyoshi.geojson
+
+tippecanoe -o oyamasakichyo.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=0 \
+    --layer=chibanzu \
+    oyamasakichyo.geojson

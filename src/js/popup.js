@@ -3368,6 +3368,7 @@ export function popup(e,map,mapName,mapFlg) {
                 break
             }
             case 'oh-city-geojson-poligon-layer':
+            case 'oh-city-pmtiles-poligon-layer':
             {
                 let features = map.queryRenderedFeatures(
                     map.project(coordinates), {layers: [layerId]}
@@ -3387,6 +3388,8 @@ export function popup(e,map,mapName,mapFlg) {
                     case 2:
                         publicType = 'オープンデータ'
                         break
+                    default:
+                        publicType = '未取得'
                 }
                 if (html.indexOf('oh-city-geojson-poligon-layer') === -1) {
                     html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
