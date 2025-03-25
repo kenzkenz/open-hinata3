@@ -194,9 +194,14 @@ const cityPmtilesLabelLayer = {
         'text-font': ['NotoSansJP-Regular'],
         'text-offset': [0, 1],
     },
+    // paint: {
+    //     'text-color': 'rgba(255, 255, 255, 1)',
+    //     'text-halo-color': 'rgba(0,0,0,1)',
+    //     'text-halo-width': 1.0,
+    // },
     paint: {
-        'text-color': 'rgba(255, 255, 255, 1)',
-        'text-halo-color': 'rgba(0,0,0,1)',
+        'text-color': 'navy',
+        'text-halo-color': 'rgba(255,255,255,1)',
         'text-halo-width': 1.0,
     },
     minzoom: 7

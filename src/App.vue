@@ -901,7 +901,7 @@ export default {
   computed: {
     cityItems() {
       const filteredCities = Object.entries(muni)
-          .filter(([_, value]) => value.startsWith(`${this.selectedPrefCode.padStart(2, '0')},`))
+          .filter(([_, value]) => value.startsWith(`${Number(this.selectedPrefCode)},`))
           .map(([cityCode, value]) => {
             const parts = value.split(',');
             return { prefCode: parts[0].padStart(5, '0'), cityCode: parts[2], cityName: parts[3] };
