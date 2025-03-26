@@ -540,7 +540,7 @@ import {
   simaLoadForUser,
   tileGenerateForUser1file, tileGenerateForUserJpg, tileGenerateForUserPdf, tileGenerateForUserPng,
   tileGenerateForUserTfw,
-  transformGeoJSONToEPSG4326, userKmzSet, userSimaSet,
+  transformGeoJSONToEPSG4326, updateMeasureUnit, userKmzSet, userSimaSet,
   zahyokei, zipDownloadSimaText
 } from '@/js/downLoad'
 
@@ -2316,6 +2316,10 @@ export default {
       }
       // MapLibre のロード完了後に監視開始
       map.on("load", observeToolbar);
+      map.on('load', () => {
+        drawControl.distancePrecision = 100
+        updateMeasureUnit('m')
+      })
 
       drawInstance.on('finish', (e) => {
         const snapshot = drawInstance.getSnapshot();

@@ -55,7 +55,7 @@ import {
   geojsonAddLayer,
   highlightSpecificFeatures,
   highlightSpecificFeaturesCity,
-  simaToGeoJSON, userPmtileSet
+  simaToGeoJSON, updateMeasureUnit, userPmtileSet
 } from "@/js/downLoad";
 import * as Layers from '@/js/layers'
 import Tree from "vue3-tree"
@@ -980,6 +980,9 @@ export default {
         map.moveLayer( 'terradraw-measure-polygon-label')
         map.moveLayer( 'terradraw-measure-line-label')
         map.moveLayer( 'terradraw-measure-line-node')
+
+        updateMeasureUnit('m')
+
       }
     },
     mw5AddLayers(map,mapName) {

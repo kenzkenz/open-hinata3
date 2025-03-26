@@ -6681,3 +6681,56 @@ export function getParentIdByLayerId(targetLayerId) {
     }
     return null;
 }
+
+export const labelTextFieldInMeters = [
+    'concat',
+    ['to-string', ['get', 'distance']],
+    ' m',
+    [
+        'case',
+        ['==', ['get', 'total'], 0],
+        '',
+        ['concat', '\n(', ['to-string', ['get', 'total']], ' m', ')']
+    ],
+    [
+        'case',
+        ['all', ['has', 'elevation'], ['>', ['get', 'elevation'], 0]],
+        ['concat', '\nAlt. ', ['to-string', ['floor', ['get', 'elevation']]], ' m'],
+        ''
+    ]
+];
+
+export const labelTextFieldInCentimeters = [
+    'concat',
+    ['/', ['round', ['*', ['*', ['get', 'distance'], 1000], 100]], 100],
+    ' m',
+    [
+        'case',
+        ['==', ['get', 'total'], 0],
+        '',
+        ['concat', '\n(', ['/', ['round',  ['*', ['*', ['get', 'total'], 1000], 100]], 100], ' m', ')'],
+    ],
+    [//未修正
+        'case',
+        ['all', ['has', 'elevation'], ['>', ['get', 'elevation'], 0]],
+        ['concat', '\nAlt. ', ['to-string', ['floor', ['get', 'elevation']]], ' m'],
+        ''
+    ]
+];
+
+export function updateMeasureUnit(unit) {
+    let textField
+    if (unit === 'm') {
+        textField = labelTextFieldInCentimeters
+    }
+    store.state.map01.setLayoutProperty(
+        'terradraw-measure-line-label',
+        'text-field',
+        textField
+    );
+    store.state.map02.setLayoutProperty(
+        'terradraw-measure-line-label',
+        'text-field',
+        textField
+    );
+}
