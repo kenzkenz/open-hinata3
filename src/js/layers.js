@@ -2151,6 +2151,27 @@ const syochiikLayerLine = {
         ]
     },
 }
+const syochiikLayerLine2 = {
+    id: "oh-syochiiki-line",
+    type: "line",
+    source: "syochiikiSource",
+    "source-layer": "polygon",
+    paint: {
+        'line-color': 'black',
+        'line-width': [
+            'interpolate', // Zoom-based interpolation
+            ['linear'],
+            ['zoom'], // Use the zoom level as the input
+            1, 0.1,
+            11, 2.0,
+            12, 3,
+            14, 4,
+            16, 6,
+            18, 12,
+            30, 14,
+        ]
+    },
+}
 const syochiikiLayerLabel = {
     id: "oh-syochiiki-label",
     type: "symbol",
@@ -2171,6 +2192,29 @@ const syochiikiLayerLabel = {
     },
     'paint': {
         'text-color': 'rgba(255, 0, 0, 1)',
+        'text-halo-color': 'rgba(255,255,255,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 10
+}
+const syochiikiLayerLabel2 = {
+    id: "oh-syochiiki-label",
+    type: "symbol",
+    source: "syochiikiSource",
+    "source-layer": "polygon",
+    'layout': {
+        'text-field': [
+            'format',
+            ['get', 'S_NAME'],{}
+        ],
+        'text-font': ['NotoSansJP-Regular'],
+        // 'text-anchor': 'left',
+        'text-offset': [0.5, 0],
+        'visibility': 'visible',
+    },
+    'paint': {
+        'text-color': 'rgba(0, 0, 0, 1)',
         'text-halo-color': 'rgba(255,255,255,0.7)',
         'text-halo-width': 1.0,
     },
@@ -8663,7 +8707,7 @@ const layers01 = [
                 id: 'oh-syochiiki2',
                 label: "2020 町丁・字等別境界",
                 source: syochiikiSource,
-                layers: [syochiikiLayer,syochiikLayerLine,syochiikiLayerLabel],
+                layers: [syochiikiLayer,syochiikLayerLine2,syochiikiLayerLabel2],
                 attribution: '出典：<a href="https://www.e-stat.go.jp/stat-search/files?page=1&toukei=00200521&tstat=000001136464&cycle=0&tclass1=000001136472" target="_blank">e-Stat</a>',
                 // ext: {name:'extSyochiiki'}
             },
