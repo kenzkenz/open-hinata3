@@ -8660,6 +8660,14 @@ const layers01 = [
                 ext: {name:'extTokijyo'}
             },
             {
+                id: 'oh-syochiiki2',
+                label: "2020 町丁・字等別境界",
+                source: syochiikiSource,
+                layers: [syochiikiLayer,syochiikLayerLine,syochiikiLayerLabel],
+                attribution: '出典：<a href="https://www.e-stat.go.jp/stat-search/files?page=1&toukei=00200521&tstat=000001136464&cycle=0&tclass1=000001136472" target="_blank">e-Stat</a>',
+                // ext: {name:'extSyochiiki'}
+            },
+            {
                 id: 'oh-fude',
                 label: "農地の区画情報(筆ポリゴン)",
                 source: fudeSource,
