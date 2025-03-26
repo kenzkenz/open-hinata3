@@ -2965,8 +2965,7 @@ export function popup(e,map,mapName,mapFlg) {
                     Object.keys(props).forEach(function (key) {
                         html0 += key + '=' + props[key] + '<br>'
                     })
-                    // html0 += '<br><span style="font-size: 14px;">面積:' + PolygonMetrics.area + ' 周長:' + PolygonMetrics.perimeter +
-                    //     '<br>境界点数:' + PolygonMetrics.vertexCount + '</span>'
+                    html0 += '<div class="street-view" style="margin-top:0px;height: 200px;width: 300px"></div>'
                     html0 += '<div>'
                     html += html0
                 }
@@ -3068,9 +3067,8 @@ export function popup(e,map,mapName,mapFlg) {
                     Object.keys(props).forEach(function (key) {
                         html0 += key + '=' + props[key] + '<br>'
                     })
-                    // html0 += '<br><span style="font-size: 14px;">面積:' + PolygonMetrics.area + ' 周長:' + PolygonMetrics.perimeter +
-                    //     '<br>境界点数:' + PolygonMetrics.vertexCount + '</span>'
-                    html0 += '<br><span style="font-size: 14px;" class="feature-area"></span>'
+                    html0 += '<div style="font-size: 14px;margin-top: 5px;" class="feature-area"></div>'
+                    html0 += '<div class="street-view" style="margin-top:0px;height: 200px;width: 300px"></div>'
                     html0 += '<div>'
                     html += html0
                 }
@@ -3426,6 +3424,7 @@ export function popup(e,map,mapName,mapFlg) {
                 Object.keys(props).forEach(function (key) {
                     html0 += key + '=' + props[key] + '<br>'
                 })
+                html0 += '<div class="street-view" style="margin-top:0px;height: 200px;width: 300px"></div>'
                 html0 += '<div>'
                 html += html0
             }
@@ -3624,7 +3623,7 @@ function createPopup(map, coordinates, htmlContent, mapName) {
             position: {lat: lat, lng: lng},
             pov: {heading: 34, pitch: 10},
             zoom: 1,
-            disableDefaultUI: true // これでUIをすべて非表示にする
+            disableDefaultUI: true, // これでUIをすべて非表示にする
         })
     }
 

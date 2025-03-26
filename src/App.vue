@@ -448,7 +448,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         </v-card>
       </v-dialog>
 
-<!--      <div class="street-view">dddddddd</div>-->
       <div id="map00">
 
         <img class='loadingImg' src="https://kenzkenz.xsrv.jp/open-hinata3/img/icons/loading2.gif">
@@ -467,7 +466,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
             <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="s_dialogForLogin = !s_dialogForLogin" v-if="mapName === 'map01'"><v-icon>mdi-login</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickSplit" v-if="mapName === 'map01'"><v-icon>mdi-monitor-multiple</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="btnClickMyroom (mapName)"><v-icon v-if="user1">mdi-home</v-icon></v-btn>
-<!--            <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForImage = !s_dialogForImage"><v-icon v-if="user1">mdi-image</v-icon></v-btn>-->
+            <!-- <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForImage = !s_dialogForImage"><v-icon v-if="user1">mdi-image</v-icon></v-btn>-->
             <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickLayer(mapName)"><v-icon>mdi-layers</v-icon></v-btn>
           </div>
           <!--右メニュー-->
@@ -477,6 +476,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
             <v-btn :size="isSmall ? 'small' : 'default'" class="zoom-in" icon @click="zoomIn" v-if="mapName === 'map01'"><v-icon>mdi-plus</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" class="zoom-out" icon @click="zoomOut" v-if="mapName === 'map01'"><v-icon>mdi-minus</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" class="share" icon @click="share(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-share-variant</v-icon></v-btn>
+            <v-btn :size="isSmall ? 'small' : 'default'" class="draw" icon @click="draw" v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>
           </div>
 
           <DialogMenu :mapName=mapName />
@@ -898,6 +898,8 @@ export default {
     selectedPrefCode: '',
     selectedCityCode: '',
     isPublic: false,
+    drawControl: null,
+    showDrawUI: false,
   }),
   computed: {
     cityItems() {
@@ -1388,6 +1390,15 @@ export default {
       // if (this.$store.state.simaTextForUser) {
       //   downloadSimaText(true)
       // }
+    },
+    draw() {
+      if (!this.showDrawUI) {
+        document.querySelector('.maplibregl-ctrl-bottom-right').style.display = 'block'
+        this.showDrawUI = true
+      } else {
+        document.querySelector('.maplibregl-ctrl-bottom-right').style.display = 'none'
+        this.showDrawUI = false
+      }
     },
     share(mapName) {
       if (this.$store.state.dialogs.shareDialog[mapName].style.display === 'none') {
@@ -2267,9 +2278,9 @@ export default {
       // });
       // map.addControl(draw, 'bottom-right');
 
-      const drawControl = new MaplibreMeasureControl({
+      this.drawControl = new MaplibreMeasureControl({
         modes: [
-          'render',
+          // 'render',
           'point',
           'linestring',
           'polygon',
@@ -2280,11 +2291,10 @@ export default {
           'delete',
           'download'
         ],
-        open: false,
+        open: true,
       });
-      map.addControl(drawControl, 'bottom-right');
-      const drawInstance = drawControl.getTerraDrawInstance()
-
+      map.addControl(this.drawControl, 'bottom-right');
+      const drawInstance = this.drawControl.getTerraDrawInstance()
       function observeToolbar() {
         const observer = new MutationObserver(() => {
           const toolbarContainer = document.querySelector(".maplibregl-ctrl-bottom-right");
@@ -2301,7 +2311,8 @@ export default {
 
       function addCustomButton(toolbar) {
         const customButton = document.createElement("button");
-        customButton.className = "custom-button maplibregl-terradraw-add-control hidden maplibregl-terradraw-download-button";
+        // customButton.className = "custom-button maplibregl-terradraw-add-control hidden maplibregl-terradraw-download-button";
+        customButton.className = "custom-button maplibregl-terradraw-add-control maplibregl-terradraw-download-button";
         customButton.title = 'KML-Download'
         customButton.setAttribute("type", "button");
         customButton.innerHTML = '<p style="margin-top: -18px;">KML</p>';
@@ -2315,10 +2326,14 @@ export default {
         };
         toolbar.appendChild(customButton);
       }
+      const elm = document.querySelector('.maplibregl-ctrl-bottom-right')
+      elm.style.display = 'none'
+      elm.style.top = '220px'
+      elm.style.right ='60px'
       // MapLibre のロード完了後に監視開始
-      map.on("load", observeToolbar);
       map.on('load', () => {
-        drawControl.distancePrecision = 100
+        observeToolbar()
+        this.drawControl.distancePrecision = 100
         updateMeasureUnit('m')
       })
 
@@ -2558,7 +2573,7 @@ export default {
             this.$store.state.drawGeojsonText = params.drawGeojsonText
             const geojson = JSON.parse(this.$store.state.drawGeojsonText);
             drawInstance.addFeatures(geojson);
-            drawControl.recalc()
+            this.drawControl.recalc()
           }
 
           if (params.gpxText) {
@@ -4112,6 +4127,11 @@ export default {
 .share {
   position: absolute;
   top: 240px;
+  left: 0;
+}
+.draw {
+  position: absolute;
+  top: 300px;
   left: 0;
 }
 /*3Dのボタン-------------------------------------------------------------*/
