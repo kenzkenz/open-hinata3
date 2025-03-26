@@ -1389,7 +1389,8 @@ export default {
           return {
             citycode:v.citycode,
             pmtilesurl:v.url,
-            public: 1
+            public: 1,
+            page: ''
           }
         })
         console.log(cities)
@@ -1399,7 +1400,8 @@ export default {
             cities2.push({
               citycode:v.code,
               pmtilesurl:'999',
-              public: 2
+              public: 2,
+              page: v.page
             })
           }
         })
@@ -1805,7 +1807,7 @@ export default {
     },
     pmtileSelectPublic () {
       const vm = this
-      async function fetchUserData(uid) {
+      async function fetchUserData() {
         try {
           const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtileSelectPublic.php', {
             params: {}

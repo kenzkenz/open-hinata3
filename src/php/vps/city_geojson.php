@@ -38,6 +38,7 @@ foreach ($geojson['features'] as &$feature) {
             if (str_pad($city['citycode'], 5, '0', STR_PAD_LEFT) === str_pad($citycode, 5, '0', STR_PAD_LEFT)) {
             $feature['properties']['public'] = $city['public'];
             $feature['properties']['pmtilesurl'] = $city['pmtilesurl'];
+            $feature['properties']['page'] = $city['page'];
             break;
             }
         }

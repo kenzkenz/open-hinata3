@@ -3386,7 +3386,7 @@ export function popup(e,map,mapName,mapFlg) {
                         publicType = 'ユーザーによる開示請求'
                         break
                     case 2:
-                        publicType = 'オープンデータ'
+                        publicType = '<a target="_blank" href=' + props.page + '> オープンデータ</a>'
                         break
                     default:
                         publicType = '未取得'
