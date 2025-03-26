@@ -3454,8 +3454,7 @@ export function popup(e,map,mapName,mapFlg) {
                 html +=
                     '<div class="oh-sima" font-weight: normal; color: #333;line-height: 25px;">' +
                     '<span style="font-size:18px;">' + propName + '=' + props.chiban + '</span><br>' +
-                    // '<img src="' + streetViewHref + '">' +
-                    // '<iframe src="' + streetViewHref + '" width="600" height="400"></iframe>' +
+                    '<div class="street-view" style="margin-top:10px;height: 200px;width: 300px"></div>' +
                     '</div>'
             }
         }
@@ -3576,7 +3575,20 @@ export function popup(e,map,mapName,mapFlg) {
         }
     }
 }
+
+let isGoogleMapsLoaded = false;
+
+function onGoogleMapsLoaded() {
+    isGoogleMapsLoaded = true;
+}
+
 function createPopup(map, coordinates, htmlContent, mapName) {
+
+    // if (!isGoogleMapsLoaded) {
+    //     alert("Google Maps APIがまだ読み込まれていません");
+    //     return;
+    // }
+
     // ストリートビューとGoogleマップへのリンクを追加
     const [lng, lat] = coordinates;
     console.log(lng)
@@ -3594,6 +3606,7 @@ function createPopup(map, coordinates, htmlContent, mapName) {
     popups.forEach(popup => popup.remove());
     popups.length = 0;
 
+
     // ポップアップを作成して地図に追加
     const popup = new maplibregl.Popup({ closeButton: true, maxWidth: "350px" })
         .setLngLat(coordinates)
@@ -3603,6 +3616,17 @@ function createPopup(map, coordinates, htmlContent, mapName) {
     // ポップアップイベント設定
     popups.push(popup);
     popup.on('close', closeAllPopups);
+
+    // ストリートビューを挿入
+    const container = document.querySelector('.street-view');
+    if (container) {
+        const panorama = new window.google.maps.StreetViewPanorama(container, {
+            position: {lat: lat, lng: lng},
+            pov: {heading: 34, pitch: 10},
+            zoom: 1,
+            disableDefaultUI: true // これでUIをすべて非表示にする
+        })
+    }
 
     // スクロールリセット（ポップアップ内のスクロール位置をリセット）
     document.querySelectorAll('.popup-html-div').forEach(element => {

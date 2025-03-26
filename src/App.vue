@@ -448,6 +448,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         </v-card>
       </v-dialog>
 
+<!--      <div class="street-view">dddddddd</div>-->
       <div id="map00">
 
         <img class='loadingImg' src="https://kenzkenz.xsrv.jp/open-hinata3/img/icons/loading2.gif">
