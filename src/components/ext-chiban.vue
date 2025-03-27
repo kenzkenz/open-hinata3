@@ -555,6 +555,11 @@ export default {
           this.sourceId = 'oh-chibanzu-直方市-source'
           this.fields = ['id']
           break
+        case 'oh-chibanzu-西粟倉村':
+          this.layerId = 'oh-chibanzu-西粟倉村'
+          this.sourceId = 'oh-chibanzu-西粟倉村-source'
+          this.fields = ['id']
+          break
         case 'oh-chibanzu-高崎市':
           this.layerId = 'oh-chibanzu-高崎市'
           this.sourceId = 'oh-chibanzu-高崎市-source'

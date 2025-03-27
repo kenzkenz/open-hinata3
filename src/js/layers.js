@@ -1887,11 +1887,12 @@ export const sicyosonChibanzuUrls = [
     {code:'28207', name:'伊丹市', chiban: ['get', '所在地番'], position:[135.40037589806093,34.784457867420755], url:'itamishi', page:'https://www.geospatial.jp/ckan/dataset/202401/resource/ec8eb484-66e4-40a7-bf05-248476b0d61d'},
     {code:'28210', name:'加古川市', chiban: ['get', 'TXTCODE1'], position:[134.84064926983825,34.75678296665963], url:'kakogawashi', page:'https://opendata-api-kakogawa.jp/ckan/dataset/landhouse/resource/c37f9b63-54c8-4094-9e48-8d3817918476'},
     {code:'28217', name:'川西市', chiban: ['get', 'TXTCODE1'], position:[135.4173282883612,34.82989631871767], url:'kawanishishi', page:'https://www.city.kawanishi.hyogo.jp/opendata/1017548/1009883/1016648.html'},
-
     {code:'28501', name:'佐用町', chiban: ['get', 'CHIBAN'], position:[134.35598183068578,35.004205695261106], url:'sayochyo', page:'https://www.town.sayo.lg.jp/cms-sypher/www/service/detail.jsp?id=9343'},
     // 奈良県
     {code:'29201', name:'奈良市', chiban: ['concat', ['get', '地番本番'], '-', ['get', '地番枝番'], '-', ['get', '地番小枝']], position:[135.80463216931253,34.684824554866864], url:'narashi2', page:'https://www.city.nara.lg.jp/soshiki/14/104605.html'},
     {code:'29210', name:'香芝市', chiban: ['get', '地番名称'], position:[135.69894062698785,34.5410982491169], url:'kashibashi', page:'https://www.city.kashiba.lg.jp/soshiki/5/31946.html'},
+    // 岡山県
+    {code:'33643', name:'西粟倉村', chiban: ['get', 'TIBAN'], position:[134.33562862698358,35.171553518278486], url:'nishiawakuramura', page:'https://www.vill.nishiawakura.okayama.jp/open_data/others/index.html'},
     // 広島県
     {code:'34207', name:'福山市', chiban: ['get', '小字名'], position:[133.36252445767389,34.485761252632884], url:'hukuyamashi', page:'https://data.city.fukuyama.hiroshima.jp/dataset/digital_numbers_map/resource/93328fe8-64fb-4321-9964-84eab4f68fcd'},
     // 香川県
@@ -8596,8 +8597,8 @@ const sagakijyuntenPointLayer = {
     type: "circle",
     source: "saga-kijyunten-source",
     paint: {
-        'circle-color': 'rgba(255,0,0,1)', // 赤色で中心点を強調
-        'circle-radius': 5, // 固定サイズの点
+        'circle-color': 'navy', // 赤色で中心点を強調
+        'circle-radius': 8, // 固定サイズの点
         'circle-opacity': 1,
         'circle-stroke-width': 1,
         'circle-stroke-color': '#fff'
@@ -8613,8 +8614,8 @@ const sagakijyuntenLabelLayer = {
         'text-offset': [0, 1],
     },
     'paint': {
-        'text-color': 'rgba(255, 255, 255, 0.7)',
-        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-color': 'rgba(255, 255, 255, 1)',
+        'text-halo-color': 'rgba(0,0,0,1)',
         'text-halo-width': 1.0,
     },
     'maxzoom': 24,

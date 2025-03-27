@@ -13,6 +13,10 @@ const popups = []
 
 console.log(store.state.selectedLayers)
 
+function isIphone() {
+    return /iPhone/i.test(navigator.userAgent);
+}
+
 // Turf.jsを使用して面積、周長、頂点数を計算する関数
 function calculatePolygonMetrics(polygon) {
     try {
@@ -2901,10 +2905,12 @@ export function popup(e,map,mapName,mapFlg) {
                         '<span style="font-size:20px;">基準点種別＝' + props.基準点種別 + '</span><br>' +
                         '<span style="font-size:14px;">基準点コード＝' + props.基準点コード + '</span><br>' +
                         '<span style="font-size:14px;">成果状態＝' + props.成果状態 + '</span><br>' +
+                        '<div class="street-view" style="margin-top:0px;height: 200px;width: 300px"></div>' +
                         '</div>'
                 }
                 break
             }
+            case 'oh-chibanzu-西粟倉村':
             case 'oh-chibanzu-高崎市':
             case 'oh-chibanzu-仙台市':
             case 'oh-chibanzu-姫路市':
@@ -3122,11 +3128,13 @@ export function popup(e,map,mapName,mapFlg) {
                 let html0 = ''
                 if (html.indexOf('gaiku') === -1) {
                     html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html0 += '<div class="street-view" style="margin-top:10px;height: 200px;width: 300px"></div>'
                     html0 += '<div class="gaiku" font-weight: normal; color: #333;line-height: 25px;">'
                     Object.keys(props).forEach(function (key) {
                         html0 += key + '=' + props[key] + '<br>'
                     })
-                 html0 += '<div>'
+                    // if (isIphone()) html0 += '<div class="street-view" style="margin-top:10px;height: 200px;width: 300px"></div>'
+                    html0 += '<div>'
                     html += html0
                 }
                 break
@@ -3356,6 +3364,7 @@ export function popup(e,map,mapName,mapFlg) {
                 let html0 = ''
                 if (html.indexOf('saga-kijyunten') === -1) {
                     html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html0 += '<div class="street-view" style="margin-top:0px;height: 200px;width: 300px"></div>'
                     html0 += '<div class="saga-kijyunten" font-weight: normal; color: #333;line-height: 25px;">'
                     Object.keys(props).forEach(function (key) {
                         html0 += key + '=' + props[key] + '<br>'
@@ -3400,9 +3409,6 @@ export function popup(e,map,mapName,mapFlg) {
                 break
             }
         }
-
-        // alert(/^oh-chibanL-/.test(layerId))
-        // alert(layerId)
 
         if(/^oh-chiban-/.test(layerId) || /^oh-chibanL-/.test(layerId)) {
             let features = map.queryRenderedFeatures(
@@ -3644,6 +3650,12 @@ function createPopup(map, coordinates, htmlContent, mapName) {
                     zoom: 1,
                     disableDefaultUI: true,
                 });
+                // スクロールリセット（ポップアップ内のスクロール位置をリセット）
+                setTimeout(() => {
+                    document.querySelectorAll('.popup-html-div').forEach(element => {
+                        element.scrollTop = 0;
+                    });
+                },200)
             }
         }
         setupStreetViewWithMotion()
