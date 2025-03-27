@@ -520,7 +520,7 @@ import DxfParser from 'dxf-parser'
 import proj4 from 'proj4'
 import { gpx } from '@tmcw/togeojson'
 import { user } from "@/authState"; // グローバルの認証情報を取得
-import { MaplibreTerradrawControl,MaplibreMeasureControl } from '@watergis/maplibre-gl-terradraw';
+import { MaplibreMeasureControl } from '@watergis/maplibre-gl-terradraw';
 import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
 import {
   csvGenerateForUserPng,
@@ -2362,7 +2362,7 @@ export default {
       // MapLibre のロード完了後に監視開始
       map.on('load', () => {
         observeToolbar()
-        this.drawControl.a = 100
+        this.drawControl.distancePrecision = 100
       })
 
       drawInstance.on('finish', (e) => {
