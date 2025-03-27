@@ -900,6 +900,9 @@ export default {
     isPublic: false,
     drawControl: null,
     showDrawUI: false,
+    tDraw: false,
+    drawInstance: false,
+    geojon:null,
   }),
   computed: {
     cityItems() {
@@ -1392,11 +1395,28 @@ export default {
       // }
     },
     draw() {
+      const map = this.$store.state.map01
       if (!this.showDrawUI) {
         document.querySelector('.maplibregl-ctrl-bottom-right').style.display = 'block'
+        this.drawControl.activate()
+        if (this.geojson) this.drawInstance.addFeatures(this.geojson);
+        setTimeout(() => {
+          map.setLayoutProperty('terradraw-measure-polygon-label', 'visibility', 'visible');
+          map.setLayoutProperty('terradraw-measure-line-label', 'visibility', 'visible');
+          map.setLayoutProperty('terradraw-measure-line-node', 'visibility', 'visible');
+          map.moveLayer('terradraw-measure-polygon-label')
+          map.moveLayer('terradraw-measure-line-label')
+          map.moveLayer('terradraw-measure-line-node')
+          updateMeasureUnit()
+        },0)
         this.showDrawUI = true
       } else {
         document.querySelector('.maplibregl-ctrl-bottom-right').style.display = 'none'
+        this.geojson = this.drawInstance.getSnapshot()
+        this.drawControl.deactivate()
+        map.setLayoutProperty('terradraw-measure-polygon-label', 'visibility', 'none');
+        map.setLayoutProperty('terradraw-measure-line-label', 'visibility', 'none');
+        map.setLayoutProperty('terradraw-measure-line-node', 'visibility', 'none');
         this.showDrawUI = false
       }
     },
@@ -2277,6 +2297,14 @@ export default {
       //   modes: ['render', 'point', 'linestring', 'polygon', 'rectangle', 'circle', 'freehand', 'select', 'delete-selection', 'delete']
       // });
       // map.addControl(draw, 'bottom-right');
+      // map.on('load', () => {
+      //   console.log(map)
+      //   this.tDraw = new TerraDraw({
+      //     map: map,
+      //     modes: [new TerraDrawPolygonMode()],
+      //   })
+      //   this.tDraw.start()
+      // })
 
       this.drawControl = new MaplibreMeasureControl({
         modes: [
@@ -2295,6 +2323,7 @@ export default {
       });
       map.addControl(this.drawControl, 'bottom-right');
       const drawInstance = this.drawControl.getTerraDrawInstance()
+      this.drawInstance = drawInstance
       function observeToolbar() {
         const observer = new MutationObserver(() => {
           const toolbarContainer = document.querySelector(".maplibregl-ctrl-bottom-right");
@@ -2343,6 +2372,24 @@ export default {
         this.$store.state.drawGeojsonText = geojsonText
         this.updatePermalink()
       });
+      // document.addEventListener('keydown', (e) => {
+      //   // MacのBackspaceに相当するキー
+      //   if (e.key === 'Backspace') {
+      //     e.preventDefault(); // 不要な戻る操作を防ぐ
+      //
+      //     // TerraDraw にカスタム delete イベントを送信
+      //     if (this.drawControl) {
+      //
+      //       // this.drawControl.draw.handleEvent({
+      //       //   type: 'keydown',
+      //       //   key: 'Delete', // ← 擬似的に "Delete" を送る！
+      //       // });
+      //     }
+      //   }
+      // })
+
+
+
 
       map.on('click', (e) => {
         const latitude = e.lngLat.lat
@@ -3220,6 +3267,7 @@ export default {
 
           //------------------------------------------------------------------------------------------------------------
           map.on('mousemove', (e) => {
+            if (this.showDrawUI) return
             // console.log(e)
             // クリック可能なすべてのレイヤーからフィーチャーを取得
             const features = map.queryRenderedFeatures(e.point);

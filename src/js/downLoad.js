@@ -6723,14 +6723,14 @@ export function updateMeasureUnit(unit) {
     if (unit === 'm') {
         textField = labelTextFieldInCentimeters
     }
-    store.state.map01.setLayoutProperty(
-        'terradraw-measure-line-label',
-        'text-field',
-        textField
-    );
-    store.state.map02.setLayoutProperty(
-        'terradraw-measure-line-label',
-        'text-field',
-        textField
-    );
+    const maps = [store.state.map01,store.state.map02]
+    maps.forEach(map => {
+        map.setLayoutProperty(
+            'terradraw-measure-line-label',
+            'text-field',
+            textField
+        );
+        map.setPaintProperty('td-linestring', 'line-color', 'dodgerblue')
+        map.setPaintProperty('td-polygon-outline', 'line-color', 'dodgerblue')
+    })
 }
