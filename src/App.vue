@@ -522,6 +522,7 @@ import { gpx } from '@tmcw/togeojson'
 import { user } from "@/authState"; // グローバルの認証情報を取得
 import { MaplibreMeasureControl } from '@watergis/maplibre-gl-terradraw';
 import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
+import { TerraDrawPointMode,TerraDrawLineStringMode,TerraDrawPolygonMode } from 'terra-draw'
 import {
   csvGenerateForUserPng,
   ddSimaUpload,
@@ -2320,6 +2321,38 @@ export default {
           'download'
         ],
         open: true,
+        modeOptions: {
+          point: new TerraDrawPointMode({
+            styles: {
+              pointColor: '#FF0000',
+              pointWidth: 3,
+              pointOutlineColor: '#FF0000',
+              pointOutlineWidth: 1
+            }
+          }),
+          linestring: new TerraDrawLineStringMode({
+            styles: {
+              lineStringColor: 'dodgerblue',
+              lineStringWidth: 2,
+              closingPointColor: '#FFFFFF',
+              closingPointWidth: 3,
+              closingPointOutlineColor: '#FF0000',
+              closingPointOutlineWidth: 1
+            }
+          }),
+          polygon: new TerraDrawPolygonMode({
+            styles: {
+              fillColor: '#F5AEAE',
+              fillOpacity: 0.7,
+              outlineColor: '#FF0000',
+              outlineWidth: 2,
+              closingPointColor: '#FAFAFA',
+              closingPointWidth: 3,
+              closingPointOutlineColor: '#FF0000',
+              closingPointOutlineWidth: 1
+            }
+          }),
+        }
       });
       map.addControl(this.drawControl, 'bottom-right');
       const drawInstance = this.drawControl.getTerraDrawInstance()

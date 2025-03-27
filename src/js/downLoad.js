@@ -6730,7 +6730,7 @@ export function updateMeasureUnit(unit) {
             'text-field',
             textField
         );
-        map.setPaintProperty('td-linestring', 'line-color', 'dodgerblue')
-        map.setPaintProperty('td-polygon-outline', 'line-color', 'dodgerblue')
+        // map.setPaintProperty('td-linestring', 'line-color', 'dodgerblue')
+        // map.setPaintProperty('td-polygon-outline', 'line-color', 'dodgerblue')
     })
 }
