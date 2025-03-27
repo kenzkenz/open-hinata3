@@ -1407,7 +1407,7 @@ export default {
           map.moveLayer('terradraw-measure-polygon-label')
           map.moveLayer('terradraw-measure-line-label')
           map.moveLayer('terradraw-measure-line-node')
-          updateMeasureUnit()
+          updateMeasureUnit('m')
         },0)
         this.showDrawUI = true
       } else {
@@ -2362,16 +2362,28 @@ export default {
       // MapLibre のロード完了後に監視開始
       map.on('load', () => {
         observeToolbar()
-        this.drawControl.distancePrecision = 100
-        updateMeasureUnit('m')
+        this.drawControl.a = 100
       })
 
       drawInstance.on('finish', (e) => {
+        updateMeasureUnit('m')
         const snapshot = drawInstance.getSnapshot();
         const geojsonText = JSON.stringify(snapshot, null, 2);
         this.$store.state.drawGeojsonText = geojsonText
         this.updatePermalink()
       });
+
+      document.querySelector('.maplibregl-terradraw-delete-button').addEventListener('click', () => {
+        this.$store.state.drawGeojsonText = ''
+        this.updatePermalink()
+      });
+
+      // drawInstance.on('feature-deleted', (e) => {
+      //   alert(99)
+      // })
+
+
+
       // document.addEventListener('keydown', (e) => {
       //   // MacのBackspaceに相当するキー
       //   if (e.key === 'Backspace') {
@@ -2387,9 +2399,6 @@ export default {
       //     }
       //   }
       // })
-
-
-
 
       map.on('click', (e) => {
         const latitude = e.lngLat.lat
