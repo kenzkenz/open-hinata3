@@ -522,7 +522,7 @@ import { gpx } from '@tmcw/togeojson'
 import { user } from "@/authState"; // グローバルの認証情報を取得
 import { MaplibreMeasureControl } from '@watergis/maplibre-gl-terradraw';
 import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
-import { TerraDrawPointMode,TerraDrawLineStringMode,TerraDrawPolygonMode } from 'terra-draw'
+import { TerraDraw,TerraDrawPointMode,TerraDrawLineStringMode,TerraDrawPolygonMode,TerraDrawFreehandMode } from 'terra-draw'
 import {
   csvGenerateForUserPng,
   ddSimaUpload,
@@ -2293,20 +2293,6 @@ export default {
       const map = this.$store.state.map01
       const vm = this
       //----------------------------------
-
-      // const draw = new MaplibreTerradrawControl({
-      //   modes: ['render', 'point', 'linestring', 'polygon', 'rectangle', 'circle', 'freehand', 'select', 'delete-selection', 'delete']
-      // });
-      // map.addControl(draw, 'bottom-right');
-      // map.on('load', () => {
-      //   console.log(map)
-      //   this.tDraw = new TerraDraw({
-      //     map: map,
-      //     modes: [new TerraDrawPolygonMode()],
-      //   })
-      //   this.tDraw.start()
-      // })
-
       this.drawControl = new MaplibreMeasureControl({
         modes: [
           // 'render',
@@ -2371,6 +2357,27 @@ export default {
         observer.observe(document.body, { childList: true, subtree: true });
       }
 
+      function convertPolygonsToLineStrings(features) {
+        return features.flatMap(feature => {
+          if (feature.geometry?.type === 'Polygon' && feature.properties?.mode === 'freehand') {
+            const coords = feature.geometry.coordinates[0];
+            return {
+              type: 'Feature',
+              geometry: {
+                type: 'LineString',
+                coordinates: coords.slice(0, -1),
+              },
+              properties: {
+                ...feature.properties,
+                mode: 'linestring',
+              },
+            };
+          } else {
+            return feature;
+          }
+        });
+      }
+
       function featuresCreate (features) {
         features = features.filter(feature => feature.properties?.mode !== 'select')
         features = features.map(feature => {
@@ -2413,8 +2420,11 @@ export default {
       })
 
       drawInstance.on('finish', (e) => {
-        // updateMeasureUnit('m')
-        const geojsonText = JSON.stringify(featuresCreate (drawInstance.getSnapshot()), null, 2);
+        // const features =featuresCreate (drawInstance.getSnapshot())
+        const features = convertPolygonsToLineStrings(featuresCreate (drawInstance.getSnapshot()))
+        drawInstance.clear();
+        drawInstance.addFeatures(features);
+        const geojsonText = JSON.stringify(features, null, 2);
         this.$store.state.drawGeojsonText = geojsonText
         this.updatePermalink()
       });
@@ -2423,13 +2433,7 @@ export default {
         this.$store.state.drawGeojsonText = ''
         this.updatePermalink()
       });
-
-      // drawInstance.on('feature-deleted', (e) => {
-      //   alert(99)
-      // })
-
-
-
+      
       // document.addEventListener('keydown', (e) => {
       //   // MacのBackspaceに相当するキー
       //   if (e.key === 'Backspace') {
@@ -3775,6 +3779,7 @@ export default {
           // マップ上でポリゴンをクリックしたときのイベントリスナー
           let highlightCounter = 0;
           map.on('click', 'oh-amx-a-fude', (e) => {
+            if (!this.$store.state.isRenzoku) return
             console.log(this.$store.state.highlightedChibans)
             // this.$store.state.highlightedChibans = new Set()
             if (e.features && e.features.length > 0) {
@@ -3951,6 +3956,7 @@ export default {
           'oh-chibanzu-香芝市','oh-chibanzu-直方市','oh-chibanzu-西粟倉村']
         layers.forEach(layer => {
           map.on('click', layer, (e) => {
+            if (!this.$store.state.isRenzoku) return
             if (e.features && e.features.length > 0) {
               let targetId
               if (e.features[0].properties['id'] !== undefined) {

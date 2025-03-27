@@ -168,7 +168,6 @@
           label="連続選択"
           color="primary"
           style="height: 40px; margin-top: -15px;"
-          v-bind="props"
       />
     </div>
     <div class="color-container">
@@ -246,6 +245,7 @@ export default {
       },
       set(value) {
         this.$store.state.isRenzoku = value
+        if (!value) this.resetFeatureColors()
       }
     },
     s_chibanText: {

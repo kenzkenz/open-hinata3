@@ -121,7 +121,6 @@
             label="連続選択"
             color="primary"
             style="height: 20px; margin-top: -30px;padding-bottom: 30px"
-            v-bind="props"
         />
 <!--      <v-tooltip top>-->
 <!--        <template v-slot:activator="{ props }">-->
@@ -264,6 +263,7 @@ export default {
       },
       set(value) {
         this.$store.state.isRenzoku = value
+        if (!value) this.resetFeatureColors()
       }
     },
   },
