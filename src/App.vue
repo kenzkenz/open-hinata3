@@ -2433,7 +2433,7 @@ export default {
         this.$store.state.drawGeojsonText = ''
         this.updatePermalink()
       });
-      
+
       // document.addEventListener('keydown', (e) => {
       //   // MacのBackspaceに相当するキー
       //   if (e.key === 'Backspace') {
