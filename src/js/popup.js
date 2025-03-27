@@ -243,7 +243,7 @@ function urlByLayerId (layerId) {
     return [RasterTileUrl,legend,zoom]
 }
 export function popup(e,map,mapName,mapFlg) {
-
+    enableMotionPermission()
     let html = ''
     let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
     console.log(features[0])
@@ -3595,8 +3595,6 @@ function enableMotionPermission() {
         console.log('モーションセンサーの許可は不要です');
     }
 }
-
-
 
 function createPopup(map, coordinates, htmlContent, mapName) {
 
