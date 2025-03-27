@@ -3575,18 +3575,30 @@ export function popup(e,map,mapName,mapFlg) {
     }
 }
 
-let isGoogleMapsLoaded = false;
-
-function onGoogleMapsLoaded() {
-    isGoogleMapsLoaded = true;
+function enableMotionPermission() {
+    if (
+        typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function'
+    ) {
+        // iOS (Safariなど)
+        DeviceOrientationEvent.requestPermission()
+            .then(permissionState => {
+                if (permissionState === 'granted') {
+                    console.log('📱 モーションセンサーの使用が許可されました');
+                } else {
+                    alert('モーションセンサーが許可されていません');
+                }
+            })
+            .catch(console.error);
+    } else {
+        // Android / PC（多くは許可不要）
+        console.log('モーションセンサーの許可は不要です');
+    }
 }
 
-function createPopup(map, coordinates, htmlContent, mapName) {
 
-    // if (!isGoogleMapsLoaded) {
-    //     alert("Google Maps APIがまだ読み込まれていません");
-    //     return;
-    // }
+
+function createPopup(map, coordinates, htmlContent, mapName) {
 
     // ストリートビューとGoogleマップへのリンクを追加
     const [lng, lat] = coordinates;
@@ -3605,7 +3617,6 @@ function createPopup(map, coordinates, htmlContent, mapName) {
     popups.forEach(popup => popup.remove());
     popups.length = 0;
 
-
     // ポップアップを作成して地図に追加
     const popup = new maplibregl.Popup({ closeButton: true, maxWidth: "350px" })
         .setLngLat(coordinates)
@@ -3619,12 +3630,25 @@ function createPopup(map, coordinates, htmlContent, mapName) {
     // ストリートビューを挿入
     const container = document.querySelector('.street-view');
     if (container) {
-        const panorama = new window.google.maps.StreetViewPanorama(container, {
-            position: {lat: lat, lng: lng},
-            pov: {heading: 34, pitch: 10},
-            zoom: 1,
-            disableDefaultUI: true, // これでUIをすべて非表示にする
-        })
+        // const panorama = new window.google.maps.StreetViewPanorama(container, {
+        //     position: {lat: lat, lng: lng},
+        //     pov: {heading: 34, pitch: 10},
+        //     zoom: 1,
+        //     disableDefaultUI: true, // これでUIをすべて非表示にする
+        // })
+        async function setupStreetViewWithMotion() {
+            await enableMotionPermission(); // ← 先に許可をもらう
+            const container = document.querySelector('.street-view');
+            if (container) {
+                const panorama = new window.google.maps.StreetViewPanorama(container, {
+                    position: {lat: lat, lng: lng},
+                    pov: { heading: 34, pitch: 10 },
+                    zoom: 1,
+                    disableDefaultUI: true,
+                });
+            }
+        }
+        setupStreetViewWithMotion()
     }
 
     // スクロールリセット（ポップアップ内のスクロール位置をリセット）

@@ -542,7 +542,7 @@ import {
   simaLoadForUser,
   tileGenerateForUser1file, tileGenerateForUserJpg, tileGenerateForUserPdf, tileGenerateForUserPng,
   tileGenerateForUserTfw,
-  transformGeoJSONToEPSG4326, updateMeasureUnit, userKmzSet, userSimaSet,
+  transformGeoJSONToEPSG4326, userKmzSet, userSimaSet,
   zahyokei, zipDownloadSimaText
 } from '@/js/downLoad'
 
@@ -1408,7 +1408,7 @@ export default {
           map.moveLayer('terradraw-measure-polygon-label')
           map.moveLayer('terradraw-measure-line-label')
           map.moveLayer('terradraw-measure-line-node')
-          updateMeasureUnit('m')
+          // updateMeasureUnit('m')
         },0)
         this.showDrawUI = true
       } else {
@@ -2371,6 +2371,19 @@ export default {
         observer.observe(document.body, { childList: true, subtree: true });
       }
 
+      function featuresCreate (features) {
+        features = features.filter(feature => feature.properties?.mode !== 'select')
+        features = features.map(feature => {
+          const newProps = {...feature.properties};
+          delete newProps.selected;
+          return {
+            ...feature,
+            properties: newProps,
+          };
+        })
+        return features
+      }
+
       function addCustomButton(toolbar) {
         const customButton = document.createElement("button");
         // customButton.className = "custom-button maplibregl-terradraw-add-control hidden maplibregl-terradraw-download-button";
@@ -2379,7 +2392,8 @@ export default {
         customButton.setAttribute("type", "button");
         customButton.innerHTML = '<p style="margin-top: -18px;">KML</p>';
         customButton.onclick = () => {
-          const features = drawInstance.getSnapshot();
+          // const features = drawInstance.getSnapshot();
+          const features = featuresCreate (drawInstance.getSnapshot())
           const geojson = {
             "type": "FeatureCollection",
             "features": features
@@ -2395,13 +2409,12 @@ export default {
       // MapLibre のロード完了後に監視開始
       map.on('load', () => {
         observeToolbar()
-        this.drawControl.distancePrecision = 100
+        // this.drawControl.distancePrecision = 100
       })
 
       drawInstance.on('finish', (e) => {
-        updateMeasureUnit('m')
-        const snapshot = drawInstance.getSnapshot();
-        const geojsonText = JSON.stringify(snapshot, null, 2);
+        // updateMeasureUnit('m')
+        const geojsonText = JSON.stringify(featuresCreate (drawInstance.getSnapshot()), null, 2);
         this.$store.state.drawGeojsonText = geojsonText
         this.updatePermalink()
       });
@@ -2660,8 +2673,8 @@ export default {
 
           if (params.drawGeojsonText) {
             this.$store.state.drawGeojsonText = params.drawGeojsonText
-            const geojson = JSON.parse(this.$store.state.drawGeojsonText);
-            drawInstance.addFeatures(geojson);
+            const features = JSON.parse(this.$store.state.drawGeojsonText);
+            drawInstance.addFeatures(features);
             this.drawControl.recalc()
           }
 

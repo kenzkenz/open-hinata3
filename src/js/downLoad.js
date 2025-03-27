@@ -6702,13 +6702,15 @@ export const labelTextFieldInMeters = [
 
 export const labelTextFieldInCentimeters = [
     'concat',
-    ['/', ['round', ['*', ['*', ['get', 'distance'], 1000], 100]], 100],
+    // ['/', ['round', ['*', ['*', ['get', 'distance'], 1000], 100]], 100],
+    ['get', 'distance'],
     ' m',
     [
         'case',
         ['==', ['get', 'total'], 0],
         '',
-        ['concat', '\n(', ['/', ['round',  ['*', ['*', ['get', 'total'], 1000], 100]], 100], ' m', ')'],
+        // ['concat', '\n(', ['/', ['round',  ['*', ['*', ['get', 'total'], 1000], 100]], 100], ' m', ')'],
+        ['concat', '\n(', ['/', ['get', 'total'], ' m', ')']]
     ],
     [//未修正
         'case',
@@ -6719,18 +6721,18 @@ export const labelTextFieldInCentimeters = [
 ];
 
 export function updateMeasureUnit(unit) {
-    let textField
-    if (unit === 'm') {
-        textField = labelTextFieldInCentimeters
-    }
-    const maps = [store.state.map01,store.state.map02]
-    maps.forEach(map => {
-        map.setLayoutProperty(
-            'terradraw-measure-line-label',
-            'text-field',
-            textField
-        );
-        // map.setPaintProperty('td-linestring', 'line-color', 'dodgerblue')
-        // map.setPaintProperty('td-polygon-outline', 'line-color', 'dodgerblue')
-    })
+    // let textField
+    // if (unit === 'm') {
+    //     textField = labelTextFieldInCentimeters
+    // }
+    // const maps = [store.state.map01,store.state.map02]
+    // maps.forEach(map => {
+    //     map.setLayoutProperty(
+    //         'terradraw-measure-line-label',
+    //         'text-field',
+    //         textField
+    //     );
+    //     // map.setPaintProperty('td-linestring', 'line-color', 'dodgerblue')
+    //     // map.setPaintProperty('td-polygon-outline', 'line-color', 'dodgerblue')
+    // })
 }
