@@ -2424,6 +2424,11 @@ export default {
         const features = convertPolygonsToLineStrings(featuresCreate (drawInstance.getSnapshot()))
         drawInstance.clear();
         drawInstance.addFeatures(features);
+        setTimeout(() => {
+          map.moveLayer( 'terradraw-measure-polygon-label')
+          map.moveLayer( 'terradraw-measure-line-label')
+          map.moveLayer( 'terradraw-measure-line-node')
+        },500)
         const geojsonText = JSON.stringify(features, null, 2);
         this.$store.state.drawGeojsonText = geojsonText
         this.updatePermalink()
