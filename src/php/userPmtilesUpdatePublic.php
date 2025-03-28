@@ -15,7 +15,7 @@ try {
         ':public' => $public,
     ]);
 
-    $sql = "SELECT * FROM userpmtiles WHERE public = 1";
+    $sql = "SELECT * FROM userpmtiles WHERE public IN (1, 3) ";
     $stmt1 = $pdo->prepare($sql);
     $stmt1->execute();
 

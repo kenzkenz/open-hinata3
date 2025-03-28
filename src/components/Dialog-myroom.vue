@@ -1384,12 +1384,12 @@ export default {
         }
       }).then(function (response) {
         vm.pmtileSelectPublic()
-        console.log(response)
+        console.log(response.data.publics[0].public)
         let cities = response.data.publics.map(v => {
           return {
             citycode:v.citycode,
             pmtilesurl:v.url,
-            public: 1,
+            public: Number(v.public),
             page: ''
           }
         })

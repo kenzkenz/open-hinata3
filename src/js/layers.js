@@ -161,6 +161,8 @@ const cityPmtilesPolygonLayer = {
             'blue', // public が 1 のとき
             ['==', ['get', 'public'], 2],
             'green', // public が 2 のとき
+            ['==', ['get', 'public'], 3],
+            'gray', // public が 3 のとき
             'rgba(255,255,255,0.1)'
         ],
     },
@@ -226,6 +228,8 @@ const cityGeojsonPolygonLayer = {
             'blue', // public が 1 のとき
             ['==', ['get', 'public'], 2],
             'green', // public が 2 のとき
+            ['==', ['get', 'gray'], 3],
+            'green', // public が 3 のとき
             'rgba(255,255,255,0.1)'
         ],
     },

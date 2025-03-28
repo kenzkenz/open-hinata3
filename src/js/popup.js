@@ -3390,19 +3390,22 @@ export function popup(e,map,mapName,mapFlg) {
                 let publicType
                 switch (props.public) {
                     case 1:
-                        publicType = 'ユーザーによる開示請求'
+                        publicType = '入手方法＝ユーザーによる開示請求'
                         break
                     case 2:
-                        publicType = '<a target="_blank" href=' + props.page + '> オープンデータ</a>'
+                        publicType = '<a target="_blank" href=' + props.page + '>入手方法＝オープンデータ</a>'
+                        break
+                    case 3:
+                        publicType = '<span style="font-size: smaller;">開示請求により入手できたが公開の可否不明</span>'
                         break
                     default:
-                        publicType = '未取得'
+                        publicType = '入手方法＝未取得'
                 }
                 if (html.indexOf('oh-city-geojson-poligon-layer') === -1) {
                     html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                     html +=
                         '<div class="oh-city-geojson-poligon-layer" font-weight: normal; color: #333;line-height: 25px;">' +
-                        '<span style="font-size:16px;">入手方法＝' + publicType + '</span><hr>' +
+                        '<span style="font-size:16px;">' + publicType + '</span><hr>' +
                         '<span style="font-size:22px;">' + props.N03_001 + props.N03_004 + '</span>' +
                         '</div>'
                 }
