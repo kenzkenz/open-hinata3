@@ -1884,11 +1884,11 @@ export default {
           .then(response => {
             window.history.pushState(null, 'map', "?s=" + response.data.urlid)
             console.log(window.location.pathname)
-            let pathName = ''
+            let pathName = '/'
             if (window.location.pathname !== '/') {
               pathName = window.location.pathname
             }
-            this.$store.state.url = window.location.protocol + '//' + window.location.host + pathName + "/?s=" + response.data.urlid
+            this.$store.state.url = window.location.protocol + '//' + window.location.host + pathName + "?s=" + response.data.urlid
             console.log('保存成功')
           })
           .catch(error => {
