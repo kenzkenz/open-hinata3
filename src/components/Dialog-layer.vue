@@ -1198,6 +1198,7 @@ export default {
 .center-div {
   height: 8px;
   background-color:rgba(0,60,136,0.5);
+  background-color:var(--main-color);
   cursor: grab;
 }
 .second-div {
@@ -1211,6 +1212,10 @@ export default {
   color:white;
   background-color: rgba(132,163,213,1);
   border-bottom: #fff 1px solid;
+
+  /*color:gray;*/
+  background-color: #ffcbef;
+  border-bottom: #000 1px solid;
 }
 .trash-div{
   font-size: x-large;
@@ -1237,6 +1242,7 @@ export default {
   width:30px;
   height:100%;
   background-color:rgba(0,60,136,0.5);
+  background-color:var(--main-color);
   font-size: x-large;
   padding-left: 6px;
   padding-top: 6px;
@@ -1248,6 +1254,8 @@ export default {
   left:80px;
   width:calc(100% - 80px);
   padding-left: 5px;
+
+  color:gray;/**/
 }
 .visible-layer-div {
   position:absolute;

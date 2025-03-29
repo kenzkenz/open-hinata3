@@ -230,8 +230,8 @@ export default {
     .drag-handle{
       height: 30px;
       padding: 5px;
-      /*background-color: rgba(0,60,136,0.5);*/
       background-color: rgb(50,101,186);
+      background-color:var(--main-color);
       border-top-left-radius: 4px;
       border-top-right-radius: 4px;
       cursor: grab;

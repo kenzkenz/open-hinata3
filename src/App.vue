@@ -1,11 +1,11 @@
 <script setup>
 import { user as user1 } from "@/authState"; // グローバルの認証情報を取得
+import SakuraEffect from './components/SakuraEffect.vue';
 </script>
 
 <template>
   <v-app>
     <v-main>
-
       <v-snackbar v-model="loadingSnackbar"
                   :timeout="-1"
                   color="primary">
@@ -41,12 +41,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   公共座標{{ number }}系
                 </option>
               </select>
-<!--              <v-select class="scrollable-content"-->
-<!--                        v-model="s_ocrAccuracy"-->
-<!--                        :items="[1,2,4]"-->
-<!--                        label="OCR精度を選択してください。通常は1です。"-->
-<!--                        outlined-->
-<!--              ></v-select>-->
             </div>
             <div v-else>
               <v-select class="scrollable-content"
@@ -55,12 +49,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                         label="座標系を選択してください"
                         outlined
               ></v-select>
-<!--              <v-select class="scrollable-content"-->
-<!--                        v-model="s_ocrAccuracy"-->
-<!--                        :items="[1,2,4]"-->
-<!--                        label="OCR精度を選択してください。通常は1です。"-->
-<!--                        outlined-->
-<!--              ></v-select>-->
             </div>
             <v-btn @click="imagePngLoad">png読込開始</v-btn>
           </v-card-text>
@@ -449,13 +437,11 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <div id="map00">
-
         <img class='loadingImg' src="https://kenzkenz.xsrv.jp/open-hinata3/img/icons/loading2.gif">
         <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="(mapName === 'map01'|| mapName === 'map02' && s_map2Flg)" @click="btnPosition">
-
           <v-progress-linear  v-if="s_loading" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
           <v-progress-linear  v-if="s_loading2" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
-
+          <SakuraEffect />
           <div id="pointer1" class="pointer" v-if="mapName === 'map01'"></div>
           <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
 
@@ -511,6 +497,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 </template>
 
 <script>
+
 import {mouseMoveForPopup, popup} from "@/js/popup"
 import { CompassControl } from 'maplibre-gl-compass'
 import shp from "shpjs"
@@ -4383,6 +4370,14 @@ export default {
 </style>
 
 <style>
+:root {
+  --main-color: rgb(50,101,186);
+  --main-color: #f17ecd;
+}
+v-btn, .button {
+  background-color: var(--main-color);
+}
+
 html, body {
   overscroll-behavior: none;
 
