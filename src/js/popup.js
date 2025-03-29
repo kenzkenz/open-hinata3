@@ -3402,7 +3402,7 @@ export function popup(e,map,mapName,mapFlg) {
                         publicType = '入手方法＝未取得'
                 }
                 if (html.indexOf('oh-city-geojson-poligon-layer') === -1) {
-                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html += '<div class="layer-label-div">全国地番図公開マップ</div>'
                     html +=
                         '<div class="oh-city-geojson-poligon-layer" font-weight: normal; color: #333;line-height: 25px;">' +
                         '<span style="font-size:16px;">' + publicType + '</span><hr>' +

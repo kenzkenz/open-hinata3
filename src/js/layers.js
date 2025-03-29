@@ -8682,7 +8682,7 @@ const layers01 = [
     },
     {
         id: 'oh-chibanzu-all2',
-        label: "全国地番図公開マップ",
+        label: '<span style="color:navy">全国地番図公開マップ</span>',
         // sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
         // layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
         sources: [cityPmtilesSource,...chibanzuSources,...publicSources],
@@ -8802,7 +8802,7 @@ const layers01 = [
                     // },
                     {
                         id: 'oh-chibanzu-all2',
-                        label: "全国地番図公開マップ",
+                        label: '<span style="color:navy">全国地番図公開マップ</span>',
                         // sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
                         // layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
                         sources: [cityPmtilesSource,...chibanzuSources,...publicSources],
@@ -10768,3 +10768,4 @@ export const layers = {
     map01: layers01,
     map02: layers02
 }
+console.log(layers)

@@ -140,7 +140,8 @@
     </v-card>
   </v-dialog>
   <div :style="menuContentSize">
-    <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
+<!--    <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>-->
+    <div style="font-size: large;margin-bottom: 10px;" v-html="item.label"/>
     <div v-if="item.id === 'oh-chibanzu-all2'" style="font-size: small">
       オープンデータは「緑色」<br>開示請求且つ公開可能は「青色」<br>
       開示請求により入手できたが公開の可否不明は「灰色」

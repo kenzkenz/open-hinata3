@@ -2,6 +2,7 @@
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div :id="'container-div-' + mapName" :style="menuContentSize" class="container-div">
       <div :id="'first-div-' + mapName" class="first-div">
+
         <draggable @start="onStart" @end="onEnd" v-model="s_selectedLayers[mapName]" item-key="id" handle=".handle-div">
           <template #item="{element}">
             <div class="drag-item">
@@ -17,9 +18,10 @@
                 <v-icon v-if="element.ext">mdi-cog</v-icon>
                 <v-icon v-if="!element.ext">mdi-information</v-icon>
               </div>
-              <div class="label-div">{{element.label}}</div>
+<!--              <div class="label-div">{{element.label}}</div>-->
+              <div class="label-div" v-html="element.label" />
+<!--              <pre>{{ element.label }}</pre>-->
               <div class="range-div">
-<!--                <input type="range" min="0" max="1" step="0.01" class="range" v-model.number="element.opacity" @input="changeSlider(element)"/>-->
                 <input type="range" min="0" max="1" step="0.01" class="range" v-model.number="element.opacity" @input="inputSlider(element)" @change="changeSlider" @mouseover="changeWatchFlg(false)" @mouseleave="changeWatchFlg(true)"/>
               </div>
               <div class="trash-div" @click="removeLayer(element.id)"><i class="fa-sharp fa-solid fa-trash-arrow-up hover"></i></div>
@@ -35,13 +37,26 @@
 
       <div :id="'second-div-' + mapName" :style="s_secondDivStyle" class="second-div scrollable-content">
         <v-text-field label="地図抽出" v-model="searchText" style="margin-top: 10px"></v-text-field>
+<!--        <Tree-->
+<!--            :nodes="layers"-->
+<!--            :search-text="searchText"-->
+<!--            :use-checkbox="false"-->
+<!--            :use-icon="true"-->
+<!--            @nodeClick="onNodeClick"-->
+<!--        />-->
         <Tree
             :nodes="layers"
             :search-text="searchText"
             :use-checkbox="false"
             :use-icon="true"
             @nodeClick="onNodeClick"
-        />
+        >
+          <!-- カスタム描画 -->
+          <template #tree-node="{ node }">
+            <div v-html="node.label"></div>
+<!--            <pre style="display:none">{{ console.log('ラベル内容:', node.label) }}</pre>-->
+          </template>
+        </Tree>
       </div>
     </div>
   </Dialog>
@@ -58,8 +73,10 @@ import {
   simaToGeoJSON, updateMeasureUnit, userPmtileSet
 } from "@/js/downLoad";
 import * as Layers from '@/js/layers'
-import Tree from "vue3-tree"
-import "vue3-tree/dist/style.css"
+// import Tree from "vue3-tree"
+import Tree from '@/components/custom-tree/Tree.vue'
+// import "vue3-tree/dist/style.css"
+import '@/components/custom-tree/tree-style.css'
 import draggable from "vuedraggable"
 import mw5 from '@/js/mw5'
 import * as turf from '@turf/turf'
