@@ -17,7 +17,6 @@ let animationFrameId;
 const petals = [];
 const petalCount = 50;
 const petalImage = new Image();
-// petalImage.src = 'https://chicodeza.com/wordpress/wp-content/uploads/sakurasozai-09.png';
 petalImage.src = 'https://kenzkenz.xsrv.jp/open-hinata3/img/sakurasozai-09.png';
 
 function random(min, max) {
@@ -27,6 +26,7 @@ function random(min, max) {
 class Petal {
   constructor() {
     this.reset();
+    this.alpha = 1; // 追加: 透明度
   }
   reset() {
     this.x = random(0, width);
@@ -36,17 +36,24 @@ class Petal {
     this.speedY = random(1, 3);
     this.angle = random(0, 2 * Math.PI);
     this.spin = random(-0.02, 0.02);
+    this.alpha = 1;
   }
-  update() {
+  update(fade) {
     this.x += this.speedX;
     this.y += this.speedY;
     this.angle += this.spin;
-    if (this.y > height || this.x < -50 || this.x > width + 50) {
-      this.reset();
+    if (fade && this.alpha > 0) {
+      this.alpha -= 0.01; // 少しずつ透明に
+    }
+    if (this.y > height || this.x < -50 || this.x > width + 50 || this.alpha <= 0) {
+      if (!fade) {
+        this.reset();
+      }
     }
   }
   draw() {
     ctx.save();
+    ctx.globalAlpha = this.alpha;
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
     ctx.drawImage(petalImage, -this.radius / 2, -this.radius / 2, this.radius, this.radius);
@@ -54,10 +61,14 @@ class Petal {
   }
 }
 
+let fadeOut = false;
+let startFadeTimeout;
+let endFadeTimeout;
+
 function animate() {
   ctx.clearRect(0, 0, width, height);
   for (let petal of petals) {
-    petal.update();
+    petal.update(fadeOut);
     petal.draw();
   }
   animationFrameId = requestAnimationFrame(animate);
@@ -76,11 +87,15 @@ onMounted(() => {
   }
   petalImage.onload = () => {
     animate();
-    // 停止用のタイマー（20秒後）＋ フェードアウト
-    setTimeout(() => {
-      cancelAnimationFrame(animationFrameId);
-      canvasStyle.value.opacity = 0;
+    // フェードアウト開始を20秒後に設定
+    startFadeTimeout = setTimeout(() => {
+      fadeOut = true;
     }, 20000);
+    // canvas自体の非表示をさらに5秒後（25秒後）に設定
+    // endFadeTimeout = setTimeout(() => {
+    //   canvasStyle.value.opacity = 0;
+    //   cancelAnimationFrame(animationFrameId);
+    // }, 20000);
   };
   window.addEventListener('resize', resizeCanvas);
 });
