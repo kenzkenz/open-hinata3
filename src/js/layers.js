@@ -9267,7 +9267,7 @@ const layers01 = [
                 label: "地理院ベクター",
                 sources: fxBasicSources,
                 layers: fxBasicLayers,
-                ext: {name:'extChiriin'}
+                // ext: {name:'extChiriin'}
             },
             {
                 id: 'oh-vector-mono',
@@ -9281,7 +9281,7 @@ const layers01 = [
                 label: "地理院ベクター・ダーク",
                 sources: fxDarkSources,
                 layers: fxDarkLayers,
-                ext: {name:'extChiriinDark'}
+                // ext: {name:'extChiriinDark'}
             },
             // {
             //     id: 'oh-osm',

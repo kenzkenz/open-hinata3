@@ -6,6 +6,24 @@
         <v-icon @click="dialogForDxf = false">mdi-close</v-icon>
       </v-card-title>
       <v-card-text>
+
+        <div v-if="s_isAndroid" class="select-container">
+          <select id="selectBox" v-model="s_zahyokei" class="custom-select">
+            <option value="" disabled selected>座標系を選択してください。</option>
+            <option v-for="number in 19" :key="number" :value="`公共座標${number}系`">
+              公共座標{{ number }}系
+            </option>
+          </select>
+        </div>
+        <div v-else>
+          <v-select class="scrollable-content"
+                    v-model="s_zahyokei"
+                    :items="items"
+                    label="座標系を選択してください"
+                    outlined
+          ></v-select>
+        </div>
+
         <p style="margin-bottom: 10px;">レイヤーを選択してください。</p>
         <v-btn @click="saveDxf1">出力開始</v-btn>
         <v-btn style="margin-left: 10px;" @click="allon">全てオン</v-btn>
@@ -45,6 +63,16 @@ export default {
   name: 'ext-chiriin',
   props: ['mapName','item'],
   data: () => ({
+    items: [
+      // 'WGS84',
+      '公共座標1系', '公共座標2系', '公共座標3系',
+      '公共座標4系', '公共座標5系', '公共座標6系',
+      '公共座標7系', '公共座標8系', '公共座標9系',
+      '公共座標10系', '公共座標11系', '公共座標12系',
+      '公共座標13系', '公共座標14系', '公共座標15系',
+      '公共座標16系', '公共座標17系', '公共座標18系',
+      '公共座標19系'
+    ],
     layerVisibility: {},
     filteredLayerIds: [],
     dialogForDxf: false,
@@ -55,6 +83,9 @@ export default {
     menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'hidden', 'user-select': 'text', 'font-size':'large'}
   }),
   computed: {
+    s_isAndroid () {
+      return this.$store.state.isAndroid
+    },
     s_userId () {
       return this.$store.state.userId
     },
@@ -112,6 +143,10 @@ export default {
       this.dialogForDxf = true
     },
     saveDxf1 () {
+      if (!this.s_zahyokei) {
+        alert('座標系を選択してください。')
+        return
+      }
       function getTrueKeys(obj) {
         return Object.keys(obj).filter(key => obj[key] === true);
       }

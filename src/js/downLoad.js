@@ -5965,6 +5965,37 @@ export const wsg84ToJgd = (coordinates) => {
     return proj4("EPSG:4326", code, coordinates);
 };
 
+export const wsg84ToJgdForGeojson = (geojson) => {
+    const code = zahyokei.find(item => item.kei === store.state.zahyokei).code;
+
+    const transformCoords = (coords) => {
+        if (typeof coords[0] === 'number') {
+            return proj4("EPSG:4326", code, coords);
+        }
+        return coords.map(transformCoords);
+    };
+
+    const transformed = JSON.parse(JSON.stringify(geojson)); // deep copy
+
+    if (geojson.type === 'FeatureCollection') {
+        transformed.features = geojson.features.map(feature => {
+            return {
+                ...feature,
+                geometry: {
+                    ...feature.geometry,
+                    coordinates: transformCoords(feature.geometry.coordinates),
+                },
+            };
+        });
+    } else if (geojson.type === 'Feature') {
+        transformed.geometry.coordinates = transformCoords(geojson.geometry.coordinates);
+    } else if (geojson.coordinates) {
+        transformed.coordinates = transformCoords(geojson.coordinates);
+    }
+
+    return transformed;
+};
+
 export async function userSimaSet(name, url, id, zahyokei, simaText, isFirst) {
     const map = store.state.map01;
     try {
@@ -6561,7 +6592,7 @@ export function saveDxfForChiriin (map,layerIds) {
             "features": allFeatures
         };
     }
-    const geojson = getGeoJSONFromLayers(map, layerIds)
+    const geojson = wsg84ToJgdForGeojson(getGeoJSONFromLayers(map, layerIds))
     try {
         const dxfString = geojsonToDXF(geojson);
         // DXFファイルとしてダウンロード
