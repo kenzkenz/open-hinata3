@@ -3578,7 +3578,7 @@ export function popup(e,map,mapName,mapFlg) {
             lng = coordinates[0]
             lat = coordinates[1]
         }
-        if (html) {
+        if (html || store.state.mapillaryFlg) {
             createPopup(map, [lng,lat], html, mapName)
         }
     }
@@ -3620,7 +3620,7 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
     // ポップアップHTMLを生成
     let popupHtml = `<div class="popup-html-div">${htmlContent}${streetView}</div>`;
     // マピラリー---------------------------------------------------------------------------------------------------------
-    if (htmlContent.includes('street-view')) {
+    // if (htmlContent.includes('street-view')) {
         if (store.state.mapillaryFlg) {
             const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c';
             async function mapillary() {
@@ -3638,7 +3638,7 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
             htmlContent = htmlContent.replace(/<div class="street-view"[^>]*>.*?<\/div>/gs, '');
             popupHtml = `<div class="popup-html-div">${htmlContent}${img}${streetView}</div>`;
         }
-    }
+    // }
     // マピラリーここまで----------------------------------------------------------------------------------------------------
 
     // 既存のポップアップを全て削除
