@@ -14,8 +14,8 @@ export default createStore({
         map02:{name:'shareDialog',style: {top: '65px', left: '10px', 'z-index': 1, height: 'auto', 'width': '250px', display: 'none'}},
       },
       menuDialog: {
-        map01:{name:'menuDialog',style: {top: '65px', left: '10px', 'z-index': 1, height: 'auto', 'width': '250px', display: 'none'}},
-        map02:{name:'menuDialog',style: {top: '65px', left: '10px', 'z-index': 1, height: 'auto', 'width': '250px', display: 'none'}},
+        map01:{name:'menuDialog',style: {top: '65px', left: '10px', 'z-index': 1, height: 'auto', 'width': '300px', display: 'none'}},
+        map02:{name:'menuDialog',style: {top: '65px', left: '10px', 'z-index': 1, height: 'auto', 'width': '300px', display: 'none'}},
       },
       myroomDialog: {
         map01:{name:'myroomDialog',style: {top: '65px', left: '10px', 'z-index': 1, height: 'auto', 'width': '250px', display: 'none'}},
@@ -130,6 +130,7 @@ export default createStore({
     pmtilesName: '',
     pmtilesPropertieName: '',
     address: '',
+    mapillaryFlg: false,
     //------------------------
     highwayYear:{
       map01: 2024,

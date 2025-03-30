@@ -109,11 +109,11 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <div>
-        <p v-if="user1">ようこそ、{{ user1.displayName || "ゲスト" }}さん！</p>
+        <p v-if="user1"><strong>ようこそ、{{ user1.displayName || "ゲスト" }}さん！</strong></p>
         <p v-else></p>
       </div>
       <p style="margin-top: 10px;margin-bottom: 10px;">
-        v0.694
+        v0.695
       </p>
       <v-btn @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
@@ -126,11 +126,13 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
       <v-switch style="height: 40px;" v-model="s_isPitch" @change="changePitch" label="２画面時に傾きを同期" color="primary" />
 
-      <v-switch style="height: 40px;margin-bottom: 20px;" v-model="s_isWindow" label="ウインドウ復帰" color="primary" />
+      <v-switch style="height: 40px;" v-model="s_isWindow" label="ウインドウ復帰" color="primary" />
+
+      <v-switch style="height: 40px;margin-bottom: 20px;" v-model="s_mapillary" label="mapillary" color="primary" />
 
       標高を強調します。{{s_terrainLevel}}倍
       <div class="range-div">
-        <input type="range" min="1" max="10" step="0.1" class="range" v-model.number="s_terrainLevel" @input="terrainLevelInput"/>
+        <input style="width: 200px" type="range" min="1" max="10" step="0.1" class="range" v-model.number="s_terrainLevel" @input="terrainLevelInput"/>
       </div>
 <!--      <v-btn @click="addLayerDiv=!addLayerDiv">レイヤー追加（XYZタイル）</v-btn>-->
 <!--      <div v-if="addLayerDiv">-->
@@ -281,6 +283,15 @@ export default {
     },
     s_userId () {
       return this.$store.state.userId
+    },
+    s_mapillary: {
+      get() {
+        return this.$store.state.mapillaryFlg
+      },
+      set(value) {
+        this.$store.state.mapillaryFlg = value
+        localStorage.setItem('mapillary',value)
+      }
     },
     s_isWindow: {
       get() {
@@ -685,12 +696,16 @@ export default {
     if (localStorage.getItem('window')) {
       this.s_isWindow = JSON.parse(localStorage.getItem('window'))
     }
+    if (localStorage.getItem('mapillary')) {
+      this.s_mapillary = JSON.parse(localStorage.getItem('mapillary'))
+    }
   }
 }
 </script>
 <style scoped>
 .menu-div {
   height: auto;
+  width: 300px;
   margin: 10px;
   overflow: auto;
   user-select: text;
