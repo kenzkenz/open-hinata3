@@ -894,7 +894,7 @@ export default {
     selectedPrefCode: '',
     selectedCityCode: '',
     selectedPublic: null,
-    publicItems: [{publick:0,label:'完全非公開（マップ上は透明、詳細は非表示）'},{publick:1,label:'公開（マップ上は青色、詳細は表示）'},{publick:3,label:'非公開（マップ上は灰色、詳細は非表示）'}],
+    publicItems: [{public:0,label:'完全非公開（マップ上は透明、詳細は非表示）'},{public:3,label:'非公開（マップ上は灰色、詳細は非表示）'},{public:1,label:'公開（マップ上は青色、詳細は表示）'}],
     isPublic: false,
     drawControl: null,
     showDrawUI: false,
@@ -1255,7 +1255,7 @@ export default {
         alert("入力されていません。")
         return
       }
-      pmtilesGenerateForUser2 (this.shpGeojson,'',store.state.pmtilesPropertieName,this.selectedPrefCode,this.selectedCityCode,this.isPublic)
+      pmtilesGenerateForUser2 (this.shpGeojson,'',store.state.pmtilesPropertieName,this.selectedPrefCode,this.selectedCityCode,this.selectedPublic)
       this.dialogForShpApp = false
     },
     imagePngLoad () {

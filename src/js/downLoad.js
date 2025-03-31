@@ -6493,7 +6493,7 @@ export function userTileSet(name,url,id) {
 //         .catch(error => console.error("エラー:", error));
 //     // -------------------------------------------------------------------------------------------------
 // }
-export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,citycode,isPublic) {
+export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,citycode,selectedPublic) {
     async function insertPmtilesData(uid, name, url, url2,  chiban, bbox, length, prefcode, citycode) {
         try {
             const prefCode = String(Number(prefcode)).padStart(2, '0')
@@ -6510,14 +6510,8 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
                 }
             });
             const cityName = result[1].split(',')[3]
-            let public0
-            if (isPublic) {
-                public0 = 1
-            } else {
-                public0 = 0
-            }
-            if (public0) {
-                alert(1)
+            const public0 = selectedPublic
+            if (Number(selectedPublic) > 0) {
                 publicChk (0,0)
             }
             const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesInsert.php', new URLSearchParams({
@@ -6776,7 +6770,6 @@ export function updateMeasureUnit(unit) {
     //     // map.setPaintProperty('td-polygon-outline', 'line-color', 'dodgerblue')
     // })
 }
-
 export function publicChk (id,public0) {
     store.state.loading2 = true
     store.state.loadingMessage = '処理中です。'
