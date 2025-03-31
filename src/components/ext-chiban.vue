@@ -321,7 +321,26 @@ export default {
     },
     idForLayerId (id) {
       console.log(id)
+      const map = this.$store.state[this.mapName]
+      const features = map.queryRenderedFeatures();
+      const visibleLayers = new Set();
+      const visibleSources = new Set();
       switch (id) {
+        case 'oh-chibanzu-all2':
+          features.forEach(f => {
+            if (f.layer.id.includes('oh-chiban') && f.layer.id.split('-').length === 3) {
+              visibleLayers.add(f.layer.id);
+              if (f.layer.source) {
+                visibleSources.add(f.layer.source);
+              }
+            }
+          });
+          console.log(Array.from(visibleLayers));
+          console.log(Array.from(visibleSources));
+          this.layerId = Array.from(visibleLayers)[0]
+          this.sourceId = Array.from(visibleSources)[0]
+          this.fields = ['id']
+          break
         case 'oh-chibanzu2024':
           this.layerId = 'oh-chibanzu2024'
           this.sourceId = 'chibanzu2024-source'
@@ -572,11 +591,11 @@ export default {
           this.sourceId = 'oh-chibanzu-all-source'
           this.fields = ['id']
           break
-        case 'oh-chibanzu-all2':
-          this.layerId = 'oh-chibanzu-all2'
-          this.sourceId = 'oh-chibanzu-all2-source'
-          this.fields = ['id']
-          break
+        // case 'oh-chibanzu-all2':
+        //   this.layerId = 'oh-chibanzu-all2'
+        //   this.sourceId = 'oh-chibanzu-all2-source'
+        //   this.fields = ['id']
+        //   break
       }
       if(/^oh-chiban-/.test(id)) {
         this.layerId = id
@@ -641,10 +660,10 @@ export default {
       saveCima3(map)
     },
     saveSima () {
-      if (this.item.id === 'oh-chibanzu-all2') {
-        alert('まだこのレイヤーでは機能しません。')
-        return
-      }
+      // if (this.item.id === 'oh-chibanzu-all2') {
+      //   alert('まだこのレイヤーでは機能しません。')
+      //   return
+      // }
       const map = this.$store.state[this.mapName]
       this.idForLayerId(this.item.id)
       // saveCima(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'],true)
