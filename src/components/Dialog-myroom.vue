@@ -11,8 +11,9 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-tab value="0">SIMA</v-tab>
               <v-tab value="1">URL記憶</v-tab>
               <v-tab value="2">タイル記憶</v-tab>
-              <v-tab value="3">地番図</v-tab>
+              <v-tab @click="myChibanzu" value="3">地番図</v-tab>
               <v-tab value="31">公開地番図</v-tab>
+              <v-tab @click="kenzChibanzu" v-if="isOh3Team" value="32">kenz地番図</v-tab>
               <v-tab value="4">画像</v-tab>
               <v-tab value="5">kmz</v-tab>
               <v-tab value="6">復帰</v-tab>
@@ -128,6 +129,16 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 <!--                        @mousedown.stop-->
 <!--                        @click.stop-->
 <!--                    />-->
+                    <strong>{{ item.name }}</strong><br>
+                  </div>
+                </v-card>
+              </v-window-item>
+              <v-window-item value="32">
+                <v-card>
+                  <div style="margin-left: 0px;margin-bottom:10px;font-size: small;">
+                    kenzkenzが持つ地番図です。既にオープンデータ化されているものは含まれません。
+                  </div>
+                  <div v-for="item in jsonDataPmtile" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban,item.bbox,item.length,item.prefcode,item.citycode)">
                     <strong>{{ item.name }}</strong><br>
                   </div>
                 </v-card>
@@ -356,6 +367,7 @@ export default {
         'tb3jBL4qEPdNseETkgGkj9MmsJ42',
         'C3N0zX1NdRSIJNjoQh54ForwFnW2',
         'oi4f1BDMg3WjZXLRV44jOb9Q5VK2',
+        // 'GmzTsgclQyMkUFqVpvHVEwPsihC2'
       ]
       return oh3Team.includes(this.s_userId)
     },
@@ -468,6 +480,12 @@ export default {
     },
   },
   methods: {
+    myChibanzu () {
+      this.pmtileSelect(this.uid)
+    },
+    kenzChibanzu () {
+      this.pmtileSelect('dqyHV8DykbdSVvDXrHc7xweuKT02')
+    },
     scrapeLinks () {
       let count = 0
       const vm = this
