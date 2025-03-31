@@ -328,7 +328,8 @@ export default {
       switch (id) {
         case 'oh-chibanzu-all2':
           features.forEach(f => {
-            if (f.layer.id.includes('oh-chiban') && f.layer.id.split('-').length === 3) {
+            console.log(f.layer.id,f.layer.id.split('-').length)
+            if ((f.layer.id.includes('oh-chibanzu-') && f.layer.id.split('-').length === 3) || f.layer.id.includes('oh-chiban-')) {
               visibleLayers.add(f.layer.id);
               if (f.layer.source) {
                 visibleSources.add(f.layer.source);
@@ -660,20 +661,41 @@ export default {
       saveCima3(map)
     },
     saveSima () {
-      // if (this.item.id === 'oh-chibanzu-all2') {
-      //   alert('まだこのレイヤーでは機能しません。')
-      //   return
-      // }
       const map = this.$store.state[this.mapName]
-      this.idForLayerId(this.item.id)
-      // saveCima(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'],true)
-      console.log(this.item.id)
-      console.log(this.layerId)
-      console.log(this.sourceId)
-      console.log(this.fields)
-      console.log(this.s_zahyokei)
-      saveCima(map,this.layerId,this.sourceId,this.fields,true,this.s_zahyokei)
-      this.dialog5 = false
+      const vm = this
+      console.log(9999)
+      async function aaa () {
+        vm.idForLayerId(vm.item.id)
+        // saveCima(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'],true)
+        console.log(vm.item.id)
+        console.log(vm.layerId)
+        console.log(vm.sourceId)
+        console.log(vm.fields)
+        console.log(vm.s_zahyokei)
+
+        const layer = map.getLayer(vm.layerId);
+        let chiban = null
+        if (layer) {
+          const sourceId = layer.source;
+          const source = map.getSource(sourceId);
+          const style = map.getStyle();
+          const sourceInfo = style.sources[sourceId];
+          console.log(sourceInfo.url); // ここに `pmtiles://yourfile.pmtiles` などがあるかも
+          const url = sourceInfo.url.replace('pmtiles://', '')
+          console.log(url)
+          const response = await fetch(`https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesSelectByUrl.php?url=${url}`);
+          const data = await response.json();
+          if (data.length > 0) {
+            console.log(data[0].chiban)
+            chiban = data[0].chiban
+          } else {
+            chiban = null
+          }
+        }
+        saveCima(map, vm.layerId, vm.sourceId, vm.fields, true, vm.s_zahyokei,chiban)
+        vm.dialog5 = false
+      }
+      aaa()
     },
     saveGeojson () {
       const map = this.$store.state[this.mapName]

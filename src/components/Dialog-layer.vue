@@ -64,6 +64,8 @@
 
 <script>
 
+const registeredLayers = new Set()
+
 import {
   addImageLayer,
   addImageLayerJpg, addImageLayerPng, addTileLayer,
@@ -921,7 +923,8 @@ export default {
         // map.moveLayer(fileExtension + '-polygon-points')
       }
 
-      if (this.counter === 1 && map === this.$store.state.map01) {
+      // if (this.counter === 1 && map === this.$store.state.map01) {
+      if (map === this.$store.state.map01) {
         setTimeout(() => {
           console.log(this.$store.state.map01.getStyle().layers)
           const targetLayers = this.$store.state.map01.getStyle().layers
@@ -929,6 +932,7 @@ export default {
               .map(layer => layer.id);
           console.log(targetLayers)
           targetLayers.forEach(layer => {
+            registeredLayers.add(layer)
             console.log(`Adding click event to layer: ${layer}`);
             this.$store.state.map01.on('click', layer, (e) => {
               if (e.features && e.features.length > 0) {
@@ -946,7 +950,7 @@ export default {
             });
           });
         },100)
-        const registeredLayers = new Set();
+        // const registeredLayers = new Set();
       }
 
       this.$store.state.map01.getStyle().layers.forEach(layer => {

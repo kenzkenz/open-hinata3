@@ -260,8 +260,7 @@ export function gistUpload (map,layerId,sourceId,fields) {
 }
 
 // geojsonから最小の地番を取得する関数
-function getChibanAndHoka(geojson,isDxf) {
-
+function getChibanAndHoka(geojson,isDxf,chiban) {
     if (isDxf) {
         const filteredFeatures = geojson.features.filter(feature => {
             const geometryType = feature.geometry?.type;
@@ -275,15 +274,15 @@ function getChibanAndHoka(geojson,isDxf) {
     }
     try {
         // 地番の最小値を取得
+        let chiban0 = chiban ? chiban : '地番';
         let firstChiban = geojson.features
-            .map(feature => feature.properties?.地番) // 地番を抽出
+            .map(feature => feature.properties?.[chiban0]) // 地番を抽出
             .filter(chiban => chiban !== undefined && chiban !== null) // undefinedやnullを除外
-            .map(chiban => Number(chiban)) // 数値に変換（地番が数値型である場合）
+            .map(chiban => Number(chiban)) // 数値に変換
             .filter(chiban => !isNaN(chiban)) // NaNを除外
             .reduce((min, current) => Math.min(min, current), Infinity); // 最小値を取得
-        if (firstChiban === Infinity) {
-            // 有効な地番が見つからない場合、最初の地番を取得
-            firstChiban = geojson.features[0]?.properties?.地番 || '';
+        if (firstChiban === Infinity && geojson.features.length > 0) {
+            firstChiban = geojson.features[0].properties?.[chiban0] ?? '';
         }
         // hokaの値を設定
         let hoka = '';
@@ -334,7 +333,7 @@ async function fetchData(id) {
     return data;
 }
 
-export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, fileName, kaniFlg, zahyokei2, kukaku,jww, kei2) {
+export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, fileName, kaniFlg, zahyokei2, kukaku,jww, kei2,chiban) {
     console.log(geojson)
     geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
     console.log(geojson)
@@ -388,8 +387,8 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
 
     // 座標とカウンターを関連付けるマップ
     const coordinateMap = new Map();
-    const firstChiban = getChibanAndHoka(geojson).firstChiban
-    const hoka = getChibanAndHoka(geojson).hoka
+    const firstChiban = getChibanAndHoka(geojson,null,chiban).firstChiban
+    const hoka = getChibanAndHoka(geojson,null,chiban).hoka
     console.log(geojson)
     geojson.features.forEach((feature) => {
         let chiban = feature.properties.地番;
@@ -802,7 +801,7 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
 //     URL.revokeObjectURL(link.href);
 // }
 
-export function saveCima(map, layerId, sourceId, fields, kaniFlg, kei) {
+export function saveCima(map, layerId, sourceId, fields, kaniFlg, kei, chiban) {
     if (map.getZoom() <= 15) {
         alert('ズーム15以上にしてください。')
         return
@@ -839,7 +838,7 @@ export function saveCima(map, layerId, sourceId, fields, kaniFlg, kei) {
         geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields);
     }
     console.log(geojson)
-    convertAndDownloadGeoJSONToSIMA(map,layerId,geojson,'簡易_',kaniFlg,kei);
+    convertAndDownloadGeoJSONToSIMA(map,layerId,geojson,'簡易_',kaniFlg,kei,null,null,null,chiban);
 }
 
 // // ⭐️これは地番がない最もベーシックなもの をm単位にしたもの 1月4日時点の決定版
