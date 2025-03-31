@@ -1164,3 +1164,29 @@ tippecanoe -o nagoyashi.pmtiles \
     --minimum-zoom=0 \
     --layer=oh3 \
     nagoyashi.geojson
+
+tippecanoe -o itakoshi.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=0 \
+    --layer=chibanzu \
+    itakoshi.geojson
+
+tippecanoe -o kofushi.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=0 \
+    --layer=chibanzu \
+    kofushi.geojson

@@ -1860,7 +1860,9 @@ export const sicyosonChibanzuUrls = [
     // 福島県
     {code:'07201', name:'福島市', chiban: ['get', 'TXTCD'], position:[140.47460922099737,37.76082999999447], url:'fukushimashi2', page:'https://www.city.fukushima.fukushima.jp/d-kikaku/shise/opendate/machidukuri.html'},
     // 茨城県
+    {code:'08223', name:'潮来市', chiban: ['get', '地番'], position:[140.55540531603634,35.947116226224], url: 'itakoshi', page:'https://www.city.itako.lg.jp/opendata.php'},
     {code:'08564', name:'利根町', chiban: ['get', '地番'], position:[140.1391729153425,35.85756030920088], url: 'tonechyo', page:'https://www.town.tone.ibaraki.jp/opendata.php'},
+
     // 群馬県
     {code:'10202', name:'高崎市', chiban: ['get', '地番_地番図_label'], position:[139.00336683069094,36.32182569208747], url:'takasakishi', page:'https://www.city.takasaki.gunma.jp/page/3130.html'},
     // 埼玉県
@@ -1871,6 +1873,10 @@ export const sicyosonChibanzuUrls = [
     {code:'13211', name:'小平市', chiban: ['get', '表示地番'], position:[139.47753045767575,35.728369484747276], url:'kodairashi', page:'https://www.city.kodaira.tokyo.jp/kurashi/111/111978.html'},
     {code:'13213', name:'東村山市', chiban: ['get', 'TXTCD'], position:[139.4687322037018,35.75465000000037], url:'higashimurayamashi', page:'https://catalog.data.metro.tokyo.lg.jp/dataset/t132136d0000000005'},
     {code:'13215', name:'国立市', chiban: ['get', '表示文字列'], position:[139.44141245767452,35.68379371055923], url:'kunitachishi3', page:'https://www.city.kunitachi.tokyo.jp/soshiki/Dept01/Div03/Sec01/oshirase/11883.html'},
+    // 山梨県
+    {code:'19201', name:'甲府市', chiban: ['get', '地番'], position:[138.56829800000241,35.66205666308586], url:'kofushi', page:'https://kofu.geocloud.jp/webgis/?p=0&bt=0&mp=337-1&'},
+
+
     // 静岡県
     {code:'22100', name:'静岡市', chiban: ['get', '地番'], position:[138.38294267724638,34.974974010631584], url:'shizuokashi', page:'https://dataset.city.shizuoka.jp/dataset/1707986930/resource/4a40cc33-0aef-4426-825e-3b034347812b'},
     {code:'22211', name:'磐田市', chiban: ['get', 'TXTCD'], position:[137.85162388532535,34.7178716931619], url:'iwatashi', page:'https://www.city.iwata.shizuoka.jp/shiseijouhou/1006207/1002775.html'},

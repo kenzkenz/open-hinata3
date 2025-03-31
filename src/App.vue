@@ -3955,7 +3955,8 @@ export default {
           'oh-chibanzu-福山市','oh-chibanzu-深谷市','oh-chibanzu-伊丹市','oh-chibanzu-豊中市',
           'oh-chibanzu-姫路市','oh-chibanzu-仙台市','oh-chibanzu-高崎市','oh-chibanzu-旭川市',
           'oh-chibanzu-東村山市','oh-chibanzu-城陽市','oh-chibanzu-大山崎町','oh-chibanzu-川西市',
-          'oh-chibanzu-香芝市','oh-chibanzu-直方市','oh-chibanzu-西粟倉村']
+          'oh-chibanzu-香芝市','oh-chibanzu-直方市','oh-chibanzu-西粟倉村','oh-chibanzu-潮来市',
+          'oh-chibanzu-甲府市']
         layers.forEach(layer => {
           map.on('click', layer, (e) => {
             if (!this.$store.state.isRenzoku) return
