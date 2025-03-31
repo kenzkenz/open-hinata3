@@ -92,7 +92,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   label="市区町村名を選択してください"
                   outlined
               ></v-select>
-              <v-switch style="height: 40px;margin-top: -20px;margin-bottom: 20px;" v-model="isPublic" @change="isPublicSwitch" label="OH3上に公開" color="primary" />
+<!--              <v-switch style="height: 40px;margin-top: -20px;margin-bottom: 20px;" v-model="isPublic" @change="isPublicSwitch" label="OH3上に公開" color="primary" />-->
+              <v-select
+                  v-model="selectedPublic"
+                  :items="publicItems"
+                  item-title="label"
+                  item-value="public"
+                  label="公開方法を選択してください"
+                  outlined
+              ></v-select>
             </div>
             <v-btn @click="shpLoad">読込開始</v-btn>
           </v-card-text>
@@ -885,6 +893,8 @@ export default {
     loadingSnackbar: false,
     selectedPrefCode: '',
     selectedCityCode: '',
+    selectedPublic: null,
+    publicItems: [{publick:0,label:'完全非公開（マップ上は透明、詳細は非表示）'},{publick:1,label:'公開（マップ上は青色、詳細は表示）'},{publick:3,label:'非公開（マップ上は灰色、詳細は非表示）'}],
     isPublic: false,
     drawControl: null,
     showDrawUI: false,
