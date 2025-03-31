@@ -92,7 +92,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   label="市区町村名を選択してください"
                   outlined
               ></v-select>
-              <v-switch style="height: 40px;margin-top: -20px;margin-bottom: 20px;" v-model="isPublic" @change="isPublicSwitch" label="公開" color="primary" />
+              <v-switch style="height: 40px;margin-top: -20px;margin-bottom: 20px;" v-model="isPublic" @change="isPublicSwitch" label="OH3上に公開" color="primary" />
             </div>
             <v-btn @click="shpLoad">読込開始</v-btn>
           </v-card-text>

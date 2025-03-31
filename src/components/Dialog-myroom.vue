@@ -194,7 +194,7 @@ import {
   addImageLayerJpg,
   addImageLayerPng,
   addTileLayerForImage,
-  geojsonAddLayer, highlightSpecificFeaturesCity, iko,
+  geojsonAddLayer, highlightSpecificFeaturesCity, iko, publicChk,
   simaToGeoJSON, userKmzSet, userPmtileSet, userSimaSet, userTileSet, userXyztileSet
 } from "@/js/downLoad";
 import muni from '@/js/muni'
@@ -1374,79 +1374,81 @@ export default {
       deleteUserData(id)
     },
     publicChk (id,public0) {
-      store.state.loading2 = true
-      store.state.loadingMessage = '処理中です。'
       const vm = this
-      axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesUpdatePublic.php',{
-        params: {
-          id: id,
-          public: public0
-        }
-      }).then(function (response) {
+      async function aaa () {
+        await publicChk (id,public0)
         vm.pmtileSelectPublic()
-        console.log(response.data.publics[0].public)
-        let cities = response.data.publics.map(v => {
-          return {
-            citycode:v.citycode,
-            pmtilesurl:v.url,
-            public: Number(v.public),
-            page: ''
-          }
-        })
-        console.log(cities)
-        const cities2 = []
-        sicyosonChibanzuUrls.forEach(v => {
-          if (v.code) {
-            cities2.push({
-              citycode:v.code,
-              pmtilesurl:'999',
-              public: 2,
-              page: v.page
-            })
-          }
-        })
-        console.log(cities2)
-        cities = [...cities, ...cities2];
+      }
+      aaa()
 
-        async function cityGeojson() {
-          try {
-            const response1 = await axios.post('https://kenzkenz.duckdns.org/myphp/city_geojson.php', {
-              cities: cities
-              // cities: [{citycode:'45201',pmtilesurl:'9999'}]
-            });
-            console.log(response1)
-            if (response1.data.error) {
-              console.error('エラー:', response1.data.error);
-              // alert(`エラー: ${response.data.error}`);
-            } else {
-              console.log('成功:', response1.data);
-              // if (vm.$store.state.map01.getSource('city-geojson-source')) {
-              //   vm.$store.state.map01.getSource('city-geojson-source').setData('https://kenzkenz.duckdns.org//original-data/city.geojson?nocache=' + Date.now())
-              // } else {
-              //   cityGeojsonSource.obj.data = 'https://kenzkenz.duckdns.org//original-data/city.geojson?nocache=' + Date.now()
-              // }
-              // alert(id)
-              const maps = [vm.$store.state.map01,vm.$store.state.map02]
-              maps.forEach(map => {
-                map.getStyle().layers.forEach(layer => {
-                  if (layer.id.includes('oh-chibanL-') && layer.id.includes(id)) {
-                    map.removeLayer(layer.id)
-                  }
-                })
-              })
-              setTimeout(() => {
-                store.state.loading2 = false
-                alert('設定を反映するには再読み込みしてください。')
-              },3000)
-            }
-          } catch (error) {
-            console.error('リクエストエラー:', error);
-            alert('通信エラーが発生しました');
-          }
-        }
-        cityGeojson()
-      })
+      // store.state.loading2 = true
+      // store.state.loadingMessage = '処理中です。'
+      // const vm = this
+      // axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesUpdatePublic.php',{
+      //   params: {
+      //     id: id,
+      //     public: public0
+      //   }
+      // }).then(function (response) {
+      //   vm.pmtileSelectPublic()
+      //   console.log(response.data.publics[0].public)
+      //   let cities = response.data.publics.map(v => {
+      //     return {
+      //       citycode:v.citycode,
+      //       pmtilesurl:v.url,
+      //       public: Number(v.public),
+      //       page: ''
+      //     }
+      //   })
+      //   console.log(cities)
+      //   const cities2 = []
+      //   sicyosonChibanzuUrls.forEach(v => {
+      //     if (v.code) {
+      //       cities2.push({
+      //         citycode:v.code,
+      //         pmtilesurl:'999',
+      //         public: 2,
+      //         page: v.page
+      //       })
+      //     }
+      //   })
+      //   console.log(cities2)
+      //   cities = [...cities, ...cities2];
+      //
+      //   async function cityGeojson() {
+      //     try {
+      //       const response1 = await axios.post('https://kenzkenz.duckdns.org/myphp/city_geojson.php', {
+      //         cities: cities
+      //         // cities: [{citycode:'45201',pmtilesurl:'9999'}]
+      //       });
+      //       console.log(response1)
+      //       if (response1.data.error) {
+      //         console.error('エラー:', response1.data.error);
+      //         // alert(`エラー: ${response.data.error}`);
+      //       } else {
+      //         console.log('成功:', response1.data);
+      //         const maps = [vm.$store.state.map01,vm.$store.state.map02]
+      //         maps.forEach(map => {
+      //           map.getStyle().layers.forEach(layer => {
+      //             if (layer.id.includes('oh-chibanL-') && layer.id.includes(id)) {
+      //               map.removeLayer(layer.id)
+      //             }
+      //           })
+      //         })
+      //         setTimeout(() => {
+      //           store.state.loading2 = false
+      //           alert('設定を反映するには再読み込みしてください。')
+      //         },3000)
+      //       }
+      //     } catch (error) {
+      //       console.error('リクエストエラー:', error);
+      //       alert('通信エラーが発生しました');
+      //     }
+      //   }
+      //   cityGeojson()
+      // })
     },
+
     transparentChk (id,transparent) {
       axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userXyztileUpdateTransparent.php',{
         params: {

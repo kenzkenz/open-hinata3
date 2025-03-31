@@ -15,7 +15,7 @@ try {
         ':public' => $public,
     ]);
 
-    $sql = "SELECT * FROM userpmtiles WHERE public IN (1, 3) ";
+    $sql = "SELECT * FROM userpmtiles WHERE public IN (1, 3) ORDER BY id DESC";
     $stmt1 = $pdo->prepare($sql);
     $stmt1->execute();
 
