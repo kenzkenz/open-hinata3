@@ -1319,32 +1319,31 @@ export default {
           if (!fetchFlg) vm.$store.state.selectedLayers = slj0
         });
 
-        setTimeout(() => {
-          console.log(map.getStyle().layers)
-          const targetLayers = map.getStyle().layers
-              .filter(layer => layer.id.startsWith('oh-chiban-') && !registeredLayers.has(layer.id))
-              .map(layer => layer.id);
-          console.log(targetLayers)
-          targetLayers.forEach(layer => {
-            console.log(`Adding click event to layer: ${layer}`);
-            map.on('click', layer, (e) => {
-              if (e.features && e.features.length > 0) {
-                const targetId = `${e.features[0].properties['oh3id']}`;
-                console.log('Clicked ID', targetId);
-                if (store.state.highlightedChibans.has(targetId)) {
-                  // すでに選択されている場合は解除
-                  store.state.highlightedChibans.delete(targetId);
-                } else {
-                  // 新しいIDを追加
-                  store.state.highlightedChibans.add(targetId);
-                }
-                highlightSpecificFeaturesCity(map, layer);
-              }
-            });
-          });
-        },500)
-        const registeredLayers = new Set();
-
+      //   setTimeout(() => {
+      //     console.log(map.getStyle().layers)
+      //     const targetLayers = map.getStyle().layers
+      //         .filter(layer => layer.id.startsWith('oh-chiban-') && !registeredLayers.has(layer.id))
+      //         .map(layer => layer.id);
+      //     console.log(targetLayers)
+      //     targetLayers.forEach(layer => {
+      //       console.log(`Adding click event to layer: ${layer}`);
+      //       map.on('click', layer, (e) => {
+      //         if (e.features && e.features.length > 0) {
+      //           const targetId = `${e.features[0].properties['oh3id']}`;
+      //           console.log('Clicked ID', targetId);
+      //           if (store.state.highlightedChibans.has(targetId)) {
+      //             // すでに選択されている場合は解除
+      //             store.state.highlightedChibans.delete(targetId);
+      //           } else {
+      //             // 新しいIDを追加
+      //             store.state.highlightedChibans.add(targetId);
+      //           }
+      //           highlightSpecificFeaturesCity(map, layer);
+      //         }
+      //       });
+      //     });
+      //   },500)
+      //   const registeredLayers = new Set();
       })
     },
     removeItem (id,event) {

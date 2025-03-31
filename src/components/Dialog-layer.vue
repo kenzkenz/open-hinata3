@@ -940,6 +940,7 @@ export default {
                 console.log('Clicked ID', targetId);
                 if (this.$store.state.highlightedChibans.has(targetId)) {
                   // すでに選択されている場合は解除
+                  console.log(this.$store.state.highlightedChibans)
                   this.$store.state.highlightedChibans.delete(targetId);
                 } else {
                   // 新しいIDを追加
@@ -949,7 +950,7 @@ export default {
               }
             });
           });
-        },100)
+        },0)
         // const registeredLayers = new Set();
       }
 

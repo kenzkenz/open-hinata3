@@ -6346,33 +6346,33 @@ export function userPmtileSet(name,url,id, chiban, bbox, length) {
         ], { padding: 20, animate: false  });
     }
 
-    setTimeout(() => {
-        console.log(map.getStyle().layers)
-        const targetLayers = map.getStyle().layers
-            .filter(layer => layer.id.startsWith('oh-chiban-') && !registeredLayers.has(layer.id))
-            .map(layer => layer.id);
-        console.log(targetLayers)
-        targetLayers.forEach(layer => {
-            console.log(`Adding click event to layer: ${layer}`);
-            map.on('click', layer, (e) => {
-                if (e.features && e.features.length > 0) {
-                    const targetId = `${e.features[0].properties['oh3id']}`;
-                    console.log('Clicked ID', targetId);
-                    if (store.state.highlightedChibans.has(targetId)) {
-                        // すでに選択されている場合は解除
-                        store.state.highlightedChibans.delete(targetId);
-                    } else {
-                        // 新しいIDを追加
-                        // alert(targetId)
-                        store.state.highlightedChibans.add(targetId);
-                        // alert(Array.from(store.state.highlightedChibans))
-                    }
-                    highlightSpecificFeaturesCity(map, layer);
-                }
-            });
-        });
-    },100)
-    const registeredLayers = new Set();
+    // setTimeout(() => {
+    //     console.log(map.getStyle().layers)
+    //     const targetLayers = map.getStyle().layers
+    //         .filter(layer => layer.id.startsWith('oh-chiban-') && !registeredLayers.has(layer.id))
+    //         .map(layer => layer.id);
+    //     console.log(targetLayers)
+    //     targetLayers.forEach(layer => {
+    //         console.log(`Adding click event to layer: ${layer}`);
+    //         map.on('click', layer, (e) => {
+    //             if (e.features && e.features.length > 0) {
+    //                 const targetId = `${e.features[0].properties['oh3id']}`;
+    //                 console.log('Clicked ID', targetId);
+    //                 if (store.state.highlightedChibans.has(targetId)) {
+    //                     // すでに選択されている場合は解除
+    //                     store.state.highlightedChibans.delete(targetId);
+    //                 } else {
+    //                     // 新しいIDを追加
+    //                     // alert(targetId)
+    //                     store.state.highlightedChibans.add(targetId);
+    //                     // alert(Array.from(store.state.highlightedChibans))
+    //                 }
+    //                 highlightSpecificFeaturesCity(map, layer);
+    //             }
+    //         });
+    //     });
+    // },100)
+    // const registeredLayers = new Set();
 }
 
 export function userTileSet(name,url,id) {
