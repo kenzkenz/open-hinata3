@@ -903,7 +903,8 @@ export default {
     showDrawUI: false,
     tDraw: false,
     drawInstance: false,
-    geojon:null,
+    geojon: null,
+    intervalId: null,
   }),
   computed: {
     cityItems() {
@@ -4037,6 +4038,13 @@ export default {
   mounted() {
     // this.$store.state.highlightedChibans = new Set()
     const vm = this
+
+    // 5分おきに実行
+    this.intervalId = setInterval(() => {
+      history('autosave', window.location.href)
+    }, 5 * 60 * 1000)
+
+
 
     window.addEventListener("resize", this.onResize);
 
