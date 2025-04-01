@@ -1862,7 +1862,6 @@ export const sicyosonChibanzuUrls = [
     // 茨城県
     {code:'08223', name:'潮来市', chiban: ['get', '地番'], position:[140.55540531603634,35.947116226224], url: 'itakoshi', page:'https://www.city.itako.lg.jp/opendata.php'},
     {code:'08564', name:'利根町', chiban: ['get', '地番'], position:[140.1391729153425,35.85756030920088], url: 'tonechyo', page:'https://www.town.tone.ibaraki.jp/opendata.php'},
-
     // 群馬県
     {code:'10202', name:'高崎市', chiban: ['get', '地番_地番図_label'], position:[139.00336683069094,36.32182569208747], url:'takasakishi', page:'https://www.city.takasaki.gunma.jp/page/3130.html'},
     // 埼玉県
@@ -1875,8 +1874,6 @@ export const sicyosonChibanzuUrls = [
     {code:'13215', name:'国立市', chiban: ['get', '表示文字列'], position:[139.44141245767452,35.68379371055923], url:'kunitachishi3', page:'https://www.city.kunitachi.tokyo.jp/soshiki/Dept01/Div03/Sec01/oshirase/11883.html'},
     // 山梨県
     {code:'19201', name:'甲府市', chiban: ['get', '地番'], position:[138.56829800000241,35.66205666308586], url:'kofushi', page:'https://kofu.geocloud.jp/webgis/?p=0&bt=0&mp=337-1&'},
-
-
     // 静岡県
     {code:'22100', name:'静岡市', chiban: ['get', '地番'], position:[138.38294267724638,34.974974010631584], url:'shizuokashi', page:'https://dataset.city.shizuoka.jp/dataset/1707986930/resource/4a40cc33-0aef-4426-825e-3b034347812b'},
     {code:'22211', name:'磐田市', chiban: ['get', 'TXTCD'], position:[137.85162388532535,34.7178716931619], url:'iwatashi', page:'https://www.city.iwata.shizuoka.jp/shiseijouhou/1006207/1002775.html'},
@@ -1911,7 +1908,6 @@ export const sicyosonChibanzuUrls = [
     // 福岡県
     {code:'40130', name:'福岡市', chiban: ['get', '地番'], position:[130.40177928836357,33.5897855042562], url:'fukuokashi2', page:'https://webmap.city.fukuoka.lg.jp/fukuoka/OpenData?mids=&pno=1'},
     {code:'40204', name:'直方市', chiban: ['get', '地番'], position:[130.72966337301625,33.743983314699236], url:'nogatashi', page:'https://data.bodik.jp/dataset/402044_land_lot_correspondence_map/resource/3e57cf4e-a84b-4a6a-adba-fd27013531c7'},
-
     // 長崎県
     {code:'42307', name:'長与町', chiban: ['get', 'SAFIELD002'], position:[129.87507937301513,32.82524812594376], url:'nagayochyo', page:'https://data.bodik.jp/dataset/423076_tibansankouzu/resource/580da941-74d1-4ddd-a0f0-fb6b88fc793a'}
 ];
