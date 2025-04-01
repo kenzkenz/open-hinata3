@@ -905,6 +905,7 @@ export default {
     drawInstance: false,
     geojon: null,
     intervalId: null,
+    preUrl: '',
   }),
   computed: {
     cityItems() {
@@ -4043,7 +4044,10 @@ export default {
     // history('autosave', window.location.href)
     // 5分おきに実行
     this.intervalId = setInterval(() => {
-      history('autosave', window.location.href)
+      if (window.location.href !== vm.preUrl) {
+        history('autosave', window.location.href)
+      }
+      vm.preUrl = window.location.href
     }, 5 * 60 * 1000)
 
 
