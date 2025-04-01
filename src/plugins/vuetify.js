@@ -29,7 +29,7 @@ const vuetify = createVuetify({
             myTheme: {
                 dark: false,
                 colors: {
-                    primary: '#f17ecd', // ← これを変えれば、v-btn も自動で変わる
+                    // primary: '#f17ecd', // ← これを変えれば、v-btn も自動で変わる
                 },
             },
         },

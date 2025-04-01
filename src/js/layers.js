@@ -145,8 +145,8 @@ const publicLayers0 = [...publicPolygonLayers,...publicLineLayers,...publicLabel
 export const cityPmtilesSource = {
     id: 'city-pmtiles-source', obj: {
         type: "vector",
-        // url: "pmtiles://https://kenzkenz.duckdns.org//original-data/city.pmtiles?nocache=" + Date.now(),
-        url: "pmtiles://https://kenzkenz.duckdns.org//original-data/city.pmtiles",
+        url: "pmtiles://https://kenzkenz.duckdns.org//original-data/city.pmtiles?nocache=" + Date.now(),
+        // url: "pmtiles://https://kenzkenz.duckdns.org//original-data/city.pmtiles",
     }
 }
 

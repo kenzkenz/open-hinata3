@@ -1219,7 +1219,7 @@ export default {
   border-bottom: #fff 1px solid;
 
   /*color:gray;*/
-  background-color: #ffcbef;
+  /*background-color: #ffcbef;*/
   border-bottom: #000 1px solid;
 }
 .trash-div{
@@ -1260,7 +1260,7 @@ export default {
   width:calc(100% - 80px);
   padding-left: 5px;
 
-  color:gray;/**/
+  /*color:gray;!**!*/
 }
 .visible-layer-div {
   position:absolute;

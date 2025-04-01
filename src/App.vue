@@ -4051,14 +4051,12 @@ export default {
     }, 5 * 60 * 1000)
 
 
-
     window.addEventListener("resize", this.onResize);
 
     if (window.innerWidth < 500) {
       this.s_isSmartPhone = true
       this.terrainBtnClos()
     }
-
 
     // -----------------------------------------------------------------------------------------------------------------
     this.mapNames.forEach(mapName => {
@@ -4400,7 +4398,7 @@ export default {
 <style>
 :root {
   --main-color: rgb(50,101,186);
-  --main-color: #f17ecd;
+  /*--main-color: #f17ecd;*/
 }
 v-btn, .button {
   background-color: var(--main-color);
