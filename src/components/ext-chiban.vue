@@ -143,8 +143,10 @@
 <!--    <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>-->
     <div style="font-size: large;margin-bottom: 10px;" v-html="item.label"/>
     <div v-if="item.id === 'oh-chibanzu-all2'" style="font-size: small">
-      オープンデータは「緑色」<br>開示請求且つ公開可能は「青色」<br>
+      <div>オープンデータは「緑色」<br>開示請求且つ公開可能は「青色」<br>
       開示請求により入手できたが公開の可否不明は「灰色」
+      </div>
+      <v-btn style="margin-top: 10px" class="tiny-btn" @click="list">リスト表示</v-btn>
     </div>
 
     <v-text-field label="表示地番検索（例）5-7" v-model="s_chibanText" @input="change" style="margin-top: 0px"></v-text-field>
@@ -313,6 +315,24 @@ export default {
       //     this.s_chibanCircleColor
       //   ]
       // })
+    },
+    list () {
+      if (this.$store.state.dialogs.chibanzuListDialog.map01.style.display === 'none') {
+        this.$store.commit('incrDialogMaxZindex')
+        this.$store.state.dialogs.chibanzuListDialog.map01.style['z-index'] = this.$store.state.dialogMaxZindex
+        this.$store.state.dialogs.chibanzuListDialog.map01.style.display = 'block'
+        // if (window.innerWidth < 450) {
+        //   this.$store.state.dialogs.chibanzuListDialog.map01.style.left = '0px'
+        // } else {
+        //   if (this.s_map2Flg) {
+        //     this.$store.state.dialogs.chibanzuListDialog.map01.style.left = (window.innerWidth / 2 - 360) + 'px'
+        //   } else {
+        //     this.$store.state.dialogs.chibanzuListDialog.map01.style.left = (window.innerWidth - 360) + 'px'
+        //   }
+        // }
+      } else {
+        this.$store.state.dialogs.chibanzuListDialog.map01.style.display = 'none'
+      }
     },
     checkDevice() {
       const userAgent = navigator.userAgent || navigator.vendor || window.opera;

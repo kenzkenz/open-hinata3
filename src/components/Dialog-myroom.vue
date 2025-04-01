@@ -189,6 +189,8 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 <v-card>
                   <!-- <v-btn style="margin-bottom: 10px;" @click="isAllBtn">全表示</v-btn>-->
                   <v-switch style="height: 40px;" v-model="isAll" @change="isAllSwitch" label="全表示" color="primary" />
+                  <v-btn style="margin-bottom: 30px; width: 180px;" @click="openData">オープンデータ更新</v-btn>
+
                 </v-card>
               </v-window-item>
             </v-window>
@@ -480,6 +482,25 @@ export default {
     },
   },
   methods: {
+    openData () {
+      // PHPへ送信
+      fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/insert_opendata.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(sicyosonChibanzuUrls)
+      })
+          .then(response => response.text())
+          .then(result => {
+            alert('成功')
+            console.log('成功:', result);
+          })
+          .catch(error => {
+            alert('失敗')
+            console.error('エラー:', error);
+          });
+    },
     myChibanzu () {
       this.pmtileSelect(this.uid)
     },

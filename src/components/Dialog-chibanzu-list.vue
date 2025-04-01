@@ -7,6 +7,11 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
     <div class="myroom-div">
         <v-card>
           <v-card-text :style="mayroomStyle">
+            <span style="font-size: smaller">
+            オープンデータは「緑色」<br>
+            開示請求且つ公開可能は「青色」<br>
+            開示請求により入手できたが公開の可否不明は「灰色」
+            </span><hr>
             <v-tabs mobile-breakpoint="0" v-model="tab" class="custom-tabs">
               <v-tab value="0">緑色</v-tab>
               <v-tab value="1">青色</v-tab>
@@ -18,8 +23,8 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 <v-card>
                   <v-text-field v-model="greenSearchText" type="text" placeholder="検索"></v-text-field>
                   <v-btn style="margin-top: -10px;margin-bottom: 10px;margin-left: 0px;" @click="greenSearch">検索</v-btn>
-                  <div v-for="item in jsonDataGreen" :key="item.id" class="data-container" @click="simaClick(item.name,item.url,item.id,item.simatext,item.zahyokei)">
-                    <strong>{{ item.name }}</strong><br>
+                  <div v-for="item in jsonDataGreen" :key="item.id" class="data-container" @click="greenClick(item.position)">
+                    <strong>{{ item.prefname + '-' + item.name }}</strong><br>
                   </div>
                 </v-card>
               </v-window-item>
@@ -27,7 +32,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 <v-card>
                   <v-text-field v-model="blueSearchText" type="text" placeholder="検索"></v-text-field>
                   <v-btn style="margin-top: -10px;margin-bottom: 10px;margin-left: 0px;" @click="blueAndGraySearch('blue')">検索</v-btn>
-                  <div v-for="item in jsonDataBlue" :key="item.id" class="data-container" @click="simaClick(item.name,item.url,item.id,item.simatext,item.zahyokei)">
+                  <div v-for="item in jsonDataBlue" :key="item.id" class="data-container" @click="blueAndGrayClick(item.bbox)">
                     <strong>{{ item.name }}</strong><br>
                   </div>
                 </v-card>
@@ -36,7 +41,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 <v-card>
                   <v-text-field v-model="graySearchText" type="text" placeholder="検索"></v-text-field>
                   <v-btn style="margin-top: -10px;margin-bottom: 10px;margin-left: 0px;" @click="blueAndGraySearch('gray')">検索</v-btn>
-                  <div v-for="item in jsonDataGray" :key="item.id" class="data-container" @click="simaClick(item.name,item.url,item.id,item.simatext,item.zahyokei)">
+                  <div v-for="item in jsonDataGray" :key="item.id" class="data-container" @click="blueAndGrayClick(item.bbox)">
                     <strong>{{ item.name }}</strong><br>
                   </div>
                 </v-card>
@@ -281,6 +286,44 @@ export default {
     },
   },
   methods: {
+    blueAndGrayClick (bbox) {
+      const map = this.$store.state.map01
+      map.fitBounds(JSON.parse(bbox), {
+        padding: 200,     // 地図の周囲に余白を持たせる（ピクセル単位）
+        maxZoom: 13,     // 最大ズームレベル（必要に応じて調整）
+        duration: 1000   // アニメーション時間（ミリ秒）
+      });
+    },
+    greenClick (position) {
+      const map = this.$store.state.map01
+      map.flyTo({
+        center: JSON.parse(position),
+        zoom: 15,
+        speed: 3,
+        curve: 1.42,
+        easing: t => t,
+      });
+    },
+    greenSelect () {
+      const vm = this
+      async function fetchUserData() {
+        try {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userGreenSelect.php', {
+            params: {}
+          });
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            vm.jsonDataGreen = response.data.result
+          }
+        } catch (error) {
+          console.error('通信エラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      fetchUserData()
+    },
     blueAndGraySelect (color) {
       const vm = this
       async function fetchUserData(color) {
@@ -304,6 +347,29 @@ export default {
         }
       }
       fetchUserData(color)
+    },
+    greenSearch () {
+      const vm = this
+      const name = this.greenSearchText
+      async function fetchUserData() {
+        try {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userGreenPmtilesSearch.php', {
+            params: {
+              name: name
+            }
+          });
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            vm.jsonDataGreen = response.data.result
+          }
+        } catch (error) {
+          console.error('通信エラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      fetchUserData()
     },
     blueAndGraySearch (color) {
       const vm = this
@@ -1858,6 +1924,9 @@ export default {
     }
   },
   mounted() {
+    this.greenSelect()
+    this.blueAndGraySelect('blue')
+    this.blueAndGraySelect('gray')
     document.querySelector('#drag-handle-myroomDialog-map01').innerHTML = '<span style="font-size: large;">my room</span>'
     // -------------------------------------------------------------------
     let maxHeight
@@ -1874,6 +1943,7 @@ export default {
         this.uid = user._rawValue.uid;
         this.$store.state.userId = user._rawValue.uid
 
+        this.greenSelect()
         this.blueAndGraySelect('blue')
         this.blueAndGraySelect('gray')
 

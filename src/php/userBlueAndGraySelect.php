@@ -22,8 +22,7 @@ try {
         $public = 3;
     }
 
-
-    $sql = "SELECT * FROM userpmtiles WHERE public LIKE :public ORDER BY citycode DESC";
+    $sql = "SELECT * FROM userpmtiles WHERE public LIKE :public ORDER BY citycode";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':public' => $public]);
 
