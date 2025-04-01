@@ -186,6 +186,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   <v-btn style="margin-left: 10px;margin-bottom: 10px; width: 180px" @click="device('iPhone')">iPhoneでの最後</v-btn>
 
                   <p style="margin-top:10px;margin-bottom: 10px;">全デバイスの履歴です。クリックすると復帰します。1000行までです。</p>
+                  <v-btn style="margin-left: 0px;margin-bottom: 10px;" class="tiny-btn" @click="reload">再読み込み</v-btn>
 <!--                  <div v-for="item in jsonDataHistory" :key="item.id" class="data-container" @click="historyClick(item.name,item.url,item.id)">-->
                   <div
                       v-for="item in filteredHistory"
@@ -499,6 +500,9 @@ export default {
     },
   },
   methods: {
+    reload () {
+      this.historySelect()
+    },
     detectDevice(ua) {
       if (ua.includes('Windows')) return 'Windows';
       if (ua.includes('Macintosh')) return 'Macintosh';
