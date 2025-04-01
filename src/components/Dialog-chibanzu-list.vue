@@ -23,15 +23,18 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 <v-card>
                   <v-text-field v-model="greenSearchText" type="text" placeholder="検索"></v-text-field>
                   <v-btn style="margin-top: -10px;margin-bottom: 10px;margin-left: 0px;" @click="greenSearch">検索</v-btn>
+                  <span style="margin-left: 8px;font-size: 16px">{{ jsonDataGreen ? jsonDataGreen.length : 0 }}件</span>
                   <div v-for="item in jsonDataGreen" :key="item.id" class="data-container" @click="greenClick(item.position)">
                     <strong>{{ item.prefname + '-' + item.name }}</strong><br>
                   </div>
+
                 </v-card>
               </v-window-item>
               <v-window-item value="1">
                 <v-card>
                   <v-text-field v-model="blueSearchText" type="text" placeholder="検索"></v-text-field>
                   <v-btn style="margin-top: -10px;margin-bottom: 10px;margin-left: 0px;" @click="blueAndGraySearch('blue')">検索</v-btn>
+                  <span style="margin-left: 8px;font-size: 16px">{{ jsonDataBlue ? jsonDataBlue.length : 0 }}件</span>
                   <div v-for="item in jsonDataBlue" :key="item.id" class="data-container" @click="blueAndGrayClick(item.bbox)">
                     <strong>{{ item.name }}</strong><br>
                   </div>
@@ -41,6 +44,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 <v-card>
                   <v-text-field v-model="graySearchText" type="text" placeholder="検索"></v-text-field>
                   <v-btn style="margin-top: -10px;margin-bottom: 10px;margin-left: 0px;" @click="blueAndGraySearch('gray')">検索</v-btn>
+                  <span style="margin-left: 8px;font-size: 16px">{{ jsonDataGray ? jsonDataGray.length : 0 }}件</span>
                   <div v-for="item in jsonDataGray" :key="item.id" class="data-container" @click="blueAndGrayClick(item.bbox)">
                     <strong>{{ item.name }}</strong><br>
                   </div>
@@ -288,11 +292,17 @@ export default {
   methods: {
     blueAndGrayClick (bbox) {
       const map = this.$store.state.map01
-      map.fitBounds(JSON.parse(bbox), {
-        padding: 200,     // 地図の周囲に余白を持たせる（ピクセル単位）
-        maxZoom: 13,     // 最大ズームレベル（必要に応じて調整）
-        duration: 1000   // アニメーション時間（ミリ秒）
+      const camera = map.cameraForBounds(JSON.parse(bbox), {
+        padding: 200
       });
+      if (camera) {
+        const maxZoom = 10;
+        camera.zoom = Math.min(camera.zoom, maxZoom);
+        map.easeTo({
+          ...camera,
+          duration: 1000
+        });
+      }
     },
     greenClick (position) {
       const map = this.$store.state.map01
