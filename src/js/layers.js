@@ -158,11 +158,11 @@ const cityPmtilesPolygonLayer = {
         'fill-color': [
             'case',
             ['==', ['get', 'public'], 1],
-            'blue', // public が 1 のとき
+            'rgba(0,0,255,0.8)', // public が 1 のとき
             ['==', ['get', 'public'], 2],
-            'green', // public が 2 のとき
+            'rgba(0,128,0,0.8)', // public が 2 のとき
             ['==', ['get', 'public'], 3],
-            'gray', // public が 3 のとき
+            'rgba(128,128,128,0.8)', // public が 3 のとき
             'rgba(255,255,255,0.1)'
         ],
     },
