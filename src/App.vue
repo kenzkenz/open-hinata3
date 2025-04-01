@@ -479,6 +479,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <dialog-info :mapName=mapName />
           <dialog2 :mapName=mapName />
           <dialogShare :mapName=mapName />
+          <DialogChibanzuList :mapName=mapName />
 
           <div :id="'terrain-btn-div-' + mapName" class="terrain-btn-div">
             <div class="terrain-btn-container">
@@ -820,6 +821,7 @@ import DialogLayer from '@/components/Dialog-layer'
 import DialogInfo from '@/components/Dialog-info'
 import Dialog2 from '@/components/Dialog2'
 import DialogShare from "@/components/Dialog-share"
+import DialogChibanzuList from "@/components/Dialog-chibanzu-list"
 import pyramid from '@/js/pyramid'
 import * as Layers from '@/js/layers'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -848,6 +850,7 @@ export default {
     DialogInfo,
     Dialog2,
     DialogShare,
+    DialogChibanzuList
   },
   data: () => ({
     mapNames: ['map01','map02'],
