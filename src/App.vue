@@ -449,7 +449,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
         <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="(mapName === 'map01'|| mapName === 'map02' && s_map2Flg)" @click="btnPosition">
           <v-progress-linear  v-if="s_loading" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
           <v-progress-linear  v-if="s_loading2" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
-          <SakuraEffect />
+<!--          <SakuraEffect />-->
           <div id="pointer1" class="pointer" v-if="mapName === 'map01'"></div>
           <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
 
@@ -4039,6 +4039,8 @@ export default {
     // this.$store.state.highlightedChibans = new Set()
     const vm = this
 
+    // 初回実行
+    history('autosave', window.location.href)
     // 5分おきに実行
     this.intervalId = setInterval(() => {
       history('autosave', window.location.href)

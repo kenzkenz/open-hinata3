@@ -4,7 +4,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
 <template>
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
-    <div class="myroom-div">
+    <div class="chibanzu-list-div">
         <v-card>
           <v-card-text :style="mayroomStyle">
             <span style="font-size: smaller">
