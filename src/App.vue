@@ -4040,7 +4040,7 @@ export default {
     const vm = this
 
     // 初回実行
-    history('autosave', window.location.href)
+    // history('autosave', window.location.href)
     // 5分おきに実行
     this.intervalId = setInterval(() => {
       history('autosave', window.location.href)

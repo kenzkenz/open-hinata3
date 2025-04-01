@@ -3621,23 +3621,42 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
     let popupHtml = `<div class="popup-html-div">${htmlContent}${streetView}</div>`;
     // マピラリー---------------------------------------------------------------------------------------------------------
     // if (htmlContent.includes('street-view')) {
-        if (store.state.mapillaryFlg) {
-            const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c';
-            async function mapillary() {
-                const response = await fetch(`https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${lng - 0.001},${lat - 0.001},${lng + 0.001},${lat + 0.001}&limit=1`);
-                const data = await response.json();
-                if (data.data && data.data.length > 0) {
-                    const imageUrl = data.data[0].thumb_1024_url;
-                    const img = `mapillary<br><a href="${imageUrl}" target="_blank"><img width="300px" src="${imageUrl}" alt="Mapillary Image"></a>`;
-                    return img;  // これでちゃんと mapillary() の戻り値になる
-                } else {
-                    return '近くにMapillary画像が見つかりませんでした。';
-                }
+    if (store.state.mapillaryFlg) {
+        const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c';
+        async function mapillary() {
+            const deltaLat = 0.00009; // 約10m
+            const deltaLng = 0.00011; // 東京近辺での約10m
+            const response = await fetch(`https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${lng - deltaLng},${lat - deltaLat},${lng + deltaLng},${lat + deltaLat}&limit=1`);
+            const data = await response.json();
+            if (data.data && data.data.length > 0) {
+                const imageUrl = data.data[0].thumb_1024_url;
+                const img = `mapillary<br><a href="${imageUrl}" target="_blank"><img width="300px" src="${imageUrl}" alt="Mapillary Image"></a>`;
+                return img;
+            } else {
+                return '近くにMapillary画像が見つかりませんでした。';
             }
-            const img = await mapillary()
-            htmlContent = htmlContent.replace(/<div class="street-view"[^>]*>.*?<\/div>/gs, '');
-            popupHtml = `<div class="popup-html-div">${htmlContent}${img}${streetView}</div>`;
         }
+        const img = await mapillary()
+        htmlContent = htmlContent.replace(/<div class="street-view"[^>]*>.*?<\/div>/gs, '');
+        popupHtml = `<div class="popup-html-div">${htmlContent}${img}${streetView}</div>`;
+    }
+    //     if (store.state.mapillaryFlg) {
+    //         const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c';
+    //         async function mapillary() {
+    //             const response = await fetch(`https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${lng - 0.001},${lat - 0.001},${lng + 0.001},${lat + 0.001}&limit=1`);
+    //             const data = await response.json();
+    //             if (data.data && data.data.length > 0) {
+    //                 const imageUrl = data.data[0].thumb_1024_url;
+    //                 const img = `mapillary<br><a href="${imageUrl}" target="_blank"><img width="300px" src="${imageUrl}" alt="Mapillary Image"></a>`;
+    //                 return img;  // これでちゃんと mapillary() の戻り値になる
+    //             } else {
+    //                 return '近くにMapillary画像が見つかりませんでした。';
+    //             }
+    //         }
+    //         const img = await mapillary()
+    //         htmlContent = htmlContent.replace(/<div class="street-view"[^>]*>.*?<\/div>/gs, '');
+    //         popupHtml = `<div class="popup-html-div">${htmlContent}${img}${streetView}</div>`;
+    //     }
     // }
     // マピラリーここまで----------------------------------------------------------------------------------------------------
 

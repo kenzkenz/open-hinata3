@@ -178,11 +178,24 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               </v-window-item>
               <v-window-item value="6">
                 <v-card>
-                  <p style="margin-bottom: 30px;">各デバイスの最後に開いた画面に復帰します。ただいま試験運用中です。</p>
-                  <v-btn style="margin-bottom: 30px; width: 180px;" @click="device('Windows')">Windowsでの最後</v-btn>
-                  <v-btn style="margin-left: 10px;margin-bottom: 30px; width: 180px" @click="device('Macintosh')">Macでの最後</v-btn><br>
+                  <p style="margin-bottom: 10px;">各デバイスの最後に開いた画面に復帰します。ただいま試験運用中です。</p>
+                  <v-btn style="margin-bottom: 10px; width: 180px;" @click="device('Windows')">Windowsでの最後</v-btn>
+                  <v-btn style="margin-left: 10px;margin-bottom: 10px; width: 180px" @click="device('Macintosh')">Macでの最後</v-btn><br>
+
                   <v-btn style="margin-bottom: 10px; width: 180px" @click="device('Android')">Androidでの最後</v-btn>
                   <v-btn style="margin-left: 10px;margin-bottom: 10px; width: 180px" @click="device('iPhone')">iPhoneでの最後</v-btn>
+
+                  <p style="margin-top:10px;margin-bottom: 10px;">全デバイスの履歴です。クリックすると復帰します。1000行までです。</p>
+<!--                  <div v-for="item in jsonDataHistory" :key="item.id" class="data-container" @click="historyClick(item.name,item.url,item.id)">-->
+                  <div
+                      v-for="item in filteredHistory"
+                      :key="item.id"
+                      class="data-container"
+                      @click="historyClick(item.name, item.url, item.id)"
+                  >
+                    <strong>{{ item.date + '-' + detectDevice(item.ua) }}</strong><br>
+                  </div>
+
                 </v-card>
               </v-window-item>
               <v-window-item value="7">
@@ -311,6 +324,7 @@ export default {
     jsonDataxyztileAll: null,
     jsonDataKmz: null,
     jsonDataSima: null,
+    jsonDataHistory: null,
     uid: null,
     images: [],
     email: '',
@@ -331,6 +345,9 @@ export default {
     mayroomStyle: {"overflow-y": "auto", "max-height": "530px", "max-width": "600px", "padding-top": "10px"}
   }),
   computed: {
+    filteredHistory() {
+      return this.jsonDataHistory.filter(item => !item.url.includes('localhost'));
+    },
     cityItems() {
       const filteredCities = Object.entries(muni)
           .filter(([_, value]) => value.startsWith(`${Number(this.selectedPrefCode)},`))
@@ -482,6 +499,13 @@ export default {
     },
   },
   methods: {
+    detectDevice(ua) {
+      if (ua.includes('Windows')) return 'Windows';
+      if (ua.includes('Macintosh')) return 'Macintosh';
+      if (ua.includes('iPhone')) return 'iPhone';
+      if (ua.includes('Android')) return 'Android';
+      return ua; // 該当がなければそのまま表示
+    },
     openData () {
       // PHPへ送信
       fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/insert_opendata.php', {
@@ -539,6 +563,22 @@ export default {
         }
       }
       scrapeLinks ()
+    },
+    history () {
+      const vm = this
+      axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userHystorySelect.php',{
+        params: {
+          uid: this.uid,
+        }
+      }).then(function (response) {
+        console.log(response)
+        history('history復帰', window.location.href)
+        if (response.data.length > 0) {
+          vm.urlClick('', response.data[0].url, '')
+        } else {
+          alert('履歴が一件もありません。')
+        }
+      })
     },
     device (device) {
       const vm = this
@@ -828,6 +868,9 @@ export default {
     },
     tileClick (name,url,id) {
       userTileSet(name,url,id)
+    },
+    historyClick (name,url,id) {
+      this.urlClick (name,url,id)
     },
     urlClick (name,url,id) {
       this.urlName = name
@@ -1763,6 +1806,26 @@ export default {
       }
       fetchUserData(this.s_userId)
     },
+    historySelect () {
+      const vm = this
+      async function fetchUserData(uid) {
+        try {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userHistorySelect.php', {
+            params: { uid: vm.uid}
+          });
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            alert(`エラー: ${response.data.error}`);
+          } else {
+            vm.jsonDataHistory = response.data.result
+          }
+        } catch (error) {
+          console.error('通信エラー:', error);
+          alert('通信エラーが発生しました');
+        }
+      }
+      fetchUserData()
+    },
     simaSelect (uid) {
       const vm = this
       // alert(vm.isAll)
@@ -2003,6 +2066,7 @@ export default {
       this.simaSelect(this.$store.state.userId)
       this.xyztileSelectAll()
       this.pmtileSelectPublic()
+      this.historySelect()
     },
     s_fetchImagesFire () {
       this.fetchImages()
@@ -2014,6 +2078,7 @@ export default {
       this.simaSelect(this.$store.state.userId)
       this.xyztileSelectAll()
       this.pmtileSelectPublic()
+      this.historySelect()
     }
   },
   mounted() {
@@ -2042,6 +2107,7 @@ export default {
         this.simaSelect(this.uid)
         this.xyztileSelectAll()
         this.pmtileSelectPublic()
+        this.historySelect()
       }
     }, 5);
   }
