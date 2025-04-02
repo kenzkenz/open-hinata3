@@ -1879,6 +1879,7 @@ export const sicyosonChibanzuUrls = [
     {prefname:'静岡県', prefcode:'22', code:'22100', name:'静岡市', chiban: ['get', '地番'], position:[138.38294267724638,34.974974010631584], url:'shizuokashi', page:'https://dataset.city.shizuoka.jp/dataset/1707986930/resource/4a40cc33-0aef-4426-825e-3b034347812b'},
     {prefname:'静岡県', prefcode:'22', code:'22211', name:'磐田市', chiban: ['get', 'TXTCD'], position:[137.85162388532535,34.7178716931619], url:'iwatashi', page:'https://www.city.iwata.shizuoka.jp/shiseijouhou/1006207/1002775.html'},
     // 愛知県
+    {prefname:'愛知県', prefcode:'23', code:'23100', name:'名古屋市', chiban: ['get', 'TXTCD'], position:[136.9066772883615,35.1812626194769], url:'nagoyashi', page:'https://data.bodik.jp/dataset/231002_0703030000_chibansankouzu'},
     {prefname:'愛知県', prefcode:'23', code:'23205', name:'半田市', chiban: ['concat', ['get', '番地'], '-', ['get', '枝番'], '-', ['get', '小枝']], position:[136.93819204686196,34.891670467553226], url:'handashi', page:'https://www.city.handa.lg.jp/opendata/1005557/1005561/1004329.html'},
     // 京都府
     {prefname:'京都府', prefcode:'26', code:'26100', name:'京都市', chiban: ['get', 'TIBAN'], position:[135.76794033862097,35.011458104660534], url:'kyotoshi', page:'https://data.city.kyoto.lg.jp/resource/?id=18537'},
