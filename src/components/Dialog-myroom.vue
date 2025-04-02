@@ -2113,7 +2113,6 @@ export default {
       if (user && user._rawValue && user._rawValue.uid) {
         this.uid = user._rawValue.uid;
         this.$store.state.userId = user._rawValue.uid
-        clearInterval(checkUser); // UIDを取得できたら監視を停止
         this.fetchImages(this.uid); // UIDを取得した後に fetchImages を実行
         this.urlSelect(this.uid)
         this.tileSelect(this.uid)
@@ -2124,6 +2123,7 @@ export default {
         this.xyztileSelectAll()
         this.pmtileSelectPublic()
         this.historySelect()
+        clearInterval(checkUser); // UIDを取得できたら監視を停止
       }
     }, 5);
   }

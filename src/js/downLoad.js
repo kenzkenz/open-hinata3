@@ -5671,6 +5671,7 @@ export function capture(uid,isFirst) {
             } else {
                 history('autosave', window.location.href,msg.url)
             }
+            store.state.fetchImagesFire = !store.state.fetchImagesFire
         } catch (err) {
             console.error("Fetch failed:", err);
         }

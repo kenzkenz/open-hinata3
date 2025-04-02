@@ -4061,7 +4061,7 @@ export default {
         vm.historyCount++
       }
       vm.preUrl = window.location.href
-    }, 5 * 60 * 1000)
+    }, 1 * 60 * 1000)
     // -----------------------------------------------------------------------------
 
     window.addEventListener("resize", this.onResize);
