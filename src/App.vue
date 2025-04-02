@@ -712,6 +712,7 @@ export function history (event,url,thumbnail) {
   const height = window.screen.height
   const referrer = document.referrer
   // alert(store.state.address)
+  if (!thumbnail) thumbnail = ''
   axios
       .get('https://kenzkenz.xsrv.jp/open-hinata3/php/history.php',{
         params: {
