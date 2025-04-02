@@ -1241,7 +1241,6 @@ export function saveDxf (map, layerId, sourceId, fields, detailGeojson, kei2) {
 
     geojson = saveDXfGaiku (map,geojson,zahyo)
 
-    console.log(geojson)
     try {
         const dxfString = geojsonToDXF(geojson);
         // DXFファイルとしてダウンロード
