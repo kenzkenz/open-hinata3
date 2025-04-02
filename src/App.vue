@@ -520,6 +520,7 @@ import { MaplibreMeasureControl } from '@watergis/maplibre-gl-terradraw';
 import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
 import { TerraDraw,TerraDrawPointMode,TerraDrawLineStringMode,TerraDrawPolygonMode,TerraDrawFreehandMode } from 'terra-draw'
 import {
+  capture,
   csvGenerateForUserPng,
   ddSimaUpload,
   downloadKML,
@@ -705,7 +706,7 @@ function closeAllPopups() {
   // 配列をクリア
   popups.length = 0
 }
-export function history (event,url) {
+export function history (event,url,thumbnail) {
   const ua = navigator.userAgent
   const width = window.screen.width
   const height = window.screen.height
@@ -720,7 +721,8 @@ export function history (event,url) {
           referrer:referrer,
           url: url,
           uid: store.state.userId,
-          address: store.state.address
+          address: store.state.address,
+          thumbnail: thumbnail
         }
       })
 }
@@ -840,6 +842,7 @@ import {
 import muni from '@/js/muni'
 import { kml } from '@tmcw/togeojson';
 import store from "@/store";
+import html2canvas from 'html2canvas'
 
 export default {
   name: 'App',
@@ -4046,19 +4049,20 @@ export default {
       if (user && user._rawValue && user._rawValue.uid) {
         this.uid = user._rawValue.uid;
         this.$store.state.userId = user._rawValue.uid
-        history('autosave-first', window.location.href)
+        capture(this.uid,true)
         clearInterval(checkUser); // UIDを取得できたら監視を停止
       }
     }, 5);
+
     // 5分おきに実行
     this.intervalId = setInterval(() => {
       if (window.location.href !== vm.preUrl) {
-        history('autosave', window.location.href)
+        capture(this.uid,false)
         vm.historyCount++
       }
       vm.preUrl = window.location.href
     }, 5 * 60 * 1000)
-
+    // -----------------------------------------------------------------------------
 
     window.addEventListener("resize", this.onResize);
 

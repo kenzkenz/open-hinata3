@@ -5579,6 +5579,107 @@ export async function geoTiffLoad (map,mapName,isUpload) {
     }
 }
 
+// export function capture(uid) {
+//     const map = store.state.map01
+//     console.log(map)
+//     if (!map || !map.isStyleLoaded()) {
+//         console.error("mapがまだ初期化されていません");
+//         return;
+//     }
+//     map.once('idle', async () => {
+//         const canvas = map.getCanvas();
+//         console.log("キャンバスサイズ:", canvas.width, canvas.height);
+//         if (canvas.width === 0 || canvas.height === 0) {
+//             console.error("キャンバスのサイズがゼロです");
+//             return;
+//         }
+//         const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+//         console.log("生成された画像URL:", dataUrl); // ここで確認
+//
+//         fetch("https://kenzkenz.duckdns.org/myphp/thumbnail.php", {
+//             method: "POST",
+//             body: JSON.stringify({
+//                 image: dataUrl,
+//                 dir: uid
+//             }),
+//             headers: {
+//                 "Content-Type": "application/json"
+//             }
+//         })
+//             .then(res => res.json())
+//             .then(msg => console.log("保存結果:", msg))
+//             .catch(err => console.error("Fetch failed:", err));
+//     })
+// }
+
+// export function capture(uid) {
+//     if(!uid) return
+//     const map01 = store.state.map01
+//     // 地図のレンダリング完了を待機
+//     map01.once('idle', async () => {
+//         const canvas = map01.getCanvas();
+//         console.log("キャンバスサイズ:", canvas.width, canvas.height);
+//         if (canvas.width === 0 || canvas.height === 0) {
+//             console.error("キャンバスのサイズがゼロです");
+//             return;
+//         }
+//         const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+//         console.log("生成された画像URL:", dataUrl); // ここで確認
+//
+//         fetch("https://kenzkenz.duckdns.org/myphp/thumbnail.php", {
+//             method: "POST",
+//             body: JSON.stringify({
+//                 image: dataUrl,
+//                 dir: uid
+//             }),
+//             headers: {
+//                 "Content-Type": "application/json"
+//             }
+//         })
+//             .then(res => res.json())
+//             .then(msg => console.log("保存結果:", msg))
+//             .catch(err => console.error("Fetch failed:", err));
+//     });
+//     // これ重要↓
+//     const currentZoom = map01.getZoom();
+//     map01.zoomTo(currentZoom + 0.00000000000000000000000000001);
+// }
+
+export function capture(uid,isFirst) {
+    if (!uid) return;
+    const map01 = store.state.map01;
+    map01.once('idle', async () => {
+        const canvas = map01.getCanvas();
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+        // console.log("生成された画像URL:", dataUrl);
+        try {
+            const res = await fetch("https://kenzkenz.duckdns.org/myphp/thumbnail.php", {
+                method: "POST",
+                body: JSON.stringify({
+                    image: dataUrl,
+                    dir: uid
+                }),
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+            const msg = await res.json();
+            console.log("保存結果:", msg);
+            // alert(msg.url)
+            if (isFirst) {
+                history('autosave-first', window.location.href,msg.url)
+            } else {
+                history('autosave', window.location.href,msg.url)
+            }
+        } catch (err) {
+            console.error("Fetch failed:", err);
+        }
+    });
+    // idle を強制発火させるため微小ズーム 重要！これがないと動かない。
+    const currentZoom = map01.getZoom();
+    map01.zoomTo(currentZoom + 0.00000000000000000000000000001);
+}
+
 export function pngDownload() {
     const map01 = store.state.map01
     const code = zahyokei.find(item => item.kei === store.state.zahyokei).code;

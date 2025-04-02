@@ -8476,7 +8476,8 @@ const shizuokaOrthoSource = {
         tileSize: 256, // タイルサイズに合わせる
         maxzoom: 19,   // 適切なズーム範囲を設定
         minzoom: 1,
-        bounds: boundsSort([137.36343383789062,35.380092992092145,138.702392578125,34.51447797766275])
+        bounds: boundsSort([137.36343383789062,35.380092992092145,138.702392578125,34.51447797766275]),
+        crossOrigin: "anonymous"
     }
 }
 const shizuokaOrthoLayer = {

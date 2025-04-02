@@ -194,9 +194,11 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                       class="data-container"
                       @click="historyClick(item.name, item.url, item.id)"
                   >
-                    <strong :style="item.event.includes('autosave-first') ? 'color: red;' : ''">
-                      {{ item.date + ' / ' + detectDevice(item.ua) + ' / ' + item.event }}
-                    </strong><br>
+<!--                    <strong :style="item.event.includes('autosave-first') ? 'color: red;' : ''">-->
+<!--                      {{ item.date + ' / ' + detectDevice(item.ua) + ' / ' + item.event + item.thumbnail }}-->
+<!--                    </strong><br>-->
+                    <strong v-html="formatItem(item)" :style="item.event.includes('autosave-first') ? 'color: red;' : ''"></strong><br>
+
                   </div>
 
                 </v-card>
@@ -222,8 +224,8 @@ import {
   addImageLayer,
   addImageLayerJpg,
   addImageLayerPng,
-  addTileLayerForImage,
-  geojsonAddLayer, highlightSpecificFeaturesCity, iko, publicChk,
+  addTileLayerForImage, capture,
+  geojsonAddLayer, highlightSpecificFeaturesCity, iko, pngDownload, publicChk,
   simaToGeoJSON, userKmzSet, userPmtileSet, userSimaSet, userTileSet, userXyztileSet
 } from "@/js/downLoad";
 import muni from '@/js/muni'
@@ -502,6 +504,14 @@ export default {
     },
   },
   methods: {
+    formatItem(item) {
+      const device = this.detectDevice(item.ua);
+      const text = `${item.date} / ${device} / ${item.event}`;
+      const thumbnailImg = item.thumbnail
+          ? ` <img src="${item.thumbnail}" alt="thumbnail" style="vertical-align: middle;">`
+          : '';
+      return thumbnailImg + ' ' + text;
+    },
     reload () {
       this.historySelect()
     },

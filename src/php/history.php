@@ -7,14 +7,19 @@ $referrer = $_GET["referrer"];
 $url = $_GET["url"];
 $uid = $_GET["uid"];
 $address = $_GET["address"];
+$thumbnail = $_GET["thumbnail"];
 
 if (!$url){
     $url = "";
 };
 
-$mysql = "INSERT INTO history(event,screen,ua,referrer,url,uid,address) values (?,?,?,?,?,?,?)";
+//$mysql = "INSERT INTO history(event,screen,ua,referrer,url,uid,address) values (?,?,?,?,?,?,?)";
+//$stmt = $pdo->prepare($mysql);
+//$stmt->execute(array($event,$screen,$ua,$referrer,$url,$uid,$address));
+
+$mysql = "INSERT INTO history(event,screen,ua,referrer,url,uid,address,thumbnail) values (?,?,?,?,?,?,?,?)";
 $stmt = $pdo->prepare($mysql);
-$stmt->execute(array($event,$screen,$ua,$referrer,$url,$uid,$address));
-//$response = array('layer' => $layer);
-//echo json_encode($response);
+$stmt->execute(array($event,$screen,$ua,$referrer,$url,$uid,$address,$thumbnail));
+
+
 ?>
