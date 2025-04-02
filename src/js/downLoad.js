@@ -1241,23 +1241,28 @@ export function saveDxf (map, layerId, sourceId, fields, detailGeojson, kei2) {
 
     geojson = saveDXfGaiku (map,geojson,zahyo)
 
-    try {
-        const dxfString = geojsonToDXF(geojson);
-        // DXFファイルとしてダウンロード
-        const blob = new Blob([dxfString], { type: 'application/dxf' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
+    console.log(code)
+    console.log(geojson)
+    convertGeoJSON(geojson,code)
 
-        const firstChiban = getChibanAndHoka(geojson,true).firstChiban
-        const hoka = getChibanAndHoka(geojson,true).hoka
-        const kei = getKeiByCode(code)
-        link.download = kei + firstChiban + hoka + '.dxf';
 
-        link.click();
-    } catch (error) {
-        console.error('GeoJSONの解析中にエラーが発生しました:', error);
-        alert('有効なGeoJSONを入力してください。');
-    }
+    // try {
+    //     const dxfString = geojsonToDXF(geojson);
+    //     // DXFファイルとしてダウンロード
+    //     const blob = new Blob([dxfString], { type: 'application/dxf' });
+    //     const link = document.createElement('a');
+    //     link.href = URL.createObjectURL(blob);
+    //
+    //     const firstChiban = getChibanAndHoka(geojson,true).firstChiban
+    //     const hoka = getChibanAndHoka(geojson,true).hoka
+    //     const kei = getKeiByCode(code)
+    //     link.download = kei + firstChiban + hoka + '.dxf';
+    //
+    //     link.click();
+    // } catch (error) {
+    //     console.error('GeoJSONの解析中にエラーが発生しました:', error);
+    //     alert('有効なGeoJSONを入力してください。');
+    // }
 }
 
 function downloadGeoJSONAsCSV(geojson, filename = 'data.csv') {
@@ -6078,9 +6083,13 @@ export const wsg84ToJgd = (coordinates) => {
     return proj4("EPSG:4326", code, coordinates);
 };
 
-export const wsg84ToJgdForGeojson = (geojson) => {
-    const code = zahyokei.find(item => item.kei === store.state.zahyokei).code;
-
+export const wsg84ToJgdForGeojson = (geojson,code0) => {
+    let code
+    if (code0) {
+        code = code0
+    } else {
+        code = zahyokei.find(item => item.kei === store.state.zahyokei).code;
+    }
     const transformCoords = (coords) => {
         if (typeof coords[0] === 'number') {
             return proj4("EPSG:4326", code, coords);
@@ -6948,4 +6957,36 @@ export function publicChk (id,public0) {
         }
         cityGeojson()
     })
+}
+
+export async function convertGeoJSON(geojson,code) {
+    try {
+        const response = await fetch('https://kenzkenz.duckdns.org/myphp/geojsonToDxf.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(geojson) // オブジェクトを文字列に変換
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'サーバーエラー');
+        }
+
+        // DXFファイルとしてダウンロード
+        const blob = await response.blob();
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+
+        const firstChiban = getChibanAndHoka(geojson,true).firstChiban
+        const hoka = getChibanAndHoka(geojson,true).hoka
+        const kei = getKeiByCode(code)
+        link.download = kei + firstChiban + hoka + '.dxf';
+        link.click();
+
+    } catch (error) {
+        alert('失敗！')
+        console.log(`エラー: ${error.message}`)
+    }
 }
