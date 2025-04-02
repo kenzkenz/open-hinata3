@@ -906,6 +906,7 @@ export default {
     geojon: null,
     intervalId: null,
     preUrl: '',
+    historyCount: 0,
   }),
   computed: {
     cityItems() {
@@ -4040,12 +4041,20 @@ export default {
     // this.$store.state.highlightedChibans = new Set()
     const vm = this
 
-    // 初回実行
-    // history('autosave', window.location.href)
+    // 非同期で user の UID を監視
+    const checkUser = setInterval(() => {
+      if (user && user._rawValue && user._rawValue.uid) {
+        this.uid = user._rawValue.uid;
+        this.$store.state.userId = user._rawValue.uid
+        history('autosave-first', window.location.href)
+        clearInterval(checkUser); // UIDを取得できたら監視を停止
+      }
+    }, 5);
     // 5分おきに実行
     this.intervalId = setInterval(() => {
       if (window.location.href !== vm.preUrl) {
         history('autosave', window.location.href)
+        vm.historyCount++
       }
       vm.preUrl = window.location.href
     }, 5 * 60 * 1000)

@@ -16,7 +16,8 @@ try {
         exit;
     }
 
-    $sql = "SELECT * FROM history WHERE uid LIKE :uid AND event LIKE 'autosave' ORDER BY id DESC LIMIT 1000";
+//    $sql = "SELECT * FROM history WHERE uid LIKE :uid AND event LIKE 'autosave' ORDER BY id DESC LIMIT 1000";
+    $sql = "SELECT * FROM history WHERE uid LIKE :uid AND event IN ('autosave', 'autosave-first') ORDER BY id DESC LIMIT 1000";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':uid' => $uid]);
 

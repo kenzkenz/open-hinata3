@@ -194,7 +194,9 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                       class="data-container"
                       @click="historyClick(item.name, item.url, item.id)"
                   >
-                    <strong>{{ item.date + '-' + detectDevice(item.ua) }}</strong><br>
+                    <strong :style="item.event.includes('autosave-first') ? 'color: red;' : ''">
+                      {{ item.date + ' / ' + detectDevice(item.ua) + ' / ' + item.event }}
+                    </strong><br>
                   </div>
 
                 </v-card>
