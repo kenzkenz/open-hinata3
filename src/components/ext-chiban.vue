@@ -191,13 +191,49 @@
     </div>
     <div v-html="item.attribution"></div>
 
-    <v-text-field
-        v-model="lineWidth"
-        label="線幅の数値を入力"
-        type="number"
-        :min="1"
-        @change="changeLineWidth(lineWidth,true)"
-    />
+    <v-row
+        class="justify-center align-center"
+        no-gutters
+    >
+      <v-btn icon @click="decrement" size="mini"
+             @mousedown="startDecrement"
+             @mouseup="stopAdjust"
+             @mouseleave="stopAdjust"
+             @touchstart.prevent="startDecrement"
+             @touchend="stopAdjust"
+      >
+        <v-icon>mdi-minus</v-icon>
+      </v-btn>
+
+      <v-text-field
+          label="線幅の数値を入力"
+          v-model.number="lineWidth"
+          type="number"
+          class="mx-2"
+          style="max-width: 150px;"
+          hide-details
+          :min=1
+          @input="changeLineWidth(lineWidth,true)"
+      />
+
+<!--      <v-text-field-->
+<!--          v-model="lineWidth"-->
+<!--          label="線幅の数値を入力"-->
+<!--          type="number"-->
+<!--          :min="1"-->
+<!--          @input="changeLineWidth(lineWidth,true)"-->
+<!--      />-->
+
+      <v-btn icon @click="increment" size="mini"
+             @mousedown="startIncrement"
+             @mouseup="stopAdjust"
+             @mouseleave="stopAdjust"
+             @touchstart.prevent="startIncrement"
+             @touchend="stopAdjust"
+      >
+        <v-icon>mdi-plus</v-icon>
+      </v-btn>
+    </v-row>
 
   </div>
 
@@ -219,6 +255,7 @@ export default {
   name: 'ext-chibanzu',
   props: ['mapName','item'],
   data: () => ({
+    adjustTimer: null,
     lineWidth: null,
     fields: '',
     sourceId: '',
@@ -324,6 +361,28 @@ export default {
     },
   },
   methods: {
+    startIncrement() {
+      this.increment()
+      this.adjustTimer = setInterval(this.increment, 100)
+    },
+    startDecrement() {
+      this.decrement()
+      this.adjustTimer = setInterval(this.decrement, 100)
+    },
+    stopAdjust() {
+      clearInterval(this.adjustTimer)
+      this.adjustTimer = null
+    },
+    increment() {
+      this.lineWidth += 1
+      this.changeLineWidth(this.lineWidth,true)
+    },
+    decrement() {
+      if (this.lineWidth > 1) {
+        this.lineWidth -= 1
+        this.changeLineWidth(this.lineWidth,true)
+      }
+    },
     update () {
       const map = this.$store.state[this.mapName]
       map.getStyle().layers.forEach(layer => {
