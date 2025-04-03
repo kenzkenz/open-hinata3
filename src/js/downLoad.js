@@ -6966,6 +6966,9 @@ export async function convertGeoJSON(geojson,code) {
             scale = 1
         }
 
+        console.log(geojson)
+
+
         // リクエストボディにGeoJSONとスケール値を含める
         const requestBody = {
             geojson: geojson,
@@ -6980,7 +6983,9 @@ export async function convertGeoJSON(geojson,code) {
             body: JSON.stringify(geojson) // オブジェクトを文字列に変換
         });
 
+        console.log(response)
         if (!response.ok) {
+            alert(99)
             const errorData = await response.json();
             throw new Error(errorData.error || 'サーバーエラー');
         }
