@@ -141,7 +141,7 @@
   </v-dialog>
   <div :style="menuContentSize">
 <!--    <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>-->
-    <div style="font-size: large;margin-bottom: 10px;" v-html="item.label"/>
+<!--    <div style="font-size: large;margin-bottom: 10px;" v-html="item.label"/>-->
     <div v-if="item.id === 'oh-chibanzu-all2'" style="font-size: small">
       <div>オープンデータは「緑色」<br>開示請求且つ公開可能は「青色」<br>
       開示請求により入手できたが公開の可否不明は「灰色」
@@ -189,8 +189,6 @@
       <div class="circle box5" @click="changeColorCircle('orange',true)"></div>
       <div class="circle box6" @click="changeColorCircle('rgba(0,0,0,0)')"></div>
     </div>
-    <div v-html="item.attribution"></div>
-
     <v-row
         class="justify-center align-center"
         no-gutters
@@ -226,6 +224,8 @@
         <v-icon>mdi-plus</v-icon>
       </v-btn>
     </v-row>
+
+    <div v-if="!s_isUnder500" style="text-align: center;margin-top: 10px;" v-html="item.attribution"></div>
 
   </div>
 
@@ -272,6 +272,9 @@ export default {
     menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'hidden', 'user-select': 'text', 'font-size':'large'}
   }),
   computed: {
+    s_isUnder500 () {
+      return this.$store.state.isUnder500
+    },
     s_isAndroid () {
       return this.$store.state.isAndroid
     },
@@ -1102,9 +1105,13 @@ export default {
     this.checkDevice();
   },
   mounted() {
-    // alert(this.s_chibanColorsString)
-    // console.log(this.s_chibanColorsString)
-    console.log(this.s_chibanWidhsString)
+    document.querySelector('#handle-' + this.item.id).innerHTML = '<span style="font-size: large;">' + this.item.label + '</span>'
+
+    if (this.s_tokijyoLineWidth) {
+      this.lineWidth = this.s_tokijyoLineWidth
+    } else {
+      this.lineWidth = 2
+    }
   },
   watch: {
     s_extFire () {

@@ -108,14 +108,10 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         </v-card>
       </v-dialog>
 
-      <div>
-        <p v-if="user1"><strong>ようこそ、{{ user1.displayName || "ゲスト" }}さん！</strong></p>
-        <p v-else></p>
-      </div>
-      <p style="margin-top: 10px;margin-bottom: 10px;">
-        v0.741
+      <p style="margin-top: 3px;margin-bottom: 10px;">
+        v0.744
       </p>
-      <v-btn @click="reset">リセット</v-btn>
+      <v-btn style="width:100%" @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 
 <!--      <v-btn class="tiny-btn" @click="simaLoad">SIMA読み込</v-btn>-->
@@ -130,8 +126,8 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
       <v-switch style="height: 40px;margin-bottom: 20px;" v-model="s_mapillary" label="mapillary" color="primary" />
 
-      標高を強調します。{{s_terrainLevel}}倍
-      <div class="range-div">
+      <div class="range-div" style="text-align: center">
+        標高を強調します。{{s_terrainLevel}}倍
         <input style="width: 200px" type="range" min="1" max="10" step="0.1" class="range" v-model.number="s_terrainLevel" @input="terrainLevelInput"/>
       </div>
 <!--      <v-btn @click="addLayerDiv=!addLayerDiv">レイヤー追加（XYZタイル）</v-btn>-->
@@ -673,14 +669,16 @@ export default {
   watch: {
   },
   mounted() {
+
+    document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー</span>'
+
     // 非同期で user の UID を監視
     const checkUser = setInterval(() => {
       if (user && user._rawValue && user._rawValue.uid) {
         this.uid = user._rawValue.uid;
         this.$store.state.userId = user._rawValue.uid
+        document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー　ようこそ' + user._rawValue.displayName + 'さん</span>'
         clearInterval(checkUser); // UIDを取得できたら監視を停止
-
-
       }
     }, 5);
 

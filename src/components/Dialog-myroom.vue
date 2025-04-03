@@ -2119,7 +2119,7 @@ export default {
     }
   },
   mounted() {
-    document.querySelector('#drag-handle-myroomDialog-map01').innerHTML = '<span style="font-size: large;">my room</span>'
+    document.querySelector('#drag-handle-myroomDialog-map01').innerHTML = '<span style="font-size: large;">マイルーム</span>'
     // -------------------------------------------------------------------
     let maxHeight
     if (window.innerWidth <= 500) {

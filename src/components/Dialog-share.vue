@@ -48,6 +48,9 @@ export default {
     },
   },
   mounted() {
+
+    document.querySelector('#drag-handle-shareDialog-map01').innerHTML = '<span style="font-size: large;">共有</span>'
+
     if (localStorage.getItem('terrainLevel')) {
       this.s_terrainLevel = Number(localStorage.getItem('terrainLevel'))
     } else {

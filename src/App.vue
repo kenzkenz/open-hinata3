@@ -4059,11 +4059,15 @@ export default {
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
     console.log(/android/i.test(userAgent))
     this.$store.state.isAndroid = /android/i.test(userAgent);
+
+    if (window.innerWidth < 500) this.$store.state.isUnder500 = true
+
   },
   beforeUnmount() {
     window.removeEventListener("resize", this.onResize);
   },
   mounted() {
+
     // this.$store.state.highlightedChibans = new Set()
     const vm = this
 

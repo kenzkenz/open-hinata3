@@ -8,6 +8,7 @@ export default createStore({
     userId: '',
     storeTest: 'storeTest',
     map2Flg: false,
+    isUnder500: false,
     dialogs: {
       chibanzuListDialog:{
         map01:{name:'chibanzuListDialog',style: {top: '65px', left: '10px', 'z-index': 1, height: 'auto', 'width': '350px', display: 'none'}},

@@ -7,6 +7,7 @@
       </v-card-title>
       <v-card-text>
         <div>
+          <p> 作成中です。今の所どちらを選んでも差異はないです。</p><br>
           <v-select class="scrollable-content"
                     v-model="s_cad"
                     :items="caditems"
@@ -22,7 +23,6 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
-
 
   <v-dialog v-model="dialogForShape" max-width="500px">
     <v-card>
@@ -102,7 +102,7 @@
     </v-card>
   </v-dialog>
   <div :style="menuContentSize">
-    <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
+<!--    <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>-->
 
     <v-text-field label="表示地番検索（例）5-7" v-model="s_tokijyoText" @input="change" style="margin-top: 0px"></v-text-field>
 
@@ -208,8 +208,9 @@
         <v-icon>mdi-plus</v-icon>
       </v-btn>
     </v-row>
-
-    <div style="font-size: 12px;margin-top: 10px;"><div v-html="item.attribution"></div>{{ s_zahyokei }}</div>
+    <div style="text-align: center" v-if="!s_isUnder500">
+      <div style="font-size: 12px;margin-top: 10px;"><div v-html="item.attribution"></div>{{ s_zahyokei }}</div>
+    </div>
   </div>
 </template>
 
@@ -259,6 +260,9 @@ export default {
     menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'hidden', 'user-select': 'text', 'font-size':'large'}
   }),
   computed: {
+    s_isUnder500 () {
+      return this.$store.state.isUnder500
+    },
     s_cad: {
       get() {
         return this.$store.state.cad
@@ -579,7 +583,12 @@ export default {
     this.$store.state.isAndroid = /android/i.test(userAgent);
   },
   mounted() {
-    this.lineWidth = this.s_tokijyoLineWidth
+    document.querySelector('#handle-' + this.item.id).innerHTML = '<span style="font-size: large;">' + this.item.label + '</span>'
+    if (this.s_tokijyoLineWidth) {
+      this.lineWidth = this.s_tokijyoLineWidth
+    } else {
+      this.lineWidth = 2
+    }
   },
   watch: {
     s_extFire () {

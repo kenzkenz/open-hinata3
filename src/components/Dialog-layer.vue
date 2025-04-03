@@ -1077,6 +1077,10 @@ export default {
   },
   mounted() {
 
+    document.querySelector('#drag-handle-layerDialog-map01').innerHTML = '<span style="font-size: large;">レイヤー</span>'
+    document.querySelector('#drag-handle-layerDialog-map02').innerHTML = '<span style="font-size: large;">レイヤー</span>'
+
+
     if (window.innerWidth > 480) {
       this.menuContentSize.height = '600px'
     } else {
