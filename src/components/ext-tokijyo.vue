@@ -1,5 +1,29 @@
 <template>
 
+  <v-dialog v-model="dialogForDxf" max-width="500px">
+    <v-card>
+      <v-card-title>
+        CAD選択
+      </v-card-title>
+      <v-card-text>
+        <div>
+          <v-select class="scrollable-content"
+                    v-model="s_cad"
+                    :items="caditems"
+                    label="選択してください"
+                    outlined
+          ></v-select>
+        </div>
+        <v-btn @click="saveDxf">DXF保存開始</v-btn>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="blue-darken-1" text @click="dialogForDxf = false">Close</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+
   <v-dialog v-model="dialogForShape" max-width="500px">
     <v-card>
       <v-card-title>
@@ -92,7 +116,7 @@
       <div style="margin-top:0px;display: flex; justify-content: space-between; gap: 0px; padding-right: 0px;">
         <v-btn style="width: 70px;" class="tiny-btn" @click="saveSima2">sima保存</v-btn>
         <v-btn style="width: 70px;" class="tiny-btn" @click="s_dialogForSima = true">sima読込</v-btn>
-        <v-btn style="width: 70px;" class="tiny-btn" @click="saveDxf">dxf保存</v-btn>
+        <v-btn style="width: 70px;" class="tiny-btn" @click="dialogForDxf = true">dxf保存</v-btn>
       </div>
 
       <!-- 3行目 -->
@@ -176,6 +200,7 @@ export default {
   name: 'ext-tokijyo',
   props: ['mapName','item'],
   data: () => ({
+    dialogForDxf: false,
     dialogForShape: false,
     mode: false,
     // dialog: false,
@@ -193,10 +218,21 @@ export default {
     items2: [
       'WGS84', '公共座標XX系'
     ],
+    caditems: [
+      'jww', 'その他'
+    ],
     zahyokei: 'WGS84',
     menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'hidden', 'user-select': 'text', 'font-size':'large'}
   }),
   computed: {
+    s_cad: {
+      get() {
+        return this.$store.state.cad
+      },
+      set(value) {
+        return this.$store.state.cad = value
+      }
+    },
     s_isAndroid () {
       return this.$store.state.isAndroid
     },

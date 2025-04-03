@@ -135,6 +135,7 @@ export default createStore({
     pmtilesPropertieName: '',
     address: '',
     mapillaryFlg: false,
+    cad: '',
     //------------------------
     highwayYear:{
       map01: 2024,

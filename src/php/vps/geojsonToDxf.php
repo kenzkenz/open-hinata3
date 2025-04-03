@@ -25,7 +25,8 @@ if ($result === false) {
 // Python環境の設定
 $pythonPath = '/var/www/html/public_html/myphp/venv/bin/python3';
 $pythonScript = '/var/www/html/public_html/myphp/convert_to_dxf.py';
-$scaleFactor = 1000; // スケール値（必要に応じて変更可能）
+//$scaleFactor = 1000; // スケール値（必要に応じて変更可能）
+$scaleFactor = isset($_POST['scale']) ? floatval($_POST['scale']) : 1000;
 
 if (!file_exists($pythonPath)) {
     echo json_encode(['error' => 'Python executable not found', 'path' => $pythonPath]);
