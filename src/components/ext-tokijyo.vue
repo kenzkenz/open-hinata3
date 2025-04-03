@@ -402,6 +402,61 @@ export default {
       const map = this.$store.state[this.mapName]
       map.setPaintProperty('oh-amx-a-fude-line', 'line-color', color)
       this.s_tokijyoColor = color
+
+      // 既存のレイヤーを削除
+      if (map.getLayer('oh-amx-a-daihyo')) {
+        map.removeLayer('oh-amx-a-daihyo');
+      }
+
+      let colors
+      switch (color) {
+        case 'red':
+          colors = ["rgba(255, 255, 255, 0)", "rgba(255, 255, 0, 0.5)", "rgba(255, 0, 0, 0.5)"]
+          break
+        case 'black':
+          colors = ["rgba(0, 0, 0, 0)","rgba(0, 0, 0, 0.5)","rgba(0, 0, 0, 1)"]
+          break
+        case 'blue':
+          colors = ["rgba(0, 0, 255, 0)","rgba(0, 0, 255, 0.5)","rgba(0, 0, 255, 1)"]
+          break
+        case 'green':
+          colors = ["rgba(0, 255, 0, 0)","rgba(0, 255, 0, 0.5)","rgba(0, 128, 0, 1)"]
+          break
+        case 'orange':
+          colors = ["rgba(255, 165, 0, 0)","rgba(255, 165, 0, 0.5)","rgba(255, 140, 0, 1)"]
+          break
+      }
+
+      // 新しい設定でレイヤーを追加
+      map.addLayer({
+        id: 'oh-amx-a-daihyo',
+        type: 'heatmap',
+        source: "amx-a-pmtiles",
+        "source-layer": "daihyo",
+        paint: {
+          'heatmap-color': [
+            "interpolate",
+            ["linear"],
+            ["heatmap-density"],
+            0, colors[0],
+            0.5, colors[1],
+            1, colors[2],
+          ],
+          "heatmap-radius": [
+            // 入力値と出力値のペア（"stop"）の間を補間することにより、連続的で滑らかな結果を生成する
+            "interpolate",
+            // 出力が増加する割合を制御する、1に近づくほど出力が増加する
+            ["exponential", 10],
+            // ズームレベルに応じて半径を調整する
+            ["zoom"],
+            2,
+            5,
+            14,
+            50,
+          ],
+        }
+      });
+
       if (isUpdate) this.update()
     },
     changeMode () {
