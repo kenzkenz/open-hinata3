@@ -207,7 +207,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 <v-card>
                   <!-- <v-btn style="margin-bottom: 10px;" @click="isAllBtn">全表示</v-btn>-->
                   <v-switch style="height: 40px;" v-model="isAll" @change="isAllSwitch" label="全表示" color="primary" />
-                  <v-btn style="margin-bottom: 30px; width: 180px;" @click="openData">オープンデータ更新</v-btn>
+                  <v-btn style="margin-top:20px;margin-bottom: 30px; width: 180px;" @click="openData">オープンデータ更新</v-btn>
 
                 </v-card>
               </v-window-item>

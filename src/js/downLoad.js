@@ -6630,7 +6630,8 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
             const cityName = result[1].split(',')[3]
             const public0 = selectedPublic
             if (Number(selectedPublic) > 0) {
-                publicChk (0,0)
+                alert(Number(selectedPublic))
+                publicChk (0,Number(selectedPublic))
             }
             const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesInsert.php', new URLSearchParams({
                 uid: uid,
@@ -6890,7 +6891,7 @@ export function updateMeasureUnit(unit) {
 }
 export function publicChk (id,public0) {
     store.state.loading2 = true
-    store.state.loadingMessage = '処理中です。'
+    store.state.loadingMessage = '全国地番図公開マップ作成中です。'
     axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesUpdatePublic.php',{
         params: {
             id: id,
