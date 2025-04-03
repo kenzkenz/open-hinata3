@@ -6965,10 +6965,7 @@ export async function convertGeoJSON(geojson,code) {
         } else {
             scale = 1
         }
-
         console.log(geojson)
-
-
         // リクエストボディにGeoJSONとスケール値を含める
         const requestBody = {
             geojson: geojson,
@@ -6980,7 +6977,8 @@ export async function convertGeoJSON(geojson,code) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(geojson) // オブジェクトを文字列に変換
+            // body: JSON.stringify(geojson) // オブジェクトを文字列に変換
+            body: JSON.stringify(requestBody) // オブジェクトを文字列に変換
         });
 
         console.log(response)
