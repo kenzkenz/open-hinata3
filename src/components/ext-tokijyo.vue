@@ -175,7 +175,39 @@
       <div class="circle box5" @click="changeColorCircle('orange',true)"></div>
       <div class="circle box6" @click="changeColorCircle('rgba(0,0,0,0)')"></div>
     </div>
-<!--    <v-btn style="margin-top: 10px;margin-left: 100px;width: 50px" class="tiny-btn" @click="info">help</v-btn>-->
+    <v-row
+        class="justify-center align-center"
+        no-gutters
+    >
+      <v-btn icon @click="decrement" size="mini"
+             @mousedown="startDecrement"
+             @mouseup="stopAdjust"
+             @mouseleave="stopAdjust"
+             @touchstart.prevent="startDecrement"
+             @touchend="stopAdjust"
+      >
+        <v-icon>mdi-minus</v-icon>
+      </v-btn>
+      <v-text-field
+          label="線の太さ"
+          v-model.number="lineWidth"
+          type="number"
+          class="mx-2"
+          style="max-width: 150px;"
+          hide-details
+          :min=1
+          @input="changeLineWidth(lineWidth,true)"
+      />
+      <v-btn icon @click="increment" size="mini"
+             @mousedown="startIncrement"
+             @mouseup="stopAdjust"
+             @mouseleave="stopAdjust"
+             @touchstart.prevent="startIncrement"
+             @touchend="stopAdjust"
+      >
+        <v-icon>mdi-plus</v-icon>
+      </v-btn>
+    </v-row>
 
     <div style="font-size: 12px;margin-top: 10px;"><div v-html="item.attribution"></div>{{ s_zahyokei }}</div>
   </div>
@@ -192,7 +224,7 @@ import {
   initializePlaneRectangularCRS,
   saveCsv,
   simaToGeoJSON,
-  resetFeatureColors, downloadKML
+  resetFeatureColors, downloadKML, getLayersById
 } from "@/js/downLoad";
 import {history} from "@/App";
 
@@ -200,6 +232,8 @@ export default {
   name: 'ext-tokijyo',
   props: ['mapName','item'],
   data: () => ({
+    adjustTimer: null,
+    lineWidth: null,
     dialogForDxf: false,
     dialogForShape: false,
     mode: false,
@@ -261,6 +295,14 @@ export default {
         this.$store.state.tokijyoText[this.mapName] = value
       }
     },
+    s_tokijyoLineWidth: {
+      get() {
+        return this.$store.state.tokijyoLineWidth[this.mapName]
+      },
+      set(value) {
+        this.$store.state.tokijyoLineWidth[this.mapName] = value
+      }
+    },
     s_tokijyoColor: {
       get() {
         return this.$store.state.tokijyoColor[this.mapName]
@@ -304,6 +346,28 @@ export default {
     },
   },
   methods: {
+    startIncrement() {
+      this.increment()
+      this.adjustTimer = setInterval(this.increment, 100)
+    },
+    startDecrement() {
+      this.decrement()
+      this.adjustTimer = setInterval(this.decrement, 100)
+    },
+    stopAdjust() {
+      clearInterval(this.adjustTimer)
+      this.adjustTimer = null
+    },
+    increment() {
+      this.lineWidth = Number(this.lineWidth) + 1
+      this.changeLineWidth(this.lineWidth,true)
+    },
+    decrement() {
+      if (this.lineWidth > 1) {
+        this.lineWidth -= 1
+        this.changeLineWidth(this.lineWidth,true)
+      }
+    },
     tutorial () {
       window.open("https://hackmd.io/@kenz/H15Iq49D1g", "_blank");
       history('チュートリアル',window.location.href)
@@ -313,9 +377,16 @@ export default {
         mapName: this.mapName, id: this.item.id, values: [
           this.s_tokijyoText,
           this.s_tokijyoColor,
-          this.s_tokijyoCircleColor
+          this.s_tokijyoCircleColor,
+          this.s_tokijyoLineWidth
         ]
       })
+    },
+    changeLineWidth (width,isUpdate) {
+      const map = this.$store.state[this.mapName]
+      map.setPaintProperty('oh-amx-a-fude-line', 'line-width', width)
+      this.s_tokijyoLineWidth = Number(width)
+      if (isUpdate) this.update()
     },
     changeColorCircle (color,isUpdate) {
       const map = this.$store.state[this.mapName]
@@ -327,7 +398,6 @@ export default {
       const map = this.$store.state[this.mapName]
       map.setPaintProperty('oh-amx-a-fude-line', 'line-color', color)
       this.s_tokijyoColor = color
-
       if (isUpdate) this.update()
     },
     changeMode () {
@@ -509,12 +579,14 @@ export default {
     this.$store.state.isAndroid = /android/i.test(userAgent);
   },
   mounted() {
+    this.lineWidth = this.s_tokijyoLineWidth
   },
   watch: {
     s_extFire () {
       this.change()
       this.changeColor(this.s_tokijyoColor)
       this.changeColorCircle(this.s_tokijyoCircleColor)
+      this.changeLineWidth(this.s_tokijyoLineWidth)
     },
   }
 }

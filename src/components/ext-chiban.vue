@@ -206,7 +206,7 @@
       </v-btn>
 
       <v-text-field
-          label="線幅の数値を入力"
+          label="線の太さ"
           v-model.number="lineWidth"
           type="number"
           class="mx-2"
@@ -215,14 +215,6 @@
           :min=1
           @input="changeLineWidth(lineWidth,true)"
       />
-
-<!--      <v-text-field-->
-<!--          v-model="lineWidth"-->
-<!--          label="線幅の数値を入力"-->
-<!--          type="number"-->
-<!--          :min="1"-->
-<!--          @input="changeLineWidth(lineWidth,true)"-->
-<!--      />-->
 
       <v-btn icon @click="increment" size="mini"
              @mousedown="startIncrement"
@@ -374,7 +366,7 @@ export default {
       this.adjustTimer = null
     },
     increment() {
-      this.lineWidth += 1
+      this.lineWidth = Number(this.lineWidth) + 1
       this.changeLineWidth(this.lineWidth,true)
     },
     decrement() {

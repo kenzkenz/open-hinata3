@@ -269,6 +269,10 @@ export default createStore({
       map01: '',
       map02: ''
     },
+    tokijyoLineWidth:{
+      map01: null,
+      map02: null
+    },
     tokijyoColor:{
       map01: 'red',
       map02: 'red'
@@ -454,6 +458,9 @@ export default createStore({
             }
             if (payload.order === 2) {
               variable = 'tokijyoCircleColor'
+            }
+            if (payload.order === 3) {
+              variable = 'tokijyoLineWidth'
             }
             break
           case 'ext-chibanzu':
