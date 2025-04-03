@@ -285,6 +285,11 @@ export default createStore({
       map01: 'blue',
       map02: 'blue'
     },
+    chibanWidhs: [],
+    chibanWidhsString: {
+      map01: '',
+      map02: ''
+    },
     chibanColors: [],
     chibanColorsString: {
       map01: '',
@@ -460,6 +465,9 @@ export default createStore({
             }
             if (payload.order === 2) {
               variable = 'chibanCircleColor'
+            }
+            if (payload.order === 3) {
+              variable = 'chibanWidhsString'
             }
             break
           case 'extZeni':

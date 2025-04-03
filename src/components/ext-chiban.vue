@@ -190,7 +190,17 @@
       <div class="circle box6" @click="changeColorCircle('rgba(0,0,0,0)')"></div>
     </div>
     <div v-html="item.attribution"></div>
+
+    <v-text-field
+        v-model="lineWidth"
+        label="線幅の数値を入力"
+        type="number"
+        :min="1"
+        @change="changeLineWidth(lineWidth,true)"
+    />
+
   </div>
+
 </template>
 
 <script>
@@ -209,6 +219,7 @@ export default {
   name: 'ext-chibanzu',
   props: ['mapName','item'],
   data: () => ({
+    lineWidth: null,
     fields: '',
     sourceId: '',
     layerId: '',
@@ -271,6 +282,22 @@ export default {
         this.$store.state.chibanColor[this.mapName] = value
       }
     },
+    s_chibanWidhs: {
+      get() {
+        return this.$store.state.chibanWidhs[this.mapName]
+      },
+      set(value) {
+        this.$store.state.chibanWidhs[this.mapName] = value
+      }
+    },
+    s_chibanWidhsString: {
+      get() {
+        return this.$store.state.chibanWidhsString[this.mapName]
+      },
+      set(value) {
+        this.$store.state.chibanWidhsString[this.mapName] = value
+      }
+    },
     s_chibanColors: {
       get() {
         return this.$store.state.chibanColors[this.mapName]
@@ -306,7 +333,8 @@ export default {
             mapName: this.mapName, id: getParentIdByLayerId(layer.id), values: [
               this.s_chibanText,
               this.s_chibanColorsString,
-              this.s_chibanCircleColor
+              this.s_chibanCircleColor,
+              this.s_chibanWidhsString,
             ]
           })
         }
@@ -808,6 +836,84 @@ export default {
 
       if (isUpdate) this.update()
     },
+    changeLineWidth (width,isUpdate) {
+      // alert(this.s_chibanWidhsString)
+      let lineWidth
+      let result
+      if (this.s_chibanWidhsString) {
+        result = JSON.parse(this.s_chibanWidhsString).find(v => {
+          return v.layerId === this.item.id}
+        )
+        if (result) {
+          if (width) {
+            lineWidth = Number(width)
+          } else {
+            this.lineWidth = Number(result.width)
+            lineWidth = Number(result.width)
+          }
+        }
+      } else {
+        lineWidth = Number(width)
+      }
+      const map = this.$store.state[this.mapName]
+      const layers = getLayersById(map,this.item.id)
+      const lineLayerId = layers.find(v => v.id.includes('line')).id
+      if (lineWidth) {
+        map.setPaintProperty(lineLayerId, 'line-width', lineWidth)
+      }
+
+      if (result) {
+        this.$store.state.chibanWidhs = JSON.parse(this.s_chibanWidhsString)
+        const result1 = this.$store.state.chibanWidhs.find(v => v.layerId === this.item.id)
+        if (result1) {
+          result1.width = lineWidth
+          this.s_chibanWidhsString = JSON.stringify(this.$store.state.chibanWidhs)
+        }
+
+      } else {
+        if (width) {
+          map.setPaintProperty(lineLayerId, 'line-width', Number(width))
+          this.$store.state.chibanWidhs.push({
+            layerId: this.item.id,
+            width: width
+          })
+          this.s_chibanWidhsString = JSON.stringify(this.$store.state.chibanWidhs)
+        }
+      }
+      //----------------------------------------------------------------------------------------------------------------
+      if (this.item.id === 'oh-chibanzu-all') {
+        console.log(this.item.id)
+        getLayersById(map,'oh-chibanzu-all').filter(v => v.id.includes('line')).forEach(v => {
+          map.setPaintProperty(v.id, 'line-width', lineWidth)
+        })
+      }
+      //----------------------------------------------------------------------------------------------------------------
+      console.log(this.item.id)
+      if (this.item.id === 'oh-chibanzu-all2') {
+        map.getStyle().layers.forEach(layer => {
+          try {
+            if (layer.id.includes('oh-chibanzu-line')) {
+              if (width) {
+                map.setPaintProperty(layer.id, 'line-width', Number(width))
+              } else {
+                map.setPaintProperty(layer.id, 'line-width', Number(result.width))
+              }
+            }
+            if (layer.id.includes('oh-chibanL-') && layer.id.includes('line')) {
+              if (width) {
+                map.setPaintProperty(layer.id, 'line-width', Number(width))
+              } else {
+                map.setPaintProperty(layer.id, 'line-width', Number(result.width))
+              }
+            }
+          } catch (e) {
+            console.log(e)
+          }
+        })
+      }
+      //----------------------------------------------------------------------------------------------------------------
+      if (isUpdate) this.update()
+    },
     changeColor (color,isUpdate) {
       // const map = this.$store.state[this.mapName]
       // map.getStyle().layers.forEach(layer => {
@@ -819,16 +925,12 @@ export default {
       //   }
       // })
       // alert(this.item.id)
-
-
       let lineColor
       let result
-      // console.log(this.s_chibanColorsString)
       if (this.s_chibanColorsString) {
         result = JSON.parse(this.s_chibanColorsString).find(v => {
           return v.layerId === this.item.id}
         )
-        // if (result) alert(result.layerId)
         if (result) {
           if (color) {
             lineColor = color
@@ -950,13 +1052,15 @@ export default {
   },
   mounted() {
     // alert(this.s_chibanColorsString)
-    console.log(this.s_chibanColorsString)
+    // console.log(this.s_chibanColorsString)
+    console.log(this.s_chibanWidhsString)
   },
   watch: {
     s_extFire () {
       this.change()
       this.changeColor()
       this.changeColorCircle(this.s_chibanCircleColor)
+      this.changeLineWidth()
     },
   }
 }
