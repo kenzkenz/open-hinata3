@@ -1203,22 +1203,43 @@ export default {
                     } else {
                       minZoom = 17
                     }
+                    // const labelLayer = {
+                    //   id: 'oh-chibanL-' + name + '-label-layer',
+                    //   type: "symbol",
+                    //   source: 'oh-chiban-' + id + '-' + name + + '-source',
+                    //   "source-layer": "oh3",
+                    //   'layout': {
+                    //     'text-field': ['get', chiban],
+                    //     'text-font': ['NotoSansJP-Regular'],
+                    //   },
+                    //   'paint': {
+                    //     'text-color': 'navy',
+                    //     'text-halo-color': 'rgba(255,255,255,1)',
+                    //     'text-halo-width': 1.0,
+                    //   },
+                    //   'minzoom': minZoom
+                    // }
                     const labelLayer = {
                       id: 'oh-chibanL-' + name + '-label-layer',
                       type: "symbol",
-                      source: 'oh-chiban-' + id + '-' + name + + '-source',
+                      source: 'oh-chiban-' + id + '-' + name + '-source',
                       "source-layer": "oh3",
-                      'layout': {
+                      layout: {
                         'text-field': ['get', chiban],
                         'text-font': ['NotoSansJP-Regular'],
+                        'text-offset': [
+                          'case',
+                          ['==', ['geometry-type'], 'Point'], ['literal', [0, 1.2]],  // ポイントは下にずらす
+                          ['literal', [0, 0]]  // ポリゴンなどはそのまま
+                        ]
                       },
-                      'paint': {
+                      paint: {
                         'text-color': 'navy',
                         'text-halo-color': 'rgba(255,255,255,1)',
                         'text-halo-width': 1.0,
                       },
-                      'minzoom': minZoom
-                    }
+                      minzoom: minZoom
+                    };
                     const pointLayer = {
                       id: 'oh-chibanL-' + name + '-point-layer',
                       type: "circle",
