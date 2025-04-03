@@ -714,6 +714,7 @@ export default {
       // saveDxf(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'])
       // saveDxf(map,this.layerId,this.sourceId,this.fields)
       saveSima2(map,this.layerId,null,true,this.sourceId,this.fields,this.s_zahyokei)
+      this.dialog4 = false
     },
     loadSima () {
       if (!this.s_zahyokei) {

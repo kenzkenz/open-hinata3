@@ -24,7 +24,7 @@ for feature in geojson_data['features']:
         msp.add_lwpolyline(coords + [coords[0]])  # ポリゴンを描画
         centroid = geom.centroid
         # "地番"をラベルとして取得、デフォルトは"NoChiban"
-        label = feature['properties'].get('地番', 'NoChiban')
+        label = feature['properties'].get('地番', '')
         msp.add_text(label, dxfattribs={"height": 1.0}).set_placement(
             (centroid.x, centroid.y), align=TextEntityAlignment.MIDDLE_CENTER
         )

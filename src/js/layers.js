@@ -1903,7 +1903,7 @@ export const sicyosonChibanzuUrls = [
     // 岡山県
     {prefname:'岡山県', prefcode:'33', code:'33643', name:'西粟倉村', chiban: ['get', 'TIBAN'], position:[134.33562862698358,35.171553518278486], url:'nishiawakuramura', page:'https://www.vill.nishiawakura.okayama.jp/open_data/others/index.html'},
     // 広島県
-    {prefname:'広島県', prefcode:'34', code:'34207', name:'福山市', chiban: ['get', '小字名'], position:[133.36252445767389,34.485761252632884], url:'hukuyamashi', page:'https://data.city.fukuyama.hiroshima.jp/dataset/digital_numbers_map/resource/93328fe8-64fb-4321-9964-84eab4f68fcd'},
+    {prefname:'広島県', prefcode:'34', code:'34207', name:'福山市', chiban: ['get', '地番'], position:[133.36252445767389,34.485761252632884], url:'fukuyamashi', page:'https://data.city.fukuyama.hiroshima.jp/dataset/digital_numbers_map/resource/93328fe8-64fb-4321-9964-84eab4f68fcd'},
     // 香川県
     {prefname:'香川県', prefcode:'37', code:'37203', name:'坂出市', chiban: ['concat', ['get', '所在地番3'], '-', ['get', '所在地番5']], position:[133.8605011373076,34.3166967696347], url:'sakaideshi', page:'https://www.city.sakaide.lg.jp/soshiki/kouminrenkei/opendata.html'},
     {prefname:'香川県', prefcode:'37', code:'37204', name:'善通寺市', chiban: ['concat', ['get', '本番'], '-', ['get', '枝番'], '-', ['get', '孫番']],position:[133.78706908666885,34.22705330992301], url:'zentujishi', page:'https://opendata.pref.kagawa.lg.jp/dataset/701.html'},
@@ -1911,7 +1911,7 @@ export const sicyosonChibanzuUrls = [
     {prefname:'福岡県', prefcode:'40', code:'40130', name:'福岡市', chiban: ['get', '地番'], position:[130.40177928836357,33.5897855042562], url:'fukuokashi2', page:'https://webmap.city.fukuoka.lg.jp/fukuoka/OpenData?mids=&pno=1'},
     {prefname:'福岡県', prefcode:'40', code:'40204', name:'直方市', chiban: ['get', '地番'], position:[130.72966337301625,33.743983314699236], url:'nogatashi', page:'https://data.bodik.jp/dataset/402044_land_lot_correspondence_map/resource/3e57cf4e-a84b-4a6a-adba-fd27013531c7'},
     // 長崎県
-    {prefname:'長崎県', prefcode:'42', code:'42307', name:'長与町', chiban: ['get', 'SAFIELD002'], position:[129.87507937301513,32.82524812594376], url:'nagayochyo', page:'https://data.bodik.jp/dataset/423076_tibansankouzu/resource/580da941-74d1-4ddd-a0f0-fb6b88fc793a'}
+    {prefname:'長崎県', prefcode:'42', code:'42307', name:'長与町', chiban: ['get', '地番'], position:[129.87507937301513,32.82524812594376], url:'nagayochyo', page:'https://data.bodik.jp/dataset/423076_tibansankouzu/resource/580da941-74d1-4ddd-a0f0-fb6b88fc793a'}
 ];
 
 export const chibanzuSources = []
