@@ -6958,6 +6958,20 @@ export function publicChk (id,public0) {
 
 export async function convertGeoJSON(geojson,code) {
     try {
+
+        let scale
+        if (store.state.cad === 'jww') {
+            scale = 1000
+        } else {
+            scale = 1
+        }
+
+        // リクエストボディにGeoJSONとスケール値を含める
+        const requestBody = {
+            geojson: geojson,
+            scale: scale
+        };
+
         const response = await fetch('https://kenzkenz.duckdns.org/myphp/geojsonToDxf.php', {
             method: 'POST',
             headers: {
