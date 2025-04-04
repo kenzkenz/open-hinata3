@@ -76,7 +76,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
           <v-card-title>
             <p v-if="user1">ようこそ、{{ user1.displayName }}さん！</p>
             <div v-if="user1 && s_currentGroupName">
-              現在のグループは{{ s_currentGroupName }}です。
+              現在のグループは「{{ s_currentGroupName }}」です。
               <v-select
                   ref="groupSelect2"
                   v-model="selectedGroupId"
@@ -136,7 +136,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </p>
 
       <div v-if="user1 && s_currentGroupName">
-        現在のグループは{{ s_currentGroupName }}です。
+        現在のグループは「{{ s_currentGroupName }}」です。
         <v-select
             ref="groupSelect1"
             v-model="selectedGroupId"
