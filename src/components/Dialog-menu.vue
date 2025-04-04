@@ -85,20 +85,57 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
           <v-card-text>
 
             <v-tabs mobile-breakpoint="0" v-model="tab">
-              <v-tab value="0">グループ作成</v-tab>
-              <v-tab value="1">グループ変更</v-tab>
-              <v-tab value="2">グループ削除</v-tab>
+              <v-tab value="0">作成</v-tab>
+              <v-tab value="1">招待</v-tab>
+              <v-tab value="2">変更</v-tab>
+              <v-tab value="3">削除</v-tab>
             </v-tabs>
 
             <v-window v-model="tab">
               <v-window-item value="0" class="my-v-window">
                 <div class="create-group" v-if="user1 && !loginDiv && !signUpDiv">
-                  <p style="margin-top: 20px;">グループを新規作成するときは以下を入力してください。</p>
+<!--                  <p style="margin-top: 20px;">グループを新規作成するときは以下を入力してください。</p>-->
                   <v-text-field v-model="groupName" label="グループ名" />
                   <v-btn @click="createGroup">グループ作成</v-btn>
                 </div>
               </v-window-item>
               <v-window-item value="1" class="my-v-window">
+                <div style="margin-bottom: 20px;">
+                  <div v-if="s_currentGroupName">
+                    現在のグループは「{{ s_currentGroupName }}」です。
+                  </div>
+                  <div v-else>
+                    グループに所属していません。
+                  </div>
+                </div>
+                <v-select
+                    v-model="selectedGroupId"
+                    :items="groupOptions.filter((g, i) => i !== 0)"
+                    item-value="id"
+                    item-title="name"
+                    label="グループを選択"
+                    outlined
+                    dense
+                    class="mt-2"
+                    @update:modelValue="onGroupChange"
+                    v-model:menu="selectMenuOpen1"
+                />
+                <v-text-field
+                    v-model="inviteEmail"
+                    :rules="emailRules"
+                    label="メールアドレスで招待"
+                />
+                <v-btn @click="sendInvite">招待を送信</v-btn>
+              </v-window-item>
+              <v-window-item value="2" class="my-v-window">
+                <div style="margin-bottom: 20px;">
+                  <div v-if="s_currentGroupName">
+                    現在のグループは「{{ s_currentGroupName }}」です。
+                  </div>
+                  <div v-else>
+                    グループに所属していません。
+                  </div>
+                </div>
                 <v-select
                     ref="groupSelect1"
                     v-model="selectedGroupId"
@@ -110,18 +147,12 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                     dense
                     class="mt-2"
                     @update:modelValue="onGroupChange"
-                    v-model:menu="selectMenuOpen"
+                    v-model:menu="selectMenuOpen2"
                 />
-                <template v-if="s_currentGroupName">
-                  現在のグループは「{{ s_currentGroupName }}」です。
-                </template>
-                <template v-else>
-                  グループに所属していません。
-                </template>
 
               </v-window-item>
-              <v-window-item value="2" class="my-v-window">
-                <p style="margin-top: 20px;">グループを削除するときは以下を選択してください。削除はオーナーしかできません。</p>
+              <v-window-item value="3" class="my-v-window">
+                <p style="margin-top: 20px;">削除はオーナーしかできません。</p>
                 <v-select
                     ref="groupSelect3"
                     v-model="selectedGroupId2"
@@ -168,15 +199,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         </p>
       </div>
 
-<!--      <div v-if="user1 && s_currentGroupName">-->
-<!--        <p style="margin-bottom: 20px;">現在のグループは「{{ s_currentGroupName }}」です。</p>-->
-<!--      </div>-->
-
-<!--      <div v-if="user1 && s_currentGroupName && showGroupName">-->
-<!--        <p style="margin-bottom: 20px;">現在のグループは「{{ s_currentGroupName }}」です。</p>-->
-<!--      </div>-->
-
-      <v-btn style="width:100%;margin-bottom: 20px;" @click="reset">リセット</v-btn>
+      <v-btn style="width:100%;margin-bottom: 20px;" @click="reset">リセット（初期時に戻す）</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 
 <!--      <v-btn class="tiny-btn" @click="simaLoad">SIMA読み込</v-btn>-->
@@ -227,7 +250,6 @@ import {extLayer, extSource, konUrls} from "@/js/layers";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut } from "firebase/auth";
 import firebase from '@/firebase'
 import { nextTick } from 'vue'
-
 import store from "@/store";
 
 const getFirebaseUid = async () => {
@@ -291,16 +313,20 @@ export default {
   name: 'Dialog-menu',
   props: ['mapName'],
   components: {
-    // MasonryWall,
   },
   data: () => ({
+    emailRules: [
+      (v) => !!v || "メールアドレスを入力してください",
+      (v) => /.+@.+\..+/.test(v) || "正しいメールアドレスを入力してください"
+    ],
+    inviteEmail: '',
     initialGroupName: localStorage.getItem("lastUsedGroupName") || "",
-    showGroupName: false,
+    // showGroupName: false,
     // lastSetTime: 0,
     snackbar: false,
     snackbarText: '',
     isGroupOwner: false,
-    selectMenuOpen: false, // ← false にしておくことで勝手に開かないように
+    selectMenuOpen1: false, // ← false にしておくことで勝手に開かないように
     selectMenuOpen2: false,
     selectMenuOpen3: false,
     groupOptions: [],
@@ -490,13 +516,117 @@ export default {
     },
   },
   methods: {
-    async handleMenuOpen(isOpen) {
-      if (isOpen) {
-        console.log("🔁 セレクトボックスを開いたので再設定")
-        console.log(JSON.stringify(this.groupOptions))
-        this.groupOptions = JSON.parse(JSON.stringify(this.groupOptions)) // 再代入で強制的に更新させる
+    async sendInvite() {
+      // メールアドレスとグループ名のバリデーション
+      if (!this.inviteEmail || !/.+@.+\..+/.test(this.inviteEmail)) {
+        alert("正しいメールアドレスを入力してください");
+        return;
       }
+      if (!this.selectedGroupId || !this.initialGroupName) {
+        alert("グループを選択してください");
+        return;
+      }
+
+      // Firestore に保存（例: Firestore を使う場合）
+      try {
+        // await this.$firestore.collection("invitations").add({
+        //   email: this.inviteEmail,
+        //   groupId: this.selectedGroupId,
+        //   groupName: this.initialGroupName,
+        //   invitedBy: this.currentUserId,
+        //   status: "pending",
+        //   createdAt: new Date()
+        // });
+        // Firestore に保存
+        await db.collection("invitations").add({
+          email: this.inviteEmail,
+          groupId: this.selectedGroupId,
+          groupName: this.groupOptions.find(g => g.id === this.selectedGroupId)?.name,
+          invitedBy: this.currentUserId,
+          status: "pending",
+          createdAt: new Date()
+        });
+
+      } catch (e) {
+        console.error("Firestore 保存失敗:", e);
+        alert("Firestore への保存に失敗しました");
+        return;
+      }
+
+      // PHP (SMTPメール送信) に送信
+      try {
+        const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/invite_mail.php", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            email: this.inviteEmail,
+            group: this.initialGroupName
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          alert("招待メールを送信しました。");
+        } else {
+          alert("メール送信に失敗しました: " + result.message);
+        }
+      } catch (err) {
+        console.error("PHPへの送信エラー:", err);
+        alert("サーバーへの接続に失敗しました");
+      }
+
+      // 招待済みのメールはリセット（任意）
+      // this.inviteEmail = "";
     },
+    // async sendInvite() {
+    //   if (!this.inviteEmail || !/.+@.+\..+/.test(this.inviteEmail)) {
+    //     alert("正しいメールアドレスを入力してください");
+    //     return;
+    //   }
+    //   if (!this.selectedGroupId) {
+    //     alert("グループを選択してください");
+    //     return;
+    //   }
+    //
+    //   // Firestore に保存
+    //   await db.collection("invitations").add({
+    //     email: this.inviteEmail,
+    //     groupId: this.selectedGroupId,
+    //     groupName: this.groupOptions.find(g => g.id === this.selectedGroupId)?.name,
+    //     invitedBy: this.currentUserId,
+    //     status: "pending",
+    //     createdAt: new Date()
+    //   });
+    //
+    //   // PHP に送信
+    //   try {
+    //     const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/invite_mail.php", {
+    //       method: "POST",
+    //       headers: {
+    //         "Content-Type": "application/json"
+    //       },
+    //       body: JSON.stringify({
+    //         email: this.inviteEmail,
+    //         group: this.initialGroupName || "(不明なグループ名)"
+    //       })
+    //     });
+    //
+    //     const result = await response.json();
+    //
+    //     if (result.success) {
+    //       alert("招待メールを送信しました。");
+    //     } else {
+    //       alert("メール送信に失敗しました: " + result.message);
+    //     }
+    //   } catch (err) {
+    //     console.error("PHPへの送信エラー:", err);
+    //     alert("サーバーへの接続に失敗しました");
+    //   }
+    //   // this.inviteEmail = "";
+    // },
     async deleteGroup() {
       const groupId = this.selectedGroupId2
       if (!groupId) return alert("削除するグループを選択してください")
@@ -602,7 +732,7 @@ export default {
         localStorage.setItem("lastUsedGroupId", group.id)
         localStorage.setItem("lastUsedGroupName", group.name)  // 👈 保存
         this.initialGroupName = group.name                     // 👈 同期表示用
-        this.selectMenuOpen = false
+        // this.selectMenuOpen = false
         console.log("🔄 グループ変更で initialGroupName 更新:", group.name)
       }
     },
