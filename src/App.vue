@@ -2251,7 +2251,7 @@ export default {
           pitch: pitch[mapName],
           bearing:bearing,
           maxPitch: 85, // 最大の傾き85、デフォルトは60
-          attributionControl: false,
+          attributionControl: true,
           // style: 'https://raw.githubusercontent.com/gsi-cyberjapan/optimal_bvmap/52ba56f645334c979998b730477b2072c7418b94/style/std.json',
           // style:require('@/assets/json/std.json')
           // style:"https://kenzkenz.xsrv.jp/open-hinata3/json/std.json",
@@ -2644,8 +2644,6 @@ export default {
           // map.on("mouseleave", "oh-amx-a-fude", () => {
           //   map.removeFeatureState({ source: "amx-a-2024-pmtiles", sourceLayer: "fude" });
           // });
-
-
 
           map.setProjection({"type": "globe"})
           map.resize()
@@ -4072,14 +4070,23 @@ export default {
     const vm = this
 
     // 非同期で user の UID を監視
+    // const checkUser = setInterval(() => {
+    //   if (user && user._rawValue && user._rawValue.uid) {
+    //     this.uid = user._rawValue.uid;
+    //     this.$store.state.userId = user._rawValue.uid
+    //     capture(this.uid,true)
+    //     clearInterval(checkUser); // UIDを取得できたら監視を停止
+    //   }
+    // }, 5);
     const checkUser = setInterval(() => {
-      if (user && user._rawValue && user._rawValue.uid) {
-        this.uid = user._rawValue.uid;
-        this.$store.state.userId = user._rawValue.uid
-        capture(this.uid,true)
-        clearInterval(checkUser); // UIDを取得できたら監視を停止
+      if (user.value && user.value.uid) {
+        const uid = user.value.uid
+        this.uid = uid
+        this.$store.state.userId = uid
+        capture(uid, true)
+        clearInterval(checkUser) // UID を取得できたら監視を停止
       }
-    }, 5);
+    }, 100)
 
     // 5分おきに実行
     this.intervalId = setInterval(() => {
@@ -4353,7 +4360,7 @@ export default {
   padding:0;
   width: 50px;
   min-width: 50px;
-  height:50px;
+  height:50px!important;
   margin-left:-25px;
   color: white;
   border-radius:8px;
@@ -4365,7 +4372,7 @@ export default {
   padding:0;
   width: 50px;
   min-width: 50px;
-  height:50px;
+  height:50px!important;
   margin-left:-25px;
   color: white;
   border-radius:8px;
@@ -4377,7 +4384,7 @@ export default {
   padding:0;
   width: 50px;
   min-width: 50px;
-  height:50px;
+  height:50px!important;
   margin-top:-25px;
   color: white;
   border-radius:8px;
@@ -4389,7 +4396,7 @@ export default {
   padding:0;
   width: 50px;
   min-width: 50px;
-  height:50px;
+  height:50px!important;
   margin-top:-25px;
   color: white;
   border-radius:8px;
@@ -4532,12 +4539,12 @@ font {
   margin-bottom: 10px;
 }
 .tiny-btn {
-  font-size: 10px; /* フォントサイズを小さく */
-  padding: 2px 6px; /* パディングを小さく */
-  min-width: 24px; /* ボタンの最小幅 */
-  height: 24px; /* ボタンの高さ */
-  line-height: 24px; /* 中央揃え */
-  margin-bottom: 10px;
+  font-size: 10px !important;
+  padding: 2px 6px !important;
+  min-width: 24px !important;
+  /*height: 24px !important;*/
+  line-height: 24px !important;
+  margin-bottom: 10px !important;
 }
 .style01 {
   background: linear-gradient(transparent 85%, #ffd700 80%);

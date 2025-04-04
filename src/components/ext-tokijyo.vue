@@ -130,7 +130,7 @@
 
     <!-- 4行目 -->
     <div style="display: flex; justify-content: space-between; gap: 0px; padding-right: 0px;">
-      <v-btn style="width: 70px; font-size: 8px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>
+      <v-btn style="width: 70px;" class="tiny-btn" @click="saveGeojson"><span style="font-size: 8px;">geojson保存</span></v-btn>
       <v-btn style="width: 145px;" @click="tutorial">使い方説明</v-btn>
     </div>
 

@@ -3,6 +3,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 </script>
 
 <template>
+  <v-app>
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div class="menu-div">
 
@@ -78,27 +79,73 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
           <v-card-text>
 
             <div style="margin-top: 10px;">
-              <v-btn v-if="!user1" @click="loginDiv=!loginDiv,signUpDiv=false">ログイン</v-btn><v-btn v-if="user1" @click="logOut">ログアウト</v-btn>
-              <v-btn style="margin-left: 10px;" v-if="!user1" @click="signUpDiv=!signUpDiv,loginDiv=false">新規登録</v-btn>
-              <span v-if="!user1" style="margin-left: 20px;">新規登録は無料です。</span>
 
-              <div v-if="loginDiv" style="margin-top: 10px;">
-                <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
-                <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>
-                <v-btn @click="login">ログインします</v-btn>
-                <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
-              </div>
-            </div>
-            <div style="margin-top: 10px;">
+              <div>
+                <!-- トグルボタン -->
+                <v-btn v-if="!user1" @click="toggleLogin">ログイン</v-btn>
+                <v-btn v-if="!user1" style="margin-left: 10px;" @click="toggleSignUp">新規登録</v-btn>
+                <v-btn v-if="user1" @click="logOut">ログアウト</v-btn>
+                <span v-if="!user1" style="margin-left: 20px;">新規登録は無料です。</span>
 
-              <div v-if="signUpDiv" style="margin-top: 10px;">
-                <v-text-field  v-model="nickname" type="text" placeholder="ニックネーム"></v-text-field>
-                <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
-                <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>
-                <v-btn @click="signUp">新規登録します</v-btn>
-                <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
+                <!-- ログインフォーム -->
+                <div style="margin-top: 10px;" v-if="loginDiv">
+                  <v-text-field v-model="email" label="メールアドレス" />
+                  <v-text-field v-model="password" label="パスワード" type="password" />
+                  <v-btn @click="login">ログインします</v-btn>
+                </div>
+
+                <!-- 新規登録フォーム -->
+                <div style="margin-top: 10px;" v-if="signUpDiv">
+                  <v-text-field v-model="nickname" label="ニックネーム" />
+                  <v-text-field v-model="email" label="メールアドレス" />
+                  <v-text-field v-model="password" label="パスワード" type="password" />
+                  <v-btn @click="signUp">新規登録します</v-btn>
+                </div>
+
+                <!-- グループ作成フォーム：どちらのフォームも非表示のときだけ表示 -->
+                <div class="create-group" v-if="user1 && !loginDiv && !signUpDiv">
+                  <br><hr style="margin-top: 30px;">
+                  <p style="margin-top: 20px;">グループ作成するときは以下を入力してください。作成中です。グループを作ってもなにも起こりません。</p>
+                  <v-text-field v-model="groupName" label="グループ名" />
+                  <v-btn @click="createGroup">グループ作成</v-btn>
+                </div>
               </div>
+
+
+
+
+<!--              <div>-->
+<!--                <v-btn v-if="!user1" @click="loginDiv = !loginDiv; signUpDiv = false">ログイン</v-btn>-->
+<!--                <v-btn v-if="user1" @click="logOut">ログアウト</v-btn>-->
+<!--                <v-btn style="margin-left: 10px;" v-if="!user1" @click="signUpDiv = !signUpDiv; loginDiv = false">新規登録</v-btn>-->
+<!--                <span v-if="!user1" style="margin-left: 20px;">新規登録は無料です。</span>-->
+<!--              </div>-->
+
+<!--              <div v-if="loginDiv" style="margin-top: 10px;">-->
+<!--                <v-text-field v-model="email" type="email" placeholder="メールアドレス" />-->
+<!--                <v-text-field v-model="password" type="password" placeholder="パスワード" />-->
+<!--                <v-btn @click="login">ログインします</v-btn>-->
+<!--                <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>-->
+<!--              </div>-->
+
+<!--              &lt;!&ndash; ログイン or 新規登録が表示されていないときだけ表示する &ndash;&gt;-->
+<!--              <div class="create-group" v-if="!loginDiv && !signUpDiv">-->
+<!--                <p style="margin-top: 20px;">グループ作成するときは以下を入力してください。</p>-->
+<!--                <v-text-field v-model="groupName" placeholder="グループ名" />-->
+<!--                <v-btn @click="createGroup">グループ作成</v-btn>-->
+<!--              </div>-->
             </div>
+
+<!--            <div style="margin-top: 10px;">-->
+
+<!--              <div v-if="signUpDiv" style="margin-top: 10px;">-->
+<!--                <v-text-field  v-model="nickname" type="text" placeholder="ニックネーム"></v-text-field>-->
+<!--                <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>-->
+<!--                <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>-->
+<!--                <v-btn @click="signUp">新規登録します</v-btn>-->
+<!--                <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>-->
+<!--              </div>-->
+<!--            </div>-->
 
           </v-card-text>
           <v-card-actions>
@@ -109,7 +156,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v0.745
+        v0.800
       </p>
       <v-btn style="width:100%" @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
@@ -147,18 +194,21 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
     </div>
   </Dialog>
+  </v-app>
 </template>
 
 <script>
 
-import {
-  addImageLayer,
-  addImageLayerJpg,
-  addImageLayerPng,
-  addTileLayerForImage,
-  geojsonAddLayer, highlightSpecificFeaturesCity, iko, scrollForAndroid, simaFileUpload,
-  simaToGeoJSON, userPmileSet, userPmtileSet, userTileSet, userXyztileSet
-} from "@/js/downLoad";
+import {iko, simaFileUpload} from "@/js/downLoad";
+import { db, auth } from '@/firebase'
+import {user} from "@/authState";
+import axios from "axios"
+import maplibregl from 'maplibre-gl'
+import {history} from "@/App";
+import {extLayer, extSource, konUrls} from "@/js/layers";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut } from "firebase/auth";
+import firebase from '@/firebase'
+import store from "@/store";
 
 const getFirebaseUid = async () => {
   if (!user.value) return;
@@ -216,17 +266,6 @@ const createUserDirectory = async () => {
     console.error("ディレクトリ作成エラー:", error);
   }
 };
-import {user} from "@/authState";
-import axios from "axios"
-import maplibregl from 'maplibre-gl'
-import {history} from "@/App";
-import {extLayer, extSource, konUrls} from "@/js/layers";
-import { auth } from "@/firebase";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut } from "firebase/auth";
-import * as Layers from "@/js/layers";
-import {kml} from "@tmcw/togeojson";
-import JSZip from "jszip";
-import store from "@/store";
 
 export default {
   name: 'Dialog-menu',
@@ -235,6 +274,7 @@ export default {
     // MasonryWall,
   },
   data: () => ({
+    groupName: '',
     tab: 0,
     tileUrl: '',
     tileName: '',
@@ -250,6 +290,7 @@ export default {
     addLayerDiv: false,
     loginDiv: false,
     signUpDiv: false,
+    showAuthArea: false, // 👈 追加（初期は非表示）
     dialogForUpload: false,
     items: [
       'WGS84',
@@ -392,6 +433,39 @@ export default {
     },
   },
   methods: {
+    toggleLogin() {
+      this.showAuthArea = true
+      this.loginDiv = !this.loginDiv
+      this.signUpDiv = false
+    },
+    toggleSignUp() {
+      this.showAuthArea = true
+      this.signUpDiv = !this.signUpDiv
+      this.loginDiv = false
+    },
+    // async createGroup() {
+    //   const user = auth.currentUser
+    //   if (!user || !this.groupName) return
+    //
+    //   const groupId = db.collection('groups').doc().id
+    //
+    //   await db.collection('groups').doc(groupId).set({
+    //     name: this.groupName,
+    //     ownerUid: user.uid,
+    //     members: [user.uid],
+    //     createdAt: new Date(),
+    //   })
+    //
+    //   await db.collection('users').doc(user.uid).set(
+    //       {
+    //         groups: firebase.firestore.FieldValue.arrayUnion(groupId),
+    //       },
+    //       { merge: true }
+    //   )
+    //
+    //   alert('グループを作成しました')
+    //   this.groupName = ''
+    // },
     simaUploadInput (event) {
       simaFileUpload(event)
       this.dialogForUpload = false
@@ -418,88 +492,145 @@ export default {
     logOut () {
       const logout = async () => {
         try {
-          await signOut(auth); // ここで `auth` を明示的に指定
+          await firebase.auth().signOut()
           this.$store.state.userId = 'dummy'
           this.s_fetchImagesFire = !this.s_fetchImagesFire
-          alert("ログアウトしました");
+          alert("ログアウトしました")
         } catch (error) {
-          console.error("ログアウトエラー:", error.message);
+          console.error("ログアウトエラー:", error.message)
         }
-      };
+      }
       logout()
     },
+
     signUp () {
-      if (!(this.email && this.password &&this.nickname)) {
+      if (!(this.email && this.password && this.nickname)) {
         alert('入力されていません。')
         return
       }
+
       const signup = async () => {
         try {
-          // Firebase 認証でアカウント作成
-          const userCredential = await createUserWithEmailAndPassword(auth,  this.email, this.password);
-          const user = userCredential.user;
-          // ニックネーム（displayName）を設定
-          await updateProfile(user, {
+          const userCredential = await firebase.auth().createUserWithEmailAndPassword(this.email, this.password)
+          const user = userCredential.user
+
+          await firebase.auth().currentUser.updateProfile({
             displayName: this.nickname
-          });
-          console.log("アカウント作成成功！ユーザー:", user);
+          })
+
           this.createDirectory()
-          alert(`登録成功！ようこそ、${user.displayName} さん！`);
+          alert(`登録成功！ようこそ、${this.nickname} さん！`)
           this.errorMsg = ''
           this.signUpDiv = false
         } catch (error) {
-          console.error("サインアップ失敗:", error.message);
-          // エラーメッセージを表示
+          console.error("サインアップ失敗:", error.message)
           switch (error.code) {
             case "auth/user-not-found":
-              this.errorMsg = "ユーザーが見つかりません";
-              break;
+              this.errorMsg = "ユーザーが見つかりません"
+              break
             case "auth/wrong-password":
-              this.errorMsg = "パスワードが違います";
-              break;
+              this.errorMsg = "パスワードが違います"
+              break
             case "auth/invalid-email":
-              this.errorMsg = "無効なメールアドレスです";
-              break;
+              this.errorMsg = "無効なメールアドレスです"
+              break
             default:
-              this.errorMsg = "ログインに失敗しました";
+              this.errorMsg = "登録に失敗しました"
           }
         }
-      };
+      }
+
       signup()
     },
+
+    // logOut () {
+    //   const logout = async () => {
+    //     try {
+    //       await signOut(auth); // ここで `auth` を明示的に指定
+    //       this.$store.state.userId = 'dummy'
+    //       this.s_fetchImagesFire = !this.s_fetchImagesFire
+    //       alert("ログアウトしました");
+    //     } catch (error) {
+    //       console.error("ログアウトエラー:", error.message);
+    //     }
+    //   };
+    //   logout()
+    // },
+    // signUp () {
+    //   if (!(this.email && this.password &&this.nickname)) {
+    //     alert('入力されていません。')
+    //     return
+    //   }
+    //   const signup = async () => {
+    //     try {
+    //       // Firebase 認証でアカウント作成
+    //       const userCredential = await createUserWithEmailAndPassword(auth,  this.email, this.password);
+    //       const user = userCredential.user;
+    //       // ニックネーム（displayName）を設定
+    //       await updateProfile(user, {
+    //         displayName: this.nickname
+    //       });
+    //       console.log("アカウント作成成功！ユーザー:", user);
+    //       this.createDirectory()
+    //       alert(`登録成功！ようこそ、${user.displayName} さん！`);
+    //       this.errorMsg = ''
+    //       this.signUpDiv = false
+    //     } catch (error) {
+    //       console.error("サインアップ失敗:", error.message);
+    //       // エラーメッセージを表示
+    //       switch (error.code) {
+    //         case "auth/user-not-found":
+    //           this.errorMsg = "ユーザーが見つかりません";
+    //           break;
+    //         case "auth/wrong-password":
+    //           this.errorMsg = "パスワードが違います";
+    //           break;
+    //         case "auth/invalid-email":
+    //           this.errorMsg = "無効なメールアドレスです";
+    //           break;
+    //         default:
+    //           this.errorMsg = "ログインに失敗しました";
+    //       }
+    //     }
+    //   };
+    //   signup()
+    // },
     login () {
       const login = async () => {
         try {
-          // Firebase の signInWithEmailAndPassword を使ってログイン
-          const userCredential = await signInWithEmailAndPassword(auth, this.email, this.password);
-          // ユーザー情報を取得
-          const user = userCredential.user;
-          console.log("ログイン成功！", user);
+          const userCredential = await firebase.auth().signInWithEmailAndPassword(this.email, this.password)
+          const user = userCredential.user
+
+          if (!user) {
+            this.errorMsg = "ログインは成功しましたが、ユーザー情報が取得できません"
+            return
+          }
+
+          console.log("ログイン成功！", user)
+
           this.createDirectory()
-          this.errorMsg = 'ログイン成功';
+          this.errorMsg = 'ログイン成功'
           this.loginDiv = false
-          this.$store.state.userId = user._rawValue.uid
+          this.$store.state.userId = user.uid
           this.s_fetchImagesFire = !this.s_fetchImagesFire
         } catch (error) {
-          console.error("ログイン失敗:", error.message);
-          // エラーメッセージを表示
+          console.error("ログイン失敗:", error.message)
+
           switch (error.code) {
             case "auth/user-not-found":
-              this.errorMsg = "ユーザーが見つかりません";
-              break;
+              this.errorMsg = "ユーザーが見つかりません"
+              break
             case "auth/wrong-password":
-              this.errorMsg = "パスワードが違います";
-              break;
+              this.errorMsg = "パスワードが違います"
+              break
             case "auth/invalid-email":
-              this.errorMsg = "無効なメールアドレスです";
-              break;
+              this.errorMsg = "無効なメールアドレスです"
+              break
             default:
-              this.errorMsg = "ログインに失敗しました";
-              this.$store.state.userId = user._rawValue.uid
-              this.s_fetchImagesFire = !this.s_fetchImagesFire
+              this.errorMsg = "ログインに失敗しました"
           }
         }
-      };
+      }
       login()
     },
     addLayer () {

@@ -351,7 +351,10 @@ export default {
   }),
   computed: {
     filteredHistory() {
-      return this.jsonDataHistory.filter(item => !item.url.includes('localhost'));
+      // return this.jsonDataHistory.filter(item => !item.url.includes('localhost'));
+      return (this.jsonDataHistory || []).filter(item => {
+        return item.url && !item.url.includes('localhost');
+      });
     },
     cityItems() {
       const filteredCities = Object.entries(muni)
@@ -1851,8 +1854,9 @@ export default {
             params: { uid: vm.uid}
           });
           if (response.data.error) {
-            console.error('エラー:', response.data.error);
-            alert(`エラー: ${response.data.error}`);
+            console.error('エラー!:', response.data.error);
+            // 様修正 ここでエラーが出ている。
+            // alert(`エラー: ${response.data.error}`);
           } else {
             vm.jsonDataHistory = response.data.result
           }
@@ -2106,16 +2110,20 @@ export default {
       this.historySelect()
     },
     s_fetchImagesFire () {
-      this.fetchImages()
-      this.urlSelect(this.$store.state.userId)
-      this.tileSelect(this.$store.state.userId)
-      this.pmtileSelect(this.$store.state.userId)
-      this.xyztileSelect(this.$store.state.userId)
-      this.kmzSelect(this.$store.state.userId)
-      this.simaSelect(this.$store.state.userId)
-      this.xyztileSelectAll()
-      this.pmtileSelectPublic()
-      this.historySelect()
+      try {
+        this.fetchImages()
+        this.urlSelect(this.$store.state.userId)
+        this.tileSelect(this.$store.state.userId)
+        this.pmtileSelect(this.$store.state.userId)
+        this.xyztileSelect(this.$store.state.userId)
+        this.kmzSelect(this.$store.state.userId)
+        this.simaSelect(this.$store.state.userId)
+        this.xyztileSelectAll()
+        this.pmtileSelectPublic()
+        this.historySelect()
+      } catch (e) {
+        console.log(e)
+      }
     }
   },
   mounted() {
@@ -2129,24 +2137,46 @@ export default {
     }
     this.mayroomStyle["max-height"] = maxHeight
     // 非同期で user の UID を監視
-    // -------------------------------------------------------------------
+    // // -------------------------------------------------------------------
     const checkUser = setInterval(() => {
-      if (user && user._rawValue && user._rawValue.uid) {
-        this.uid = user._rawValue.uid;
-        this.$store.state.userId = user._rawValue.uid
-        this.fetchImages(this.uid); // UIDを取得した後に fetchImages を実行
-        this.urlSelect(this.uid)
-        this.tileSelect(this.uid)
-        this.pmtileSelect(this.uid)
-        this.xyztileSelect(this.uid)
-        this.kmzSelect(this.uid)
-        this.simaSelect(this.uid)
+      if (user.value && user.value.uid) {
+        const uid = user.value.uid
+        this.uid = uid
+        this.$store.state.userId = uid
+
+        this.fetchImages(uid)
+        this.urlSelect(uid)
+        this.tileSelect(uid)
+        this.pmtileSelect(uid)
+        this.xyztileSelect(uid)
+        this.kmzSelect(uid)
+        this.simaSelect(uid)
         this.xyztileSelectAll()
         this.pmtileSelectPublic()
         this.historySelect()
-        clearInterval(checkUser); // UIDを取得できたら監視を停止
+
+        clearInterval(checkUser)
       }
-    }, 5);
+    }, 100) // 5ms → 100ms に変更（CPU負荷軽減のため）
+
+
+    // const checkUser = setInterval(() => {
+    //   if (user && user._rawValue && user._rawValue.uid) {
+    //     this.uid = user._rawValue.uid;
+    //     this.$store.state.userId = user._rawValue.uid
+    //     this.fetchImages(this.uid); // UIDを取得した後に fetchImages を実行
+    //     this.urlSelect(this.uid)
+    //     this.tileSelect(this.uid)
+    //     this.pmtileSelect(this.uid)
+    //     this.xyztileSelect(this.uid)
+    //     this.kmzSelect(this.uid)
+    //     this.simaSelect(this.uid)
+    //     this.xyztileSelectAll()
+    //     this.pmtileSelectPublic()
+    //     this.historySelect()
+    //     clearInterval(checkUser); // UIDを取得できたら監視を停止
+    //   }
+    // }, 5);
   }
 }
 </script>
