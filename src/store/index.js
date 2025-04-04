@@ -110,6 +110,7 @@ export default createStore({
     dialogForApp: false,
     dialogForImage: false,
     dialogForLogin: false,
+    dialogForGroup: false,
     dialogForLink: false,
     isMenu: false,
     isAndroid: false,

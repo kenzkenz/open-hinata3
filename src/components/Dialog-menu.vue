@@ -71,6 +71,45 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         </v-card>
       </v-dialog>
 
+      <v-dialog v-model="s_dialogForGroup" max-width="500px">
+        <v-card>
+          <v-card-title>
+            グループ管理
+          </v-card-title>
+          <v-card-text>
+            <div class="create-group" v-if="user1 && !loginDiv && !signUpDiv">
+              <p style="margin-top: 20px;">グループを新規作成するときは以下を入力してください。</p>
+              <v-text-field v-model="groupName" label="グループ名" />
+              <v-btn @click="createGroup">グループ作成</v-btn>
+            </div>
+
+            <hr style="margin-top: 20px;">
+            <p style="margin-top: 20px;">グループを削除するときは以下を選択してください。</p>
+            <v-select
+                ref="groupSelect3"
+                v-model="selectedGroupId"
+                :items="groupOptions"
+                item-value="id"
+                item-title="name"
+                label="削除するグループを選択"
+                outlined
+                dense
+                class="mt-2"
+                @update:modelValue="onGroupChange"
+                v-model:menu="selectMenuOpen3"
+            />
+
+
+
+
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="s_dialogForGroup = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>>
+
       <v-dialog v-model="s_dialogForLogin" max-width="500px">
         <v-card>
           <v-card-title>
@@ -114,13 +153,13 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   <v-text-field v-model="password" label="パスワード" type="password" />
                   <v-btn @click="signUp">新規登録します</v-btn>
                 </div>
-                <!-- グループ作成フォーム：どちらのフォームも非表示のときだけ表示 -->
-                <div class="create-group" v-if="user1 && !loginDiv && !signUpDiv">
-                  <br><hr style="margin-top: 30px;">
-                  <p style="margin-top: 20px;">グループを新規作成するときは以下を入力してください。</p>
-                  <v-text-field v-model="groupName" label="グループ名" />
-                  <v-btn @click="createGroup">グループ作成</v-btn>
-                </div>
+<!--                &lt;!&ndash; グループ作成フォーム：どちらのフォームも非表示のときだけ表示 &ndash;&gt;-->
+<!--                <div class="create-group" v-if="user1 && !loginDiv && !signUpDiv">-->
+<!--                  <br><hr style="margin-top: 30px;">-->
+<!--                  <p style="margin-top: 20px;">グループを新規作成するときは以下を入力してください。</p>-->
+<!--                  <v-text-field v-model="groupName" label="グループ名" />-->
+<!--                  <v-btn @click="createGroup">グループ作成</v-btn>-->
+<!--                </div>-->
               </div>
             </div>
 
@@ -151,7 +190,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
             v-model:menu="selectMenuOpen"
         />
       </div>
-
 
       <v-btn style="width:100%" @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
@@ -271,10 +309,13 @@ export default {
     // MasonryWall,
   },
   data: () => ({
+    isGroupOwner: false,
     selectMenuOpen: false, // ← false にしておくことで勝手に開かないように
     selectMenuOpen2: false,
+    selectMenuOpen3: false,
     groupOptions: [],
     selectedGroupId: null,
+    selectedGroupId2: null,
     groupName: '',
     tab: 0,
     tileUrl: '',
@@ -305,6 +346,14 @@ export default {
     ],
   }),
   computed: {
+    s_dialogForGroup: {
+      get() {
+        return this.$store.state.dialogForGroup
+      },
+      set(value) {
+        this.$store.state.dialogForGroup = value
+      }
+    },
     currentUserId() {
       return this.$store.state.userId
     },
