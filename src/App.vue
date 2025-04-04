@@ -473,12 +473,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
             <v-btn :size="isSmall ? 'small' : 'default'" class="draw" icon @click="draw" v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>
           </div>
 
-          <DialogMenu :mapName=mapName />
-          <DialogMyroom :mapName=mapName />
+          <DialogMenu v-if="mapName === 'map01'" :mapName=mapName />
+          <DialogMyroom v-if="mapName === 'map01'" :mapName=mapName />
           <DialogLayer :mapName=mapName />
           <dialog-info :mapName=mapName />
           <dialog2 :mapName=mapName />
-          <dialogShare :mapName=mapName />
+          <dialogShare v-if="mapName === 'map01'" :mapName=mapName />
           <DialogChibanzuList :mapName=mapName />
 
           <div :id="'terrain-btn-div-' + mapName" class="terrain-btn-div">

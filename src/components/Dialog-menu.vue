@@ -4,7 +4,12 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
 <template>
   <v-app>
-  <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
+
+    <v-snackbar v-model="snackbar" :timeout="3000">
+      {{ snackbarText }}
+    </v-snackbar>
+
+    <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div class="menu-div">
 
       <input @change="simaUploadInput" type="file" id="simaFileInput" accept=".sim" style="display: none;">
@@ -71,36 +76,69 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         </v-card>
       </v-dialog>
 
-      <v-dialog v-model="s_dialogForGroup" max-width="500px">
+      <v-dialog v-model="s_dialogForGroup" max-width="500px" height="400px">
         <v-card>
           <v-card-title>
             グループ管理
           </v-card-title>
+
           <v-card-text>
-            <div class="create-group" v-if="user1 && !loginDiv && !signUpDiv">
-              <p style="margin-top: 20px;">グループを新規作成するときは以下を入力してください。</p>
-              <v-text-field v-model="groupName" label="グループ名" />
-              <v-btn @click="createGroup">グループ作成</v-btn>
-            </div>
 
-            <hr style="margin-top: 20px;">
-            <p style="margin-top: 20px;">グループを削除するときは以下を選択してください。</p>
-            <v-select
-                ref="groupSelect3"
-                v-model="selectedGroupId"
-                :items="groupOptions"
-                item-value="id"
-                item-title="name"
-                label="削除するグループを選択"
-                outlined
-                dense
-                class="mt-2"
-                @update:modelValue="onGroupChange"
-                v-model:menu="selectMenuOpen3"
-            />
+            <v-tabs mobile-breakpoint="0" v-model="tab">
+              <v-tab value="0">グループ作成</v-tab>
+              <v-tab value="1">グループ変更</v-tab>
+              <v-tab value="2">グループ削除</v-tab>
+            </v-tabs>
 
-
-
+            <v-window v-model="tab">
+              <v-window-item value="0" class="my-v-window">
+                <div class="create-group" v-if="user1 && !loginDiv && !signUpDiv">
+                  <p style="margin-top: 20px;">グループを新規作成するときは以下を入力してください。</p>
+                  <v-text-field v-model="groupName" label="グループ名" />
+                  <v-btn @click="createGroup">グループ作成</v-btn>
+                </div>
+              </v-window-item>
+              <v-window-item value="1" class="my-v-window">
+                <v-select
+                    ref="groupSelect1"
+                    v-model="selectedGroupId"
+                    :items="groupOptions"
+                    item-value="id"
+                    item-title="name"
+                    label="グループを選択"
+                    outlined
+                    dense
+                    class="mt-2"
+                    @update:modelValue="onGroupChange"
+                    v-model:menu="selectMenuOpen"
+                />
+                <p style="margin-bottom: 0px;">現在のグループは「{{ s_currentGroupName }}」です。</p>
+              </v-window-item>
+              <v-window-item value="2" class="my-v-window">
+                <p style="margin-top: 20px;">グループを削除するときは以下を選択してください。削除はオーナーしかできません。</p>
+                <v-select
+                    ref="groupSelect3"
+                    v-model="selectedGroupId2"
+                    :items="groupOptions.filter((g, i) => i !== 0)"
+                    item-value="id"
+                    item-title="name"
+                    label="削除するグループを選択"
+                    outlined
+                    dense
+                    class="mt-2"
+                    @update:modelValue="deleteBtn"
+                    v-model:menu="selectMenuOpen3"
+                />
+                <v-btn
+                    v-if="canDeleteSelectedGroup"
+                    color="red"
+                    @click="deleteGroup"
+                >
+                  <v-icon start>mdi-delete</v-icon>
+                  グループを削除
+                </v-btn>
+              </v-window-item>
+            </v-window>
 
           </v-card-text>
           <v-card-actions>
@@ -108,90 +146,31 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
             <v-btn color="blue-darken-1" text @click="s_dialogForGroup = false">Close</v-btn>
           </v-card-actions>
         </v-card>
-      </v-dialog>>
-
-      <v-dialog v-model="s_dialogForLogin" max-width="500px">
-        <v-card>
-          <v-card-title>
-            <p v-if="user1">ようこそ、{{ user1.displayName }}さん！</p>
-            <div v-if="user1 && s_currentGroupName">
-              現在のグループは「{{ s_currentGroupName }}」です。
-              <v-select
-                  ref="groupSelect2"
-                  v-model="selectedGroupId"
-                  :items="groupOptions"
-                  item-value="id"
-                  item-title="name"
-                  label="グループを選択"
-                  outlined
-                  dense
-                  class="mt-2"
-                  @update:modelValue="onGroupChange"
-                  v-model:menu="selectMenuOpen2"
-              />
-            </div>
-          </v-card-title>
-
-          <v-card-text>
-            <div style="margin-top: 0px;">
-              <div>
-                <!-- トグルボタン -->
-                <v-btn v-if="!user1" @click="toggleLogin">ログイン</v-btn>
-                <v-btn v-if="!user1" style="margin-left: 10px;" @click="toggleSignUp">新規登録</v-btn>
-                <v-btn v-if="user1" @click="logOut">ログアウト</v-btn>
-                <span v-if="!user1" style="margin-left: 20px;">新規登録は無料です。</span>
-                <!-- ログインフォーム -->
-                <div style="margin-top: 10px;" v-if="loginDiv">
-                  <v-text-field v-model="email" label="メールアドレス" />
-                  <v-text-field v-model="password" label="パスワード" type="password" />
-                  <v-btn @click="login">ログインします</v-btn>
-                </div>
-                <!-- 新規登録フォーム -->
-                <div style="margin-top: 10px;" v-if="signUpDiv">
-                  <v-text-field v-model="nickname" label="ニックネーム" />
-                  <v-text-field v-model="email" label="メールアドレス" />
-                  <v-text-field v-model="password" label="パスワード" type="password" />
-                  <v-btn @click="signUp">新規登録します</v-btn>
-                </div>
-<!--                &lt;!&ndash; グループ作成フォーム：どちらのフォームも非表示のときだけ表示 &ndash;&gt;-->
-<!--                <div class="create-group" v-if="user1 && !loginDiv && !signUpDiv">-->
-<!--                  <br><hr style="margin-top: 30px;">-->
-<!--                  <p style="margin-top: 20px;">グループを新規作成するときは以下を入力してください。</p>-->
-<!--                  <v-text-field v-model="groupName" label="グループ名" />-->
-<!--                  <v-btn @click="createGroup">グループ作成</v-btn>-->
-<!--                </div>-->
-              </div>
-            </div>
-
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="blue-darken-1" text @click="s_dialogForLogin = false">Close</v-btn>
-          </v-card-actions>
-        </v-card>
       </v-dialog>
-      <p style="margin-top: 3px;margin-bottom: 10px;">
-        v0.801
-      </p>
 
-      <div v-if="user1 && s_currentGroupName">
-        現在のグループは「{{ s_currentGroupName }}」です。
-        <v-select
-            ref="groupSelect1"
-            v-model="selectedGroupId"
-            :items="groupOptions"
-            item-value="id"
-            item-title="name"
-            label="グループを選択"
-            outlined
-            dense
-            class="mt-2"
-            @update:modelValue="onGroupChange"
-            v-model:menu="selectMenuOpen"
-        />
+      <p style="margin-top: 3px;margin-bottom: 10px;">
+        v0.802
+      </p>
+      <div v-if="user1">
+        <p style="margin-bottom: 20px;">
+          <template v-if="initialGroupName && initialGroupName !== ''">
+            現在のグループは「{{ initialGroupName }}」です。
+          </template>
+          <template v-else>
+            グループに所属していません
+          </template>
+        </p>
       </div>
 
-      <v-btn style="width:100%" @click="reset">リセット</v-btn>
+<!--      <div v-if="user1 && s_currentGroupName">-->
+<!--        <p style="margin-bottom: 20px;">現在のグループは「{{ s_currentGroupName }}」です。</p>-->
+<!--      </div>-->
+
+<!--      <div v-if="user1 && s_currentGroupName && showGroupName">-->
+<!--        <p style="margin-bottom: 20px;">現在のグループは「{{ s_currentGroupName }}」です。</p>-->
+<!--      </div>-->
+
+      <v-btn style="width:100%;margin-bottom: 20px;" @click="reset">リセット</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 
 <!--      <v-btn class="tiny-btn" @click="simaLoad">SIMA読み込</v-btn>-->
@@ -309,6 +288,11 @@ export default {
     // MasonryWall,
   },
   data: () => ({
+    initialGroupName: localStorage.getItem("lastUsedGroupName") || "",
+    showGroupName: false,
+    lastSetTime: 0,
+    snackbar: false,
+    snackbarText: '',
     isGroupOwner: false,
     selectMenuOpen: false, // ← false にしておくことで勝手に開かないように
     selectMenuOpen2: false,
@@ -346,6 +330,12 @@ export default {
     ],
   }),
   computed: {
+    canDeleteSelectedGroup() {
+      const selectedGroup = this.groupOptions.find(g => g.id === this.selectedGroupId2)
+      console.log('selectedGroup:', selectedGroup)
+      console.log('currentUserId:', this.currentUserId)
+      return selectedGroup && selectedGroup.ownerUid === this.currentUserId
+    },
     s_dialogForGroup: {
       get() {
         return this.$store.state.dialogForGroup
@@ -494,16 +484,160 @@ export default {
     },
   },
   methods: {
+    async handleMenuOpen(isOpen) {
+      if (isOpen) {
+        console.log("🔁 セレクトボックスを開いたので再設定")
+        console.log(JSON.stringify(this.groupOptions))
+        this.groupOptions = JSON.parse(JSON.stringify(this.groupOptions)) // 再代入で強制的に更新させる
+      }
+    },
+    async deleteGroup() {
+      const groupId = this.selectedGroupId2
+      if (!groupId) return alert("削除するグループを選択してください")
+
+      const groupDoc = await db.collection("groups").doc(groupId).get()
+      if (!groupDoc.exists) return alert("グループが見つかりません")
+
+      const groupData = groupDoc.data()
+      if (groupData.ownerUid !== this.currentUserId) {
+        return alert("このグループを削除する権限がありません")
+      }
+
+      if (!confirm(`本当にグループ「${groupData.name}」を削除しますか？`)) return
+
+      try {
+        // Firestore: グループ削除
+        await db.collection("groups").doc(groupId).delete()
+
+        // Firestore: 各メンバーからグループを除外
+        const members = groupData.members || []
+        for (const memberUid of members) {
+          await db.collection("users").doc(memberUid).update({
+            groups: firebase.firestore.FieldValue.arrayRemove(groupId)
+          })
+        }
+
+        // 🔄 Vue側の groupOptions 更新（リアクティブに反映）
+        const updatedGroups = this.groupOptions.filter(g => g.id !== groupId)
+        this.groupOptions = [] // 一度空にして nextTick で反映確実に
+        await this.$nextTick()
+        this.groupOptions = updatedGroups
+
+        // 🔄 選択状態リセット
+        const fallbackGroup = updatedGroups[0] || null
+
+        if (this.selectedGroupId === groupId) {
+          this.selectedGroupId = fallbackGroup ? fallbackGroup.id : null
+          this.s_currentGroupName = fallbackGroup ? fallbackGroup.name : ""
+          if (fallbackGroup) {
+            localStorage.setItem("lastUsedGroupId", fallbackGroup.id)
+          } else {
+            localStorage.removeItem("lastUsedGroupId")
+          }
+        }
+
+        // セレクトボックスを強制同期（特に Vuetify）
+        await this.$nextTick()
+        if (this.$refs.groupSelect1) {
+          // this.$refs.groupSelect1.items = this.groupOptions
+          this.$refs.groupSelect1.internalValue = this.selectedGroupId
+        }
+        console.log("🧪 groupSelect2:", this.$refs.groupSelect2)
+        if (this.$refs.groupSelect2) {
+          alert(100)
+          this.$refs.groupSelect2.internalValue = this.selectedGroupId
+        }
+
+        this.selectedGroupId2 = null
+        this.snackbarText = "グループを削除しました"
+        this.snackbar = true
+
+      } catch (e) {
+        console.error("🔥 グループ削除失敗", e)
+        alert("削除に失敗しました")
+      }
+    },
+
+
+    // async deleteGroup() {
+    //   const groupId = this.selectedGroupId
+    //   if (!groupId) return alert("削除するグループを選択してください")
+    //
+    //   const groupDoc = await db.collection("groups").doc(groupId).get()
+    //   if (!groupDoc.exists) return alert("グループが見つかりません")
+    //
+    //   const groupData = groupDoc.data()
+    //
+    //   // 所有者でないと削除不可
+    //   if (groupData.ownerUid !== this.currentUserId) {
+    //     return alert("このグループを削除する権限がありません")
+    //   }
+    //
+    //   if (!confirm(`本当にグループ「${groupData.name}」を削除しますか？`)) return
+    //
+    //   try {
+    //     // Firestoreから削除
+    //     await db.collection("groups").doc(groupId).delete()
+    //
+    //     // 参加者のuserドキュメントからも削除（全ユーザーへ反映）
+    //     const members = groupData.members || []
+    //     for (const memberUid of members) {
+    //       await db.collection("users").doc(memberUid).update({
+    //         groups: firebase.firestore.FieldValue.arrayRemove(groupId)
+    //       })
+    //     }
+    //
+    //     // 🔄 UI更新
+    //     this.groupOptions = this.groupOptions.filter(g => g.id !== groupId)
+    //     this.selectedGroupId = this.groupOptions[0]?.id || null
+    //     this.onGroupChange(this.selectedGroupId)
+    //
+    //     // 🎉 アニメーション用にトーストやスナックバー
+    //     this.$emit('showSnackbar', `${groupData.name} を削除しました`)
+    //
+    //   } catch (e) {
+    //     console.error("グループ削除エラー:", e)
+    //     alert("グループの削除に失敗しました")
+    //   }
+    // },
+    showSnackbar(msg) {
+      this.snackbarText = msg
+      this.snackbar = true
+    },
+    async deleteBtn(groupId) {
+      const group = this.groupOptions.find(g => g.id === groupId)
+      if (group) {
+        // グループ作成者か確認（削除ボタン表示制御用）
+        const groupDoc = await db.collection("groups").doc(groupId).get()
+        if (groupDoc.exists) {
+          this.isGroupOwner = groupDoc.data().ownerUid === this.s_userId
+        } else {
+          this.isGroupOwner = false
+        }
+        console.log("🔄 グループ切り替え:", group.name)
+      }
+    },
+
     async onGroupChange(groupId) {
       const group = this.groupOptions.find(g => g.id === groupId)
+
+      if (!groupId || !group) {
+        this.s_currentGroupName = ''
+        this.selectedGroupId = null
+        localStorage.setItem('lastUsedGroupId', '')         // ← 空ID保存
+        localStorage.setItem('lastUsedGroupName', '')       // ✅ 名前も空に！
+        this.initialGroupName = ''                          // ✅ 表示クリア！
+        console.log('🧼 グループなしモードに切り替え')
+        return
+      }
+
       if (group) {
         this.$store.commit("setCurrentGroupName", group.name)
         localStorage.setItem("lastUsedGroupId", group.id)
-        // alert('セット！' + group.id)
-        this.selectMenuOpen = false // ← 強制的に閉じる
-
-        // 任意でログなども追加
-        console.log("🔄 グループ切り替え:", group.name)
+        localStorage.setItem("lastUsedGroupName", group.name)  // 👈 保存
+        this.initialGroupName = group.name                     // 👈 同期表示用
+        this.selectMenuOpen = false
+        console.log("🔄 グループ変更で initialGroupName 更新:", group.name)
       }
     },
     async switchGroup(groupId) {
@@ -534,20 +668,38 @@ export default {
           alert("グループ名を入力してください")
           return
         }
+
         const groupId = db.collection('groups').doc().id
+
+        // Firestore にグループ作成
         await db.collection('groups').doc(groupId).set({
           name: this.groupName,
           ownerUid: user.uid,
           members: [user.uid],
           createdAt: new Date(),
         })
+
+        // ユーザーにグループ追加
         await db.collection('users').doc(user.uid).set(
             {
               groups: firebase.firestore.FieldValue.arrayUnion(groupId),
             },
             { merge: true }
         )
+
+        // ✅ UI に即時反映（ownerUid を含める！）
+        const newGroup = {
+          id: groupId,
+          name: this.groupName,
+          ownerUid: user.uid // ← これが重要！
+        }
+        this.groupOptions.push(newGroup)
+
+        // 選択状態と保存
+        this.selectedGroupId = groupId
         this.s_currentGroupName = this.groupName
+        localStorage.setItem("lastUsedGroupId", groupId)
+
         alert('グループを作成しました')
         this.groupName = ''
       } catch (error) {
@@ -904,16 +1056,30 @@ export default {
     }
   },
   watch: {
+    // s_currentGroupName: {
+    //   handler(newVal) {
+    //     this.showGroupName = false // いったん非表示に戻す
+    //
+    //     if (this.displayTimer) {
+    //       clearTimeout(this.displayTimer)
+    //     }
+    //
+    //     // 最新変更から 1500ms 経過後に表示
+    //     this.displayTimer = setTimeout(() => {
+    //       this.showGroupName = true
+    //     }, 3000)
+    //   },
+    //   immediate: true
+    // },
+    // s_currentGroupName(newVal, oldVal) {
+    //   console.log(`🕵️‍♂️ s_currentGroupName changed: ${oldVal} → ${newVal}`)
+    //   console.trace()
+    // },
     selectedGroupId(newVal) {
-      // 効いていない！！
-      this.$nextTick(() => {
-        if (this.$refs.groupSelect1) {
-          this.$refs.groupSelect1.internalValue = newVal
-        }
-        if (this.$refs.groupSelect2) {
-          this.$refs.groupSelect2.internalValue = newVal
-        }
-      })
+      console.log("🧩 selectedGroupId:", newVal)
+    },
+    groupOptions(newVal) {
+      console.log("📦 groupOptions:", JSON.stringify(newVal))
     },
     currentUserId: {
       immediate: true,
@@ -924,51 +1090,42 @@ export default {
           const userDoc = await db.collection("users").doc(uid).get()
           const groupIds = userDoc.exists ? userDoc.data().groups || [] : []
 
-          console.log("取得した groupIds:", groupIds)
-
           const groups = []
           for (const groupId of groupIds) {
             const groupDoc = await db.collection("groups").doc(groupId).get()
             if (groupDoc.exists) {
               const name = groupDoc.data().name || "(名前なし)"
-              console.log(`✅ groupId=${groupId} name=${name}`)
-              groups.push({ id: groupId, name })
-            } else {
-              console.warn("❌ groupDoc 不存在:", groupId)
+              groups.push({
+                id: groupId,
+                name,
+                ownerUid: groupDoc.data().ownerUid
+              })
             }
           }
 
-          this.groupOptions = groups
+          // 先頭に「グループに入らない」を追加
           this.groupOptions = [
             { id: null, name: "（グループに入らない）" },
             ...groups
           ]
 
-          console.log("📦 groupOptions:", this.groupOptions)
+          const savedGroupId = localStorage.getItem("lastUsedGroupId")
 
-          const lastUsedGroupId = localStorage.getItem("lastUsedGroupId")
-          const defaultGroupId = lastUsedGroupId && groups.find(g => g.id === lastUsedGroupId)
-              ? lastUsedGroupId
-              : groups.length > 0 ? groups[0].id : null
+          // ✅ 空文字のときは null として扱う（これが重要！）
+          const validGroupId = savedGroupId === "" ? null : savedGroupId
 
-          if (defaultGroupId) {
-            this.selectedGroupId = defaultGroupId
-            const selectedGroup = groups.find(g => g.id === defaultGroupId)
-            if (selectedGroup) {
-              this.s_currentGroupName = selectedGroup.name
-              // 🔽 DOM と state の更新を待ってから alert を表示
-              await nextTick()
-              // alert(this.s_currentGroupName)
-            }
+          // ✅ groupOptions に含まれていればそれを使う
+          const defaultGroupId = this.groupOptions.find(g => g.id === validGroupId)
+              ? validGroupId
+              : null
 
-            this.onGroupChange(defaultGroupId)
-          }
-
+          this.selectedGroupId = defaultGroupId
+          this.onGroupChange(defaultGroupId)
         } catch (e) {
           console.error("🔥 グループ取得中エラー", e)
         }
       }
-    }
+    },
   },
   created() {
     auth.onAuthStateChanged(async user => {
@@ -983,27 +1140,33 @@ export default {
         for (const groupId of groupIds) {
           const groupDoc = await db.collection("groups").doc(groupId).get()
           if (groupDoc.exists) {
-            groups.push({ id: groupId, name: groupDoc.data().name })
+            groups.push({
+              id: groupId,
+              name: groupDoc.data().name,
+              ownerUid: groupDoc.data().ownerUid
+            })
           }
         }
 
-        this.groupOptions = groups
         this.groupOptions = [
           { id: null, name: "（グループに入らない）" },
           ...groups
         ]
 
         const savedGroupId = localStorage.getItem("lastUsedGroupId")
+        const validGroupId = savedGroupId === "" ? null : savedGroupId
 
-        // alert('ゲット！' + savedGroupId)
+        const defaultGroupId = this.groupOptions.find(g => g.id === validGroupId)
+            ? validGroupId
+            : null
 
-        const fallbackGroupId = groups.length > 0 ? groups[0].id : null
-        const defaultGroupId = groups.find(g => g.id === savedGroupId) ? savedGroupId : fallbackGroupId
+        this.selectedGroupId = defaultGroupId
 
-        if (defaultGroupId) {
-          this.selectedGroupId = defaultGroupId
+        // 🕒 強制的に一番最後に反映（これで上書きされない）
+        setTimeout(() => {
+          console.log("🛡 強制的に onGroupChange 実行")
           this.onGroupChange(defaultGroupId)
-        }
+        }, 1000) // ← 必要なら 2000 でもOK
       }
     })
   },
