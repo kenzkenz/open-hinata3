@@ -2039,7 +2039,7 @@ export default {
     //       }
     //     });
     //   });
-      
+
 
       // maplibregl.addProtocol('cleanpmtiles', async (params, callback) => {
       //   params.url = params.url.replace('cleanpmtiles://', 'pmtiles://');

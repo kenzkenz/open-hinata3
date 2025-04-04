@@ -6,6 +6,7 @@ export default createStore({
     map01:null,
     map02:null,
     userId: '',
+    currentGroupName: null,
     storeTest: 'storeTest',
     map2Flg: false,
     isUnder500: false,
@@ -331,6 +332,12 @@ export default createStore({
   getters: {
   },
   mutations: {
+    setCurrentGroupName(state, name) {
+      state.currentGroupName = name
+    },
+    setUserId(state, uid) {
+      state.userId = uid
+    },
     updateParam (state,payload) {
       let variable
       let variable2
