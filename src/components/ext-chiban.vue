@@ -891,6 +891,8 @@ export default {
       if (isUpdate) this.update()
     },
     changeLineWidth (width,isUpdate) {
+      // ⭐️ここを修正する必要あり。このままだと2は設定されない。
+      if(this.lineWidth === 2) return
       // alert(this.s_chibanWidhsString)
       let lineWidth
       let result

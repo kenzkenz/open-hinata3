@@ -388,7 +388,9 @@ export default {
     },
     changeLineWidth (width,isUpdate) {
       const map = this.$store.state[this.mapName]
-      map.setPaintProperty('oh-amx-a-fude-line', 'line-width', width)
+      // ⭐️ここを修正する必要あり。このままだと2は設定されない。
+      if (isNaN(width)) width = this.lineWidth = 2
+      if(this.lineWidth !== 2) map.setPaintProperty('oh-amx-a-fude-line', 'line-width', width)
       this.s_tokijyoLineWidth = Number(width)
       if (isUpdate) this.update()
     },
