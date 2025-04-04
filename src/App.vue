@@ -2020,6 +2020,27 @@ export default {
       // protocol.setCacheSize(50) // タイルキャッシュサイズを設定（単位: タイル数）
       // ======================================================================
 
+
+      // 元のPMTilesプロトコルを登録
+    //   const pmtilesProtocol = new Protocol();
+    //   maplibregl.addProtocol('pmtiles', pmtilesProtocol.tile);
+    //
+    // // 新しいカスタムプロトコルを別の名前で登録
+    //   maplibregl.addProtocol('custom-pmtiles', (request, callback) => {
+    //     // 元のPMTilesプロトコルを再利用しつつカスタム処理を追加
+    //     pmtilesProtocol.tile(request, (err, data) => {
+    //       if (err) {
+    //         callback(err);
+    //       } else {
+    //         // カスタム処理の例: ログ出力
+    //         console.log(`Custom PMTiles requested: ${request.url}`);
+    //         // 必要に応じてdataを改変可能（MVT形式に注意）
+    //         callback(null, data);
+    //       }
+    //     });
+    //   });
+      
+
       // maplibregl.addProtocol('cleanpmtiles', async (params, callback) => {
       //   params.url = params.url.replace('cleanpmtiles://', 'pmtiles://');
       //   try {
