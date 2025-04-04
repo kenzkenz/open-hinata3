@@ -47,7 +47,8 @@ try {
 あなたはグループ「{$groupName}」に招待されました。
 
 以下のリンクから参加してください：
-https://kenzkenz.xsrv.jp/open-hinata3/join?group={$groupName}
+https://kenzkenz.xsrv.jp/open-hinata3/join.php?group={$groupName}
+
 
 ※このメールに心当たりがない場合は無視してください。
 EOT;
