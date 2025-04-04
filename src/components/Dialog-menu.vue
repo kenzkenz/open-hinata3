@@ -112,7 +112,13 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                     @update:modelValue="onGroupChange"
                     v-model:menu="selectMenuOpen"
                 />
-                <p style="margin-bottom: 0px;">現在のグループは「{{ s_currentGroupName }}」です。</p>
+                <template v-if="s_currentGroupName">
+                  現在のグループは「{{ s_currentGroupName }}」です。
+                </template>
+                <template v-else>
+                  グループに所属していません。
+                </template>
+
               </v-window-item>
               <v-window-item value="2" class="my-v-window">
                 <p style="margin-top: 20px;">グループを削除するときは以下を選択してください。削除はオーナーしかできません。</p>
@@ -157,7 +163,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
             現在のグループは「{{ initialGroupName }}」です。
           </template>
           <template v-else>
-            グループに所属していません
+            グループに所属していません。
           </template>
         </p>
       </div>
@@ -290,7 +296,7 @@ export default {
   data: () => ({
     initialGroupName: localStorage.getItem("lastUsedGroupName") || "",
     showGroupName: false,
-    lastSetTime: 0,
+    // lastSetTime: 0,
     snackbar: false,
     snackbarText: '',
     isGroupOwner: false,
@@ -552,54 +558,14 @@ export default {
         this.snackbarText = "グループを削除しました"
         this.snackbar = true
 
+        // 🎉 アニメーション用にトーストやスナックバー
+        this.$emit('showSnackbar', `${groupData.name} を削除しました`)
+
       } catch (e) {
         console.error("🔥 グループ削除失敗", e)
         alert("削除に失敗しました")
       }
     },
-
-
-    // async deleteGroup() {
-    //   const groupId = this.selectedGroupId
-    //   if (!groupId) return alert("削除するグループを選択してください")
-    //
-    //   const groupDoc = await db.collection("groups").doc(groupId).get()
-    //   if (!groupDoc.exists) return alert("グループが見つかりません")
-    //
-    //   const groupData = groupDoc.data()
-    //
-    //   // 所有者でないと削除不可
-    //   if (groupData.ownerUid !== this.currentUserId) {
-    //     return alert("このグループを削除する権限がありません")
-    //   }
-    //
-    //   if (!confirm(`本当にグループ「${groupData.name}」を削除しますか？`)) return
-    //
-    //   try {
-    //     // Firestoreから削除
-    //     await db.collection("groups").doc(groupId).delete()
-    //
-    //     // 参加者のuserドキュメントからも削除（全ユーザーへ反映）
-    //     const members = groupData.members || []
-    //     for (const memberUid of members) {
-    //       await db.collection("users").doc(memberUid).update({
-    //         groups: firebase.firestore.FieldValue.arrayRemove(groupId)
-    //       })
-    //     }
-    //
-    //     // 🔄 UI更新
-    //     this.groupOptions = this.groupOptions.filter(g => g.id !== groupId)
-    //     this.selectedGroupId = this.groupOptions[0]?.id || null
-    //     this.onGroupChange(this.selectedGroupId)
-    //
-    //     // 🎉 アニメーション用にトーストやスナックバー
-    //     this.$emit('showSnackbar', `${groupData.name} を削除しました`)
-    //
-    //   } catch (e) {
-    //     console.error("グループ削除エラー:", e)
-    //     alert("グループの削除に失敗しました")
-    //   }
-    // },
     showSnackbar(msg) {
       this.snackbarText = msg
       this.snackbar = true
@@ -781,62 +747,8 @@ export default {
           }
         }
       }
-
       signup()
     },
-
-    // logOut () {
-    //   const logout = async () => {
-    //     try {
-    //       await signOut(auth); // ここで `auth` を明示的に指定
-    //       this.$store.state.userId = 'dummy'
-    //       this.s_fetchImagesFire = !this.s_fetchImagesFire
-    //       alert("ログアウトしました");
-    //     } catch (error) {
-    //       console.error("ログアウトエラー:", error.message);
-    //     }
-    //   };
-    //   logout()
-    // },
-    // signUp () {
-    //   if (!(this.email && this.password &&this.nickname)) {
-    //     alert('入力されていません。')
-    //     return
-    //   }
-    //   const signup = async () => {
-    //     try {
-    //       // Firebase 認証でアカウント作成
-    //       const userCredential = await createUserWithEmailAndPassword(auth,  this.email, this.password);
-    //       const user = userCredential.user;
-    //       // ニックネーム（displayName）を設定
-    //       await updateProfile(user, {
-    //         displayName: this.nickname
-    //       });
-    //       console.log("アカウント作成成功！ユーザー:", user);
-    //       this.createDirectory()
-    //       alert(`登録成功！ようこそ、${user.displayName} さん！`);
-    //       this.errorMsg = ''
-    //       this.signUpDiv = false
-    //     } catch (error) {
-    //       console.error("サインアップ失敗:", error.message);
-    //       // エラーメッセージを表示
-    //       switch (error.code) {
-    //         case "auth/user-not-found":
-    //           this.errorMsg = "ユーザーが見つかりません";
-    //           break;
-    //         case "auth/wrong-password":
-    //           this.errorMsg = "パスワードが違います";
-    //           break;
-    //         case "auth/invalid-email":
-    //           this.errorMsg = "無効なメールアドレスです";
-    //           break;
-    //         default:
-    //           this.errorMsg = "ログインに失敗しました";
-    //       }
-    //     }
-    //   };
-    //   signup()
-    // },
     login () {
       const login = async () => {
         try {
@@ -1056,31 +968,6 @@ export default {
     }
   },
   watch: {
-    // s_currentGroupName: {
-    //   handler(newVal) {
-    //     this.showGroupName = false // いったん非表示に戻す
-    //
-    //     if (this.displayTimer) {
-    //       clearTimeout(this.displayTimer)
-    //     }
-    //
-    //     // 最新変更から 1500ms 経過後に表示
-    //     this.displayTimer = setTimeout(() => {
-    //       this.showGroupName = true
-    //     }, 3000)
-    //   },
-    //   immediate: true
-    // },
-    // s_currentGroupName(newVal, oldVal) {
-    //   console.log(`🕵️‍♂️ s_currentGroupName changed: ${oldVal} → ${newVal}`)
-    //   console.trace()
-    // },
-    selectedGroupId(newVal) {
-      console.log("🧩 selectedGroupId:", newVal)
-    },
-    groupOptions(newVal) {
-      console.log("📦 groupOptions:", JSON.stringify(newVal))
-    },
     currentUserId: {
       immediate: true,
       async handler(uid) {
