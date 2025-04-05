@@ -694,24 +694,80 @@ export default {
           alert("メールアドレスを入力してください");
           return;
         }
-
         if (!this.groupId || typeof this.groupId !== "string") {
           alert("グループIDを入力してください");
           return;
         }
-
         const user = firebase.auth().currentUser;
         if (!user) {
           alert("ログインしてください！");
           return;
         }
-
         const userRef = firebase.firestore().collection("users").doc(user.uid);
         const userDoc = await userRef.get();
         if (userDoc.exists) {
           const groups = userDoc.data().groups || [];
           if (groups.includes(this.groupId)) {
-            alert("すでにこのグループに参加済みです！");
+
+            // ✅ ここで groupOptions を再構築してUI更新
+            const groupIds = groups;
+            // let name
+            // const fetchedGroups = [];
+            // for (const groupId of groupIds) {
+            //   const groupDoc = await firebase.firestore().collection("groups").doc(groupId).get();
+            //   if (groupDoc.exists) {
+            //     name = groupDoc.data().name || "(名前なし)";
+            //     fetchedGroups.push({
+            //       id: groupId,
+            //       name,
+            //       ownerUid: groupDoc.data().ownerUid,
+            //     });
+            //   }
+            // }
+            //
+            // // 「グループに入らない」オプションを追加して更新
+            // this.groupOptions = [
+            //   { id: null, name: "（グループに入らない）" },
+            //   ...fetchedGroups,
+            // ];
+            //
+            // // セレクト状態を更新して保存
+            // this.selectedGroupId = this.groupId;
+            // this.onGroupChange(this.groupId);
+            //
+            //
+            // alert("既に「" + name + "」に参加済みです！");
+
+
+            const fetchedGroups = [];
+            let joinedGroupName = ""; // ← ここで参加済みのグループ名を保存する
+            for (const groupId of groupIds) {
+              const groupDoc = await firebase.firestore().collection("groups").doc(groupId).get();
+              if (groupDoc.exists) {
+                const groupData = groupDoc.data();
+                const name = groupData.name || "(名前なし)";
+                fetchedGroups.push({
+                  id: groupId,
+                  name,
+                  ownerUid: groupData.ownerUid,
+                });
+
+                if (groupId === this.groupId) {
+                  joinedGroupName = name; // ← ここで該当グループ名を確保！
+                }
+              }
+            }
+
+            this.groupOptions = [
+              { id: null, name: "（グループに入らない）" },
+              ...fetchedGroups,
+            ];
+
+            this.selectedGroupId = this.groupId;
+            this.onGroupChange(this.groupId);
+
+            alert(`既に「${joinedGroupName}」に参加済みです！\nまた、「${joinedGroupName}」にログインしました！`);
+
             return;
           }
         } else {
@@ -781,8 +837,55 @@ export default {
           console.warn(`⚠️ users/${user.uid} ドキュメントが存在しません`);
           throw new Error("ユーザー情報の取得に失敗しました。");
         }
+        
+        // 🎯 成功後：グループ状態を再取得＆更新
+        // const updatedUserDoc = await userRef.get();
+        const groupIds = updatedUserDoc.exists ? updatedUserDoc.data().groups || [] : [];
 
-        alert("🎉 参加が完了しました！");
+        // const groups = [];
+        // for (const groupId of groupIds) {
+        //   const groupDoc = await db.collection("groups").doc(groupId).get();
+        //   if (groupDoc.exists) {
+        //     const name = groupDoc.data().name || "(名前なし)";
+        //     groups.push({
+        //       id: groupId,
+        //       name,
+        //       ownerUid: groupDoc.data().ownerUid,
+        //     });
+        //   }
+        // }
+
+        let matchedGroupName = "";
+
+        const groups = [];
+        for (const groupId of groupIds) {
+          const groupDoc = await db.collection("groups").doc(groupId).get();
+          if (groupDoc.exists) {
+            const name = groupDoc.data().name || "(名前なし)";
+            groups.push({
+              id: groupId,
+              name,
+              ownerUid: groupDoc.data().ownerUid,
+            });
+
+            // 👇 該当グループの名前を保存
+            if (groupId === this.groupId) {
+              matchedGroupName = name;
+            }
+          }
+        }
+
+        // 先頭に「グループに入らない」を追加
+        this.groupOptions = [
+          { id: null, name: "（グループに入らない）" },
+          ...groups,
+        ];
+
+        // セレクト状態を更新して保存
+        this.selectedGroupId = this.groupId;
+        this.onGroupChange(this.groupId);
+
+        alert(`「${matchedGroupName}」に参加しました！\nまた、「${matchedGroupName}」にログインしました！`);
       } catch (error) {
         console.error("❌ グループ参加処理でエラーが発生しました:", error);
         alert(`エラーが発生しました: ${error.message}`);
@@ -907,508 +1010,6 @@ export default {
       }
     },
 
-
-    // async sendInvite() {
-    //   try {
-    //     // ローディング開始
-    //     this.isSendingInvite = true;
-    //
-    //     // バリデーション
-    //     if (!this.inviteEmail || !/.+@.+\..+/.test(this.inviteEmail)) {
-    //       this.snackbarText = "正しいメールアドレスを入力してください";
-    //       this.snackbar = true;
-    //       return;
-    //     }
-    //     if (!this.selectedGroupId) {
-    //       this.snackbarText = "グループを選択してください";
-    //       this.snackbar = true;
-    //       return;
-    //     }
-    //
-    //     const group = this.groupOptions.find(g => g.id === this.selectedGroupId);
-    //     if (!group || !group.name) {
-    //       this.snackbarText = "選択したグループが見つかりません、またはグループ名がありません";
-    //       this.snackbar = true;
-    //       return;
-    //     }
-    //
-    //     // 招待元のユーザー名を取得
-    //     let inviterName = "不明なユーザー";
-    //     if (this.currentUserId) {
-    //       try {
-    //         const userDoc = await db.collection("users").doc(this.currentUserId).get();
-    //         if (userDoc.exists) {
-    //           inviterName = userDoc.data().nickname || userDoc.data().email || "不明なユーザー";
-    //           console.log("✅ 招待者名を取得:", inviterName);
-    //         } else {
-    //           console.warn("⚠️ 招待元のユーザードキュメントが存在しません:", this.currentUserId);
-    //         }
-    //       } catch (error) {
-    //         console.error("招待元ユーザー名の取得エラー:", error);
-    //       }
-    //     } else {
-    //       console.warn("⚠️ currentUserId が設定されていません:", this.currentUserId);
-    //     }
-    //
-    //     // デバッグ用ログ
-    //     const requestData = {
-    //       email: this.inviteEmail,
-    //       group: group.name,
-    //       groupId: this.selectedGroupId,
-    //       inviter: inviterName,
-    //     };
-    //     console.log("送信データ:", requestData);
-    //
-    //     // Firestore に保存
-    //     await db.collection("invitations").add({
-    //       email: this.inviteEmail,
-    //       groupId: this.selectedGroupId,
-    //       groupName: group.name,
-    //       invitedBy: this.currentUserId,
-    //       inviterName: inviterName,
-    //       status: "pending",
-    //       createdAt: new Date(),
-    //     });
-    //
-    //     // PHP (SMTPメール送信) に送信
-    //     const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/invite_mail.php", {
-    //       method: "POST",
-    //       headers: {
-    //         "Content-Type": "application/json",
-    //       },
-    //       body: JSON.stringify(requestData),
-    //     });
-    //
-    //     const result = await response.json();
-    //
-    //     if (result.success) {
-    //       this.snackbarText = `「${group.name}」への招待メールを送信しました`;
-    //       this.snackbar = true;
-    //       this.inviteEmail = ""; // 招待済みのメールをリセット
-    //     } else {
-    //       this.snackbarText = `メール送信に失敗しました: ${result.message}`;
-    //       this.snackbar = true;
-    //     }
-    //   } catch (err) {
-    //     console.error("招待送信エラー:", err);
-    //     this.snackbarText = "サーバーへの接続に失敗しました: " + err.message;
-    //     this.snackbar = true;
-    //   } finally {
-    //     // ローディング終了
-    //     this.isSendingInvite = false;
-    //   }
-    // },
-    // async sendInvite() {
-    //   try {
-    //     // ローディング開始
-    //     this.isSendingInvite = true;
-    //
-    //     // バリデーション
-    //     if (!this.inviteEmail || !/.+@.+\..+/.test(this.inviteEmail)) {
-    //       this.snackbarText = "正しいメールアドレスを入力してください";
-    //       this.snackbar = true;
-    //       return;
-    //     }
-    //     if (!this.selectedGroupId) {
-    //       this.snackbarText = "グループを選択してください";
-    //       this.snackbar = true;
-    //       return;
-    //     }
-    //
-    //     const group = this.groupOptions.find(g => g.id === this.selectedGroupId);
-    //     if (!group || !group.name) {
-    //       this.snackbarText = "選択したグループが見つかりません、またはグループ名がありません";
-    //       this.snackbar = true;
-    //       return;
-    //     }
-    //
-    //     // 招待元のユーザー名を取得
-    //     let inviterName = "不明なユーザー";
-    //     if (this.currentUserId) {
-    //       try {
-    //         const userDoc = await db.collection("users").doc(this.currentUserId).get();
-    //         if (userDoc.exists && userDoc.data().nickname) {
-    //           inviterName = userDoc.data().nickname;
-    //         } else {
-    //           console.warn("⚠️ 招待元のユーザー名が見つかりません:", this.currentUserId);
-    //         }
-    //       } catch (error) {
-    //         console.error("招待元ユーザー名の取得エラー:", error);
-    //       }
-    //     }
-    //
-    //     // デバッグ用ログ
-    //     const requestData = {
-    //       email: this.inviteEmail,
-    //       group: group.name,
-    //       groupId: this.selectedGroupId,
-    //       inviter: inviterName,
-    //     };
-    //     console.log("送信データ:", requestData);
-    //
-    //     // Firestore に保存
-    //     await db.collection("invitations").add({
-    //       email: this.inviteEmail,
-    //       groupId: this.selectedGroupId,
-    //       groupName: group.name,
-    //       invitedBy: this.currentUserId,
-    //       inviterName: inviterName,
-    //       status: "pending",
-    //       createdAt: new Date(),
-    //     });
-    //
-    //     // PHP (SMTPメール送信) に送信
-    //     const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/invite_mail.php", {
-    //       method: "POST",
-    //       headers: {
-    //         "Content-Type": "application/json",
-    //       },
-    //       body: JSON.stringify(requestData),
-    //     });
-    //
-    //     const result = await response.json();
-    //
-    //     if (result.success) {
-    //       this.snackbarText = `「${group.name}」への招待メールを送信しました`;
-    //       this.snackbar = true;
-    //       this.inviteEmail = ""; // 招待済みのメールをリセット
-    //     } else {
-    //       this.snackbarText = `メール送信に失敗しました: ${result.message}`;
-    //       this.snackbar = true;
-    //     }
-    //   } catch (err) {
-    //     console.error("招待送信エラー:", err);
-    //     this.snackbarText = "サーバーへの接続に失敗しました: " + err.message;
-    //     this.snackbar = true;
-    //   } finally {
-    //     // ローディング終了
-    //     this.isSendingInvite = false;
-    //   }
-    // },
-    // async sendInvite() {
-    //   try {
-    //     // ローディング開始
-    //     this.isSendingInvite = true;
-    //
-    //     // バリデーション
-    //     if (!this.inviteEmail || !/.+@.+\..+/.test(this.inviteEmail)) {
-    //       this.snackbarText = "正しいメールアドレスを入力してください";
-    //       this.snackbar = true;
-    //       return;
-    //     }
-    //     if (!this.selectedGroupId) {
-    //       this.snackbarText = "グループを選択してください";
-    //       this.snackbar = true;
-    //       return;
-    //     }
-    //
-    //     const group = this.groupOptions.find(g => g.id === this.selectedGroupId);
-    //     if (!group) {
-    //       this.snackbarText = "選択したグループが見つかりません";
-    //       this.snackbar = true;
-    //       return;
-    //     }
-    //
-    //     // Firestore に保存
-    //     await db.collection("invitations").add({
-    //       email: this.inviteEmail,
-    //       groupId: this.selectedGroupId,
-    //       groupName: group.name,
-    //       invitedBy: this.currentUserId,
-    //       status: "pending",
-    //       createdAt: new Date(),
-    //     });
-    //
-    //     // PHP (SMTPメール送信) に送信
-    //     const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/invite_mail.php", {
-    //       method: "POST",
-    //       headers: {
-    //         "Content-Type": "application/json",
-    //       },
-    //       body: JSON.stringify({
-    //         email: this.inviteEmail,
-    //         group: group.name,
-    //         groupId: this.selectedGroupId, // groupId を追加
-    //       }),
-    //     });
-    //
-    //     const result = await response.json();
-    //
-    //     if (result.success) {
-    //       this.snackbarText = "招待メールを送信しました";
-    //       this.snackbar = true;
-    //       this.inviteEmail = ""; // 招待済みのメールをリセット
-    //     } else {
-    //       this.snackbarText = `メール送信に失敗しました: ${result.message}`;
-    //       this.snackbar = true;
-    //     }
-    //   } catch (err) {
-    //     console.error("招待送信エラー:", err);
-    //     this.snackbarText = "サーバーへの接続に失敗しました: " + err.message;
-    //     this.snackbar = true;
-    //   } finally {
-    //     // ローディング終了
-    //     this.isSendingInvite = false;
-    //   }
-    // },
-    // async sendInvite() {
-    //   // メールアドレスとグループ名のバリデーション
-    //   if (!this.inviteEmail || !/.+@.+\..+/.test(this.inviteEmail)) {
-    //     alert("正しいメールアドレスを入力してください");
-    //     return;
-    //   }
-    //   if (!this.selectedGroupId || !this.initialGroupName) {
-    //     alert("グループを選択してください");
-    //     return;
-    //   }
-    //   // Firestore に保存（例: Firestore を使う場合）
-    //   try {
-    //     // Firestore に保存
-    //     await db.collection("invitations").add({
-    //       email: this.inviteEmail,
-    //       groupId: this.selectedGroupId,
-    //       groupName: this.groupOptions.find(g => g.id === this.selectedGroupId)?.name,
-    //       invitedBy: this.currentUserId,
-    //       status: "pending",
-    //       createdAt: new Date()
-    //     });
-    //
-    //   } catch (e) {
-    //     console.error("Firestore 保存失敗:", e);
-    //     alert("Firestore への保存に失敗しました");
-    //     return;
-    //   }
-    //
-    //   // PHP (SMTPメール送信) に送信
-    //   try {
-    //     const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/invite_mail.php", {
-    //       method: "POST",
-    //       headers: {
-    //         "Content-Type": "application/json"
-    //       },
-    //       body: JSON.stringify({
-    //         email: this.inviteEmail,
-    //         group: this.initialGroupName
-    //       })
-    //     });
-    //
-    //     const result = await response.json();
-    //
-    //     if (result.success) {
-    //       alert("招待メールを送信しました。");
-    //     } else {
-    //       alert("メール送信に失敗しました: " + result.message);
-    //     }
-    //   } catch (err) {
-    //     console.error("PHPへの送信エラー:", err);
-    //     alert("サーバーへの接続に失敗しました");
-    //   }
-    //   // 招待済みのメールはリセット（任意）
-    //   // this.inviteEmail = "";
-    // },
-    // async sendInvite() {
-    //   if (!this.inviteEmail || !/.+@.+\..+/.test(this.inviteEmail)) {
-    //     alert("正しいメールアドレスを入力してください");
-    //     return;
-    //   }
-    //   if (!this.selectedGroupId) {
-    //     alert("グループを選択してください");
-    //     return;
-    //   }
-    //
-    //   // Firestore 登録などはここに
-    //
-    //   // PHP へメール送信
-    //   try {
-    //     const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/invite_mail.php", {
-    //       method: "POST",
-    //       headers: {
-    //         "Content-Type": "application/json"
-    //       },
-    //       body: JSON.stringify({
-    //         email: this.inviteEmail,
-    //         groupName: this.groupOptions.find(g => g.id === this.selectedGroupId)?.name,
-    //         groupId: this.selectedGroupId
-    //       })
-    //     });
-    //
-    //     const result = await response.json();
-    //
-    //     if (result.success) {
-    //       alert("招待メールを送信しました。");
-    //     } else {
-    //       alert("メール送信に失敗しました: " + result.message);
-    //     }
-    //   } catch (err) {
-    //     console.error("PHPへの送信エラー:", err);
-    //     alert("サーバーへの接続に失敗しました");
-    //   }
-    // },
-
-
-
-
-
-
-
-    // async sendInvite() {
-    //   if (!this.inviteEmail || !/.+@.+\..+/.test(this.inviteEmail)) {
-    //     alert("正しいメールアドレスを入力してください");
-    //     return;
-    //   }
-    //   if (!this.selectedGroupId) {
-    //     alert("グループを選択してください");
-    //     return;
-    //   }
-    //
-    //   // Firestore に保存
-    //   await db.collection("invitations").add({
-    //     email: this.inviteEmail,
-    //     groupId: this.selectedGroupId,
-    //     groupName: this.groupOptions.find(g => g.id === this.selectedGroupId)?.name,
-    //     invitedBy: this.currentUserId,
-    //     status: "pending",
-    //     createdAt: new Date()
-    //   });
-    //
-    //   // PHP にメール送信リクエスト
-    //   try {
-    //     const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/invite_mail.php", {
-    //       method: "POST",
-    //       headers: {
-    //         "Content-Type": "application/json"
-    //       },
-    //       body: JSON.stringify({
-    //         email: this.inviteEmail,
-    //         groupName: this.groupOptions.find(g => g.id === this.selectedGroupId)?.name,
-    //         groupId: this.selectedGroupId
-    //       })
-    //     });
-    //
-    //     const result = await response.json();
-    //
-    //     if (result.success) {
-    //       alert("招待メールを送信しました。");
-    //     } else {
-    //       alert("メール送信に失敗しました: " + result.message);
-    //     }
-    //   } catch (err) {
-    //     console.error("PHPへの送信エラー:", err);
-    //     alert("サーバーへの接続に失敗しました");
-    //   }
-    // },
-
-    // async sendInvite() {
-    //   // メールアドレスとグループ名のバリデーション
-    //   if (!this.inviteEmail || !/.+@.+\..+/.test(this.inviteEmail)) {
-    //     alert("正しいメールアドレスを入力してください");
-    //     return;
-    //   }
-    //   if (!this.selectedGroupId || !this.initialGroupName) {
-    //     alert("グループを選択してください");
-    //     return;
-    //   }
-    //
-    //   // Firestore に保存（例: Firestore を使う場合）
-    //   try {
-    //     // await this.$firestore.collection("invitations").add({
-    //     //   email: this.inviteEmail,
-    //     //   groupId: this.selectedGroupId,
-    //     //   groupName: this.initialGroupName,
-    //     //   invitedBy: this.currentUserId,
-    //     //   status: "pending",
-    //     //   createdAt: new Date()
-    //     // });
-    //     // Firestore に保存
-    //     await db.collection("invitations").add({
-    //       email: this.inviteEmail,
-    //       groupId: this.selectedGroupId,
-    //       groupName: this.groupOptions.find(g => g.id === this.selectedGroupId)?.name,
-    //       invitedBy: this.currentUserId,
-    //       status: "pending",
-    //       createdAt: new Date()
-    //     });
-    //
-    //   } catch (e) {
-    //     console.error("Firestore 保存失敗:", e);
-    //     alert("Firestore への保存に失敗しました");
-    //     return;
-    //   }
-    //
-    //   // PHP (SMTPメール送信) に送信
-    //   try {
-    //     const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/invite_mail.php", {
-    //       method: "POST",
-    //       headers: {
-    //         "Content-Type": "application/json"
-    //       },
-    //       body: JSON.stringify({
-    //         email: this.inviteEmail,
-    //         group: this.initialGroupName
-    //       })
-    //     });
-    //
-    //     const result = await response.json();
-    //
-    //     if (result.success) {
-    //       alert("招待メールを送信しました。");
-    //     } else {
-    //       alert("メール送信に失敗しました: " + result.message);
-    //     }
-    //   } catch (err) {
-    //     console.error("PHPへの送信エラー:", err);
-    //     alert("サーバーへの接続に失敗しました");
-    //   }
-    //
-    //   // 招待済みのメールはリセット（任意）
-    //   // this.inviteEmail = "";
-    // },
-    // async sendInvite() {
-    //   if (!this.inviteEmail || !/.+@.+\..+/.test(this.inviteEmail)) {
-    //     alert("正しいメールアドレスを入力してください");
-    //     return;
-    //   }
-    //   if (!this.selectedGroupId) {
-    //     alert("グループを選択してください");
-    //     return;
-    //   }
-    //
-    //   // Firestore に保存
-    //   await db.collection("invitations").add({
-    //     email: this.inviteEmail,
-    //     groupId: this.selectedGroupId,
-    //     groupName: this.groupOptions.find(g => g.id === this.selectedGroupId)?.name,
-    //     invitedBy: this.currentUserId,
-    //     status: "pending",
-    //     createdAt: new Date()
-    //   });
-    //
-    //   // PHP に送信
-    //   try {
-    //     const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/invite_mail.php", {
-    //       method: "POST",
-    //       headers: {
-    //         "Content-Type": "application/json"
-    //       },
-    //       body: JSON.stringify({
-    //         email: this.inviteEmail,
-    //         group: this.initialGroupName || "(不明なグループ名)"
-    //       })
-    //     });
-    //
-    //     const result = await response.json();
-    //
-    //     if (result.success) {
-    //       alert("招待メールを送信しました。");
-    //     } else {
-    //       alert("メール送信に失敗しました: " + result.message);
-    //     }
-    //   } catch (err) {
-    //     console.error("PHPへの送信エラー:", err);
-    //     alert("サーバーへの接続に失敗しました");
-    //   }
-    //   // this.inviteEmail = "";
-    // },
     async deleteGroup() {
       const groupId = this.selectedGroupId2
       if (!groupId) return alert("削除するグループを選択してください")
