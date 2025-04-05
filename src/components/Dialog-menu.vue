@@ -5,7 +5,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 <template>
   <v-app>
 
-    <v-snackbar v-model="snackbar" :timeout="3000">
+    <v-snackbar v-model="snackbar" :timeout="3000" color="primary">
       {{ snackbarText }}
     </v-snackbar>
 
@@ -318,7 +318,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v0.807
+        v0.808
       </p>
       <div v-if="user1">
         <p style="margin-bottom: 20px;">
