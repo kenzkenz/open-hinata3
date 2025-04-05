@@ -118,8 +118,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         </v-card>
       </v-dialog>
 
-
-
+      <!-- グループ管理ダイアログ -->
       <v-dialog v-model="s_dialogForGroup" max-width="500px" height="400px">
         <v-card>
           <v-card-title>
@@ -127,7 +126,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
           </v-card-title>
 
           <v-card-text>
-
             <v-tabs mobile-breakpoint="0" v-model="tab">
               <v-tab value="9">参加</v-tab>
               <v-tab value="0">作成</v-tab>
@@ -138,6 +136,14 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
             <v-window v-model="tab">
               <v-window-item value="9" class="my-v-window">
+                <!-- グループID入力欄を追加 -->
+                <v-text-field
+                    v-model="joinGroupId"
+                    label="グループIDを入力（招待リンクから取得）"
+                    outlined
+                    clearable
+                    :rules="[v => !!v || 'グループIDを入力してください']"
+                />
                 <v-text-field
                     v-model="emailInput"
                     label="あなたのメールアドレスを入力"
@@ -149,15 +155,14 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 />
                 <v-btn
                     color="primary"
-                    @click="joinGroup"
-                    :disabled="!emailInput || !/.+@.+\..+/.test(emailInput)"
+                    @click="joinGroupFromDialog"
+                    :disabled="!emailInput || !joinGroupId || !/.+@.+\..+/.test(emailInput)"
                 >
                   参加する
                 </v-btn>
               </v-window-item>
               <v-window-item value="0" class="my-v-window">
                 <div class="create-group" v-if="user1 && !loginDiv && !signUpDiv">
-<!--                  <p style="margin-top: 20px;">グループを新規作成するときは以下を入力してください。</p>-->
                   <v-text-field v-model="groupName" label="グループ名" />
                   <v-btn @click="createGroup">グループ作成</v-btn>
                 </div>
@@ -212,10 +217,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                     @update:modelValue="onGroupChange"
                     v-model:menu="selectMenuOpen2"
                 />
-
                 <v-btn @click="kakunin">確認</v-btn>
-
-
               </v-window-item>
               <v-window-item value="3" class="my-v-window">
                 <p style="margin-top: 20px;">削除はオーナーしかできません。</p>
@@ -242,14 +244,145 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 </v-btn>
               </v-window-item>
             </v-window>
-
           </v-card-text>
+
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn color="blue-darken-1" text @click="s_dialogForGroup = false">Close</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
+
+<!--      <v-dialog v-model="s_dialogForGroup" max-width="500px" height="400px">-->
+<!--        <v-card>-->
+<!--          <v-card-title>-->
+<!--            グループ管理-->
+<!--          </v-card-title>-->
+
+<!--          <v-card-text>-->
+
+<!--            <v-tabs mobile-breakpoint="0" v-model="tab">-->
+<!--              <v-tab value="9">参加</v-tab>-->
+<!--              <v-tab value="0">作成</v-tab>-->
+<!--              <v-tab value="1">招待</v-tab>-->
+<!--              <v-tab value="2">変更</v-tab>-->
+<!--              <v-tab value="3">削除</v-tab>-->
+<!--            </v-tabs>-->
+
+<!--            <v-window v-model="tab">-->
+<!--              <v-window-item value="9" class="my-v-window">-->
+<!--                <v-text-field-->
+<!--                    v-model="emailInput"-->
+<!--                    label="あなたのメールアドレスを入力"-->
+<!--                    type="email"-->
+<!--                    :rules="emailRules"-->
+<!--                    outlined-->
+<!--                    clearable-->
+<!--                    required-->
+<!--                />-->
+<!--                <v-btn-->
+<!--                    color="primary"-->
+<!--                    @click="joinGroup"-->
+<!--                    :disabled="!emailInput || !/.+@.+\..+/.test(emailInput)"-->
+<!--                >-->
+<!--                  参加する-->
+<!--                </v-btn>-->
+<!--              </v-window-item>-->
+<!--              <v-window-item value="0" class="my-v-window">-->
+<!--                <div class="create-group" v-if="user1 && !loginDiv && !signUpDiv">-->
+<!--&lt;!&ndash;                  <p style="margin-top: 20px;">グループを新規作成するときは以下を入力してください。</p>&ndash;&gt;-->
+<!--                  <v-text-field v-model="groupName" label="グループ名" />-->
+<!--                  <v-btn @click="createGroup">グループ作成</v-btn>-->
+<!--                </div>-->
+<!--              </v-window-item>-->
+<!--              <v-window-item value="1" class="my-v-window">-->
+<!--                <div style="margin-bottom: 20px;">-->
+<!--                  <div v-if="s_currentGroupName">-->
+<!--                    現在のグループは「{{ s_currentGroupName }}」です。-->
+<!--                  </div>-->
+<!--                  <div v-else>-->
+<!--                    グループに所属していません。-->
+<!--                  </div>-->
+<!--                </div>-->
+<!--                <v-select-->
+<!--                    v-model="selectedGroupId"-->
+<!--                    :items="groupOptions.filter((g, i) => i !== 0)"-->
+<!--                    item-value="id"-->
+<!--                    item-title="name"-->
+<!--                    label="グループを選択"-->
+<!--                    outlined-->
+<!--                    dense-->
+<!--                    class="mt-2"-->
+<!--                    @update:modelValue="onGroupChange"-->
+<!--                    v-model:menu="selectMenuOpen1"-->
+<!--                />-->
+<!--                <v-text-field-->
+<!--                    v-model="inviteEmail"-->
+<!--                    :rules="emailRules"-->
+<!--                    label="メールアドレスで招待"-->
+<!--                />-->
+<!--                <v-btn @click="sendInvite">招待を送信</v-btn>-->
+<!--              </v-window-item>-->
+<!--              <v-window-item value="2" class="my-v-window">-->
+<!--                <div style="margin-bottom: 20px;">-->
+<!--                  <div v-if="s_currentGroupName">-->
+<!--                    現在のグループは「{{ s_currentGroupName }}」です。-->
+<!--                  </div>-->
+<!--                  <div v-else>-->
+<!--                    グループに所属していません。-->
+<!--                  </div>-->
+<!--                </div>-->
+<!--                <v-select-->
+<!--                    ref="groupSelect1"-->
+<!--                    v-model="selectedGroupId"-->
+<!--                    :items="groupOptions"-->
+<!--                    item-value="id"-->
+<!--                    item-title="name"-->
+<!--                    label="グループを選択"-->
+<!--                    outlined-->
+<!--                    dense-->
+<!--                    class="mt-2"-->
+<!--                    @update:modelValue="onGroupChange"-->
+<!--                    v-model:menu="selectMenuOpen2"-->
+<!--                />-->
+
+<!--                <v-btn @click="kakunin">確認</v-btn>-->
+
+
+<!--              </v-window-item>-->
+<!--              <v-window-item value="3" class="my-v-window">-->
+<!--                <p style="margin-top: 20px;">削除はオーナーしかできません。</p>-->
+<!--                <v-select-->
+<!--                    ref="groupSelect3"-->
+<!--                    v-model="selectedGroupId2"-->
+<!--                    :items="groupOptions.filter((g, i) => i !== 0)"-->
+<!--                    item-value="id"-->
+<!--                    item-title="name"-->
+<!--                    label="削除するグループを選択"-->
+<!--                    outlined-->
+<!--                    dense-->
+<!--                    class="mt-2"-->
+<!--                    @update:modelValue="deleteBtn"-->
+<!--                    v-model:menu="selectMenuOpen3"-->
+<!--                />-->
+<!--                <v-btn-->
+<!--                    v-if="canDeleteSelectedGroup"-->
+<!--                    color="red"-->
+<!--                    @click="deleteGroup"-->
+<!--                >-->
+<!--                  <v-icon start>mdi-delete</v-icon>-->
+<!--                  グループを削除-->
+<!--                </v-btn>-->
+<!--              </v-window-item>-->
+<!--            </v-window>-->
+
+<!--          </v-card-text>-->
+<!--          <v-card-actions>-->
+<!--            <v-spacer></v-spacer>-->
+<!--            <v-btn color="blue-darken-1" text @click="s_dialogForGroup = false">Close</v-btn>-->
+<!--          </v-card-actions>-->
+<!--        </v-card>-->
+<!--      </v-dialog>-->
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
         v0.802
@@ -381,6 +514,8 @@ export default {
   components: {
   },
   data: () => ({
+    // 追加
+    joinGroupId: "", // 入力されたグループID
     groupId: "",
     emailInput: "",         // 入力フォームのメールアドレス
     groupIdFromURL: "",     // URL から取得した groupId
@@ -585,6 +720,112 @@ export default {
     },
   },
   methods: {
+    async joinGroupFromDialog() {
+      try {
+        this.groupId = this.joinGroupId;
+        await this.joinGroup();
+        this.tab = 0; // 成功したら「作成」タブに戻す（任意）
+      } catch (error) {
+        console.error("❌ グループ参加処理でエラーが発生しました:", error);
+        alert(`エラーが発生しました: ${error.message}`);
+      }
+    },
+    async joinGroup() {
+      try {
+        if (!this.emailInput) {
+          alert("メールアドレスを入力してください");
+          return;
+        }
+
+        if (!this.groupId || typeof this.groupId !== "string") {
+          alert("グループIDを入力してください");
+          return;
+        }
+
+        const user = firebase.auth().currentUser;
+        if (!user) {
+          alert("ログインしてください！");
+          return;
+        }
+
+        const userRef = firebase.firestore().collection("users").doc(user.uid);
+        const userDoc = await userRef.get();
+        if (userDoc.exists) {
+          const groups = userDoc.data().groups || [];
+          if (groups.includes(this.groupId)) {
+            alert("すでにこのグループに参加済みです！");
+            return;
+          }
+        } else {
+          console.warn(`⚠️ users/${user.uid} ドキュメントが存在しません`);
+        }
+
+        console.log("✅ 入力されたメール:", this.emailInput);
+        console.log("✅ 取得した groupId:", this.groupId);
+
+        await firebase.firestore().runTransaction(async (transaction) => {
+          const query = firebase.firestore()
+              .collection("invitations")
+              .where("email", "==", this.emailInput)
+              .where("groupId", "==", this.groupId);
+
+          const snapshot = await query.get();
+          if (snapshot.empty) {
+            throw new Error("招待が見つかりませんでした。メールアドレスが正しいかご確認ください。");
+          }
+
+          const invitationDoc = snapshot.docs[0];
+          const invitationRef = invitationDoc.ref;
+          const currentStatus = invitationDoc.data().status;
+
+          console.log("📦 取得したステータス:", currentStatus);
+
+          if (currentStatus !== "joined") {
+            transaction.update(invitationRef, { status: "joined" });
+            console.log("✅ Firestoreのstatusをjoinedに更新しました");
+          } else {
+            console.log("ℹ️ すでにjoined状態でしたが、usersにも追加します");
+          }
+
+          transaction.set(
+              userRef,
+              {
+                groups: firebase.firestore.FieldValue.arrayUnion(this.groupId),
+              },
+              { merge: true }
+          );
+
+          const groupRef = firebase.firestore().collection("groups").doc(this.groupId);
+          transaction.set(
+              groupRef,
+              {
+                members: firebase.firestore.FieldValue.arrayUnion(user.uid),
+              },
+              { merge: true }
+          );
+        });
+
+        const updatedUserDoc = await userRef.get();
+        if (updatedUserDoc.exists) {
+          const groups = updatedUserDoc.data().groups || [];
+          if (groups.includes(this.groupId)) {
+            console.log(`🟢 成功: groupId ${this.groupId} が users/${user.uid} に追加されました`);
+          } else {
+            console.warn(`🔴 失敗: groupId ${this.groupId} が users/${user.uid} に見つかりません`);
+            throw new Error("グループへの参加に失敗しました。");
+          }
+        } else {
+          console.warn(`⚠️ users/${user.uid} ドキュメントが存在しません`);
+          throw new Error("ユーザー情報の取得に失敗しました。");
+        }
+
+        alert("🎉 参加が完了しました！");
+      } catch (error) {
+        console.error("❌ グループ参加処理でエラーが発生しました:", error);
+        alert(`エラーが発生しました: ${error.message}`);
+      }
+    },
+
     kakunin () {
       const user = firebase.auth().currentUser;
       if (user) {
@@ -593,54 +834,54 @@ export default {
         console.log("❌ ログインしていません");
       }
     },
-
-    async joinGroup() {
-      try {
-        if (!this.emailInput) {
-          alert("メールアドレスを入力してください");
-          return;
-        }
-
-        if (!this.groupId || typeof this.groupId !== 'string') {
-          alert("URLにグループIDが含まれてねー");
-          return;
-        }
-
-        console.log("✅ 入力されたメール:", this.email);
-        console.log("✅ 取得した groupId:", this.groupId);
-
-        const query = firebase.firestore()
-            .collection("invitations")
-            .where("email", "==", this.email)
-            .where("groupId", "==", this.groupId);
-
-        const snapshot = await query.get();
-
-        if (snapshot.empty) {
-          alert("招待が見つかりませんでした。メールアドレスが正しいかご確認ください。");
-          console.warn("⚠️ 該当する招待が見つかりません");
-          return;
-        }
-
-        const invitationDoc = snapshot.docs[0];
-        const currentStatus = invitationDoc.data().status;
-
-        console.log("📦 取得したステータス:", currentStatus);
-
-        if (currentStatus === "joined") {
-          alert("すでに参加済みです！");
-          return;
-        }
-
-        await invitationDoc.ref.update({ status: "joined" });
-
-        alert("🎉 参加が完了しました！");
-        console.log("✅ Firestoreのstatusをjoinedに更新しました");
-      } catch (error) {
-        console.error("❌ エラー発生:", error);
-        alert("エラーが発生しました: " + error.message);
-      }
-    },
+    //
+    // async joinGroup() {
+    //   try {
+    //     if (!this.emailInput) {
+    //       alert("メールアドレスを入力してください");
+    //       return;
+    //     }
+    //
+    //     if (!this.groupId || typeof this.groupId !== 'string') {
+    //       alert("URLにグループIDが含まれてねー");
+    //       return;
+    //     }
+    //
+    //     console.log("✅ 入力されたメール:", this.email);
+    //     console.log("✅ 取得した groupId:", this.groupId);
+    //
+    //     const query = firebase.firestore()
+    //         .collection("invitations")
+    //         .where("email", "==", this.email)
+    //         .where("groupId", "==", this.groupId);
+    //
+    //     const snapshot = await query.get();
+    //
+    //     if (snapshot.empty) {
+    //       alert("招待が見つかりませんでした。メールアドレスが正しいかご確認ください。");
+    //       console.warn("⚠️ 該当する招待が見つかりません");
+    //       return;
+    //     }
+    //
+    //     const invitationDoc = snapshot.docs[0];
+    //     const currentStatus = invitationDoc.data().status;
+    //
+    //     console.log("📦 取得したステータス:", currentStatus);
+    //
+    //     if (currentStatus === "joined") {
+    //       alert("すでに参加済みです！");
+    //       return;
+    //     }
+    //
+    //     await invitationDoc.ref.update({ status: "joined" });
+    //
+    //     alert("🎉 参加が完了しました！");
+    //     console.log("✅ Firestoreのstatusをjoinedに更新しました");
+    //   } catch (error) {
+    //     console.error("❌ エラー発生:", error);
+    //     alert("エラーが発生しました: " + error.message);
+    //   }
+    // },
     //
     //
     // async joinGroup() {
