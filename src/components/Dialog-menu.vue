@@ -76,6 +76,50 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         </v-card>
       </v-dialog>
 
+
+      <v-dialog v-model="s_dialogForLogin" max-width="500px">
+        <v-card>
+          <v-card-title>
+            ログイン管理
+            <span v-if="user1 && user1.displayName" style="margin-left:20px;font-size: 16px;">
+              ようこそ、{{ user1.displayName }}さん！
+            </span>
+          </v-card-title>
+
+          <v-card-text>
+            <div style="margin-top: 10px;">
+              <v-btn v-if="!user1" @click="loginDiv=!loginDiv,signUpDiv=false">ログイン</v-btn><v-btn v-if="user1" @click="logOut">ログアウト</v-btn>
+              <v-btn style="margin-left: 10px;" v-if="!user1" @click="signUpDiv=!signUpDiv,loginDiv=false">新規登録</v-btn>
+              <span v-if="!user1" style="margin-left: 20px;">新規登録は無料です。</span>
+
+              <div v-if="loginDiv" style="margin-top: 10px;">
+                <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
+                <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>
+                <v-btn @click="login">ログインします</v-btn>
+                <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
+              </div>
+            </div>
+            <div style="margin-top: 10px;">
+
+              <div v-if="signUpDiv" style="margin-top: 10px;">
+                <v-text-field  v-model="nickname" type="text" placeholder="ニックネーム"></v-text-field>
+                <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
+                <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>
+                <v-btn @click="signUp">新規登録します</v-btn>
+                <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
+              </div>
+            </div>
+
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="s_dialogForLogin = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+
+
       <v-dialog v-model="s_dialogForGroup" max-width="500px" height="400px">
         <v-card>
           <v-card-title>
@@ -85,6 +129,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
           <v-card-text>
 
             <v-tabs mobile-breakpoint="0" v-model="tab">
+              <v-tab value="9">参加</v-tab>
               <v-tab value="0">作成</v-tab>
               <v-tab value="1">招待</v-tab>
               <v-tab value="2">変更</v-tab>
@@ -92,6 +137,24 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
             </v-tabs>
 
             <v-window v-model="tab">
+              <v-window-item value="9" class="my-v-window">
+                <v-text-field
+                    v-model="emailInput"
+                    label="あなたのメールアドレスを入力"
+                    type="email"
+                    :rules="emailRules"
+                    outlined
+                    clearable
+                    required
+                />
+                <v-btn
+                    color="primary"
+                    @click="joinGroup"
+                    :disabled="!emailInput || !/.+@.+\..+/.test(emailInput)"
+                >
+                  参加する
+                </v-btn>
+              </v-window-item>
               <v-window-item value="0" class="my-v-window">
                 <div class="create-group" v-if="user1 && !loginDiv && !signUpDiv">
 <!--                  <p style="margin-top: 20px;">グループを新規作成するときは以下を入力してください。</p>-->
@@ -149,6 +212,9 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                     @update:modelValue="onGroupChange"
                     v-model:menu="selectMenuOpen2"
                 />
+
+                <v-btn @click="kakunin">確認</v-btn>
+
 
               </v-window-item>
               <v-window-item value="3" class="my-v-window">
@@ -315,6 +381,9 @@ export default {
   components: {
   },
   data: () => ({
+    groupId: "",
+    emailInput: "",         // 入力フォームのメールアドレス
+    groupIdFromURL: "",     // URL から取得した groupId
     emailRules: [
       (v) => !!v || "メールアドレスを入力してください",
       (v) => /.+@.+\..+/.test(v) || "正しいメールアドレスを入力してください"
@@ -516,44 +585,125 @@ export default {
     },
   },
   methods: {
+    kakunin () {
+      const user = firebase.auth().currentUser;
+      if (user) {
+        console.log("✅ ログイン中のユーザー:", user.email);
+      } else {
+        console.log("❌ ログインしていません");
+      }
+    },
+
+    async joinGroup() {
+      try {
+        if (!this.emailInput) {
+          alert("メールアドレスを入力してください");
+          return;
+        }
+
+        if (!this.groupId || typeof this.groupId !== 'string') {
+          alert("URLにグループIDが含まれてねー");
+          return;
+        }
+
+        console.log("✅ 入力されたメール:", this.email);
+        console.log("✅ 取得した groupId:", this.groupId);
+
+        const query = firebase.firestore()
+            .collection("invitations")
+            .where("email", "==", this.email)
+            .where("groupId", "==", this.groupId);
+
+        const snapshot = await query.get();
+
+        if (snapshot.empty) {
+          alert("招待が見つかりませんでした。メールアドレスが正しいかご確認ください。");
+          console.warn("⚠️ 該当する招待が見つかりません");
+          return;
+        }
+
+        const invitationDoc = snapshot.docs[0];
+        const currentStatus = invitationDoc.data().status;
+
+        console.log("📦 取得したステータス:", currentStatus);
+
+        if (currentStatus === "joined") {
+          alert("すでに参加済みです！");
+          return;
+        }
+
+        await invitationDoc.ref.update({ status: "joined" });
+
+        alert("🎉 参加が完了しました！");
+        console.log("✅ Firestoreのstatusをjoinedに更新しました");
+      } catch (error) {
+        console.error("❌ エラー発生:", error);
+        alert("エラーが発生しました: " + error.message);
+      }
+    },
+    //
+    //
+    // async joinGroup() {
+    //   try {
+    //     if (!this.emailInput) {
+    //       alert("メールアドレスを入力してください");
+    //       return;
+    //     }
+    //
+    //     if (!this.groupIdFromURL) {
+    //       alert("URLにグループIDが含まれてねー");
+    //       return;
+    //     }
+    //
+    //     console.log("✅ 入力されたメール:", this.emailInput);
+    //     console.log("✅ URLから取得したgroupId:", this.groupIdFromURL);
+    //
+    //     const query = firebase.firestore()
+    //         .collection("invitations")
+    //         .where("email", "==", this.emailInput)
+    //         .where("groupId", "==", this.groupIdFromURL);
+    //
+    //     const snapshot = await query.get();
+    //
+    //     if (snapshot.empty) {
+    //       alert("招待が見つかりませんでした。メールアドレスが正しいかご確認ください。");
+    //       console.warn("⚠️ 該当する招待が見つかりません");
+    //       return;
+    //     }
+    //
+    //     const invitationDoc = snapshot.docs[0];
+    //     const currentStatus = invitationDoc.data().status;
+    //
+    //     console.log("📦 取得したステータス:", currentStatus);
+    //
+    //     if (currentStatus === "joined") {
+    //       alert("すでに参加済みです！");
+    //       return;
+    //     }
+    //
+    //     await invitationDoc.ref.update({ status: "joined" });
+    //
+    //     alert("🎉 参加が完了しました！");
+    //     console.log("✅ Firestoreのstatusをjoinedに更新しました");
+    //
+    //   } catch (error) {
+    //     console.error("❌ エラー発生:", error);
+    //     alert("エラーが発生しました: " + error.message);
+    //   }
+    // },
     async sendInvite() {
-      // メールアドレスとグループ名のバリデーション
       if (!this.inviteEmail || !/.+@.+\..+/.test(this.inviteEmail)) {
         alert("正しいメールアドレスを入力してください");
         return;
       }
-      if (!this.selectedGroupId || !this.initialGroupName) {
+      if (!this.selectedGroupId) {
         alert("グループを選択してください");
         return;
       }
 
-      // Firestore に保存（例: Firestore を使う場合）
-      try {
-        // await this.$firestore.collection("invitations").add({
-        //   email: this.inviteEmail,
-        //   groupId: this.selectedGroupId,
-        //   groupName: this.initialGroupName,
-        //   invitedBy: this.currentUserId,
-        //   status: "pending",
-        //   createdAt: new Date()
-        // });
-        // Firestore に保存
-        await db.collection("invitations").add({
-          email: this.inviteEmail,
-          groupId: this.selectedGroupId,
-          groupName: this.groupOptions.find(g => g.id === this.selectedGroupId)?.name,
-          invitedBy: this.currentUserId,
-          status: "pending",
-          createdAt: new Date()
-        });
+      // Firestore 登録などはここに
 
-      } catch (e) {
-        console.error("Firestore 保存失敗:", e);
-        alert("Firestore への保存に失敗しました");
-        return;
-      }
-
-      // PHP (SMTPメール送信) に送信
+      // PHP へメール送信
       try {
         const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/invite_mail.php", {
           method: "POST",
@@ -562,7 +712,8 @@ export default {
           },
           body: JSON.stringify({
             email: this.inviteEmail,
-            group: this.initialGroupName
+            groupName: this.groupOptions.find(g => g.id === this.selectedGroupId)?.name,
+            groupId: this.selectedGroupId
           })
         });
 
@@ -577,10 +728,126 @@ export default {
         console.error("PHPへの送信エラー:", err);
         alert("サーバーへの接続に失敗しました");
       }
-
-      // 招待済みのメールはリセット（任意）
-      // this.inviteEmail = "";
     },
+
+
+
+
+
+
+
+    // async sendInvite() {
+    //   if (!this.inviteEmail || !/.+@.+\..+/.test(this.inviteEmail)) {
+    //     alert("正しいメールアドレスを入力してください");
+    //     return;
+    //   }
+    //   if (!this.selectedGroupId) {
+    //     alert("グループを選択してください");
+    //     return;
+    //   }
+    //
+    //   // Firestore に保存
+    //   await db.collection("invitations").add({
+    //     email: this.inviteEmail,
+    //     groupId: this.selectedGroupId,
+    //     groupName: this.groupOptions.find(g => g.id === this.selectedGroupId)?.name,
+    //     invitedBy: this.currentUserId,
+    //     status: "pending",
+    //     createdAt: new Date()
+    //   });
+    //
+    //   // PHP にメール送信リクエスト
+    //   try {
+    //     const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/invite_mail.php", {
+    //       method: "POST",
+    //       headers: {
+    //         "Content-Type": "application/json"
+    //       },
+    //       body: JSON.stringify({
+    //         email: this.inviteEmail,
+    //         groupName: this.groupOptions.find(g => g.id === this.selectedGroupId)?.name,
+    //         groupId: this.selectedGroupId
+    //       })
+    //     });
+    //
+    //     const result = await response.json();
+    //
+    //     if (result.success) {
+    //       alert("招待メールを送信しました。");
+    //     } else {
+    //       alert("メール送信に失敗しました: " + result.message);
+    //     }
+    //   } catch (err) {
+    //     console.error("PHPへの送信エラー:", err);
+    //     alert("サーバーへの接続に失敗しました");
+    //   }
+    // },
+
+    // async sendInvite() {
+    //   // メールアドレスとグループ名のバリデーション
+    //   if (!this.inviteEmail || !/.+@.+\..+/.test(this.inviteEmail)) {
+    //     alert("正しいメールアドレスを入力してください");
+    //     return;
+    //   }
+    //   if (!this.selectedGroupId || !this.initialGroupName) {
+    //     alert("グループを選択してください");
+    //     return;
+    //   }
+    //
+    //   // Firestore に保存（例: Firestore を使う場合）
+    //   try {
+    //     // await this.$firestore.collection("invitations").add({
+    //     //   email: this.inviteEmail,
+    //     //   groupId: this.selectedGroupId,
+    //     //   groupName: this.initialGroupName,
+    //     //   invitedBy: this.currentUserId,
+    //     //   status: "pending",
+    //     //   createdAt: new Date()
+    //     // });
+    //     // Firestore に保存
+    //     await db.collection("invitations").add({
+    //       email: this.inviteEmail,
+    //       groupId: this.selectedGroupId,
+    //       groupName: this.groupOptions.find(g => g.id === this.selectedGroupId)?.name,
+    //       invitedBy: this.currentUserId,
+    //       status: "pending",
+    //       createdAt: new Date()
+    //     });
+    //
+    //   } catch (e) {
+    //     console.error("Firestore 保存失敗:", e);
+    //     alert("Firestore への保存に失敗しました");
+    //     return;
+    //   }
+    //
+    //   // PHP (SMTPメール送信) に送信
+    //   try {
+    //     const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/invite_mail.php", {
+    //       method: "POST",
+    //       headers: {
+    //         "Content-Type": "application/json"
+    //       },
+    //       body: JSON.stringify({
+    //         email: this.inviteEmail,
+    //         group: this.initialGroupName
+    //       })
+    //     });
+    //
+    //     const result = await response.json();
+    //
+    //     if (result.success) {
+    //       alert("招待メールを送信しました。");
+    //     } else {
+    //       alert("メール送信に失敗しました: " + result.message);
+    //     }
+    //   } catch (err) {
+    //     console.error("PHPへの送信エラー:", err);
+    //     alert("サーバーへの接続に失敗しました");
+    //   }
+    //
+    //   // 招待済みのメールはリセット（任意）
+    //   // this.inviteEmail = "";
+    // },
     // async sendInvite() {
     //   if (!this.inviteEmail || !/.+@.+\..+/.test(this.inviteEmail)) {
     //     alert("正しいメールアドレスを入力してください");
@@ -1098,6 +1365,9 @@ export default {
     }
   },
   watch: {
+
+
+
     currentUserId: {
       immediate: true,
       async handler(uid) {
@@ -1106,8 +1376,28 @@ export default {
         try {
           const userDoc = await db.collection("users").doc(uid).get()
           const groupIds = userDoc.exists ? userDoc.data().groups || [] : []
-
           const groups = []
+
+
+          // const groupIds = userDoc.exists ? userDoc.data().groups || [] : []
+          //
+          // const groups = []
+          // for (const groupId of groupIds) {
+          //   const groupDoc = await db.collection("groups").doc(groupId).get()
+          //   if (groupDoc.exists) {
+          //     const name = groupDoc.data().name || "(名前なし)"
+          //     groups.push({
+          //       id: groupId,
+          //       name,
+          //       ownerUid: groupDoc.data().ownerUid
+          //     })
+          //   }
+          // }
+          //
+
+
+
+
           for (const groupId of groupIds) {
             const groupDoc = await db.collection("groups").doc(groupId).get()
             if (groupDoc.exists) {
@@ -1188,35 +1478,79 @@ export default {
     })
   },
   mounted() {
+    const params = new URLSearchParams(window.location.search);
+    console.log(params)
+    const groupParam = params.get("group");
 
-    document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー</span>'
+    console.log("🔍 URLから取得したgroupパラメータ:", groupParam);
 
-    // 非同期で user の UID を監視
-    const checkUser = setInterval(() => {
-      if (user && user._rawValue && user._rawValue.uid) {
-        this.uid = user._rawValue.uid;
-        this.$store.state.userId = user._rawValue.uid
-        document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー　ようこそ' + user._rawValue.displayName + 'さん</span>'
-        clearInterval(checkUser); // UIDを取得できたら監視を停止
-      }
-    }, 5);
+    if (!groupParam) {
+      console.warn("❌ URLにグループIDが含まれていません");
+      return;
+    }
 
-    if (localStorage.getItem('terrainLevel')) {
-      this.s_terrainLevel = Number(localStorage.getItem('terrainLevel'))
-    } else {
-      this.s_terrainLevel = 1
-    }
-    this.s_isPitch = JSON.parse(localStorage.getItem('isPitch'))
-    if (localStorage.getItem('resolution')) {
-      this.s_resolution = localStorage.getItem('resolution')
-    }
-    if (localStorage.getItem('window')) {
-      this.s_isWindow = JSON.parse(localStorage.getItem('window'))
-    }
-    if (localStorage.getItem('mapillary')) {
-      this.s_mapillary = JSON.parse(localStorage.getItem('mapillary'))
-    }
+    firebase.firestore().collection("groups").doc(groupParam).get()
+        .then(async (doc) => {
+          if (doc.exists) {
+            this.groupId = doc.id;
+            this.groupName = doc.data().name;
+            console.log("✅ Firestoreの doc 検索で groupId を取得:", this.groupId);
+          } else {
+            // name フィールドでの検索（古い形式対応）
+            const snapshot = await firebase.firestore()
+                .collection("groups")
+                .where("name", "==", groupParam)
+                .limit(1)
+                .get();
+
+            if (!snapshot.empty) {
+              const matchedDoc = snapshot.docs[0];
+              this.groupId = matchedDoc.id;
+              this.groupName = matchedDoc.data().name;
+              console.log("✅ Firestoreの name 検索で groupId を取得:", this.groupId);
+            } else {
+              console.warn("❌ グループが見つかりませんでした（name検索も失敗）");
+            }
+          }
+        })
+        .catch((err) => {
+          console.error("❌ Firestoreエラー:", err);
+        });
   }
+
+
+
+
+  // mounted() {
+  //
+  //   document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー</span>'
+  //
+  //   // 非同期で user の UID を監視
+  //   const checkUser = setInterval(() => {
+  //     if (user && user._rawValue && user._rawValue.uid) {
+  //       this.uid = user._rawValue.uid;
+  //       this.$store.state.userId = user._rawValue.uid
+  //        document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニューようこそ' + user._rawValue.displayName + 'さん</span>'
+  //       clearInterval(checkUser); // UIDを取得できたら監視を停止
+  //     }
+  //   }, 5);
+  //
+  //   if (localStorage.getItem('terrainLevel')) {
+  //     this.s_terrainLevel = Number(localStorage.getItem('terrainLevel'))
+  //   } else {
+  //     this.s_terrainLevel = 1
+  //   }
+  //   this.s_isPitch = JSON.parse(localStorage.getItem('isPitch'))
+  //   if (localStorage.getItem('resolution')) {
+  //     this.s_resolution = localStorage.getItem('resolution')
+  //   }
+  //   if (localStorage.getItem('window')) {
+  //     this.s_isWindow = JSON.parse(localStorage.getItem('window'))
+  //   }
+  //   if (localStorage.getItem('mapillary')) {
+  //     this.s_mapillary = JSON.parse(localStorage.getItem('mapillary'))
+  //   }
+  // }
 }
 </script>
 <style scoped>

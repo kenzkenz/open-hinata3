@@ -1,5 +1,17 @@
 const { defineConfig } = require('@vue/cli-service')
 module.exports = defineConfig({
+    pages: {
+        index: {
+            entry: 'src/main.js',
+            template: 'public/index.html',
+            filename: 'index.html'
+        },
+        join: {
+            entry: 'src/join/main.js',
+            template: 'public/join.html',
+            filename: 'join.html'
+        }
+    },
     transpileDependencies: ['vuetify'],
     pwa: {
         iconPaths: {
