@@ -161,10 +161,15 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                     color="primary"
                     @click="joinGroupFromDialog"
                     :disabled="!emailInput || !joinGroupId || !/.+@.+\..+/.test(emailInput)"
-                    :loading="true"
+                    :loading="joinLoading"
                 >
                   参加する
                 </v-btn>
+
+
+
+
+
               </v-window-item>
 
 
@@ -313,7 +318,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v0.806
+        v0.807
       </p>
       <div v-if="user1">
         <p style="margin-bottom: 20px;">
@@ -442,6 +447,7 @@ export default {
   components: {
   },
   data: () => ({
+    joinLoading: false,
     invitedGroupName: "", // 招待されたグループ名
     isSendingInvite: false, // ローディング状態
     joinGroupId: "", // 入力されたグループID
@@ -680,14 +686,17 @@ export default {
     //   });
     // },
     async joinGroupFromDialog() {
+      this.joinLoading = true
       try {
         this.groupId = this.joinGroupId;
         await this.joinGroup();
         this.tab = 0; // 成功したら「作成」タブに戻す（任意）
       } catch (error) {
         console.error("❌ グループ参加処理でエラーが発生しました:", error);
+        this.joinLoading = false
         alert(`エラーが発生しました: ${error.message}`);
       }
+      this.joinLoading = false
     },
     async joinGroup() {
       try {

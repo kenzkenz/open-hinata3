@@ -43,22 +43,22 @@ $to = $email;
 $subject = "Open Hinata: 「{$groupName}」への招待";
 
 // デバッグ用ログ（メール件名）
-file_put_contents('debug.log', "メール件名: $subject\n", FILE_APPEND);
+file_put_contents('debug.log', "メール件名: {$subject}\n", FILE_APPEND);
 
 // プレーンテキスト形式の本文
 $textMessage = "こんにちは、\n\n";
 $textMessage .= "あなたは「{$groupName}」に招待されました！\n";
 $textMessage .= "招待者: {$inviter} ({$inviterEmail})\n\n";
-$textMessage .= "Open Hinata は、地理情報を共有し、グループで地図を活用するアプリです。\n\n";
+$textMessage .= "Open Hinata3 は、地理情報を共有し、グループで地図を活用するアプリです。\n\n";
 $textMessage .= "以下のリンクからグループに参加してください：\n";
 $textMessage .= "$inviteLink\n\n";
 $textMessage .= "参加手順：\n";
-$textMessage .= "1. リンクをクリックして Open Hinata にアクセスします。\n";
-$textMessage .= "2. ログインまたは新規登録を行います。\n";
+$textMessage .= "1. 事前にOpen Hinata3にログインしておいてください。\n";
+$textMessage .= "2. リンクをクリックして Open Hinata3 にアクセスします。\n";
 $textMessage .= "3. グループ管理ダイアログから「参加する」をクリックしてグループに参加します。\n\n";
 $textMessage .= "何かご不明な点があれば、サポートまでお問い合わせください。\n";
 $textMessage .= "よろしくお願いします。\n";
-$textMessage .= "Open Hinata チーム\n";
+$textMessage .= "Open Hinata3 チーム\n";
 
 // デバッグ用ログ（プレーンテキスト本文）
 file_put_contents('debug.log', "プレーンテキスト本文: $textMessage\n", FILE_APPEND);
@@ -73,19 +73,27 @@ $htmlMessage .= "<img src='https://kenzkenz.xsrv.jp/open-hinata3/logo.png' alt='
 $htmlMessage .= "</div>";
 $htmlMessage .= "<h2 style='color: #1976d2;'>こんにちは</h2>";
 $htmlMessage .= "<p>あなたは <strong style='color: #d32f2f;'>「{$groupName}」</strong> に招待されました！</p>";
-$htmlMessage .= "<p>招待者: <strong>{$inviter}</strong> ({$inviterEmail})</p>";
-$htmlMessage .= "<p>Open Hinata は、地理情報を共有し、グループで地図を活用するアプリです。</p>";
+//$htmlMessage .= "<p>招待者: <strong>{$inviter}</strong> ({$inviterEmail})</p>";
+$htmlMessage .= "<p>招待者: ({$inviterEmail})</p>";
+$htmlMessage .= "<p>Open Hinata3 は、地理情報を共有し、グループで地図を活用するアプリです。</p>";
 $htmlMessage .= "<p>以下のリンクからグループに参加してください：</p>";
-$htmlMessage .= "<p><a href='{$inviteLink}' style='display: inline-block; padding: 10px 20px; background-color: #1976d2; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;'>グループに参加する</a></p>";
+$htmlMessage .= "<p style='text-align: center;'>
+  <a href='{$inviteLink}' 
+     style='display: inline-block; padding: 12px 24px; background-color: #1976d2; color: white; 
+            text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; 
+            font-family: sans-serif;'>
+    グループに参加する
+  </a>
+</p>";
 $htmlMessage .= "<p style='color: #555; font-size: 14px;'>リンク: {$inviteLink}</p>";
 $htmlMessage .= "<h3>参加手順</h3>";
 $htmlMessage .= "<ol>";
-$htmlMessage .= "<li>リンクをクリックして Open Hinata にアクセスします。</li>";
-$htmlMessage .= "<li>ログインまたは新規登録を行います。</li>";
+$htmlMessage .= "<li>事前にOpen Hinata3にログインしておいてください。</li>";
+$htmlMessage .= "<li>リンクをクリックして Open Hinata3 にアクセスします。</li>";
 $htmlMessage .= "<li>グループ管理ダイアログから「参加する」をクリックしてグループに参加します。</li>";
 $htmlMessage .= "</ol>";
 $htmlMessage .= "<p>何かご不明な点があれば、サポートまでお問い合わせください。</p>";
-$htmlMessage .= "<p style='color: #777; font-size: 12px; margin-top: 20px; text-align: center;'>よろしくお願いします。<br>Open Hinata チーム</p>";
+$htmlMessage .= "<p style='color: #777; font-size: 12px; margin-top: 20px; text-align: center;'>よろしくお願いします。<br>Open Hinata3 チーム</p>";
 $htmlMessage .= "</body>";
 $htmlMessage .= "</html>";
 
