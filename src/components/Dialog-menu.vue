@@ -155,7 +155,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                     type="email"
                     :rules="emailRules"
                     outlined
-                    readonly
                 />
 
                 <v-btn
@@ -313,7 +312,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v0.805
+        v0.806
       </p>
       <div v-if="user1">
         <p style="margin-bottom: 20px;">
@@ -722,10 +721,15 @@ export default {
         console.log("✅ 入力されたメール:", this.emailInput);
         console.log("✅ 取得した groupId:", this.groupId);
 
+
+        // this.emailInput = "kenzkenz@kenzkenz.xsrv.jp";
+
         await firebase.firestore().runTransaction(async (transaction) => {
           const query = firebase.firestore()
               .collection("invitations")
-              .where("email", "==", this.emailInput)
+              // .where("email", "==", this.emailInput)
+              // .where("email", "==", this.email.trim())  // ←ここ！
+              .where("mail", "==", this.emailInput.trim())
               .where("groupId", "==", this.groupId);
 
           const snapshot = await query.get();
@@ -863,7 +867,8 @@ export default {
 
         // Firestore に保存
         await db.collection("invitations").add({
-          email: this.inviteEmail,
+          // email: this.inviteEmail,
+          mail: this.inviteEmail.trim(), // ← ここにtrim()
           groupId: this.selectedGroupId,
           groupName: group.name,
           invitedBy: user ? user.uid : null,
