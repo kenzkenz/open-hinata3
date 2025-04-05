@@ -1498,44 +1498,52 @@ export default {
     })
   },
   mounted() {
-    const params = new URLSearchParams(window.location.search);
-    console.log(params)
-    const groupParam = params.get("group");
 
-    console.log("🔍 URLから取得したgroupパラメータ:", groupParam);
-
-    if (!groupParam) {
-      console.warn("❌ URLにグループIDが含まれていません");
-      return;
+    const user = firebase.auth().currentUser;
+    if (user && user.email) {
+      this.emailInput = user.email;
     }
 
-    firebase.firestore().collection("groups").doc(groupParam).get()
-        .then(async (doc) => {
-          if (doc.exists) {
-            this.groupId = doc.id;
-            this.groupName = doc.data().name;
-            console.log("✅ Firestoreの doc 検索で groupId を取得:", this.groupId);
-          } else {
-            // name フィールドでの検索（古い形式対応）
-            const snapshot = await firebase.firestore()
-                .collection("groups")
-                .where("name", "==", groupParam)
-                .limit(1)
-                .get();
-
-            if (!snapshot.empty) {
-              const matchedDoc = snapshot.docs[0];
-              this.groupId = matchedDoc.id;
-              this.groupName = matchedDoc.data().name;
-              console.log("✅ Firestoreの name 検索で groupId を取得:", this.groupId);
-            } else {
-              console.warn("❌ グループが見つかりませんでした（name検索も失敗）");
-            }
-          }
-        })
-        .catch((err) => {
-          console.error("❌ Firestoreエラー:", err);
-        });
+    //
+    //
+    // const params = new URLSearchParams(window.location.search);
+    // console.log(params)
+    // const groupParam = params.get("group");
+    //
+    // console.log("🔍 URLから取得したgroupパラメータ:", groupParam);
+    //
+    // if (!groupParam) {
+    //   console.warn("❌ URLにグループIDが含まれていません");
+    //   return;
+    // }
+    //
+    // firebase.firestore().collection("groups").doc(groupParam).get()
+    //     .then(async (doc) => {
+    //       if (doc.exists) {
+    //         this.groupId = doc.id;
+    //         this.groupName = doc.data().name;
+    //         console.log("✅ Firestoreの doc 検索で groupId を取得:", this.groupId);
+    //       } else {
+    //         // name フィールドでの検索（古い形式対応）
+    //         const snapshot = await firebase.firestore()
+    //             .collection("groups")
+    //             .where("name", "==", groupParam)
+    //             .limit(1)
+    //             .get();
+    //
+    //         if (!snapshot.empty) {
+    //           const matchedDoc = snapshot.docs[0];
+    //           this.groupId = matchedDoc.id;
+    //           this.groupName = matchedDoc.data().name;
+    //           console.log("✅ Firestoreの name 検索で groupId を取得:", this.groupId);
+    //         } else {
+    //           console.warn("❌ グループが見つかりませんでした（name検索も失敗）");
+    //         }
+    //       }
+    //     })
+    //     .catch((err) => {
+    //       console.error("❌ Firestoreエラー:", err);
+    //     });
   }
 
 
