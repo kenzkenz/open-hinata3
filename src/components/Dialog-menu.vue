@@ -119,7 +119,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <!-- グループ管理ダイアログ -->
-      <v-dialog v-model="s_dialogForGroup" max-width="500px" height="400px">
+      <v-dialog v-model="s_dialogForGroup" max-width="500px" height="500px">
         <v-card>
           <v-card-title>
             グループ管理
@@ -175,6 +175,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   <v-btn @click="createGroup">グループ作成</v-btn>
                 </div>
               </v-window-item>
+
               <v-window-item value="1" class="my-v-window">
                 <div style="margin-bottom: 20px;">
                   <div v-if="s_currentGroupName">
@@ -195,14 +196,54 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                     class="mt-2"
                     @update:modelValue="onGroupChange"
                     v-model:menu="selectMenuOpen1"
+                    :disabled="isSendingInvite"
                 />
                 <v-text-field
                     v-model="inviteEmail"
                     :rules="emailRules"
                     label="メールアドレスで招待"
+                    :disabled="isSendingInvite"
                 />
-                <v-btn @click="sendInvite">招待を送信</v-btn>
+                <v-btn style="margin-top: 10px;"
+                    @click="sendInvite"
+                    :disabled="isSendingInvite"
+                    :loading="isSendingInvite"
+                >
+                  招待を送信
+                </v-btn>
+
+                <v-btn v-if="selectedGroupId && inviteEmail && !isSendingInvite" style="margin-top: 10px;margin-left: 30px;"
+                    @click="copyInviteLink"
+                >
+                  下記招待リンクをコピー
+                </v-btn>
+                <div v-if="selectedGroupId && inviteEmail && !isSendingInvite" style="margin-top: 10px;">
+                  <p>招待リンク（手動で共有する場合）:</p>
+                  <span style="font-size: small">
+                  <a
+                      :href="`https://kenzkenz.xsrv.jp/open-hinata3/?group=${selectedGroupId}`"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="invite-link"
+                  >
+                    {{ `https://kenzkenz.xsrv.jp/open-hinata3/?group=${selectedGroupId}` }}
+                  </a>
+                  </span>
+                </div>
+
+
+<!--                <div v-if="selectedGroupId && inviteEmail && !isSendingInvite" style="margin-top: 10px;">-->
+<!--                  <p>招待リンク（手動で共有する場合）:</p>-->
+<!--                  <a-->
+<!--                      :href="`https://kenzkenz.xsrv.jp/open-hinata3/join?group=${selectedGroupId}`"-->
+<!--                      target="_blank"-->
+<!--                      rel="noopener noreferrer"-->
+<!--                  >-->
+<!--                    {{ `https://kenzkenz.xsrv.jp/open-hinata3/join?group=${selectedGroupId}` }}-->
+<!--                  </a>-->
+<!--                </div>-->
               </v-window-item>
+
               <v-window-item value="2" class="my-v-window">
                 <div style="margin-bottom: 20px;">
                   <div v-if="s_currentGroupName">
@@ -264,7 +305,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v0.802
+        v0.805
       </p>
       <div v-if="user1">
         <p style="margin-bottom: 20px;">
@@ -394,6 +435,7 @@ export default {
   },
   data: () => ({
     // 追加
+    isSendingInvite: false, // ローディング状態
     joinGroupId: "", // 入力されたグループID
     groupId: "",
     emailInput: "",         // 入力フォームのメールアドレス
@@ -606,6 +648,17 @@ export default {
     },
   },
   methods: {
+    copyInviteLink() {
+      const inviteLink = `https://kenzkenz.xsrv.jp/open-hinata3/?group=${this.selectedGroupId}`;
+      navigator.clipboard.writeText(inviteLink).then(() => {
+        this.snackbarText = "招待リンクをコピーしました";
+        this.snackbar = true;
+      }).catch(err => {
+        console.error("リンクのコピーに失敗しました:", err);
+        this.snackbarText = "リンクのコピーに失敗しました";
+        this.snackbar = true;
+      });
+    },
     async joinGroupFromDialog() {
       try {
         this.groupId = this.joinGroupId;
@@ -720,43 +773,164 @@ export default {
       }
     },
     async sendInvite() {
-      if (!this.inviteEmail || !/.+@.+\..+/.test(this.inviteEmail)) {
-        alert("正しいメールアドレスを入力してください");
-        return;
-      }
-      if (!this.selectedGroupId) {
-        alert("グループを選択してください");
-        return;
-      }
-
-      // Firestore 登録などはここに
-
-      // PHP へメール送信
       try {
+        // ローディング開始
+        this.isSendingInvite = true;
+
+        // バリデーション
+        if (!this.inviteEmail || !/.+@.+\..+/.test(this.inviteEmail)) {
+          this.snackbarText = "正しいメールアドレスを入力してください";
+          this.snackbar = true;
+          return;
+        }
+        if (!this.selectedGroupId) {
+          this.snackbarText = "グループを選択してください";
+          this.snackbar = true;
+          return;
+        }
+
+        const group = this.groupOptions.find(g => g.id === this.selectedGroupId);
+        if (!group) {
+          this.snackbarText = "選択したグループが見つかりません";
+          this.snackbar = true;
+          return;
+        }
+
+        // Firestore に保存
+        await db.collection("invitations").add({
+          email: this.inviteEmail,
+          groupId: this.selectedGroupId,
+          groupName: group.name,
+          invitedBy: this.currentUserId,
+          status: "pending",
+          createdAt: new Date(),
+        });
+
+        // PHP (SMTPメール送信) に送信
         const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/invite_mail.php", {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             email: this.inviteEmail,
-            groupName: this.groupOptions.find(g => g.id === this.selectedGroupId)?.name,
-            groupId: this.selectedGroupId
-          })
+            group: group.name,
+            groupId: this.selectedGroupId, // groupId を追加
+          }),
         });
 
         const result = await response.json();
 
         if (result.success) {
-          alert("招待メールを送信しました。");
+          this.snackbarText = "招待メールを送信しました";
+          this.snackbar = true;
+          this.inviteEmail = ""; // 招待済みのメールをリセット
         } else {
-          alert("メール送信に失敗しました: " + result.message);
+          this.snackbarText = `メール送信に失敗しました: ${result.message}`;
+          this.snackbar = true;
         }
       } catch (err) {
-        console.error("PHPへの送信エラー:", err);
-        alert("サーバーへの接続に失敗しました");
+        console.error("招待送信エラー:", err);
+        this.snackbarText = "サーバーへの接続に失敗しました: " + err.message;
+        this.snackbar = true;
+      } finally {
+        // ローディング終了
+        this.isSendingInvite = false;
       }
     },
+    // async sendInvite() {
+    //   // メールアドレスとグループ名のバリデーション
+    //   if (!this.inviteEmail || !/.+@.+\..+/.test(this.inviteEmail)) {
+    //     alert("正しいメールアドレスを入力してください");
+    //     return;
+    //   }
+    //   if (!this.selectedGroupId || !this.initialGroupName) {
+    //     alert("グループを選択してください");
+    //     return;
+    //   }
+    //   // Firestore に保存（例: Firestore を使う場合）
+    //   try {
+    //     // Firestore に保存
+    //     await db.collection("invitations").add({
+    //       email: this.inviteEmail,
+    //       groupId: this.selectedGroupId,
+    //       groupName: this.groupOptions.find(g => g.id === this.selectedGroupId)?.name,
+    //       invitedBy: this.currentUserId,
+    //       status: "pending",
+    //       createdAt: new Date()
+    //     });
+    //
+    //   } catch (e) {
+    //     console.error("Firestore 保存失敗:", e);
+    //     alert("Firestore への保存に失敗しました");
+    //     return;
+    //   }
+    //
+    //   // PHP (SMTPメール送信) に送信
+    //   try {
+    //     const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/invite_mail.php", {
+    //       method: "POST",
+    //       headers: {
+    //         "Content-Type": "application/json"
+    //       },
+    //       body: JSON.stringify({
+    //         email: this.inviteEmail,
+    //         group: this.initialGroupName
+    //       })
+    //     });
+    //
+    //     const result = await response.json();
+    //
+    //     if (result.success) {
+    //       alert("招待メールを送信しました。");
+    //     } else {
+    //       alert("メール送信に失敗しました: " + result.message);
+    //     }
+    //   } catch (err) {
+    //     console.error("PHPへの送信エラー:", err);
+    //     alert("サーバーへの接続に失敗しました");
+    //   }
+    //   // 招待済みのメールはリセット（任意）
+    //   // this.inviteEmail = "";
+    // },
+    // async sendInvite() {
+    //   if (!this.inviteEmail || !/.+@.+\..+/.test(this.inviteEmail)) {
+    //     alert("正しいメールアドレスを入力してください");
+    //     return;
+    //   }
+    //   if (!this.selectedGroupId) {
+    //     alert("グループを選択してください");
+    //     return;
+    //   }
+    //
+    //   // Firestore 登録などはここに
+    //
+    //   // PHP へメール送信
+    //   try {
+    //     const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/invite_mail.php", {
+    //       method: "POST",
+    //       headers: {
+    //         "Content-Type": "application/json"
+    //       },
+    //       body: JSON.stringify({
+    //         email: this.inviteEmail,
+    //         groupName: this.groupOptions.find(g => g.id === this.selectedGroupId)?.name,
+    //         groupId: this.selectedGroupId
+    //       })
+    //     });
+    //
+    //     const result = await response.json();
+    //
+    //     if (result.success) {
+    //       alert("招待メールを送信しました。");
+    //     } else {
+    //       alert("メール送信に失敗しました: " + result.message);
+    //     }
+    //   } catch (err) {
+    //     console.error("PHPへの送信エラー:", err);
+    //     alert("サーバーへの接続に失敗しました");
+    //   }
+    // },
 
 
 
