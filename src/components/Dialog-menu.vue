@@ -155,6 +155,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                     type="email"
                     :rules="emailRules"
                     outlined
+                    readonly
                 />
 
                 <v-btn
