@@ -2,6 +2,54 @@
 // "text-font": ["NotoSansJP-Regular"],
 import store from '@/store'
 import * as turf from '@turf/turf'
+
+
+// グループでクリックで追加するポイントのGeoJSONソースを作成
+export const groupPointsSource	 ={
+    iD: 'group-points-source', obj: {
+        type: 'geojson',
+        data: {
+            type: 'FeatureCollection',
+            features: [
+            ]
+        }
+    }
+};
+
+// グループでポイントを描画するレイヤーを追加
+export const groupPointsLayer = {
+    id: 'group-points-layer',
+    type: 'circle',
+    source: 'group-points-source',
+    paint: {
+        'circle-radius': 8,
+        'circle-color': '#ff0000',
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#ffffff'
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function boundsSort (bounds) {
     function compareFunc(a, b) {
         return a - b;
@@ -8720,7 +8768,7 @@ const layers01 = [
                 layers: [syochiikiLayer,syochiikLayerLine2,syochiikiLayerLabel2],
                 attribution: '出典：<a href="https://www.e-stat.go.jp/stat-search/files?page=1&toukei=00200521&tstat=000001136464&cycle=0&tclass1=000001136472" target="_blank">e-Stat</a>',
                 // ext: {name:'extSyochiiki'}
-            },
+            },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
             {
                 id: 'oh-fude',
                 label: "農地の区画情報(筆ポリゴン)",
