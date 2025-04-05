@@ -137,12 +137,20 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
             <v-window v-model="tab">
               <v-window-item value="9" class="my-v-window">
                 <!-- グループID入力欄を追加 -->
+<!--                <v-text-field-->
+<!--                    v-model="joinGroupId"-->
+<!--                    label="グループIDを入力（招待リンクから取得）"-->
+<!--                    outlined-->
+<!--                    clearable-->
+<!--                    :rules="[v => !!v || 'グループIDを入力してください']"-->
+<!--                />-->
                 <v-text-field
                     v-model="joinGroupId"
-                    label="グループIDを入力（招待リンクから取得）"
+                    label="グループID"
                     outlined
                     clearable
                     :rules="[v => !!v || 'グループIDを入力してください']"
+                    :disabled="joinGroupId"
                 />
                 <v-text-field
                     v-model="emailInput"
@@ -1502,6 +1510,14 @@ export default {
     const user = firebase.auth().currentUser;
     if (user && user.email) {
       this.emailInput = user.email;
+    }
+
+    // URLパラメータからグループIDを取得
+    const params = new URLSearchParams(window.location.search);
+    const groupId = params.get("group");
+    if (groupId) {
+      this.joinGroupId = groupId;
+      this.tab = "9"; // 自動で「参加」タブに移動
     }
 
     //
