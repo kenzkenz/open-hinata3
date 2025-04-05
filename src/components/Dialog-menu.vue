@@ -161,6 +161,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                     color="primary"
                     @click="joinGroupFromDialog"
                     :disabled="!emailInput || !joinGroupId || !/.+@.+\..+/.test(emailInput)"
+                    :loading="true"
                 >
                   参加する
                 </v-btn>
@@ -837,7 +838,7 @@ export default {
           console.warn(`⚠️ users/${user.uid} ドキュメントが存在しません`);
           throw new Error("ユーザー情報の取得に失敗しました。");
         }
-        
+
         // 🎯 成功後：グループ状態を再取得＆更新
         // const updatedUserDoc = await userRef.get();
         const groupIds = updatedUserDoc.exists ? updatedUserDoc.data().groups || [] : [];
@@ -1640,6 +1641,7 @@ export default {
     })
   },
   mounted() {
+    document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー</span>'
     // Firebase の認証状態が確定するまで監視
     firebase.auth().onAuthStateChanged(user => {
       if (user && user.email) {
@@ -1648,13 +1650,13 @@ export default {
         // Vue のリアクティブシステムが更新されるのを待機
         this.$nextTick(() => {
           console.log("✅ emailInput に設定:", this.emailInput);
+          document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー　ようこそ' + user.displayName + 'さん</span>'
         });
       } else {
         console.warn("⚠️ ログイン中のユーザーが見つかりません");
         this.emailInput = ""; // ログインしていない場合は空に
       }
     });
-
     // URLパラメータからグループIDとグループ名を取得
     const params = new URLSearchParams(window.location.search);
     const groupId = params.get("group");
@@ -1665,6 +1667,23 @@ export default {
       this.tab = "9";
       this.s_dialogForGroup = true;
     }
+
+    if (localStorage.getItem('terrainLevel')) {
+      this.s_terrainLevel = Number(localStorage.getItem('terrainLevel'))
+    } else {
+      this.s_terrainLevel = 1
+    }
+    this.s_isPitch = JSON.parse(localStorage.getItem('isPitch'))
+    if (localStorage.getItem('resolution')) {
+      this.s_resolution = localStorage.getItem('resolution')
+    }
+    if (localStorage.getItem('window')) {
+      this.s_isWindow = JSON.parse(localStorage.getItem('window'))
+    }
+    if (localStorage.getItem('mapillary')) {
+      this.s_mapillary = JSON.parse(localStorage.getItem('mapillary'))
+    }
+
   },
 
 
