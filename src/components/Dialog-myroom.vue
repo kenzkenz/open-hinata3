@@ -1489,7 +1489,6 @@ export default {
           }
         } catch (error) {
           console.error('通信エラー:', error);
-          alert('通信エラーが発生しました');
         }
       }
       deleteUserData(id)
@@ -1563,7 +1562,6 @@ export default {
       //       }
       //     } catch (error) {
       //       console.error('リクエストエラー:', error);
-      //       alert('通信エラーが発生しました');
       //     }
       //   }
       //   cityGeojson()
@@ -1600,7 +1598,6 @@ export default {
           }
         } catch (error) {
           console.error('リクエストエラー:', error);
-          alert('通信エラーが発生しました');
         }
       }
       deleteUserSima(url2)
@@ -1619,7 +1616,6 @@ export default {
           }
         } catch (error) {
           console.error('通信エラー2:', error);
-          alert('通信エラーが発生しました');
         }
       }
       deleteUserData(id)
@@ -1644,7 +1640,6 @@ export default {
           }
         } catch (error) {
           console.error('リクエストエラー:', error);
-          alert('通信エラーが発生しました');
         }
       }
       deleteUserKmz(url2)
@@ -1663,7 +1658,6 @@ export default {
           }
         } catch (error) {
           console.error('通信エラー2:', error);
-          alert('通信エラーが発生しました');
         }
       }
       deleteUserData(id)
@@ -1688,7 +1682,6 @@ export default {
           }
         } catch (error) {
           console.error('リクエストエラー:', error);
-          alert('通信エラーが発生しました');
         }
       }
       deleteUserXyztile(url2)
@@ -1707,7 +1700,6 @@ export default {
           }
         } catch (error) {
           console.error('通信エラー2:', error);
-          alert('通信エラーが発生しました');
         }
       }
       deleteUserData(id)
@@ -1733,7 +1725,6 @@ export default {
           }
         } catch (error) {
           console.error('リクエストエラー:', error);
-          alert('通信エラーが発生しました');
         }
       }
       deleteUserPmtiles(url2)
@@ -1752,7 +1743,6 @@ export default {
           }
         } catch (error) {
           console.error('通信エラー2:', error);
-          alert('通信エラーが発生しました');
         }
       }
       deleteUserData(id)
@@ -1778,7 +1768,6 @@ export default {
           }
         } catch (error) {
           console.error('通信エラー:', error);
-          alert('通信エラーが発生しました');
         }
       }
       deleteUserData(id)
@@ -1799,7 +1788,6 @@ export default {
           }
         } catch (error) {
           console.error('通信エラー:', error);
-          alert('通信エラーが発生しました');
         }
       }
       fetchUserData(uid)
@@ -1821,7 +1809,6 @@ export default {
           }
         } catch (error) {
           console.error('通信エラー:', error);
-          alert('通信エラーが発生しました');
         }
       }
       fetchUserData(this.s_userId)
@@ -1841,7 +1828,6 @@ export default {
           }
         } catch (error) {
           console.error('通信エラー:', error);
-          alert('通信エラーが発生しました');
         }
       }
       fetchUserData(this.s_userId)
@@ -1862,7 +1848,6 @@ export default {
           }
         } catch (error) {
           console.error('通信エラー:', error);
-          alert('通信エラーが発生しました');
         }
       }
       fetchUserData()
@@ -1883,7 +1868,6 @@ export default {
           }
         } catch (error) {
           console.error('通信エラー:', error);
-          alert('通信エラーが発生しました');
         }
       }
       fetchUserData(uid)
@@ -1903,7 +1887,6 @@ export default {
           }
         } catch (error) {
           console.error('通信エラー:', error);
-          alert('通信エラーが発生しました');
         }
       }
       fetchUserData(uid)
@@ -1924,7 +1907,6 @@ export default {
           }
         } catch (error) {
           console.error('通信エラー:', error);
-          alert('通信エラーが発生しました');
         }
       }
       fetchUserData(uid)
@@ -1944,7 +1926,6 @@ export default {
           }
         } catch (error) {
           console.error('通信エラー:', error);
-          alert('通信エラーが発生しました');
         }
       }
       fetchUserData(uid)
@@ -1965,7 +1946,6 @@ export default {
           }
         } catch (error) {
           console.error('通信エラー:', error);
-          alert('通信エラーが発生しました');
         }
       }
       fetchUserData()
@@ -1986,7 +1966,6 @@ export default {
           }
         } catch (error) {
           console.error('通信エラー:', error);
-          alert('通信エラーが発生しました');
         }
       }
       fetchUserData(uid)
@@ -2010,7 +1989,6 @@ export default {
           }
         } catch (error) {
           console.error('通信エラー:', error);
-          alert('通信エラーが発生しました');
         }
       }
       fetchUserData(uid)
@@ -2040,7 +2018,6 @@ export default {
           }
         } catch (error) {
           console.error('通信エラー:', error);
-          alert('通信エラーが発生しました');
         }
       }
       insertUserData(this.$store.state.userId,this.tileName,this.tileUrl)
@@ -2068,7 +2045,6 @@ export default {
           }
         } catch (error) {
           console.error('通信エラー:', error);
-          alert('通信エラーが発生しました');
         }
       }
       insertUserData(this.$store.state.userId,this.urlName,window.location.href)

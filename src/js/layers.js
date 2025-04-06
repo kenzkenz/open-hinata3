@@ -63,7 +63,6 @@ async function publicData() {
         }
     } catch (error) {
         console.error('通信エラー:', error);
-        alert('通信エラーが発生しました');
     }
 }
 const pablicDatas = await publicData()

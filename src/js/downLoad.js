@@ -4566,7 +4566,6 @@ async function insertXyztileData(uid, name, url, url2, url3, bbox) {
         }
     } catch (error) {
         console.error('通信エラー:', error);
-        alert('通信エラーが発生しました');
     }
 }
 function addXyztileLayer(id,name,url,bbox) {
@@ -4851,7 +4850,6 @@ async function insertSimaData(uid, name, url, url2, simaText, zahyokei) {
         }
     } catch (error) {
         console.error('通信エラー:', error);
-        alert('通信エラーが発生しました');
     }
 }
 
@@ -4923,7 +4921,6 @@ export async function simaLoadForUser (map,isUpload,simaText) {
     //         }
     //     } catch (error) {
     //         console.error('通信エラー:', error);
-    //         alert('通信エラーが発生しました');
     //     }
     // }
 
@@ -5086,7 +5083,6 @@ export async function kmzLoadForUser (map,isUpload) {
             }
         } catch (error) {
             console.error('通信エラー:', error);
-            alert('通信エラーが発生しました');
         }
     }
 
@@ -6602,7 +6598,6 @@ export function userTileSet(name,url,id) {
 //             }
 //         } catch (error) {
 //             console.error('通信エラー:', error);
-//             alert('通信エラーが発生しました');
 //         }
 //     }
 //     // -------------------------------------------------------------------------------------------------
@@ -6678,7 +6673,6 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
             }
         } catch (error) {
             console.error('通信エラー:', error);
-            alert('通信エラーが発生しました');
         }
     }
     // -------------------------------------------------------------------------------------------------
@@ -6971,7 +6965,6 @@ export function publicChk (id,public0) {
                 }
             } catch (error) {
                 console.error('リクエストエラー:', error);
-                alert('通信エラーが発生しました');
             }
         }
         cityGeojson()
