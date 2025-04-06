@@ -826,6 +826,7 @@ import Dialog2 from '@/components/Dialog2'
 import DialogShare from "@/components/Dialog-share"
 import DialogChibanzuList from "@/components/Dialog-chibanzu-list"
 import pyramid from '@/js/pyramid'
+import glouplayer from '@/js/glouplayer'
 import * as Layers from '@/js/layers'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import maplibregl from 'maplibre-gl'
@@ -4185,6 +4186,7 @@ export default {
     })
     // -----------------------------------------------------------------------------------------------------------------
     pyramid()
+    glouplayer()
     //------------------------------------------------------------------------------------------------------------------
     document.addEventListener('touchmove', function (event) {
       if (event.scale !== 1) {

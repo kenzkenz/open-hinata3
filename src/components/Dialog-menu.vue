@@ -319,7 +319,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v0.810
+        v0.811
       </p>
       <div v-if="user1">
         <p style="margin-bottom: 20px;">

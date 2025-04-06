@@ -22,35 +22,6 @@ function waitForStateValue(getter, checkFn = val => val !== undefined && val !==
 
 
 
-// グループでクリックで追加するポイントのGeoJSONソースを作成
-export const groupPointsSource	 ={
-    iD: 'group-points-source', obj: {
-        type: 'geojson',
-        data: {
-            type: 'FeatureCollection',
-            features: [
-            ]
-        }
-    }
-};
-
-// グループでポイントを描画するレイヤーを追加
-export const groupPointsLayer = {
-    id: 'group-points-layer',
-    type: 'circle',
-    source: 'group-points-source',
-    paint: {
-        'circle-radius': 8,
-        'circle-color': '#ff0000',
-        'circle-stroke-width': 2,
-        'circle-stroke-color': '#ffffff'
-    }
-}
-
-
-
-
-
 
 
 
@@ -8742,10 +8713,57 @@ const sagakijyuntenLabelLayer = {
 //
 // console.log(aaa)
 
+// // グループでクリックで追加するポイントのGeoJSONソースを作成
+// const groupPointsSource ={
+//     iD: 'group-points-source', obj: {
+//         type: 'geojson',
+//         data: {
+//             type: 'FeatureCollection',
+//             features: [
+//             ]
+//         }
+//     }
+// };
+//
+// // グループでポイントを描画するレイヤーを追加
+// const groupPointsLayer = {
+//     id: 'oh-group-points-layer',
+//     type: 'circle',
+//     source: 'group-points-source',
+//     paint: {
+//         'circle-radius': 8,
+//         'circle-color': '#ff0000',
+//         'circle-stroke-width': 2,
+//         'circle-stroke-color': '#ffffff'
+//     }
+// }
+
+const groupPointsSource = {
+    id: "group-points-source", obj: {
+        'type': 'geojson',
+        data: {
+            type: 'FeatureCollection',
+            features: [
+            ]
+        }
+    }
+}
+const groupPointsLayer = {
+    id: "oh-group-points-layer",
+    type: "circle",
+    source: "group-points-source",
+    paint: {
+        'circle-color': 'navy', // 赤色で中心点を強調
+        'circle-radius': 8, // 固定サイズの点
+        'circle-opacity': 1,
+        'circle-stroke-width': 1,
+        'circle-stroke-color': '#fff'
+    }
+}
 let layers01 = [
     {
         id: 'oh-gloup-layer',
-        label: "<div class='group-layer'><div>グループレイヤー</div></div>",
+        label: "<div class='group-layer'>グループレイヤー</div>",
         sources: [groupPointsSource],
         layers: [groupPointsLayer],
         attribution: '',
@@ -10842,28 +10860,7 @@ let layers01 = [
     },
 ]
 let layers02 = JSON.parse(JSON.stringify(layers01))
-// export let layers = ref([]);
-// try {
-//     const currentGroupName = computed(() => store.state.currentGroupName);
-//     watch(currentGroupName, (newVal, ) => {
-//         if (newVal) {
-//             layers01 = layers01.filter(layers => {
-//                 return layers.id !== 'oh-gloup-layer'
-//             })
-//         }
-//     })
-// }catch (e) {
-//     console.log(e)
-// }
-// layers = {
-//     map01: layers01,
-//     map02: layers02
-// }
 
-// export const layers = {
-//     map01: layers01,
-//     map02: layers02,
-// };
 let layers01Clone = [...layers01]
 let layers02Clone = [...layers02]
 export const layers = reactive({
@@ -10871,7 +10868,7 @@ export const layers = reactive({
     map02: layers02Clone,
 });
 waitForStateValue(() => store.state.currentGroupName).then((val) => {
-    setTimeout(() => {
+    nextTick(() => {
         console.log(layers01)
         const currentGroupName = toRef(store.state, 'currentGroupName');
         document.querySelectorAll('.group-layer').forEach(groupLayer => {
@@ -10881,7 +10878,6 @@ waitForStateValue(() => store.state.currentGroupName).then((val) => {
                 groupLayer.innerHTML = ``
             }
         })
-        // store.state.currentGroupName = ''
         watch(currentGroupName, (newVal) => {
             if (newVal) {
                 console.log(layers01)
@@ -10894,7 +10890,7 @@ waitForStateValue(() => store.state.currentGroupName).then((val) => {
             // 中身を置き換える方法
             layers.map01.splice(0, layers01Clone.length, ...layers01Clone);
             layers.map02.splice(0, layers02Clone.length, ...layers02Clone);
-            setTimeout(() => {
+            nextTick(() => {
                 document.querySelectorAll('.group-layer').forEach(groupLayer => {
                     if (newVal) {
                         groupLayer.innerHTML = `⭐<span style="color: red">️${newVal}</span>`
@@ -10902,9 +10898,23 @@ waitForStateValue(() => store.state.currentGroupName).then((val) => {
                         groupLayer.innerHTML = ``
                     }
                 })
-            },0)
+            })
         });
-    },0)
+    })
+    const selectedLayers = computed(() => store.state.selectedLayers);
+    watch(selectedLayers, (newVal) => {
+        nextTick(() => {
+            document.querySelectorAll('.group-layer').forEach(groupLayer => {
+                if (store.state.currentGroupName) {
+                    groupLayer.innerHTML = `⭐<span style="color: red">️${store.state.currentGroupName}</span>`
+                } else {
+                    groupLayer.innerHTML = ``
+                }
+            })
+        })
+    }, { deep: true });
 })
+
+
 
 console.log(layers)
