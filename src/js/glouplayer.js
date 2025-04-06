@@ -138,10 +138,12 @@ export default function useGloupLayer() {
             if (map01.getSource('group-points-source')) {
                 map01.removeSource('group-points-source')
             }
-
-            store.state.selectedLayers.map01 = store.state.selectedLayers.map01.filter(
-                l => l.id !== 'oh-gloup-layer'
-            )
+            // 💥 selectedLayers から group レイヤーを削除（初回復元時はスキップ）
+            if (!justChangedGroup) {
+                store.state.selectedLayers.map01 = store.state.selectedLayers.map01.filter(
+                    l => l.id !== 'oh-gloup-layer'
+                )
+            }
 
             groupGeojson.value = { type: 'FeatureCollection', features: [] }
 
