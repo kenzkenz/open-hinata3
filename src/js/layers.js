@@ -10864,25 +10864,37 @@ let layers02 = JSON.parse(JSON.stringify(layers01))
 //     map01: layers01,
 //     map02: layers02,
 // };
-
-
+let layers01Clone = [...layers01]
+let layers02Clone = [...layers02]
 export const layers = reactive({
-    map01: layers01,
-    map02: layers02,
+    map01: layers01Clone,
+    map02: layers02Clone,
 });
 waitForStateValue(() => store.state.currentGroupName).then((val) => {
     setTimeout(() => {
         console.log(layers01)
         const currentGroupName = toRef(store.state, 'currentGroupName');
+        document.querySelectorAll('.group-layer').forEach(groupLayer => {
+            if (store.state.currentGroupName) {
+                groupLayer.innerHTML = `⭐<span style="color: red">️${store.state.currentGroupName}</span>`
+            } else {
+                groupLayer.innerHTML = ``
+            }
+        })
         // store.state.currentGroupName = ''
         watch(currentGroupName, (newVal) => {
-            let fillteredLayers01
-            let fillteredLayers02
             if (newVal) {
-                alert(newVal)
                 console.log(layers01)
-                fillteredLayers01 = layers01
-                fillteredLayers02 = layers02
+                layers01Clone = layers01
+                layers02Clone = layers02
+            } else {
+                layers01Clone = layers01.filter(l => l.id !== 'oh-gloup-layer');
+                layers02Clone = layers02.filter(l => l.id !== 'oh-gloup-layer');
+            }
+            // 中身を置き換える方法
+            layers.map01.splice(0, layers01Clone.length, ...layers01Clone);
+            layers.map02.splice(0, layers02Clone.length, ...layers02Clone);
+            setTimeout(() => {
                 document.querySelectorAll('.group-layer').forEach(groupLayer => {
                     if (newVal) {
                         groupLayer.innerHTML = `⭐<span style="color: red">️${newVal}</span>`
@@ -10890,13 +10902,7 @@ waitForStateValue(() => store.state.currentGroupName).then((val) => {
                         groupLayer.innerHTML = ``
                     }
                 })
-            } else {
-                fillteredLayers01 = layers01.filter(l => l.id !== 'oh-gloup-layer');
-                fillteredLayers02 = layers02.filter(l => l.id !== 'oh-gloup-layer');
-            }
-            // 中身を置き換える方法
-            layers.map01.splice(0, fillteredLayers01.length, ...fillteredLayers01);
-            layers.map02.splice(0, fillteredLayers02.length, ...fillteredLayers02);
+            },0)
         });
     },0)
 })
