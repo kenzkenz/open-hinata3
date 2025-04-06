@@ -5,6 +5,10 @@ export default createStore({
   state: {
     map01:null,
     map02:null,
+    snackbar: false,
+    snackbarText: '',
+    snackbarForGroup: false,
+    snackbarForGroupText: false,
     userId: '',
     currentGroupName: null,
     storeTest: 'storeTest',
@@ -100,7 +104,6 @@ export default createStore({
     dxfText: '',
     gpxText: '',
     simaTextZahyoukei: '',
-    snackbar: false,
     dialogForSimaApp: false,
     dialogForPng2App: false,
     dialogForJpgApp: false,
@@ -333,6 +336,13 @@ export default createStore({
   getters: {
   },
   mutations: {
+    showSnackbarForGroup(state, text) {
+      state.snackbarForGroupText = text
+      state.snackbarForGroup = true
+    },
+    hideSnackbar(state) {
+      state.snackbarForGroup = false
+    },
     setCurrentGroupName(state, name) {
       state.currentGroupName = name
     },

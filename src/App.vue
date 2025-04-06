@@ -1,6 +1,7 @@
 <script setup>
 import { user as user1 } from "@/authState"; // グローバルの認証情報を取得
 import SakuraEffect from './components/SakuraEffect.vue';
+
 </script>
 
 <template>
@@ -11,6 +12,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   color="primary">
         <p v-if="s_loading">処理中です。</p>
         <p v-if="s_loading2">{{s_loadingMessage}}</p>
+      </v-snackbar>
+
+      <v-snackbar v-model="s_snackbarForGroup" :timeout="3000" color="primary">
+        {{ s_snackbarForGroupText }}
       </v-snackbar>
 
       <v-snackbar
@@ -506,7 +511,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 </template>
 
 <script>
-
+import store from '@/store'
 import {mouseMoveForPopup, popup} from "@/js/popup"
 import { CompassControl } from 'maplibre-gl-compass'
 import shp from "shpjs"
@@ -843,7 +848,7 @@ import {
 } from "@/js/layers"
 import muni from '@/js/muni'
 import { kml } from '@tmcw/togeojson';
-import store from "@/store";
+// import store from "@/store";
 import html2canvas from 'html2canvas'
 
 export default {
@@ -1158,6 +1163,22 @@ export default {
       },
       set(value) {
         this.$store.state.snackbar = value
+      }
+    },
+    s_snackbarForGroup: {
+      get() {
+        return this.$store.state.snackbarForGroup
+      },
+      set(value) {
+        this.$store.state.snackbarForGroup = value
+      }
+    },
+    s_snackbarForGroupText: {
+      get() {
+        return this.$store.state.snackbarForGroupText
+      },
+      set(value) {
+        this.$store.state.snackbarForGroupText = value
       }
     },
     s_terrainLevel: {
