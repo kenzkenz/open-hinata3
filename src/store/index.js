@@ -10,6 +10,7 @@ export default createStore({
     snackbarForGroup: false,
     snackbarForGroupText: false,
     userId: '',
+    myNickname: '',
     currentGroupName: null,
     storeTest: 'storeTest',
     map2Flg: false,

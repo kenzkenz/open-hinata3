@@ -1657,6 +1657,8 @@ export default {
       if (user && user.email) {
         console.log("✅ ログイン中のユーザー:", user.email);
         this.emailInput = user.email;
+        store.state.myNickname = user.displayName || '名無し'
+        // alert(store.state.myNickname)
         // Vue のリアクティブシステムが更新されるのを待機
         this.$nextTick(() => {
           console.log("✅ emailInput に設定:", this.emailInput);
