@@ -3414,6 +3414,29 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-group-points-layer':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                const featureId = feature.properties.id
+                console.log(coordinates)
+                props = features[0].properties
+                if (html.indexOf('oh-group-points-layer') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="oh-group-points-layer" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<div class="street-view" style="margin-top:0px;height: 200px;width: 300px"></div>' +
+                        `<button class="point-remove pyramid-btn" data-id="${featureId}">ポイントを削除</button>` +
+                        '</div>'
+                }
+                break
+            }
         }
 
         if(/^oh-chibanzu-/.test(layerId)) {

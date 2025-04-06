@@ -37,6 +37,22 @@ async function loadGroupGeojson(groupId, layerId) {
     }
 }
 
+function deleteAllPoints() {
+    if (!confirm('本当にすべてのポイントを削除しますか？')) return
+
+    groupGeojson.value.features = []
+
+    const map = store.state.map01
+    if (map && map.getSource('group-points-source')) {
+        map.getSource('group-points-source').setData(groupGeojson.value)
+    }
+
+    const groupId = store.state.currentGroupName
+    saveGroupGeojson(groupId, 'points', groupGeojson.value)
+
+    console.log('✅ 全ポイント削除完了')
+}
+
 export default function useGloupLayer() {
     watch(
         () => [store.state.map01, store.state.currentGroupName],
@@ -79,9 +95,13 @@ export default function useGloupLayer() {
 
                         // ✅ クリックイベント登録
                         map01.on('click', (e) => {
+                            // クリックした位置に既存ポイントがあるか確認
+                            const features = map01.queryRenderedFeatures(e.point, {
+                                layers: ['oh-group-points-layer']
+                            })
+                            if (features.length > 0) return
                             if (!e.lngLat) return
                             const { lng, lat } = e.lngLat
-
                             const pointFeature = {
                                 type: 'Feature',
                                 geometry: {
@@ -89,14 +109,32 @@ export default function useGloupLayer() {
                                     coordinates: [lng, lat]
                                 },
                                 properties: {
+                                    id: Date.now(),
                                     createdAt: Date.now()
                                 }
                             }
-
                             groupGeojson.value.features.push(pointFeature)
                             map01.getSource('group-points-source')?.setData(groupGeojson.value)
                             saveGroupGeojson(groupId, layerId, groupGeojson.value)
                         })
+
+                        const mapElm = document.querySelector('#map01')
+                        // すでに登録されてたら削除（同じ関数じゃないと外れないので↓へ）
+                        mapElm.removeEventListener('click', handleMapClick) // ← 事前に remove して…
+                        function handleMapClick(e) {
+                            if (e.target && e.target.classList.contains('point-remove')) {
+                                const id = Number(e.target.getAttribute("data-id"))
+                                if (!id) return
+                                // 🔥 削除実行
+                                groupGeojson.value.features = groupGeojson.value.features.filter(
+                                    (f) => f.properties.id !== id
+                                )
+                                map01.getSource('group-points-source')?.setData(groupGeojson.value)
+                                saveGroupGeojson(store.state.currentGroupName, 'points', groupGeojson.value)
+
+                            }
+                        }
+                        mapElm.addEventListener('click', handleMapClick)
 
                         clickRegistered = true
                         clearInterval(checkLayerInterval)
@@ -109,6 +147,7 @@ export default function useGloupLayer() {
             } else {
                 map01.on('load', setupMapLogic)
             }
+
         },
         { immediate: true }
     )
