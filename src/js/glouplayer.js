@@ -10,10 +10,13 @@ let targetFeatures
 let unsubscribeSnapshot = null
 let lastClickTimestamp = 0
 let previousIds = new Set()
+let mapClickHandler = null
 
 // 🔁 復帰時にFirestoreの最新状態で再同期
 window.addEventListener('focus', async () => {
-    const doc = await db.collection('groups').doc(store.state.currentGroupName).get()
+    const currentGroupId = store.state.currentGroupName
+    if (!currentGroupId) return
+    const doc = await db.collection('groups').doc(currentGroupId).get()
     const layerData = doc.data()?.layers?.points
     if (layerData) {
         groupGeojson.value = JSON.parse(JSON.stringify(layerData))
@@ -22,53 +25,25 @@ window.addEventListener('focus', async () => {
     }
 })
 
-// async function saveGroupGeojson(groupId, layerId, geojson) {
-//     if (!groupId) {
-//         console.warn('グループIDが未定義のため保存スキップ')
-//         return
-//     }
-//     const docRef = db.collection('groups').doc(groupId)
-//     await docRef.set(
-//         {
-//             layers: {
-//                 [layerId]: geojson
-//             },
-//             lastModifiedBy: store.state.userId,
-//             lastModifiedAt: Date.now()
-//         },
-//         { merge: true }
-//     )
-// }
-
 async function saveGroupGeojson(groupId, layerId, geojson) {
     if (!groupId) {
         console.warn('グループIDが未定義のため保存スキップ')
         return
     }
-
     const docRef = db.collection('groups').doc(groupId)
-    await docRef.update({
-        [`layers.${layerId}`]: geojson,
-        lastModifiedBy: store.state.userId,
-        lastModifiedAt: Date.now()
-    }).catch(async (error) => {
-        if (error.code === 'not-found') {
-            // ドキュメントが存在しない場合は set で作成
-            await docRef.set({
-                layers: {
-                    [layerId]: geojson
-                },
-                lastModifiedBy: store.state.userId,
-                lastModifiedAt: Date.now()
-            })
-        } else {
-            console.error('Firestore 書き込みエラー:', error)
-        }
-    })
+    await docRef.set(
+        {
+            layers: {
+                [layerId]: geojson
+            },
+            lastModifiedBy: store.state.userId,
+            lastModifiedAt: Date.now()
+        },
+        { merge: true }
+    )
 }
 
-
-function deleteAllPoints() {
+function deleteAllPoints(currentGroupId) {
     if (!confirm('本当にすべてのポイントを削除しますか？')) return
 
     groupGeojson.value.features = []
@@ -84,27 +59,22 @@ function deleteAllPoints() {
         })
     }
 
-    const groupId = store.state.currentGroupName
-    saveGroupGeojson(groupId, 'points', groupGeojson.value)
-
+    saveGroupGeojson(currentGroupId, 'points', groupGeojson.value)
     console.log('✅ 全ポイント削除完了')
 }
 
-// deleteAllPoints()
-
-function handleMapClick(e) {
+function handleMapClick(e, currentGroupId) {
     const map = store.state.map01
-    const groupId = store.state.currentGroupName
     const layerId = 'points'
 
     if (!(e.target && e.target.classList.contains('point-remove'))) return
 
-    const idsToDelete = new Set((targetFeatures || []).map(f => String(f.properties.id)))
+    const idsToDelete = new Set((targetFeatures || []).map(f => String(f.properties?.id)))
     console.log('🗑️ 削除候補 IDs:', idsToDelete)
 
     const beforeLength = groupGeojson.value.features.length
     groupGeojson.value.features = groupGeojson.value.features.filter(
-        f => !idsToDelete.has(String(f.properties.id))
+        f => f.properties?.id && !idsToDelete.has(String(f.properties.id))
     )
 
     const afterLength = groupGeojson.value.features.length
@@ -117,7 +87,7 @@ function handleMapClick(e) {
         JSON.parse(JSON.stringify(groupGeojson.value))
     )
     map.triggerRepaint()
-    saveGroupGeojson(groupId, layerId, groupGeojson.value)
+    saveGroupGeojson(currentGroupId, layerId, groupGeojson.value)
 
     popups.forEach(popup => popup.remove())
     popups.length = 0
@@ -184,6 +154,27 @@ export default function useGloupLayer() {
                 previousIds = new Set()
             }
 
+            if (!map01.getSource('group-points-source')) {
+                map01.addSource('group-points-source', {
+                    type: 'geojson',
+                    data: groupGeojson.value
+                })
+            }
+
+            if (!map01.getLayer('oh-group-points-layer')) {
+                map01.addLayer({
+                    id: 'oh-group-points-layer',
+                    type: 'circle',
+                    source: 'group-points-source',
+                    paint: {
+                        'circle-radius': 8,
+                        'circle-color': '#ff0000',
+                        'circle-stroke-width': 2,
+                        'circle-stroke-color': '#ffffff'
+                    }
+                })
+            }
+
             const source = map01.getSource('group-points-source')
             if (source) {
                 setTimeout(() => {
@@ -194,10 +185,16 @@ export default function useGloupLayer() {
 
             isInitializing = false
 
-            map01.on('click',async (e) => {
+            if (mapClickHandler) {
+                map01.off('click', mapClickHandler)
+            }
+
+            mapClickHandler = (e) => {
                 const now = Date.now()
                 if (now - lastClickTimestamp < 300) return
                 lastClickTimestamp = now
+
+                if (!store.state.currentGroupName) return // 🔒 グループ未所属なら無視
 
                 if (e.originalEvent?.target?.classList.contains('point-remove')) return
 
@@ -206,8 +203,9 @@ export default function useGloupLayer() {
                 })
                 targetFeatures = features
 
-                if (features.length > 0) return
-                if (!e.lngLat) return
+                if (features.length > 0 || !e.lngLat) return
+
+                alert(`✅ 書き込み先グループ: ${store.state.currentGroupName}`)
 
                 const { lng, lat } = e.lngLat
                 const pointFeature = {
@@ -221,35 +219,281 @@ export default function useGloupLayer() {
                         createdAt: Date.now()
                     }
                 }
+
                 groupGeojson.value.features.push(pointFeature)
+
                 requestAnimationFrame(() => {
                     map01.getSource('group-points-source')?.setData(JSON.parse(JSON.stringify(groupGeojson.value)))
                     map01.triggerRepaint()
                 })
-                if (!isInitializing) {
-                    saveGroupGeojson(groupId, layerId, groupGeojson.value)
-                }
 
                 if (!isInitializing) {
-                    await saveGroupGeojson(groupId, layerId, groupGeojson.value);
-                    const source = map01.getSource('group-points-source');
-                    if (source) {
-                        source.setData(JSON.parse(JSON.stringify(groupGeojson.value)));
-                        map01.triggerRepaint();
-                        console.log('強制的にソース更新');
-                    }
+                    saveGroupGeojson(store.state.currentGroupName, layerId, groupGeojson.value)
                 }
+            }
 
-
-            })
+            map01.on('click', mapClickHandler)
 
             const mapElm = document.querySelector('#map01')
             mapElm.removeEventListener('click', handleMapClick)
-            mapElm.addEventListener('click', handleMapClick)
+            mapElm.addEventListener('click', (e) => handleMapClick(e, groupId))
         },
         { immediate: true }
     )
 }
+
+// import store from '@/store'
+// import maplibregl from 'maplibre-gl'
+// import { db } from '@/firebase'
+// import { watch } from 'vue'
+// import { groupGeojson } from '@/js/layers'
+// import { popups } from '@/js/popup'
+// import { v4 as uuidv4 } from 'uuid'
+//
+// let targetFeatures
+// let unsubscribeSnapshot = null
+// let lastClickTimestamp = 0
+// let previousIds = new Set()
+//
+// // 🔁 復帰時にFirestoreの最新状態で再同期
+// window.addEventListener('focus', async () => {
+//     const doc = await db.collection('groups').doc(store.state.currentGroupName).get()
+//     const layerData = doc.data()?.layers?.points
+//     if (layerData) {
+//         groupGeojson.value = JSON.parse(JSON.stringify(layerData))
+//         store.state.map01?.getSource('group-points-source')?.setData(groupGeojson.value)
+//         store.state.map01?.triggerRepaint()
+//     }
+// })
+//
+// // async function saveGroupGeojson(groupId, layerId, geojson) {
+// //     if (!groupId) {
+// //         console.warn('グループIDが未定義のため保存スキップ')
+// //         return
+// //     }
+// //     const docRef = db.collection('groups').doc(groupId)
+// //     await docRef.set(
+// //         {
+// //             layers: {
+// //                 [layerId]: geojson
+// //             },
+// //             lastModifiedBy: store.state.userId,
+// //             lastModifiedAt: Date.now()
+// //         },
+// //         { merge: true }
+// //     )
+// // }
+//
+// async function saveGroupGeojson(groupId, layerId, geojson) {
+//     if (!groupId) {
+//         console.warn('グループIDが未定義のため保存スキップ')
+//         return
+//     }
+//
+//     const docRef = db.collection('groups').doc(groupId)
+//     await docRef.update({
+//         [`layers.${layerId}`]: geojson,
+//         lastModifiedBy: store.state.userId,
+//         lastModifiedAt: Date.now()
+//     }).catch(async (error) => {
+//         if (error.code === 'not-found') {
+//             // ドキュメントが存在しない場合は set で作成
+//             await docRef.set({
+//                 layers: {
+//                     [layerId]: geojson
+//                 },
+//                 lastModifiedBy: store.state.userId,
+//                 lastModifiedAt: Date.now()
+//             })
+//         } else {
+//             console.error('Firestore 書き込みエラー:', error)
+//         }
+//     })
+// }
+//
+//
+// function deleteAllPoints() {
+//     if (!confirm('本当にすべてのポイントを削除しますか？')) return
+//
+//     groupGeojson.value.features = []
+//
+//     const map = store.state.map01
+//     if (map && map.getSource('group-points-source')) {
+//         requestAnimationFrame(() => {
+//             map.getSource('group-points-source').setData({
+//                 type: 'FeatureCollection',
+//                 features: []
+//             })
+//             map.triggerRepaint()
+//         })
+//     }
+//
+//     const groupId = store.state.currentGroupName
+//     saveGroupGeojson(groupId, 'points', groupGeojson.value)
+//
+//     console.log('✅ 全ポイント削除完了')
+// }
+//
+// // deleteAllPoints()
+//
+// function handleMapClick(e) {
+//     const map = store.state.map01
+//     const groupId = store.state.currentGroupName
+//     const layerId = 'points'
+//
+//     if (!(e.target && e.target.classList.contains('point-remove'))) return
+//
+//     const idsToDelete = new Set((targetFeatures || []).map(f => String(f.properties.id)))
+//     console.log('🗑️ 削除候補 IDs:', idsToDelete)
+//
+//     const beforeLength = groupGeojson.value.features.length
+//     groupGeojson.value.features = groupGeojson.value.features.filter(
+//         f => !idsToDelete.has(String(f.properties.id))
+//     )
+//
+//     const afterLength = groupGeojson.value.features.length
+//     if (beforeLength === afterLength) {
+//         console.warn('❗ 該当 feature が削除対象に見つからなかった')
+//         return
+//     }
+//
+//     map.getSource('group-points-source')?.setData(
+//         JSON.parse(JSON.stringify(groupGeojson.value))
+//     )
+//     map.triggerRepaint()
+//     saveGroupGeojson(groupId, layerId, groupGeojson.value)
+//
+//     popups.forEach(popup => popup.remove())
+//     popups.length = 0
+// }
+//
+// export default function useGloupLayer() {
+//     watch(
+//         () => [store.state.map01, store.state.currentGroupName],
+//         async ([map01, groupId]) => {
+//             if (!map01 || !groupId) {
+//                 console.warn('map01 or groupId が未定義')
+//                 return
+//             }
+//
+//             const layerId = 'points'
+//             let isInitializing = true
+//
+//             if (unsubscribeSnapshot) unsubscribeSnapshot()
+//             unsubscribeSnapshot = db.collection('groups').doc(groupId)
+//                 .onSnapshot({ includeMetadataChanges: true }, (doc) => {
+//                     const data = doc.data()
+//                     if (data && data.layers && data.layers[layerId]) {
+//                         const features = data.layers[layerId].features || []
+//                         const currentIds = new Set(features.map(f => f.properties?.id))
+//                         const newIds = [...currentIds].filter(id => !previousIds.has(id))
+//                         const deletedIds = [...previousIds].filter(id => !currentIds.has(id))
+//
+//                         console.log('📡 Snapshot fired')
+//                         console.log('📄 currentIds:', currentIds)
+//                         console.log('📄 previousIds:', previousIds)
+//                         console.log('🆕 new:', newIds)
+//                         console.log('🗑️ deleted:', deletedIds)
+//
+//                         if (!isInitializing) {
+//                             if (newIds.length > 0) {
+//                                 store.commit('showSnackbarForGroup', `🔴 ${newIds.length} 件のポイントが追加されました`)
+//                             } else if (deletedIds.length > 0) {
+//                                 store.commit('showSnackbarForGroup', `🗑️ ${deletedIds.length} 件のポイントが削除されました`)
+//                             }
+//                         }
+//
+//                         previousIds = currentIds
+//                         groupGeojson.value.features = features
+//                         const source = map01.getSource('group-points-source')
+//                         if (source) {
+//                             source.setData({ type: 'FeatureCollection', features })
+//                             map01.triggerRepaint()
+//                         }
+//                     }
+//                 })
+//
+//             const doc = await db.collection('groups').doc(groupId).get()
+//             if (doc.exists) {
+//                 const data = doc.data()?.layers?.[layerId]
+//                 if (data) {
+//                     groupGeojson.value = JSON.parse(JSON.stringify(data))
+//                     previousIds = new Set(groupGeojson.value.features.map(f => f.properties?.id))
+//                 } else {
+//                     groupGeojson.value = { type: 'FeatureCollection', features: [] }
+//                     previousIds = new Set()
+//                 }
+//             } else {
+//                 groupGeojson.value = { type: 'FeatureCollection', features: [] }
+//                 previousIds = new Set()
+//             }
+//
+//             const source = map01.getSource('group-points-source')
+//             if (source) {
+//                 setTimeout(() => {
+//                     source.setData(JSON.parse(JSON.stringify(groupGeojson.value)))
+//                     map01.triggerRepaint()
+//                 }, 500)
+//             }
+//
+//             isInitializing = false
+//
+//             map01.on('click',async (e) => {
+//                 const now = Date.now()
+//                 if (now - lastClickTimestamp < 300) return
+//                 lastClickTimestamp = now
+//
+//                 if (e.originalEvent?.target?.classList.contains('point-remove')) return
+//
+//                 const features = map01.queryRenderedFeatures(e.point, {
+//                     layers: ['oh-group-points-layer']
+//                 })
+//                 targetFeatures = features
+//
+//                 if (features.length > 0) return
+//                 if (!e.lngLat) return
+//
+//                 const { lng, lat } = e.lngLat
+//                 const pointFeature = {
+//                     type: 'Feature',
+//                     geometry: {
+//                         type: 'Point',
+//                         coordinates: [lng, lat]
+//                     },
+//                     properties: {
+//                         id: uuidv4(),
+//                         createdAt: Date.now()
+//                     }
+//                 }
+//                 groupGeojson.value.features.push(pointFeature)
+//                 requestAnimationFrame(() => {
+//                     map01.getSource('group-points-source')?.setData(JSON.parse(JSON.stringify(groupGeojson.value)))
+//                     map01.triggerRepaint()
+//                 })
+//                 if (!isInitializing) {
+//                     saveGroupGeojson(groupId, layerId, groupGeojson.value)
+//                 }
+//
+//                 if (!isInitializing) {
+//                     await saveGroupGeojson(groupId, layerId, groupGeojson.value);
+//                     const source = map01.getSource('group-points-source');
+//                     if (source) {
+//                         source.setData(JSON.parse(JSON.stringify(groupGeojson.value)));
+//                         map01.triggerRepaint();
+//                         console.log('強制的にソース更新');
+//                     }
+//                 }
+//
+//
+//             })
+//
+//             const mapElm = document.querySelector('#map01')
+//             mapElm.removeEventListener('click', handleMapClick)
+//             mapElm.addEventListener('click', handleMapClick)
+//         },
+//         { immediate: true }
+//     )
+// }
 
 
 
