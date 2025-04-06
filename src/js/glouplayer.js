@@ -2,6 +2,7 @@ import store from '@/store'
 import maplibregl from 'maplibre-gl'
 import * as turf from '@turf/turf'
 import { nextTick, toRef, reactive, ref, computed, watch } from 'vue';
+import {gropuGeojson, groupGeojson} from "@/js/layers";
 export default function useGloupLayer() {
     watch(
         () => store.state.map01,
@@ -10,13 +11,25 @@ export default function useGloupLayer() {
             console.log(map01)
             map01.on('load', () => {
                 map01.on('click', (e) => {
-                    console.log(map01.getStyle().layers)
-                    const hasLayer = map01.getStyle().layers.some(layer => layer.id === 'oh-group-points-layer');
-                    if (!hasLayer || !e.lngLat) return;
+                    if (!map01.getLayer('oh-group-points-layer') || !e.lngLat) return;
                     const { lng, lat } = e.lngLat;
-                    new maplibregl.Marker()
-                        .setLngLat([lng, lat])
-                        .addTo(map01); // map01 を使って追加！
+                    const pointFeature = {
+                        type: 'Feature',
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [lng, lat]
+                        },
+                        properties: {
+                            createdAt: Date.now()
+                        }
+                    }
+                    // GeoJSONに追加
+                    groupGeojson.value.features.push(pointFeature)
+                    // 地図に反映
+                    const source = map01.getSource('group-points-source')
+                    if (source) {
+                        source.setData(groupGeojson.value)
+                    }
                 });
             })
         },

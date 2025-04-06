@@ -8738,14 +8738,16 @@ const sagakijyuntenLabelLayer = {
 //     }
 // }
 
+export const groupGeojson = ref({
+    type: 'FeatureCollection',
+    features: []
+})
+
+
 const groupPointsSource = {
     id: "group-points-source", obj: {
         'type': 'geojson',
-        data: {
-            type: 'FeatureCollection',
-            features: [
-            ]
-        }
+        data: groupGeojson.value
     }
 }
 const groupPointsLayer = {
