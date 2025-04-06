@@ -83,7 +83,7 @@ export default function useGloupLayer() {
 
             const geojson = await loadGroupGeojson(groupId, layerId)
             if (geojson) {
-                groupGeojson.value = geojson
+                groupGeojson.value = JSON.parse(JSON.stringify(geojson))
             }
 
             if (!map01.getSource('group-points-source')) {
