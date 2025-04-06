@@ -2,6 +2,24 @@
 // "text-font": ["NotoSansJP-Regular"],
 import store from '@/store'
 import * as turf from '@turf/turf'
+import { nextTick, toRef, reactive, ref, computed, watch } from 'vue';
+
+function waitForStateValue(getter, checkFn = val => val !== undefined && val !== null, interval = 50) {
+    return new Promise((resolve) => {
+        const timer = setInterval(() => {
+            const val = getter();
+            if (checkFn(val)) {
+                clearInterval(timer);
+                resolve(val);
+            }
+        }, interval);
+    });
+}
+
+
+
+
+
 
 
 // グループでクリックで追加するポイントのGeoJSONソースを作成
@@ -8724,7 +8742,14 @@ const sagakijyuntenLabelLayer = {
 //
 // console.log(aaa)
 
-const layers01 = [
+let layers01 = [
+    {
+        id: 'oh-gloup-layer',
+        label: "<div class='group-layer'><div>グループレイヤー</div></div>",
+        sources: [groupPointsSource],
+        layers: [groupPointsLayer],
+        attribution: '',
+    },
     {
         id: 'oh-amx-a-fude',
         label: "登記所備付地図データ",
@@ -8735,7 +8760,7 @@ const layers01 = [
     },
     {
         id: 'oh-chibanzu-all2',
-        label: '<span style="color:navy">全国地番図公開マップ</span>',
+        label: '全国地番図公開マップ',
         // sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
         // layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
         sources: [cityPmtilesSource,...chibanzuSources,...publicSources],
@@ -8768,7 +8793,7 @@ const layers01 = [
                 layers: [syochiikiLayer,syochiikLayerLine2,syochiikiLayerLabel2],
                 attribution: '出典：<a href="https://www.e-stat.go.jp/stat-search/files?page=1&toukei=00200521&tstat=000001136464&cycle=0&tclass1=000001136472" target="_blank">e-Stat</a>',
                 // ext: {name:'extSyochiiki'}
-            },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+            },
             {
                 id: 'oh-fude',
                 label: "農地の区画情報(筆ポリゴン)",
@@ -8839,7 +8864,7 @@ const layers01 = [
                 label: "佐賀県基準点",
                 source: sagakijyuntenSource,
                 layers:[sagakijyuntenPointLayer, sagakijyuntenLabelLayer],
-                attribution: '<a href="http://www.sagakoushoku.com/toukikijyunten/" target="_blank">佐賀県公共嘱託登記土地家屋調査士協会</a>',
+                                attribution: '<a href="http://www.sagakoushoku.com/toukikijyunten/" target="_blank">佐賀県公共嘱託登記土地家屋調査士協会</a>',
                 ext: {name:'extSaga'}
             },
             {
@@ -8855,7 +8880,7 @@ const layers01 = [
                     // },
                     {
                         id: 'oh-chibanzu-all2',
-                        label: '<span style="color:navy">全国地番図公開マップ</span>',
+                        label: '全国地番図公開マップ',
                         // sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
                         // layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
                         sources: [cityPmtilesSource,...chibanzuSources,...publicSources],
@@ -10816,9 +10841,64 @@ const layers01 = [
         ]
     },
 ]
-const layers02 = JSON.parse(JSON.stringify(layers01))
-export const layers = {
+let layers02 = JSON.parse(JSON.stringify(layers01))
+// export let layers = ref([]);
+// try {
+//     const currentGroupName = computed(() => store.state.currentGroupName);
+//     watch(currentGroupName, (newVal, ) => {
+//         if (newVal) {
+//             layers01 = layers01.filter(layers => {
+//                 return layers.id !== 'oh-gloup-layer'
+//             })
+//         }
+//     })
+// }catch (e) {
+//     console.log(e)
+// }
+// layers = {
+//     map01: layers01,
+//     map02: layers02
+// }
+
+// export const layers = {
+//     map01: layers01,
+//     map02: layers02,
+// };
+
+
+export const layers = reactive({
     map01: layers01,
-    map02: layers02
-}
+    map02: layers02,
+});
+waitForStateValue(() => store.state.currentGroupName).then((val) => {
+    setTimeout(() => {
+        console.log(layers01)
+        const currentGroupName = toRef(store.state, 'currentGroupName');
+        // store.state.currentGroupName = ''
+        watch(currentGroupName, (newVal) => {
+            let fillteredLayers01
+            let fillteredLayers02
+            if (newVal) {
+                alert(newVal)
+                console.log(layers01)
+                fillteredLayers01 = layers01
+                fillteredLayers02 = layers02
+                document.querySelectorAll('.group-layer').forEach(groupLayer => {
+                    if (newVal) {
+                        groupLayer.innerHTML = `⭐<span style="color: red">️${newVal}</span>`
+                    } else {
+                        groupLayer.innerHTML = ``
+                    }
+                })
+            } else {
+                fillteredLayers01 = layers01.filter(l => l.id !== 'oh-gloup-layer');
+                fillteredLayers02 = layers02.filter(l => l.id !== 'oh-gloup-layer');
+            }
+            // 中身を置き換える方法
+            layers.map01.splice(0, fillteredLayers01.length, ...fillteredLayers01);
+            layers.map02.splice(0, fillteredLayers02.length, ...fillteredLayers02);
+        });
+    },0)
+})
+
 console.log(layers)
