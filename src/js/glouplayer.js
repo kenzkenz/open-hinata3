@@ -1,14 +1,25 @@
 import store from '@/store'
 import maplibregl from 'maplibre-gl'
 import * as turf from '@turf/turf'
+import { db, firebase } from '@/firebase'
 import { nextTick, toRef, reactive, ref, computed, watch } from 'vue';
-import {gropuGeojson, groupGeojson} from "@/js/layers";
+import {groupGeojson} from "@/js/layers";
 export default function useGloupLayer() {
     watch(
         () => store.state.map01,
         (map01) => {
             if (!map01) return;
-            console.log(map01)
+
+            const currentGroupName = toRef(store.state, 'currentGroupName')
+            async function saveGroupGeojson(groupId, layerId, geojson) {
+                const docRef = db.collection('groups').doc(groupId)
+                await docRef.set({
+                    layers: {
+                        [layerId]: geojson
+                    }
+                }, { merge: true })
+            }
+
             map01.on('load', () => {
                 map01.on('click', (e) => {
                     if (!map01.getLayer('oh-group-points-layer') || !e.lngLat) return;
@@ -30,6 +41,7 @@ export default function useGloupLayer() {
                     if (source) {
                         source.setData(groupGeojson.value)
                     }
+                    saveGroupGeojson(currentGroupName.value, 'points', groupGeojson.value)
                 });
             })
         },
