@@ -11,7 +11,7 @@ import {feature} from "@turf/turf";
 import {transformCoordinates} from "@/App";
 import { Viewer } from 'mapillary-js';
 
-const popups = []
+export const popups = []
 
 console.log(store.state.selectedLayers)
 

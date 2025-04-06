@@ -3,6 +3,9 @@ import maplibregl from 'maplibre-gl'
 import { db } from '@/firebase'
 import { watch } from 'vue'
 import { groupGeojson } from '@/js/layers'
+import {popups} from "@/js/popup";
+
+let targetFeatures
 
 async function saveGroupGeojson(groupId, layerId, geojson) {
     if (!groupId) {
@@ -42,8 +45,13 @@ function deleteAllPoints() {
 
     const map = store.state.map01
     if (map && map.getSource('group-points-source')) {
-        map.getSource('group-points-source').setData(groupGeojson.value)
-        map.triggerRepaint()
+        requestAnimationFrame(() => {
+            map.getSource('group-points-source').setData({
+                type: 'FeatureCollection',
+                features: []
+            })
+            map.triggerRepaint()
+        })
     }
 
     const groupId = store.state.currentGroupName
@@ -52,22 +60,32 @@ function deleteAllPoints() {
     console.log('✅ 全ポイント削除完了')
 }
 
-// 削除ボタン処理を先に定義
 function handleMapClick(e) {
     const map = store.state.map01
     const groupId = store.state.currentGroupName
     const layerId = 'points'
+    // // ボタンクリックでなければスキップ
+    if (!(e.target && e.target.classList.contains('point-remove'))) return
 
-    if (e.target && e.target.classList.contains('point-remove')) {
-        const id = Number(e.target.getAttribute('data-id'))
-        if (!id) return
-        groupGeojson.value.features = groupGeojson.value.features.filter(
-            (f) => f.properties.id !== id
+    const targetId = String(targetFeatures[0].properties.id)
+    console.log('🗑️ 削除対象 ID:', targetId)
+
+    groupGeojson.value.features = groupGeojson.value.features.filter(
+        (f) => String(f.properties.id) !== targetId
+    )
+
+    requestAnimationFrame(() => {
+        map.getSource('group-points-source')?.setData(
+            JSON.parse(JSON.stringify(groupGeojson.value))
         )
-        map.getSource('group-points-source')?.setData(groupGeojson.value)
         map.triggerRepaint()
-        saveGroupGeojson(groupId, layerId, groupGeojson.value)
-    }
+    })
+
+    saveGroupGeojson(groupId, layerId, groupGeojson.value)
+
+    popups.forEach(popup => popup.remove());
+    popups.length = 0;
+
 }
 
 export default function useGloupLayer() {
@@ -80,10 +98,16 @@ export default function useGloupLayer() {
             }
 
             const layerId = 'points'
+            let isInitializing = true
 
             const geojson = await loadGroupGeojson(groupId, layerId)
             if (geojson) {
                 groupGeojson.value = JSON.parse(JSON.stringify(geojson))
+            } else {
+                groupGeojson.value = {
+                    type: 'FeatureCollection',
+                    features: []
+                }
             }
 
             if (!map01.getSource('group-points-source')) {
@@ -93,32 +117,28 @@ export default function useGloupLayer() {
                 })
             }
 
-            if (!map01.getLayer('oh-group-points-layer')) {
-                map01.addLayer({
-                    id: 'oh-group-points-layer',
-                    type: 'circle',
-                    source: 'group-points-source',
-                    paint: {
-                        'circle-radius': 8,
-                        'circle-color': '#ff0000',
-                        'circle-stroke-width': 2,
-                        'circle-stroke-color': '#ffffff'
-                    }
-                })
-            }
-
             const source = map01.getSource('group-points-source')
             if (source) {
-                source.setData(groupGeojson.value)
-                map01.triggerRepaint()
+                setTimeout(() => {
+                    source.setData(JSON.parse(JSON.stringify(groupGeojson.value)))
+                    map01.triggerRepaint()
+                },500)
             }
 
+            isInitializing = false
+
             map01.on('click', (e) => {
+                if (e.originalEvent?.target?.classList.contains('point-remove')) return
+
                 const features = map01.queryRenderedFeatures(e.point, {
                     layers: ['oh-group-points-layer']
                 })
+
+                targetFeatures = features
+
                 if (features.length > 0) return
                 if (!e.lngLat) return
+
                 const { lng, lat } = e.lngLat
                 const pointFeature = {
                     type: 'Feature',
@@ -127,14 +147,18 @@ export default function useGloupLayer() {
                         coordinates: [lng, lat]
                     },
                     properties: {
-                        id: Date.now(),
+                        id: Date.now().toString(),
                         createdAt: Date.now()
                     }
                 }
                 groupGeojson.value.features.push(pointFeature)
-                map01.getSource('group-points-source')?.setData(groupGeojson.value)
-                map01.triggerRepaint()
-                saveGroupGeojson(groupId, layerId, groupGeojson.value)
+                requestAnimationFrame(() => {
+                    map01.getSource('group-points-source')?.setData(JSON.parse(JSON.stringify(groupGeojson.value)))
+                    map01.triggerRepaint()
+                })
+                if (!isInitializing) {
+                    saveGroupGeojson(groupId, layerId, groupGeojson.value)
+                }
             })
 
             const mapElm = document.querySelector('#map01')
