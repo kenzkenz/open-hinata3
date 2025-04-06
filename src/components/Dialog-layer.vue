@@ -1181,6 +1181,7 @@ export default {
         // console.log('変更を検出しました',this.$store.state.watchFlg,val)
         // ------------------------------------------------------------------
         const map01 = this.$store.state.map01
+        if (!map01) return  // ← これを追加
         const bounds = map01.getBounds()
         // 南西端と北東端の座標を取得
         const sw = bounds.getSouthWest()
