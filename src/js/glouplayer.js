@@ -199,9 +199,16 @@ export default function useGloupLayer() {
 
             isInitialStartup = false
 
+            // setTimeout(() => {
+            //     justChangedGroup = false
+            // }, 500)
+
+            // 🔒 justChangedGroup を安全に false に戻す
             setTimeout(() => {
                 justChangedGroup = false
-            }, 500)
+            }, 0)
+
+
 
             groupGeojson.value = { type: 'FeatureCollection', features: [] }
 
@@ -214,6 +221,7 @@ export default function useGloupLayer() {
                         const newIds = [...currentIds].filter(id => !previousIds.has(id))
                         const deletedIds = [...previousIds].filter(id => !currentIds.has(id))
                         const userNickname = store.state.myNickname
+                        // ✅ 通知はグループ変更では出さないようにする
                         if (!isInitializing && !justChangedGroup) {
                             // if (newIds.length > 0) {
                             //     store.commit('showSnackbarForGroup', `🔴 ${newIds.length} 件のポイントが追加されました。${userNickname}`)
