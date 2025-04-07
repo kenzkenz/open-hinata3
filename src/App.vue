@@ -500,6 +500,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <dialog2 :mapName=mapName />
           <dialogShare v-if="mapName === 'map01'" :mapName=mapName />
           <DialogChibanzuList :mapName=mapName />
+          <template>
+            <div>
+              <!-- 他のUIの中に追加 -->
+              <LayerTabPanel />
+            </div>
+          </template>
 
           <div :id="'terrain-btn-div-' + mapName" class="terrain-btn-div">
             <div class="terrain-btn-container">
@@ -542,6 +548,7 @@ import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
 import { TerraDraw,TerraDrawPointMode,TerraDrawLineStringMode,TerraDrawPolygonMode,TerraDrawFreehandMode } from 'terra-draw'
 import PointInfoDrawer from '@/components/PointInfoDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
+import LayerTabPanel from '@/components/LayerTabPanel.vue'
 import {
   capture,
   csvGenerateForUserPng,
@@ -879,7 +886,8 @@ export default {
     Dialog2,
     DialogShare,
     DialogChibanzuList,
-    PointInfoDrawer
+    PointInfoDrawer,
+    LayerTabPanel,
   },
   data: () => ({
     mapNames: ['map01','map02'],

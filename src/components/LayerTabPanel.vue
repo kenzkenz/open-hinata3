@@ -7,7 +7,7 @@
         dark
     >
       <v-tab
-          v-for="(layer, index) in pointLayers"
+          v-for="(layer) in pointLayers"
           :key="layer.id"
           @click="selectLayer(layer.id)"
       >
@@ -20,7 +20,7 @@
 
     <v-tabs-items v-model="currentTab">
       <v-tab-item
-          v-for="(layer, index) in pointLayers"
+          v-for="(layer) in pointLayers"
           :key="layer.id"
       >
         <v-card flat class="pa-3">
@@ -53,7 +53,7 @@
 import { mapState, mapMutations } from 'vuex'
 
 export default {
-  name: 'LayerTabPanel',
+  name: 'Layer-Tab-Panel',
   computed: {
     ...mapState([
       'pointLayers',
