@@ -357,6 +357,9 @@ export default createStore({
   getters: {
   },
   mutations: {
+    setCurrentPointLayerId(state, id) {
+      state.currentPointLayerId = id
+    },
     addPointLayer(state) {
       const id = 'layer' + (state.pointLayers.length + 1)
       state.pointLayers.push({ id, name: `ポイントレイヤー${state.pointLayers.length + 1}` })
