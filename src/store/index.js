@@ -1,10 +1,9 @@
 import { createStore } from 'vuex'
 import { db } from '@/firebase'
 
-import {highlightedChibans} from "@/js/downLoad";
-
 export default createStore({
   state: {
+    currentGroupLayers: [],
     pointLayers: [
       {
         id: 'layer1',

@@ -10,6 +10,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
             <v-tabs mobile-breakpoint="0" v-model="tab" class="custom-tabs">
               <v-tab value="0">SIMA</v-tab>
               <v-tab value="1">URL記憶</v-tab>
+              <v-tab value="11" v-if="s_currentGroupName">{{s_currentGroupName}}</v-tab>
               <v-tab value="2">タイル記憶</v-tab>
               <v-tab @click="myChibanzu" value="3">地番図</v-tab>
               <v-tab value="31">公開地番図</v-tab>
@@ -29,6 +30,20 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   <div v-for="item in jsonDataSima" :key="item.id" class="data-container" @click="simaClick(item.name,item.url,item.id,item.simatext,item.zahyokei)">
                     <button v-if="!isAll" class="close-btn" @click="removeSima(item.id,item.url2,$event)">×</button>
                     <strong>{{ item.name }}</strong><br>
+                  </div>
+                </v-card>
+              </v-window-item>
+              <v-window-item value="11">
+                <v-card>
+                  <div style="margin-bottom: 10px;">
+                    <v-text-field v-model="urlName" type="text" placeholder="レイヤーネームまたは検索"></v-text-field>
+                    <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="addLayer">レイヤー追加</v-btn>
+                    <v-btn style="margin-top: -10px; margin-bottom: 10px; margin-left: 10px" @click="layerRenameBtn">リネーム</v-btn>
+                    <v-btn style="margin-top: -10px;margin-bottom: 10px;margin-left: 10px;" @click="layerSerchBtn">検索</v-btn>
+                    <div v-for="item in s_currentGroupLayers" :key="item.id" class="data-container" @click="layerSet(item.name,item.id)">
+                      <button class="close-btn" @click="removeLayer(item.id, $event)">×</button>
+                      <strong>{{ item.name }}</strong>
+                    </div>
                   </div>
                 </v-card>
               </v-window-item>
@@ -347,9 +362,20 @@ export default {
     isDragging: false,
     dragStartX: 0,
     dragStartY: 0,
-    mayroomStyle: {"overflow-y": "auto", "max-height": "530px", "max-width": "600px", "padding-top": "10px"}
+    mayroomStyle: {"overflow-y": "auto", "max-height": "530px", "max-width": "560px", "padding-top": "10px"}
   }),
   computed: {
+    s_currentGroupLayers: {
+      get() {
+        return this.$store.state.currentGroupLayers
+      },
+      set(value) {
+        this.$store.state.currentGroupLayers = value
+      }
+    },
+    s_currentGroupName () {
+      return this.$store.state.currentGroupName
+    },
     filteredHistory() {
       // return this.jsonDataHistory.filter(item => !item.url.includes('localhost'));
       return (this.jsonDataHistory || []).filter(item => {

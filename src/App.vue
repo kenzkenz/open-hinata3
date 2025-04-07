@@ -8,25 +8,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
-<!--      <v-btn @click="showLayerDialog = true" color="primary" class="ma-4">-->
-<!--        レイヤー設定を開く-->
-<!--      </v-btn>-->
-
-<!--      <v-dialog v-model="showLayerDialog" max-width="500">-->
-<!--        <v-card>-->
-<!--          <v-card-title class="text-h6">-->
-<!--            ポイントレイヤー設定-->
-<!--          </v-card-title>-->
-<!--          <v-card-text>-->
-<!--            <LayerTabPanel />-->
-<!--          </v-card-text>-->
-<!--          <v-card-actions>-->
-<!--            <v-spacer />-->
-<!--            <v-btn text @click="showLayerDialog = false">閉じる</v-btn>-->
-<!--          </v-card-actions>-->
-<!--        </v-card>-->
-<!--      </v-dialog>-->
-
       <PointInfoDrawer
           :value="showPointInfoDrawer"
           :feature="selectedPointFeature"
@@ -493,7 +474,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
             <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickSplit" v-if="mapName === 'map01'"><v-icon>mdi-monitor-multiple</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="btnClickMyroom (mapName)"><v-icon v-if="user1">mdi-home</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForGroup = !s_dialogForGroup"><v-icon v-if="user1">mdi-account-supervisor</v-icon></v-btn>
-            <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="showLayerDialog = !showLayerDialog"><v-icon v-if="user1"></v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickLayer(mapName)"><v-icon>mdi-layers</v-icon></v-btn>
           </div>
           <!--右メニュー-->
@@ -513,7 +493,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <dialog2 :mapName=mapName />
           <dialogShare v-if="mapName === 'map01'" :mapName=mapName />
           <DialogChibanzuList :mapName=mapName />
-          <LayerTabPanel />
+<!--          <LayerTabPanel />-->
 
           <div :id="'terrain-btn-div-' + mapName" class="terrain-btn-div">
             <div class="terrain-btn-container">
@@ -895,7 +875,6 @@ export default {
     DialogShare,
     DialogChibanzuList,
     PointInfoDrawer,
-    LayerTabPanel,
   },
   data: () => ({
     mapNames: ['map01','map02'],
