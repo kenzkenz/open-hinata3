@@ -41,7 +41,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                     <v-btn style="margin-top: -10px; margin-bottom: 10px; margin-left: 10px" @click="layerRenameBtn">リネーム</v-btn>
                     <v-btn style="margin-top: -10px;margin-bottom: 10px;margin-left: 10px;" @click="layerSerchBtn">検索</v-btn>
                     <div v-for="item in s_currentGroupLayers" :key="item.id" class="data-container" @click="layerSet(item.name,item.id)">
-                      <button class="close-btn" @click="removeLayer(item.id, $event)">×</button>
+                      <button class="close-btn" @click="deleteLayer(item.id)">×</button>
                       <strong>{{ item.name }}</strong>
                     </div>
                   </div>
@@ -546,6 +546,23 @@ export default {
     },
   },
   methods: {
+    async deleteLayer (id) {
+      if (!confirm("本当に削除しますか？元には戻りません。")) {
+        return
+      }
+      try {
+        await firebase.firestore()
+            .collection('groups')
+            .doc(this.s_currentGroupId)
+            .collection('layers')
+            .doc(id)
+            .delete()
+        this.layerName = ''
+        await this.fetchLayers()
+      } catch (e) {
+        console.error('Firestore 削除エラー:', e)
+      }
+    },
     layerSet (name,id) {
       this.layerName = name
       this.layerId = id
