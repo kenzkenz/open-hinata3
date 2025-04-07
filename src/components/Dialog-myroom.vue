@@ -546,9 +546,10 @@ export default {
   },
   methods: {
     async addLayer () {
-      // const nextIndex = this.s_currentGroupLayers.length + 1
+      const nextIndex = this.s_currentGroupLayers.length + 1
+      const name = this.layerName.trim() || `レイヤー${nextIndex}`
       const newLayer = {
-        name: this.layerName,
+        name: name,
         color: '#ff0000',
         visible: true,
         features: [],
