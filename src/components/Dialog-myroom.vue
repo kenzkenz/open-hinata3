@@ -546,6 +546,10 @@ export default {
   },
   methods: {
     async addLayer () {
+      if (!this.layerName) {
+        alert('ネームが未記入です。')
+        return
+      }
       const nextIndex = this.s_currentGroupLayers.length + 1
       const name = this.layerName.trim() || `レイヤー${nextIndex}`
       const newLayer = {
