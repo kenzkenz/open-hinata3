@@ -179,11 +179,13 @@ export default function useGloupLayer() {
                 map01.removeSource('group-points-source')
             }
 
-            if (!isInitialStartup) {
+            // とりあえずコメントアウト。このコメントを外すと起動時にグループレイヤーが表示される。
+            // しかしポップアップは復帰しない。
+            // if (!isInitialStartup) {
                 store.state.selectedLayers.map01 = store.state.selectedLayers.map01.filter(
                     l => l.id !== 'oh-gloup-layer'
                 )
-            }
+            // }
 
             isInitialStartup = false
 
@@ -259,7 +261,8 @@ export default function useGloupLayer() {
                         createdAt: Date.now()
                     }
                 }
-
+                // ✅ 追加前にグループ名をアラート表示
+                alert(`✅ 書き込み先グループ: ${store.state.currentGroupName}`)
                 groupGeojson.value.features.push(pointFeature)
 
                 requestAnimationFrame(() => {
