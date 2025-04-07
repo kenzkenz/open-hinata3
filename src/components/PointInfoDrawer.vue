@@ -7,7 +7,7 @@
       class="point-info-drawer"
   >
     <v-card flat class="bg-white">
-      <v-card-title class="text-h6 text-white" style="background-color: var(--main-color);">
+      <v-card-title class="text-h6 text-white" style="background-color: var(--main-color);height: 40px;display: flex;align-items: center ">
         ポイント情報
       </v-card-title>
       <v-card-text style="margin-top: 30px;" class="text-body-1">

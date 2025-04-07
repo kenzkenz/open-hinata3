@@ -3754,7 +3754,7 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
         popups.push(popup);
         popup.on('close', closeAllPopups);
     }
-    
+
     // ストリートビューを挿入
     const container = document.querySelector('.street-view');
     if (container && !store.state.mapillaryFlg) {
