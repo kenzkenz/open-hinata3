@@ -583,6 +583,17 @@ export default {
     layerSet (name,id) {
       this.layerName = name
       this.layerId = id
+      const newLayer = {
+        id: `oh-point-${id}`,
+        label: name,
+        source: null,       // 別の処理で source を追加する想定
+        layers: [],         // 同上、レイヤー定義も後から
+        opacity: 1,
+        visibility: true
+      }
+      // MapLibre 用に selectedLayers.map01 / map02 に追加
+      this.$store.state.selectedLayers.map01.unshift(newLayer)
+      this.$store.state.selectedLayers.map02.unshift(newLayer)
     },
     async layerRenameBtn () {
       if (!this.layerName.trim()) return alert('新しい名前を入力してください')
