@@ -12,20 +12,20 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <!--        レイヤー設定を開く-->
 <!--      </v-btn>-->
 
-      <v-dialog v-model="showLayerDialog" max-width="500">
-        <v-card>
-          <v-card-title class="text-h6">
-            ポイントレイヤー設定
-          </v-card-title>
-          <v-card-text>
-            <LayerTabPanel />
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer />
-            <v-btn text @click="showLayerDialog = false">閉じる</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
+<!--      <v-dialog v-model="showLayerDialog" max-width="500">-->
+<!--        <v-card>-->
+<!--          <v-card-title class="text-h6">-->
+<!--            ポイントレイヤー設定-->
+<!--          </v-card-title>-->
+<!--          <v-card-text>-->
+<!--            <LayerTabPanel />-->
+<!--          </v-card-text>-->
+<!--          <v-card-actions>-->
+<!--            <v-spacer />-->
+<!--            <v-btn text @click="showLayerDialog = false">閉じる</v-btn>-->
+<!--          </v-card-actions>-->
+<!--        </v-card>-->
+<!--      </v-dialog>-->
 
       <PointInfoDrawer
           :value="showPointInfoDrawer"
@@ -513,7 +513,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <dialog2 :mapName=mapName />
           <dialogShare v-if="mapName === 'map01'" :mapName=mapName />
           <DialogChibanzuList :mapName=mapName />
-<!--          <LayerTabPanel />-->
+          <LayerTabPanel />
 
           <div :id="'terrain-btn-div-' + mapName" class="terrain-btn-div">
             <div class="terrain-btn-container">
