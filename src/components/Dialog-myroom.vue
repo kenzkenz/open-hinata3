@@ -321,6 +321,7 @@ export default {
     // MasonryWall,
   },
   data: () => ({
+    layerId: '',
     layerName: '',
     selectedPrefName: '',
     selectedCityName: '',
@@ -545,6 +546,49 @@ export default {
     },
   },
   methods: {
+    layerSet (name,id) {
+      this.layerName = name
+      this.layerId = id
+    },
+    async layerRenameBtn () {
+      if (!this.layerName.trim()) return alert('新しい名前を入力してください')
+      const selectedLayer = this.s_currentGroupLayers.find(layer => layer.id === this.layerId)
+      if (!selectedLayer) return alert('対象のレイヤーが見つかりません')
+
+      try {
+        await firebase.firestore()
+            .collection('groups')
+            .doc(this.s_currentGroupId)
+            .collection('layers')
+            .doc(selectedLayer.id)
+            .update({ name: this.layerName })
+
+        selectedLayer.name = this.layerName
+        alert('リネーム成功')
+      } catch (e) {
+        console.error('Firestore リネームエラー:', e)
+        alert('リネーム失敗')
+      }
+    },
+    async fetchLayers () {
+      if (!this.s_currentGroupId) return
+      try {
+        const snapshot = await firebase.firestore()
+            .collection('groups')
+            .doc(this.s_currentGroupId)
+            .collection('layers')
+            .orderBy('createdAt')
+            .get()
+
+        const layers = []
+        snapshot.forEach(doc => {
+          layers.push({ id: doc.id, ...doc.data() })
+        })
+        this.$store.state.currentGroupLayers = layers
+      } catch (e) {
+        console.error('Firestore 読み込みエラー:', e)
+      }
+    },
     async addLayer () {
       if (!this.layerName) {
         alert('ネームが未記入です。')
@@ -2132,6 +2176,9 @@ export default {
     },
   },
   watch: {
+    s_currentGroupName() {
+      this.fetchLayers()
+    },
     s_dialogForLink () {
       this.openDialog();
       try {
@@ -2167,6 +2214,7 @@ export default {
     }
   },
   mounted() {
+    // ------------------
     document.querySelector('#drag-handle-myroomDialog-map01').innerHTML = '<span style="font-size: large;">マイルーム</span>'
     // -------------------------------------------------------------------
     let maxHeight
@@ -2183,6 +2231,13 @@ export default {
         const uid = user.value.uid
         this.uid = uid
         this.$store.state.userId = uid
+
+
+
+
+        if (this.s_currentGroupId) {
+          this.fetchLayers()
+        }
 
         this.fetchImages(uid)
         this.urlSelect(uid)

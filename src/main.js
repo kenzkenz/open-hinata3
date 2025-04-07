@@ -30,6 +30,7 @@ auth.onAuthStateChanged(async user => {
             if (groupDoc.exists) {
                 const groupName = groupDoc.data().name
                 // ✅ Vuex にグループ名をセット
+                store.commit('setCurrentGroupId', groupId)
                 store.commit('setCurrentGroupName', groupName)
                 console.log("✅ 自動参加グループ:", groupName)
                 break

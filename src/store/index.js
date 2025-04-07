@@ -3,6 +3,7 @@ import { db } from '@/firebase'
 
 export default createStore({
   state: {
+    currentGroupId: '',
     currentGroupLayers: [],
     pointLayers: [
       {
@@ -426,6 +427,9 @@ export default createStore({
     },
     hideSnackbar(state) {
       state.snackbarForGroup = false
+    },
+    setCurrentGroupId(state, name) {
+      state.currentGroupId = name
     },
     setCurrentGroupName(state, name) {
       state.currentGroupName = name
