@@ -3460,6 +3460,7 @@ export function popup(e,map,mapName,mapFlg) {
 
                     store.commit('setPointInfoDrawer', true)
                 }
+                html = 'dumy'
                 // const featureId = feature.properties.id
                 // console.log(coordinates)
                 // props = features[0].properties
@@ -3743,15 +3744,17 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
     popups.length = 0;
 
     // ポップアップを作成して地図に追加
-    const popup = new maplibregl.Popup({ closeButton: true, maxWidth: "350px" })
-        .setLngLat(coordinates)
-        .setHTML(popupHtml)
-        .addTo(map);
+    if (htmlContent !== 'dumy') {
+        const popup = new maplibregl.Popup({ closeButton: true, maxWidth: "350px" })
+            .setLngLat(coordinates)
+            .setHTML(popupHtml)
+            .addTo(map);
 
-    // ポップアップイベント設定
-    popups.push(popup);
-    popup.on('close', closeAllPopups);
-
+        // ポップアップイベント設定
+        popups.push(popup);
+        popup.on('close', closeAllPopups);
+    }
+    
     // ストリートビューを挿入
     const container = document.querySelector('.street-view');
     if (container && !store.state.mapillaryFlg) {
