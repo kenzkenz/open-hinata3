@@ -342,6 +342,10 @@ export default createStore({
   getters: {
   },
   mutations: {
+    // 他のミューテーションがある中に追加
+    setGroupGeojson(state, geojson) {
+      state.groupGeojson = geojson
+    },
     saveSelectedPointFeature(state) {
       const feature = state.selectedPointFeature
       if (!feature || !feature.properties?.id) return
@@ -624,20 +628,66 @@ export default createStore({
     },
   },
   actions: {
+
     async saveSelectedPointToFirestore({ state }) {
-      console.log('保存前の features:', state.groupGeojson.features)
       const groupId = state.currentGroupName
       if (!groupId) return
-      const db = require('@/firebase').db  // ここで db を明示的に import
+
+      const doc = await db.collection('groups').doc(groupId).get()
+      let existingFeatures = []
+      if (doc.exists) {
+        const data = doc.data()
+        if (data.layers?.points?.features) {
+          existingFeatures = data.layers.points.features
+        }
+      }
+
+      // IDごとに上書き or 追加（既存＋新規のマージ）
+      const mergedMap = new Map()
+      for (const f of existingFeatures) {
+        mergedMap.set(f.properties.id, f)
+      }
+      for (const f of state.groupGeojson.features) {
+        mergedMap.set(f.properties.id, f)
+      }
+      const mergedFeatures = Array.from(mergedMap.values())
 
       await db.collection('groups').doc(groupId).set({
         layers: {
-          points: JSON.parse(JSON.stringify(state.groupGeojson))
+          points: {
+            type: 'FeatureCollection',
+            features: mergedFeatures
+          }
         },
         lastModifiedBy: state.userId,
         lastModifiedAt: Date.now()
       }, { merge: true })
+
+      console.log('✅ マージして保存しました')
     },
+    async fetchGroupData({ commit }, groupId) {
+      const doc = await db.collection('groups').doc(groupId).get()
+      if (doc.exists) {
+        const data = doc.data()
+        if (data.layers?.points) {
+          commit('setGroupGeojson', data.layers.points)
+        }
+      }
+    },
+    // async saveSelectedPointToFirestore({ state }) {
+    //   console.log('保存前の features:', state.groupGeojson.features)
+    //   const groupId = state.currentGroupName
+    //   if (!groupId) return
+    //   const db = require('@/firebase').db  // ここで db を明示的に import
+    //
+    //   await db.collection('groups').doc(groupId).set({
+    //     layers: {
+    //       points: JSON.parse(JSON.stringify(state.groupGeojson))
+    //     },
+    //     lastModifiedBy: state.userId,
+    //     lastModifiedAt: Date.now()
+    //   }, { merge: true })
+    // },
     async saveSelectedPointFeatureToFirestore({ state, commit }) {
       const feature = state.selectedPointFeature
       const groupId = state.currentGroupName
