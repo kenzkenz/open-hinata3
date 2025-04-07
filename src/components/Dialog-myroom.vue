@@ -305,7 +305,15 @@ import {user} from "@/authState";
 import axios from "axios"
 import maplibregl from 'maplibre-gl'
 import {history} from "@/App";
-import {cityGeojsonSource, extLayer, extSource, konUrls, sicyosonChibanzuUrls} from "@/js/layers";
+import {
+  cityGeojsonSource,
+  extLayer,
+  extSource,
+  groupPointsLayer, groupPointsSource,
+  konUrls, pngLayer,
+  pngSource,
+  sicyosonChibanzuUrls
+} from "@/js/layers";
 import * as Layers from "@/js/layers";
 import {kml} from "@tmcw/togeojson";
 import JSZip from "jszip";
@@ -370,6 +378,12 @@ export default {
     mayroomStyle: {"overflow-y": "auto", "max-height": "530px", "max-width": "560px", "padding-top": "10px"}
   }),
   computed: {
+    map01Layers () {
+      return this.$store.state.selectedLayers.map01
+    },
+    s_map01 () {
+      return this.$store.state.map01
+    },
     s_currentGroupId: {
       get() {
         return this.$store.state.currentGroupId
@@ -546,6 +560,267 @@ export default {
     },
   },
   methods: {
+    setupSelectedLayerWatcher () {
+      this.$watch('map01Layers', {
+        handler: (newVal) => {
+          const map = this.$store.state.map01
+          if (!map) return
+
+          newVal.forEach(layer => {
+            if (!map.getSource(layer.id)) {
+              map.addSource(layer.id, {
+                type: 'geojson',
+                data: {
+                  type: 'FeatureCollection',
+                  features: layer.features || []
+                }
+              })
+              map.addLayer({
+                id: layer.id + '-layer',
+                type: 'circle',
+                source: layer.id,
+                paint: {
+                  'circle-radius': 6,
+                  'circle-color': layer.color || '#ff0000'
+                }
+              })
+            }
+          })
+          console.log(JSON.stringify(this.$store.state.selectedLayers.map01, null, 2))
+          // alert(888)
+        },
+        deep: true,
+        immediate: true
+      })
+
+
+      //
+      // this.$watch('selectedLayers.map01', {
+      //   handler: (newVal) => {
+      //     const map = this.$store.state.map01
+      //     if (!map) {
+      //       return
+      //     }
+      //     console.log('111',newVal)
+      //     alert(0)
+      //     newVal.forEach(layer => {
+      //       if (!map.getSource(layer.id)) {
+      //         map.addSource(layer.id, {
+      //           type: 'geojson',
+      //           data: {
+      //             type: 'FeatureCollection',
+      //             features: layer.features || []
+      //           }
+      //         })
+      //         map.addLayer({
+      //           id: layer.id + '-layer',
+      //           type: 'circle',
+      //           source: layer.id,
+      //           paint: {
+      //             'circle-radius': 6,
+      //             'circle-color': layer.color || '#ff0000'
+      //           }
+      //         })
+      //       }
+      //     })
+      //   },
+      //   deep: true,
+      //   immediate: true
+      // })
+    },
+    handleMapClick(e) {
+      const selectedLayers = this.$store.state.selectedLayers
+      if (!selectedLayers.map01) {
+        this.$set(selectedLayers, 'map01', [])
+      }
+
+      const selected = selectedLayers.map01.find(layer =>
+          layer.id.startsWith('oh-userlayer')
+      )
+      if (!selected) return
+
+      const coord = [e.lngLat.lng, e.lngLat.lat]
+      const feature = {
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: coord
+        },
+        properties: {}
+      }
+
+      if (!selected.features) {
+        // this.$set(selected, 'features', [])
+        selected.features = [...selected.features, feature]
+
+      }
+      selected.features.push(feature)
+
+// setData 更新
+      const map = this.$store.state.map01
+      const source = map.getSource(selected.id)
+      if (source && source.setData) {
+        source.setData({
+          type: 'FeatureCollection',
+          features: selected.features.slice() // Proxy解除
+        })
+      }
+      console.log('ohfeatures', selected.features)
+      console.log('ohsource', source)
+      console.log('source data set OK')
+    },
+
+    //
+    // handleMapClick (e) {
+    //   const selected = this.$store.state.selectedLayers.map01.find(layer =>
+    //       layer.id.startsWith('oh-userlayer')
+    //   )
+    //   if (!selected) return
+    //
+    //   const coord = [e.lngLat.lng, e.lngLat.lat]
+    //   const feature = {
+    //     type: 'Feature',
+    //     geometry: {
+    //       type: 'Point',
+    //       coordinates: coord
+    //     },
+    //     properties: {}
+    //   }
+    //   selected.features.push(feature)
+    //   // 👇 MapLibre の source を更新
+    //   const map = this.$store.state.map01
+    //   const source = map.getSource(selected.id)
+    //   if (source && source.setData) {
+    //     source.setData({
+    //       type: 'FeatureCollection',
+    //       features: selected.features
+    //     })
+    //   }
+    //   console.log('ポイント追加:', JSON.stringify(feature, null, 2))
+    //   console.log('features 全体:', selected.features)
+    //   console.log('selected.id:', selected.id)
+    //   console.log('source:', map.getSource(selected.id))
+    //   // alert(999)
+    // },
+    // handleMapClick (e) {
+    //   const map = this.$store.state.map01
+    //   console.log(this.$store.state.selectedLayers.map01)
+    //   const groupLayer = this.$store.state.selectedLayers.map01.find(l =>
+    //       this.s_currentGroupLayers.some(g => g.id === l.id)
+    //   )
+    //   alert(groupLayer)
+    //   if (!groupLayer) return
+    //
+    //   const point = {
+    //     type: 'Feature',
+    //     geometry: {
+    //       type: 'Point',
+    //       coordinates: [e.lngLat.lng, e.lngLat.lat]
+    //     },
+    //     properties: {}
+    //   }
+    //
+    //   groupLayer.features = groupLayer.features || []
+    //   groupLayer.features.push(point)
+    //
+    //   const source = map.getSource(groupLayer.source)
+    //   if (source) {
+    //     source.setData({
+    //       type: 'FeatureCollection',
+    //       features: groupLayer.features
+    //     })
+    //   }
+    // },
+    restoreLayerSources () {
+      const baseSource = (layer) => {
+        return {
+          id: layer.id + '-source',
+          obj: {
+            type: 'geojson',
+            data: {
+              type: 'FeatureCollection',
+              features: layer.features || []
+            }
+          }
+        }
+      }
+
+      const baseLayer = (layer) => {
+        return {
+          id: layer.id,
+          label: layer.name,
+          source: layer.id + '-source',
+          layers: [
+            {
+              id: layer.id + '-circle',
+              type: 'circle',
+              source: layer.id + '-source',
+              paint: {
+                'circle-radius': 6,
+                'circle-color': layer.color || '#ff0000'
+              }
+            }
+          ],
+          opacity: 1,
+          visibility: layer.visible !== false
+        }
+      }
+
+      const restored = this.s_currentGroupLayers.map(layer => {
+        return {
+          ...baseLayer(layer),
+          sources: [baseSource(layer)]
+        }
+      })
+
+      this.$store.state.selectedLayers.map01 = [
+        ...restored,
+        ...this.$store.state.selectedLayers.map01
+      ]
+    },
+    // setLayerConfigs () {
+    //   const layerMap = Object.fromEntries(
+    //       this.s_currentGroupLayers.map(l => [l.id, l])
+    //   )
+    //   this.$store.state.selectedLayers.map01.forEach(layer => {
+    //     // Firestore の ID を抽出
+    //     const match = layer.id.match(/^oh-userlayer-(.+)$/)
+    //     const pureId = match ? match[1] : layer.id
+    //
+    //     const config = layerMap[pureId]
+    //     if (config) {
+    //       layer.label = config.name
+    //       layer.color = config.color
+    //       layer.visible = config.visible
+    //       // layer.features = config.features
+    //       layer.features = Array.isArray(config.features) ? config.features : []
+    //     }
+    //   })
+    // },
+    // setLayerConfigs () {
+    //   const layerMap = Object.fromEntries(
+    //       this.s_currentGroupLayers.map(l => [l.id, l])
+    //   )
+    //   this.$store.state.selectedLayers.map01.forEach(layer => {
+    //     const config = layerMap[layer.id]
+    //     if (config) {
+    //       layer.label = config.name
+    //       layer.color = config.color
+    //       layer.visible = config.visible
+    //       layer.features = config.features
+    //     }
+    //   })
+    // },
+    // setLayerLabels () {
+    //   const layerMap = Object.fromEntries(
+    //       this.s_currentGroupLayers.map(l => [l.id, l.name])
+    //   )
+    //   this.$store.state.selectedLayers.map01.forEach(layer => {
+    //     if (layer.id && layerMap[layer.id]) {
+    //       layer.label = layerMap[layer.id]
+    //     }
+    //   })
+    // },
     layerSerchBtn () {
       const keyword = this.layerName.trim()
       if (!keyword) {
@@ -580,23 +855,125 @@ export default {
         console.error('Firestore 削除エラー:', e)
       }
     },
-    layerSet (name,id) {
-      this.layerName = name
-      this.layerId = id
-      const newLayer = {
-        // id: `oh-point-${id}`,
-        // label: name,
-        id: 'oh-userlayer-' + id,
-        label: name, // ★ここでレイヤー名をセット！
-        source: null,       // 別の処理で source を追加する想定
-        layers: [],         // 同上、レイヤー定義も後から
-        opacity: 1,
-        visibility: true
+    layerSet(name, id) {
+      this.layerName = name;
+      this.layerId = id;
+      this.$store.commit('setSelectedLayerId', id);
+
+      const mapLayers = this.$store.state.selectedLayers['map01'];
+      const existingLayer = mapLayers.find(l => l.id === 'oh-point-layer');
+      if (!existingLayer) {
+        // 初回のみ追加
+        mapLayers.unshift({
+          id: 'oh-point-layer',
+          label: name,
+          sources: [{
+            id: 'oh-point-source',
+            obj: {
+              type: 'geojson',
+              data: {
+                type: 'FeatureCollection',
+                features: []
+              }
+            }
+          }],
+          layers: [{
+            id: 'oh-point-layer',
+            type: 'circle',
+            source: 'oh-point-source',
+            paint: {
+              'circle-radius': 6,
+              'circle-color': '#ff0000',
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#fff'
+            }
+          }],
+          opacity: 1,
+          visibility: true,
+          attribution: '',
+          layerid: id // FirestoreのレイヤーID
+        });
+      } else {
+        // 既存の場合はラベルとlayeridを更新
+        existingLayer.label = name;
+        existingLayer.layerid = id;
       }
-      // MapLibre 用に selectedLayers.map01 / map02 に追加
-      this.$store.state.selectedLayers.map01.unshift(newLayer)
-      this.$store.state.selectedLayers.map02.unshift(newLayer)
+
+      // 選択レイヤーのデータをマップに反映
+      const currentLayer = this.$store.state.currentGroupLayers.find(l => l.id === id);
+      const map01 = this.$store.state.map01;
+      if (map01 && map01.getSource('oh-point-source')) {
+        const features = currentLayer?.features || [];
+        map01.getSource('oh-point-source').setData({
+          type: 'FeatureCollection',
+          features: features
+        });
+        map01.setPaintProperty('oh-point-layer', 'circle-color', currentLayer?.color || '#ff0000');
+        map01.triggerRepaint();
+      } else {
+        console.warn('マップまたはソースが未初期化');
+      }
     },
+    // layerSet(name, id) {
+    //   this.layerName = name;
+    //   this.layerId = id;
+    //   this.$store.commit('setSelectedLayerId', id);
+    //   // oh-point-layer が既に存在するかチェック
+    //   const mapLayers = this.$store.state.selectedLayers['map01'];
+    //   const existingLayer = mapLayers.find(l => l.id === 'oh-point-layer');
+    //   if (!existingLayer) {
+    //     // 初回のみ追加
+    //     mapLayers.unshift({
+    //       id: 'oh-point-layer',
+    //       label: name,
+    //       sources: [groupPointsSource],
+    //       layers: [groupPointsLayer],
+    //       opacity: 1,
+    //       visibility: true,
+    //       attribution: '',
+    //       layerid: id
+    //     });
+    //   } else {
+    //     // 既存の場合はラベル更新
+    //     existingLayer.label = name;
+    //   }
+    //   // 選択レイヤーのデータをマップに反映
+    //   const currentLayer = this.$store.state.currentGroupLayers.find(l => l.id === id);
+    //   const map01 = this.$store.state.map01
+    //   const features = currentLayer?.features || [];
+    //   map01.getSource('oh-point-source')?.setData({
+    //     type: 'FeatureCollection',
+    //     features: features
+    //   });
+    // },
+    // layerSet (name,id) {
+    //   this.layerName = name
+    //   this.layerId = id
+    //   this.$store.commit('setSelectedLayerId', id)
+    //   this.$store.state.selectedLayers['map01'].unshift(
+    //       {
+    //         id: 'oh-point-layer',
+    //         label: name,
+    //         sources: [groupPointsSource],
+    //         layers: [groupPointsLayer],
+    //         opacity: 1,
+    //         visibility: true,
+    //         attribution: '',
+    //       },
+    //   );
+    //   // const newLayer = {
+    //   //   // id: 'oh-userlayer-' + id,
+    //   //   id: 'oh-group-points-layer',
+    //   //   label: name, // ★ここでレイヤー名をセット！
+    //   //   source: null,       // 別の処理で source を追加する想定
+    //   //   layers: [],         // 同上、レイヤー定義も後から
+    //   //   opacity: 1,
+    //   //   visibility: true
+    //   // }
+    //   // // MapLibre 用に selectedLayers.map01 / map02 に追加
+    //   // this.$store.state.selectedLayers.map01.unshift(newLayer)
+    //   // this.$store.state.selectedLayers.map02.unshift(newLayer)
+    // },
     async layerRenameBtn () {
       if (!this.layerName.trim()) return alert('新しい名前を入力してください')
       const selectedLayer = this.s_currentGroupLayers.find(layer => layer.id === this.layerId)
@@ -632,6 +1009,9 @@ export default {
           layers.push({ id: doc.id, ...doc.data() })
         })
         this.$store.state.currentGroupLayers = layers
+        // this.setLayerLabels()
+        this.setLayerConfigs()
+        // this.restoreLayerSources()
       } catch (e) {
         console.error('Firestore 読み込みエラー:', e)
       }
@@ -658,6 +1038,39 @@ export default {
             .add(newLayer)
         newLayer.id = docRef.id
         this.$store.state.currentGroupLayers.push(newLayer)
+        // this.$store.state.selectedLayers.map01.unshift({
+        //   id: `group-layer-${newLayer.id}`,
+        //   label: newLayer.name,
+        //   source: `group-layer-${newLayer.id}-source`,
+        //   sources: [
+        //     {
+        //       id: `group-layer-${newLayer.id}-source`,
+        //       obj: {
+        //         type: 'geojson',
+        //         data: {
+        //           type: 'FeatureCollection',
+        //           features: []
+        //         }
+        //       }
+        //     }
+        //   ],
+        //   layers: [
+        //     {
+        //       id: `group-layer-${newLayer.id}-circle`,
+        //       type: 'circle',
+        //       source: `group-layer-${newLayer.id}-source`,
+        //       paint: {
+        //         'circle-radius': 6,
+        //         'circle-color': newLayer.color,
+        //         'circle-stroke-width': 1,
+        //         'circle-stroke-color': '#fff'
+        //       }
+        //     }
+        //   ],
+        //   visible: true,
+        //   opacity: 1
+        // })
+
       } catch (e) {
         console.error('Firestore 書き込みエラー:', e)
       }
@@ -2223,6 +2636,93 @@ export default {
     },
   },
   watch: {
+    // s_map01: {
+    //   handler(map) {
+    //     if (map) {
+    //       alert(999)
+    //       this.setupSelectedLayerWatcher()
+    //     }
+    //   },
+    //   immediate: true
+    // },
+    // 'selectedLayers.map01': {
+    //   handler (newVal) {
+    //     const map = this.$store.state.map01
+    //     if (!map) {
+    //       alert(0)
+    //       return
+    //     }
+    //     newVal.forEach(layer => {
+    //       if (!map.getSource(layer.id)) {
+    //         map.addSource(layer.id, {
+    //           type: 'geojson',
+    //           data: {
+    //             type: 'FeatureCollection',
+    //             features: layer.features || []
+    //           }
+    //         })
+    //         map.addLayer({
+    //           id: layer.id + '-layer',
+    //           type: 'circle',
+    //           source: layer.id,
+    //           paint: {
+    //             'circle-radius': 6,
+    //             'circle-color': layer.color || '#ff0000'
+    //           }
+    //         })
+    //       }
+    //     })
+    //     alert('selectedLayers.map01 changed!')
+    //   },
+    //   deep: true,
+    //   immediate: true
+    // },
+    // s_selectedLayers: {
+    //   handler(newVal) {
+    //     alert(newVal)
+    //     const map = this.$store.state.map01
+    //     if (!map) return
+    //
+    //     newVal.forEach(layer => {
+    //       if (!map.getSource(layer.id)) {
+    //         map.addSource(layer.id, {
+    //           type: 'geojson',
+    //           data: {
+    //             type: 'FeatureCollection',
+    //             features: layer.features || []
+    //           }
+    //         })
+    //         map.addLayer({
+    //           id: layer.id + '-layer',
+    //           type: 'circle',
+    //           source: layer.id,
+    //           paint: {
+    //             'circle-radius': 6,
+    //             'circle-color': layer.color || '#ff0000'
+    //           }
+    //         })
+    //       }
+    //     })
+    //     this.setLayerConfigs()
+    //   },
+    //   deep: true,
+    //   immediate: true
+    // },
+    // s_selectedLayers(newVal) {
+    //   // id がある程度入ってきたらラベル設定を試みる
+    //   if (newVal.length > 0) {
+    //     this.setLayerConfigs()
+    //   }
+    // },
+    // s_map01: {
+    //   handler (map) {
+    //     if (!map || this._clickRegistered) return
+    //     this.setupSelectedLayerWatcher()
+    //     this._clickRegistered = true
+    //     map.on('click', this.handleMapClick)
+    //   },
+    //   immediate: true
+    // },
     s_currentGroupName() {
       this.fetchLayers()
     },
@@ -2261,6 +2761,15 @@ export default {
     }
   },
   mounted() {
+
+    // const map = this.$store.state.map01
+    // map.on('load', () => {
+    //   console.log('レイヤー一覧:', map.getStyle().layers.map(l => l.id))
+    //   console.log('ソース一覧:', Object.keys(map.style.sourceCaches))
+    // })
+
+
+
     // ------------------
     document.querySelector('#drag-handle-myroomDialog-map01').innerHTML = '<span style="font-size: large;">マイルーム</span>'
     // -------------------------------------------------------------------

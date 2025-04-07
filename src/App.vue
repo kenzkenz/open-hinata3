@@ -940,6 +940,9 @@ export default {
       'showPointInfoDrawer',
       'selectedPointFeature'
     ]),
+    selectedLayers () {
+      return this.$store.state.selectedLayers
+    },
     cityItems() {
       const filteredCities = Object.entries(muni)
           .filter(([_, value]) => value.startsWith(`${Number(this.selectedPrefCode)},`))
@@ -4298,7 +4301,7 @@ export default {
     })
     // -----------------------------------------------------------------------------------------------------------------
     pyramid()
-    // glouplayer()
+    glouplayer()
     //------------------------------------------------------------------------------------------------------------------
     document.addEventListener('touchmove', function (event) {
       if (event.scale !== 1) {
@@ -4327,6 +4330,35 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
+    // 'store.state.selectedLayers.map01': {
+    //   handler(layers) {
+    //     const map = this.$store.state.map01
+    //     if (!map) return
+    //
+    //     layers.forEach(layer => {
+    //       if (!map.getSource(layer.id)) {
+    //         map.addSource(layer.id, {
+    //           type: 'geojson',
+    //           data: {
+    //             type: 'FeatureCollection',
+    //             features: layer.features || []
+    //           }
+    //         })
+    //         map.addLayer({
+    //           id: layer.id + '-layer',
+    //           type: 'circle',
+    //           source: layer.id,
+    //           paint: {
+    //             'circle-radius': 6,
+    //             'circle-color': layer.color || '#ff0000'
+    //           }
+    //         })
+    //       }
+    //     })
+    //   },
+    //   immediate: true,
+    //   deep: true
+    // },
     s_isWindow () {
       try {
         this.updatePermalink()

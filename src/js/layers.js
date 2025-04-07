@@ -8743,13 +8743,13 @@ export const groupGeojson = ref({
 })
 
 
-const groupPointsSource = {
+export const groupPointsSource = {
     id: "group-points-source", obj: {
         'type': 'geojson',
         data: groupGeojson.value
     }
 }
-const groupPointsLayer = {
+export const groupPointsLayer = {
     id: "oh-group-points-layer",
     type: "circle",
     source: "group-points-source",
@@ -8761,6 +8761,11 @@ const groupPointsLayer = {
         'circle-stroke-color': '#fff'
     }
 }
+
+
+
+
+
 
 const getLayerData = (layerId) => {
     try {

@@ -3,6 +3,7 @@ import { db } from '@/firebase'
 
 export default createStore({
   state: {
+    selectedLayerId: null, // 選択中のレイヤーIDを追加
     currentGroupId: '',
     currentGroupLayers: [],
     pointLayers: [
@@ -357,6 +358,9 @@ export default createStore({
   getters: {
   },
   mutations: {
+    setSelectedLayerId(state, layerId) {
+      state.selectedLayerId = layerId;
+    },
     setCurrentPointLayerId(state, id) {
       state.currentPointLayerId = id
     },
