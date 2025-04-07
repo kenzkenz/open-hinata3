@@ -500,12 +500,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <dialog2 :mapName=mapName />
           <dialogShare v-if="mapName === 'map01'" :mapName=mapName />
           <DialogChibanzuList :mapName=mapName />
-          <template>
-            <div>
-              <!-- 他のUIの中に追加 -->
-              <LayerTabPanel />
-            </div>
-          </template>
+          <LayerTabPanel />
 
           <div :id="'terrain-btn-div-' + mapName" class="terrain-btn-div">
             <div class="terrain-btn-container">
