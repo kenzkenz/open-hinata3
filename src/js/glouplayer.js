@@ -17,6 +17,16 @@ let isInitializing = false
 let justChangedGroup = false
 let isInitialStartup = true
 
+function handleMapClickWithCurrentGroup(e) {
+    const currentGroupId = store.state.currentGroupName
+    handleMapClick(e, currentGroupId)
+}
+
+// wrapper 関数を追加
+// function handleMapClickWithGroup(e, groupId) {
+//     handleMapClick(e, groupId)
+// }
+
 async function fetchAndSetGeojson(groupId, map) {
     const doc = await db.collection('groups').doc(groupId).get()
     const layerData = doc.data()?.layers?.points
@@ -262,7 +272,7 @@ export default function useGloupLayer() {
                     }
                 }
                 // ✅ 追加前にグループ名をアラート表示
-                alert(`✅ 書き込み先グループ: ${store.state.currentGroupName}`)
+                // alert(`✅ 書き込み先グループ: ${store.state.currentGroupName}`)
                 groupGeojson.value.features.push(pointFeature)
 
                 requestAnimationFrame(() => {
@@ -278,8 +288,9 @@ export default function useGloupLayer() {
             map01.on('click', mapClickHandler)
 
             const mapElm = document.querySelector('#map01')
-            mapElm.removeEventListener('click', handleMapClick)
-            mapElm.addEventListener('click', (e) => handleMapClick(e, groupId))
+            mapElm.removeEventListener('click', handleMapClickWithCurrentGroup)
+            mapElm.addEventListener('click', handleMapClickWithCurrentGroup)
+
         },
         { immediate: true }
     )
