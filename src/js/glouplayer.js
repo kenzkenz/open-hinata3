@@ -208,8 +208,6 @@ export default function useGloupLayer() {
                 justChangedGroup = false
             }, 0)
 
-
-
             groupGeojson.value = { type: 'FeatureCollection', features: [] }
 
             unsubscribeSnapshot = db.collection('groups').doc(groupId)

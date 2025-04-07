@@ -7,6 +7,21 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <template>
   <v-app>
     <v-main>
+
+      <!-- ポイント情報ドロワー -->
+<!--      <PointInfoDrawer-->
+<!--          :value="drawerVisible"-->
+<!--          :feature="selectedFeature"-->
+<!--          @input="drawerVisible = $event"-->
+<!--          @save="handleDescriptionSave"-->
+<!--      />-->
+      <PointInfoDrawer
+          :value="showPointInfoDrawer"
+          :feature="selectedPointFeature"
+          @input="setDrawerVisible"
+          @save="savePointDescription"
+      />
+
       <v-snackbar v-model="loadingSnackbar"
                   :timeout="-1"
                   color="primary">
@@ -524,6 +539,8 @@ import { user } from "@/authState"; // グローバルの認証情報を取得
 import { MaplibreMeasureControl } from '@watergis/maplibre-gl-terradraw';
 import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
 import { TerraDraw,TerraDrawPointMode,TerraDrawLineStringMode,TerraDrawPolygonMode,TerraDrawFreehandMode } from 'terra-draw'
+import PointInfoDrawer from '@/components/PointInfoDrawer.vue'
+import { mapState, mapMutations } from 'vuex'
 import {
   capture,
   csvGenerateForUserPng,
@@ -860,7 +877,8 @@ export default {
     DialogInfo,
     Dialog2,
     DialogShare,
-    DialogChibanzuList
+    DialogChibanzuList,
+    PointInfoDrawer
   },
   data: () => ({
     mapNames: ['map01','map02'],
@@ -917,8 +935,14 @@ export default {
     intervalId: null,
     preUrl: '',
     historyCount: 0,
+    drawerVisible: false,
+    selectedFeature: null
   }),
   computed: {
+    ...mapState([
+      'showPointInfoDrawer',
+      'selectedPointFeature'
+    ]),
     cityItems() {
       const filteredCities = Object.entries(muni)
           .filter(([_, value]) => value.startsWith(`${Number(this.selectedPrefCode)},`))
@@ -1202,8 +1226,27 @@ export default {
     },
   },
   methods: {
-    isPublicSwitch () {
-
+    ...mapMutations([
+      'setPointInfoDrawer',
+      'setSelectedPointFeature'
+    ]),
+    setDrawerVisible(val) {
+      this.setPointInfoDrawer(val)
+    },
+    savePointDescription(description) {
+      const feature = { ...this.selectedPointFeature }
+      feature.properties.description = description
+      // 🔁 FirestoreやGeoJSONの更新ロジックここに挿入
+      console.log('✅ 保存された説明:', description)
+    },
+    openFeatureDrawer (feature) {
+      this.selectedFeature = feature
+      this.drawerVisible = true
+    },
+    handleDescriptionSave (newDescription) {
+      // 🔧 Firestore やローカル GeoJSON に保存処理
+      this.selectedFeature.properties.description = newDescription
+      console.log('保存されました:', newDescription)
     },
     simaClose () {
       this.s_snackbar = false

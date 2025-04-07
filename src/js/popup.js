@@ -3416,6 +3416,15 @@ export function popup(e,map,mapName,mapFlg) {
             }
             case 'oh-group-points-layer':
             {
+
+                // クリック時
+                // store.commit('setSelectedPointFeature', clickedFeature)
+                store.commit('setPointInfoDrawer', true)
+
+
+
+
+
                 let features = map.queryRenderedFeatures(
                     map.project(coordinates), {layers: [layerId]}
                 )

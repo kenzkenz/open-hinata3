@@ -15,6 +15,8 @@ export default createStore({
     storeTest: 'storeTest',
     map2Flg: false,
     isUnder500: false,
+    showPointInfoDrawer: false,
+    selectedPointFeature: null,
     dialogs: {
       chibanzuListDialog:{
         map01:{name:'chibanzuListDialog',style: {top: '65px', left: '10px', 'z-index': 1, height: 'auto', 'width': '350px', display: 'none'}},
@@ -337,6 +339,12 @@ export default createStore({
   getters: {
   },
   mutations: {
+    setPointInfoDrawer(state, payload) {
+      state.showPointInfoDrawer = payload
+    },
+    setSelectedPointFeature(state, feature) {
+      state.selectedPointFeature = feature
+    },
     showSnackbarForGroup(state, text) {
       state.snackbarForGroupText = text
       state.snackbarForGroup = true
