@@ -342,6 +342,12 @@ export default createStore({
   getters: {
   },
   mutations: {
+    removePointFeature(state, id) {
+      const index = state.groupGeojson.features.findIndex(f => f.properties?.id === id)
+      if (index !== -1) {
+        state.groupGeojson.features.splice(index, 1)
+      }
+    },
     // 他のミューテーションがある中に追加
     setGroupGeojson(state, geojson) {
       state.groupGeojson = geojson
@@ -363,29 +369,6 @@ export default createStore({
         state.groupGeojson.features.push(JSON.parse(JSON.stringify(feature)))
       }
     },
-    // saveSelectedPointFeature(state) {
-    //   const feature = state.selectedPointFeature
-    //   if (!feature || !feature.properties?.id) return
-    //
-    //   const features = state.groupGeojson.features
-    //   const index = features.findIndex(f => f.properties?.id === feature.properties.id)
-    //   if (index !== -1) {
-    //     console.log('保存前の features:', state.groupGeojson.features)
-    //     // splice によるリアクティブな置き換え
-    //     features.splice(index, 1, JSON.parse(JSON.stringify(feature)))
-    //   }
-    // },
-    // saveSelectedPointFeature(state) {
-    //   const feature = state.selectedPointFeature
-    //   if (!feature || !feature.properties?.id) return
-    //
-    //   const features = state.groupGeojson.features
-    //   const index = features.findIndex(f => f.properties?.id === feature.properties.id)
-    //   if (index !== -1) {
-    //     // 差し替える（深いコピーで）
-    //     state.groupGeojson.features[index] = JSON.parse(JSON.stringify(feature))
-    //   }
-    // },
     setPointInfoDrawer (state, val) {
       state.showPointInfoDrawer = val
     },
@@ -397,16 +380,6 @@ export default createStore({
         state.selectedPointFeature.properties.description = val
       }
     },
-    // saveSelectedPointFeature (state) {
-    //   const id = state.selectedPointFeature?.properties?.id
-    //   if (!id) return
-    //   const index = state.groupGeojson.features.findIndex(
-    //       f => f.properties.id === id
-    //   )
-    //   if (index !== -1) {
-    //     state.groupGeojson.features.splice(index, 1, JSON.parse(JSON.stringify(state.selectedPointFeature)))
-    //   }
-    // },
     updatePointDescription (state, { id, description }) {
       const feature = state.groupGeojson.features.find(f => f.properties.id === id)
       if (feature) {
@@ -628,7 +601,22 @@ export default createStore({
     },
   },
   actions: {
-
+    // async saveSelectedPointToFirestore({ state }, groupGeojsonOverride) {
+    //   const groupId = state.currentGroupName
+    //   if (!groupId) return
+    //
+    //   const geojsonToSave = groupGeojsonOverride || state.groupGeojson
+    //
+    //   await db.collection('groups').doc(groupId).set({
+    //     layers: {
+    //       points: JSON.parse(JSON.stringify(geojsonToSave))
+    //     },
+    //     lastModifiedBy: state.userId,
+    //     lastModifiedAt: Date.now()
+    //   }, { merge: true })
+    //
+    //   console.log('✅ Firestore に保存しました')
+    // },
     async saveSelectedPointToFirestore({ state }) {
       const groupId = state.currentGroupName
       if (!groupId) return
@@ -674,20 +662,6 @@ export default createStore({
         }
       }
     },
-    // async saveSelectedPointToFirestore({ state }) {
-    //   console.log('保存前の features:', state.groupGeojson.features)
-    //   const groupId = state.currentGroupName
-    //   if (!groupId) return
-    //   const db = require('@/firebase').db  // ここで db を明示的に import
-    //
-    //   await db.collection('groups').doc(groupId).set({
-    //     layers: {
-    //       points: JSON.parse(JSON.stringify(state.groupGeojson))
-    //     },
-    //     lastModifiedBy: state.userId,
-    //     lastModifiedAt: Date.now()
-    //   }, { merge: true })
-    // },
     async saveSelectedPointFeatureToFirestore({ state, commit }) {
       const feature = state.selectedPointFeature
       const groupId = state.currentGroupName
@@ -708,16 +682,6 @@ export default createStore({
 
       console.log('✅ Firestore に保存しました')
     }
-    // saveGroupGeojsonToFirestore({ state }, { groupId, geojson }) {
-    //   const docRef = db.collection('groups').doc(groupId)
-    //   return docRef.set({
-    //     layers: {
-    //       points: geojson
-    //     },
-    //     lastModifiedBy: state.userId,
-    //     lastModifiedAt: Date.now()
-    //   }, { merge: true })
-    // }
   },
   modules: {
   }
