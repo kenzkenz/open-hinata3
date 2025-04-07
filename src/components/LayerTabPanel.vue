@@ -1,71 +1,80 @@
 <template>
-  <v-card>
-    <v-tabs
-        v-model="currentTab"
-        background-color="primary"
-        show-arrows
-        dark
-    >
-      <v-tab
-          v-for="(layer) in pointLayers"
-          :key="layer.id"
-          @click="selectLayer(layer.id)"
-      >
-        {{ layer.name }}
-      </v-tab>
-      <v-tab @click="addLayer">
-        <v-icon small>mdi-plus</v-icon>
-      </v-tab>
-    </v-tabs>
+  <v-dialog v-model="dialogVisible" max-width="500px" height="500px">
+    <v-card>
+      <v-card-title>
+        レイヤー管理
+      </v-card-title>
 
-    <v-tabs-items v-model="currentTab">
-      <v-tab-item
-          v-for="(layer) in pointLayers"
-          :key="layer.id"
-      >
-        <v-card flat class="pa-3">
-          <v-text-field
-              v-model="layer.name"
-              label="レイヤー名"
-              dense
-          />
-          <v-color-picker
-              v-model="layer.color"
-              hide-canvas
-              show-swatches
-              swatches-max-height="150"
-              dot-size="20"
-              class="mt-3"
-          />
-          <v-checkbox
-              v-model="layer.visible"
-              label="このレイヤーを表示"
-              class="mt-2"
-          />
-          <v-btn small color="error" @click="removeLayer(layer.id)">削除</v-btn>
-        </v-card>
-      </v-tab-item>
-    </v-tabs-items>
-  </v-card>
+      <v-card-text>
+        <v-tabs
+            v-model="currentTabId"
+            mobile-breakpoint="0"
+            background-color="primary"
+            show-arrows
+            dark
+        >
+          <v-tab
+              v-for="layer in pointLayers"
+              :key="layer.id"
+              :value="layer.id"
+          >
+            {{ layer.name }}
+          </v-tab>
+          <v-tab @click="addLayer">
+            <v-icon small>mdi-plus</v-icon>
+          </v-tab>
+        </v-tabs>
+
+        <v-window v-model="currentTabId">
+          <v-window-item
+              v-for="layer in pointLayers"
+              :key="layer.id"
+              :value="layer.id"
+              class="pa-3"
+          >
+            <v-text-field
+                v-model="layer.name"
+                label="レイヤー名"
+                dense
+            />
+            <v-checkbox
+                v-model="layer.visible"
+                label="このレイヤーを表示"
+                class="mt-2"
+            />
+            <v-btn small color="error" @click="removeLayer(layer.id)">
+              削除
+            </v-btn>
+          </v-window-item>
+        </v-window>
+      </v-card-text>
+
+      <v-card-actions>
+        <v-spacer />
+        <v-btn color="blue-darken-1" text @click="dialogVisible = false">閉じる</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script>
 import { mapState, mapMutations } from 'vuex'
 
 export default {
-  name: 'Layer-Tab-Panel',
+  name: 'LayerTabPanel',
+  data () {
+    return {
+      dialogVisible: true
+    }
+  },
   computed: {
-    ...mapState([
-      'pointLayers',
-      'currentPointLayerId'
-    ]),
-    currentTab: {
+    ...mapState(['pointLayers', 'currentPointLayerId']),
+    currentTabId: {
       get () {
-        return this.pointLayers.findIndex(l => l.id === this.currentPointLayerId)
+        return this.currentPointLayerId
       },
-      set (index) {
-        const id = this.pointLayers[index]?.id
-        if (id) this.setCurrentPointLayerId(id)
+      set (val) {
+        this.setCurrentPointLayerId(val)
       }
     }
   },
@@ -80,70 +89,7 @@ export default {
     },
     removeLayer (id) {
       this.removePointLayer(id)
-    },
-    selectLayer (id) {
-      this.setCurrentPointLayerId(id)
     }
   }
 }
 </script>
-
-
-
-
-
-
-
-<!--<template>-->
-<!--  <v-card>-->
-<!--    &lt;!&ndash; タブ &ndash;&gt;-->
-<!--    <v-tabs-->
-<!--        v-model="currentTab"-->
-<!--        background-color="primary"-->
-<!--        dark-->
-<!--        show-arrows-->
-<!--    >-->
-<!--      <v-tab-->
-<!--          v-for="(layer, index) in pointLayers"-->
-<!--          :key="layer.id"-->
-<!--      >-->
-<!--        {{ layer.name }}-->
-<!--      </v-tab>-->
-
-<!--      &lt;!&ndash; 追加ボタン &ndash;&gt;-->
-<!--      <v-tab @click="addLayer">-->
-<!--        <v-icon small>mdi-plus</v-icon>-->
-<!--      </v-tab>-->
-<!--    </v-tabs>-->
-
-<!--    &lt;!&ndash; 各タブごとの中身 &ndash;&gt;-->
-<!--    <v-tabs-items v-model="currentTab">-->
-<!--      <v-tab-item-->
-<!--          v-for="(layer, index) in pointLayers"-->
-<!--          :key="layer.id"-->
-<!--      >-->
-<!--        <v-card flat class="pa-3">-->
-<!--          <v-text-field-->
-<!--              v-model="layer.name"-->
-<!--              label="レイヤー名"-->
-<!--              dense-->
-<!--          />-->
-<!--          <v-color-picker-->
-<!--              v-model="layer.color"-->
-<!--              hide-canvas-->
-<!--              show-swatches-->
-<!--              swatches-max-height="150"-->
-<!--              dot-size="20"-->
-<!--              class="mt-3"-->
-<!--          />-->
-<!--          <v-checkbox-->
-<!--              v-model="layer.visible"-->
-<!--              label="このレイヤーを表示"-->
-<!--              class="mt-2"-->
-<!--          />-->
-<!--          <v-btn small color="error" class="mt-4" @click="removeLayer(layer.id)">このレイヤーを削除</v-btn>-->
-<!--        </v-card>-->
-<!--      </v-tab-item>-->
-<!--    </v-tabs-items>-->
-<!--  </v-card>-->
-<!--</template>-->

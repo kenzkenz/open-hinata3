@@ -167,10 +167,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   参加する
                 </v-btn>
 
-
-
-
-
               </v-window-item>
 
 
@@ -226,14 +222,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 <div v-if="selectedGroupId && inviteEmail && !isSendingInvite" style="margin-top: 10px;">
                   <p>招待リンク（手動で共有する場合）:</p>
                   <span style="font-size: small">
-<!--                  <a-->
-<!--                      :href="`https://kenzkenz.xsrv.jp/open-hinata3/?group=${selectedGroupId}`"-->
-<!--                      target="_blank"-->
-<!--                      rel="noopener noreferrer"-->
-<!--                      class="invite-link"-->
-<!--                  >-->
-<!--                    {{ `https://kenzkenz.xsrv.jp/open-hinata3/?group=${selectedGroupId}` }}-->
-<!--                  </a>-->
                       <a
                           :href="`https://kenzkenz.xsrv.jp/open-hinata3/?group=${selectedGroupId}&groupName=${encodeURIComponent(groupOptions.find(g => g.id === selectedGroupId)?.name || '')}`"
                           target="_blank"
@@ -244,18 +232,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                       </a>
                   </span>
                 </div>
-
-
-<!--                <div v-if="selectedGroupId && inviteEmail && !isSendingInvite" style="margin-top: 10px;">-->
-<!--                  <p>招待リンク（手動で共有する場合）:</p>-->
-<!--                  <a-->
-<!--                      :href="`https://kenzkenz.xsrv.jp/open-hinata3/join?group=${selectedGroupId}`"-->
-<!--                      target="_blank"-->
-<!--                      rel="noopener noreferrer"-->
-<!--                  >-->
-<!--                    {{ `https://kenzkenz.xsrv.jp/open-hinata3/join?group=${selectedGroupId}` }}-->
-<!--                  </a>-->
-<!--                </div>-->
               </v-window-item>
 
               <v-window-item value="2" class="my-v-window">
