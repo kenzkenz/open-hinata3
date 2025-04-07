@@ -8761,7 +8761,53 @@ const groupPointsLayer = {
         'circle-stroke-color': '#fff'
     }
 }
+
+const getLayerData = (layerId) => {
+    try {
+        const layer = store?.state?.pointLayers?.find(l => l.id === layerId)
+        return layer || { color: '#ff0000', features: [] }
+    } catch (e) {
+        console.warn('💥 store.state.pointLayers アクセスエラー:', e)
+        return { color: '#ff0000', features: [] }
+    }
+}
+
+// 1回だけ呼ぶ
+const layerData = getLayerData('layer1')
+
+const pointLayerSource1 = {
+    id: 'point-layer-source1',
+    obj: {
+        type: 'geojson',
+        data: {
+            type: 'FeatureCollection',
+            features: layerData.features
+        }
+    }
+}
+
+const pointLayerLayer1 = {
+    id: 'oh-point-layer-layer1',
+    type: 'circle',
+    source: 'point-layer-source1',
+    paint: {
+        'circle-radius': 6,
+        'circle-color': layerData.color,  // ← レイヤーごとの色を反映
+        'circle-stroke-color': '#fff',
+        'circle-stroke-width': 2
+    }
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------------
 let layers01 = [
+    {
+        id: 'oh-point-layer',
+        label: "<div class='point-layer'>ポイントレイヤー</div>",
+        sources: [pointLayerSource1],
+        layers: [pointLayerLayer1],
+        attribution: '',
+    },
     {
         id: 'oh-gloup-layer',
         label: "<div class='group-layer'>グループレイヤー</div>",

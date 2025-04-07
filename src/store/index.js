@@ -5,6 +5,21 @@ import {highlightedChibans} from "@/js/downLoad";
 
 export default createStore({
   state: {
+    pointLayers: [
+      {
+        id: 'layer1',
+        name: 'ポイントレイヤー1',
+        color: '#ff0000',
+        visible: true,
+        features: [
+          { id: 'abc123', geometry: {}, properties: {} }
+        ]
+      }
+    ],
+    currentPointLayerId: 'layer1',  // ← 現在選択されているレイヤーを保持
+    // selectedPointFeature: null,
+    currentPointLayerIndex: 0,
+    // -----------------------------------------------------------------------------------------------------------------
     map01:null,
     map02:null,
     snackbar: false,
@@ -342,6 +357,23 @@ export default createStore({
   getters: {
   },
   mutations: {
+    addPointLayer(state) {
+      const id = 'layer' + (state.pointLayers.length + 1)
+      state.pointLayers.push({ id, name: `ポイントレイヤー${state.pointLayers.length + 1}` })
+    },
+    removePointLayer(state, id) {
+      const index = state.pointLayers.findIndex(l => l.id === id)
+      if (index !== -1) {
+        state.pointLayers.splice(index, 1)
+        if (state.currentPointLayerIndex >= state.pointLayers.length) {
+          state.currentPointLayerIndex = Math.max(0, state.pointLayers.length - 1)
+        }
+      }
+    },
+    setCurrentPointLayerIndex(state, index) {
+      state.currentPointLayerIndex = index
+    },
+    // -----------------------------------------------------------------------------------------------------------------
     removePointFeature(state, id) {
       const index = state.groupGeojson.features.findIndex(f => f.properties?.id === id)
       if (index !== -1) {
