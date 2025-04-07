@@ -601,22 +601,34 @@ export default createStore({
     },
   },
   actions: {
-    // async saveSelectedPointToFirestore({ state }, groupGeojsonOverride) {
-    //   const groupId = state.currentGroupName
-    //   if (!groupId) return
-    //
-    //   const geojsonToSave = groupGeojsonOverride || state.groupGeojson
-    //
-    //   await db.collection('groups').doc(groupId).set({
-    //     layers: {
-    //       points: JSON.parse(JSON.stringify(geojsonToSave))
-    //     },
-    //     lastModifiedBy: state.userId,
-    //     lastModifiedAt: Date.now()
-    //   }, { merge: true })
-    //
-    //   console.log('✅ Firestore に保存しました')
-    // },
+    async deleteSelectedPointFromFirestore({ state }) {
+      const groupId = state.currentGroupName
+      if (!groupId) return
+
+      const idToDelete = state.selectedPointFeature?.properties?.id
+      if (!idToDelete) return
+
+      const doc = await db.collection('groups').doc(groupId).get()
+      if (!doc.exists) return
+
+      const data = doc.data()
+      const features = data.layers?.points?.features || []
+
+      const newFeatures = features.filter(f => f.properties?.id !== idToDelete)
+
+      await db.collection('groups').doc(groupId).set({
+        layers: {
+          points: {
+            type: 'FeatureCollection',
+            features: newFeatures
+          }
+        },
+        lastModifiedBy: state.userId,
+        lastModifiedAt: Date.now()
+      }, { merge: true })
+
+      console.log(`🗑️ 削除済み ID: ${idToDelete}`)
+    },
     async saveSelectedPointToFirestore({ state }) {
       const groupId = state.currentGroupName
       if (!groupId) return
@@ -629,7 +641,6 @@ export default createStore({
           existingFeatures = data.layers.points.features
         }
       }
-
       // IDごとに上書き or 追加（既存＋新規のマージ）
       const mergedMap = new Map()
       for (const f of existingFeatures) {

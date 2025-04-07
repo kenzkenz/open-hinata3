@@ -87,7 +87,8 @@ export default {
       if (index !== -1) {
         features.splice(index, 1)
         // this.$store.dispatch('saveSelectedPointToFirestore')
-        this.$store.dispatch('saveSelectedPointToFirestore', JSON.parse(JSON.stringify(this.$store.state.groupGeojson)))
+        // this.$store.dispatch('saveSelectedPointToFirestore', JSON.parse(JSON.stringify(this.$store.state.groupGeojson)))
+        this.$store.dispatch('deleteSelectedPointFromFirestore')
         this.$store.commit('showSnackbarForGroup', '🗑️ ポイントを削除しました')
       } else {
         console.warn('❗ 削除対象が見つかりませんでした')
