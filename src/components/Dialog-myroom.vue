@@ -546,6 +546,23 @@ export default {
     },
   },
   methods: {
+    layerSerchBtn () {
+      const keyword = this.layerName.trim()
+      if (!keyword) {
+        this.fetchLayers()
+        return
+      }
+      const matched = this.s_currentGroupLayers.filter(layer =>
+          layer.name.includes(keyword)
+      )
+
+      if (matched.length === 0) {
+        alert('一致するレイヤーが見つかりません')
+      } else {
+        // 検索結果だけ一時的に表示
+        this.$store.state.currentGroupLayers = matched
+      }
+    },
     async deleteLayer (id) {
       if (!confirm("本当に削除しますか？元には戻りません。")) {
         return
@@ -2369,6 +2386,9 @@ export default {
   cursor: pointer;
   padding: 5px;
   font-size: 30px;
+}
+.close-btn:hover {
+  color: red;
 }
 .scrollable-dialog {
   overflow-y: auto !important;
