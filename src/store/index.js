@@ -17,6 +17,7 @@ export default createStore({
     isUnder500: false,
     showPointInfoDrawer: false,
     selectedPointFeature: null,
+    groupGeojson: { type: 'FeatureCollection', features: [] },
     dialogs: {
       chibanzuListDialog:{
         map01:{name:'chibanzuListDialog',style: {top: '65px', left: '10px', 'z-index': 1, height: 'auto', 'width': '350px', display: 'none'}},
@@ -339,11 +340,32 @@ export default createStore({
   getters: {
   },
   mutations: {
-    setPointInfoDrawer(state, payload) {
-      state.showPointInfoDrawer = payload
+    setPointInfoDrawer (state, val) {
+      state.showPointInfoDrawer = val
     },
-    setSelectedPointFeature(state, feature) {
+    setSelectedPointFeature (state, feature) {
       state.selectedPointFeature = feature
+    },
+    updateSelectedPointDescription (state, val) {
+      if (state.selectedPointFeature) {
+        state.selectedPointFeature.properties.description = val
+      }
+    },
+    saveSelectedPointFeature (state) {
+      const id = state.selectedPointFeature?.properties?.id
+      if (!id) return
+      const index = state.groupGeojson.features.findIndex(
+          f => f.properties.id === id
+      )
+      if (index !== -1) {
+        state.groupGeojson.features.splice(index, 1, JSON.parse(JSON.stringify(state.selectedPointFeature)))
+      }
+    },
+    updatePointDescription (state, { id, description }) {
+      const feature = state.groupGeojson.features.find(f => f.properties.id === id)
+      if (feature) {
+        feature.properties.description = description
+      }
     },
     showSnackbarForGroup(state, text) {
       state.snackbarForGroupText = text

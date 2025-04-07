@@ -33,31 +33,41 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
+
 export default {
   name: 'PointInfoDrawer',
-  props: {
-    value: Boolean,
-    feature: Object
-  },
-  data () {
-    return {
-      visible: this.value,
-      description: this.feature?.properties?.description || '',
-      creator: this.feature?.properties?.createdBy || '不明',
-      timestamp: new Date(this.feature?.properties?.createdAt || 0).toLocaleString()
-    }
-  },
-  watch: {
-    value (val) {
-      this.visible = val
+  computed: {
+    ...mapState([
+      'showPointInfoDrawer',
+      'selectedPointFeature'
+    ]),
+    visible: {
+      get () {
+        return this.showPointInfoDrawer
+      },
+      set (val) {
+        this.$store.commit('setPointInfoDrawer', val)
+      }
     },
-    visible (val) {
-      this.$emit('input', val)
+    description: {
+      get () {
+        return this.selectedPointFeature?.properties?.description || ''
+      },
+      set (val) {
+        this.$store.commit('updateSelectedPointDescription', val)
+      }
+    },
+    creator () {
+      return this.selectedPointFeature?.properties?.createdBy || '不明'
+    },
+    timestamp () {
+      return new Date(this.selectedPointFeature?.properties?.createdAt || 0).toLocaleString()
     }
   },
   methods: {
     save () {
-      this.$emit('save', this.description)
+      this.$store.commit('saveSelectedPointFeature')
       this.close()
     },
     close () {
@@ -66,6 +76,43 @@ export default {
   }
 }
 </script>
+
+
+
+<!--<script>-->
+<!--export default {-->
+<!--  name: 'PointInfoDrawer',-->
+<!--  props: {-->
+<!--    value: Boolean,-->
+<!--    feature: Object-->
+<!--  },-->
+<!--  data () {-->
+<!--    return {-->
+<!--      visible: this.value,-->
+<!--      description: this.feature?.properties?.description || '',-->
+<!--      creator: this.feature?.properties?.createdBy || '不明',-->
+<!--      timestamp: new Date(this.feature?.properties?.createdAt || 0).toLocaleString()-->
+<!--    }-->
+<!--  },-->
+<!--  watch: {-->
+<!--    value (val) {-->
+<!--      this.visible = val-->
+<!--    },-->
+<!--    visible (val) {-->
+<!--      this.$emit('input', val)-->
+<!--    }-->
+<!--  },-->
+<!--  methods: {-->
+<!--    save () {-->
+<!--      this.$emit('save', this.description)-->
+<!--      this.close()-->
+<!--    },-->
+<!--    close () {-->
+<!--      this.visible = false-->
+<!--    }-->
+<!--  }-->
+<!--}-->
+<!--</script>-->
 
 <style scoped>
 .point-info-drawer {

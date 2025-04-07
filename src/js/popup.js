@@ -3417,9 +3417,10 @@ export function popup(e,map,mapName,mapFlg) {
             case 'oh-group-points-layer':
             {
 
-                // クリック時
-                // store.commit('setSelectedPointFeature', clickedFeature)
-                store.commit('setPointInfoDrawer', true)
+
+
+
+
 
 
 
@@ -3433,6 +3434,14 @@ export function popup(e,map,mapName,mapFlg) {
                         map.project(e.lngLat), {layers: [layerId]}
                     )
                 }
+
+                if (features.length > 0) {
+                    const clickedFeature = features[0]
+                    store.commit('setSelectedPointFeature', clickedFeature)
+                    store.commit('setPointInfoDrawer', true)
+                }
+
+
                 const featureId = feature.properties.id
                 console.log(coordinates)
                 props = features[0].properties
