@@ -1865,6 +1865,21 @@ export default {
       }
     },
     btnClickLayer (mapName) {
+      setTimeout(() => {
+        // ★レイヤーラベル補完処理（名前の復元）
+        const groupLayerMap = Object.fromEntries(
+            this.$store.state.currentGroupLayers.map(layer => [`oh-userlayer-${layer.id}`, layer.name])
+        )
+        const layers = this.$store.state.selectedLayers.map01
+        for (const layer of layers) {
+          if (!layer.label || layer.label === '') {
+            const name = groupLayerMap[layer.id]
+            if (name) {
+              layer.label = name
+            }
+          }
+        }
+      },300)
       if (this.$store.state.dialogs.layerDialog[mapName].style.display === 'none') {
         this.$store.commit('incrDialogMaxZindex')
         this.$store.state.dialogs.layerDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
@@ -4283,7 +4298,7 @@ export default {
     })
     // -----------------------------------------------------------------------------------------------------------------
     pyramid()
-    glouplayer()
+    // glouplayer()
     //------------------------------------------------------------------------------------------------------------------
     document.addEventListener('touchmove', function (event) {
       if (event.scale !== 1) {

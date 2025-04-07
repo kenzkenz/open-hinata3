@@ -584,8 +584,10 @@ export default {
       this.layerName = name
       this.layerId = id
       const newLayer = {
-        id: `oh-point-${id}`,
-        label: name,
+        // id: `oh-point-${id}`,
+        // label: name,
+        id: 'oh-userlayer-' + id,
+        label: name, // ★ここでレイヤー名をセット！
         source: null,       // 別の処理で source を追加する想定
         layers: [],         // 同上、レイヤー定義も後から
         opacity: 1,

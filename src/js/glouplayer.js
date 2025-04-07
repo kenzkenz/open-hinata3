@@ -1,5 +1,3 @@
-
-
 import store from '@/store'
 import maplibregl from 'maplibre-gl'
 import { db } from '@/firebase'
