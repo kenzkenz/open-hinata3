@@ -36,7 +36,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-window-item value="11">
                 <v-card>
                   <div style="margin-bottom: 10px;">
-                    <v-text-field v-model="urlName" type="text" placeholder="レイヤーネームまたは検索"></v-text-field>
+                    <v-text-field v-model="layerName" type="text" placeholder="レイヤーネームまたは検索"></v-text-field>
                     <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="addLayer">レイヤー追加</v-btn>
                     <v-btn style="margin-top: -10px; margin-bottom: 10px; margin-left: 10px" @click="layerRenameBtn">リネーム</v-btn>
                     <v-btn style="margin-top: -10px;margin-bottom: 10px;margin-left: 10px;" @click="layerSerchBtn">検索</v-btn>
@@ -310,6 +310,9 @@ import * as Layers from "@/js/layers";
 import {kml} from "@tmcw/togeojson";
 import JSZip from "jszip";
 import store from "@/store";
+import firebase from 'firebase/app'
+import 'firebase/firestore'
+import { mapState } from 'vuex'
 
 export default {
   name: 'Dialog-myroom',
@@ -318,6 +321,7 @@ export default {
     // MasonryWall,
   },
   data: () => ({
+    layerName: '',
     selectedPrefName: '',
     selectedCityName: '',
     selectedPrefCode: '',
@@ -365,6 +369,14 @@ export default {
     mayroomStyle: {"overflow-y": "auto", "max-height": "530px", "max-width": "560px", "padding-top": "10px"}
   }),
   computed: {
+    s_currentGroupId: {
+      get() {
+        return this.$store.state.currentGroupId
+      },
+      set(value) {
+        this.$store.state.currentGroupId = value
+      }
+    },
     s_currentGroupLayers: {
       get() {
         return this.$store.state.currentGroupLayers
@@ -533,6 +545,27 @@ export default {
     },
   },
   methods: {
+    async addLayer () {
+      // const nextIndex = this.s_currentGroupLayers.length + 1
+      const newLayer = {
+        name: this.layerName,
+        color: '#ff0000',
+        visible: true,
+        features: [],
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }
+      try {
+        const docRef = await firebase.firestore()
+            .collection('groups')
+            .doc(this.s_currentGroupId)
+            .collection('layers')
+            .add(newLayer)
+        newLayer.id = docRef.id
+        this.$store.state.currentGroupLayers.push(newLayer)
+      } catch (e) {
+        console.error('Firestore 書き込みエラー:', e)
+      }
+    },
     formatItem(item) {
       const device = this.detectDevice(item.ua);
       const text = `${item.date} / ${device} / ${item.event}`;
