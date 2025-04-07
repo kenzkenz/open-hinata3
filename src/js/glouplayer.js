@@ -81,6 +81,8 @@ function deleteAllPoints(currentGroupId) {
     saveGroupGeojson(currentGroupId, 'points', groupGeojson.value)
     console.log('✅ 全ポイント削除完了')
 }
+// 例：現在のグループIDを取得して実行
+// deleteAllPoints(store.state.currentGroupName)
 
 function handleMapClick(e, currentGroupId) {
     const map = store.state.map01
@@ -274,7 +276,9 @@ export default function useGloupLayer() {
                     },
                     properties: {
                         id: uuidv4(),
-                        createdAt: Date.now()
+                        createdAt: Date.now(),
+                        createdBy: store.state.myNickname || '不明', // 👈 これを追加
+                        description: 'テスト' // 👈 任意で初期化（空文字でOK）
                     }
                 }
                 // ✅ 追加前にグループ名をアラート表示

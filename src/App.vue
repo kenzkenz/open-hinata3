@@ -526,6 +526,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 </template>
 
 <script>
+import { db } from '@/firebase'
 import store from '@/store'
 import {mouseMoveForPopup, popup} from "@/js/popup"
 import { CompassControl } from 'maplibre-gl-compass'
@@ -540,7 +541,7 @@ import { MaplibreMeasureControl } from '@watergis/maplibre-gl-terradraw';
 import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
 import { TerraDraw,TerraDrawPointMode,TerraDrawLineStringMode,TerraDrawPolygonMode,TerraDrawFreehandMode } from 'terra-draw'
 import PointInfoDrawer from '@/components/PointInfoDrawer.vue'
-import { mapState, mapMutations } from 'vuex'
+import { mapState, mapMutations, mapActions} from 'vuex'
 import {
   capture,
   csvGenerateForUserPng,
@@ -1226,10 +1227,46 @@ export default {
     },
   },
   methods: {
-    ...mapMutations([
-      'setPointInfoDrawer',
-      'setSelectedPointFeature'
-    ]),
+    save () {
+      this.saveSelectedPointFeature()
+
+      // Firestore に保存
+      const groupId = this.$store.state.currentGroupName
+      const geojson = this.$store.state.groupGeojson
+      db.collection('groups').doc(groupId).set({
+        layers: {
+          points: geojson
+        },
+        lastModifiedBy: this.$store.state.userId,
+        lastModifiedAt: Date.now()
+      }, { merge: true })
+
+      this.close()
+    },
+    // save () {
+    //   this.saveSelectedPointFeature()
+    //
+    //   // Firestore に保存するための処理を追加
+    //   const groupId = this.$store.state.currentGroupName
+    //   const geojson = this.$store.state.groupGeojson
+    //   this.$store.dispatch('saveGroupGeojsonToFirestore', { groupId, geojson })
+    //
+    //   this.close()
+    // },
+    ...mapMutations(['setPointInfoDrawer', 'saveSelectedPointFeature']),
+    ...mapActions(['saveSelectedPointFeatureToFirestore']),
+    // async save () {
+    //   this.saveSelectedPointFeature()
+    //   await this.saveSelectedPointFeatureToFirestore()
+    //   this.close()
+    // },
+    close () {
+      this.setPointInfoDrawer(false)
+    },
+    // ...mapMutations([
+    //   'setPointInfoDrawer',
+    //   'setSelectedPointFeature'
+    // ]),
     setDrawerVisible(val) {
       this.setPointInfoDrawer(val)
     },

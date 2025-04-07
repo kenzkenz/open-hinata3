@@ -1,4 +1,6 @@
 import { createStore } from 'vuex'
+import { db } from '@/firebase'
+
 import {highlightedChibans} from "@/js/downLoad";
 
 export default createStore({
@@ -340,6 +342,46 @@ export default createStore({
   getters: {
   },
   mutations: {
+    saveSelectedPointFeature(state) {
+      const feature = state.selectedPointFeature
+      if (!feature || !feature.properties?.id) return
+
+      console.log('保存対象の feature:', feature)
+      console.log('保存前の features:', state.groupGeojson.features)
+
+      const features = state.groupGeojson.features
+      const index = features.findIndex(f => f.properties?.id === feature.properties.id)
+      if (index !== -1) {
+        // 既存のポイントを更新
+        state.groupGeojson.features[index] = JSON.parse(JSON.stringify(feature))
+      } else {
+        // 新しいポイントを追加
+        state.groupGeojson.features.push(JSON.parse(JSON.stringify(feature)))
+      }
+    },
+    // saveSelectedPointFeature(state) {
+    //   const feature = state.selectedPointFeature
+    //   if (!feature || !feature.properties?.id) return
+    //
+    //   const features = state.groupGeojson.features
+    //   const index = features.findIndex(f => f.properties?.id === feature.properties.id)
+    //   if (index !== -1) {
+    //     console.log('保存前の features:', state.groupGeojson.features)
+    //     // splice によるリアクティブな置き換え
+    //     features.splice(index, 1, JSON.parse(JSON.stringify(feature)))
+    //   }
+    // },
+    // saveSelectedPointFeature(state) {
+    //   const feature = state.selectedPointFeature
+    //   if (!feature || !feature.properties?.id) return
+    //
+    //   const features = state.groupGeojson.features
+    //   const index = features.findIndex(f => f.properties?.id === feature.properties.id)
+    //   if (index !== -1) {
+    //     // 差し替える（深いコピーで）
+    //     state.groupGeojson.features[index] = JSON.parse(JSON.stringify(feature))
+    //   }
+    // },
     setPointInfoDrawer (state, val) {
       state.showPointInfoDrawer = val
     },
@@ -351,16 +393,16 @@ export default createStore({
         state.selectedPointFeature.properties.description = val
       }
     },
-    saveSelectedPointFeature (state) {
-      const id = state.selectedPointFeature?.properties?.id
-      if (!id) return
-      const index = state.groupGeojson.features.findIndex(
-          f => f.properties.id === id
-      )
-      if (index !== -1) {
-        state.groupGeojson.features.splice(index, 1, JSON.parse(JSON.stringify(state.selectedPointFeature)))
-      }
-    },
+    // saveSelectedPointFeature (state) {
+    //   const id = state.selectedPointFeature?.properties?.id
+    //   if (!id) return
+    //   const index = state.groupGeojson.features.findIndex(
+    //       f => f.properties.id === id
+    //   )
+    //   if (index !== -1) {
+    //     state.groupGeojson.features.splice(index, 1, JSON.parse(JSON.stringify(state.selectedPointFeature)))
+    //   }
+    // },
     updatePointDescription (state, { id, description }) {
       const feature = state.groupGeojson.features.find(f => f.properties.id === id)
       if (feature) {
@@ -582,6 +624,50 @@ export default createStore({
     },
   },
   actions: {
+    async saveSelectedPointToFirestore({ state }) {
+      console.log('保存前の features:', state.groupGeojson.features)
+      const groupId = state.currentGroupName
+      if (!groupId) return
+      const db = require('@/firebase').db  // ここで db を明示的に import
+
+      await db.collection('groups').doc(groupId).set({
+        layers: {
+          points: JSON.parse(JSON.stringify(state.groupGeojson))
+        },
+        lastModifiedBy: state.userId,
+        lastModifiedAt: Date.now()
+      }, { merge: true })
+    },
+    async saveSelectedPointFeatureToFirestore({ state, commit }) {
+      const feature = state.selectedPointFeature
+      const groupId = state.currentGroupName
+
+      if (!feature || !feature.properties?.id || !groupId) return
+
+      // Vuex 側の groupGeojson を更新
+      commit('saveSelectedPointFeature')
+
+      // Firestore に保存
+      await db.collection('groups').doc(groupId).set({
+        layers: {
+          points: JSON.parse(JSON.stringify(state.groupGeojson))
+        },
+        lastModifiedBy: state.userId,
+        lastModifiedAt: Date.now()
+      }, { merge: true })
+
+      console.log('✅ Firestore に保存しました')
+    }
+    // saveGroupGeojsonToFirestore({ state }, { groupId, geojson }) {
+    //   const docRef = db.collection('groups').doc(groupId)
+    //   return docRef.set({
+    //     layers: {
+    //       points: geojson
+    //     },
+    //     lastModifiedBy: state.userId,
+    //     lastModifiedAt: Date.now()
+    //   }, { merge: true })
+    // }
   },
   modules: {
   }
