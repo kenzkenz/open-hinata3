@@ -26,7 +26,7 @@
         </div>
       </v-card-text>
       <v-card-actions>
-        <v-btn style="background-color: var(--main-color); color: white!important;" @click="removeAll">全削除</v-btn>
+        <v-btn style="background-color: var(--main-color); color: white!important;" @click="removeAllFeatures">全削除</v-btn>
         <v-spacer />
         <v-btn style="background-color: var(--main-color); color: white!important;" @click="remove">削除</v-btn>
         <v-btn style="background-color: var(--main-color); color: white!important;" @click="save">保存</v-btn>
@@ -38,10 +38,17 @@
 
 <script>
 import { mapState, mapMutations } from 'vuex'
+import firebase from "firebase/app";
+import "firebase/firestore";
 import {deleteAllPoints} from "@/js/glouplayer";
 
 export default {
   name: 'PointInfoDrawer',
+  data() {
+    return {
+      selectedPointFeature: null // 初期値をnullに設定
+    };
+  },
   computed: {
     ...mapState([
       'showPointInfoDrawer',
@@ -104,33 +111,89 @@ export default {
       this.$store.commit('showSnackbarForGroup', '🗑️ ポイントを削除しました')
       this.close()
     },
-    async remove() {
-      const id = this.selectedPointFeature?.properties?.id;
+    async deleteSelectedPoint() {
+      const db = firebase.firestore();
+      const selectedPointFeature = this.$store.state.selectedPointFeature;
+      const id = selectedPointFeature?.properties?.id;
+      const groupId = this.$store.state.currentGroupId;
+      const layerId = this.$store.state.selectedLayerId;
+
       if (!id) {
         console.warn('削除対象のIDがありません');
+        this.$store.commit('showSnackbarForGroup', '削除するポイントを選択してください');
         return;
       }
 
-      // ここに1行追加
-      console.log('現在の状態:', { features: this.$store.state.groupGeojson.features, groupId: this.$store.state.currentGroupId, layerId: this.$store.state.selectedLayerId });
-      console.log('削除対象のID:', id);
-      console.log('現在のfeatures:', this.$store.state.groupGeojson.features);
-      const index = this.$store.state.groupGeojson.features.findIndex(f => f.properties?.id === id);
-      console.log('削除対象のindex:', index);
-      console.log('削除対象のindex:', index);
-      console.log('削除対象のID:', id);
-      console.log('現在のfeatures:', this.$store.state.groupGeojson.features.length);
-alert(id)
-      if (index !== -1) {
-        // Vuex ミューテーションで削除
-        this.removePointFeature(id);
+      try {
+        const docRef = db.collection('groups').doc(groupId).collection('layers').doc(layerId);
+        const doc = await docRef.get();
+        if (!doc.exists) {
+          console.warn('ドキュメントが存在しません');
+          return;
+        }
 
-        await this.$store.dispatch('saveSelectedPointToFirestore');
+        const currentData = doc.data();
+        const updatedFeatures = (currentData.features || []).filter(
+            (feature) => feature.properties.id !== id
+        );
+
+        await docRef.update({
+          features: updatedFeatures,
+          lastModifiedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
         this.$store.commit('showSnackbarForGroup', '🗑️ ポイントを削除しました');
-      } else {
-        console.warn('削除対象が見つかりませんでした');
+        this.$store.commit('setSelectedPointFeature', null); // ストアをリセット
+      } catch (error) {
+        console.error("削除エラー:", error);
+        this.$store.commit('showSnackbarForGroup', '削除に失敗しました: ' + error.message);
       }
-      this.close();
+    },
+    remove() {
+      const selectedPointFeature = this.$store.state.selectedPointFeature;
+      if (!selectedPointFeature || !selectedPointFeature.properties?.id) {
+        console.warn('選択されたポイントがありません');
+        this.$store.commit('showSnackbarForGroup', '削除するポイントを選択してください');
+        return;
+      }
+      this.deleteSelectedPoint();
+    },
+    async removeAllFeatures() {
+      const db = firebase.firestore();
+      const groupId = this.$store.state.currentGroupId;
+      const layerId = this.$store.state.selectedLayerId;
+
+      if (!confirm("全削除しますか？元には戻りません。")) {
+        return
+      }
+
+      if (!groupId || !layerId) {
+        console.warn('groupIdまたはlayerIdが未設定です');
+        this.$store.commit('showSnackbarForGroup', 'グループまたはレイヤーが選択されていません');
+        return;
+      }
+
+      try {
+        const docRef = db.collection('groups').doc(groupId).collection('layers').doc(layerId);
+        const doc = await docRef.get();
+        if (!doc.exists) {
+          console.warn('ドキュメントが存在しません');
+          return;
+        }
+
+        // features配列を空に更新
+        await docRef.update({
+          features: [], // 全地物を削除
+          lastModifiedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        alert(`✅ ${groupId}/${layerId} の全地物を削除しました`);
+        this.$store.commit('showSnackbarForGroup', '🗑️ 全地物を削除しました');
+        this.selectedPointFeature = null; // 選択をリセット
+      } catch (error) {
+        console.error("全地物削除エラー:", error);
+        this.$store.commit('showSnackbarForGroup', '全地物の削除に失敗しました: ' + error.message);
+      }
     },
     close () {
       this.setPointInfoDrawer(false)
