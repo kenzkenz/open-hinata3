@@ -1,19 +1,19 @@
-import store from '@/store'
-import maplibregl from 'maplibre-gl'
-import { db } from '@/firebase'
-import { watch } from 'vue'
-import { groupGeojson } from '@/js/layers'
-import { popups } from '@/js/popup'
-import { v4 as uuidv4 } from 'uuid'
-import firebase from 'firebase/app'
-import 'firebase/firestore'
+import store from '@/store';
+import maplibregl from 'maplibre-gl';
+import { db } from '@/firebase';
+import { watch } from 'vue';
+import {groupGeojson, ohPointLayer} from '@/js/layers';
+import { popups } from '@/js/popup';
+import { v4 as uuidv4 } from 'uuid';
+import firebase from 'firebase/app';
+import 'firebase/firestore';
 
-let unsubscribeSnapshot = null
-let lastClickTimestamp = 0
-let previousIds = new Set()
-let mapClickHandler = null
-let isInitializing = false
-let justChangedGroup = false
+let unsubscribeSnapshot = null;
+let lastClickTimestamp = 0;
+let previousIds = new Set();
+let mapClickHandler = null;
+let isInitializing = false;
+let justChangedGroup = false;
 let isSaving = false
 
 async function fetchAndSetGeojson(groupId, map, layerId) {
@@ -28,7 +28,7 @@ async function fetchAndSetGeojson(groupId, map, layerId) {
         const source = map.getSource('oh-point-source');
         if (source) {
             source.setData({ type: 'FeatureCollection', features: newFeatures });
-            map.setPaintProperty('oh-point-layer', 'circle-color', '#ff0000');
+            // map.setPaintProperty('oh-point-layer', 'circle-color', '#ff0000');
             map.triggerRepaint();
         }
 
@@ -51,7 +51,7 @@ async function fetchAndSetGeojson(groupId, map, layerId) {
                         id: 'oh-point-layer',
                         type: 'circle',
                         source: 'oh-point-source',
-                        paint: { 'circle-radius': 6, 'circle-color': '#ff0000', 'circle-stroke-width': 2, 'circle-stroke-color': '#fff' }
+                        paint: { 'circle-radius': 6, 'circle-color': 'navy', 'circle-stroke-width': 2, 'circle-stroke-color': '#fff' }
                     }],
                     opacity: 1,
                     visibility: true,
@@ -59,14 +59,22 @@ async function fetchAndSetGeojson(groupId, map, layerId) {
                     layerid: layerId
                 }
             });
+            // スナックバー通知
+            // store.dispatch('triggerSnackbarForGroup', {
+            //     message: `レイヤー "Layer_${layerId}" を追加しました`
+            // });
         }
     } else {
         groupGeojson.value.features = [];
         store.commit('setCurrentGroupLayers', []);
+        // スナックバー通知
+        store.dispatch('triggerSnackbarForGroup', {
+            message: 'レイヤーデータが空です'
+        });
     }
 }
 
-function deleteAllPoints(currentGroupId) {
+export function deleteAllPoints(currentGroupId) {
     groupGeojson.value.features = [];
     const map = store.state.map01;
     if (map && map.getSource('oh-point-source')) {
@@ -77,6 +85,10 @@ function deleteAllPoints(currentGroupId) {
         map.triggerRepaint();
     }
     saveLayerToFirestore(currentGroupId, store.state.selectedLayerId, groupGeojson.value.features);
+    // スナックバー通知
+    store.dispatch('triggerSnackbarForGroup', {
+        message: 'すべてのポイントを削除しました'
+    });
 }
 
 function handleMapClick(e, currentGroupId) {
@@ -95,6 +107,11 @@ function handleMapClick(e, currentGroupId) {
 
     popups.forEach(popup => popup.remove());
     popups.length = 0;
+
+    // スナックバー通知
+    store.dispatch('triggerSnackbarForGroup', {
+        message: `${idsToDelete.size} 件のポイントを削除しました`
+    });
 }
 
 async function saveLayerToFirestore(groupId, layerId, features) {
@@ -118,6 +135,10 @@ async function saveLayerToFirestore(groupId, layerId, features) {
         groupGeojson.value.features = features;
     } catch (e) {
         console.error('Firestore 更新エラー:', e);
+        // スナックバー通知
+        store.dispatch('triggerSnackbarForGroup', {
+            message: 'データの保存に失敗しました'
+        });
     } finally {
         await new Promise(resolve => setTimeout(resolve, 200));
         isSaving = false;
@@ -138,7 +159,7 @@ function setupFirestoreListener(groupId, layerId) {
             const modifiedBy = data?.lastModifiedBy;
             const myId = store.state.userId;
 
-            if (isSaving || modifiedBy === myId) return;
+            // if (isSaving || modifiedBy === myId) return;
 
             if (data && data.features) {
                 const features = data.features || [];
@@ -147,12 +168,22 @@ function setupFirestoreListener(groupId, layerId) {
                 const deletedIds = [...previousIds].filter(id => !currentIds.has(id));
                 const userNickname = store.state.myNickname;
 
+                console.log('Firestore スナップショット: ', { currentIds, previousIds, newIds, deletedIds }); // デバッグログ
+
                 if (!isInitializing && !justChangedGroup) {
                     if (newIds.length > 0) {
-                        store.commit('showSnackbarForGroup', `🔴 ${newIds.length} 件のポイントが追加されました。${userNickname}`);
+                        console.log('ポイント追加通知トリガー');
+                        store.dispatch('triggerSnackbarForGroup', {
+                            message: `🔴 ${newIds.length} 件のポイントが追加されました。${userNickname}` // "messege" ではなく "message"
+                        });
                     } else if (deletedIds.length > 0) {
-                        store.commit('showSnackbarForGroup', `🗑️ ${deletedIds.length} 件のポイントが削除されました。${userNickname}`);
+                        console.log('ポイント削除通知トリガー');
+                        store.dispatch('triggerSnackbarForGroup', {
+                            message: `🗑️ ${deletedIds.length} 件のポイントが削除されました。${userNickname}` // "messege" ではなく "message"
+                        });
                     }
+                } else {
+                    console.log('通知スキップ: ', { isInitializing, justChangedGroup });
                 }
 
                 previousIds = currentIds;
@@ -184,6 +215,9 @@ function setupFirestoreListener(groupId, layerId) {
             }
         }, (error) => {
             console.error('Snapshot エラー:', error);
+            store.dispatch('triggerSnackbarForGroup', {
+                message: 'リアルタイム更新に失敗しました' // "messege" ではなく "message"
+            });
         });
 }
 
@@ -208,7 +242,7 @@ function createMapClickHandler(map01) {
                 id: uuidv4(),
                 createdAt: Date.now(),
                 createdBy: store.state.myNickname || '不明',
-                description: 'テスト'
+                description: ''
             }
         };
 
@@ -225,6 +259,10 @@ function createMapClickHandler(map01) {
 
         if (!isInitializing) {
             await saveLayerToFirestore(groupId, layerId, updatedFeatures);
+            // スナックバー通知
+            // store.dispatch('triggerSnackbarForGroup', {
+            //     message: '新しいポイントを追加しました'
+            // });
         }
     };
 }
@@ -233,7 +271,6 @@ export default function useGloupLayer() {
     let savedGroupId = localStorage.getItem('lastGroupId');
     let savedLayerId = localStorage.getItem('lastLayerId');
 
-    // 初期化時に savedLayerId を検証し、無効ならデフォルトを設定
     const initializeGroupAndLayer = async () => {
         if (savedGroupId && savedLayerId) {
             const docRef = firebase.firestore()
@@ -268,7 +305,12 @@ export default function useGloupLayer() {
         }
     };
 
-    initializeGroupAndLayer().catch(e => console.error('初期化エラー:', e));
+    initializeGroupAndLayer().catch(e => {
+        console.error('初期化エラー:', e);
+        store.dispatch('triggerSnackbarForGroup', {
+            message: '初期化に失敗しました'
+        });
+    });
 
     watch(
         () => [store.state.map01, store.state.currentGroupId, store.state.selectedLayerId],
@@ -296,15 +338,7 @@ export default function useGloupLayer() {
                 }
                 if (!map01.getLayer('oh-point-layer')) {
                     map01.addLayer({
-                        id: 'oh-point-layer',
-                        type: 'circle',
-                        source: 'oh-point-source',
-                        paint: {
-                            'circle-radius': 8,
-                            'circle-color': '#ff0000',
-                            'circle-stroke-width': 2,
-                            'circle-stroke-color': '#ffffff'
-                        }
+                        ohPointLayer
                     });
                 }
 

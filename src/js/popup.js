@@ -3414,7 +3414,7 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
-            case 'oh-group-points-layer':
+            case 'oh-point-layer':
             {
 
                 // let features = map.queryRenderedFeatures(

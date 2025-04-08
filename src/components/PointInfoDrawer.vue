@@ -10,7 +10,8 @@
       <v-card-title class="text-h6 text-white" style="background-color: var(--main-color);height: 40px;display: flex;align-items: center ">
         ポイント情報
       </v-card-title>
-      <v-card-text style="margin-top: 30px;" class="text-body-1">
+      <v-card-text style="margin-top: 20px;" class="text-body-1">
+        <p class="mt-2 text-caption" style="margin-bottom: 10px;"> グループ: {{ groupName }} / レイヤー: {{ layerName }}</p>
         <v-textarea
             v-model="description"
             label="説明（最大500文字）"
@@ -25,8 +26,9 @@
         </div>
       </v-card-text>
       <v-card-actions>
-        <v-btn style="background-color: var(--main-color); color: white!important;" @click="remove">削除</v-btn>
+        <v-btn style="background-color: var(--main-color); color: white!important;" @click="removeAll">全削除</v-btn>
         <v-spacer />
+        <v-btn style="background-color: var(--main-color); color: white!important;" @click="remove">削除</v-btn>
         <v-btn style="background-color: var(--main-color); color: white!important;" @click="save">保存</v-btn>
         <v-btn style="background-color: var(--main-color); color: white!important;" @click="close">閉じる</v-btn>
       </v-card-actions>
@@ -36,14 +38,25 @@
 
 <script>
 import { mapState, mapMutations } from 'vuex'
+import {deleteAllPoints} from "@/js/glouplayer";
 
 export default {
   name: 'PointInfoDrawer',
   computed: {
     ...mapState([
       'showPointInfoDrawer',
-      'selectedPointFeature'
+      'selectedPointFeature',
     ]),
+    // カスタム計算プロパティを個別に定義
+    groupName() {
+      return this.$store.state.currentGroup?.name || '未選択';
+    },
+    layerName() {
+      const id = this.$store.state.selectedLayerId;
+      const layers = this.$store.state.currentGroupLayers;
+      const layer = layers.find(l => l.id === id);
+      return layer?.name || '未選択';
+    },
     visible: {
       get () {
         return this.showPointInfoDrawer
@@ -70,7 +83,8 @@ export default {
   methods: {
     ...mapMutations([
       'setPointInfoDrawer',
-      'saveSelectedPointFeature'
+      'saveSelectedPointFeature',
+      'removePointFeature', // ここに追加
     ]),
     save () {
       this.saveSelectedPointFeature()
@@ -78,20 +92,44 @@ export default {
       this.$store.dispatch('saveSelectedPointToFirestore')
       this.close()
     },
-    remove () {
-      const id = this.selectedPointFeature?.properties?.id
-      if (!id) return
-
-      const features = this.$store.state.groupGeojson.features
-      const index = features.findIndex(f => f.properties?.id === id)
-      if (index !== -1) {
-        features.splice(index, 1)
-        this.$store.dispatch('saveSelectedPointToFirestore')
-        this.$store.commit('showSnackbarForGroup', '🗑️ ポイントを削除しました')
-      } else {
-        console.warn('削除対象が見つかりませんでした')
+    removeAll () {
+      if (!this.$store.state.groupId) {
+        alert('グループに参加していないと削除できません')
+        return;
       }
+      if (!confirm("全削除しますか？")) {
+        return
+      }
+      deleteAllPoints(this.$store.state.groupId)
+      this.$store.commit('showSnackbarForGroup', '🗑️ ポイントを削除しました')
       this.close()
+    },
+    async remove() {
+      const id = this.selectedPointFeature?.properties?.id;
+      if (!id) {
+        console.warn('削除対象のIDがありません');
+        return;
+      }
+
+      // ここに1行追加
+      console.log('現在の状態:', { features: this.$store.state.groupGeojson.features, groupId: this.$store.state.currentGroupId, layerId: this.$store.state.selectedLayerId });
+      console.log('削除対象のID:', id);
+      console.log('現在のfeatures:', this.$store.state.groupGeojson.features);
+      const index = this.$store.state.groupGeojson.features.findIndex(f => f.properties?.id === id);
+      console.log('削除対象のindex:', index);
+      console.log('削除対象のindex:', index);
+      console.log('削除対象のID:', id);
+      console.log('現在のfeatures:', this.$store.state.groupGeojson.features);
+alert(id)
+      if (index !== -1) {
+        // Vuex ミューテーションで削除
+        this.removePointFeature(id);
+        await this.$store.dispatch('saveSelectedPointToFirestore');
+        this.$store.commit('showSnackbarForGroup', '🗑️ ポイントを削除しました');
+      } else {
+        console.warn('削除対象が見つかりませんでした');
+      }
+      this.close();
     },
     close () {
       this.setPointInfoDrawer(false)

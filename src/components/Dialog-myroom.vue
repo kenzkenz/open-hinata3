@@ -306,7 +306,7 @@ import {
   extLayer,
   extSource,
   groupPointsLayer, groupPointsSource,
-  konUrls, pngLayer,
+  konUrls, ohPointLayer, pngLayer,
   pngSource,
   sicyosonChibanzuUrls
 } from "@/js/layers";
@@ -577,7 +577,7 @@ export default {
 
         // currentGroupLayersをクリアして最新データに更新
         this.$store.state.currentGroupLayers = layers;
-        console.log('fetchLayers: 更新後のcurrentGroupLayers=', JSON.stringify(this.s_currentGroupLayers));
+        // console.log('fetchLayers: 更新後のcurrentGroupLayers=', JSON.stringify(this.s_currentGroupLayers));
 
         // selectedLayers.map01と同期
         // this.syncSelectedLayers();
@@ -658,7 +658,6 @@ export default {
     },
 
     layerSet(name, id) {
-      alert(999)
       this.layerName = name;
       this.layerId = id;
       this.$store.commit('setSelectedLayerId', id);
@@ -670,42 +669,27 @@ export default {
         console.warn('layerSet: 指定されたレイヤーがcurrentGroupLayersに存在しません', id);
         return;
       }
-      // if (existingLayer) {
-      //   existingLayer.label = name;
-      //   existingLayer.layerid = id;
-      // }
 
       if (!existingLayer) {
         // 初回追加
         mapLayers.unshift({
-          id: 'oh-point-layer',
-          label: name,
-          sources: [{
-            id: 'oh-point-source',
-            obj: {
-              type: 'geojson',
-              data: {
-                type: 'FeatureCollection',
-                features: currentLayer.features || []
-              }
-            }
-          }],
-          layers: [{
-            id: 'oh-point-layer',
-            type: 'circle',
-            source: 'oh-point-source',
-            paint: {
-              'circle-radius': 6,
-              'circle-color': currentLayer.color || '#ff0000',
-              'circle-stroke-width': 2,
-              'circle-stroke-color': '#fff'
-            }
-          }],
-          opacity: 1,
-          visibility: true,
-          attribution: '',
-          layerid: id
-        });
+              id: 'oh-point-layer',
+              label: name,
+              sources: [{
+                id: 'oh-point-source',
+                obj: {
+                  type: 'geojson',
+                  data: {
+                    type: 'FeatureCollection',
+                    features: currentLayer.features || []
+                  }
+                }
+              }],
+              layers: [ohPointLayer],
+              opacity:1,
+              visibility: true,
+            },
+        )
       } else {
         // 既存レイヤーの更新
         existingLayer.label = name;
@@ -1724,22 +1708,6 @@ export default {
                     } else {
                       minZoom = 17
                     }
-                    // const labelLayer = {
-                    //   id: 'oh-chibanL-' + name + '-label-layer',
-                    //   type: "symbol",
-                    //   source: 'oh-chiban-' + id + '-' + name + + '-source',
-                    //   "source-layer": "oh3",
-                    //   'layout': {
-                    //     'text-field': ['get', chiban],
-                    //     'text-font': ['NotoSansJP-Regular'],
-                    //   },
-                    //   'paint': {
-                    //     'text-color': 'navy',
-                    //     'text-halo-color': 'rgba(255,255,255,1)',
-                    //     'text-halo-width': 1.0,
-                    //   },
-                    //   'minzoom': minZoom
-                    // }
                     const labelLayer = {
                       id: 'oh-chibanL-' + name + '-label-layer',
                       type: "symbol",

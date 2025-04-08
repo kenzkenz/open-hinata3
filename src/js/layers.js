@@ -8802,7 +8802,23 @@ const pointLayerLayer1 = {
         'circle-stroke-width': 2
     }
 }
-
+export const ohPointLayer =
+    {id: 'oh-point-layer',
+    type: 'circle',
+    source: 'oh-point-source',
+    paint: {
+        'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            5, 4,   // ズーム5では半径4
+            10, 8,  // ズーム10では半径8
+            15, 20  // ズーム15では半径20
+        ],
+        'circle-color': 'navy',
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#ffffff'
+    }}
 
 // ---------------------------------------------------------------------------------------------------------------------
 let layers01 = [

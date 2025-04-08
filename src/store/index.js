@@ -1,5 +1,6 @@
 import { createStore } from 'vuex'
 import { db } from '@/firebase'
+import firebase from "firebase";
 
 export default createStore({
   state: {
@@ -358,6 +359,12 @@ export default createStore({
   getters: {
   },
   mutations: {
+    setGroupGeojsonFeatures(state, features) {
+      state.groupGeojson.features = features;
+    },
+    setSnackbarForGroup(state, value) {
+      state.snackbarForGroup = value;
+    },
     setSelectedLayerId(state, layerId) {
       state.selectedLayerId = layerId;
       console.log('ミューテーション: selectedLayerId を更新:', state.selectedLayerId);
@@ -386,10 +393,10 @@ export default createStore({
       state.currentPointLayerIndex = index
     },
     // -----------------------------------------------------------------------------------------------------------------
-    removePointFeature(state, id) {
-      const index = state.groupGeojson.features.findIndex(f => f.properties?.id === id)
+    removePointFeature(state, id) { // ここを確認または追加
+      const index = state.groupGeojson.features.findIndex(f => f.properties?.id === id);
       if (index !== -1) {
-        state.groupGeojson.features.splice(index, 1)
+        state.groupGeojson.features.splice(index, 1);
       }
     },
     // 他のミューテーションがある中に追加
@@ -405,6 +412,7 @@ export default createStore({
 
       const features = state.groupGeojson.features
       const index = features.findIndex(f => f.properties?.id === feature.properties.id)
+
       if (index !== -1) {
         // 既存のポイントを更新
         state.groupGeojson.features[index] = JSON.parse(JSON.stringify(feature))
@@ -648,6 +656,10 @@ export default createStore({
     },
   },
   actions: {
+    triggerSnackbarForGroup({ commit }, { message }) {
+      commit('showSnackbarForGroup', message);
+      setTimeout(() => commit('hideSnackbarForGroup'), 3000); // timeout と一致
+    },
     async deleteSelectedPointFromFirestore({ state }) {
       const groupId = state.currentGroupName
       if (!groupId) return
@@ -676,40 +688,56 @@ export default createStore({
 
       console.log(`🗑️ 削除済み ID: ${idToDelete}`)
     },
-    async saveSelectedPointToFirestore({ state }) {
-      const groupId = state.currentGroupName
-      if (!groupId) return
 
-      const doc = await db.collection('groups').doc(groupId).get()
-      let existingFeatures = []
-      if (doc.exists) {
-        const data = doc.data()
-        if (data.layers?.points?.features) {
-          existingFeatures = data.layers.points.features
-        }
+    async saveSelectedPointToFirestore({ state, commit }) {
+      const groupId = state.currentGroupId;
+      const layerId = state.selectedLayerId;
+      if (!groupId || !layerId) {
+        console.warn('groupId または layerId が未設定です');
+        commit('showSnackbarForGroup', { message: 'グループまたはレイヤーが選択されていません' });
+        return;
       }
-      // IDごとに上書き or 追加（既存＋新規のマージ）
-      const mergedMap = new Map()
-      for (const f of existingFeatures) {
-        mergedMap.set(f.properties.id, f)
-      }
-      for (const f of state.groupGeojson.features) {
-        mergedMap.set(f.properties.id, f)
-      }
-      const mergedFeatures = Array.from(mergedMap.values())
 
-      await db.collection('groups').doc(groupId).set({
-        layers: {
-          points: {
-            type: 'FeatureCollection',
-            features: mergedFeatures
+      try {
+        const docRef = db.collection('groups').doc(groupId).collection('layers').doc(layerId);
+        const doc = await docRef.get(); // ドキュメントを取得
+        let existingFeatures = [];
+
+        if (doc.exists) { // exists は DocumentSnapshot のプロパティ
+          const data = doc.data();
+          if (data.features) {
+            existingFeatures = data.features;
           }
-        },
-        lastModifiedBy: state.userId,
-        lastModifiedAt: Date.now()
-      }, { merge: true })
+        }
 
-      console.log('✅ マージして保存しました')
+        // 既存の特徴量と新規の特徴量をマージ
+        const mergedMap = new Map();
+        for (const f of existingFeatures) {
+          mergedMap.set(f.properties.id, f);
+        }
+        for (const f of state.groupGeojson.features) {
+          mergedMap.set(f.properties.id, f);
+        }
+        const mergedFeatures = Array.from(mergedMap.values());
+
+        // Firestore に保存
+        await docRef.set(
+            {
+              features: mergedFeatures,
+              lastModifiedBy: state.userId,
+              lastModifiedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+        );
+
+        // ストアの状態を更新
+        commit('setGroupGeojsonFeatures', mergedFeatures);
+        commit('showSnackbarForGroup', '✅ ポイントを保存しました' );
+        console.log('✅ マージして保存しました');
+      } catch (error) {
+        console.error('Firestore 保存エラー:', error);
+        commit('showSnackbarForGroup', 'ポイントの保存に失敗しました: ' + error.message);
+      }
     },
     async fetchGroupData({ commit }, groupId) {
       const doc = await db.collection('groups').doc(groupId).get()
