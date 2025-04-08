@@ -124,6 +124,7 @@ alert(id)
       if (index !== -1) {
         // Vuex ミューテーションで削除
         this.removePointFeature(id);
+
         await this.$store.dispatch('saveSelectedPointToFirestore');
         this.$store.commit('showSnackbarForGroup', '🗑️ ポイントを削除しました');
       } else {

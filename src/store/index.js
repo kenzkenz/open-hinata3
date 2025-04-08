@@ -705,6 +705,12 @@ export default createStore({
         const doc = await docRef.get(); // ドキュメントを取得
         let existingFeatures = [];
 
+        const unsubscribe = db.collection('groups').doc(groupId).collection('layers').onSnapshot(() => {
+          // 監視処理
+        });
+        // 削除前にリスナーを解除
+        unsubscribe();
+
         if (doc.exists) { // exists は DocumentSnapshot のプロパティ
           const data = doc.data();
           if (data.features) {
