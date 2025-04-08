@@ -8806,20 +8806,20 @@ const pointLayerLayer1 = {
 
 // ---------------------------------------------------------------------------------------------------------------------
 let layers01 = [
-    {
-        id: 'oh-point-layer',
-        label: "<div class='point-layer'>ポイントレイヤー</div>",
-        sources: [pointLayerSource1],
-        layers: [pointLayerLayer1],
-        attribution: '',
-    },
-    {
-        id: 'oh-gloup-layer',
-        label: "<div class='group-layer'>グループレイヤー</div>",
-        sources: [groupPointsSource],
-        layers: [groupPointsLayer],
-        attribution: '',
-    },
+    // {
+    //     id: 'oh-point-layer',
+    //     label: "<div class='point-layer'>ポイントレイヤー</div>",
+    //     sources: [pointLayerSource1],
+    //     layers: [pointLayerLayer1],
+    //     attribution: '',
+    // },
+    // {
+    //     id: 'oh-gloup-layer',
+    //     label: "<div class='group-layer'>グループレイヤー</div>",
+    //     sources: [groupPointsSource],
+    //     layers: [groupPointsLayer],
+    //     attribution: '',
+    // },
     {
         id: 'oh-amx-a-fude',
         label: "登記所備付地図データ",

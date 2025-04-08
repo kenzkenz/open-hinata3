@@ -658,6 +658,7 @@ export default {
     },
 
     layerSet(name, id) {
+      alert(999)
       this.layerName = name;
       this.layerId = id;
       this.$store.commit('setSelectedLayerId', id);
@@ -669,6 +670,10 @@ export default {
         console.warn('layerSet: 指定されたレイヤーがcurrentGroupLayersに存在しません', id);
         return;
       }
+      // if (existingLayer) {
+      //   existingLayer.label = name;
+      //   existingLayer.layerid = id;
+      // }
 
       if (!existingLayer) {
         // 初回追加
@@ -719,7 +724,6 @@ export default {
         console.warn('マップまたはソースが未初期化');
       }
     },
-
     async layerRenameBtn() {
       if (!this.layerName.trim()) return alert('新しい名前を入力してください');
       const selectedLayer = this.s_currentGroupLayers.find(layer => layer.id === this.layerId);
