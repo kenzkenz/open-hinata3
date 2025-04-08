@@ -360,6 +360,11 @@ export default createStore({
   mutations: {
     setSelectedLayerId(state, layerId) {
       state.selectedLayerId = layerId;
+      console.log('ミューテーション: selectedLayerId を更新:', state.selectedLayerId);
+    },
+    hideSnackbarForGroup(state) {
+      state.snackbarForGroup = false;
+      state.snackbarForGroupText = '';
     },
     setCurrentPointLayerId(state, id) {
       state.currentPointLayerId = id

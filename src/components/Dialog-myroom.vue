@@ -856,6 +856,7 @@ export default {
       }
     },
     layerSet(name, id) {
+      alert(id)
       this.layerName = name;
       this.layerId = id;
       this.$store.commit('setSelectedLayerId', id);

@@ -344,7 +344,6 @@ export default function useGloupLayer() {
                     console.log('9. Firestore保存開始');
                     await saveLayerToFirestore(groupId, layerId, currentLayer.features); // await追加
                 }
-                alert(999);
             };
 
             map01.on('click', mapClickHandler);
