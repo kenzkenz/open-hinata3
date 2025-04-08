@@ -54,9 +54,16 @@ export default {
       'showPointInfoDrawer',
       'selectedPointFeature',
     ]),
+    currentGroupId() {
+      return this.$store.state.currentGroupId; // 最新のgroupIdを監視
+    },
+    selectedLayerId() {
+      return this.$store.state.selectedLayerId; // 最新のlayerIdを監視
+    },
     // カスタム計算プロパティを個別に定義
     groupName() {
-      return this.$store.state.currentGroup?.name || '未選択';
+      alert(this.$store.state.currentGroupName)
+      return this.$store.state.currentGroupName;
     },
     layerName() {
       const id = this.$store.state.selectedLayerId;
