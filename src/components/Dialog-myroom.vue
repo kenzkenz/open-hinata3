@@ -856,10 +856,10 @@ export default {
       }
     },
     layerSet(name, id) {
-      alert(id)
       this.layerName = name;
       this.layerId = id;
-      this.$store.commit('setSelectedLayerId', id);
+      this.$store.state.selectedLayerId = id
+      // this.$store.commit('setSelectedLayerId', id);
 
       const mapLayers = this.$store.state.selectedLayers['map01'];
       const existingLayer = mapLayers.find(l => l.id === 'oh-point-layer');
