@@ -142,6 +142,7 @@ function setupFirestoreListener(groupId, layerId) {
         console.warn('setupFirestoreListener: 不正なgroupIdまたはlayerId: groupId=', groupId, 'layerId=', layerId, '期待値=', store.state.currentGroupId)
         return
     }
+
     const map01 = store.state.map01
     if (unsubscribeSnapshot) unsubscribeSnapshot()
 
@@ -151,12 +152,17 @@ function setupFirestoreListener(groupId, layerId) {
         .collection('layers')
         .doc(layerId)
         .onSnapshot({ includeMetadataChanges: true }, (doc) => {
-            if (isSaving) {
-                console.log('保存中なのでリスナーをスキップ')
+            const data = doc.data()
+            const modifiedBy = data?.lastModifiedBy
+            const myId = store.state.userId
+
+            if (isSaving || modifiedBy === myId) {
+                console.log('🔁 自分の変更なのでスキップ: modifiedBy=', modifiedBy, 'myId=', myId)
                 return
             }
-            const data = doc.data()
+
             console.log('Firestoreから取得: groupId=', groupId, 'layerId=', layerId, 'data=', JSON.stringify(data))
+
             if (data && data.features) {
                 const features = data.features || []
                 const currentIds = new Set(features.map(f => f.properties?.id))
@@ -173,24 +179,44 @@ function setupFirestoreListener(groupId, layerId) {
                 }
 
                 previousIds = currentIds
-                // リスナーではgroupGeojsonのみ更新、マップは更新しない
+
+                const source = map01.getSource('oh-point-source')
+                const currentData = groupGeojson.value.features
+                const newDataStr = JSON.stringify(features)
+                const currentDataStr = JSON.stringify(currentData)
+
                 groupGeojson.value.features = features
                 const updatedLayers = store.state.currentGroupLayers.filter(l => l.id !== layerId)
                 updatedLayers.push({ id: layerId, name: `Layer_${layerId}`, features })
                 store.commit('setCurrentGroupLayers', updatedLayers)
-                console.log('リスナーでデータ更新:', JSON.stringify(features))
+
+                if (source && newDataStr !== currentDataStr) {
+                    console.log('📍 差分あり: setTimeout で遅延描画します')
+                    setTimeout(() => {
+                        source.setData({ type: 'FeatureCollection', features })
+                        map01.triggerRepaint()
+                        console.log('🕒 遅延後にマップに再描画しました')
+                    }, 200) // 点滅抑制のため200ms待機（必要なら調整）
+                } else {
+                    console.log('📍 差分なし: setData スキップ')
+                }
+
             } else {
+                console.log('📭 Firestore にデータなし。レイヤー削除扱い')
                 groupGeojson.value.features = []
                 store.commit('setCurrentGroupLayers', store.state.currentGroupLayers.filter(l => l.id !== layerId))
                 const source = map01.getSource('oh-point-source')
                 if (source) {
-                    source.setData({ type: 'FeatureCollection', features: [] })
-                    map01.triggerRepaint()
+                    // setTimeout(() => {
+                    //     source.setData({ type: 'FeatureCollection', features: [] })
+                    //     map01.triggerRepaint()
+                    //     console.log('🕒 遅延後に空データで描画クリア')
+                    // }, 2000)
                 }
                 if (store.state.selectedLayerId === layerId) {
                     store.commit('setSelectedLayerId', null)
                     localStorage.removeItem('lastLayerId')
-                    console.log('リスナー: selectedLayerIdをクリア:', layerId)
+                    console.log('リスナー: selectedLayerId をクリア:', layerId)
                 }
             }
         }, (error) => {
@@ -198,44 +224,189 @@ function setupFirestoreListener(groupId, layerId) {
         })
 }
 
+
+
+// function setupFirestoreListener(groupId, layerId) {
+//     if (groupId !== store.state.currentGroupId || !layerId) {
+//         console.warn('setupFirestoreListener: 不正なgroupIdまたはlayerId: groupId=', groupId, 'layerId=', layerId, '期待値=', store.state.currentGroupId)
+//         return
+//     }
+//     const map01 = store.state.map01
+//     if (unsubscribeSnapshot) unsubscribeSnapshot()
+//
+//     unsubscribeSnapshot = firebase.firestore()
+//         .collection('groups')
+//         .doc(groupId)
+//         .collection('layers')
+//         .doc(layerId)
+//         .onSnapshot({ includeMetadataChanges: true }, (doc) => {
+//             const data = doc.data()
+//             const modifiedBy = data?.lastModifiedBy
+//             const myId = store.state.userId
+//
+//             if (isSaving || modifiedBy === myId) {
+//                 console.log('🔁 自分の変更なのでスキップ: modifiedBy=', modifiedBy, 'myId=', myId)
+//                 return
+//             }
+//
+//             console.log('Firestoreから取得: groupId=', groupId, 'layerId=', layerId, 'data=', JSON.stringify(data))
+//             // if (data && data.features) {
+//             //     const features = data.features || []
+//             //     const currentIds = new Set(features.map(f => f.properties?.id))
+//             //     const newIds = [...currentIds].filter(id => !previousIds.has(id))
+//             //     const deletedIds = [...previousIds].filter(id => !currentIds.has(id))
+//             //     const userNickname = store.state.myNickname
+//             //
+//             //     if (!isInitializing && !justChangedGroup) {
+//             //         if (newIds.length === 1) {
+//             //             store.commit('showSnackbarForGroup', `🔴 ${newIds.length} 件のポイントが追加されました。${userNickname}`)
+//             //         } else if (deletedIds.length === 1) {
+//             //             store.commit('showSnackbarForGroup', `🗑️ ${deletedIds.length} 件のポイントが削除されました。${userNickname}`)
+//             //         }
+//             //     }
+//             //
+//             //     previousIds = currentIds
+//             //     groupGeojson.value.features = features
+//             //     const updatedLayers = store.state.currentGroupLayers.filter(l => l.id !== layerId)
+//             //     updatedLayers.push({ id: layerId, name: `Layer_${layerId}`, features })
+//             //     store.commit('setCurrentGroupLayers', updatedLayers)
+//             //     console.log('リスナーでデータ更新:', JSON.stringify(features))
+//             // } else {
+//             //     groupGeojson.value.features = []
+//             //     store.commit('setCurrentGroupLayers', store.state.currentGroupLayers.filter(l => l.id !== layerId))
+//             //     const source = map01.getSource('oh-point-source')
+//             //     if (source) {
+//             //         source.setData({ type: 'FeatureCollection', features: [] })
+//             //         map01.triggerRepaint()
+//             //     }
+//             //     if (store.state.selectedLayerId === layerId) {
+//             //         store.commit('setSelectedLayerId', null)
+//             //         localStorage.removeItem('lastLayerId')
+//             //         console.log('リスナー: selectedLayerIdをクリア:', layerId)
+//             //     }
+//             // }
+//             if (data && data.features) {
+//                 const features = data.features || []
+//                 const currentIds = new Set(features.map(f => f.properties?.id))
+//                 const newIds = [...currentIds].filter(id => !previousIds.has(id))
+//                 const deletedIds = [...previousIds].filter(id => !currentIds.has(id))
+//                 const userNickname = store.state.myNickname
+//
+//                 if (!isInitializing && !justChangedGroup) {
+//                     if (newIds.length === 1) {
+//                         store.commit('showSnackbarForGroup', `🔴 ${newIds.length} 件のポイントが追加されました。${userNickname}`)
+//                     } else if (deletedIds.length === 1) {
+//                         store.commit('showSnackbarForGroup', `🗑️ ${deletedIds.length} 件のポイントが削除されました。${userNickname}`)
+//                     }
+//                 }
+//
+//                 previousIds = currentIds
+//
+//                 const source = map01.getSource('oh-point-source')
+//                 const currentData = groupGeojson.value.features
+//                 const newDataStr = JSON.stringify(features)
+//                 const currentDataStr = JSON.stringify(currentData)
+//
+//                 groupGeojson.value.features = features
+//                 const updatedLayers = store.state.currentGroupLayers.filter(l => l.id !== layerId)
+//                 updatedLayers.push({ id: layerId, name: `Layer_${layerId}`, features })
+//                 store.commit('setCurrentGroupLayers', updatedLayers)
+//
+//                 // 差分があるときだけマップ更新
+//                 if (source && newDataStr !== currentDataStr) {
+//                     source.setData({ type: 'FeatureCollection', features })
+//                     map01.triggerRepaint()
+//                     console.log('📍 差分あり: マップに再描画実行')
+//                 } else {
+//                     console.log('📍 差分なし: setDataスキップ')
+//                 }
+//
+//                 console.log('リスナーでデータ更新:', newDataStr)
+//             }
+//
+//         }, (error) => {
+//             console.error('Snapshot エラー:', error)
+//         })
+// }
+
+//
+// function setupFirestoreListener(groupId, layerId) {
+//     if (groupId !== store.state.currentGroupId || !layerId) {
+//         console.warn('setupFirestoreListener: 不正なgroupIdまたはlayerId: groupId=', groupId, 'layerId=', layerId, '期待値=', store.state.currentGroupId)
+//         return
+//     }
+//     const map01 = store.state.map01
+//     if (unsubscribeSnapshot) unsubscribeSnapshot()
+//
+//     unsubscribeSnapshot = firebase.firestore()
+//         .collection('groups')
+//         .doc(groupId)
+//         .collection('layers')
+//         .doc(layerId)
+//         .onSnapshot({ includeMetadataChanges: true }, (doc) => {
+//             if (isSaving) {
+//                 console.log('保存中なのでリスナーをスキップ')
+//                 return
+//             }
+//             const data = doc.data()
+//             console.log('Firestoreから取得: groupId=', groupId, 'layerId=', layerId, 'data=', JSON.stringify(data))
+//             if (data && data.features) {
+//                 const features = data.features || []
+//                 const currentIds = new Set(features.map(f => f.properties?.id))
+//                 const newIds = [...currentIds].filter(id => !previousIds.has(id))
+//                 const deletedIds = [...previousIds].filter(id => !currentIds.has(id))
+//                 const userNickname = store.state.myNickname
+//
+//                 if (!isInitializing && !justChangedGroup) {
+//                     if (newIds.length === 1) {
+//                         store.commit('showSnackbarForGroup', `🔴 ${newIds.length} 件のポイントが追加されました。${userNickname}`)
+//                     } else if (deletedIds.length === 1) {
+//                         store.commit('showSnackbarForGroup', `🗑️ ${deletedIds.length} 件のポイントが削除されました。${userNickname}`)
+//                     }
+//                 }
+//
+//                 previousIds = currentIds
+//                 // リスナーではgroupGeojsonのみ更新、マップは更新しない
+//                 groupGeojson.value.features = features
+//                 const updatedLayers = store.state.currentGroupLayers.filter(l => l.id !== layerId)
+//                 updatedLayers.push({ id: layerId, name: `Layer_${layerId}`, features })
+//                 store.commit('setCurrentGroupLayers', updatedLayers)
+//                 console.log('リスナーでデータ更新:', JSON.stringify(features))
+//             } else {
+//                 groupGeojson.value.features = []
+//                 store.commit('setCurrentGroupLayers', store.state.currentGroupLayers.filter(l => l.id !== layerId))
+//                 const source = map01.getSource('oh-point-source')
+//                 if (source) {
+//                     source.setData({ type: 'FeatureCollection', features: [] })
+//                     map01.triggerRepaint()
+//                 }
+//                 if (store.state.selectedLayerId === layerId) {
+//                     store.commit('setSelectedLayerId', null)
+//                     localStorage.removeItem('lastLayerId')
+//                     console.log('リスナー: selectedLayerIdをクリア:', layerId)
+//                 }
+//             }
+//         }, (error) => {
+//             console.error('Snapshot エラー:', error)
+//         })
+// }
+
+
 function createMapClickHandler(map01) {
     return async (e) => {
-        // alert('mapClickHandler開始: ' + store.state.selectedLayerId)
-        const style = map01.getStyle()
-        console.log('全レイヤ:', style.layers)
-
         const now = Date.now()
         if (now - lastClickTimestamp < 300) return
         lastClickTimestamp = now
 
         const groupId = store.state.currentGroupId
         const layerId = store.state.selectedLayerId
-        console.log('クリック: groupId=', groupId, 'layerId=', layerId)
-        if (!groupId || !layerId) {
-            console.warn('グループIDまたはレイヤーIDが未定義: groupId=', groupId, 'layerId=', layerId)
-            return
-        }
-
-        const docRef = firebase.firestore()
-            .collection('groups')
-            .doc(groupId)
-            .collection('layers')
-            .doc(layerId)
-        const doc = await docRef.get()
-        if (!doc.exists) {
-            console.warn('クリック無効: layerIdが存在しません:', layerId)
-            store.commit('setSelectedLayerId', null)
-            localStorage.removeItem('lastLayerId')
-            alert('選択されたレイヤーが存在しないため、リセットしました')
-            return
-        }
+        if (!groupId || !layerId) return
 
         const features = map01.queryRenderedFeatures(e.point, { layers: ['oh-point-layer'] })
-        console.log('既存のfeatures:', features)
         if (features.length > 0 || !e.lngLat) return
 
         const { lng, lat } = e.lngLat
-        const pointFeature = {
+        const newFeature = {
             type: 'Feature',
             geometry: { type: 'Point', coordinates: [lng, lat] },
             properties: {
@@ -245,37 +416,112 @@ function createMapClickHandler(map01) {
                 description: 'テスト'
             }
         }
-        console.log('新しいポイント:', pointFeature)
 
-        if (!store.state.currentGroupLayers) store.state.currentGroupLayers = []
-        let currentLayer = store.state.currentGroupLayers.find(l => l.id === layerId)
-        if (!currentLayer) {
-            currentLayer = { id: layerId, name: `Layer_${layerId}`, features: [] }
-            store.state.currentGroupLayers.push(currentLayer)
-        }
-        currentLayer.features.push(pointFeature)
-        groupGeojson.value.features = currentLayer.features
-
-        // マップに即時反映（ここで表示を確定）
+        // 差分追加：現在の features を取得して追加する
         const source = map01.getSource('oh-point-source')
+        const currentFeatures = groupGeojson.value.features || []
+        const updatedFeatures = [...currentFeatures, newFeature]
+
+        groupGeojson.value.features = updatedFeatures
+
         if (source) {
-            source.setData({ type: 'FeatureCollection', features: currentLayer.features })
-            map01.triggerRepaint()
-            console.log('クリック直後にマップを更新:', JSON.stringify(currentLayer.features))
+            // ⏳ setTimeout を入れてマイルドに描画
+            setTimeout(() => {
+                source.setData({
+                    type: 'FeatureCollection',
+                    features: updatedFeatures
+                })
+                map01.triggerRepaint()
+                console.log('🕒 ポイント追加描画完了')
+            }, 100)
         }
 
+        // Firestore へ保存
         if (!isInitializing) {
-            await saveLayerToFirestore(groupId, layerId, currentLayer.features)
-            // 保存後のマップ再確認
-            if (source) {
-                source.setData({ type: 'FeatureCollection', features: currentLayer.features })
-                map01.triggerRepaint()
-                console.log('保存後にマップを再確認:', JSON.stringify(currentLayer.features))
-            }
+            await saveLayerToFirestore(groupId, layerId, updatedFeatures)
         }
-        // alert('mapClickHandler終了: ' + store.state.selectedLayerId)
     }
 }
+
+
+// function createMapClickHandler(map01) {
+//     return async (e) => {
+//         // alert('mapClickHandler開始: ' + store.state.selectedLayerId)
+//         const style = map01.getStyle()
+//         console.log('全レイヤ:', style.layers)
+//
+//         const now = Date.now()
+//         if (now - lastClickTimestamp < 300) return
+//         lastClickTimestamp = now
+//
+//         const groupId = store.state.currentGroupId
+//         const layerId = store.state.selectedLayerId
+//         console.log('クリック: groupId=', groupId, 'layerId=', layerId)
+//         if (!groupId || !layerId) {
+//             console.warn('グループIDまたはレイヤーIDが未定義: groupId=', groupId, 'layerId=', layerId)
+//             return
+//         }
+//
+//         const docRef = firebase.firestore()
+//             .collection('groups')
+//             .doc(groupId)
+//             .collection('layers')
+//             .doc(layerId)
+//         const doc = await docRef.get()
+//         if (!doc.exists) {
+//             console.warn('クリック無効: layerIdが存在しません:', layerId)
+//             store.commit('setSelectedLayerId', null)
+//             localStorage.removeItem('lastLayerId')
+//             alert('選択されたレイヤーが存在しないため、リセットしました')
+//             return
+//         }
+//
+//         const features = map01.queryRenderedFeatures(e.point, { layers: ['oh-point-layer'] })
+//         console.log('既存のfeatures:', features)
+//         if (features.length > 0 || !e.lngLat) return
+//
+//         const { lng, lat } = e.lngLat
+//         const pointFeature = {
+//             type: 'Feature',
+//             geometry: { type: 'Point', coordinates: [lng, lat] },
+//             properties: {
+//                 id: uuidv4(),
+//                 createdAt: Date.now(),
+//                 createdBy: store.state.myNickname || '不明',
+//                 description: 'テスト'
+//             }
+//         }
+//         console.log('新しいポイント:', pointFeature)
+//
+//         if (!store.state.currentGroupLayers) store.state.currentGroupLayers = []
+//         let currentLayer = store.state.currentGroupLayers.find(l => l.id === layerId)
+//         if (!currentLayer) {
+//             currentLayer = { id: layerId, name: `Layer_${layerId}`, features: [] }
+//             store.state.currentGroupLayers.push(currentLayer)
+//         }
+//         currentLayer.features.push(pointFeature)
+//         groupGeojson.value.features = currentLayer.features
+//
+//         // マップに即時反映（ここで表示を確定）
+//         const source = map01.getSource('oh-point-source')
+//         if (source) {
+//             source.setData({ type: 'FeatureCollection', features: currentLayer.features })
+//             map01.triggerRepaint()
+//             console.log('クリック直後にマップを更新:', JSON.stringify(currentLayer.features))
+//         }
+//
+//         if (!isInitializing) {
+//             await saveLayerToFirestore(groupId, layerId, currentLayer.features)
+//             // 保存後のマップ再確認
+//             if (source) {
+//                 source.setData({ type: 'FeatureCollection', features: currentLayer.features })
+//                 map01.triggerRepaint()
+//                 console.log('保存後にマップを再確認:', JSON.stringify(currentLayer.features))
+//             }
+//         }
+//         // alert('mapClickHandler終了: ' + store.state.selectedLayerId)
+//     }
+// }
 
 export default function useGloupLayer() {
     const savedGroupId = localStorage.getItem('lastGroupId')
