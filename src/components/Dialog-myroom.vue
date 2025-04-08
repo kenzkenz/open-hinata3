@@ -38,7 +38,7 @@
                     <v-btn style="margin-top: -10px;margin-bottom: 10px;margin-left: 10px;" @click="layerSerchBtn">検索</v-btn>
                     <div v-for="item in s_currentGroupLayers" :key="item.id" class="data-container" @click="layerSet(item.name,item.id)">
                       <button class="close-btn" @click="deleteLayer(item.id)">×</button>
-                      <strong>{{ item.name }}</strong>
+                      <strong>{{ item.name + item.groupId }}</strong>
                     </div>
                   </div>
                 </v-card>
@@ -557,6 +557,7 @@ export default {
   },
   methods: {
     async fetchLayers() {
+      alert('フェッチ')
       if (!this.s_currentGroupId) {
         console.warn('fetchLayers: グループIDが未定義');
         this.$store.state.currentGroupLayers = []; // 未定義の場合はクリア
@@ -577,7 +578,7 @@ export default {
 
         // currentGroupLayersをクリアして最新データに更新
         this.$store.state.currentGroupLayers = layers;
-        // console.log('fetchLayers: 更新後のcurrentGroupLayers=', JSON.stringify(this.s_currentGroupLayers));
+        console.log('fetchLayers: 更新後のcurrentGroupLayers=', JSON.stringify(this.s_currentGroupLayers));
 
         // selectedLayers.map01と同期
         // this.syncSelectedLayers();
@@ -2412,7 +2413,8 @@ export default {
     },
   },
   watch: {
-    s_currentGroupName() {
+    s_currentGroupId() {
+      alert('ウオッチ')
       this.fetchLayers()
     },
     s_dialogForLink () {
