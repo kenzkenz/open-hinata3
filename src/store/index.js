@@ -393,10 +393,12 @@ export default createStore({
       state.currentPointLayerIndex = index
     },
     // -----------------------------------------------------------------------------------------------------------------
-    removePointFeature(state, id) { // ここを確認または追加
+    removePointFeature(state, id) {
       const index = state.groupGeojson.features.findIndex(f => f.properties?.id === id);
+      alert(index);
       if (index !== -1) {
         state.groupGeojson.features.splice(index, 1);
+        console.log('削除後の features:', state.groupGeojson.features.length); // 追加
       }
     },
     // 他のミューテーションがある中に追加

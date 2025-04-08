@@ -119,7 +119,7 @@ export default {
       console.log('削除対象のindex:', index);
       console.log('削除対象のindex:', index);
       console.log('削除対象のID:', id);
-      console.log('現在のfeatures:', this.$store.state.groupGeojson.features);
+      console.log('現在のfeatures:', this.$store.state.groupGeojson.features.length);
 alert(id)
       if (index !== -1) {
         // Vuex ミューテーションで削除
