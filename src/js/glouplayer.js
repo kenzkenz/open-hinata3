@@ -318,6 +318,9 @@ export default function useGloupLayer() {
                     previousIds = new Set(groupGeojson.value.features.map(f => f.properties?.id))
                 }
             }
+
+            // ⛔ localStorage 書き込みを一時停止
+            // localStorage.setItem('selectedLayers_map01', JSON.stringify(selectedLayers))
         },
         { deep: true }
     )

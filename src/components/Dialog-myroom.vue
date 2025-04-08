@@ -1,7 +1,3 @@
-<script setup>
-import { user as user1 } from "@/authState"; // グローバルの認証情報を取得
-</script>
-
 <template>
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div class="myroom-div">
@@ -584,7 +580,7 @@ export default {
         console.log('fetchLayers: 更新後のcurrentGroupLayers=', JSON.stringify(this.s_currentGroupLayers));
 
         // selectedLayers.map01と同期
-        this.syncSelectedLayers();
+        // this.syncSelectedLayers();
       } catch (e) {
         console.error('Firestore 読み込みエラー:', e);
       }
@@ -2444,93 +2440,6 @@ export default {
     },
   },
   watch: {
-    // s_map01: {
-    //   handler(map) {
-    //     if (map) {
-    //       alert(999)
-    //       this.setupSelectedLayerWatcher()
-    //     }
-    //   },
-    //   immediate: true
-    // },
-    // 'selectedLayers.map01': {
-    //   handler (newVal) {
-    //     const map = this.$store.state.map01
-    //     if (!map) {
-    //       alert(0)
-    //       return
-    //     }
-    //     newVal.forEach(layer => {
-    //       if (!map.getSource(layer.id)) {
-    //         map.addSource(layer.id, {
-    //           type: 'geojson',
-    //           data: {
-    //             type: 'FeatureCollection',
-    //             features: layer.features || []
-    //           }
-    //         })
-    //         map.addLayer({
-    //           id: layer.id + '-layer',
-    //           type: 'circle',
-    //           source: layer.id,
-    //           paint: {
-    //             'circle-radius': 6,
-    //             'circle-color': layer.color || '#ff0000'
-    //           }
-    //         })
-    //       }
-    //     })
-    //     alert('selectedLayers.map01 changed!')
-    //   },
-    //   deep: true,
-    //   immediate: true
-    // },
-    // s_selectedLayers: {
-    //   handler(newVal) {
-    //     alert(newVal)
-    //     const map = this.$store.state.map01
-    //     if (!map) return
-    //
-    //     newVal.forEach(layer => {
-    //       if (!map.getSource(layer.id)) {
-    //         map.addSource(layer.id, {
-    //           type: 'geojson',
-    //           data: {
-    //             type: 'FeatureCollection',
-    //             features: layer.features || []
-    //           }
-    //         })
-    //         map.addLayer({
-    //           id: layer.id + '-layer',
-    //           type: 'circle',
-    //           source: layer.id,
-    //           paint: {
-    //             'circle-radius': 6,
-    //             'circle-color': layer.color || '#ff0000'
-    //           }
-    //         })
-    //       }
-    //     })
-    //     this.setLayerConfigs()
-    //   },
-    //   deep: true,
-    //   immediate: true
-    // },
-    // s_selectedLayers(newVal) {
-    //   // id がある程度入ってきたらラベル設定を試みる
-    //   if (newVal.length > 0) {
-    //     this.setLayerConfigs()
-    //   }
-    // },
-    // s_map01: {
-    //   handler (map) {
-    //     if (!map || this._clickRegistered) return
-    //     this.setupSelectedLayerWatcher()
-    //     this._clickRegistered = true
-    //     map.on('click', this.handleMapClick)
-    //   },
-    //   immediate: true
-    // },
     s_currentGroupName() {
       this.fetchLayers()
     },
