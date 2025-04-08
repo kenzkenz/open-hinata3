@@ -997,6 +997,7 @@ export default {
       }
     },
     async fetchLayers () {
+      alert(this.s_currentGroupId)
       if (!this.s_currentGroupId) return
       try {
         const snapshot = await firebase.firestore()
@@ -1010,6 +1011,8 @@ export default {
         snapshot.forEach(doc => {
           layers.push({ id: doc.id, ...doc.data() })
         })
+        // 既存データをクリアしてから設定
+        this.$store.state.currentGroupLayers = [] // クリア
         this.$store.state.currentGroupLayers = layers
         // this.setLayerLabels()
         this.setLayerConfigs()
