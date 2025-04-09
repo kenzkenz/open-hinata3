@@ -11,7 +11,6 @@
         ポイント情報
       </v-card-title>
       <v-card-text style="margin-top: 20px;" class="text-body-1">
-        <p class="mt-2 text-caption" style="margin-bottom: 10px;"> グループ: {{ groupName }} / レイヤー: {{ layerName }}</p>
         <v-text-field
             v-model="title"
             label="タイトル"
@@ -24,6 +23,14 @@
             auto-grow
             rows="6"
         />
+        <v-img style="margin-bottom: 20px;"
+            v-if="photoUrl"
+            :src="photoUrl"
+            max-height="200"
+            max-width="100%"
+            class="mt-2"
+            @error="onImageError"
+        />
         <v-file-input
             v-model="photo"
             label="写真をアップロード"
@@ -32,33 +39,24 @@
             prepend-icon="mdi-camera"
             :loading="isUploading"
         />
-<!--        <v-img-->
-<!--            :src="'https://firebasestorage.googleapis.com/v0/b/open-hinata3.firebasestorage.app/o/points%2F26eb966e-af30-4ceb-9e01-7b4ead31b2ab_1744191841794.jpeg?alt=media&token=a4f78f7c-8cec-44b7-810e-3e2603a84719'"-->
-<!--            max-height="200"-->
-<!--            max-width="100%"-->
-<!--            class="mt-2"-->
-<!--        />-->
-        <v-img
-            v-if="photoUrl"
-            :src="photoUrl"
-            max-height="200"
-            max-width="100%"
-            class="mt-2"
-            @error="onImageError"
-        />
 <!--        <div class="street-view" style="margin-top:0px;height: 200px;width: 100%"></div>-->
-        <div class="mt-2 text-caption text-right">
-          作成者: {{ creator }}<br />
-          日時: {{ timestamp }}
-        </div>
       </v-card-text>
-      <v-card-actions>
+      <v-card-actions style="margin-top: -20px">
         <v-btn style="background-color: var(--main-color); color: white!important;" @click="removeAllFeatures">全削除</v-btn>
         <v-spacer />
         <v-btn style="background-color: var(--main-color); color: white!important;" @click="remove">削除</v-btn>
         <v-btn style="background-color: var(--main-color); color: white!important;" @click="save">保存</v-btn>
         <v-btn style="background-color: var(--main-color); color: white!important;" @click="close">閉じる</v-btn>
       </v-card-actions>
+      <v-card-text style="margin-top: -20px">
+        <div class="mt-2 text-caption text-right">
+          作成者: {{ creator }}<br>
+          日時: {{ timestamp }}<br>
+          グループ: {{ groupName }}<br>
+          レイヤー: {{ layerName }}
+        </div>
+<!--        <p class="mt-2 text-caption" style="margin-bottom: 10px;"> グループ: {{ groupName }} / レイヤー: {{ layerName }}</p>-->
+      </v-card-text>
     </v-card>
   </v-navigation-drawer>
 </template>
