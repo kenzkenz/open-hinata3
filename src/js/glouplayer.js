@@ -19,7 +19,8 @@ let isSaving = false
 // 地物クリック時のハンドラー
 function createPointClickHandler(map01) {
     return (e) => {
-        const features = map01.queryRenderedFeatures(e.point, { layers: ['oh-point-layer'] });
+        const features = map01.queryRenderedFeatures(e.point, { layers: ['oh-point-layer','oh-point-label-layer'] });
+        // alert(features.length)
         if (features.length > 0) {
             const clickedFeature = features[0];
             const featureData = {
@@ -33,6 +34,7 @@ function createPointClickHandler(map01) {
         }
     };
 }
+
 async function fetchAndSetGeojson(groupId, map, layerId) {
     if (groupId !== store.state.currentGroupId || layerId !== store.state.selectedLayerId) return;
     const doc = await db.collection('groups').doc(groupId).collection('layers').doc(layerId).get();
@@ -77,9 +79,9 @@ async function fetchAndSetGeojson(groupId, map, layerId) {
                 }
             });
             // スナックバー通知
-            // store.dispatch('triggerSnackbarForGroup', {
-            //     message: `レイヤー "Layer_${layerId}" を追加しました`
-            // });
+            store.dispatch('triggerSnackbarForGroup', {
+                message: `レイヤー "Layer_${layerId}" を追加しました`
+            });
         }
     } else {
         groupGeojson.value.features = [];
@@ -257,8 +259,14 @@ function createMapClickHandler(map01) {
         const layerId = store.state.selectedLayerId;
         if (!groupId || !layerId) return;
 
-        const features = map01.queryRenderedFeatures(e.point, { layers: ['oh-point-layer'] });
+        // const features = map01.queryRenderedFeatures(e.point, { layers: ['oh-point-layer'] });
+        // if (features.length > 0 || !e.lngLat) return;
+
+        const features = map01.queryRenderedFeatures(e.point, {
+            layers: ['oh-point-layer', 'oh-point-label-layer']
+        });
         if (features.length > 0 || !e.lngLat) return;
+
 
         const { lng, lat } = e.lngLat;
         const newFeature = {
@@ -395,6 +403,7 @@ export default function useGloupLayer() {
                 map01.on('click', mapClickHandler);
                 // 地物クリックイベントを追加
                 map01.on('click', 'oh-point-layer', createPointClickHandler(map01)); // ★ここでクリックを監視★
+                map01.on('click', 'oh-point-label-layer', createPointClickHandler(map01));
             };
 
             if (map01.isStyleLoaded()) {
@@ -411,7 +420,6 @@ export default function useGloupLayer() {
         },
         { immediate: true }
     );
-
     watch(
         () => store.state.selectedLayers.map01,
         async (selectedLayers) => {

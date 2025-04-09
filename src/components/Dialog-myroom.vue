@@ -306,7 +306,7 @@ import {
   extLayer,
   extSource,
   groupPointsLayer, groupPointsSource,
-  konUrls, ohPointLayer, pngLayer,
+  konUrls, ohLabelLayer, ohPointLayer, pngLayer,
   pngSource,
   sicyosonChibanzuUrls
 } from "@/js/layers";
@@ -775,7 +775,7 @@ export default {
                   }
                 }
               }],
-              layers: [ohPointLayer],
+              layers: [ohPointLayer,ohLabelLayer],
               opacity:1,
               visibility: true,
             },

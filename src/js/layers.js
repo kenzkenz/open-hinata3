@@ -8819,6 +8819,23 @@ export const ohPointLayer =
         'circle-stroke-width': 2,
         'circle-stroke-color': '#ffffff'
     }}
+export const ohLabelLayer = {
+    id: 'oh-point-label-layer',
+    type: 'symbol',
+    source: 'oh-point-source',
+    layout: {
+        'text-field': ['get', 'title'],  // ← GeoJSON の properties.title を使う
+        'text-font': ['Noto Sans Regular', 'Arial Unicode MS Regular'],
+        'text-size': 14,
+        'text-offset': [0, 0.5],
+        'text-anchor': 'top'
+    },
+    paint: {
+        'text-color': '#333',
+        'text-halo-color': '#fff',
+        'text-halo-width': 1.2
+    }
+}
 
 // ---------------------------------------------------------------------------------------------------------------------
 let layers01 = [

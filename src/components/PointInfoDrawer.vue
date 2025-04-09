@@ -209,6 +209,17 @@ export default {
     },
     save() {
       console.log('保存開始');
+
+      if (this.selectedPointFeature?.properties) {
+        this.selectedPointFeature.properties.title = this.title;
+        this.selectedPointFeature.properties.description = this.description;
+
+        // ここで photoUrl が null になってる可能性があるのでガード付きに
+        if (this.photoUrl) {
+          this.selectedPointFeature.properties.photoUrl = this.photoUrl;
+        }
+      }
+
       this.saveSelectedPointFeature();
       this.$store.dispatch('saveSelectedPointToFirestore');
       console.log('保存後のselectedPointFeature:', JSON.stringify(this.selectedPointFeature));
@@ -226,6 +237,7 @@ export default {
         return;
       }
       this.deleteSelectedPoint();
+      this.close();
     },
     async deleteSelectedPoint() {
       const db = firebase.firestore();
