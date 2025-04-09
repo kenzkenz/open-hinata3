@@ -38,7 +38,7 @@
                     <v-btn style="margin-top: -10px;margin-bottom: 10px;margin-left: 10px;" @click="layerSerchBtn">検索</v-btn>
                     <div v-for="item in s_currentGroupLayers" :key="item.id" class="data-container" @click="layerSet(item.name,item.id)">
                       <button class="close-btn" @click="deleteLayer(item.id)">×</button>
-                      <strong>{{ item.name + item.groupId }}</strong>
+                      <span v-html="'<strong>' + item.name + '</strong>_' + item.nickName + 'が作成_' + readableTime (item.createdAt)"></span>
                     </div>
                   </div>
                 </v-card>
@@ -556,8 +556,12 @@ export default {
     },
   },
   methods: {
+    readableTime (createdAt) {
+      const date = createdAt.toDate(); // Date オブジェクトに変換
+      return  date.toLocaleString();
+    },
     async fetchLayers() {
-      alert('フェッチ')
+      // フェッチレイヤーズ
       if (!this.s_currentGroupId) {
         console.warn('fetchLayers: グループIDが未定義');
         this.$store.state.currentGroupLayers = []; // 未定義の場合はクリア
@@ -575,6 +579,8 @@ export default {
         snapshot.forEach(doc => {
           layers.push({ id: doc.id, ...doc.data() });
         });
+
+        // alert('フェッチ' +  JSON.stringify(this.s_currentGroupLayers))
 
         // currentGroupLayersをクリアして最新データに更新
         this.$store.state.currentGroupLayers = layers;
@@ -611,12 +617,90 @@ export default {
         }
       }
     },
+    async fetchMyGroupId() {
+      const db = firebase.firestore();
+      const user = firebase.auth().currentUser;
 
-    async addLayer() {
-      if (!this.layerName) {
-        alert('ネームが未記入です。');
+      if (!user) {
+        console.warn('ログインしていません');
+        alert('ログインしてください');
         return;
       }
+      const userId = user.uid;
+      console.log('ログイン中のユーザーUID:', userId);
+
+      try {
+        const snapshot = await db.collection('groups')
+            .where('members', 'array-contains', userId)
+            .get();
+
+        const myGroups = snapshot.docs.map(doc => ({
+          id: doc.id,
+          name: doc.data().name
+        }));
+
+        if (myGroups.length > 0) {
+          this.myGroupId = myGroups[0].id; // ここでカレントグループIDを設定
+          console.log('取得したグループID:', this.myGroupId);
+          alert(`グループID: ${this.myGroupId}, 名前: ${myGroups[0].name}`);
+        } else {
+          console.warn('グループが見つかりません');
+          alert('所属グループがありません');
+          this.myGroupId = null;
+        }
+      } catch (error) {
+        console.error('グループ取得エラー:', error);
+        alert('グループ取得に失敗しました');
+      }
+    },
+    async fetchMyGroups() {
+      const db = firebase.firestore();
+      const user = firebase.auth().currentUser;
+
+      if (!user) {
+        console.warn('ログインしていません');
+        alert('ログインしてください');
+        return;
+      }
+
+      try {
+        const snapshot = await db.collection('groups')
+            .where('members', 'array-contains', user.uid)
+            .get();
+
+        alert(user.uid)
+
+        this.myGroups = snapshot.docs.map(doc => ({
+          id: doc.id,
+          name: doc.data().name
+        }));
+
+        if (this.myGroups.length > 0) {
+          console.log('自分のグループ:', this.myGroups);
+          alert(`所属グループ: ${this.myGroups.map(g => g.name).join(', ')}`);
+        } else {
+          console.warn('グループが見つかりません');
+          alert('所属グループがありません');
+        }
+      } catch (error) {
+        console.error('グループ取得エラー:', error);
+        alert('グループ取得に失敗しました');
+      }
+    },
+    async addLayer() {
+      // await this.fetchMyGroupId()
+      // alert('カレントグループID' + this.s_currentGroupId)
+      console.log('s_currentGroupId:', this.s_currentGroupId); // デバッグ用
+      if (!this.s_currentGroupId) {
+        this.$store.commit('showSnackbarForGroup', 'グループを選択してください');
+        return;
+      }
+
+      if (!this.layerName) {
+        this.$store.commit('showSnackbarForGroup', 'ネームが未記入です');
+        return;
+      }
+
       const nextIndex = this.s_currentGroupLayers.length + 1;
       const name = this.layerName.trim() || `レイヤー${nextIndex}`;
       const newLayer = {
@@ -624,23 +708,64 @@ export default {
         color: '#ff0000',
         visible: true,
         features: [],
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        groupId: this.s_currentGroupId,
+        nickName: this.$store.state.myNickname
       };
+
       try {
-        const docRef = await firebase.firestore()
+        const db = firebase.firestore();
+        const docRef = await db
             .collection('groups')
             .doc(this.s_currentGroupId)
             .collection('layers')
             .add(newLayer);
-        newLayer.id = docRef.id;
 
-        // 保存後にfetchLayersで最新状態を取得
-        await this.fetchLayers();
-        this.layerSet(name, newLayer.id); // 即時反映
-      } catch (e) {
-        console.error('Firestore 書き込みエラー:', e);
+        newLayer.id = docRef.id;
+        console.log('新しいレイヤー追加:', newLayer);
+
+        // 最新レイヤーリストを更新
+        // await this.updateCurrentGroupLayers(this.s_currentGroupId);
+        // this.layerSet(name, newLayer.id); // 即時反映
+        this.$store.commit('showSnackbarForGroup', `✅ レイヤー ${name} を追加しました`);
+        this.layerName = ''; // 入力欄をリセット
+        this.fetchLayers()
+      } catch (error) {
+        console.error('Firestore 書き込みエラー:', error);
+        this.$store.commit('showSnackbarForGroup', 'レイヤー追加に失敗しました');
       }
     },
+
+    // async addLayer() {
+    //   alert(this.s_currentGroupId)
+    //   if (!this.layerName) {
+    //     alert('ネームが未記入です。');
+    //     return;
+    //   }
+    //   const nextIndex = this.s_currentGroupLayers.length + 1;
+    //   const name = this.layerName.trim() || `レイヤー${nextIndex}`;
+    //   const newLayer = {
+    //     name: name,
+    //     color: '#ff0000',
+    //     visible: true,
+    //     features: [],
+    //     createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    //   };
+    //   try {
+    //     const docRef = await firebase.firestore()
+    //         .collection('groups')
+    //         .doc(this.s_currentGroupId)
+    //         .collection('layers')
+    //         .add(newLayer);
+    //     newLayer.id = docRef.id;
+    //
+    //     // 保存後にfetchLayersで最新状態を取得
+    //     await this.fetchLayers();
+    //     this.layerSet(name, newLayer.id); // 即時反映
+    //   } catch (e) {
+    //     console.error('Firestore 書き込みエラー:', e);
+    //   }
+    // },
 
     async deleteLayer(id) {
       if (!confirm("本当に削除しますか？元には戻りません。")) return;
@@ -2414,7 +2539,6 @@ export default {
   },
   watch: {
     s_currentGroupId() {
-      alert('ウオッチ')
       this.fetchLayers()
     },
     s_dialogForLink () {
@@ -2479,12 +2603,9 @@ export default {
         this.uid = uid
         this.$store.state.userId = uid
 
-
-
-
-        if (this.s_currentGroupId) {
+        // if (this.s_currentGroupId) {
           this.fetchLayers()
-        }
+        // }
 
         this.fetchImages(uid)
         this.urlSelect(uid)

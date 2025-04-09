@@ -68,9 +68,9 @@ async function fetchAndSetGeojson(groupId, map, layerId) {
         groupGeojson.value.features = [];
         store.commit('setCurrentGroupLayers', []);
         // スナックバー通知
-        store.dispatch('triggerSnackbarForGroup', {
-            message: 'レイヤーデータが空です'
-        });
+        // store.dispatch('triggerSnackbarForGroup', {
+        //     message: 'レイヤーデータが空です'
+        // });
     }
 }
 

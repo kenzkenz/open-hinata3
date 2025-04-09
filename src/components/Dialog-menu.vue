@@ -100,7 +100,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               </div>
             </div>
             <div style="margin-top: 10px;">
-
               <div v-if="signUpDiv" style="margin-top: 10px;">
                 <v-text-field  v-model="nickname" type="text" placeholder="ニックネーム"></v-text-field>
                 <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
@@ -301,6 +300,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <p style="margin-bottom: 20px;">
           <template v-if="initialGroupName && initialGroupName !== ''">
             現在のグループは「{{ initialGroupName }}」です。
+            {{ s_currentGroupId }}
           </template>
           <template v-else>
             グループに所属していません。
@@ -455,9 +455,10 @@ export default {
     urlName: '',
     uid: null,
     images: [],
+    nickname: '',
     email: '',
     password: '',
-    nickname: '',
+    // nickname: '',
     errorMsg: '',
     konjyakuYear: '1890',
     address: '',
@@ -501,6 +502,9 @@ export default {
     },
     currentUserId() {
       return this.$store.state.userId
+    },
+    s_currentGroupId() {
+      return this.$store.state.currentGroupId
     },
     s_currentGroupName: {
       get() {
@@ -1086,7 +1090,10 @@ export default {
 
     async onGroupChange(groupId) {
       const group = this.groupOptions.find(g => g.id === groupId)
-
+      // alert('グループID' + groupId)
+      if (group) {
+        this.$store.commit('setCurrentGroupId', groupId)
+      }
       if (!groupId || !group) {
         this.s_currentGroupName = ''
         this.selectedGroupId = null
@@ -1104,6 +1111,7 @@ export default {
         this.initialGroupName = group.name                     // 👈 同期表示用
         // this.selectMenuOpen = false
         console.log("🔄 グループ変更で initialGroupName 更新:", group.name)
+        document.querySelector('#drag-handle-myroomDialog-map01').innerHTML = '<span style="font-size: large;">マイルーム_' + this.s_currentGroupName + '</span>'
       }
     },
     async switchGroup(groupId) {
@@ -1468,6 +1476,9 @@ export default {
     }
   },
   watch: {
+    s_currentGroupId (newVal,oldVal) {
+      // alert('newVal' + newVal + 'oldVal' + oldVal)
+    },
     currentUserId: {
       immediate: true,
       async handler(uid) {
@@ -1512,77 +1523,6 @@ export default {
       },
     },
   },
-
-  // watch: {
-  //
-  //
-  //
-  //   currentUserId: {
-  //     immediate: true,
-  //     async handler(uid) {
-  //       if (!uid || uid === 'dummy') return
-  //
-  //       try {
-  //         const userDoc = await db.collection("users").doc(uid).get()
-  //         const groupIds = userDoc.exists ? userDoc.data().groups || [] : []
-  //         const groups = []
-  //
-  //
-  //         // const groupIds = userDoc.exists ? userDoc.data().groups || [] : []
-  //         //
-  //         // const groups = []
-  //         // for (const groupId of groupIds) {
-  //         //   const groupDoc = await db.collection("groups").doc(groupId).get()
-  //         //   if (groupDoc.exists) {
-  //         //     const name = groupDoc.data().name || "(名前なし)"
-  //         //     groups.push({
-  //         //       id: groupId,
-  //         //       name,
-  //         //       ownerUid: groupDoc.data().ownerUid
-  //         //     })
-  //         //   }
-  //         // }
-  //         //
-  //
-  //
-  //
-  //
-  //         for (const groupId of groupIds) {
-  //           const groupDoc = await db.collection("groups").doc(groupId).get()
-  //           if (groupDoc.exists) {
-  //             const name = groupDoc.data().name || "(名前なし)"
-  //             groups.push({
-  //               id: groupId,
-  //               name,
-  //               ownerUid: groupDoc.data().ownerUid
-  //             })
-  //           }
-  //         }
-  //
-  //         // 先頭に「グループに入らない」を追加
-  //         this.groupOptions = [
-  //           { id: null, name: "（グループに入らない）" },
-  //           ...groups
-  //         ]
-  //
-  //         const savedGroupId = localStorage.getItem("lastUsedGroupId")
-  //
-  //         // ✅ 空文字のときは null として扱う（これが重要！）
-  //         const validGroupId = savedGroupId === "" ? null : savedGroupId
-  //
-  //         // ✅ groupOptions に含まれていればそれを使う
-  //         const defaultGroupId = this.groupOptions.find(g => g.id === validGroupId)
-  //             ? validGroupId
-  //             : null
-  //
-  //         this.selectedGroupId = defaultGroupId
-  //         this.onGroupChange(defaultGroupId)
-  //       } catch (e) {
-  //         console.error("🔥 グループ取得中エラー", e)
-  //       }
-  //     }
-  //   },
-  // },
   created() {
     auth.onAuthStateChanged(async user => {
       if (user) {

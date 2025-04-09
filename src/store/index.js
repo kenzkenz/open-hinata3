@@ -395,7 +395,7 @@ export default createStore({
     // -----------------------------------------------------------------------------------------------------------------
     removePointFeature(state, id) {
       const index = state.groupGeojson.features.findIndex(f => f.properties?.id === id);
-      alert(index);
+      // alert(index);
       if (index !== -1) {
         state.groupGeojson.features.splice(index, 1);
         console.log('削除後の features:', state.groupGeojson.features.length); // 追加
@@ -424,6 +424,8 @@ export default createStore({
       }
     },
     setPointInfoDrawer (state, val) {
+      const groupId = db.collection('groups').doc().id
+      state.currentGroupId = groupId
       state.showPointInfoDrawer = val
     },
     setSelectedPointFeature (state, feature) {

@@ -3417,30 +3417,6 @@ export function popup(e,map,mapName,mapFlg) {
             case 'oh-point-layer':
             {
 
-                // let features = map.queryRenderedFeatures(
-                //     map.project(coordinates), {layers: [layerId]}
-                // )
-                // if (features.length === 0) {
-                //     features = map.queryRenderedFeatures(
-                //         map.project(e.lngLat), {layers: [layerId]}
-                //     )
-                // }
-                //
-                // if (features.length > 0) {
-                //     const clickedFeature = features[0]
-                //     store.commit('setSelectedPointFeature', clickedFeature)
-                //     store.commit('setPointInfoDrawer', true)
-                // }
-                //
-                //
-                // store.commit('setSelectedPointFeature', feature)
-                // // ← 追加！groupGeojson.features に含まれてなければ push する
-                // const exists = store.state.groupGeojson.features.some(f => f.properties.id === feature.properties.id)
-                // if (!exists) {
-                //     store.state.groupGeojson.features.push(JSON.parse(JSON.stringify(feature)))
-                // }
-                // store.commit('setPointInfoDrawer', true)
-
                 let features = map.queryRenderedFeatures(map.project(coordinates), {layers: [layerId]})
                 if (features.length === 0) {
                     features = map.queryRenderedFeatures(map.project(e.lngLat), {layers: [layerId]})

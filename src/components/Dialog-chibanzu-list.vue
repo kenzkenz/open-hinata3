@@ -1931,7 +1931,6 @@ export default {
     this.greenSelect()
     this.blueAndGraySelect('blue')
     this.blueAndGraySelect('gray')
-    document.querySelector('#drag-handle-myroomDialog-map01').innerHTML = '<span style="font-size: large;">my room</span>'
     // -------------------------------------------------------------------
     let maxHeight
     if (window.innerWidth <= 500) {

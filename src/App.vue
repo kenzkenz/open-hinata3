@@ -940,6 +940,9 @@ export default {
       'showPointInfoDrawer',
       'selectedPointFeature'
     ]),
+    s_currentGroupId() {
+      return this.$store.state.currentGroupId
+    },
     selectedLayers () {
       return this.$store.state.selectedLayers
     },
@@ -1807,6 +1810,10 @@ export default {
       pitch()
     },
     btnClickMyroom (mapName) {
+      // const groupId = db.collection('groups').doc().id
+      // const groupId = this.s_currentGroupId; // 修正: ストアから取得
+      // alert('app.vueから' + groupId)
+      // this.$store.state.currentGroupId = groupId
       if (this.$store.state.dialogs.myroomDialog[mapName].style.display === 'none') {
         this.$store.commit('incrDialogMaxZindex')
         this.$store.state.dialogs.myroomDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
@@ -4210,19 +4217,7 @@ export default {
     window.removeEventListener("resize", this.onResize);
   },
   mounted() {
-
-    // this.$store.state.highlightedChibans = new Set()
     const vm = this
-
-    // 非同期で user の UID を監視
-    // const checkUser = setInterval(() => {
-    //   if (user && user._rawValue && user._rawValue.uid) {
-    //     this.uid = user._rawValue.uid;
-    //     this.$store.state.userId = user._rawValue.uid
-    //     capture(this.uid,true)
-    //     clearInterval(checkUser); // UIDを取得できたら監視を停止
-    //   }
-    // }, 5);
     const checkUser = setInterval(() => {
       if (user.value && user.value.uid) {
         const uid = user.value.uid
@@ -4240,7 +4235,7 @@ export default {
         vm.historyCount++
       }
       vm.preUrl = window.location.href
-    }, 1 * 60 * 1000)
+    }, 5 * 60 * 1000)
     // -----------------------------------------------------------------------------
 
     window.addEventListener("resize", this.onResize);

@@ -62,7 +62,7 @@ export default {
     },
     // カスタム計算プロパティを個別に定義
     groupName() {
-      alert(this.$store.state.currentGroupName)
+      // alert(this.$store.state.currentGroupName)
       return this.$store.state.currentGroupName;
     },
     layerName() {
