@@ -55,9 +55,35 @@
             prepend-icon="mdi-camera"
             :loading="isUploading"
         />
-<!--        <div class="street-view" style="margin-top:0px;height: 200px;width: 100%"></div>-->
       </v-card-text>
-      <v-card-actions style="margin-top: -20px">
+
+      <v-card-text style="margin-top: -35px;">
+        <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+          <div
+              v-for="c in presetColors"
+              :class="['color-circle', { selected: color === c }]"
+              :key="c"
+              :style="{
+        backgroundColor: c,
+        width: '100%',
+        maxWidth: '36px',
+        height: '36px',
+        borderRadius: '50%',
+        border: color === c ? '2px solid black' : '1px solid #ccc',
+        cursor: 'pointer',
+        flex: '1',
+        margin: '0 4px',
+      }"
+              @click="color = c"
+          />
+        </div>
+      </v-card-text>
+
+
+
+
+
+      <v-card-actions style="margin-top: 0px">
         <v-btn style="background-color: var(--main-color); color: white!important;" @click="removeAllFeatures">全削除</v-btn>
         <v-spacer />
         <v-btn style="background-color: var(--main-color); color: white!important;" @click="remove">削除</v-btn>
@@ -94,7 +120,10 @@ export default {
       description: '',
       photo: null,
       photoUrl: '',
-      isUploading: false
+      isUploading: false,
+      color: '#ff0000',  // 初期色（赤）
+      presetColors: ['#ff0000', '#00aaff', '#00cc66', '#ffcc00', '#ff66cc', '#9966ff', '#aaaaaa', '#000000'],
+
     };
   },
   computed: {
@@ -132,8 +161,10 @@ export default {
 
         this.title = newVal?.properties?.title || '';
         this.description = newVal?.properties?.description || '';
-        this.photo = null;
+        this.photo = null
 
+        this.color = newVal?.properties?.color || this.presetColors[0]; // ←★ここ！
+        
         const id = newVal?.properties?.id;
         const photoUrlFromProp = newVal?.properties?.photoUrl;
 
@@ -201,12 +232,13 @@ export default {
 
       // 新しい画像が選択されているならアップロードしてから保存
       if (this.photo) {
-        await this.handlePhotoUpload(); // ← ここで画像アップしてから return で終わらず続ける
+        await this.handlePhotoUpload();
       }
 
       if (this.selectedPointFeature?.properties) {
         this.selectedPointFeature.properties.title = this.title;
         this.selectedPointFeature.properties.description = this.description;
+        this.selectedPointFeature.properties.color = this.color; // ← ★ここを追加
 
         if (this.photoUrl) {
           this.selectedPointFeature.properties.photoUrl = this.photoUrl;
@@ -218,6 +250,28 @@ export default {
       console.log('保存後のselectedPointFeature:', JSON.stringify(this.selectedPointFeature));
       this.close();
     },
+    // async save() {
+    //   console.log('保存開始');
+    //
+    //   // 新しい画像が選択されているならアップロードしてから保存
+    //   if (this.photo) {
+    //     await this.handlePhotoUpload(); // ← ここで画像アップしてから return で終わらず続ける
+    //   }
+    //
+    //   if (this.selectedPointFeature?.properties) {
+    //     this.selectedPointFeature.properties.title = this.title;
+    //     this.selectedPointFeature.properties.description = this.description;
+    //
+    //     if (this.photoUrl) {
+    //       this.selectedPointFeature.properties.photoUrl = this.photoUrl;
+    //     }
+    //   }
+    //
+    //   this.saveSelectedPointFeature();
+    //   this.$store.dispatch('saveSelectedPointToFirestore');
+    //   console.log('保存後のselectedPointFeature:', JSON.stringify(this.selectedPointFeature));
+    //   this.close();
+    // },
     onImageError() {
       console.error('画像の読み込みに失敗しました:', this.photoUrl);
       this.photoUrl = '';
@@ -330,5 +384,31 @@ export default {
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 2;
+}
+.color-picker-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.color-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.color-circle:hover {
+  transform: scale(1.15);
+  opacity: 0.8;
+}
+
+.color-circle.selected {
+  border: 3px solid black;
+}
+.selected-color {
+  border: 2px solid black;
 }
 </style>

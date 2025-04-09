@@ -4,6 +4,7 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    selectedPointColor: '#ff0000', // ✅ 追加: 現在のポイント色
     selectedLayerId: null, // 選択中のレイヤーIDを追加
     currentGroupId: '',
     currentGroupLayers: [],
@@ -703,111 +704,6 @@ export default createStore({
 
       console.log(`🗑️ 削除済み ID: ${idToDelete}`)
     },
-    // async saveSelectedPointToFirestore({ state, commit }) {
-    //   const groupId = state.currentGroupId;
-    //   const layerId = state.selectedLayerId;
-    //   if (!groupId || !layerId) {
-    //     console.warn('groupId または layerId が未設定です');
-    //     commit('showSnackbarForGroup', { message: 'グループまたはレイヤーが選択されていません' });
-    //     return;
-    //   }
-    //
-    //   try {
-    //     const docRef = db.collection('groups').doc(groupId).collection('layers').doc(layerId);
-    //     const doc = await docRef.get(); // ドキュメントを取得
-    //     let existingFeatures = [];
-    //
-    //     if (doc.exists) { // exists は DocumentSnapshot のプロパティ
-    //       const data = doc.data();
-    //       if (data.features) {
-    //         existingFeatures = data.features;
-    //       }
-    //     }
-    //
-    //     // 既存の特徴量と新規の特徴量をマージ
-    //     const mergedMap = new Map();
-    //     for (const f of existingFeatures) {
-    //       mergedMap.set(f.properties.id, f);
-    //     }
-    //     for (const f of state.groupGeojson.features) {
-    //       // selectedPointFeature の title を反映
-    //       if (state.selectedPointFeature && f.properties.id === state.selectedPointFeature.properties.id) {
-    //         f.properties.title = state.selectedPointFeature.properties.title || f.properties.title || '';
-    //         f.properties.description = state.selectedPointFeature.properties.description || f.properties.description || '';
-    //       }
-    //       mergedMap.set(f.properties.id, f);
-    //     }
-    //     const mergedFeatures = Array.from(mergedMap.values());
-    //
-    //     // Firestore に保存
-    //     await docRef.set(
-    //         {
-    //           features: mergedFeatures,
-    //           lastModifiedBy: state.userId,
-    //           lastModifiedAt: firebase.firestore.FieldValue.serverTimestamp(),
-    //         },
-    //         { merge: true }
-    //     );
-    //
-    //     // ストアの状態を更新
-    //     commit('setGroupGeojsonFeatures', mergedFeatures);
-    //     commit('showSnackbarForGroup', '✅ ポイントを保存しました');
-    //     console.log('✅ マージして保存しました', mergedFeatures);
-    //   } catch (error) {
-    //     console.error('Firestore 保存エラー:', error);
-    //     commit('showSnackbarForGroup', 'ポイントの保存に失敗しました: ' + error.message);
-    //   }
-    // },
-    // async saveSelectedPointToFirestore({ state, commit }) {
-    //   const groupId = state.currentGroupId;
-    //   const layerId = state.selectedLayerId;
-    //   if (!groupId || !layerId) {
-    //     console.warn('groupId または layerId が未設定です');
-    //     commit('showSnackbarForGroup', { message: 'グループまたはレイヤーが選択されていません' });
-    //     return;
-    //   }
-    //
-    //   try {
-    //     const docRef = db.collection('groups').doc(groupId).collection('layers').doc(layerId);
-    //     const doc = await docRef.get(); // ドキュメントを取得
-    //     let existingFeatures = [];
-    //
-    //     if (doc.exists) { // exists は DocumentSnapshot のプロパティ
-    //       const data = doc.data();
-    //       if (data.features) {
-    //         existingFeatures = data.features;
-    //       }
-    //     }
-    //
-    //     // 既存の特徴量と新規の特徴量をマージ
-    //     const mergedMap = new Map();
-    //     for (const f of existingFeatures) {
-    //       mergedMap.set(f.properties.id, f);
-    //     }
-    //     for (const f of state.groupGeojson.features) {
-    //       mergedMap.set(f.properties.id, f);
-    //     }
-    //     const mergedFeatures = Array.from(mergedMap.values());
-    //
-    //     // Firestore に保存
-    //     await docRef.set(
-    //         {
-    //           features: mergedFeatures,
-    //           lastModifiedBy: state.userId,
-    //           lastModifiedAt: firebase.firestore.FieldValue.serverTimestamp(),
-    //         },
-    //         { merge: true }
-    //     );
-    //
-    //     // ストアの状態を更新
-    //     commit('setGroupGeojsonFeatures', mergedFeatures);
-    //     commit('showSnackbarForGroup', '✅ ポイントを保存しました' );
-    //     console.log('✅ マージして保存しました');
-    //   } catch (error) {
-    //     console.error('Firestore 保存エラー:', error);
-    //     commit('showSnackbarForGroup', 'ポイントの保存に失敗しました: ' + error.message);
-    //   }
-    // },
     async fetchGroupData({ commit }, groupId) {
       const doc = await db.collection('groups').doc(groupId).get()
       if (doc.exists) {
@@ -869,7 +765,18 @@ export default createStore({
       }, { merge: true })
 
       console.log('✅ Firestore に保存しました')
-    }
+    },
+    updateSelectedPointColor(state, color) {
+      if (state.selectedPointFeature) {
+        state.selectedPointFeature.properties.color = color;
+        state.selectedPointColor = color;
+      }
+    },
+    setSelectedPointFeature (state, feature) {
+      state.selectedPointFeature = feature;
+      // ✅ 選択時に色を反映
+      state.selectedPointColor = feature?.properties?.color || '#ff0000';
+    },
   },
   modules: {
   }
