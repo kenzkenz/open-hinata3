@@ -359,6 +359,11 @@ export default createStore({
   getters: {
   },
   mutations: {
+    updateSelectedPointPhotoUrl(state, photoUrl) { // 新しいミューテーション
+      if (state.selectedPointFeature) {
+        state.selectedPointFeature.properties.photoUrl = photoUrl;
+      }
+    },
     setGroupGeojsonFeatures(state, features) {
       state.groupGeojson.features = features;
     },

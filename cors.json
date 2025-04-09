@@ -1,0 +1,7 @@
+[
+  {
+    "origin": ["https://kenzkenz.xsrv.jp", "http://localhost:8080"],
+    "method": ["GET", "POST", "PUT"],
+    "maxAge": 3600
+  }
+]

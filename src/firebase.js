@@ -7,7 +7,7 @@ const firebaseConfig = {
     apiKey: "AIzaSyD0br7P-RNCERYEO2pfnVJsQjstd-GztQY",
     authDomain: "open-hinata3.firebaseapp.com",
     projectId: "open-hinata3",
-    storageBucket: "open-hinata3.appspot.com", // ← typo 修正済み
+    storageBucket: "open-hinata3.firebasestorage.app", // ここを修正
     messagingSenderId: "531336516229",
     appId: "1:531336516229:web:1f41b71722d28ee51f4fec",
     measurementId: "G-9WVN4ESGR2"
