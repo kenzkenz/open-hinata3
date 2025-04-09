@@ -193,12 +193,14 @@ function setupFirestoreListener(groupId, layerId) {
                     if (newIds.length === 1) {
                         console.log('ポイント追加通知トリガー');
                         store.dispatch('triggerSnackbarForGroup', {
-                            message: `🔴 ${newIds.length} 件のポイントが追加されました。${userNickname}`
+                            // message: `🔴 ${newIds.length} 件のポイントが追加されました。${userNickname}`
+                            message: `🔴 ${newIds.length} 件のポイントが追加されました。`
                         });
                     } else if (deletedIds.length === 1) {
                         console.log('ポイント削除通知トリガー');
                         store.dispatch('triggerSnackbarForGroup', {
-                            message: `🗑️ ${deletedIds.length} 件のポイントが削除されました。${userNickname}`
+                            // message: `🗑️ ${deletedIds.length} 件のポイントが削除されました。${userNickname}`
+                            message: `🗑️ ${deletedIds.length} 件のポイントが削除されました。`
                         });
                     }
                 } else {
@@ -293,11 +295,11 @@ function createMapClickHandler(map01) {
 
         if (!isInitializing) {
             await saveLayerToFirestore(groupId, layerId, updatedFeatures);
-            // スナックバー通知
-            // store.dispatch('triggerSnackbarForGroup', {
-            //     message: '新しいポイントを追加しました'
-            // });
         }
+
+        // ✅ ドロワーを開く！
+        store.commit('setSelectedPointFeature', newFeature);
+        store.commit('setPointInfoDrawer', true);
     };
 }
 

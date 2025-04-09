@@ -167,8 +167,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
               </v-window-item>
 
-
-
               <v-window-item value="0" class="my-v-window">
                 <div class="create-group" v-if="user1 && !loginDiv && !signUpDiv">
                   <v-text-field v-model="groupName" label="グループ名" />
@@ -293,7 +291,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v0.822
+        v0.826
       </p>
       <div v-if="user1">
         <p style="margin-bottom: 20px;">

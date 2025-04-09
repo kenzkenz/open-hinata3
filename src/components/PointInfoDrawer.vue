@@ -1,12 +1,13 @@
 <template>
   <v-navigation-drawer
+      style="border-radius: 0;"
       v-model="visible"
       right
       temporary
       width="400"
       class="point-info-drawer"
   >
-    <v-card flat class="bg-white">
+    <v-card flat class="bg-white" style="border-radius: 0;">
       <v-card-title class="text-h6 text-white" style="background-color: var(--main-color);height: 40px;display: flex;align-items: center ">
         ポイント情報
         <div class="close-btn-div" style="margin-top: -3px;font-size: 30px!important;" @click="close"><i class="fa-solid fa-xmark hover close-btn"></i></div>
@@ -17,6 +18,22 @@
             label="タイトル"
             auto-grow
         />
+
+<!--        <QuillEditor-->
+<!--            v-model:content="description"-->
+<!--            contentType="html"-->
+<!--            theme="snow"-->
+<!--            style="height: 150px; margin-bottom: 20px;background-color: white;"-->
+<!--        />-->
+
+<!--        <QuillEditor-->
+<!--            v-model:content="description"-->
+<!--            contentType="html"-->
+<!--            theme="snow"-->
+<!--            :modules="quillModules"-->
+<!--            style="height: 150px; margin-bottom:20px;background-color: white;"-->
+<!--        />-->
+
         <v-textarea
             v-model="description"
             label="説明（最大500文字）"
@@ -24,14 +41,28 @@
             auto-grow
             rows="6"
         />
-        <v-img style="margin-bottom: 20px;"
-            v-if="photoUrl"
-            :src="photoUrl"
-            max-height="200"
-            max-width="100%"
-            class="mt-2"
-            @error="onImageError"
-        />
+        <a v-if="photoUrl" :href="photoUrl" target="_blank" rel="noopener noreferrer">
+          <div style="position: relative; width: 100%; margin-bottom: 20px;">
+            <!-- ローディング（中央） -->
+            <v-progress-circular
+                v-if="!isImageLoaded"
+                indeterminate
+                color="primary"
+                size="40"
+                class="image-loader"
+            />
+            <!-- 画像（フェードイン） -->
+            <div :class="{'fade-in': isImageLoaded, 'hidden': !isImageLoaded}">
+              <v-img
+                  :src="photoUrl"
+                  style="width: 100%;"
+                  class="mt-2"
+                  @load="isImageLoaded = true"
+                  @error="onImageError"
+              />
+            </div>
+          </div>
+        </a>
         <v-file-input
             v-model="photo"
             label="写真をアップロード"
@@ -67,11 +98,32 @@ import { mapState, mapMutations } from 'vuex';
 import firebase from "firebase/app";
 import "firebase/firestore";
 import "firebase/storage";
+// import Quill from 'quill'; // Quill を明示的にインポート
+// import { QuillEditor } from '@vueup/vue-quill'
+// // import 'quill/dist/quill.snow.css'
+// import '@/node_modules/quill/dist/quill.snow.css'; // Vue CLI でのエイリアス使用
+
 
 export default {
   name: 'PointInfoDrawer',
+  components: {
+    // QuillEditor
+  },
   data() {
     return {
+      modules: {
+        toolbar: ['bold'] // 配列を直接渡す
+        // toolbar: [
+        //   [{ header: [1, 2, 3, false] }],
+        //   ['bold', 'italic', 'underline', 'strike'],
+        //   [{ color: [] }, { background: [] }],
+        //   [{ list: 'ordered' }, { list: 'bullet' }],
+        //   [{ align: [] }],
+        //   ['link', 'image'],
+        //   ['clean']
+        // ]
+      },
+      isImageLoaded: false,
       title: '',
       description: '',
       photo: null,
@@ -108,6 +160,10 @@ export default {
       deep: true,
       async handler(newVal) {
         console.log('selectedPointFeature 更新:', JSON.stringify(newVal));
+
+        this.isImageLoaded = false;
+        this.photoUrl = ''; // ← 一旦空にすることで強制的に画像をリセット
+
         this.title = newVal?.properties?.title || '';
         this.description = newVal?.properties?.description || '';
         this.photo = null;
@@ -116,16 +172,21 @@ export default {
         const photoUrlFromProp = newVal?.properties?.photoUrl;
 
         if (photoUrlFromProp) {
-          this.photoUrl = photoUrlFromProp;
+          // 💡 少し遅らせて再セットする（再描画させるため）
+          setTimeout(() => {
+            this.photoUrl = photoUrlFromProp;
+          }, 10);
         } else if (id) {
-          // Firestore に photoUrl がない場合は、Storage から取得してみる
           try {
             const storage = firebase.storage();
             const [file] = await storage.ref('points').listAll().then(res =>
                 res.items.filter(item => item.name.startsWith(id + '_'))
             );
             if (file) {
-              this.photoUrl = await file.getDownloadURL();
+              const url = await file.getDownloadURL();
+              setTimeout(() => {
+                this.photoUrl = url;
+              }, 10);
             } else {
               this.photoUrl = '';
             }
@@ -136,12 +197,88 @@ export default {
         } else {
           this.photoUrl = '';
         }
-
-        this.$nextTick(() => {
-          console.log('次tickでのphotoUrl:', this.photoUrl);
-        });
       }
     },
+    // selectedPointFeature: {
+    //   immediate: true,
+    //   deep: true,
+    //   async handler(newVal) {
+    //     console.log('selectedPointFeature 更新:', JSON.stringify(newVal));
+    //     this.isImageLoaded = false; // 新しい画像をセットするたびに false に
+    //     // 1️⃣ まず photoUrl を空にしておく（瞬間的な表示を防ぐ）
+    //     this.photoUrl = '';
+    //
+    //     this.title = newVal?.properties?.title || '';
+    //     this.description = newVal?.properties?.description || '';
+    //     this.photo = null;
+    //
+    //     const id = newVal?.properties?.id;
+    //     const photoUrlFromProp = newVal?.properties?.photoUrl;
+    //
+    //     if (photoUrlFromProp) {
+    //       this.photoUrl = photoUrlFromProp;
+    //     } else if (id) {
+    //       try {
+    //         const storage = firebase.storage();
+    //         const [file] = await storage.ref('points').listAll().then(res =>
+    //             res.items.filter(item => item.name.startsWith(id + '_'))
+    //         );
+    //         if (file) {
+    //           this.photoUrl = await file.getDownloadURL();
+    //         } else {
+    //           this.photoUrl = '';
+    //         }
+    //       } catch (e) {
+    //         console.warn('Storage からの画像取得に失敗:', e);
+    //         this.photoUrl = '';
+    //       }
+    //     } else {
+    //       this.photoUrl = '';
+    //     }
+    //     this.$nextTick(() => {
+    //       console.log('次tickでのphotoUrl:', this.photoUrl);
+    //     });
+    //   }
+    // },
+    // selectedPointFeature: {
+    //   immediate: true,
+    //   deep: true,
+    //   async handler(newVal) {
+    //     console.log('selectedPointFeature 更新:', JSON.stringify(newVal));
+    //     this.title = newVal?.properties?.title || '';
+    //     this.description = newVal?.properties?.description || '';
+    //     this.photo = null;
+    //
+    //     const id = newVal?.properties?.id;
+    //     const photoUrlFromProp = newVal?.properties?.photoUrl;
+    //
+    //     if (photoUrlFromProp) {
+    //       this.photoUrl = photoUrlFromProp;
+    //     } else if (id) {
+    //       // Firestore に photoUrl がない場合は、Storage から取得してみる
+    //       try {
+    //         const storage = firebase.storage();
+    //         const [file] = await storage.ref('points').listAll().then(res =>
+    //             res.items.filter(item => item.name.startsWith(id + '_'))
+    //         );
+    //         if (file) {
+    //           this.photoUrl = await file.getDownloadURL();
+    //         } else {
+    //           this.photoUrl = '';
+    //         }
+    //       } catch (e) {
+    //         console.warn('Storage からの画像取得に失敗:', e);
+    //         this.photoUrl = '';
+    //       }
+    //     } else {
+    //       this.photoUrl = '';
+    //     }
+    //
+    //     this.$nextTick(() => {
+    //       console.log('次tickでのphotoUrl:', this.photoUrl);
+    //     });
+    //   }
+    // },
   },
   methods: {
     ...mapMutations([
@@ -149,60 +286,148 @@ export default {
       'saveSelectedPointFeature',
       'updateSelectedPointPhotoUrl'
     ]),
+    // 画像アップロード専用にする（保存は save() 側で一括）
     async handlePhotoUpload() {
-      console.log('handlePhotoUpload 開始, photo:', this.photo);
-      if (!this.photo) {
-        console.log('写真が選択されていません');
-        this.photoUrl = '';
-        this.$store.commit('updateSelectedPointPhotoUrl', '');
-        return;
-      }
-
-      if (!firebase.storage) {
-        console.error('Firebase Storage が初期化されていません');
-        this.$store.commit('showSnackbarForGroup', 'Firebase Storage が利用できません');
-        return;
-      }
+      if (!this.photo) return;
 
       this.isUploading = true;
+
       try {
-        this.save()
         const storageRef = firebase.storage().ref();
         const fileExtension = this.photo.name.split('.').pop();
         const fileName = `${this.selectedPointFeature?.properties?.id || 'new'}_${Date.now()}.${fileExtension}`;
         const photoRef = storageRef.child(`points/${fileName}`);
 
-        console.log('アップロード開始, fileName:', fileName);
         const snapshot = await photoRef.put(this.photo);
         const photoUrl = await snapshot.ref.getDownloadURL();
-        console.log('アップロード成功, photoUrl:', photoUrl);
 
         this.photoUrl = photoUrl;
         this.$store.commit('updateSelectedPointPhotoUrl', photoUrl);
-        console.log('ストアのphotoUrl:', this.selectedPointFeature?.properties?.photoUrl);
-        this.$forceUpdate(); // 必要に応じて強制再レンダリング
       } catch (error) {
         console.error('写真アップロードエラー:', error);
         this.$store.commit('showSnackbarForGroup', '写真のアップロードに失敗しました: ' + error.message);
       } finally {
         this.isUploading = false;
-        console.log('アップロード処理終了');
       }
     },
-    save() {
+    // async handlePhotoUpload() {
+    //   console.log('handlePhotoUpload 開始, photo:', this.photo);
+    //   if (!this.photo) {
+    //     console.log('写真が選択されていません');
+    //     this.photoUrl = '';
+    //     this.$store.commit('updateSelectedPointPhotoUrl', '');
+    //     return;
+    //   }
+    //
+    //   if (!firebase.storage) {
+    //     console.error('Firebase Storage が初期化されていません');
+    //     this.$store.commit('showSnackbarForGroup', 'Firebase Storage が利用できません');
+    //     return;
+    //   }
+    //
+    //   this.isUploading = true;
+    //
+    //   try {
+    //     const storageRef = firebase.storage().ref();
+    //     const fileExtension = this.photo.name.split('.').pop();
+    //     const fileName = `${this.selectedPointFeature?.properties?.id || 'new'}_${Date.now()}.${fileExtension}`;
+    //     const photoRef = storageRef.child(`points/${fileName}`);
+    //
+    //     console.log('アップロード開始, fileName:', fileName);
+    //     const snapshot = await photoRef.put(this.photo);
+    //     const photoUrl = await snapshot.ref.getDownloadURL();
+    //     console.log('アップロード成功, photoUrl:', photoUrl);
+    //
+    //     this.photoUrl = photoUrl;
+    //     this.$store.commit('updateSelectedPointPhotoUrl', photoUrl);
+    //
+    //     // ✅ アップロードが成功してから保存する
+    //     this.save();
+    //     this.$forceUpdate();
+    //   } catch (error) {
+    //     console.error('写真アップロードエラー:', error);
+    //     this.$store.commit('showSnackbarForGroup', '写真のアップロードに失敗しました: ' + error.message);
+    //   } finally {
+    //     this.isUploading = false;
+    //     console.log('アップロード処理終了');
+    //   }
+    // },
+    // async handlePhotoUpload() {
+    //   console.log('handlePhotoUpload 開始, photo:', this.photo);
+    //   if (!this.photo) {
+    //     console.log('写真が選択されていません');
+    //     this.photoUrl = '';
+    //     this.$store.commit('updateSelectedPointPhotoUrl', '');
+    //     return;
+    //   }
+    //
+    //   if (!firebase.storage) {
+    //     console.error('Firebase Storage が初期化されていません');
+    //     this.$store.commit('showSnackbarForGroup', 'Firebase Storage が利用できません');
+    //     return;
+    //   }
+    //
+    //   this.isUploading = true;
+    //   try {
+    //     this.save()
+    //     const storageRef = firebase.storage().ref();
+    //     const fileExtension = this.photo.name.split('.').pop();
+    //     const fileName = `${this.selectedPointFeature?.properties?.id || 'new'}_${Date.now()}.${fileExtension}`;
+    //     const photoRef = storageRef.child(`points/${fileName}`);
+    //
+    //     console.log('アップロード開始, fileName:', fileName);
+    //     const snapshot = await photoRef.put(this.photo);
+    //     const photoUrl = await snapshot.ref.getDownloadURL();
+    //     console.log('アップロード成功, photoUrl:', photoUrl);
+    //
+    //     this.photoUrl = photoUrl;
+    //     this.$store.commit('updateSelectedPointPhotoUrl', photoUrl);
+    //     console.log('ストアのphotoUrl:', this.selectedPointFeature?.properties?.photoUrl);
+    //     this.$forceUpdate(); // 必要に応じて強制再レンダリング
+    //   } catch (error) {
+    //     console.error('写真アップロードエラー:', error);
+    //     this.$store.commit('showSnackbarForGroup', '写真のアップロードに失敗しました: ' + error.message);
+    //   } finally {
+    //     this.isUploading = false;
+    //     console.log('アップロード処理終了');
+    //   }
+    // },
+    async save() {
       console.log('保存開始');
+
+      // 新しい画像が選択されているならアップロードしてから保存
+      if (this.photo) {
+        await this.handlePhotoUpload(); // ← ここで画像アップしてから return で終わらず続ける
+      }
+
       if (this.selectedPointFeature?.properties) {
         this.selectedPointFeature.properties.title = this.title;
         this.selectedPointFeature.properties.description = this.description;
-        // ここで photoUrl が null になってる可能性があるのでガード付きに
+
         if (this.photoUrl) {
           this.selectedPointFeature.properties.photoUrl = this.photoUrl;
         }
       }
+
       this.saveSelectedPointFeature();
       this.$store.dispatch('saveSelectedPointToFirestore');
       console.log('保存後のselectedPointFeature:', JSON.stringify(this.selectedPointFeature));
+      this.close();
     },
+    // save() {
+    //   console.log('保存開始');
+    //   if (this.selectedPointFeature?.properties) {
+    //     this.selectedPointFeature.properties.title = this.title;
+    //     this.selectedPointFeature.properties.description = this.description;
+    //     // ここで photoUrl が null になってる可能性があるのでガード付きに
+    //     if (this.photoUrl) {
+    //       this.selectedPointFeature.properties.photoUrl = this.photoUrl;
+    //     }
+    //   }
+    //   this.saveSelectedPointFeature();
+    //   this.$store.dispatch('saveSelectedPointToFirestore');
+    //   console.log('保存後のselectedPointFeature:', JSON.stringify(this.selectedPointFeature));
+    // },
     onImageError() {
       console.error('画像の読み込みに失敗しました:', this.photoUrl);
       this.photoUrl = '';
@@ -301,5 +526,19 @@ export default {
 <style scoped>
 .point-info-drawer {
   z-index: 2500;
+}
+.fade-in {
+  opacity: 1;
+  transition: opacity 0.5s ease-in;
+}
+.hidden {
+  opacity: 0;
+}
+.image-loader {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
 }
 </style>
