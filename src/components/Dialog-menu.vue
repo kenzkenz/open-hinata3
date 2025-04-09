@@ -76,7 +76,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         </v-card>
       </v-dialog>
 
-
       <v-dialog v-model="s_dialogForLogin" max-width="500px">
         <v-card>
           <v-card-title>

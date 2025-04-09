@@ -688,19 +688,15 @@ export default {
       }
     },
     async addLayer() {
-      // await this.fetchMyGroupId()
-      // alert('カレントグループID' + this.s_currentGroupId)
       console.log('s_currentGroupId:', this.s_currentGroupId); // デバッグ用
       if (!this.s_currentGroupId) {
         this.$store.commit('showSnackbarForGroup', 'グループを選択してください');
         return;
       }
-
       if (!this.layerName) {
         this.$store.commit('showSnackbarForGroup', 'ネームが未記入です');
         return;
       }
-
       const nextIndex = this.s_currentGroupLayers.length + 1;
       const name = this.layerName.trim() || `レイヤー${nextIndex}`;
       const newLayer = {
@@ -730,43 +726,12 @@ export default {
         this.$store.commit('showSnackbarForGroup', `✅ レイヤー ${name} を追加しました`);
         this.layerName = ''; // 入力欄をリセット
         this.fetchLayers()
+        this.layerSet(name, newLayer.id)
       } catch (error) {
         console.error('Firestore 書き込みエラー:', error);
         this.$store.commit('showSnackbarForGroup', 'レイヤー追加に失敗しました');
       }
     },
-
-    // async addLayer() {
-    //   alert(this.s_currentGroupId)
-    //   if (!this.layerName) {
-    //     alert('ネームが未記入です。');
-    //     return;
-    //   }
-    //   const nextIndex = this.s_currentGroupLayers.length + 1;
-    //   const name = this.layerName.trim() || `レイヤー${nextIndex}`;
-    //   const newLayer = {
-    //     name: name,
-    //     color: '#ff0000',
-    //     visible: true,
-    //     features: [],
-    //     createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    //   };
-    //   try {
-    //     const docRef = await firebase.firestore()
-    //         .collection('groups')
-    //         .doc(this.s_currentGroupId)
-    //         .collection('layers')
-    //         .add(newLayer);
-    //     newLayer.id = docRef.id;
-    //
-    //     // 保存後にfetchLayersで最新状態を取得
-    //     await this.fetchLayers();
-    //     this.layerSet(name, newLayer.id); // 即時反映
-    //   } catch (e) {
-    //     console.error('Firestore 書き込みエラー:', e);
-    //   }
-    // },
-
     async deleteLayer(id) {
       if (!confirm("本当に削除しますか？元には戻りません。")) return;
       try {
@@ -782,7 +747,6 @@ export default {
         console.error('Firestore 削除エラー:', e);
       }
     },
-
     layerSet(name, id) {
       this.layerName = name;
       this.layerId = id;
@@ -2576,15 +2540,6 @@ export default {
     }
   },
   mounted() {
-
-    // const map = this.$store.state.map01
-    // map.on('load', () => {
-    //   console.log('レイヤー一覧:', map.getStyle().layers.map(l => l.id))
-    //   console.log('ソース一覧:', Object.keys(map.style.sourceCaches))
-    // })
-
-
-
     // ------------------
     document.querySelector('#drag-handle-myroomDialog-map01').innerHTML = '<span style="font-size: large;">マイルーム</span>'
     // -------------------------------------------------------------------

@@ -16,6 +16,23 @@ let isInitializing = false;
 let justChangedGroup = false;
 let isSaving = false
 
+// 地物クリック時のハンドラー
+function createPointClickHandler(map01) {
+    return (e) => {
+        const features = map01.queryRenderedFeatures(e.point, { layers: ['oh-point-layer'] });
+        if (features.length > 0) {
+            const clickedFeature = features[0];
+            const featureData = {
+                type: clickedFeature.type,
+                geometry: clickedFeature.geometry,
+                properties: clickedFeature.properties
+            };
+            console.log('設定する地物データ:', featureData);
+            store.commit('setSelectedPointFeature', featureData); // 必要なデータのみ設定
+            store.commit('setPointInfoDrawer', true);
+        }
+    };
+}
 async function fetchAndSetGeojson(groupId, map, layerId) {
     if (groupId !== store.state.currentGroupId || layerId !== store.state.selectedLayerId) return;
     const doc = await db.collection('groups').doc(groupId).collection('layers').doc(layerId).get();
@@ -171,12 +188,12 @@ function setupFirestoreListener(groupId, layerId) {
                 console.log('Firestore スナップショット: ', { currentIds, previousIds, newIds, deletedIds }); // デバッグログ
 
                 if (!isInitializing && !justChangedGroup) {
-                    if (newIds.length > 0) {
+                    if (newIds.length === 1) {
                         console.log('ポイント追加通知トリガー');
                         store.dispatch('triggerSnackbarForGroup', {
                             message: `🔴 ${newIds.length} 件のポイントが追加されました。${userNickname}`
                         });
-                    } else if (deletedIds.length > 0) {
+                    } else if (deletedIds.length === 1) {
                         console.log('ポイント削除通知トリガー');
                         store.dispatch('triggerSnackbarForGroup', {
                             message: `🗑️ ${deletedIds.length} 件のポイントが削除されました。${userNickname}`
@@ -376,6 +393,8 @@ export default function useGloupLayer() {
                 if (mapClickHandler) map01.off('click', mapClickHandler);
                 mapClickHandler = createMapClickHandler(map01);
                 map01.on('click', mapClickHandler);
+                // 地物クリックイベントを追加
+                map01.on('click', 'oh-point-layer', createPointClickHandler(map01)); // ★ここでクリックを監視★
             };
 
             if (map01.isStyleLoaded()) {
