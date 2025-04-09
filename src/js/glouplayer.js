@@ -281,6 +281,24 @@ export default function useGloupLayer() {
     let savedLayerId = localStorage.getItem('lastLayerId');
 
     const initializeGroupAndLayer = async () => {
+
+        // selectedLayers.map01 から oh-point-layer を削除
+        setTimeout(() => {
+            let selectedLayers = store.state.selectedLayers.map01;
+            // alert(JSON.stringify(selectedLayers.length))
+            store.state.selectedLayers.map01 = selectedLayers.filter(layer => layer.id !== 'oh-point-layer');
+            console.log(selectedLayers)
+            // alert(JSON.stringify(selectedLayers.length))
+        },1500)
+
+
+        // if (selectedLayers.length !== updatedLayers.length) {
+        //     alert(8888)
+        //     console.log('oh-point-layer を selectedLayers から削除しました');
+        //     store.commit('setSelectedLayers', { map: 'map01', layers: updatedLayers });
+        // }
+
+
         // 一時的に復帰を停止
         // if (savedGroupId && savedLayerId) {
         //     const docRef = firebase.firestore()
