@@ -358,8 +358,53 @@ export default {
     },
     close() {
       this.setPointInfoDrawer(false);
+    },
+    async handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        this.forceResync();
+      }
+    },
+    async forceResync() {
+      try {
+        const db = firebase.firestore();
+        const docRef = db.collection('groups')
+            .doc(this.currentGroupId)
+            .collection('layers')
+            .doc(this.selectedLayerId);
+        const doc = await docRef.get();
+        if (doc.exists) {
+          const data = doc.data();
+          if (data?.features) {
+            const matched = data.features.find(f =>
+                f.properties?.id === this.selectedPointFeature?.properties?.id
+            );
+            if (matched) {
+              this.$store.commit('setSelectedPointFeature', JSON.parse(JSON.stringify(matched)));
+              console.log('📶 ポーリング同期: データ更新');
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('同期失敗:', e);
+      }
     }
-  }
+  },
+  mounted() {
+    document.addEventListener('visibilitychange', this.handleVisibilityChange);
+    window.addEventListener('focus', this.forceResync);
+    window.addEventListener('online', this.forceResync);
+    this.pollingInterval = setInterval(this.forceResync, 30000);
+    this.fastInterval = setInterval(this.forceResync, 7000);
+    this.superInterval = setInterval(this.forceResync, 5000);
+  },
+  beforeUnmount() {
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    clearInterval(this.pollingInterval);
+    clearInterval(this.fastInterval);
+    clearInterval(this.superInterval);
+    window.removeEventListener('focus', this.forceResync);
+    window.removeEventListener('online', this.forceResync);
+  },
 };
 </script>
 
