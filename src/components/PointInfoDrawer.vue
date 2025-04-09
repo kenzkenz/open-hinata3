@@ -18,22 +18,6 @@
             label="タイトル"
             auto-grow
         />
-
-<!--        <QuillEditor-->
-<!--            v-model:content="description"-->
-<!--            contentType="html"-->
-<!--            theme="snow"-->
-<!--            style="height: 150px; margin-bottom: 20px;background-color: white;"-->
-<!--        />-->
-
-<!--        <QuillEditor-->
-<!--            v-model:content="description"-->
-<!--            contentType="html"-->
-<!--            theme="snow"-->
-<!--            :modules="quillModules"-->
-<!--            style="height: 150px; margin-bottom:20px;background-color: white;"-->
-<!--        />-->
-
         <v-textarea
             v-model="description"
             label="説明（最大500文字）"
@@ -98,31 +82,13 @@ import { mapState, mapMutations } from 'vuex';
 import firebase from "firebase/app";
 import "firebase/firestore";
 import "firebase/storage";
-// import Quill from 'quill'; // Quill を明示的にインポート
-// import { QuillEditor } from '@vueup/vue-quill'
-// // import 'quill/dist/quill.snow.css'
-// import '@/node_modules/quill/dist/quill.snow.css'; // Vue CLI でのエイリアス使用
-
 
 export default {
   name: 'PointInfoDrawer',
   components: {
-    // QuillEditor
   },
   data() {
     return {
-      modules: {
-        toolbar: ['bold'] // 配列を直接渡す
-        // toolbar: [
-        //   [{ header: [1, 2, 3, false] }],
-        //   ['bold', 'italic', 'underline', 'strike'],
-        //   [{ color: [] }, { background: [] }],
-        //   [{ list: 'ordered' }, { list: 'bullet' }],
-        //   [{ align: [] }],
-        //   ['link', 'image'],
-        //   ['clean']
-        // ]
-      },
       isImageLoaded: false,
       title: '',
       description: '',
@@ -199,86 +165,6 @@ export default {
         }
       }
     },
-    // selectedPointFeature: {
-    //   immediate: true,
-    //   deep: true,
-    //   async handler(newVal) {
-    //     console.log('selectedPointFeature 更新:', JSON.stringify(newVal));
-    //     this.isImageLoaded = false; // 新しい画像をセットするたびに false に
-    //     // 1️⃣ まず photoUrl を空にしておく（瞬間的な表示を防ぐ）
-    //     this.photoUrl = '';
-    //
-    //     this.title = newVal?.properties?.title || '';
-    //     this.description = newVal?.properties?.description || '';
-    //     this.photo = null;
-    //
-    //     const id = newVal?.properties?.id;
-    //     const photoUrlFromProp = newVal?.properties?.photoUrl;
-    //
-    //     if (photoUrlFromProp) {
-    //       this.photoUrl = photoUrlFromProp;
-    //     } else if (id) {
-    //       try {
-    //         const storage = firebase.storage();
-    //         const [file] = await storage.ref('points').listAll().then(res =>
-    //             res.items.filter(item => item.name.startsWith(id + '_'))
-    //         );
-    //         if (file) {
-    //           this.photoUrl = await file.getDownloadURL();
-    //         } else {
-    //           this.photoUrl = '';
-    //         }
-    //       } catch (e) {
-    //         console.warn('Storage からの画像取得に失敗:', e);
-    //         this.photoUrl = '';
-    //       }
-    //     } else {
-    //       this.photoUrl = '';
-    //     }
-    //     this.$nextTick(() => {
-    //       console.log('次tickでのphotoUrl:', this.photoUrl);
-    //     });
-    //   }
-    // },
-    // selectedPointFeature: {
-    //   immediate: true,
-    //   deep: true,
-    //   async handler(newVal) {
-    //     console.log('selectedPointFeature 更新:', JSON.stringify(newVal));
-    //     this.title = newVal?.properties?.title || '';
-    //     this.description = newVal?.properties?.description || '';
-    //     this.photo = null;
-    //
-    //     const id = newVal?.properties?.id;
-    //     const photoUrlFromProp = newVal?.properties?.photoUrl;
-    //
-    //     if (photoUrlFromProp) {
-    //       this.photoUrl = photoUrlFromProp;
-    //     } else if (id) {
-    //       // Firestore に photoUrl がない場合は、Storage から取得してみる
-    //       try {
-    //         const storage = firebase.storage();
-    //         const [file] = await storage.ref('points').listAll().then(res =>
-    //             res.items.filter(item => item.name.startsWith(id + '_'))
-    //         );
-    //         if (file) {
-    //           this.photoUrl = await file.getDownloadURL();
-    //         } else {
-    //           this.photoUrl = '';
-    //         }
-    //       } catch (e) {
-    //         console.warn('Storage からの画像取得に失敗:', e);
-    //         this.photoUrl = '';
-    //       }
-    //     } else {
-    //       this.photoUrl = '';
-    //     }
-    //
-    //     this.$nextTick(() => {
-    //       console.log('次tickでのphotoUrl:', this.photoUrl);
-    //     });
-    //   }
-    // },
   },
   methods: {
     ...mapMutations([
@@ -310,88 +196,6 @@ export default {
         this.isUploading = false;
       }
     },
-    // async handlePhotoUpload() {
-    //   console.log('handlePhotoUpload 開始, photo:', this.photo);
-    //   if (!this.photo) {
-    //     console.log('写真が選択されていません');
-    //     this.photoUrl = '';
-    //     this.$store.commit('updateSelectedPointPhotoUrl', '');
-    //     return;
-    //   }
-    //
-    //   if (!firebase.storage) {
-    //     console.error('Firebase Storage が初期化されていません');
-    //     this.$store.commit('showSnackbarForGroup', 'Firebase Storage が利用できません');
-    //     return;
-    //   }
-    //
-    //   this.isUploading = true;
-    //
-    //   try {
-    //     const storageRef = firebase.storage().ref();
-    //     const fileExtension = this.photo.name.split('.').pop();
-    //     const fileName = `${this.selectedPointFeature?.properties?.id || 'new'}_${Date.now()}.${fileExtension}`;
-    //     const photoRef = storageRef.child(`points/${fileName}`);
-    //
-    //     console.log('アップロード開始, fileName:', fileName);
-    //     const snapshot = await photoRef.put(this.photo);
-    //     const photoUrl = await snapshot.ref.getDownloadURL();
-    //     console.log('アップロード成功, photoUrl:', photoUrl);
-    //
-    //     this.photoUrl = photoUrl;
-    //     this.$store.commit('updateSelectedPointPhotoUrl', photoUrl);
-    //
-    //     // ✅ アップロードが成功してから保存する
-    //     this.save();
-    //     this.$forceUpdate();
-    //   } catch (error) {
-    //     console.error('写真アップロードエラー:', error);
-    //     this.$store.commit('showSnackbarForGroup', '写真のアップロードに失敗しました: ' + error.message);
-    //   } finally {
-    //     this.isUploading = false;
-    //     console.log('アップロード処理終了');
-    //   }
-    // },
-    // async handlePhotoUpload() {
-    //   console.log('handlePhotoUpload 開始, photo:', this.photo);
-    //   if (!this.photo) {
-    //     console.log('写真が選択されていません');
-    //     this.photoUrl = '';
-    //     this.$store.commit('updateSelectedPointPhotoUrl', '');
-    //     return;
-    //   }
-    //
-    //   if (!firebase.storage) {
-    //     console.error('Firebase Storage が初期化されていません');
-    //     this.$store.commit('showSnackbarForGroup', 'Firebase Storage が利用できません');
-    //     return;
-    //   }
-    //
-    //   this.isUploading = true;
-    //   try {
-    //     this.save()
-    //     const storageRef = firebase.storage().ref();
-    //     const fileExtension = this.photo.name.split('.').pop();
-    //     const fileName = `${this.selectedPointFeature?.properties?.id || 'new'}_${Date.now()}.${fileExtension}`;
-    //     const photoRef = storageRef.child(`points/${fileName}`);
-    //
-    //     console.log('アップロード開始, fileName:', fileName);
-    //     const snapshot = await photoRef.put(this.photo);
-    //     const photoUrl = await snapshot.ref.getDownloadURL();
-    //     console.log('アップロード成功, photoUrl:', photoUrl);
-    //
-    //     this.photoUrl = photoUrl;
-    //     this.$store.commit('updateSelectedPointPhotoUrl', photoUrl);
-    //     console.log('ストアのphotoUrl:', this.selectedPointFeature?.properties?.photoUrl);
-    //     this.$forceUpdate(); // 必要に応じて強制再レンダリング
-    //   } catch (error) {
-    //     console.error('写真アップロードエラー:', error);
-    //     this.$store.commit('showSnackbarForGroup', '写真のアップロードに失敗しました: ' + error.message);
-    //   } finally {
-    //     this.isUploading = false;
-    //     console.log('アップロード処理終了');
-    //   }
-    // },
     async save() {
       console.log('保存開始');
 
@@ -414,20 +218,6 @@ export default {
       console.log('保存後のselectedPointFeature:', JSON.stringify(this.selectedPointFeature));
       this.close();
     },
-    // save() {
-    //   console.log('保存開始');
-    //   if (this.selectedPointFeature?.properties) {
-    //     this.selectedPointFeature.properties.title = this.title;
-    //     this.selectedPointFeature.properties.description = this.description;
-    //     // ここで photoUrl が null になってる可能性があるのでガード付きに
-    //     if (this.photoUrl) {
-    //       this.selectedPointFeature.properties.photoUrl = this.photoUrl;
-    //     }
-    //   }
-    //   this.saveSelectedPointFeature();
-    //   this.$store.dispatch('saveSelectedPointToFirestore');
-    //   console.log('保存後のselectedPointFeature:', JSON.stringify(this.selectedPointFeature));
-    // },
     onImageError() {
       console.error('画像の読み込みに失敗しました:', this.photoUrl);
       this.photoUrl = '';
