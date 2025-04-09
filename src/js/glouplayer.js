@@ -174,12 +174,12 @@ function setupFirestoreListener(groupId, layerId) {
                     if (newIds.length > 0) {
                         console.log('ポイント追加通知トリガー');
                         store.dispatch('triggerSnackbarForGroup', {
-                            message: `🔴 ${newIds.length} 件のポイントが追加されました。${userNickname}` // "messege" ではなく "message"
+                            message: `🔴 ${newIds.length} 件のポイントが追加されました。${userNickname}`
                         });
                     } else if (deletedIds.length > 0) {
                         console.log('ポイント削除通知トリガー');
                         store.dispatch('triggerSnackbarForGroup', {
-                            message: `🗑️ ${deletedIds.length} 件のポイントが削除されました。${userNickname}` // "messege" ではなく "message"
+                            message: `🗑️ ${deletedIds.length} 件のポイントが削除されました。${userNickname}`
                         });
                     }
                 } else {
@@ -223,6 +223,15 @@ function setupFirestoreListener(groupId, layerId) {
 
 function createMapClickHandler(map01) {
     return async (e) => {
+        // oh-point-layer が存在しない場合は処理を抜ける
+        try {
+            if (!map01.getLayer('oh-point-layer')) {
+                console.warn('oh-point-layer が存在しません。処理をスキップします。');
+                return;
+            }
+        } catch (e) {
+            console.log(e)
+        }
         const now = Date.now();
         if (now - lastClickTimestamp < 300) return;
         lastClickTimestamp = now;
@@ -272,37 +281,38 @@ export default function useGloupLayer() {
     let savedLayerId = localStorage.getItem('lastLayerId');
 
     const initializeGroupAndLayer = async () => {
-        if (savedGroupId && savedLayerId) {
-            const docRef = firebase.firestore()
-                .collection('groups')
-                .doc(savedGroupId)
-                .collection('layers')
-                .doc(savedLayerId);
-            const doc = await docRef.get();
-            if (doc.exists) {
-                store.commit('setCurrentGroup', { id: savedGroupId, name: savedGroupId });
-                store.commit('setSelectedLayerId', savedLayerId);
-            } else {
-                localStorage.removeItem('lastLayerId');
-                store.commit('setSelectedLayerId', null);
-                savedLayerId = null;
-            }
-        }
-
-        if (savedGroupId && !savedLayerId) {
-            const snapshot = await firebase.firestore()
-                .collection('groups')
-                .doc(savedGroupId)
-                .collection('layers')
-                .limit(1)
-                .get();
-            if (!snapshot.empty) {
-                const firstLayer = snapshot.docs[0];
-                savedLayerId = firstLayer.id;
-                localStorage.setItem('lastLayerId', savedLayerId);
-                store.commit('setSelectedLayerId', savedLayerId);
-            }
-        }
+        // 一時的に復帰を停止
+        // if (savedGroupId && savedLayerId) {
+        //     const docRef = firebase.firestore()
+        //         .collection('groups')
+        //         .doc(savedGroupId)
+        //         .collection('layers')
+        //         .doc(savedLayerId);
+        //     const doc = await docRef.get();
+        //     if (doc.exists) {
+        //         store.commit('setCurrentGroup', { id: savedGroupId, name: savedGroupId });
+        //         store.commit('setSelectedLayerId', savedLayerId);
+        //     } else {
+        //         localStorage.removeItem('lastLayerId');
+        //         store.commit('setSelectedLayerId', null);
+        //         savedLayerId = null;
+        //     }
+        // }
+        //
+        // if (savedGroupId && !savedLayerId) {
+        //     const snapshot = await firebase.firestore()
+        //         .collection('groups')
+        //         .doc(savedGroupId)
+        //         .collection('layers')
+        //         .limit(1)
+        //         .get();
+        //     if (!snapshot.empty) {
+        //         const firstLayer = snapshot.docs[0];
+        //         savedLayerId = firstLayer.id;
+        //         localStorage.setItem('lastLayerId', savedLayerId);
+        //         store.commit('setSelectedLayerId', savedLayerId);
+        //     }
+        // }
     };
 
     initializeGroupAndLayer().catch(e => {
