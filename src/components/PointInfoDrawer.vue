@@ -79,10 +79,6 @@
         </div>
       </v-card-text>
 
-
-
-
-
       <v-card-actions style="margin-top: 0px">
         <v-btn style="background-color: var(--main-color); color: white!important;" @click="removeAllFeatures">全削除</v-btn>
         <v-spacer />
@@ -121,9 +117,8 @@ export default {
       photo: null,
       photoUrl: '',
       isUploading: false,
-      color: '#ff0000',  // 初期色（赤）
+      color: '#000000',  // 初期色（黒）
       presetColors: ['#ff0000', '#00aaff', '#00cc66', '#ffcc00', '#ff66cc', '#9966ff', '#aaaaaa', '#000000'],
-
     };
   },
   computed: {
@@ -163,8 +158,9 @@ export default {
         this.description = newVal?.properties?.description || '';
         this.photo = null
 
-        this.color = newVal?.properties?.color || this.presetColors[0]; // ←★ここ！
-        
+        // this.color = newVal?.properties?.color || this.presetColors[0]; // ←★ここ！
+        this.color = newVal?.properties?.color || '#000000';
+
         const id = newVal?.properties?.id;
         const photoUrlFromProp = newVal?.properties?.photoUrl;
 
