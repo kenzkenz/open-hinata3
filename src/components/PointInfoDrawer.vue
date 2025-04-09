@@ -149,26 +149,22 @@ export default {
       immediate: true,
       deep: true,
       async handler(newVal) {
-        console.log('selectedPointFeature 更新:', JSON.stringify(newVal));
-
-        this.isImageLoaded = false;
-        this.photoUrl = ''; // ← 一旦空にすることで強制的に画像をリセット
-
         this.title = newVal?.properties?.title || '';
         this.description = newVal?.properties?.description || '';
-        this.photo = null
-
-        // this.color = newVal?.properties?.color || this.presetColors[0]; // ←★ここ！
+        this.photo = null;
         this.color = newVal?.properties?.color || '#000000';
 
         const id = newVal?.properties?.id;
         const photoUrlFromProp = newVal?.properties?.photoUrl;
 
         if (photoUrlFromProp) {
-          // 💡 少し遅らせて再セットする（再描画させるため）
-          setTimeout(() => {
-            this.photoUrl = photoUrlFromProp;
-          }, 10);
+          if (this.photoUrl !== photoUrlFromProp) {
+            this.isImageLoaded = false;
+            this.photoUrl = '';
+            setTimeout(() => {
+              this.photoUrl = photoUrlFromProp;
+            }, 10);
+          }
         } else if (id) {
           try {
             const storage = firebase.storage();
@@ -177,14 +173,17 @@ export default {
             );
             if (file) {
               const url = await file.getDownloadURL();
-              setTimeout(() => {
-                this.photoUrl = url;
-              }, 10);
+              if (this.photoUrl !== url) {
+                this.isImageLoaded = false;
+                this.photoUrl = '';
+                setTimeout(() => {
+                  this.photoUrl = url;
+                }, 10);
+              }
             } else {
               this.photoUrl = '';
             }
           } catch (e) {
-            console.warn('Storage からの画像取得に失敗:', e);
             this.photoUrl = '';
           }
         } else {
@@ -192,6 +191,53 @@ export default {
         }
       }
     },
+    // selectedPointFeature: {
+    //   immediate: true,
+    //   deep: true,
+    //   async handler(newVal) {
+    //     console.log('selectedPointFeature 更新:', JSON.stringify(newVal));
+    //
+    //     this.isImageLoaded = false;
+    //     this.photoUrl = ''; // ← 一旦空にすることで強制的に画像をリセット
+    //
+    //     this.title = newVal?.properties?.title || '';
+    //     this.description = newVal?.properties?.description || '';
+    //     this.photo = null
+    //
+    //     // this.color = newVal?.properties?.color || this.presetColors[0]; // ←★ここ！
+    //     this.color = newVal?.properties?.color || '#000000';
+    //
+    //     const id = newVal?.properties?.id;
+    //     const photoUrlFromProp = newVal?.properties?.photoUrl;
+    //
+    //     if (photoUrlFromProp) {
+    //       // 💡 少し遅らせて再セットする（再描画させるため）
+    //       setTimeout(() => {
+    //         this.photoUrl = photoUrlFromProp;
+    //       }, 10);
+    //     } else if (id) {
+    //       try {
+    //         const storage = firebase.storage();
+    //         const [file] = await storage.ref('points').listAll().then(res =>
+    //             res.items.filter(item => item.name.startsWith(id + '_'))
+    //         );
+    //         if (file) {
+    //           const url = await file.getDownloadURL();
+    //           setTimeout(() => {
+    //             this.photoUrl = url;
+    //           }, 10);
+    //         } else {
+    //           this.photoUrl = '';
+    //         }
+    //       } catch (e) {
+    //         console.warn('Storage からの画像取得に失敗:', e);
+    //         this.photoUrl = '';
+    //       }
+    //     } else {
+    //       this.photoUrl = '';
+    //     }
+    //   }
+    // },
   },
   methods: {
     ...mapMutations([
