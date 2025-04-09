@@ -9,6 +9,7 @@
     <v-card flat class="bg-white">
       <v-card-title class="text-h6 text-white" style="background-color: var(--main-color);height: 40px;display: flex;align-items: center ">
         ポイント情報
+        <div class="close-btn-div" style="margin-top: -3px;font-size: 30px!important;" @click="close"><i class="fa-solid fa-xmark hover close-btn"></i></div>
       </v-card-title>
       <v-card-text style="margin-top: 20px;" class="text-body-1">
         <v-text-field
@@ -141,26 +142,6 @@ export default {
         });
       }
     },
-    // selectedPointFeature: {
-    //   immediate: true,
-    //   deep: true, // 深い変更を監視
-    //   handler(newVal) {
-    //     console.log('selectedPointFeature 更新:', JSON.stringify(newVal));
-    //     this.title = newVal?.properties?.title || '';
-    //     this.description = newVal?.properties?.description || '';
-    //     this.photoUrl = newVal?.properties?.photoUrl || '';
-    //     this.photo = null;
-    //     console.log('photoUrl 初期化:', this.photoUrl);
-    //     this.$nextTick(() => {
-    //       console.log('次tickでのphotoUrl:', this.photoUrl);
-    //     });
-    //   }
-    // },
-    // title(newVal) { this.$store.commit('updateSelectedPointTitle', newVal); },
-    // description(newVal) { this.$store.commit('updateSelectedPointDescription', newVal); },
-    // photoUrl(newVal) {
-    //   console.log('photoUrl 更新:', newVal);
-    // }
   },
   methods: {
     ...mapMutations([
@@ -185,6 +166,7 @@ export default {
 
       this.isUploading = true;
       try {
+        this.save()
         const storageRef = firebase.storage().ref();
         const fileExtension = this.photo.name.split('.').pop();
         const fileName = `${this.selectedPointFeature?.properties?.id || 'new'}_${Date.now()}.${fileExtension}`;
@@ -209,21 +191,17 @@ export default {
     },
     save() {
       console.log('保存開始');
-
       if (this.selectedPointFeature?.properties) {
         this.selectedPointFeature.properties.title = this.title;
         this.selectedPointFeature.properties.description = this.description;
-
         // ここで photoUrl が null になってる可能性があるのでガード付きに
         if (this.photoUrl) {
           this.selectedPointFeature.properties.photoUrl = this.photoUrl;
         }
       }
-
       this.saveSelectedPointFeature();
       this.$store.dispatch('saveSelectedPointToFirestore');
       console.log('保存後のselectedPointFeature:', JSON.stringify(this.selectedPointFeature));
-      this.close();
     },
     onImageError() {
       console.error('画像の読み込みに失敗しました:', this.photoUrl);
