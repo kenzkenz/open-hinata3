@@ -752,6 +752,10 @@ export default {
       this.layerId = id;
       this.$store.commit('setSelectedLayerId', id);
 
+
+      console.log('layerSet呼び出し:', name, id);
+
+
       const mapLayers = this.$store.state.selectedLayers['map01'];
       const existingLayer = mapLayers.find(l => l.id === 'oh-point-layer');
       const currentLayer = this.s_currentGroupLayers.find(l => l.id === id);

@@ -197,28 +197,74 @@ export default {
     async save() {
       console.log('保存開始');
 
-      // 既に photoUrl があればアップロード済みとみなし、再アップロードしない
-      if (this.selectedPointFeature?.properties) {
-        this.selectedPointFeature.properties.title = this.title;
-        this.selectedPointFeature.properties.description = this.description;
-        this.selectedPointFeature.properties.color = this.color;
-        if (this.photoUrl) {
-          this.selectedPointFeature.properties.photoUrl = this.photoUrl;
-        }
+      const feature = this.selectedPointFeature;
+      const layerId = this.selectedLayerId;
+      const groupId = this.currentGroupId;
+
+      console.log('現在の layerId:', layerId);
+      console.log('feature が属しているレイヤー:', feature?.properties?.layerId);
+
+      if (!feature || !feature.properties) {
+        this.$store.commit('showSnackbarForGroup', '保存対象のポイントがありません');
+        return;
+      }
+
+      // ★ 必要なら layerId をここで feature にも保存
+      feature.properties.title = this.title;
+      feature.properties.description = this.description;
+      feature.properties.color = this.color;
+      feature.properties.layerId = layerId;
+
+      if (this.photoUrl) {
+        feature.properties.photoUrl = this.photoUrl;
       }
 
       this.saveSelectedPointFeature();
       await this.$store.dispatch('saveSelectedPointToFirestore');
-      console.log('保存後のselectedPointFeature:', JSON.stringify(this.selectedPointFeature));
+      console.log('保存完了');
 
-      // 保存後に最新データを再取得
       await this.syncPointData();
       this.close();
+
+      const map = this.$store.state.map01;
+      const updatedFeatures = this.$store.state.groupFeatures; // ← syncPointData で更新されたやつ
+
+      if (map && map.getSource('oh-point-source')) {
+        map.getSource('oh-point-source').setData({
+          type: 'FeatureCollection',
+          features: updatedFeatures
+        });
+        map.triggerRepaint();
+        console.log('🗺️ マップ上のポイントを更新しました');
+      }
+
+
     },
-    onImageError() {
-      console.error('画像の読み込みに失敗しました:', this.photoUrl);
-      this.photoUrl = '';
-    },
+    // async save() {
+    //   console.log('保存開始');
+    //
+    //   // 既に photoUrl があればアップロード済みとみなし、再アップロードしない
+    //   if (this.selectedPointFeature?.properties) {
+    //     this.selectedPointFeature.properties.title = this.title;
+    //     this.selectedPointFeature.properties.description = this.description;
+    //     this.selectedPointFeature.properties.color = this.color;
+    //     if (this.photoUrl) {
+    //       this.selectedPointFeature.properties.photoUrl = this.photoUrl;
+    //     }
+    //   }
+    //
+    //   this.saveSelectedPointFeature();
+    //   await this.$store.dispatch('saveSelectedPointToFirestore');
+    //   console.log('保存後のselectedPointFeature:', JSON.stringify(this.selectedPointFeature));
+    //
+    //   // 保存後に最新データを再取得
+    //   await this.syncPointData();
+    //   this.close();
+    // },
+    // onImageError() {
+    //   console.error('画像の読み込みに失敗しました:', this.photoUrl);
+    //   this.photoUrl = '';
+    // },
     remove() {
       const selectedPointFeature = this.selectedPointFeature;
       if (!selectedPointFeature || !selectedPointFeature.properties?.id) {

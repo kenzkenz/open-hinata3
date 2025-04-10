@@ -718,8 +718,11 @@ export default createStore({
     async saveSelectedPointToFirestore({ state }) {
       const db = firebase.firestore();
       const groupId = state.currentGroupId;
-      const layerId = state.selectedLayerId;
+      const layerId = state.selectedLayerId; // ← こっちを必ず使う
       const feature = state.selectedPointFeature;
+
+      console.log('保存対象の feature ID:', feature.properties.id);
+      console.log('保存先 layerId:', layerId);
 
       if (!groupId || !layerId || !feature) {
         console.warn('groupId, layerId, または feature が未設定です');
@@ -748,6 +751,40 @@ export default createStore({
         console.error('Firestore 保存エラー:', error);
       }
     },
+
+    // async saveSelectedPointToFirestore({ state }) {
+    //   const db = firebase.firestore();
+    //   const groupId = state.currentGroupId;
+    //   const layerId = state.selectedLayerId;
+    //   const feature = state.selectedPointFeature;
+    //
+    //   if (!groupId || !layerId || !feature) {
+    //     console.warn('groupId, layerId, または feature が未設定です');
+    //     return;
+    //   }
+    //
+    //   try {
+    //     const docRef = db.collection('groups').doc(groupId).collection('layers').doc(layerId);
+    //     const doc = await docRef.get();
+    //     let features = doc.exists ? doc.data().features || [] : [];
+    //
+    //     const index = features.findIndex(f => f.properties.id === feature.properties.id);
+    //     if (index >= 0) {
+    //       features[index] = feature; // 更新
+    //     } else {
+    //       features.push(feature); // 新規追加
+    //     }
+    //
+    //     await docRef.set({
+    //       features,
+    //       lastModifiedAt: firebase.firestore.FieldValue.serverTimestamp()
+    //     }, { merge: true });
+    //
+    //     console.log('Firestore に保存成功:', feature);
+    //   } catch (error) {
+    //     console.error('Firestore 保存エラー:', error);
+    //   }
+    // },
     async saveSelectedPointFeatureToFirestore({ state, commit }) {
       const feature = state.selectedPointFeature
       const groupId = state.currentGroupName
