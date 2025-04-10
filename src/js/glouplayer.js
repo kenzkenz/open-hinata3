@@ -94,6 +94,7 @@ async function fetchAndSetGeojson(groupId, map, layerId) {
 }
 
 export function deleteAllPoints(currentGroupId) {
+    console.log(1)
     groupGeojson.value.features = [];
     const map = store.state.map01;
     if (map && map.getSource('oh-point-source')) {
