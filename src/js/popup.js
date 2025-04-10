@@ -249,6 +249,9 @@ function urlByLayerId (layerId) {
     return [RasterTileUrl,legend,zoom]
 }
 export function popup(e,map,mapName,mapFlg) {
+
+    if (map.getLayer('oh-point-layer')) return
+
     enableMotionPermission()
     let html = ''
     let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
@@ -3454,7 +3457,6 @@ export function popup(e,map,mapName,mapFlg) {
                 break
             }
         }
-
         if(/^oh-chibanzu-/.test(layerId)) {
             if (store.state.isRenzoku) return
             let features = map.queryRenderedFeatures(

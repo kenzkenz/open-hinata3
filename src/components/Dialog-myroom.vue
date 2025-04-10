@@ -612,7 +612,7 @@ export default {
             type: 'FeatureCollection',
             features: currentLayer.features || []
           });
-          map.setPaintProperty('oh-point-layer', 'circle-color', currentLayer.color || '#ff0000');
+          // map.setPaintProperty('oh-point-layer', 'circle-color', currentLayer.color || '#ff0000');
           map.triggerRepaint();
         }
       }
@@ -701,7 +701,7 @@ export default {
       const name = this.layerName.trim() || `レイヤー${nextIndex}`;
       const newLayer = {
         name: name,
-        color: '#ff0000',
+        color: '#000000',
         visible: true,
         features: [],
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -796,7 +796,7 @@ export default {
           type: 'FeatureCollection',
           features: currentLayer.features || []
         });
-        map01.setPaintProperty('oh-point-layer', 'circle-color', currentLayer.color || '#ff0000');
+        // map01.setPaintProperty('oh-point-layer', 'circle-color', currentLayer.color || '#ff0000');
         map01.triggerRepaint();
       } else {
         console.warn('マップまたはソースが未初期化');

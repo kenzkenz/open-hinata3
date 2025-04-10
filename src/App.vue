@@ -3964,8 +3964,7 @@ export default {
           let highlightCounter = 0;
           map.on('click', 'oh-amx-a-fude', (e) => {
             if (!this.$store.state.isRenzoku) return
-            console.log(this.$store.state.highlightedChibans)
-            // this.$store.state.highlightedChibans = new Set()
+            if (map.getLayer('oh-point-layer')) return
             if (e.features && e.features.length > 0) {
               // const targetId = `${e.features[0].properties['丁目コード']}_${e.features[0].properties['小字コード']}_${e.features[0].properties['地番']}`;
               const targetId = `${e.features[0].properties['地番区域']}_${e.features[0].properties['地番']}`;
@@ -4138,10 +4137,11 @@ export default {
           'oh-chibanzu-姫路市','oh-chibanzu-仙台市','oh-chibanzu-高崎市','oh-chibanzu-旭川市',
           'oh-chibanzu-東村山市','oh-chibanzu-城陽市','oh-chibanzu-大山崎町','oh-chibanzu-川西市',
           'oh-chibanzu-香芝市','oh-chibanzu-直方市','oh-chibanzu-西粟倉村','oh-chibanzu-潮来市',
-          'oh-chibanzu-甲府市','oh-chibanzu-名古屋市']
+          'oh-chibanzu-甲府市','oh-chibanzu-名古屋市','oh-chibanzu-唐津市']
         layers.forEach(layer => {
           map.on('click', layer, (e) => {
             if (!this.$store.state.isRenzoku) return
+            if (map.getLayer('oh-point-layer')) return
             if (e.features && e.features.length > 0) {
               let targetId
               if (e.features[0].properties['id'] !== undefined) {

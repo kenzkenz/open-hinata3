@@ -475,6 +475,9 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
             case 'oh-chibanzu-香芝市':
                 chiban = feature.properties.地番名称
                 break
+            case 'oh-chibanzu-唐津市':
+                chiban = feature.properties.SAFIELD001
+                break
             case 'oh-chibanzu-all':
                 // とりあえずidにする。
                 chiban = feature.properties.id
@@ -2336,6 +2339,7 @@ export function highlightSpecificFeaturesCity(map,layerId) {
             case 'oh-fukuokashichiban':
                 fields = ['concat', ['get', 'id']]
                 break
+            case 'oh-chibanzu-唐津市':
             case 'oh-chibanzu-名古屋市':
             case 'oh-chibanzu-甲府市':
             case 'oh-chibanzu-潮来市':
@@ -2460,6 +2464,7 @@ function getBoundingBoxByLayer(map, layerId) {
             case 'oh-fukuokashichiban':
                 targetId = `${feature.properties['id']}`;
                 break;
+            case 'oh-chibanzu-唐津市':
             case 'oh-chibanzu-名古屋市':
             case 'oh-chibanzu-甲府市':
             case 'oh-chibanzu-潮来市':
@@ -2634,6 +2639,7 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
             case 'oh-fukuokashichiban':
                 targetId = `${feature.properties['id']}`;
                 break;
+            case 'oh-chibanzu-唐津市':
             case 'oh-chibanzu-名古屋市':
             case 'oh-chibanzu-甲府市':
             case 'oh-chibanzu-潮来市':
@@ -6678,7 +6684,7 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
     // -------------------------------------------------------------------------------------------------
     store.state.loading2 = true
     store.state.loadingMessage = 'pmtiles作成中です。'
-
+    console.log("geojson送信前の中身:", geojson);
     let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles5.php", {
         method: "POST",
         headers: {"Content-Type": "application/json"},

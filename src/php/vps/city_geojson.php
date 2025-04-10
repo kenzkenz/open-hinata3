@@ -55,17 +55,17 @@ if ($result === false) {
     exit;
 }
 
-$tippecanoeCmd = sprintf(
-    "tippecanoe -o %s --generate-ids --no-feature-limit --no-tile-size-limit --force --drop-densest-as-needed --coalesce-densest-as-needed --simplification=2 --simplify-only-low-zooms --maximum-zoom=14 --minimum-zoom=0 --layer=oh3 %s 2>&1",
-    escapeshellarg($pmtilesPath),
-    escapeshellarg($outputPath)
-);
-
-exec($tippecanoeCmd, $output, $returnVar);
-if ($returnVar !== 0) {
-    echo json_encode(["error" => "Tippecanoeの実行に失敗しました", "command" => $tippecanoeCmd, "output" => implode("\n", $output)]);
-    exit;
-}
+//$tippecanoeCmd = sprintf(
+//    "tippecanoe -o %s --generate-ids --no-feature-limit --no-tile-size-limit --force --drop-densest-as-needed --coalesce-densest-as-needed --simplification=2 --simplify-only-low-zooms --maximum-zoom=14 --minimum-zoom=0 --layer=oh3 %s 2>&1",
+//    escapeshellarg($pmtilesPath),
+//    escapeshellarg($outputPath)
+//);
+//
+//exec($tippecanoeCmd, $output, $returnVar);
+//if ($returnVar !== 0) {
+//    echo json_encode(["error" => "Tippecanoeの実行に失敗しました", "command" => $tippecanoeCmd, "output" => implode("\n", $output)]);
+//    exit;
+//}
 
 // 成功レスポンス
 echo json_encode(['status' => 'success', 'message' => 'city.geojsonを保存しました', 'cities' => $cities]);

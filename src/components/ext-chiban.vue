@@ -745,6 +745,11 @@ export default {
           this.sourceId = 'oh-chibanzu-名古屋市-source'
           this.fields = ['id']
           break
+        case 'oh-chibanzu-唐津市':
+          this.layerId = 'oh-chibanzu-唐津市'
+          this.sourceId = 'oh-chibanzu-唐津市-source'
+          this.fields = ['id']
+          break
         case 'oh-chibanzu-高崎市':
           this.layerId = 'oh-chibanzu-高崎市'
           this.sourceId = 'oh-chibanzu-高崎市-source'
@@ -876,11 +881,12 @@ export default {
       gistUpload(map,this.layerId,this.sourceId,this.fields)
     },
     changeColorCircle (color,isUpdate) {
+      // ここが遅い 要改修
       const map = this.$store.state[this.mapName]
       map.getStyle().layers.forEach(layer => {
         if (layer.id.includes('oh-chibanzu-vertex')) {
           map.setPaintProperty(layer.id, 'circle-color', color)
-          console.log(map.getPaintProperty(layer.id,'circle-color'))
+          // console.log(map.getPaintProperty(layer.id,'circle-color'))
         }
         if (layer.id.includes('oh-chibanL-') && layer.id.includes('vertex')) {
           map.setPaintProperty(layer.id, 'circle-color', color)
