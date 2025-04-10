@@ -360,7 +360,9 @@ export default createStore({
   getters: {
   },
   mutations: {
-
+    setGroupFeatures(state, features) {
+      state.groupFeatures = features;
+    },
     updateSelectedPointPhotoUrl(state, photoUrl) { // 新しいミューテーション
       if (state.selectedPointFeature) {
         state.selectedPointFeature.properties.photoUrl = photoUrl;
