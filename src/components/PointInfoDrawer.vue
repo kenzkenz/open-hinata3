@@ -8,9 +8,9 @@
       class="point-info-drawer"
   >
     <v-card flat class="bg-white" style="border-radius: 0;">
-      <v-card-title class="text-h6 text-white" style="background-color: var(--main-color);height: 40px;display: flex;align-items: center ">
+      <v-card-title class="text-h6 text-white" style="background-color: var(--main-color); height: 40px; display: flex; align-items: center;">
         ポイント情報
-        <div class="close-btn-div" style="margin-top: -3px;font-size: 30px!important;" @click="close"><i class="fa-solid fa-xmark hover close-btn"></i></div>
+        <div class="close-btn-div" style="margin-top: -3px; font-size: 30px!important;" @click="close"><i class="fa-solid fa-xmark hover close-btn"></i></div>
       </v-card-title>
       <v-card-text style="margin-top: 20px;" class="text-body-1">
         <v-text-field
@@ -27,7 +27,6 @@
         />
         <a v-if="photoUrl" :href="photoUrl" target="_blank" rel="noopener noreferrer">
           <div style="position: relative; width: 100%; margin-bottom: 20px;">
-            <!-- ローディング（中央） -->
             <v-progress-circular
                 v-if="!isImageLoaded"
                 indeterminate
@@ -35,7 +34,6 @@
                 size="40"
                 class="image-loader"
             />
-            <!-- 画像（フェードイン） -->
             <div :class="{'fade-in': isImageLoaded, 'hidden': !isImageLoaded}">
               <v-img
                   :src="photoUrl"
@@ -64,16 +62,16 @@
               :class="['color-circle', { selected: color === c }]"
               :key="c"
               :style="{
-        backgroundColor: c,
-        width: '100%',
-        maxWidth: '36px',
-        height: '36px',
-        borderRadius: '50%',
-        border: color === c ? '2px solid black' : '1px solid #ccc',
-        cursor: 'pointer',
-        flex: '1',
-        margin: '0 4px',
-      }"
+                backgroundColor: c,
+                width: '100%',
+                maxWidth: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                border: color === c ? '2px solid black' : '1px solid #ccc',
+                cursor: 'pointer',
+                flex: '1',
+                margin: '0 4px',
+              }"
               @click="color = c"
           />
         </div>
@@ -93,7 +91,6 @@
           グループ: {{ groupName }}<br>
           レイヤー: {{ layerName }}
         </div>
-<!--        <p class="mt-2 text-caption" style="margin-bottom: 10px;"> グループ: {{ groupName }} / レイヤー: {{ layerName }}</p>-->
       </v-card-text>
     </v-card>
   </v-navigation-drawer>
@@ -107,8 +104,7 @@ import "firebase/storage";
 
 export default {
   name: 'PointInfoDrawer',
-  components: {
-  },
+  components: {},
   data() {
     return {
       isImageLoaded: false,
@@ -117,7 +113,7 @@ export default {
       photo: null,
       photoUrl: '',
       isUploading: false,
-      color: '#000000',  // 初期色（黒）
+      color: '#000000',
       presetColors: ['#ff0000', '#00aaff', '#00cc66', '#ffcc00', '#ff66cc', '#9966ff', '#aaaaaa', '#000000'],
     };
   },
@@ -128,7 +124,8 @@ export default {
       'currentGroupId',
       'selectedLayerId',
       'currentGroupName',
-      'currentGroupLayers'
+      'currentGroupLayers',
+      'groupFeatures'
     ]),
     groupName() { return this.currentGroupName || '未選択'; },
     layerName() {
@@ -139,118 +136,45 @@ export default {
     },
     visible: {
       get() { return this.showPointInfoDrawer; },
-      set(val) { this.setPointInfoDrawer(val); }
+      set(val) {
+        this.setPointInfoDrawer(val);
+        if (!val) {
+          // ドロワー閉じるときにフィールドをクリア
+          this.title = '';
+          this.description = '';
+          this.photo = null;
+          this.photoUrl = '';
+          this.color = '#000000';
+        }
+      }
     },
     creator() { return this.selectedPointFeature?.properties?.createdBy || '不明'; },
     timestamp() { return new Date(this.selectedPointFeature?.properties?.createdAt || 0).toLocaleString(); }
   },
   watch: {
-    selectedPointFeature: {
-      immediate: true,
-      deep: true,
-      async handler(newVal) {
-        this.title = newVal?.properties?.title || '';
-        this.description = newVal?.properties?.description || '';
+    selectedPointFeature(newVal) {
+      // 地物がクリックされたときにフィールドを更新
+      if (newVal && this.visible) {
+        this.title = newVal.properties.title || '';
+        this.description = newVal.properties.description || '';
+        this.color = newVal.properties.color || '#000000';
+        this.photoUrl = newVal.properties.photoUrl || '';
         this.photo = null;
-        this.color = newVal?.properties?.color || '#000000';
-
-        const id = newVal?.properties?.id;
-        const photoUrlFromProp = newVal?.properties?.photoUrl;
-
-        if (photoUrlFromProp) {
-          if (this.photoUrl !== photoUrlFromProp) {
-            this.isImageLoaded = false;
-            this.photoUrl = '';
-            setTimeout(() => {
-              this.photoUrl = photoUrlFromProp;
-            }, 10);
-          }
-        } else if (id) {
-          try {
-            const storage = firebase.storage();
-            const [file] = await storage.ref('points').listAll().then(res =>
-                res.items.filter(item => item.name.startsWith(id + '_'))
-            );
-            if (file) {
-              const url = await file.getDownloadURL();
-              if (this.photoUrl !== url) {
-                this.isImageLoaded = false;
-                this.photoUrl = '';
-                setTimeout(() => {
-                  this.photoUrl = url;
-                }, 10);
-              }
-            } else {
-              this.photoUrl = '';
-            }
-          } catch (e) {
-            this.photoUrl = '';
-          }
-        } else {
-          this.photoUrl = '';
-        }
       }
-    },
-    // selectedPointFeature: {
-    //   immediate: true,
-    //   deep: true,
-    //   async handler(newVal) {
-    //     console.log('selectedPointFeature 更新:', JSON.stringify(newVal));
-    //
-    //     this.isImageLoaded = false;
-    //     this.photoUrl = ''; // ← 一旦空にすることで強制的に画像をリセット
-    //
-    //     this.title = newVal?.properties?.title || '';
-    //     this.description = newVal?.properties?.description || '';
-    //     this.photo = null
-    //
-    //     // this.color = newVal?.properties?.color || this.presetColors[0]; // ←★ここ！
-    //     this.color = newVal?.properties?.color || '#000000';
-    //
-    //     const id = newVal?.properties?.id;
-    //     const photoUrlFromProp = newVal?.properties?.photoUrl;
-    //
-    //     if (photoUrlFromProp) {
-    //       // 💡 少し遅らせて再セットする（再描画させるため）
-    //       setTimeout(() => {
-    //         this.photoUrl = photoUrlFromProp;
-    //       }, 10);
-    //     } else if (id) {
-    //       try {
-    //         const storage = firebase.storage();
-    //         const [file] = await storage.ref('points').listAll().then(res =>
-    //             res.items.filter(item => item.name.startsWith(id + '_'))
-    //         );
-    //         if (file) {
-    //           const url = await file.getDownloadURL();
-    //           setTimeout(() => {
-    //             this.photoUrl = url;
-    //           }, 10);
-    //         } else {
-    //           this.photoUrl = '';
-    //         }
-    //       } catch (e) {
-    //         console.warn('Storage からの画像取得に失敗:', e);
-    //         this.photoUrl = '';
-    //       }
-    //     } else {
-    //       this.photoUrl = '';
-    //     }
-    //   }
-    // },
+    }
   },
   methods: {
     ...mapMutations([
       'setPointInfoDrawer',
       'saveSelectedPointFeature',
-      'updateSelectedPointPhotoUrl'
+      'updateSelectedPointPhotoUrl',
+      'setSelectedPointFeature',
+      'setGroupFeatures'
     ]),
-    // 画像アップロード専用にする（保存は save() 側で一括）
     async handlePhotoUpload() {
       if (!this.photo) return;
 
       this.isUploading = true;
-
       try {
         const storageRef = firebase.storage().ref();
         const fileExtension = this.photo.name.split('.').pop();
@@ -262,6 +186,7 @@ export default {
 
         this.photoUrl = photoUrl;
         this.$store.commit('updateSelectedPointPhotoUrl', photoUrl);
+        this.photo = null; // アップロード成功後に photo をリセット
       } catch (error) {
         console.error('写真アップロードエラー:', error);
         this.$store.commit('showSnackbarForGroup', '写真のアップロードに失敗しました: ' + error.message);
@@ -272,48 +197,24 @@ export default {
     async save() {
       console.log('保存開始');
 
-      // 新しい画像が選択されているならアップロードしてから保存
-      if (this.photo) {
-        await this.handlePhotoUpload();
-      }
-
+      // 既に photoUrl があればアップロード済みとみなし、再アップロードしない
       if (this.selectedPointFeature?.properties) {
         this.selectedPointFeature.properties.title = this.title;
         this.selectedPointFeature.properties.description = this.description;
-        this.selectedPointFeature.properties.color = this.color; // ← ★ここを追加
-
+        this.selectedPointFeature.properties.color = this.color;
         if (this.photoUrl) {
           this.selectedPointFeature.properties.photoUrl = this.photoUrl;
         }
       }
 
       this.saveSelectedPointFeature();
-      this.$store.dispatch('saveSelectedPointToFirestore');
+      await this.$store.dispatch('saveSelectedPointToFirestore');
       console.log('保存後のselectedPointFeature:', JSON.stringify(this.selectedPointFeature));
+
+      // 保存後に最新データを再取得
+      await this.syncPointData();
       this.close();
     },
-    // async save() {
-    //   console.log('保存開始');
-    //
-    //   // 新しい画像が選択されているならアップロードしてから保存
-    //   if (this.photo) {
-    //     await this.handlePhotoUpload(); // ← ここで画像アップしてから return で終わらず続ける
-    //   }
-    //
-    //   if (this.selectedPointFeature?.properties) {
-    //     this.selectedPointFeature.properties.title = this.title;
-    //     this.selectedPointFeature.properties.description = this.description;
-    //
-    //     if (this.photoUrl) {
-    //       this.selectedPointFeature.properties.photoUrl = this.photoUrl;
-    //     }
-    //   }
-    //
-    //   this.saveSelectedPointFeature();
-    //   this.$store.dispatch('saveSelectedPointToFirestore');
-    //   console.log('保存後のselectedPointFeature:', JSON.stringify(this.selectedPointFeature));
-    //   this.close();
-    // },
     onImageError() {
       console.error('画像の読み込みに失敗しました:', this.photoUrl);
       this.photoUrl = '';
@@ -405,52 +306,49 @@ export default {
     close() {
       this.setPointInfoDrawer(false);
     },
-    async handleVisibilityChange() {
-      if (document.visibilityState === 'visible') {
-        this.forceResync();
-      }
-    },
-    async forceResync() {
+    async syncPointData() {
+      const groupId = this.currentGroupId;
+      const layerId = this.selectedLayerId;
+      const selectedId = this.selectedPointFeature?.properties?.id;
+
+      if (!groupId || !layerId || !selectedId) return;
+
       try {
         const db = firebase.firestore();
-        const docRef = db.collection('groups')
-            .doc(this.currentGroupId)
-            .collection('layers')
-            .doc(this.selectedLayerId);
+        const docRef = db.collection('groups').doc(groupId).collection('layers').doc(layerId);
         const doc = await docRef.get();
         if (doc.exists) {
-          const data = doc.data();
-          if (data?.features) {
-            const matched = data.features.find(f =>
-                f.properties?.id === this.selectedPointFeature?.properties?.id
-            );
-            if (matched) {
-              this.$store.commit('setSelectedPointFeature', JSON.parse(JSON.stringify(matched)));
-              console.log('📶 ポーリング同期: データ更新');
-            }
+          const features = doc.data().features || [];
+          const matched = features.find(f => f.properties.id === selectedId);
+          if (matched) {
+            this.$store.commit('setSelectedPointFeature', JSON.parse(JSON.stringify(matched)));
+            this.$store.commit('setGroupFeatures', features);
+            this.title = matched.properties.title || '';
+            this.description = matched.properties.description || '';
+            this.color = matched.properties.color || '#000000';
+            this.photoUrl = matched.properties.photoUrl || '';
+            this.photo = null;
+            console.log('📶 保存後同期: データ更新', matched);
+          } else {
+            console.warn('選択されたポイントが見つかりません');
+            this.$store.commit('setSelectedPointFeature', null);
+            this.title = '';
+            this.description = '';
+            this.photoUrl = '';
+            this.color = '#000000';
           }
         }
-      } catch (e) {
-        console.warn('同期失敗:', e);
+      } catch (error) {
+        console.error('同期エラー:', error);
       }
     }
   },
   mounted() {
-    document.addEventListener('visibilitychange', this.handleVisibilityChange);
-    window.addEventListener('focus', this.forceResync);
-    window.addEventListener('online', this.forceResync);
-    this.pollingInterval = setInterval(this.forceResync, 30000);
-    this.fastInterval = setInterval(this.forceResync, 7000);
-    this.superInterval = setInterval(this.forceResync, 5000);
+    // 初期化は watch に依存
   },
   beforeUnmount() {
-    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
-    clearInterval(this.pollingInterval);
-    clearInterval(this.fastInterval);
-    clearInterval(this.superInterval);
-    window.removeEventListener('focus', this.forceResync);
-    window.removeEventListener('online', this.forceResync);
-  },
+    // 特にクリーンアップ不要
+  }
 };
 </script>
 
@@ -477,21 +375,18 @@ export default {
   justify-content: space-between;
   padding: 8px 0;
 }
-
 .color-circle {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  borderRadius: 50%;
   border: 1px solid #ccc;
   cursor: pointer;
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
-
 .color-circle:hover {
   transform: scale(1.15);
   opacity: 0.8;
 }
-
 .color-circle.selected {
   border: 3px solid black;
 }
