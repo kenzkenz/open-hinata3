@@ -407,6 +407,54 @@ export default function useGloupLayer() {
                 // 地物クリックイベントを追加
                 map01.on('click', 'oh-point-layer', createPointClickHandler(map01)); // ★ここでクリックを監視★
                 map01.on('click', 'oh-point-label-layer', createPointClickHandler(map01));
+
+                let draggedFeatureId = null;
+
+                map01.on('mousedown', 'oh-point-layer', (e) => {
+                    if (!e.features.length) return;
+                    map01.getCanvas().style.cursor = 'grabbing';
+
+                    draggedFeatureId = e.features[0].properties.id;
+                    map01.dragPan.disable(); // ドラッグ中は地図のパンを無効化
+                });
+
+                map01.on('mousemove', (e) => {
+                    if (!draggedFeatureId) return;
+
+                    const features = groupGeojson.value.features.map(f => {
+                        if (f.properties.id === draggedFeatureId) {
+                            return {
+                                ...f,
+                                geometry: {
+                                    ...f.geometry,
+                                    coordinates: [e.lngLat.lng, e.lngLat.lat]
+                                }
+                            };
+                        }
+                        return f;
+                    });
+
+                    groupGeojson.value.features = features;
+                    const source = map01.getSource('oh-point-source');
+                    if (source) {
+                        source.setData({ type: 'FeatureCollection', features });
+                    }
+                });
+
+                map01.on('mouseup', async () => {
+                    if (draggedFeatureId) {
+                        map01.getCanvas().style.cursor = '';
+                        map01.dragPan.enable();
+                        draggedFeatureId = null;
+
+                        // Firestoreへ保存
+                        const groupId = store.state.currentGroupId;
+                        const layerId = store.state.selectedLayerId;
+                        await saveLayerToFirestore(groupId, layerId, groupGeojson.value.features);
+                    }
+                });
+
+
             };
 
             if (map01.isStyleLoaded()) {
