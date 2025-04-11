@@ -361,6 +361,15 @@ export default createStore({
   getters: {
   },
   mutations: {
+    clearSelectedLayers(state, mapId) {
+      state.selectedLayers[mapId] = [];
+    },
+    setCurrentGroupLayers(state, layers) {
+      state.currentGroupLayers = layers;
+    },
+    addSelectedLayer(state, { map, layer }) {
+      state.selectedLayers[map].push(layer);
+    },
     setGroupFeatures(state, features) {
       state.groupFeatures = features;
     },
