@@ -454,6 +454,47 @@ export default function useGloupLayer() {
                     }
                 });
 
+                // スマホ向けの変数と処理
+                map01.on('touchstart', 'oh-point-layer', (e) => {
+                    if (!e.features.length) return;
+                    draggedFeatureId = e.features[0].properties.id;
+                    map01.dragPan.disable(); // 地図のパンを一時無効化
+                });
+
+                map01.on('touchmove', (e) => {
+                    if (!draggedFeatureId || !e.points || e.points.length === 0) return;
+
+                    const touch = e.lngLat;
+                    const features = groupGeojson.value.features.map(f => {
+                        if (f.properties.id === draggedFeatureId) {
+                            return {
+                                ...f,
+                                geometry: {
+                                    ...f.geometry,
+                                    coordinates: [touch.lng, touch.lat]
+                                }
+                            };
+                        }
+                        return f;
+                    });
+
+                    groupGeojson.value.features = features;
+                    const source = map01.getSource('oh-point-source');
+                    if (source) {
+                        source.setData({ type: 'FeatureCollection', features });
+                    }
+                });
+
+                map01.on('touchend', async () => {
+                    if (draggedFeatureId) {
+                        map01.dragPan.enable();
+                        draggedFeatureId = null;
+
+                        const groupId = store.state.currentGroupId;
+                        const layerId = store.state.selectedLayerId;
+                        await saveLayerToFirestore(groupId, layerId, groupGeojson.value.features);
+                    }
+                });
 
             };
 
