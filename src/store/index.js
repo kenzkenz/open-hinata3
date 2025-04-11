@@ -4,6 +4,7 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    clickedCoordinates: [],
     selectedPointColor: '#ff0000', // ✅ 追加: 現在のポイント色
     selectedLayerId: null, // 選択中のレイヤーIDを追加
     currentGroupId: '',

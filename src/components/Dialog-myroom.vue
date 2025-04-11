@@ -580,11 +580,9 @@ export default {
           layers.push({ id: doc.id, ...doc.data() });
         });
 
-        // alert('フェッチ' +  JSON.stringify(this.s_currentGroupLayers))
-
         // currentGroupLayersをクリアして最新データに更新
         this.$store.state.currentGroupLayers = layers;
-        console.log('fetchLayers: 更新後のcurrentGroupLayers=', JSON.stringify(this.s_currentGroupLayers));
+        // console.log('fetchLayers: 更新後のcurrentGroupLayers=', JSON.stringify(this.s_currentGroupLayers));
 
         // selectedLayers.map01と同期
         // this.syncSelectedLayers();

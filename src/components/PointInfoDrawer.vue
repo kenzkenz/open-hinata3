@@ -25,26 +25,57 @@
             auto-grow
             rows="6"
         />
-        <a v-if="photoUrl" :href="photoUrl" target="_blank" rel="noopener noreferrer">
-          <div style="position: relative; width: 100%; margin-bottom: 20px;">
-            <v-progress-circular
-                v-if="!isImageLoaded"
-                indeterminate
-                color="primary"
-                size="40"
-                class="image-loader"
-            />
-            <div :class="{'fade-in': isImageLoaded, 'hidden': !isImageLoaded}">
-              <v-img
-                  :src="photoUrl"
-                  style="width: 100%;"
-                  class="mt-2"
-                  @load="isImageLoaded = true"
-                  @error="onImageError"
-              />
-            </div>
-          </div>
-        </a>
+        <v-tabs mobile-breakpoint="0" v-model="tab" class="custom-tabs" style="margin-top: -18px">
+          <v-tab value="0">uploaded</v-tab>
+          <v-tab value="1">streetview</v-tab>
+        </v-tabs>
+        <v-window v-model="tab" style="margin-bottom: 20px;">
+          <v-window-item value="0">
+            <a v-if="photoUrl" :href="photoUrl" target="_blank" rel="noopener noreferrer">
+              <div style="position: relative; width: 100%; margin-bottom: 0px;">
+                <v-progress-circular
+                    v-if="!isImageLoaded"
+                    indeterminate
+                    color="primary"
+                    size="40"
+                    class="image-loader"
+                />
+                <div :class="{'fade-in': isImageLoaded, 'hidden': !isImageLoaded}">
+                  <v-img
+                      :src="photoUrl"
+                      style="width: 100%;"
+                      class="mt-2"
+                      @load="isImageLoaded = true"
+                      @error="onImageError"
+                  />
+                </div>
+              </div>
+            </a>
+          </v-window-item>
+          <v-window-item value="1">
+            <div class="street-view" style="margin-top:10px;height: 200px;width: 380px"></div>
+          </v-window-item>
+        </v-window>
+<!--        <a v-if="photoUrl" :href="photoUrl" target="_blank" rel="noopener noreferrer">-->
+<!--          <div style="position: relative; width: 100%; margin-bottom: 20px;">-->
+<!--            <v-progress-circular-->
+<!--                v-if="!isImageLoaded"-->
+<!--                indeterminate-->
+<!--                color="primary"-->
+<!--                size="40"-->
+<!--                class="image-loader"-->
+<!--            />-->
+<!--            <div :class="{'fade-in': isImageLoaded, 'hidden': !isImageLoaded}">-->
+<!--              <v-img-->
+<!--                  :src="photoUrl"-->
+<!--                  style="width: 100%;"-->
+<!--                  class="mt-2"-->
+<!--                  @load="isImageLoaded = true"-->
+<!--                  @error="onImageError"-->
+<!--              />-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </a>-->
         <v-file-input
             v-model="photo"
             label="写真をアップロード"
@@ -101,12 +132,15 @@ import { mapState, mapMutations } from 'vuex';
 import firebase from "firebase/app";
 import "firebase/firestore";
 import "firebase/storage";
+import {enableMotionPermission} from "@/js/popup";
+import store from "@/store";
 
 export default {
   name: 'PointInfoDrawer',
   components: {},
   data() {
     return {
+      tab: '0',
       isImageLoaded: false,
       title: '',
       description: '',
@@ -152,7 +186,28 @@ export default {
     timestamp() { return new Date(this.selectedPointFeature?.properties?.createdAt || 0).toLocaleString(); }
   },
   watch: {
+
+    tab (newVal) {
+      if (newVal === '1') {
+        const coordinates = this.$store.state.clickedCoordinates;
+        async function setupStreetViewWithMotion() {
+          await enableMotionPermission(); // ← 先に許可をもらう
+            setTimeout(() => {
+              const container = document.querySelector('.street-view')
+              new window.google.maps.StreetViewPanorama(container, {
+                position: {lat: coordinates[1], lng: coordinates[0]},
+                pov: { heading: 34, pitch: 10 },
+                zoom: 1,
+                disableDefaultUI: true,
+              });
+            },100)
+        }
+        setupStreetViewWithMotion()
+      }
+    },
+
     selectedPointFeature(newVal) {
+      this.tab = '0'
       // 地物がクリックされたときにフィールドを更新
       if (newVal && this.visible) {
         this.title = newVal.properties.title || '';
@@ -240,31 +295,6 @@ export default {
 
 
     },
-    // async save() {
-    //   console.log('保存開始');
-    //
-    //   // 既に photoUrl があればアップロード済みとみなし、再アップロードしない
-    //   if (this.selectedPointFeature?.properties) {
-    //     this.selectedPointFeature.properties.title = this.title;
-    //     this.selectedPointFeature.properties.description = this.description;
-    //     this.selectedPointFeature.properties.color = this.color;
-    //     if (this.photoUrl) {
-    //       this.selectedPointFeature.properties.photoUrl = this.photoUrl;
-    //     }
-    //   }
-    //
-    //   this.saveSelectedPointFeature();
-    //   await this.$store.dispatch('saveSelectedPointToFirestore');
-    //   console.log('保存後のselectedPointFeature:', JSON.stringify(this.selectedPointFeature));
-    //
-    //   // 保存後に最新データを再取得
-    //   await this.syncPointData();
-    //   this.close();
-    // },
-    // onImageError() {
-    //   console.error('画像の読み込みに失敗しました:', this.photoUrl);
-    //   this.photoUrl = '';
-    // },
     remove() {
       const selectedPointFeature = this.selectedPointFeature;
       if (!selectedPointFeature || !selectedPointFeature.properties?.id) {

@@ -4223,7 +4223,13 @@ export default {
         const uid = user.value.uid
         this.uid = uid
         this.$store.state.userId = uid
-        capture(uid, true)
+        // capture(uid, true)
+        const map01 = store.state.map01
+        if (map01) {
+          capture(uid.value)
+        } else {
+          console.warn("地図がまだ初期化されていません")
+        }
         clearInterval(checkUser) // UID を取得できたら監視を停止
       }
     }, 100)

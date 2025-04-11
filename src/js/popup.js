@@ -249,11 +249,8 @@ function urlByLayerId (layerId) {
     return [RasterTileUrl,legend,zoom]
 }
 export function popup(e,map,mapName,mapFlg) {
-
-    if (map.getLayer('oh-point-layer')) return
-
-    enableMotionPermission()
     let html = ''
+    enableMotionPermission()
     let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
     console.log(features[0])
     console.log(map.getStyle().layers)
@@ -300,6 +297,11 @@ export function popup(e,map,mapName,mapFlg) {
         }
     } else {
         coordinates = e.lngLat
+    }
+
+    if (map.getLayer('oh-point-layer')) {
+        store.state.clickedCoordinates = coordinates
+        return
     }
 
     // if (features.length > 0) {
@@ -3439,9 +3441,6 @@ export function popup(e,map,mapName,mapFlg) {
                 //
                 //     store.commit('setPointInfoDrawer', true)
                 // }
-
-
-
                 html = 'dumy'
                 // const featureId = feature.properties.id
                 // console.log(coordinates)
@@ -3653,7 +3652,7 @@ export function popup(e,map,mapName,mapFlg) {
     }
 }
 
-function enableMotionPermission() {
+export function enableMotionPermission() {
     if (
         typeof DeviceOrientationEvent !== 'undefined' &&
         typeof DeviceOrientationEvent.requestPermission === 'function'
@@ -3738,26 +3737,30 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
 
     // ストリートビューを挿入
     const container = document.querySelector('.street-view');
-    if (container && !store.state.mapillaryFlg) {
-        async function setupStreetViewWithMotion() {
-            await enableMotionPermission(); // ← 先に許可をもらう
-            if (container) {
-                new window.google.maps.StreetViewPanorama(container, {
-                    position: {lat: lat, lng: lng},
-                    pov: { heading: 34, pitch: 10 },
-                    zoom: 1,
-                    disableDefaultUI: true,
-                });
-                // スクロールリセット（ポップアップ内のスクロール位置をリセット）
-                setTimeout(() => {
-                    document.querySelectorAll('.popup-html-div').forEach(element => {
-                        element.scrollTop = 0;
+
+    setTimeout(() => {
+        if (container && !store.state.mapillaryFlg) {
+            async function setupStreetViewWithMotion() {
+                await enableMotionPermission(); // ← 先に許可をもらう
+                if (container) {
+                    new window.google.maps.StreetViewPanorama(container, {
+                        position: {lat: lat, lng: lng},
+                        pov: { heading: 34, pitch: 10 },
+                        zoom: 1,
+                        disableDefaultUI: true,
                     });
-                },200)
+                    // スクロールリセット（ポップアップ内のスクロール位置をリセット）
+                    setTimeout(() => {
+                        document.querySelectorAll('.popup-html-div').forEach(element => {
+                            element.scrollTop = 0;
+                        });
+                    },200)
+                }
             }
+            setupStreetViewWithMotion()
         }
-        setupStreetViewWithMotion()
-    }
+    },100)
+
 
     // if (store.state.mapillaryFlg) {
     //     alert(888)
