@@ -750,9 +750,7 @@ export default {
       this.layerId = id;
       this.$store.commit('setSelectedLayerId', id);
 
-
       console.log('layerSet呼び出し:', name, id);
-
 
       const mapLayers = this.$store.state.selectedLayers['map01'];
       const existingLayer = mapLayers.find(l => l.id === 'oh-point-layer');
@@ -799,6 +797,9 @@ export default {
       } else {
         console.warn('マップまたはソースが未初期化');
       }
+
+      console.log('セレクテッドレイヤーズ' ,JSON.stringify(this.$store.state.selectedLayers))
+
     },
     async layerRenameBtn() {
       if (!this.layerName.trim()) return alert('新しい名前を入力してください');

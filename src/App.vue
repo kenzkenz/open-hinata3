@@ -1960,7 +1960,8 @@ export default {
         return obj
       }
 
-      const keysToRemove = ['label', 'source', 'layers', 'sources', 'attribution','info']
+      // const keysToRemove = ['label', 'source', 'layers', 'sources', 'attribution','info']
+      const keysToRemove = ['source', 'layers', 'sources', 'attribution','info']
       let copiedSelectedLayers = JSON.parse(JSON.stringify(this.$store.state.selectedLayers))
       copiedSelectedLayers = removeKeys(copiedSelectedLayers, keysToRemove)
       // console.log(JSON.stringify(copiedSelectedLayers))
@@ -2881,6 +2882,8 @@ export default {
             })
           }
 
+          console.log('復帰',params.slj)
+
           if (params.slj) {
             const mapNames = ['map01', 'map02']
             mapNames.forEach(mapName => {
@@ -2897,8 +2900,9 @@ export default {
                           traverseLayers([node], slj); // 再帰処理
                         } else {
                           // 子ノードがない場合の処理
+                          // if (slj.label) alert(slj.label)
                           if (node.id === slj.id) {
-                            slj.label = node.label
+                            // slj.label = node.label
                             slj.source = node.source
                             slj.sources = node.sources
                             slj.layers = node.layers
@@ -2912,7 +2916,7 @@ export default {
                     } else {
                       // 子ノードがない場合の処理
                       if (layer.id === slj.id) {
-                        slj.label = layer.label
+                        // slj.label = layer.label
                         slj.source = layer.source
                         slj.sources = layer.sources
                         slj.layers = layer.layers
@@ -2928,7 +2932,7 @@ export default {
                 const layers = Layers.layers[mapName];
                 traverseLayers(layers, slj);
                 // 必要であれば処理結果のログを出力
-                // console.log(layerNames)
+                console.log(layerNames)
                 const uniqueLayerNames = [...new Set(layerNames)]
                 // console.log(uniqueLayerNames.join('\n'));
                 console.log(`Processed ${count} layers for map: ${mapName}`);
