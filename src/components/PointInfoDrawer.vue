@@ -25,9 +25,10 @@
             auto-grow
             rows="6"
         />
-        <v-tabs mobile-breakpoint="0" v-model="tab" class="custom-tabs" style="margin-top: -18px">
+        <v-tabs mobile-breakpoint="0" v-model="tab" class="custom-tabs" style="margin-top: -18px;">
           <v-tab value="0">uploaded</v-tab>
           <v-tab value="1">streetview</v-tab>
+          <v-tab value="2">mapillary</v-tab>
         </v-tabs>
         <v-window v-model="tab" style="margin-bottom: 20px;">
           <v-window-item value="0">
@@ -55,7 +56,11 @@
           <v-window-item value="1">
             <div class="street-view" style="margin-top:10px;height: 200px;width: 380px"></div>
           </v-window-item>
+          <v-window-item value="2">
+            <div class="mapillary" style="margin-top:10px;height: 200px;width: 380px"></div>
+          </v-window-item>
         </v-window>
+
 <!--        <a v-if="photoUrl" :href="photoUrl" target="_blank" rel="noopener noreferrer">-->
 <!--          <div style="position: relative; width: 100%; margin-bottom: 20px;">-->
 <!--            <v-progress-circular-->
@@ -192,17 +197,39 @@ export default {
         const coordinates = this.$store.state.clickedCoordinates;
         async function setupStreetViewWithMotion() {
           await enableMotionPermission(); // ← 先に許可をもらう
-            setTimeout(() => {
-              const container = document.querySelector('.street-view')
-              new window.google.maps.StreetViewPanorama(container, {
-                position: {lat: coordinates[1], lng: coordinates[0]},
-                pov: { heading: 34, pitch: 10 },
-                zoom: 1,
-                disableDefaultUI: true,
-              });
-            },100)
+          setTimeout(() => {
+            const container = document.querySelector('.street-view')
+            new window.google.maps.StreetViewPanorama(container, {
+              position: {lat: coordinates[1], lng: coordinates[0]},
+              pov: {heading: 34, pitch: 10},
+              zoom: 1,
+              disableDefaultUI: true,
+            });
+          }, 100)
         }
         setupStreetViewWithMotion()
+      } else if (newVal === '2') {
+        const coordinates = this.$store.state.clickedCoordinates;
+        const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c';
+        async function aaa () {
+          async function mapillary() {
+            const deltaLat = 0.00009; // 約10m
+            const deltaLng = 0.00011; // 東京近辺での約10m
+            const response = await fetch(`https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${coordinates[0] - deltaLng},${coordinates[1] - deltaLat},${coordinates[0] + deltaLng},${coordinates[1] + deltaLat}&limit=1`);
+            const data = await response.json();
+            if (data.data && data.data.length > 0) {
+              const imageUrl = data.data[0].thumb_1024_url;
+              const img = `<br><a href="${imageUrl}" target="_blank"><img width="380px" src="${imageUrl}" alt="Mapillary Image"></a>`;
+              return img;
+            } else {
+              return '<div style="text-align: center;"><span style="font-size: small">10m圏内にMapillary画像が見つかりませんでした。</span></div>';
+            }
+          }
+          const img = await mapillary()
+          const container = document.querySelector('.mapillary')
+          container.innerHTML = img
+        }
+        aaa()
       }
     },
 
@@ -468,5 +495,8 @@ export default {
 }
 .selected-color {
   border: 2px solid black;
+}
+.custom-tabs .v-btn {
+  padding: 10px!important;
 }
 </style>
