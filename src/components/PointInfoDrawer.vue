@@ -343,6 +343,7 @@ export default {
       }
     },
     async save() {
+      this.close();
       console.log('保存開始');
 
       const feature = this.selectedPointFeature;
@@ -372,7 +373,7 @@ export default {
       console.log('保存完了');
 
       await this.syncPointData();
-      this.close();
+      // this.close();
 
       const map = this.$store.state.map01;
       const updatedFeatures = this.$store.state.groupFeatures; // ← syncPointData で更新されたやつ
