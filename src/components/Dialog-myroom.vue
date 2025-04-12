@@ -36,7 +36,7 @@
                     <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="addLayer">レイヤー追加</v-btn>
                     <v-btn style="margin-top: -10px; margin-bottom: 10px; margin-left: 10px" @click="layerRenameBtn">リネーム</v-btn>
                     <v-btn style="margin-top: -10px;margin-bottom: 10px;margin-left: 10px;" @click="layerSerchBtn">検索</v-btn>
-                    <div v-for="item in s_currentGroupLayers" :key="item.id" class="data-container" @click="layerSet(item.name,item.id)">
+                    <div style="height: 50px;" v-for="item in s_currentGroupLayers" :key="item.id" class="data-container" @click="layerSet(item.name,item.id)">
                       <button class="close-btn" @click="deleteLayer(item.id)">×</button>
                       <span v-html="'<strong>' + item.name + '</strong>_' + item.nickName + 'が作成_' + readableTime (item.createdAt)"></span>
                     </div>
@@ -746,6 +746,8 @@ export default {
       }
     },
     layerSet(name, id) {
+      if (this.layerId === id) return;
+
       this.layerName = name;
       this.layerId = id;
       this.$store.commit('setSelectedLayerId', id);
