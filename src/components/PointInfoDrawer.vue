@@ -96,7 +96,7 @@
 
       </v-card-text>
 
-      <v-card-text style="margin-top: -35px;">
+      <v-card-text style="margin-top: -40px;">
         <div style="display: flex; justify-content: space-between; padding: 8px 0;">
           <div
               v-for="c in presetColors"
@@ -125,6 +125,7 @@
         <v-btn style="background-color: var(--main-color); color: white!important;" @click="save">保存</v-btn>
         <v-btn style="background-color: var(--main-color); color: white!important;" @click="close">閉じる</v-btn>
       </v-card-actions>
+
       <v-card-text style="margin-top: -20px">
         <div class="mt-2 text-caption text-right">
           作成者: {{ creator }}<br>
@@ -344,6 +345,7 @@ export default {
     },
     async save() {
       this.close();
+
       console.log('保存開始');
 
       const feature = this.selectedPointFeature;
@@ -386,6 +388,16 @@ export default {
         map.triggerRepaint();
         console.log('🗺️ マップ上のポイントを更新しました');
       }
+      // 現在のズームを取得
+      const currentZoom = map.getZoom();
+      // アニメーションで移動（ズーム変更なし）
+      map.flyTo({
+        center: this.$store.state.clickedCoordinates,
+        zoom: currentZoom,     // 明示的に現在のズームを指定してもよい
+        speed: 0.8,            // アニメーション速度（デフォルトは1.2）
+        curve: 1.42,           // カーブ具合（デフォルトは1.42）
+        essential: true        // ユーザー設定のモーション制限を無視
+      });
     },
     remove() {
       const selectedPointFeature = this.selectedPointFeature;
