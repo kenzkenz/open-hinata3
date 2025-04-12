@@ -387,9 +387,9 @@ export default function useGloupLayer() {
                         source: 'oh-point-source',
                         layout: {
                             'text-field': ['get', 'title'],
-                            'text-size': 12,
-                            'text-offset': [0, -1.5],
-                            'text-anchor': 'bottom'
+                            'text-size': 14,
+                            'text-offset': [0, 0.5],
+                            'text-anchor': 'top'
                         },
                         paint: {
                             'text-color': '#000',
