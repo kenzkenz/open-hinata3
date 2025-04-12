@@ -64,7 +64,8 @@
         </v-window>
 
         <div style="display: flex; gap: 8px; margin-bottom: 16px; align-items: center;">
-          <div style="display: flex; align-items: center; height: 56px; padding-top: 4px;">
+          <!-- カメラアイコン（Androidでは非表示） -->
+          <div v-if="!s_isAndroid" style="display: flex; align-items: center; height: 56px; padding-top: 4px;">
             <v-btn
                 color="primary"
                 icon
@@ -83,16 +84,48 @@
                 @change="handlePhotoFromCamera"
             />
           </div>
+          <!-- ファイル入力（Android時に幅を調整） -->
           <v-file-input
               v-model="photo"
               label="写真をアップロード"
               accept="image/*"
               @change="handlePhotoUpload"
               :loading="isUploading"
-              style="flex: 1"
+              :style="s_isAndroid ? 'flex: 1; width: 100%;' : 'flex: 1'"
               prepend-icon=""
           />
         </div>
+
+        <!--        <div style="display: flex; gap: 8px; margin-bottom: 16px; align-items: center;">-->
+<!--          <div style="display: flex; align-items: center; height: 56px; padding-top: 4px;">-->
+<!--            <v-btn-->
+<!--                color="primary"-->
+<!--                icon-->
+<!--                @click="$refs.cameraInput.click()"-->
+<!--                title="カメラで撮影"-->
+<!--                style="margin-top: -24px;"-->
+<!--            >-->
+<!--              <v-icon>mdi-camera</v-icon>-->
+<!--            </v-btn>-->
+<!--            <input-->
+<!--                type="file"-->
+<!--                ref="cameraInput"-->
+<!--                accept="image/*"-->
+<!--                capture="environment"-->
+<!--                style="display: none"-->
+<!--                @change="handlePhotoFromCamera"-->
+<!--            />-->
+<!--          </div>-->
+<!--          <v-file-input-->
+<!--              v-model="photo"-->
+<!--              label="写真をアップロード"-->
+<!--              accept="image/*"-->
+<!--              @change="handlePhotoUpload"-->
+<!--              :loading="isUploading"-->
+<!--              style="flex: 1"-->
+<!--              prepend-icon=""-->
+<!--          />-->
+<!--        </div>-->
 
       </v-card-text>
 
@@ -173,6 +206,9 @@ export default {
       'currentGroupLayers',
       'groupFeatures'
     ]),
+    s_isAndroid () {
+      return this.$store.state.isAndroid
+    },
     drawerWidth () {
       return window.innerWidth
     },

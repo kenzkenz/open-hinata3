@@ -1242,27 +1242,27 @@ export function saveDxf (map, layerId, sourceId, fields, detailGeojson, kei2) {
 
     console.log(code)
     console.log(geojson)
-    convertGeoJSON(geojson,code)
+    // convertGeoJSON(geojson,code) // ここを復活するとPHP版になる。
     store.state.loading = false
 
 
-    // try {
-    //     const dxfString = geojsonToDXF(geojson);
-    //     // DXFファイルとしてダウンロード
-    //     const blob = new Blob([dxfString], { type: 'application/dxf' });
-    //     const link = document.createElement('a');
-    //     link.href = URL.createObjectURL(blob);
-    //
-    //     const firstChiban = getChibanAndHoka(geojson,true).firstChiban
-    //     const hoka = getChibanAndHoka(geojson,true).hoka
-    //     const kei = getKeiByCode(code)
-    //     link.download = kei + firstChiban + hoka + '.dxf';
-    //
-    //     link.click();
-    // } catch (error) {
-    //     console.error('GeoJSONの解析中にエラーが発生しました:', error);
-    //     alert('有効なGeoJSONを入力してください。');
-    // }
+    try {
+        const dxfString = geojsonToDXF(geojson);
+        // DXFファイルとしてダウンロード
+        const blob = new Blob([dxfString], { type: 'application/dxf' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+
+        const firstChiban = getChibanAndHoka(geojson,true).firstChiban
+        const hoka = getChibanAndHoka(geojson,true).hoka
+        const kei = getKeiByCode(code)
+        link.download = kei + firstChiban + hoka + '.dxf';
+
+        link.click();
+    } catch (error) {
+        console.error('GeoJSONの解析中にエラーが発生しました:', error);
+        alert('有効なGeoJSONを入力してください。');
+    }
 }
 
 function downloadGeoJSONAsCSV(geojson, filename = 'data.csv') {
