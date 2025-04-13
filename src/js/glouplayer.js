@@ -298,29 +298,100 @@ function createMapClickHandler(map01) {
             }
         };
 
-        const source = map01.getSource('oh-point-source');
-        const currentFeatures = groupGeojson.value.features || [];
+        // 選択中のレイヤーのfeaturesを取得
+        const currentLayer = store.state.currentGroupLayers.find(l => l.id === layerId);
+        if (!currentLayer) {
+            store.dispatch('triggerSnackbarForGroup', { message: '選択中のレイヤーが見つかりません。' });
+            return;
+        }
+
+        // 選択中のレイヤーのfeaturesに追加
+        const currentFeatures = currentLayer.features || [];
         const updatedFeatures = [...currentFeatures, newFeature];
 
-        groupGeojson.value.features = updatedFeatures;
+        // レイヤーのfeaturesを更新
+        currentLayer.features = updatedFeatures;
 
+        // 共有ソースを更新（仕様上、oh-point-sourceを使わざるを得ない）
+        const source = map01.getSource('oh-point-source');
         if (source) {
-            source.setData({ type: 'FeatureCollection', features: updatedFeatures });
+            source.setData({
+                type: 'FeatureCollection',
+                features: updatedFeatures // 選択中のレイヤーのfeaturesのみ
+            });
             map01.triggerRepaint();
+        } else {
+            console.warn('ソースが見つかりません: oh-point-source');
+            return;
         }
 
         if (!isInitializing) {
+            // Firestoreに保存（選択中のレイヤーのfeaturesのみ）
             await saveLayerToFirestore(groupId, layerId, updatedFeatures);
         }
 
         store.commit('setSelectedPointFeature', newFeature);
         setTimeout(() => {
             store.commit('setPointInfoDrawer', true);
-        },0)
+        }, 0);
 
-        store.dispatch('triggerSnackbarForGroup', { message: 'ポイントを追加しました'});
+        store.dispatch('triggerSnackbarForGroup', { message: 'ポイントを追加しました' });
     };
 }
+
+// function createMapClickHandler(map01) {
+//     return async (e) => {
+//         if (isSyncFailed) {
+//             store.dispatch('triggerSnackbarForGroup', { message: 'ネットワークに接続されていません。ポイントを追加できません。' });
+//             return;
+//         }
+//
+//         const now = Date.now();
+//         if (now - lastClickTimestamp < 300) return;
+//         lastClickTimestamp = now;
+//
+//         const groupId = store.state.currentGroupId;
+//         const layerId = store.state.selectedLayerId;
+//         if (!groupId || !layerId) return;
+//
+//         const features = map01.queryRenderedFeatures(e.point, { layers: ['oh-point-layer', 'oh-point-label-layer'] });
+//         if (features.length > 0 || !e.lngLat) return;
+//
+//         const { lng, lat } = e.lngLat;
+//         const newFeature = {
+//             type: 'Feature',
+//             geometry: { type: 'Point', coordinates: [lng, lat] },
+//             properties: {
+//                 id: uuidv4(),
+//                 createdAt: Date.now(),
+//                 createdBy: store.state.myNickname || '不明',
+//                 title: '新規ポイント'
+//             }
+//         };
+//
+//         const source = map01.getSource('oh-point-source');
+//         const currentFeatures = groupGeojson.value.features || [];
+//         const updatedFeatures = [...currentFeatures, newFeature];
+//
+//         groupGeojson.value.features = updatedFeatures;
+//
+//         if (source) {
+//             source.setData({ type: 'FeatureCollection', features: updatedFeatures });
+//             map01.triggerRepaint();
+//         }
+//
+//         if (!isInitializing) {
+//             await saveLayerToFirestore(groupId, layerId, updatedFeatures);
+//         }
+//
+//         store.commit('setSelectedPointFeature', newFeature);
+//         setTimeout(() => {
+//             store.commit('setPointInfoDrawer', true);
+//         },0)
+//
+//         store.dispatch('triggerSnackbarForGroup', { message: 'ポイントを追加しました'});
+//     };
+// }
 
 export default function useGloupLayer() {
     const initializeGroupAndLayer = async () => {

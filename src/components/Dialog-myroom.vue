@@ -806,9 +806,7 @@ export default {
       } else {
         console.warn('マップまたはソースが未初期化');
       }
-
       console.log('セレクテッドレイヤーズ' ,JSON.stringify(this.$store.state.selectedLayers))
-
     },
     async layerRenameBtn() {
       if (!this.layerName.trim()) return alert('新しい名前を入力してください');
