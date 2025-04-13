@@ -41,6 +41,23 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </template>
       </v-snackbar>
 
+      <v-dialog v-model="s_mapillaryDialog">
+        <v-card>
+          <v-card-title>
+          </v-card-title>
+          <v-card-text>
+            <div class="mapillary-container2" :width="mapillaryWidth" :style="`height: ${mapillarHeight}`"></div>
+          </v-card-text>
+          <v-card-actions>
+            <div style="margin-top: -10px;">
+              <span class="attribution-date" style="margin-left: 20px;"></span><span class="attribution-username" style="margin-left: 10px;"></span>
+            </div>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="s_mapillaryDialog = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
       <v-dialog v-model="dialogForImagePng" max-width="500px">
         <v-card>
           <v-card-title>
@@ -877,6 +894,8 @@ export default {
     PointInfoDrawer,
   },
   data: () => ({
+    mapillaryWidth: '0px',
+    mapillarHeight: '0px',
     mapNames: ['map01','map02'],
     mapSize: {
       map01: {top: 0, left: 0, width: '100%', height: '100%'},
@@ -940,6 +959,14 @@ export default {
       'showPointInfoDrawer',
       'selectedPointFeature'
     ]),
+    s_mapillaryDialog: {
+      get() {
+        return this.$store.state.mapillaryDialog
+      },
+      set(value) {
+        this.$store.state.mapillaryDialog = value
+      }
+    },
     s_currentGroupId() {
       return this.$store.state.currentGroupId
     },
@@ -4223,6 +4250,10 @@ export default {
   },
   mounted() {
     const vm = this
+
+    this.mapillarWidth = (window.innerWidth * 0.8) + 'px'
+    this.mapillarHeight = (window.innerHeight * 0.8) + 'px'
+
     const checkUser = setInterval(() => {
       if (user.value && user.value.uid) {
         const uid = user.value.uid
@@ -4909,4 +4940,9 @@ select {
   z-index: 1000; /* 他の要素の上に表示 */
   direction: ltr; /* 左から右に展開 */
 }
+
+.mapillary-attribution-container {
+  display: none!important;
+}
+
 </style>

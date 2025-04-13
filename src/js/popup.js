@@ -3770,10 +3770,17 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
     let container = document.querySelector('.street-view');
     let viewer = null;
     if (store.state.mapillaryFlg) {
-        setTimeout(() => {
-            if (!container) {
+        if (!container) {
+            if (window.innerWidth < 500) {
                 container = document.querySelector('.mapillary-container');
+            } else {
+                store.state.mapillaryDialog = true
+                popups.forEach(popup => popup.remove());
+                popups.length = 0;
             }
+        }
+        setTimeout(() => {
+            if (window.innerWidth > 500) container = document.querySelector('.mapillary-container2');
             if (container && store.state.mapillaryFlg) {
                 store.state.loading2 = true
                 store.state.loadingMessage = '読み込み中です。'
@@ -3792,6 +3799,16 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
                             component: {cover: false}
                         })
                         viewer.on('image', image => {
+                            // document.querySelector('.mapillary-attribution-container').style.display = 'none'
+                            setTimeout(() => {
+                                try {
+                                    const link = document.querySelector('.mapillary-attribution-image-container').href;
+                                    document.querySelector('.attribution-username').innerHTML = `<a href=${link} target=_'blank' >${document.querySelector('.mapillary-attribution-username').innerHTML}</a>`
+                                    document.querySelector('.attribution-date').innerHTML = document.querySelector('.mapillary-attribution-date').innerHTML
+                                } catch (e) {
+                                    console.log(e)
+                                }
+                            },0)
                             console.log('✔️ 画像読み込み完了:', image);
                             store.state.loading2 = false;
                         });
