@@ -598,6 +598,7 @@ export default {
       } else if (newVal === '3') {
         this.$nextTick(() => {
           const self = this; // Vueのthisをローカル変数に保存
+          self.$refs.mlyContainer.innerHTML = ''
           async function aaa () {
             console.log(self.$refs.mlyContainer?.getBoundingClientRect());
             console.log('DOM:', self.$refs.mlyContainer);
