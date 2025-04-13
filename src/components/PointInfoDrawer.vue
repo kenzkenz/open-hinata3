@@ -597,13 +597,14 @@ export default {
         aaa()
       } else if (newVal === '3') {
         this.$nextTick(() => {
-          const self = this; // Vueのthisをローカル変数に保存
+          const self = this
           self.$refs.mlyContainer.innerHTML = ''
           async function mapillarySet () {
-            setTimeout(async () => {
               const coordinates = self.$store.state.clickedCoordinates;
               const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c';
-              const response = await fetch(`https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id&bbox=${coordinates[0] - 0.00011},${coordinates[1] - 0.00009},${coordinates[0] + 0.00011},${coordinates[1] + 0.00009}&limit=1`);
+              const deltaLat = 0.00009; // 約10m
+              const deltaLng = 0.00011; // 東京近辺での約10m
+              const response = await fetch(`https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${coordinates[0] - deltaLng},${coordinates[1] - deltaLat},${coordinates[0] + deltaLng},${coordinates[1] + deltaLat}&limit=1`);
               const data = await response.json();
               if (data.data && data.data.length > 0) {
                 const imageId = data.data[0].id;
@@ -612,18 +613,11 @@ export default {
                   container: self.$refs.mlyContainer,
                   imageId: imageId,
                   component: { cover: false }
-                });
-                self.viewer.on('image', image => {
-                  console.log('✔️ 画像読み込み成功:', image);
-                });
-                self.viewer.on('error', err => {
-                  console.error('❌ エラー:', err);
-                });
+                })
               } else {
                 self.$refs.mlyContainer.innerHTML = '<div style="text-align: center;"><span style="font-size: small">Mapillary画像が見つかりませんでした。</span></div>'
                 console.warn('Mapillary画像が見つかりませんでした');
               }
-            }, 200);
           }
           mapillarySet();
         });
