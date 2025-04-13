@@ -29,7 +29,8 @@
         <v-tabs mobile-breakpoint="0" v-model="tab" class="custom-tabs" style="margin-top: -18px;">
           <v-tab value="0">uploaded</v-tab>
           <v-tab value="1">streetview</v-tab>
-          <v-tab value="2">mapillary</v-tab>
+<!--          <v-tab value="2">mapillary</v-tab>-->
+          <v-tab value="3">mapillary</v-tab>
         </v-tabs>
         <v-window v-model="tab" style="margin-bottom: 20px;">
           <v-window-item value="0">
@@ -60,6 +61,9 @@
           </v-window-item>
           <v-window-item value="2">
             <div class="mapillary" style="margin-top:10px;height: 200px;width: 380px"></div>
+          </v-window-item>
+          <v-window-item value="3">
+            <div ref="mlyContainer" style="margin-top:10px;height: 200px;width: 380px"></div>
           </v-window-item>
         </v-window>
 
@@ -152,7 +156,7 @@
       </v-card-text>
 
       <v-card-actions style="margin-top: 0px">
-        <v-btn style="background-color: var(--main-color); color: white!important;" @click="removeAllFeatures">全削除</v-btn>
+<!--        <v-btn style="background-color: var(&#45;&#45;main-color); color: white!important;" @click="removeAllFeatures">全削除</v-btn>-->
         <v-spacer />
         <v-btn style="background-color: var(--main-color); color: white!important;" @click="remove">削除</v-btn>
         <v-btn style="background-color: var(--main-color); color: white!important;" @click="save">保存</v-btn>
@@ -178,6 +182,8 @@ import "firebase/firestore";
 import "firebase/storage";
 import {enableMotionPermission} from "@/js/popup";
 import ExifReader from 'exifreader';
+import { onMounted } from 'vue'
+import { Viewer } from 'mapillary-js'
 
 export default {
   name: 'PointInfoDrawer',
@@ -241,60 +247,6 @@ export default {
     },
     creator() { return this.selectedPointFeature?.properties?.createdBy || '不明'; },
     timestamp() { return new Date(this.selectedPointFeature?.properties?.createdAt || 0).toLocaleString(); }
-  },
-  watch: {
-    tab (newVal) {
-      if (newVal === '1') {
-        const coordinates = this.$store.state.clickedCoordinates;
-        async function setupStreetViewWithMotion() {
-          await enableMotionPermission(); // ← 先に許可をもらう
-          setTimeout(() => {
-            const container = document.querySelector('.street-view')
-            new window.google.maps.StreetViewPanorama(container, {
-              position: {lat: coordinates[1], lng: coordinates[0]},
-              pov: {heading: 34, pitch: 10},
-              zoom: 1,
-              disableDefaultUI: true,
-            });
-          }, 100)
-        }
-        setupStreetViewWithMotion()
-      } else if (newVal === '2') {
-        const coordinates = this.$store.state.clickedCoordinates;
-        const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c';
-        async function aaa () {
-          async function mapillary() {
-            const deltaLat = 0.00009; // 約10m
-            const deltaLng = 0.00011; // 東京近辺での約10m
-            const response = await fetch(`https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${coordinates[0] - deltaLng},${coordinates[1] - deltaLat},${coordinates[0] + deltaLng},${coordinates[1] + deltaLat}&limit=1`);
-            const data = await response.json();
-            if (data.data && data.data.length > 0) {
-              const imageUrl = data.data[0].thumb_1024_url;
-              const img = `<br><a href="${imageUrl}" target="_blank"><img width="380px" src="${imageUrl}" alt="Mapillary Image"></a>`;
-              return img;
-            } else {
-              return '<div style="text-align: center;"><span style="font-size: small">10m圏内にMapillary画像が見つかりませんでした。</span></div>';
-            }
-          }
-          const img = await mapillary()
-          const container = document.querySelector('.mapillary')
-          container.innerHTML = img
-        }
-        aaa()
-      }
-    },
-
-    selectedPointFeature(newVal) {
-      this.tab = '0'
-      // 地物がクリックされたときにフィールドを更新
-      if (newVal && this.visible) {
-        this.title = newVal.properties.title || '';
-        this.description = newVal.properties.description || '';
-        this.color = newVal.properties.color || '#000000';
-        this.photoUrl = newVal.properties.photoUrl || '';
-        this.photo = null;
-      }
-    }
   },
   methods: {
     ...mapMutations([
@@ -604,6 +556,92 @@ export default {
       });
     }
   },
+  watch: {
+    tab (newVal) {
+      if (newVal === '1') {
+        const coordinates = this.$store.state.clickedCoordinates;
+        async function setupStreetViewWithMotion() {
+          await enableMotionPermission(); // ← 先に許可をもらう
+          setTimeout(() => {
+            const container = document.querySelector('.street-view')
+            new window.google.maps.StreetViewPanorama(container, {
+              position: {lat: coordinates[1], lng: coordinates[0]},
+              pov: {heading: 34, pitch: 10},
+              zoom: 1,
+              disableDefaultUI: true,
+            });
+          }, 100)
+        }
+        setupStreetViewWithMotion()
+      } else if (newVal === '2') {
+        const coordinates = this.$store.state.clickedCoordinates;
+        const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c';
+        async function aaa () {
+          async function mapillary() {
+            const deltaLat = 0.00009; // 約10m
+            const deltaLng = 0.00011; // 東京近辺での約10m
+            const response = await fetch(`https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${coordinates[0] - deltaLng},${coordinates[1] - deltaLat},${coordinates[0] + deltaLng},${coordinates[1] + deltaLat}&limit=1`);
+            const data = await response.json();
+            if (data.data && data.data.length > 0) {
+              const imageUrl = data.data[0].thumb_1024_url;
+              const img = `<br><a href="${imageUrl}" target="_blank"><img width="380px" src="${imageUrl}" alt="Mapillary Image"></a>`;
+              return img;
+            } else {
+              return '<div style="text-align: center;"><span style="font-size: small">10m圏内にMapillary画像が見つかりませんでした。</span></div>';
+            }
+          }
+          const img = await mapillary()
+          const container = document.querySelector('.mapillary')
+          container.innerHTML = img
+        }
+        aaa()
+      } else if (newVal === '3') {
+        this.$nextTick(() => {
+          const self = this; // Vueのthisをローカル変数に保存
+          async function aaa () {
+            console.log(self.$refs.mlyContainer?.getBoundingClientRect());
+            console.log('DOM:', self.$refs.mlyContainer);
+            setTimeout(async () => {
+              const coordinates = self.$store.state.clickedCoordinates;
+              const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c';
+              const response = await fetch(`https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id&bbox=${coordinates[0] - 0.00011},${coordinates[1] - 0.00009},${coordinates[0] + 0.00011},${coordinates[1] + 0.00009}&limit=1`);
+              const data = await response.json();
+              if (data.data && data.data.length > 0) {
+                const imageId = data.data[0].id;
+                self.viewer = new Viewer({
+                  accessToken: MAPILLARY_CLIENT_ID,
+                  container: self.$refs.mlyContainer,
+                  imageId: imageId,
+                  component: { cover: false }
+                });
+                self.viewer.on('image', image => {
+                  console.log('✔️ 画像読み込み成功:', image);
+                });
+                self.viewer.on('error', err => {
+                  console.error('❌ エラー:', err);
+                });
+              } else {
+                self.$refs.mlyContainer.innerHTML = '<div style="text-align: center;"><span style="font-size: small">Mapillary画像が見つかりませんでした。</span></div>'
+                console.warn('Mapillary画像が見つかりませんでした');
+              }
+            }, 200);
+          }
+          aaa();
+        });
+      }
+    },
+    selectedPointFeature(newVal) {
+      this.tab = '0'
+      // 地物がクリックされたときにフィールドを更新
+      if (newVal && this.visible) {
+        this.title = newVal.properties.title || '';
+        this.description = newVal.properties.description || '';
+        this.color = newVal.properties.color || '#000000';
+        this.photoUrl = newVal.properties.photoUrl || '';
+        this.photo = null;
+      }
+    }
+  },
   beforeUnmount() {
     // 特にクリーンアップ不要
   }
@@ -653,5 +691,10 @@ export default {
 }
 .custom-tabs .v-btn {
   padding: 10px!important;
+}
+.mapillary-viewer {
+  position: relative !important;
+  left: 0px !important;
+  background: #eee;
 }
 </style>
