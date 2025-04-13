@@ -156,7 +156,7 @@
       </v-card-text>
 
       <v-card-actions style="margin-top: 0px">
-<!--        <v-btn style="background-color: var(&#45;&#45;main-color); color: white!important;" @click="removeAllFeatures">全削除</v-btn>-->
+        <v-btn disabled=true style="background-color: var(--main-color); color: white!important;" @click="removeAllFeatures">全削除</v-btn>
         <v-spacer />
         <v-btn style="background-color: var(--main-color); color: white!important;" @click="remove">削除</v-btn>
         <v-btn style="background-color: var(--main-color); color: white!important;" @click="save">保存</v-btn>
@@ -475,7 +475,17 @@ export default {
           lastModifiedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        alert(`✅ ${groupId}/${layerId} の全地物を削除しました`);
+        // マップのソースデータを更新
+        const map = this.$store.state.map01
+        const source = map.getSource('oh-point-source');
+        if (source) {
+          source.setData({
+            type: 'FeatureCollection',
+            features: []
+          });
+        }
+
+        // alert(`✅ ${groupId}/${layerId} の全地物を削除しました`);
         this.$store.commit('showSnackbarForGroup', '🗑️ 全地物を削除しました');
         this.$store.commit('setSelectedPointFeature', null);
       } catch (error) {

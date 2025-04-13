@@ -6,7 +6,7 @@ export default createStore({
   state: {
     mapillaryDialog : false,
     clickedCoordinates: [],
-    selectedPointColor: '#ff0000', // ✅ 追加: 現在のポイント色
+    selectedPointColor: '#000000', // ✅ 追加: 現在のポイント色
     selectedLayerId: null, // 選択中のレイヤーIDを追加
     currentGroupId: '',
     currentGroupLayers: [],
@@ -14,7 +14,7 @@ export default createStore({
       {
         id: 'layer1',
         name: 'ポイントレイヤー1',
-        color: '#ff0000',
+        color: '#000000',
         visible: true,
         features: [
           { id: 'abc123', geometry: {}, properties: {} }
@@ -435,8 +435,6 @@ export default createStore({
       }
     },
     setPointInfoDrawer (state, val) {
-      // const groupId = db.collection('groups').doc().id
-      // state.currentGroupId = groupId
       state.showPointInfoDrawer = val
     },
     setSelectedPointFeature (state, feature) {

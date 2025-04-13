@@ -250,6 +250,7 @@ function urlByLayerId (layerId) {
     return [RasterTileUrl,legend,zoom]
 }
 export function popup(e,map,mapName,mapFlg) {
+
     let html = ''
     enableMotionPermission()
     let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
@@ -291,13 +292,16 @@ export function popup(e,map,mapName,mapFlg) {
         coordinates = features[0].geometry.coordinates.slice()
         if (coordinates.length === 2) {
             if (coordinates[0].length > 0) {
-                coordinates = e.lngLat
+                // coordinates = e.lngLat
+                coordinates = [e.lngLat.lng,e.lngLat.lat]
             }
         } else {
-            coordinates = e.lngLat
+            // coordinates = e.lngLat
+            coordinates = [e.lngLat.lng,e.lngLat.lat]
         }
     } else {
-        coordinates = e.lngLat
+        // coordinates = e.lngLat
+        coordinates = [e.lngLat.lng,e.lngLat.lat]
     }
 
     if (map.getLayer('oh-point-layer')) {

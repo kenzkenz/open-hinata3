@@ -36,7 +36,13 @@
                     <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="addLayer">レイヤー追加</v-btn>
                     <v-btn style="margin-top: -10px; margin-bottom: 10px; margin-left: 10px" @click="layerRenameBtn">リネーム</v-btn>
                     <v-btn style="margin-top: -10px;margin-bottom: 10px;margin-left: 10px;" @click="layerSerchBtn">検索</v-btn>
-                    <div style="height: 50px;" v-for="item in s_currentGroupLayers" :key="item.id" class="data-container" @click="layerSet(item.name,item.id)">
+                    <div style="height: 50px;"
+                         v-for="item in s_currentGroupLayers"
+                         :key="item.id"
+                         class="data-container"
+                         :class="{ 'selected': selectedLayerId === item.id }"
+                         @click="layerSet(item.name,item.id)"
+                    >
                       <button class="close-btn" @click="deleteLayer(item.id)">×</button>
                       <span v-html="'<strong>' + item.name + '</strong>_' + item.nickName + 'が作成_' + readableTime (item.createdAt)"></span>
                     </div>
@@ -325,6 +331,7 @@ export default {
     // MasonryWall,
   },
   data: () => ({
+    selectedLayerId: null, // 選択中のレイヤーID
     layerId: '',
     layerName: '',
     selectedPrefName: '',
@@ -747,7 +754,7 @@ export default {
     },
     layerSet(name, id) {
       if (this.layerId === id) return;
-
+      this.selectedLayerId = id; // 選択したレイヤーのIDを保存
       this.layerName = name;
       this.layerId = id;
       this.$store.commit('setSelectedLayerId', id);
@@ -2699,6 +2706,10 @@ export default {
   min-width: 60px; /* タブの最小幅を狭く */
   padding: 5px 8px; /* 余白を小さく */
   font-size: 14px; /* フォントサイズを小さく */
+}
+/* 選択時のスタイル */
+.data-container.selected {
+  background-color: #b2ebf2;
 }
 </style>
 

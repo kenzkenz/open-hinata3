@@ -314,7 +314,11 @@ function createMapClickHandler(map01) {
         }
 
         store.commit('setSelectedPointFeature', newFeature);
-        store.commit('setPointInfoDrawer', true);
+        setTimeout(() => {
+            store.commit('setPointInfoDrawer', true);
+        },0)
+
+        store.dispatch('triggerSnackbarForGroup', { message: 'ポイントを追加しました'});
     };
 }
 
