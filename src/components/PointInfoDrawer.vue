@@ -599,9 +599,7 @@ export default {
         this.$nextTick(() => {
           const self = this; // Vueのthisをローカル変数に保存
           self.$refs.mlyContainer.innerHTML = ''
-          async function aaa () {
-            console.log(self.$refs.mlyContainer?.getBoundingClientRect());
-            console.log('DOM:', self.$refs.mlyContainer);
+          async function mapillarySet () {
             setTimeout(async () => {
               const coordinates = self.$store.state.clickedCoordinates;
               const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c';
@@ -627,7 +625,7 @@ export default {
               }
             }, 200);
           }
-          aaa();
+          mapillarySet();
         });
       }
     },

@@ -1475,7 +1475,8 @@ export default {
       } else {
         if (this.$store.state.userId) {
           const map1 = this.$store.state.map01
-          simaLoadForUser (map1,true, this.ddSimaText)
+          // alert('座標系' + this.s_zahyokei)
+          simaLoadForUser (map1,true, this.ddSimaText,this.s_zahyokei)
         } else {
           ddSimaUpload(this.ddSimaText)
         }

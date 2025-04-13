@@ -4859,7 +4859,7 @@ async function insertSimaData(uid, name, url, url2, simaText, zahyokei) {
     }
 }
 
-export async function simaLoadForUser (map,isUpload,simaText) {
+export async function simaLoadForUser (map,isUpload,simaText,zahyokei) {
     // async function insertSimaData(uid, name, url, url2, simaText, zahyokei) {
     //     try {
     //         const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userSimaInsert.php', new URLSearchParams({
@@ -4969,7 +4969,8 @@ export async function simaLoadForUser (map,isUpload,simaText) {
                     store.state.fetchImagesFire = !store.state.fetchImagesFire
                     async function aaa() {
                         console.log(response)
-                        const sourceAndLayers = await userSimaSet(name, webUrl, id, null, simaText, isUpload)
+                        // alert(222 + zahyokei)
+                        const sourceAndLayers = await userSimaSet(name, webUrl, id, zahyokei, simaText, isUpload)
                         console.log(sourceAndLayers)
                         store.state.geojsonSources.push({
                             sourceId: sourceAndLayers.source.id,
@@ -6155,7 +6156,9 @@ export async function userSimaSet(name, url, id, zahyokei, simaText, isFirst) {
             })
             store.state.simaOpacity = opacity
         }
-
+        // alert(zahyokei)
+        // zahyokei = store.state.zahyokei
+        // alert(zahyokei)
         const geojson = simaToGeoJSON(simaText, map, zahyokei, false, true);
         return createSourceAndLayers(geojson);
     } catch (error) {
