@@ -602,12 +602,6 @@ export default {
       const map = this.$store.state.map01;
       if (!map) return;
 
-      const currentLayerIds = new Set(this.s_currentGroupLayers.map(l => l.id));
-      // oh-point-layer以外の古いレイヤーを削除
-      this.$store.state.selectedLayers.map01 = this.$store.state.selectedLayers.map01.filter(layer =>
-          layer.id === 'oh-point-layer' || currentLayerIds.has(layer.layerid)
-      );
-
       const selectedLayer = this.$store.state.selectedLayers.map01.find(l => l.id === 'oh-point-layer');
       if (selectedLayer && selectedLayer.layerid) {
         const currentLayer = this.s_currentGroupLayers.find(l => l.id === selectedLayer.layerid);
@@ -823,7 +817,7 @@ export default {
 
         selectedLayer.name = this.layerName;
         this.syncSelectedLayers(); // リネーム後に同期
-        alert('リネーム成功');
+        this.$store.commit('showSnackbarForGroup', 'リネームに成功しました');
       } catch (e) {
         console.error('Firestore リネームエラー:', e);
         alert('リネーム失敗');
