@@ -44,6 +44,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <v-dialog v-model="s_mapillaryDialog">
         <v-card>
           <v-card-title>
+            <div class="close-btn-div" @click="s_mapillaryDialog = false"><i class="fa-solid fa-xmark hover close-btn" style="color: #0d47a1; margin-top: -100px!important;"></i></div>
           </v-card-title>
           <v-card-text>
             <div class="mapillary-container2" :width="mapillaryWidth" :style="`height: ${mapillarHeight}`"></div>
@@ -4943,6 +4944,11 @@ select {
 
 .mapillary-attribution-container {
   display: none!important;
+}
+
+.mapillary-container2 {
+  overflow: hidden;
+  position: relative;
 }
 
 </style>

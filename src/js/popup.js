@@ -3697,17 +3697,10 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
 
     // ポップアップHTMLを生成
     let popupHtml = `<div class="popup-html-div">${htmlContent}${streetView}</div>`;
-    let popupWidth = 350
+    let popupWidth = 300
     if (store.state.mapillaryFlg) {
         let height
         if (window.innerWidth < 400) {
-            popupWidth = 350
-            height = 233
-            popupWidth = 300
-            height = 200
-        } else {
-            popupWidth = window.innerWidth * 0.8
-            height = popupWidth * 0.66
             popupWidth = 300
             height = 200
         }
@@ -3799,7 +3792,6 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
                             component: {cover: false}
                         })
                         viewer.on('image', image => {
-                            // document.querySelector('.mapillary-attribution-container').style.display = 'none'
                             setTimeout(() => {
                                 try {
                                     const link = document.querySelector('.mapillary-attribution-image-container').href;
