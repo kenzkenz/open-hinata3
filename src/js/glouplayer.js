@@ -88,11 +88,11 @@ async function fetchAndSetGeojson(groupId, map, layerId) {
             const newFeatures = data.features;
             // レイヤー名をdata.nameから取得
             const layerName = data.name || `Layer_${layerId}`; // フォールバックはLayer_${layerId}
-            console.log('取得したレイヤー名:', layerName);
-            groupGeojson.value.features = newFeatures;
-            console.log('フェッチしたGeoJSONデータ:', newFeatures);
-            console.log('各フィーチャーのdescription:', newFeatures.map(f => f.properties?.description || 'なし'));
-            console.log('各フィーチャーのtitle:', newFeatures.map(f => f.properties?.title || 'なし'));
+            // console.log('取得したレイヤー名:', layerName);
+            // groupGeojson.value.features = newFeatures;
+            // console.log('フェッチしたGeoJSONデータ:', newFeatures);
+            // console.log('各フィーチャーのdescription:', newFeatures.map(f => f.properties?.description || 'なし'));
+            // console.log('各フィーチャーのtitle:', newFeatures.map(f => f.properties?.title || 'なし'));
 
             const source = map.getSource('oh-point-source');
             if (source) {
@@ -158,6 +158,7 @@ export function deleteAllPoints(currentGroupId) {
 }
 
 function handleMapClick(e, currentGroupId) {
+
     const map = store.state.map01;
     const layerId = store.state.selectedLayerId;
 

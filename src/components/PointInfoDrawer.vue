@@ -184,6 +184,7 @@ import {enableMotionPermission} from "@/js/popup";
 import ExifReader from 'exifreader';
 import { onMounted } from 'vue'
 import { Viewer } from 'mapillary-js'
+import {groupGeojson} from "@/js/layers";
 
 export default {
   name: 'PointInfoDrawer',
@@ -398,6 +399,7 @@ export default {
       this.close();
     },
     async deleteSelectedPoint() {
+
       const db = firebase.firestore();
       const selectedPointFeature = this.selectedPointFeature;
       const id = selectedPointFeature?.properties?.id;
@@ -428,7 +430,17 @@ export default {
           lastModifiedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        this.$store.commit('showSnackbarForGroup', '🗑️ ポイントを削除しました');
+        // マップのソースデータを更新
+        const map = this.$store.state.map01
+        const source = map.getSource('oh-point-source');
+        if (source) {
+          source.setData({
+            type: 'FeatureCollection',
+            features: updatedFeatures
+          });
+        }
+
+        this.$store.commit('showSnackbarForGroup', '🗑️ ポイントを削除しました!');
         this.$store.commit('setSelectedPointFeature', null);
       } catch (error) {
         console.error("削除エラー:", error);
