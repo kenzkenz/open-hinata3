@@ -3785,12 +3785,38 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
                     const data = await response.json();
                     if (data.data && data.data.length > 0) {
                         const imageId = data.data[0].id;
+                        // Graph API で画像の sequence を取得
+                        const url = `https://graph.mapillary.com/${imageId}?access_token=${MAPILLARY_CLIENT_ID}&fields=sequence`;
+                        console.log(url)
+                        let sequenceId
+                        try {
+                            const res = await fetch(url);
+                            const data = await res.json();
+                            console.log(data)
+                            if (data.sequence && data.id) {
+                                sequenceId = data.sequence
+                                console.log('✅ つながっている画像です。Sequence ID:', data.sequence);
+                            } else {
+                                console.warn('⚠️ この画像は他とつながっていません（シーケンスなし）');
+                            }
+                        } catch (err) {
+                            console.error('❌ 取得エラー:', err);
+                        }
                         viewer = new Viewer({
                             accessToken: MAPILLARY_CLIENT_ID,
                             container: container,
                             imageId: imageId,
-                            component: {cover: false}
+                            component: {
+                                sequenceId: sequenceId,
+                                cover: false,
+                                sequence: true,     // ← 前後移動
+                                direction: true,    // ← 方向矢印
+                                attribution: true   // ← 右下 Attribution 表示
+                            }
                         })
+                        // シーケンスを強制ロード（仮の方法）
+                        // viewer.moveToSequence(sequenceId).catch(err => console.error('シーケンス移動エラー:', err));
+
                         viewer.on('image', image => {
                             setTimeout(() => {
                                 try {

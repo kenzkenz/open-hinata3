@@ -4946,9 +4946,11 @@ select {
   display: none!important;
 }
 
+.mapillary-container,
 .mapillary-container2 {
-  overflow: hidden;
   position: relative;
+  overflow: hidden;
+  z-index: 10; /* 他の要素に埋もれてないか確認 */
 }
 
 </style>
