@@ -4962,7 +4962,7 @@ export async function simaLoadForUser (map,isUpload,simaText,zahyokei) {
                 const name = response.data.simaName.replace('.sim','')
                 let id
                 async function bbb () {
-                    const res = await insertSimaData(store.state.userId, name, webUrl, response.data.simaPath, simaText, store.state.zahyokei)
+                    const res = await insertSimaData(store.state.userId, name, webUrl, response.data.simaPath, simaText, zahyokei)
                     id = res.lastId
                 }
                 bbb().then(() => {
