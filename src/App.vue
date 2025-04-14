@@ -41,21 +41,25 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </template>
       </v-snackbar>
 
-      <v-dialog v-model="s_mapillaryDialog">
+      <v-dialog v-model="s_mapillaryDialog" fullscreen>
         <v-card>
-          <v-card-title>
-            <div class="close-btn-div" @click="s_mapillaryDialog = false" style="z-index: 101!important; color: #0d47a1; margin-top: -10px!important;"><i class="fa-solid fa-xmark hover close-btn"></i></div>
-          </v-card-title>
-          <v-card-text>
+<!--          <v-card-title style="height: 0">-->
+<!--            <div class="close-btn-div" @click="s_mapillaryDialog = false" style="z-index: 101!important; color: #0d47a1; margin-top: -10px!important;"><i class="fa-solid fa-xmark hover close-btn"></i></div>-->
+<!--          </v-card-title>-->
+          <v-card-text style="padding: 0">
+            <div class="close-btn-div" @click="s_mapillaryDialog = false" style="z-index: 101!important; color: #0d47a1; position: absolute;top:10px;right:15px;"><i class="fa-solid fa-xmark hover close-btn"></i></div>
             <div class="mapillary-container2" :width="mapillaryWidth" :style="`height: ${mapillarHeight}`"></div>
-          </v-card-text>
-          <v-card-actions>
-            <div style="margin-top: -10px;">
+            <div style="position: absolute;bottom: 10px;left: 10px;z-index: 100">
               <span class="attribution-date" style="margin-left: 20px;"></span><span class="attribution-username" style="margin-left: 10px;"></span>
             </div>
-            <v-spacer></v-spacer>
-            <v-btn color="blue-darken-1" text @click="s_mapillaryDialog = false">Close</v-btn>
-          </v-card-actions>
+          </v-card-text>
+<!--          <v-card-actions style="height: 20px!important;">-->
+<!--            <div style="margin-bottom: 10px;">-->
+<!--              <span class="attribution-date" style="margin-left: 20px;"></span><span class="attribution-username" style="margin-left: 10px;"></span>-->
+<!--            </div>-->
+<!--            <v-spacer></v-spacer>-->
+<!--            <v-btn color="blue-darken-1" text @click="s_mapillaryDialog = false">Close</v-btn>-->
+<!--          </v-card-actions>-->
         </v-card>
       </v-dialog>
 
@@ -4252,8 +4256,8 @@ export default {
   mounted() {
     const vm = this
 
-    this.mapillarWidth = (window.innerWidth * 0.8) + 'px'
-    this.mapillarHeight = (window.innerHeight * 0.8) + 'px'
+    this.mapillarWidth = (window.innerWidth * 1) + 'px'
+    this.mapillarHeight = (window.innerHeight * 1) + 'px'
 
     const checkUser = setInterval(() => {
       if (user.value && user.value.uid) {
