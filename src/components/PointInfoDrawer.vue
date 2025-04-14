@@ -68,31 +68,22 @@
             <div style="margin-top: 10px;">
               <!-- ファイル一覧 -->
               <div v-if="fileList.length > 0" style="margin-top: 10px;">
-                <div
+                <div class="data-container"
                     v-for="file in fileList"
                     :key="file.id"
                     @click="openFile(file.url, file.type)"
-                    style="
-                      display: flex;
-                      justify-content: space-between;
-                      align-items: center;
-                      padding: 8px;
-                      border-bottom: 1px solid #ccc;
-                      cursor: pointer;
-                      background-color: #f9f9f9;
-                      margin-bottom: 4px;
-                    "
-                    class="file-item"
+
                 >
                   <span>{{ file.name }}</span>
-                  <v-btn
-                      icon
-                      small
-                      color="red"
-                      @click.stop="deleteFile(file.id, file.url)"
-                  >
-                    <v-icon>mdi-close</v-icon>
-                  </v-btn>
+                  <button class="close-btn" @click.stop="deleteFile(file.id, file.url)">×</button>
+<!--                  <v-btn-->
+<!--                      icon-->
+<!--                      small-->
+<!--                      color="red"-->
+<!--                      @click.stop="deleteFile(file.id, file.url)"-->
+<!--                  >-->
+<!--                    <v-icon>mdi-close</v-icon>-->
+<!--                  </v-btn>-->
                 </div>
               </div>
               <div v-else style="text-align: center; color: #888; margin-top: 10px;">
@@ -836,6 +827,40 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.data-container {
+  padding: 5px;
+  border: 1px solid #ddd;
+  margin-bottom: 5px;
+  position: relative;
+  cursor: pointer;
+  background-color: rgba(132,163,213,0.3);
+}
+.data-container:hover {
+  background-color: #f0f8ff;
+}
+.transparent-chk {
+  position: absolute;
+  top: -15px;
+  right: 20px;
+  color: rgb(50,101,186);
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 12px;
+}
+.close-btn {
+  position: absolute;
+  top: -10px;
+  right: 10px;
+  color: black;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 30px;
+}
+.close-btn:hover {
+  color: red;
 }
 </style>
 
