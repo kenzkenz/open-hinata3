@@ -3769,7 +3769,7 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
     let viewer = null;
     if (store.state.mapillaryFlg) {
         if (!container) {
-            if (window.innerWidth < 500) {
+            if (window.innerWidth < 0) {
                 container = document.querySelector('.mapillary-container');
             } else {
                 store.state.mapillaryDialog = true
@@ -3778,7 +3778,7 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
             }
         }
         setTimeout(() => {
-            if (window.innerWidth > 500) container = document.querySelector('.mapillary-container2');
+            if (window.innerWidth > 0) container = document.querySelector('.mapillary-container2');
             if (container && store.state.mapillaryFlg) {
                 store.state.loading2 = true
                 store.state.loadingMessage = '読み込み中です。'
