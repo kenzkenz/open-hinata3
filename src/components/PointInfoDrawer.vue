@@ -57,13 +57,13 @@
             </a>
           </v-window-item>
           <v-window-item value="1">
-            <div class="street-view" style="margin-top:10px;height: 200px;width: 380px"></div>
+            <div class="street-view" style="margin-top:10px;height: 200px;width: 100%"></div>
           </v-window-item>
-          <v-window-item value="2">
-            <div class="mapillary" style="margin-top:10px;height: 200px;width: 380px"></div>
-          </v-window-item>
+<!--          <v-window-item value="2">-->
+<!--            <div class="mapillary" style="margin-top:10px;height: 200px;width: 380px"></div>-->
+<!--          </v-window-item>-->
           <v-window-item value="3">
-            <div ref="mlyContainer" style="margin-top:10px;height: 200px;width: 380px"></div>
+            <div ref="mlyContainer" style="margin-top:10px;height: 200px;width: 100%"></div>
           </v-window-item>
         </v-window>
 
@@ -99,37 +99,6 @@
               prepend-icon=""
           />
         </div>
-
-        <!--        <div style="display: flex; gap: 8px; margin-bottom: 16px; align-items: center;">-->
-<!--          <div style="display: flex; align-items: center; height: 56px; padding-top: 4px;">-->
-<!--            <v-btn-->
-<!--                color="primary"-->
-<!--                icon-->
-<!--                @click="$refs.cameraInput.click()"-->
-<!--                title="カメラで撮影"-->
-<!--                style="margin-top: -24px;"-->
-<!--            >-->
-<!--              <v-icon>mdi-camera</v-icon>-->
-<!--            </v-btn>-->
-<!--            <input-->
-<!--                type="file"-->
-<!--                ref="cameraInput"-->
-<!--                accept="image/*"-->
-<!--                capture="environment"-->
-<!--                style="display: none"-->
-<!--                @change="handlePhotoFromCamera"-->
-<!--            />-->
-<!--          </div>-->
-<!--          <v-file-input-->
-<!--              v-model="photo"-->
-<!--              label="写真をアップロード"-->
-<!--              accept="image/*"-->
-<!--              @change="handlePhotoUpload"-->
-<!--              :loading="isUploading"-->
-<!--              style="flex: 1"-->
-<!--              prepend-icon=""-->
-<!--          />-->
-<!--        </div>-->
 
       </v-card-text>
 
