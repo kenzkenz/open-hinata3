@@ -4670,10 +4670,8 @@ v-btn, .button {
 
 html, body {
   overscroll-behavior: none;
-
   overflow: hidden;
   touch-action: none;
-
   -webkit-overflow-scrolling: touch;
   height: 100%;
 }

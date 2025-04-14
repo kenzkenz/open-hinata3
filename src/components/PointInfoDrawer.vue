@@ -29,8 +29,8 @@
         <v-tabs mobile-breakpoint="0" v-model="tab" class="custom-tabs" style="margin-top: -18px;">
           <v-tab value="0">uploaded</v-tab>
           <v-tab value="1">streetview</v-tab>
-<!--          <v-tab value="2">mapillary</v-tab>-->
-          <v-tab value="3">mapillary</v-tab>
+          <v-tab value="2">mapillary</v-tab>
+          <v-tab value="9">close</v-tab>
         </v-tabs>
         <v-window v-model="tab" style="margin-bottom: 20px;">
           <v-window-item value="0">
@@ -59,10 +59,7 @@
           <v-window-item value="1">
             <div class="street-view" style="margin-top:10px;height: 200px;width: 100%"></div>
           </v-window-item>
-<!--          <v-window-item value="2">-->
-<!--            <div class="mapillary" style="margin-top:10px;height: 200px;width: 380px"></div>-->
-<!--          </v-window-item>-->
-          <v-window-item value="3">
+          <v-window-item value="2">
             <div ref="mlyContainer" style="margin-top:10px;height: 200px;width: 100%"></div>
           </v-window-item>
         </v-window>
@@ -132,7 +129,7 @@
         <v-btn style="background-color: var(--main-color); color: white!important;" @click="close">閉じる</v-btn>
       </v-card-actions>
 
-      <v-card-text style="margin-top: -20px">
+      <v-card-text style="margin-top: -20px; height: 300px;">
         <div class="mt-2 text-caption text-right">
           作成者: {{ creator }}<br>
           日時: {{ timestamp }}<br>
@@ -151,7 +148,6 @@ import "firebase/firestore";
 import "firebase/storage";
 import {enableMotionPermission} from "@/js/popup";
 import ExifReader from 'exifreader';
-import { onMounted } from 'vue'
 import { Viewer } from 'mapillary-js'
 import {groupGeojson} from "@/js/layers";
 
@@ -503,6 +499,16 @@ export default {
     }
   },
   mounted() {
+
+    const drawer = document.querySelector('.drawer');
+    // スクロールイベントで最下部を監視
+    drawer.addEventListener('scroll', () => {
+      const isAtBottom = drawer.scrollTop + drawer.clientHeight >= drawer.scrollHeight - 10; // 10pxの余裕
+      if (isAtBottom) {
+        drawer.scrollTop = drawer.scrollHeight - drawer.clientHeight; // 最下部を強制
+      }
+    });
+
     if (this.$store.state.isAndroid){
       let startY;
       let isTouching = false;
@@ -565,28 +571,6 @@ export default {
         }
         setupStreetViewWithMotion()
       } else if (newVal === '2') {
-        const coordinates = this.$store.state.clickedCoordinates;
-        const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c';
-        async function aaa () {
-          async function mapillary() {
-            const deltaLat = 0.00009; // 約10m
-            const deltaLng = 0.00011; // 東京近辺での約10m
-            const response = await fetch(`https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${coordinates[0] - deltaLng},${coordinates[1] - deltaLat},${coordinates[0] + deltaLng},${coordinates[1] + deltaLat}&limit=1`);
-            const data = await response.json();
-            if (data.data && data.data.length > 0) {
-              const imageUrl = data.data[0].thumb_1024_url;
-              const img = `<br><a href="${imageUrl}" target="_blank"><img width="380px" src="${imageUrl}" alt="Mapillary Image"></a>`;
-              return img;
-            } else {
-              return '<div style="text-align: center;"><span style="font-size: small">10m圏内にMapillary画像が見つかりませんでした。</span></div>';
-            }
-          }
-          const img = await mapillary()
-          const container = document.querySelector('.mapillary')
-          container.innerHTML = img
-        }
-        aaa()
-      } else if (newVal === '3') {
         this.$nextTick(() => {
           const self = this
           self.$refs.mlyContainer.innerHTML = ''
@@ -633,6 +617,12 @@ export default {
 </script>
 
 <style scoped>
+.drawer {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: auto;
+}
 .point-info-drawer {
   z-index: 2500;
 }
