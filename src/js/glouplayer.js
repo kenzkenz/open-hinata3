@@ -330,6 +330,7 @@ function createMapClickHandler(map01) {
         }
 
         store.commit('setSelectedPointFeature', newFeature);
+
         setTimeout(() => {
             store.commit('setPointInfoDrawer', true);
         }, 100);
