@@ -27,7 +27,8 @@
         />
 
         <v-tabs mobile-breakpoint="0" v-model="tab" class="custom-tabs" style="margin-top: -18px;">
-          <v-tab value="0">uploaded</v-tab>
+          <v-tab value="0">photo</v-tab>
+          <v-tab value="3">file</v-tab>
           <v-tab value="1">streetview</v-tab>
           <v-tab value="2">mapillary</v-tab>
           <v-tab value="9">close</v-tab>
