@@ -362,9 +362,9 @@ export default createStore({
   getters: {
   },
   mutations: {
-    setCurrentGroupLayers(state, layers) {
-      state.currentGroupLayers = layers;
-    },
+    // setCurrentGroupLayers(state, layers) {
+    //   state.currentGroupLayers = layers;
+    // },
     setGroupFeatures(state, features) {
       state.groupFeatures = features;
     },
