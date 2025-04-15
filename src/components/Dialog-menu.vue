@@ -117,14 +117,15 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <!-- グループ管理ダイアログ -->
-      <v-dialog v-model="s_dialogForGroup" max-width="500px" height="500px">
+      <v-dialog v-model="s_dialogForGroup" max-width="700px" height="700px">
         <v-card>
           <v-card-title>
-            グループ管理
+            グループ機能
           </v-card-title>
 
           <v-card-text>
             <v-tabs mobile-breakpoint="0" v-model="tab">
+              <v-tab value="8">グループレイヤー</v-tab>
               <v-tab value="9">参加</v-tab>
               <v-tab value="0">作成</v-tab>
               <v-tab value="1">招待</v-tab>
@@ -133,7 +134,29 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
             </v-tabs>
 
             <v-window v-model="tab">
-
+              <v-window-item value="8" class="my-v-window">
+                <v-select
+                    ref="groupSelect1"
+                    v-model="selectedGroupId"
+                    :items="groupOptions"
+                    item-value="id"
+                    item-title="name"
+                    label="グループを選択"
+                    outlined
+                    dense
+                    class="mt-2"
+                    @update:modelValue="onGroupChange"
+                    v-model:menu="selectMenuOpen2"
+                />
+                <LayerManager
+                    v-model:layerName="layerName"
+                    v-model:currentGroupLayers="s_currentGroupLayers"
+                    v-model:selectedLayerId="selectedLayerId"
+                    :groupId="s_currentGroupId"
+                    :mapInstance="mapInstance"
+                    @select-layer="onSelectLayer"
+                />
+              </v-window-item>
               <v-window-item value="9" class="my-v-window">
                 <v-text-field
                     v-model="invitedGroupName"
@@ -252,7 +275,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                     @update:modelValue="onGroupChange"
                     v-model:menu="selectMenuOpen2"
                 />
-<!--                <v-btn @click="kakunin">確認</v-btn>-->
               </v-window-item>
               <v-window-item value="3" class="my-v-window">
                 <v-select
@@ -346,7 +368,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 </template>
 
 <script>
-
+import LayerManager from '@/components/LayerManager.vue';
 import {iko, simaFileUpload} from "@/js/downLoad";
 import { db, auth } from '@/firebase'
 import {user} from "@/authState";
@@ -420,8 +442,10 @@ export default {
   name: 'Dialog-menu',
   props: ['mapName'],
   components: {
+    LayerManager
   },
   data: () => ({
+    layerName: '',
     joinLoading: false,
     invitedGroupName: "", // 招待されたグループ名
     isSendingInvite: false, // ローディング状態
@@ -477,6 +501,25 @@ export default {
     ],
   }),
   computed: {
+    selectedLayerId: {
+      get() {
+        return this.$store.state.selectedLayerId;
+      },
+      set(value) {
+        this.$store.commit('setSelectedLayerId', value);
+      }
+    },
+    s_currentGroupLayers: {
+      get() {
+        return this.$store.state.currentGroupLayers
+      },
+      set(value) {
+        this.$store.state.currentGroupLayers = value
+      }
+    },
+    mapInstance() {
+      return this.$store.state.map01;
+    },
     // 追加: 自分がオーナーであるグループのみを抽出
     ownerGroupOptions() {
       // groupOptions から「グループなし」を除外し、ownerUid が currentUserId と一致するもののみをフィルタリング
@@ -641,6 +684,12 @@ export default {
     },
   },
   methods: {
+    onSelectLayer({ name, id }) {
+      console.log('onSelectLayer:', { name, id });
+      // 追加のカスタム処理（例: 他の状態更新）があればここに
+      this.layerId = id;
+      this.layerName = name;
+    },
     copyInviteLink() {
       const groupName = this.groupOptions.find(g => g.id === this.selectedGroupId)?.name || '';
       const inviteLink = `https://kenzkenz.xsrv.jp/open-hinata3/?group=${this.selectedGroupId}&groupName=${encodeURIComponent(groupName)}`;
@@ -1111,6 +1160,9 @@ export default {
         console.log("🔄 グループ変更で initialGroupName 更新:", group.name)
         document.querySelector('#drag-handle-myroomDialog-map01').innerHTML = '<span style="font-size: large;">マイルーム_' + this.s_currentGroupName + '</span>'
       }
+
+
+
     },
     async switchGroup(groupId) {
       const groupDoc = await db.collection('groups').doc(groupId).get()

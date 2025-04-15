@@ -157,69 +157,69 @@ async function fetchAndSetGeojson(groupId, map, layerId) {
         }
     } catch (e) {
         console.error('fetchAndSetGeojsonエラー: ', e);
-        store.dispatch('triggerSnackbarForGroup', { message: `データ取得に失敗: ${e.message}` });
+        // store.dispatch('triggerSnackbarForGroup', { message: `データ取得に失敗: ${e.message}` });
     }
 }
 
-export function deleteAllPoints(currentGroupId) {
-    if (isSyncFailed) {
-        store.dispatch('triggerSnackbarForGroup', { message: 'ネットワークに接続されていません。ポイントを削除できません。' });
-        return;
-    }
+// export function deleteAllPoints(currentGroupId) {
+//     if (isSyncFailed) {
+//         store.dispatch('triggerSnackbarForGroup', { message: 'ネットワークに接続されていません。ポイントを削除できません。' });
+//         return;
+//     }
+//
+//     const layerId = store.state.selectedLayerId;
+//     const currentLayer = store.state.currentGroupLayers.find(l => l.id === layerId);
+//     if (currentLayer) {
+//         currentLayer.features = [];
+//         store.commit('setCurrentGroupLayers', [...store.state.currentGroupLayers]);
+//     }
+//
+//     const map = store.state.map01;
+//     if (map && map.getSource('oh-point-source')) {
+//         map.getSource('oh-point-source').setData({ type: 'FeatureCollection', features: [] });
+//         map.triggerRepaint();
+//     }
+//
+//     saveLayerToFirestore(currentGroupId, layerId, []);
+//     store.dispatch('triggerSnackbarForGroup', { message: 'すべてのポイントを削除しました' });
+// }
 
-    const layerId = store.state.selectedLayerId;
-    const currentLayer = store.state.currentGroupLayers.find(l => l.id === layerId);
-    if (currentLayer) {
-        currentLayer.features = [];
-        store.commit('setCurrentGroupLayers', [...store.state.currentGroupLayers]);
-    }
-
-    const map = store.state.map01;
-    if (map && map.getSource('oh-point-source')) {
-        map.getSource('oh-point-source').setData({ type: 'FeatureCollection', features: [] });
-        map.triggerRepaint();
-    }
-
-    saveLayerToFirestore(currentGroupId, layerId, []);
-    store.dispatch('triggerSnackbarForGroup', { message: 'すべてのポイントを削除しました' });
-}
-
-function handleMapClick(e, currentGroupId) {
-    const map = store.state.map01;
-    const layerId = store.state.selectedLayerId;
-
-    if (!(e.target && e.target.classList.contains('point-remove'))) return;
-
-    if (isSyncFailed) {
-        store.dispatch('triggerSnackbarForGroup', { message: 'ネットワークに接続されていません。ポイントを削除できません。' });
-        return;
-    }
-
-    const idsToDelete = new Set((map.queryRenderedFeatures(e.point, { layers: ['oh-point-layer'] }) || []).map(f => String(f.properties?.id)));
-    if (idsToDelete.size === 0) return;
-
-    const currentLayer = store.state.currentGroupLayers.find(l => l.id === layerId);
-    if (!currentLayer) {
-        store.dispatch('triggerSnackbarForGroup', { message: '選択中のレイヤーが見つかりません。' });
-        return;
-    }
-
-    currentLayer.features = currentLayer.features.filter(f => f.properties?.id && !idsToDelete.has(String(f.properties.id)));
-    store.commit('setCurrentGroupLayers', [...store.state.currentGroupLayers]);
-
-    const mapSource = map.getSource('oh-point-source');
-    if (mapSource) {
-        mapSource.setData({ type: 'FeatureCollection', features: currentLayer.features });
-        map.triggerRepaint();
-    }
-
-    saveLayerToFirestore(currentGroupId, layerId, currentLayer.features);
-
-    popups.forEach(popup => popup.remove());
-    popups.length = 0;
-
-    store.dispatch('triggerSnackbarForGroup', { message: `${idsToDelete.size} 件のポイントを削除しました` });
-}
+// function handleMapClick(e, currentGroupId) {
+//     const map = store.state.map01;
+//     const layerId = store.state.selectedLayerId;
+//
+//     if (!(e.target && e.target.classList.contains('point-remove'))) return;
+//
+//     if (isSyncFailed) {
+//         store.dispatch('triggerSnackbarForGroup', { message: 'ネットワークに接続されていません。ポイントを削除できません。' });
+//         return;
+//     }
+//
+//     const idsToDelete = new Set((map.queryRenderedFeatures(e.point, { layers: ['oh-point-layer'] }) || []).map(f => String(f.properties?.id)));
+//     if (idsToDelete.size === 0) return;
+//
+//     const currentLayer = store.state.currentGroupLayers.find(l => l.id === layerId);
+//     if (!currentLayer) {
+//         store.dispatch('triggerSnackbarForGroup', { message: '選択中のレイヤーが見つかりません。' });
+//         return;
+//     }
+//
+//     currentLayer.features = currentLayer.features.filter(f => f.properties?.id && !idsToDelete.has(String(f.properties.id)));
+//     store.commit('setCurrentGroupLayers', [...store.state.currentGroupLayers]);
+//
+//     const mapSource = map.getSource('oh-point-source');
+//     if (mapSource) {
+//         mapSource.setData({ type: 'FeatureCollection', features: currentLayer.features });
+//         map.triggerRepaint();
+//     }
+//
+//     saveLayerToFirestore(currentGroupId, layerId, currentLayer.features);
+//
+//     popups.forEach(popup => popup.remove());
+//     popups.length = 0;
+//
+//     store.dispatch('triggerSnackbarForGroup', { message: `${idsToDelete.size} 件のポイントを削除しました` });
+// }
 
 async function saveLayerToFirestore(groupId, layerId, features) {
     if (!groupId || groupId !== store.state.currentGroupId || !layerId) return;
@@ -264,69 +264,69 @@ async function saveLayerToFirestore(groupId, layerId, features) {
     }
 }
 
-async function saveSelectedPointToFirestore() {
-    if (isSyncFailed) {
-        store.dispatch('triggerSnackbarForGroup', { message: 'ネットワークに接続されていません。ポイントを保存できません。' });
-        return;
-    }
-
-    const feature = store.state.selectedPointFeature;
-    const groupId = store.state.currentGroupId;
-    const layerId = store.state.selectedLayerId;
-
-    if (!feature || !feature.properties || !groupId || !layerId) {
-        store.dispatch('triggerSnackbarForGroup', { message: '保存するポイント、グループ、またはレイヤーが選択されていません。' });
-        return;
-    }
-
-    try {
-        const docRef = db.collection('groups').doc(groupId).collection('layers').doc(layerId);
-        const doc = await docRef.get({ source: 'server' });
-        if (!doc.exists) {
-            console.warn('ドキュメントが存在しません');
-            store.dispatch('triggerSnackbarForGroup', { message: 'レイヤーが存在しません。' });
-            return;
-        }
-
-        const currentData = doc.data();
-        let features = currentData.features || [];
-
-        // 既存のポイントを更新、または新規追加
-        const featureIndex = features.findIndex(f => f.properties.id === feature.properties.id);
-        if (featureIndex >= 0) {
-            features[featureIndex] = feature;
-        } else {
-            features.push(feature);
-        }
-
-        await docRef.update({
-            features: features,
-            lastModifiedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            lastModifiedBy: store.state.userId
-        });
-
-        // ローカル状態を更新
-        const currentLayer = store.state.currentGroupLayers.find(l => l.id === layerId);
-        if (currentLayer) {
-            currentLayer.features = features;
-            store.commit('setCurrentGroupLayers', [...store.state.currentGroupLayers]);
-        }
-
-        const map = store.state.map01;
-        if (map && map.getSource('oh-point-source')) {
-            map.getSource('oh-point-source').setData({
-                type: 'FeatureCollection',
-                features: features
-            });
-            map.triggerRepaint();
-        }
-
-        store.dispatch('triggerSnackbarForGroup', { message: 'ポイントを保存しました' });
-    } catch (error) {
-        console.error('ポイント保存エラー:', error);
-        store.dispatch('triggerSnackbarForGroup', { message: 'ポイントの保存に失敗しました: ' + error.message });
-    }
-}
+// async function saveSelectedPointToFirestore() {
+//     if (isSyncFailed) {
+//         store.dispatch('triggerSnackbarForGroup', { message: 'ネットワークに接続されていません。ポイントを保存できません。' });
+//         return;
+//     }
+//
+//     const feature = store.state.selectedPointFeature;
+//     const groupId = store.state.currentGroupId;
+//     const layerId = store.state.selectedLayerId;
+//
+//     if (!feature || !feature.properties || !groupId || !layerId) {
+//         store.dispatch('triggerSnackbarForGroup', { message: '保存するポイント、グループ、またはレイヤーが選択されていません。' });
+//         return;
+//     }
+//
+//     try {
+//         const docRef = db.collection('groups').doc(groupId).collection('layers').doc(layerId);
+//         const doc = await docRef.get({ source: 'server' });
+//         if (!doc.exists) {
+//             console.warn('ドキュメントが存在しません');
+//             store.dispatch('triggerSnackbarForGroup', { message: 'レイヤーが存在しません。' });
+//             return;
+//         }
+//
+//         const currentData = doc.data();
+//         let features = currentData.features || [];
+//
+//         // 既存のポイントを更新、または新規追加
+//         const featureIndex = features.findIndex(f => f.properties.id === feature.properties.id);
+//         if (featureIndex >= 0) {
+//             features[featureIndex] = feature;
+//         } else {
+//             features.push(feature);
+//         }
+//
+//         await docRef.update({
+//             features: features,
+//             lastModifiedAt: firebase.firestore.FieldValue.serverTimestamp(),
+//             lastModifiedBy: store.state.userId
+//         });
+//
+//         // ローカル状態を更新
+//         const currentLayer = store.state.currentGroupLayers.find(l => l.id === layerId);
+//         if (currentLayer) {
+//             currentLayer.features = features;
+//             store.commit('setCurrentGroupLayers', [...store.state.currentGroupLayers]);
+//         }
+//
+//         const map = store.state.map01;
+//         if (map && map.getSource('oh-point-source')) {
+//             map.getSource('oh-point-source').setData({
+//                 type: 'FeatureCollection',
+//                 features: features
+//             });
+//             map.triggerRepaint();
+//         }
+//
+//         store.dispatch('triggerSnackbarForGroup', { message: 'ポイントを保存しました' });
+//     } catch (error) {
+//         console.error('ポイント保存エラー:', error);
+//         store.dispatch('triggerSnackbarForGroup', { message: 'ポイントの保存に失敗しました: ' + error.message });
+//     }
+// }
 
 function setupFirestoreListener(groupId, layerId) {
     console.log('setupFirestoreListener開始: groupId=', groupId, 'layerId=', layerId);

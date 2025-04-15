@@ -8795,7 +8795,7 @@ export const ohPointLayer =
             15, 20  // ズーム15では半径20
         ],
         // 'circle-color': 'navy',
-        'circle-color': ['coalesce', ['get', 'color'], 'red'],
+        'circle-color': ['coalesce', ['get', 'color'], 'black'],
         'circle-stroke-width': 2,
         'circle-stroke-color': '#ffffff'
     }}

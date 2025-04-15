@@ -61,6 +61,11 @@ export default {
     'update:selectedLayerId',
     'select-layer'
   ],
+  computed: {
+    s_currentGroupId() {
+      return this.$store.state.currentGroupId ;
+    },
+  },
   methods: {
     async fetchLayers() {
       if (!this.groupId) {
@@ -321,7 +326,7 @@ export default {
           console.log('マップ再描画トリガー');
         }
 
-        this.$store.commit('showSnackbarForGroup', `レイヤー "${name}" を選択しました`);
+        this.$store.commit('showSnackbarForGroup', `${name} を選択しました`);
       } catch (error) {
         console.error('selectLayerエラー:', error);
         this.$store.commit('showSnackbarForGroup', `レイヤー選択に失敗: ${error.message}`);
@@ -358,6 +363,11 @@ export default {
         hour: '2-digit',
         minute: '2-digit'
       });
+    }
+  },
+  watch:{
+    s_currentGroupId(){
+      this.fetchLayers()
     }
   },
   mounted() {
