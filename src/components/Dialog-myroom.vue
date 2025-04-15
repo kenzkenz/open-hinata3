@@ -30,24 +30,14 @@
                 </v-card>
               </v-window-item>
               <v-window-item value="11">
-                <v-card>
-                  <div style="margin-bottom: 10px;">
-                    <v-text-field v-model="layerName" type="text" placeholder="レイヤーネームまたは検索"></v-text-field>
-                    <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="addLayer">レイヤー追加</v-btn>
-                    <v-btn style="margin-top: -10px; margin-bottom: 10px; margin-left: 10px" @click="layerRenameBtn">リネーム</v-btn>
-                    <v-btn style="margin-top: -10px;margin-bottom: 10px;margin-left: 10px;" @click="layerSerchBtn">検索</v-btn>
-                    <div style="height: 50px;"
-                         v-for="item in s_currentGroupLayers"
-                         :key="item.id"
-                         class="data-container"
-                         :class="{ 'selected': selectedLayerId === item.id }"
-                         @click="layerSet(item.name,item.id)"
-                    >
-                      <button class="close-btn" @click="deleteLayer(item.id)">×</button>
-                      <span v-html="'<strong>' + item.name + '</strong>_' + item.nickName + 'が作成_' + readableTime (item.createdAt)"></span>
-                    </div>
-                  </div>
-                </v-card>
+                <LayerManager
+                    v-model:layerName="layerName"
+                    v-model:currentGroupLayers="s_currentGroupLayers"
+                    v-model:selectedLayerId="selectedLayerId"
+                    :groupId="s_currentGroupId"
+                    :mapInstance="mapInstance"
+                    @select-layer="onSelectLayer"
+                />
               </v-window-item>
               <v-window-item value="1">
                 <v-card>
@@ -246,6 +236,7 @@ import {
   simaToGeoJSON, userKmzSet, userPmtileSet, userSimaSet, userTileSet, userXyztileSet
 } from "@/js/downLoad";
 import muni from '@/js/muni'
+import LayerManager from '@/components/LayerManager.vue';
 
 const getFirebaseUid = async () => {
   if (!user.value) return;
@@ -328,7 +319,7 @@ export default {
   name: 'Dialog-myroom',
   props: ['mapName'],
   components: {
-    // MasonryWall,
+    LayerManager
   },
   data: () => ({
     // selectedLayerId: null, // 選択中のレイヤーID
@@ -381,6 +372,9 @@ export default {
     mayroomStyle: {"overflow-y": "auto", "max-height": "530px", "max-width": "560px", "padding-top": "10px"}
   }),
   computed: {
+    mapInstance() {
+      return this.$store.state.map01;
+    },
     selectedLayerId: {
       get() {
         return this.$store.state.selectedLayerId;
@@ -571,50 +565,16 @@ export default {
     },
   },
   methods: {
+    onSelectLayer({ name, id }) {
+      console.log('onSelectLayer:', { name, id });
+      // 追加のカスタム処理（例: 他の状態更新）があればここに
+      this.layerId = id;
+      this.layerName = name;
+    },
     readableTime (createdAt) {
       const date = createdAt.toDate(); // Date オブジェクトに変換
       return  date.toLocaleString();
     },
-    async fetchLayers() {
-      console.log('fetchLayers開始: currentGroupId=', this.s_currentGroupId);
-      if (!this.s_currentGroupId) {
-        console.warn('fetchLayers: グループIDが未定義、currentGroupLayersをクリア');
-        this.$store.state.currentGroupLayers = [];
-        return;
-      }
-
-      try {
-        const snapshot = await firebase.firestore()
-            .collection('groups')
-            .doc(this.s_currentGroupId)
-            .collection('layers')
-            .orderBy('createdAt')
-            .get();
-
-        const layers = [];
-        snapshot.forEach(doc => {
-          layers.push({ id: doc.id, ...doc.data() });
-        });
-
-        console.log('取得したレイヤー数: ', layers.length);
-        // console.log('取得したレイヤーデータ: ', JSON.stringify(layers, null, 2));
-
-        // currentGroupLayersを更新
-        this.$store.state.currentGroupLayers = layers;
-        // console.log('Vuex: currentGroupLayers更新: ', JSON.stringify(this.s_currentGroupLayers, null, 2));
-
-        // 選択中のレイヤーIDがリストにない場合、リセット
-        if (this.$store.state.selectedLayerId && !layers.find(l => l.id === this.$store.state.selectedLayerId)) {
-          console.warn('選択中のレイヤーIDがリストにない: selectedLayerId=', this.$store.state.selectedLayerId);
-          this.$store.commit('setSelectedLayerId', null);
-        }
-      } catch (e) {
-        console.error('fetchLayersエラー: ', e);
-        this.$store.commit('showSnackbarForGroup', `レイヤー取得に失敗: ${e.message}`);
-        this.$store.state.currentGroupLayers = [];
-      }
-    },
-
     syncSelectedLayers() {
       const map = this.$store.state.map01;
       if (!map) return;
@@ -701,267 +661,6 @@ export default {
       } catch (error) {
         console.error('グループ取得エラー:', error);
         alert('グループ取得に失敗しました');
-      }
-    },
-    async addLayer() {
-      console.log('s_currentGroupId:', this.s_currentGroupId); // デバッグ用
-      if (!this.s_currentGroupId) {
-        this.$store.commit('showSnackbarForGroup', 'グループを選択してください');
-        return;
-      }
-      if (!this.layerName) {
-        this.$store.commit('showSnackbarForGroup', 'ネームが未記入です');
-        return;
-      }
-      const nextIndex = this.s_currentGroupLayers.length + 1;
-      const name = this.layerName.trim() || `レイヤー${nextIndex}`;
-      const newLayer = {
-        name: name,
-        color: '#000000',
-        visible: true,
-        features: [],
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        groupId: this.s_currentGroupId,
-        nickName: this.$store.state.myNickname
-      };
-
-      try {
-        const db = firebase.firestore();
-        const docRef = await db
-            .collection('groups')
-            .doc(this.s_currentGroupId)
-            .collection('layers')
-            .add(newLayer);
-
-        newLayer.id = docRef.id;
-        console.log('新しいレイヤー追加:', newLayer);
-
-        // 最新レイヤーリストを更新
-        // await this.updateCurrentGroupLayers(this.s_currentGroupId);
-        // this.layerSet(name, newLayer.id); // 即時反映
-        this.$store.commit('showSnackbarForGroup', `✅ レイヤー ${name} を追加しました`);
-        this.layerName = ''; // 入力欄をリセット
-        this.fetchLayers()
-        this.layerSet(name, newLayer.id)
-      } catch (error) {
-        console.error('Firestore 書き込みエラー:', error);
-        this.$store.commit('showSnackbarForGroup', 'レイヤー追加に失敗しました');
-      }
-    },
-    async deleteLayer(id) {
-      if (!confirm("本当に削除しますか？元には戻りません。")) return;
-      try {
-        await firebase.firestore()
-            .collection('groups')
-            .doc(this.s_currentGroupId)
-            .collection('layers')
-            .doc(id)
-            .delete();
-        this.layerName = '';
-        await this.fetchLayers(); // 削除後に再取得
-      } catch (e) {
-        console.error('Firestore 削除エラー:', e);
-      }
-    },
-
-    async layerSet(name, id) {
-      console.log('layerSet開始: name=', name, 'id=', id);
-      if (this.layerId === id) {
-        console.log('同じレイヤーが選択済み、処理スキップ');
-        return;
-      }
-
-      try {
-        // 入力バリデーション
-        if (!id || !name) {
-          throw new Error('レイヤーIDまたは名前が未定義: id=' + id + ', name=' + name);
-        }
-
-        // Vuexストア更新
-        this.selectedLayerId = id;
-        this.layerName = name;
-        this.layerId = id;
-        this.$store.commit('setSelectedLayerId', id);
-        console.log('Vuex: selectedLayerIdを更新: ', id);
-
-        // マップインスタンス確認
-        const map01 = this.$store.state.map01;
-        if (!map01) {
-          throw new Error('マップインスタンスが見つからない');
-        }
-
-        // Firestoreから最新データを取得
-        const docRef = firebase.firestore()
-            .collection('groups')
-            .doc(this.s_currentGroupId)
-            .collection('layers')
-            .doc(id);
-        const doc = await docRef.get();
-        if (!doc.exists) {
-          throw new Error(`レイヤードキュメントが存在しない: id=${id}`);
-        }
-        const currentLayer = { id: doc.id, ...doc.data() };
-        console.log('Firestoreから取得したレイヤー: ', JSON.stringify(currentLayer, null, 2));
-
-        // currentGroupLayersを更新
-        const updatedLayers = this.s_currentGroupLayers.filter(l => l.id !== id);
-        updatedLayers.push(currentLayer);
-        this.$store.commit('setCurrentGroupLayers', updatedLayers);
-
-        // selectedLayers.map01を更新
-        const mapLayers = this.$store.state.selectedLayers['map01'];
-        let existingLayer = mapLayers.find(l => l.id === 'oh-point-layer');
-
-        if (!existingLayer) {
-          console.log('oh-point-layerが存在しないので新規追加');
-          const newLayer = {
-            id: 'oh-point-layer',
-            label: name,
-            sources: [{
-              id: 'oh-point-source',
-              obj: {
-                type: 'geojson',
-                data: {
-                  type: 'FeatureCollection',
-                  features: currentLayer.features || []
-                }
-              }
-            }],
-            layers: [
-              ohPointLayer,
-              {
-                id: 'oh-label-layer',
-                type: 'symbol',
-                source: 'oh-point-source',
-                layout: {
-                  'text-field': ['get', 'name'],
-                  'text-font': ['NotoSansJP-Regular'],
-                  'text-size': 12,
-                  'text-offset': [0, 1.5]
-                },
-                paint: {
-                  'text-color': 'navy',
-                  'text-halo-color': '#fff',
-                  'text-halo-width': 1
-                }
-              }
-            ],
-            opacity: 1,
-            visibility: true,
-            layerid: id
-          };
-          mapLayers.unshift(newLayer);
-          existingLayer = newLayer;
-        } else {
-          console.log('既存のoh-point-layerを更新');
-          existingLayer.label = name;
-          existingLayer.layerid = id;
-          if (!existingLayer.sources || !existingLayer.sources.length) {
-            console.warn('sourcesが欠落、修復');
-            existingLayer.sources = [{
-              id: 'oh-point-source',
-              obj: {
-                type: 'geojson',
-                data: {
-                  type: 'FeatureCollection',
-                  features: currentLayer.features || []
-                }
-              }
-            }];
-          } else {
-            existingLayer.sources[0].obj.data.features = currentLayer.features || [];
-          }
-          if (!existingLayer.layers || !existingLayer.layers.length) {
-            console.warn('layersが欠落、修復');
-            existingLayer.layers = [
-              ohPointLayer,
-              {
-                id: 'oh-label-layer',
-                type: 'symbol',
-                source: 'oh-point-source',
-                layout: {
-                  'text-field': ['get', 'name'],
-                  'text-font': ['NotoSansJP-Regular'],
-                  'text-size': 12,
-                  'text-offset': [0, 1.5]
-                },
-                paint: {
-                  'text-color': 'navy',
-                  'text-halo-color': '#fff',
-                  'text-halo-width': 1
-                }
-              }
-            ];
-          }
-        }
-        console.log('更新後のselectedLayers.map01: ', JSON.stringify(mapLayers, null, 2));
-
-        // マップソース更新
-        if (!map01.getSource('oh-point-source')) {
-          console.warn('oh-point-sourceが存在しない、追加');
-          map01.addSource('oh-point-source', {
-            type: 'geojson',
-            data: {
-              type: 'FeatureCollection',
-              features: currentLayer.features || []
-            }
-          });
-          map01.addLayer(
-              ohPointLayer
-          );
-          map01.addLayer({
-            id: 'oh-label-layer',
-            type: 'symbol',
-            source: 'oh-point-source',
-            layout: {
-              'text-field': ['get', 'name'],
-              'text-font': ['NotoSansJP-Regular'],
-              'text-size': 12,
-              'text-offset': [0, 1.5]
-            },
-            paint: {
-              'text-color': 'navy',
-              'text-halo-color': '#fff',
-              'text-halo-width': 1
-            }
-          });
-        } else {
-          map01.getSource('oh-point-source').setData({
-            type: 'FeatureCollection',
-            features: currentLayer.features || []
-          });
-        }
-        console.log('マップソースにデータセット完了: features=', currentLayer.features?.length || 0);
-
-        map01.triggerRepaint();
-        console.log('マップ再描画トリガー');
-
-        // Snackbarで成功通知
-        this.$store.commit('showSnackbarForGroup', `${name}を選択しました`);
-      } catch (error) {
-        console.error('layerSetエラー: ', error);
-        this.$store.commit('showSnackbarForGroup', `レイヤー選択に失敗: ${error.message}`);
-      }
-    },
-    async layerRenameBtn() {
-      if (!this.layerName.trim()) return alert('新しい名前を入力してください');
-      const selectedLayer = this.s_currentGroupLayers.find(layer => layer.id === this.layerId);
-      if (!selectedLayer) return alert('対象のレイヤーが見つかりません');
-
-      try {
-        await firebase.firestore()
-            .collection('groups')
-            .doc(this.s_currentGroupId)
-            .collection('layers')
-            .doc(selectedLayer.id)
-            .update({ name: this.layerName });
-
-        selectedLayer.name = this.layerName;
-        this.syncSelectedLayers(); // リネーム後に同期
-        this.$store.commit('showSnackbarForGroup', 'リネームに成功しました');
-      } catch (e) {
-        console.error('Firestore リネームエラー:', e);
-        alert('リネーム失敗');
       }
     },
     setupSelectedLayerWatcher () {
@@ -1084,23 +783,6 @@ export default {
         ...restored,
         ...this.$store.state.selectedLayers.map01
       ]
-    },
-    layerSerchBtn () {
-      const keyword = this.layerName.trim()
-      if (!keyword) {
-        this.fetchLayers()
-        return
-      }
-      const matched = this.s_currentGroupLayers.filter(layer =>
-          layer.name.includes(keyword)
-      )
-
-      if (matched.length === 0) {
-        alert('一致するレイヤーが見つかりません')
-      } else {
-        // 検索結果だけ一時的に表示
-        this.$store.state.currentGroupLayers = matched
-      }
     },
     formatItem(item) {
       const device = this.detectDevice(item.ua);
@@ -2556,9 +2238,9 @@ export default {
     },
   },
   watch: {
-    s_currentGroupId() {
-      this.fetchLayers()
-    },
+    // s_currentGroupId() {
+    //   this.fetchLayers()
+    // },
     s_dialogForLink () {
       this.openDialog();
       try {
@@ -2611,11 +2293,6 @@ export default {
         const uid = user.value.uid
         this.uid = uid
         this.$store.state.userId = uid
-
-        // if (this.s_currentGroupId) {
-          this.fetchLayers()
-        // }
-
         this.fetchImages(uid)
         this.urlSelect(uid)
         this.tileSelect(uid)
