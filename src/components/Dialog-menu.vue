@@ -368,6 +368,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 </template>
 
 <script>
+
 import LayerManager from '@/components/LayerManager.vue';
 import {iko, simaFileUpload} from "@/js/downLoad";
 import { db, auth } from '@/firebase'

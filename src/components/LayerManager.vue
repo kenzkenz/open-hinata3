@@ -29,6 +29,8 @@
 import firebase from 'firebase/app';
 import 'firebase/firestore';
 import { ohPointLayer } from "@/js/layers";
+import 'firebase/auth';
+import { onAuthStateChanged } from "firebase/auth";
 
 export default {
   name: 'LayerManager',
@@ -54,12 +56,6 @@ export default {
       default: null // マップが不要な場合に対応
     }
   },
-  // emits: [
-  //   'update:layerName',
-  //   'update:currentGroupLayers',
-  //   'update:selectedLayerId',
-  //   'select-layer'
-  // ],
   computed: {
     s_currentGroupId() {
       return this.$store.state.currentGroupId ;
@@ -363,7 +359,75 @@ export default {
         hour: '2-digit',
         minute: '2-digit'
       });
-    }
+    },
+    async createSoloGroupOnLogin() {
+      try {
+        const user = firebase.auth().currentUser;
+        if (!user) {
+          console.log('ログイン情報がありません');
+          return;
+        }
+
+        // ユーザー情報を取得（ニックネーム用）
+        const nickname = user.displayName || 'ユーザー'; // ニックネームがない場合はデフォルト
+
+        // alert(nickname)
+
+        // グループIDとしてユーザーIDを使用
+        const groupId = user.uid;
+
+        // 既にグループが存在するかチェック
+        const groupDoc = await firebase.firestore().collection('groups').doc(groupId).get();
+        if (groupDoc.exists) {
+          console.log('お一人様グループは既に存在します');
+          return;
+        }
+
+        // グループ名を自動生成
+        const groupName = `${nickname}のお一人様グループ`;
+
+        // Firestore にグループ作成
+        await firebase.firestore().collection('groups').doc(groupId).set({
+          name: groupName,
+          ownerUid: user.uid,
+          members: [user.uid],
+          createdAt: new Date(),
+          isSoloGroup: true, // お一人様グループ用のフラグ
+          isProtected: true, // 削除防止フラグ
+          priority: 1, // リスト先頭表示用
+        });
+
+        // ユーザーにグループ追加
+        await firebase.firestore().collection('users').doc(user.uid).set(
+            {
+              groups: firebase.firestore.FieldValue.arrayUnion(groupId),
+            },
+            { merge: true }
+        );
+
+        // UI に即時反映
+        const newGroup = {
+          id: groupId,
+          name: groupName,
+          ownerUid: user.uid,
+          isSoloGroup: true,
+          isProtected: true,
+          priority: 1,
+        };
+        // Vue 2でのリアクティブ更新
+        this.groupOptions.unshift(newGroup); // 先頭に追加
+        this.$forceUpdate(); // 必要に応じて強制再描画
+
+        // 選択状態と保存
+        this.selectedGroupId = groupId;
+        this.s_currentGroupName = groupName;
+        localStorage.setItem('lastUsedGroupId', groupId);
+
+        console.log('お一人様グループを作成しました');
+      } catch (error) {
+        console.error('お一人様グループ作成中にエラーが発生:', error);
+      }
+    },
   },
   watch:{
     s_currentGroupId(){
@@ -371,6 +435,12 @@ export default {
     }
   },
   mounted() {
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        this.createSoloGroupOnLogin();
+        this.fetchLayers()
+      }
+    });
     this.fetchLayers()
   }
 }
