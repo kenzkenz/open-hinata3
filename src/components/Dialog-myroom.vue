@@ -568,12 +568,13 @@ export default {
       return  date.toLocaleString();
     },
     async fetchLayers() {
-      // フェッチレイヤーズ
+      console.log('fetchLayers開始: currentGroupId=', this.s_currentGroupId);
       if (!this.s_currentGroupId) {
-        console.warn('fetchLayers: グループIDが未定義');
-        this.$store.state.currentGroupLayers = []; // 未定義の場合はクリア
+        console.warn('fetchLayers: グループIDが未定義、currentGroupLayersをクリア');
+        this.$store.state.currentGroupLayers = [];
         return;
       }
+
       try {
         const snapshot = await firebase.firestore()
             .collection('groups')
@@ -587,16 +588,54 @@ export default {
           layers.push({ id: doc.id, ...doc.data() });
         });
 
-        // currentGroupLayersをクリアして最新データに更新
-        this.$store.state.currentGroupLayers = layers;
-        // console.log('fetchLayers: 更新後のcurrentGroupLayers=', JSON.stringify(this.s_currentGroupLayers));
+        console.log('取得したレイヤー数: ', layers.length);
+        console.log('取得したレイヤーデータ: ', JSON.stringify(layers, null, 2));
 
-        // selectedLayers.map01と同期
-        // this.syncSelectedLayers();
+        // currentGroupLayersを更新
+        this.$store.state.currentGroupLayers = layers;
+        console.log('Vuex: currentGroupLayers更新: ', JSON.stringify(this.s_currentGroupLayers, null, 2));
+
+        // 選択中のレイヤーIDがリストにない場合、リセット
+        if (this.$store.state.selectedLayerId && !layers.find(l => l.id === this.$store.state.selectedLayerId)) {
+          console.warn('選択中のレイヤーIDがリストにない: selectedLayerId=', this.$store.state.selectedLayerId);
+          this.$store.commit('setSelectedLayerId', null);
+        }
       } catch (e) {
-        console.error('Firestore 読み込みエラー:', e);
+        console.error('fetchLayersエラー: ', e);
+        this.$store.commit('showSnackbarForGroup', `レイヤー取得に失敗: ${e.message}`);
+        this.$store.state.currentGroupLayers = [];
       }
     },
+    // async fetchLayers() {
+    //   // フェッチレイヤーズ
+    //   if (!this.s_currentGroupId) {
+    //     console.warn('fetchLayers: グループIDが未定義');
+    //     this.$store.state.currentGroupLayers = []; // 未定義の場合はクリア
+    //     return;
+    //   }
+    //   try {
+    //     const snapshot = await firebase.firestore()
+    //         .collection('groups')
+    //         .doc(this.s_currentGroupId)
+    //         .collection('layers')
+    //         .orderBy('createdAt')
+    //         .get();
+    //
+    //     const layers = [];
+    //     snapshot.forEach(doc => {
+    //       layers.push({ id: doc.id, ...doc.data() });
+    //     });
+    //
+    //     // currentGroupLayersをクリアして最新データに更新
+    //     this.$store.state.currentGroupLayers = layers;
+    //     // console.log('fetchLayers: 更新後のcurrentGroupLayers=', JSON.stringify(this.s_currentGroupLayers));
+    //
+    //     // selectedLayers.map01と同期
+    //     // this.syncSelectedLayers();
+    //   } catch (e) {
+    //     console.error('Firestore 読み込みエラー:', e);
+    //   }
+    // },
 
     syncSelectedLayers() {
       const map = this.$store.state.map01;
@@ -746,62 +785,147 @@ export default {
         console.error('Firestore 削除エラー:', e);
       }
     },
-    layerSet(name, id) {
-      if (this.layerId === id) return;
-      this.selectedLayerId = id; // 選択したレイヤーのIDを保存
-      this.layerName = name;
-      this.layerId = id;
-      this.$store.commit('setSelectedLayerId', id);
-
-      console.log('layerSet呼び出し:', name, id);
-
-      const mapLayers = this.$store.state.selectedLayers['map01'];
-      const existingLayer = mapLayers.find(l => l.id === 'oh-point-layer');
-      const currentLayer = this.s_currentGroupLayers.find(l => l.id === id);
-      if (!currentLayer) {
-        console.warn('layerSet: 指定されたレイヤーがcurrentGroupLayersに存在しません', id);
+    async layerSet(name, id) {
+      console.log('layerSet開始: name=', name, 'id=', id);
+      if (this.layerId === id) {
+        console.log('同じレイヤーが選択済み、処理スキップ');
         return;
       }
 
-      if (!existingLayer) {
-        // 初回追加
-        mapLayers.unshift({
-              id: 'oh-point-layer',
-              label: name,
-              sources: [{
-                id: 'oh-point-source',
-                obj: {
-                  type: 'geojson',
-                  data: {
-                    type: 'FeatureCollection',
-                    features: currentLayer.features || []
-                  }
-                }
-              }],
-              layers: [ohPointLayer,ohLabelLayer],
-              opacity:1,
-              visibility: true,
-            },
-        )
-      } else {
-        // 既存レイヤーの更新
-        existingLayer.label = name;
-        existingLayer.layerid = id;
-      }
+      try {
+        // 入力バリデーション
+        if (!id || !name) {
+          throw new Error('レイヤーIDまたは名前が未定義: id=' + id + ', name=' + name);
+        }
 
-      const map01 = this.$store.state.map01;
-      if (map01 && map01.getSource('oh-point-source')) {
+        // Vuexストア更新
+        this.selectedLayerId = id;
+        this.layerName = name;
+        this.layerId = id;
+        this.$store.commit('setSelectedLayerId', id);
+        console.log('Vuex: selectedLayerIdを更新: ', id);
+
+        // currentGroupLayersからレイヤーを探す
+        const currentLayer = this.s_currentGroupLayers.find(l => l.id === id);
+        if (!currentLayer) {
+          throw new Error(`レイヤーがcurrentGroupLayersに見つからない: id=${id}`);
+        }
+        console.log('見つかったレイヤー: ', JSON.stringify(currentLayer, null, 2));
+
+        // selectedLayers.map01を更新
+        const mapLayers = this.$store.state.selectedLayers['map01'];
+        const existingLayer = mapLayers.find(l => l.id === 'oh-point-layer');
+
+        if (!existingLayer) {
+          console.log('oh-point-layerが存在しないので新規追加');
+          mapLayers.unshift({
+            id: 'oh-point-layer',
+            label: name,
+            sources: [{
+              id: 'oh-point-source',
+              obj: {
+                type: 'geojson',
+                data: {
+                  type: 'FeatureCollection',
+                  features: currentLayer.features || []
+                }
+              }
+            }],
+            layers: [ohPointLayer, ohLabelLayer],
+            opacity: 1,
+            visibility: true,
+            layerid: id
+          });
+        } else {
+          console.log('既存のoh-point-layerを更新');
+          existingLayer.label = name;
+          existingLayer.layerid = id;
+          existingLayer.sources[0].obj.data.features = currentLayer.features || [];
+        }
+        console.log('更新後のselectedLayers.map01: ', JSON.stringify(mapLayers, null, 2));
+
+        // マップソース更新
+        const map01 = this.$store.state.map01;
+        if (!map01) {
+          throw new Error('マップインスタンスが見つからない');
+        }
+
+        if (!map01.getSource('oh-point-source')) {
+          throw new Error('oh-point-sourceが見つからない');
+        }
+
         map01.getSource('oh-point-source').setData({
           type: 'FeatureCollection',
           features: currentLayer.features || []
         });
-        // map01.setPaintProperty('oh-point-layer', 'circle-color', currentLayer.color || '#ff0000');
+        console.log('マップソースにデータセット完了: features=', currentLayer.features?.length || 0);
+
         map01.triggerRepaint();
-      } else {
-        console.warn('マップまたはソースが未初期化');
+        console.log('マップ再描画トリガー');
+
+        // Snackbarで成功通知
+        this.$store.commit('showSnackbarForGroup', `レイヤー "${name}" を選択しました`);
+      } catch (error) {
+        console.error('layerSetエラー: ', error);
+        this.$store.commit('showSnackbarForGroup', `レイヤー選択に失敗: ${error.message}`);
       }
-      console.log('セレクテッドレイヤーズ' ,JSON.stringify(this.$store.state.selectedLayers))
     },
+    // layerSet(name, id) {
+    //   if (this.layerId === id) return;
+    //   this.selectedLayerId = id; // 選択したレイヤーのIDを保存
+    //   this.layerName = name;
+    //   this.layerId = id;
+    //   this.$store.commit('setSelectedLayerId', id);
+    //
+    //   console.log('layerSet呼び出し:', name, id);
+    //
+    //   const mapLayers = this.$store.state.selectedLayers['map01'];
+    //   const existingLayer = mapLayers.find(l => l.id === 'oh-point-layer');
+    //   const currentLayer = this.s_currentGroupLayers.find(l => l.id === id);
+    //   if (!currentLayer) {
+    //     console.warn('layerSet: 指定されたレイヤーがcurrentGroupLayersに存在しません', id);
+    //     return;
+    //   }
+    //
+    //   if (!existingLayer) {
+    //     // 初回追加
+    //     mapLayers.unshift({
+    //           id: 'oh-point-layer',
+    //           label: name,
+    //           sources: [{
+    //             id: 'oh-point-source',
+    //             obj: {
+    //               type: 'geojson',
+    //               data: {
+    //                 type: 'FeatureCollection',
+    //                 features: currentLayer.features || []
+    //               }
+    //             }
+    //           }],
+    //           layers: [ohPointLayer,ohLabelLayer],
+    //           opacity:1,
+    //           visibility: true,
+    //         },
+    //     )
+    //   } else {
+    //     // 既存レイヤーの更新
+    //     existingLayer.label = name;
+    //     existingLayer.layerid = id;
+    //   }
+    //
+    //   const map01 = this.$store.state.map01;
+    //   if (map01 && map01.getSource('oh-point-source')) {
+    //     map01.getSource('oh-point-source').setData({
+    //       type: 'FeatureCollection',
+    //       features: currentLayer.features || []
+    //     });
+    //     // map01.setPaintProperty('oh-point-layer', 'circle-color', currentLayer.color || '#ff0000');
+    //     map01.triggerRepaint();
+    //   } else {
+    //     console.warn('マップまたはソースが未初期化');
+    //   }
+    //   console.log('セレクテッドレイヤーズ' ,JSON.stringify(this.$store.state.selectedLayers))
+    // },
     async layerRenameBtn() {
       if (!this.layerName.trim()) return alert('新しい名前を入力してください');
       const selectedLayer = this.s_currentGroupLayers.find(layer => layer.id === this.layerId);

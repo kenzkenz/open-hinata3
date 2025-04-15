@@ -2965,7 +2965,7 @@ export default {
                 const layers = Layers.layers[mapName];
                 traverseLayers(layers, slj);
                 // 必要であれば処理結果のログを出力
-                console.log(layerNames)
+                // console.log(layerNames)
                 const uniqueLayerNames = [...new Set(layerNames)]
                 // console.log(uniqueLayerNames.join('\n'));
                 console.log(`Processed ${count} layers for map: ${mapName}`);
