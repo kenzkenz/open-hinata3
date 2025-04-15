@@ -367,7 +367,6 @@ export default {
           console.log('ログイン情報がありません');
           return;
         }
-
         // ユーザー情報を取得（ニックネーム用）
         const nickname = user.displayName || 'ユーザー'; // ニックネームがない場合はデフォルト
 
@@ -405,27 +404,30 @@ export default {
             { merge: true }
         );
 
-        // UI に即時反映
-        const newGroup = {
-          id: groupId,
-          name: groupName,
-          ownerUid: user.uid,
-          isSoloGroup: true,
-          isProtected: true,
-          priority: 1,
-        };
-        // Vue 2でのリアクティブ更新
-        this.groupOptions.unshift(newGroup); // 先頭に追加
-        this.$forceUpdate(); // 必要に応じて強制再描画
-
-        // 選択状態と保存
-        this.selectedGroupId = groupId;
-        this.s_currentGroupName = groupName;
-        localStorage.setItem('lastUsedGroupId', groupId);
-
-        console.log('お一人様グループを作成しました');
+        // // UI に即時反映
+        // const newGroup = {
+        //   id: groupId,
+        //   name: groupName,
+        //   ownerUid: user.uid,
+        //   isSoloGroup: true,
+        //   isProtected: true,
+        //   priority: 1,
+        // };
+        // // Vue 2でのリアクティブ更新
+        // this.groupOptions.unshift(newGroup); // 先頭に追加
+        // this.$forceUpdate(); // 必要に応じて強制再描画
+        //
+        // // 選択状態と保存
+        // this.selectedGroupId = groupId;
+        // this.s_currentGroupName = groupName;
+        // localStorage.setItem('lastUsedGroupId', groupId);
+        console.log('お一人様グループを作成しました！レイヤーを追加してみましょう！');
+        this.$store.state.soloFlg = true
+        alert(`${nickname}のお一人様グループを自動作成しました！レイヤーを追加してみましょう！`)
       } catch (error) {
         console.error('お一人様グループ作成中にエラーが発生:', error);
+        // 逃げのコード
+        this.$store.state.soloFlg = true
       }
     },
   },

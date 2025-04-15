@@ -208,7 +208,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 </div>
                 <v-select
                     v-model="selectedGroupId"
-                    :items="groupOptions.filter((g, i) => i !== 0)"
+                    :items="invitableGroupOptions"
                     item-value="id"
                     item-title="name"
                     label="グループを選択"
@@ -313,7 +313,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v0.870
+        v0.871
       </p>
 
       <div v-if="user1">
@@ -502,6 +502,13 @@ export default {
     ],
   }),
   computed: {
+    s_soloFlg() {
+      return this.$store.state.soloFlg;
+    },
+    invitableGroupOptions() {
+      // 「グループに入らない」と isSoloGroup: true を除外
+      return this.groupOptions.filter(g => g.id !== null && !g.isSoloGroup);
+    },
     selectedLayerId: {
       get() {
         return this.$store.state.selectedLayerId;
@@ -905,6 +912,7 @@ export default {
               id: groupId,
               name,
               ownerUid: groupDoc.data().ownerUid,
+              isSoloGroup: groupDoc.data().isSoloGroup === true
             });
 
             // 👇 該当グループの名前を保存
@@ -1518,9 +1526,56 @@ export default {
       this.$store.state.map02.setTerrain({ 'source': 'terrain', 'exaggeration': this.s_terrainLevel })
       localStorage.setItem('terrainLevel',this.s_terrainLevel)
       history('terrainLevelInput',window.location.href)
+    },
+    aaa () {
+      auth.onAuthStateChanged(async user => {
+        if (user) {
+          const uid = user.uid
+          this.$store.commit('setUserId', uid)
+
+          const userDoc = await db.collection('users').doc(uid).get()
+          const groupIds = userDoc.exists ? userDoc.data().groups || [] : []
+
+          const groups = []
+          for (const groupId of groupIds) {
+            const groupDoc = await db.collection("groups").doc(groupId).get()
+            if (groupDoc.exists) {
+              groups.push({
+                id: groupId,
+                name: groupDoc.data().name,
+                ownerUid: groupDoc.data().ownerUid,
+                isSoloGroup: groupDoc.data().isSoloGroup === true, // 明示的に true をチェック
+              })
+            }
+          }
+
+          this.groupOptions = [
+            { id: null, name: "（グループに入らない）" },
+            ...groups
+          ]
+
+          const savedGroupId = localStorage.getItem("lastUsedGroupId")
+          const validGroupId = savedGroupId === "" ? null : savedGroupId
+
+          const defaultGroupId = this.groupOptions.find(g => g.id === validGroupId)
+              ? validGroupId
+              : null
+
+          this.selectedGroupId = defaultGroupId
+
+          // 🕒 強制的に一番最後に反映（これで上書きされない）
+          setTimeout(() => {
+            console.log("🛡 強制的に onGroupChange 実行")
+            this.onGroupChange(defaultGroupId)
+          }, 1000) // ← 必要なら 2000 でもOK
+        }
+      })
     }
   },
   watch: {
+    s_soloFlg() {
+      this.aaa()
+    },
     s_currentGroupId (newVal,oldVal) {
       // alert('newVal' + newVal + 'oldVal' + oldVal)
     },
@@ -1542,6 +1597,7 @@ export default {
                 id: groupId,
                 name,
                 ownerUid: groupDoc.data().ownerUid,
+                isSoloGroup: groupDoc.data().isSoloGroup === true
               });
             }
           }
@@ -1569,47 +1625,7 @@ export default {
     },
   },
   created() {
-    auth.onAuthStateChanged(async user => {
-      if (user) {
-        const uid = user.uid
-        this.$store.commit('setUserId', uid)
-
-        const userDoc = await db.collection('users').doc(uid).get()
-        const groupIds = userDoc.exists ? userDoc.data().groups || [] : []
-
-        const groups = []
-        for (const groupId of groupIds) {
-          const groupDoc = await db.collection("groups").doc(groupId).get()
-          if (groupDoc.exists) {
-            groups.push({
-              id: groupId,
-              name: groupDoc.data().name,
-              ownerUid: groupDoc.data().ownerUid
-            })
-          }
-        }
-
-        this.groupOptions = [
-          { id: null, name: "（グループに入らない）" },
-          ...groups
-        ]
-
-        const savedGroupId = localStorage.getItem("lastUsedGroupId")
-        const validGroupId = savedGroupId === "" ? null : savedGroupId
-
-        const defaultGroupId = this.groupOptions.find(g => g.id === validGroupId)
-            ? validGroupId
-            : null
-
-        this.selectedGroupId = defaultGroupId
-
-        // 🕒 強制的に一番最後に反映（これで上書きされない）
-        setTimeout(() => {
-          console.log("🛡 強制的に onGroupChange 実行")
-          this.onGroupChange(defaultGroupId)
-        }, 1000) // ← 必要なら 2000 でもOK
-      }
-    })
+    this.aaa()
   },
   mounted() {
     document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー</span>'

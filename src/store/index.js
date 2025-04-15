@@ -4,6 +4,7 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    soloFlg: false,
     mapillaryDialog : false,
     clickedCoordinates: [],
     selectedPointColor: '#000000', // ✅ 追加: 現在のポイント色
