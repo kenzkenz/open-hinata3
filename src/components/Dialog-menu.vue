@@ -1192,9 +1192,7 @@ export default {
           alert("グループ名を入力してください")
           return
         }
-
         const groupId = db.collection('groups').doc().id
-
         // Firestore にグループ作成
         await db.collection('groups').doc(groupId).set({
           name: this.groupName,
@@ -1202,7 +1200,6 @@ export default {
           members: [user.uid],
           createdAt: new Date(),
         })
-
         // ユーザーにグループ追加
         await db.collection('users').doc(user.uid).set(
             {
@@ -1210,7 +1207,6 @@ export default {
             },
             { merge: true }
         )
-
         // ✅ UI に即時反映（ownerUid を含める！）
         const newGroup = {
           id: groupId,
@@ -1218,12 +1214,10 @@ export default {
           ownerUid: user.uid // ← これが重要！
         }
         this.groupOptions.push(newGroup)
-
         // 選択状態と保存
         this.selectedGroupId = groupId
         this.s_currentGroupName = this.groupName
         localStorage.setItem("lastUsedGroupId", groupId)
-
         alert('グループを作成しました')
         this.groupName = ''
       } catch (error) {
