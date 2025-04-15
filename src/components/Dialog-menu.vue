@@ -129,7 +129,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-tab value="9">参加</v-tab>
               <v-tab value="0">作成</v-tab>
               <v-tab value="1">招待</v-tab>
-              <v-tab value="2">変更</v-tab>
+<!--              <v-tab value="2">変更</v-tab>-->
               <v-tab value="3">削除</v-tab>
             </v-tabs>
 
@@ -253,29 +253,29 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 </div>
               </v-window-item>
 
-              <v-window-item value="2" class="my-v-window">
-                <div style="margin-bottom: 20px;">
-                  <div v-if="s_currentGroupName">
-                    現在のグループは「{{ s_currentGroupName }}」です。
-                  </div>
-                  <div v-else>
-                    グループに所属していません。
-                  </div>
-                </div>
-                <v-select
-                    ref="groupSelect1"
-                    v-model="selectedGroupId"
-                    :items="groupOptions"
-                    item-value="id"
-                    item-title="name"
-                    label="グループを選択"
-                    outlined
-                    dense
-                    class="mt-2"
-                    @update:modelValue="onGroupChange"
-                    v-model:menu="selectMenuOpen2"
-                />
-              </v-window-item>
+<!--              <v-window-item value="2" class="my-v-window">-->
+<!--                <div style="margin-bottom: 20px;">-->
+<!--                  <div v-if="s_currentGroupName">-->
+<!--                    現在のグループは「{{ s_currentGroupName }}」です。-->
+<!--                  </div>-->
+<!--                  <div v-else>-->
+<!--                    グループに所属していません。-->
+<!--                  </div>-->
+<!--                </div>-->
+<!--                <v-select-->
+<!--                    ref="groupSelect1"-->
+<!--                    v-model="selectedGroupId"-->
+<!--                    :items="groupOptions"-->
+<!--                    item-value="id"-->
+<!--                    item-title="name"-->
+<!--                    label="グループを選択"-->
+<!--                    outlined-->
+<!--                    dense-->
+<!--                    class="mt-2"-->
+<!--                    @update:modelValue="onGroupChange"-->
+<!--                    v-model:menu="selectMenuOpen2"-->
+<!--                />-->
+<!--              </v-window-item>-->
               <v-window-item value="3" class="my-v-window">
                 <v-select
                     ref="groupSelect3"
@@ -313,14 +313,14 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v0.867
+        v0.870
       </p>
 
       <div v-if="user1">
         <p style="margin-bottom: 20px;">
           <template v-if="initialGroupName && initialGroupName !== ''">
-            現在のグループは「{{ initialGroupName }}」です。
-            {{ s_currentGroupId }}
+            現在のグループ＝「{{ initialGroupName }}」
+<!--            {{ s_currentGroupId }}-->
           </template>
           <template v-else>
             グループに所属していません。

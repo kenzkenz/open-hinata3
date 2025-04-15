@@ -582,21 +582,49 @@ export default function useGloupLayer() {
                     map01.on('click', 'oh-point-label-layer', createPointClickHandler(map01));
 
                     let draggedFeatureId = null;
+                    let isDragging = false;
 
                     map01.on('mousedown', 'oh-point-layer', (e) => {
-                        if (!e.features.length) return;
+                        // e.featuresが存在し、かつ配列に要素があるか確認
+                        if (!e.features || !e.features.length) return;
                         if (isSyncFailed) {
                             store.dispatch('triggerSnackbarForGroup', {
                                 message: 'ネットワークに接続されていません。ポイントを移動できません。'
                             });
                             return;
                         }
-                        map01.getCanvas().style.cursor = 'grabbing';
-                        draggedFeatureId = e.features[0].properties.id;
-                        map01.dragPan.disable();
+
+                        isDragging = false;
+                        // featuresをキャッシュ
+                        const feature = e.features[0];
+                        const featureId = feature.properties.id;
+                        const mouseDownTime = Date.now();
+
+                        setTimeout(() => {
+                            if (Date.now() - mouseDownTime >= 100) {
+                                isDragging = true
+                                map01.getCanvas().style.cursor = 'grabbing';
+                                draggedFeatureId = featureId; // キャッシュしたIDを使用
+                                map01.dragPan.disable();
+                            }
+                        }, 100);
                     });
 
+                    // map01.on('mousedown', 'oh-point-layer', (e) => {
+                    //     if (!e.features.length) return;
+                    //     if (isSyncFailed) {
+                    //         store.dispatch('triggerSnackbarForGroup', {
+                    //             message: 'ネットワークに接続されていません。ポイントを移動できません。'
+                    //         });
+                    //         return;
+                    //     }
+                    //     map01.getCanvas().style.cursor = 'grabbing';
+                    //     draggedFeatureId = e.features[0].properties.id;
+                    //     map01.dragPan.disable();
+                    // });
+
                     map01.on('mousemove', (e) => {
+                        if (!isDragging) return;
                         if (!draggedFeatureId) return;
                         if (isSyncFailed) {
                             store.dispatch('triggerSnackbarForGroup', {
@@ -645,6 +673,8 @@ export default function useGloupLayer() {
                                 await saveLayerToFirestore(groupId, layerId, currentLayer.features);
                             }
                         }
+                        isDragging = false;
+                        draggedFeatureId = null
                     });
 
                 } catch (e) {

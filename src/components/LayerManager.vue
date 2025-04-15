@@ -1,4 +1,3 @@
-<!-- src/components/LayerManager.vue -->
 <template>
   <v-card>
     <div style="margin-bottom: 10px;">
@@ -55,12 +54,12 @@ export default {
       default: null // マップが不要な場合に対応
     }
   },
-  emits: [
-    'update:layerName',
-    'update:currentGroupLayers',
-    'update:selectedLayerId',
-    'select-layer'
-  ],
+  // emits: [
+  //   'update:layerName',
+  //   'update:currentGroupLayers',
+  //   'update:selectedLayerId',
+  //   'select-layer'
+  // ],
   computed: {
     s_currentGroupId() {
       return this.$store.state.currentGroupId ;
@@ -333,6 +332,7 @@ export default {
       }
     },
     async deleteLayer(id) {
+      if (!confirm(`本当に削除しますか？元には戻りません。`)) return
       try {
         if (!this.groupId) {
           throw new Error('グループIDが必要です');
