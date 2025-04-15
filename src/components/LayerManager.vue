@@ -438,7 +438,6 @@ export default {
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
         this.createSoloGroupOnLogin();
-        this.fetchLayers()
       }
     });
     this.fetchLayers()
