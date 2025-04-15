@@ -160,71 +160,6 @@ async function fetchAndSetGeojson(groupId, map, layerId) {
         store.dispatch('triggerSnackbarForGroup', { message: `データ取得に失敗: ${e.message}` });
     }
 }
-// async function fetchAndSetGeojson(groupId, map, layerId) {
-//     if (groupId !== store.state.currentGroupId || layerId !== store.state.selectedLayerId) return;
-//     try {
-//         const docRef = db.collection('groups').doc(groupId).collection('layers').doc(layerId);
-//         const doc = await docRef.get({ source: 'server' });
-//         const data = doc.data();
-//         console.log('Firestoreから取得した生データ（全フィールド）:', JSON.stringify(data, null, 2));
-//
-//         if (data && data.features) {
-//             const newFeatures = data.features;
-//             const layerName = data.name || `Layer_${layerId}`;
-//
-//             // Vuexストアを更新
-//             const updatedLayers = store.state.currentGroupLayers.filter(l => l.id !== layerId);
-//             updatedLayers.push({ id: layerId, name: layerName, features: newFeatures });
-//             store.commit('setCurrentGroupLayers', updatedLayers);
-//             console.log('更新後のcurrentGroupLayers:', store.state.currentGroupLayers);
-//
-//             // マップソースを更新
-//             const source = map.getSource('oh-point-source');
-//             if (source) {
-//                 source.setData({ type: 'FeatureCollection', features: newFeatures });
-//                 map.triggerRepaint();
-//             }
-//
-//             // レイヤー情報をストアに反映
-//             const existing = store.state.selectedLayers.map01.find(l => l.id === 'oh-point-layer');
-//             if (!existing) {
-//                 store.commit('addSelectedLayer', {
-//                     map: 'map01',
-//                     layer: {
-//                         id: 'oh-point-layer',
-//                         label: layerName,
-//                         sources: [{
-//                             id: 'oh-point-source',
-//                             obj: { type: 'geojson', data: { type: 'FeatureCollection', features: newFeatures } }
-//                         }],
-//                         layers: [{
-//                             id: 'oh-point-layer',
-//                             type: 'circle',
-//                             source: 'oh-point-source',
-//                             paint: { 'circle-radius': 6, 'circle-color': 'navy', 'circle-stroke-width': 2, 'circle-stroke-color': '#fff' }
-//                         }],
-//                         opacity: 1,
-//                         visibility: true,
-//                         attribution: '',
-//                         layerid: layerId
-//                     }
-//                 });
-//                 store.dispatch('triggerSnackbarForGroup', { message: `レイヤー "${layerName}" を追加しました` });
-//             }
-//         } else {
-//             console.log('データが存在しないか、featuresが空です');
-//             store.commit('setCurrentGroupLayers', []);
-//             const source = map.getSource('oh-point-source');
-//             if (source) {
-//                 source.setData({ type: 'FeatureCollection', features: [] });
-//                 map.triggerRepaint();
-//             }
-//         }
-//     } catch (e) {
-//         console.error('データ取得エラー:', e);
-//         store.dispatch('triggerSnackbarForGroup', { message: 'データの取得に失敗しました' });
-//     }
-// }
 
 export function deleteAllPoints(currentGroupId) {
     if (isSyncFailed) {
@@ -478,57 +413,6 @@ function setupFirestoreListener(groupId, layerId) {
         store.dispatch('triggerSnackbarForGroup', { message: `リスナー設定に失敗: ${error.message}` });
     }
 }
-
-// function setupFirestoreListener(groupId, layerId) {
-//     if (groupId !== store.state.currentGroupId || layerId !== store.state.selectedLayerId) return;
-//     if (unsubscribeSnapshot) unsubscribeSnapshot();
-//
-//     unsubscribeSnapshot = firebase.firestore()
-//         .collection('groups')
-//         .doc(groupId)
-//         .collection('layers')
-//         .doc(layerId)
-//         .onSnapshot({ includeMetadataChanges: true }, (doc) => {
-//             if (isSaving) return; // 保存中はリスナーを無視
-//             const data = doc.data();
-//             if (data && data.features && !doc.metadata.fromCache) {
-//                 const features = data.features || [];
-//                 const layerName = data.name || `Layer_${layerId}`;
-//
-//                 const currentLayer = store.state.currentGroupLayers.find(l => l.id === layerId);
-//                 if (currentLayer) {
-//                     currentLayer.features = features;
-//                 } else {
-//                     const updatedLayers = store.state.currentGroupLayers.filter(l => l.id !== layerId);
-//                     updatedLayers.push({ id: layerId, name: layerName, features });
-//                     store.commit('setCurrentGroupLayers', updatedLayers);
-//                 }
-//                 store.commit('setCurrentGroupLayers', [...store.state.currentGroupLayers]);
-//
-//                 const map01 = store.state.map01;
-//                 if (map01 && map01.getSource('oh-point-source')) {
-//                     map01.getSource('oh-point-source').setData({ type: 'FeatureCollection', features });
-//                     map01.triggerRepaint();
-//                 }
-//                 console.log('リスナー更新後のcurrentGroupLayers:', store.state.currentGroupLayers);
-//             } else if (!data || !data.features) {
-//                 const currentLayer = store.state.currentGroupLayers.find(l => l.id === layerId);
-//                 if (currentLayer) {
-//                     currentLayer.features = [];
-//                     store.commit('setCurrentGroupLayers', [...store.state.currentGroupLayers]);
-//                 }
-//                 const map01 = store.state.map01;
-//                 if (map01 && map01.getSource('oh-point-source')) {
-//                     map01.getSource('oh-point-source').setData({ type: 'FeatureCollection', features: [] });
-//                     map01.triggerRepaint();
-//                 }
-//             }
-//         }, (error) => {
-//             console.error('Snapshot エラー:', error);
-//             isSyncFailed = true;
-//             store.dispatch('triggerSnackbarForGroup', { message: 'リアルタイム同期に失敗しました。操作が制限されています。' });
-//         });
-// }
 
 function createMapClickHandler(map01) {
     return async (e) => {

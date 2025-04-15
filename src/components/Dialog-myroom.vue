@@ -937,7 +937,7 @@ export default {
         console.log('マップ再描画トリガー');
 
         // Snackbarで成功通知
-        this.$store.commit('showSnackbarForGroup', `レイヤー "${name}" を選択しました`);
+        this.$store.commit('showSnackbarForGroup', `${name}を選択しました`);
       } catch (error) {
         console.error('layerSetエラー: ', error);
         this.$store.commit('showSnackbarForGroup', `レイヤー選択に失敗: ${error.message}`);
