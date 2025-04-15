@@ -96,7 +96,7 @@ async function fetchAndSetGeojson(groupId, map, layerId) {
         }
 
         const data = doc.data();
-        console.log('取得データ: ', JSON.stringify(data, null, 2));
+        // console.log('取得データ: ', JSON.stringify(data, null, 2));
 
         if (data && data.features) {
             const newFeatures = data.features;
@@ -107,7 +107,7 @@ async function fetchAndSetGeojson(groupId, map, layerId) {
             const updatedLayers = store.state.currentGroupLayers.filter(l => l.id !== layerId);
             updatedLayers.push({ id: layerId, name: layerName, features: newFeatures });
             store.commit('setCurrentGroupLayers', updatedLayers);
-            console.log('Vuex: currentGroupLayers更新: ', JSON.stringify(updatedLayers, null, 2));
+            // console.log('Vuex: currentGroupLayers更新: ', JSON.stringify(updatedLayers, null, 2));
 
             // マップソース更新
             const source = map.getSource('oh-point-source');

@@ -589,11 +589,11 @@ export default {
         });
 
         console.log('取得したレイヤー数: ', layers.length);
-        console.log('取得したレイヤーデータ: ', JSON.stringify(layers, null, 2));
+        // console.log('取得したレイヤーデータ: ', JSON.stringify(layers, null, 2));
 
         // currentGroupLayersを更新
         this.$store.state.currentGroupLayers = layers;
-        console.log('Vuex: currentGroupLayers更新: ', JSON.stringify(this.s_currentGroupLayers, null, 2));
+        // console.log('Vuex: currentGroupLayers更新: ', JSON.stringify(this.s_currentGroupLayers, null, 2));
 
         // 選択中のレイヤーIDがリストにない場合、リセット
         if (this.$store.state.selectedLayerId && !layers.find(l => l.id === this.$store.state.selectedLayerId)) {
