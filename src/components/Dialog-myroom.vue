@@ -331,7 +331,7 @@ export default {
     // MasonryWall,
   },
   data: () => ({
-    selectedLayerId: null, // 選択中のレイヤーID
+    // selectedLayerId: null, // 選択中のレイヤーID
     layerId: '',
     layerName: '',
     selectedPrefName: '',
@@ -381,6 +381,14 @@ export default {
     mayroomStyle: {"overflow-y": "auto", "max-height": "530px", "max-width": "560px", "padding-top": "10px"}
   }),
   computed: {
+    selectedLayerId: {
+      get() {
+        return this.$store.state.selectedLayerId;
+      },
+      set(value) {
+        this.$store.commit('setSelectedLayerId', value);
+      }
+    },
     map01Layers () {
       return this.$store.state.selectedLayers.map01
     },
