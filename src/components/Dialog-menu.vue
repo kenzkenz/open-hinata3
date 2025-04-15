@@ -200,14 +200,14 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-window-item value="1" class="my-v-window">
                 <div style="margin-bottom: 20px;">
                   <div v-if="s_currentGroupName">
-                    現在のグループは「{{ s_currentGroupName }}」です。
+<!--                    現在のグループは「{{ s_currentGroupName }}」です。-->
                   </div>
                   <div v-else>
                     グループに所属していません。
                   </div>
                 </div>
                 <v-select
-                    v-model="selectedGroupId"
+                    v-model="inviteGroupId"
                     :items="invitableGroupOptions"
                     item-value="id"
                     item-title="name"
@@ -233,21 +233,21 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   招待を送信
                 </v-btn>
 
-                <v-btn v-if="selectedGroupId && inviteEmail && !isSendingInvite" style="margin-top: 10px;margin-left: 30px;"
+                <v-btn v-if="inviteGroupId && inviteEmail && !isSendingInvite" style="margin-top: 10px;margin-left: 30px;"
                     @click="copyInviteLink"
                 >
                   下記招待リンクをコピー
                 </v-btn>
-                <div v-if="selectedGroupId && inviteEmail && !isSendingInvite" style="margin-top: 10px;">
+                <div v-if="inviteGroupId && inviteEmail && !isSendingInvite" style="margin-top: 10px;">
                   <p>招待リンク（手動で共有する場合）:</p>
                   <span style="font-size: small">
                       <a
-                          :href="`https://kenzkenz.xsrv.jp/open-hinata3/?group=${selectedGroupId}&groupName=${encodeURIComponent(groupOptions.find(g => g.id === selectedGroupId)?.name || '')}`"
+                          :href="`https://kenzkenz.xsrv.jp/open-hinata3/?group=${inviteGroupId}&groupName=${encodeURIComponent(groupOptions.find(g => g.id === inviteGroupId)?.name || '')}`"
                           target="_blank"
                           rel="noopener noreferrer"
                           class="invite-link"
                       >
-                        {{ `https://kenzkenz.xsrv.jp/open-hinata3/?group=${selectedGroupId}&groupName=${encodeURIComponent(groupOptions.find(g => g.id === selectedGroupId)?.name || '')}` }}
+                        {{ `https://kenzkenz.xsrv.jp/open-hinata3/?group=${inviteGroupId}&groupName=${encodeURIComponent(groupOptions.find(g => g.id === inviteGroupId)?.name || '')}` }}
                       </a>
                   </span>
                 </div>
@@ -313,7 +313,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v0.871
+        v0.874
       </p>
 
       <div v-if="user1">
@@ -471,6 +471,7 @@ export default {
     groupOptions: [],
     selectedGroupId: null,
     selectedGroupId2: null,
+    inviteGroupId: null,
     groupName: '',
     tab: 0,
     tileUrl: '',
@@ -965,10 +966,10 @@ export default {
         }
 
         // グループ情報を取得
-        const group = this.groupOptions.find(g => g.id === this.selectedGroupId);
+        const group = this.groupOptions.find(g => g.id === this.inviteGroupId);
         if (!group || !group.name) {
           console.error("❌ グループが見つかりませんまたはグループ名がありません:", {
-            selectedGroupId: this.selectedGroupId,
+            selectedGroupId: this.inviteGroupId,
             groupOptions: this.groupOptions,
           });
           this.snackbarText = "選択したグループが見つかりません、またはグループ名がありません";
@@ -1009,7 +1010,7 @@ export default {
         const requestData = {
           email: this.inviteEmail,
           group: group.name,
-          groupId: this.selectedGroupId,
+          groupId: this.inviteGroupId,
           inviter: inviterName,
           inviterEmail: inviterEmail,
         };
@@ -1019,7 +1020,7 @@ export default {
         await db.collection("invitations").add({
           // email: this.inviteEmail,
           mail: this.inviteEmail.trim(), // ← ここにtrim()
-          groupId: this.selectedGroupId,
+          groupId: this.inviteGroupId,
           groupName: group.name,
           invitedBy: user ? user.uid : null,
           inviterName: inviterName,
@@ -1145,6 +1146,7 @@ export default {
     },
 
     async onGroupChange(groupId) {
+      this.layerName = ''
       const group = this.groupOptions.find(g => g.id === groupId)
       // alert('グループID' + groupId)
       if (group) {

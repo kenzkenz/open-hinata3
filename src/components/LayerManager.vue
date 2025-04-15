@@ -369,22 +369,16 @@ export default {
         }
         // ユーザー情報を取得（ニックネーム用）
         const nickname = user.displayName || 'ユーザー'; // ニックネームがない場合はデフォルト
-
-        // alert(nickname)
-
         // グループIDとしてユーザーIDを使用
         const groupId = user.uid;
-
         // 既にグループが存在するかチェック
         const groupDoc = await firebase.firestore().collection('groups').doc(groupId).get();
         if (groupDoc.exists) {
           console.log('お一人様グループは既に存在します');
           return;
         }
-
         // グループ名を自動生成
         const groupName = `${nickname}のお一人様グループ`;
-
         // Firestore にグループ作成
         await firebase.firestore().collection('groups').doc(groupId).set({
           name: groupName,
@@ -395,7 +389,6 @@ export default {
           isProtected: true, // 削除防止フラグ
           priority: 1, // リスト先頭表示用
         });
-
         // ユーザーにグループ追加
         await firebase.firestore().collection('users').doc(user.uid).set(
             {
@@ -403,31 +396,24 @@ export default {
             },
             { merge: true }
         );
-
-        // // UI に即時反映
-        // const newGroup = {
-        //   id: groupId,
-        //   name: groupName,
-        //   ownerUid: user.uid,
-        //   isSoloGroup: true,
-        //   isProtected: true,
-        //   priority: 1,
-        // };
-        // // Vue 2でのリアクティブ更新
-        // this.groupOptions.unshift(newGroup); // 先頭に追加
-        // this.$forceUpdate(); // 必要に応じて強制再描画
-        //
-        // // 選択状態と保存
-        // this.selectedGroupId = groupId;
-        // this.s_currentGroupName = groupName;
-        // localStorage.setItem('lastUsedGroupId', groupId);
-        console.log('お一人様グループを作成しました！レイヤーを追加してみましょう！');
-        this.$store.state.soloFlg = true
-        alert(`${nickname}のお一人様グループを自動作成しました！レイヤーを追加してみましょう！`)
+        // レイヤーを作成（IDはFirestoreに自動生成させる）
+        const layerName = `${nickname}のお一人様レイヤー`;
+        const layerRef = await firebase.firestore()
+            .collection('groups')
+            .doc(groupId)
+            .collection('layers')
+            .add({
+              name: layerName,
+              ownerUid: user.uid,
+              createdAt: new Date(),
+              nickName: 'OH3'
+              // isSoloLayer: true, // お一人様レイヤー用のフラグ（必要に応じて）
+            });
+        console.log('お一人様グループとレイヤーを作成しました！ レイヤーID:', layerRef.id);
+        this.$store.state.soloFlg = true;
+        alert(`${nickname}のお一人様グループと${layerName}を自動作成しました！グループを選択してください。`);
       } catch (error) {
         console.error('お一人様グループ作成中にエラーが発生:', error);
-        // 逃げのコード
-        this.$store.state.soloFlg = true
       }
     },
   },
