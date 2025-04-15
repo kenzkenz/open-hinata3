@@ -606,36 +606,6 @@ export default {
         this.$store.state.currentGroupLayers = [];
       }
     },
-    // async fetchLayers() {
-    //   // フェッチレイヤーズ
-    //   if (!this.s_currentGroupId) {
-    //     console.warn('fetchLayers: グループIDが未定義');
-    //     this.$store.state.currentGroupLayers = []; // 未定義の場合はクリア
-    //     return;
-    //   }
-    //   try {
-    //     const snapshot = await firebase.firestore()
-    //         .collection('groups')
-    //         .doc(this.s_currentGroupId)
-    //         .collection('layers')
-    //         .orderBy('createdAt')
-    //         .get();
-    //
-    //     const layers = [];
-    //     snapshot.forEach(doc => {
-    //       layers.push({ id: doc.id, ...doc.data() });
-    //     });
-    //
-    //     // currentGroupLayersをクリアして最新データに更新
-    //     this.$store.state.currentGroupLayers = layers;
-    //     // console.log('fetchLayers: 更新後のcurrentGroupLayers=', JSON.stringify(this.s_currentGroupLayers));
-    //
-    //     // selectedLayers.map01と同期
-    //     // this.syncSelectedLayers();
-    //   } catch (e) {
-    //     console.error('Firestore 読み込みエラー:', e);
-    //   }
-    // },
 
     syncSelectedLayers() {
       const map = this.$store.state.map01;
@@ -850,17 +820,7 @@ export default {
               }
             }],
             layers: [
-              {
-                id: 'oh-point-layer',
-                type: 'circle',
-                source: 'oh-point-source',
-                paint: {
-                  'circle-radius': 6,
-                  'circle-color': 'navy',
-                  'circle-stroke-width': 2,
-                  'circle-stroke-color': '#fff'
-                }
-              },
+              ohPointLayer,
               {
                 id: 'oh-label-layer',
                 type: 'symbol',
@@ -906,17 +866,7 @@ export default {
           if (!existingLayer.layers || !existingLayer.layers.length) {
             console.warn('layersが欠落、修復');
             existingLayer.layers = [
-              {
-                id: 'oh-point-layer',
-                type: 'circle',
-                source: 'oh-point-source',
-                paint: {
-                  'circle-radius': 6,
-                  'circle-color': 'navy',
-                  'circle-stroke-width': 2,
-                  'circle-stroke-color': '#fff'
-                }
-              },
+              ohPointLayer,
               {
                 id: 'oh-label-layer',
                 type: 'symbol',
@@ -948,17 +898,9 @@ export default {
               features: currentLayer.features || []
             }
           });
-          map01.addLayer({
-            id: 'oh-point-layer',
-            type: 'circle',
-            source: 'oh-point-source',
-            paint: {
-              'circle-radius': 6,
-              'circle-color': 'navy',
-              'circle-stroke-width': 2,
-              'circle-stroke-color': '#fff'
-            }
-          });
+          map01.addLayer(
+              ohPointLayer
+          );
           map01.addLayer({
             id: 'oh-label-layer',
             type: 'symbol',
@@ -993,152 +935,6 @@ export default {
         this.$store.commit('showSnackbarForGroup', `レイヤー選択に失敗: ${error.message}`);
       }
     },
-
-    // async layerSet(name, id) {
-    //   console.log('layerSet開始: name=', name, 'id=', id);
-    //   if (this.layerId === id) {
-    //     console.log('同じレイヤーが選択済み、処理スキップ');
-    //     return;
-    //   }
-    //
-    //   try {
-    //     // 入力バリデーション
-    //     if (!id || !name) {
-    //       throw new Error('レイヤーIDまたは名前が未定義: id=' + id + ', name=' + name);
-    //     }
-    //
-    //     // Vuexストア更新
-    //     this.selectedLayerId = id;
-    //     this.layerName = name;
-    //     this.layerId = id;
-    //     this.$store.commit('setSelectedLayerId', id);
-    //     console.log('Vuex: selectedLayerIdを更新: ', id);
-    //
-    //     // currentGroupLayersからレイヤーを探す
-    //     const currentLayer = this.s_currentGroupLayers.find(l => l.id === id);
-    //     if (!currentLayer) {
-    //       throw new Error(`レイヤーがcurrentGroupLayersに見つからない: id=${id}`);
-    //     }
-    //     console.log('見つかったレイヤー: ', JSON.stringify(currentLayer, null, 2));
-    //
-    //     // selectedLayers.map01を更新
-    //     const mapLayers = this.$store.state.selectedLayers['map01'];
-    //     const existingLayer = mapLayers.find(l => l.id === 'oh-point-layer');
-    //
-    //     if (!existingLayer) {
-    //       console.log('oh-point-layerが存在しないので新規追加');
-    //       mapLayers.unshift({
-    //         id: 'oh-point-layer',
-    //         label: name,
-    //         sources: [{
-    //           id: 'oh-point-source',
-    //           obj: {
-    //             type: 'geojson',
-    //             data: {
-    //               type: 'FeatureCollection',
-    //               features: currentLayer.features || []
-    //             }
-    //           }
-    //         }],
-    //         layers: [ohPointLayer, ohLabelLayer],
-    //         opacity: 1,
-    //         visibility: true,
-    //         layerid: id
-    //       });
-    //     } else {
-    //       console.log('既存のoh-point-layerを更新');
-    //       console.log(existingLayer)
-    //       existingLayer.label = name;
-    //       existingLayer.layerid = id;
-    //       existingLayer.sources[0].obj.data.features = currentLayer.features || [];
-    //     }
-    //     console.log('更新後のselectedLayers.map01: ', JSON.stringify(mapLayers, null, 2));
-    //
-    //     // マップソース更新
-    //     const map01 = this.$store.state.map01;
-    //     if (!map01) {
-    //       throw new Error('マップインスタンスが見つからない');
-    //     }
-    //
-    //     if (!map01.getSource('oh-point-source')) {
-    //       throw new Error('oh-point-sourceが見つからない');
-    //     }
-    //
-    //     map01.getSource('oh-point-source').setData({
-    //       type: 'FeatureCollection',
-    //       features: currentLayer.features || []
-    //     });
-    //     console.log('マップソースにデータセット完了: features=', currentLayer.features?.length || 0);
-    //
-    //     map01.triggerRepaint();
-    //     console.log('マップ再描画トリガー');
-    //
-    //     // Snackbarで成功通知
-    //     this.$store.commit('showSnackbarForGroup', `レイヤー "${name}" を選択しました`);
-    //   } catch (error) {
-    //     console.error('layerSetエラー: ', error);
-    //     this.$store.commit('showSnackbarForGroup', `レイヤー選択に失敗: ${error.message}`);
-    //   }
-    // },
-
-
-
-    // layerSet(name, id) {
-    //   if (this.layerId === id) return;
-    //   this.selectedLayerId = id; // 選択したレイヤーのIDを保存
-    //   this.layerName = name;
-    //   this.layerId = id;
-    //   this.$store.commit('setSelectedLayerId', id);
-    //
-    //   console.log('layerSet呼び出し:', name, id);
-    //
-    //   const mapLayers = this.$store.state.selectedLayers['map01'];
-    //   const existingLayer = mapLayers.find(l => l.id === 'oh-point-layer');
-    //   const currentLayer = this.s_currentGroupLayers.find(l => l.id === id);
-    //   if (!currentLayer) {
-    //     console.warn('layerSet: 指定されたレイヤーがcurrentGroupLayersに存在しません', id);
-    //     return;
-    //   }
-    //
-    //   if (!existingLayer) {
-    //     // 初回追加
-    //     mapLayers.unshift({
-    //           id: 'oh-point-layer',
-    //           label: name,
-    //           sources: [{
-    //             id: 'oh-point-source',
-    //             obj: {
-    //               type: 'geojson',
-    //               data: {
-    //                 type: 'FeatureCollection',
-    //                 features: currentLayer.features || []
-    //               }
-    //             }
-    //           }],
-    //           layers: [ohPointLayer,ohLabelLayer],
-    //           opacity:1,
-    //           visibility: true,
-    //         },
-    //     )
-    //   } else {
-    //     // 既存レイヤーの更新
-    //     existingLayer.label = name;
-    //     existingLayer.layerid = id;
-    //   }
-    //
-    //   const map01 = this.$store.state.map01;
-    //   if (map01 && map01.getSource('oh-point-source')) {
-    //     map01.getSource('oh-point-source').setData({
-    //       type: 'FeatureCollection',
-    //       features: currentLayer.features || []
-    //     });
-    //     // map01.setPaintProperty('oh-point-layer', 'circle-color', currentLayer.color || '#ff0000');
-    //     map01.triggerRepaint();
-    //   } else {
-    //     console.warn('マップまたはソースが未初期化');
-    //   }
-    //   console.log('セレクテッドレイヤーズ' ,JSON.stringify(this.$store.state.selectedLayers))
-    // },
     async layerRenameBtn() {
       if (!this.layerName.trim()) return alert('新しい名前を入力してください');
       const selectedLayer = this.s_currentGroupLayers.find(layer => layer.id === this.layerId);
@@ -2216,31 +2012,6 @@ export default {
           if (!fetchFlg) vm.$store.state.selectedLayers = slj0
         });
 
-      //   setTimeout(() => {
-      //     console.log(map.getStyle().layers)
-      //     const targetLayers = map.getStyle().layers
-      //         .filter(layer => layer.id.startsWith('oh-chiban-') && !registeredLayers.has(layer.id))
-      //         .map(layer => layer.id);
-      //     console.log(targetLayers)
-      //     targetLayers.forEach(layer => {
-      //       console.log(`Adding click event to layer: ${layer}`);
-      //       map.on('click', layer, (e) => {
-      //         if (e.features && e.features.length > 0) {
-      //           const targetId = `${e.features[0].properties['oh3id']}`;
-      //           console.log('Clicked ID', targetId);
-      //           if (store.state.highlightedChibans.has(targetId)) {
-      //             // すでに選択されている場合は解除
-      //             store.state.highlightedChibans.delete(targetId);
-      //           } else {
-      //             // 新しいIDを追加
-      //             store.state.highlightedChibans.add(targetId);
-      //           }
-      //           highlightSpecificFeaturesCity(map, layer);
-      //         }
-      //       });
-      //     });
-      //   },500)
-      //   const registeredLayers = new Set();
       })
     },
     removeItem (id,event) {
@@ -2275,72 +2046,6 @@ export default {
         vm.pmtileSelectPublic()
       }
       aaa()
-
-      // store.state.loading2 = true
-      // store.state.loadingMessage = '処理中です。'
-      // const vm = this
-      // axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesUpdatePublic.php',{
-      //   params: {
-      //     id: id,
-      //     public: public0
-      //   }
-      // }).then(function (response) {
-      //   vm.pmtileSelectPublic()
-      //   console.log(response.data.publics[0].public)
-      //   let cities = response.data.publics.map(v => {
-      //     return {
-      //       citycode:v.citycode,
-      //       pmtilesurl:v.url,
-      //       public: Number(v.public),
-      //       page: ''
-      //     }
-      //   })
-      //   console.log(cities)
-      //   const cities2 = []
-      //   sicyosonChibanzuUrls.forEach(v => {
-      //     if (v.code) {
-      //       cities2.push({
-      //         citycode:v.code,
-      //         pmtilesurl:'999',
-      //         public: 2,
-      //         page: v.page
-      //       })
-      //     }
-      //   })
-      //   console.log(cities2)
-      //   cities = [...cities, ...cities2];
-      //
-      //   async function cityGeojson() {
-      //     try {
-      //       const response1 = await axios.post('https://kenzkenz.duckdns.org/myphp/city_geojson.php', {
-      //         cities: cities
-      //         // cities: [{citycode:'45201',pmtilesurl:'9999'}]
-      //       });
-      //       console.log(response1)
-      //       if (response1.data.error) {
-      //         console.error('エラー:', response1.data.error);
-      //         // alert(`エラー: ${response.data.error}`);
-      //       } else {
-      //         console.log('成功:', response1.data);
-      //         const maps = [vm.$store.state.map01,vm.$store.state.map02]
-      //         maps.forEach(map => {
-      //           map.getStyle().layers.forEach(layer => {
-      //             if (layer.id.includes('oh-chibanL-') && layer.id.includes(id)) {
-      //               map.removeLayer(layer.id)
-      //             }
-      //           })
-      //         })
-      //         setTimeout(() => {
-      //           store.state.loading2 = false
-      //           alert('設定を反映するには再読み込みしてください。')
-      //         },3000)
-      //       }
-      //     } catch (error) {
-      //       console.error('リクエストエラー:', error);
-      //     }
-      //   }
-      //   cityGeojson()
-      // })
     },
 
     transparentChk (id,transparent) {
