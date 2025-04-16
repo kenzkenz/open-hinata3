@@ -12,12 +12,22 @@
       <v-btn style="margin-top: -10px;margin-bottom: 10px;margin-left: 10px;" @click="searchLayer">検索</v-btn>
       <div
           style="height: 50px;"
-          v-for="item in currentGroupLayers"
+          v-for="item in sortedGroupLayers"
           :key="item.id"
           class="data-container"
           :class="{ 'selected': selectedLayerId === item.id }"
           @click="selectLayer(item.name, item.id)"
       >
+        <v-chip
+            v-if="item.features?.length ?? 0"
+            class="file-count-badge"
+            size="small"
+            color="navy"
+            text-color="white"
+        >
+          {{ item.features?.length ?? 0 }}
+        </v-chip>
+        <span v-else style="color: red;">new </span>
         <button class="close-btn" @click.stop="deleteLayer(item.id)">×</button>
         <span v-html="'<strong>' + item.name + '</strong>_' + item.nickName + 'が作成_' + readableTime(item.createdAt)"></span>
       </div>
@@ -30,7 +40,6 @@ import firebase from 'firebase/app';
 import 'firebase/firestore';
 import { ohPointLayer } from "@/js/layers";
 import 'firebase/auth';
-import { onAuthStateChanged } from "firebase/auth";
 
 export default {
   name: 'LayerManager',
@@ -56,12 +65,39 @@ export default {
       default: null // マップが不要な場合に対応
     }
   },
+  data: () => ({
+    // localLayerName: this.layerName, // プロパティをローカルデータにコピー エラーを起こす
+    // isDeleted: false
+  }),
   computed: {
+    // localLayerName () {
+    //   if (this.isDeleted) {
+    //     // this.isDeleted = false
+    //     return ''
+    //   } else {
+    //     return this.layerName
+    //   }
+    // },
+    sortedGroupLayers() {
+      return [...this.currentGroupLayers].sort((a, b) => {
+        const aLength = a.features?.length || 0;
+        const bLength = b.features?.length || 0;
+        // lengthが0の場合は先頭に
+        if (aLength === 0 && bLength === 0) return 0;
+        if (aLength === 0) return -1;
+        if (bLength === 0) return 1;
+        // それ以外はlengthの降順
+        return bLength - aLength;
+      });
+    },
     s_currentGroupId() {
       return this.$store.state.currentGroupId ;
     },
   },
   methods: {
+    updateLocalLayerName() {
+      this.localLayerName = ''; // ローカルデータを変更
+    },
     async fetchLayers() {
       if (!this.groupId) {
         console.warn('fetchLayers: グループIDが未定義、currentGroupLayersをクリア');
@@ -93,6 +129,12 @@ export default {
       }
     },
     async addLayer() {
+      // layerNameと一致する要素を検索
+      const matchedLayer = this.currentGroupLayers.find(layer => layer?.name === this.layerName);
+      if (matchedLayer) {
+        alert ('同じ名前でレイヤー追加はできません')
+        return
+      }
       try {
         if (!this.layerName) {
           throw new Error('レイヤー名を入力してください');
@@ -121,6 +163,12 @@ export default {
       }
     },
     async renameLayer() {
+      // layerNameと一致する要素を検索
+      // const matchedLayer = this.currentGroupLayers.find(layer => layer?.name === this.layerName);
+      // if (matchedLayer) {
+      //   alert ('同じ名前にリネームはできません')
+      //   return
+      // }
       try {
         if (!this.selectedLayerId || !this.layerName) {
           throw new Error('レイヤーを選択し、名前を入力してください');
@@ -344,6 +392,7 @@ export default {
           this.$emit('update:selectedLayerId', null);
         }
         this.$store.commit('showSnackbarForGroup', 'レイヤーを削除しました');
+        // this.isDeleted = true
       } catch (error) {
         console.error('deleteLayerエラー:', error);
         this.$store.commit('showSnackbarForGroup', `レイヤー削除に失敗: ${error.message}`);
@@ -411,6 +460,7 @@ export default {
             });
         console.log('お一人様グループとレイヤーを作成しました！ レイヤーID:', layerRef.id);
         this.$store.state.soloFlg = true;
+        this.fetchLayers()
         alert(`${nickname}のお一人様グループと${layerName}を自動作成しました！グループを選択してください。`);
       } catch (error) {
         console.error('お一人様グループ作成中にエラーが発生:', error);
@@ -461,5 +511,13 @@ export default {
 .data-container.selected {
   background-color: #b2ebf2;
 }
-
+.file-count-badge {
+  margin-left: 4px;
+  font-size: 10px;
+  font-weight: bold;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+  padding: 0 4px;
+}
 </style>
