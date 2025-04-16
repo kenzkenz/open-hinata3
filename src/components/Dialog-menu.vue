@@ -253,29 +253,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 </div>
               </v-window-item>
 
-<!--              <v-window-item value="2" class="my-v-window">-->
-<!--                <div style="margin-bottom: 20px;">-->
-<!--                  <div v-if="s_currentGroupName">-->
-<!--                    現在のグループは「{{ s_currentGroupName }}」です。-->
-<!--                  </div>-->
-<!--                  <div v-else>-->
-<!--                    グループに所属していません。-->
-<!--                  </div>-->
-<!--                </div>-->
-<!--                <v-select-->
-<!--                    ref="groupSelect1"-->
-<!--                    v-model="selectedGroupId"-->
-<!--                    :items="groupOptions"-->
-<!--                    item-value="id"-->
-<!--                    item-title="name"-->
-<!--                    label="グループを選択"-->
-<!--                    outlined-->
-<!--                    dense-->
-<!--                    class="mt-2"-->
-<!--                    @update:modelValue="onGroupChange"-->
-<!--                    v-model:menu="selectMenuOpen2"-->
-<!--                />-->
-<!--              </v-window-item>-->
               <v-window-item value="3" class="my-v-window">
                 <v-select
                     ref="groupSelect3"
@@ -313,7 +290,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v0.878
+        v0.879
       </p>
 
       <div v-if="user1">

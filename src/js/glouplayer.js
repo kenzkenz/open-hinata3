@@ -1,3 +1,6 @@
+
+
+
 import store from '@/store';
 import { db } from '@/firebase';
 import { watch } from 'vue';
@@ -16,6 +19,12 @@ let justChangedGroup = false;
 let isSaving = false;
 let isSyncFailed = !navigator.onLine;
 let pingIntervalId = null;
+
+// `oh-point-layer`の存在をチェックする関数
+function hasOhPointLayer(map) {
+    const selectedLayers = store.state.selectedLayers.map01;
+    return selectedLayers.some(layer => layer.id === 'oh-point-layer') && map.getLayer('oh-point-layer');
+}
 
 async function pingServer(source = 'interval', retries = 3, delay = 1000) {
     for (let i = 0; i < retries; i++) {
@@ -416,6 +425,10 @@ function setupFirestoreListener(groupId, layerId) {
 
 function createMapClickHandler(map01) {
     return async (e) => {
+        if (!hasOhPointLayer(map01)) {
+            console.log('oh-point-layerが存在しません。初期化をスキップします。');
+            return;
+        }
         if (isSyncFailed) {
             store.dispatch('triggerSnackbarForGroup', { message: 'ネットワークに接続されていません。ポイントを追加できません。' });
             return;

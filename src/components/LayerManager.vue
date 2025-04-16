@@ -212,10 +212,10 @@ export default {
     },
     async selectLayer(name, id) {
       try {
-        if (this.selectedLayerId === id) {
-          console.log('同じレイヤーが選択済み、処理スキップ');
-          return;
-        }
+        // if (this.selectedLayerId === id) {
+        //   console.log('同じレイヤーが選択済み、処理スキップ');
+        //   return;
+        // }
         this.$emit('update:selectedLayerId', id);
         this.$emit('select-layer', { name, id });
 
