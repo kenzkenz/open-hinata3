@@ -373,7 +373,7 @@ function createMapClickHandler(map01) {
         store.commit('setSelectedPointFeature', newFeature);
 
         await new Promise(resolve => setTimeout(resolve, 100));
-        store.commit('setPointInfoDrawer', true);
+        // store.commit('setPointInfoDrawer', true);
 
         store.dispatch('triggerSnackbarForGroup', { message: 'ポイントを追加しました' });
     };
@@ -492,88 +492,88 @@ export default function useGloupLayer() {
                     map01.on('click', mapClickHandler);
                     map01.on('click', 'oh-point-layer', createPointClickHandler(map01));
                     map01.on('click', 'oh-point-label-layer', createPointClickHandler(map01));
-
-                    let draggedFeatureId = null;
-                    let isDragging = false;
-
-                    map01.on('mousedown', 'oh-point-layer', (e) => {
-                        if (!e.features || !e.features.length) return;
-                        if (isSyncFailed) {
-                            store.dispatch('triggerSnackbarForGroup', {
-                                message: 'ネットワークに接続されていません。ポイントを移動できません。'
-                            });
-                            return;
-                        }
-
-                        isDragging = false;
-                        const feature = e.features[0];
-                        const featureId = feature.properties.id;
-                        const mouseDownTime = Date.now();
-
-                        setTimeout(() => {
-                            if (Date.now() - mouseDownTime >= 100) {
-                                isDragging = true;
-                                map01.getCanvas().style.cursor = 'grabbing';
-                                draggedFeatureId = featureId;
-                                map01.dragPan.disable();
-                            }
-                        }, 100);
-                    });
-
-                    map01.on('mousemove', (e) => {
-                        if (!isDragging) return;
-                        if (!draggedFeatureId) return;
-                        if (isSyncFailed) {
-                            store.dispatch('triggerSnackbarForGroup', {
-                                message: 'ネットワークに接続されていません。ポイントを移動できません。'
-                            });
-                            draggedFeatureId = null;
-                            map01.getCanvas().style.cursor = '';
-                            map01.dragPan.enable();
-                            return;
-                        }
-
-                        const currentLayer = store.state.currentGroupLayers.find(l => l.id === store.state.selectedLayerId);
-                        if (!currentLayer) return;
-
-                        currentLayer.features = currentLayer.features.map(f => {
-                            if (f.properties.id === draggedFeatureId) {
-                                return {
-                                    ...f,
-                                    geometry: {
-                                        ...f.geometry,
-                                        coordinates: [e.lngLat.lng, e.lngLat.lat]
-                                    }
-                                };
-                            }
-                            return f;
-                        });
-
-                        store.commit('setCurrentGroupLayers', [...store.state.currentGroupLayers]);
-
-                        const source = map01.getSource('oh-point-source');
-                        if (source) {
-                            source.setData({ type: 'FeatureCollection', features: currentLayer.features });
-                        }
-                    });
-
-                    map01.on('mouseup', async () => {
-                        if (draggedFeatureId) {
-                            map01.getCanvas().style.cursor = '';
-                            map01.dragPan.enable();
-                            draggedFeatureId = null;
-
-                            const groupId = store.state.currentGroupId;
-                            const layerId = store.state.selectedLayerId;
-                            const currentLayer = store.state.currentGroupLayers.find(l => l.id === layerId);
-                            if (currentLayer) {
-                                await saveLayerToFirestore(groupId, layerId, currentLayer.features);
-                            }
-                        }
-                        isDragging = false;
-                        draggedFeatureId = null;
-                    });
-
+                //
+                //     let draggedFeatureId = null;
+                //     let isDragging = false;
+                //
+                //     map01.on('mousedown', 'oh-point-layer', (e) => {
+                //         if (!e.features || !e.features.length) return;
+                //         if (isSyncFailed) {
+                //             store.dispatch('triggerSnackbarForGroup', {
+                //                 message: 'ネットワークに接続されていません。ポイントを移動できません。'
+                //             });
+                //             return;
+                //         }
+                //
+                //         isDragging = false;
+                //         const feature = e.features[0];
+                //         const featureId = feature.properties.id;
+                //         const mouseDownTime = Date.now();
+                //
+                //         setTimeout(() => {
+                //             if (Date.now() - mouseDownTime >= 100) {
+                //                 isDragging = true;
+                //                 map01.getCanvas().style.cursor = 'grabbing';
+                //                 draggedFeatureId = featureId;
+                //                 map01.dragPan.disable();
+                //             }
+                //         }, 100);
+                //     });
+                //
+                //     map01.on('mousemove', (e) => {
+                //         if (!isDragging) return;
+                //         if (!draggedFeatureId) return;
+                //         if (isSyncFailed) {
+                //             store.dispatch('triggerSnackbarForGroup', {
+                //                 message: 'ネットワークに接続されていません。ポイントを移動できません。'
+                //             });
+                //             draggedFeatureId = null;
+                //             map01.getCanvas().style.cursor = '';
+                //             map01.dragPan.enable();
+                //             return;
+                //         }
+                //
+                //         const currentLayer = store.state.currentGroupLayers.find(l => l.id === store.state.selectedLayerId);
+                //         if (!currentLayer) return;
+                //
+                //         currentLayer.features = currentLayer.features.map(f => {
+                //             if (f.properties.id === draggedFeatureId) {
+                //                 return {
+                //                     ...f,
+                //                     geometry: {
+                //                         ...f.geometry,
+                //                         coordinates: [e.lngLat.lng, e.lngLat.lat]
+                //                     }
+                //                 };
+                //             }
+                //             return f;
+                //         });
+                //
+                //         store.commit('setCurrentGroupLayers', [...store.state.currentGroupLayers]);
+                //
+                //         const source = map01.getSource('oh-point-source');
+                //         if (source) {
+                //             source.setData({ type: 'FeatureCollection', features: currentLayer.features });
+                //         }
+                //     });
+                //
+                //     map01.on('mouseup', async () => {
+                //         if (draggedFeatureId) {
+                //             map01.getCanvas().style.cursor = '';
+                //             map01.dragPan.enable();
+                //             draggedFeatureId = null;
+                //
+                //             const groupId = store.state.currentGroupId;
+                //             const layerId = store.state.selectedLayerId;
+                //             const currentLayer = store.state.currentGroupLayers.find(l => l.id === layerId);
+                //             if (currentLayer) {
+                //                 await saveLayerToFirestore(groupId, layerId, currentLayer.features);
+                //             }
+                //         }
+                //         isDragging = false;
+                //         draggedFeatureId = null;
+                //     });
+                //
                 } catch (e) {
                     console.error('マップ初期化エラー:', e);
                 }
