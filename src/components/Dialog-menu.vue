@@ -290,7 +290,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v0.879
+        v0.880
       </p>
 
       <div v-if="user1">
@@ -735,33 +735,6 @@ export default {
 
             // ✅ ここで groupOptions を再構築してUI更新
             const groupIds = groups;
-            // let name
-            // const fetchedGroups = [];
-            // for (const groupId of groupIds) {
-            //   const groupDoc = await firebase.firestore().collection("groups").doc(groupId).get();
-            //   if (groupDoc.exists) {
-            //     name = groupDoc.data().name || "(名前なし)";
-            //     fetchedGroups.push({
-            //       id: groupId,
-            //       name,
-            //       ownerUid: groupDoc.data().ownerUid,
-            //     });
-            //   }
-            // }
-            //
-            // // 「グループに入らない」オプションを追加して更新
-            // this.groupOptions = [
-            //   { id: null, name: "（グループに入らない）" },
-            //   ...fetchedGroups,
-            // ];
-            //
-            // // セレクト状態を更新して保存
-            // this.selectedGroupId = this.groupId;
-            // this.onGroupChange(this.groupId);
-            //
-            //
-            // alert("既に「" + name + "」に参加済みです！");
-
 
             const fetchedGroups = [];
             let joinedGroupName = ""; // ← ここで参加済みのグループ名を保存する
@@ -800,7 +773,6 @@ export default {
 
         console.log("✅ 入力されたメール:", this.emailInput);
         console.log("✅ 取得した groupId:", this.groupId);
-
 
         // this.emailInput = "kenzkenz@kenzkenz.xsrv.jp";
 
@@ -865,19 +837,6 @@ export default {
         // 🎯 成功後：グループ状態を再取得＆更新
         // const updatedUserDoc = await userRef.get();
         const groupIds = updatedUserDoc.exists ? updatedUserDoc.data().groups || [] : [];
-
-        // const groups = [];
-        // for (const groupId of groupIds) {
-        //   const groupDoc = await db.collection("groups").doc(groupId).get();
-        //   if (groupDoc.exists) {
-        //     const name = groupDoc.data().name || "(名前なし)";
-        //     groups.push({
-        //       id: groupId,
-        //       name,
-        //       ownerUid: groupDoc.data().ownerUid,
-        //     });
-        //   }
-        // }
 
         let matchedGroupName = "";
 
@@ -1651,42 +1610,7 @@ export default {
     if (localStorage.getItem('mapillary')) {
       this.s_mapillary = JSON.parse(localStorage.getItem('mapillary'))
     }
-
   },
-
-
-
-
-  // mounted() {
-  //
-  //   document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー</span>'
-  //
-  //   // 非同期で user の UID を監視
-  //   const checkUser = setInterval(() => {
-  //     if (user && user._rawValue && user._rawValue.uid) {
-  //       this.uid = user._rawValue.uid;
-  //       this.$store.state.userId = user._rawValue.uid
-  //        document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニューようこそ' + user._rawValue.displayName + 'さん</span>'
-  //       clearInterval(checkUser); // UIDを取得できたら監視を停止
-  //     }
-  //   }, 5);
-  //
-  //   if (localStorage.getItem('terrainLevel')) {
-  //     this.s_terrainLevel = Number(localStorage.getItem('terrainLevel'))
-  //   } else {
-  //     this.s_terrainLevel = 1
-  //   }
-  //   this.s_isPitch = JSON.parse(localStorage.getItem('isPitch'))
-  //   if (localStorage.getItem('resolution')) {
-  //     this.s_resolution = localStorage.getItem('resolution')
-  //   }
-  //   if (localStorage.getItem('window')) {
-  //     this.s_isWindow = JSON.parse(localStorage.getItem('window'))
-  //   }
-  //   if (localStorage.getItem('mapillary')) {
-  //     this.s_mapillary = JSON.parse(localStorage.getItem('mapillary'))
-  //   }
-  // }
 }
 </script>
 <style scoped>
