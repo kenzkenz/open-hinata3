@@ -61,7 +61,7 @@
                   <!-- トリミング後の画像 -->
                   <img
                       id="trimmedImage"
-                      style="width: 100%; max-height: 250px; object-fit: cover;"
+                      style="width: 100%; height: 206px; object-fit: cover;"
                       class="mt-2"
                       @load="isImageLoaded = true"
                       @error="onImageError"
