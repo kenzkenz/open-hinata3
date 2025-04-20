@@ -1,3 +1,4 @@
+
 <template>
   <v-navigation-drawer
       :style="drawerStyle"
@@ -341,7 +342,8 @@ export default {
     // 画像エラーハンドラ
     onImageError() {
       this.isImageLoaded = false;
-      this.$store.commit('showSnackbarForGroup', '画像の読み込みに失敗しました');
+      console.log('画像の読み込みに失敗しました')
+      // this.$store.commit('showSnackbarForGroup', '画像の読み込みに失敗しました');
     },
     async handlePhotoFromCamera(event) {
       const file = event.target.files[0];
@@ -970,7 +972,7 @@ export default {
 <!--      class="point-info-drawer"-->
 <!--  >-->
 <!--    <v-card flat class="bg-white drawer" style="border-radius: 0;">-->
-<!--      <v-card-title class="text-h6 text-white" style="background-color: var(&#45;&#45;main-color); height: 40px; display: flex; align-items: center;">-->
+<!--      <v-card-title class="text-h6 text-white" style="background-color: var(--main-color); height: 40px; display: flex; align-items: center;">-->
 <!--        ポイント情報-->
 <!--        <div class="close-btn-div" style="margin-right:4px;margin-top: 0px; color:white!important; ;font-size: 30px!important;" @click="close"><i class="fa-solid fa-xmark hover"></i></div>-->
 <!--      </v-card-title>-->
@@ -1134,11 +1136,11 @@ export default {
 <!--      </v-card-text>-->
 
 <!--      <v-card-actions style="margin-top: 0px">-->
-<!--        <v-btn disabled=true style="background-color: var(&#45;&#45;main-color); color: white!important;" @click="removeAllFeatures">全削除</v-btn>-->
+<!--        <v-btn disabled=true style="background-color: var(--main-color); color: white!important;" @click="removeAllFeatures">全削除</v-btn>-->
 <!--        <v-spacer />-->
-<!--        <v-btn style="background-color: var(&#45;&#45;main-color); color: white!important;" @click="remove">削除</v-btn>-->
-<!--        <v-btn style="background-color: var(&#45;&#45;main-color); color: white!important;" @click="save">保存</v-btn>-->
-<!--        <v-btn style="background-color: var(&#45;&#45;main-color); color: white!important;" @click="close">閉じる</v-btn>-->
+<!--        <v-btn style="background-color: var(--main-color); color: white!important;" @click="remove">削除</v-btn>-->
+<!--        <v-btn style="background-color: var(--main-color); color: white!important;" @click="save">保存</v-btn>-->
+<!--        <v-btn style="background-color: var(--main-color); color: white!important;" @click="close">閉じる</v-btn>-->
 <!--      </v-card-actions>-->
 
 <!--      <v-card-text style="margin-top: -20px; height: 300px;">-->
