@@ -342,6 +342,7 @@ function createMapClickHandler(map01) {
         };
 
         const currentLayer = store.state.currentGroupLayers.find(l => l.id === layerId);
+        // alert(JSON.stringify(store.state.currentGroupLayers + '/' + layerId))
         if (!currentLayer) {
             store.dispatch('triggerSnackbarForGroup', { message: '選択中のレイヤーが見つかりません。' });
             return;
@@ -492,6 +493,11 @@ export default function useGloupLayer() {
                     map01.on('click', mapClickHandler);
                     map01.on('click', 'oh-point-layer', createPointClickHandler(map01));
                     map01.on('click', 'oh-point-label-layer', createPointClickHandler(map01));
+
+
+
+
+
                 //
                 //     let draggedFeatureId = null;
                 //     let isDragging = false;
@@ -587,6 +593,7 @@ export default function useGloupLayer() {
 
             localStorage.setItem('lastGroupId', groupId);
             localStorage.setItem('lastLayerId', layerId);
+
         },
         { immediate: true }
     );

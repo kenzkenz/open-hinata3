@@ -18,18 +18,20 @@
           :class="{ 'selected': selectedLayerId === item.id }"
           @click="selectLayer(item.name, item.id)"
       >
-        <v-chip
-            v-if="item.features?.length ?? 0"
-            class="file-count-badge"
-            size="small"
-            color="navy"
-            text-color="white"
-        >
-          {{ item.features?.length ?? 0 }}
-        </v-chip>
-        <span v-else style="color: red;">new </span>
-        <button class="close-btn" @click.stop="deleteLayer(item.id)">×</button>
-        <span v-html="'<strong>' + item.name + '</strong>_' + item.nickName + 'が作成_' + readableTime(item.createdAt)"></span>
+        <div v-if="item.name">
+          <v-chip
+              v-if="item.features?.length ?? 0"
+              class="file-count-badge"
+              size="small"
+              color="navy"
+              text-color="white"
+          >
+            {{ item.features?.length ?? 0 }}
+          </v-chip>
+          <span v-else style="color: red;">new </span>
+          <button class="close-btn" @click.stop="deleteLayer(item.id)">×</button>
+          <span v-html="'<strong>' + item.name + '</strong>_' + item.nickName + 'が作成_' + readableTime(item.createdAt)"></span>
+        </div>
       </div>
     </div>
   </v-card>
