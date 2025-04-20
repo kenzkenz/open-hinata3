@@ -404,7 +404,7 @@ export default function useGloupLayer() {
             } catch (e) {
                 console.error('復帰エラー:', e);
             }
-        }, 3000);
+        }, 4000);
     };
 
     initializeGroupAndLayer();
@@ -493,10 +493,6 @@ export default function useGloupLayer() {
                     map01.on('click', mapClickHandler);
                     map01.on('click', 'oh-point-layer', createPointClickHandler(map01));
                     map01.on('click', 'oh-point-label-layer', createPointClickHandler(map01));
-
-
-
-
 
                 //
                 //     let draggedFeatureId = null;
