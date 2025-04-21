@@ -636,7 +636,7 @@ export default function useGloupLayer() {
                     }
                 });
                 map.triggerRepaint(); // 再描画を確実にする
-                console.log('oh-point-label-layer を追加しました。');
+                console.log('oh-point-label-layer を追加しました');
             }
         },
         { deep: true }

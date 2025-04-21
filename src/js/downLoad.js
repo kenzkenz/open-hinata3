@@ -77,6 +77,23 @@ function getKeiByCode(code) {
     const result = zahyokei.find(item => item.code === code);
     return result ? result.kei : null;
 }
+// 現在表示されているレイヤーを取得する関数
+function getVisibleRenderedLayers(map) {
+    const visibleLayerIds = [];
+    const allLayers = map.getStyle().layers;
+    allLayers.forEach(layer => {
+        const visibility = map.getLayoutProperty(layer.id, 'visibility');
+        if (visibility === 'none') return;
+
+        const features = map.queryRenderedFeatures({ layers: [layer.id] });
+        if (features.length > 0) {
+            visibleLayerIds.push(layer.id);
+        }
+    });
+    return visibleLayerIds;
+}
+
+
 function dissolveGeoJSONByFields(geojson, fields) {
     if (!geojson || !fields || !Array.isArray(fields)) {
         throw new Error("GeoJSONデータとフィールド名（配列）は必須です。");
@@ -359,11 +376,23 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
     const code = zahyokei.find(item => item.kei === zahyo).code
     const kei = zahyokei.find(item => item.kei === zahyo).kei
     console.log(code,kei)
+
+    const visibleLayers = getVisibleRenderedLayers(map)
+    const osakashi = visibleLayers.find(l => l.includes('大阪市'))
+    // alert(JSON.stringify(visibleLayers))
+    // alert(osakashi)
+
     if (kukaku) {
         alert(kei + 'で区画ファイルを作ります。作図範囲は1区画です。ドーナツ形状には対応していません。')
     } else {
         if (kaniFlg) {
-            alert('注!簡易の場合、座標値は元データとほんの少し異なります。座標の利用は自己責任でお願いします。' + kei + 'でsimファイルを作ります。')
+            if (osakashi) {
+                alert('（１）公開用地籍図データを利用する際は、出典を記載してください。\n' +
+                    '（２）公開用地籍図データを編集・加工等して利用する場合は、上記出典とは別に、編集・加工等を行ったことを記載してください。\n' +
+                    'なお、編集・加工した情報を、あたかも大阪市が作成したかのような態様で公表・利用しないでください。')
+            } else {
+                alert('注!簡易の場合、座標値は元データとほんの少し異なります。座標の利用は自己責任でお願いします。' + kei + 'でsimファイルを作ります。')
+            }
         } else {
             // alert(kei + 'でsimファイルを作ります。')
         }
