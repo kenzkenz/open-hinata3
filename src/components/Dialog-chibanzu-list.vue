@@ -25,7 +25,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                   <v-btn style="margin-top: -10px;margin-bottom: 10px;margin-left: 0px;" @click="greenSearch">検索</v-btn>
                   <span style="margin-left: 8px;font-size: 16px">{{ jsonDataGreen ? jsonDataGreen.length : 0 }}件</span>
                   <div v-for="item in jsonDataGreen" :key="item.id" class="data-container" @click="greenClick(item.position)">
-                    <strong>{{ item.prefname + '-' + item.name }}</strong><br>
+                    <strong>{{ item.prefname + '-' + item.cityname }}</strong><br>
                   </div>
 
                 </v-card>
@@ -325,6 +325,7 @@ export default {
             console.error('エラー:', response.data.error);
             alert(`エラー: ${response.data.error}`);
           } else {
+            console.error(response.data.result)
             vm.jsonDataGreen = response.data.result
           }
         } catch (error) {

@@ -147,6 +147,7 @@
       開示請求により入手できたが公開の可否不明は「灰色」
       </div>
       <v-btn style="margin-top: 10px" class="tiny-btn" @click="list">リスト表示</v-btn>
+      <v-btn color="red" style="margin-top: 10px;margin-left: 10px;" class="tiny-btn" @click="openTerms">地番参考図利用規約</v-btn>
     </div>
 
     <v-text-field label="表示地番検索（例）5-7" v-model="s_chibanText" @input="change" style="margin-top: 0px"></v-text-field>
@@ -356,6 +357,9 @@ export default {
     },
   },
   methods: {
+    openTerms() {
+      window.open('./pdf/chibanzukiyaku.pdf', '_blank');
+    },
     startIncrement() {
       this.increment()
       this.adjustTimer = setInterval(this.increment, 100)
