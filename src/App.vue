@@ -2437,7 +2437,7 @@ export default {
           pitch: pitch[mapName],
           bearing:bearing,
           maxPitch: 85, // 最大の傾き85、デフォルトは60
-          attributionControl: true,
+          attributionControl: false,
           // style: 'https://raw.githubusercontent.com/gsi-cyberjapan/optimal_bvmap/52ba56f645334c979998b730477b2072c7418b94/style/std.json',
           // style:require('@/assets/json/std.json')
           // style:"https://kenzkenz.xsrv.jp/open-hinata3/json/std.json",

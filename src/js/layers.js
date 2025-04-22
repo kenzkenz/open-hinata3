@@ -272,13 +272,13 @@ const cityGeojsonLabelLayer = {
     source: 'city-geojson-source',
     layout: {
         'text-field': ['get', 'N03_004'],
-        'text-font': ['NotoSansJP-Regular'],
+        // 'text-font': ['NotoSansJP-Regular'],
         'text-offset': [0, 1],
     },
     paint: {
-        'text-color': 'rgba(255, 255, 255, 1)',
-        'text-halo-color': 'rgba(0,0,0,1)',
-        'text-halo-width': 1.0,
+        'text-color': '#000',
+        'text-halo-color': '#fff',
+        'text-halo-width': 1
     },
     minzoom: 7
 }
@@ -1908,7 +1908,7 @@ export const sicyosonChibanzuUrls = [
     {prefname:'兵庫県', prefcode:'28', code:'28204', name:'西宮市', chiban: ['get', 'TXTCD'], position:[135.34190737301537,34.73766946698089], url:'nishinomiyashi', page:'https://opendata.nishi.or.jp/opendata/ResultDetail.php?id=69'},
     {prefname:'兵庫県', prefcode:'28', code:'28207', name:'伊丹市', chiban: ['get', '所在地番'], position:[135.40037589806093,34.784457867420755], url:'itamishi', page:'https://www.geospatial.jp/ckan/dataset/202401/resource/ec8eb484-66e4-40a7-bf05-248476b0d61d'},
     {prefname:'兵庫県', prefcode:'28', code:'28210', name:'加古川市', chiban: ['get', 'TXTCODE1'], position:[134.84064926983825,34.75678296665963], url:'kakogawashi', page:'https://opendata-api-kakogawa.jp/ckan/dataset/landhouse/resource/c37f9b63-54c8-4094-9e48-8d3817918476'},
-    {prefname:'兵庫県', prefcode:'28', code:'28217', name:'川西市', chiban: ['get', 'TXTCODE1'], position:[135.4173282883612,34.82989631871767], url:'kawanishishi', page:'https://www.city.kawanishi.hyogo.jp/opendata/1017548/1009883/1016648.html'},
+    {prefname:'兵庫県', prefcode:'28', code:'28217', name:'川西市', chiban: ['get', '地番'], position:[135.4173282883612,34.82989631871767], url:'kawanishishi', page:'https://www.city.kawanishi.hyogo.jp/opendata/1017548/1009883/1016648.html'},
     {prefname:'兵庫県', prefcode:'28', code:'28501', name:'佐用町', chiban: ['get', 'CHIBAN'], position:[134.35598183068578,35.004205695261106], url:'sayochyo', page:'https://www.town.sayo.lg.jp/cms-sypher/www/service/detail.jsp?id=9343'},
     // 奈良県
     {prefname:'奈良県', prefcode:'29', code:'29201', name:'奈良市', chiban: ['concat', ['get', '地番本番'], '-', ['get', '地番枝番'], '-', ['get', '地番小枝']], position:[135.80463216931253,34.684824554866864], url:'narashi2', page:'https://www.city.nara.lg.jp/soshiki/14/104605.html'},

@@ -61,7 +61,7 @@ $isPoint = isFirstFeaturePoint($data["geojson"]);
 
 if (!$isPoint) {
     $tippecanoeCmd = sprintf(
-        "tippecanoe -o %s --generate-ids --no-feature-limit --no-tile-size-limit --force --drop-densest-as-needed --coalesce-densest-as-needed --simplification=2 --simplify-only-low-zooms --maximum-zoom=14 --minimum-zoom=0 --layer=oh3 %s 2>&1",
+        "tippecanoe -o %s --generate-ids --no-feature-limit --no-tile-size-limit --force --drop-densest-as-needed --coalesce-densest-as-needed --simplification=2 --simplify-only-low-zooms --maximum-zoom=16 --minimum-zoom=0 --layer=oh3 %s 2>&1",
         escapeshellarg($pmtilesPath),
         escapeshellarg($tempFilePath)
     );

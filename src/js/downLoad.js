@@ -422,6 +422,7 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
     geojson.features.forEach((feature) => {
         let chiban = feature.properties.地番;
         switch (layerId) {
+            case 'oh-chibanzu-川西市':
             case 'oh-chibanzu-長与町':
             case 'oh-chibanzu-福山市':
             case 'oh-chibanzu-甲府市':
@@ -469,7 +470,6 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
             case 'oh-chibanzu-半田市':
                 chiban = feature.properties.番地 + '-' + feature.properties.枝番 + '-' + feature.properties.小枝
                 break
-            case 'oh-chibanzu-川西市':
             case 'oh-chibanzu-加古川市':
                 chiban = feature.properties.TXTCODE1
                 break
