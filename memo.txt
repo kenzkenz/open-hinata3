@@ -1299,3 +1299,16 @@ tippecanoe -f -l fude -Z14 -z16 -o 22.pmtiles --no-tile-compression --drop-dense
 ogr2ogr -f GeoJSON -overwrite output_point.geojson output.geojson -dialect sqlite -sql "SELECT ST_PointOnSurface(geometry) AS geometry, * FROM output"
 
 tippecanoe -l daihyo  -Z0 -z14 -rg -pk -f -o 22point.pmtiles output_point.geojson
+
+tippecanoe -f -l fude -Z14 -z16 -o 40.pmtiles --no-tile-compression --drop-densest-as-needed --no-tile-size-limit --no-line-simplification 40.fgb
+
+ogr2ogr -f GeoJSON -overwrite 40point.geojson 40.geojson -dialect sqlite -sql "SELECT ST_PointOnSurface(geometry) AS geometry, * FROM 40"
+
+tippecanoe -f -l fude -Z14 -z16 -o 22or40.pmtiles --no-tile-compression --drop-densest-as-needed --no-tile-size-limit --no-line-simplification 22or40.geojson
+
+ogr2ogr -f GeoJSON -overwrite 22or40point.geojson 22or40.geojson \
+  -dialect sqlite \
+  -sql 'SELECT ST_PointOnSurface(geometry) AS geometry, * FROM "22or40"' \
+  --debug on
+
+tippecanoe -l daihyo  -Z0 -z14 -rg -pk -f -o 22or40point.pmtiles 22or40point.geojson

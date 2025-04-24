@@ -3274,6 +3274,114 @@ const ryuikiLayer = {
     'source': 'ryuiki-source',
 }
 // 登記所備付地図データ ----------------------------------------------------------------------------------------------------
+const homusyo2025Source = {
+    id: "homusyo-2025-source", obj: {
+        type: "vector",
+        url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/22or40.pmtiles'
+    },
+}
+const homusyo2025DaihyoSource = {
+    id: "homusyo-2025-diahyo-source", obj: {
+        type: "vector",
+        url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/22or40point.pmtiles'
+    },
+}
+// 登記所備付地図データ 間引きなし
+const homusyo2025Layer = {
+    id: "oh-homusyo-2025-polygon",
+    type: "fill",
+    source: "homusyo-2025-source",
+    "source-layer": "fude",
+    paint: {
+        "fill-color": "rgba(0, 0, 0, 0)"
+    },
+};
+const homusyo2025LayerLine = {
+    id: "oh-homusyo-2025-line",
+    type: "line",
+    source: "homusyo-2025-source",
+    "source-layer": "fude",
+    paint: {
+        "line-color": "green",
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            14, 0.5,
+            20, 6
+        ]
+    },
+}
+const homusyo2025LayerLabel = {
+    id: "oh-homusyo-2025-label",
+    type: "symbol",
+    source: "homusyo-2025-source",
+    "source-layer": "fude",
+    'layout': {
+        'text-field': ['get', '地番'],
+        'text-font': ['NotoSansJP-Regular'],
+    },
+    'paint': {
+        'text-color': 'green',
+        'text-halo-color': 'rgba(255,255,255,1)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 15
+}
+const homusyo2025LayerVertex = {
+    id: 'oh-homusyo-2025-vertex',
+    type: 'circle',
+    source: 'homusyo-2025-source',
+    "source-layer": "fude",
+    paint: {
+        'circle-radius': [
+            'interpolate', ['linear'], ['zoom'],
+            15, 0,
+            18,4
+        ],
+        'circle-color': 'green',
+    }
+}
+const colors = ["rgba(0, 255, 0, 0)","rgba(0, 255, 0, 0.5)","rgba(0, 128, 0, 1)"]
+const homusyo2025LayerDaihyou = {
+    id: "oh-homusyo-2025-daihyo",
+    // ヒートマップ
+    type: "heatmap",
+    source: "homusyo-2025-diahyo-source",
+    // ベクトルタイルソースから使用するレイヤ
+    "source-layer": "daihyo",
+    paint: {
+        // ヒートマップの密度に基づいて各ピクセルの色を定義
+        "heatmap-color": [
+            // 入力値と出力値のペア（"stop"）の間を補間することにより、連続的で滑らかな結果を生成する
+            "interpolate",
+            // 入力より小さいストップと大きいストップのペアを直線的に補間
+            ["linear"],
+            // ヒートマップレイヤーの密度推定値を取得
+            ["heatmap-density"],
+            0, colors[0],
+            0.5, colors[1],
+            // 1に近づくほど密度が高い
+            1, colors[2],
+        ],
+        // ヒートマップ1点の半径（ピクセル単位）
+        "heatmap-radius": [
+            // 入力値と出力値のペア（"stop"）の間を補間することにより、連続的で滑らかな結果を生成する
+            "interpolate",
+            // 出力が増加する割合を制御する、1に近づくほど出力が増加する
+            ["exponential", 10],
+            // ズームレベルに応じて半径を調整する
+            ["zoom"],
+            2,
+            5,
+            14,
+            50,
+        ],
+    },
+    'maxzoom': 15,
+}
+// ---------------------------------------------------------------------------------------------------------------------
 const amx2024Source = {
     id: "amx-a-2024-pmtiles", obj: {
         type: "vector",
@@ -3289,14 +3397,6 @@ const amx2024Layer = {
     source: "amx-a-2024-pmtiles",
     "source-layer": "fude",
     paint: {
-        // "fill-color": [
-        //     "case",
-        //     ["in", "道", ["get", "地番"]],
-        //     "rgba(192, 192, 192, 0.7)", // 道っぽい灰色
-        //     ["in", "水", ["get", "地番"]],
-        //     "rgba(135, 206, 250, 0.7)", // 水っぽい青色
-        //     "rgba(254, 217, 192, 1)" // それ以外は透明
-        // ],
         "fill-color": "rgba(0, 0, 0, 0)",
         "fill-outline-color": "rgba(255, 0, 0, 1)",
     },
@@ -8840,6 +8940,14 @@ let layers01 = [
         layers: [amxLayerDaihyou,amx2024Layer,amx2024LayerLine,amx2024LayerVertex,amx2024LayerLabel],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
         ext: {name:'extTokijyo'}
+    },
+    {
+        id: 'oh-homusyo-2025-layer',
+        label: "2025登記所備付地図データtest",
+        sources: [homusyo2025Source,homusyo2025DaihyoSource],
+        layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025LayerDaihyou],
+        attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
+        // ext: {name:'extTokijyo'}
     },
     {
         id: 'oh-chibanzu-all2',
