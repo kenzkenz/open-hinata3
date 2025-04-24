@@ -1293,3 +1293,9 @@ tippecanoe -o yokohamashi.pmtiles \
     --minimum-zoom=0 \
     --layer=oh3 \
     yokohamashi.geojson
+
+tippecanoe -f -l fude -Z14 -z16 -o 22.pmtiles --no-tile-compression --drop-densest-as-needed --no-tile-size-limit --no-line-simplification output.geojson
+
+ogr2ogr -f GeoJSON -overwrite output_point.geojson output.geojson -dialect sqlite -sql "SELECT ST_PointOnSurface(geometry) AS geometry, * FROM output"
+
+tippecanoe -l daihyo  -Z0 -z14 -rg -pk -f -o 22point.pmtiles output_point.geojson
