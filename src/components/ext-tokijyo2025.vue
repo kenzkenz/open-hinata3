@@ -230,7 +230,7 @@ import {
 import {history} from "@/App";
 
 export default {
-  name: 'ext-tokijyo',
+  name: 'ext-tokijyo2025',
   props: ['mapName','item'],
   data: () => ({
     adjustTimer: null,
@@ -403,7 +403,7 @@ export default {
     changeColor (color,isUpdate) {
       const map = this.$store.state[this.mapName]
       map.setPaintProperty('oh-homusyo-2025-line', 'line-color', color)
-      this.s_tokijyoColo2025 = color
+      this.s_tokijyoColor2025 = color
 
       // 既存のレイヤーを削除
       if (map.getLayer('oh-homusyo-2025-daihyo')) {

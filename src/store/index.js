@@ -625,7 +625,7 @@ export default createStore({
               variable = 'tokijyoLineWidth'
             }
             break
-          case 'extTokijyo2':
+          case 'extTokijyo2025':
             if (payload.order === 0) {
               variable = 'tokijyoText2025'
             }
