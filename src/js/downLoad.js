@@ -2143,7 +2143,7 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
         const specialIds = ['07', '15', '22', '26', '28', '29', '30', '40', '43', '44','45','47'];
         switch (layerId) {
             case 'oh-homusyo-2025-polygon':
-                return 'https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/22.fgb'
+                return 'https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025.fgb'
             case 'oh-chibanzu2024':
                 return 'https://kenzkenz3.xsrv.jp/fgb/Chibanzu_2024_with_id.fgb'
             case 'oh-amx-a-fude':
@@ -2185,6 +2185,7 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
         let geojson = { type: 'FeatureCollection', features: [] };
         console.log('データをデシリアライズ中...');
         // alert(fgb_URL)
+        console.error('bbox',bbox)
         const iter = window.flatgeobuf.deserialize(fgb_URL, bbox);
         console.log(iter)
         for await (const feature of iter) {

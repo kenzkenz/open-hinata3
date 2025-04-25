@@ -3277,13 +3277,13 @@ const ryuikiLayer = {
 const homusyo2025Source = {
     id: "homusyo-2025-source", obj: {
         type: "vector",
-        url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/22or40.pmtiles'
+        url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025.pmtiles'
     },
 }
 const homusyo2025DaihyoSource = {
     id: "homusyo-2025-diahyo-source", obj: {
         type: "vector",
-        url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/22or40point.pmtiles'
+        url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025point.pmtiles'
     },
 }
 // 登記所備付地図データ 間引きなし

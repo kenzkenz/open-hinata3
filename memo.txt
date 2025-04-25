@@ -1314,3 +1314,12 @@ ogr2ogr -f GeoJSON -overwrite 22or40point.geojson 22or40.geojson \
 tippecanoe -l daihyo  -Z0 -z14 -rg -pk -f -o 22or40point.pmtiles 22or40point.geojson
 
 ogrmerge.py -single -o 2025.fgb fgb_by_pref/*.fgb
+
+tippecanoe -f -l fude -Z14 -z16 -o 2025.pmtiles --no-tile-compression --drop-densest-as-needed --no-tile-size-limit --no-line-simplification 2025.fgb
+
+ogr2ogr -f FlatGeobuf -overwrite 2025point.fgb 2025.fgb \
+  -dialect sqlite \
+  -sql 'SELECT ST_PointOnSurface(geometry) AS geometry, * FROM "2025"' \
+  --debug on
+
+tippecanoe -l daihyo  -Z0 -z14 -rg -pk -f -o 2025point.pmtiles 2025point.fgb
