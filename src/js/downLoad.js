@@ -422,6 +422,9 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
     geojson.features.forEach((feature) => {
         let chiban = feature.properties.地番;
         switch (layerId) {
+            case 'oh-homusyo-2025-polygon':
+                chiban = feature.properties.筆ID
+                break
             case 'oh-chibanzu-川西市':
             case 'oh-chibanzu-長与町':
             case 'oh-chibanzu-福山市':
@@ -2281,6 +2284,36 @@ export async function saveCima3(map,kei,jww) {
 
 // クリックされた地番を強調表示する関数
 let isFirstRun = true;
+export function highlightSpecificFeatures2025(map,layerId) {
+    console.log(store.state.highlightedChibans);
+    let sec = 0
+    if (isFirstRun) {
+        sec = 1000
+    } else {
+        sec = 0
+    }
+    map.setPaintProperty(
+        layerId,
+        "fill-color", "rgba(0, 0, 0, 0)",
+    );
+    setTimeout(() => {
+        map.setPaintProperty(
+            layerId,
+            'fill-color',
+            [
+                'case',
+                [
+                    'in',
+                    ['concat', ['get', '筆ID']],
+                    ['literal', Array.from(store.state.highlightedChibans)]
+                ],
+                'rgba(255, 0, 0, 0.5)', // クリックされた地番が選択された場合
+                'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
+            ]
+        );
+    }, sec)
+    isFirstRun = false
+}
 export function highlightSpecificFeatures(map,layerId) {
     // alert(999999)
     console.log(store.state.highlightedChibans);
@@ -2293,15 +2326,6 @@ export function highlightSpecificFeatures(map,layerId) {
 
     map.setPaintProperty(
         layerId,
-        // 'fill-color',
-        // [
-        //     "case",
-        //     ["in", "道", ["get", "地番"]],
-        //     "rgba(192, 192, 192, 0.7)", // 道っぽい灰色
-        //     ["in", "水", ["get", "地番"]],
-        //     "rgba(135, 206, 250, 0.7)", // 水っぽい青色
-        //     "rgba(254, 217, 192, 0)" // それ以外は透明
-        // ],
         "fill-color", "rgba(0, 0, 0, 0)",
     );
     setTimeout(() => {
@@ -2318,14 +2342,6 @@ export function highlightSpecificFeatures(map,layerId) {
                 ],
                 'rgba(255, 0, 0, 0.5)', // クリックされた地番が選択された場合
                 'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
-                // [
-                //     "case",
-                //     ["in", "道", ["get", "地番"]],
-                //     "rgba(192, 192, 192, 0.7)", // 道っぽい灰色
-                //     ["in", "水", ["get", "地番"]],
-                //     "rgba(135, 206, 250, 0.7)", // 水っぽい青色
-                //     "rgba(254, 217, 192, 0)" // それ以外は透明
-                // ],
             ]
         );
     }, sec)
@@ -2427,6 +2443,7 @@ export function highlightSpecificFeaturesCity(map,layerId) {
             fields = ['concat', ['get', 'oh3id']]
         }
 
+        alert(layerId)
         console.log(layerId)
         console.log(fields)
         console.log(Array.from(store.state.highlightedChibans))
@@ -2471,6 +2488,9 @@ function getBoundingBoxByLayer(map, layerId) {
     }).filter(feature => {
         let targetId;
         switch (layerId) {
+            case 'oh-homusyo-2025-polygon':
+                targetId = `${feature.properties['筆ID']}`;
+                break;
             case 'oh-chibanzu2024':
                 targetId = `${feature.properties['id']}`;
                 break;
@@ -2639,6 +2659,9 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
     const filteredFeatures = geojsonData.features.filter(feature => {
         let targetId;
         switch (layerId) {
+            case 'oh-homusyo-2025-polygon':
+                targetId = feature.properties['筆ID'];
+                break
             case 'oh-chibanzu2024':
                 console.log(feature.properties['id'])
                 targetId = `${feature.properties['id']}`;

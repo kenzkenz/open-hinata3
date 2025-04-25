@@ -8947,7 +8947,7 @@ let layers01 = [
         sources: [homusyo2025Source,homusyo2025DaihyoSource],
         layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025LayerDaihyou],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
-        // ext: {name:'extTokijyo'}
+        ext: {name:'extTokijyo2'}
     },
     {
         id: 'oh-chibanzu-all2',

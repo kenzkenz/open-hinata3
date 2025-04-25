@@ -570,7 +570,7 @@ import {
   geoTiffLoad2,
   getCRS,
   handleFileUpload,
-  highlightSpecificFeatures,
+  highlightSpecificFeatures, highlightSpecificFeatures2025,
   highlightSpecificFeaturesCity,
   jpgLoad,
   kmzLoadForUser, pmtilesGenerateForUser2,
@@ -3999,6 +3999,24 @@ export default {
           // -----------------------------------------------------------------------------------------------------------
           // マップ上でポリゴンをクリックしたときのイベントリスナー
           let highlightCounter = 0;
+          map.on('click', 'oh-homusyo-2025-polygon', (e) => {
+            if (!this.$store.state.isRenzoku) return
+            if (map.getLayer('oh-point-layer')) return
+            if (e.features && e.features.length > 0) {
+              const targetId = e.features[0].properties['筆ID']
+              console.log(targetId);
+              console.log(this.$store.state.highlightedChibans)
+              if (this.$store.state.highlightedChibans.has(targetId)) {
+                // すでに選択されている場合は解除
+                this.$store.state.highlightedChibans.delete(targetId);
+              } else {
+                // 新しいIDを追加
+                this.$store.state.highlightedChibans.add(targetId);
+                alert(targetId)
+              }
+              highlightSpecificFeatures2025(map,'oh-homusyo-2025-polygon');
+            }
+          });
           map.on('click', 'oh-amx-a-fude', (e) => {
             if (!this.$store.state.isRenzoku) return
             if (map.getLayer('oh-point-layer')) return

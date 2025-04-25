@@ -41,6 +41,7 @@
           ].includes(item.ext.name)"/>
     <extOSM :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extOSM'"/>
     <extTokijyo :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extTokijyo'"/>
+    <extTokijyo2 :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extTokijyo2'"/>
     <extZeni :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extZeni' || item.ext.name === 'extNtrip' || item.ext.name === 'extMinden'"/>
     <extIwata :item="item" :mapName="mapName" v-else-if="[
         'extIwata',
@@ -78,6 +79,7 @@ import extBunsuirei from "@/components/ext-bunsuirei"
 import extCity from "@/components/ext-city"
 import extOSM from "@/components/ext-osm"
 import extTokijyo from "@/components/ext-tokijyo"
+import extTokijyo2 from "@/components/ext-tokijyo2"
 import extZeni from "@/components/ext-zeni"
 import extIwata from "@/components/ext-chiban"
 import extGaiku from "@/components/ext-gaiku"
@@ -103,6 +105,7 @@ export default {
     extCity,
     extOSM,
     extTokijyo,
+    extTokijyo2,
     extZeni,
     extGaiku,
     extIwata,
