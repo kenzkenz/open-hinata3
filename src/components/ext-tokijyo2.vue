@@ -390,24 +390,24 @@ export default {
       const map = this.$store.state[this.mapName]
       // ⭐️ここを修正する必要あり。このままだと2は設定されない。
       if (isNaN(width)) width = this.lineWidth = 2
-      if(this.lineWidth !== 2) map.setPaintProperty('oh-homusyo-2025-polygon-line', 'line-width', width)
+      if(this.lineWidth !== 2) map.setPaintProperty('oh-homusyo-2025-line', 'line-width', width)
       this.s_tokijyoLineWidth = Number(width)
       if (isUpdate) this.update()
     },
     changeColorCircle (color,isUpdate) {
       const map = this.$store.state[this.mapName]
-      map.setPaintProperty('oh-amx-vertex', 'circle-color', color)
+      map.setPaintProperty('oh-homusyo-2025-vertex', 'circle-color', color)
       this.s_tokijyoCircleColor = color
       if (isUpdate) this.update()
     },
     changeColor (color,isUpdate) {
       const map = this.$store.state[this.mapName]
-      map.setPaintProperty('oh-homusyo-2025-polygon-line', 'line-color', color)
+      map.setPaintProperty('oh-homusyo-2025-line', 'line-color', color)
       this.s_tokijyoColor = color
 
       // 既存のレイヤーを削除
-      if (map.getLayer('oh-amx-a-daihyo')) {
-        map.removeLayer('oh-amx-a-daihyo');
+      if (map.getLayer('oh-homusyo-2025-daihyo')) {
+        map.removeLayer('oh-homusyo-2025-daihyo');
       }
 
       let colors
@@ -431,9 +431,9 @@ export default {
 
       // 新しい設定でレイヤーを追加
       map.addLayer({
-        id: 'oh-amx-a-daihyo',
+        id: 'oh-homusyo-2025-daihyo',
         type: 'heatmap',
-        source: "homusyo-2025-source",
+        source: "homusyo-2025-diahyo-source",
         "source-layer": "daihyo",
         paint: {
           'heatmap-color': [
