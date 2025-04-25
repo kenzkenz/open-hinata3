@@ -2922,74 +2922,6 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
-            //
-            // case 'oh-chibanzu-西粟倉村':
-            // case 'oh-chibanzu-高崎市':
-            // case 'oh-chibanzu-仙台市':
-            // case 'oh-chibanzu-姫路市':
-            // case 'oh-chibanzu-豊中市':
-            // case 'oh-chibanzu-伊丹市市':
-            // case 'oh-chibanzu-深谷市':
-            // case 'oh-chibanzu-舟形町':
-            // case 'oh-chibanzu-福山市':
-            // case 'oh-chibanzu-越谷市':
-            // case 'oh-chibanzu-福岡市':
-            // case 'oh-chibanzu-国立市':
-            // case 'oh-chibanzu-北広島市':
-            // case 'oh-chibanzu-福島市':
-            // case 'oh-chibanzu-長与町':
-            // case 'oh-chibanzu-善通寺市':
-            // case 'oh-chibanzu-坂出市':
-            // case 'oh-chibanzu-奈良市':
-            // case 'oh-chibanzu-佐用町':
-            // case 'oh-chibanzu-加古川市':
-            // case 'oh-chibanzu-西宮市':
-            // case 'oh-chibanzu-泉南市':
-            // case 'oh-chibanzu-岸和田市':
-            // case 'oh-chibanzu-長岡京市':
-            // case 'oh-chibanzu-京都市':
-            // case 'oh-chibanzu-半田市':
-            // case 'oh-chibanzu-磐田市':
-            // case 'oh-chibanzu-静岡市':
-            // case 'oh-chibanzu-町田市':
-            // case 'oh-chibanzu-小平市':
-            // case 'oh-chibanzu2024':
-            // case 'oh-chibanzu-利根町':
-            // case 'oh-chibanzu-鹿角市':
-            // case 'oh-chibanzu-音更町':
-            // case 'oh-chibanzu-ニセコ町':
-            // case 'oh-chibanzu-室蘭市':
-            // case 'oh-fukuokashichiban':
-            // case 'oh-kunitachishi':
-            // case 'oh-kitahiroshimachiban':
-            // case 'oh-fukushimachiban':
-            // case 'oh-narashichiban':
-            // case 'oh-iwatapolygon':
-            // {
-            //     if (store.state.isRenzoku) return
-            //     let features = map.queryRenderedFeatures(
-            //         map.project(coordinates), {layers: [layerId]}
-            //     )
-            //     if (features.length === 0) {
-            //         features = map.queryRenderedFeatures(
-            //             map.project(e.lngLat), {layers: [layerId]}
-            //         )
-            //     }
-            //     console.log(coordinates)
-            //     props = features[0].properties
-            //     let html0 = ''
-            //     if (html.indexOf('iwatapolygon') === -1) {
-            //         html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
-            //         html0 += '<div class="iwatapolygon" font-weight: normal; color: #333;line-height: 25px;">'
-            //         Object.keys(props).forEach(function (key) {
-            //             html0 += key + '=' + props[key] + '<br>'
-            //         })
-            //         html0 += '<div class="street-view" style="margin-top:0px;height: 200px;width: 300px"></div>'
-            //         html0 += '<div>'
-            //         html += html0
-            //     }
-            //     break
-            // }
             case 'oh-amx-vertex': {
                 if (store.state.isRenzoku) return
                 const features = map.queryRenderedFeatures(
@@ -3085,6 +3017,31 @@ export function popup(e,map,mapName,mapFlg) {
                     html0 += '<div class="amx-a-fude" font-weight: normal; color: #333;line-height: 25px;">'
                     Object.keys(props).forEach(function (key) {
                         html0 += key + '=' + props[key] + '<br>'
+                    })
+                    html0 += '<div style="font-size: 14px;margin-top: 5px;" class="feature-area"></div>'
+                    html0 += '<div class="street-view" style="margin-top:0px;height: 200px;width: 300px"></div>'
+                    html0 += '<div>'
+                    html += html0
+                }
+                break
+            }
+            case 'oh-homusyo-2025-polygon':
+            {
+                if (store.state.isRenzoku) return
+                const features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: ['oh-homusyo-2025-polygon']}
+                )
+                console.log(features)
+                if (features.length === 0) return
+                props = features[0].properties
+                let html0 = ''
+                if (html.indexOf('oh-homusyo-2025-polygon') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html0 += '<div class="oh-homusyo-2025-polygon" font-weight: normal; color: #333;line-height: 25px;">'
+                    Object.keys(props).forEach(function (key) {
+                        if (!key.includes('コード')) {
+                            html0 += key + '=' + props[key] + '<br>'
+                        }
                     })
                     html0 += '<div style="font-size: 14px;margin-top: 5px;" class="feature-area"></div>'
                     html0 += '<div class="street-view" style="margin-top:0px;height: 200px;width: 300px"></div>'

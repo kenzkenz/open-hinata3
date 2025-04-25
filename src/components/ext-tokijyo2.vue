@@ -291,36 +291,36 @@ export default {
         return this.$store.state.dialogForSima = value
       }
     },
-    s_tokijyoText: {
+    s_tokijyoText2025: {
       get() {
-        return this.$store.state.tokijyoText[this.mapName]
+        return this.$store.state.tokijyoText2025[this.mapName]
       },
       set(value) {
-        this.$store.state.tokijyoText[this.mapName] = value
+        this.$store.state.tokijyoText2025[this.mapName] = value
       }
     },
-    s_tokijyoLineWidth: {
+    s_tokijyoLineWidth2025: {
       get() {
-        return this.$store.state.tokijyoLineWidth[this.mapName]
+        return this.$store.state.tokijyoLineWidth2025[this.mapName]
       },
       set(value) {
-        this.$store.state.tokijyoLineWidth[this.mapName] = value
+        this.$store.state.tokijyoLineWidth2025[this.mapName] = value
       }
     },
-    s_tokijyoColor: {
+    s_tokijyoColor2025: {
       get() {
-        return this.$store.state.tokijyoColor[this.mapName]
+        return this.$store.state.tokijyoColor2025[this.mapName]
       },
       set(value) {
-        this.$store.state.tokijyoColor[this.mapName] = value
+        this.$store.state.tokijyoColor2025[this.mapName] = value
       }
     },
-    s_tokijyoCircleColor: {
+    s_tokijyoCircleColor2025: {
       get() {
-        return this.$store.state.tokijyoCircleColor[this.mapName]
+        return this.$store.state.tokijyoCircleColor2025[this.mapName]
       },
       set(value) {
-        this.$store.state.tokijyoCircleColor[this.mapName] = value
+        this.$store.state.tokijyoCircleColor2025[this.mapName] = value
       }
     },
     s_zahyokei: {
@@ -379,10 +379,10 @@ export default {
     update () {
       this.$store.commit('updateSelectedLayers', {
         mapName: this.mapName, id: this.item.id, values: [
-          this.s_tokijyoText,
-          this.s_tokijyoColor,
-          this.s_tokijyoCircleColor,
-          this.s_tokijyoLineWidth
+          this.s_tokijyoText2025,
+          this.s_tokijyoColor2025,
+          this.s_tokijyoCircleColor2025,
+          this.s_tokijyoLineWidth2025
         ]
       })
     },
@@ -391,19 +391,19 @@ export default {
       // ⭐️ここを修正する必要あり。このままだと2は設定されない。
       if (isNaN(width)) width = this.lineWidth = 2
       if(this.lineWidth !== 2) map.setPaintProperty('oh-homusyo-2025-line', 'line-width', width)
-      this.s_tokijyoLineWidth = Number(width)
+      this.s_tokijyoLineWidth2025 = Number(width)
       if (isUpdate) this.update()
     },
     changeColorCircle (color,isUpdate) {
       const map = this.$store.state[this.mapName]
       map.setPaintProperty('oh-homusyo-2025-vertex', 'circle-color', color)
-      this.s_tokijyoCircleColor = color
+      this.s_tokijyoCircleColor2025 = color
       if (isUpdate) this.update()
     },
     changeColor (color,isUpdate) {
       const map = this.$store.state[this.mapName]
       map.setPaintProperty('oh-homusyo-2025-line', 'line-color', color)
-      this.s_tokijyoColor = color
+      this.s_tokijyoColo2025 = color
 
       // 既存のレイヤーを削除
       if (map.getLayer('oh-homusyo-2025-daihyo')) {
@@ -456,7 +456,8 @@ export default {
             14,
             50,
           ],
-        }
+        },
+        'maxzoom': 14
       });
 
       if (isUpdate) this.update()
@@ -549,7 +550,7 @@ export default {
           map.setFilter('oh-homusyo-2025-vertex', null)
         }
       }
-      filterBy(this.s_tokijyoText)
+      filterBy(this.s_tokijyoText2025)
       this.update()
     },
   },
@@ -560,8 +561,8 @@ export default {
   },
   mounted() {
     document.querySelector('#handle-' + this.item.id).innerHTML = '<span style="font-size: large;">' + this.item.label + '</span>'
-    if (this.s_tokijyoLineWidth) {
-      this.lineWidth = this.s_tokijyoLineWidth
+    if (this.s_tokijyoLineWidth2025) {
+      this.lineWidth = this.s_tokijyoLineWidth2025
     } else {
       this.lineWidth = 2
     }
@@ -569,9 +570,9 @@ export default {
   watch: {
     s_extFire () {
       this.change()
-      this.changeColor(this.s_tokijyoColor)
-      this.changeColorCircle(this.s_tokijyoCircleColor)
-      this.changeLineWidth(this.s_tokijyoLineWidth)
+      this.changeColor(this.s_tokijyoColor2025)
+      this.changeColorCircle(this.s_tokijyoCircleColor2025)
+      this.changeLineWidth(this.s_tokijyoLineWidth2025)
     },
   }
 }

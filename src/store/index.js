@@ -314,6 +314,22 @@ export default createStore({
       map01: 'red',
       map02: 'red'
     },
+    tokijyoText2025:{
+      map01: '',
+      map02: ''
+    },
+    tokijyoLineWidth2025:{
+      map01: null,
+      map02: null
+    },
+    tokijyoColor2025:{
+      map01: 'green',
+      map02: 'green'
+    },
+    tokijyoCircleColor2025:{
+      map01: 'green',
+      map02: 'green'
+    },
     chibanText:{
       map01: '',
       map02: ''
@@ -607,6 +623,20 @@ export default createStore({
             }
             if (payload.order === 3) {
               variable = 'tokijyoLineWidth'
+            }
+            break
+          case 'extTokijyo2':
+            if (payload.order === 0) {
+              variable = 'tokijyoText2025'
+            }
+            if (payload.order === 1) {
+              variable = 'tokijyoColor2025'
+            }
+            if (payload.order === 2) {
+              variable = 'tokijyoCircleColor2025'
+            }
+            if (payload.order === 3) {
+              variable = 'tokijyoLineWidth2025'
             }
             break
           case 'ext-chibanzu':
