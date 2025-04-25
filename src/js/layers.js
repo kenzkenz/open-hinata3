@@ -8934,20 +8934,20 @@ let layers01 = [
     //     attribution: '',
     // },
     {
-        id: 'oh-amx-a-fude',
-        label: "登記所備付地図データ",
-        sources: [amxSource,amx2024Source],
-        layers: [amxLayerDaihyou,amx2024Layer,amx2024LayerLine,amx2024LayerVertex,amx2024LayerLabel],
-        attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
-        ext: {name:'extTokijyo'}
-    },
-    {
         id: 'oh-homusyo-2025-layer',
-        label: "2025登記所備付地図データtest",
+        label: "2025登記所備付地図データ",
         sources: [homusyo2025Source,homusyo2025DaihyoSource],
         layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025LayerDaihyou],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
         ext: {name:'extTokijyo2025'}
+    },
+    {
+        id: 'oh-amx-a-fude',
+        label: "2024登記所備付地図データ",
+        sources: [amxSource,amx2024Source],
+        layers: [amxLayerDaihyou,amx2024Layer,amx2024LayerLine,amx2024LayerVertex,amx2024LayerLabel],
+        attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
+        ext: {name:'extTokijyo'}
     },
     {
         id: 'oh-chibanzu-all2',
@@ -8968,15 +8968,6 @@ let layers01 = [
         id: 'hikkai',
         label: "筆界調査データベース",
         nodes: [
-            {
-                id: 'oh-amx-a-fude',
-                label: "登記所備付地図データ",
-                sources: [amxSource,amx2024Source],
-                layers: [amxLayerDaihyou,amx2024Layer,amx2024LayerLine,amx2024LayerVertex,amx2024LayerLabel],
-                // layers: [amxLayerDaihyou,amx2024LayerLabel,amx2024Layer,amx2024LayerLine,amx2024LayerVertex],
-                attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
-                ext: {name:'extTokijyo'}
-            },
             {
                 id: 'oh-syochiiki2',
                 label: "2020 町丁・字等別境界",
@@ -9131,15 +9122,6 @@ let layers01 = [
                     '</ul>' +
                     '</div>',
                 info: true
-            },
-            {
-                id: 'oh-amx-a-fude',
-                label: "登記所備付地図データ",
-                sources: [amxSource,amx2024Source],
-                layers: [amxLayerDaihyou,amx2024Layer,amx2024LayerLine,amx2024LayerVertex,amx2024LayerLabel],
-                // layers: [amxLayerDaihyou,amx2024LayerLabel,amx2024Layer,amx2024LayerLine,amx2024LayerVertex],
-                attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
-                ext: {name:'extTokijyo'}
             },
             {
                 id: 'citychibanzu',
