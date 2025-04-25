@@ -1312,3 +1312,5 @@ ogr2ogr -f GeoJSON -overwrite 22or40point.geojson 22or40.geojson \
   --debug on
 
 tippecanoe -l daihyo  -Z0 -z14 -rg -pk -f -o 22or40point.pmtiles 22or40point.geojson
+
+ogrmerge.py -single -o 2025.fgb fgb_by_pref/*.fgb
