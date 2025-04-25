@@ -390,7 +390,7 @@ export default {
       const map = this.$store.state[this.mapName]
       // ⭐️ここを修正する必要あり。このままだと2は設定されない。
       if (isNaN(width)) width = this.lineWidth = 2
-      if(this.lineWidth !== 2) map.setPaintProperty('oh-amx-a-fude-line', 'line-width', width)
+      if(this.lineWidth !== 2) map.setPaintProperty('oh-homusyo-2025-polygon-line', 'line-width', width)
       this.s_tokijyoLineWidth = Number(width)
       if (isUpdate) this.update()
     },
@@ -402,7 +402,7 @@ export default {
     },
     changeColor (color,isUpdate) {
       const map = this.$store.state[this.mapName]
-      map.setPaintProperty('oh-amx-a-fude-line', 'line-color', color)
+      map.setPaintProperty('oh-homusyo-2025-polygon-line', 'line-color', color)
       this.s_tokijyoColor = color
 
       // 既存のレイヤーを削除
@@ -433,7 +433,7 @@ export default {
       map.addLayer({
         id: 'oh-amx-a-daihyo',
         type: 'heatmap',
-        source: "amx-a-pmtiles",
+        source: "homusyo-2025-source",
         "source-layer": "daihyo",
         paint: {
           'heatmap-color': [
@@ -469,11 +469,11 @@ export default {
     },
     jww () {
       const map = this.$store.state[this.mapName]
-      saveSima2(map,'oh-amx-a-fude',true)
+      saveSima2(map,'oh-homusyo-2025-polygon',true)
     },
     resetFeatureColors () {
       const map = this.$store.state[this.mapName]
-      resetFeatureColors(map,'oh-amx-a-fude')
+      resetFeatureColors(map,'oh-homusyo-2025-polygon')
     },
     loadSima () {
       if (!this.s_zahyokei) {
@@ -485,42 +485,42 @@ export default {
     },
     saveKml () {
       const map = this.$store.state[this.mapName]
-      downloadKML(map, 'oh-amx-a-fude')
+      downloadKML(map, 'oh-homusyo-2025-polygon')
       history('KML保存',window.location.href)
     },
     saveCsv () {
       const map = this.$store.state[this.mapName]
-      saveCsv(map,'oh-amx-a-fude','amx-a-pmtiles',[])
+      saveCsv(map,'oh-homusyo-2025-polygon','homusyo-2025-source',[])
       history('CSV保存',window.location.href)
     },
     saveDxf () {
       const map = this.$store.state[this.mapName]
-      // saveDxf(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
-      saveSima2(map,'oh-amx-a-fude',null,true,'amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
+      // saveDxf(map,'oh-homusyo-2025-polygon','homusyo-2025-source',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
+      saveSima2(map,'oh-homusyo-2025-polygon',null,true,'homusyo-2025-source',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
       history('DXF保存',window.location.href)
     },
     saveShape () {
       const map = this.$store.state[this.mapName]
-      saveSima2(map, 'oh-amx-a-fude', null, false, null, null, null, true)
+      saveSima2(map, 'oh-homusyo-2025-polygon', null, false, null, null, null, true)
       this.dialogForShape = false
       history('SHAPE保存',window.location.href)
     },
     saveSima2 () {
       const map = this.$store.state[this.mapName]
-      saveSima2(map,'oh-amx-a-fude')
+      saveSima2(map,'oh-homusyo-2025-polygon')
       history('SIMA保存',window.location.href)
     },
     saveSima () {
       const map = this.$store.state[this.mapName]
-      saveCima(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'],true)
+      saveCima(map,'oh-homusyo-2025-polygon','homusyo-2025-source',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'],true)
     },
     saveGeojson () {
       const map = this.$store.state[this.mapName]
-      saveGeojson(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
+      saveGeojson(map,'oh-homusyo-2025-polygon','homusyo-2025-source',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
     },
     gistUpload () {
       const map = this.$store.state[this.mapName]
-      gistUpload(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
+      gistUpload(map,'oh-homusyo-2025-polygon','homusyo-2025-source',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
     },
     change () {
       console.log(this.item)
@@ -555,7 +555,7 @@ export default {
 
           // フィルターを更新する関数（featureKey なし）
           // function updateFilter() {
-          //   let features = map.queryRenderedFeatures({ layers: ["oh-amx-a-fude"] });
+          //   let features = map.queryRenderedFeatures({ layers: ["oh-homusyo-2025-polygon"] });
           //
           //   if (!features.length) return;
           //
@@ -579,7 +579,7 @@ export default {
           //   });
           //
           //   // if (filterConditions.length > 1) {
-          //   //   map.setFilter("oh-amx-a-fude", filterConditions);
+          //   //   map.setFilter("oh-homusyo-2025-polygon", filterConditions);
           //   // }
           //
           //   return filterConditions
@@ -589,7 +589,7 @@ export default {
           // function updateFilter() {
           //   let filterConditions = ["any"];
           //
-          //   let features = map.queryRenderedFeatures({ layers: ["oh-amx-a-fude"] });
+          //   let features = map.queryRenderedFeatures({ layers: ["oh-homusyo-2025-polygon"] });
           //
           //   features.forEach(feature => {
           //     if (feature.properties["地番区域"] && feature.properties["地番"]) {
@@ -606,7 +606,7 @@ export default {
           //   });
           //   return
           //   // if (filterConditions.length > 1) {
-          //   //   map.setFilter("oh-amx-a-fude", filterConditions);
+          //   //   map.setFilter("oh-homusyo-2025-polygon", filterConditions);
           //   // }
           // }
           // const combinedFields = updateFilter()
@@ -619,13 +619,13 @@ export default {
           const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);
           // いずれかの単語が含まれる場合の条件を作成 (OR条件)
           const matchCondition = ["any", ...filterConditions]
-          map.setFilter('oh-amx-a-fude', matchCondition)
-          map.setFilter('oh-amx-a-fude-line', matchCondition)
+          map.setFilter('oh-homusyo-2025-polygon', matchCondition)
+          map.setFilter('oh-homusyo-2025-polygon-line', matchCondition)
           map.setFilter('oh-amx-label', matchCondition)
           map.setFilter('oh-amx-vertex', matchCondition)
         } else {
-          map.setFilter('oh-amx-a-fude', null)
-          map.setFilter('oh-amx-a-fude-line', null)
+          map.setFilter('oh-homusyo-2025-polygon', null)
+          map.setFilter('oh-homusyo-2025-polygon-line', null)
           map.setFilter('oh-amx-label', null)
           map.setFilter('oh-amx-vertex', null)
         }

@@ -356,7 +356,7 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
     console.log(geojson)
     let zahyo
     console.log(layerId)
-    if (layerId ==='oh-amx-a-fude') {
+    if (layerId ==='oh-amx-a-fude' || layerId ==='oh-homusyo-2025-polygon') {
         for (const feature of geojson.features) {
             if (feature.properties && feature.properties.座標系) {
                 console.log("Found Coordinate Property:", feature.properties.座標系);
@@ -423,7 +423,7 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
         let chiban = feature.properties.地番;
         switch (layerId) {
             case 'oh-homusyo-2025-polygon':
-                chiban = feature.properties.筆ID
+                chiban = feature.properties.地番
                 break
             case 'oh-chibanzu-川西市':
             case 'oh-chibanzu-長与町':
@@ -2142,6 +2142,8 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
     function getFgbUrl(prefId) {
         const specialIds = ['07', '15', '22', '26', '28', '29', '30', '40', '43', '44','45','47'];
         switch (layerId) {
+            case 'oh-homusyo-2025-polygon':
+                return 'https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/22.fgb'
             case 'oh-chibanzu2024':
                 return 'https://kenzkenz3.xsrv.jp/fgb/Chibanzu_2024_with_id.fgb'
             case 'oh-amx-a-fude':
@@ -2203,16 +2205,18 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
             return;
         }
         if (isShape) {
-            console.log()
-            geojson = extractMatchingFeatures(map,geojson)
+            console.log(geojson)
+            geojson = extractMatchingFeatures(map,geojson,layerId)
+            console.log(geojson)
             geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
+            console.log(geojson)
             geojsonToShapefile(geojson)
             store.state.loading = false
         } else {
             if (!isDfx) {
                 console.log(geojson)
-                if (layerId === 'oh-amx-a-fude') {
-                    geojson = extractMatchingFeatures(map,geojson)
+                if (layerId === 'oh-amx-a-fude' || layerId === 'oh-homusyo-2025-polygon') {
+                    geojson = extractMatchingFeatures(map,geojson,layerId)
                 }
                 console.log(geojson)
                 convertAndDownloadGeoJSONToSIMA(map, layerId, geojson, '詳細_', false, '', kukaku);
@@ -2304,7 +2308,7 @@ export function highlightSpecificFeatures2025(map,layerId) {
                 'case',
                 [
                     'in',
-                    ['concat', ['get', '筆ID']],
+                    ['concat', ['get', '筆ID'], '_', ['get', '地番']],
                     ['literal', Array.from(store.state.highlightedChibans)]
                 ],
                 'rgba(255, 0, 0, 0.5)', // クリックされた地番が選択された場合
@@ -2660,7 +2664,7 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
         let targetId;
         switch (layerId) {
             case 'oh-homusyo-2025-polygon':
-                targetId = feature.properties['筆ID'];
+                targetId = `${feature.properties['筆ID']}_${feature.properties['地番']}`
                 break
             case 'oh-chibanzu2024':
                 console.log(feature.properties['id'])
@@ -2781,23 +2785,8 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
 // 全フィーチャの選択状態をリセットする関数
 export function resetFeatureColors(map,layerId) {
     store.state.highlightedChibans.clear();
-    // map.setPaintProperty(
-    //     layerId,
-    //     'fill-color',
-    //     'rgba(0, 0, 0, 0)' // 全ての地番+丁目コードを透明にリセット
-    // );
-
     map.setPaintProperty(
         layerId,
-        // 'fill-color',
-        // [
-        //     "case",
-        //     ["in", "道", ["get", "地番"]],
-        //     "rgba(192, 192, 192, 0.7)", // 道っぽい灰色
-        //     ["in", "水", ["get", "地番"]],
-        //     "rgba(135, 206, 250, 0.7)", // 水っぽい青色
-        //     "rgba(254, 217, 192, 0)" // それ以外は透明
-        // ],
         "fill-color", "rgba(0, 0, 0, 0)",
     );
 }
@@ -2834,8 +2823,8 @@ function convertSIMtoTXT(simText) {
     return formattedLines;
 }
 // oh-amx-a-fude専用ファンクション。
-function extractMatchingFeatures(map,geojson) {
-    const layerId = 'oh-amx-a-fude'
+function extractMatchingFeatures(map,geojson,layerId) {
+    // const layerId = 'oh-amx-a-fude'
     // 1. MapLibreから現在表示されている地物を取得
     const visibleFeatures = map.queryRenderedFeatures({ layers: [layerId] });
     // 2. 表示中地物のプロパティを収集
