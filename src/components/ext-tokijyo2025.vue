@@ -548,11 +548,14 @@ export default {
           map.setFilter('oh-homusyo-2025-line', matchCondition)
           map.setFilter('oh-homusyo-2025-label', matchCondition)
           map.setFilter('oh-homusyo-2025-vertex', matchCondition)
+          map.setFilter('oh-homusyo-2025-vertex', matchCondition)
+          map.setFilter('oh-homusyo-2025-daihyo', matchCondition)
         } else {
           map.setFilter('oh-homusyo-2025-polygon', null)
           map.setFilter('oh-homusyo-2025-line', null)
           map.setFilter('oh-homusyo-2025-label', null)
           map.setFilter('oh-homusyo-2025-vertex', null)
+          map.setFilter('oh-homusyo-2025-daihyo', null)
         }
       }
       filterBy(this.s_tokijyoText2025)
@@ -574,10 +577,10 @@ export default {
   },
   watch: {
     s_extFire () {
-      this.change()
       this.changeColor(this.s_tokijyoColor2025)
       this.changeColorCircle(this.s_tokijyoCircleColor2025)
-      this.changeLineWidth(this.s_tokijyoLineWidth2025)
+      this.changeLineWidth(Number(this.s_tokijyoLineWidth2025))
+      this.change()
     },
   }
 }

@@ -3372,12 +3372,12 @@ const homusyo2025LayerDaihyou = {
             // 入力値と出力値のペア（"stop"）の間を補間することにより、連続的で滑らかな結果を生成する
             "interpolate",
             // 出力が増加する割合を制御する、1に近づくほど出力が増加する
-            ["exponential", 10],
+            ["exponential", 5],
             // ズームレベルに応じて半径を調整する
             ["zoom"],
-            2,
-            5,
-            14,
+            4,
+            10,
+            28,
             50,
         ],
     },
@@ -3387,7 +3387,8 @@ const homusyo2025LayerDaihyou = {
 const amx2024Source = {
     id: "amx-a-2024-pmtiles", obj: {
         type: "vector",
-        url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/amx/MojMap_amx_2024.pmtiles'
+        url: 'pmtiles://https://kenzkenz4.xsrv.jp/pmtiles/homusyo/2024/MojMap_amx_2024.pmtiles'
+        // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/amx/MojMap_amx_2024.pmtiles'
         // url: 'pmtiles://https://data.source.coop/smartmaps/amx-2024-04/MojMap_amx_2024.pmtiles',
     },
 }
