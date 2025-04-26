@@ -396,8 +396,9 @@ export default {
     changeLineWidth (width,isUpdate) {
       const map = this.$store.state[this.mapName]
       // ⭐️ここを修正する必要あり。このままだと2は設定されない。
-      if (isNaN(width)) width = this.lineWidth = 2
-      if(this.lineWidth !== 2) map.setPaintProperty('oh-homusyo-2025-line', 'line-width', width)
+      // if (isNaN(width)) width = this.lineWidth = 2
+      // if(this.lineWidth !== 2) map.setPaintProperty('oh-homusyo-2025-line', 'line-width', width)
+      map.setPaintProperty('oh-homusyo-2025-line', 'line-width', width)
       this.s_tokijyoLineWidth2025 = Number(width)
       if (isUpdate) this.update()
     },
@@ -455,12 +456,12 @@ export default {
             // 入力値と出力値のペア（"stop"）の間を補間することにより、連続的で滑らかな結果を生成する
             "interpolate",
             // 出力が増加する割合を制御する、1に近づくほど出力が増加する
-            ["exponential", 10],
+            ["exponential", 5],
             // ズームレベルに応じて半径を調整する
             ["zoom"],
-            2,
-            5,
-            14,
+            4,
+            10,
+            28,
             50,
           ],
         },
