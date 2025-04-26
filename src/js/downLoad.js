@@ -2298,6 +2298,9 @@ export function highlightSpecificFeatures2025(map,layerId) {
     } else {
         sec = 0
     }
+
+    if (!map.getLayer(layerId)) return
+
     map.setPaintProperty(
         layerId,
         "fill-color", "rgba(0, 0, 0, 0)",
@@ -2448,8 +2451,6 @@ export function highlightSpecificFeaturesCity(map,layerId) {
         if(/^oh-chiban-/.test(layerId)) {
             fields = ['concat', ['get', 'oh3id']]
         }
-
-        alert(layerId)
         console.log(layerId)
         console.log(fields)
         console.log(Array.from(store.state.highlightedChibans))
@@ -2755,7 +2756,7 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
                 }
                 break;
         }
-        console.log(layerId)
+        // console.log(layerId)
         if(/^oh-chiban-/.test(layerId)) {
             targetId = `${feature.properties['oh3id']}`;
         }
@@ -2765,7 +2766,7 @@ function extractHighlightedGeoJSONFromSource(geojsonData,layerId) {
             return chiban.includes(feature.properties['地番'])
             // return chiban.includes(feature.properties['地番']) && chyome.includes(feature.properties['丁目名'])
         } else {
-            console.log(targetId)
+            // console.log(targetId)
             return store.state.highlightedChibans.has(targetId);
         }
     });
