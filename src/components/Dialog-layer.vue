@@ -70,7 +70,7 @@ import {
   addImageLayer,
   addImageLayerJpg, addImageLayerPng, addTileLayer,
   geojsonAddLayer,
-  highlightSpecificFeatures,
+  highlightSpecificFeatures, highlightSpecificFeatures2025,
   highlightSpecificFeaturesCity,
   simaToGeoJSON, updateMeasureUnit, userPmtileSet
 } from "@/js/downLoad";
@@ -1006,6 +1006,7 @@ export default {
         updateMeasureUnit('m')
 
       }
+      highlightSpecificFeatures2025(map,'oh-homusyo-2025-polygon');
     },
     mw5AddLayers(map,mapName) {
       if (!this.s_selectedLayers[mapName].find(v => v.id === 'oh-mw5')) {
