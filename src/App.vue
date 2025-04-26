@@ -4003,7 +4003,6 @@ export default {
             if (!this.$store.state.isRenzoku) return
             if (map.getLayer('oh-point-layer')) return
             if (e.features && e.features.length > 0) {
-              // const targetId = e.features[0].properties['筆ID']
               const targetId = `${e.features[0].properties['筆ID']}_${e.features[0].properties['地番']}`;
               console.log(targetId);
               console.log(this.$store.state.highlightedChibans)

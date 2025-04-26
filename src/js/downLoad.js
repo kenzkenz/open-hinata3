@@ -2294,7 +2294,7 @@ export function highlightSpecificFeatures2025(map,layerId) {
     console.log(store.state.highlightedChibans);
     let sec = 0
     if (isFirstRun) {
-        sec = 1000
+        sec = 0
     } else {
         sec = 0
     }
