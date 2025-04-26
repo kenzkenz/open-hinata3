@@ -380,7 +380,7 @@ export default {
             info: node.info,
             position: node.position,
           }
-          if (!this.s_selectedLayers[this.mapName]?.some(layer => layer.id === 'oh-amx-a-fude')) {
+          if (!this.s_selectedLayers[this.mapName]?.some(layer => layer.id === 'oh-amx-a-fude' || layer.id === 'oh-homusyo-2025-layer')) {
             this.s_selectedLayers[this.mapName].unshift(obj)
           } else {
             this.s_selectedLayers[this.mapName].splice(1, 0, obj)
