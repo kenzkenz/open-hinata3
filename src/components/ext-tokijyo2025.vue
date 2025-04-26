@@ -139,6 +139,9 @@
       <v-btn style="height: 40px; line-height: 40px; margin-left: 0px;margin-top: 10px;" class="tiny-btn" @click="resetFeatureColors">
         選択解除
       </v-btn>
+      <v-btn style="height: 40px; line-height: 40px; margin-left: 0px;margin-top: 10px;" class="tiny-btn" @click="selectAll">
+        全選択
+      </v-btn>
       <div class="swich">
         <v-switch
             v-model="s_isRenzoku"
@@ -225,7 +228,7 @@ import {
   initializePlaneRectangularCRS,
   saveCsv,
   simaToGeoJSON,
-  resetFeatureColors, downloadKML, getLayersById
+  resetFeatureColors, downloadKML, getLayersById, selectAll
 } from "@/js/downLoad";
 import {history} from "@/App";
 
@@ -350,6 +353,10 @@ export default {
     },
   },
   methods: {
+    selectAll() {
+      const map = this.$store.state[this.mapName]
+      selectAll(map)
+    },
     startIncrement() {
       this.increment()
       this.adjustTimer = setInterval(this.increment, 100)
@@ -524,8 +531,6 @@ export default {
       gistUpload(map,'oh-homusyo-2025-polygon','homusyo-2025-source',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
     },
     change () {
-      console.log(this.item)
-      // const vm = this
       const map = this.$store.state[this.mapName]
       //-------------------------------------------------------------------------
       function filterBy(text) {
@@ -534,7 +539,6 @@ export default {
           searchString = searchString.replace(/\u3000/g,' ').trim()
           const words = searchString.split(" ")
           // 複数フィールドを結合する
-          // const combinedFields = ["concat", ["get", "市区町村名"], " ", ["get", "丁目名"], " ", ["get", "大字名"], " ", ["get", "地番"]];
           const combinedFields = ["concat", ["get", "市区町村名"], ["get", "大字名"], ["get", "丁目名"], ["get", "地番"]];
           // 各単語に対して、結合したフィールドに対する index-of チェックを実行
           const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);

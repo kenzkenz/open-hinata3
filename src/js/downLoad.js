@@ -7072,3 +7072,16 @@ export async function convertGeoJSON(geojson,code) {
         console.log(`エラー: ${error.message}`)
     }
 }
+
+export function selectAll (map) {
+    const visibleFeatures = map.queryRenderedFeatures({
+        layers: ['oh-homusyo-2025-polygon']
+    });
+    const uniqueVisibleFeatures = Array.from(new Set(visibleFeatures.map(f => f.id)))
+        .map(id => visibleFeatures.find(f => f.id === id));
+    uniqueVisibleFeatures.forEach(f => {
+        const targetId = `${f.properties['筆ID']}_${f.properties['地番']}`;
+        store.state.highlightedChibans.add(targetId);
+    })
+    highlightSpecificFeatures2025(map,'oh-homusyo-2025-polygon');
+}
