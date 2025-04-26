@@ -196,6 +196,7 @@
           style="max-width: 150px;"
           hide-details
           :min=1
+          step="0.5"
           @input="changeLineWidth(lineWidth,true)"
       />
       <v-btn icon @click="increment" size="mini"
@@ -363,12 +364,12 @@ export default {
       this.adjustTimer = null
     },
     increment() {
-      this.lineWidth = Number(this.lineWidth) + 1
+      this.lineWidth = Number(this.lineWidth) + 0.5
       this.changeLineWidth(this.lineWidth,true)
     },
     decrement() {
-      if (this.lineWidth > 1) {
-        this.lineWidth -= 1
+      if (this.lineWidth > 0.5) {
+        this.lineWidth -= 0.5
         this.changeLineWidth(this.lineWidth,true)
       }
     },
@@ -650,10 +651,10 @@ export default {
   },
   watch: {
     s_extFire () {
-      this.change()
       this.changeColor(this.s_tokijyoColor)
       this.changeColorCircle(this.s_tokijyoCircleColor)
-      this.changeLineWidth(this.s_tokijyoLineWidth)
+      this.changeLineWidth(Number(this.s_tokijyoLineWidth))
+      this.change()
     },
   }
 }
