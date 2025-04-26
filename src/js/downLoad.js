@@ -2143,7 +2143,8 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
         const specialIds = ['07', '15', '22', '26', '28', '29', '30', '40', '43', '44','45','47'];
         switch (layerId) {
             case 'oh-homusyo-2025-polygon':
-                return 'https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025.fgb'
+                // return 'https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025.fgb'
+                return `https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/fgb/${prefId}.fgb`
             case 'oh-chibanzu2024':
                 return 'https://kenzkenz3.xsrv.jp/fgb/Chibanzu_2024_with_id.fgb'
             case 'oh-amx-a-fude':

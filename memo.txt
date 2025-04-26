@@ -1323,3 +1323,18 @@ ogr2ogr -f FlatGeobuf -overwrite 2025point.fgb 2025.fgb \
   --debug on
 
 tippecanoe -l daihyo  -Z0 -z14 -rg -pk -f -o 2025point.pmtiles 2025point.fgb
+
+tippecanoe -o 2025.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=14 \
+    --layer=fude \
+    2025.fgb
+
+tippecanoe -f -l daihyo -Z0 -z14 -rg -pk -y 市区町村名 -y 大字名 -y 地番 -o 2025point.pmtiles 2025point.fgb

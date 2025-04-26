@@ -3278,6 +3278,8 @@ const homusyo2025Source = {
     id: "homusyo-2025-source", obj: {
         type: "vector",
         url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025.pmtiles'
+        // url: 'pmtiles://https://data.source.coop/smartmaps/amx-2024-04/MojMap_amx_2024/.pmtiles',
+        // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/amx/MojMap_amx_2024.pmtiles'
     },
 }
 const homusyo2025DaihyoSource = {

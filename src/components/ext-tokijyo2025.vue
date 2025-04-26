@@ -104,7 +104,7 @@
   <div :style="menuContentSize">
 <!--    <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>-->
 
-    <v-text-field label="表示地番検索（例）5-7" v-model="s_tokijyoText" @input="change" style="margin-top: 0px"></v-text-field>
+    <v-text-field label="表示地番検索（例）5-7" v-model="s_tokijyoText2025" @input="change" style="margin-top: 0px"></v-text-field>
 
       <!-- 1行目 -->
 <!--      <div style="display: flex; justify-content: space-between; gap: 10px; padding-right: 30px;">-->
