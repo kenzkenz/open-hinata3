@@ -7,18 +7,18 @@ import { ExpirationPlugin } from 'workbox-expiration';
 precacheAndRoute(self.__WB_MANIFEST);
 
 // PMTiles キャッシュ
-registerRoute(
-    ({ url }) => url.pathname.includes('https://kenzkenz3.xsrv.jp/pmtiles/amx/MojMap_amx_2024.pmtiles'),
-    new CacheFirst({
-        cacheName: 'pmtiles-cache',
-        plugins: [
-            new ExpirationPlugin({
-                maxEntries: 1000, // キャッシュの最大エントリ数
-                maxAgeSeconds: 60 * 60 * 24 * 7, // 1週間
-            })
-        ]
-    })
-);
+// registerRoute(
+//     ({ url }) => url.pathname.includes('https://kenzkenz3.xsrv.jp/pmtiles/amx/MojMap_amx_2024.pmtiles'),
+//     new CacheFirst({
+//         cacheName: 'pmtiles-cache',
+//         plugins: [
+//             new ExpirationPlugin({
+//                 maxEntries: 1000, // キャッシュの最大エントリ数
+//                 maxAgeSeconds: 60 * 60 * 24 * 7, // 1週間
+//             })
+//         ]
+//     })
+// );
 
 // 動的リソースのキャッシュ (CSS, JS, API)
 registerRoute(

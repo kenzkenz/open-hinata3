@@ -399,6 +399,9 @@ export default {
       // ⭐️ここを修正する必要あり。このままだと2は設定されない。
       // if (isNaN(width)) width = this.lineWidth = 2
       // if(this.lineWidth !== 2) map.setPaintProperty('oh-homusyo-2025-line', 'line-width', width)
+      if (width <= 0) {
+        width = 2; // 強制的に2にする
+      }
       map.setPaintProperty('oh-homusyo-2025-line', 'line-width', width)
       this.s_tokijyoLineWidth2025 = Number(width)
       if (isUpdate) this.update()
