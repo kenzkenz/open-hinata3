@@ -2475,16 +2475,17 @@ export function highlightSpecificFeaturesCity(map,layerId) {
     isFirstRunCity1 = false
 }
 // 特定のレイヤーから地物を取得し、フィルタリング後にBBOXを計算する関数
+// ⭐️これ・・・効いているのか？遅くなる元じゃないのか？
 function getBoundingBoxByLayer(map, layerId) {
     // 地物をフィルタリング
     const chiban = []
     const chyome = []
     store.state.highlightedChibans.forEach(c => {
-        console.log(c)
+        // console.log(c)
         const lastUnderscoreIndex = c.lastIndexOf("_");
         // 最後の「_」の次の文字列を取得
         const result = c.substring(lastUnderscoreIndex + 1);
-        console.log(result)
+        // console.log(result)
         chiban.push(result)
         chyome.push(c.split('_')[2])
     })
