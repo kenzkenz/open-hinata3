@@ -3410,7 +3410,21 @@ const homusyo2025LayerKijyunten = {
         'circle-stroke-color': '#fff'
     },
 }
-
+const homusyo2025LayerKijyuntenLabel = {
+    id: "oh-homusyo-2025-kijyunten-label",
+    type: "symbol",
+    source: "homusyo-2025-kijyunten-source",
+    "source-layer": "point",
+    'layout': {
+        'text-field': ['get', '名称'],
+        'text-offset': [0, 1],
+    },
+    'paint': {
+        'text-color': 'red',
+        'text-halo-color': 'rgba(255,255,255,1)',
+        'text-halo-width': 1.0,
+    },
+}
 // ---------------------------------------------------------------------------------------------------------------------
 const amx2024Source = {
     id: "amx-a-2024-pmtiles", obj: {
@@ -8975,7 +8989,7 @@ let layers01 = [
         id: 'oh-homusyo-2025-kijyunten',
         label: "2025基準点",
         sources: [homusyo2025KijyuntenSource],
-        layers: [homusyo2025LayerKijyunten],
+        layers: [homusyo2025LayerKijyunten,homusyo2025LayerKijyuntenLabel],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
         // ext: {name:'extTokijyo2025'}
     },
