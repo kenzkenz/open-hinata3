@@ -1338,3 +1338,9 @@ tippecanoe -o 2025.pmtiles \
     2025.fgb
 
 tippecanoe -f -l daihyo -Z0 -z14 -rg -pk -y 市区町村名 -y 大字名 -y 地番 -o 2025point.pmtiles 2025point.fgb
+
+tippecanoe -l point -Z14 -z16 -rg -pk -f -o 2025kijyunten.pmtiles baseline_points22130.geojson
+
+tippecanoe -l point -Z14 -z16 -rg -pk -f -o 2025kijyunten.pmtiles output/*/*.geojson
+
+

@@ -3278,8 +3278,8 @@ const homusyo2025Source = {
     id: "homusyo-2025-source", obj: {
         type: "vector",
         // url: 'pmtiles://https://kenzkenz.xsrv.jp/pmtiles/homusyo/2025/2025.pmtiles'
-        url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025light.pmtiles'
-        // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025.pmtiles'
+        // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025light.pmtiles'
+        url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025.pmtiles'
         // url: 'pmtiles://https://data.source.coop/smartmaps/amx-2024-04/MojMap_amx_2024/.pmtiles',
         // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/amx/MojMap_amx_2024.pmtiles'
     },
@@ -3290,6 +3290,12 @@ const homusyo2025DaihyoSource = {
         // url: 'pmtiles://https://kenzkenz.xsrv.jp/pmtiles/homusyo/2025/2025point.pmtiles'
         url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025point.pmtiles'
     },
+}
+const homusyo2025KijyuntenSource = {
+    id: "homusyo-2025-kijyunten-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025kijyunten.pmtiles",
+    }
 }
 // 登記所備付地図データ 間引きなし
 const homusyo2025Layer = {
@@ -3348,6 +3354,7 @@ const homusyo2025LayerVertex = {
         'circle-color': 'green',
     }
 }
+
 const colors = ["rgba(0, 255, 0, 0)","rgba(0, 255, 0, 0.5)","rgba(0, 128, 0, 1)"]
 const homusyo2025LayerDaihyou = {
     id: "oh-homusyo-2025-daihyo",
@@ -3386,6 +3393,24 @@ const homusyo2025LayerDaihyou = {
     },
     'maxzoom': 14,
 }
+const homusyo2025LayerKijyunten = {
+    id: "oh-homusyo-2025-kijyunten",
+    type: "circle",
+    source: "homusyo-2025-kijyunten-source",
+    "source-layer": "point",
+    paint: {
+        'circle-color': 'red',
+        'circle-radius': [
+            'interpolate', ['linear'], ['zoom'],
+            14, 3,
+            20,6
+        ],
+        'circle-opacity': 1,
+        'circle-stroke-width': 1,
+        'circle-stroke-color': '#fff'
+    },
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 const amx2024Source = {
     id: "amx-a-2024-pmtiles", obj: {
@@ -8945,6 +8970,14 @@ let layers01 = [
         layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025LayerDaihyou],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
         ext: {name:'extTokijyo2025'}
+    },
+    {
+        id: 'oh-homusyo-2025-kijyunten',
+        label: "2025基準点",
+        sources: [homusyo2025KijyuntenSource],
+        layers: [homusyo2025LayerKijyunten],
+        attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
+        // ext: {name:'extTokijyo2025'}
     },
     {
         id: 'oh-amx-a-fude',
