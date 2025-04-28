@@ -3297,6 +3297,12 @@ const homusyo2025KijyuntenSource = {
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025kijyunten.pmtiles",
     }
 }
+const homusyo2025ZukakuSource = {
+    id: "homusyo-2025-zukaku-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025zukaku.pmtiles",
+    }
+}
 // 登記所備付地図データ 間引きなし
 const homusyo2025Layer = {
     id: "oh-homusyo-2025-polygon",
@@ -3424,6 +3430,48 @@ const homusyo2025LayerKijyuntenLabel = {
         'text-halo-color': 'rgba(255,255,255,1)',
         'text-halo-width': 1.0,
     },
+}
+const homusyo2025LayerZukaku = {
+    id: "oh-homusyo-2025-zukaku",
+    type: "fill",
+    source: "homusyo-2025-zukaku-source",
+    "source-layer": "polygon",
+    paint: {
+        "fill-color": "rgba(0, 0, 0, 0.1)"
+    },
+    'minzoom': 9,
+}
+const homusyo2025LayerZukakuLine = {
+    id: "oh-homusyo-2025-zukaku-line",
+    type: "line",
+    source: "homusyo-2025-zukaku-source",
+    "source-layer": "polygon",
+    paint: {
+        "line-color": "black",
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            14, 0.5,
+            20, 6
+        ]
+    },
+    'minzoom': 12,
+}
+const homusyo2025LayerZukakuLabel = {
+    id: "oh-homusyo-2025-zukaku-label",
+    type: "symbol",
+    source: "homusyo-2025-zukaku-source",
+    "source-layer": "polygon",
+    'layout': {
+        'text-field': ['get', '地図番号'],
+    },
+    'paint': {
+        'text-color': 'black',
+        'text-halo-color': 'rgba(255,255,255,1)',
+        'text-halo-width': 1.0,
+    },
+    'minzoom': 14,
 }
 // ---------------------------------------------------------------------------------------------------------------------
 const amx2024Source = {
@@ -9029,9 +9077,17 @@ let layers01 = [
     },
     {
         id: 'oh-homusyo-2025-kijyunten',
-        label: "2025登記所地図基準点",
+        label: "2025登記所地図-基準点",
         sources: [homusyo2025KijyuntenSource],
         layers: [homusyo2025LayerKijyunten,homusyo2025LayerKijyuntenLabel],
+        attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
+        // ext: {name:'extTokijyo2025'}
+    },
+    {
+        id: 'oh-homusyo-2025-zukaku',
+        label: "2025登記所地図-図郭",
+        sources: [homusyo2025ZukakuSource],
+        layers: [homusyo2025LayerZukaku,homusyo2025LayerZukakuLine,homusyo2025LayerZukakuLabel],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
         // ext: {name:'extTokijyo2025'}
     },
