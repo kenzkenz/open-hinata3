@@ -1343,4 +1343,13 @@ tippecanoe -l point -Z14 -z16 -rg -pk -f -o 2025kijyunten.pmtiles baseline_point
 
 tippecanoe -l point -Z14 -z16 -rg -pk -f -o 2025kijyunten.pmtiles output/*/*.geojson
 
-
+tippecanoe -o kokuyurin.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --layer=polygon \
+    kokuyurin.geojson
