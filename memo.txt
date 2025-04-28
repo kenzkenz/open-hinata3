@@ -1353,3 +1353,18 @@ tippecanoe -o kokuyurin.pmtiles \
     --simplify-only-low-zooms \
     --layer=polygon \
     kokuyurin.geojson
+
+tippecanoe -o 2025zukaku.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=0 \
+    --layer=polygon \
+    outputZukaku/*.geojson
+
+tippecanoe -l point -Z0 -z16 -rg -pk -f -o 2025kijyuntenFull.pmtiles output/*/*.geojson
