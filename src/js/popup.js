@@ -3050,6 +3050,41 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-homusyo-2025-kijyunten-label':
+            case 'oh-homusyo-2025-kijyunten':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(features)
+                if (features.length === 0) return
+                props = features[0].properties
+                let html0 = ''
+                if (html.indexOf('kijyunten') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html0 += '<div class="street-view" style="margin-top:10px;height: 200px;width: 300px"></div>'
+                    html0 += '<div class="kijyunten" font-weight: normal; color: #333;line-height: 25px;">'
+                    Object.keys(props).forEach(function (key) {
+                        html0 += key + '=' + props[key] + '<br>'
+                    })
+                    // if (isIphone()) html0 += '<div class="street-view" style="margin-top:10px;height: 200px;width: 300px"></div>'
+                    html0 += '<div>'
+                    html += html0
+                }
+                break
+            }
+
+
+
+
+
+
+
             case 'oh-fukuokakenshinrin':
             {
                 let features = map.queryRenderedFeatures(

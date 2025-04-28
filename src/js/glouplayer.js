@@ -30,7 +30,7 @@ async function pingServer(source = 'interval', retries = 3, delay = 1000) {
             console.log(`Ping success (${source}, attempt ${i + 1}/${retries})`);
             if (isSyncFailed) {
                 isSyncFailed = false;
-                store.dispatch('triggerSnackbarForGroup', { message: 'サーバーに接続できました。操作を再開できます。' });
+                // store.dispatch('triggerSnackbarForGroup', { message: 'サーバーに接続できました。操作を再開できます。' });
             }
             return true;
         } catch (error) {
