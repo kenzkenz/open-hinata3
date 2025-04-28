@@ -8789,6 +8789,53 @@ const sagakijyuntenLabelLayer = {
     'maxzoom': 24,
     'minzoom': 9
 }
+// 国有林
+const kokuyurinSource = {
+    id: "kokuyurin-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/kokuyurin/kokuyurin.pmtiles",
+    }
+}
+const kokuyurinLayer = {
+    id: "oh-kokuyurin-polygon",
+    type: "fill",
+    source: "kokuyurin-source",
+    "source-layer": "polygon",
+    paint: {
+        "fill-color": "rgba(0, 128, 0, 0.6)"
+    },
+};
+const kokuyurinLayerLine = {
+    id: "oh-kokuyurin-line",
+    type: "line",
+    source: "kokuyurin-source",
+    "source-layer": "polygon",
+    paint: {
+        "line-color": "black",
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10, 0,
+            20, 4
+        ]
+    },
+}
+const kokuyurinLayerLabel = {
+    id: "oh-kokuyurin-label",
+    type: "symbol",
+    source: "kokuyurin-source",
+    "source-layer": "polygon",
+    'layout': {
+        'text-field': ['get', 'A45_011'],
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 1)',
+        // 'text-halo-color': 'rgba(255,255,255,1)',
+        // 'text-halo-width': 1.0,
+    },
+    'minzoom': 15
+};
 // // 地形分類テスト --------------------------------------------------------------------------------------------
 // const chikeibunruiSource2 = {
 //     id: "chikeibunrui-source", obj: {
@@ -8885,11 +8932,6 @@ export const groupPointsLayer = {
     }
 }
 
-
-
-
-
-
 const getLayerData = (layerId) => {
     try {
         const layer = store?.state?.pointLayers?.find(l => l.id === layerId)
@@ -8979,7 +9021,7 @@ let layers01 = [
     // },
     {
         id: 'oh-homusyo-2025-layer',
-        label: "2025登記所備付地図データ",
+        label: "2025登記所地図",
         sources: [homusyo2025Source,homusyo2025DaihyoSource],
         layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025LayerDaihyou],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
@@ -8987,7 +9029,7 @@ let layers01 = [
     },
     {
         id: 'oh-homusyo-2025-kijyunten',
-        label: "2025基準点",
+        label: "2025登記所地図基準点",
         sources: [homusyo2025KijyuntenSource],
         layers: [homusyo2025LayerKijyunten,homusyo2025LayerKijyuntenLabel],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
@@ -8995,7 +9037,7 @@ let layers01 = [
     },
     {
         id: 'oh-amx-a-fude',
-        label: "2024登記所備付地図データ",
+        label: "2024登記所地図",
         sources: [amxSource,amx2024Source],
         layers: [amxLayerDaihyou,amx2024Layer,amx2024LayerLine,amx2024LayerVertex,amx2024LayerLabel],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
@@ -10684,6 +10726,13 @@ let layers01 = [
                 source: fukuokakenshinrinSource,
                 layers: [fukuokakenshinrinLayer,fukuokakenshinrinLayerLine],
                 attribution: '<a href="https://www.pref.fukuoka.lg.jp/contents/forest-opendata.html" target="_blank">ふくおか森林オープンデータ</a>'
+            },
+            {
+                id: 'oh-kokuyurin',
+                label: "国有林野データ",
+                source: kokuyurinSource,
+                layers: [kokuyurinLayer,kokuyurinLayerLine,kokuyurinLayerLabel],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A45.html" target="_blank">国土数値情報</a>'
             },
         ]
     },
