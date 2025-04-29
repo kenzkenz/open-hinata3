@@ -26,6 +26,11 @@ import muni from "@/js/muni";
 // import publicChk from '@/components/Dialog-myroom'
 // 複数のクリックされた地番を強調表示するためのセット
 // export let highlightedChibans = new Set();
+
+const dlMsg = '本データは参考図であり、筆界や権利関係を証明するものではありません。\n\n' +
+    'データ利用はすべて自己責任となりますので、地番参考図利用規約を十分に確認してください。\n\n' +
+    'ダウンロードをもって地番参考図利用規約に同意したものとみなします。';
+
 (function() {
     // 座標系の定義
     // proj4.defs['EPSG:4326'] = proj4.Proj("+proj=longlat +datum=WGS84 +no_defs");
@@ -391,7 +396,8 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
                     '（２）公開用地籍図データを編集・加工等して利用する場合は、上記出典とは別に、編集・加工等を行ったことを記載してください。\n' +
                     'なお、編集・加工した情報を、あたかも大阪市が作成したかのような態様で公表・利用しないでください。')
             } else {
-                alert('注!簡易の場合、座標値は元データとほんの少し異なります。座標の利用は自己責任でお願いします。' + kei + 'でsimファイルを作ります。')
+                // alert('注!簡易の場合、座標値は元データとほんの少し異なります。座標の利用は自己責任でお願いします。' + kei + 'でsimファイルを作ります。')
+                alert(dlMsg)
             }
         } else {
             // alert(kei + 'でsimファイルを作ります。')
@@ -1354,6 +1360,7 @@ export function saveKml(map, layerId, sourceId, fields) {
         alert('ズーム15以上にしてください。')
         return
     }
+    alert(dlMsg)
     // const geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields);
     // console.log(geojson)
     downloadKML(map, layerId, null,fields)
@@ -1364,6 +1371,7 @@ export function saveCsv(map, layerId, sourceId, fields) {
         alert('ズーム15以上にしてください。')
         return
     }
+    alert(dlMsg)
     const geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields);
     console.log(geojson)
     downloadGeoJSONAsCSV(geojson)
@@ -2132,6 +2140,7 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
         alert('ズーム15以上にしてください。');
         return;
     }
+    alert(dlMsg)
     store.state.loading = true
     let prefId = String(store.state.prefId).padStart(2, '0');
     console.log('初期 prefId:', prefId);
