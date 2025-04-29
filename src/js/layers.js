@@ -3439,7 +3439,7 @@ const homusyo2025LayerZukaku = {
     paint: {
         "fill-color": "rgba(0, 0, 0, 0.1)"
     },
-    'minzoom': 9,
+    // 'minzoom': 9,
 }
 const homusyo2025LayerZukakuLine = {
     id: "oh-homusyo-2025-zukaku-line",

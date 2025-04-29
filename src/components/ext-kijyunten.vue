@@ -86,21 +86,10 @@ export default {
       console.log(/android/i.test(userAgent))
       this.isAndroid = /android/i.test(userAgent);
     },
-    resetFeatureColors () {
-      const map = this.$store.state[this.mapName]
-      this.idForLayerId(this.item.id)
-      console.log(this.layerId)
-      resetFeatureColors(map,this.layerId)
-    },
     saveSimaKijyunten () {
       const map = this.$store.state[this.mapName]
       console.log(this.item.id)
-      let layerId
-      if (this.item.id === 'oh-toshikan') {
-        layerId = 'oh-toshikan-layer'
-      } else {
-        layerId = 'oh-gaiku-layer'
-      }
+      const layerId = this.item.id
       saveSimaKijyunten(map,layerId)
       // history('街区SIMA保存',window.location.href)
     },

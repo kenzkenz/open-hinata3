@@ -324,11 +324,11 @@ function getFirstPointName(geojson) {
 
     // 最初に見つかった「基準点等名称」または「街区点・補助点名称」を取得
     let pointName = geojson.features
-        .map(feature => feature.properties?.['基準点等名称'] || feature.properties?.['街区点・補助点名称'])
+        .map(feature => feature.properties?.['基準点等名称'] || feature.properties?.['街区点・補助点名称'] || feature.properties?.['名称'])
         .find(name => name !== undefined && name !== null && name !== '');
 
     if (!pointName) {
-        pointName = geojson.features[0]?.properties?.['基準点等名称'] || geojson.features[0]?.properties?.['街区点・補助点名称'] || '';
+        pointName = geojson.features[0]?.properties?.['基準点等名称'] || geojson.features[0]?.properties?.['街区点・補助点名称'] || geojson.features[0]?.properties?.['名称'];
     }
 
     // hokaの値を設定
@@ -3123,27 +3123,14 @@ export function saveSimaKijyunten (map,layerId) {
         ) {
             const [x, y] = proj4('EPSG:4326', code, coord); // 座標系変換
             const coordinateKey = `${x},${y}`;
-            console.log(feature.properties.基準点等名称)
-            let name = ''
-            if (feature.properties.基準点等名称) {
-                name = feature.properties.基準点等名称
-            } else if (feature.properties['街区点・補助点名称']){
-                name = feature.properties['街区点・補助点名称']
-            }
-            let zahyoY, zahyoX
-            if (feature.properties.補正後Y座標) {
-                zahyoY = feature.properties.補正後Y座標
-                zahyoX = feature.properties.補正後X座標
-            } else {
-                zahyoY = feature.properties.Y座標
-                zahyoX = feature.properties.X座標
-            }
-            const zahyoZ = feature.properties.標高
+            console.log(feature.properties.名称)
+            const name = feature.properties.名称
+            const zahyoY = feature.properties.Y
+            const zahyoX = feature.properties.X
+            const zahyoZ = 0
             if (!coordinateMap.has(coordinateKey)) {
                 coordinateMap.set(coordinateKey, j);
                 A01Text += 'A01,' + j + ',' + name + ',' + zahyoX + ',' + zahyoY + ',' + zahyoZ + ',\n';
-                // A01Text += 'A01,' + j + ',' + name + ',' + zahyoY + ',' + zahyoX + ',\n';
-                // A01Text += 'A01,' + j + ',' + name + ',' + y.toFixed(3) + ',' + x.toFixed(3) + ',\n';
                 j++;
             }
         } else {
@@ -3170,13 +3157,7 @@ export function saveSimaKijyunten (map,layerId) {
 
     const firstPoint = getFirstPointName(geojson).pointName
     const hoka = getFirstPointName(geojson).hoka
-    let gaiku = ''
-    if (layerId === 'oh-gaiku-layer') {
-        gaiku = '街区_'
-    } else {
-        gaiku = '都管_'
-    }
-    const fileName = gaiku + store.state.zahyokei + firstPoint + hoka + '.sim'
+    const fileName = '基準点_' + store.state.zahyokei + firstPoint + hoka + '.sim'
 
     link.download = fileName; // ファイル名を正確に指定
     // リンクをクリックしてダウンロード
