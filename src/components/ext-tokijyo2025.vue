@@ -417,10 +417,10 @@ export default {
       map.setPaintProperty('oh-homusyo-2025-line', 'line-color', color)
       this.s_tokijyoColor2025 = color
 
-      // 既存のレイヤーを削除
-      if (map.getLayer('oh-homusyo-2025-daihyo')) {
-        map.removeLayer('oh-homusyo-2025-daihyo');
-      }
+      // // 既存のレイヤーを削除
+      // if (map.getLayer('oh-homusyo-2025-daihyo')) {
+      //   map.removeLayer('oh-homusyo-2025-daihyo');
+      // }
 
       let colors
       switch (color) {
@@ -441,36 +441,93 @@ export default {
           break
       }
 
-      // 新しい設定でレイヤーを追加
-      map.addLayer({
-        id: 'oh-homusyo-2025-daihyo',
-        type: 'heatmap',
-        source: "homusyo-2025-diahyo-source",
-        "source-layer": "daihyo",
-        paint: {
-          'heatmap-color': [
-            "interpolate",
-            ["linear"],
-            ["heatmap-density"],
-            0, colors[0],
-            0.5, colors[1],
-            1, colors[2],
-          ],
-          "heatmap-radius": [
-            // 入力値と出力値のペア（"stop"）の間を補間することにより、連続的で滑らかな結果を生成する
-            "interpolate",
-            // 出力が増加する割合を制御する、1に近づくほど出力が増加する
-            ["exponential", 5],
-            // ズームレベルに応じて半径を調整する
-            ["zoom"],
-            4,
-            10,
-            28,
-            50,
-          ],
-        },
-        'maxzoom': 14
-      });
+      /* utils/heatmap.js ------------------------------------------------------- */
+      // 色ストップを簡単に組むヘルパ
+      const buildHeatmapColor = (colors) => [
+        'interpolate', ['linear'], ['heatmap-density'],
+        0,   colors[0],
+        0.5, colors[1],
+        1,   colors[2],
+      ];
+
+      // レイヤーを同じ順序で差し替える
+      function replaceHeatmapLayer(map, newColors) {
+        const LAYER_ID = 'oh-homusyo-2025-daihyo';
+
+        // ── 1. いまのレイヤー順を取得
+        const layers = map.getStyle().layers;
+        const index  = layers.findIndex(l => l.id === LAYER_ID);
+        if (index === -1) {
+          console.error(`${LAYER_ID} が見つかりません`);
+          return;
+        }
+        const beforeId = (index < layers.length - 1) ? layers[index + 1].id : undefined;
+
+        // ── 2. 削除
+        if (map.getLayer(LAYER_ID)) {
+          map.removeLayer(LAYER_ID);
+        }
+
+        // ── 3. 新しいレイヤー定義
+        const newLayer = {
+          id: LAYER_ID,
+          type: 'heatmap',
+          source: 'homusyo-2025-diahyo-source',
+          'source-layer': 'daihyo',
+          paint: {
+            // 'heatmap-color': buildHeatmapColor(newColors),
+            'heatmap-color': buildHeatmapColor(newColors),
+            'heatmap-radius': [
+              'interpolate', ['exponential', 5], ['zoom'],
+              4, 10,
+              28, 50,
+            ],
+          },
+          maxzoom: 14,
+        };
+
+        // ── 4. 取得しておいた順番で add
+        if (beforeId) {
+          map.addLayer(newLayer, beforeId);   // beforeId の直前に挿入
+        } else {
+          map.addLayer(newLayer);             // 一番上（末尾）だった場合
+        }
+      }
+
+      replaceHeatmapLayer(map, colors)
+
+
+
+      // // 新しい設定でレイヤーを追加
+      // map.addLayer({
+      //   id: 'oh-homusyo-2025-daihyo',
+      //   type: 'heatmap',
+      //   source: "homusyo-2025-diahyo-source",
+      //   "source-layer": "daihyo",
+      //   paint: {
+      //     'heatmap-color': [
+      //       "interpolate",
+      //       ["linear"],
+      //       ["heatmap-density"],
+      //       0, colors[0],
+      //       0.5, colors[1],
+      //       1, colors[2],
+      //     ],
+      //     "heatmap-radius": [
+      //       // 入力値と出力値のペア（"stop"）の間を補間することにより、連続的で滑らかな結果を生成する
+      //       "interpolate",
+      //       // 出力が増加する割合を制御する、1に近づくほど出力が増加する
+      //       ["exponential", 5],
+      //       // ズームレベルに応じて半径を調整する
+      //       ["zoom"],
+      //       4,
+      //       10,
+      //       28,
+      //       50,
+      //     ],
+      //   },
+      //   'maxzoom': 14
+      // });
 
       if (isUpdate) this.update()
     },
