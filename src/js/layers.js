@@ -3424,8 +3424,8 @@ const homusyo2025LayerKijyuntenLabel = {
     source: "homusyo-2025-kijyunten-source",
     "source-layer": "point",
     'layout': {
-        'text-field': ['get', '名称'],
-        'text-offset': [0, 1],
+        'text-field': ['concat', ['get', '基準点種別'], '\n', ['get', '名称']],
+        'text-offset': [0, 1.5],
     },
     'paint': {
         'text-color': 'red',
@@ -9056,20 +9056,6 @@ export const ohLabelLayer = {
 
 // ---------------------------------------------------------------------------------------------------------------------
 let layers01 = [
-    // {
-    //     id: 'oh-point-layer',
-    //     label: "<div class='point-layer'>ポイントレイヤー</div>",
-    //     sources: [pointLayerSource1],
-    //     layers: [pointLayerLayer1],
-    //     attribution: '',
-    // },
-    // {
-    //     id: 'oh-gloup-layer',
-    //     label: "<div class='group-layer'>グループレイヤー</div>",
-    //     sources: [groupPointsSource],
-    //     layers: [groupPointsLayer],
-    //     attribution: '',
-    // },
     {
         id: 'oh-homusyo-2025-layer',
         label: "2025登記所地図",
@@ -9094,14 +9080,6 @@ let layers01 = [
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
     },
     {
-        id: 'oh-amx-a-fude',
-        label: "2024登記所地図",
-        sources: [amxSource,amx2024Source],
-        layers: [amxLayerDaihyou,amx2024Layer,amx2024LayerLine,amx2024LayerVertex,amx2024LayerLabel],
-        attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
-        ext: {name:'extTokijyo'}
-    },
-    {
         id: 'oh-chibanzu-all2',
         label: '全国地番図公開マップ',
         sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
@@ -9110,16 +9088,33 @@ let layers01 = [
         // layers: [...chibanzuLayers1,...publicLayers0,cityPmtilesPolygonLayer,cityPmtilesLineLayer,cityPmtilesLabelLayer],
         ext: {name:'ext-chibanzu'}
     },
-    // {
-    //     id: 'oh-city-geojson',
-    //     label: "地番図公開マップ",
-    //     sources: [cityGeojsonSource],
-    //     layers: [cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
-    // },
     {
         id: 'hikkai',
         label: "筆界調査データベース",
         nodes: [
+            {
+                id: 'oh-homusyo-2025-layer',
+                label: "2025登記所地図",
+                sources: [homusyo2025Source,homusyo2025DaihyoSource],
+                layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025LayerDaihyou],
+                attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
+                ext: {name:'extTokijyo2025'}
+            },
+            {
+                id: 'oh-homusyo-2025-kijyunten',
+                label: "2025登記所地図-基準点",
+                sources: [homusyo2025KijyuntenSource],
+                layers: [homusyo2025LayerKijyunten,homusyo2025LayerKijyuntenLabel],
+                attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
+                ext: {name:'extKijyunten'}
+            },
+            {
+                id: 'oh-homusyo-2025-zukaku',
+                label: "2025登記所地図-図郭",
+                sources: [homusyo2025ZukakuSource],
+                layers: [homusyo2025LayerZukaku,homusyo2025LayerZukakuLine,homusyo2025LayerZukakuLabel],
+                attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
+            },
             {
                 id: 'oh-syochiiki2',
                 label: "2020 町丁・字等別境界",
@@ -11105,6 +11100,14 @@ let layers01 = [
         label: "テスト",
         nodes: [
             {
+                id: 'oh-amx-a-fude',
+                label: "2024登記所地図",
+                sources: [amxSource,amx2024Source],
+                layers: [amxLayerDaihyou,amx2024Layer,amx2024LayerLine,amx2024LayerVertex,amx2024LayerLabel],
+                attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
+                ext: {name:'extTokijyo'}
+            },
+            {
                 id: 'oh-vector-layer-mono',
                 label: "地理院ベクター・モノクロ",
                 sources: monoSources,
@@ -11134,42 +11137,6 @@ let layers01 = [
                 source: hikariSource,
                 layers: [hikariLayerHeight]
             },
-            // {
-            //     id: 'oh-yotochiiki',
-            //     label: "用途地域",
-            //     source: yotochiikiSource,
-            //     layers: [yotochiikiLayer,yotochiikiLayerLine,yotochiikiLayerLabel]
-            // },
-            // {
-            //     id: 'oh-yotochiiki-3d',
-            //     label: "用途地域3D",
-            //     source: yotochiikiSource,
-            //     layers: [yotochiikiLayer,yotochiikiLayerLine,yotochiikiLayerLabel,yotochiikiLayerHeight]
-            // },
-            // {
-            //     id: 'oh-test',
-            //     label: "テスト",
-            //     source: testSource,
-            //     layers: [testLayer]
-            // },
-            // {
-            //     id: 'test2',
-            //     label: "標準地図",
-            //     nodes: [
-            //         {
-            //             id: 'test3',
-            //             label: "標準地図",
-            //             nodes: [
-            //                 {
-            //                     id: 'oh-stdLayer',
-            //                     label: "テスト標準地図",
-            //                     source: stdSource,
-            //                     layers: [stdLayer]
-            //                 },
-            //             ]
-            //         },
-            //     ]
-            // },
         ]
     },
 ]
