@@ -3294,7 +3294,8 @@ const homusyo2025DaihyoSource = {
 const homusyo2025KijyuntenSource = {
     id: "homusyo-2025-kijyunten-source", obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025kijyunten.pmtiles",
+        // url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025kijyunten.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025kijyuntenFull.pmtiles",
     }
 }
 const homusyo2025ZukakuSource = {
@@ -3408,6 +3409,7 @@ const homusyo2025LayerKijyunten = {
         'circle-color': 'red',
         'circle-radius': [
             'interpolate', ['linear'], ['zoom'],
+            0,0,
             14, 3,
             20,6
         ],
@@ -3430,6 +3432,7 @@ const homusyo2025LayerKijyuntenLabel = {
         'text-halo-color': 'rgba(255,255,255,1)',
         'text-halo-width': 1.0,
     },
+    'minzoom': 14,
 }
 const homusyo2025LayerZukaku = {
     id: "oh-homusyo-2025-zukaku",

@@ -3076,8 +3076,8 @@ export function saveSimaImage (chiban,data) {
 }
 
 export function saveSimaKijyunten (map,layerId) {
-    if (map.getZoom() <= 12) {
-        alert('ズーム12以上にしてください。')
+    if (map.getZoom() <= 16) {
+        alert('ズーム16以上にしてください。')
         return
     }
     console.log(layerId)
