@@ -3072,7 +3072,6 @@ export function popup(e,map,mapName,mapFlg) {
                     Object.keys(props).forEach(function (key) {
                         html0 += key + '=' + props[key] + '<br>'
                     })
-                    // if (isIphone()) html0 += '<div class="street-view" style="margin-top:10px;height: 200px;width: 300px"></div>'
                     html0 += '<div>'
                     html += html0
                 }
@@ -3495,10 +3494,18 @@ export function popup(e,map,mapName,mapFlg) {
                 if (html.indexOf('kokuyurin') === -1) {
                     html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                     html0 += '<div class="kokuyurin" font-weight: normal; color: #333;line-height: 25px;">'
-                    Object.keys(props).forEach(function (key) {
-                        html0 += key + '=' + props[key] + '<br>'
-                    })
-                    // html0 += '<div class="street-view" style="margin-top:0px;height: 200px;width: 300px"></div>'
+                    html0 += '<span style="font-size:16px;">森林管理局＝' + props.A45_008 + '</span><br>'
+                    html0 += '<span style="font-size:16px;">森林管理署＝' + props.A45_009 + '</span><br>'
+                    html0 += '<span style="font-size:16px;">小班＝' + props.A45_010 + '</span><br>'
+                    html0 += '<span style="font-size:16px;">林小班＝' + props.A45_011 + '</span><br>'
+                    html0 += '<span style="font-size:16px;">国有林名称＝' + props.A45_013 + '</span><br>'
+                    html0 += '<span style="font-size:16px;">県市町村名＝' + props.A45_014 + '</span><br>'
+                    html0 += '<span style="font-size:16px;">雑種１＝' + props.A45_015 + '</span><br>'
+                    html0 += '<span style="font-size:16px;">雑種２＝' + props.A45_018 + '</span><br>'
+                    html0 += '<span style="font-size:16px;">林種＝' + props.A45_025 + '</span><br>'
+                    html0 += '<span style="font-size:16px;">機能類型＝' + props.A45_026 + '</span><br>'
+                    html0 += '<span style="font-size:16px;">小班面積ha＝' + props.A45_027 + '</span><br>'
+                    html0 += '<span style="font-size:16px;">保安林＝' + props.A45_028 + '</span><br>'
                     html0 += '<div>'
                     html += html0
                 }
