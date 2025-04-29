@@ -3075,6 +3075,122 @@ export function saveSimaImage (chiban,data) {
 
 }
 
+export function saveSimaKijyunten (map,layerId) {
+    if (map.getZoom() <= 12) {
+        alert('ズーム12以上にしてください。')
+        return
+    }
+    console.log(layerId)
+    const features = map.queryRenderedFeatures({
+        layers: [layerId] // 対象のレイヤー名を指定
+    });
+    // GeoJSON形式に変換
+    const geojson = {
+        type: 'FeatureCollection',
+        features: features.map(feature => ({
+            type: 'Feature',
+            geometry: feature.geometry,
+            properties: feature.properties
+        }))
+    };
+    console.log(geojson)
+    console.log(store.state.zahyokei)
+    const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
+    console.log(code)
+
+    let simaData = 'G00,01,open-hinata3,\n';
+    simaData += 'Z00,座標ﾃﾞｰﾀ,,\n';
+    simaData += 'A00,\n';
+
+    let A01Text = '';
+    let j = 1;
+
+    // 座標を関連付けるマップ
+    const coordinateMap = new Map();
+
+    geojson.features.forEach((feature) => {
+        if (feature.geometry.type !== 'Point') {
+            console.warn('Unsupported geometry type:', feature.geometry.type);
+            return; // Point以外はスキップ
+        }
+
+        const coord = feature.geometry.coordinates;
+        if (
+            Array.isArray(coord) &&
+            coord.length === 2 &&
+            Number.isFinite(coord[0]) &&
+            Number.isFinite(coord[1])
+        ) {
+            const [x, y] = proj4('EPSG:4326', code, coord); // 座標系変換
+            const coordinateKey = `${x},${y}`;
+            console.log(feature.properties.基準点等名称)
+            let name = ''
+            if (feature.properties.基準点等名称) {
+                name = feature.properties.基準点等名称
+            } else if (feature.properties['街区点・補助点名称']){
+                name = feature.properties['街区点・補助点名称']
+            }
+            let zahyoY, zahyoX
+            if (feature.properties.補正後Y座標) {
+                zahyoY = feature.properties.補正後Y座標
+                zahyoX = feature.properties.補正後X座標
+            } else {
+                zahyoY = feature.properties.Y座標
+                zahyoX = feature.properties.X座標
+            }
+            const zahyoZ = feature.properties.標高
+            if (!coordinateMap.has(coordinateKey)) {
+                coordinateMap.set(coordinateKey, j);
+                A01Text += 'A01,' + j + ',' + name + ',' + zahyoX + ',' + zahyoY + ',' + zahyoZ + ',\n';
+                // A01Text += 'A01,' + j + ',' + name + ',' + zahyoY + ',' + zahyoX + ',\n';
+                // A01Text += 'A01,' + j + ',' + name + ',' + y.toFixed(3) + ',' + x.toFixed(3) + ',\n';
+                j++;
+            }
+        } else {
+            console.error('Invalid coordinate skipped:', coord);
+        }
+    });
+
+    simaData += A01Text + 'A99\n';
+    simaData += 'A99,END,,\n';
+    console.log(simaData)
+
+    // UTF-8で文字列をコードポイントに変換
+    const utf8Array = window.Encoding.stringToCode(simaData);
+    // UTF-8からShift-JISに変換
+    const shiftJISArray = window.Encoding.convert(utf8Array, 'SJIS');
+    // Shift-JISエンコードされたデータをUint8Arrayに格納
+    const uint8Array = new Uint8Array(shiftJISArray);
+    // Blobを作成（MIMEタイプを変更）
+    const blob = new Blob([uint8Array], { type: 'application/octet-stream' });
+
+    // ダウンロード用リンクを作成
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+
+    const firstPoint = getFirstPointName(geojson).pointName
+    const hoka = getFirstPointName(geojson).hoka
+    let gaiku = ''
+    if (layerId === 'oh-gaiku-layer') {
+        gaiku = '街区_'
+    } else {
+        gaiku = '都管_'
+    }
+    const fileName = gaiku + store.state.zahyokei + firstPoint + hoka + '.sim'
+
+    link.download = fileName; // ファイル名を正確に指定
+    // リンクをクリックしてダウンロード
+    link.click();
+    URL.revokeObjectURL(link.href);
+
+    if (store.state.userId) {
+        insertSimaData(store.state.userId, fileName.split('.')[0], 'dummy', 'dummy', simaData, store.state.zahyokei)
+            .then(r => {
+                store.state.fetchImagesFire = !store.state.fetchImagesFire
+            })
+    }
+}
+
 export function saveSimaGaiku (map,layerId) {
     if (map.getZoom() <= 12) {
         alert('ズーム12以上にしてください。')

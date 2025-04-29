@@ -9081,7 +9081,7 @@ let layers01 = [
         sources: [homusyo2025KijyuntenSource],
         layers: [homusyo2025LayerKijyunten,homusyo2025LayerKijyuntenLabel],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
-        // ext: {name:'extTokijyo2025'}
+        ext: {name:'extKijyunten'}
     },
     {
         id: 'oh-homusyo-2025-zukaku',
@@ -9089,7 +9089,6 @@ let layers01 = [
         sources: [homusyo2025ZukakuSource],
         layers: [homusyo2025LayerZukaku,homusyo2025LayerZukakuLine,homusyo2025LayerZukakuLabel],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
-        // ext: {name:'extTokijyo2025'}
     },
     {
         id: 'oh-amx-a-fude',

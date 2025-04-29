@@ -59,6 +59,7 @@
         'extChiriinMono',
         'extChiriinDark',
           ].includes(item.ext.name)"/>
+    <extKijyunten :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extKijyunten'"/>
     <extSaga :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extSaga'"/>
   </div>
 </template>
@@ -83,6 +84,7 @@ import extTokijyo2025 from "@/components/ext-tokijyo2025"
 import extZeni from "@/components/ext-zeni"
 import extIwata from "@/components/ext-chiban"
 import extGaiku from "@/components/ext-gaiku"
+import extKijyunten from "@/components/ext-kijyunten"
 import extChiriin from "@/components/ext-chiriin"
 import extSaga from "@/components/ext-saga"
 
@@ -108,6 +110,7 @@ export default {
     extTokijyo2025,
     extZeni,
     extGaiku,
+    extKijyunten,
     extIwata,
     extChiriin,
     extSaga
