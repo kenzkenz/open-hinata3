@@ -20,7 +20,7 @@
     </v-card>
   </v-dialog>
   <div :style="menuContentSize">
-    <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
+<!--    <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>-->
     <v-btn style="margin-top: 0px;margin-left: 0px;margin-bottom: 10px;" @click="saveSimaKijyunten">sima保存</v-btn>
     <hr>
     <div v-html="item.attribution"></div>
@@ -29,7 +29,6 @@
 
 <script>
 import {
-  resetFeatureColors,
   saveSimaKijyunten
 } from "@/js/downLoad";
 
@@ -71,24 +70,14 @@ export default {
         this.$store.state.zahyokei = value
       }
     },
-    s_isRenzoku: {
-      get() {
-        return this.$store.state.isRenzoku
-      },
-      set(value) {
-        this.$store.state.isRenzoku = value
-      }
-    },
   },
   methods: {
     checkDevice() {
       const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-      console.log(/android/i.test(userAgent))
       this.isAndroid = /android/i.test(userAgent);
     },
     saveSimaKijyunten () {
       const map = this.$store.state[this.mapName]
-      console.log(this.item.id)
       const layerId = this.item.id
       saveSimaKijyunten(map,layerId)
       // history('街区SIMA保存',window.location.href)
@@ -98,7 +87,7 @@ export default {
     this.checkDevice();
   },
   mounted() {
-
+    document.querySelector('#handle-' + this.item.id).innerHTML = '<span style="font-size: large;">' + this.item.label + '</span>'
   },
   watch: {
     s_extFire () {
