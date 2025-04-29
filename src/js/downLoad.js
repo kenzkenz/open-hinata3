@@ -6806,7 +6806,7 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
             const cityName = result[1].split(',')[3]
             const public0 = selectedPublic
             if (Number(selectedPublic) > 0) {
-                alert(Number(selectedPublic))
+                // alert(Number(selectedPublic))
                 publicChk (0,Number(selectedPublic))
             }
             const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesInsert.php', new URLSearchParams({
@@ -7121,7 +7121,7 @@ export function publicChk (id,public0) {
                     setTimeout(() => {
                         store.state.loading2 = false
                         alert('設定を反映するには再読み込みしてください。')
-                    },3000)
+                    },0)
                 }
             } catch (error) {
                 console.error('リクエストエラー:', error);
