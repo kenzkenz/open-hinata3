@@ -149,6 +149,9 @@
       <v-btn style="margin-top: 10px" class="tiny-btn" @click="list">リスト表示</v-btn>
       <v-btn color="red" style="margin-top: 10px;margin-left: 10px;" class="tiny-btn" @click="openTerms">地番参考図利用規約</v-btn>
     </div>
+    <div v-else>
+      <v-btn color="red" style="margin-top: 10px;margin-bottom: 10px; width: 100%;" @click="openTerms">地番参考図利用規約</v-btn>
+    </div>
 
     <v-text-field label="表示地番検索（例）5-7" v-model="s_chibanText" @input="change" style="margin-top: 0px"></v-text-field>
 
