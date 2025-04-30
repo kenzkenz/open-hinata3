@@ -3383,7 +3383,7 @@ const homusyo2025LayerDaihyou = {
         // ヒートマップ1点の半径（ピクセル単位）
         "heatmap-radius": [
             "interpolate", ["linear"], ["zoom"],
-            0, 30,
+            0, 10,
             4, 50,
             14, 80
         ],
@@ -3431,9 +3431,15 @@ const homusyo2025LayerZukaku = {
     source: "homusyo-2025-zukaku-source",
     "source-layer": "polygon",
     paint: {
-        "fill-color": "rgba(0, 0, 0, 0.1)"
-    },
-    // 'minzoom': 9,
+        // "fill-color": "rgba(0, 0, 0, 0.1)"
+        "fill-color": [
+            "step",
+            ["zoom"],
+            "rgba(0, 0, 0, 0.1)", // ズーム < 14 → 不透明
+            14,
+            "rgba(0, 0, 0, 0)"  // ズーム >= 14 → 完全に透明
+        ]
+    }
 }
 const homusyo2025LayerZukakuLine = {
     id: "oh-homusyo-2025-zukaku-line",
