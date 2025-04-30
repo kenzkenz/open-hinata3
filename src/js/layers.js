@@ -3361,7 +3361,7 @@ const homusyo2025LayerVertex = {
 }
 
 const colors = ["rgba(255, 255, 255, 0)", "rgba(255, 255, 0, 0.5)", "rgba(255, 0, 0, 0.5)"]
-const homusyo2025LayerDaihyou = {
+export const homusyo2025LayerDaihyou = {
     id: "oh-homusyo-2025-daihyo",
     type: "heatmap",
     source: "homusyo-2025-diahyo-source",
@@ -3383,12 +3383,12 @@ const homusyo2025LayerDaihyou = {
         // ヒートマップ1点の半径（ピクセル単位）
         "heatmap-radius": [
             "interpolate", ["linear"], ["zoom"],
-            0, 10,
-            4, 50,
-            14, 80
+            0, 0,
+            4, 5,
+            15, 20
         ],
     },
-    'maxzoom': 14,
+    'maxzoom': 15,
 }
 const homusyo2025LayerKijyunten = {
     id: "oh-homusyo-2025-kijyunten",

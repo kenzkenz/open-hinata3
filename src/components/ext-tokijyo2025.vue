@@ -232,7 +232,7 @@ import {
   resetFeatureColors, downloadKML, getLayersById, selectAll
 } from "@/js/downLoad";
 import {history} from "@/App";
-import {homusyo2025LayerLine} from "@/js/layers";
+import {homusyo2025LayerDaihyou, homusyo2025LayerLine} from "@/js/layers";
 
 export default {
   name: 'ext-tokijyo2025',
@@ -467,6 +467,7 @@ export default {
         }
 
         // ── 3. 新しいレイヤー定義
+        // const newLayer = homusyo2025LayerDaihyou
         const newLayer = {
           id: LAYER_ID,
           type: 'heatmap',
@@ -476,11 +477,12 @@ export default {
             'heatmap-color': buildHeatmapColor(newColors),
             'heatmap-radius': [
               'interpolate', ['exponential', 5], ['zoom'],
-              4, 10,
-              28, 50,
+              0, 0,
+              4, 5,
+              15, 20
             ],
           },
-          maxzoom: 14,
+          maxzoom: 15,
         };
 
         // ── 4. 取得しておいた順番で add
