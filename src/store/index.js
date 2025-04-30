@@ -323,12 +323,12 @@ export default createStore({
       map02: null
     },
     tokijyoColor2025:{
-      map01: 'green',
-      map02: 'green'
+      map01: 'red',
+      map02: 'red'
     },
     tokijyoCircleColor2025:{
-      map01: 'green',
-      map02: 'green'
+      map01: 'red',
+      map02: 'red'
     },
     chibanText:{
       map01: '',

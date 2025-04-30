@@ -3280,8 +3280,6 @@ const homusyo2025Source = {
         // url: 'pmtiles://https://kenzkenz.xsrv.jp/pmtiles/homusyo/2025/2025.pmtiles'
         // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025light.pmtiles'
         url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025.pmtiles'
-        // url: 'pmtiles://https://data.source.coop/smartmaps/amx-2024-04/MojMap_amx_2024/.pmtiles',
-        // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/amx/MojMap_amx_2024.pmtiles'
     },
 }
 const homusyo2025DaihyoSource = {
@@ -3313,14 +3311,14 @@ const homusyo2025Layer = {
     paint: {
         "fill-color": "rgba(0, 0, 0, 0)"
     },
-};
-const homusyo2025LayerLine = {
+}
+export const homusyo2025LayerLine = {
     id: "oh-homusyo-2025-line",
     type: "line",
     source: "homusyo-2025-source",
     "source-layer": "fude",
     paint: {
-        "line-color": "green",
+        "line-color": "red",
         'line-width': [
             'interpolate',
             ['linear'],
@@ -3340,7 +3338,7 @@ const homusyo2025LayerLabel = {
         'text-font': ['NotoSansJP-Regular'],
     },
     'paint': {
-        'text-color': 'green',
+        'text-color': 'red',
         'text-halo-color': 'rgba(255,255,255,1)',
         'text-halo-width': 1.0,
     },
@@ -3358,11 +3356,11 @@ const homusyo2025LayerVertex = {
             15, 0,
             18,4
         ],
-        'circle-color': 'green',
+        'circle-color': 'red',
     }
 }
 
-const colors = ["rgba(0, 255, 0, 0)","rgba(0, 255, 0, 0.5)","rgba(0, 128, 0, 1)"]
+const colors = ["rgba(255, 255, 255, 0)", "rgba(255, 255, 0, 0.5)", "rgba(255, 0, 0, 0.5)"]
 const homusyo2025LayerDaihyou = {
     id: "oh-homusyo-2025-daihyo",
     // ヒートマップ
@@ -3406,7 +3404,7 @@ const homusyo2025LayerKijyunten = {
     source: "homusyo-2025-kijyunten-source",
     "source-layer": "point",
     paint: {
-        'circle-color': 'red',
+        'circle-color': 'navy',
         'circle-radius': [
             'interpolate', ['linear'], ['zoom'],
             0,0,
@@ -3424,11 +3422,12 @@ const homusyo2025LayerKijyuntenLabel = {
     source: "homusyo-2025-kijyunten-source",
     "source-layer": "point",
     'layout': {
-        'text-field': ['concat', ['get', '基準点種別'], '\n', ['get', '名称']],
-        'text-offset': [0, 1.5],
+        // 'text-field': ['concat', ['get', '基準点種別'], '\n', ['get', '名称']],
+        'text-field': ['get', '名称'],
+        'text-offset': [0, 1],
     },
     'paint': {
-        'text-color': 'red',
+        'text-color': 'navy',
         'text-halo-color': 'rgba(255,255,255,1)',
         'text-halo-width': 1.0,
     },

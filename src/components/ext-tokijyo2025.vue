@@ -232,6 +232,7 @@ import {
   resetFeatureColors, downloadKML, getLayersById, selectAll
 } from "@/js/downLoad";
 import {history} from "@/App";
+import {homusyo2025LayerLine} from "@/js/layers";
 
 export default {
   name: 'ext-tokijyo2025',
@@ -396,13 +397,14 @@ export default {
     },
     changeLineWidth (width,isUpdate) {
       const map = this.$store.state[this.mapName]
-      // ⭐️ここを修正する必要あり。このままだと2は設定されない。
-      // if (isNaN(width)) width = this.lineWidth = 2
-      // if(this.lineWidth !== 2) map.setPaintProperty('oh-homusyo-2025-line', 'line-width', width)
       if (width <= 0) {
         width = 2; // 強制的に2にする
       }
-      map.setPaintProperty('oh-homusyo-2025-line', 'line-width', width)
+      if (width ===2) {
+        map.setPaintProperty('oh-homusyo-2025-line', 'line-width', homusyo2025LayerLine.paint["line-width"])
+      } else {
+        map.setPaintProperty('oh-homusyo-2025-line', 'line-width', width)
+      }
       this.s_tokijyoLineWidth2025 = Number(width)
       if (isUpdate) this.update()
     },
@@ -416,11 +418,6 @@ export default {
       const map = this.$store.state[this.mapName]
       map.setPaintProperty('oh-homusyo-2025-line', 'line-color', color)
       this.s_tokijyoColor2025 = color
-
-      // // 既存のレイヤーを削除
-      // if (map.getLayer('oh-homusyo-2025-daihyo')) {
-      //   map.removeLayer('oh-homusyo-2025-daihyo');
-      // }
 
       let colors
       switch (color) {
@@ -495,39 +492,6 @@ export default {
       }
 
       replaceHeatmapLayer(map, colors)
-
-
-
-      // // 新しい設定でレイヤーを追加
-      // map.addLayer({
-      //   id: 'oh-homusyo-2025-daihyo',
-      //   type: 'heatmap',
-      //   source: "homusyo-2025-diahyo-source",
-      //   "source-layer": "daihyo",
-      //   paint: {
-      //     'heatmap-color': [
-      //       "interpolate",
-      //       ["linear"],
-      //       ["heatmap-density"],
-      //       0, colors[0],
-      //       0.5, colors[1],
-      //       1, colors[2],
-      //     ],
-      //     "heatmap-radius": [
-      //       // 入力値と出力値のペア（"stop"）の間を補間することにより、連続的で滑らかな結果を生成する
-      //       "interpolate",
-      //       // 出力が増加する割合を制御する、1に近づくほど出力が増加する
-      //       ["exponential", 5],
-      //       // ズームレベルに応じて半径を調整する
-      //       ["zoom"],
-      //       4,
-      //       10,
-      //       28,
-      //       50,
-      //     ],
-      //   },
-      //   'maxzoom': 14
-      // });
 
       if (isUpdate) this.update()
     },
