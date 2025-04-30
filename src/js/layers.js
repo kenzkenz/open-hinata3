@@ -3363,10 +3363,8 @@ const homusyo2025LayerVertex = {
 const colors = ["rgba(255, 255, 255, 0)", "rgba(255, 255, 0, 0.5)", "rgba(255, 0, 0, 0.5)"]
 const homusyo2025LayerDaihyou = {
     id: "oh-homusyo-2025-daihyo",
-    // ヒートマップ
     type: "heatmap",
     source: "homusyo-2025-diahyo-source",
-    // ベクトルタイルソースから使用するレイヤ
     "source-layer": "daihyo",
     paint: {
         // ヒートマップの密度に基づいて各ピクセルの色を定義
@@ -3384,16 +3382,10 @@ const homusyo2025LayerDaihyou = {
         ],
         // ヒートマップ1点の半径（ピクセル単位）
         "heatmap-radius": [
-            // 入力値と出力値のペア（"stop"）の間を補間することにより、連続的で滑らかな結果を生成する
-            "interpolate",
-            // 出力が増加する割合を制御する、1に近づくほど出力が増加する
-            ["exponential", 5],
-            // ズームレベルに応じて半径を調整する
-            ["zoom"],
-            4,
-            10,
-            28,
-            50,
+            "interpolate", ["linear"], ["zoom"],
+            0, 30,
+            4, 50,
+            14, 80
         ],
     },
     'maxzoom': 14,
