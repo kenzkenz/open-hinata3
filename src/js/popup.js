@@ -1066,23 +1066,6 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
-            case 'oh-bus-lines': {
-                const features = map.queryRenderedFeatures(
-                    map.project(coordinates), {layers: ['oh-bus-lines']}
-                )
-                console.log(features)
-                if (features.length === 0) return;
-                props = features[0].properties
-                const name = props.N07_001
-                if (html.indexOf('bus-lines') === -1) {
-                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
-                    html +=
-                        '<div class="bus-lines" font-weight: normal; color: #333;line-height: 25px;">' +
-                        '<span style="font-size: 16px;">' + name + '</span><br>' +
-                        '</div>'
-                }
-                break
-            }
             case 'oh-bus-label':
             case 'oh-bus-points': {
                 const features = map.queryRenderedFeatures(
@@ -1096,8 +1079,26 @@ export function popup(e,map,mapName,mapFlg) {
                     html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                     html +=
                         '<div class="bus-points" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<div class="street-view" style="margin-top:0px;height: 200px;width: 300px"></div>' +
                         '<span style="font-size: 16px;">' + name + '</span><br>' +
                         '<span style="font-size: 12px;">事業者名=' + props.P11_002 + '</span><br>' +
+                        '</div>'
+                }
+                break
+            }
+            case 'oh-bus-lines': {
+                const features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: ['oh-bus-lines']}
+                )
+                console.log(features)
+                if (features.length === 0) return;
+                props = features[0].properties
+                const name = props.N07_001
+                if (html.indexOf('bus-points') === -1) {
+                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html +=
+                        '<div class="bus-points" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size: 16px;">' + name + '</span><br>' +
                         '</div>'
                 }
                 break
