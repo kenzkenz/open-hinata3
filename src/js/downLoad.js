@@ -2325,7 +2325,7 @@ export function highlightSpecificFeatures2025(map,layerId) {
                     ['concat', ['get', '筆ID'], '_', ['get', '地番']],
                     ['literal', Array.from(store.state.highlightedChibans)]
                 ],
-                'rgba(255, 0, 0, 0.5)', // クリックされた地番が選択された場合
+                'rgba(140, 255, 0, 0.5)', // クリックされた地番が選択された場合
                 'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
             ]
         );
