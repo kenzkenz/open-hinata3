@@ -23,7 +23,7 @@
 <!--    <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>-->
     <v-btn style="margin-top: 0px;margin-left: 0px;margin-bottom: 10px;" @click="saveSimaKijyunten">sima保存</v-btn>
     <hr>
-    <div v-html="item.attribution"></div>
+    <div style="font-size: 16px" v-html="item.attribution"></div>
   </div>
 </template>
 

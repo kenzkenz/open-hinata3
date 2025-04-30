@@ -417,6 +417,7 @@ export default {
     changeColor (color,isUpdate) {
       const map = this.$store.state[this.mapName]
       map.setPaintProperty('oh-homusyo-2025-line', 'line-color', color)
+      map.setPaintProperty('oh-homusyo-2025-label', 'text-color', color)
       this.s_tokijyoColor2025 = color
 
       let colors
@@ -472,7 +473,6 @@ export default {
           source: 'homusyo-2025-diahyo-source',
           'source-layer': 'daihyo',
           paint: {
-            // 'heatmap-color': buildHeatmapColor(newColors),
             'heatmap-color': buildHeatmapColor(newColors),
             'heatmap-radius': [
               'interpolate', ['exponential', 5], ['zoom'],
