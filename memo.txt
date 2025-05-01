@@ -1368,3 +1368,19 @@ tippecanoe -o 2025zukaku.pmtiles \
     outputZukaku/*.geojson
 
 tippecanoe -l point -Z0 -z16 -rg -pk -f -o 2025kijyuntenFull.pmtiles output/*/*.geojson
+
+tippecanoe \
+  -f \
+  -l daihyo \
+  -Z0 -z14 \
+  -rg \
+  -pf \
+  -pk \
+  -y 市区町村名 \
+  -y 大字名 \
+  -y 丁目名 \
+  -y 地番 \
+  -o 2025pointFull.pmtiles \
+  2025point.fgb
+
+

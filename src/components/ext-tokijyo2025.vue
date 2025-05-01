@@ -418,6 +418,7 @@ export default {
       const map = this.$store.state[this.mapName]
       map.setPaintProperty('oh-homusyo-2025-line', 'line-color', color)
       map.setPaintProperty('oh-homusyo-2025-label', 'text-color', color)
+      map.setPaintProperty('oh-homusyo-2025-searched-point', 'circle-color', color)
       this.s_tokijyoColor2025 = color
 
       let colors
@@ -451,7 +452,6 @@ export default {
       // レイヤーを同じ順序で差し替える
       function replaceHeatmapLayer(map, newColors) {
         const LAYER_ID = 'oh-homusyo-2025-daihyo';
-
         // ── 1. いまのレイヤー順を取得
         const layers = map.getStyle().layers;
         const index  = layers.findIndex(l => l.id === LAYER_ID);
@@ -460,14 +460,11 @@ export default {
           return;
         }
         const beforeId = (index < layers.length - 1) ? layers[index + 1].id : undefined;
-
         // ── 2. 削除
         if (map.getLayer(LAYER_ID)) {
           map.removeLayer(LAYER_ID);
         }
-
         // ── 3. 新しいレイヤー定義
-        // const newLayer = homusyo2025LayerDaihyou
         const newLayer = {
           id: LAYER_ID,
           type: 'heatmap',
@@ -484,7 +481,6 @@ export default {
           },
           maxzoom: 15,
         };
-
         // ── 4. 取得しておいた順番で add
         if (beforeId) {
           map.addLayer(newLayer, beforeId);   // beforeId の直前に挿入
@@ -493,7 +489,9 @@ export default {
         }
       }
 
-      replaceHeatmapLayer(map, colors)
+      if (!this.s_tokijyoText2025) {
+        replaceHeatmapLayer(map, colors)
+      }
 
       if (isUpdate) this.update()
     },
@@ -558,37 +556,93 @@ export default {
       const map = this.$store.state[this.mapName]
       gistUpload(map,'oh-homusyo-2025-polygon','homusyo-2025-source',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
     },
-    change () {
+
+    change() {
       const map = this.$store.state[this.mapName]
-      //-------------------------------------------------------------------------
+
       function filterBy(text) {
+        let matchCondition
         if (text) {
           let searchString = text
-          searchString = searchString.replace(/\u3000/g,' ').trim()
+          searchString = searchString.replace(/\u3000/g, ' ').trim()
           const words = searchString.split(" ")
-          // 複数フィールドを結合する
           const combinedFields = ["concat", ["get", "市区町村名"], ["get", "大字名"], ["get", "丁目名"], ["get", "地番"]];
-          // 各単語に対して、結合したフィールドに対する index-of チェックを実行
-          const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);
-          // いずれかの単語が含まれる場合の条件を作成 (OR条件)
-          const matchCondition = ["any", ...filterConditions]
+
+          if ((text.match(/"/g) || []).length >= 2) {
+            // 各単語に対して、結合フィールド or 各フィールドの完全一致をORでつなぐ
+            const filterConditions = words.map(word => [
+              "any",
+              ["==", combinedFields, word.replace(/"/gi,'')],
+              ["==", ["get", "市区町村名"], word.replace(/"/gi,'')],
+              ["==", ["get", "大字名"], word.replace(/"/gi,'')],
+              ["==", ["get", "丁目名"], word.replace(/"/gi,'')],
+              ["==", ["get", "地番"], word.replace(/"/gi,'')],
+            ]);
+            // 複数語があるときはANDで結合（すべての単語がどれかに一致）
+            matchCondition = ["all", ...filterConditions]
+          } else {
+            // 各単語に対して、結合したフィールドに対する index-of チェックを実行
+            const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);
+            // いずれかの単語が含まれる場合の条件を作成 (OR条件)
+            matchCondition = ["any", ...filterConditions]
+          }
+
           map.setFilter('oh-homusyo-2025-polygon', matchCondition)
           map.setFilter('oh-homusyo-2025-line', matchCondition)
           map.setFilter('oh-homusyo-2025-label', matchCondition)
           map.setFilter('oh-homusyo-2025-vertex', matchCondition)
-          map.setFilter('oh-homusyo-2025-vertex', matchCondition)
-          map.setFilter('oh-homusyo-2025-daihyo', matchCondition)
+          map.setFilter('oh-homusyo-2025-daihyo', ['==', ['get', '市町村名'], '999'])
+          map.setFilter('oh-homusyo-2025-searched-point', matchCondition)
         } else {
           map.setFilter('oh-homusyo-2025-polygon', null)
           map.setFilter('oh-homusyo-2025-line', null)
           map.setFilter('oh-homusyo-2025-label', null)
           map.setFilter('oh-homusyo-2025-vertex', null)
           map.setFilter('oh-homusyo-2025-daihyo', null)
+          map.setFilter('oh-homusyo-2025-searched-point', ['==', ['get', '市町村名'], '999']);
         }
       }
+
       filterBy(this.s_tokijyoText2025)
       this.update()
-    },
+    }
+
+    //   change () {
+  //     const map = this.$store.state[this.mapName]
+  //     //-------------------------------------------------------------------------
+  //     function filterBy(text) {
+  //       let matchCondition
+  //       if (text) {
+  //         let searchString = text
+  //         searchString = searchString.replace(/\u3000/g,' ').trim()
+  //         const words = searchString.split(" ")
+  //         // 複数フィールドを結合する
+  //         const combinedFields = ["concat", ["get", "市区町村名"], ["get", "大字名"], ["get", "丁目名"], ["get", "地番"]];
+  //         // 各単語に対して、結合したフィールドに対する index-of チェックを実行
+  //         const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);
+  //         // いずれかの単語が含まれる場合の条件を作成 (OR条件)
+  //         matchCondition = ["any", ...filterConditions]
+  //         map.setFilter('oh-homusyo-2025-polygon', matchCondition)
+  //         map.setFilter('oh-homusyo-2025-line', matchCondition)
+  //         map.setFilter('oh-homusyo-2025-label', matchCondition)
+  //         map.setFilter('oh-homusyo-2025-vertex', matchCondition)
+  //         map.setFilter('oh-homusyo-2025-vertex', matchCondition)
+  //         map.setFilter('oh-homusyo-2025-daihyo', ['==', ['get', '市町村名'], '999'])
+  //         map.setFilter('oh-homusyo-2025-searched-point', matchCondition)
+  //       } else {
+  //         map.setFilter('oh-homusyo-2025-polygon', null)
+  //         map.setFilter('oh-homusyo-2025-line', null)
+  //         map.setFilter('oh-homusyo-2025-label', null)
+  //         map.setFilter('oh-homusyo-2025-vertex', null)
+  //         // map.setFilter('oh-homusyo-2025-daihyo', null)
+  //         map.setFilter('oh-homusyo-2025-daihyo', matchCondition)
+  //         // map.setFilter('oh-homusyo-2025-searched-point', null)
+  //         map.setFilter('oh-homusyo-2025-searched-point', ['==', ['get', '市町村名'], '999']);
+  //       }
+  //     }
+  //     filterBy(this.s_tokijyoText2025)
+  //     this.update()
+  //   },
   },
   created() {
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;

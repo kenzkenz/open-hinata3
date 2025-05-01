@@ -290,7 +290,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v0.919
+        v0.921
       </p>
 
       <div v-if="user1">
@@ -1107,8 +1107,6 @@ export default {
         console.log("🔄 グループ変更で initialGroupName 更新:", group.name)
         document.querySelector('#drag-handle-myroomDialog-map01').innerHTML = '<span style="font-size: large;">マイルーム_' + this.s_currentGroupName + '</span>'
       }
-
-
 
     },
     async switchGroup(groupId) {

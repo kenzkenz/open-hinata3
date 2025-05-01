@@ -3289,6 +3289,13 @@ const homusyo2025DaihyoSource = {
         url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025point.pmtiles'
     },
 }
+const homusyo2025DaihyoSource2 = {
+    id: "homusyo-2025-diahyo-source2", obj: {
+        type: "vector",
+        // url: 'pmtiles://https://kenzkenz.xsrv.jp/pmtiles/homusyo/2025/2025point.pmtiles'
+        url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025pointFull.pmtiles'
+    },
+}
 const homusyo2025KijyuntenSource = {
     id: "homusyo-2025-kijyunten-source", obj: {
         type: "vector",
@@ -3472,6 +3479,18 @@ const homusyo2025LayerZukakuLabel = {
         'text-halo-width': 1.0,
     },
     'minzoom': 14,
+}
+export const homusyo2025LayerSearchedPoint = {
+    id: "oh-homusyo-2025-searched-point",
+    type: "circle",
+    source: "homusyo-2025-diahyo-source2",
+    "source-layer": "daihyo",
+    filter: ['==', ['get', '市町村名'], '999'],
+    paint: {
+        'circle-color': 'red',
+        'circle-radius': 8,
+    },
+    'maxzoom': 14
 }
 // ---------------------------------------------------------------------------------------------------------------------
 const amx2024Source = {
@@ -9056,8 +9075,9 @@ let layers01 = [
     {
         id: 'oh-homusyo-2025-layer',
         label: "2025登記所地図",
-        sources: [homusyo2025Source,homusyo2025DaihyoSource],
-        layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025LayerDaihyou],
+        sources: [homusyo2025Source,homusyo2025DaihyoSource,homusyo2025DaihyoSource2],
+        // layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025LayerDaihyou],
+        layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025LayerDaihyou,homusyo2025LayerSearchedPoint],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
         ext: {name:'extTokijyo2025'}
     },
@@ -9092,8 +9112,8 @@ let layers01 = [
             {
                 id: 'oh-homusyo-2025-layer',
                 label: "2025登記所地図",
-                sources: [homusyo2025Source,homusyo2025DaihyoSource],
-                layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025LayerDaihyou],
+                sources: [homusyo2025Source,homusyo2025DaihyoSource,homusyo2025DaihyoSource2],
+                layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025LayerDaihyou,homusyo2025LayerSearchedPoint],
                 attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
                 ext: {name:'extTokijyo2025'}
             },
