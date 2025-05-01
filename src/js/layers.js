@@ -3477,8 +3477,8 @@ const homusyo2025LayerZukakuLabel = {
 const amx2024Source = {
     id: "amx-a-2024-pmtiles", obj: {
         type: "vector",
-        url: 'pmtiles://https://kenzkenz4.xsrv.jp/pmtiles/homusyo/2024/MojMap_amx_2024.pmtiles'
-        // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/amx/MojMap_amx_2024.pmtiles'
+        // url: 'pmtiles://https://kenzkenz4.xsrv.jp/pmtiles/homusyo/2024/MojMap_amx_2024v2.pmtiles'
+        url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/amx/MojMap_amx_2024.pmtiles'
         // url: 'pmtiles://https://data.source.coop/smartmaps/amx-2024-04/MojMap_amx_2024.pmtiles',
     },
 }
