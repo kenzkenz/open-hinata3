@@ -3333,7 +3333,8 @@ const homusyo2025DissolvedLayer = {
     paint: {
         "fill-color": "rgba(0, 0, 0, 0.1)"
     },
-    minzoom: 10
+    minzoom: 10,
+    maxzoom: 15
 }
 export const homusyo2025LayerLine = {
     id: "oh-homusyo-2025-line",

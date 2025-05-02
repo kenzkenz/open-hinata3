@@ -557,9 +557,34 @@ export default {
       gistUpload(map,'oh-homusyo-2025-polygon','homusyo-2025-source',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
     },
 
-
     change() {
       const map = this.$store.state[this.mapName];
+
+      // 色名から RGB へのマッピング（指定された色のみ）
+      const colorMap = {
+        red: [255, 0, 0],
+        black: [0, 0, 0],
+        blue: [0, 0, 255],
+        green: [0, 128, 0],
+        orange: [255, 165, 0],
+      };
+
+      // 色を RGBA に変換するヘルパー関数
+      function toRGBA(color, alpha = 0.6) {
+        // 色名の場合
+        if (colorMap[color.toLowerCase()]) {
+          const [r, g, b] = colorMap[color.toLowerCase()];
+          return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+        // 無効な色の場合、デフォルトとして青（透過度0.6）を返す
+        console.warn(`Invalid color: ${color}, falling back to blue`);
+        return `rgba(0, 0, 255, ${alpha})`;
+      }
+
+      // デフォルト色（this.s_tokijyoCircleColor2025 を RGBA に変換）
+      const DEFAULT_FILL_COLOR = toRGBA(this.s_tokijyoCircleColor2025, 0.6);
+      // ヒット時の色（赤、透過度0.6）
+      const HIT_FILL_COLOR = 'rgba(255, 0, 0, 0.6)';
 
       function filterBy(text) {
         let matchCondition;
@@ -630,19 +655,207 @@ export default {
           map.setFilter('oh-homusyo-2025-label', matchCondition);
           map.setFilter('oh-homusyo-2025-vertex', matchCondition);
           map.setFilter('oh-homusyo-2025-polygon-dissolved', matchCondition);
+
+          // ヒットした場合、fill-colorを赤（透過度0.6）に変更
+          map.setPaintProperty('oh-homusyo-2025-polygon-dissolved', 'fill-color', HIT_FILL_COLOR);
         } else {
-          // 検索テキストがない場合、フィルタをリセット
+          // 検索テキストがない場合、フィルタをリセットし、元の色（透過度0.6）に戻す
           map.setFilter('oh-homusyo-2025-polygon', null);
           map.setFilter('oh-homusyo-2025-line', null);
           map.setFilter('oh-homusyo-2025-label', null);
           map.setFilter('oh-homusyo-2025-vertex', null);
           map.setFilter('oh-homusyo-2025-polygon-dissolved', null);
+
+          // 元の色（this.s_tokijyoCircleColor2025、透過度0.6）に戻す
+          map.setPaintProperty('oh-homusyo-2025-polygon-dissolved', 'fill-color', DEFAULT_FILL_COLOR);
         }
       }
 
       filterBy(this.s_tokijyoText2025);
       this.update();
     }
+
+    // change() {
+    //   const map = this.$store.state[this.mapName];
+    //
+    //   // 元の色の定義（必要に応じて実際のデフォルト値に変更）
+    //   const DEFAULT_FILL_COLOR = '#0000FF'; // 仮のデフォルト色
+    //   const HIT_FILL_COLOR = '#FF0000'; // ヒット時の赤色
+    //
+    //   function filterBy(text) {
+    //     let matchCondition;
+    //     if (text) {
+    //       let searchString = text
+    //           .replace(/\u3000/g, ' ') // 全角スペースを半角に
+    //           .trim()
+    //           .replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)) // 全角英数字を半角に
+    //           .replace(/[\u30FC\u2010-\u2015\u2212]/g, '-'); // 全角ハイフンやダッシュ類を半角ハイフンに変換
+    //
+    //       // 漢数字＋丁目をアラビア数字＋丁目に変換
+    //       const kanjiNums = { '一': '1', '二': '2', '三': '3', '四': '4', '五': '5', '六': '6', '七': '7', '八': '8', '九': '9', '十': '10' };
+    //       searchString = searchString.replace(/([一二三四五六七八九十])丁目/g, (_, kanji) => {
+    //         return (kanjiNums[kanji] || kanji) + '丁目';
+    //       });
+    //
+    //       // 地番抽出：最後尾から漢字が現れるまで（例：5-57, 5, 5-5, 5-）
+    //       let chibanWord = '';
+    //       if (searchString.match(/\d+(-\d+)?-?$/)) { // 例: "5-57", "5", "5-5", "5-"
+    //         chibanWord = searchString.match(/\d+(-\d+)?-?$/)[0]; // 地番部分（末尾の「-」も含む）
+    //         searchString = searchString.replace(/\d+(-\d+)?-?$/, '').trim(); // 地番を除去
+    //       }
+    //
+    //       const words = searchString.split(" ").filter(w => w);
+    //       if (chibanWord) words.push(chibanWord); // 地番を単語として追加
+    //
+    //       const combinedFields = ["concat", ["get", "市区町村名"], ["get", "大字名"], ["get", "丁目名"], ["get", "地番"], ["get", "chibans"]];
+    //
+    //       if ((text.match(/"/g) || []).length >= 2) {
+    //         // ダブルクォートで囲まれた場合の完全一致検索
+    //         const filterConditions = words.map(word => [
+    //           "any",
+    //           ["==", combinedFields, word.replace(/"/gi, '')],
+    //           ["==", ["get", "市区町村名"], word.replace(/"/gi, '')],
+    //           ["==", ["get", "大字名"], word.replace(/"/gi, '')],
+    //           ["==", ["get", "丁目名"], word.replace(/"/gi, '')],
+    //           ["==", ["get", "地番"], word.replace(/"/gi, '')],
+    //           ["==", ["get", "chibans"], word.replace(/"/gi, '')]
+    //         ]);
+    //         matchCondition = ["all", ...filterConditions];
+    //       } else {
+    //         // 通常の部分一致検索
+    //         const filterConditions = words.map(word => [
+    //           "any",
+    //           [">=", ["index-of", word, combinedFields], 0],
+    //           [">=", ["index-of", word, ["get", "市区町村名"]], 0],
+    //           [">=", ["index-of", word, ["get", "大字名"]], 0],
+    //           [">=", ["index-of", word, ["get", "丁目名"]], 0],
+    //           word === chibanWord
+    //               ? ["any",
+    //                 [">=", ["index-of", word, ["get", "地番"]], 0], // 地番に部分一致
+    //                 [">=", ["index-of", word, ["get", "chibans"]], 0] // chibansに部分一致
+    //               ]
+    //               : [">=", ["index-of", word, ["get", "地番"]], 0],
+    //           word === chibanWord
+    //               ? ["any",
+    //                 [">=", ["index-of", word, ["get", "地番"]], 0],
+    //                 [">=", ["index-of", word, ["get", "chibans"]], 0]
+    //               ]
+    //               : [">=", ["index-of", word, ["get", "chibans"]], 0]
+    //         ]);
+    //         matchCondition = ["all", ...filterConditions];
+    //       }
+    //
+    //       // フィルタ適用
+    //       map.setFilter('oh-homusyo-2025-polygon', matchCondition);
+    //       map.setFilter('oh-homusyo-2025-line', matchCondition);
+    //       map.setFilter('oh-homusyo-2025-label', matchCondition);
+    //       map.setFilter('oh-homusyo-2025-vertex', matchCondition);
+    //       map.setFilter('oh-homusyo-2025-polygon-dissolved', matchCondition);
+    //
+    //       // ヒットした場合、fill-colorを赤に変更
+    //       map.setPaintProperty('oh-homusyo-2025-polygon-dissolved', 'fill-color', HIT_FILL_COLOR);
+    //     } else {
+    //       // 検索テキストがない場合、フィルタをリセットし、元の色に戻す
+    //       map.setFilter('oh-homusyo-2025-polygon', null);
+    //       map.setFilter('oh-homusyo-2025-line', null);
+    //       map.setFilter('oh-homusyo-2025-label', null);
+    //       map.setFilter('oh-homusyo-2025-vertex', null);
+    //       map.setFilter('oh-homusyo-2025-polygon-dissolved', null);
+    //
+    //       // 元の色に戻す
+    //       map.setPaintProperty('oh-homusyo-2025-polygon-dissolved', 'fill-color', DEFAULT_FILL_COLOR);
+    //     }
+    //   }
+    //
+    //   filterBy(this.s_tokijyoText2025);
+    //   this.update();
+    // }
+
+    // change() {
+    //   const map = this.$store.state[this.mapName];
+    //
+    //   function filterBy(text) {
+    //     let matchCondition;
+    //     if (text) {
+    //       let searchString = text
+    //           .replace(/\u3000/g, ' ') // 全角スペースを半角に
+    //           .trim()
+    //           .replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)) // 全角英数字を半角に
+    //           .replace(/[\u30FC\u2010-\u2015\u2212]/g, '-'); // 全角ハイフンやダッシュ類を半角ハイフンに変換
+    //
+    //       // 漢数字＋丁目をアラビア数字＋丁目に変換
+    //       const kanjiNums = { '一': '1', '二': '2', '三': '3', '四': '4', '五': '5', '六': '6', '七': '7', '八': '8', '九': '9', '十': '10' };
+    //       searchString = searchString.replace(/([一二三四五六七八九十])丁目/g, (_, kanji) => {
+    //         return (kanjiNums[kanji] || kanji) + '丁目';
+    //       });
+    //
+    //       // 地番抽出：最後尾から漢字が現れるまで（例：5-57, 5, 5-5, 5-）
+    //       let chibanWord = '';
+    //       if (searchString.match(/\d+(-\d+)?-?$/)) { // 例: "5-57", "5", "5-5", "5-"
+    //         chibanWord = searchString.match(/\d+(-\d+)?-?$/)[0]; // 地番部分（末尾の「-」も含む）
+    //         searchString = searchString.replace(/\d+(-\d+)?-?$/, '').trim(); // 地番を除去
+    //       }
+    //
+    //       const words = searchString.split(" ").filter(w => w);
+    //       if (chibanWord) words.push(chibanWord); // 地番を単語として追加
+    //
+    //       const combinedFields = ["concat", ["get", "市区町村名"], ["get", "大字名"], ["get", "丁目名"], ["get", "地番"], ["get", "chibans"]];
+    //
+    //       if ((text.match(/"/g) || []).length >= 2) {
+    //         // ダブルクォートで囲まれた場合の完全一致検索
+    //         const filterConditions = words.map(word => [
+    //           "any",
+    //           ["==", combinedFields, word.replace(/"/gi, '')],
+    //           ["==", ["get", "市区町村名"], word.replace(/"/gi, '')],
+    //           ["==", ["get", "大字名"], word.replace(/"/gi, '')],
+    //           ["==", ["get", "丁目名"], word.replace(/"/gi, '')],
+    //           ["==", ["get", "地番"], word.replace(/"/gi, '')],
+    //           ["==", ["get", "chibans"], word.replace(/"/gi, '')]
+    //         ]);
+    //         matchCondition = ["all", ...filterConditions];
+    //       } else {
+    //         // 通常の部分一致検索
+    //         const filterConditions = words.map(word => [
+    //           "any",
+    //           [">=", ["index-of", word, combinedFields], 0],
+    //           [">=", ["index-of", word, ["get", "市区町村名"]], 0],
+    //           [">=", ["index-of", word, ["get", "大字名"]], 0],
+    //           [">=", ["index-of", word, ["get", "丁目名"]], 0],
+    //           word === chibanWord
+    //               ? ["any",
+    //                 [">=", ["index-of", word, ["get", "地番"]], 0], // 地番に部分一致
+    //                 [">=", ["index-of", word, ["get", "chibans"]], 0] // chibansに部分一致
+    //               ]
+    //               : [">=", ["index-of", word, ["get", "地番"]], 0],
+    //           word === chibanWord
+    //               ? ["any",
+    //                 [">=", ["index-of", word, ["get", "地番"]], 0],
+    //                 [">=", ["index-of", word, ["get", "chibans"]], 0]
+    //               ]
+    //               : [">=", ["index-of", word, ["get", "chibans"]], 0]
+    //         ]);
+    //         matchCondition = ["all", ...filterConditions];
+    //       }
+    //
+    //       // フィルタ適用
+    //       map.setFilter('oh-homusyo-2025-polygon', matchCondition);
+    //       map.setFilter('oh-homusyo-2025-line', matchCondition);
+    //       map.setFilter('oh-homusyo-2025-label', matchCondition);
+    //       map.setFilter('oh-homusyo-2025-vertex', matchCondition);
+    //       map.setFilter('oh-homusyo-2025-polygon-dissolved', matchCondition);
+    //     } else {
+    //       // 検索テキストがない場合、フィルタをリセット
+    //       map.setFilter('oh-homusyo-2025-polygon', null);
+    //       map.setFilter('oh-homusyo-2025-line', null);
+    //       map.setFilter('oh-homusyo-2025-label', null);
+    //       map.setFilter('oh-homusyo-2025-vertex', null);
+    //       map.setFilter('oh-homusyo-2025-polygon-dissolved', null);
+    //     }
+    //   }
+    //
+    //   filterBy(this.s_tokijyoText2025);
+    //   this.update();
+    // }
 
     //
     // change() {
