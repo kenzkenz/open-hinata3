@@ -565,6 +565,16 @@ export default {
         if (text) {
           let searchString = text
           searchString = searchString.replace(/\u3000/g, ' ').trim()
+          // 全角→半角正規化（特に数字とアルファベット）
+          searchString = searchString.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function (s) {
+            return String.fromCharCode(s.charCodeAt(0) - 0xFEE0)
+          })
+          // 漢数字＋丁目をアラビア数字＋丁目に変換
+          const kanjiNums = { '一': '1', '二': '2', '三': '3', '四': '4', '五': '5', '六': '6', '七': '7', '八': '8', '九': '9', '十': '10' }
+          searchString = searchString.replace(/([一二三四五六七八九十])丁目/g, (_, kanji) => {
+            return (kanjiNums[kanji] || kanji) + '丁目'
+          })
+
           const words = searchString.split(" ")
           const combinedFields = ["concat", ["get", "市区町村名"], ["get", "大字名"], ["get", "丁目名"], ["get", "地番"]];
 
