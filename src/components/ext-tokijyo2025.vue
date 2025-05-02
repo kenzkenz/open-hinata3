@@ -582,7 +582,7 @@ export default {
       }
 
       // デフォルト色（this.s_tokijyoCircleColor2025 を RGBA に変換）
-      const DEFAULT_FILL_COLOR = toRGBA(this.s_tokijyoCircleColor2025, 0.6);
+      const DEFAULT_FILL_COLOR = toRGBA(this.s_tokijyoColor2025, 0.4);
       // ヒット時の色（赤、透過度0.6）
       const HIT_FILL_COLOR = 'rgba(255, 0, 0, 0.6)';
 
