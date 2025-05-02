@@ -1383,4 +1383,8 @@ tippecanoe \
   -o 2025pointFull.pmtiles \
   2025point.fgb
 
+tippecanoe -pk -pf -f -l polygon -Z0 -z14 -o 2025dissolved.pmtiles fdb_by_pref_normalized_dissolved/*.fgb
+
+tippecanoe -pk -pf -f -l polygon -Z0 -z14 --simplification=2 --simplify-only-low-zooms -o 2025dissolvedSimple.pmtiles fdb_by_pref_normalized_dissolved/*.fgb
+
 
