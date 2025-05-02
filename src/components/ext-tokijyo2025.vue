@@ -567,7 +567,8 @@ export default {
           let searchString = text
               .replace(/\u3000/g, ' ') // 全角スペースを半角に
               .trim()
-              .replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)); // 全角英数字を半角に
+              .replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)) // 全角英数字を半角に
+              .replace(/[\u30FC\u2010-\u2015\u2212]/g, '-'); // 全角ハイフンやダッシュ類を半角ハイフンに変換
 
           // 漢数字＋丁目をアラビア数字＋丁目に変換
           const kanjiNums = { '一': '1', '二': '2', '三': '3', '四': '4', '五': '5', '六': '6', '七': '7', '八': '8', '九': '9', '十': '10' };
@@ -585,7 +586,7 @@ export default {
           const words = searchString.split(" ").filter(w => w);
           if (chibanWord) words.push(chibanWord); // 地番を単語として追加
 
-          const combinedFields = ["concat", ["get", "市区町村名"], ["get", "大字名"], ["get", "丁目名"], ["get", "地番"], ["get", "chibans"]]; // 修正: 閉じ括弧を追加、mediaplayer → chibans
+          const combinedFields = ["concat", ["get", "市区町村名"], ["get", "大字名"], ["get", "丁目名"], ["get", "地番"], ["get", "chibans"]];
 
           if ((text.match(/"/g) || []).length >= 2) {
             // ダブルクォートで囲まれた場合の完全一致検索
