@@ -15,11 +15,19 @@
       </v-card-title>
 
       <v-card-text style="margin-top: 20px;">
-        <h2 style="margin-bottom: 10px;">{{ `${popupFeatureProperties.市区町村名}${popupFeatureProperties.大字名}${popupFeatureProperties.丁目名}${popupFeatureProperties.地番}` }}</h2>
+        <transition name="fade" mode="out-in">
+          <h2
+              :key="`${popupFeatureProperties.市区町村名}${popupFeatureProperties.大字名}${popupFeatureProperties.丁目名}${popupFeatureProperties.地番}`"
+              style="margin-bottom: 10px;"
+          >
+            {{ `${popupFeatureProperties.市区町村名}${popupFeatureProperties.大字名}${popupFeatureProperties['丁目名'] || ''}${popupFeatureProperties.地番}` }}
+          </h2>
+        </transition>
+<!--        <h2 style="margin-bottom: 10px;">{{ `${popupFeatureProperties.市区町村名}${popupFeatureProperties.大字名}${popupFeatureProperties.丁目名}${popupFeatureProperties.地番}` }}</h2>-->
         <p v-for="[key, value] in Object.entries(popupFeatureProperties)" :key="key" class="property-text">
           {{ key }}: {{ value }}
         </p>
-        <div class="street-view-drawer" style="margin-top:10px;height: 200px;width:100%;background-color: gray"></div>
+        <div class="street-view-drawer" style="margin-top:10px;height: 350px;width:100%;background-color: gray"></div>
       </v-card-text>
 
 <!--      <v-card-actions style="margin-top: 0px">-->
@@ -130,5 +138,14 @@ export default {
 }
 .close-btn:hover {
   color: red;
+}
+/* フェードアニメーション */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

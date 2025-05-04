@@ -407,21 +407,6 @@ export default {
         }
       }
 
-      // -----------------------------------------
-      // if (this.s_selectedLayers[this.mapName]?.some(layer => layer.id === 'oh-amx-a-fude')) {
-      //   this.$store.state.watchFlg = false
-      //   this.isDragging = false
-      //   if (Array.isArray(this.s_selectedLayers[this.mapName])) {
-      //     const layers = this.s_selectedLayers[this.mapName];
-      //     const index = layers.findIndex(layer => layer.id === 'oh-amx-a-fude');
-      //     if (index !== -1) {
-      //       // 要素が存在する場合、先頭に移動
-      //       const [targetLayer] = layers.splice(index, 1); // 指定した要素を取り除く
-      //       layers.unshift(targetLayer); // 取り除いた要素を先頭に追加
-      //     }
-      //   }
-      // }
-      // -------------------------------------------------------------------------------------------
       console.log('selectedLayers',this.s_selectedLayers)
 
       function isObject(value) {
@@ -443,8 +428,6 @@ export default {
               }
             } else {
               if (!map.getSource(layer.source.id)) {
-                // alert(1111)
-
                 const source = this.$store.state.geojsonSources.find(source => {
                   // alert(source.sourceId + '//////' + layer.source)
                   return source.sourceId === layer.source
@@ -491,16 +474,19 @@ export default {
               if (layer0.type === 'raster') {
                 map.setPaintProperty(layer0.id, 'raster-opacity', opacity)
               } else if (layer0.type === 'fill') {
-                if ((layer0.metadata && layer0.metadata.group === 'osm-bright') || (layer0.metadata && layer0.metadata.group === 'osm-3d')) {
-                  if (typeof layer0.paint['fill-opacity'] === 'number') {
-                    // console.log(layer0.paint['fill-opacity'])
-                    map.setPaintProperty(layer0.id, 'fill-opacity', layer0.paint['fill-opacity'] * opacity)
+
+                if (layer0.id !== 'oh-homusyo-2025-polygon') {
+                  if ((layer0.metadata && layer0.metadata.group === 'osm-bright') || (layer0.metadata && layer0.metadata.group === 'osm-3d')) {
+                    if (typeof layer0.paint['fill-opacity'] === 'number') {
+                      map.setPaintProperty(layer0.id, 'fill-opacity', layer0.paint['fill-opacity'] * opacity)
+                    } else {
+                      map.setPaintProperty(layer0.id, 'fill-opacity', opacity)
+                    }
                   } else {
                     map.setPaintProperty(layer0.id, 'fill-opacity', opacity)
                   }
-                } else {
-                  map.setPaintProperty(layer0.id, 'fill-opacity', opacity)
                 }
+
               } else if (layer0.type === 'line') {
                 map.setPaintProperty(layer0.id, 'line-opacity', opacity)
               } else if (layer0.type === 'fill-extrusion') {
@@ -629,17 +615,6 @@ export default {
           console.error("ファイルの取得中にエラーが発生しました:", error);
         }
       }
-
-      // 逃げのコード。用改修
-      // if (this.counter <= 5) {
-      //   try {
-      //     if (JSON.parse(this.$store.state.uploadedImage).tile) {
-      //       addTileLayer(map)
-      //     }
-      //   } catch (e) {
-      //     console.log(e)
-      //   }
-      // }
 
       if (this.counter === 1) {
         if (this.$store.state.uploadedVector) {
@@ -1008,6 +983,7 @@ export default {
       }
       highlightSpecificFeatures2025(map,'oh-homusyo-2025-polygon');
     },
+
     mw5AddLayers(map,mapName) {
       if (!this.s_selectedLayers[mapName].find(v => v.id === 'oh-mw5')) {
         return
