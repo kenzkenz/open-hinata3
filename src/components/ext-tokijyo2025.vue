@@ -233,7 +233,26 @@ import {
 } from "@/js/downLoad";
 import {history} from "@/App";
 import {homusyo2025LayerDaihyou, homusyo2025LayerLine} from "@/js/layers";
+// 色名から RGB へのマッピング（指定された色のみ）
+const colorMap = {
+  red: [255, 0, 0],
+  black: [0, 0, 0],
+  blue: [0, 0, 255],
+  green: [0, 128, 0],
+  orange: [255, 165, 0],
+};
 
+// 色を RGBA に変換するヘルパー関数
+function toRGBA(color, alpha = 0.6) {
+  // 色名の場合
+  if (colorMap[color.toLowerCase()]) {
+    const [r, g, b] = colorMap[color.toLowerCase()];
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+  // 無効な色の場合、デフォルトとして青（透過度0.6）を返す
+  console.warn(`Invalid color: ${color}, falling back to blue`);
+  return `rgba(0, 0, 255, ${alpha})`;
+}
 export default {
   name: 'ext-tokijyo2025',
   props: ['mapName','item'],
@@ -419,6 +438,8 @@ export default {
       map.setPaintProperty('oh-homusyo-2025-line', 'line-color', color)
       map.setPaintProperty('oh-homusyo-2025-label', 'text-color', color)
       map.setPaintProperty('oh-homusyo-2025-searched-point', 'circle-color', color)
+      const DEFAULT_FILL_COLOR = toRGBA(color, 0.4);
+      map.setPaintProperty('oh-homusyo-2025-polygon-dissolved-all', 'fill-color', DEFAULT_FILL_COLOR);
       this.s_tokijyoColor2025 = color
 
       let colors
@@ -560,27 +581,6 @@ export default {
     change() {
       const map = this.$store.state[this.mapName];
 
-      // 色名から RGB へのマッピング（指定された色のみ）
-      const colorMap = {
-        red: [255, 0, 0],
-        black: [0, 0, 0],
-        blue: [0, 0, 255],
-        green: [0, 128, 0],
-        orange: [255, 165, 0],
-      };
-
-      // 色を RGBA に変換するヘルパー関数
-      function toRGBA(color, alpha = 0.6) {
-        // 色名の場合
-        if (colorMap[color.toLowerCase()]) {
-          const [r, g, b] = colorMap[color.toLowerCase()];
-          return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-        }
-        // 無効な色の場合、デフォルトとして青（透過度0.6）を返す
-        console.warn(`Invalid color: ${color}, falling back to blue`);
-        return `rgba(0, 0, 255, ${alpha})`;
-      }
-
       // デフォルト色（this.s_tokijyoCircleColor2025 を RGBA に変換）
       const DEFAULT_FILL_COLOR = toRGBA(this.s_tokijyoColor2025, 0.4);
       // ヒット時の色（赤、透過度0.6）
@@ -670,6 +670,7 @@ export default {
           // 元の色（this.s_tokijyoCircleColor2025、透過度0.6）に戻す
           // map.setPaintProperty('oh-homusyo-2025-polygon-dissolved', 'fill-color', DEFAULT_FILL_COLOR);
           map.setPaintProperty('oh-homusyo-2025-polygon-dissolved', 'fill-color', 'rgba(255, 0, 0, 0, 0)');
+          map.setPaintProperty('oh-homusyo-2025-polygon-dissolved-all', 'fill-color', DEFAULT_FILL_COLOR);
           map.setFilter('oh-homusyo-2025-polygon-dissolved-all', null)
 
         }
