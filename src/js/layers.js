@@ -9109,7 +9109,6 @@ let layers01 = [
         id: 'oh-homusyo-2025-layer',
         label: "2025登記所地図",
         sources: [homusyo2025Source,homusyo2025DDissolvedAllSource,homusyo2025DDissolvedSource],
-        // layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025LayerDaihyou],
         layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025DissolvedAllLayer,homusyo2025DissolvedLayer],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
         ext: {name:'extTokijyo2025'}
@@ -9150,6 +9149,14 @@ let layers01 = [
             //     attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
             //     ext: {name:'extTokijyo2025'}
             // },
+            {
+                id: 'oh-homusyo-2025-layer',
+                label: "2025登記所地図",
+                sources: [homusyo2025Source,homusyo2025DDissolvedAllSource,homusyo2025DDissolvedSource],
+                layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025DissolvedAllLayer,homusyo2025DissolvedLayer],
+                attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
+                ext: {name:'extTokijyo2025'}
+            },
             {
                 id: 'oh-homusyo-2025-kijyunten',
                 label: "2025登記所地図-基準点",
