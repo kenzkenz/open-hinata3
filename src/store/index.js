@@ -4,6 +4,8 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    popupFeatureProperties: {},
+    popupFeatureCoordinates: [],
     soloFlg: false,
     mapillaryDialog : false,
     clickedCoordinates: [],
@@ -39,6 +41,7 @@ export default createStore({
     map2Flg: false,
     isUnder500: false,
     showPointInfoDrawer: false,
+    showRightDrawer: false,
     selectedPointFeature: null,
     groupGeojson: { type: 'FeatureCollection', features: [] },
     dialogs: {
@@ -456,6 +459,9 @@ export default createStore({
     },
     setPointInfoDrawer (state, val) {
       state.showPointInfoDrawer = val
+    },
+    setRightDrawer (state, val) {
+      state.showRightDrawer = val
     },
     setSelectedPointFeature (state, feature) {
       state.selectedPointFeature = feature

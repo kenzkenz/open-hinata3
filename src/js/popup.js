@@ -3028,12 +3028,30 @@ export function popup(e,map,mapName,mapFlg) {
             }
             case 'oh-homusyo-2025-polygon':
             {
-                if (store.state.isRenzoku) return
                 const features = map.queryRenderedFeatures(
                     map.project(coordinates), {layers: ['oh-homusyo-2025-polygon']}
                 )
                 console.log(features)
                 if (features.length === 0) return
+
+                // ⭐️-----------------------------------------------------------------------------------------------------
+                if (store.state.isRenzoku) {
+                    if (window.innerWidth >= 500) {
+
+                        const targetId = `${features[0].properties['筆ID']}_${features[0].properties['地番']}`
+                        if (!store.state.highlightedChibans.has(targetId)) {
+                            store.state.popupFeatureProperties = features[0].properties
+                            store.state.popupFeatureCoordinates = coordinates
+                            store.commit('setRightDrawer', true)
+                        } else {
+                            store.commit('setRightDrawer', false)
+                        }
+
+                    }
+                    return
+                }
+                // -----------------------------------------------------------------------------------------------------
+
                 props = features[0].properties
                 let html0 = ''
                 if (html.indexOf('oh-homusyo-2025-polygon') === -1) {

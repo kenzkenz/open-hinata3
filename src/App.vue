@@ -8,6 +8,11 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
+      <RightDrawer
+          :value="showRightDrawer"
+          :feature="selectedPointFeature"
+      />
+
       <PointInfoDrawer
           :value="showPointInfoDrawer"
           :feature="selectedPointFeature"
@@ -557,6 +562,7 @@ import { MaplibreMeasureControl } from '@watergis/maplibre-gl-terradraw';
 import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
 import { TerraDraw,TerraDrawPointMode,TerraDrawLineStringMode,TerraDrawPolygonMode,TerraDrawFreehandMode } from 'terra-draw'
 import PointInfoDrawer from '@/components/PointInfoDrawer.vue'
+import RightDrawer from '@/components/rightDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
 import LayerTabPanel from '@/components/LayerTabPanel.vue'
 import {
@@ -897,6 +903,7 @@ export default {
     DialogShare,
     DialogChibanzuList,
     PointInfoDrawer,
+    RightDrawer
   },
   data: () => ({
     mapillaryWidth: '0px',
@@ -962,6 +969,7 @@ export default {
   computed: {
     ...mapState([
       'showPointInfoDrawer',
+      'showRightDrawer',
       'selectedPointFeature'
     ]),
     s_mapillaryDialog: {
@@ -1287,22 +1295,16 @@ export default {
     //
     //   this.close()
     // },
-    ...mapMutations(['setPointInfoDrawer', 'saveSelectedPointFeature']),
+    ...mapMutations(['setRightDrawer', 'setPointInfoDrawer', 'saveSelectedPointFeature']),
     ...mapActions(['saveSelectedPointFeatureToFirestore']),
-    // async save () {
-    //   this.saveSelectedPointFeature()
-    //   await this.saveSelectedPointFeatureToFirestore()
-    //   this.close()
-    // },
     close () {
       this.setPointInfoDrawer(false)
     },
-    // ...mapMutations([
-    //   'setPointInfoDrawer',
-    //   'setSelectedPointFeature'
-    // ]),
     setDrawerVisible(val) {
       this.setPointInfoDrawer(val)
+    },
+    setRightVisible(val) {
+      this.setRightDrawer(val)
     },
     savePointDescription(description) {
       const feature = { ...this.selectedPointFeature }
