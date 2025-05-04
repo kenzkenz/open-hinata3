@@ -655,19 +655,23 @@ export default {
           map.setFilter('oh-homusyo-2025-label', matchCondition);
           map.setFilter('oh-homusyo-2025-vertex', matchCondition);
           map.setFilter('oh-homusyo-2025-polygon-dissolved', matchCondition);
-
           // ヒットした場合、fill-colorを赤（透過度0.6）に変更
           map.setPaintProperty('oh-homusyo-2025-polygon-dissolved', 'fill-color', HIT_FILL_COLOR);
+          map.setFilter('oh-homusyo-2025-polygon-dissolved-all', ['==', ['get', 'id'], '999'])
         } else {
           // 検索テキストがない場合、フィルタをリセットし、元の色（透過度0.6）に戻す
           map.setFilter('oh-homusyo-2025-polygon', null);
           map.setFilter('oh-homusyo-2025-line', null);
           map.setFilter('oh-homusyo-2025-label', null);
           map.setFilter('oh-homusyo-2025-vertex', null);
-          map.setFilter('oh-homusyo-2025-polygon-dissolved', null);
+          // map.setFilter('oh-homusyo-2025-polygon-dissolved', null);
+          map.setFilter('oh-homusyo-2025-polygon-dissolved', ['==', ['get', 'id'], '999'])
 
           // 元の色（this.s_tokijyoCircleColor2025、透過度0.6）に戻す
-          map.setPaintProperty('oh-homusyo-2025-polygon-dissolved', 'fill-color', DEFAULT_FILL_COLOR);
+          // map.setPaintProperty('oh-homusyo-2025-polygon-dissolved', 'fill-color', DEFAULT_FILL_COLOR);
+          map.setPaintProperty('oh-homusyo-2025-polygon-dissolved', 'fill-color', 'rgba(255, 0, 0, 0, 0)');
+          map.setFilter('oh-homusyo-2025-polygon-dissolved-all', null)
+
         }
       }
 

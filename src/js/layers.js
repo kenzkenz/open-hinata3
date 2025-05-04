@@ -3339,7 +3339,7 @@ const homusyo2025DissolvedLayer = {
     paint: {
         "fill-color": "rgba(0, 0, 0, 0)"
     },
-    minzoom: 10,
+    // minzoom: 10,
     maxzoom: 15
 }
 const homusyo2025DissolvedAllLayer = {
@@ -3348,9 +3348,9 @@ const homusyo2025DissolvedAllLayer = {
     source: "homusyo-2025-dissolved-source-all",
     "source-layer": "polygon",
     paint: {
-        "fill-color": "rgba(0, 0, 0, 0.1)"
+        "fill-color": "rgba(0, 0, 0, 0.2)"
     },
-    maxzoom: 10
+    maxzoom: 14
 }
 export const homusyo2025LayerLine = {
     id: "oh-homusyo-2025-line",
