@@ -1387,4 +1387,5 @@ tippecanoe -pk -pf -f -l polygon -Z0 -z14 -o 2025dissolved.pmtiles fdb_by_pref_n
 
 tippecanoe -pk -pf -f -l polygon -Z0 -z14 --simplification=2 --simplify-only-low-zooms -o 2025dissolvedSimple.pmtiles fdb_by_pref_normalized_dissolved/*.fgb
 
+tippecanoe -f -l polygon -Z0 -z10 -o 2025dissolvedAll.pmtiles output-dissolved/*.fgb
 

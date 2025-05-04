@@ -3288,20 +3288,26 @@ const homusyo2025DDissolvedSource = {
         url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025dissolved.pmtiles'
     },
 }
-const homusyo2025DaihyoSource = {
-    id: "homusyo-2025-diahyo-source", obj: {
+const homusyo2025DDissolvedAllSource = {
+    id: "homusyo-2025-dissolved-source-all", obj: {
         type: "vector",
-        // url: 'pmtiles://https://kenzkenz.xsrv.jp/pmtiles/homusyo/2025/2025point.pmtiles'
-        url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025point.pmtiles'
+        url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025dissolvedAll.pmtiles'
     },
 }
-const homusyo2025DaihyoSource2 = {
-    id: "homusyo-2025-diahyo-source2", obj: {
-        type: "vector",
-        // url: 'pmtiles://https://kenzkenz.xsrv.jp/pmtiles/homusyo/2025/2025point.pmtiles'
-        url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025pointFull.pmtiles'
-    },
-}
+// const homusyo2025DaihyoSource = {
+//     id: "homusyo-2025-diahyo-source", obj: {
+//         type: "vector",
+//         // url: 'pmtiles://https://kenzkenz.xsrv.jp/pmtiles/homusyo/2025/2025point.pmtiles'
+//         url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025point.pmtiles'
+//     },
+// }
+// const homusyo2025DaihyoSource2 = {
+//     id: "homusyo-2025-diahyo-source2", obj: {
+//         type: "vector",
+//         // url: 'pmtiles://https://kenzkenz.xsrv.jp/pmtiles/homusyo/2025/2025point.pmtiles'
+//         url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025pointFull.pmtiles'
+//     },
+// }
 const homusyo2025KijyuntenSource = {
     id: "homusyo-2025-kijyunten-source", obj: {
         type: "vector",
@@ -3331,10 +3337,20 @@ const homusyo2025DissolvedLayer = {
     source: "homusyo-2025-dissolved-source",
     "source-layer": "polygon",
     paint: {
-        "fill-color": "rgba(0, 0, 0, 0.1)"
+        "fill-color": "rgba(0, 0, 0, 0)"
     },
     minzoom: 10,
     maxzoom: 15
+}
+const homusyo2025DissolvedAllLayer = {
+    id: "oh-homusyo-2025-polygon-dissolved-all",
+    type: "fill",
+    source: "homusyo-2025-dissolved-source-all",
+    "source-layer": "polygon",
+    paint: {
+        "fill-color": "rgba(0, 0, 0, 0.1)"
+    },
+    maxzoom: 10
 }
 export const homusyo2025LayerLine = {
     id: "oh-homusyo-2025-line",
@@ -9092,9 +9108,9 @@ let layers01 = [
     {
         id: 'oh-homusyo-2025-layer',
         label: "2025登記所地図",
-        sources: [homusyo2025Source,homusyo2025DDissolvedSource],
+        sources: [homusyo2025Source,homusyo2025DDissolvedAllSource,homusyo2025DDissolvedSource],
         // layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025LayerDaihyou],
-        layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025DissolvedLayer],
+        layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025DissolvedAllLayer,homusyo2025DissolvedLayer],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
         ext: {name:'extTokijyo2025'}
     },
