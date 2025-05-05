@@ -3291,7 +3291,7 @@ const homusyo2025DDissolvedSource = {
 const homusyo2025DDissolvedAllSource = {
     id: "homusyo-2025-dissolved-source-all", obj: {
         type: "vector",
-        url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025dissolvedAll.pmtiles'
+        url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025dissolved_all_simplified.pmtiles'
     },
 }
 // const homusyo2025DaihyoSource = {

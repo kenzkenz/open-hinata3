@@ -1389,3 +1389,19 @@ tippecanoe -pk -pf -f -l polygon -Z0 -z14 --simplification=2 --simplify-only-low
 
 tippecanoe -f -l polygon -Z0 -z15 -o 2025dissolvedAll.pmtiles output-dissolved/*.fgb
 
+tippecanoe -f -l polygon -Z0 -z15 -o 2025dissolvedAll2.pmtiles \
+  --simplification=10 \
+  -D6 \
+  --drop-rate=3 \
+  --coalesce \
+  --maximum-tile-bytes=100000 \
+  --no-tile-stats \
+  dissolved.geojson
+
+mapshaper -i dissolved.geojson -simplify 10% keep-shapes -o format=geojson dissolved_simplified2.geojson
+
+tippecanoe -f -l polygon -Z0 -z15 -o 2025dissolved_all_simplified.pmtiles dissolved_simplified.geojson
+
+mapshaper -i dissolved.geojson -simplify 10% keep-shapes -o format=geojson dissolved_simplified.geojson
+
+tippecanoe -f -l polygon -Z0 -z14 -o 2025dissolved_simplified.pmtiles dissolved_simplified.geojson
