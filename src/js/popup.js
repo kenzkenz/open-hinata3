@@ -3451,7 +3451,8 @@ export function popup(e,map,mapName,mapFlg) {
                         publicType = '入手方法＝未取得'
                 }
                 let ku = ''
-                if (props.N03_005) ku = props.N03_005
+                // if (props.N03_005) ku = props.N03_005
+                if (props.N03_004 === '札幌市') ku = props.N03_005
                 if (html.indexOf('oh-city-geojson-poligon-layer') === -1) {
                     html += '<div class="layer-label-div">全国地番図公開マップ</div>'
                     html +=
