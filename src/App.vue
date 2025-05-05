@@ -2935,7 +2935,7 @@ export default {
                           traverseLayers([node], slj); // 再帰処理
                         } else {
                           // 子ノードがない場合の処理
-                          console.log(slj.id)
+                          // console.log(slj.id)
                           // if (slj.id === 'oh-amx-a-fude') slj.id = 'oh-homusyo-2025-polygon'
                           // if (slj.label) alert(slj.label)
                           if (node.id === slj.id) {

@@ -2368,9 +2368,9 @@ export function highlightSpecificFeatures(map,layerId) {
 
 let isFirstRunCity1 = true;
 export function highlightSpecificFeaturesCity(map,layerId) {
-    console.log(store.state.highlightedChibans);
-    console.log(Array.from(store.state.highlightedChibans))
-    console.log(layerId)
+    // console.log(store.state.highlightedChibans);
+    // console.log(Array.from(store.state.highlightedChibans))
+    // console.log(layerId)
     let sec = 0
     if (isFirstRunCity1) {
         sec = 1000
@@ -2378,7 +2378,7 @@ export function highlightSpecificFeaturesCity(map,layerId) {
         sec = 0
     }
     setTimeout(() => {
-        console.log(Array.from(store.state.highlightedChibans))
+        // console.log(Array.from(store.state.highlightedChibans))
         let fields
         switch (layerId) {
             case 'oh-chibanzu2024':
@@ -2460,9 +2460,9 @@ export function highlightSpecificFeaturesCity(map,layerId) {
         if(/^oh-chiban-/.test(layerId)) {
             fields = ['concat', ['get', 'oh3id']]
         }
-        console.log(layerId)
-        console.log(fields)
-        console.log(Array.from(store.state.highlightedChibans))
+        // console.log(layerId)
+        // console.log(fields)
+        // console.log(Array.from(store.state.highlightedChibans))
         // alert(Array.from(store.state.highlightedChibans))
         if (Array.from(store.state.highlightedChibans)) {
             map.setPaintProperty(

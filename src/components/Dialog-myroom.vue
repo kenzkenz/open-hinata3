@@ -97,22 +97,48 @@
                           outlined
                       ></v-select>
                     </v-col>
+                    <v-select style="margin-top: -20px;"
+                        v-model="selectedPublic"
+                        :items="publicItems"
+                        item-title="label"
+                        item-value="public"
+                        label="公開方法を選択してください"
+                        outlined
+                    ></v-select>
                   </v-row>
-                  <v-btn v-if="!isAll" style="margin-top: -10px;margin-bottom: 10px" @click="pmtilesRenameBtn">リネーム</v-btn>
-                  <div style="height: 20px">
-                    <p v-if="!isAll && isOh3Team" style="position: absolute;right:30px;">公開</p>
-                  </div>
-                  <div v-for="item in jsonDataPmtile" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban,item.bbox,item.length,item.prefcode,item.citycode)">
-                    <v-checkbox
-                        v-if="!isAll"
-                        class="transparent-chk"
-                        v-model="item.public"
-                        true-value=1
-                        false-value=0
-                        @change="publicChk(item.id, item.public)"
-                        @mousedown.stop
-                        @click.stop
-                    />
+                  <v-btn v-if="!isAll" style="margin-top: 0px;margin-bottom: 10px" @click="pmtilesRenameBtn">変更</v-btn>
+<!--                  <div style="height: 20px">-->
+<!--                    <p v-if="!isAll && isOh3Team" style="position: absolute;right:30px;">公開</p>-->
+<!--                  </div>-->
+                  <div
+                      v-for="item in jsonDataPmtile"
+                      :key="item.id"
+                      class="data-container"
+                      :style="{ color:
+                                  item.public === '1'
+                                    ? 'white' // 青
+                                    : 'black',
+                                backgroundColor:
+                                  item.public === '0'
+                                    ? 'rgba(0, 0, 0, 0)'
+                                    : item.public === '1'
+                                    ? 'rgba(0, 0, 255, 1)' // 青
+                                    : item.public === '3'
+                                    ? 'rgba(128, 128, 128, 0.4)' // 灰色
+                                    : 'transparent' // それ以外は透明
+                                }"
+                      @click="pmtileClick(item.name, item.url, item.id, item.chiban, item.bbox, item.length, item.prefcode, item.citycode, item.public)"
+                  >
+<!--                    <v-checkbox-->
+<!--                        v-if="!isAll"-->
+<!--                        class="transparent-chk"-->
+<!--                        v-model="item.public"-->
+<!--                        true-value=1-->
+<!--                        false-value=0-->
+<!--                        @change="publicChk(item.id, item.public)"-->
+<!--                        @mousedown.stop-->
+<!--                        @click.stop-->
+<!--                    />-->
                     <button v-if="!isAll" class="close-btn" @click="removeItemPmtiles(item.id,item.url2,$event)">×</button>
                     <strong>{{ item.name }}</strong><br>
                   </div>
@@ -323,7 +349,8 @@ export default {
     LayerManager
   },
   data: () => ({
-    // selectedLayerId: null, // 選択中のレイヤーID
+    publicItems: [{public:0,label:'完全非公開（マップ上は透明、詳細は非表示）'},{public:3,label:'非公開（マップ上は灰色、詳細は非表示）'},{public:1,label:'公開（マップ上は青色、詳細は表示）'}],
+    selectedPublic: '',
     layerId: '',
     layerName: '',
     selectedPrefName: '',
@@ -974,7 +1001,7 @@ export default {
       })
     },
     pmtilesRenameBtn () {
-      if (!confirm("リネームしますか？")) {
+      if (!confirm("変更しますか？")) {
         return
       }
       const vm = this
@@ -1000,10 +1027,12 @@ export default {
           prefcode: this.selectedPrefCode,
           citycode: this.selectedCityCode,
           prefname: prefName,
-          cityname: cityName
+          cityname: cityName,
+          public: this.selectedPublic,
         }
       }).then(function (response) {
         console.log(response)
+        vm.publicChk()
         vm.pmtileSelect(vm.$store.state.userId)
       })
     },
@@ -1158,12 +1187,13 @@ export default {
       this.name = name
       userXyztileSet(name,url,id,JSON.parse(bbox),JSON.parse(transparent))
     },
-    pmtileClick (name,url,id, chiban, bbox, length, prefCode, cityCode) {
+    pmtileClick (name,url,id, chiban, bbox, length, prefCode, cityCode, public0) {
       this.pmtilesRename = name
       this.id = id
       this.name = name
       this.selectedPrefCode = prefCode
       this.selectedCityCode = cityCode
+      this.selectedPublic = Number(public0)
       userPmtileSet(name,url,id, chiban, JSON.parse(bbox), length)
     },
     tileClick (name,url,id) {

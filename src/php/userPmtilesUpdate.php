@@ -11,6 +11,7 @@ try {
     $citycode = $_GET['citycode'] ?? null;
     $prefname = $_GET['prefname'] ?? null;
     $cityname = $_GET['cityname'] ?? null;
+    $public = $_GET['public'] ?? null;
 
     // バリデーション: 空チェック
     if (empty($id) || empty($name)) {
@@ -18,7 +19,7 @@ try {
         exit;
     }
 
-    $sql = "UPDATE userpmtiles SET name = :name, prefcode = :prefcode, citycode = :citycode, prefname = :prefname, cityname = :cityname WHERE id LIKE :id";
+    $sql = "UPDATE userpmtiles SET name = :name, prefcode = :prefcode, citycode = :citycode, prefname = :prefname, cityname = :cityname, public = :public WHERE id LIKE :id";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ':id' => $id,
@@ -27,8 +28,8 @@ try {
         ':citycode' => $citycode,
         ':prefname' => $prefname,
         ':cityname' => $cityname,
+        ':public' => $public,
     ]);
-
 
     // 更新された行数を取得
     if ($stmt->rowCount() > 0) {
@@ -38,6 +39,7 @@ try {
             "name" => $name,
             "prefcode" => $prefcode,
             "citycode" => $citycode,
+            "public" => $public,
         ]);
     } else {
         echo json_encode([

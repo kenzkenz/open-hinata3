@@ -908,7 +908,7 @@ export default {
           console.log(targetLayers)
           targetLayers.forEach(layer => {
             registeredLayers.add(layer)
-            console.log(`Adding click event to layer: ${layer}`);
+            // console.log(`Adding click event to layer: ${layer}`);
             this.$store.state.map01.on('click', layer, (e) => {
               if (e.features && e.features.length > 0) {
                 const targetId = `${e.features[0].properties['oh3id']}`;
