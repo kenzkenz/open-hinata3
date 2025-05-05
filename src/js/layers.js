@@ -102,13 +102,23 @@ pablicDatas.forEach(v => {
         },
         minzoom: 11
     })
+    let lineColor
+    switch (v.public) {
+        case '-1':
+            // alert(v.name)
+            lineColor = 'green'
+            break
+        case '1':
+            lineColor = 'blue'
+            break
+    }
     publicLineLayers.push({
         id: 'oh-chibanL-' + v.id + '-' + v.name + '-line-layer',
         source: 'oh-chiban-' + v.id + '-' + v.name + '-source',
         type: 'line',
         "source-layer": "oh3",
         paint: {
-            'line-color': 'blue',
+            'line-color': lineColor,
             'line-width': [
                 'interpolate',
                 ['linear'],

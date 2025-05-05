@@ -146,8 +146,8 @@
       <div>オープンデータは「緑色」<br>開示請求且つ公開可能は「青色」<br>
       開示請求により入手できたが公開の可否不明は「灰色」
       </div>
-      <v-btn style="margin-top: 10px" class="tiny-btn" @click="list">リスト表示</v-btn>
-      <v-btn color="red" style="margin-top: 10px;margin-left: 10px;" class="tiny-btn" @click="openTerms">地番参考図利用規約</v-btn>
+<!--      <v-btn style="margin-top: 10px" class="tiny-btn" @click="list">リスト表示</v-btn>-->
+      <v-btn color="red" style="margin-top: 10px;margin-left: 0px;" class="tiny-btn" @click="openTerms">地番参考図利用規約</v-btn>
     </div>
     <div v-else>
       <v-btn color="red" style="margin-top: 10px;margin-bottom: 10px; width: 100%;" @click="openTerms">地番参考図利用規約</v-btn>

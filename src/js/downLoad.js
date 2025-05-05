@@ -6828,6 +6828,7 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
                 alert(`エラー: ${response.data.error}`);
             } else {
                 console.log('登録成功:', response.data);
+                publicChk()
                 userPmtileSet(name,url,response.data.id, chiban, bbox, length)
                 store.state.fetchImagesFire = !store.state.fetchImagesFire
             }

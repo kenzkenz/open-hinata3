@@ -5,7 +5,8 @@ header("Content-Type: application/json");
 
 try {
 
-    $sql = "SELECT * FROM userpmtiles WHERE public = 1 ORDER BY prefcode, citycode, name";
+//    $sql = "SELECT * FROM userpmtiles WHERE public = 1 ORDER BY prefcode, citycode, name";
+    $sql = "SELECT * FROM userpmtiles WHERE public IN (1, -1) ORDER BY prefcode, citycode, name";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
 
