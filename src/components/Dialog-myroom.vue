@@ -1734,6 +1734,10 @@ export default {
       async function aaa () {
         await publicChk (id,public0)
         vm.pmtileSelectPublic()
+
+
+
+
       }
       aaa()
     },

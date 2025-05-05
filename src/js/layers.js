@@ -4,6 +4,39 @@ import store from '@/store'
 import * as turf from '@turf/turf'
 import { nextTick, toRef, reactive, ref, computed, watch } from 'vue';
 
+// 色データの取得
+async function loadColorData() {
+    try {
+        const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/userChibanzumapSelect.php');
+        if (!response.ok) {
+            throw new Error(`HTTPエラー: ${response.status}`);
+        }
+        const data = await response.json();
+        // エラーチェック
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        // citycodeをキー、色を値とするオブジェクトを作成
+        const colorMap = {};
+        data.forEach(item => {
+            const code = parseInt(item.public, 10);
+            // public値を色に変換
+            const color = code === -1 ? 'rgba(0,128,0,0.8)' :
+                code === 0 ? 'rgba(0,0,0,0)' :
+                    code === 1 ? 'rgba(0,0,255,0.8)' :
+                        code === 3 ? 'rgba(128,128,128,0.8)' : '#CCCCCC';
+            colorMap[item.citycode] = color;
+        });
+        return colorMap;
+    } catch (error) {
+        console.error('色データの取得に失敗:', error);
+        return {};
+    }
+}
+
+const chibanzuColors = await loadColorData();
+console.log(chibanzuColors)
+
 function waitForStateValue(getter, checkFn = val => val !== undefined && val !== null, interval = 50) {
     return new Promise((resolve) => {
         const timer = setInterval(() => {
@@ -227,7 +260,7 @@ const cityPmtilesLabelLayer = {
 export const cityGeojsonSource = {
     id: 'city-geojson-source', obj: {
         'type': 'geojson',
-        'data': 'https://kenzkenz.duckdns.org//original-data/city.geojson?nocache=' + Date.now()
+        'data': 'https://kenzkenz.duckdns.org//original-data/city-original.geojson?nocache=' + Date.now()
     }
 }
 
@@ -237,14 +270,10 @@ const cityGeojsonPolygonLayer = {
     source: 'city-geojson-source',
     paint: {
         'fill-color': [
-            'case',
-            ['==', ['get', 'public'], 1],
-            'rgba(0,0,255,0.8)', // public が 1 のとき
-            ['==', ['get', 'public'], 2],
-            'rgba(0,128,0,0.8)', // public が 2 のとき
-            ['==', ['get', 'public'], 3],
-            'rgba(128,128,128,0.8)', // public が 3 のとき
-            'rgba(255,255,255,0.1)'
+            'match',
+            ['get', 'N03_007'],
+            ...Object.entries(chibanzuColors).flat(),
+            'rgba(0,0,0,0)' // デフォルト色
         ],
     },
     maxzoom: 11.5
@@ -272,7 +301,6 @@ const cityGeojsonLabelLayer = {
     source: 'city-geojson-source',
     layout: {
         'text-field': ['get', 'N03_004'],
-        // 'text-font': ['NotoSansJP-Regular'],
         'text-offset': [0, 1],
     },
     paint: {
@@ -9264,15 +9292,15 @@ let layers01 = [
                     //     layers: chibanzuLayers0,
                     //     ext: {name:'ext-chibanzu'}
                     // },
-                    {
-                        id: 'oh-chibanzu-all2',
-                        label: '全国地番図公開マップ',
-                        sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
-                        layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
-                        // sources: [cityPmtilesSource,...chibanzuSources,...publicSources],
-                        // layers: [...chibanzuLayers1,...publicLayers0,cityPmtilesPolygonLayer,cityPmtilesLineLayer,cityPmtilesLabelLayer],
-                        ext: {name:'ext-chibanzu'}
-                    },
+                    // {
+                    //     id: 'oh-chibanzu-all2',
+                    //     label: '全国地番図公開マップ',
+                    //     sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
+                    //     layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
+                    //     // sources: [cityPmtilesSource,...chibanzuSources,...publicSources],
+                    //     // layers: [...chibanzuLayers1,...publicLayers0,cityPmtilesPolygonLayer,cityPmtilesLineLayer,cityPmtilesLabelLayer],
+                    //     ext: {name:'ext-chibanzu'}
+                    // },
                     ...chibanzuLayers2,
                     ...publicLayers,
                 ]

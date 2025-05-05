@@ -7067,69 +7067,81 @@ export function updateMeasureUnit(unit) {
 export function publicChk (id,public0) {
     store.state.loading2 = true
     store.state.loadingMessage = '全国地番図公開マップ作成中です。'
-    axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesUpdatePublic.php',{
-        params: {
-            id: id,
-            public: public0
-        }
+    axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userChibanzumapUpdate.php',{
+        params: {}
     }).then(function (response) {
-        // vm.pmtileSelectPublic()
-        console.log(response.data.publics[0].public)
-        let cities = response.data.publics.map(v => {
-            return {
-                citycode:v.citycode,
-                pmtilesurl:v.url,
-                public: Number(v.public),
-                page: ''
-            }
-        })
-        console.log(cities)
-        const cities2 = []
-        sicyosonChibanzuUrls.forEach(v => {
-            if (v.code) {
-                cities2.push({
-                    citycode:v.code,
-                    pmtilesurl:'999',
-                    public: 2,
-                    page: v.page
-                })
-            }
-        })
-        console.log(cities2)
-        cities = [...cities, ...cities2];
-
-        async function cityGeojson() {
-            try {
-                const response1 = await axios.post('https://kenzkenz.duckdns.org/myphp/city_geojson.php', {
-                    cities: cities
-                    // cities: [{citycode:'45201',pmtilesurl:'9999'}]
-                });
-                console.log(response1)
-                if (response1.data.error) {
-                    console.error('エラー:', response1.data.error);
-                    // alert(`エラー: ${response.data.error}`);
-                } else {
-                    console.log('成功:', response1.data);
-                    const maps = [store.state.map01,store.state.map02]
-                    maps.forEach(map => {
-                        map.getStyle().layers.forEach(layer => {
-                            if (layer.id.includes('oh-chibanL-') && layer.id.includes(id)) {
-                                map.removeLayer(layer.id)
-                            }
-                        })
-                    })
-                    setTimeout(() => {
-                        store.state.loading2 = false
-                        alert('設定を反映するには再読み込みしてください。')
-                    },0)
-                }
-            } catch (error) {
-                console.error('リクエストエラー:', error);
-            }
-        }
-        cityGeojson()
+        console.log(response)
+        store.state.loading2 = false
     })
 }
+
+
+// export function publicChk (id,public0) {
+//     store.state.loading2 = true
+//     store.state.loadingMessage = '全国地番図公開マップ作成中です。'
+//     axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesUpdatePublic.php',{
+//         params: {
+//             id: id,
+//             public: public0
+//         }
+//     }).then(function (response) {
+//         // vm.pmtileSelectPublic()
+//         console.log(response.data.publics[0].public)
+//         let cities = response.data.publics.map(v => {
+//             return {
+//                 citycode:v.citycode,
+//                 pmtilesurl:v.url,
+//                 public: Number(v.public),
+//                 page: ''
+//             }
+//         })
+//         console.log(cities)
+//         const cities2 = []
+//         sicyosonChibanzuUrls.forEach(v => {
+//             if (v.code) {
+//                 cities2.push({
+//                     citycode:v.code,
+//                     pmtilesurl:'999',
+//                     public: 2,
+//                     page: v.page
+//                 })
+//             }
+//         })
+//         console.log(cities2)
+//         cities = [...cities, ...cities2];
+//
+//         async function cityGeojson() {
+//             try {
+//                 const response1 = await axios.post('https://kenzkenz.duckdns.org/myphp/city_geojson.php', {
+//                     cities: cities
+//                     // cities: [{citycode:'45201',pmtilesurl:'9999'}]
+//                 });
+//                 console.log(response1)
+//                 if (response1.data.error) {
+//                     console.error('エラー:', response1.data.error);
+//                     // alert(`エラー: ${response.data.error}`);
+//                 } else {
+//                     console.log('成功:', response1.data);
+//                     const maps = [store.state.map01,store.state.map02]
+//                     maps.forEach(map => {
+//                         map.getStyle().layers.forEach(layer => {
+//                             if (layer.id.includes('oh-chibanL-') && layer.id.includes(id)) {
+//                                 map.removeLayer(layer.id)
+//                             }
+//                         })
+//                     })
+//                     setTimeout(() => {
+//                         store.state.loading2 = false
+//                         alert('設定を反映するには再読み込みしてください。')
+//                     },0)
+//                 }
+//             } catch (error) {
+//                 console.error('リクエストエラー:', error);
+//             }
+//         }
+//         cityGeojson()
+//     })
+// }
 
 export async function convertGeoJSON(geojson,code) {
     try {
