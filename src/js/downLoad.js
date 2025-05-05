@@ -12,7 +12,7 @@ import {
     pngSource,
     pngLayer,
     vpsTileSource,
-    vpsTileLayer, chibanzuLayers0, chibanzuLayers, chibanzuSources, sicyosonChibanzuUrls
+    vpsTileLayer, chibanzuLayers0, chibanzuLayers, chibanzuSources, sicyosonChibanzuUrls, loadColorData
 } from "@/js/layers";
 import shpwrite from "@mapbox/shp-write"
 import JSZip from 'jszip'
@@ -7067,11 +7067,31 @@ export function updateMeasureUnit(unit) {
 export function publicChk (id,public0) {
     store.state.loading2 = true
     store.state.loadingMessage = '全国地番図公開マップ作成中です。'
-    axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userChibanzumapUpdate.php',{
-        params: {}
+    axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesUpdatePublic.php',{
+        params: {
+            id: id,
+            public: public0
+        }
     }).then(function (response) {
-        console.log(response)
-        store.state.loading2 = false
+        axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userChibanzumapUpdate.php',{
+            params: {}
+        }).then(function (response) {
+            console.log(response)
+            async function aaa () {
+                const chibanzuColors = await loadColorData();
+                const maps = [store.state.map01,store.state.map02]
+                maps.forEach(map => {
+                    map.setPaintProperty('oh-city-geojson-poligon-layer', 'fill-color', [
+                        'match',
+                        ['get', 'N03_007'],
+                        ...Object.entries(chibanzuColors).flat(),
+                        'rgba(0,0,0,0)' // デフォルト色
+                    ]);
+                })
+                store.state.loading2 = false
+            }
+            aaa()
+        })
     })
 }
 

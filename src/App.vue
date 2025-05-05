@@ -1411,7 +1411,7 @@ export default {
         alert("入力されていません。")
         return
       }
-      pmtilesGenerateForUser2 (this.shpGeojson,'',store.state.pmtilesPropertieName,this.selectedPrefCode,this.selectedCityCode,this.selectedPublic)
+      pmtilesGenerateForUser2 (this.shpGeojson,'',store.state.pmtilesPropertieName,this.selectedPrefCode,String(this.selectedCityCode).padStart(5, '0'),this.selectedPublic)
       this.dialogForShpApp = false
     },
     imagePngLoad () {

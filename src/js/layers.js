@@ -5,7 +5,7 @@ import * as turf from '@turf/turf'
 import { nextTick, toRef, reactive, ref, computed, watch } from 'vue';
 
 // 色データの取得
-async function loadColorData() {
+export async function loadColorData() {
     try {
         const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/userChibanzumapSelect.php');
         if (!response.ok) {
@@ -124,6 +124,7 @@ pablicDatas.forEach(v => {
         minZoom = 17
     } else if (v.length < 10000) {
         minZoom = 0
+        // minZoom = 17
     } else {
         minZoom = 17
     }
@@ -134,7 +135,6 @@ pablicDatas.forEach(v => {
         "source-layer": "oh3",
         'layout': {
             'text-field': ['get', v.chiban],
-            'text-font': ['NotoSansJP-Regular'],
         },
         'paint': {
             'text-color': 'navy',
@@ -256,11 +256,11 @@ const cityPmtilesLabelLayer = {
     minzoom: 7
 }
 
-
 export const cityGeojsonSource = {
     id: 'city-geojson-source', obj: {
         'type': 'geojson',
-        'data': 'https://kenzkenz.duckdns.org//original-data/city-original.geojson?nocache=' + Date.now()
+        // 'data': 'https://kenzkenz.duckdns.org//original-data/chibanzumap.geojson?nocache=' + Date.now()
+        'data': 'https://kenzkenz.duckdns.org//original-data/chibanzumap.geojson'
     }
 }
 

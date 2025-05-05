@@ -3450,12 +3450,14 @@ export function popup(e,map,mapName,mapFlg) {
                     default:
                         publicType = '入手方法＝未取得'
                 }
+                let ku = ''
+                if (props.N03_005) ku = props.N03_005
                 if (html.indexOf('oh-city-geojson-poligon-layer') === -1) {
                     html += '<div class="layer-label-div">全国地番図公開マップ</div>'
                     html +=
                         '<div class="oh-city-geojson-poligon-layer" font-weight: normal; color: #333;line-height: 25px;">' +
-                        '<span style="font-size:16px;">' + publicType + '</span><hr>' +
-                        '<span style="font-size:22px;">' + props.N03_001 + props.N03_004 + '</span>' +
+                        // '<span style="font-size:16px;">' + publicType + '</span><hr>' +
+                        '<span style="font-size:22px;">' + props.N03_001 + props.N03_004 + ku + '</span>' +
                         '</div>'
                 }
                 break
