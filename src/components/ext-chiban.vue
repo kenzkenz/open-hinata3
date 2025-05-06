@@ -144,13 +144,13 @@
 <!--    <div style="font-size: large;margin-bottom: 10px;" v-html="item.label"/>-->
     <div v-if="item.id === 'oh-chibanzu-all2'" style="font-size: small">
       <div>オープンデータは「緑色」<br>開示請求且つ公開可能は「青色」<br>
-      開示請求により入手できたが公開の可否不明は「灰色」
+      開示請求により入手できたが公開の可否不明は「灰色」。「赤色」は・・
       </div>
 <!--      <v-btn style="margin-top: 10px" class="tiny-btn" @click="list">リスト表示</v-btn>-->
-      <v-btn color="red" style="margin-top: 10px;margin-left: 0px;" class="tiny-btn" @click="openTerms">地番参考図利用規約</v-btn>
+      <v-btn color="error" style="margin-top: 10px;margin-left: 0px;" class="tiny-btn" @click="openTerms">地番参考図利用規約</v-btn>
     </div>
     <div v-else>
-      <v-btn color="red" style="margin-top: 10px;margin-bottom: 10px; width: 100%;" @click="openTerms">地番参考図利用規約</v-btn>
+      <v-btn color="error" style="margin-top: 10px;margin-bottom: 10px; width: 100%;" @click="openTerms">地番参考図利用規約</v-btn>
     </div>
 
     <v-text-field label="表示地番検索（例）5-7" v-model="s_chibanText" @input="change" style="margin-top: 0px"></v-text-field>
