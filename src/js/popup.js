@@ -3435,32 +3435,49 @@ export function popup(e,map,mapName,mapFlg) {
                     )
                 }
                 if (features.length === 0) return
-                props = features[0].properties
-                let publicType
-                switch (props.public) {
-                    case 1:
-                        publicType = '入手方法＝ユーザーによる開示請求'
-                        break
-                    case 2:
-                        publicType = '<a target="_blank" href=' + props.page + '>入手方法＝オープンデータ</a>'
-                        break
-                    case 3:
-                        publicType = '<span style="font-size: smaller;">開示請求により入手できたが公開の可否不明</span>'
-                        break
-                    default:
-                        publicType = '入手方法＝未取得'
-                }
-                let ku = ''
-                // if (props.N03_005) ku = props.N03_005
-                if (props.N03_004 === '札幌市') ku = props.N03_005
-                if (html.indexOf('oh-city-geojson-poligon-layer') === -1) {
-                    html += '<div class="layer-label-div">全国地番図公開マップ</div>'
-                    html +=
-                        '<div class="oh-city-geojson-poligon-layer" font-weight: normal; color: #333;line-height: 25px;">' +
-                        // '<span style="font-size:16px;">' + publicType + '</span><hr>' +
-                        '<span style="font-size:22px;">' + props.N03_001 + props.N03_004 + ku + '</span>' +
-                        '</div>'
-                }
+
+
+                // ⭐️-----------------------------------------------------------------------------------------------------
+                store.state.popupFeatureProperties = features[0].properties
+                store.state.popupFeatureCoordinates = coordinates
+                store.commit('setChibanzuDrawer', true)
+                // -----------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+                // props = features[0].properties
+                // let publicType
+                // switch (props.public) {
+                //     case 1:
+                //         publicType = '入手方法＝ユーザーによる開示請求'
+                //         break
+                //     case 2:
+                //         publicType = '<a target="_blank" href=' + props.page + '>入手方法＝オープンデータ</a>'
+                //         break
+                //     case 3:
+                //         publicType = '<span style="font-size: smaller;">開示請求により入手できたが公開の可否不明</span>'
+                //         break
+                //     default:
+                //         publicType = '入手方法＝未取得'
+                // }
+                // let ku = ''
+                // // if (props.N03_005) ku = props.N03_005
+                // if (props.N03_004 === '札幌市') ku = props.N03_005
+                // if (html.indexOf('oh-city-geojson-poligon-layer') === -1) {
+                //     html += '<div class="layer-label-div">全国地番図公開マップ</div>'
+                //     html +=
+                //         '<div class="oh-city-geojson-poligon-layer" font-weight: normal; color: #333;line-height: 25px;">' +
+                //         // '<span style="font-size:16px;">' + publicType + '</span><hr>' +
+                //         '<span style="font-size:22px;">' + props.N03_001 + props.N03_004 + ku + '</span>' +
+                //         '</div>'
+                // }
+
                 break
             }
             case 'oh-point-layer':

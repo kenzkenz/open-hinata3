@@ -901,21 +901,21 @@ export default {
       // if (this.counter === 1 && map === this.$store.state.map01) {
       if (map === this.$store.state.map01) {
         setTimeout(() => {
-          console.log(this.$store.state.map01.getStyle().layers)
+          // console.log(this.$store.state.map01.getStyle().layers)
           const targetLayers = this.$store.state.map01.getStyle().layers
               .filter(layer => layer.id.startsWith('oh-chiban-') && !registeredLayers.has(layer.id))
               .map(layer => layer.id);
-          console.log(targetLayers)
+          // console.log(targetLayers)
           targetLayers.forEach(layer => {
             registeredLayers.add(layer)
             // console.log(`Adding click event to layer: ${layer}`);
             this.$store.state.map01.on('click', layer, (e) => {
               if (e.features && e.features.length > 0) {
                 const targetId = `${e.features[0].properties['oh3id']}`;
-                console.log('Clicked ID', targetId);
+                // console.log('Clicked ID', targetId);
                 if (this.$store.state.highlightedChibans.has(targetId)) {
                   // すでに選択されている場合は解除
-                  console.log(this.$store.state.highlightedChibans)
+                  // console.log(this.$store.state.highlightedChibans)
                   this.$store.state.highlightedChibans.delete(targetId);
                 } else {
                   // 新しいIDを追加

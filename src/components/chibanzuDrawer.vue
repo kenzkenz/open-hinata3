@@ -15,6 +15,9 @@
       </v-card-title>
 
       <v-card-text style="margin-top: 20px;">
+        <h2>
+          {{ cityName + cityCode }}
+        </h2>
 <!--        <transition name="fade" mode="out-in">-->
 <!--          <h2-->
 <!--              :key="`${popupFeatureProperties.市区町村名}${popupFeatureProperties.大字名}${popupFeatureProperties.丁目名}${popupFeatureProperties.地番}`"-->
@@ -42,7 +45,6 @@
 
 <script>
 import { mapState, mapMutations } from 'vuex';
-import {enableMotionPermission} from "@/js/popup";
 
 export default {
   name: 'chibanzuDrawer',
@@ -55,9 +57,18 @@ export default {
   computed: {
     ...mapState([
       'showChibanzuDrawer',
+      'popupFeatureProperties',
+      'popupFeatureCoordinates'
     ]),
-    s_popupFeatureProperties () {
-      return this.$store.state.popupFeatureProperties
+    cityCode () {
+      return this.popupFeatureProperties.N03_007.padStart(5, '0')
+    },
+    cityName () {
+      if (this.popupFeatureProperties.N03_004 === '札幌市') {
+        return this.popupFeatureProperties.N03_001 + this.popupFeatureProperties.N03_004 + this.popupFeatureProperties.N03_005
+      } else {
+        return this.popupFeatureProperties.N03_001 + this.popupFeatureProperties.N03_004
+      }
     },
     s_isAndroid () {
       return this.$store.state.isAndroid
