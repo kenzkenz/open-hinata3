@@ -42,7 +42,7 @@ export default createStore({
     isUnder500: false,
     showPointInfoDrawer: false,
     showRightDrawer: false,
-    showChibanzuDrawer: true,
+    showChibanzuDrawer: false,
     selectedPointFeature: null,
     groupGeojson: { type: 'FeatureCollection', features: [] },
     dialogs: {

@@ -1,0 +1,369 @@
+[debug] [2025-05-06T08:56:26.115Z] ----------------------------------------------------------------------
+[debug] [2025-05-06T08:56:26.116Z] Command:       /usr/local/bin/node /usr/local/bin/firebase deploy --only functions
+[debug] [2025-05-06T08:56:26.116Z] CLI Version:   14.2.2
+[debug] [2025-05-06T08:56:26.116Z] Platform:      darwin
+[debug] [2025-05-06T08:56:26.116Z] Node Version:  v20.16.0
+[debug] [2025-05-06T08:56:26.116Z] Time:          Tue May 06 2025 17:56:26 GMT+0900 (Japan Standard Time)
+[debug] [2025-05-06T08:56:26.116Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-05-06T08:56:26.198Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-05-06T08:56:26.198Z] > authorizing via signed-in user (kenotiai@gmail.com)
+[debug] [2025-05-06T08:56:26.198Z] [iam] checking project open-hinata3 for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2025-05-06T08:56:26.199Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:26.199Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:26.199Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/open-hinata3:testIamPermissions [none]
+[debug] [2025-05-06T08:56:26.199Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/open-hinata3:testIamPermissions x-goog-quota-user=projects/open-hinata3
+[debug] [2025-05-06T08:56:26.199Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/open-hinata3:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2025-05-06T08:56:27.088Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/open-hinata3:testIamPermissions 200
+[debug] [2025-05-06T08:56:27.088Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/open-hinata3:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2025-05-06T08:56:27.088Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:27.089Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:27.089Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/open-hinata3/serviceAccounts/open-hinata3@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2025-05-06T08:56:27.089Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/open-hinata3/serviceAccounts/open-hinata3@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2025-05-06T08:56:28.203Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/open-hinata3/serviceAccounts/open-hinata3@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2025-05-06T08:56:28.203Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/open-hinata3/serviceAccounts/open-hinata3@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[info] 
+[info] === Deploying to 'open-hinata3'...
+[info] 
+[info] i  deploying functions 
+[info] Running command: npm --prefix "$RESOURCE_DIR" run lint
+[info] ✔  functions: Finished running predeploy script. 
+[debug] [2025-05-06T08:56:28.609Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:28.609Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:28.609Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/open-hinata3 [none]
+[debug] [2025-05-06T08:56:28.921Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/open-hinata3 200
+[debug] [2025-05-06T08:56:28.922Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/open-hinata3 {"projectNumber":"531336516229","projectId":"open-hinata3","lifecycleState":"ACTIVE","name":"open-hinata3","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2025-02-05T04:37:29.967630Z"}
+[info] i  functions: preparing codebase default for deployment 
+[info] i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
+[debug] [2025-05-06T08:56:28.924Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:28.924Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:28.924Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:28.924Z] Checked if tokens are valid: true, expires at: 1746524267999
+[info] i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
+[debug] [2025-05-06T08:56:28.924Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:28.925Z] Checked if tokens are valid: true, expires at: 1746524267999
+[info] i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
+[debug] [2025-05-06T08:56:28.925Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:28.925Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:28.925Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/cloudfunctions.googleapis.com [none]
+[debug] [2025-05-06T08:56:28.925Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/cloudfunctions.googleapis.com x-goog-quota-user=projects/open-hinata3
+[debug] [2025-05-06T08:56:28.927Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/runtimeconfig.googleapis.com [none]
+[debug] [2025-05-06T08:56:28.927Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/runtimeconfig.googleapis.com x-goog-quota-user=projects/open-hinata3
+[debug] [2025-05-06T08:56:28.929Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/cloudbuild.googleapis.com [none]
+[debug] [2025-05-06T08:56:28.929Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/cloudbuild.googleapis.com x-goog-quota-user=projects/open-hinata3
+[debug] [2025-05-06T08:56:28.931Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/artifactregistry.googleapis.com [none]
+[debug] [2025-05-06T08:56:28.931Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/artifactregistry.googleapis.com x-goog-quota-user=projects/open-hinata3
+[debug] [2025-05-06T08:56:29.472Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/runtimeconfig.googleapis.com 200
+[debug] [2025-05-06T08:56:29.472Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/runtimeconfig.googleapis.com [omitted]
+[debug] [2025-05-06T08:56:30.222Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/cloudbuild.googleapis.com 200
+[debug] [2025-05-06T08:56:30.223Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/cloudbuild.googleapis.com [omitted]
+[info] ✔  functions: required API cloudbuild.googleapis.com is enabled 
+[debug] [2025-05-06T08:56:30.590Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/cloudfunctions.googleapis.com 200
+[debug] [2025-05-06T08:56:30.590Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/cloudfunctions.googleapis.com [omitted]
+[info] ✔  functions: required API cloudfunctions.googleapis.com is enabled 
+[debug] [2025-05-06T08:56:30.664Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/artifactregistry.googleapis.com 200
+[debug] [2025-05-06T08:56:30.664Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/artifactregistry.googleapis.com [omitted]
+[info] ✔  artifactregistry: required API artifactregistry.googleapis.com is enabled 
+[debug] [2025-05-06T08:56:30.664Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:30.664Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:30.664Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/open-hinata3/adminSdkConfig [none]
+[debug] [2025-05-06T08:56:31.384Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/open-hinata3/adminSdkConfig 200
+[debug] [2025-05-06T08:56:31.384Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/open-hinata3/adminSdkConfig {"projectId":"open-hinata3","databaseURL":"https://open-hinata3-default-rtdb.asia-southeast1.firebasedatabase.app","storageBucket":"open-hinata3.firebasestorage.app"}
+[debug] [2025-05-06T08:56:31.385Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:31.385Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:31.385Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/open-hinata3/configs [none]
+[debug] [2025-05-06T08:56:31.905Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/open-hinata3/configs 200
+[debug] [2025-05-06T08:56:31.905Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/open-hinata3/configs {}
+[debug] [2025-05-06T08:56:31.909Z] Validating nodejs source
+[debug] [2025-05-06T08:56:32.850Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "lint": "eslint .",
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "22"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.5",
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^6.3.2"
+  },
+  "devDependencies": {
+    "eslint": "^9.26.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-plugin-import": "^2.31.0",
+    "firebase-functions-test": "^3.1.0",
+    "glob": "^11.0.2",
+    "globals": "^16.0.0",
+    "rimraf": "^6.0.1"
+  },
+  "private": true
+}
+[debug] [2025-05-06T08:56:32.850Z] Building nodejs source
+[info] i  functions: Loading and analyzing source code for codebase default to determine what to deploy 
+[debug] [2025-05-06T08:56:32.850Z] Could not find functions.yaml. Must use http discovery
+[debug] [2025-05-06T08:56:32.855Z] Found firebase-functions binary at '/Users/ochiaikenji/open-hinata3/functions/node_modules/.bin/firebase-functions'
+[info] Serving at port 8105
+
+[debug] [2025-05-06T08:56:33.066Z] Got response from /__/functions.yaml {"endpoints":{"notifyReply":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-southeast1"],"labels":{},"eventTrigger":{"eventType":"google.firebase.database.ref.v1.created","eventFilters":{},"eventFilterPathPatterns":{"ref":"threads/{cityCode}/{commentId}","instance":"*"},"retry":false},"entryPoint":"notifyReply"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[info] i  extensions: ensuring required API firebaseextensions.googleapis.com is enabled... 
+[debug] [2025-05-06T08:56:38.082Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:38.082Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:38.083Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/firebaseextensions.googleapis.com [none]
+[debug] [2025-05-06T08:56:38.083Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/firebaseextensions.googleapis.com x-goog-quota-user=projects/open-hinata3
+[debug] [2025-05-06T08:56:39.276Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/firebaseextensions.googleapis.com 200
+[debug] [2025-05-06T08:56:39.276Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/firebaseextensions.googleapis.com [omitted]
+[warn] ⚠  extensions: missing required API firebaseextensions.googleapis.com. Enabling now... 
+[debug] [2025-05-06T08:56:39.277Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:39.277Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:39.277Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/firebaseextensions.googleapis.com:enable [none]
+[debug] [2025-05-06T08:56:39.277Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/firebaseextensions.googleapis.com:enable x-goog-quota-user=projects/open-hinata3
+[debug] [2025-05-06T08:56:39.703Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/firebaseextensions.googleapis.com:enable 200
+[debug] [2025-05-06T08:56:39.703Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/firebaseextensions.googleapis.com:enable [omitted]
+[debug] [2025-05-06T08:56:49.705Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:49.706Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:49.707Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/firebaseextensions.googleapis.com [none]
+[debug] [2025-05-06T08:56:49.707Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/firebaseextensions.googleapis.com x-goog-quota-user=projects/open-hinata3
+[debug] [2025-05-06T08:56:50.806Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/firebaseextensions.googleapis.com 200
+[debug] [2025-05-06T08:56:50.807Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/firebaseextensions.googleapis.com [omitted]
+[info] ✔  extensions: required API firebaseextensions.googleapis.com is enabled 
+[debug] [2025-05-06T08:56:50.812Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-05-06T08:56:50.813Z] > authorizing via signed-in user (kenotiai@gmail.com)
+[debug] [2025-05-06T08:56:50.813Z] [iam] checking project open-hinata3 for permissions ["firebase.projects.get","firebaseextensions.instances.list"]
+[debug] [2025-05-06T08:56:50.813Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:50.813Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:50.813Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/open-hinata3:testIamPermissions [none]
+[debug] [2025-05-06T08:56:50.813Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/open-hinata3:testIamPermissions x-goog-quota-user=projects/open-hinata3
+[debug] [2025-05-06T08:56:50.813Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/open-hinata3:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
+[debug] [2025-05-06T08:56:51.606Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/open-hinata3:testIamPermissions 200
+[debug] [2025-05-06T08:56:51.607Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/open-hinata3:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
+[debug] [2025-05-06T08:56:51.607Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:51.608Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:51.608Z] >>> [apiv2][query] GET https://firebaseextensions.googleapis.com/v1beta/projects/open-hinata3/instances pageSize=100&pageToken=
+[debug] [2025-05-06T08:56:53.700Z] <<< [apiv2][status] GET https://firebaseextensions.googleapis.com/v1beta/projects/open-hinata3/instances 200
+[debug] [2025-05-06T08:56:53.701Z] <<< [apiv2][body] GET https://firebaseextensions.googleapis.com/v1beta/projects/open-hinata3/instances {}
+[info] i  functions: preparing functions directory for uploading... 
+[info] i  functions: packaged /Users/ochiaikenji/open-hinata3/functions (90.69 KB) for uploading 
+[debug] [2025-05-06T08:56:53.736Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:53.736Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:53.737Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v1/projects/open-hinata3/locations/-/functions [none]
+[debug] [2025-05-06T08:56:54.668Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v1/projects/open-hinata3/locations/-/functions 200
+[debug] [2025-05-06T08:56:54.668Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v1/projects/open-hinata3/locations/-/functions {}
+[debug] [2025-05-06T08:56:54.669Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:54.671Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:54.671Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v2/projects/open-hinata3/locations/-/functions filter=environment%3D%22GEN_2%22
+[debug] [2025-05-06T08:56:56.055Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v2/projects/open-hinata3/locations/-/functions 200
+[debug] [2025-05-06T08:56:56.055Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v2/projects/open-hinata3/locations/-/functions {}
+[info] i  functions: ensuring required API run.googleapis.com is enabled... 
+[debug] [2025-05-06T08:56:56.059Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:56.059Z] Checked if tokens are valid: true, expires at: 1746524267999
+[info] i  functions: ensuring required API eventarc.googleapis.com is enabled... 
+[debug] [2025-05-06T08:56:56.059Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:56.059Z] Checked if tokens are valid: true, expires at: 1746524267999
+[info] i  functions: ensuring required API pubsub.googleapis.com is enabled... 
+[debug] [2025-05-06T08:56:56.059Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:56.059Z] Checked if tokens are valid: true, expires at: 1746524267999
+[info] i  functions: ensuring required API storage.googleapis.com is enabled... 
+[debug] [2025-05-06T08:56:56.059Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:56.059Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:56.060Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/run.googleapis.com [none]
+[debug] [2025-05-06T08:56:56.060Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/run.googleapis.com x-goog-quota-user=projects/open-hinata3
+[debug] [2025-05-06T08:56:56.062Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/eventarc.googleapis.com [none]
+[debug] [2025-05-06T08:56:56.062Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/eventarc.googleapis.com x-goog-quota-user=projects/open-hinata3
+[debug] [2025-05-06T08:56:56.064Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/pubsub.googleapis.com [none]
+[debug] [2025-05-06T08:56:56.064Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/pubsub.googleapis.com x-goog-quota-user=projects/open-hinata3
+[debug] [2025-05-06T08:56:56.065Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/storage.googleapis.com [none]
+[debug] [2025-05-06T08:56:56.065Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/storage.googleapis.com x-goog-quota-user=projects/open-hinata3
+[debug] [2025-05-06T08:56:57.188Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/run.googleapis.com 200
+[debug] [2025-05-06T08:56:57.188Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/run.googleapis.com [omitted]
+[warn] ⚠  functions: missing required API run.googleapis.com. Enabling now... 
+[debug] [2025-05-06T08:56:57.188Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:57.188Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:57.189Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/run.googleapis.com:enable [none]
+[debug] [2025-05-06T08:56:57.190Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/run.googleapis.com:enable x-goog-quota-user=projects/open-hinata3
+[debug] [2025-05-06T08:56:57.191Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/eventarc.googleapis.com 200
+[debug] [2025-05-06T08:56:57.191Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/eventarc.googleapis.com [omitted]
+[warn] ⚠  functions: missing required API eventarc.googleapis.com. Enabling now... 
+[debug] [2025-05-06T08:56:57.191Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:57.191Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:56:57.191Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/eventarc.googleapis.com:enable [none]
+[debug] [2025-05-06T08:56:57.192Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/eventarc.googleapis.com:enable x-goog-quota-user=projects/open-hinata3
+[debug] [2025-05-06T08:56:57.193Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/storage.googleapis.com 200
+[debug] [2025-05-06T08:56:57.193Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/storage.googleapis.com [omitted]
+[info] ✔  functions: required API storage.googleapis.com is enabled 
+[debug] [2025-05-06T08:56:57.193Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/pubsub.googleapis.com 200
+[debug] [2025-05-06T08:56:57.193Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/pubsub.googleapis.com [omitted]
+[info] ✔  functions: required API pubsub.googleapis.com is enabled 
+[debug] [2025-05-06T08:56:57.695Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/eventarc.googleapis.com:enable 200
+[debug] [2025-05-06T08:56:57.695Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/eventarc.googleapis.com:enable [omitted]
+[debug] [2025-05-06T08:56:57.696Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/run.googleapis.com:enable 200
+[debug] [2025-05-06T08:56:57.696Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/run.googleapis.com:enable [omitted]
+[debug] [2025-05-06T08:57:07.697Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:57:07.698Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:57:07.698Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/eventarc.googleapis.com [none]
+[debug] [2025-05-06T08:57:07.698Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/eventarc.googleapis.com x-goog-quota-user=projects/open-hinata3
+[debug] [2025-05-06T08:57:07.702Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:57:07.702Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:57:07.702Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/run.googleapis.com [none]
+[debug] [2025-05-06T08:57:07.702Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/run.googleapis.com x-goog-quota-user=projects/open-hinata3
+[debug] [2025-05-06T08:57:10.704Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/eventarc.googleapis.com 200
+[debug] [2025-05-06T08:57:10.704Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/eventarc.googleapis.com [omitted]
+[info] ✔  functions: required API eventarc.googleapis.com is enabled 
+[debug] [2025-05-06T08:57:10.708Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/run.googleapis.com 200
+[debug] [2025-05-06T08:57:10.708Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/open-hinata3/services/run.googleapis.com [omitted]
+[info] ✔  functions: required API run.googleapis.com is enabled 
+[info] i  functions: generating the service identity for pubsub.googleapis.com... 
+[debug] [2025-05-06T08:57:10.711Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:57:10.711Z] Checked if tokens are valid: true, expires at: 1746524267999
+[info] i  functions: generating the service identity for eventarc.googleapis.com... 
+[debug] [2025-05-06T08:57:10.711Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:57:10.711Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:57:10.711Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1beta1/projects/531336516229/services/pubsub.googleapis.com:generateServiceIdentity [none]
+[debug] [2025-05-06T08:57:10.712Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1beta1/projects/531336516229/services/eventarc.googleapis.com:generateServiceIdentity [none]
+[debug] [2025-05-06T08:57:11.213Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1beta1/projects/531336516229/services/pubsub.googleapis.com:generateServiceIdentity 200
+[debug] [2025-05-06T08:57:11.214Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/531336516229/services/pubsub.googleapis.com:generateServiceIdentity {"name":"operations/finished.DONE_OPERATION","done":true,"response":{"@type":"type.googleapis.com/google.api.serviceusage.v1beta1.ServiceIdentity","email":"service-531336516229@gcp-sa-pubsub.iam.gserviceaccount.com","uniqueId":"116337559408866332564"}}
+[debug] [2025-05-06T08:57:11.296Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1beta1/projects/531336516229/services/eventarc.googleapis.com:generateServiceIdentity 200
+[debug] [2025-05-06T08:57:11.296Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/531336516229/services/eventarc.googleapis.com:generateServiceIdentity {"name":"operations/finished.DONE_OPERATION","done":true,"response":{"@type":"type.googleapis.com/google.api.serviceusage.v1beta1.ServiceIdentity","email":"service-531336516229@gcp-sa-eventarc.iam.gserviceaccount.com","uniqueId":"115977292673922488287"}}
+[debug] [2025-05-06T08:57:11.299Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:57:11.299Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:57:11.299Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/531336516229:getIamPolicy [none]
+[debug] [2025-05-06T08:57:12.237Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/531336516229:getIamPolicy 200
+[debug] [2025-05-06T08:57:12.237Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/531336516229:getIamPolicy {"version":1,"etag":"BwY0c8y2FBo=","bindings":[{"role":"roles/cloudbuild.builds.builder","members":["serviceAccount:531336516229@cloudbuild.gserviceaccount.com"]},{"role":"roles/cloudbuild.serviceAgent","members":["serviceAccount:service-531336516229@gcp-sa-cloudbuild.iam.gserviceaccount.com"]},{"role":"roles/cloudfunctions.serviceAgent","members":["serviceAccount:service-531336516229@gcf-admin-robot.iam.gserviceaccount.com"]},{"role":"roles/containerregistry.ServiceAgent","members":["serviceAccount:service-531336516229@containerregistry.iam.gserviceaccount.com"]},{"role":"roles/editor","members":["serviceAccount:531336516229@cloudservices.gserviceaccount.com","serviceAccount:open-hinata3@appspot.gserviceaccount.com","serviceAccount:531336516229-compute@developer.gserviceaccount.com"]},{"role":"roles/firebase.managementServiceAgent","members":["serviceAccount:service-531336516229@gcp-sa-firebase.iam.gserviceaccount.com"]},{"role":"roles/firebase.sdkAdminServiceAgent","members":["serviceAccount:firebase-adminsdk-fbsvc@open-hinata3.iam.gserviceaccount.com"]},{"role":"roles/firebaseauth.admin","members":["serviceAccount:firebase-adminsdk-fbsvc@open-hinata3.iam.gserviceaccount.com"]},{"role":"roles/firebasemods.serviceAgent","members":["serviceAccount:service-531336516229@gcp-sa-firebasemods.iam.gserviceaccount.com"]},{"role":"roles/firebaserules.system","members":["serviceAccount:service-531336516229@firebase-rules.iam.gserviceaccount.com"]},{"role":"roles/firebasestorage.serviceAgent","members":["serviceAccount:service-531336516229@gcp-sa-firebasestorage.iam.gserviceaccount.com"]},{"role":"roles/firestore.serviceAgent","members":["serviceAccount:service-531336516229@gcp-sa-firestore.iam.gserviceaccount.com"]},{"role":"roles/iam.serviceAccountTokenCreator","members":["serviceAccount:firebase-adminsdk-fbsvc@open-hinata3.iam.gserviceaccount.com"]},{"role":"roles/owner","members":["user:kenotiai@gmail.com"]},{"role":"roles/run.serviceAgent","members":["serviceAccount:service-531336516229@serverless-robot-prod.iam.gserviceaccount.com"]},{"role":"roles/storage.admin","members":["serviceAccount:firebase-adminsdk-fbsvc@open-hinata3.iam.gserviceaccount.com"]}]}
+[debug] [2025-05-06T08:57:12.238Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:57:12.238Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:57:12.238Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/531336516229:setIamPolicy [none]
+[debug] [2025-05-06T08:57:12.238Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/531336516229:setIamPolicy {"policy":{"version":1,"etag":"BwY0c8y2FBo=","bindings":[{"role":"roles/cloudbuild.builds.builder","members":["serviceAccount:531336516229@cloudbuild.gserviceaccount.com"]},{"role":"roles/cloudbuild.serviceAgent","members":["serviceAccount:service-531336516229@gcp-sa-cloudbuild.iam.gserviceaccount.com"]},{"role":"roles/cloudfunctions.serviceAgent","members":["serviceAccount:service-531336516229@gcf-admin-robot.iam.gserviceaccount.com"]},{"role":"roles/containerregistry.ServiceAgent","members":["serviceAccount:service-531336516229@containerregistry.iam.gserviceaccount.com"]},{"role":"roles/editor","members":["serviceAccount:531336516229@cloudservices.gserviceaccount.com","serviceAccount:open-hinata3@appspot.gserviceaccount.com","serviceAccount:531336516229-compute@developer.gserviceaccount.com"]},{"role":"roles/firebase.managementServiceAgent","members":["serviceAccount:service-531336516229@gcp-sa-firebase.iam.gserviceaccount.com"]},{"role":"roles/firebase.sdkAdminServiceAgent","members":["serviceAccount:firebase-adminsdk-fbsvc@open-hinata3.iam.gserviceaccount.com"]},{"role":"roles/firebaseauth.admin","members":["serviceAccount:firebase-adminsdk-fbsvc@open-hinata3.iam.gserviceaccount.com"]},{"role":"roles/firebasemods.serviceAgent","members":["serviceAccount:service-531336516229@gcp-sa-firebasemods.iam.gserviceaccount.com"]},{"role":"roles/firebaserules.system","members":["serviceAccount:service-531336516229@firebase-rules.iam.gserviceaccount.com"]},{"role":"roles/firebasestorage.serviceAgent","members":["serviceAccount:service-531336516229@gcp-sa-firebasestorage.iam.gserviceaccount.com"]},{"role":"roles/firestore.serviceAgent","members":["serviceAccount:service-531336516229@gcp-sa-firestore.iam.gserviceaccount.com"]},{"role":"roles/iam.serviceAccountTokenCreator","members":["serviceAccount:firebase-adminsdk-fbsvc@open-hinata3.iam.gserviceaccount.com","serviceAccount:service-531336516229@gcp-sa-pubsub.iam.gserviceaccount.com"]},{"role":"roles/owner","members":["user:kenotiai@gmail.com"]},{"role":"roles/run.serviceAgent","members":["serviceAccount:service-531336516229@serverless-robot-prod.iam.gserviceaccount.com"]},{"role":"roles/storage.admin","members":["serviceAccount:firebase-adminsdk-fbsvc@open-hinata3.iam.gserviceaccount.com"]},{"role":"roles/run.invoker","members":["serviceAccount:531336516229-compute@developer.gserviceaccount.com"]},{"role":"roles/eventarc.eventReceiver","members":["serviceAccount:531336516229-compute@developer.gserviceaccount.com"]}]},"updateMask":"bindings"}
+[debug] [2025-05-06T08:57:13.117Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/531336516229:setIamPolicy 200
+[debug] [2025-05-06T08:57:13.117Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/531336516229:setIamPolicy {"version":1,"etag":"BwY0c81zRCo=","bindings":[{"role":"roles/cloudbuild.builds.builder","members":["serviceAccount:531336516229@cloudbuild.gserviceaccount.com"]},{"role":"roles/cloudbuild.serviceAgent","members":["serviceAccount:service-531336516229@gcp-sa-cloudbuild.iam.gserviceaccount.com"]},{"role":"roles/cloudfunctions.serviceAgent","members":["serviceAccount:service-531336516229@gcf-admin-robot.iam.gserviceaccount.com"]},{"role":"roles/containerregistry.ServiceAgent","members":["serviceAccount:service-531336516229@containerregistry.iam.gserviceaccount.com"]},{"role":"roles/editor","members":["serviceAccount:531336516229-compute@developer.gserviceaccount.com","serviceAccount:531336516229@cloudservices.gserviceaccount.com","serviceAccount:open-hinata3@appspot.gserviceaccount.com"]},{"role":"roles/eventarc.eventReceiver","members":["serviceAccount:531336516229-compute@developer.gserviceaccount.com"]},{"role":"roles/firebase.managementServiceAgent","members":["serviceAccount:service-531336516229@gcp-sa-firebase.iam.gserviceaccount.com"]},{"role":"roles/firebase.sdkAdminServiceAgent","members":["serviceAccount:firebase-adminsdk-fbsvc@open-hinata3.iam.gserviceaccount.com"]},{"role":"roles/firebaseauth.admin","members":["serviceAccount:firebase-adminsdk-fbsvc@open-hinata3.iam.gserviceaccount.com"]},{"role":"roles/firebasemods.serviceAgent","members":["serviceAccount:service-531336516229@gcp-sa-firebasemods.iam.gserviceaccount.com"]},{"role":"roles/firebaserules.system","members":["serviceAccount:service-531336516229@firebase-rules.iam.gserviceaccount.com"]},{"role":"roles/firebasestorage.serviceAgent","members":["serviceAccount:service-531336516229@gcp-sa-firebasestorage.iam.gserviceaccount.com"]},{"role":"roles/firestore.serviceAgent","members":["serviceAccount:service-531336516229@gcp-sa-firestore.iam.gserviceaccount.com"]},{"role":"roles/iam.serviceAccountTokenCreator","members":["serviceAccount:firebase-adminsdk-fbsvc@open-hinata3.iam.gserviceaccount.com","serviceAccount:service-531336516229@gcp-sa-pubsub.iam.gserviceaccount.com"]},{"role":"roles/owner","members":["user:kenotiai@gmail.com"]},{"role":"roles/run.invoker","members":["serviceAccount:531336516229-compute@developer.gserviceaccount.com"]},{"role":"roles/run.serviceAgent","members":["serviceAccount:service-531336516229@serverless-robot-prod.iam.gserviceaccount.com"]},{"role":"roles/storage.admin","members":["serviceAccount:firebase-adminsdk-fbsvc@open-hinata3.iam.gserviceaccount.com"]}]}
+[debug] [2025-05-06T08:57:13.118Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:57:13.118Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:57:13.119Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/open-hinata3 [none]
+[debug] [2025-05-06T08:57:13.323Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/open-hinata3 200
+[debug] [2025-05-06T08:57:13.323Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/open-hinata3 {"projectNumber":"531336516229","projectId":"open-hinata3","lifecycleState":"ACTIVE","name":"open-hinata3","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2025-02-05T04:37:29.967630Z"}
+[debug] [2025-05-06T08:57:13.325Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:57:13.325Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:57:13.325Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/open-hinata3/billingInfo [none]
+[debug] [2025-05-06T08:57:14.517Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/open-hinata3/billingInfo 200
+[debug] [2025-05-06T08:57:14.518Z] <<< [apiv2][body] GET https://cloudbilling.googleapis.com/v1/projects/open-hinata3/billingInfo {"name":"projects/open-hinata3/billingInfo","projectId":"open-hinata3","billingAccountName":"billingAccounts/01A254-153E83-EE5E23","billingEnabled":true}
+[debug] [2025-05-06T08:57:14.520Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:57:14.520Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:57:14.520Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/open-hinata3/locations/asia-southeast1/functions:generateUploadUrl [none]
+[debug] [2025-05-06T08:57:18.739Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/open-hinata3/locations/asia-southeast1/functions:generateUploadUrl 200
+[debug] [2025-05-06T08:57:18.739Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/open-hinata3/locations/asia-southeast1/functions:generateUploadUrl {"uploadUrl":"https://storage.googleapis.com/gcf-v2-uploads-531336516229.asia-southeast1.cloudfunctions.appspot.com/1ce92ad3-3e65-4055-a0d5-de1847c46eff.zip?GoogleAccessId=service-531336516229@gcf-admin-robot.iam.gserviceaccount.com&Expires=1746523638&Signature=UJJqoAHVpubRonDvYiEGgEMxAhPYCchcDxCESoYoEaIWgeo9Gcw6u92bRzKHWgURuTZUIV1YAjVcdivOAD428jpBeadXvWXRFAGDdAMBPXrowDxAxnBqBzmfzyKEOw6KjkcXO2ciZ%2B%2F%2B77AlA9AbahwlCiD30LxGRCHuDVyqKgNAQ2diwFPMUMRNLWKePrpmsQ4WBqOXhKYqRF9TV4mldu7ujFuLVHsMXtzcuWq26IvClatqnxe206TRHuKbhSOXvvI7Kv5GlaAlH80LsNK4V%2FsSizMiX02dtUgTa4CwAFL4p0MMD5kWDuAu%2F45TTnCikmM1AJwOz6B5DSD27w3ngA%3D%3D","storageSource":{"bucket":"gcf-v2-uploads-531336516229.asia-southeast1.cloudfunctions.appspot.com","object":"1ce92ad3-3e65-4055-a0d5-de1847c46eff.zip"}}
+[debug] [2025-05-06T08:57:18.740Z] >>> [apiv2][query] PUT https://storage.googleapis.com/gcf-v2-uploads-531336516229.asia-southeast1.cloudfunctions.appspot.com/1ce92ad3-3e65-4055-a0d5-de1847c46eff.zip GoogleAccessId=service-531336516229%40gcf-admin-robot.iam.gserviceaccount.com&Expires=1746523638&Signature=UJJqoAHVpubRonDvYiEGgEMxAhPYCchcDxCESoYoEaIWgeo9Gcw6u92bRzKHWgURuTZUIV1YAjVcdivOAD428jpBeadXvWXRFAGDdAMBPXrowDxAxnBqBzmfzyKEOw6KjkcXO2ciZ%2B%2F%2B77AlA9AbahwlCiD30LxGRCHuDVyqKgNAQ2diwFPMUMRNLWKePrpmsQ4WBqOXhKYqRF9TV4mldu7ujFuLVHsMXtzcuWq26IvClatqnxe206TRHuKbhSOXvvI7Kv5GlaAlH80LsNK4V%2FsSizMiX02dtUgTa4CwAFL4p0MMD5kWDuAu%2F45TTnCikmM1AJwOz6B5DSD27w3ngA%3D%3D
+[debug] [2025-05-06T08:57:18.741Z] >>> [apiv2][body] PUT https://storage.googleapis.com/gcf-v2-uploads-531336516229.asia-southeast1.cloudfunctions.appspot.com/1ce92ad3-3e65-4055-a0d5-de1847c46eff.zip [stream]
+[debug] [2025-05-06T08:57:19.640Z] <<< [apiv2][status] PUT https://storage.googleapis.com/gcf-v2-uploads-531336516229.asia-southeast1.cloudfunctions.appspot.com/1ce92ad3-3e65-4055-a0d5-de1847c46eff.zip 200
+[debug] [2025-05-06T08:57:19.641Z] <<< [apiv2][body] PUT https://storage.googleapis.com/gcf-v2-uploads-531336516229.asia-southeast1.cloudfunctions.appspot.com/1ce92ad3-3e65-4055-a0d5-de1847c46eff.zip [omitted]
+[info] ✔  functions: functions folder uploaded successfully 
+[info] i  functions: creating Node.js 22 (2nd Gen) function notifyReply(asia-southeast1)... 
+[debug] [2025-05-06T08:57:19.646Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:57:19.646Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:57:19.647Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/open-hinata3/locations/asia-southeast1/functions functionId=notifyReply
+[debug] [2025-05-06T08:57:19.647Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/open-hinata3/locations/asia-southeast1/functions {"name":"projects/open-hinata3/locations/asia-southeast1/functions/notifyReply","buildConfig":{"runtime":"nodejs22","entryPoint":"notifyReply","source":{"storageSource":{"bucket":"gcf-v2-uploads-531336516229.asia-southeast1.cloudfunctions.appspot.com","object":"1ce92ad3-3e65-4055-a0d5-de1847c46eff.zip"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""}},"serviceConfig":{"environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"open-hinata3\",\"databaseURL\":\"https://open-hinata3-default-rtdb.asia-southeast1.firebasedatabase.app\",\"storageBucket\":\"open-hinata3.firebasestorage.app\"}","GCLOUD_PROJECT":"open-hinata3","EVENTARC_CLOUD_EVENT_SOURCE":"projects/open-hinata3/locations/asia-southeast1/services/notifyReply","FUNCTION_SIGNATURE_TYPE":"cloudevent","FUNCTION_TARGET":"notifyReply","LOG_EXECUTION_ID":"true"},"ingressSettings":null,"timeoutSeconds":null,"serviceAccountEmail":null,"availableMemory":"256Mi","minInstanceCount":null,"maxInstanceCount":null,"maxInstanceRequestConcurrency":80,"availableCpu":"1","vpcConnector":null,"vpcConnectorEgressSettings":null},"labels":{"deployment-tool":"cli-firebase","firebase-functions-hash":"8325062ce03c980df36ca718562a0a90f2aabfce"},"eventTrigger":{"eventType":"google.firebase.database.ref.v1.created","retryPolicy":"RETRY_POLICY_DO_NOT_RETRY","eventFilters":[{"attribute":"ref","value":"threads/{cityCode}/{commentId}","operator":"match-path-pattern"},{"attribute":"instance","value":"*","operator":"match-path-pattern"}],"triggerRegion":"asia-southeast1"}}
+[debug] [2025-05-06T08:57:45.210Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/open-hinata3/locations/asia-southeast1/functions 400
+[debug] [2025-05-06T08:57:45.210Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/open-hinata3/locations/asia-southeast1/functions {"error":{"code":400,"message":"Validation failed for trigger projects/open-hinata3/locations/asia-southeast1/triggers/notifyreply-099577: Invalid resource state for \"\": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role.","status":"FAILED_PRECONDITION"}}
+[warn] ⚠  functions: Request to https://cloudfunctions.googleapis.com/v2/projects/open-hinata3/locations/asia-southeast1/functions?functionId=notifyReply had HTTP Error: 400, Validation failed for trigger projects/open-hinata3/locations/asia-southeast1/triggers/notifyreply-099577: Invalid resource state for "": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role. 
+[warn] ⚠  functions: Since this is your first time using 2nd gen functions, we need a little bit longer to finish setting everything up. Retry the deployment in a few minutes. 
+[warn] ⚠  functions:  failed to create function projects/open-hinata3/locations/asia-southeast1/functions/notifyReply 
+[error] Failed to create function projects/open-hinata3/locations/asia-southeast1/functions/notifyReply
+[debug] [2025-05-06T08:57:45.220Z] Total Function Deployment time: 25568
+[debug] [2025-05-06T08:57:45.220Z] 1 Functions Deployed
+[debug] [2025-05-06T08:57:45.220Z] 1 Functions Errored
+[debug] [2025-05-06T08:57:45.220Z] 0 Function Deployments Aborted
+[debug] [2025-05-06T08:57:45.220Z] Average Function Deployment time: 25567
+[info] 
+[info] Functions deploy had errors with the following functions:
+	notifyReply(asia-southeast1)
+[debug] [2025-05-06T08:57:45.383Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:57:45.383Z] Checked if tokens are valid: true, expires at: 1746524267999
+[debug] [2025-05-06T08:57:45.383Z] >>> [apiv2][query] GET https://artifactregistry.googleapis.com/v1/projects/open-hinata3/locations/asia-southeast1/repositories/gcf-artifacts [none]
+[debug] [2025-05-06T08:57:45.925Z] <<< [apiv2][status] GET https://artifactregistry.googleapis.com/v1/projects/open-hinata3/locations/asia-southeast1/repositories/gcf-artifacts 404
+[debug] [2025-05-06T08:57:45.926Z] <<< [apiv2][body] GET https://artifactregistry.googleapis.com/v1/projects/open-hinata3/locations/asia-southeast1/repositories/gcf-artifacts {"error":{"code":404,"message":"Requested entity was not found.","status":"NOT_FOUND"}}
+[debug] [2025-05-06T08:57:45.926Z] Failed to check artifact cleanup policy for region asia-southeast1: Request to https://artifactregistry.googleapis.com/v1/projects/open-hinata3/locations/asia-southeast1/repositories/gcf-artifacts had HTTP Error: 404, Requested entity was not found. {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":404,"message":"Requested entity was not found.","status":"NOT_FOUND"}},"response":{"statusCode":404}},"exit":1,"message":"Request to https://artifactregistry.googleapis.com/v1/projects/open-hinata3/locations/asia-southeast1/repositories/gcf-artifacts had HTTP Error: 404, Requested entity was not found.","status":404}
+[debug] [2025-05-06T08:57:45.926Z] Functions deploy failed.
+[debug] [2025-05-06T08:57:45.927Z] {
+  "endpoint": {
+    "id": "notifyReply",
+    "project": "open-hinata3",
+    "region": "asia-southeast1",
+    "entryPoint": "notifyReply",
+    "platform": "gcfv2",
+    "runtime": "nodejs22",
+    "eventTrigger": {
+      "eventType": "google.firebase.database.ref.v1.created",
+      "retry": false,
+      "eventFilters": {},
+      "eventFilterPathPatterns": {
+        "ref": "threads/{cityCode}/{commentId}",
+        "instance": "*"
+      },
+      "region": "asia-southeast1"
+    },
+    "labels": {
+      "deployment-tool": "cli-firebase"
+    },
+    "serviceAccount": null,
+    "ingressSettings": null,
+    "availableMemoryMb": null,
+    "timeoutSeconds": null,
+    "maxInstances": null,
+    "minInstances": null,
+    "concurrency": 80,
+    "vpc": null,
+    "environmentVariables": {
+      "FIREBASE_CONFIG": "{\"projectId\":\"open-hinata3\",\"databaseURL\":\"https://open-hinata3-default-rtdb.asia-southeast1.firebasedatabase.app\",\"storageBucket\":\"open-hinata3.firebasestorage.app\"}",
+      "GCLOUD_PROJECT": "open-hinata3",
+      "EVENTARC_CLOUD_EVENT_SOURCE": "projects/open-hinata3/locations/asia-southeast1/services/notifyReply"
+    },
+    "codebase": "default",
+    "cpu": 1,
+    "targetedByOnly": false,
+    "hash": "8325062ce03c980df36ca718562a0a90f2aabfce"
+  },
+  "op": "create",
+  "original": {
+    "name": "FirebaseError",
+    "children": [],
+    "context": {
+      "function": "projects/open-hinata3/locations/asia-southeast1/functions/notifyReply"
+    },
+    "exit": 1,
+    "message": "Failed to create function projects/open-hinata3/locations/asia-southeast1/functions/notifyReply",
+    "original": {
+      "name": "FirebaseError",
+      "children": [],
+      "context": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Validation failed for trigger projects/open-hinata3/locations/asia-southeast1/triggers/notifyreply-099577: Invalid resource state for \"\": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role.",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "response": {
+          "statusCode": 400
+        }
+      },
+      "exit": 1,
+      "message": "Request to https://cloudfunctions.googleapis.com/v2/projects/open-hinata3/locations/asia-southeast1/functions?functionId=notifyReply had HTTP Error: 400, Validation failed for trigger projects/open-hinata3/locations/asia-southeast1/triggers/notifyreply-099577: Invalid resource state for \"\": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role.",
+      "status": 400
+    },
+    "status": 400,
+    "code": 400
+  }
+}
+[debug] [2025-05-06T08:57:45.991Z] Error: Failed to create function notifyReply in region asia-southeast1
+    at /usr/local/lib/node_modules/firebase-tools/lib/deploy/functions/release/fabricator.js:294:27
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Fabricator.createV2Function (/usr/local/lib/node_modules/firebase-tools/lib/deploy/functions/release/fabricator.js:278:30)
+    at async Fabricator.createEndpoint (/usr/local/lib/node_modules/firebase-tools/lib/deploy/functions/release/fabricator.js:137:13)
+    at async handle (/usr/local/lib/node_modules/firebase-tools/lib/deploy/functions/release/fabricator.js:89:17)
+[error] 
+[error] Error: There was an error deploying functions
