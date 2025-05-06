@@ -18,17 +18,9 @@
         <h2>
           {{ cityName + cityCode }}
         </h2>
-<!--        <transition name="fade" mode="out-in">-->
-<!--          <h2-->
-<!--              :key="`${popupFeatureProperties.市区町村名}${popupFeatureProperties.大字名}${popupFeatureProperties.丁目名}${popupFeatureProperties.地番}`"-->
-<!--              style="margin-bottom: 10px;"-->
-<!--          >-->
-<!--            {{ `${popupFeatureProperties.市区町村名}${popupFeatureProperties.大字名}${popupFeatureProperties['丁目名'] || ''}${popupFeatureProperties.地番}` }}-->
-<!--          </h2>-->
-<!--        </transition>-->
-<!--        <p v-for="[key, value] in Object.entries(popupFeatureProperties)" :key="key" class="property-text">-->
-<!--          {{ key }}: {{ value }}-->
-<!--        </p>-->
+
+        ここにスレッドを設置
+
       </v-card-text>
 
 <!--      <v-card-actions style="margin-top: 0px">-->
