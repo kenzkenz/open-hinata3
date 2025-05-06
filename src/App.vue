@@ -8,6 +8,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
+      <ChibanzuDrawer
+          :value="showChibanzuDrawer"
+      />
+
       <RightDrawer
           :value="showRightDrawer"
           :feature="selectedPointFeature"
@@ -563,6 +567,7 @@ import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
 import { TerraDraw,TerraDrawPointMode,TerraDrawLineStringMode,TerraDrawPolygonMode,TerraDrawFreehandMode } from 'terra-draw'
 import PointInfoDrawer from '@/components/PointInfoDrawer.vue'
 import RightDrawer from '@/components/rightDrawer.vue'
+import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
 import LayerTabPanel from '@/components/LayerTabPanel.vue'
 import {
@@ -903,7 +908,8 @@ export default {
     DialogShare,
     DialogChibanzuList,
     PointInfoDrawer,
-    RightDrawer
+    RightDrawer,
+    ChibanzuDrawer
   },
   data: () => ({
     mapillaryWidth: '0px',
@@ -970,7 +976,8 @@ export default {
     ...mapState([
       'showPointInfoDrawer',
       'showRightDrawer',
-      'selectedPointFeature'
+      'selectedPointFeature',
+      'showChibanzuDrawer',
     ]),
     s_mapillaryDialog: {
       get() {
@@ -1295,7 +1302,7 @@ export default {
     //
     //   this.close()
     // },
-    ...mapMutations(['setRightDrawer', 'setPointInfoDrawer', 'saveSelectedPointFeature']),
+    ...mapMutations(['setChibanzuDrawer', 'setRightDrawer', 'setPointInfoDrawer', 'saveSelectedPointFeature']),
     ...mapActions(['saveSelectedPointFeatureToFirestore']),
     close () {
       this.setPointInfoDrawer(false)

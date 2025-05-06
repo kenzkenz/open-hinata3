@@ -42,6 +42,7 @@ export default createStore({
     isUnder500: false,
     showPointInfoDrawer: false,
     showRightDrawer: false,
+    showChibanzuDrawer: true,
     selectedPointFeature: null,
     groupGeojson: { type: 'FeatureCollection', features: [] },
     dialogs: {
@@ -462,6 +463,9 @@ export default createStore({
     },
     setRightDrawer (state, val) {
       state.showRightDrawer = val
+    },
+    setChibanzuDrawer (state, val) {
+      state.showChibanzuDrawer = val
     },
     setSelectedPointFeature (state, feature) {
       state.selectedPointFeature = feature
