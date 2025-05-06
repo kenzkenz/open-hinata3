@@ -21,6 +21,14 @@
         </h2>
         <p v-else>自治体を選択してください</p>
 
+        <v-btn
+            style="margin-top: 20px;"
+            color="error"
+            @click="red"
+        >
+          赤色onof
+        </v-btn>
+        <span style="margin-left: 20px;">既に色がついている場合は無効</span>
         <!-- コメント投稿フォーム -->
         <div v-if="user" class="comment-form mt-4">
           <div v-if="replyingTo" class="replying-to mb-2">
@@ -128,6 +136,7 @@
 import { mapState, mapMutations } from 'vuex';
 import { db, auth } from '../firebase';
 import firebase from 'firebase/app';
+import {publicChk} from "@/js/downLoad";
 
 export default {
   name: 'chibanzuDrawer',
@@ -151,6 +160,9 @@ export default {
     ]),
     cityCode() {
       return this.popupFeatureProperties?.N03_007?.padStart(5, '0') || '';
+    },
+    prefName() {
+      return this.popupFeatureProperties?.N03_001;
     },
     cityName() {
       if (!this.popupFeatureProperties) return '';
@@ -211,6 +223,32 @@ export default {
     ...mapMutations([
       'setChibanzuDrawer',
     ]),
+    async red() {
+      const url = 'https://kenzkenz.xsrv.jp/open-hinata3/php/userChibanzumapRedUpdate.php';
+      const data = {
+        citycode: this.cityCode,
+        prefname: this.prefName,
+        cityname: this.cityName
+      };
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (result.error) {
+          console.log(result)
+        } else {
+          console.log(result)
+          publicChk ()
+        }
+      } catch (error) {
+        console.log(error)
+      }
+    },
     close() {
       this.setChibanzuDrawer(false);
     },

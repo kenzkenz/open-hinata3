@@ -24,7 +24,8 @@ export async function loadColorData() {
             const color = code === -1 ? 'rgba(0,128,0,0.8)' :
                 code === 0 ? 'rgba(0,0,0,0)' :
                     code === 1 ? 'rgba(0,0,255,0.8)' :
-                        code === 3 ? 'rgba(128,128,128,0.8)' : '#CCCCCC';
+                        code === 3 ? 'rgba(128,128,128,0.8)' :
+                            code === 4 ? 'rgba(255,0,0,0.8)' : '#CCCCCC';
             colorMap[item.citycode] = color;
         });
         return colorMap;

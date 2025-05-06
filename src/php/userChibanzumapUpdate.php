@@ -18,6 +18,39 @@ try {
     // 1. chibanzumapテーブルをトランケート
     $pdo->exec('TRUNCATE TABLE chibanzumap');
 
+    // 7. chibanzumapredから全データを取得（新規追加）
+    $selectChibanzumapredStmt = $pdo->query('SELECT citycode, prefname, cityname, public FROM chibanzumapred');
+    $chibanzumapred = $selectChibanzumapredStmt->fetchAll();
+
+    // chibanzumapredのデータ件数を記録
+    $result['chibanzumapred_count'] = count($chibanzumapred);
+
+    // chibanzumapredのデータ検証
+    if (!empty($chibanzumapred)) {
+        foreach ($chibanzumapred as $index => $row) {
+            if (empty($row['citycode']) || is_null($row['citycode'])) {
+                throw new Exception("chibanzumapred: citycodeが空またはNULLです（行: " . ($index + 1) . "）");
+            }
+        }
+
+        // 8. chibanzumapredをバッチインサート
+        $values = [];
+        $placeholders = [];
+        foreach ($chibanzumapred as $row) {
+            $placeholders[] = '(?, ?, ?, ?)';
+            $values[] = $row['citycode'];
+            $values[] = $row['prefname'] ?? '';
+            $values[] = $row['cityname'] ?? '';
+            $values[] = $row['public'] ?? 4; // デフォルト値（前のコードから推測）
+        }
+
+        $sql = 'INSERT INTO chibanzumap (citycode, prefname, cityname, public) VALUES ' . implode(', ', $placeholders);
+        $insertStmt = $pdo->prepare($sql);
+        $insertStmt->execute($values);
+    } else {
+        $result['message'] .= 'chibanzumapredデータがありません。';
+    }
+
     // 2. opendataから全データを取得
     $selectStmt = $pdo->query('SELECT citycode, prefname, cityname, public FROM opendata');
     $opendata = $selectStmt->fetchAll();
