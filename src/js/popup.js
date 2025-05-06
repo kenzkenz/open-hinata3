@@ -3437,10 +3437,19 @@ export function popup(e,map,mapName,mapFlg) {
                 if (features.length === 0) return
 
 
-                // ⭐️-----------------------------------------------------------------------------------------------------
+                // ⭐️---------------------------------------------------------------------------------------------------
+                let sec
+                if (store.state.showChibanzuDrawer) {
+                    store.commit('setChibanzuDrawer', false)
+                    sec = 500
+                } else {
+                    sec = 0
+                }
                 store.state.popupFeatureProperties = features[0].properties
                 store.state.popupFeatureCoordinates = coordinates
-                store.commit('setChibanzuDrawer', true)
+                setTimeout(() => {
+                    store.commit('setChibanzuDrawer', true)
+                },sec)
                 // -----------------------------------------------------------------------------------------------------
 
 
