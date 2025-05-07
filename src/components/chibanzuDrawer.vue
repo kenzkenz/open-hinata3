@@ -280,6 +280,14 @@ export default {
         this.$store.state.chibanzuGeojson = value
       }
     },
+    s_pmtilesName: {
+      get() {
+        return this.$store.state.pmtilesName
+      },
+      set(value) {
+        this.$store.state.pmtilesName = value
+      }
+    },
     s_showChibanzuDialog: {
       get() {
         return this.$store.state.showChibanzuDialog
@@ -305,11 +313,11 @@ export default {
     cityName() {
       if (!this.popupFeatureProperties) return '';
       if (this.popupFeatureProperties.N03_004 === '札幌市') {
-        return (this.popupFeatureProperties.N03_001 || '') +
+        return (this.popupFeatureProperties.N03_001 || '') + '-' +
             (this.popupFeatureProperties.N03_004 || '') +
             (this.popupFeatureProperties.N03_005 || '');
       } else {
-        return (this.popupFeatureProperties.N03_001 || '') +
+        return (this.popupFeatureProperties.N03_001 || '') + '-' +
             (this.popupFeatureProperties.N03_004 || '');
       }
     },
@@ -381,6 +389,7 @@ export default {
               this.s_chibanzuPropaties = Object.keys(firstFeature.properties)
               this.s_chibanzuGeojson= geojson
               this.s_showChibanzuDialog = true
+              this.s_pmtilesName = this.cityName
 
             } catch (error) {
               console.error('GeoJSONファイルの読み込みエラー:', error);

@@ -977,6 +977,8 @@ export default {
       'showRightDrawer',
       'selectedPointFeature',
       'showChibanzuDrawer',
+      'chibanzuPrefCode',
+      'chibanzuCityCode',
     ]),
     s_chibanzuPropaties: {
       get() {
