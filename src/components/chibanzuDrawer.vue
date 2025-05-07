@@ -264,6 +264,30 @@ export default {
       'popupFeatureProperties',
       'popupFeatureCoordinates',
     ]),
+    s_chibanzuPropaties: {
+      get() {
+        return this.$store.state.chibanzuPropaties
+      },
+      set(value) {
+        this.$store.state.chibanzuPropaties = value
+      }
+    },
+    s_chibanzuGeojson: {
+      get() {
+        return this.$store.state.chibanzuGeojson
+      },
+      set(value) {
+        this.$store.state.chibanzuGeojson = value
+      }
+    },
+    s_showChibanzuDialog: {
+      get() {
+        return this.$store.state.showChibanzuDialog
+      },
+      set(value) {
+        this.$store.state.showChibanzuDialog = value
+      }
+    },
     s_dialogForLogin: {
       get() {
         return this.$store.state.dialogForLogin
@@ -353,7 +377,11 @@ export default {
             try {
               const geojsonText = event.target.result;
               const geojson = JSON.parse(geojsonText);
-              alert()
+              const firstFeature = geojson.features[0];
+              this.s_chibanzuPropaties = Object.keys(firstFeature.properties)
+              this.s_chibanzuGeojson= geojson
+              this.s_showChibanzuDialog = true
+
             } catch (error) {
               console.error('GeoJSONファイルの読み込みエラー:', error);
             } finally {

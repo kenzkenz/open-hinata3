@@ -4,6 +4,9 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    chibanzuPropaties: {},
+    chibanzuGeojson: [],
+    showChibanzuDialog: false,
     popupFeatureProperties: {},
     popupFeatureCoordinates: [],
     soloFlg: false,

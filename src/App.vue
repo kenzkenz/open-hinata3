@@ -103,7 +103,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </v-card>
       </v-dialog>
 
-      <v-dialog v-model="dialogForShpApp" max-width="500px">
+      <v-dialog v-model="s_showChibanzuDialog" max-width="500px">
         <v-card>
           <v-card-title>
             地番図アップロード
@@ -150,7 +150,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="blue-darken-1" text @click="dialogForShpApp = false">Close</v-btn>
+            <v-btn color="blue-darken-1" text @click="s_showChibanzuDialog = false">Close</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -950,7 +950,6 @@ export default {
     resolutions: [13,14,15,16,17,18,19,20,21,22,23,24,25,26],
     dialogForGeotiffApp1file: false,
     dialogForPdfApp: false,
-    dialogForShpApp: false,
     dialogForImagePng: false,
     shpPropaties: [],
     shpGeojson: [],
@@ -979,6 +978,30 @@ export default {
       'selectedPointFeature',
       'showChibanzuDrawer',
     ]),
+    s_chibanzuPropaties: {
+      get() {
+        return this.$store.state.chibanzuPropaties
+      },
+      set(value) {
+        return this.$store.state.chibanzuPropaties = value
+      }
+    },
+    s_chibanzuGeojson: {
+      get() {
+        return this.$store.state.chibanzuGeojson
+      },
+      set(value) {
+        return this.$store.state.chibanzuGeojson = value
+      }
+    },
+    s_showChibanzuDialog: {
+      get() {
+        return this.$store.state.showChibanzuDialog
+      },
+      set(value) {
+        return this.$store.state.showChibanzuDialog = value
+      }
+    },
     s_mapillaryDialog: {
       get() {
         return this.$store.state.mapillaryDialog
@@ -1419,7 +1442,7 @@ export default {
         return
       }
       pmtilesGenerateForUser2 (this.shpGeojson,'',store.state.pmtilesPropertieName,this.selectedPrefCode,String(this.selectedCityCode).padStart(5, '0'),this.selectedPublic)
-      this.dialogForShpApp = false
+      this.s_showChibanzuDialog = false
     },
     imagePngLoad () {
       csvGenerateForUserPng()
@@ -3789,9 +3812,9 @@ export default {
                       const geojson = JSON.parse(geojsonText);
                       if (this.$store.state.userId) {
                         const firstFeature = geojson.features[0];
-                        this.shpPropaties = Object.keys(firstFeature.properties)
-                        this.shpGeojson = geojson
-                        this.dialogForShpApp = true
+                        this.s_chibanzuPropaties = Object.keys(firstFeature.properties)
+                        this.s_chibanzuGeojson= geojson
+                        this.s_showChibanzuDialog = true
                       } else {
                         this.$store.state.geojsonText = geojsonText
                         geojsonAddLayer (map, geojson, true, fileExtension)
@@ -3814,11 +3837,11 @@ export default {
                       const arrayBuffer = await file.arrayBuffer();
                       const geojson = await shp(arrayBuffer);
                       const firstFeature = geojson.features[0];
-                      this.shpPropaties = Object.keys(firstFeature.properties)
-                      this.shpGeojson = geojson
+                      this.s_chibanzuPropaties = Object.keys(firstFeature.properties)
+                      this.s_chibanzuGeojson = geojson
                       this.loadingSnackbar = false
                       this.s_loading = false
-                      this.dialogForShpApp = true
+                      this.s_showChibanzuDialog = true
                     }catch (e) {
                       alert('シェイプファイルをgeojsonに変換できませんでした。')
                       this.loadingSnackbar = false
