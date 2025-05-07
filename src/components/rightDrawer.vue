@@ -20,7 +20,7 @@
               :key="`${popupFeatureProperties.市区町村名}${popupFeatureProperties.大字名}${popupFeatureProperties.丁目名}${popupFeatureProperties.地番}`"
               style="margin-bottom: 10px;"
           >
-            {{ `${popupFeatureProperties.市区町村名}${popupFeatureProperties.大字名}${popupFeatureProperties['丁目名'] || ''}${popupFeatureProperties.地番}` }}
+            {{ `${popupFeatureProperties.市区町村名}${popupFeatureProperties.大字名 || ''}${popupFeatureProperties['丁目名'] || ''}${popupFeatureProperties.地番}` }}
           </h2>
         </transition>
 <!--        <h2 style="margin-bottom: 10px;">{{ `${popupFeatureProperties.市区町村名}${popupFeatureProperties.大字名}${popupFeatureProperties.丁目名}${popupFeatureProperties.地番}` }}</h2>-->
