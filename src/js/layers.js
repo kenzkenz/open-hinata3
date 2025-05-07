@@ -9169,7 +9169,7 @@ let layers01 = [
     },
     {
         id: 'oh-chibanzu-all2',
-        label: '全国地番図公開マップ',
+        label: '⭐️全国地番図公開マップ️',
         sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
         layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
         // sources: [cityPmtilesSource,...chibanzuSources,...publicSources],
