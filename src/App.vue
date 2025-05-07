@@ -116,12 +116,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <v-text-field v-model="s_pmtilesName" type="email" placeholder="地番図名" ></v-text-field>
               <v-select class="scrollable-content"
                         v-model="s_pmtilesPropertieName"
-                        :items="shpPropaties"
+                        :items="s_chibanzuPropaties"
                         label="地番にあたるフィールドを選択してください"
                         outlined
               ></v-select>
               <v-select
-                  v-model="selectedPrefCode"
+                  v-model="s_chibanzuPrefCode"
                   :items="prefItems"
                   item-title="prefName"
                   item-value="prefCode"
@@ -129,14 +129,13 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   outlined
               ></v-select>
               <v-select
-                  v-model="selectedCityCode"
+                  v-model="s_chibanzuCityCode"
                   :items="cityItems"
                   item-title="cityName"
                   item-value="cityCode"
                   label="市区町村名を選択してください"
                   outlined
               ></v-select>
-<!--              <v-switch style="height: 40px;margin-top: -20px;margin-bottom: 20px;" v-model="isPublic" @change="isPublicSwitch" label="OH3上に公開" color="primary" />-->
               <v-select
                   v-model="selectedPublic"
                   :items="publicItems"
@@ -524,7 +523,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <dialog2 :mapName=mapName />
           <dialogShare v-if="mapName === 'map01'" :mapName=mapName />
           <DialogChibanzuList :mapName=mapName />
-<!--          <LayerTabPanel />-->
 
           <div :id="'terrain-btn-div-' + mapName" class="terrain-btn-div">
             <div class="terrain-btn-container">
@@ -954,8 +952,6 @@ export default {
     shpPropaties: [],
     shpGeojson: [],
     loadingSnackbar: false,
-    selectedPrefCode: '',
-    selectedCityCode: '',
     selectedPublic: null,
     publicItems: [{public:-1,label:'オープンデータ（マップ上は緑色、詳細は表示）'},{public:0,label:'完全非公開（マップ上は透明、詳細は非表示）'},{public:3,label:'非公開（マップ上は灰色、詳細は非表示）'},{public:1,label:'公開（マップ上は青色、詳細は表示）'}],
     isPublic: false,
@@ -977,9 +973,23 @@ export default {
       'showRightDrawer',
       'selectedPointFeature',
       'showChibanzuDrawer',
-      'chibanzuPrefCode',
-      'chibanzuCityCode',
     ]),
+    s_chibanzuPrefCode: {
+      get() {
+        return this.$store.state.chibanzuPrefCode
+      },
+      set(value) {
+        return this.$store.state.chibanzuPrefCode = value
+      }
+    },
+    s_chibanzuCityCode: {
+      get() {
+        return this.$store.state.chibanzuCityCode
+      },
+      set(value) {
+        return this.$store.state.chibanzuCityCode = value
+      }
+    },
     s_chibanzuPropaties: {
       get() {
         return this.$store.state.chibanzuPropaties
@@ -1020,7 +1030,7 @@ export default {
     },
     cityItems() {
       const filteredCities = Object.entries(muni)
-          .filter(([_, value]) => value.startsWith(`${Number(this.selectedPrefCode)},`))
+          .filter(([_, value]) => value.startsWith(`${Number(this.s_chibanzuPrefCode)},`))
           .map(([cityCode, value]) => {
             const parts = value.split(',');
             return { prefCode: parts[0].padStart(5, '0'), cityCode: parts[2], cityName: parts[3] };
@@ -1443,7 +1453,7 @@ export default {
         alert("入力されていません。")
         return
       }
-      pmtilesGenerateForUser2 (this.shpGeojson,'',store.state.pmtilesPropertieName,this.selectedPrefCode,String(this.selectedCityCode).padStart(5, '0'),this.selectedPublic)
+      pmtilesGenerateForUser2 (this.s_chibanzuGeojson,'',store.state.pmtilesPropertieName,this.s_chibanzuPrefCode,String(this.s_chibanzuCityCode).padStart(5, '0'),this.selectedPublic)
       this.s_showChibanzuDialog = false
     },
     imagePngLoad () {
@@ -3815,7 +3825,7 @@ export default {
                       if (this.$store.state.userId) {
                         const firstFeature = geojson.features[0];
                         this.s_chibanzuPropaties = Object.keys(firstFeature.properties)
-                        this.s_chibanzuGeojson= geojson
+                        this.s_chibanzuGeojson = geojson
                         this.s_showChibanzuDialog = true
                       } else {
                         this.$store.state.geojsonText = geojsonText

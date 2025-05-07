@@ -72,7 +72,7 @@
           </v-btn>
         </div>
         <div v-else class="login-prompt mt-4">
-          <p>コメントするにはログインしてください</p>
+          <p>コメント、アップロードするにはログインしてください</p>
           <v-btn
                  style="margin-top: 10px;"
                  color="primary"
@@ -222,14 +222,16 @@
               </div>
             </v-card-text>
           </v-card>
-          <hr>
-          <v-btn
-              style="margin-top: 20px;width: 100%;"
-              v-if="user"
-              @click="geojsonUpload"
-          >
-            地番図アップロード（geojsonファイル）
-          </v-btn>
+          <div v-if="user">
+            <v-btn
+                style="margin-top: 20px;width: 100%;"
+                v-if="user"
+                @click="geojsonUpload"
+            >
+              地番図アップロード（geojsonファイル）
+            </v-btn>
+            <p style="margin-top: 10px;">上限500mbです。超える場合は@kenzkenzに連絡を。</p>
+          </div>
         </div>
       </v-card-text>
     </v-card>
@@ -264,6 +266,22 @@ export default {
       'popupFeatureProperties',
       'popupFeatureCoordinates',
     ]),
+    s_chibanzuPrefCode: {
+      get() {
+        return this.$store.state.chibanzuPrefCode
+      },
+      set(value) {
+        return this.$store.state.chibanzuPrefCode = value
+      }
+    },
+    s_chibanzuCityCode: {
+      get() {
+        return this.$store.state.chibanzuCityCode
+      },
+      set(value) {
+        return this.$store.state.chibanzuCityCode = value
+      }
+    },
     s_chibanzuPropaties: {
       get() {
         return this.$store.state.chibanzuPropaties
@@ -390,6 +408,8 @@ export default {
               this.s_chibanzuGeojson= geojson
               this.s_showChibanzuDialog = true
               this.s_pmtilesName = this.cityName
+              this.s_chibanzuPrefCode = this.cityCode.slice(0,2)
+              this.s_chibanzuCityCode = String(Number(this.cityCode))
 
             } catch (error) {
               console.error('GeoJSONファイルの読み込みエラー:', error);

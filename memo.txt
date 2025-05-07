@@ -1405,3 +1405,16 @@ tippecanoe -f -l polygon -Z0 -z15 -o 2025dissolved_all_simplified.pmtiles dissol
 mapshaper -i dissolved.geojson -simplify 10% keep-shapes -o format=geojson dissolved_simplified.geojson
 
 tippecanoe -f -l polygon -Z0 -z14 -o 2025dissolved_simplified.pmtiles dissolved_simplified.geojson
+
+tippecanoe -o nagasakishi.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=0 \
+    --layer=oh3 \
+    nagasakishi.geojson
