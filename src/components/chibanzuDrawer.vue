@@ -230,7 +230,8 @@
             >
               地番図アップロード（geojsonファイル）
             </v-btn>
-            <p style="margin-top: 10px;">上限500mbです。超える場合は@kenzkenzに連絡を。</p>
+            <p style="margin-top: 10px;">上限500mbです。超える場合は@kenzkenzに連絡を。<br>どうしてもUPに失敗するときも連絡を。</p>
+<!--            <p>UPしたらなるべくコメントしてください。</p>-->
           </div>
         </div>
       </v-card-text>
