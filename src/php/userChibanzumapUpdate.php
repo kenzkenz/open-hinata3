@@ -41,7 +41,7 @@ try {
             $values[] = $row['citycode'];
             $values[] = $row['prefname'] ?? '';
             $values[] = $row['cityname'] ?? '';
-            $values[] = $row['public'] ?? 4; // デフォルト値（前のコードから推測）
+            $values[] = $row['public'] ?? '';
         }
 
         $sql = 'INSERT INTO chibanzumap (citycode, prefname, cityname, public) VALUES ' . implode(', ', $placeholders);

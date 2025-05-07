@@ -24,12 +24,24 @@
         <v-btn v-if="user"
                style="margin-top: 20px;"
                color="error"
-               @click="red"
+               @click="public0(4)"
         >
-          赤色onoff
+          赤色
+        </v-btn>
+        <v-btn v-if="user"
+               style="margin-top: 20px;margin-left: 10px;background: gray !important;"
+               @click="public0(3)"
+        >
+          灰色
+        </v-btn>
+        <v-btn v-if="user"
+               style="margin-top: 20px;margin-left: 10px;background: rgba(0,0,0,0.2) !important;"
+               @click="public0(0)"
+        >
+          色なし
         </v-btn>
 
-        <span v-if="user" style="margin-left: 20px;">既に色がついている場合は無効</span>
+        <p v-if="user" style="margin-left: 0px;">アップロードがある場合は無効</p>
         <!-- コメント投稿フォーム -->
         <div v-if="user" class="comment-form mt-4">
           <div v-if="replyingTo" class="replying-to mb-2">
@@ -61,6 +73,15 @@
         </div>
         <div v-else class="login-prompt mt-4">
           <p>コメントするにはログインしてください</p>
+          <v-btn
+                 style="margin-top: 10px;"
+                 color="primary"
+                 small
+                 text
+                 @click="login"
+          >
+            ログイン
+          </v-btn>
         </div>
 
         <!-- コメントリスト -->
@@ -201,6 +222,14 @@
               </div>
             </v-card-text>
           </v-card>
+          <hr>
+          <v-btn
+              style="margin-top: 20px;width: 100%;"
+              v-if="user"
+              @click="geojsonUpload"
+          >
+            地番図アップロード（geojsonファイル）
+          </v-btn>
         </div>
       </v-card-text>
     </v-card>
@@ -233,8 +262,16 @@ export default {
     ...mapState([
       'showChibanzuDrawer',
       'popupFeatureProperties',
-      'popupFeatureCoordinates'
+      'popupFeatureCoordinates',
     ]),
+    s_dialogForLogin: {
+      get() {
+        return this.$store.state.dialogForLogin
+      },
+      set(value) {
+        this.$store.state.dialogForLogin = value
+      }
+    },
     cityCode() {
       return this.popupFeatureProperties?.N03_007?.padStart(5, '0') || '';
     },
@@ -300,6 +337,65 @@ export default {
     ...mapMutations([
       'setChibanzuDrawer',
     ]),
+    geojsonUpload () {
+
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = '.geojson,.json';
+      fileInput.style.display = 'none';
+      document.body.appendChild(fileInput);
+
+      fileInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            try {
+              const geojsonText = event.target.result;
+              const geojson = JSON.parse(geojsonText);
+              alert()
+            } catch (error) {
+              console.error('GeoJSONファイルの読み込みエラー:', error);
+            } finally {
+              // 隠しファイル入力を破棄
+              fileInput.remove();
+            }
+          };
+          reader.readAsText(file);
+        } else {
+          // ファイルが選択されなかった場合も破棄
+          fileInput.remove();
+        }
+      });
+      fileInput.click();
+    },
+    async public0 (no) {
+      const url = 'https://kenzkenz.xsrv.jp/open-hinata3/php/userChibanzumapRedUpdate.php';
+      const data = {
+        citycode: this.cityCode,
+        prefname: this.prefName,
+        cityname: this.cityName,
+        public: no,
+      };
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (result.error) {
+          console.log(result);
+        } else {
+          console.log(result);
+          publicChk();
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    },
     async red() {
       const url = 'https://kenzkenz.xsrv.jp/open-hinata3/php/userChibanzumapRedUpdate.php';
       const data = {
@@ -330,7 +426,8 @@ export default {
       this.setChibanzuDrawer(false);
     },
     login() {
-      this.$emit('login');
+      this.s_dialogForLogin = true
+      // this.$emit('login');
     },
     async loadComments() {
       if (this.unsubscribe) {
