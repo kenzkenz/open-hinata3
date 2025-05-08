@@ -912,14 +912,17 @@ export default {
             this.$store.state.map01.on('click', layer, (e) => {
               if (e.features && e.features.length > 0) {
                 const targetId = `${e.features[0].properties['oh3id']}`;
-                // console.log('Clicked ID', targetId);
                 if (this.$store.state.highlightedChibans.has(targetId)) {
                   // すでに選択されている場合は解除
-                  // console.log(this.$store.state.highlightedChibans)
                   this.$store.state.highlightedChibans.delete(targetId);
+                  store.commit('setRightDrawer', false)
                 } else {
                   // 新しいIDを追加
                   this.$store.state.highlightedChibans.add(targetId);
+                  const lngLat = e.lngLat
+                  store.state.popupFeatureProperties = e.features[0].properties
+                  store.state.popupFeatureCoordinates = [lngLat.lng, lngLat.lat]
+                  store.commit('setRightDrawer', true)
                 }
                 highlightSpecificFeaturesCity(map, layer);
               }

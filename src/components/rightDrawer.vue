@@ -9,20 +9,12 @@
   >
     <v-card flat class="bg-white drawer" style="border-radius: 0;">
       <v-card-title class="text-h6 text-white" style="background-color: var(--main-color); height: 40px; display: flex; align-items: center;">
-        2025登記所地図
+<!--        2025登記所地図-->
         <div class="close-btn-div" style="margin-right:4px;margin-top: 0px; color:white!important; ;font-size: 30px!important;" @click="close"><i class="fa-solid fa-xmark hover"></i></div>
       </v-card-title>
 
       <v-card-text style="margin-top: 20px;">
-<!--        <transition name="fade" mode="out-in">-->
-<!--          <h2-->
-<!--              :key="`${popupFeatureProperties.市区町村名}${popupFeatureProperties.大字名}${popupFeatureProperties.丁目名}${popupFeatureProperties.地番}`"-->
-<!--              style="margin-bottom: 10px;"-->
-<!--          >-->
-<!--            {{ `${popupFeatureProperties.市区町村名}${popupFeatureProperties.大字名 || ''}${popupFeatureProperties['丁目名'] || ''}${popupFeatureProperties.地番}` }}-->
-<!--          </h2>-->
-<!--        </transition>-->
-        <h2 style="margin-bottom: 10px;">{{ `${popupFeatureProperties.市区町村名}${popupFeatureProperties.大字名 || ''}${popupFeatureProperties['丁目名'] || ''}${popupFeatureProperties.地番}` }}</h2>
+        <h2 style="margin-bottom: 10px;">{{ `${popupFeatureProperties.市区町村名 || ''}${popupFeatureProperties.大字名 || ''}${popupFeatureProperties['丁目名'] || ''}${popupFeatureProperties.地番 || ''}` }}</h2>
         <p v-for="[key, value] in Object.entries(popupFeatureProperties)" :key="key" class="property-text">
           {{ key }}: {{ value }}
         </p>

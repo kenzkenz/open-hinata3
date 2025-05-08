@@ -3034,9 +3034,9 @@ export function popup(e,map,mapName,mapFlg) {
                 console.log(features)
                 if (features.length === 0) return
 
-                // ⭐️-----------------------------------------------------------------------------------------------------
+                // ⭐️---------------------------------------------------------------------------------------------------
                 if (store.state.isRenzoku) {
-                    if (window.innerWidth >= 500) {
+                    // if (window.innerWidth >= 500) {
 
                         const targetId = `${features[0].properties['筆ID']}_${features[0].properties['地番']}`
                         if (!store.state.highlightedChibans.has(targetId)) {
@@ -3047,7 +3047,7 @@ export function popup(e,map,mapName,mapFlg) {
                             store.commit('setRightDrawer', false)
                         }
 
-                    }
+                    // }
                     return
                 }
                 // -----------------------------------------------------------------------------------------------------
@@ -3562,7 +3562,6 @@ export function popup(e,map,mapName,mapFlg) {
         }
 
         if(/^oh-chibanzu-/.test(layerId)) {
-            if (store.state.isRenzoku) return
             let features = map.queryRenderedFeatures(
                 map.project(coordinates), {layers: [layerId]}
             )
@@ -3571,8 +3570,26 @@ export function popup(e,map,mapName,mapFlg) {
                     map.project(e.lngLat), {layers: [layerId]}
                 )
             }
-            console.log(coordinates)
+            // ⭐️---------------------------------------------------------------------------------------------------
+            // app.vueの4250行あたりに移動
+            // if (store.state.isRenzoku) {
+            //     const targetId = features[0].properties.id
+            //     console.log(targetId)
+            //     console.log(store.state.highlightedChibans)
+            //     if (!store.state.highlightedChibans.has(targetId)) {
+            //         console.log(store.state.highlightedChibans)
+            //         store.state.popupFeatureProperties = features[0].properties
+            //         store.state.popupFeatureCoordinates = coordinates
+            //         store.commit('setRightDrawer', true)
+            //     } else {
+            //         console.log(111)
+            //     }
+            //     return
+            // }
+            // -----------------------------------------------------------------------------------------------------
+            if (store.state.isRenzoku) return
             props = features[0].properties
+
             let html0 = ''
             if (html.indexOf('iwatapolygon') === -1) {
                 html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'

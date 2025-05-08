@@ -9172,8 +9172,6 @@ let layers01 = [
         label: '⭐️全国地番図公開マップ️',
         sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
         layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
-        // sources: [cityPmtilesSource,...chibanzuSources,...publicSources],
-        // layers: [...chibanzuLayers1,...publicLayers0,cityPmtilesPolygonLayer,cityPmtilesLineLayer,cityPmtilesLabelLayer],
         ext: {name:'ext-chibanzu'}
     },
     {

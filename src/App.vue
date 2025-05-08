@@ -894,6 +894,7 @@ import muni from '@/js/muni'
 import { kml } from '@tmcw/togeojson';
 // import store from "@/store";
 import html2canvas from 'html2canvas'
+import {feature} from "@turf/turf";
 
 export default {
   name: 'App',
@@ -4255,9 +4256,14 @@ export default {
               if (this.$store.state.highlightedChibans.has(targetId)) {
                 // すでに選択されている場合は解除
                 vm.$store.state.highlightedChibans.delete(targetId);
+                store.commit('setRightDrawer', false)
               } else {
                 // 新しいIDを追加
                 this.$store.state.highlightedChibans.add(targetId);
+                const lngLat = e.lngLat
+                store.state.popupFeatureProperties = e.features[0].properties
+                store.state.popupFeatureCoordinates = [lngLat.lng, lngLat.lat]
+                store.commit('setRightDrawer', true)
               }
               highlightSpecificFeaturesCity(map,layer);
             }
