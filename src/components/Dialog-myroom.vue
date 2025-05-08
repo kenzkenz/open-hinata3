@@ -833,7 +833,7 @@ export default {
       return ua; // 該当がなければそのまま表示
     },
     chibanzuMap () {
-      this.publicChk()
+      publicChk()
     },
     openData () {
       // PHPへ送信
