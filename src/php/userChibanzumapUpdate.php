@@ -96,7 +96,7 @@ try {
     WHERE (citycode, public, date) IN (
         SELECT citycode, MIN(public), MAX(date)
         FROM userpmtiles
-        WHERE citycode IS NOT NULL AND citycode != \'\' AND public != 0
+        WHERE citycode IS NOT NULL AND citycode != \'\'
         GROUP BY citycode
     )
 '   );

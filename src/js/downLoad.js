@@ -7077,7 +7077,6 @@ export function publicChk (id,public0) {
         axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userChibanzumapUpdate.php',{
             params: {}
         }).then(function (response) {
-            console.log(response)
             async function aaa () {
                 const chibanzuColors = await loadColorData();
                 const maps = [store.state.map01,store.state.map02]

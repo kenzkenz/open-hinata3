@@ -1034,8 +1034,8 @@ export default {
         }
       }).then(function (response) {
         console.log(response)
-        vm.publicChk()
         vm.pmtileSelect(vm.$store.state.userId)
+        publicChk() //なぜかズームを変えると前の色が復活してしまう。様改修
       })
     },
     changeVisible () {
