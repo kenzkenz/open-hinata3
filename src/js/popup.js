@@ -313,6 +313,7 @@ export function popup(e,map,mapName,mapFlg) {
     let regionType = ''
     features.forEach(feature => {
         const layerId = feature.layer.id
+        console.log(feature)
         console.log(layerId)
         let props = feature.properties
         // const coordinates = e.lngLat

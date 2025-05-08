@@ -2458,6 +2458,7 @@ export function highlightSpecificFeaturesCity(map,layerId) {
         }
 
         if(/^oh-chiban-/.test(layerId)) {
+            // alert(999)
             fields = ['concat', ['get', 'oh3id']]
         }
         // console.log(layerId)
