@@ -171,27 +171,29 @@
       <v-btn style="height: 40px; line-height: 40px; margin-left: 0px;margin-top: 10px;" class="tiny-btn" @click="resetFeatureColors">
         選択解除
       </v-btn>
-      <v-switch
-          v-model="s_isRenzoku"
-          label="連続選択"
-          color="primary"
-          style="height: 40px; margin-top: -15px;"
-      />
+<!--      <v-switch-->
+<!--          v-model="s_isRenzoku"-->
+<!--          label="連続選択"-->
+<!--          color="primary"-->
+<!--          style="height: 40px; margin-top: -15px;"-->
+<!--      />-->
     </div>
-    <div class="color-container">
-      <div class="box box1" @click="changeColor('red',true)"></div>
-      <div class="box box2" @click="changeColor('black',true)"></div>
-      <div class="box box3" @click="changeColor('blue',true)"></div>
-      <div class="box box4" @click="changeColor('green',true)"></div>
-      <div class="box box5" @click="changeColor('orange',true)"></div>
-    </div>
-    <div class="color-container2">
-      <div class="circle box1" @click="changeColorCircle('red',true)"></div>
-      <div class="circle box2" @click="changeColorCircle('black',true)"></div>
-      <div class="circle box3" @click="changeColorCircle('blue',true)"></div>
-      <div class="circle box4" @click="changeColorCircle('green',true)"></div>
-      <div class="circle box5" @click="changeColorCircle('orange',true)"></div>
-      <div class="circle box6" @click="changeColorCircle('rgba(0,0,0,0)')"></div>
+    <div v-if="item.id !== 'oh-chibanzu-all2'">
+      <div class="color-container">
+        <div class="box box1" @click="changeColor('red',true)"></div>
+        <div class="box box2" @click="changeColor('black',true)"></div>
+        <div class="box box3" @click="changeColor('blue',true)"></div>
+        <div class="box box4" @click="changeColor('green',true)"></div>
+        <div class="box box5" @click="changeColor('orange',true)"></div>
+      </div>
+      <div class="color-container2">
+        <div class="circle box1" @click="changeColorCircle('red',true)"></div>
+        <div class="circle box2" @click="changeColorCircle('black',true)"></div>
+        <div class="circle box3" @click="changeColorCircle('blue',true)"></div>
+        <div class="circle box4" @click="changeColorCircle('green',true)"></div>
+        <div class="circle box5" @click="changeColorCircle('orange',true)"></div>
+        <div class="circle box6" @click="changeColorCircle('rgba(0,0,0,0)')"></div>
+      </div>
     </div>
     <v-row
         class="justify-center align-center"
@@ -482,15 +484,15 @@ export default {
       const visibleSources = new Set();
       switch (id) {
         case 'oh-chibanzu-all2':
-          features.forEach(f => {
-            console.log(f.layer.id,f.layer.id.split('-').length)
-            if ((f.layer.id.includes('oh-chibanzu-') && f.layer.id.split('-').length === 3) || f.layer.id.includes('oh-chiban-')) {
-              visibleLayers.add(f.layer.id);
-              if (f.layer.source) {
-                visibleSources.add(f.layer.source);
-              }
-            }
-          });
+          // features.forEach(f => {
+          //   // console.log(f.layer.id,f.layer.id.split('-').length)
+          //   if ((f.layer.id.includes('oh-chibanzu-') && f.layer.id.split('-').length === 3) || f.layer.id.includes('oh-chiban-')) {
+          //     visibleLayers.add(f.layer.id);
+          //     if (f.layer.source) {
+          //       visibleSources.add(f.layer.source);
+          //     }
+          //   }
+          // });
           console.log(Array.from(visibleLayers));
           console.log(Array.from(visibleSources));
           this.layerId = Array.from(visibleLayers)[0]

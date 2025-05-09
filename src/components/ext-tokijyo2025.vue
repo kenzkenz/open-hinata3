@@ -104,7 +104,7 @@
   <div :style="menuContentSize">
 <!--    <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>-->
 
-    <v-text-field label="表示地番検索（例）5-7" v-model="s_tokijyoText2025" @input="change" style="margin-top: 0px"></v-text-field>
+    <v-text-field label="表示地番検索" v-model="s_tokijyoText2025" @input="change" style="margin-top: 0px"></v-text-field>
 
       <!-- 1行目 -->
 <!--      <div style="display: flex; justify-content: space-between; gap: 10px; padding-right: 30px;">-->
@@ -142,26 +142,26 @@
       <v-btn style="height: 40px; line-height: 40px; margin-left: 0px;margin-top: 10px;" class="tiny-btn" @click="selectAll">
         全選択
       </v-btn>
-      <div class="swich">
-        <v-switch
-            v-model="s_isRenzoku"
-            label="連続選択"
-            color="primary"
-            style="height: 20px; margin-top: -30px;padding-bottom: 30px"
-        />
-<!--      <v-tooltip top>-->
-<!--        <template v-slot:activator="{ props }">-->
-<!--          <v-switch-->
-<!--              v-model="s_isRenzoku"-->
-<!--              label="連続選択"-->
-<!--              color="primary"-->
-<!--              style="height: 20px; margin-top: -30px;padding-bottom: 30px"-->
-<!--              v-bind="props"-->
-<!--          />-->
-<!--        </template>-->
-<!--        <span>オフにするとポップアップします。</span>-->
-<!--      </v-tooltip>-->
-      </div>
+<!--      <div class="swich">-->
+<!--        <v-switch-->
+<!--            v-model="s_isRenzoku"-->
+<!--            label="連続選択"-->
+<!--            color="primary"-->
+<!--            style="height: 20px; margin-top: -30px;padding-bottom: 30px"-->
+<!--        />-->
+<!--&lt;!&ndash;      <v-tooltip top>&ndash;&gt;-->
+<!--&lt;!&ndash;        <template v-slot:activator="{ props }">&ndash;&gt;-->
+<!--&lt;!&ndash;          <v-switch&ndash;&gt;-->
+<!--&lt;!&ndash;              v-model="s_isRenzoku"&ndash;&gt;-->
+<!--&lt;!&ndash;              label="連続選択"&ndash;&gt;-->
+<!--&lt;!&ndash;              color="primary"&ndash;&gt;-->
+<!--&lt;!&ndash;              style="height: 20px; margin-top: -30px;padding-bottom: 30px"&ndash;&gt;-->
+<!--&lt;!&ndash;              v-bind="props"&ndash;&gt;-->
+<!--&lt;!&ndash;          />&ndash;&gt;-->
+<!--&lt;!&ndash;        </template>&ndash;&gt;-->
+<!--&lt;!&ndash;        <span>オフにするとポップアップします。</span>&ndash;&gt;-->
+<!--&lt;!&ndash;      </v-tooltip>&ndash;&gt;-->
+<!--      </div>-->
     </div>
     <div class="color-container">
       <div class="box box1" @click="changeColor('red',true)"></div>

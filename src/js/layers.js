@@ -3333,20 +3333,6 @@ const homusyo2025DDissolvedAllSource = {
         url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025dissolved_all_simplified.pmtiles'
     },
 }
-// const homusyo2025DaihyoSource = {
-//     id: "homusyo-2025-diahyo-source", obj: {
-//         type: "vector",
-//         // url: 'pmtiles://https://kenzkenz.xsrv.jp/pmtiles/homusyo/2025/2025point.pmtiles'
-//         url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025point.pmtiles'
-//     },
-// }
-// const homusyo2025DaihyoSource2 = {
-//     id: "homusyo-2025-diahyo-source2", obj: {
-//         type: "vector",
-//         // url: 'pmtiles://https://kenzkenz.xsrv.jp/pmtiles/homusyo/2025/2025point.pmtiles'
-//         url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025pointFull.pmtiles'
-//     },
-// }
 const homusyo2025KijyuntenSource = {
     id: "homusyo-2025-kijyunten-source", obj: {
         type: "vector",

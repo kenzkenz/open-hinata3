@@ -922,6 +922,7 @@ export default {
                   const lngLat = e.lngLat
                   store.state.popupFeatureProperties = e.features[0].properties
                   store.state.popupFeatureCoordinates = [lngLat.lng, lngLat.lat]
+                  store.commit('setChibanzuDrawer', false)
                   store.commit('setRightDrawer', true)
                 }
                 highlightSpecificFeaturesCity(map, layer);

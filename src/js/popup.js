@@ -3449,6 +3449,7 @@ export function popup(e,map,mapName,mapFlg) {
                 store.state.popupFeatureProperties = features[0].properties
                 store.state.popupFeatureCoordinates = coordinates
                 setTimeout(() => {
+                    store.commit('setRightDrawer', false)
                     store.commit('setChibanzuDrawer', true)
                 },sec)
                 // -----------------------------------------------------------------------------------------------------
