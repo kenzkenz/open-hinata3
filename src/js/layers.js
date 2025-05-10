@@ -11179,14 +11179,14 @@ let layers01 = [
         id: 'test',
         label: "テスト",
         nodes: [
-            {
-                id: 'oh-amx-a-fude',
-                label: "2024登記所地図",
-                sources: [amxSource,amx2024Source],
-                layers: [amxLayerDaihyou,amx2024Layer,amx2024LayerLine,amx2024LayerVertex,amx2024LayerLabel],
-                attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
-                ext: {name:'extTokijyo'}
-            },
+            // {
+            //     id: 'oh-amx-a-fude',
+            //     label: "2024登記所地図",
+            //     sources: [amxSource,amx2024Source],
+            //     layers: [amxLayerDaihyou,amx2024Layer,amx2024LayerLine,amx2024LayerVertex,amx2024LayerLabel],
+            //     attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
+            //     ext: {name:'extTokijyo'}
+            // },
             {
                 id: 'oh-vector-layer-mono',
                 label: "地理院ベクター・モノクロ",

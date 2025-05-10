@@ -551,6 +551,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <script>
 import { db } from '@/firebase'
 import store from '@/store'
+import { toRaw } from 'vue'
 import {mouseMoveForPopup, popup} from "@/js/popup"
 import { CompassControl } from 'maplibre-gl-compass'
 import shp from "shpjs"
@@ -2978,9 +2979,6 @@ export default {
                           traverseLayers([node], slj); // 再帰処理
                         } else {
                           // 子ノードがない場合の処理
-                          // console.log(slj.id)
-                          // if (slj.id === 'oh-amx-a-fude') slj.id = 'oh-homusyo-2025-polygon'
-                          // if (slj.label) alert(slj.label)
                           if (node.id === slj.id) {
                             slj.label = node.label
                             slj.source = node.source
@@ -2995,14 +2993,27 @@ export default {
                       });
                     } else {
                       // 子ノードがない場合の処理
-                      // if (slj.id === 'oh-amx-a-fude') slj.id = 'oh-homusyo-2025-polygon'
-                      if (layer.id === slj.id) {
-                        slj.label = layer.label
-                        slj.source = layer.source
-                        slj.sources = layer.sources
-                        slj.layers = layer.layers
-                        slj.attribution = layer.attribution
-                        slj.info = layer.info
+                      if (slj.id === 'oh-amx-a-fude') {
+                        const result = toRaw(layers).find(layer => {
+                          return layer.id === 'oh-homusyo-2025-layer'
+                        })
+                        console.log(result)
+                        slj.id = result.id
+                        slj.label = result.label
+                        slj.source = result.source
+                        slj.sources = result.sources
+                        slj.layers = result.layers
+                        slj.attribution = result.attribution
+                        slj.info = result.info
+                      } else {
+                        if (layer.id === slj.id) {
+                          slj.label = layer.label
+                          slj.source = layer.source
+                          slj.sources = layer.sources
+                          slj.layers = layer.layers
+                          slj.attribution = layer.attribution
+                          slj.info = layer.info
+                        }
                       }
                       layerNames.push(layer.label)
                       count++;
