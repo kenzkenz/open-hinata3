@@ -1431,3 +1431,30 @@ tippecanoe -o oitashi.pmtiles \
     --minimum-zoom=0 \
     --layer=oh3 \
     oitashi.geojson
+
+ tippecanoe -o 2025.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=14 \
+    --layer=fude fgb_by_pref_normalized/*.fgb
+
+output-dissolved-noholesにあるfgbをズーム0から15までつくる。--layerはdissolvedにする。
+
+tippecanoe -o 2025final.pmtiles \
+  --no-feature-limit \
+  --no-tile-size-limit \
+  --force \
+  --drop-densest-as-needed \
+  --coalesce-densest-as-needed \
+  --simplification=2 \
+  --simplify-only-low-zooms \
+  --maximum-zoom=16 \
+  --minimum-zoom=14 \
+  --layer=fude fgb_by_pref_normalized/*.fgb \
+  --layer=dissolved --minimum-zoom=0 --maximum-zoom=15 output-dissolved-noholes/*.fgb

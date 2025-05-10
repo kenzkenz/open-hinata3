@@ -2968,6 +2968,9 @@ export default {
             const mapNames = ['map01', 'map02']
             mapNames.forEach(mapName => {
               params.slj[mapName].forEach(slj => {
+                if (slj.id === 'oh-amx-a-fude') {
+                  store.dispatch('triggerSnackbarForGroup', {message: '2024登記所地図は終了しました。2025版をご覧ください。'});
+                }
                 const layerNames = []
                 let count = 0;
                 // レイヤーを探索して必要な情報を取得する関数
@@ -2994,27 +2997,36 @@ export default {
                       });
                     } else {
                       // 子ノードがない場合の処理
-                      if (slj.id === 'oh-amx-a-fude') {
-                        const result = toRaw(layers).find(layer => {
-                          return layer.id === 'oh-homusyo-2025-layer'
-                        })
-                        console.log(result)
-                        slj.id = result.id
-                        slj.label = result.label
-                        slj.source = result.source
-                        slj.sources = result.sources
-                        slj.layers = result.layers
-                        slj.attribution = result.attribution
-                        slj.info = result.info
-                      } else {
-                        if (layer.id === slj.id) {
-                          slj.label = layer.label
-                          slj.source = layer.source
-                          slj.sources = layer.sources
-                          slj.layers = layer.layers
-                          slj.attribution = layer.attribution
-                          slj.info = layer.info
-                        }
+                      // if (slj.id === 'oh-amx-a-fude') {
+                      //   const result = toRaw(layers).find(layer => {
+                      //     return layer.id === 'oh-homusyo-2025-layer'
+                      //   })
+                      //   console.log(result)
+                      //   slj.id = result.id
+                      //   slj.label = result.label
+                      //   slj.source = result.source
+                      //   slj.sources = result.sources
+                      //   slj.layers = result.layers
+                      //   slj.attribution = result.attribution
+                      //   slj.ext = result.ext
+                      //   slj.info = result.info
+                      // } else {
+                      //   if (layer.id === slj.id) {
+                      //     slj.label = layer.label
+                      //     slj.source = layer.source
+                      //     slj.sources = layer.sources
+                      //     slj.layers = layer.layers
+                      //     slj.attribution = layer.attribution
+                      //     slj.info = layer.info
+                      //   }
+                      // }
+                      if (layer.id === slj.id) {
+                        slj.label = layer.label
+                        slj.source = layer.source
+                        slj.sources = layer.sources
+                        slj.layers = layer.layers
+                        slj.attribution = layer.attribution
+                        slj.info = layer.info
                       }
                       layerNames.push(layer.label)
                       count++;
