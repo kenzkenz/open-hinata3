@@ -2097,10 +2097,11 @@ export default {
     createShortUrl() {
       let params = new URLSearchParams()
       params.append('parameters', this.param)
-      // console.log(this.param)
       axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrl.php', params)
           .then(response => {
-            window.history.pushState(null, 'map', "?s=" + response.data.urlid)
+            const basePath = window.location.pathname.replace(/\/\/+$/, '/'); // 末尾のスラッシュを削除 通常はこの処理はいらない。間違えたURLを使い続けている人の対応
+            const newUrl = basePath + "?s=" + response.data.urlid;
+            window.history.pushState(null, 'map', newUrl)
             console.log(window.location.pathname)
             let pathName = '/'
             if (window.location.pathname !== '/') {
@@ -4317,9 +4318,6 @@ export default {
           visible: false // ボタンを非表示にする
         })
         map.addControl(this.compass)
-
-
-
 
         //on load終了----------------------------------------------------------------------------------------------------
       })
