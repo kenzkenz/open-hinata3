@@ -3319,6 +3319,7 @@ const homusyo2025Source = {
         // url: 'pmtiles://https://kenzkenz.xsrv.jp/pmtiles/homusyo/2025/2025.pmtiles'
         // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025light.pmtiles'
         url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025.pmtiles'
+        // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025final.pmtiles'
     },
 }
 const homusyo2025DDissolvedSource = {
