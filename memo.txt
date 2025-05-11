@@ -1432,7 +1432,7 @@ tippecanoe -o oitashi.pmtiles \
     --layer=oh3 \
     oitashi.geojson
 
-tippecanoe -o 2025dissolved-new2.pmtiles \
+tippecanoe -o 2025dissolved-new.pmtiles \
   --no-feature-limit \
   --no-tile-size-limit \
   --force \
@@ -1446,4 +1446,4 @@ tippecanoe -o 2025dissolved-new2.pmtiles \
 tile-join -o 2025final.pmtiles -f \
   --no-tile-size-limit \
   2025.pmtiles \
-  2025dissolved-new2.pmtiles
+  2025dissolved-new.pmtiles

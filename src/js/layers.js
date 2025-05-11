@@ -3318,8 +3318,8 @@ const homusyo2025Source = {
         type: "vector",
         // url: 'pmtiles://https://kenzkenz.xsrv.jp/pmtiles/homusyo/2025/2025.pmtiles'
         // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025light.pmtiles'
-        url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025.pmtiles'
-        // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025final.pmtiles'
+        // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025.pmtiles'
+        url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025final.pmtiles'
     },
 }
 const homusyo2025DDissolvedSource = {
@@ -3328,12 +3328,12 @@ const homusyo2025DDissolvedSource = {
         url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025dissolved.pmtiles'
     },
 }
-const homusyo2025DDissolvedAllSource = {
-    id: "homusyo-2025-dissolved-source-all", obj: {
-        type: "vector",
-        url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025dissolved_all_simplified.pmtiles'
-    },
-}
+// const homusyo2025DDissolvedAllSource = {
+//     id: "homusyo-2025-dissolved-source-all", obj: {
+//         type: "vector",
+//         url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025dissolved_all_simplified.pmtiles'
+//     },
+// }
 const homusyo2025KijyuntenSource = {
     id: "homusyo-2025-kijyunten-source", obj: {
         type: "vector",
@@ -3371,8 +3371,9 @@ const homusyo2025DissolvedLayer = {
 const homusyo2025DissolvedAllLayer = {
     id: "oh-homusyo-2025-polygon-dissolved-all",
     type: "fill",
-    source: "homusyo-2025-dissolved-source-all",
-    "source-layer": "polygon",
+    // source: "homusyo-2025-dissolved-source-all",
+    source: "homusyo-2025-source",
+    "source-layer": "dissolved",
     paint: {
         "fill-color": "rgba(0, 0, 0, 0)"
     },
@@ -9134,7 +9135,7 @@ let layers01 = [
     {
         id: 'oh-homusyo-2025-layer',
         label: "2025登記所地図",
-        sources: [homusyo2025Source,homusyo2025DDissolvedAllSource,homusyo2025DDissolvedSource],
+        sources: [homusyo2025Source,homusyo2025DDissolvedSource],
         layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025DissolvedAllLayer,homusyo2025DissolvedLayer],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
         ext: {name:'extTokijyo2025'}
@@ -9176,7 +9177,7 @@ let layers01 = [
             {
                 id: 'oh-homusyo-2025-layer',
                 label: "2025登記所地図",
-                sources: [homusyo2025Source,homusyo2025DDissolvedAllSource,homusyo2025DDissolvedSource],
+                sources: [homusyo2025Source,homusyo2025DDissolvedSource],
                 layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025DissolvedAllLayer,homusyo2025DissolvedLayer],
                 attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
                 ext: {name:'extTokijyo2025'}
