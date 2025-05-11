@@ -6788,7 +6788,7 @@ export function userTileSet(name,url,id) {
 //         .catch(error => console.error("エラー:", error));
 //     // -------------------------------------------------------------------------------------------------
 // }
-export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,citycode,selectedPublic) {
+export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,citycode,selectedPublic,file) {
     async function insertPmtilesData(uid, name, url, url2,  chiban, bbox, length, prefcode, citycode) {
         try {
             const prefCode = String(Number(prefcode)).padStart(2, '0')
@@ -6841,14 +6841,15 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
     store.state.loading2 = true
     store.state.loadingMessage = 'pmtiles作成中です。'
     console.log("geojson送信前の中身:", geojson);
-    let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles5.php", {
+    console.log(file)
+    console.log(store.state.userId)
+    const formData = new FormData();
+    formData.append("geojson", file, file.name);
+    formData.append("dir", store.state.userId);
+    formData.append("chiban", chiban);
+    let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles6.php", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            geojson: geojson,
-            dir: store.state.userId,
-            chiban: chiban,
-        }),
+        body: formData,
     });
     let result = await response.json();
     if (result.success) {

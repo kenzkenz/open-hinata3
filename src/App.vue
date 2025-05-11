@@ -912,6 +912,7 @@ export default {
     ChibanzuDrawer
   },
   data: () => ({
+    file: null,
     mapillaryWidth: '0px',
     mapillarHeight: '0px',
     mapNames: ['map01','map02'],
@@ -1455,7 +1456,7 @@ export default {
         alert("入力されていません。")
         return
       }
-      pmtilesGenerateForUser2 (this.s_chibanzuGeojson,'',store.state.pmtilesPropertieName,this.s_chibanzuPrefCode,String(this.s_chibanzuCityCode).padStart(5, '0'),this.selectedPublic)
+      pmtilesGenerateForUser2 (this.s_chibanzuGeojson,'',store.state.pmtilesPropertieName,this.s_chibanzuPrefCode,String(this.s_chibanzuCityCode).padStart(5, '0'),this.selectedPublic,this.file)
       this.s_showChibanzuDialog = false
     },
     imagePngLoad () {
@@ -3726,6 +3727,7 @@ export default {
               const files = e.dataTransfer.files;
               if (files.length === 0) return;
               const file = files[0]
+              this.file = file
               const fileName = file.name;
               const fileExtension = fileName.split('.').pop().toLowerCase();
               history(fileExtension + 'をDD',window.location.href)
