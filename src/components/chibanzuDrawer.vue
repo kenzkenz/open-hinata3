@@ -267,6 +267,14 @@ export default {
       'popupFeatureProperties',
       'popupFeatureCoordinates',
     ]),
+    s_geojsonFile: {
+      get() {
+        return this.$store.state.geojsonFile
+      },
+      set(value) {
+        return this.$store.state.geojsonFile = value
+      }
+    },
     s_chibanzuPrefCode: {
       get() {
         return this.$store.state.chibanzuPrefCode;
@@ -403,6 +411,7 @@ export default {
       fileInput.addEventListener('change', (event) => {
         const file = event.target.files[0];
         if (file) {
+          vm.s_geojsonFile = file
           const reader = new FileReader();
           reader.onload = (event) => {
             try {

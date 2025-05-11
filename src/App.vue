@@ -137,7 +137,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   outlined
               ></v-select>
               <v-select
-                  v-model="selectedPublic"
+                  v-model="s_selectedPublic"
                   :items="publicItems"
                   item-title="label"
                   item-value="public"
@@ -955,7 +955,6 @@ export default {
     shpPropaties: [],
     shpGeojson: [],
     loadingSnackbar: false,
-    selectedPublic: null,
     publicItems: [{public:-1,label:'オープンデータ（マップ上は緑色、詳細は表示）'},{public:0,label:'完全非公開（マップ上は透明、詳細は非表示）'},{public:3,label:'非公開（マップ上は灰色、詳細は非表示）'},{public:1,label:'公開（マップ上は青色、詳細は表示）'}],
     isPublic: false,
     drawControl: null,
@@ -977,6 +976,14 @@ export default {
       'selectedPointFeature',
       'showChibanzuDrawer',
     ]),
+    s_selectedPublic: {
+      get() {
+        return this.$store.state.selectedPublic
+      },
+      set(value) {
+        return this.$store.state.selectedPublic = value
+      }
+    },
     s_geojsonFile: {
       get() {
         return this.$store.state.geojsonFile
@@ -1464,7 +1471,7 @@ export default {
         alert("入力されていません。")
         return
       }
-      pmtilesGenerateForUser2 (this.s_chibanzuGeojson,'',store.state.pmtilesPropertieName,this.s_chibanzuPrefCode,String(this.s_chibanzuCityCode).padStart(5, '0'),this.selectedPublic,this.s_geojsonFile)
+      pmtilesGenerateForUser2 (this.s_chibanzuGeojson,'',store.state.pmtilesPropertieName,this.s_chibanzuPrefCode,String(this.s_chibanzuCityCode).padStart(5, '0'),this.s_selectedPublic,this.s_geojsonFile)
       this.s_showChibanzuDialog = false
     },
     imagePngLoad () {
