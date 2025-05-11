@@ -148,6 +148,11 @@ function readPMTilesBBOX($filepath) {
     ];
 }
 
+
+
+
+
+
 function calculateBoundsAndLength($geojsonContent) {
     $geojson = json_decode($geojsonContent, true);
     if (!$geojson || !isset($geojson['type']) || $geojson['type'] !== 'FeatureCollection') {
