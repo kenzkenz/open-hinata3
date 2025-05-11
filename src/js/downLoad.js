@@ -7226,3 +7226,36 @@ export function selectAll (map) {
     })
     highlightSpecificFeatures2025(map,'oh-homusyo-2025-polygon');
 }
+
+export async function extractFirstFeatureProperties(file) {
+    const chunkSize = 1024 * 1024; // 1MB
+    let offset = 0;
+    let foundProperties = false;
+    let properties = null;
+    let buffer = '';
+    while (!foundProperties && offset < file.size) {
+        const blob = file.slice(offset, offset + chunkSize);
+        const text = await blob.text();
+        buffer += text; // チャンクをバッファに追加
+        // "features"以降の最初のpropertiesを検索
+        const featuresIndex = buffer.indexOf('"features"');
+        if (featuresIndex !== -1) {
+            const propertiesMatch = buffer.slice(featuresIndex).match(/"properties"\s*:\s*{([^}]*)}/);
+            if (propertiesMatch) {
+                // propertiesをJSONとしてパース
+                const propertiesStr = `{${propertiesMatch[1]}}`;
+                try {
+                    properties = JSON.parse(propertiesStr);
+                    foundProperties = true;
+                } catch (err) {
+                    throw new Error('プロパティのパースに失敗しました');
+                }
+            }
+        }
+        offset += chunkSize;
+    }
+    if (!foundProperties) {
+        throw new Error('GeoJSONにプロパティが見つかりませんでした');
+    }
+    return Object.keys(properties);
+}

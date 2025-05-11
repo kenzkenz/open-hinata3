@@ -574,7 +574,7 @@ import {
   csvGenerateForUserPng,
   ddSimaUpload,
   downloadKML,
-  downloadSimaText,
+  downloadSimaText, extractFirstFeatureProperties,
   geojsonAddLayer,
   geoTiffLoad,
   geoTiffLoad2,
@@ -977,6 +977,14 @@ export default {
       'selectedPointFeature',
       'showChibanzuDrawer',
     ]),
+    s_geojsonFile: {
+      get() {
+        return this.$store.state.geojsonFile
+      },
+      set(value) {
+        return this.$store.state.geojsonFile = value
+      }
+    },
     s_chibanzuPrefCode: {
       get() {
         return this.$store.state.chibanzuPrefCode
@@ -1456,7 +1464,7 @@ export default {
         alert("入力されていません。")
         return
       }
-      pmtilesGenerateForUser2 (this.s_chibanzuGeojson,'',store.state.pmtilesPropertieName,this.s_chibanzuPrefCode,String(this.s_chibanzuCityCode).padStart(5, '0'),this.selectedPublic,this.file)
+      pmtilesGenerateForUser2 (this.s_chibanzuGeojson,'',store.state.pmtilesPropertieName,this.s_chibanzuPrefCode,String(this.s_chibanzuCityCode).padStart(5, '0'),this.selectedPublic,this.s_geojsonFile)
       this.s_showChibanzuDialog = false
     },
     imagePngLoad () {
@@ -3727,7 +3735,7 @@ export default {
               const files = e.dataTransfer.files;
               if (files.length === 0) return;
               const file = files[0]
-              this.file = file
+              this.s_geojsonFile = file
               const fileName = file.name;
               const fileExtension = fileName.split('.').pop().toLowerCase();
               history(fileExtension + 'をDD',window.location.href)
@@ -3842,50 +3850,10 @@ export default {
                   }
                   break
                 }
-
                 case 'geojson':
                 {
                   reader.onload = (event) => {
-                    const geojsonText = event.target.result
                     try {
-                      async function extractFirstFeatureProperties(file) {
-                        const chunkSize = 1024 * 1024; // 1MB
-                        let offset = 0;
-                        let foundProperties = false;
-                        let properties = null;
-                        let buffer = '';
-
-                        while (!foundProperties && offset < file.size) {
-                          const blob = file.slice(offset, offset + chunkSize);
-                          const text = await blob.text();
-                          buffer += text; // チャンクをバッファに追加
-
-                          // "features"以降の最初のpropertiesを検索
-                          const featuresIndex = buffer.indexOf('"features"');
-                          if (featuresIndex !== -1) {
-                            const propertiesMatch = buffer.slice(featuresIndex).match(/"properties"\s*:\s*{([^}]*)}/);
-                            if (propertiesMatch) {
-                              // propertiesをJSONとしてパース
-                              const propertiesStr = `{${propertiesMatch[1]}}`;
-                              try {
-                                properties = JSON.parse(propertiesStr);
-                                foundProperties = true;
-                              } catch (err) {
-                                throw new Error('プロパティのパースに失敗しました');
-                              }
-                            }
-                          }
-
-                          offset += chunkSize;
-                        }
-
-                        if (!foundProperties) {
-                          throw new Error('GeoJSONにプロパティが見つかりませんでした');
-                        }
-
-                        return Object.keys(properties);
-                      }
-                      // const geojson = JSON.parse(geojsonText);
                       async function aaa () {
                         if (vm.$store.state.userId) {
                           // const firstFeature = geojson.features[0];
