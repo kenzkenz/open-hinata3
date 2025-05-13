@@ -1447,3 +1447,16 @@ tile-join -o 2025final.pmtiles -f \
   --no-tile-size-limit \
   2025.pmtiles \
   2025dissolved-new.pmtiles
+
+tippecanoe -o kobe.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=0 \
+    --layer=oh3 \
+    koube_GeoJson.geojson
