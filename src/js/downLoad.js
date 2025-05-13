@@ -6843,32 +6843,159 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
     console.log("geojson送信前の中身:", geojson);
     console.log(file)
     console.log(store.state.userId)
+
+
     const formData = new FormData();
     formData.append("geojson", file, file.name);
     formData.append("dir", store.state.userId);
     formData.append("chiban", chiban);
-    let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles6.php", {
+
+    const response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles7.php", {
         method: "POST",
         body: formData,
     });
-    let result = await response.json();
-    if (result.success) {
-        store.state.loading2 = false
-        // addTileLayer(result.tiles_url, result.bbox)
-        console.log(result)
-        const webUrl = 'https://kenzkenz.duckdns.org/' + result.pmtiles_file.replace('/var/www/html/public_html/','')
-        console.log(result.pmtiles_file)
-        insertPmtilesData(store.state.userId , store.state.pmtilesName, webUrl, result.pmtiles_file, store.state.pmtilesPropertieName, result.bbox, result.length, prefcode, citycode)
-        console.log('pmtiles作成完了')
-        if (!result.bbox) {
-            alert('座標系が間違えているかもしれません。geojson化するときはEPSG:4326に設定してください。')
+
+    if (!response.ok) {
+        store.state.loading2 = false;
+        alert("サーバーエラーが発生しました: " + response.statusText);
+        return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let result = null;
+    let buffer = '';
+
+    async function processStream() {
+        for await (const chunk of streamAsyncIterator(reader)) {
+            buffer += decoder.decode(chunk, { stream: true });
+            // SSEイベントを即座に処理
+            while (buffer.includes('\n\n')) {
+                const index = buffer.indexOf('\n\n');
+                const event = buffer.substring(0, index);
+                buffer = buffer.substring(index + 2);
+
+                if (event.startsWith('data: ')) {
+                    try {
+                        const jsonStr = event.substring(6); // 'data: 'を削除
+                        const data = JSON.parse(jsonStr);
+                        if (data.log) {
+                            // ログを一行ずつリアルタイムで表示
+                            // console.log(data.is_error ? `[ERROR] ${data.log}` : data.log);
+                            // 行単位に分割して後ろから走査
+                            const lines = data.log.trim().split(/\r?\n/).reverse();
+                            let targetLine = lines.find(line => line.includes('%'));
+                            targetLine = targetLine.slice(0, 20);
+                            store.state.loadingMessage = targetLine
+                        } else if (data.error) {
+                            console.log("エラー:", data);
+                            store.state.loading2 = false;
+                            alert("タイル生成に失敗しました！" + data.error);
+                            return;
+                        } else if (data.success) {
+                            result = data;
+                        }
+                    } catch (e) {
+                        console.error("JSONパースエラー:", event);
+                    }
+                }
+            }
         }
 
-    } else {
-        console.log(result)
-        store.state.loading2 = false
-        alert("タイル生成に失敗しました！" + result.error);
+        // バッファに残ったデータがあれば処理
+        if (buffer.startsWith('data: ')) {
+            try {
+                const jsonStr = buffer.substring(6);
+                const data = JSON.parse(jsonStr);
+                if (data.success) result = data;
+                else if (data.error) {
+                    console.log("エラー:", data);
+                    store.state.loading2 = false;
+                    alert("タイル生成に失敗しました！" + data.error);
+                    return;
+                }
+            } catch (e) {
+                console.error("最終バッファパースエラー:", buffer);
+            }
+        }
+
+        // 最終レスポンスを処理
+        if (result && result.success) {
+            store.state.loading2 = false;
+            console.log(result);
+            const webUrl = 'https://kenzkenz.duckdns.org/' + result.pmtiles_file.replace('/var/www/html/public_html/', '');
+            console.log(result.pmtiles_file);
+            insertPmtilesData(
+                store.state.userId,
+                store.state.pmtilesName,
+                webUrl,
+                result.pmtiles_file,
+                store.state.pmtilesPropertieName,
+                result.bbox,
+                result.length,
+                prefcode,
+                citycode
+            );
+            console.log('pmtiles作成完了');
+            if (!result.bbox) {
+                alert('座標系が間違えているかもしれません。geojson化するときはEPSG:4326に設定してください。');
+            }
+        } else {
+            console.log("成功レスポンスがありません");
+            store.state.loading2 = false;
+            alert("タイル生成に失敗しました！");
+        }
     }
+
+// ReadableStreamを非同期イテレータとして処理
+    async function* streamAsyncIterator(reader) {
+        try {
+            let done, value;
+            do {
+                ({ done, value } = await reader.read());
+                if (done) return;
+                yield value;
+            } while (!done);
+        } finally {
+            reader.releaseLock();
+        }
+    }
+
+// ストリーム処理を開始
+    processStream().catch(error => {
+        console.error("ストリーム処理エラー:", error);
+        store.state.loading2 = false;
+        alert("ストリーム処理に失敗しました！");
+    });
+
+
+
+    // const formData = new FormData();
+    // formData.append("geojson", file, file.name);
+    // formData.append("dir", store.state.userId);
+    // formData.append("chiban", chiban);
+    // let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles7.php", {
+    //     method: "POST",
+    //     body: formData,
+    // });
+    // let result = await response.json();
+    // if (result.success) {
+    //     store.state.loading2 = false
+    //     // addTileLayer(result.tiles_url, result.bbox)
+    //     console.log(result)
+    //     const webUrl = 'https://kenzkenz.duckdns.org/' + result.pmtiles_file.replace('/var/www/html/public_html/','')
+    //     console.log(result.pmtiles_file)
+    //     insertPmtilesData(store.state.userId , store.state.pmtilesName, webUrl, result.pmtiles_file, store.state.pmtilesPropertieName, result.bbox, result.length, prefcode, citycode)
+    //     console.log('pmtiles作成完了')
+    //     if (!result.bbox) {
+    //         alert('座標系が間違えているかもしれません。geojson化するときはEPSG:4326に設定してください。')
+    //     }
+    //
+    // } else {
+    //     console.log(result)
+    //     store.state.loading2 = false
+    //     alert("タイル生成に失敗しました！" + result.error);
+    // }
 }
 
 export function saveDxfForChiriin (map,layerIds) {
