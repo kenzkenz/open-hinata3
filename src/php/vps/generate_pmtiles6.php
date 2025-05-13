@@ -1,4 +1,5 @@
 <?php
+
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
@@ -50,7 +51,7 @@ if (!move_uploaded_file($_FILES["geojson"]["tmp_name"], $tempFilePath)) {
     exit;
 }
 
-// GeoJSONの検証とBBOX/地物数の計算
+// ----------------- GeoJSON 検証 -----------------
 $geojsonContent = file_get_contents($tempFilePath);
 $geojson = json_decode($geojsonContent, true);
 if (!$geojson || !isset($geojson['type']) || $geojson['type'] !== 'FeatureCollection') {
@@ -59,16 +60,30 @@ if (!$geojson || !isset($geojson['type']) || $geojson['type'] !== 'FeatureCollec
     exit;
 }
 
-// BBOXと地物数を計算
+// ----------------- oh3id 付与 & BBOX -----------------
 $length = count($geojson["features"]);
 $bbox = [INF, INF, -INF, -INF];
+
 foreach ($geojson["features"] as $index => &$feature) {
-    $feature["properties"]["oh3id"] = $index;
+    // 1 始まりの連番にする場合は +1
+    $feature["properties"]["oh3id"] = $index + 1;
+
     if (isset($feature["geometry"]["coordinates"])) {
         updateBBOX($feature["geometry"]["coordinates"], $bbox);
     }
 }
+unset($feature); // 参照解除
+ini_set('serialize_precision', -1);
+// ★ ここで書き戻す ★
+file_put_contents(
+    $tempFilePath,
+    json_encode(
+        $geojson,
+        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION
+    )
+);
 
+// ----------------- Tippecanoe 実行 -----------------
 $pmtilesPath = $pmtilesDir . $fileBaseName . ".pmtiles";
 $tippecanoeCmd = sprintf(
     "tippecanoe -o %s --generate-ids --no-feature-limit --no-tile-size-limit --force --drop-densest-as-needed --coalesce-densest-as-needed --simplification=2 --simplify-only-low-zooms --maximum-zoom=16 --minimum-zoom=0 --layer=oh3 %s 2>&1",
@@ -90,6 +105,8 @@ if ($returnVar !== 0) {
 
 deleteTempFilesExceptPmtiles($pmtilesDir);
 
+// ----------------- レスポンス -----------------
+
 echo json_encode([
     "success" => true,
     "message" => "PMTilesファイルが作成されました",
@@ -100,7 +117,9 @@ echo json_encode([
 ], JSON_PRESERVE_ZERO_FRACTION);
 exit;
 
-function deleteTempFilesExceptPmtiles($dir) {
+// ----------------- 関数 -----------------
+function deleteTempFilesExceptPmtiles($dir)
+{
     foreach (scandir($dir) as $file) {
         if ($file === '.' || $file === '..') continue;
         $fullPath = $dir . DIRECTORY_SEPARATOR . $file;
