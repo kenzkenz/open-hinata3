@@ -6839,7 +6839,7 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
     }
     // -------------------------------------------------------------------------------------------------
     store.state.loading2 = true
-    store.state.loadingMessage = 'pmtiles作成中です。'
+    store.state.loadingMessage = 'アップロード中です。'
     console.log("geojson送信前の中身:", geojson);
     console.log(file)
     console.log(store.state.userId)
@@ -6897,6 +6897,8 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
                         }
                     } catch (e) {
                         console.error("JSONパースエラー:", event);
+                        // store.state.loadingMessage = event.substring(6).slice(0, 45)
+                        store.state.loadingMessage = JSON.parse(event.substring(6)).log.slice(0, 45)
                     }
                 }
             }

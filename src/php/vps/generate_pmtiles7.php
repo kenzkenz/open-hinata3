@@ -63,19 +63,21 @@ $fileBaseName = uniqid();
 $tempFilePath = $pmtilesDir . $fileBaseName . ".geojson";
 
 try {
+    sendSSE(["log" => 'GeoJSON 保存中']);
     if (!move_uploaded_file($_FILES["geojson"]["tmp_name"], $tempFilePath)) {
         throw new Exception("GeoJSONファイルの保存に失敗しました");
     }
-
     // ----------------- GeoJSON 検証 -----------------
+    sendSSE(["log" => 'GeoJSON 検証中']);
     $geojsonContent = file_get_contents($tempFilePath);
     $geojson = json_decode($geojsonContent, true);
     if (!$geojson || !isset($geojson['type']) || $geojson['type'] !== 'FeatureCollection') {
         throw new Exception("無効なGeoJSON形式です");
     }
-
     // ----------------- oh3id 付与 & BBOX -----------------
+    sendSSE(["log" => "Starting to process GeoJSON features"]);
     $length = count($geojson["features"]);
+    sendSSE(["log" => "Total features: $length"]);
     $bbox = [INF, INF, -INF, -INF];
 
     foreach ($geojson["features"] as $index => &$feature) {
@@ -83,8 +85,16 @@ try {
         if (isset($feature["geometry"]["coordinates"])) {
             updateBBOX($feature["geometry"]["coordinates"], $bbox);
         }
+        // 2000フィーチャごとに進捗ログを出力
+        if (($index + 1) % 2000 === 0 || $index + 1 === $length) {
+            sendSSE(["log" => ($index + 1) . "/$length" . '(地物)']);
+        }
     }
     unset($feature);
+    sendSSE(["log" => json_encode($bbox)]);
+
+    // GeoJSONファイル書き込み
+    sendSSE(["log" => "Writing GeoJSON to file: $tempFilePath"]);
     ini_set('serialize_precision', -1);
     if (!file_put_contents(
         $tempFilePath,
@@ -95,6 +105,29 @@ try {
     )) {
         throw new Exception("GeoJSONファイルの書き込みに失敗しました");
     }
+    sendSSE(["log" => "successfully"]);
+
+//    // ----------------- oh3id 付与 & BBOX -----------------
+//    $length = count($geojson["features"]);
+//    $bbox = [INF, INF, -INF, -INF];
+//
+//    foreach ($geojson["features"] as $index => &$feature) {
+//        $feature["properties"]["oh3id"] = $index + 1;
+//        if (isset($feature["geometry"]["coordinates"])) {
+//            updateBBOX($feature["geometry"]["coordinates"], $bbox);
+//        }
+//    }
+//    unset($feature);
+//    ini_set('serialize_precision', -1);
+//    if (!file_put_contents(
+//        $tempFilePath,
+//        json_encode(
+//            $geojson,
+//            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION
+//        )
+//    )) {
+//        throw new Exception("GeoJSONファイルの書き込みに失敗しました");
+//    }
 
     // ----------------- Tippecanoe 実行 -----------------
     $pmtilesPath = $pmtilesDir . $fileBaseName . ".pmtiles";
