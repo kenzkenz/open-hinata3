@@ -5220,6 +5220,92 @@ const chikalayerheight = {
     }
 }
 // 公示価格--------------------------------------------------------------------------------------------------------------
+const r07kojiSource = {
+    id: "r07koji-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz4.xsrv.jp/pmtiles/kojikakaku/r07kojikakaku.pmtiles",
+    }
+}
+const r07kojiLayerLabel = {
+    id: "oh-r07koji-label",
+    type: "symbol",
+    source: "r07koji-source",
+    "source-layer": "point",
+    'layout': {
+        'text-field': ['get', 'L01_025'],
+        'text-offset': [0, 2],
+        'visibility': 'visible',
+    },
+    'paint': {
+        'text-color': 'rgba(255, 255, 255, 0.7)',
+        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-halo-width': 1.0,
+    },
+    'maxzoom': 24,
+    'minzoom': 12
+}
+const r07kojiLayerPoint = {
+    id: "oh-r07koji_point",
+    type: "circle",
+    source: "r07koji-source",
+    "source-layer": "point",
+    'paint': {
+        'circle-color': [
+            'interpolate',
+            ['linear'],
+            ["to-number",['get', 'L01_008']],
+            0, 'white',
+            500000, 'red',
+            50000000, 'black'
+        ],
+        'circle-stroke-color': 'black',
+        'circle-stroke-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            8, 0,
+            10, 1
+        ],
+        'circle-radius':[
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            2, 0.1,
+            4, 0.5,
+            7, 2,
+            11, 8
+        ]
+    }
+}
+const r07kojilayerheight = {
+    id: 'oh-r07koji-height',
+    type: 'fill-extrusion',
+    source: "r07koji-source",
+    "source-layer": "polygon",
+    paint: {
+        'fill-extrusion-height': [
+            'interpolate',
+            ['linear'],
+            ["to-number",['get', 'L01_008']],
+            0, 50.0, // 高さの最小値を50mに設定
+            50000000, 5000.0 // 高さの最大値を5000mに設定
+        ],
+        'fill-extrusion-color': [
+            'step',
+            ['get', 'L01_008'],
+            'rgb(245, 245, 81)', // 10万未満の色
+            100000, 'rgb(239, 211, 71)', // 10万から25万の色
+            250000, 'rgb(235, 178, 61)', // 25万から50万の色
+            500000, 'rgb(231, 145, 52)', // 50万から75万の色
+            750000, 'rgb(226, 84, 39)', // 75万から100万の色
+            1000000, 'rgb(225, 61, 35)', // 100万から1000万の色
+            10000000, 'rgb(225, 49, 33)', // 1000万から2000万の色
+            20000000, 'rgb(180, 30, 25)', // 2000万から4000万をさらに赤黒く
+            40000000, 'rgb(160, 20, 20)' // 4000万以上をさらにさらに赤黒く
+        ]
+    }
+}
+
 const kojiSource = {
     id: "koji-source", obj: {
         type: "vector",
@@ -11123,6 +11209,25 @@ let layers01 = [
                 label: "選挙区（2022）",
                 source: senkyokuSource,
                 layers:[senkyokuLayer,senkyokuLayerLine,senkyokuLayerLabel]
+            },
+            {
+                id: 'oh-r07koji-3d',
+                label: "公示価格（R07）3D",
+                source: r07kojiSource,
+                layers:[r07kojilayerheight],
+                attribution: '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-L01-2025.html" target="_blank">国土数値情報</a>' +
+                    '<div class="legend-scale">' +
+                    '<ul class="legend-labels">' +
+                    '<li><span style="background:rgb(225, 49, 33);"></span>1000万円以上</li>' +
+                    '<li><span style="background:rgb(225, 61, 35);"></span>100万円ー1000万円</li>' +
+                    '<li><span style="background:rgb(226, 84, 39);"></span>75万円ー100万円</li>' +
+                    '<li><span style="background:rgb(231, 145, 52);"></span>50万円ー75万円</li>' +
+                    '<li><span style="background:rgb(235, 178, 61);"></span>25万円ー50万円</li>' +
+                    '<li><span style="background:rgb(239, 211, 71);"></span>10万円ー25万円</li>' +
+                    '<li><span style="background:rgb(245, 245, 81);"></span>10万円未満</li>' +
+                    '</ul>' +
+                    '</div>',
+                info: true
             },
             {
                 id: 'oh-koji',

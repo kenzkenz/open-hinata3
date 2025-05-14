@@ -1460,3 +1460,6 @@ tippecanoe -o kobe.pmtiles \
     --minimum-zoom=0 \
     --layer=oh3 \
     koube_GeoJson.geojson
+
+tippecanoe -l point -rg -pk -pf -f -o kojikakaku.pmtiles kojikakaku.geojson
+tippecanoe -l polygon -rg -pk -pf -f -o r07kojikakaku.pmtiles r07kojikakaku.geojson

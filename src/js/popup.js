@@ -437,6 +437,9 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-r07koji-label':
+            case 'oh-r07koji-height':
+            case 'oh-r07koji_point':
             case 'oh-koji-label':
             case 'oh-koji-height':
             case 'oh-koji_point': {
@@ -446,7 +449,7 @@ export function popup(e,map,mapName,mapFlg) {
                     html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                     html +=
                         '<div class="koji_point" font-weight: normal; color: #333;line-height: 25px;">' +
-                        '<span style="font-size: 20px;">' + name + '</span><br>' +
+                        '<span style="font-size: 16px;">' + name + '</span><br>' +
                         '<span style="font-size: 20px;">' + kojikakaku + '</span>' +
                         '</div>'
                 }
