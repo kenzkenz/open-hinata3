@@ -9,7 +9,7 @@
   >
     <v-card flat class="bg-white drawer" style="border-radius: 0;">
       <v-card-title class="text-h6 text-white" style="background-color: var(--main-color); height: 40px; display: flex; align-items: center;">
-<!--        2025登記所地図-->
+        {{ s_rightDrawerTitle }}
         <div class="close-btn-div" style="margin-right:4px;margin-top: 0px; color:white!important; ;font-size: 30px!important;" @click="close"><i class="fa-solid fa-xmark hover"></i></div>
       </v-card-title>
 
@@ -50,8 +50,11 @@ export default {
     ...mapState([
       'showRightDrawer',
       'selectedPointFeature',
-      'popupFeatureProperties'
+      'popupFeatureProperties',
     ]),
+    s_rightDrawerTitle () {
+      return this.$store.state.rightDrawerTitle
+    },
     s_popupFeatureProperties () {
       return this.$store.state.popupFeatureProperties
     },

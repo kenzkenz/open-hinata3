@@ -7359,3 +7359,24 @@ export async function extractFirstFeatureProperties(file) {
     }
     return Object.keys(properties);
 }
+
+export async function LngLatToAddress(lng, lat) {
+    try {
+        const response = await axios.get('https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress', {
+            params: {
+                lon: lng,
+                lat: lat
+            }
+        });
+
+        if (response.data.results) {
+            const splitMuni = muni[Number(response.data.results.muniCd)].split(',');
+            return splitMuni[1] + splitMuni[3] + response.data.results.lv01Nm;
+        } else {
+            return null;
+        }
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}

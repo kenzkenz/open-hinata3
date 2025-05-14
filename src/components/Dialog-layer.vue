@@ -71,7 +71,7 @@ import {
   addImageLayerJpg, addImageLayerPng, addTileLayer,
   geojsonAddLayer,
   highlightSpecificFeatures, highlightSpecificFeatures2025,
-  highlightSpecificFeaturesCity,
+  highlightSpecificFeaturesCity, LngLatToAddress,
   simaToGeoJSON, updateMeasureUnit, userPmtileSet
 } from "@/js/downLoad";
 import * as Layers from '@/js/layers'
@@ -898,39 +898,46 @@ export default {
         // map.moveLayer(fileExtension + '-polygon-points')
       }
 
-      // if (this.counter === 1 && map === this.$store.state.map01) {
       if (map === this.$store.state.map01) {
         setTimeout(() => {
-          // console.log(this.$store.state.map01.getStyle().layers)
           const targetLayers = this.$store.state.map01.getStyle().layers
               .filter(layer => layer.id.startsWith('oh-chiban-') && !registeredLayers.has(layer.id))
               .map(layer => layer.id);
-          // console.log(targetLayers)
           targetLayers.forEach(layer => {
             registeredLayers.add(layer)
-            // console.log(`Adding click event to layer: ${layer}`);
             this.$store.state.map01.on('click', layer, (e) => {
               if (e.features && e.features.length > 0) {
-                const targetId = `${e.features[0].properties['oh3id']}`;
+                // 最小面積のポリゴンを選ぶ
+                let smallestFeature = e.features[0];
+                let minArea = turf.area(e.features[0]);
+                for (let feature of e.features) {
+                  const area = turf.area(feature);
+                  if (area < minArea) {
+                    smallestFeature = feature;
+                    minArea = area;
+                  }
+                }
+                const targetId = `${smallestFeature.properties['oh3id']}`;
                 if (this.$store.state.highlightedChibans.has(targetId)) {
-                  // すでに選択されている場合は解除
                   this.$store.state.highlightedChibans.delete(targetId);
-                  store.commit('setRightDrawer', false)
+                  store.commit('setRightDrawer', false);
                 } else {
-                  // 新しいIDを追加
                   this.$store.state.highlightedChibans.add(targetId);
-                  const lngLat = e.lngLat
-                  store.state.popupFeatureProperties = e.features[0].properties
-                  store.state.popupFeatureCoordinates = [lngLat.lng, lngLat.lat]
-                  store.commit('setChibanzuDrawer', false)
-                  store.commit('setRightDrawer', true)
+                  const lngLat = e.lngLat;
+                  store.state.popupFeatureProperties = smallestFeature.properties;
+                  store.state.popupFeatureCoordinates = [lngLat.lng, lngLat.lat];
+                  (async () => {
+                    const address = await LngLatToAddress(lngLat.lng, lngLat.lat);
+                    store.state.rightDrawerTitle = address;
+                  })();
+                  store.commit('setChibanzuDrawer', false);
+                  store.commit('setRightDrawer', true);
                 }
                 highlightSpecificFeaturesCity(map, layer);
               }
             });
           });
         },0)
-        // const registeredLayers = new Set();
       }
 
       this.$store.state.map01.getStyle().layers.forEach(layer => {

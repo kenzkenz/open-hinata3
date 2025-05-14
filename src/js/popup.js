@@ -3040,18 +3040,15 @@ export function popup(e,map,mapName,mapFlg) {
 
                 // ⭐️---------------------------------------------------------------------------------------------------
                 if (store.state.isRenzoku) {
-                    // if (window.innerWidth >= 500) {
-
-                        const targetId = `${features[0].properties['筆ID']}_${features[0].properties['地番']}`
-                        if (!store.state.highlightedChibans.has(targetId)) {
-                            store.state.popupFeatureProperties = features[0].properties
-                            store.state.popupFeatureCoordinates = coordinates
-                            store.commit('setRightDrawer', true)
-                        } else {
-                            store.commit('setRightDrawer', false)
-                        }
-
-                    // }
+                    const targetId = `${features[0].properties['筆ID']}_${features[0].properties['地番']}`
+                    if (!store.state.highlightedChibans.has(targetId)) {
+                        store.state.popupFeatureProperties = features[0].properties
+                        store.state.popupFeatureCoordinates = coordinates
+                        store.state.rightDrawerTitle = '2025登記所地図'
+                        store.commit('setRightDrawer', true)
+                    } else {
+                        store.commit('setRightDrawer', false)
+                    }
                     return
                 }
                 // -----------------------------------------------------------------------------------------------------

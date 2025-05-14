@@ -147,7 +147,8 @@
       開示請求により入手できたが公開の可否不明は「灰色」。「赤色」は・・
       </div>
 <!--      <v-btn style="margin-top: 10px" class="tiny-btn" @click="list">リスト表示</v-btn>-->
-      <v-btn color="error" style="margin-top: 10px;margin-left: 0px;" class="tiny-btn" @click="openTerms">地番参考図利用規約</v-btn>
+<!--      <v-btn color="error" style="margin-top: 10px;margin-left: 0px;" class="tiny-btn" @click="openTerms">地番参考図利用規約</v-btn>-->
+      <v-btn color="error" style="margin-top: 10px;margin-left: 0px;width: 100%;" @click="openTerms">地番参考図利用規約</v-btn>
     </div>
     <div v-else>
       <v-btn color="error" style="margin-top: 10px;margin-bottom: 10px; width: 100%;" @click="openTerms">地番参考図利用規約</v-btn>
@@ -484,15 +485,15 @@ export default {
       const visibleSources = new Set();
       switch (id) {
         case 'oh-chibanzu-all2':
-          // features.forEach(f => {
-          //   // console.log(f.layer.id,f.layer.id.split('-').length)
-          //   if ((f.layer.id.includes('oh-chibanzu-') && f.layer.id.split('-').length === 3) || f.layer.id.includes('oh-chiban-')) {
-          //     visibleLayers.add(f.layer.id);
-          //     if (f.layer.source) {
-          //       visibleSources.add(f.layer.source);
-          //     }
-          //   }
-          // });
+          features.forEach(f => {
+            // console.log(f.layer.id,f.layer.id.split('-').length)
+            if ((f.layer.id.includes('oh-chibanzu-') && f.layer.id.split('-').length === 3) || f.layer.id.includes('oh-chiban-')) {
+              visibleLayers.add(f.layer.id);
+              if (f.layer.source) {
+                visibleSources.add(f.layer.source);
+              }
+            }
+          });
           console.log(Array.from(visibleLayers));
           console.log(Array.from(visibleSources));
           this.layerId = Array.from(visibleLayers)[0]
@@ -784,7 +785,6 @@ export default {
     resetFeatureColors () {
       const map = this.$store.state[this.mapName]
       this.idForLayerId(this.item.id)
-      console.log(this.layerId)
       resetFeatureColors(map,this.layerId)
     },
     outputJww () {
