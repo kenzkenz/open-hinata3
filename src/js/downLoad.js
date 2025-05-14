@@ -6844,7 +6844,6 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
     console.log(file)
     console.log(store.state.userId)
 
-
     const formData = new FormData();
     formData.append("geojson", file, file.name);
     formData.append("dir", store.state.userId);
@@ -6949,7 +6948,7 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
         }
     }
 
-// ReadableStreamを非同期イテレータとして処理
+    // ReadableStreamを非同期イテレータとして処理
     async function* streamAsyncIterator(reader) {
         try {
             let done, value;
@@ -6963,41 +6962,13 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
         }
     }
 
-// ストリーム処理を開始
+    // ストリーム処理を開始
     processStream().catch(error => {
         console.error("ストリーム処理エラー:", error);
-        store.state.loading2 = false;
-        alert("ストリーム処理に失敗しました！");
+        // store.state.loading2 = false;
+        // alert("ストリーム処理に失敗しました！");
+        store.state.loadingMessage = 'ログ取得に失敗しましたが、このまま実行します。ブラウザを閉じないでください。'
     });
-
-
-
-    // const formData = new FormData();
-    // formData.append("geojson", file, file.name);
-    // formData.append("dir", store.state.userId);
-    // formData.append("chiban", chiban);
-    // let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles7.php", {
-    //     method: "POST",
-    //     body: formData,
-    // });
-    // let result = await response.json();
-    // if (result.success) {
-    //     store.state.loading2 = false
-    //     // addTileLayer(result.tiles_url, result.bbox)
-    //     console.log(result)
-    //     const webUrl = 'https://kenzkenz.duckdns.org/' + result.pmtiles_file.replace('/var/www/html/public_html/','')
-    //     console.log(result.pmtiles_file)
-    //     insertPmtilesData(store.state.userId , store.state.pmtilesName, webUrl, result.pmtiles_file, store.state.pmtilesPropertieName, result.bbox, result.length, prefcode, citycode)
-    //     console.log('pmtiles作成完了')
-    //     if (!result.bbox) {
-    //         alert('座標系が間違えているかもしれません。geojson化するときはEPSG:4326に設定してください。')
-    //     }
-    //
-    // } else {
-    //     console.log(result)
-    //     store.state.loading2 = false
-    //     alert("タイル生成に失敗しました！" + result.error);
-    // }
 }
 
 export function saveDxfForChiriin (map,layerIds) {

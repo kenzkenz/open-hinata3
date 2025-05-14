@@ -87,7 +87,7 @@ try {
         }
         // 2000フィーチャごとに進捗ログを出力
         if (($index + 1) % 2000 === 0 || $index + 1 === $length) {
-            sendSSE(["log" => ($index + 1) . "/$length" . '(地物)']);
+            sendSSE(["log" => ($index + 1) . "/$length" . '(地物) id作成中']);
         }
     }
     unset($feature);
@@ -106,28 +106,6 @@ try {
         throw new Exception("GeoJSONファイルの書き込みに失敗しました");
     }
     sendSSE(["log" => "successfully"]);
-
-//    // ----------------- oh3id 付与 & BBOX -----------------
-//    $length = count($geojson["features"]);
-//    $bbox = [INF, INF, -INF, -INF];
-//
-//    foreach ($geojson["features"] as $index => &$feature) {
-//        $feature["properties"]["oh3id"] = $index + 1;
-//        if (isset($feature["geometry"]["coordinates"])) {
-//            updateBBOX($feature["geometry"]["coordinates"], $bbox);
-//        }
-//    }
-//    unset($feature);
-//    ini_set('serialize_precision', -1);
-//    if (!file_put_contents(
-//        $tempFilePath,
-//        json_encode(
-//            $geojson,
-//            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION
-//        )
-//    )) {
-//        throw new Exception("GeoJSONファイルの書き込みに失敗しました");
-//    }
 
     // ----------------- Tippecanoe 実行 -----------------
     $pmtilesPath = $pmtilesDir . $fileBaseName . ".pmtiles";
