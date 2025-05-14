@@ -154,19 +154,36 @@
       <v-btn color="error" style="margin-top: 10px;margin-bottom: 10px; width: 100%;" @click="openTerms">地番参考図利用規約</v-btn>
     </div>
 
-    <v-text-field label="表示地番検索（例）5-7" v-model="s_chibanText" @input="change" style="margin-top: 0px"></v-text-field>
+    <v-text-field label="表示地番検索（例）5-7" v-model="s_chibanText" @input="change" style="margin-top: 10px"></v-text-field>
 
-<!--    <v-btn style="margin-top: 0px" class="tiny-btn" @click="saveGeojson">geojson保存</v-btn>-->
-<!--    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="gistUpload">gistアップロード</v-btn>-->
-    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog5=true" v-if="item.id !== 'oh-chibanzu2024'">sima保存（簡易）</v-btn>
-<!--    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveSima3" v-if="item.id === 'oh-chibanzu2024'">sima保存</v-btn>-->
-    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog2=true" v-if="item.id === 'oh-chibanzu2024'">sima保存</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 5px;width: 72px;" class="tiny-btn" @click="dialog=true">sima読込</v-btn>
-    <br>
-    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog4=true">dxf保存</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveKml">kml保存</v-btn>
-    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog3=true" v-if="item.id === 'oh-chibanzu2024'">jww座標ファイル</v-btn>
+    <v-row dense no-gutters>
+      <v-col cols="6">
+        <v-btn block @click="dialog5 = true">sima保存</v-btn>
+      </v-col>
+      <v-col cols="6" style="padding-left: 10px;">
+        <v-btn block @click="dialog = true">sima読込</v-btn>
+      </v-col>
+    </v-row>
+
+    <v-row dense no-gutters style="margin-top: 10px; margin-bottom: 10px;">
+      <v-col cols="4">
+        <v-btn class="tiny-btn2" block @click="dialog4 = true">dxf保存</v-btn>
+      </v-col>
+      <v-col cols="4" style="padding-left:  10px;">
+        <v-btn class="tiny-btn2" block @click="saveCsv">csv保存</v-btn>
+      </v-col>
+      <v-col cols="4" style="padding-left: 10px;">
+        <v-btn class="tiny-btn2" block @click="saveKml">kml保存</v-btn>
+      </v-col>
+    </v-row>
+
+
+<!--    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog5=true">sima保存（簡易）</v-btn>-->
+<!--    <v-btn style="margin-top: 0px;margin-left: 5px;width: 72px;" class="tiny-btn" @click="dialog=true">sima読込</v-btn>-->
+<!--    <br>-->
+<!--    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog4=true">dxf保存</v-btn>-->
+<!--    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>-->
+<!--    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveKml">kml保存</v-btn>-->
     <hr>
     <div style="display: flex; align-items: center; gap: 10px;">
       <v-btn style="height: 40px; line-height: 40px; margin-left: 0px;margin-top: 10px;" class="tiny-btn" @click="resetFeatureColors">

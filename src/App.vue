@@ -4878,6 +4878,9 @@ font {
   line-height: 24px !important;
   margin-bottom: 10px !important;
 }
+.tiny-btn2 {
+  font-size: 10px !important;
+}
 .style01 {
   background: linear-gradient(transparent 85%, #ffd700 80%);
 }
