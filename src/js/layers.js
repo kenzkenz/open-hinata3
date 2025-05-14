@@ -1944,7 +1944,7 @@ export const sicyosonChibanzuUrls = [
     {prefname:'大阪府', prefcode:'27', code:'27203', name:'豊中市', chiban: ['get', 'TEXTCODE1'], position:[135.4697598501699,34.78130126564767], url:'toyonakashi', page:'https://data.bodik.jp/dataset/272035_chibansanko/resource/c5858297-c312-489f-b244-885074c70daa'},
     // 兵庫県
     // {prefname:'', prefcode:'', code:'28201, name:'姫路市', chiban: ['get', 'TXTCD'], position:[134.68545471163947,34.815118449686565], url:'himejishi', page:''},
-    {prefname:'兵庫県', prefcode:'28', code:'28204', name:'西宮市', chiban: ['get', 'TXTCD'], position:[135.34190737301537,34.73766946698089], url:'nishinomiyashi', page:'https://opendata.nishi.or.jp/opendata/ResultDetail.php?id=69'},
+    // {prefname:'兵庫県', prefcode:'28', code:'28204', name:'西宮市', chiban: ['get', 'TXTCD'], position:[135.34190737301537,34.73766946698089], url:'nishinomiyashi', page:'https://opendata.nishi.or.jp/opendata/ResultDetail.php?id=69'},
     {prefname:'兵庫県', prefcode:'28', code:'28207', name:'伊丹市', chiban: ['get', '所在地番'], position:[135.40037589806093,34.784457867420755], url:'itamishi', page:'https://www.geospatial.jp/ckan/dataset/202401/resource/ec8eb484-66e4-40a7-bf05-248476b0d61d'},
     {prefname:'兵庫県', prefcode:'28', code:'28210', name:'加古川市', chiban: ['get', 'TXTCODE1'], position:[134.84064926983825,34.75678296665963], url:'kakogawashi', page:'https://opendata-api-kakogawa.jp/ckan/dataset/landhouse/resource/c37f9b63-54c8-4094-9e48-8d3817918476'},
     {prefname:'兵庫県', prefcode:'28', code:'28217', name:'川西市', chiban: ['get', '地番'], position:[135.4173282883612,34.82989631871767], url:'kawanishishi', page:'https://www.city.kawanishi.hyogo.jp/opendata/1017548/1009883/1016648.html'},
