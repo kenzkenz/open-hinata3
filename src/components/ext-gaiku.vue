@@ -20,9 +20,8 @@
     </v-card>
   </v-dialog>
   <div :style="menuContentSize">
-    <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
+    <div style="font-size: large;margin-bottom: 10px;"></div>
     <v-btn style="margin-top: 0px;margin-left: 0px;margin-bottom: 10px;" @click="saveSimaGaiku">sima保存</v-btn>
-<!--    <v-btn style="margin-top: 0px;margin-left: 10px;margin-bottom: 10px;" @click="tutorial">説明</v-btn>-->
     <hr>
     <div v-html="item.attribution"></div>
   </div>
@@ -127,7 +126,7 @@ export default {
     this.checkDevice();
   },
   mounted() {
-
+    document.querySelector('#handle-' + this.item.id).innerHTML = '<span style="font-size: large;">' + this.item.label + '</span>'
   },
   watch: {
     s_extFire () {

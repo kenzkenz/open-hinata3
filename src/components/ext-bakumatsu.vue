@@ -170,6 +170,9 @@ export default {
       this.update()
     },
   },
+  mounted() {
+    document.querySelector('#handle-' + this.item.id).innerHTML = '<span style="font-size: large;">' + this.item.label + '</span>'
+  },
   watch: {
     s_extFire () {
       this.onSelectChange (this.s_bakumatsuSelected)

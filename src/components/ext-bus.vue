@@ -77,6 +77,7 @@ export default {
     },
   },
   mounted() {
+    document.querySelector('#handle-' + this.item.id).innerHTML = '<span style="font-size: large;">' + this.item.label + '</span>'
     this.onSelectChange (this.s_busSelected)
   },
   watch: {

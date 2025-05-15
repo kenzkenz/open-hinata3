@@ -14,11 +14,12 @@
       </v-card-title>
 
       <v-card-text style="margin-top: 20px;">
-        <h2 style="margin-bottom: 10px;">{{ `${popupFeatureProperties.市区町村名 || ''}${popupFeatureProperties.大字名 || ''}${popupFeatureProperties['丁目名'] || ''}${popupFeatureProperties.地番 || ''}` }}</h2>
-        <p v-for="[key, value] in Object.entries(popupFeatureProperties)" :key="key" class="property-text">
-          {{ key }}: {{ value }}
-        </p>
-<!--        <div class="street-view-drawer" style="margin-top:10px;height: 350px;width:100%;background-color: gray"></div>-->
+        <div class="top-div">
+          <h2 style="margin-bottom: 10px;">{{ `${popupFeatureProperties.市区町村名 || ''}${popupFeatureProperties.大字名 || ''}${popupFeatureProperties['丁目名'] || ''}${popupFeatureProperties.地番 || ''}` }}</h2>
+          <p v-for="[key, value] in Object.entries(popupFeatureProperties)" :key="key" class="property-text">
+            {{ key }}: {{ value }}
+          </p>
+        </div>
         <div class="street-view-drawer" style="margin-top:10px;height: calc(100vh - 450px);width:100%;background-color: gray"></div>
       </v-card-text>
 
@@ -51,6 +52,7 @@ export default {
       'showRightDrawer',
       'selectedPointFeature',
       'popupFeatureProperties',
+      'rightDrawerTitle'
     ]),
     s_rightDrawerTitle () {
       return this.$store.state.rightDrawerTitle
@@ -88,12 +90,13 @@ export default {
   },
   watch: {
     popupFeatureProperties (newVal) {
-      console.log(newVal)
       const container = document.querySelector('.street-view-drawer')
       const [lng, lat] = this.$store.state.popupFeatureCoordinates;
       async function setupStreetViewWithMotion() {
         await enableMotionPermission(); // ← 先に許可をもらう
         if (container) {
+          const topDiv = document.querySelector('.top-div')
+          document.querySelector('.street-view-drawer').style.height = window.innerHeight - topDiv.offsetHeight - topDiv.getBoundingClientRect().top - 30 + 'px'
           new window.google.maps.StreetViewPanorama(container, {
             position: {lat: lat, lng: lng},
             pov: { heading: 34, pitch: 10 },
@@ -105,9 +108,6 @@ export default {
       setupStreetViewWithMotion()
     }
   },
-  beforeUnmount() {
-    // クリーンアップ不要
-  }
 };
 </script>
 

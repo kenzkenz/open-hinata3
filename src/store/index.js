@@ -4,7 +4,7 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
-    rightDrawerTitle: 'ddd',
+    rightDrawerTitle: '',
     selectedPublic: 0,
     geojsonFile: null,
     chibanzuPrefCode: '',

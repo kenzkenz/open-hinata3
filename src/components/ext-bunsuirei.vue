@@ -1,6 +1,5 @@
 <template>
     <div :style="menuContentSize">
-      <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
       <v-switch class="custom-switch" v-model="s_isPaintBunsuirei" @change="changePaint" label="塗りつぶし" color="primary" />
       <v-switch class="custom-switch" v-model="s_isKasen" @change="changePaint" label="河川" color="primary" />
       <br>
@@ -234,6 +233,9 @@ export default {
       }
       this.update()
     },
+  },
+  mounted() {
+    document.querySelector('#handle-' + this.item.id).innerHTML = '<span style="font-size: large;">' + this.item.label + '</span>'
   },
   watch: {
     s_kasenMei () {

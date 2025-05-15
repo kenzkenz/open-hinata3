@@ -99,8 +99,7 @@ export default {
     }
   },
   mounted() {
-    // this.bakumatsuInput (this.mapName)
-    // this.calcKokudaka()
+    document.querySelector('#handle-' + this.item.id).innerHTML = '<span>' + this.item.label + '</span>'
   },
   watch: {
     s_watchFlg () {

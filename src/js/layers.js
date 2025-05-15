@@ -1606,7 +1606,6 @@ urls.forEach(url => {
         source: 'oh-ams-geojson-' + url.name,
         layout: {
             'text-field': ['get', 'name'],
-            'text-font': ['NotoSansJP-Regular'],
             'text-offset': [0, 1],
         },
         paint: {

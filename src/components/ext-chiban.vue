@@ -176,8 +176,6 @@
         <v-btn class="tiny-btn2" block @click="saveKml">kml保存</v-btn>
       </v-col>
     </v-row>
-
-
 <!--    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog5=true">sima保存（簡易）</v-btn>-->
 <!--    <v-btn style="margin-top: 0px;margin-left: 5px;width: 72px;" class="tiny-btn" @click="dialog=true">sima読込</v-btn>-->
 <!--    <br>-->
@@ -824,8 +822,6 @@ export default {
     saveDxf () {
       const map = this.$store.state[this.mapName]
       this.idForLayerId(this.item.id)
-      // saveDxf(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'])
-      // saveDxf(map,this.layerId,this.sourceId,this.fields)
       saveSima2(map,this.layerId,null,true,this.sourceId,this.fields,this.s_zahyokei)
       this.dialog4 = false
     },
@@ -858,16 +854,13 @@ export default {
     saveSima () {
       const map = this.$store.state[this.mapName]
       const vm = this
-      console.log(9999)
       async function aaa () {
         vm.idForLayerId(vm.item.id)
-        // saveCima(map,'oh-iwatapolygon','iwatapolygon-source',['SKSCD','AZACD','TXTCD'],true)
         console.log(vm.item.id)
         console.log(vm.layerId)
         console.log(vm.sourceId)
         console.log(vm.fields)
         console.log(vm.s_zahyokei)
-
         const layer = map.getLayer(vm.layerId);
         let chiban = null
         if (layer) {
@@ -875,7 +868,7 @@ export default {
           const source = map.getSource(sourceId);
           const style = map.getStyle();
           const sourceInfo = style.sources[sourceId];
-          console.log(sourceInfo.url); // ここに `pmtiles://yourfile.pmtiles` などがあるかも
+          console.log(sourceInfo.url);
           const url = sourceInfo.url.replace('pmtiles://', '')
           console.log(url)
           const response = await fetch(`https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesSelectByUrl.php?url=${url}`);
@@ -912,7 +905,6 @@ export default {
       map.getStyle().layers.forEach(layer => {
         if (layer.id.includes('oh-chibanzu-vertex')) {
           map.setPaintProperty(layer.id, 'circle-color', color)
-          // console.log(map.getPaintProperty(layer.id,'circle-color'))
         }
         if (layer.id.includes('oh-chibanL-') && layer.id.includes('vertex')) {
           map.setPaintProperty(layer.id, 'circle-color', color)
@@ -925,7 +917,6 @@ export default {
     changeLineWidth (width,isUpdate) {
       // ⭐️ここを修正する必要あり。このままだと2は設定されない。
       if(this.lineWidth === 2) return
-      // alert(this.s_chibanWidhsString)
       let lineWidth
       let result
       if (this.s_chibanWidhsString) {
@@ -1140,7 +1131,7 @@ export default {
   },
   mounted() {
     document.querySelector('#handle-' + this.item.id).innerHTML = '<span style="font-size: large;">' + this.item.label + '</span>'
-
+    this.changeColorCircle(this.s_chibanCircleColor)
     if (this.s_tokijyoLineWidth) {
       this.lineWidth = this.s_tokijyoLineWidth
     } else {

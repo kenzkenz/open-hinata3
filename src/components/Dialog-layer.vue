@@ -948,8 +948,12 @@ export default {
             this.$store.state.map01.setPaintProperty(layer.id, 'fill-opacity', 0)
           }
         }
-        if (layer.id.includes('oh-chiban-')) {
-          highlightSpecificFeaturesCity(map,layer.id)
+        if (layer.id.includes('oh-chiban-') || layer.id.includes('oh-chibanzu-')) {
+          try {
+            highlightSpecificFeaturesCity(map,layer.id)
+          }catch (e) {
+            console.log(e)
+          }
         }
       })
 
