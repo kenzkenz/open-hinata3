@@ -264,6 +264,7 @@ import {
   simaToGeoJSON,
   resetFeatureColors, saveSima2, saveKml, getLayersById, getParentIdByLayerId
 } from "@/js/downLoad";
+import {homusyo2025LayerLine} from "@/js/layers";
 
 export default {
   name: 'ext-chibanzu',
@@ -915,8 +916,24 @@ export default {
       if (isUpdate) this.update()
     },
     changeLineWidth (width,isUpdate) {
-      // ⭐️ここを修正する必要あり。このままだと2は設定されない。
-      if(this.lineWidth === 2) return
+      const map = this.$store.state[this.mapName]
+      const layers = getLayersById(map,this.item.id)
+      const lineLayerId = layers.find(v => v.id.includes('line')).id
+      if (width <= 0) {
+        width = 2; // 強制的に2にする
+      }
+      if (width === undefined) {
+        width = 2; // 強制的に2にする
+      }
+      if (width === 2) {
+        if (getLayersById(map,'oh-chibanzu-all2').length > 0) {
+          getLayersById(map,'oh-chibanzu-all2').filter(v => v.id.includes('line')).forEach(v => {
+            map.setPaintProperty(v.id, 'line-width', homusyo2025LayerLine.paint["line-width"])
+          })
+        }
+        return
+      }
+      // -----------------------------------------------------------------------------------------------
       let lineWidth
       let result
       if (this.s_chibanWidhsString) {
@@ -934,9 +951,7 @@ export default {
       } else {
         lineWidth = Number(width)
       }
-      const map = this.$store.state[this.mapName]
-      const layers = getLayersById(map,this.item.id)
-      const lineLayerId = layers.find(v => v.id.includes('line')).id
+
       if (lineWidth) {
         map.setPaintProperty(lineLayerId, 'line-width', lineWidth)
       }

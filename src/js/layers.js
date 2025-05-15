@@ -1962,7 +1962,7 @@ export const sicyosonChibanzuUrls = [
     {prefname:'福岡県', prefcode:'40', code:'40130', name:'福岡市', chiban: ['get', '地番'], position:[130.40177928836357,33.5897855042562], url:'fukuokashi2', page:'https://webmap.city.fukuoka.lg.jp/fukuoka/OpenData?mids=&pno=1'},
     {prefname:'福岡県', prefcode:'40', code:'40204', name:'直方市', chiban: ['get', '地番'], position:[130.72966337301625,33.743983314699236], url:'nogatashi', page:'https://data.bodik.jp/dataset/402044_land_lot_correspondence_map/resource/3e57cf4e-a84b-4a6a-adba-fd27013531c7'},
     // 佐賀県
-    {prefname:'福岡県', prefcode:'41', code:'41202', name:'唐津市', chiban: ['get', 'SAFIELD001'], position:[129.9677463730212,33.44981990361434], url:'karatsushi', page:'https://www.open-data-portal.jp/opendata/dataset/chiban'},
+    {prefname:'佐賀県', prefcode:'41', code:'41202', name:'唐津市', chiban: ['get', 'SAFIELD001'], position:[129.9677463730212,33.44981990361434], url:'karatsushi', page:'https://www.open-data-portal.jp/opendata/dataset/chiban'},
     // 長崎県
     {prefname:'長崎県', prefcode:'42', code:'42307', name:'長与町', chiban: ['get', '地番'], position:[129.87507937301513,32.82524812594376], url:'nagayochyo', page:'https://data.bodik.jp/dataset/423076_tibansankouzu/resource/580da941-74d1-4ddd-a0f0-fb6b88fc793a'}
 ];

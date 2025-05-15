@@ -2466,20 +2466,24 @@ export function highlightSpecificFeaturesCity(map,layerId) {
         // console.log(Array.from(store.state.highlightedChibans))
         // alert(Array.from(store.state.highlightedChibans))
         if (Array.from(store.state.highlightedChibans)) {
-            map.setPaintProperty(
-                layerId,
-                'fill-color',
-                [
-                    'case',
+            try {
+                map.setPaintProperty(
+                    layerId,
+                    'fill-color',
                     [
-                        'in',
-                        fields,
-                        ['literal', Array.from(store.state.highlightedChibans)]
-                    ],
-                    'rgba(255, 0, 0, 0.5)', // クリックされた地番が選択された場合
-                    'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
-                ]
-            );
+                        'case',
+                        [
+                            'in',
+                            fields,
+                            ['literal', Array.from(store.state.highlightedChibans)]
+                        ],
+                        'rgba(255, 0, 0, 0.5)', // クリックされた地番が選択された場合
+                        'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
+                    ]
+                );
+            } catch (e) {
+                console.log(e)
+            }
         }
     }, sec)
     isFirstRunCity1 = false
