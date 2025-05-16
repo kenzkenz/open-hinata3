@@ -1463,3 +1463,5 @@ tippecanoe -o kobe.pmtiles \
 
 tippecanoe -l point -rg -pk -pf -f -o kojikakaku.pmtiles kojikakaku.geojson
 tippecanoe -l polygon -rg -pk -pf -f -o r07kojikakaku.pmtiles r07kojikakaku.geojson
+
+tippecanoe --simplification=5 -f -l polygon -o chibanzumap.pmtiles chibanzumap.geojson

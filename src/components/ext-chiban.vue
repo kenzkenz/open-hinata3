@@ -901,10 +901,9 @@ export default {
       gistUpload(map,this.layerId,this.sourceId,this.fields)
     },
     changeColorCircle (color,isUpdate) {
-      // ここが遅い 要改修
       const map = this.$store.state[this.mapName]
       map.getStyle().layers.forEach(layer => {
-        if (layer.id.includes('oh-chibanzu-vertex')) {
+        if (layer.id.includes('oh-chibanzu-vertex') && !layer.id.includes('oh-chibanzu-vertex-green')) {
           map.setPaintProperty(layer.id, 'circle-color', color)
         }
         if (layer.id.includes('oh-chibanL-') && layer.id.includes('vertex')) {
@@ -912,7 +911,6 @@ export default {
         }
       })
       this.s_chibanCircleColor = color
-
       if (isUpdate) this.update()
     },
     changeLineWidth (width,isUpdate) {
@@ -926,11 +924,12 @@ export default {
         width = 2; // 強制的に2にする
       }
       if (width === 2) {
-        if (getLayersById(map,'oh-chibanzu-all2').length > 0) {
+        if (getLayersById(map,'oh-chibanzu-all2') && getLayersById(map,'oh-chibanzu-all2').length > 0) {
           getLayersById(map,'oh-chibanzu-all2').filter(v => v.id.includes('line')).forEach(v => {
             map.setPaintProperty(v.id, 'line-width', homusyo2025LayerLine.paint["line-width"])
           })
         }
+        map.setPaintProperty(lineLayerId, 'line-width', homusyo2025LayerLine.paint["line-width"])
         return
       }
       // -----------------------------------------------------------------------------------------------
@@ -1009,16 +1008,6 @@ export default {
       if (isUpdate) this.update()
     },
     changeColor (color,isUpdate) {
-      // const map = this.$store.state[this.mapName]
-      // map.getStyle().layers.forEach(layer => {
-      //   if (layer.id.includes('oh-chibanzu-line')) {
-      //     map.setPaintProperty(layer.id, 'line-color', color)
-      //   }
-      //   if (layer.id.includes('oh-chibanL-') && layer.id.includes('line')) {
-      //     map.setPaintProperty(layer.id, 'line-color', color)
-      //   }
-      // })
-      // alert(this.item.id)
       let lineColor
       let result
       if (this.s_chibanColorsString) {
@@ -1049,7 +1038,6 @@ export default {
           result1.color = lineColor
           this.s_chibanColorsString = JSON.stringify(this.$store.state.chibanColors)
         }
-
       } else {
         if (color) {
           map.setPaintProperty(lineLayerId, 'line-color', color)
@@ -1147,6 +1135,7 @@ export default {
   mounted() {
     document.querySelector('#handle-' + this.item.id).innerHTML = '<span style="font-size: large;">' + this.item.label + '</span>'
     this.changeColorCircle(this.s_chibanCircleColor)
+    this.changeLineWidth()
     if (this.s_tokijyoLineWidth) {
       this.lineWidth = this.s_tokijyoLineWidth
     } else {

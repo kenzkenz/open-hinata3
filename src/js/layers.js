@@ -267,18 +267,26 @@ const cityPmtilesLabelLayer = {
     minzoom: 7
 }
 
+// export const cityGeojsonSource = {
+//     id: 'city-geojson-source', obj: {
+//         'type': 'geojson',
+//         // 'data': 'https://kenzkenz.duckdns.org//original-data/chibanzumap.geojson?nocache=' + Date.now()
+//         'data': 'https://kenzkenz.duckdns.org//original-data/chibanzumap.geojson'
+//     }
+// }
 export const cityGeojsonSource = {
     id: 'city-geojson-source', obj: {
-        'type': 'geojson',
-        // 'data': 'https://kenzkenz.duckdns.org//original-data/chibanzumap.geojson?nocache=' + Date.now()
-        'data': 'https://kenzkenz.duckdns.org//original-data/chibanzumap.geojson'
+        'type': 'vector',
+        'url': 'pmtiles://https://kenzkenz.duckdns.org//original-data/chibanzumap.pmtiles'
     }
 }
+
 
 const cityGeojsonPolygonLayer = {
     id: 'oh-city-geojson-poligon-layer',
     type: 'fill',
     source: 'city-geojson-source',
+    "source-layer": 'polygon',
     paint: {
         'fill-color': [
             'match',
@@ -293,6 +301,7 @@ const cityGeojsonPolygonLayer = {
 const cityGeojsonLineLayer = {
     id: 'oh-city-geojson-line-layer',
     source: 'city-geojson-source',
+    "source-layer": 'polygon',
     type: 'line',
     paint: {
         'line-color': 'black',
@@ -310,6 +319,7 @@ const cityGeojsonLabelLayer = {
     id: 'oh-city-geojson-label-layer',
     type: 'symbol',
     source: 'city-geojson-source',
+    "source-layer": 'polygon',
     layout: {
         'text-field': ['get', 'N03_004'],
         'text-offset': [0, 1],
@@ -1970,12 +1980,13 @@ export const sicyosonChibanzuUrls = [
 export const chibanzuSources = []
 export const chibanzuLayers = []
 const chibanzuLayerLines = []
-const chibanzuLayerLinesRed = []
+const chibanzuLayerLinesGreen = []
 const chibanzuLayerLabel = []
+const chibanzuLayerLabelGreen = []
 const chibanzuLayerVertex = []
+const chibanzuLayerVertexGreen = []
 const chibanzuLayerPoint = []
 sicyosonChibanzuUrls.forEach(url => {
-    // console.log(url.name)
     let sourceLayer
     if (url.name === '高崎市') {
         sourceLayer = 'oh3'
@@ -1999,7 +2010,8 @@ sicyosonChibanzuUrls.forEach(url => {
             'fill-color': 'rgba(0,0,0,0)',
         },
         position: url.position,
-        page :url.page
+        page: url.page,
+        name: `${url.prefname}-${url.name}`
     })
     chibanzuLayerLines.push({
         id: 'oh-chibanzu-line-' + url.name,
@@ -2017,7 +2029,7 @@ sicyosonChibanzuUrls.forEach(url => {
             ]
         },
     })
-    chibanzuLayerLinesRed.push({
+    chibanzuLayerLinesGreen.push({
         id: 'oh-chibanzu-line-' + url.name,
         source: 'oh-chibanzu-' + url.name + '-source',
         type: 'line',
@@ -2040,12 +2052,26 @@ sicyosonChibanzuUrls.forEach(url => {
         source: 'oh-chibanzu-' + url.name + '-source',
         "source-layer": sourceLayer,
         'layout': {
-            // 'text-field': ['get', url.chiban],
             'text-field': url.chiban,
-            'text-font': ['NotoSansJP-Regular'],
         },
         'paint': {
             'text-color': 'navy',
+            'text-halo-color': 'rgba(255,255,255,1)',
+            'text-halo-width': 1.0,
+        },
+        'maxzoom': 24,
+        'minzoom': 15
+    })
+    chibanzuLayerLabelGreen.push({
+        id: 'oh-chibanzu-label-green-' + url.name,
+        type: "symbol",
+        source: 'oh-chibanzu-' + url.name + '-source',
+        "source-layer": sourceLayer,
+        'layout': {
+            'text-field': url.chiban,
+        },
+        'paint': {
+            'text-color': 'green',
             'text-halo-color': 'rgba(255,255,255,1)',
             'text-halo-width': 1.0,
         },
@@ -2063,7 +2089,21 @@ sicyosonChibanzuUrls.forEach(url => {
                 15, 0,
                 18,4
             ],
-            'circle-color': 'blue',
+            'circle-color': 'green',
+        }
+    })
+    chibanzuLayerVertexGreen.push({
+        id: 'oh-chibanzu-vertex-green-' + url.name,
+        type: "circle",
+        source: 'oh-chibanzu-' + url.name + '-source',
+        "source-layer": sourceLayer,
+        paint: {
+            'circle-radius': [
+                'interpolate', ['linear'], ['zoom'],
+                15, 0,
+                18,4
+            ],
+            'circle-color': 'green',
         }
     })
     // ここの filter: ['==', '$type', 'Point']が効いたり効かなかったり。様修正
@@ -2079,15 +2119,14 @@ sicyosonChibanzuUrls.forEach(url => {
                 15, 0,
                 18,4
             ],
-            'circle-color': 'blue',
+            'circle-color': 'green',
         }
     })
 })
 const chibanzuLayers2 = chibanzuLayers.map((layer,i) => {
-    const name = layer.id.replace('oh-chibanzu-','') + '地番図'
     return {
         id: layer.id,
-        label: name,
+        label: layer.name,
         source: chibanzuSources[i],
         layers:[layer,chibanzuLayerLines[i],chibanzuLayerLabel[i],chibanzuLayerPoint[i],chibanzuLayerVertex[i]],
         attribution: '<a href="' + layer.page + '" target="_blank">' + name + '</a>',
@@ -2096,10 +2135,8 @@ const chibanzuLayers2 = chibanzuLayers.map((layer,i) => {
     }
 })
 // 並びを様修正
-const chibanzuLayers0 = [...chibanzuLayers,...chibanzuLayerLines,...chibanzuLayerLabel,...chibanzuLayerPoint,...chibanzuLayerVertex]
-const chibanzuLayers1 = [...chibanzuLayers,...chibanzuLayerLinesRed,...chibanzuLayerLabel,...chibanzuLayerPoint,...chibanzuLayerVertex]
+const chibanzuLayers1 = [...chibanzuLayers,...chibanzuLayerLinesGreen,...chibanzuLayerLabelGreen,...chibanzuLayerPoint,...chibanzuLayerVertexGreen]
 
-console.log(chibanzuLayers2)
 // 古地図----------------------------------------------------------------------------------------------------------------
 // 戦前の旧版地形図
 const mw5DummySource = {
