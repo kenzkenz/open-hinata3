@@ -232,7 +232,8 @@
           class="mx-2"
           style="max-width: 150px;"
           hide-details
-          :min=1
+          step="0.5"
+          :min=0.5
           @input="changeLineWidth(lineWidth,true)"
       />
 
@@ -916,7 +917,8 @@ export default {
     changeLineWidth (width,isUpdate) {
       const map = this.$store.state[this.mapName]
       const layers = getLayersById(map,this.item.id)
-      const lineLayerId = layers.find(v => v.id.includes('line')).id
+      // const lineLayerId = layers.find(v => v.id.includes('line') && v.id !== 'oh-city-geojson-line-layer').id
+      const lineLayerId = layers.find(v => v.id.includes('line') && v.id !== 'oh-city-geojson-line-layer')?.id || null;
       if (width <= 0) {
         width = 2; // 強制的に2にする
       }
@@ -925,11 +927,11 @@ export default {
       }
       if (width === 2) {
         if (getLayersById(map,'oh-chibanzu-all2') && getLayersById(map,'oh-chibanzu-all2').length > 0) {
-          getLayersById(map,'oh-chibanzu-all2').filter(v => v.id.includes('line')).forEach(v => {
+          getLayersById(map,'oh-chibanzu-all2').filter(v => v.id.includes('line') && v.id !== 'oh-city-geojson-line-layer').forEach(v => {
             map.setPaintProperty(v.id, 'line-width', homusyo2025LayerLine.paint["line-width"])
           })
         }
-        map.setPaintProperty(lineLayerId, 'line-width', homusyo2025LayerLine.paint["line-width"])
+        if (lineLayerId) map.setPaintProperty(lineLayerId, 'line-width', homusyo2025LayerLine.paint["line-width"])
         return
       }
       // -----------------------------------------------------------------------------------------------

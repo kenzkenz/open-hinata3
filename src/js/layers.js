@@ -7,7 +7,7 @@ import { nextTick, toRef, reactive, ref, computed, watch } from 'vue';
 export function zenkokuChibanzuAddLayer (map,zoom) {
     const targetLayer = findLayerById(map,'oh-chibanzu-all2')
     if (targetLayer) {
-        console.log('ターゲットレイヤー', targetLayer.layers)
+        // console.log('ターゲットレイヤー', targetLayer.layers)
         if (zoom >= 11) {
             const bounds = map.getBounds();
             const maplibreBbox = [
@@ -26,31 +26,16 @@ export function zenkokuChibanzuAddLayer (map,zoom) {
                         maplibreBbox[3] > dataBbox[1] && // north > south
                         maplibreBbox[1] < dataBbox[3];   // south < north
                     if (isIntersecting) {
-                        console.log('重なってる:', v);
+                        // console.log('重なってる:', v);
                         if (!v.url) {
                             return
                         }
                         const layers = publiLayersCreate(v)
-                        const layerPolygon = {
-                            name: v.name,
-                            id: 'oh-chiban-' + v.id + '-' + v.name + '-layer',
-                            type: 'fill',
-                            source: 'oh-chiban-' + v.id + '-' + v.name + '-source',
-                            "source-layer": 'oh3',
-                            'paint': {
-                                'fill-color': 'rgba(0,0,0,0)',
-                            },
-                            minzoom: 11
-                        }
                         const allLayers = map.getStyle().layers;
-                        console.log('allLayers',allLayers)
                         const result = allLayers.find(l => {
-                            console.log(l.id,layers.publicPolygonLayer)
-                            return l.id === layers.publicPolygonLayer
+                            return l.id === layers.publicPolygonLayer.id
                         })
-                        console.log('result',result)
                         if (!result) {
-                            console.log(111,result)
                             targetLayer.layers.push(layers.publicPolygonLayer)
                             targetLayer.layers.push(layers.publicLineLayer)
                             targetLayer.layers.push(layers.publicLabelLayer)
@@ -59,7 +44,35 @@ export function zenkokuChibanzuAddLayer (map,zoom) {
                         }
                     }
                 }
-            });
+            })
+            sicyosonChibanzuUrls.forEach(v => {
+                if (v.bbox) {
+                    const dataBbox = v.bbox; // [west, south, east, north]
+                    const isIntersecting =
+                        Number(maplibreBbox[2]) > Number(dataBbox[0]) && // east > west
+                        Number(maplibreBbox[0]) < Number(dataBbox[2]) && // west < east
+                        Number(maplibreBbox[3]) > Number(dataBbox[1]) && // north > south
+                        Number(maplibreBbox[1]) < Number(dataBbox[3]);   // south < north
+                    if (isIntersecting) {
+                        // console.log('重なってる2:', v);
+                        // if (!v.url) {
+                        //     return
+                        // }
+                        const layers = chibanzuLayersCreate(v)
+                        const allLayers = map.getStyle().layers;
+                        const result = allLayers.find(l => {
+                            return l.id === layers.chibanzuLayer.id
+                        })
+                        if (!result) {
+                            targetLayer.layers.push(layers.chibanzuLayer)
+                            targetLayer.layers.push(layers.chibanzuLayerLineGreen)
+                            targetLayer.layers.push(layers.chibanzuLayerLabelGreen)
+                            targetLayer.layers.push(layers.chibanzuLayerVertexGreen)
+                            targetLayer.layers.push(layers.chibanzuLayerPoint)
+                        }
+                    }
+                }
+            })
         }
     }
 }
@@ -2024,7 +2037,7 @@ export const sicyosonChibanzuUrls = [
     // 山梨県
     {prefname:'山梨県', prefcode:'19', code:'19201', name:'甲府市', chiban: ['get', '地番'], bbox:[138.500000, 35.600000, 138.650000, 35.700000], position:[138.56829800000241,35.66205666308586], url:'kofushi', page:'https://kofu.geocloud.jp/webgis/?p=0&bt=0&mp=337-1&'},
     // 静岡県
-    {prefname:'静岡県', prefcode:'22', code:'22100', name:'静岡市', chiban: ['get', '地番'], bbox:[138.383333, 35.000000, 139.000000, 35.416667], position:[138.38294267724638,34.974974010631584], url:'shizuokashi', page:'https://dataset.city.shizuoka.jp/dataset/1707986930/resource/4a40cc33-0aef-4426-825e-3b034347812b'},
+    {prefname:'静岡県', prefcode:'22', code:'22100', name:'静岡市', chiban: ['get', '地番'], bbox:[138.08306, 34.89861, 138.63944, 35.64583], position:[138.38294267724638,34.974974010631584], url:'shizuokashi', page:'https://dataset.city.shizuoka.jp/dataset/1707986930/resource/4a40cc33-0aef-4426-825e-3b034347812b'},
     {prefname:'静岡県', prefcode:'22', code:'22211', name:'磐田市', chiban: ['get', 'TXTCD'], bbox:[137.800000, 34.650000, 137.950000, 34.800000], position:[137.85162388532535,34.7178716931619], url:'iwatashi', page:'https://www.city.iwata.shizuoka.jp/shiseijouhou/1006207/1002775.html'},
     // 愛知県
     {prefname:'愛知県', prefcode:'23', code:'23100', name:'名古屋市', chiban: ['get', 'TXTCD'], bbox:[136.800000, 35.000000, 137.050000, 35.300000], position:[136.9066772883615,35.1812626194769], url:'nagoyashi', page:'https://data.bodik.jp/dataset/231002_0703030000_chibansankouzu'},
@@ -2063,25 +2076,14 @@ export const sicyosonChibanzuUrls = [
     // 長崎県
     {prefname:'長崎県', prefcode:'42', code:'42307', name:'長与町', chiban: ['get', '地番'], bbox:[129.840000, 32.800000, 129.900000, 32.850000], position:[129.87507937301513,32.82524812594376], url:'nagayochyo', page:'https://data.bodik.jp/dataset/423076_tibansankouzu/resource/580da941-74d1-4ddd-a0f0-fb6b88fc793a'}
 ];
-
-export const chibanzuSources = []
-export const chibanzuLayers = []
-const chibanzuLayerLines = []
-const chibanzuLayerLinesGreen = []
-const chibanzuLayerLabel = []
-const chibanzuLayerLabelGreen = []
-const chibanzuLayerVertex = []
-const chibanzuLayerVertexGreen = []
-const chibanzuLayerPoint = []
-sicyosonChibanzuUrls.forEach(url => {
+function chibanzuLayersCreate (url) {
     let sourceLayer
     if (url.name === '高崎市') {
         sourceLayer = 'oh3'
     } else {
         sourceLayer = 'chibanzu'
     }
-    console.log()
-    chibanzuSources.push({
+    const chibanzuSource = {
         id: 'oh-chibanzu-' + url.name + '-source',
         obj: {
             type: "vector",
@@ -2089,8 +2091,8 @@ sicyosonChibanzuUrls.forEach(url => {
             tileSize: 512, // タイルサイズを適切に設定
         },
         minzoom: 11
-    })
-    chibanzuLayers.push({
+    }
+    const chibanzuLayer = {
         id: 'oh-chibanzu-' + url.name,
         source: 'oh-chibanzu-' + url.name + '-source',
         type: 'fill',
@@ -2101,8 +2103,8 @@ sicyosonChibanzuUrls.forEach(url => {
         position: url.position,
         page: url.page,
         name: `${url.prefname}-${url.name}`
-    })
-    chibanzuLayerLines.push({
+    }
+    const chibanzuLayerLine = {
         id: 'oh-chibanzu-line-' + url.name,
         source: 'oh-chibanzu-' + url.name + '-source',
         type: 'line',
@@ -2117,8 +2119,8 @@ sicyosonChibanzuUrls.forEach(url => {
                 16, 2
             ]
         },
-    })
-    chibanzuLayerLinesGreen.push({
+    }
+    const chibanzuLayerLineGreen = {
         id: 'oh-chibanzu-line-' + url.name,
         source: 'oh-chibanzu-' + url.name + '-source',
         type: 'line',
@@ -2134,8 +2136,8 @@ sicyosonChibanzuUrls.forEach(url => {
             ]
         },
         minzoom: 11
-    })
-    chibanzuLayerLabel.push({
+    }
+    const chibanzuLayerLabel = {
         id: 'oh-chibanzu-label-' + url.name,
         type: "symbol",
         source: 'oh-chibanzu-' + url.name + '-source',
@@ -2150,8 +2152,8 @@ sicyosonChibanzuUrls.forEach(url => {
         },
         'maxzoom': 24,
         'minzoom': 15
-    })
-    chibanzuLayerLabelGreen.push({
+    }
+    const chibanzuLayerLabelGreen = {
         id: 'oh-chibanzu-label-green-' + url.name,
         type: "symbol",
         source: 'oh-chibanzu-' + url.name + '-source',
@@ -2166,8 +2168,8 @@ sicyosonChibanzuUrls.forEach(url => {
         },
         'maxzoom': 24,
         'minzoom': 15
-    })
-    chibanzuLayerVertex.push({
+    }
+    const chibanzuLayerVertex = {
         id: 'oh-chibanzu-vertex-' + url.name,
         type: "circle",
         source: 'oh-chibanzu-' + url.name + '-source',
@@ -2180,8 +2182,8 @@ sicyosonChibanzuUrls.forEach(url => {
             ],
             'circle-color': 'green',
         }
-    })
-    chibanzuLayerVertexGreen.push({
+    }
+    const chibanzuLayerVertexGreen = {
         id: 'oh-chibanzu-vertex-green-' + url.name,
         type: "circle",
         source: 'oh-chibanzu-' + url.name + '-source',
@@ -2194,9 +2196,9 @@ sicyosonChibanzuUrls.forEach(url => {
             ],
             'circle-color': 'green',
         }
-    })
+    }
     // ここの filter: ['==', '$type', 'Point']が効いたり効かなかったり。様修正
-    chibanzuLayerPoint.push({
+    const chibanzuLayerPoint = {
         id: 'oh-chibanzu-point-' + url.name,
         type: "circle",
         source: 'oh-chibanzu-' + url.name + '-source',
@@ -2210,7 +2212,30 @@ sicyosonChibanzuUrls.forEach(url => {
             ],
             'circle-color': 'green',
         }
-    })
+    }
+    return {chibanzuSource,chibanzuLayer,chibanzuLayerLine,chibanzuLayerLineGreen,chibanzuLayerLabel,
+        chibanzuLayerLabelGreen,chibanzuLayerVertex,chibanzuLayerVertexGreen,chibanzuLayerPoint}
+}
+export const chibanzuSources = []
+export const chibanzuLayers = []
+const chibanzuLayerLines = []
+const chibanzuLayerLinesGreen = []
+const chibanzuLayerLabel = []
+const chibanzuLayerLabelGreen = []
+const chibanzuLayerVertex = []
+const chibanzuLayerVertexGreen = []
+const chibanzuLayerPoint = []
+sicyosonChibanzuUrls.forEach(url => {
+    const layers = chibanzuLayersCreate (url)
+    chibanzuSources.push(layers.chibanzuSource)
+    chibanzuLayers.push(layers.chibanzuLayer)
+    chibanzuLayerLines.push(layers.chibanzuLayerLine)
+    chibanzuLayerLinesGreen.push(layers.chibanzuLayerLineGreen)
+    chibanzuLayerLabel.push(layers.chibanzuLayerLabel)
+    chibanzuLayerLabelGreen.push(layers.chibanzuLayerLabelGreen)
+    chibanzuLayerVertex.push(layers.chibanzuLayerVertex)
+    chibanzuLayerVertexGreen.push(layers.chibanzuLayerVertexGreen)
+    chibanzuLayerPoint.push(layers.chibanzuLayerPoint)
 })
 const chibanzuLayers2 = chibanzuLayers.map((layer,i) => {
     return {
