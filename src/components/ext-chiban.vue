@@ -917,7 +917,6 @@ export default {
     changeLineWidth (width,isUpdate) {
       const map = this.$store.state[this.mapName]
       const layers = getLayersById(map,this.item.id)
-      // const lineLayerId = layers.find(v => v.id.includes('line') && v.id !== 'oh-city-geojson-line-layer').id
       const lineLayerId = layers.find(v => v.id.includes('line') && v.id !== 'oh-city-geojson-line-layer')?.id || null;
       if (width <= 0) {
         width = 2; // 強制的に2にする
@@ -1028,8 +1027,8 @@ export default {
       }
       const map = this.$store.state[this.mapName]
       const layers = getLayersById(map,this.item.id)
-      const lineLayerId = layers.find(v => v.id.includes('line')).id
-      if (lineColor) {
+      const lineLayerId = layers.find(v => v.id.includes('line') && v.id !== 'oh-city-geojson-line-layer')?.id || null;
+      if (lineColor && lineLayerId) {
         map.setPaintProperty(lineLayerId, 'line-color', lineColor)
       }
 
