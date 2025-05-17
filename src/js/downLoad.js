@@ -7385,13 +7385,14 @@ export async function LngLatToAddress(lng, lat) {
     }
 }
 
-export function findLayerById(targetId) {
-    for (const mapKey in store.state.selectedLayers) {
-        const layers = store.state.selectedLayers[mapKey];
-        for (const layer of layers) {
-            if (layer.id === targetId) {
-                return layer;
-            }
+export function findLayerById(map, targetId) {
+    const mapDivName = map?._container?.id
+    const layers = store.state.selectedLayers[mapDivName];
+    if (!layers) return null;
+
+    for (const layer of layers) {
+        if (layer.id === targetId) {
+            return layer;
         }
     }
     return null; // 見つからなかった場合

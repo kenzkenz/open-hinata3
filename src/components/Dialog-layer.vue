@@ -85,7 +85,7 @@ import * as turf from '@turf/turf'
 import {gpx, kml} from "@tmcw/togeojson";
 import DxfParser from 'dxf-parser'
 import {dxfToGeoJSON} from '@/App'
-import {clickPointLayer, clickPointSource} from "@/js/layers";
+import {clickPointLayer, clickPointSource, zenkokuChibanzuAddLayer} from "@/js/layers";
 import JSZip from "jszip";
 import store from "@/store";
 
@@ -549,6 +549,7 @@ export default {
           if (layer.info) this.infoOpen(layer,false, true)
           // -------------------------------------------------
         }
+        if (this.counter === 0) zenkokuChibanzuAddLayer(map,map.getZoom())
       }
       if (this.counter >= 1) {
         if (map.getLayer('sima-layer')) {
@@ -965,11 +966,10 @@ export default {
         map.moveLayer( 'terradraw-measure-polygon-label')
         map.moveLayer( 'terradraw-measure-line-label')
         map.moveLayer( 'terradraw-measure-line-node')
-
         updateMeasureUnit('m')
-
       }
       highlightSpecificFeatures2025(map,'oh-homusyo-2025-polygon');
+      // zenkokuChibanzuAddLayer(map,map.getZoom())
     },
 
     mw5AddLayers(map,mapName) {

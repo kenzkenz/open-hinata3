@@ -5,10 +5,62 @@ import * as turf from '@turf/turf'
 import { nextTick, toRef, reactive, ref, computed, watch } from 'vue';
 
 export function zenkokuChibanzuAddLayer (map,zoom) {
-    const targetLayer = findLayerById('oh-chibanzu-all2')
+    const targetLayer = findLayerById(map,'oh-chibanzu-all2')
     if (targetLayer) {
-        console.log(targetLayer)
-        console.log(zoom)
+        console.log('ターゲットレイヤー', targetLayer.layers)
+        if (zoom >= 11) {
+            const bounds = map.getBounds();
+            const maplibreBbox = [
+                bounds.getWest(),  // 最小経度（left）
+                bounds.getSouth(), // 最小緯度（bottom）
+                bounds.getEast(),  // 最大経度（right）
+                bounds.getNorth()  // 最大緯度（top）
+            ];
+            console.log('現在のBBOX:', maplibreBbox);
+            pablicDatas.forEach(v => {
+                if (v.bbox) {
+                    const dataBbox = JSON.parse(v.bbox); // [west, south, east, north]
+                    const isIntersecting =
+                        maplibreBbox[2] > dataBbox[0] && // east > west
+                        maplibreBbox[0] < dataBbox[2] && // west < east
+                        maplibreBbox[3] > dataBbox[1] && // north > south
+                        maplibreBbox[1] < dataBbox[3];   // south < north
+                    if (isIntersecting) {
+                        console.log('重なってる:', v);
+                        if (!v.url) {
+                            return
+                        }
+                        const layers = publiLayersCreate(v)
+                        const layerPolygon = {
+                            name: v.name,
+                            id: 'oh-chiban-' + v.id + '-' + v.name + '-layer',
+                            type: 'fill',
+                            source: 'oh-chiban-' + v.id + '-' + v.name + '-source',
+                            "source-layer": 'oh3',
+                            'paint': {
+                                'fill-color': 'rgba(0,0,0,0)',
+                            },
+                            minzoom: 11
+                        }
+                        const allLayers = map.getStyle().layers;
+                        console.log('allLayers',allLayers)
+                        const result = allLayers.find(l => {
+                            console.log(l.id,layers.publicPolygonLayer)
+                            return l.id === layers.publicPolygonLayer
+                        })
+                        console.log('result',result)
+                        if (!result) {
+                            console.log(111,result)
+                            targetLayer.layers.push(layers.publicPolygonLayer)
+                            targetLayer.layers.push(layers.publicLineLayer)
+                            targetLayer.layers.push(layers.publicLabelLayer)
+                            targetLayer.layers.push(layers.publicPointLayer)
+                            targetLayer.layers.push(layers.publicVertexLayer)
+                        }
+                    }
+                }
+            });
+        }
     }
 }
 
@@ -85,19 +137,8 @@ async function publicData() {
     }
 }
 const pablicDatas = await publicData()
-const publicSources = []
-const publicPolygonLayers = []
-const publicLineLayers = []
-const publicLabelLayers = []
-const publicPointLayers = []
-const publicVertexLayers = []
-pablicDatas.forEach(v => {
-    console.log(v)
-    if (!v.url) {
-        return
-    }
-
-    publicSources.push({
+function publiLayersCreate (v) {
+    const publicSource = {
         id: 'oh-chiban-' + v.id + '-' + v.name + '-source',
         obj: {
             type: 'vector',
@@ -105,8 +146,8 @@ pablicDatas.forEach(v => {
         },
         minZoom: 11,
         bounds: boundsSort(JSON.parse(v.bbox))
-    })
-    publicPolygonLayers.push({
+    }
+    const publicPolygonLayer = {
         name: v.name,
         id: 'oh-chiban-' + v.id + '-' + v.name + '-layer',
         type: 'fill',
@@ -116,18 +157,17 @@ pablicDatas.forEach(v => {
             'fill-color': 'rgba(0,0,0,0)',
         },
         minzoom: 11
-    })
+    }
     let lineColor
     switch (v.public) {
         case '-1':
-            // alert(v.name)
             lineColor = 'green'
             break
         case '1':
             lineColor = 'blue'
             break
     }
-    publicLineLayers.push({
+    const publicLineLayer = {
         id: 'oh-chibanL-' + v.id + '-' + v.name + '-line-layer',
         source: 'oh-chiban-' + v.id + '-' + v.name + '-source',
         type: 'line',
@@ -143,17 +183,16 @@ pablicDatas.forEach(v => {
             ]
         },
         minzoom: 11
-    })
+    }
     let minZoom
     if (!v.length) {
         minZoom = 17
     } else if (v.length < 10000) {
         minZoom = 0
-        // minZoom = 17
     } else {
         minZoom = 17
     }
-    publicLabelLayers.push({
+    const publicLabelLayer = {
         id: 'oh-chibanL-' + v.id + '-' + v.name + '-label-layer',
         type: "symbol",
         source: 'oh-chiban-' + v.id + '-' + v.name + '-source',
@@ -167,8 +206,8 @@ pablicDatas.forEach(v => {
             'text-halo-width': 1.0,
         },
         'minzoom': minZoom
-    })
-    publicPointLayers.push({
+    }
+    const publicPointLayer = {
         id: 'oh-chibanL-' + v.id + '-' + v.name + '-point-layer',
         type: "circle",
         source: 'oh-chiban-' + v.id + '-' + v.name + '-source',
@@ -182,8 +221,8 @@ pablicDatas.forEach(v => {
             'circle-stroke-color': '#fff'
         },
         minzoom: 11
-    })
-    publicVertexLayers.push({
+    }
+    const publicVertexLayer = {
         id: 'oh-chibanL-' + v.id + '-' + v.name + '-vertex-layer',
         type: "circle",
         source: 'oh-chiban-' + v.id + '-' + v.name + '-source',
@@ -198,7 +237,27 @@ pablicDatas.forEach(v => {
             'circle-color': 'red',
         },
         minzoom: 11
-    })
+    }
+    return {publicSource,publicPolygonLayer,publicLineLayer,publicLabelLayer,publicPointLayer,publicVertexLayer}
+}
+const publicSources = []
+const publicPolygonLayers = []
+const publicLineLayers = []
+const publicLabelLayers = []
+const publicPointLayers = []
+const publicVertexLayers = []
+pablicDatas.forEach(v => {
+    console.log(v)
+    if (!v.url) {
+        return
+    }
+    const layers = publiLayersCreate(v)
+    publicSources.push(layers.publicSource)
+    publicPolygonLayers.push(layers.publicPolygonLayer)
+    publicLineLayers.push(layers.publicLineLayer)
+    publicLabelLayers.push(layers.publicLabelLayer)
+    publicPointLayers.push(layers.publicPointLayer)
+    publicVertexLayers.push(layers.publicVertexLayer)
 })
 const publicLayers = publicPolygonLayers.map((layer,i) => {
     return {
@@ -9311,7 +9370,8 @@ let layers01 = [
         id: 'oh-chibanzu-all2',
         label: '⭐️全国地番図公開マップ️',
         sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
-        layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
+        // layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
+        layers: [cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
         ext: {name:'ext-chibanzu'}
     },
     {

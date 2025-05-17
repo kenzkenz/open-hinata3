@@ -4341,10 +4341,10 @@ export default {
           visible: false // ボタンを非表示にする
         })
         map.addControl(this.compass)
-        map.on('zoomend', () => {
+        map.on('moveend', () => {
           zenkokuChibanzuAddLayer(map,map.getZoom())
         })
-        zenkokuChibanzuAddLayer(map,map.getZoom())
+        // zenkokuChibanzuAddLayer(map,map.getZoom()) // dialog.layer.vueの552行くらいに移動
         //on load終了----------------------------------------------------------------------------------------------------
       })
     }
