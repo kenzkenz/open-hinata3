@@ -785,20 +785,20 @@ export default {
   watch: {
     tab (newVal) {
       if (newVal === '1') {
-        const coordinates = this.$store.state.clickedCoordinates;
-        async function setupStreetViewWithMotion() {
-          await enableMotionPermission();
-          setTimeout(() => {
-            const container = document.querySelector('.street-view')
-            new window.google.maps.StreetViewPanorama(container, {
-              position: {lat: coordinates[1], lng: coordinates[0]},
-              pov: {heading: 34, pitch: 10},
-              zoom: 1,
-              disableDefaultUI: true,
-            });
-          }, 100)
-        }
-        setupStreetViewWithMotion()
+        // const coordinates = this.$store.state.clickedCoordinates;
+        // async function setupStreetViewWithMotion() {
+        //   await enableMotionPermission();
+        //   setTimeout(() => {
+        //     const container = document.querySelector('.street-view')
+        //     new window.google.maps.StreetViewPanorama(container, {
+        //       position: {lat: coordinates[1], lng: coordinates[0]},
+        //       pov: {heading: 34, pitch: 10},
+        //       zoom: 1,
+        //       disableDefaultUI: true,
+        //     });
+        //   }, 100)
+        // }
+        // setupStreetViewWithMotion()
       } else if (newVal === '2') {
         this.$nextTick(() => {
           const self = this

@@ -3965,28 +3965,29 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
             }
         },0)
     } else {
-        setTimeout(() => {
-            if (container && !store.state.mapillaryFlg) {
-                async function setupStreetViewWithMotion() {
-                    await enableMotionPermission(); // ← 先に許可をもらう
-                    if (container) {
-                        new window.google.maps.StreetViewPanorama(container, {
-                            position: {lat: lat, lng: lng},
-                            pov: { heading: 34, pitch: 10 },
-                            zoom: 1,
-                            disableDefaultUI: true,
-                        });
-                        // スクロールリセット（ポップアップ内のスクロール位置をリセット）
-                        setTimeout(() => {
-                            document.querySelectorAll('.popup-html-div').forEach(element => {
-                                element.scrollTop = 0;
-                            });
-                        },200)
-                    }
-                }
-                setupStreetViewWithMotion()
-            }
-        },100)
+        document.querySelector('.street-view').style.height = '0px'
+        // setTimeout(() => {
+        //     if (container && !store.state.mapillaryFlg) {
+        //         async function setupStreetViewWithMotion() {
+        //             await enableMotionPermission(); // ← 先に許可をもらう
+        //             if (container) {
+        //                 new window.google.maps.StreetViewPanorama(container, {
+        //                     position: {lat: lat, lng: lng},
+        //                     pov: { heading: 34, pitch: 10 },
+        //                     zoom: 1,
+        //                     disableDefaultUI: true,
+        //                 });
+        //                 // スクロールリセット（ポップアップ内のスクロール位置をリセット）
+        //                 setTimeout(() => {
+        //                     document.querySelectorAll('.popup-html-div').forEach(element => {
+        //                         element.scrollTop = 0;
+        //                     });
+        //                 },200)
+        //             }
+        //         }
+        //         setupStreetViewWithMotion()
+        //     }
+        // },100)
     }
 
 

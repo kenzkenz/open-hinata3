@@ -274,6 +274,7 @@ const cityPmtilesLabelLayer = {
 //         'data': 'https://kenzkenz.duckdns.org//original-data/chibanzumap.geojson'
 //     }
 // }
+
 export const cityGeojsonSource = {
     id: 'city-geojson-source', obj: {
         'type': 'vector',
@@ -281,20 +282,33 @@ export const cityGeojsonSource = {
     }
 }
 
-
 const cityGeojsonPolygonLayer = {
     id: 'oh-city-geojson-poligon-layer',
     type: 'fill',
     source: 'city-geojson-source',
     "source-layer": 'polygon',
+    // paint: {
+    //     'fill-color':
+    //         [
+    //         'match',
+    //         ['get', 'N03_007'],
+    //         ...Object.entries(chibanzuColors).flat(),
+    //         'rgba(0,0,0,0)' // デフォルト色
+    //     ],
+    // },
     paint: {
         'fill-color': [
             'match',
             ['get', 'N03_007'],
             ...Object.entries(chibanzuColors).flat(),
-            'rgba(0,0,0,0)' // デフォルト色
-        ],
+            '#000000' // fallbackにするが、filterで除外されるので表示されない
+        ]
     },
+    filter: [
+        'in',
+        ['get', 'N03_007'],
+        ['literal', Object.keys(chibanzuColors)]
+    ],
     maxzoom: 11.5
 };
 
@@ -5355,13 +5369,12 @@ const kojiLayerLabel = {
     "source-layer": "point",
     'layout': {
         'text-field': ['get', 'L01_025'],
-        'text-font': ['NotoSansJP-Regular'],
         'text-offset': [0, 2],
         'visibility': 'visible',
     },
     'paint': {
-        'text-color': 'rgba(255, 255, 255, 0.7)',
-        'text-halo-color': 'rgba(0,0,0,0.7)',
+        'text-color': 'rgba(255, 255, 255, 1)',
+        'text-halo-color': 'rgba(0,0,0,1)',
         'text-halo-width': 1.0,
     },
     'maxzoom': 24,

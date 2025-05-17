@@ -20,7 +20,7 @@
             {{ key }}: {{ value }}
           </p>
         </div>
-        <div class="street-view-drawer" style="margin-top:10px;height: calc(100vh - 450px);width:100%;background-color: gray"></div>
+        <div class="street-view-drawer" style="margin-top:10px;height: calc(100vh - 450px);width:100%;"></div>
       </v-card-text>
 
 <!--      <v-card-actions style="margin-top: 0px">-->
@@ -90,22 +90,23 @@ export default {
   },
   watch: {
     popupFeatureProperties (newVal) {
-      const container = document.querySelector('.street-view-drawer')
-      const [lng, lat] = this.$store.state.popupFeatureCoordinates;
-      async function setupStreetViewWithMotion() {
-        await enableMotionPermission(); // ← 先に許可をもらう
-        if (container) {
-          const topDiv = document.querySelector('.top-div')
-          document.querySelector('.street-view-drawer').style.height = window.innerHeight - topDiv.offsetHeight - topDiv.getBoundingClientRect().top - 30 + 'px'
-          new window.google.maps.StreetViewPanorama(container, {
-            position: {lat: lat, lng: lng},
-            pov: { heading: 34, pitch: 10 },
-            zoom: 1,
-            disableDefaultUI: true,
-          });
-        }
-      }
-      setupStreetViewWithMotion()
+      document.querySelector('.street-view-drawer').innerHTML = '<span style="color: red">現在、street-viewはアクセス増加に伴い停止中です。</span>'
+      // const container = document.querySelector('.street-view-drawer')
+      // const [lng, lat] = this.$store.state.popupFeatureCoordinates;
+      // async function setupStreetViewWithMotion() {
+      //   await enableMotionPermission(); // ← 先に許可をもらう
+      //   if (container) {
+      //     const topDiv = document.querySelector('.top-div')
+      //     document.querySelector('.street-view-drawer').style.height = window.innerHeight - topDiv.offsetHeight - topDiv.getBoundingClientRect().top - 30 + 'px'
+      //     new window.google.maps.StreetViewPanorama(container, {
+      //       position: {lat: lat, lng: lng},
+      //       pov: { heading: 34, pitch: 10 },
+      //       zoom: 1,
+      //       disableDefaultUI: true,
+      //     });
+      //   }
+      // }
+      // setupStreetViewWithMotion()
     }
   },
 };
