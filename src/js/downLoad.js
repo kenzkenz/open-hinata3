@@ -2482,7 +2482,7 @@ export function highlightSpecificFeaturesCity(map,layerId) {
                     ]
                 );
             } catch (e) {
-                console.log(e)
+                // console.log(e)
             }
         }
     }, sec)
@@ -7383,4 +7383,16 @@ export async function LngLatToAddress(lng, lat) {
         console.error(e);
         return null;
     }
+}
+
+export function findLayerById(targetId) {
+    for (const mapKey in store.state.selectedLayers) {
+        const layers = store.state.selectedLayers[mapKey];
+        for (const layer of layers) {
+            if (layer.id === targetId) {
+                return layer;
+            }
+        }
+    }
+    return null; // 見つからなかった場合
 }

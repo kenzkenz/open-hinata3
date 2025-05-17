@@ -4,6 +4,14 @@ import store from '@/store'
 import * as turf from '@turf/turf'
 import { nextTick, toRef, reactive, ref, computed, watch } from 'vue';
 
+export function zenkokuChibanzuAddLayer (map,zoom) {
+    const targetLayer = findLayerById('oh-chibanzu-all2')
+    if (targetLayer) {
+        console.log(targetLayer)
+        console.log(zoom)
+    }
+}
+
 // 色データの取得
 export async function loadColorData() {
     try {
@@ -84,13 +92,19 @@ const publicLabelLayers = []
 const publicPointLayers = []
 const publicVertexLayers = []
 pablicDatas.forEach(v => {
+    console.log(v)
+    if (!v.url) {
+        return
+    }
+
     publicSources.push({
         id: 'oh-chiban-' + v.id + '-' + v.name + '-source',
         obj: {
             type: 'vector',
             url: "pmtiles://" + v.url
         },
-        minZoom: 11
+        minZoom: 11,
+        bounds: boundsSort(JSON.parse(v.bbox))
     })
     publicPolygonLayers.push({
         name: v.name,
@@ -867,6 +881,7 @@ import osmBright from '@/assets/json/osm_bright.json'
 import osmToner from '@/assets/json/osm_toner.json'
 import osm3d from '@/assets/json/osmfj_nopoi.json'
 import axios from "axios";
+import {findLayerById} from "@/js/downLoad";
 //-------------------------------------------------------
 export const osm3dSources = []
 export const osm3dLayers = osm3d.layers.map(layer => {
@@ -2007,13 +2022,15 @@ sicyosonChibanzuUrls.forEach(url => {
     } else {
         sourceLayer = 'chibanzu'
     }
+    console.log()
     chibanzuSources.push({
         id: 'oh-chibanzu-' + url.name + '-source',
         obj: {
             type: "vector",
             url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/chiban/' + url.url + '.pmtiles',
             tileSize: 512, // タイルサイズを適切に設定
-        }
+        },
+        minzoom: 11
     })
     chibanzuLayers.push({
         id: 'oh-chibanzu-' + url.name,

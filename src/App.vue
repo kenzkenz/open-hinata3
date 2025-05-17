@@ -889,7 +889,7 @@ import {
   monoLayers,
   monoSources,
   osmBrightLayers,
-  osmBrightSources
+  osmBrightSources, zenkokuChibanzuAddLayer
 } from "@/js/layers"
 import muni from '@/js/muni'
 import { kml } from '@tmcw/togeojson';
@@ -4341,7 +4341,10 @@ export default {
           visible: false // ボタンを非表示にする
         })
         map.addControl(this.compass)
-
+        map.on('zoomend', () => {
+          zenkokuChibanzuAddLayer(map,map.getZoom())
+        })
+        zenkokuChibanzuAddLayer(map,map.getZoom())
         //on load終了----------------------------------------------------------------------------------------------------
       })
     }
