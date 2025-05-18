@@ -4,6 +4,7 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    isDrawCircle: false,
     rightDrawerTitle: '',
     selectedPublic: 0,
     geojsonFile: null,
@@ -166,6 +167,7 @@ export default createStore({
     isClickPointsLayer:false,
     drawGeojsonText: '',
     clickGeojsonText: '',
+    clickCircleGeojsonText: '',
     resolution: 23,
     loading: false,
     loading2: false,

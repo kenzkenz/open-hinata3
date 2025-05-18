@@ -432,6 +432,90 @@ const cityGeojsonLabelLayer = {
     minzoom: 7
 }
 // --------------------------------------------------------------------------------
+// クリックで追加する円のGeoJSONソースを作成
+export const clickCircleSource ={
+    iD: 'click-circle-source', obj: {
+        type: 'geojson',
+        data: {
+            "type": "FeatureCollection",
+            "features": [
+                // {
+                //     "type": "Feature",
+                //     "properties": {
+                //         label: '999999999999999'
+                //     },
+                //     "geometry": {
+                //         "type": "Polygon",
+                //         "coordinates": [
+                //             [
+                //                 [139.7671, 37.486372004],      // 北
+                //                 [142.5950136, 36.2547728],     // 北東
+                //                 [144.8271, 35.6812],           // 東
+                //                 [142.5950136, 35.1076272],     // 南東
+                //                 [139.7671, 33.875027996],      // 南
+                //                 [136.9391864, 35.1076272],     // 南西
+                //                 [134.7071, 35.6812],           // 西
+                //                 [136.9391864, 36.2547728],     // 北西
+                //                 [139.7671, 37.486372004]       // クローズ
+                //             ]
+                //         ]
+                //     }
+                // }
+            ]
+        }
+    }
+};
+
+// 円を描画するレイヤーを追加
+export const clickCircleLayer = {
+    id: 'click-circle-layer',
+    type: 'fill',
+    source: 'click-circle-source',
+    paint: {
+        'fill-color': 'rgba(255,122,0,0.3)',
+    }
+}
+export const clickCircleLineLayer = {
+    id: 'click-circle-line-layer',
+    type: 'line',
+    source: 'click-circle-source',
+    paint: {
+        'line-color': 'black',
+    }
+}
+export const clickCircleLabelLayer = {
+    id: 'click-circle-label-layer',
+    type: 'symbol',
+    source: 'click-circle-source',
+    filter: ['==', '$type', 'Point'],
+    'layout': {
+        'text-field': ['get', 'label'],
+        'text-offset': [0, 1],
+    },
+    'paint': {
+        'text-color': 'black',
+        'text-halo-color': 'rgba(255,255,255,1)',
+        'text-halo-width': 1.0,
+    },
+}
+export const clickCircSymbolLayer = {
+    id: 'click-circle-symbol-layer',
+    type: 'symbol',
+    source: 'click-circle-source',
+    filter: ['==', '$type', 'Point'],
+    layout: {
+        'text-field': '●', // 太めの点
+        'text-size': 32,   // サイズ調整
+        'text-anchor': 'center',
+        'text-allow-overlap': true
+    },
+    paint: {
+        'text-color': 'orange',
+        'text-halo-color': '#fff',
+        'text-halo-width': 1
+    }
+}
+// --------------------------------------------------------------------------------
 // クリックで追加するポイントのGeoJSONソースを作成
 export const clickPointSource ={
     iD: 'click-points-source', obj: {
@@ -2276,7 +2360,6 @@ const mw5CenterLabel = {
     source: "mw5CenterSource",
     'layout': {
         'text-field': ['get', 'title'],
-        'text-font': ['NotoSansJP-Regular'],
     },
     'paint': {
         'text-color': 'rgba(255, 255, 255, 0.7)',

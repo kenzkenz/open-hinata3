@@ -85,7 +85,15 @@ import * as turf from '@turf/turf'
 import {gpx, kml} from "@tmcw/togeojson";
 import DxfParser from 'dxf-parser'
 import {dxfToGeoJSON} from '@/App'
-import {clickPointLayer, clickPointSource, zenkokuChibanzuAddLayer} from "@/js/layers";
+import {
+  clickCircleLabelLayer,
+  clickCircleLayer,
+  clickCircleLineLayer,
+  clickCircleSource, clickCircSymbolLayer,
+  clickPointLayer,
+  clickPointSource,
+  zenkokuChibanzuAddLayer
+} from "@/js/layers";
 import JSZip from "jszip";
 import store from "@/store";
 
@@ -898,6 +906,24 @@ export default {
         map.moveLayer(fileExtension + '-point-layer')
         // map.moveLayer(fileExtension + '-polygon-points')
       }
+      // ---------------------------------------------------------------------------------
+      if (map.getSource('click-circle-source')) {
+        map.removeLayer('click-circle-layer')
+        map.removeLayer('click-circle-symbol-layer')
+        map.removeLayer('click-circle-line-layer')
+        map.removeLayer('click-circle-label-layer')
+        map.removeSource('click-circle-source')
+      }
+
+      if (this.$store.state.clickCircleGeojsonText) {
+        clickCircleSource.obj.data = JSON.parse(this.$store.state.clickCircleGeojsonText)
+      }
+
+      map.addSource('click-circle-source', clickCircleSource.obj)
+      map.addLayer(clickCircleLayer)
+      map.addLayer(clickCircSymbolLayer)
+      map.addLayer(clickCircleLineLayer)
+      map.addLayer(clickCircleLabelLayer)
 
       if (map === this.$store.state.map01) {
         setTimeout(() => {

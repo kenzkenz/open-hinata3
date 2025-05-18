@@ -510,10 +510,11 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <div id="right-top-div">
             <v-btn :size="isSmall ? 'small' : 'default'" icon @click="goToCurrentLocation" v-if="mapName === 'map01'"><v-icon>mdi-crosshairs-gps</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" class="watch-position" :color="isTracking ? 'green' : undefined" icon @click="toggleWatchPosition" v-if="mapName === 'map01'"><v-icon>mdi-map-marker-radius</v-icon></v-btn>
-            <v-btn :size="isSmall ? 'small' : 'default'" class="zoom-in" icon @click="zoomIn" v-if="mapName === 'map01'"><v-icon>mdi-plus</v-icon></v-btn>
-            <v-btn :size="isSmall ? 'small' : 'default'" class="zoom-out" icon @click="zoomOut" v-if="mapName === 'map01'"><v-icon>mdi-minus</v-icon></v-btn>
+<!--            <v-btn :size="isSmall ? 'small' : 'default'" class="zoom-in" icon @click="zoomIn" v-if="mapName === 'map01'"><v-icon>mdi-plus</v-icon></v-btn>-->
+<!--            <v-btn :size="isSmall ? 'small' : 'default'" class="zoom-out" icon @click="zoomOut" v-if="mapName === 'map01'"><v-icon>mdi-minus</v-icon></v-btn>-->
             <v-btn :size="isSmall ? 'small' : 'default'" class="share" icon @click="share(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-share-variant</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" class="draw" icon @click="draw" v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>
+            <v-btn :size="isSmall ? 'small' : 'default'" class="draw-circle" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>
           </div>
 
           <DialogMenu v-if="mapName === 'map01'" :mapName=mapName />
@@ -883,6 +884,7 @@ import maplibregl from 'maplibre-gl'
 import { Protocol } from "pmtiles"
 import { useGsiTerrainSource } from 'maplibre-gl-gsi-terrain'
 import {
+  clickCircleSource,
   extLayer,
   extSource, geotiffLayer,
   geotiffSource,
@@ -976,6 +978,14 @@ export default {
       'selectedPointFeature',
       'showChibanzuDrawer',
     ]),
+    s_isDrawCircle: {
+      get() {
+        return this.$store.state.isDrawCircle
+      },
+      set(value) {
+        return this.$store.state.isDrawCircle = value
+      }
+    },
     s_selectedPublic: {
       get() {
         return this.$store.state.selectedPublic
@@ -1329,6 +1339,9 @@ export default {
     },
   },
   methods: {
+    toggleDrawCircle () {
+      this.s_isDrawCircle = !this.s_isDrawCircle
+    },
     save () {
       this.saveSelectedPointFeature()
 
@@ -2715,6 +2728,26 @@ export default {
         const latitude = e.lngLat.lat
         const longitude = e.lngLat.lng
         console.log(JSON.stringify([longitude, latitude]))
+        if (this.s_isDrawCircle) {
+          const center = [longitude, latitude];
+          const radiusKm = 0.2; // 200m = 0.2km
+          const steps = 64;
+          const circleGeoJson = turf.circle(center, radiusKm, {
+            steps: steps,
+            units: 'kilometers'
+          });
+
+          console.log(circleGeoJson);
+
+          const centerFeature = turf.centerOfMass(circleGeoJson);
+          centerFeature.properties['label'] = '200m'
+          const circleGeoJsonFeatures = {
+            type: 'FeatureCollection',
+            features: [centerFeature,circleGeoJson]
+          };
+
+          map.getSource(clickCircleSource.iD).setData(circleGeoJsonFeatures);
+        }
       })
 
       map.on('moveend', () => {
@@ -4624,12 +4657,19 @@ export default {
 }
 .share {
   position: absolute;
-  top: 240px;
+  /*top: 240px;*/
+  top: 120px;
   left: 0;
 }
 .draw {
   position: absolute;
-  top: 300px;
+  /*top: 300px;*/
+  top: 180px;
+  left: 0;
+}
+.draw-circle {
+  position: absolute;
+  top: 240px;
   left: 0;
 }
 /*3Dのボタン-------------------------------------------------------------*/
