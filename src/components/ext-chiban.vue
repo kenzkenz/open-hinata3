@@ -1023,7 +1023,12 @@ export default {
           }
         }
       } else {
-        lineColor = 'blue'
+        // この部分自信なし
+        if (this.item.id === 'oh-chibanzu-all2') {
+          lineColor = 'green'
+        } else {
+          lineColor = 'blue'
+        }
       }
       const map = this.$store.state[this.mapName]
       const layers = getLayersById(map,this.item.id)

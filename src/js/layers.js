@@ -353,26 +353,26 @@ const cityPmtilesLabelLayer = {
     minzoom: 7
 }
 
-// export const cityGeojsonSource = {
-//     id: 'city-geojson-source', obj: {
-//         'type': 'geojson',
-//         // 'data': 'https://kenzkenz.duckdns.org//original-data/chibanzumap.geojson?nocache=' + Date.now()
-//         'data': 'https://kenzkenz.duckdns.org//original-data/chibanzumap.geojson'
-//     }
-// }
-
 export const cityGeojsonSource = {
     id: 'city-geojson-source', obj: {
-        'type': 'vector',
-        'url': 'pmtiles://https://kenzkenz.duckdns.org//original-data/chibanzumap.pmtiles'
+        'type': 'geojson',
+        // 'data': 'https://kenzkenz.duckdns.org//original-data/chibanzumap.geojson?nocache=' + Date.now()
+        'data': 'https://kenzkenz.duckdns.org//original-data/chibanzumap.geojson'
     }
 }
+
+// export const cityGeojsonSource = {
+//     id: 'city-geojson-source', obj: {
+//         'type': 'vector',
+//         'url': 'pmtiles://https://kenzkenz.duckdns.org//original-data/chibanzumap.pmtiles'
+//     }
+// }
 
 const cityGeojsonPolygonLayer = {
     id: 'oh-city-geojson-poligon-layer',
     type: 'fill',
     source: 'city-geojson-source',
-    "source-layer": 'polygon',
+    // "source-layer": 'polygon',
     // paint: {
     //     'fill-color':
     //         [
@@ -401,7 +401,7 @@ const cityGeojsonPolygonLayer = {
 const cityGeojsonLineLayer = {
     id: 'oh-city-geojson-line-layer',
     source: 'city-geojson-source',
-    "source-layer": 'polygon',
+    // "source-layer": 'polygon',
     type: 'line',
     paint: {
         'line-color': 'black',
@@ -419,7 +419,7 @@ const cityGeojsonLabelLayer = {
     id: 'oh-city-geojson-label-layer',
     type: 'symbol',
     source: 'city-geojson-source',
-    "source-layer": 'polygon',
+    // "source-layer": 'polygon',
     layout: {
         'text-field': ['get', 'N03_004'],
         'text-offset': [0, 1],
@@ -431,7 +431,7 @@ const cityGeojsonLabelLayer = {
     },
     minzoom: 7
 }
-
+// --------------------------------------------------------------------------------
 // クリックで追加するポイントのGeoJSONソースを作成
 export const clickPointSource ={
     iD: 'click-points-source', obj: {
