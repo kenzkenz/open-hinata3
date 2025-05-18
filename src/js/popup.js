@@ -117,7 +117,7 @@ const legend_tameike = [
 const legend_seamless = [
     { r: 0, g: 0, b: 0, title: '' },
 ]
-function closeAllPopups() {
+export function closeAllPopups() {
     popups.forEach(popup => popup.remove())
     // 配列をクリア
     popups.length = 0
@@ -250,7 +250,6 @@ function urlByLayerId (layerId) {
     return [RasterTileUrl,legend,zoom]
 }
 export function popup(e,map,mapName,mapFlg) {
-
     let html = ''
     enableMotionPermission()
     let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
@@ -308,7 +307,6 @@ export function popup(e,map,mapName,mapFlg) {
         store.state.clickedCoordinates = coordinates
         return
     }
-
     // if (features.length > 0) {
     let regionType = ''
     features.forEach(feature => {
@@ -320,6 +318,7 @@ export function popup(e,map,mapName,mapFlg) {
         // let coordinates = feature.geometry.coordinates.slice()
         // if (coordinates.length !== 2) coordinates = e.lngLat
         console.log(props)
+        console.log(layerId)
         switch (layerId) {
             case 'oh-zosei-line':
             case 'oh-zosei-label':
@@ -3561,6 +3560,31 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'click-circle-layer':
+            case 'click-circle-layer-label':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(features)
+                if (features.length === 0) return
+                props = features[0].properties
+                console.log(props)
+                if (html.indexOf('click-circle-layer') === -1) {
+                    html += '<div class="layer-label-div">サークル</div>'
+                    html +=
+                        '<div class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;">' + props.label + '</span><br>' +
+                        '<button style="margin-bottom: 10px;" class="circle-delete-all pyramid-btn">削　除</button><br>' +
+                        '</div>'
+                }
+                break
+            }
         }
 
         if(/^oh-chibanzu-/.test(layerId)) {
@@ -3732,7 +3756,11 @@ export function popup(e,map,mapName,mapFlg) {
                 }
             }
             if (html) {
-                createPopup(map, [lng,lat], html, mapName)
+                try {
+                    createPopup(map, [lng,lat], html, mapName)
+                } catch (e) {
+                    console.log(e)
+                }
             }
         })
 
@@ -3965,7 +3993,9 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
             }
         },0)
     } else {
-        document.querySelector('.street-view').style.height = '0px'
+        if (document.querySelector('.street-view')) {
+            document.querySelector('.street-view').style.height = '0px'
+        }
         // setTimeout(() => {
         //     if (container && !store.state.mapillaryFlg) {
         //         async function setupStreetViewWithMotion() {

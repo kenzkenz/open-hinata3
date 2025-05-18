@@ -4,6 +4,7 @@ import * as turf from '@turf/turf'
 import {convertAndDownloadGeoJSONToSIMA, savePointSima} from "@/js/downLoad";
 import {feature} from "@turf/turf";
 import {clickPointSource} from "@/js/layers";
+import {closeAllPopups} from "@/js/popup";
 export let currentIndex = 0
 let kasen
 export default function pyramid () {
@@ -1044,6 +1045,20 @@ export default function pyramid () {
                     features: []
                 });
                 store.state.clickGeojsonText = ''
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("circle-delete-all"))) {
+                const map01 = store.state.map01
+                let source01 = map01.getSource('click-circle-source');
+                // 空のGeoJSON FeatureCollectionを設定する
+                source01.setData({
+                    type: "FeatureCollection",
+                    features: []
+                });
+                closeAllPopups()
+                store.state.clickCircleGeojsonText = ''
             }
         });
     })

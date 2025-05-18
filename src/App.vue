@@ -2088,13 +2088,14 @@ export default {
       const gpxText = this.$store.state.gpxText
       const drawGeojsonText = this.$store.state.drawGeojsonText
       const clickGeojsonText = this.$store.state.clickGeojsonText
+      const clickCircleGeojsonText = this.$store.state.clickCircleGeojsonText
       const vector = this.$store.state.uploadedVector
       const isWindow = this.$store.state.isWindow
       const simaTextForUser = this.$store.state.simaTextForUser
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
       ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}
-      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}&geojsontext=${geojsonText}&dxftext=${dxfText}&gpxtext=${gpxText}&drawgeojsontext=${drawGeojsonText}&clickgeojsontext=${clickGeojsonText}&vector=${JSON.stringify(vector)}&iswindow=${JSON.stringify(isWindow)}&simatextforuser=${simaTextForUser}`
+      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}&geojsontext=${geojsonText}&dxftext=${dxfText}&gpxtext=${gpxText}&drawgeojsontext=${drawGeojsonText}&clickgeojsontext=${clickGeojsonText}&clickCirclegeojsontext=${clickCircleGeojsonText}&vector=${JSON.stringify(vector)}&iswindow=${JSON.stringify(isWindow)}&simatextforuser=${simaTextForUser}`
       // console.log(this.param)
       // this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
@@ -2172,6 +2173,7 @@ export default {
       const gpxText = params.get('gpxtext')
       const drawGeojsonText = params.get('drawgeojsontext')
       const clickGeojsonText = params.get('clickgeojsontext')
+      const clickCircleGeojsonText = params.get('clickCirclegeojsontext')
       const vector = params.get('vector')
       const isWindow = params.get('iswindow')
       const simaTextForUser = params.get('simatextforuser')
@@ -2179,7 +2181,7 @@ export default {
       this.pitch.map02 = pitch02
       this.bearing = bearing
       this.s_terrainLevel = terrainLevel
-      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText,drawGeojsonText,clickGeojsonText,vector,isWindow,simaTextForUser}// 以前のリンクをいかすためpitchを入れている。
+      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText,drawGeojsonText,clickGeojsonText,clickCircleGeojsonText,vector,isWindow,simaTextForUser}// 以前のリンクをいかすためpitchを入れている。
     },
     init() {
 
@@ -2723,7 +2725,11 @@ export default {
       //     }
       //   }
       // })
-
+      function onCircleClick(e) {
+        console.log('擬似クリック event:', e);
+        popup(e,map,'map01',vm.s_map2Flg)
+      }
+      map.on('click', 'click-circle-symbol-layer', onCircleClick);
       map.on('click', (e) => {
         const latitude = e.lngLat.lat
         const longitude = e.lngLat.lng
@@ -2736,17 +2742,24 @@ export default {
             steps: steps,
             units: 'kilometers'
           });
-
+          circleGeoJson.properties['label'] = '半径200m'
           console.log(circleGeoJson);
 
           const centerFeature = turf.centerOfMass(circleGeoJson);
-          centerFeature.properties['label'] = '200m'
+          centerFeature.properties['label'] = '半径200m'
           const circleGeoJsonFeatures = {
             type: 'FeatureCollection',
             features: [centerFeature,circleGeoJson]
           };
-
           map.getSource(clickCircleSource.iD).setData(circleGeoJsonFeatures);
+          this.$store.state.clickCircleGeojsonText = JSON.stringify(circleGeoJsonFeatures)
+          const dummyEvent = {
+            lngLat: { lng: longitude, lat: latitude },
+            features: [centerFeature]
+          };
+          setTimeout(() => {
+            onCircleClick(dummyEvent);
+          },500)
         }
       })
 
@@ -2961,6 +2974,11 @@ export default {
           }
           if (params.vector) {
             this.$store.state.uploadedVector = JSON.parse(params.vector)
+          }
+
+          if (params.clickCircleGeojsonText) {
+            this.$store.state.clickCircleGeojsonText = params.clickCircleGeojsonText
+            console.log(this.$store.state.clickCircleGeojsonText)
           }
 
           if (params.clickGeojsonText) {
