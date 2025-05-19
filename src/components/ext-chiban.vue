@@ -1009,6 +1009,7 @@ export default {
       if (isUpdate) this.update()
     },
     changeColor (color,isUpdate) {
+      if (this.item.id === 'oh-chibanzu-all2') return
       let lineColor
       let result
       if (this.s_chibanColorsString) {
@@ -1023,12 +1024,7 @@ export default {
           }
         }
       } else {
-        // この部分自信なし
-        if (this.item.id === 'oh-chibanzu-all2') {
-          lineColor = 'green'
-        } else {
-          lineColor = 'blue'
-        }
+        lineColor = 'blue'
       }
       const map = this.$store.state[this.mapName]
       const layers = getLayersById(map,this.item.id)
