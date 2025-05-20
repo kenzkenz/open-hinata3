@@ -3436,7 +3436,6 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 if (features.length === 0) return
 
-
                 // ⭐️---------------------------------------------------------------------------------------------------
                 let sec
                 if (store.state.showChibanzuDrawer) {
@@ -3452,13 +3451,6 @@ export function popup(e,map,mapName,mapFlg) {
                     store.commit('setChibanzuDrawer', true)
                 },sec)
                 // -----------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
 
 
                 // props = features[0].properties
@@ -3573,18 +3565,21 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 console.log(features)
                 if (features.length === 0) return
-                const centerCoordinates = turf.centroid(features[0]).geometry.coordinates
-                console.log(centerCoordinates)
-                const lng = centerCoordinates[0]
-                const lat = centerCoordinates[1]
+                // const centerCoordinates = turf.centroid(features[0]).geometry.coordinates
+                // console.log(centerCoordinates)
+                // const lng = centerCoordinates[0]
+                // const lat = centerCoordinates[1]
                 props = features[0].properties
                 console.log(props)
+                const lng = props.lng
+                const lat = props.lat
                 if (html.indexOf('click-circle-layer') === -1) {
                     html += '<div class="layer-label-div">サークル</div>'
                     html +=
-                        '<div class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
-                        '<span style="font-size:20px;" class="circle-label">' + props.label + '</span><br>' +
-                        '<input style="width: 100%;" type="range" min="10" max="1000" step="10" value="200" class="circle-range" lng="' + lng + '" lat="' + lat + '"/>' +
+                        '<div style="width: 200px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
+                        '<span style="font-size:20px;" class="circle-label">半径' + props.label + 'm</span><br>' +
+                        '<input style="width: 100%;" type="range" min="10" max="1000" step="10" value="' + props.label + '" class="circle-range" lng="' + lng + '" lat="' + lat + '"/>' +
+                        '<input style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input circle-text" placeholder="ここに入力" value="' + props.label2 + '">' +
                         '<button style="margin-bottom: 10px;" class="circle-delete-all pyramid-btn">削　除</button><br>' +
                         '</div>'
                 }

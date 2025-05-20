@@ -2731,31 +2731,15 @@ export default {
       }
       map.on('click', 'click-circle-symbol-layer', onCircleClick);
       map.on('click', (e) => {
-        // circleCreate()
-        const latitude = e.lngLat.lat
-        const longitude = e.lngLat.lng
-        console.log(JSON.stringify([longitude, latitude]))
+        const lat = e.lngLat.lat
+        const lng = e.lngLat.lng
         if (this.s_isDrawCircle) {
-          const center = [longitude, latitude];
-          const radiusKm = 0.2; // 200m = 0.2km
-          const steps = 64;
-          const circleGeoJson = turf.circle(center, radiusKm, {
-            steps: steps,
-            units: 'kilometers'
-          });
-          circleGeoJson.properties['label'] = '半径200m'
-          console.log(circleGeoJson);
-          const centerFeature = turf.centerOfMass(circleGeoJson);
-          centerFeature.properties['label'] = '半径200m'
-          const circleGeoJsonFeatures = {
-            type: 'FeatureCollection',
-            features: [centerFeature,circleGeoJson]
-          };
+          const circleGeoJsonFeatures = circleCreate (lng, lat, 200, '')
           map.getSource(clickCircleSource.iD).setData(circleGeoJsonFeatures);
           this.$store.state.clickCircleGeojsonText = JSON.stringify(circleGeoJsonFeatures)
           const dummyEvent = {
-            lngLat: { lng: longitude, lat: latitude },
-            features: [centerFeature]
+            lngLat: { lng: lng, lat: lat },
+            features: [circleGeoJsonFeatures[1]]
           };
           setTimeout(() => {
             onCircleClick(dummyEvent);
@@ -5125,6 +5109,27 @@ select {
 
 .mapillary-viewer {
   background-color: white;
+}
+
+.oh-cool-input {
+  padding: 0.6em 1em;
+  border: 1px solid #2979ff;
+  border-radius: 9px;
+  outline: none;
+  font-size: 1.1em;
+  background: #f4f8ff;
+  color: #18365a;
+  transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+  box-shadow: 0 2px 8px 0 rgba(41, 121, 255, 0.08);
+}
+.oh-cool-input:focus {
+  border: 2px solid #1565c0;
+  background: #e3f2fd;
+  box-shadow: 0 4px 16px 0 rgba(41, 121, 255, 0.15);
+}
+.oh-cool-input::placeholder {
+  color: #90caf9;
+  letter-spacing: 0.05em;
 }
 
 </style>

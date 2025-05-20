@@ -489,8 +489,14 @@ export const clickCircleLabelLayer = {
     source: 'click-circle-source',
     filter: ['==', '$type', 'Point'],
     'layout': {
-        'text-field': ['get', 'label'],
-        'text-offset': [0, 1],
+        'text-field': [
+            'concat',
+            '半径',
+            ['get', 'label'],
+            'm\n',
+            ['get', 'label2']
+        ],
+        'text-offset': [0, 2],
     },
     'paint': {
         'text-color': 'black',
