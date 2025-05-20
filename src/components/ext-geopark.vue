@@ -1,8 +1,7 @@
 <template>
     <div :style="menuContentSize">
-      <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
-      <v-switch v-model="s_isPaintGeopark" @change="changePaint" label="塗りつぶし" color="primary" />
-      <a href="https://tosashimizu-geo.jp/leaflet/geopark/geoparkarea.html" target="_blank">ジオパークエリア</a><br><br>
+      <v-switch style="height: 50px;" v-model="s_isPaintGeopark" @change="changePaint" label="塗りつぶし" color="primary" />
+      <a href="https://tosashimizu-geo.jp/leaflet/geopark/geoparkarea.html" target="_blank">ジオパークエリア</a><br>
       土井恵治氏 土佐清水ジオパーク推進協議会事務局
     </div>
 </template>
@@ -59,6 +58,7 @@ export default {
     },
   },
   mounted() {
+    document.querySelector('#handle-' + this.item.id).innerHTML = '<span style="font-size: large;">' + this.item.label + '</span>'
     console.log(this.s_isPaintGeopark)
   },
   watch: {

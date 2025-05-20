@@ -1,6 +1,5 @@
 <template>
     <div :style="menuContentSize">
-      <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
       <v-switch class="custom-switch" v-model="s_isPaintCity" @change="changePaint" label="塗りつぶし" color="primary" />
       <br>
       <v-text-field label="抽出" v-model="s_cityText" @input="changePaint" style="margin-top: 10px"></v-text-field>
@@ -131,6 +130,9 @@ export default {
       filterBy(this.s_cityText)
       this.update()
     },
+  },
+  mounted() {
+    document.querySelector('#handle-' + this.item.id).innerHTML = '<span style="font-size: large;">' + this.item.label + '</span>'
   },
   watch: {
     s_extFire () {

@@ -3561,7 +3561,7 @@ export function popup(e,map,mapName,mapFlg) {
                 break
             }
             case 'click-circle-layer':
-            case 'click-circle-layer-label':
+            case 'click-circle-symbol-layer':
             {
                 let features = map.queryRenderedFeatures(
                     map.project(coordinates), {layers: [layerId]}
@@ -3573,13 +3573,18 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 console.log(features)
                 if (features.length === 0) return
+                const centerCoordinates = turf.centroid(features[0]).geometry.coordinates
+                console.log(centerCoordinates)
+                const lng = centerCoordinates[0]
+                const lat = centerCoordinates[1]
                 props = features[0].properties
                 console.log(props)
                 if (html.indexOf('click-circle-layer') === -1) {
                     html += '<div class="layer-label-div">サークル</div>'
                     html +=
                         '<div class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
-                        '<span style="font-size:20px;">' + props.label + '</span><br>' +
+                        '<span style="font-size:20px;" class="circle-label">' + props.label + '</span><br>' +
+                        '<input style="width: 100%;" type="range" min="10" max="1000" step="10" value="200" class="circle-range" lng="' + lng + '" lat="' + lat + '"/>' +
                         '<button style="margin-bottom: 10px;" class="circle-delete-all pyramid-btn">削　除</button><br>' +
                         '</div>'
                 }

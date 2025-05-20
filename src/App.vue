@@ -876,7 +876,7 @@ import DialogInfo from '@/components/Dialog-info'
 import Dialog2 from '@/components/Dialog2'
 import DialogShare from "@/components/Dialog-share"
 import DialogChibanzuList from "@/components/Dialog-chibanzu-list"
-import pyramid from '@/js/pyramid'
+import pyramid, {circleCreate} from '@/js/pyramid'
 import glouplayer from '@/js/glouplayer'
 import * as Layers from '@/js/layers'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -2731,6 +2731,7 @@ export default {
       }
       map.on('click', 'click-circle-symbol-layer', onCircleClick);
       map.on('click', (e) => {
+        // circleCreate()
         const latitude = e.lngLat.lat
         const longitude = e.lngLat.lng
         console.log(JSON.stringify([longitude, latitude]))
@@ -2744,7 +2745,6 @@ export default {
           });
           circleGeoJson.properties['label'] = '半径200m'
           console.log(circleGeoJson);
-
           const centerFeature = turf.centerOfMass(circleGeoJson);
           centerFeature.properties['label'] = '半径200m'
           const circleGeoJsonFeatures = {

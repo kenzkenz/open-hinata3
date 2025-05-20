@@ -3,10 +3,28 @@ import axios from "axios"
 import * as turf from '@turf/turf'
 import {convertAndDownloadGeoJSONToSIMA, savePointSima} from "@/js/downLoad";
 import {feature} from "@turf/turf";
-import {clickPointSource} from "@/js/layers";
+import {clickCircleSource, clickPointSource} from "@/js/layers";
 import {closeAllPopups} from "@/js/popup";
 export let currentIndex = 0
 let kasen
+export function circleCreate (lng, lat, m) {
+    const center = [lng, lat];
+    // const radiusKm = 0.2; // 200m = 0.2km
+    const radiusKm = m / 1000;
+    const steps = 64;
+    const circleGeoJson = turf.circle(center, radiusKm, {
+        steps: steps,
+        units: 'kilometers'
+    });
+    circleGeoJson.properties['label'] = '半径' + m + 'm'
+    const centerFeature = turf.centerOfMass(circleGeoJson);
+    centerFeature.properties['label'] = '半径' + m + 'm'
+    const circleGeoJsonFeatures = {
+        type: 'FeatureCollection',
+        features: [centerFeature,circleGeoJson]
+    };
+    return circleGeoJsonFeatures
+}
 export default function pyramid () {
     ['map01','map02'].forEach(mapName => {
         const mapElm = document.querySelector('#' + mapName)
@@ -1059,6 +1077,19 @@ export default function pyramid () {
                 });
                 closeAllPopups()
                 store.state.clickCircleGeojsonText = ''
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('input', (e) => {
+            if (e.target && (e.target.classList.contains("circle-range"))) {
+                const map01 = store.state.map01
+                const value = Number(e.target.value)
+                const lng = Number(e.target.getAttribute("lng"))
+                const lat = Number(e.target.getAttribute("lat"))
+                const circleGeoJsonFeatures = circleCreate (lng, lat, Number(value))
+                map01.getSource(clickCircleSource.iD).setData(circleGeoJsonFeatures);
+                document.querySelector('.circle-label').innerHTML = '半径' + value + 'm'
+                store.state.clickCircleGeojsonText = JSON.stringify(circleGeoJsonFeatures)
             }
         });
     })
