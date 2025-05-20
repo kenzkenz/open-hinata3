@@ -5132,4 +5132,20 @@ select {
   letter-spacing: 0.05em;
 }
 
+/*.maplibregl-popup-content {*/
+/*  box-shadow: 0 6px 24px rgba(0,0,0,0.24), 0 1.5px 4px rgba(0,0,0,0.12);*/
+/*  border-radius: 12px;*/
+/*}*/
+
+.maplibregl-popup-content {
+  box-shadow: 0 10px 32px rgba(0,0,0,0.30), 0 2px 8px rgba(0,0,0,0.18);
+  border-radius: 8px;
+  border: none;
+}
+
+.maplibregl-popup-tip {
+  /* 吹き出し部分にも薄く影をつける */
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+}
+
 </style>
