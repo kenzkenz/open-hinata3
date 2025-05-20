@@ -476,9 +476,9 @@ export default {
   },
   mounted() {
     firebase.auth().onAuthStateChanged((user) => {
-      if (user) {
-        this.createSoloGroupOnLogin();
-      }
+      // if (user) {
+      //   this.createSoloGroupOnLogin();
+      // }
     });
     this.fetchLayers()
   }
