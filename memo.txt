@@ -1465,3 +1465,43 @@ tippecanoe -l point -rg -pk -pf -f -o kojikakaku.pmtiles kojikakaku.geojson
 tippecanoe -l polygon -rg -pk -pf -f -o r07kojikakaku.pmtiles r07kojikakaku.geojson
 
 tippecanoe --simplification=5 -f -l polygon -o chibanzumap.pmtiles chibanzumap.geojson
+
+tippecanoe -o 23ku.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=0 \
+    --layer=oh3 \
+    23ku.geojson
+
+23区を作成ーーーーーーーーーーーーーーーーーーー
+tippecanoe --layer=oh3 -o tiles_0_13.mbtiles -Z0 -z13 --force --no-tile-size-limit --no-feature-limit --no-tile-stats 23kuaza.geojson
+
+tippecanoe -o tiles_14_16.mbtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=16 \
+    --minimum-zoom=14 \
+    --layer=oh3 \
+    23ku.geojson
+
+tile-join --force --no-tile-size-limit -o combined_tiles.mbtiles tiles_0_13.mbtiles tiles_14_16.mbtiles
+
+pmtiles convert combined_tiles.mbtiles output.pmtiles
+23区を作成ここまでーーーーーーーーーーーーーーーーーーー
+
+
+
+
+
+
