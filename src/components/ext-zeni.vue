@@ -1,6 +1,5 @@
 <template>
     <div :style="menuContentSize">
-      <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>
       <div class="input-container">
         <v-btn icon @click="decrease" :disabled="s_zeniKm <= 1" class="expand-btn">−</v-btn>
         <span class="radius-text">半径{{ s_zeniKm }}km</span>
@@ -107,6 +106,9 @@ export default {
       }
       this.update()
     },
+  },
+  mounted() {
+    document.querySelector('#handle-' + this.item.id).innerHTML = '<span style="font-size: large;">' + this.item.label + '</span>'
   },
   watch: {
     s_extFire () {
