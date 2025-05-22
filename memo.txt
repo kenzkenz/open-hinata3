@@ -1504,7 +1504,6 @@ tippecanoe --layer=fude -o tiles_14_16_fgb.mbtiles -Z14 -z16 --force --no-tile-s
 
 tippecanoe --layer=fude -o tiles_0_13_fgb.mbtiles -Z0 -z13 --force --no-tile-size-limit --no-feature-limit --no-tile-stats output-dissolved/*.fgb
 
-tippecanoe --layer=fude -o test.pmtiles -Z0 -z13 --force --no-tile-size-limit --no-feature-limit --no-tile-stats output-dissolved/*.fgb
 
 
 

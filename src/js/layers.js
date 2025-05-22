@@ -157,7 +157,8 @@ function publiLayersCreate (v) {
             type: 'vector',
             url: "pmtiles://" + v.url
         },
-        minZoom: 11,
+        // minZoom: 11,
+        minzoom: 13,
         bounds: boundsSort(JSON.parse(v.bbox))
     }
     const publicPolygonLayer = {
@@ -169,7 +170,8 @@ function publiLayersCreate (v) {
         'paint': {
             'fill-color': 'rgba(0,0,0,0)',
         },
-        minzoom: 11
+        // minzoom: 11
+        minzoom: 13,
     }
     let lineColor
     switch (v.public) {
@@ -195,7 +197,8 @@ function publiLayersCreate (v) {
                 16, 2
             ]
         },
-        minzoom: 11
+        // minzoom: 11
+        minzoom: 13,
     }
     let minZoom
     if (!v.length) {
@@ -233,7 +236,8 @@ function publiLayersCreate (v) {
             'circle-stroke-width': 1,
             'circle-stroke-color': '#fff'
         },
-        minzoom: 11
+        // minzoom: 11
+        minzoom: 13,
     }
     const publicVertexLayer = {
         id: 'oh-chibanL-' + v.id + '-' + v.name + '-vertex-layer',
@@ -249,7 +253,8 @@ function publiLayersCreate (v) {
             ],
             'circle-color': 'red',
         },
-        minzoom: 11
+        // minzoom: 11
+        minzoom: 13,
     }
     return {publicSource,publicPolygonLayer,publicLineLayer,publicLabelLayer,publicPointLayer,publicVertexLayer}
 }
@@ -395,7 +400,8 @@ const cityGeojsonPolygonLayer = {
     //     ['get', 'N03_007'],
     //     ['literal', Object.keys(chibanzuColors)]
     // ],
-    maxzoom: 11.5
+    // maxzoom: 11.5
+    maxzoom: 14
 };
 
 const cityGeojsonLineLayer = {
@@ -2180,7 +2186,8 @@ function chibanzuLayersCreate (url) {
             url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/chiban/' + url.url + '.pmtiles',
             tileSize: 512, // タイルサイズを適切に設定
         },
-        minzoom: 11
+        // minzoom: 11
+        minzoom: 13
     }
     const chibanzuLayer = {
         id: 'oh-chibanzu-' + url.name,
@@ -2225,7 +2232,8 @@ function chibanzuLayersCreate (url) {
                 16, 2
             ]
         },
-        minzoom: 11
+        // minzoom: 11
+        minzoom: 13
     }
     const chibanzuLayerLabel = {
         id: 'oh-chibanzu-label-' + url.name,
