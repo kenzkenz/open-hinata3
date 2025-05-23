@@ -1634,7 +1634,13 @@ export default {
                       source: 'oh-chiban-' + id + '-' + name + + '-source',
                       "source-layer": 'oh3',
                       'paint': {
-                        'fill-color': 'rgba(0,0,0,0)',
+                        // 'fill-color': 'rgba(0,0,0,0)',
+                        'fill-color': [
+                          'case',
+                          ['has', 'AzaName'],
+                          'rgba(0,0,255,0.5)',
+                          'rgba(0,0,0,0)'
+                        ],
                       },
                     }
                     const lineLayer = {

@@ -2458,7 +2458,6 @@ export function highlightSpecificFeaturesCity(map,layerId) {
         }
 
         if(/^oh-chiban-/.test(layerId)) {
-            // alert(999)
             fields = ['concat', ['get', 'oh3id']]
         }
         // console.log(layerId)
@@ -2467,18 +2466,41 @@ export function highlightSpecificFeaturesCity(map,layerId) {
         // alert(Array.from(store.state.highlightedChibans))
         if (Array.from(store.state.highlightedChibans)) {
             try {
+                // map.setPaintProperty(
+                //     layerId,
+                //     'fill-color',
+                //     [
+                //         'case',
+                //         [
+                //             'in',
+                //             fields,
+                //             ['literal', Array.from(store.state.highlightedChibans)]
+                //         ],
+                //         'rgba(255, 0, 0, 0.5)', // クリックされた地番が選択された場合
+                //         'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
+                //     ]
+                // );
                 map.setPaintProperty(
                     layerId,
                     'fill-color',
                     [
                         'case',
+                        // クリックされた地番が選択された場合
                         [
                             'in',
                             fields,
                             ['literal', Array.from(store.state.highlightedChibans)]
                         ],
-                        'rgba(255, 0, 0, 0.5)', // クリックされた地番が選択された場合
-                        'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
+                        'rgba(255, 0, 0, 0.5)', // 赤色
+                        // AzaNameが存在し、Txtcdが存在しない場合
+                        [
+                            'all',
+                            ['has', 'AzaName'],
+                            ['!', ['has', 'Txtcd']]
+                        ],
+                        'rgba(0,120,255,0.6)', // 青色
+                        // それ以外の場合は透明
+                        'rgba(0, 0, 0, 0)'
                     ]
                 );
             } catch (e) {

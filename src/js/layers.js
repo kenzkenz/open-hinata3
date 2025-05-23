@@ -168,7 +168,13 @@ function publiLayersCreate (v) {
         source: 'oh-chiban-' + v.id + '-' + v.name + '-source',
         "source-layer": 'oh3',
         'paint': {
-            'fill-color': 'rgba(0,0,0,0)',
+            // 'fill-color': 'rgba(0,0,0,0)',
+            'fill-color': [
+                'case',
+                ['has', 'AzaName'],
+                'rgba(0,0,255,0.5)',
+                'rgba(0,0,0,0)'
+            ],
         },
         // minzoom: 11
         minzoom: 13,
@@ -2194,9 +2200,7 @@ function chibanzuLayersCreate (url) {
         source: 'oh-chibanzu-' + url.name + '-source',
         type: 'fill',
         "source-layer": sourceLayer,
-        'paint': {
-            'fill-color': 'rgba(0,0,0,0)',
-        },
+        'fill-color': 'rgba(0,0,0,0)',
         position: url.position,
         page: url.page,
         name: `${url.prefname}-${url.name}`
