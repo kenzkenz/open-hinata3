@@ -727,29 +727,66 @@ export const transformCoordinates = (coordinates) => {
   const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
   return proj4(code, "EPSG:4326", coordinates);
 };
+
 export function dxfToGeoJSON(dxf) {
   const features = [];
   dxf.entities.forEach((entity) => {
     if (entity.type === 'LINE') {
-      const line = turf.lineString([
-        transformCoordinates([entity.start.x, entity.start.y]),
-        transformCoordinates([entity.end.x, entity.end.y]),
-      ]);
-      features.push(line);
+      // entity.start, entity.endが無ければentity.verticesを使う
+      const start = entity.start || entity.vertices?.[0];
+      const end = entity.end || entity.vertices?.[1];
+      if (start && end) {
+        const line = turf.lineString([
+          transformCoordinates([start.x, start.y]),
+          transformCoordinates([end.x, end.y]),
+        ]);
+        features.push(line);
+      }
     } else if (entity.type === 'POINT') {
-      const point = turf.point(transformCoordinates([entity.position.x, entity.position.y]));
-      features.push(point);
-    } else if (entity.type === 'LWPOLYLINE') {
-      const coordinates = entity.vertices.map(vertex => transformCoordinates([vertex.x, vertex.y]));
-      const polyline = turf.lineString(coordinates);
-      features.push(polyline);
+      const pos = entity.position || entity;
+      if (pos.x !== undefined && pos.y !== undefined) {
+        const point = turf.point(transformCoordinates([pos.x, pos.y]));
+        features.push(point);
+      }
+    } else if (entity.type === 'LWPOLYLINE' || entity.type === 'POLYLINE') {
+      if (entity.vertices && entity.vertices.length > 1) {
+        const coordinates = entity.vertices.map(vertex => transformCoordinates([vertex.x, vertex.y]));
+        const polyline = turf.lineString(coordinates);
+        features.push(polyline);
+      }
     }
+    // 必要ならCIRCLE, TEXTなども追記
   });
   return {
     type: 'FeatureCollection',
     features,
   };
 }
+
+
+// export function dxfToGeoJSON(dxf) {
+//   const features = [];
+//   dxf.entities.forEach((entity) => {
+//     if (entity.type === 'LINE') {
+//       const line = turf.lineString([
+//         transformCoordinates([entity.start.x, entity.start.y]),
+//         transformCoordinates([entity.end.x, entity.end.y]),
+//       ]);
+//       features.push(line);
+//     } else if (entity.type === 'POINT') {
+//       const point = turf.point(transformCoordinates([entity.position.x, entity.position.y]));
+//       features.push(point);
+//     } else if (entity.type === 'LWPOLYLINE') {
+//       const coordinates = entity.vertices.map(vertex => transformCoordinates([vertex.x, vertex.y]));
+//       const polyline = turf.lineString(coordinates);
+//       features.push(polyline);
+//     }
+//   });
+//   return {
+//     type: 'FeatureCollection',
+//     features,
+//   };
+// }
 
 const popups = []
 function closeAllPopups() {
