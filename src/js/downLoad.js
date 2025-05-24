@@ -16,7 +16,7 @@ import {
 } from "@/js/layers";
 import shpwrite from "@mapbox/shp-write"
 import JSZip from 'jszip'
-import {history} from "@/App";
+import {history, transformCoordinates} from "@/App";
 import tokml from 'tokml'
 import iconv from "iconv-lite";
 import pako from "pako";
@@ -6021,32 +6021,70 @@ export function geojsonAddLayer (map, geojson, isFitBounds, fileExtension) {
             'line-width': ["*", ["get", "stroke-width"], 2],
         }
     });
-    map.addLayer({
-        id: fileExtension + '-point-layer',
-        type: 'circle',
-        source: fileExtension + '-source',
-        filter: ["==", "$type", "Point"],
-        paint: {
-            'circle-color': '#00FF00',
-            'circle-radius': 6
-        }
-    })
-    map.addLayer({
-        id: fileExtension + '-label',
-        type: 'symbol',
-        source: fileExtension + '-source',
-        'layout': {
-            'text-field': ['get', store.state.shpPropertieName],
-            'text-font': ['NotoSansJP-Regular'],
-        },
-        'paint': {
-            'text-color': 'rgba(255, 0, 0, 1)',
-            'text-halo-color': 'rgba(255,255,255,0.7)',
-            'text-halo-width': 1.0,
-        },
-        'maxzoom': 24,
-        'minzoom': 17
-    });
+    if (fileExtension === 'dxf') {
+        // map.addLayer({
+        //     id: 'dxf-point-layer',
+        //     type: 'circle',
+        //     source: 'dxf-source',
+        //     filter: ["==", "$type", "Point"],
+        //     paint: {
+        //         'circle-color': 'black',
+        //         'circle-radius': 6
+        //     }
+        // })
+        map.addLayer({
+            id: 'dxf-label',
+            type: 'symbol',
+            source: 'dxf-source',
+            'layout': {
+                'text-field': ['get', 'text'],
+                "text-size": [
+                    "interpolate", ["linear"], ["get", "textHeight"],
+                    0, 0,
+                    1, 8,
+                    3, 24,
+                    5, 40
+                ]
+            },
+            'paint': {
+                'text-color': 'rgba(0, 0, 0, 1)',
+                'text-halo-color': 'rgba(255,255,255,1)',
+                'text-halo-width': 1.0,
+            },
+            "text-anchor": "bottom-left",
+            "symbol-placement": "point",
+            'maxzoom': 24,
+            'minzoom': 15
+        });
+
+    } else {
+        map.addLayer({
+            id: fileExtension + '-point-layer',
+            type: 'circle',
+            source: fileExtension + '-source',
+            filter: ["==", "$type", "Point"],
+            paint: {
+                'circle-color': '#00FF00',
+                'circle-radius': 6
+            }
+        })
+        map.addLayer({
+            id: fileExtension + '-label',
+            type: 'symbol',
+            source: fileExtension + '-source',
+            'layout': {
+                'text-field': ['get', store.state.shpPropertieName],
+            },
+            'paint': {
+                'text-color': 'rgba(255, 0, 0, 1)',
+                'text-halo-color': 'rgba(255,255,255,0.7)',
+                'text-halo-width': 1.0,
+            },
+            'maxzoom': 24,
+            'minzoom': 17
+        });
+    }
+
     // map.addLayer({
     //     id: fileExtension + '-polygon-points',
     //     type: 'circle',
@@ -7419,3 +7457,54 @@ export function findLayerById(map, targetId) {
     }
     return null; // 見つからなかった場合
 }
+
+export function dxfToGeoJSON(dxf) {
+    const features = [];
+    dxf.entities.forEach((entity) => {
+        if (entity.type === 'LINE') {
+            const start = entity.start || entity.vertices?.[0];
+            const end = entity.end || entity.vertices?.[1];
+            if (start && end) {
+                features.push(
+                    turf.lineString([
+                        transformCoordinates([start.x, start.y]),
+                        transformCoordinates([end.x, end.y]),
+                    ], { ...entity }) // ← ここ
+                );
+            }
+        } else if (entity.type === 'POINT') {
+            const pos = entity.position || entity;
+            if (pos.x !== undefined && pos.y !== undefined) {
+                features.push(
+                    turf.point(
+                        transformCoordinates([pos.x, pos.y]),
+                        { ...entity }
+                    )
+                );
+            }
+        } else if (entity.type === 'LWPOLYLINE' || entity.type === 'POLYLINE') {
+            if (entity.vertices && entity.vertices.length > 1) {
+                const coordinates = entity.vertices.map(vertex => transformCoordinates([vertex.x, vertex.y]));
+                features.push(
+                    turf.lineString(coordinates, { ...entity })
+                );
+            }
+        } else if (entity.type === 'TEXT' || entity.type === 'MTEXT') {
+            const pos = entity.position || entity.startPoint || entity;
+            if (pos.x !== undefined && pos.y !== undefined) {
+                features.push(
+                    turf.point(
+                        transformCoordinates([pos.x, pos.y]),
+                        { ...entity }
+                    )
+                );
+            }
+        }
+        // 必要ならCIRCLE, ARC, ELLIPSEなども同様に
+    });
+    return {
+        type: 'FeatureCollection',
+        features,
+    };
+}
+

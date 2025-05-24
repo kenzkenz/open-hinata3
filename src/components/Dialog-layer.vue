@@ -72,7 +72,7 @@ import {
   geojsonAddLayer,
   highlightSpecificFeatures, highlightSpecificFeatures2025,
   highlightSpecificFeaturesCity, LngLatToAddress,
-  simaToGeoJSON, updateMeasureUnit, userPmtileSet
+  simaToGeoJSON, updateMeasureUnit, dxfToGeoJSON, userPmtileSet
 } from "@/js/downLoad";
 import * as Layers from '@/js/layers'
 // import Tree from "vue3-tree"
@@ -84,7 +84,6 @@ import mw5 from '@/js/mw5'
 import * as turf from '@turf/turf'
 import {gpx, kml} from "@tmcw/togeojson";
 import DxfParser from 'dxf-parser'
-import {dxfToGeoJSON} from '@/App'
 import {
   clickCircleLabelLayer,
   clickCircleLayer,
@@ -595,7 +594,6 @@ export default {
           this.$store.state.zahyokei = this.$store.state.dxfText.zahyokei
           const dxf = parser.parseSync(this.$store.state.dxfText.text);
           const geojson = dxfToGeoJSON(dxf)
-          // alert(JSON.stringify(geojson))
           geojsonAddLayer (map, geojson, false, 'dxf')
         }
         if (this.$store.state.gpxText) {

@@ -1502,14 +1502,19 @@ pmtiles convert combined_tiles.mbtiles output.pmtiles
 
 tippecanoe --layer=fude -o tiles_14_16_fgb.mbtiles -Z14 -z16 --force --no-tile-size-limit --no-feature-limit --no-tile-stats fgb_by_pref_normalized/*.fgb
 
-tippecanoe --layer=fude -o tiles_0_13_fgb.mbtiles -Z0 -z13 --force --no-tile-size-limit --no-feature-limit --no-tile-stats output-dissolved/*.fgb
+tippecanoe \
+  --layer=fude \
+  -o tiles_0_13_fgb.mbtiles \
+  -Z0 -z13 \
+  --force \
+  --no-tile-stats \
+  --drop-densest-as-needed \
+  --drop-smallest-as-needed \
+  --simplify-only-low-zooms \
+  --simplification=10 \
+  --exclude=id \
+  output-dissolved/*.fgb
 
 tile-join --force --no-tile-size-limit -o combined_fgb_tiles.mbtiles tiles_0_13_fgb.mbtiles tiles_14_16_fgb.mbtiles
 
 pmtiles convert combined_fgb_tiles.mbtiles output_fgb.pmtiles
-
-
-
-
-
-

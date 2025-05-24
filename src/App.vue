@@ -575,7 +575,7 @@ import {
   csvGenerateForUserPng,
   ddSimaUpload,
   downloadKML,
-  downloadSimaText, extractFirstFeatureProperties,
+  downloadSimaText, dxfToGeoJSON, extractFirstFeatureProperties,
   geojsonAddLayer,
   geoTiffLoad,
   geoTiffLoad2,
@@ -728,40 +728,40 @@ export const transformCoordinates = (coordinates) => {
   return proj4(code, "EPSG:4326", coordinates);
 };
 
-export function dxfToGeoJSON(dxf) {
-  const features = [];
-  dxf.entities.forEach((entity) => {
-    if (entity.type === 'LINE') {
-      // entity.start, entity.endが無ければentity.verticesを使う
-      const start = entity.start || entity.vertices?.[0];
-      const end = entity.end || entity.vertices?.[1];
-      if (start && end) {
-        const line = turf.lineString([
-          transformCoordinates([start.x, start.y]),
-          transformCoordinates([end.x, end.y]),
-        ]);
-        features.push(line);
-      }
-    } else if (entity.type === 'POINT') {
-      const pos = entity.position || entity;
-      if (pos.x !== undefined && pos.y !== undefined) {
-        const point = turf.point(transformCoordinates([pos.x, pos.y]));
-        features.push(point);
-      }
-    } else if (entity.type === 'LWPOLYLINE' || entity.type === 'POLYLINE') {
-      if (entity.vertices && entity.vertices.length > 1) {
-        const coordinates = entity.vertices.map(vertex => transformCoordinates([vertex.x, vertex.y]));
-        const polyline = turf.lineString(coordinates);
-        features.push(polyline);
-      }
-    }
-    // 必要ならCIRCLE, TEXTなども追記
-  });
-  return {
-    type: 'FeatureCollection',
-    features,
-  };
-}
+// export function dxfToGeoJSON(dxf) {
+//   const features = [];
+//   dxf.entities.forEach((entity) => {
+//     if (entity.type === 'LINE') {
+//       // entity.start, entity.endが無ければentity.verticesを使う
+//       const start = entity.start || entity.vertices?.[0];
+//       const end = entity.end || entity.vertices?.[1];
+//       if (start && end) {
+//         const line = turf.lineString([
+//           transformCoordinates([start.x, start.y]),
+//           transformCoordinates([end.x, end.y]),
+//         ]);
+//         features.push(line);
+//       }
+//     } else if (entity.type === 'POINT') {
+//       const pos = entity.position || entity;
+//       if (pos.x !== undefined && pos.y !== undefined) {
+//         const point = turf.point(transformCoordinates([pos.x, pos.y]));
+//         features.push(point);
+//       }
+//     } else if (entity.type === 'LWPOLYLINE' || entity.type === 'POLYLINE') {
+//       if (entity.vertices && entity.vertices.length > 1) {
+//         const coordinates = entity.vertices.map(vertex => transformCoordinates([vertex.x, vertex.y]));
+//         const polyline = turf.lineString(coordinates);
+//         features.push(polyline);
+//       }
+//     }
+//     // 必要ならCIRCLE, TEXTなども追記
+//   });
+//   return {
+//     type: 'FeatureCollection',
+//     features,
+//   };
+// }
 
 
 // export function dxfToGeoJSON(dxf) {

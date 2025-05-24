@@ -471,48 +471,48 @@ export default {
       ];
 
       // レイヤーを同じ順序で差し替える
-      function replaceHeatmapLayer(map, newColors) {
-        const LAYER_ID = 'oh-homusyo-2025-daihyo';
-        // ── 1. いまのレイヤー順を取得
-        const layers = map.getStyle().layers;
-        const index  = layers.findIndex(l => l.id === LAYER_ID);
-        if (index === -1) {
-          console.error(`${LAYER_ID} が見つかりません`);
-          return;
-        }
-        const beforeId = (index < layers.length - 1) ? layers[index + 1].id : undefined;
-        // ── 2. 削除
-        if (map.getLayer(LAYER_ID)) {
-          map.removeLayer(LAYER_ID);
-        }
-        // ── 3. 新しいレイヤー定義
-        const newLayer = {
-          id: LAYER_ID,
-          type: 'heatmap',
-          source: 'homusyo-2025-diahyo-source',
-          'source-layer': 'daihyo',
-          paint: {
-            'heatmap-color': buildHeatmapColor(newColors),
-            'heatmap-radius': [
-              'interpolate', ['exponential', 5], ['zoom'],
-              0, 0,
-              4, 5,
-              15, 20
-            ],
-          },
-          maxzoom: 15,
-        };
-        // ── 4. 取得しておいた順番で add
-        if (beforeId) {
-          map.addLayer(newLayer, beforeId);   // beforeId の直前に挿入
-        } else {
-          map.addLayer(newLayer);             // 一番上（末尾）だった場合
-        }
-      }
-
-      if (!this.s_tokijyoText2025) {
-        replaceHeatmapLayer(map, colors)
-      }
+      // function replaceHeatmapLayer(map, newColors) {
+      //   const LAYER_ID = 'oh-homusyo-2025-daihyo';
+      //   // ── 1. いまのレイヤー順を取得
+      //   const layers = map.getStyle().layers;
+      //   const index  = layers.findIndex(l => l.id === LAYER_ID);
+      //   if (index === -1) {
+      //     console.error(`${LAYER_ID} が見つかりません`);
+      //     return;
+      //   }
+      //   const beforeId = (index < layers.length - 1) ? layers[index + 1].id : undefined;
+      //   // ── 2. 削除
+      //   if (map.getLayer(LAYER_ID)) {
+      //     map.removeLayer(LAYER_ID);
+      //   }
+      //   // ── 3. 新しいレイヤー定義
+      //   const newLayer = {
+      //     id: LAYER_ID,
+      //     type: 'heatmap',
+      //     source: 'homusyo-2025-diahyo-source',
+      //     'source-layer': 'daihyo',
+      //     paint: {
+      //       'heatmap-color': buildHeatmapColor(newColors),
+      //       'heatmap-radius': [
+      //         'interpolate', ['exponential', 5], ['zoom'],
+      //         0, 0,
+      //         4, 5,
+      //         15, 20
+      //       ],
+      //     },
+      //     maxzoom: 15,
+      //   };
+      //   // ── 4. 取得しておいた順番で add
+      //   if (beforeId) {
+      //     map.addLayer(newLayer, beforeId);   // beforeId の直前に挿入
+      //   } else {
+      //     map.addLayer(newLayer);             // 一番上（末尾）だった場合
+      //   }
+      // }
+      //
+      // if (!this.s_tokijyoText2025) {
+      //   replaceHeatmapLayer(map, colors)
+      // }
 
       if (isUpdate) this.update()
     },

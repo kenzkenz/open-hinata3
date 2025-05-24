@@ -3254,6 +3254,7 @@ export function popup(e,map,mapName,mapFlg) {
             case 'dxf-polygon-line-layer':
             case 'dxf-line-layer':
             case 'dxf-point-layer':
+            case 'dxf-label':
             case 'gpx-polygon-layer':
             case 'gpx-polygon-line-layer':
             case 'gpx-line-layer':
