@@ -3277,7 +3277,7 @@ export function popup(e,map,mapName,mapFlg) {
                 props = features[0].properties
                 let html0 = ''
                 if (html.indexOf('kml') === -1) {
-                    html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html += '<div class="layer-label-div">　</div>'
                     html0 += '<div class="kml" font-weight: normal; color: #333;line-height: 25px;">'
                     Object.keys(props).forEach(function (key) {
                         html0 += key + '=' + props[key] + '<br>'
