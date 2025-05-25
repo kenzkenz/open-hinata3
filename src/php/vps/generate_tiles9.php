@@ -159,7 +159,7 @@ if ($isGray) {
 }
 
 // gdal2tiles の実行
-$tileCommand = "gdal2tiles.py -z 10-$max_zoom --s_srs EPSG:$sourceEPSG --xyz --processes=8 " . escapeshellarg($outputFilePath) . " " . escapeshellarg($tileDir);
+$tileCommand = "gdal2tiles.py -a 0,0,0 -z 10-$max_zoom --s_srs EPSG:$sourceEPSG --xyz --processes=8 " . escapeshellarg($outputFilePath) . " " . escapeshellarg($tileDir);
 exec($tileCommand . " 2>&1", $tileOutput, $tileReturnVar);
 if ($tileReturnVar !== 0) {
     $error = ["error" => "gdal2tiles でタイル生成に失敗しました", "details" => $tileOutput];
@@ -170,10 +170,10 @@ if ($tileReturnVar !== 0) {
 logMessage("gdal2tiles succeeded: $tileDir");
 
 // ★ parallel+mogrifyで白黒透過（CPUコア数に合わせて-j8などに調整可）
-$parallelTransparent = "find " . escapeshellarg($tileDir) . " -name '*.png' | parallel -j8 mogrify -transparent white {}";
-exec($parallelTransparent, $dummy, $ret1);
-$parallelTransparent2 = "find " . escapeshellarg($tileDir) . " -name '*.png' | parallel -j8 mogrify -transparent black {}";
-exec($parallelTransparent2, $dummy, $ret2);
+//$parallelTransparent = "find " . escapeshellarg($tileDir) . " -name '*.png' | parallel -j8 mogrify -transparent white {}";
+//exec($parallelTransparent, $dummy, $ret1);
+//$parallelTransparent2 = "find " . escapeshellarg($tileDir) . " -name '*.png' | parallel -j8 mogrify -transparent black {}";
+//exec($parallelTransparent2, $dummy, $ret2);
 
 // mb-util の確認と MBTiles 生成
 $mbUtilPath = "/var/www/venv/bin/mb-util";
