@@ -6539,25 +6539,37 @@ export async function userKmzSet(name, url, id) {
 export function userXyztileSet(name,url,id,bbox,transparent) {
     const map = store.state.map01
     const bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
-    let tile = ''
-    if (transparent !== 0) {
-        tile = 'transparentBlack://' + url
-    } else {
-        tile = url
-    }
     if (map.getLayer('oh-vpstile-' + id + '-' + name + '-layer')) {
         map.getSource('oh-vpstile-' + id + '-' + name + '-source').setTiles([tile])
     }
     store.state.selectedLayers.map01 = store.state.selectedLayers.map01.filter(layer => layer.id !== 'oh-vpstile-' + id + '-' + name + '-layer')
-    const source = {
-        id: 'oh-vpstile-' + id + '-' + name + '-source',obj: {
-            type: 'raster',
-            // tiles: [tile],
-            url: 'pmtiles://' + url,
-            bounds: bounds,
-            maxzoom: 26,
+
+    let tile = ''
+    let source = null
+    if (url.endsWith('.pmtiles')) {
+        source = {
+            id: 'oh-vpstile-' + id + '-' + name + '-source',obj: {
+                type: 'raster',
+                url: 'pmtiles://' + url,
+                bounds: bounds,
+                maxzoom: 26,
+            }
+        };
+    } else {
+        if (transparent !== 0) {
+            tile = 'transparentBlack://' + url
+        } else {
+            tile = url
         }
-    };
+        source = {
+            id: 'oh-vpstile-' + id + '-' + name + '-source',obj: {
+                type: 'raster',
+                tiles: [tile],
+                bounds: bounds,
+                maxzoom: 26,
+            }
+        };
+    }
     const layer = {
         id: 'oh-vpstile-' + id + '-' + name + '-layer',
         type: 'raster',

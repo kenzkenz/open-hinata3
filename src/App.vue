@@ -3302,20 +3302,31 @@ export default {
                     const bounds = [bbox[0], bbox[1], bbox[2], bbox[3]];
                     const transparent = JSON.parse(response.data[0].transparent);
                     let tile = ''
-                    if (transparent !== 0) {
-                      tile = 'transparentBlack://' + url
+                    let source = null
+                    if (url.endsWith('.pmtiles')) {
+                      source = {
+                        id: 'oh-vpstile-' + id + '-' + name + '-source',
+                        obj: {
+                          type: 'raster',
+                          url: 'pmtiles://' + url,
+                          bounds: bounds,
+                          maxzoom: 26 }
+                      };
                     } else {
-                      tile = url
+                      if (transparent !== 0) {
+                        tile = 'transparentBlack://' + url
+                      } else {
+                        tile = url
+                      }
+                      source = {
+                        id: 'oh-vpstile-' + id + '-' + name + '-source',
+                        obj: {
+                          type: 'raster',
+                          tiles: [tile],
+                          bounds: bounds,
+                          maxzoom: 26 }
+                      };
                     }
-                    const source = {
-                      id: 'oh-vpstile-' + id + '-' + name + '-source',
-                      obj: {
-                        type: 'raster',
-                        // tiles: [tile],
-                        url: 'pmtiles://' + url,
-                        bounds: bounds,
-                        maxzoom: 26 }
-                    };
                     const layer = {
                       id: 'oh-vpstile-' + id + '-' + name + '-layer',
                       type: 'raster',
