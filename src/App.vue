@@ -2297,6 +2297,7 @@ export default {
       // ======================================================================
       let protocol = new Protocol();
       maplibregl.addProtocol("pmtiles",protocol.tile)
+      const pmtilesProtocol = new Protocol();
       // protocol.setCacheSize(50) // タイルキャッシュサイズを設定（単位: タイル数）
       // ======================================================================
 
@@ -2371,6 +2372,228 @@ export default {
       // maplibregl.addProtocol("cleanpmtiles", cleanProtocol.tile.bind(cleanProtocol));
 
       // ======================================================================
+
+
+      // PMTiles プロトコルを登録
+      // maplibregl.addProtocol('pmtiles', PMTilesProtocol);
+
+
+// transparentPmtiles プロトコルを登録
+      maplibregl.addProtocol('transparentPmtiles', (params) => {
+        console.log('Received params:', JSON.stringify(params));
+
+        return new Promise((resolve, reject) => {
+          try {
+            // URL の検証
+            if (!params.url.startsWith('transparentPmtiles://')) {
+              console.error('Invalid protocol:', params.url);
+              reject(new Error('Invalid protocol: URL must start with transparentPmtiles://'));
+              return;
+            }
+
+            // transparentPmtiles:// を pmtiles:// に置換
+            let pmtilesUrl = params.url.replace('transparentPmtiles://', 'pmtiles://');
+
+            // タイル座標（例: /12/3620/1628）を抽出
+            const tileMatch = params.url.match(/\/(\d+)\/(\d+)\/(\d+)$/);
+            let tileParams;
+            if (tileMatch) {
+              tileParams = {
+                z: parseInt(tileMatch[1], 10),
+                x: parseInt(tileMatch[2], 10),
+                y: parseInt(tileMatch[3], 10)
+              };
+              console.log('Extracted tile coordinates:', tileParams);
+            } else if (params.tile && typeof params.tile.z === 'number' && typeof params.tile.x === 'number' && typeof params.tile.y === 'number') {
+              tileParams = params.tile;
+              console.log('Using provided tile coordinates:', tileParams);
+            } else {
+              console.error('No valid tile coordinates found in URL or params:', params);
+              reject(new Error('No valid tile coordinates found in URL or params'));
+              return;
+            }
+
+            // タイル座標を {z}/{x}/{y} に変換
+            pmtilesUrl = pmtilesUrl.replace(/\/\d+\/\d+\/\d+$/, '/{z}/{x}/{y}');
+            console.log('Converted URL:', pmtilesUrl);
+
+            // PMTiles ファイルの URL を抽出して検証
+            const urlMatch = pmtilesUrl.match(/^pmtiles:\/\/(.+)\/\{z\}\/\{x\}\/\{y\}$/);
+            if (!urlMatch) {
+              console.error('Invalid URL format:', pmtilesUrl);
+              reject(new Error('Invalid PMTiles URL format: Expected pmtiles://<file_url>/{z}/{x}/{y}'));
+              return;
+            }
+            const fileUrl = urlMatch[1];
+            console.log('PMTiles file URL:', fileUrl);
+
+            // PMTiles プロトコルを使用してタイルデータを取得
+            // const pmtilesProtocol = new PMTilesProtocol();
+            pmtilesProtocol.tile({ ...params, url: pmtilesUrl, tile: tileParams }, (err, data) => {
+              if (err) {
+                console.error('PMTiles error details:', err);
+                reject(new Error(`PMTiles error: ${err ? err.message || err.toString() : 'Unknown error'}`));
+                return;
+              }
+              if (!data) {
+                console.error('No data returned from PMTiles');
+                reject(new Error('No data returned from PMTiles'));
+                return;
+              }
+
+              // タイルデータを透過処理
+              const blob = new Blob([data], { type: 'image/png' });
+              createImageBitmap(blob)
+                  .then((image) => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = image.width;
+                    canvas.height = image.height;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) {
+                      console.error('Failed to get canvas 2D context');
+                      reject(new Error('Failed to get canvas 2D context'));
+                      return;
+                    }
+                    ctx.drawImage(image, 0, 0);
+                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const data = imgData.data;
+
+                    // 透過処理: 特定の色（黒、青、白）を透明にする
+                    for (let i = 0; i < data.length; i += 4) {
+                      const r = data[i];
+                      const g = data[i + 1];
+                      const b = data[i + 2];
+                      if (
+                          (r === 0 && g === 0 && b === 0) || // 黒
+                          (r === 0 && g === 0 && b >= 254) || // 青 (b >= 254)
+                          (r === 255 && g === 255 && b === 255) // 白
+                      ) {
+                        data[i + 3] = 0; // アルファチャンネルを0（透明）に
+                      }
+                    }
+                    ctx.putImageData(imgData, 0, 0);
+
+                    // Canvas を Blob に変換
+                    canvas.toBlob(
+                        (blob) => {
+                          if (!blob) {
+                            console.error('Blob creation failed');
+                            reject(new Error('Blob creation failed'));
+                            return;
+                          }
+                          const reader = new FileReader();
+                          reader.onload = function () {
+                            resolve({ data: reader.result, contentType: 'image/png' });
+                          };
+                          reader.onerror = function () {
+                            console.error('FileReader error while reading blob');
+                            reject(new Error('FileReader error while reading blob'));
+                          };
+                          reader.readAsArrayBuffer(blob);
+                        },
+                        'image/png'
+                    );
+                  })
+                  .catch((error) => {
+                    console.error('Image processing error:', error);
+                    reject(new Error(`Image processing error: ${error.message}`));
+                  });
+            });
+          } catch (error) {
+            console.error('Unexpected error:', error);
+            reject(new Error(`Unexpected error: ${error.message}`));
+          }
+        });
+      });
+
+
+
+      // maplibregl.addProtocol("transparentPmtiles", (params) => {
+      //   console.log("Received URL:", params.url);
+      //   // alert(params.url)
+      //   return new Promise((resolve, reject) => {
+      //     try {
+      //       // URLの検証と変換
+      //       if (!params.url.startsWith("transparentPmtiles://")) {
+      //         reject(new Error("Invalid protocol: URL must start with transparentPmtiles://"));
+      //         return;
+      //       }
+      //       let pmtilesUrl = params.url.replace("transparentPmtiles://", "pmtiles://");
+      //       console.log("Converted URL:", pmtilesUrl);
+      //
+      //       pmtilesUrl = 'pmtiles://https://kenzkenz.duckdns.org/tiles/dqyHV8DykbdSVvDXrHc7xweuKT02/6832d162d9b5c/6832d162d9b5c.pmtiles/{z}/{x}/{y}'
+      //
+      //       // PMTilesファイルのURLを抽出して検証
+      //       const urlMatch = pmtilesUrl.match(/^pmtiles:\/\/(.+)\/\{z\}\/\{x\}\/\{y\}$/);
+      //       if (!urlMatch) {
+      //         reject(new Error("Invalid PMTiles URL format: Expected pmtiles://<file_url>/{z}/{x}/{y}"));
+      //         return;
+      //       }
+      //       const fileUrl = urlMatch[1];
+      //       console.log("PMTiles file URL:", fileUrl);
+      //
+      //       pmtilesProtocol.tile({ ...params, url: pmtilesUrl }, (err, data) => {
+      //         if (err) {
+      //           console.error("PMTiles error details:", err);
+      //           reject(new Error(`PMTiles error: ${err ? err.message || err.toString() : 'Unknown error'}`));
+      //           return;
+      //         }
+      //         if (!data) {
+      //           reject(new Error("No data returned from PMTiles"));
+      //           return;
+      //         }
+      //
+      //         const blob = new Blob([data], { type: "image/png" });
+      //         createImageBitmap(blob)
+      //             .then(image => {
+      //               const canvas = document.createElement("canvas");
+      //               canvas.width = image.width;
+      //               canvas.height = image.height;
+      //               const ctx = canvas.getContext("2d");
+      //               if (!ctx) {
+      //                 reject(new Error("Failed to get canvas 2D context"));
+      //                 return;
+      //               }
+      //               ctx.drawImage(image, 0, 0);
+      //               const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      //               const data = imgData.data;
+      //               for (let i = 0; i < data.length; i += 4) {
+      //                 const r = data[i];
+      //                 const g = data[i + 1];
+      //                 const b = data[i + 2];
+      //                 if ((r === 0 && g === 0 && b === 0) ||
+      //                     (r === 0 && g === 0 && b >= 254) ||
+      //                     (r === 255 && g === 255 && b === 255)) {
+      //                   data[i + 3] = 0;
+      //                 }
+      //               }
+      //               ctx.putImageData(imgData, 0, 0);
+      //               canvas.toBlob((blob) => {
+      //                 if (!blob) {
+      //                   reject(new Error("Blob creation failed"));
+      //                   return;
+      //                 }
+      //                 const reader = new FileReader();
+      //                 reader.onload = function () {
+      //                   resolve({ data: reader.result, contentType: "image/png" });
+      //                 };
+      //                 reader.onerror = function () {
+      //                   reject(new Error("FileReader error while reading blob"));
+      //                 };
+      //                 reader.readAsArrayBuffer(blob);
+      //               }, "image/png");
+      //             })
+      //             .catch(error => {
+      //               reject(new Error(`Image processing error: ${error.message}`));
+      //             });
+      //       });
+      //     } catch (error) {
+      //       reject(new Error(`Unexpected error: ${error.message}`));
+      //     }
+      //   });
+      // });
+
+
 
       maplibregl.addProtocol("transparentBlack", (params) => {
         return new Promise((resolve, reject) => {
@@ -3304,11 +3527,14 @@ export default {
                     let tile = ''
                     let source = null
                     if (url.endsWith('.pmtiles')) {
+                      // transparentPmtiles://https://example.com/tiles.pmtiles/10/123/456
+                      // alert('transparentPmtiles://' + url + '/{z}/{x}/{y}')
                       source = {
                         id: 'oh-vpstile-' + id + '-' + name + '-source',
                         obj: {
                           type: 'raster',
                           url: 'pmtiles://' + url,
+                          // tiles: ['transparentPmtiles://' + url + '/{z}/{x}/{y}'],
                           bounds: bounds,
                           maxzoom: 26 }
                       };

@@ -4864,7 +4864,6 @@ export async function tileGenerateForUserTfw () {
     async function generateTiles(filePath, srsCode = "2450", dir) {
         store.state.loading2 = true
         store.state.loadingMessage = '地図タイル作成中です。'
-        alert(999)
         let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles9.php", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
