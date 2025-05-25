@@ -4680,7 +4680,7 @@ export async function tileGenerateForUserJpg () {
         let result = await response.json();
         if (result.success) {
             const loclUrl = '/var/www/html/public_html/' + result.tiles_url.replace('https://kenzkenz.duckdns.org/','').replace('/{z}/{x}/{y}.png','')
-            const dbResult = await insertXyztileData(store.state.userId, fileName, result.tiles_url, loclUrl, thumbnail, '[' + result.bbox + ']')
+            const dbResult = await insertXyztileData(store.state.userId, fileName, result.tiles_url, result.tiles_dir, thumbnail, '[' + result.bbox + ']')
             addXyztileLayer(dbResult.id,dbResult.name, result.tiles_url, result.bbox)
             store.state.loading2 = false
         } else {
@@ -4878,7 +4878,7 @@ export async function tileGenerateForUserTfw () {
         let result = await response.json();
         if (result.success) {
             const loclUrl = '/var/www/html/public_html/' + result.tiles_url.replace('https://kenzkenz.duckdns.org/','').replace('/{z}/{x}/{y}.png','')
-            const dbResult = await insertXyztileData(store.state.userId, fileName, result.tiles_url, loclUrl, thumbnail, '[' + result.bbox + ']')
+            const dbResult = await insertXyztileData(store.state.userId, fileName, result.tiles_url, result.tiles_dir, thumbnail, '[' + result.bbox + ']')
             addXyztileLayer(dbResult.id,dbResult.name, result.tiles_url, result.bbox)
             store.state.loading2 = false
         } else {
@@ -4887,8 +4887,6 @@ export async function tileGenerateForUserTfw () {
             alert("タイル生成に失敗しました！" + result.error);
         }
     }
-
-
     // -------------------------------------------------------------------------------------------------
     store.state.loading = true
     const srsCode = zahyokei.find(item => item.kei === store.state.zahyokei).code

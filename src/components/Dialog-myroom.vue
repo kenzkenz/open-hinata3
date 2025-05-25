@@ -183,19 +183,19 @@
                   <v-text-field v-model="xyztileRename" type="text" placeholder="リネーム"></v-text-field>
                   <v-btn v-if="!isAll" style="margin-top: -10px;margin-bottom: 10px" @click="xyztileRenameBtn">リネーム</v-btn>
                   <div style="height: 20px">
-                    <p v-if="!isAll && isOh3Team" style="position: absolute;right:30px;">透過</p>
+<!--                    <p v-if="!isAll && isOh3Team" style="position: absolute;right:30px;">透過</p>-->
                   </div>
                   <div v-for="item in jsonDataxyztile" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox,item.transparent)">
-                    <v-checkbox
-                        v-if="!isAll"
-                        class="transparent-chk"
-                        v-model="item.transparent"
-                        true-value=1
-                        false-value=0
-                        @change="transparentChk(item.id, item.transparent)"
-                        @mousedown.stop
-                        @click.stop
-                    />
+<!--                    <v-checkbox-->
+<!--                        v-if="!isAll"-->
+<!--                        class="transparent-chk"-->
+<!--                        v-model="item.transparent"-->
+<!--                        true-value=1-->
+<!--                        false-value=0-->
+<!--                        @change="transparentChk(item.id, item.transparent)"-->
+<!--                        @mousedown.stop-->
+<!--                        @click.stop-->
+<!--                    />-->
                     <button v-if="!isAll" class="close-btn" @click="removeItemxyztile(item.id,item.url2,$event)">×</button>
                     <strong>{{ item.name }}</strong><br>
                   </div>

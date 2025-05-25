@@ -330,7 +330,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <v-dialog v-model="s_dialogForGeotiff2App" max-width="500px">
         <v-card>
           <v-card-title>
-            座標系選択
+            座標系と解像度を選択
           </v-card-title>
           <v-card-text>
             <div v-if="s_isAndroid" class="select-container">
@@ -368,7 +368,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <v-dialog v-model="s_dialogForJpgApp" max-width="500px">
         <v-card>
           <v-card-title>
-            座標系選択
+            座標系と解像度を選択
           </v-card-title>
           <v-card-text>
             <div v-if="s_isAndroid" class="select-container">
@@ -406,7 +406,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <v-dialog v-model="s_dialogForPng2App" max-width="500px">
         <v-card>
           <v-card-title>
-            座標系選択
+            座標系と解像度を選択
           </v-card-title>
           <v-card-text>
             <div v-if="s_isAndroid" class="select-container">
@@ -987,7 +987,7 @@ export default {
     ],
     dialogForDxfApp: false,
     windowWidth: window.innerWidth,
-    resolutions: [13,14,15,16,17,18,19,20,21,22,23,24,25,26],
+    resolutions: [13,14,15,16,17,18,19,20,21,22,23,24],
     dialogForGeotiffApp1file: false,
     dialogForPdfApp: false,
     dialogForImagePng: false,
@@ -2771,7 +2771,7 @@ export default {
           localIdeographFontFamily: ['sans-serif'], // 日本語を表示するための設定
           center: center,
           zoom: zoom,
-          maxZoom: 25.99,
+          maxZoom: 24.4,
           pitch: pitch[mapName],
           bearing:bearing,
           maxPitch: 85, // 最大の傾き85、デフォルトは60
@@ -4795,6 +4795,7 @@ export default {
     })
     if (localStorage.getItem('resolution')) {
       this.s_resolution = localStorage.getItem('resolution')
+      if (this.s_resolution > 24) this.s_resolution = 24
     }
     // -----------------------------------------------------------------------------------------------------------------
   },
