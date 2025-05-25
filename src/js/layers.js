@@ -271,7 +271,6 @@ const publicLabelLayers = []
 const publicPointLayers = []
 const publicVertexLayers = []
 pablicDatas.forEach(v => {
-    console.log(v)
     if (!v.url) {
         return
     }

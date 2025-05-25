@@ -4588,7 +4588,7 @@ export async function tileGenerateForUserPng () {
     async function generateTiles(filePath, srsCode = "2450", dir) {
         store.state.loading2 = true
         store.state.loadingMessage = '地図タイル作成中です。'
-        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles9.php", {
+        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles10.php", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({
@@ -4596,7 +4596,8 @@ export async function tileGenerateForUserPng () {
                 srs: srsCode,
                 dir: dir,
                 fileName: fileName,
-                resolution: store.state.resolution
+                resolution: store.state.resolution,
+                transparent: store.state.transparent
             })
         });
         let result = await response.json();
@@ -4666,7 +4667,7 @@ export async function tileGenerateForUserJpg () {
     async function generateTiles(filePath, srsCode = "2450", dir) {
         store.state.loading2 = true
         store.state.loadingMessage = '地図タイル作成中です。'
-        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles9.php", {
+        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles10.php", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({
@@ -4674,12 +4675,13 @@ export async function tileGenerateForUserJpg () {
                 srs: srsCode,
                 dir: dir,
                 fileName: fileName,
-                resolution: store.state.resolution
+                resolution: store.state.resolution,
+                transparent: store.state.transparent
             })
         });
         let result = await response.json();
         if (result.success) {
-            const loclUrl = '/var/www/html/public_html/' + result.tiles_url.replace('https://kenzkenz.duckdns.org/','').replace('/{z}/{x}/{y}.png','')
+            console.log(result)
             const dbResult = await insertXyztileData(store.state.userId, fileName, result.tiles_url, result.tiles_dir, thumbnail, '[' + result.bbox + ']')
             addXyztileLayer(dbResult.id,dbResult.name, result.tiles_url, result.bbox)
             store.state.loading2 = false
@@ -4797,7 +4799,7 @@ export async function tileGenerateForUser1file () {
         store.state.loading2 = true
         store.state.loadingMessage = '地図タイル作成中です。'
         alert(888)
-        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles9.php", {
+        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles10.php", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -4805,7 +4807,8 @@ export async function tileGenerateForUser1file () {
                 srs: srsCode,
                 dir: dir,
                 fileName: fileName,
-                resolution: store.state.resolution
+                resolution: store.state.resolution,
+                transparent: store.state.transparent
             })
         });
         let result = await response.json();
@@ -4864,7 +4867,7 @@ export async function tileGenerateForUserTfw () {
     async function generateTiles(filePath, srsCode = "2450", dir) {
         store.state.loading2 = true
         store.state.loadingMessage = '地図タイル作成中です。'
-        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles9.php", {
+        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles10.php", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -4872,7 +4875,8 @@ export async function tileGenerateForUserTfw () {
                 srs: srsCode,
                 dir: dir,
                 fileName: fileName,
-                resolution: store.state.resolution
+                resolution: store.state.resolution,
+                transparent: store.state.transparent
             })
         });
         let result = await response.json();

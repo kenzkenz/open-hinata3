@@ -307,13 +307,22 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <v-select class="scrollable-content"
                         v-model="s_zahyokei"
                         :items="items"
-                        label="選択してください"
+                        label="座標系を選択してください"
                         outlined
               ></v-select>
               <v-select class="scrollable-content"
                         v-model="s_resolution"
                         :items="resolutions"
-                        label="画像取込最大解像度"
+                        label="画像取込最大解像度を選択してください"
+                        outlined
+                        v-if="user1"
+              ></v-select>
+              <v-select class="scrollable-content"
+                        v-model="s_transparent"
+                        :items="transparentType"
+                        item-title="label"
+                        item-value="value"
+                        label="透過方法を選択してください"
                         outlined
                         v-if="user1"
               ></v-select>
@@ -355,6 +364,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         outlined
                         v-if="user1"
               ></v-select>
+              <v-select class="scrollable-content"
+                        v-model="s_transparent"
+                        :items="transparentType"
+                        item-title="label"
+                        item-value="value"
+                        label="透過方法を選択してください"
+                        outlined
+                        v-if="user1"
+              ></v-select>
             </div>
             <v-btn @click="geoTiffLoad20">geotiff読込開始</v-btn>
           </v-card-text>
@@ -393,6 +411,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         outlined
                         v-if="user1"
               ></v-select>
+              <v-select class="scrollable-content"
+                        v-model="s_transparent"
+                        :items="transparentType"
+                        item-title="label"
+                        item-value="value"
+                        label="透過方法を選択してください"
+                        outlined
+                        v-if="user1"
+              ></v-select>
             </div>
             <v-btn @click="jpgLoad0">jpg読込開始</v-btn>
           </v-card-text>
@@ -428,6 +455,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         v-model="s_resolution"
                         :items="resolutions"
                         label="画像取込最大解像度"
+                        outlined
+                        v-if="user1"
+              ></v-select>
+              <v-select class="scrollable-content"
+                        v-model="s_transparent"
+                        :items="transparentType"
+                        item-title="label"
+                        item-value="value"
+                        label="透過方法を選択してください"
                         outlined
                         v-if="user1"
               ></v-select>
@@ -987,6 +1023,12 @@ export default {
     ],
     dialogForDxfApp: false,
     windowWidth: window.innerWidth,
+    transparent: 'black',
+    transparentType: [
+      { label: '黒を透過', value: 'black' },
+      { label: '白を透過', value: 'white' },
+      { label: '透過なし', value: 'not' }
+    ],
     resolutions: [13,14,15,16,17,18,19,20,21,22,23,24],
     dialogForGeotiffApp1file: false,
     dialogForPdfApp: false,
@@ -1194,6 +1236,15 @@ export default {
       },
       set(value) {
         this.$store.state.loading = value
+      }
+    },
+    s_transparent: {
+      get() {
+        return this.$store.state.transparent
+      },
+      set(value) {
+        this.$store.state.transparent = value
+        localStorage.setItem('transparent',value)
       }
     },
     s_resolution: {
@@ -4796,6 +4847,9 @@ export default {
     if (localStorage.getItem('resolution')) {
       this.s_resolution = localStorage.getItem('resolution')
       if (this.s_resolution > 24) this.s_resolution = 24
+    }
+    if (localStorage.getItem('transparent')) {
+      this.s_transparent = localStorage.getItem('transparent')
     }
     // -----------------------------------------------------------------------------------------------------------------
   },
