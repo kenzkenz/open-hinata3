@@ -4752,13 +4752,14 @@ async function insertXyztileData(uid, name, url, url2, url3, bbox) {
         console.error('通信エラー:', error);
     }
 }
-function addXyztileLayer(id,name,url,bbox) {
+export function addXyztileLayer(id,name,url,bbox) {
     const map01 = store.state.map01
     const bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
     const source = {
         id: 'oh-vpstile-' + id + '-' + name + '-source',obj: {
             type: 'raster',
-            tiles: ['transparentBlack://' + url],
+            // tiles: ['transparentBlack://' + url],
+            url: 'pmtiles://' + url,
             bounds: bounds,
             maxzoom: 26,
         }
@@ -4795,6 +4796,7 @@ export async function tileGenerateForUser1file () {
     async function generateTiles(filePath, srsCode = "2450", dir) {
         store.state.loading2 = true
         store.state.loadingMessage = '地図タイル作成中です。'
+        alert(888)
         let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -4862,7 +4864,8 @@ export async function tileGenerateForUserTfw () {
     async function generateTiles(filePath, srsCode = "2450", dir) {
         store.state.loading2 = true
         store.state.loadingMessage = '地図タイル作成中です。'
-        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles.php", {
+        alert(999)
+        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles9.php", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -6549,7 +6552,8 @@ export function userXyztileSet(name,url,id,bbox,transparent) {
     const source = {
         id: 'oh-vpstile-' + id + '-' + name + '-source',obj: {
             type: 'raster',
-            tiles: [tile],
+            // tiles: [tile],
+            url: 'pmtiles://' + url,
             bounds: bounds,
             maxzoom: 26,
         }

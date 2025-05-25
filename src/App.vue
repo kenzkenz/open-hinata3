@@ -292,7 +292,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <v-dialog v-model="s_dialogForGeotiffApp" max-width="500px">
         <v-card>
           <v-card-title>
-            座標系選択
+            座標系と解像度を選択
           </v-card-title>
           <v-card-text>
             <div v-if="s_isAndroid" class="select-container">
@@ -3309,7 +3309,12 @@ export default {
                     }
                     const source = {
                       id: 'oh-vpstile-' + id + '-' + name + '-source',
-                      obj: { type: 'raster', tiles: [tile], bounds: bounds, maxzoom: 26 }
+                      obj: {
+                        type: 'raster',
+                        // tiles: [tile],
+                        url: 'pmtiles://' + url,
+                        bounds: bounds,
+                        maxzoom: 26 }
                     };
                     const layer = {
                       id: 'oh-vpstile-' + id + '-' + name + '-layer',
