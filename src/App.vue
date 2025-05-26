@@ -1604,6 +1604,7 @@ export default {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
       if (this.$store.state.userId) {
+        this.$store.state.loadingMessage = 'アップロード開始'
         tileGenerateForUserJpg()
       } else {
         jpgLoad (map01,'map01', true)

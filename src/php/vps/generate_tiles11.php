@@ -175,7 +175,7 @@ logMessage("Grayscale check: " . ($isGray ? "Grayscale" : "Color"));
 sendSSE(["log" => "グレースケール判定完了: " . ($isGray ? "グレースケール" : "カラー")]);
 
 // gdal2tiles実行
-sendSSE(["log" => "gdal2tiles によるタイル生成を開始します"]);
+sendSSE(["log" => "タイル生成を開始。少々お待ちください。"]);
 $tileCommand = "gdal2tiles.py $alpha_value -z 10-$max_zoom --s_srs EPSG:$sourceEPSG --xyz --processes=8 " . escapeshellarg($outputFilePath) . " " . escapeshellarg($tileDir);
 logMessage("Executing gdal2tiles: $tileCommand");
 $descriptors = [0 => ["pipe", "r"], 1 => ["pipe", "w"], 2 => ["pipe", "w"]];

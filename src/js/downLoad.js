@@ -4712,7 +4712,6 @@ export async function tileGenerateForUserJpg() {
                         buffer = buffer.substring(index + 1);
 
                         console.log("イベント:", event); // デバッグ: イベント内容
-
                         // data: フィールドを抽出
                         const dataMatch = event.match(/^data:\s*(.+)$/m);
                         if (dataMatch) {
@@ -4815,7 +4814,8 @@ export async function tileGenerateForUserJpg() {
     }
 
     // アップロード処理
-    store.state.loading = true;
+    store.state.loading2 = true;
+    store.state.loadingMessage = 'アップロード中です。少々お待ちください。'
     const srsCode = zahyokei.find(item => item.kei === store.state.zahyokei)?.code || "2450";
     const files = store.state.tiffAndWorldFile || [];
     let jpgFile = null, jgwFile = null;
@@ -4826,7 +4826,7 @@ export async function tileGenerateForUserJpg() {
     }
     if (!jpgFile || !jgwFile) {
         alert("JPGファイルとJGWファイルの両方をアップロードしてください。");
-        store.state.loading = false;
+        store.state.loading2 = false;
         return;
     }
 
@@ -4846,17 +4846,17 @@ export async function tileGenerateForUserJpg() {
         const data = await response.json();
         if (data.success) {
             console.log("アップロード成功:", data);
-            store.state.loading = false;
+            store.state.loading2 = false;
             thumbnail = data.thumbnail;
             await generateTiles(data.file, srsCode, store.state.userId, fileName, store.state.resolution, store.state.transparent);
         } else {
             console.error("アップロード失敗:", data);
-            store.state.loading = false;
+            store.state.loading2 = false;
             alert("アップロードエラー: " + data.error);
         }
     } catch (error) {
         console.error("アップロードエラー:", error);
-        store.state.loading = false;
+        store.state.loading2 = false;
         alert("アップロードに失敗しました: " + error.message);
     }
 }
