@@ -4661,7 +4661,7 @@ export async function tileGenerateForUserPng () {
     // -------------------------------------------------------------------------------------------------
 }
 
-export async function tileGenerateForUserJpg() {
+export async function tileGenerateForUser(imageExtension = "jpg", worldFileExtension = "jgw") {
     // タイル生成関数
     async function generateTiles(filePath, srsCode = "2450", dir, fileName, resolution, transparent) {
         store.state.loading2 = true;
@@ -4812,27 +4812,34 @@ export async function tileGenerateForUserJpg() {
 
     // アップロード処理
     store.state.loading2 = true;
-    store.state.loadingMessage = 'アップロード中です。少々お待ちください。'
+    store.state.loadingMessage = 'アップロード中です。少々お待ちください。';
     const srsCode = zahyokei.find(item => item.kei === store.state.zahyokei)?.code || "2450";
     const files = store.state.tiffAndWorldFile || [];
-    let jpgFile = null, jgwFile = null;
+    let imageFile = null, worldFile = null;
+
+    // 拡張子を正規表現でマッチング
+    // imageExtension はカンマ区切りで複数指定可能（例: "jpg,jpeg"）
+    const imageExtRegex = new RegExp(`\\.(${imageExtension.replace(/,/g, '|')})$`, 'i');
+    const worldExtRegex = new RegExp(`\\.${worldFileExtension}$`, 'i');
+
     for (const file of files) {
         const fileName = file.name.toLowerCase();
-        if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) jpgFile = file;
-        if (fileName.endsWith(".jgw")) jgwFile = file;
+        if (imageExtRegex.test(fileName)) imageFile = file;
+        if (worldExtRegex.test(fileName)) worldFile = file;
     }
-    if (!jpgFile || !jgwFile) {
-        alert("JPGファイルとJGWファイルの両方をアップロードしてください。");
+
+    if (!imageFile || !worldFile) {
+        alert(`${imageExtension.toUpperCase()}ファイルと${worldFileExtension.toUpperCase()}ファイルの両方をアップロードしてください。`);
         store.state.loading2 = false;
         return;
     }
 
-    let fileName = jpgFile.name;
+    let fileName = imageFile.name;
     fileName = fileName.slice(0, fileName.lastIndexOf('.'));
 
     const formData = new FormData();
-    formData.append("file", jpgFile);
-    formData.append("worldfile", jgwFile);
+    formData.append("file", imageFile);
+    formData.append("worldfile", worldFile);
     formData.append("dir", store.state.userId);
 
     try {
@@ -4857,40 +4864,161 @@ export async function tileGenerateForUserJpg() {
     }
 }
 
-// export async function tileGenerateForUserJpg () {
-//     // -------------------------------------------------------------------------------------------------
-//     let thumbnail = ''
-//     async function generateTiles(filePath, srsCode = "2450", dir) {
-//         store.state.loading2 = true
-//         store.state.loadingMessage = '地図タイル作成中です。'
-//         let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles11.php", {
-//             method: "POST",
-//             headers: {"Content-Type": "application/json"},
-//             body: JSON.stringify({
-//                 file: filePath,
-//                 srs: srsCode,
-//                 dir: dir,
-//                 fileName: fileName,
-//                 resolution: store.state.resolution,
-//                 transparent: store.state.transparent
-//             })
-//         });
-//         let result = await response.json();
-//         if (result.success) {
-//             console.log(result)
-//             const dbResult = await insertXyztileData(store.state.userId, fileName, result.tiles_url, result.tiles_dir, thumbnail, '[' + result.bbox + ']')
-//             addXyztileLayer(dbResult.id,dbResult.name, result.tiles_url, result.bbox)
-//             store.state.loading2 = false
-//         } else {
-//             console.log(result)
-//             store.state.loading2 = false
-//             alert("タイル生成に失敗しました！" + result.error);
+
+// export async function tileGenerateForUserJpg() {
+//     // タイル生成関数
+//     async function generateTiles(filePath, srsCode = "2450", dir, fileName, resolution, transparent) {
+//         store.state.loading2 = true;
+//         store.state.loadingMessage = '地図タイル作成中です。';
+//
+//         // FormDataを作成
+//         const formData = new FormData();
+//         formData.append("file", filePath);
+//         formData.append("srs", srsCode);
+//         formData.append("dir", dir);
+//         formData.append("fileName", fileName);
+//         formData.append("resolution", resolution || 22);
+//         formData.append("transparent", transparent || "black");
+//
+//         try {
+//             // generate_tiles11.phpにリクエスト送信
+//             const response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles11.php", {
+//                 method: "POST",
+//                 body: formData,
+//             });
+//
+//             if (!response.ok) {
+//                 store.state.loading2 = false;
+//                 alert("サーバーエラー: " + response.statusText);
+//                 console.error("HTTPエラー:", response.status, response.statusText);
+//                 return;
+//             }
+//
+//             // ReadableStreamを取得
+//             const reader = response.body.getReader();
+//             const decoder = new TextDecoder();
+//             let result = null;
+//             let buffer = '';
+//
+//             // ストリーム処理
+//             async function processStream() {
+//                 for await (const chunk of streamAsyncIterator(reader)) {
+//                     buffer += decoder.decode(chunk, { stream: true });
+//                     console.log("受信バッファ:", buffer); // デバッグ: 生のバッファ
+//
+//                     // #でメッセージを分割
+//                     while (buffer.includes('#')) {
+//                         const index = buffer.indexOf('#');
+//                         const event = buffer.substring(0, index).trim();
+//                         buffer = buffer.substring(index + 1);
+//
+//                         console.log("イベント:", event); // デバッグ: イベント内容
+//                         // data: フィールドを抽出
+//                         const dataMatch = event.match(/^data:\s*(.+)$/m);
+//                         if (dataMatch) {
+//                             const jsonStr = dataMatch[1].trim();
+//                             try {
+//                                 const data = JSON.parse(jsonStr);
+//                                 console.log("パース済みデータ:", data); // デバッグ: パース結果
+//
+//                                 if (data.log) {
+//                                     if (!data.log.includes('[ERROR]')) {
+//                                         store.state.loadingMessage = data.log.slice(0, 40); // ログをリアルタイム表示
+//                                     }
+//                                 } else if (data.error) {
+//                                     console.error("サーバーエラー:", data);
+//                                     store.state.loading2 = false;
+//                                     alert("タイル生成エラー: " + data.error);
+//                                     return;
+//                                 } else if (data.success) {
+//                                     result = data; // 成功レスポンスを保存
+//                                 }
+//                             } catch (e) {
+//                                 console.error("JSONパースエラー:", jsonStr, e);
+//                             }
+//                         } else {
+//                             console.warn("data: フィールドが見つかりません:", event);
+//                         }
+//                     }
+//                 }
+//
+//                 // バッファに残ったデータを処理
+//                 if (buffer) {
+//                     console.log("残りのバッファ:", buffer);
+//                     const dataMatch = buffer.match(/^data:\s*(.+)$/m);
+//                     if (dataMatch) {
+//                         const jsonStr = dataMatch[1].trim();
+//                         try {
+//                             const data = JSON.parse(jsonStr);
+//                             console.log("最終パース済みデータ:", data);
+//                             if (data.success) {
+//                                 result = data;
+//                             } else if (data.error) {
+//                                 console.error("サーバーエラー:", data);
+//                                 store.state.loading2 = false;
+//                                 alert("タイル生成エラー: " + data.error);
+//                                 return;
+//                             }
+//                         } catch (e) {
+//                             console.error("最終バッファパースエラー:", jsonStr, e);
+//                         }
+//                     }
+//                 }
+//
+//                 // 成功時の処理
+//                 if (result && result.success) {
+//                     store.state.loading2 = false;
+//                     console.log("成功:", result);
+//                     const dbResult = await insertXyztileData(
+//                         store.state.userId,
+//                         fileName,
+//                         result.tiles_url,
+//                         result.tiles_dir,
+//                         'dummy',
+//                         '[' + result.bbox + ']'
+//                     );
+//                     addXyztileLayer(dbResult.id, dbResult.name, result.tiles_url, result.bbox);
+//                     console.log('タイル作成完了');
+//                     if (!result.bbox) {
+//                         alert('座標系が間違えている可能性があります。EPSG:4326に設定してください。');
+//                     }
+//                 } else {
+//                     console.error("成功レスポンスがありません");
+//                     store.state.loading2 = false;
+//                     alert("タイル生成に失敗しました！");
+//                 }
+//             }
+//
+//             // ReadableStreamを非同期イテレータに変換
+//             async function* streamAsyncIterator(reader) {
+//                 try {
+//                     while (true) {
+//                         const { done, value } = await reader.read();
+//                         if (done) return;
+//                         yield value;
+//                     }
+//                 } finally {
+//                     reader.releaseLock();
+//                 }
+//             }
+//
+//             await processStream().catch(error => {
+//                 console.error("ストリーム処理エラー:", error);
+//                 store.state.loadingMessage = 'ログ処理に失敗しましたが、処理を続行します。';
+//                 store.state.loading2 = false;
+//             });
+//         } catch (error) {
+//             console.error("タイル生成エラー:", error);
+//             store.state.loading2 = false;
+//             alert("タイル生成に失敗しました: " + error.message);
 //         }
 //     }
-//     // -------------------------------------------------------------------------------------------------
-//     store.state.loading = true
-//     const srsCode = zahyokei.find(item => item.kei === store.state.zahyokei).code
-//     const files = store.state.tiffAndWorldFile
+//
+//     // アップロード処理
+//     store.state.loading2 = true;
+//     store.state.loadingMessage = 'アップロード中です。少々お待ちください。'
+//     const srsCode = zahyokei.find(item => item.kei === store.state.zahyokei)?.code || "2450";
+//     const files = store.state.tiffAndWorldFile || [];
 //     let jpgFile = null, jgwFile = null;
 //     for (const file of files) {
 //         const fileName = file.name.toLowerCase();
@@ -4898,36 +5026,41 @@ export async function tileGenerateForUserJpg() {
 //         if (fileName.endsWith(".jgw")) jgwFile = file;
 //     }
 //     if (!jpgFile || !jgwFile) {
-//         alert(" JPGと JGW の両方をアップロードしてください！");
+//         alert("JPGファイルとJGWファイルの両方をアップロードしてください。");
+//         store.state.loading2 = false;
 //         return;
 //     }
+//
 //     let fileName = jpgFile.name;
-//     fileName = fileName.slice(0, fileName.lastIndexOf('.'))
+//     fileName = fileName.slice(0, fileName.lastIndexOf('.'));
+//
 //     const formData = new FormData();
 //     formData.append("file", jpgFile);
 //     formData.append("worldfile", jgwFile);
-//     formData.append("dir", store.state.userId); // 指定したフォルダにアップロード
-//     fetch("https://kenzkenz.duckdns.org/myphp/upload.php", {
-//         method: "POST",
-//         body: formData
-//     })
-//         .then(response => response.json())
-//         .then(data => {
-//             if (data.success) {
-//                 console.log("アップロード成功:", data);
-//                 // alert("アップロード成功!")
-//                 store.state.loading = false
-//                 thumbnail = data.thumbnail
-//                 generateTiles(data.file, srsCode, store.state.userId);
-//             } else {
-//                 console.error("アップロード失敗:", data);
-//                 store.state.loading = false
-//                 alert("アップロードエラー: " + data.error);
-//             }
-//         })
-//         .catch(error => console.error("エラー:", error));
-//     // -------------------------------------------------------------------------------------------------
+//     formData.append("dir", store.state.userId);
+//
+//     try {
+//         const response = await fetch("https://kenzkenz.duckdns.org/myphp/upload.php", {
+//             method: "POST",
+//             body: formData,
+//         });
+//         const data = await response.json();
+//         if (data.success) {
+//             console.log("アップロード成功:", data);
+//             store.state.loading2 = false;
+//             await generateTiles(data.file, srsCode, store.state.userId, fileName, store.state.resolution, store.state.transparent);
+//         } else {
+//             console.error("アップロード失敗:", data);
+//             store.state.loading2 = false;
+//             alert("アップロードエラー: " + data.error);
+//         }
+//     } catch (error) {
+//         console.error("アップロードエラー:", error);
+//         store.state.loading2 = false;
+//         alert("アップロードに失敗しました: " + error.message);
+//     }
 // }
+
 async function insertXyztileData(uid, name, url, url2, url3, bbox) {
     try {
         const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userXyztileInsert.php', new URLSearchParams({

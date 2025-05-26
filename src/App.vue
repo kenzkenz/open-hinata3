@@ -623,7 +623,7 @@ import {
   kmzLoadForUser, LngLatToAddress, pmtilesGenerateForUser2,
   pngDownload,
   pngLoad,
-  simaLoadForUser,
+  simaLoadForUser, tileGenerateForUser,
   tileGenerateForUser1file, tileGenerateForUserJpg, tileGenerateForUserPdf, tileGenerateForUserPng,
   tileGenerateForUserTfw,
   transformGeoJSONToEPSG4326, userKmzSet, userSimaSet,
@@ -1591,9 +1591,8 @@ export default {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
       if (this.$store.state.userId) {
-        // pngLoadForUser (map01,'map01', true)
-        // pngLoadForUser (map02,'map02', false)
-        tileGenerateForUserPng()
+        // tileGenerateForUserPng()
+        tileGenerateForUser('png','pgw')
       } else {
         pngLoad (map01,'map01', true)
         pngLoad (map02,'map02', false)
@@ -1605,7 +1604,7 @@ export default {
       const map02 = this.$store.state.map02
       if (this.$store.state.userId) {
         this.$store.state.loadingMessage = 'アップロード開始'
-        tileGenerateForUserJpg()
+        tileGenerateForUser('jpg','jgw')
       } else {
         jpgLoad (map01,'map01', true)
         jpgLoad (map02,'map02', false)
@@ -1616,7 +1615,8 @@ export default {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
       if (this.$store.state.userId) {
-        tileGenerateForUserTfw()
+        // tileGenerateForUserTfw()
+        tileGenerateForUser('tif','tfw')
       } else {
         geoTiffLoad (map01,'map01', true)
         geoTiffLoad (map02,'map02', false)
