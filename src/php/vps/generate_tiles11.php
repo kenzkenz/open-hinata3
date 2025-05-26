@@ -277,7 +277,7 @@ sendSSE(["log" => "layer.json を生成しました"]);
 function deleteSourceAndTempFiles($filePath) {
     $dir = dirname($filePath);
     foreach (scandir($dir) as $file) {
-        if ($file === '.' || $file === '..' || strpos($file, 'thumbnail-') === 0) continue;
+        if ($file === '.' || $file === '..') continue;
         $fullPath = "$dir/$file";
         if (is_file($fullPath)) unlink($fullPath);
     }

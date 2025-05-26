@@ -4662,9 +4662,6 @@ export async function tileGenerateForUserPng () {
 }
 
 export async function tileGenerateForUserJpg() {
-    // サムネイルの初期化
-    let thumbnail = '';
-
     // タイル生成関数
     async function generateTiles(filePath, srsCode = "2450", dir, fileName, resolution, transparent) {
         store.state.loading2 = true;
@@ -4773,7 +4770,7 @@ export async function tileGenerateForUserJpg() {
                         fileName,
                         result.tiles_url,
                         result.tiles_dir,
-                        thumbnail,
+                        'dummy',
                         '[' + result.bbox + ']'
                     );
                     addXyztileLayer(dbResult.id, dbResult.name, result.tiles_url, result.bbox);
@@ -4847,7 +4844,6 @@ export async function tileGenerateForUserJpg() {
         if (data.success) {
             console.log("アップロード成功:", data);
             store.state.loading2 = false;
-            thumbnail = data.thumbnail;
             await generateTiles(data.file, srsCode, store.state.userId, fileName, store.state.resolution, store.state.transparent);
         } else {
             console.error("アップロード失敗:", data);
