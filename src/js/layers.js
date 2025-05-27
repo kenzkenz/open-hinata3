@@ -384,28 +384,21 @@ const cityGeojsonPolygonLayer = {
     source: 'city-geojson-source',
     // "source-layer": 'polygon',
     paint: {
-        'fill-color':
-            [
-            'match',
-            ['get', 'N03_007'],
-            ...Object.entries(chibanzuColors).flat(),
+        // 'fill-color':
+        //     [
+        //     'match',
+        //     ['get', 'N03_007'],
+        //     ...Object.entries(chibanzuColors).flat(),
+        //     'rgba(0,0,0,0)' // デフォルト色
+        // ],
+        'fill-color': [
+            'case',
+            ...Object.entries(chibanzuColors).flatMap(([key, color]) => ([
+                ['==', ['to-number', ['get', 'N03_007']], Number(key)], color
+            ])),
             'rgba(0,0,0,0)' // デフォルト色
-        ],
+        ]
     },
-    // paint: {
-    //     'fill-color': [
-    //         'match',
-    //         ['get', 'N03_007'],
-    //         ...Object.entries(chibanzuColors).flat(),
-    //         '#000000' // fallbackにするが、filterで除外されるので表示されない
-    //     ]
-    // },
-    // filter: [
-    //     'in',
-    //     ['get', 'N03_007'],
-    //     ['literal', Object.keys(chibanzuColors)]
-    // ],
-    // maxzoom: 11.5
     maxzoom: 14
 };
 
