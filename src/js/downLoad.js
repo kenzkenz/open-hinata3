@@ -23,6 +23,7 @@ import pako from "pako";
 import {kml} from "@tmcw/togeojson";
 import * as GeoTIFF from 'geotiff';
 import muni from "@/js/muni";
+import * as exifr from 'exifr'
 // import publicChk from '@/components/Dialog-myroom'
 // 複数のクリックされた地番を強調表示するためのセット
 // export let highlightedChibans = new Set();
@@ -4593,12 +4594,12 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension) {
         formData.append("srs", srsCode);
         formData.append("dir", dir);
         formData.append("fileName", fileName);
-        formData.append("resolution", resolution || 22);
+        // formData.append("resolution", resolution || 22);
         formData.append("transparent", transparent || "black");
 
         try {
             // generate_tiles11.phpにリクエスト送信
-            const response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles11.php", {
+            const response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles12.php", {
                 method: "POST",
                 body: formData,
             });
@@ -4692,7 +4693,8 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension) {
                         result.tiles_dir,
                         'dummy',
                         '[' + result.bbox + ']',
-                        result.pmtiles_size_mb
+                        result.pmtiles_size_mb,
+                        result.max_zoom
                     );
                     addXyztileLayer(dbResult.id, dbResult.name, result.tiles_url, result.bbox);
                     console.log('タイル作成完了');
@@ -4791,7 +4793,7 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension) {
     }
 }
 
-async function insertXyztileData(uid, name, url, url2, url3, bbox, size) {
+async function insertXyztileData(uid, name, url, url2, url3, bbox, size, maxzoom) {
     try {
         const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userXyztileInsert.php', new URLSearchParams({
             uid: uid,
@@ -4800,7 +4802,8 @@ async function insertXyztileData(uid, name, url, url2, url3, bbox, size) {
             url2: url2,
             url3: url3,
             bbox: bbox,
-            size: size
+            size: size,
+            maxzoom: maxzoom
         }));
         if (response.data.error) {
             console.error('エラー:', response.data.error);
@@ -7443,4 +7446,3 @@ export function dxfToGeoJSON(dxf) {
         features,
     };
 }
-

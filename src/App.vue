@@ -620,6 +620,7 @@ import RightDrawer from '@/components/rightDrawer.vue'
 import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
 import {
+  calculateEdgeLengths,
   capture,
   csvGenerateForUserPng,
   ddSimaUpload,
@@ -4201,11 +4202,11 @@ export default {
                 case 'tif':
                 case 'tfw':
                 {
+                  this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
                   if (files.length > 1) {
-                    this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
                     this.s_dialogForGeotiffApp = true
                   } else if (files.length === 1){
-                    this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
+
                     const zahyokei = await getCRS(Array.from(e.dataTransfer.files)[0])
                     if (zahyokei) {
                       this.$store.state.zahyokei = zahyokei

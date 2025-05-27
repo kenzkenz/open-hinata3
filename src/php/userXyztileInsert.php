@@ -12,6 +12,7 @@ try {
     $uid = $_POST['uid'] ?? null;
     $bbox = $_POST['bbox'] ?? null;
     $size = $_POST['size'] ?? null;
+    $maxzoom = $_POST['maxzoom'] ?? null;
 
     // バリデーション: 空チェック
     if (empty($name) || empty($url) || empty($uid) || empty($url3) || empty($url2) || empty($bbox) || empty($size)) {
@@ -20,7 +21,7 @@ try {
     }
 
     // SQL: userdbに新規挿入
-    $sql = "INSERT INTO userxyztile (name, url, url2,url3,uid,bbox,size) VALUES (:name, :url, :url2, :url3, :uid, :bbox, :size)";
+    $sql = "INSERT INTO userxyztile (name, url, url2,url3,uid,bbox,size,maxzoom) VALUES (:name, :url, :url2, :url3, :uid, :bbox, :size, :maxzoom)";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ':name' => $name,
@@ -30,13 +31,14 @@ try {
         ':uid' => $uid,
         ':bbox' => $bbox,
         ':size' => $size,
+        ':maxzoom' => $maxzoom,
     ]);
 
     // 挿入された行のIDを取得
     $lastId = $pdo->lastInsertId();
 
     // 成功した場合のレスポンス
-    echo json_encode(["id" => $lastId, "name" => $name, "url" => $url, "url2" => $url2, "url3" => $url3, "uid" => $uid, "bbox" => $bbox]);
+    echo json_encode(["id" => $lastId, "name" => $name, "url" => $url, "url2" => $url2, "url3" => $url3, "uid" => $uid, "bbox" => $bbox, "size" => $size, "maxzoom" => $maxzoom]);
 
 } catch (PDOException $e) {
     echo json_encode(["error" => "データベースエラー: " . $e->getMessage()]);
