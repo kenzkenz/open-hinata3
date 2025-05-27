@@ -11,15 +11,16 @@ try {
     $url3 = $_POST['url3'] ?? null;
     $uid = $_POST['uid'] ?? null;
     $bbox = $_POST['bbox'] ?? null;
+    $size = $_POST['size'] ?? null;
 
     // バリデーション: 空チェック
-    if (empty($name) || empty($url) || empty($uid) || empty($url3) || empty($url2) || empty($bbox)) {
-        echo json_encode(["error" => "name, url, url2, url3, uid, bboxは必須です"]);
+    if (empty($name) || empty($url) || empty($uid) || empty($url3) || empty($url2) || empty($bbox) || empty($size)) {
+        echo json_encode(["error" => "name, url, url2, url3, uid, bbox, sizeは必須です"]);
         exit;
     }
 
     // SQL: userdbに新規挿入
-    $sql = "INSERT INTO userxyztile (name, url, url2,url3,uid,bbox) VALUES (:name, :url, :url2, :url3, :uid, :bbox)";
+    $sql = "INSERT INTO userxyztile (name, url, url2,url3,uid,bbox,size) VALUES (:name, :url, :url2, :url3, :uid, :bbox, :size)";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ':name' => $name,
@@ -27,7 +28,8 @@ try {
         ':url2' => $url2,
         ':url3' => $url3,
         ':uid' => $uid,
-        ':bbox' => $bbox
+        ':bbox' => $bbox,
+        ':size' => $size,
     ]);
 
     // 挿入された行のIDを取得

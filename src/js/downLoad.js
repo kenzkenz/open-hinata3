@@ -4691,7 +4691,8 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension) {
                         result.tiles_url,
                         result.tiles_dir,
                         'dummy',
-                        '[' + result.bbox + ']'
+                        '[' + result.bbox + ']',
+                        result.pmtiles_size_mb
                     );
                     addXyztileLayer(dbResult.id, dbResult.name, result.tiles_url, result.bbox);
                     console.log('タイル作成完了');
@@ -4790,7 +4791,7 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension) {
     }
 }
 
-async function insertXyztileData(uid, name, url, url2, url3, bbox) {
+async function insertXyztileData(uid, name, url, url2, url3, bbox, size) {
     try {
         const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userXyztileInsert.php', new URLSearchParams({
             uid: uid,
@@ -4798,7 +4799,8 @@ async function insertXyztileData(uid, name, url, url2, url3, bbox) {
             url: url,
             url2: url2,
             url3: url3,
-            bbox: bbox
+            bbox: bbox,
+            size: size
         }));
         if (response.data.error) {
             console.error('エラー:', response.data.error);
