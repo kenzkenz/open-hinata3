@@ -2493,13 +2493,13 @@ export function highlightSpecificFeaturesCity(map,layerId) {
                         ],
                         'rgba(255, 0, 0, 0.5)', // 赤色
                         // AzaNameが存在し、Txtcdが存在しない場合
-                        [
-                            'all',
-                            ['has', 'AzaName'],
-                            ['!', ['has', 'Txtcd']]
-                        ],
-                        'rgba(0,120,255,0.6)', // 青色
-                        // それ以外の場合は透明
+                        // [
+                        //     'all',
+                        //     ['has', 'AzaName'],
+                        //     ['!', ['has', 'Txtcd']]
+                        // ],
+                        // 'rgba(0,120,255,0.6)', // 青色
+                        // // それ以外の場合は透明
                         'rgba(0, 0, 0, 0)'
                     ]
                 );
@@ -4661,7 +4661,7 @@ export async function tileGenerateForUserPng () {
     // -------------------------------------------------------------------------------------------------
 }
 
-export async function tileGenerateForUser(imageExtension = "jpg", worldFileExtension = "jgw") {
+export async function tileGenerateForUser(imageExtension, worldFileExtension) {
     // タイル生成関数
     async function generateTiles(filePath, srsCode = "2450", dir, fileName, resolution, transparent) {
         store.state.loading2 = true;
@@ -4828,22 +4828,26 @@ export async function tileGenerateForUser(imageExtension = "jpg", worldFileExten
         if (worldExtRegex.test(fileName)) worldFile = file;
     }
 
-    if (!imageFile || !worldFile) {
-        alert(`${imageExtension.toUpperCase()}ファイルと${worldFileExtension.toUpperCase()}ファイルの両方をアップロードしてください。`);
-        store.state.loading2 = false;
-        return;
-    }
+    if (!worldFile) imageFile = files[0]
+
+    // if (!imageFile || !worldFile) {
+    //     alert(`${imageExtension.toUpperCase()}ファイルと${worldFileExtension.toUpperCase()}ファイルの両方をアップロードしてください。`);
+    //     store.state.loading2 = false;
+    //     return;
+    // }
 
     let fileName = imageFile.name;
     fileName = fileName.slice(0, fileName.lastIndexOf('.'));
 
     const formData = new FormData();
     formData.append("file", imageFile);
-    formData.append("worldfile", worldFile);
+    if (worldFile) formData.append("worldfile", worldFile);
     formData.append("dir", store.state.userId);
 
     try {
-        const response = await fetch("https://kenzkenz.duckdns.org/myphp/upload.php", {
+        let phpUrl = "https://kenzkenz.duckdns.org/myphp/upload.php"
+        if (!worldFile) phpUrl = "https://kenzkenz.duckdns.org/myphp/upload1file.php"
+        const response = await fetch(phpUrl, {
             method: "POST",
             body: formData,
         });

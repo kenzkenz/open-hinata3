@@ -118,25 +118,6 @@ $bbox4326 = [$minCoord[0], $minCoord[1], $maxCoord[0], $maxCoord[1]];
 logMessage("Transformed bbox: " . json_encode($bbox4326));
 sendSSE(["log" => "座標変換完了: " . json_encode($bbox4326)]);
 
-// 面積計算
-function haversineDistance($lat1, $lon1, $lat2, $lon2) {
-    $lat1 = deg2rad($lat1);
-    $lon1 = deg2rad($lon1);
-    $lat2 = deg2rad($lat2);
-    $lon2 = deg2rad($lon2);
-    $dlat = $lat2 - $lat1;
-    $dlon = $lon2 - $lon1;
-    $a = sin($dlat / 2) * sin($dlat / 2) + cos($lat1) * cos($lat2) * sin($dlon / 2) * sin($dlon / 2);
-    $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-    return EARTH_RADIUS_KM * $c;
-}
-
-$width_km = haversineDistance($minCoord[1], $minCoord[0], $minCoord[1], $maxCoord[0]);
-$height_km = haversineDistance($minCoord[1], $minCoord[0], $maxCoord[1], $minCoord[0]);
-$area_km2 = $width_km * $height_km;
-logMessage("Area calculated: $area_km2 km²");
-sendSSE(["log" => "面積計算完了: $area_km2 km²"]);
-
 $max_zoom = $resolution;
 
 // ディレクトリ設定
@@ -311,7 +292,6 @@ $response = [
     "tiles_url" => $tileURL,
     "tiles_dir" => $tileDir,
     "bbox" => $bbox4326,
-    "area_km2" => $area_km2,
     "max_zoom" => $max_zoom,
     "tileCommand" => $tileCommand
 ];

@@ -168,13 +168,13 @@ function publiLayersCreate (v) {
         source: 'oh-chiban-' + v.id + '-' + v.name + '-source',
         "source-layer": 'oh3',
         'paint': {
-            // 'fill-color': 'rgba(0,0,0,0)',
-            'fill-color': [
-                'case',
-                ['has', 'AzaName'],
-                'rgba(0,0,255,0.5)',
-                'rgba(0,0,0,0)'
-            ],
+            'fill-color': 'rgba(0,0,0,0)',
+            // 'fill-color': [
+            //     'case',
+            //     ['has', 'AzaName'],
+            //     'rgba(0,0,255,0.5)',
+            //     'rgba(0,0,0,0)'
+            // ],
         },
         // minzoom: 11
         minzoom: 13,
@@ -367,7 +367,7 @@ export const cityGeojsonSource = {
     id: 'city-geojson-source', obj: {
         'type': 'geojson',
         // 'data': 'https://kenzkenz.duckdns.org//original-data/chibanzumap.geojson?nocache=' + Date.now()
-        'data': 'https://kenzkenz.duckdns.org//original-data/chibanzumap.geojson'
+        'data': 'https://kenzkenz.duckdns.org//original-data/chibanzumap.geojson?v=1'
     }
 }
 

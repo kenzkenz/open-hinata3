@@ -279,6 +279,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         outlined
                         v-if="user1"
               ></v-select>
+              <v-select class="scrollable-content"
+                        v-model="s_transparent"
+                        :items="transparentType"
+                        item-title="label"
+                        item-value="value"
+                        label="透過方法を選択してください"
+                        outlined
+                        v-if="user1"
+              ></v-select>
             </div>
             <v-btn @click="geoTifLoad1file">geotif読込開始</v-btn>
           </v-card-text>
@@ -374,7 +383,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         v-if="user1"
               ></v-select>
             </div>
-            <v-btn @click="geoTiffLoad20">geotiff読込開始</v-btn>
+            <v-btn @click="geoTifLoad1file">geotiff読込開始</v-btn>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -1627,12 +1636,14 @@ export default {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
       if (this.$store.state.userId) {
-        tileGenerateForUser1file()
+        // tileGenerateForUser1file()
+        tileGenerateForUser('tif',null)
       } else {
         geoTiffLoad2 (map01,'map01', true)
         geoTiffLoad2 (map02,'map02', false)
       }
       this.dialogForGeotiffApp1file = false
+      this.s_dialogForGeotiff2App = false
     },
     simaOpacityInput () {
       const map1 = this.$store.state.map01
@@ -3651,13 +3662,13 @@ export default {
                       source: 'oh-chiban-' + id + '-' + name + '-source',
                       "source-layer": 'oh3',
                       'paint': {
-                        // 'fill-color': 'rgba(0,0,0,0)',
-                        'fill-color': [
-                          'case',
-                          ['has', 'AzaName'],
-                          'rgba(0,0,255,0.5)',
-                          'rgba(0,0,0,0)'
-                        ],
+                        'fill-color': 'rgba(0,0,0,0)',
+                        // 'fill-color': [
+                        //   'case',
+                        //   ['has', 'AzaName'],
+                        //   'rgba(0,0,255,0.5)',
+                        //   'rgba(0,0,0,0)'
+                        // ],
                       },
                     }
                     const lineLayer = {
