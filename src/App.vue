@@ -272,6 +272,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </select>
             </div>
             <div v-else>
+              <v-text-field v-model="s_gazoName" placeholder="名称" ></v-text-field>
               <v-select class="scrollable-content"
                         v-model="s_resolution"
                         :items="resolutions"
@@ -313,6 +314,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </select>
             </div>
             <div v-else>
+              <v-text-field v-model="s_gazoName" placeholder="名称" ></v-text-field>
               <v-select class="scrollable-content"
                         v-model="s_zahyokei"
                         :items="items"
@@ -360,6 +362,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </select>
             </div>
             <div v-else>
+              <v-text-field v-model="s_gazoName" placeholder="名称" ></v-text-field>
               <v-select class="scrollable-content"
                         v-model="s_zahyokei"
                         :items="items"
@@ -407,6 +410,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </select>
             </div>
             <div v-else>
+              <v-text-field v-model="s_gazoName" placeholder="名称" ></v-text-field>
               <v-select class="scrollable-content"
                         v-model="s_zahyokei"
                         :items="items"
@@ -454,6 +458,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </select>
             </div>
             <div v-else>
+              <v-text-field v-model="s_gazoName" placeholder="名称" ></v-text-field>
               <v-select class="scrollable-content"
                         v-model="s_zahyokei"
                         :items="items"
@@ -614,7 +619,6 @@ import PointInfoDrawer from '@/components/PointInfoDrawer.vue'
 import RightDrawer from '@/components/rightDrawer.vue'
 import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
-import LayerTabPanel from '@/components/LayerTabPanel.vue'
 import {
   capture,
   csvGenerateForUserPng,
@@ -633,8 +637,7 @@ import {
   pngDownload,
   pngLoad,
   simaLoadForUser, tileGenerateForUser,
-  tileGenerateForUser1file, tileGenerateForUserJpg, tileGenerateForUserPdf, tileGenerateForUserPng,
-  tileGenerateForUserTfw,
+  tileGenerateForUserPdf,
   transformGeoJSONToEPSG4326, userKmzSet, userSimaSet,
   zahyokei, zipDownloadSimaText
 } from '@/js/downLoad'
@@ -1066,6 +1069,14 @@ export default {
       'selectedPointFeature',
       'showChibanzuDrawer',
     ]),
+    s_gazoName: {
+      get() {
+        return this.$store.state.gazoName
+      },
+      set(value) {
+        return this.$store.state.gazoName = value
+      }
+    },
     s_isDrawCircle: {
       get() {
         return this.$store.state.isDrawCircle
@@ -4127,6 +4138,8 @@ export default {
               const file = files[0]
               this.s_geojsonFile = file
               const fileName = file.name;
+              // alert(fileName.split('.')[0])
+              this.s_gazoName = fileName.split('.')[0]
               const fileExtension = fileName.split('.').pop().toLowerCase();
               history(fileExtension + 'をDD',window.location.href)
               const reader = new FileReader();

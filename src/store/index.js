@@ -4,6 +4,7 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    gazoName: '',
     isDrawCircle: false,
     rightDrawerTitle: '',
     selectedPublic: 0,
