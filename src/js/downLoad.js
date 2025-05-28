@@ -7335,29 +7335,66 @@ export function selectAll (map) {
     highlightSpecificFeatures2025(map,'oh-homusyo-2025-polygon');
 }
 
-export async function extractFirstFeatureProperties(file) {
+export async function extractFirstFeaturePropertiesAndCheckCRS(file) {
     const chunkSize = 1024 * 1024; // 1MB
     let offset = 0;
     let foundProperties = false;
     let properties = null;
     let buffer = '';
+    let checkedCRS = false;
+
     while (!foundProperties && offset < file.size) {
         const blob = file.slice(offset, offset + chunkSize);
         const text = await blob.text();
         buffer += text; // チャンクをバッファに追加
-        // "features"以降の最初のpropertiesを検索
-        const featuresIndex = buffer.indexOf('"features"');
-        if (featuresIndex !== -1) {
-            const propertiesMatch = buffer.slice(featuresIndex).match(/"properties"\s*:\s*{([^}]*)}/);
-            if (propertiesMatch) {
-                // propertiesをJSONとしてパース
-                const propertiesStr = `{${propertiesMatch[1]}}`;
-                try {
-                    properties = JSON.parse(propertiesStr);
-                    foundProperties = true;
-                } catch (err) {
-                    throw new Error('プロパティのパースに失敗しました');
+
+        // CRSフィールドがあれば最優先でチェック
+        if (!checkedCRS) {
+            const crsMatch = buffer.match(/"crs"\s*:\s*{[^}]*"properties"\s*:\s*{([^}]*)}/);
+            if (crsMatch) {
+                const props = crsMatch[1];
+                // nameまたはcodeを抽出
+                const nameMatch = props.match(/"name"\s*:\s*"([^"]+)"/);
+                const codeMatch = props.match(/"code"\s*:\s*(\d+)/);
+                if (
+                    (nameMatch && nameMatch[1] !== 'urn:ogc:def:crs:OGC:1.3:CRS84' && nameMatch[1] !== 'EPSG:4326') ||
+                    (codeMatch && codeMatch[1] !== '4326')
+                ) {
+                    alert("このGeoJSONはEPSG:4326ではありません。処理を中止します。\nEPSG:4326で作成してください。");
+                    throw new Error("Not EPSG:4326");
                 }
+                checkedCRS = true;
+            }
+        }
+
+        // featuresが出てきたら座標値をざっくり検査
+        const featuresIndex = buffer.indexOf('"features"');
+        if (featuresIndex !== -1 && !checkedCRS) {
+            // coordinatesをざっくりサーチ
+            const coordMatch = buffer.slice(featuresIndex).match(/"coordinates"\s*:\s*\[([^\]]+)\]/);
+            if (coordMatch) {
+                const nums = coordMatch[1].split(",").map(s => parseFloat(s.trim()));
+                if (nums.length >= 2) {
+                    const lon = nums[0], lat = nums[1];
+                    if (Math.abs(lon) > 180 || Math.abs(lat) > 90) {
+                        alert("座標値がEPSG:4326（経度緯度）として不正です。処理を中止します。");
+                        throw new Error("Coordinates out of range for EPSG:4326");
+                    }
+                }
+                checkedCRS = true;
+            }
+        }
+
+        // 最初のpropertiesを取得
+        const propertiesMatch = buffer.slice(featuresIndex >= 0 ? featuresIndex : 0).match(/"properties"\s*:\s*{([^}]*)}/);
+        if (propertiesMatch) {
+            // propertiesをJSONとしてパース
+            const propertiesStr = `{${propertiesMatch[1]}}`;
+            try {
+                properties = JSON.parse(propertiesStr);
+                foundProperties = true;
+            } catch (err) {
+                throw new Error('プロパティのパースに失敗しました');
             }
         }
         offset += chunkSize;
@@ -7367,6 +7404,8 @@ export async function extractFirstFeatureProperties(file) {
     }
     return Object.keys(properties);
 }
+
+
 
 export async function LngLatToAddress(lng, lat) {
     try {

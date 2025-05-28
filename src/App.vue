@@ -620,12 +620,11 @@ import RightDrawer from '@/components/rightDrawer.vue'
 import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
 import {
-  calculateEdgeLengths,
   capture,
   csvGenerateForUserPng,
   ddSimaUpload,
   downloadKML,
-  downloadSimaText, dxfToGeoJSON, extractFirstFeatureProperties,
+  downloadSimaText, dxfToGeoJSON, extractFirstFeaturePropertiesAndCheckCRS,
   geojsonAddLayer,
   geoTiffLoad,
   geoTiffLoad2,
@@ -4146,7 +4145,6 @@ export default {
               const file = files[0]
               this.s_geojsonFile = file
               const fileName = file.name;
-              // alert(fileName.split('.')[0])
               this.s_gazoName = fileName.split('.')[0]
               const fileExtension = fileName.split('.').pop().toLowerCase();
               history(fileExtension + 'をDD',window.location.href)
@@ -4213,7 +4211,6 @@ export default {
                   if (files.length > 1) {
                     this.s_dialogForGeotiffApp = true
                   } else if (files.length === 1){
-
                     const zahyokei = await getCRS(Array.from(e.dataTransfer.files)[0])
                     if (zahyokei) {
                       this.$store.state.zahyokei = zahyokei
@@ -4267,11 +4264,12 @@ export default {
                     try {
                       async function aaa () {
                         if (vm.$store.state.userId) {
-                          // const firstFeature = geojson.features[0];
-                          // vm.s_chibanzuPropaties = Object.keys(firstFeature.properties)
-                          // vm.s_chibanzuGeojson = geojson
-                          vm.s_chibanzuPropaties = await extractFirstFeatureProperties(file)
-                          vm.s_showChibanzuDialog = true
+                          try {
+                            vm.s_chibanzuPropaties = await extractFirstFeaturePropertiesAndCheckCRS(file)
+                            vm.s_showChibanzuDialog = true
+                          }catch (e) {
+                            console.log(e)
+                          }
                         // } else {
                         //   vm.$store.state.geojsonText = geojsonText
                         //   geojsonAddLayer (map, geojson, true, fileExtension)

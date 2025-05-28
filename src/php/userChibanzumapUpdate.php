@@ -100,23 +100,53 @@ try {
 //            GROUP BY citycode
 //        )'
 //    );
+//    $selectUserpmtilesStmt = $pdo->query('
+//        SELECT t1.citycode, t1.prefname, t1.cityname, t1.public, t1.date
+//        FROM userpmtiles t1
+//        JOIN (
+//            SELECT citycode, MIN(public) AS min_public, MAX(date) AS max_date
+//            FROM userpmtiles
+//            WHERE citycode IS NOT NULL
+//              AND citycode != \'\'
+//              AND public != 0
+//            GROUP BY citycode
+//        ) t2
+//        ON t1.citycode = t2.citycode
+//         AND t1.public = t2.min_public
+//         AND t1.date = t2.max_date
+//        WHERE t1.citycode IS NOT NULL
+//          AND t1.citycode != \'\'
+//          AND t1.public != 0
+//    ');
     $selectUserpmtilesStmt = $pdo->query('
         SELECT t1.citycode, t1.prefname, t1.cityname, t1.public, t1.date
         FROM userpmtiles t1
         JOIN (
-            SELECT citycode, MIN(public) AS min_public, MAX(date) AS max_date
+            SELECT
+                citycode,
+                MIN(public) AS min_public
             FROM userpmtiles
-            WHERE citycode IS NOT NULL
-              AND citycode != \'\'
-              AND public != 0
+            WHERE public IN (-1, 1, 3)
+              AND citycode IS NOT NULL
             GROUP BY citycode
         ) t2
-        ON t1.citycode = t2.citycode
+          ON t1.citycode = t2.citycode
          AND t1.public = t2.min_public
-         AND t1.date = t2.max_date
-        WHERE t1.citycode IS NOT NULL
-          AND t1.citycode != \'\'
-          AND t1.public != 0
+        JOIN (
+            SELECT
+                citycode,
+                public,
+                MAX(date) AS max_date
+            FROM userpmtiles
+            WHERE public IN (-1, 1, 3)
+              AND citycode IS NOT NULL
+            GROUP BY citycode, public
+        ) t3
+          ON t1.citycode = t3.citycode
+         AND t1.public = t3.public
+         AND t1.date = t3.max_date
+        WHERE t1.public IN (-1, 1, 3)
+          AND t1.citycode IS NOT NULL
     ');
     $userpmtiles = $selectUserpmtilesStmt->fetchAll();
 
