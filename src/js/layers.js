@@ -150,6 +150,7 @@ async function publicData() {
     }
 }
 const pablicDatas = await publicData()
+console.log(pablicDatas)
 function publiLayersCreate (v) {
     const publicSource = {
         id: 'oh-chiban-' + v.id + '-' + v.name + '-source',

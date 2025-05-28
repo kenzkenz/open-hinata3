@@ -90,16 +90,34 @@ try {
     $insertStmt->execute($values);
 
     // 5. userpmtilesからデータを取得（citycodeでグループ化、publicが0以外の最小、dateが最新、citycodeがNULL/空でない）
+//    $selectUserpmtilesStmt = $pdo->query('
+//        SELECT citycode, prefname, cityname, public
+//        FROM userpmtiles
+//        WHERE (citycode, public, date) IN (
+//            SELECT citycode, MIN(public), MAX(date)
+//            FROM userpmtiles
+//            WHERE citycode IS NOT NULL AND citycode != \'\' AND public != 0
+//            GROUP BY citycode
+//        )'
+//    );
     $selectUserpmtilesStmt = $pdo->query('
-    SELECT citycode, prefname, cityname, public
-    FROM userpmtiles
-    WHERE (citycode, public, date) IN (
-        SELECT citycode, MIN(public), MAX(date)
-        FROM userpmtiles
-        WHERE citycode IS NOT NULL AND citycode != \'\' AND public != 0
-        GROUP BY citycode
-    )
-'   );
+        SELECT t1.citycode, t1.prefname, t1.cityname, t1.public, t1.date
+        FROM userpmtiles t1
+        JOIN (
+            SELECT citycode, MIN(public) AS min_public, MAX(date) AS max_date
+            FROM userpmtiles
+            WHERE citycode IS NOT NULL
+              AND citycode != \'\'
+              AND public != 0
+            GROUP BY citycode
+        ) t2
+        ON t1.citycode = t2.citycode
+         AND t1.public = t2.min_public
+         AND t1.date = t2.max_date
+        WHERE t1.citycode IS NOT NULL
+          AND t1.citycode != \'\'
+          AND t1.public != 0
+    ');
     $userpmtiles = $selectUserpmtilesStmt->fetchAll();
 
     // userpmtilesのデータ件数を記録
