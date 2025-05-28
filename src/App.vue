@@ -280,15 +280,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         outlined
                         v-if="user1"
               ></v-select>
-              <v-select class="scrollable-content"
-                        v-model="s_transparent"
-                        :items="transparentType"
-                        item-title="label"
-                        item-value="value"
-                        label="透過方法を選択してください"
-                        outlined
-                        v-if="user1"
-              ></v-select>
+<!--              <v-select class="scrollable-content"-->
+<!--                        v-model="s_transparent"-->
+<!--                        :items="transparentType"-->
+<!--                        item-title="label"-->
+<!--                        item-value="value"-->
+<!--                        label="透過方法を選択してください"-->
+<!--                        outlined-->
+<!--                        v-if="user1"-->
+<!--              ></v-select>-->
             </div>
             <v-btn @click="geoTifLoad1file">geotif読込開始</v-btn>
           </v-card-text>
@@ -328,15 +328,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <!--                        outlined-->
 <!--                        v-if="user1"-->
 <!--              ></v-select>-->
-              <v-select class="scrollable-content"
-                        v-model="s_transparent"
-                        :items="transparentType"
-                        item-title="label"
-                        item-value="value"
-                        label="透過方法を選択してください"
-                        outlined
-                        v-if="user1"
-              ></v-select>
+<!--              <v-select class="scrollable-content"-->
+<!--                        v-model="s_transparent"-->
+<!--                        :items="transparentType"-->
+<!--                        item-title="label"-->
+<!--                        item-value="value"-->
+<!--                        label="透過方法を選択してください"-->
+<!--                        outlined-->
+<!--                        v-if="user1"-->
+<!--              ></v-select>-->
             </div>
             <v-btn @click="geoTiffLoad0">geotiff読込開始</v-btn>
           </v-card-text>
@@ -376,15 +376,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <!--                        outlined-->
 <!--                        v-if="user1"-->
 <!--              ></v-select>-->
-              <v-select class="scrollable-content"
-                        v-model="s_transparent"
-                        :items="transparentType"
-                        item-title="label"
-                        item-value="value"
-                        label="透過方法を選択してください"
-                        outlined
-                        v-if="user1"
-              ></v-select>
+<!--              <v-select class="scrollable-content"-->
+<!--                        v-model="s_transparent"-->
+<!--                        :items="transparentType"-->
+<!--                        item-title="label"-->
+<!--                        item-value="value"-->
+<!--                        label="透過方法を選択してください"-->
+<!--                        outlined-->
+<!--                        v-if="user1"-->
+<!--              ></v-select>-->
             </div>
             <v-btn @click="geoTifLoad1file">geotiff読込開始</v-btn>
           </v-card-text>
@@ -424,15 +424,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <!--                        outlined-->
 <!--                        v-if="user1"-->
 <!--              ></v-select>-->
-              <v-select class="scrollable-content"
-                        v-model="s_transparent"
-                        :items="transparentType"
-                        item-title="label"
-                        item-value="value"
-                        label="透過方法を選択してください"
-                        outlined
-                        v-if="user1"
-              ></v-select>
+<!--              <v-select class="scrollable-content"-->
+<!--                        v-model="s_transparent"-->
+<!--                        :items="transparentType"-->
+<!--                        item-title="label"-->
+<!--                        item-value="value"-->
+<!--                        label="透過方法を選択してください"-->
+<!--                        outlined-->
+<!--                        v-if="user1"-->
+<!--              ></v-select>-->
             </div>
             <v-btn @click="jpgLoad0">jpg読込開始</v-btn>
           </v-card-text>
@@ -3472,22 +3472,28 @@ export default {
                     console.error('エラー:', response.data.error);
                     alert(`エラー: ${response.data.error}`);
                   } else {
+                    console.log('レスポンス',response)
                     let url = response.data[0].url
+                    console.log(JSON.stringify(url))
                     let source
                     if (url.includes('{-y}')) {
                       url = url.replace(/{-y}/,'{y}')
                       source = {
-                        id: response.data[0].name + '-source',
-                        obj: { type: 'raster', tiles: [url], scheme: 'tms' }
+                        id: response.data[0].name + '-source',obj: {
+                          type: 'raster',
+                          tiles: [url],
+                          scheme: 'tms'
+                        }
                       }
                     } else {
                       source = {
-                        id: name + '-source',obj: {
-                          id: response.data[0].name + '-source',
-                          obj: { type: 'raster', tiles: [url]}
+                        id: response.data[0].name + '-source',obj: {
+                          type: 'raster',
+                          tiles: [url]
                         }
                       }
                     }
+                    console.log(source)
                     // source = {
                     //   id: response.data[0].name + '-source',
                     //   obj: { type: 'raster', tiles: [response.data[0].url] }
@@ -3497,6 +3503,7 @@ export default {
                       type: 'raster',
                       source: response.data[0].name + '-source'
                     };
+
                     v.sources = [source];
                     v.layers = [layer];
                     v.label = response.data[0].name;

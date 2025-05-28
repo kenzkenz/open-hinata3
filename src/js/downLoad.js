@@ -4684,8 +4684,9 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension) {
 
                 // 成功時の処理
                 if (result && result.success) {
-                    store.state.loading2 = false;
                     console.log("成功:", result);
+                    let mb = result.pmtiles_size_mb
+                    if (mb === 0) mb = 0.01
                     const dbResult = await insertXyztileData(
                         store.state.userId,
                         fileName,
@@ -4693,11 +4694,15 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension) {
                         result.tiles_dir,
                         'dummy',
                         '[' + result.bbox + ']',
-                        result.pmtiles_size_mb,
+                        mb,
                         result.max_zoom
                     );
                     addXyztileLayer(dbResult.id, dbResult.name, result.tiles_url, result.bbox);
                     console.log('タイル作成完了');
+                    setTimeout(() => {
+                        store.state.loading2 = false;
+                    },4000)
+
                     if (!result.bbox) {
                         alert('座標系が間違えている可能性があります。EPSG:4326に設定してください。');
                     }
