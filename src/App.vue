@@ -302,7 +302,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <v-dialog v-model="s_dialogForGeotiffApp" max-width="500px">
         <v-card>
           <v-card-title>
-            座標系と解像度を選択
+            画像アップロード
           </v-card-title>
           <v-card-text>
             <div v-if="s_isAndroid" class="select-container">
@@ -321,13 +321,13 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         label="座標系を選択してください"
                         outlined
               ></v-select>
-              <v-select class="scrollable-content"
-                        v-model="s_resolution"
-                        :items="resolutions"
-                        label="画像取込最大解像度を選択してください"
-                        outlined
-                        v-if="user1"
-              ></v-select>
+<!--              <v-select class="scrollable-content"-->
+<!--                        v-model="s_resolution"-->
+<!--                        :items="resolutions"-->
+<!--                        label="画像取込最大解像度を選択してください"-->
+<!--                        outlined-->
+<!--                        v-if="user1"-->
+<!--              ></v-select>-->
               <v-select class="scrollable-content"
                         v-model="s_transparent"
                         :items="transparentType"
@@ -350,7 +350,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <v-dialog v-model="s_dialogForGeotiff2App" max-width="500px">
         <v-card>
           <v-card-title>
-            座標系と解像度を選択
+            画像アップロード
           </v-card-title>
           <v-card-text>
             <div v-if="s_isAndroid" class="select-container">
@@ -369,13 +369,13 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         label="選択してください"
                         outlined
               ></v-select>
-              <v-select class="scrollable-content"
-                        v-model="s_resolution"
-                        :items="resolutions"
-                        label="画像取込最大解像度"
-                        outlined
-                        v-if="user1"
-              ></v-select>
+<!--              <v-select class="scrollable-content"-->
+<!--                        v-model="s_resolution"-->
+<!--                        :items="resolutions"-->
+<!--                        label="画像取込最大解像度"-->
+<!--                        outlined-->
+<!--                        v-if="user1"-->
+<!--              ></v-select>-->
               <v-select class="scrollable-content"
                         v-model="s_transparent"
                         :items="transparentType"
@@ -398,7 +398,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <v-dialog v-model="s_dialogForJpgApp" max-width="500px">
         <v-card>
           <v-card-title>
-            座標系と解像度を選択
+            画像アップロード
           </v-card-title>
           <v-card-text>
             <div v-if="s_isAndroid" class="select-container">
@@ -417,13 +417,13 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         label="選択してください"
                         outlined
               ></v-select>
-              <v-select class="scrollable-content"
-                        v-model="s_resolution"
-                        :items="resolutions"
-                        label="画像取込最大解像度"
-                        outlined
-                        v-if="user1"
-              ></v-select>
+<!--              <v-select class="scrollable-content"-->
+<!--                        v-model="s_resolution"-->
+<!--                        :items="resolutions"-->
+<!--                        label="画像取込最大解像度"-->
+<!--                        outlined-->
+<!--                        v-if="user1"-->
+<!--              ></v-select>-->
               <v-select class="scrollable-content"
                         v-model="s_transparent"
                         :items="transparentType"
@@ -446,7 +446,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <v-dialog v-model="s_dialogForPng2App" max-width="500px">
         <v-card>
           <v-card-title>
-            座標系と解像度を選択
+            画像アップロード
           </v-card-title>
           <v-card-text>
             <div v-if="s_isAndroid" class="select-container">
@@ -465,13 +465,13 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         label="選択してください"
                         outlined
               ></v-select>
-              <v-select class="scrollable-content"
-                        v-model="s_resolution"
-                        :items="resolutions"
-                        label="画像取込最大解像度"
-                        outlined
-                        v-if="user1"
-              ></v-select>
+<!--              <v-select class="scrollable-content"-->
+<!--                        v-model="s_resolution"-->
+<!--                        :items="resolutions"-->
+<!--                        label="画像取込最大解像度"-->
+<!--                        outlined-->
+<!--                        v-if="user1"-->
+<!--              ></v-select>-->
               <v-select class="scrollable-content"
                         v-model="s_transparent"
                         :items="transparentType"
