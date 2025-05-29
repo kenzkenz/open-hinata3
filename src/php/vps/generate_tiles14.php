@@ -2,7 +2,7 @@
 // PHP設定: スクリプトの実行環境を設定
 ini_set('output_buffering', '0');
 ini_set('zlib.output_compression', '0');
-ini_set('memory_limit', '-1'); // メモリ制限を無効化（注意：環境に応じて調整）
+ini_set('memory_limit', '-1');
 ini_set('max_execution_time', 1200);
 ini_set('max_input_time', 1200);
 
@@ -27,8 +27,8 @@ flush();
 // 定数
 $BASE_URL = "https://kenzkenz.duckdns.org/tiles/";
 define("EARTH_RADIUS_KM", 6371);
-define("EARTH_RADIUS_M", 6378137); // 地球の半径（メートル、Web Mercator用）
-define("MAX_FILE_SIZE_BYTES", 200000000); // 200MB in bytes
+define("EARTH_RADIUS_M", 6378137);
+define("MAX_FILE_SIZE_BYTES", 200000000);
 $logFile = "/tmp/php_script.log";
 
 // SSE送信関数
@@ -183,7 +183,7 @@ sendSSE(["log" => "ファイル確認完了: $filePath"]);
 $fileName = isset($_POST["fileName"]) ? preg_replace('/[^a-zA-Z0-9_-]/', '', $_POST["fileName"]) : pathinfo($filePath, PATHINFO_FILENAME);
 $subDir = preg_replace('/[^a-zA-Z0-9_-]/', '', $_POST["dir"]);
 $resolution = isset($_POST["resolution"]) && is_numeric($_POST["resolution"]) ? intval($_POST["resolution"]) : null;
-$transparent = 'black'; // 透過色は黒に固定
+$transparent = 'black';
 $sourceEPSG = isset($_POST["srs"]) ? preg_replace('/[^0-9]/', '', $_POST["srs"]) : "2450";
 
 logMessage("Parameters: fileName=$fileName, subDir=$subDir, resolution=$resolution, transparent=$transparent, sourceEPSG=$sourceEPSG");
@@ -262,7 +262,7 @@ if ($bandCount == 3 && !$hasWhite && !$hasBlack) {
     // 白色と黒色透過処理
     sendSSE(["log" => "白色と黒色透過処理を開始します。少お待ちください。"]);
     $transparentPath = "/tmp/" . $fileName . "_transparent.tif";
-    $transparentCommand = "gdalwarp -dstalpha -srcnodata \"255 255 255,0 0 0\" -overwrite -co COMPRESS=DEFLATE -co PREDICTOR=2 -wo NUM_THREADS=ALL_CPUS " . escapeshellarg($outputFilePath) . " " . escapeshellarg($transparentPath);
+    $transparentCommand = "GDAL_LOG_PROGRESS=1 gdalwarp -dstalpha -srcnodata \"255 255 255,0 0 0\" -overwrite -co COMPRESS=DEFLATE -co PREDICTOR=2 -wo NUM_THREADS=ALL_CPUS " . escapeshellarg($outputFilePath) . " " . escapeshellarg($transparentPath);
     $descriptors = [
         0 => ["pipe", "r"],
         1 => ["pipe", "w"],
@@ -270,19 +270,19 @@ if ($bandCount == 3 && !$hasWhite && !$hasBlack) {
     ];
     $process = proc_open($transparentCommand, $descriptors, $pipes);
     $transparentOutput = [];
-    $startTime = time();
     if (is_resource($process)) {
         stream_set_blocking($pipes[1], false);
         stream_set_blocking($pipes[2], false);
-        $lastProgressUpdate = $startTime;
         while (proc_get_status($process)['running']) {
             $stdout = fgets($pipes[1]);
             $stderr = fgets($pipes[2]);
             if ($stdout) {
                 $log = trim($stdout);
-                logMessage("gdalwarp stdout: $log");
-                sendSSE(["log" => "gdalwarp: $log"]);
-                $transparentOutput[] = $log;
+                if (is_numeric($log) && $log >= 0 && $log <= 100) {
+                    logMessage("gdalwarp progress: $log%");
+                    sendSSE(["log" => "gdalwarp: $log%"]);
+                    $transparentOutput[] = $log;
+                }
             }
             if ($stderr) {
                 $log = trim($stderr);
@@ -290,20 +290,15 @@ if ($bandCount == 3 && !$hasWhite && !$hasBlack) {
                 sendSSE(["log" => "[gdalwarp ERROR] $log"]);
                 $transparentOutput[] = "[ERROR] $log";
             }
-            $currentTime = time();
-            if ($currentTime - $lastProgressUpdate >= 5) {
-                $elapsed = $currentTime - $startTime;
-                sendSSE(["log" => "gdalwarp 処理中: 経過時間 {$elapsed}秒"]);
-                logMessage("gdalwarp progress: elapsed {$elapsed} seconds");
-                $lastProgressUpdate = $currentTime;
-            }
             usleep(100000);
         }
         while ($stdout = fgets($pipes[1])) {
             $log = trim($stdout);
-            logMessage("gdalwarp stdout: $log");
-            sendSSE(["log" => "gdalwarp: $log"]);
-            $transparentOutput[] = $log;
+            if (is_numeric($log) && $log >= 0 && $log <= 100) {
+                logMessage("gdalwarp progress: $log%");
+                sendSSE(["log" => "gdalwarp: $log%"]);
+                $transparentOutput[] = $log;
+            }
         }
         while ($stderr = fgets($pipes[2])) {
             $log = trim($stderr);
@@ -327,7 +322,7 @@ if ($bandCount == 3 && !$hasWhite && !$hasBlack) {
         sendSSE($error, "error");
         exit;
     }
-    logMessage("White and black transparency processing completed: $transparentPath");
+    logMessage("White and black transparency processing completed: transparent.tif");
     sendSSE(["log" => "白色と黒色透過処理が完了しました"]);
     $outputFilePath = $transparentPath;
 
@@ -473,7 +468,7 @@ $tileCommandArgs = [
     escapeshellarg($outputFilePath),
     escapeshellarg($tileDir)
 ];
-$tileCommandArgs = array_filter($tileCommandArgs); // 空の要素を除外
+$tileCommandArgs = array_filter($tileCommandArgs);
 $tileCommand = implode(' ', $tileCommandArgs) . ' 2>&1';
 logMessage("Executing gdal2tiles command: $tileCommand");
 $descriptors = [0 => ["pipe", "r"], 1 => ["pipe", "w"], 2 => ["pipe", "w"]];
