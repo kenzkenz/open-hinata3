@@ -4597,7 +4597,7 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension) {
 
         try {
             // generate_tiles11.phpにリクエスト送信
-            const response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles14.php", {
+            const response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles15.php", {
                 method: "POST",
                 body: formData,
             });
@@ -4639,7 +4639,7 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension) {
                                 if (data.log) {
                                     if (!data.log.includes('[ERROR]')) {
                                         // store.state.loadingMessage = data.log.slice(0, 40); // ログをリアルタイム表示
-                                        store.state.loadingMessage = store.state.loadingMessage + '<br>' + data.log.slice(0, 40); // ログをリアルタイム表示
+                                        store.state.loadingMessage = store.state.loadingMessage + '<br>' + data.log.slice(0, 100); // ログをリアルタイム表示
                                     }
                                 } else if (data.error) {
                                     console.error("サーバーエラー:", data);
@@ -4783,7 +4783,7 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension) {
         const data = await response.json();
         if (data.success) {
             console.log("アップロード成功:", data);
-            store.state.loading2 = false;
+            store.state.loadingMessage = store.state.loadingMessage + '<br>アップロード成功'
             await generateTiles(data.file, srsCode, store.state.userId, fileName, store.state.resolution, store.state.transparent);
         } else {
             console.error("アップロード失敗:", data);
