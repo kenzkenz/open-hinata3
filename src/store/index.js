@@ -169,7 +169,7 @@ export default createStore({
     drawGeojsonText: '',
     clickGeojsonText: '',
     clickCircleGeojsonText: '',
-    transparent: 'black',
+    transparent: '1',
     resolution: 23,
     loading: false,
     loading2: false,

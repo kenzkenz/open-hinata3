@@ -4593,7 +4593,7 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension) {
         formData.append("dir", dir);
         formData.append("fileName", fileName);
         // formData.append("resolution", resolution || 22);
-        formData.append("transparent", transparent || "black");
+        formData.append("transparent", transparent || '1');
 
         try {
             // generate_tiles11.phpにリクエスト送信

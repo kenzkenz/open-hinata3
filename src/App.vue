@@ -328,15 +328,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <!--                        outlined-->
 <!--                        v-if="user1"-->
 <!--              ></v-select>-->
-<!--              <v-select class="scrollable-content"-->
-<!--                        v-model="s_transparent"-->
-<!--                        :items="transparentType"-->
-<!--                        item-title="label"-->
-<!--                        item-value="value"-->
-<!--                        label="透過方法を選択してください"-->
-<!--                        outlined-->
-<!--                        v-if="user1"-->
-<!--              ></v-select>-->
+              <v-select class="scrollable-content"
+                        v-model="s_transparent"
+                        :items="transparentType"
+                        item-title="label"
+                        item-value="value"
+                        label="透過方法を選択してください"
+                        outlined
+                        v-if="user1"
+              ></v-select>
             </div>
             <v-btn @click="geoTiffLoad0">geotiff読込開始</v-btn>
           </v-card-text>
@@ -376,15 +376,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <!--                        outlined-->
 <!--                        v-if="user1"-->
 <!--              ></v-select>-->
-<!--              <v-select class="scrollable-content"-->
-<!--                        v-model="s_transparent"-->
-<!--                        :items="transparentType"-->
-<!--                        item-title="label"-->
-<!--                        item-value="value"-->
-<!--                        label="透過方法を選択してください"-->
-<!--                        outlined-->
-<!--                        v-if="user1"-->
-<!--              ></v-select>-->
+              <v-select class="scrollable-content"
+                        v-model="s_transparent"
+                        :items="transparentType"
+                        item-title="label"
+                        item-value="value"
+                        label="透過方法を選択してください"
+                        outlined
+                        v-if="user1"
+              ></v-select>
             </div>
             <v-btn @click="geoTifLoad1file">geotiff読込開始</v-btn>
           </v-card-text>
@@ -424,15 +424,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <!--                        outlined-->
 <!--                        v-if="user1"-->
 <!--              ></v-select>-->
-<!--              <v-select class="scrollable-content"-->
-<!--                        v-model="s_transparent"-->
-<!--                        :items="transparentType"-->
-<!--                        item-title="label"-->
-<!--                        item-value="value"-->
-<!--                        label="透過方法を選択してください"-->
-<!--                        outlined-->
-<!--                        v-if="user1"-->
-<!--              ></v-select>-->
+              <v-select class="scrollable-content"
+                        v-model="s_transparent"
+                        :items="transparentType"
+                        item-title="label"
+                        item-value="value"
+                        label="透過方法を選択してください"
+                        outlined
+                        v-if="user1"
+              ></v-select>
             </div>
             <v-btn @click="jpgLoad0">jpg読込開始</v-btn>
           </v-card-text>
@@ -1035,11 +1035,10 @@ export default {
     ],
     dialogForDxfApp: false,
     windowWidth: window.innerWidth,
-    transparent: 'black',
+    // transparent: 1,
     transparentType: [
-      { label: '黒を透過', value: 'black' },
-      { label: '白を透過', value: 'white' },
-      { label: '透過なし', value: 'not' }
+      { label: '透過する。（処理遅い）', value: '1' },
+      { label: '透過なし。（処理早い）', value: '0' }
     ],
     resolutions: [13,14,15,16,17,18,19,20,21,22,23,24],
     dialogForGeotiffApp1file: false,
@@ -1264,7 +1263,7 @@ export default {
       },
       set(value) {
         this.$store.state.transparent = value
-        localStorage.setItem('transparent',value)
+        // localStorage.setItem('transparent',value)
       }
     },
     s_resolution: {
@@ -4879,9 +4878,9 @@ export default {
       this.s_resolution = localStorage.getItem('resolution')
       if (this.s_resolution > 24) this.s_resolution = 24
     }
-    if (localStorage.getItem('transparent')) {
-      this.s_transparent = localStorage.getItem('transparent')
-    }
+    // if (localStorage.getItem('transparent')) {
+    //   this.s_transparent = localStorage.getItem('transparent')
+    // }
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {

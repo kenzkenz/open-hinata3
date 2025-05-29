@@ -204,8 +204,15 @@ $fileName = isset($_POST["fileName"]) ? preg_replace('/[^a-zA-Z0-9_-]/', '', $_P
 $subDir = preg_replace('/[^a-zA-Z0-9_-]/', '', $_POST["dir"]);
 $resolution = isset($_POST["resolution"]) && is_numeric($_POST["resolution"]) ? intval($_POST["resolution"]) : null;
 $sourceEPSG = isset($_POST["srs"]) ? preg_replace('/[^0-9]/', '', $_POST["srs"]) : "2450";
-logMessage("Parameters: fileName=$fileName, subDir=$subDir, resolution=$resolution, sourceEPSG=$sourceEPSG");
-sendSSE(["log" => "パラメータ: fileName=$fileName, subDir=$subDir"]);
+$transparent = isset($_POST["transparent"]) ? $_POST["transparent"] : "1"; // デフォルトは1
+if (!in_array($transparent, ["0", "1"])) {
+    sendSSE(["error" => "無効なtransparent値: 0または1を指定してください"], "error");
+    logMessage("Invalid transparent value: $transparent");
+    exit;
+}
+$transparent = (int)$transparent; // 文字列を整数に変換
+logMessage("Parameters: fileName=$fileName, subDir=$subDir, resolution=$resolution, sourceEPSG=$sourceEPSG, transparent=$transparent");
+sendSSE(["log" => "パラメータ: fileName=$fileName, subDir=$subDir, transparent=$transparent"]);
 
 // コマンド存在確認
 checkCommand($gdalTranslate, "gdal_translate");
@@ -268,52 +275,61 @@ if (in_array(strtolower(pathinfo($filePath, PATHINFO_EXTENSION)), ['jpg', 'jpeg'
 }
 
 // 透過処理
-$transparentPath = "/tmp/" . $fileName . "_transparent.tif";
-sendSSE(["log" => "透過処理開始"]);
-$transparentCommand = "$gdalWarp -dstalpha -srcnodata \"255 255 255,0 0 0\" -overwrite -co COMPRESS=DEFLATE -co PREDICTOR=2 -wo NUM_THREADS=ALL_CPUS " . escapeshellarg($outputFilePath) . " " . escapeshellarg($transparentPath);
-$process = proc_open($transparentCommand, [0 => ["pipe", "r"], 1 => ["pipe", "w"], 2 => ["pipe", "w"]], $pipes);
-$output = [];
-if (is_resource($process)) {
-    stream_set_blocking($pipes[1], false);
-    stream_set_blocking($pipes[2], false);
-    while (proc_get_status($process)['running']) {
-        $stdout = fgets($pipes[1]);
-        $stderr = fgets($pipes[2]);
-        if ($stdout && is_numeric(trim($stdout))) {
-            sendSSE(["log" => "gdalwarp: " . trim($stdout) . "%"]);
-            $output[] = trim($stdout);
+$transparentPath = null;
+if ($transparent === 1) {
+    $transparentPath = "/tmp/" . $fileName . "_transparent.tif";
+    sendSSE(["log" => "透過処理開始"]);
+    $transparentCommand = "$gdalWarp -dstalpha -srcnodata \"255 255 255,0 0 0\" -overwrite -co COMPRESS=DEFLATE -co PREDICTOR=2 -wo NUM_THREADS=ALL_CPUS " . escapeshellarg($outputFilePath) . " " . escapeshellarg($transparentPath);
+    $process = proc_open($transparentCommand, [0 => ["pipe", "r"], 1 => ["pipe", "w"], 2 => ["pipe", "w"]], $pipes);
+    $output = [];
+    if (is_resource($process)) {
+        stream_set_blocking($pipes[1], false);
+        stream_set_blocking($pipes[2], false);
+        while (proc_get_status($process)['running']) {
+            $stdout = fgets($pipes[1]);
+            $stderr = fgets($pipes[2]);
+            if ($stdout && is_numeric(trim($stdout))) {
+                sendSSE(["log" => "gdalwarp: " . trim($stdout) . "%"]);
+                $output[] = trim($stdout);
+            }
+            if ($stderr) {
+                sendSSE(["log" => "[gdalwarp ERROR] " . trim($stderr)]);
+                $output[] = "[ERROR] " . trim($stderr);
+            }
+            usleep(100000);
         }
-        if ($stderr) {
-            sendSSE(["log" => "[gdalwarp ERROR] " . trim($stderr)]);
-            $output[] = "[ERROR] " . trim($stderr);
-        }
-        usleep(100000);
+        fclose($pipes[0]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        $transparentReturnVar = proc_close($process);
     }
-    fclose($pipes[0]);
-    fclose($pipes[1]);
-    fclose($pipes[2]);
-    $transparentReturnVar = proc_close($process);
+    if ($transparentReturnVar !== 0 || !file_exists($transparentPath)) {
+        logMessage("Transparency processing failed: " . implode("\n", $output));
+        sendSSE(["error" => "透過処理失敗", "details" => implode("\n", $output)], "error");
+        exit;
+    }
+    $outputFilePath = $transparentPath;
+    sendSSE(["log" => "透過処理完了"]);
+} else {
+    sendSSE(["log" => "透過処理をスキップ"]);
+    logMessage("Transparency processing skipped (transparent=0)");
 }
-if ($transparentReturnVar !== 0 || !file_exists($transparentPath)) {
-    logMessage("Transparency processing failed: " . implode("\n", $output));
-    sendSSE(["error" => "透過処理失敗", "details" => implode("\n", $output)], "error");
-    exit;
-}
-$outputFilePath = $transparentPath;
-sendSSE(["log" => "透過処理完了"]);
 
-// アルファチャンネル削除
-$rgbOutputPath = "/tmp/" . $fileName . "_rgb.tif";
-sendSSE(["log" => "RGB画像生成"]);
-$rgbCommand = "$gdalTranslate -b 1 -b 2 -b 3 -co COMPRESS=DEFLATE -co PREDICTOR=2 " . escapeshellarg($outputFilePath) . " " . escapeshellarg($rgbOutputPath);
-exec($rgbCommand, $rgbOutput, $rgbReturnVar);
-if ($rgbReturnVar !== 0 || !file_exists($rgbOutputPath)) {
-    logMessage("RGB generation failed: " . implode("\n", $rgbOutput));
-    sendSSE(["error" => "RGB生成失敗", "details" => implode("\n", $rgbOutput)], "error");
-    exit;
+// アルファチャンネル削除（transparent=1の場合のみ）
+$rgbOutputPath = null;
+if ($transparent === 1) {
+    $rgbOutputPath = "/tmp/" . $fileName . "_rgb.tif";
+    sendSSE(["log" => "RGB画像生成"]);
+    $rgbCommand = "$gdalTranslate -b 1 -b 2 -b 3 -co COMPRESS=DEFLATE -co PREDICTOR=2 " . escapeshellarg($outputFilePath) . " " . escapeshellarg($rgbOutputPath);
+    exec($rgbCommand, $rgbOutput, $rgbReturnVar);
+    if ($rgbReturnVar !== 0 || !file_exists($rgbOutputPath)) {
+        logMessage("RGB generation failed: " . implode("\n", $rgbOutput));
+        sendSSE(["error" => "RGB生成失敗", "details" => implode("\n", $rgbOutput)], "error");
+        exit;
+    }
+    $outputFilePath = $rgbOutputPath;
+    sendSSE(["log" => "RGB画像生成完了"]);
 }
-$outputFilePath = $rgbOutputPath;
-sendSSE(["log" => "RGB画像生成完了"]);
 
 // 座標取得
 sendSSE(["log" => "gdalinfo 実行"]);
@@ -384,7 +400,7 @@ sendSSE(["log" => "グレースケール: " . ($isGray ? "グレースケール"
 
 // WebPタイル生成
 sendSSE(["log" => "WebPタイル生成開始"]);
-$tileCommand = "$gdal2Tiles --tiledriver WEBP -a 0,0,0 -z 0-$max_zoom --s_srs EPSG:$sourceEPSG --xyz --processes 4 --webp-lossless " . escapeshellarg($outputFilePath) . " " . escapeshellarg($tileDir);
+$tileCommand = "$gdal2Tiles --tiledriver WEBP " . ($transparent === 1 ? "-a 0,0,0 " : "") . "-z 0-$max_zoom --s_srs EPSG:$sourceEPSG --xyz --processes 4 --webp-lossless " . escapeshellarg($outputFilePath) . " " . escapeshellarg($tileDir);
 $process = proc_open($tileCommand, [0 => ["pipe", "r"], 1 => ["pipe", "w"], 2 => ["pipe", "w"]], $pipes);
 $output = [];
 if (is_resource($process)) {
