@@ -4599,7 +4599,7 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension) {
 
         try {
             // generate_tiles11.phpにリクエスト送信
-            const response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles12.php", {
+            const response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles14.php", {
                 method: "POST",
                 body: formData,
             });
@@ -7360,7 +7360,7 @@ export async function extractFirstFeaturePropertiesAndCheckCRS(file) {
                     (nameMatch && nameMatch[1] !== 'urn:ogc:def:crs:OGC:1.3:CRS84' && nameMatch[1] !== 'EPSG:4326') ||
                     (codeMatch && codeMatch[1] !== '4326')
                 ) {
-                    alert("このGeoJSONはEPSG:4326ではありません。処理を中止します。\nEPSG:4326で作成してください。");
+                    alert("座標系が違います！\nこのGeoJSONはEPSG:4326ではありません。処理を中止します。\nEPSG:4326で作成してください。");
                     throw new Error("Not EPSG:4326");
                 }
                 checkedCRS = true;
