@@ -23,6 +23,7 @@ $BASE_URL = "https://kenzkenz.duckdns.org/tiles/";
 define("EARTH_RADIUS_KM", 6371);
 define("EARTH_RADIUS_M", 6378137); // 地球の半径（メートル、Web Mercator用）
 define("MAX_FILE_SIZE_BYTES", 104857600); // 100MB in bytes
+define("MULTIPLIER", 1.0); // 推定サイズの倍率（元画像サイズの1倍）
 $logFile = "/tmp/php_script.log";
 
 // SSE送信関数
@@ -37,14 +38,6 @@ function sendSSE($data, $event = "message") {
 function logMessage($message) {
     global $logFile;
     file_put_contents($logFile, date("Y-m-d H:i:s") . " - $message\n", FILE_APPEND);
-}
-
-// WebPサポートの確認
-function checkWebPSupport() {
-    $output = [];
-    $returnVar = 0;
-    exec("gdalinfo --formats 2>&1 | grep WEBP", $output, $returnVar);
-    return !empty($output);
 }
 
 // ImageMagickの確認
@@ -71,7 +64,17 @@ function checkInputFile($filePath) {
     $hasBlack = preg_match("/Minimum=0/", $statsStr);
     $isJpeg = isset($infoJson["metadata"]["IMAGE_STRUCTURE"]["COMPRESSION"]) && $infoJson["metadata"]["IMAGE_STRUCTURE"]["COMPRESSION"] === "JPEG";
     $compression = isset($infoJson["metadata"]["IMAGE_STRUCTURE"]["COMPRESSION"]) ? $infoJson["metadata"]["IMAGE_STRUCTURE"]["COMPRESSION"] : "Unknown";
-    return ["valid" => true, "bandCount" => $bandCount, "hasWhite" => $hasWhite, "hasBlack" => $hasBlack, "isJpeg" => $isJpeg, "compression" => $compression];
+    return [
+        "valid" => true,
+        "bandCount" => $bandCount,
+        "hasWhite" => $hasWhite,
+        "hasBlack" => $hasBlack,
+        "isJpeg" => $isJpeg,
+        "compression" => $compression,
+        "width" => isset($infoJson["size"][0]) ? $infoJson["size"][0] : 0,
+        "height" => isset($infoJson["size"][1]) ? $infoJson["size"][1] : 0,
+        "geoTransform" => isset($infoJson["geoTransform"]) ? $infoJson["geoTransform"] : null
+    ];
 }
 
 // ディレクトリの総ファイルサイズを計算
@@ -102,7 +105,7 @@ function deleteHighestZoomDirectory($tileDir, $currentMaxZoom) {
 }
 
 // 最大ズームレベル計算関数
-function calculateMaxZoom($filePath, $sourceEPSG) {
+function calculateMaxZoom($filePath, $originalFilePath, $sourceEPSG) {
     global $logFile;
     $gdalInfoCommand = "gdalinfo -json " . escapeshellarg($filePath);
     exec($gdalInfoCommand . " 2>&1", $gdalOutput, $gdalReturnVar);
@@ -134,6 +137,49 @@ function calculateMaxZoom($filePath, $sourceEPSG) {
     $maxZoom = min($maxZoom, 24);
     logMessage("Calculated max zoom: $originalZoom, limited to: $maxZoom (GSD: $gsd m/pixel)");
     sendSSE(["log" => "計算された最大ズーム: $originalZoom, 制限後: $maxZoom (GSD: $gsd m/pixel)"]);
+
+    // 推定サイズ計算（元画像サイズ × MULTIPLIER）
+    if (!file_exists($originalFilePath)) {
+        logMessage("Original file not found for size estimation: $originalFilePath");
+        sendSSE(["log" => "元ファイルが見つかりません、サイズ推定不可、デフォルトズーム $maxZoom 使用"]);
+        return $maxZoom;
+    }
+    $imageSizeBytes = filesize($originalFilePath);
+    $imageSizeMB = round($imageSizeBytes / (1024 * 1024), 2);
+    $processedSizeBytes = file_exists($filePath) ? filesize($filePath) : 0;
+    $processedSizeMB = round($processedSizeBytes / (1024 * 1024), 2);
+    $estimatedSizeMB = round($imageSizeMB * MULTIPLIER, 2);
+    $estimatedSizeBytes = $estimatedSizeMB * 1024 * 1024;
+    logMessage("Original image: $imageSizeMB MB ($imageSizeBytes bytes, $originalFilePath), Processed image: $processedSizeMB MB ($processedSizeBytes bytes, $filePath), Multiplier: " . MULTIPLIER . ", Estimated size: $estimatedSizeMB MB ($estimatedSizeBytes bytes)");
+    sendSSE(["log" => "元画像サイズ: $imageSizeMB MB ($originalFilePath), 倍率: " . MULTIPLIER . ", 推定サイズ: $estimatedSizeMB MB"]);
+
+    // 100MBを超える場合、ズームを下げる
+    $minZoom = 10;
+    if ($estimatedSizeBytes > MAX_FILE_SIZE_BYTES) {
+        while ($maxZoom >= $minZoom && $estimatedSizeBytes > MAX_FILE_SIZE_BYTES) {
+            $maxZoom--;
+            // ズームを1下げるごとに推定サイズを0.25倍（理論値）
+            $estimatedSizeBytes *= 0.25;
+            $estimatedSizeMB = round($estimatedSizeBytes / (1024 * 1024), 2);
+            logMessage("Reduced max zoom to $maxZoom: Estimated size: $estimatedSizeMB MB ($estimatedSizeBytes bytes)");
+            if ($estimatedSizeBytes > MAX_FILE_SIZE_BYTES) {
+                sendSSE(["log" => "推定サイズ ($estimatedSizeMB MB) が100MBを超過、最大ズームを $maxZoom に下げました"]);
+            } else {
+                sendSSE(["log" => "推定サイズ ($estimatedSizeMB MB) に調整、最大ズーム: $maxZoom"]);
+            }
+        }
+        if ($maxZoom < $minZoom) {
+            logMessage("Reached below minimum zoom level: $minZoom");
+            sendSSE(["log" => "最小ズームレベル $minZoom 以下に達しました、デフォルト $minZoom 使用"]);
+            $maxZoom = $minZoom;
+        }
+    } else {
+        logMessage("Estimated size ($estimatedSizeMB MB) is within 100MB, keeping max zoom: $maxZoom");
+        sendSSE(["log" => "推定サイズ ($estimatedSizeMB MB) は100MB以内、最大ズーム $maxZoom を維持"]);
+    }
+
+    logMessage("Final max zoom after size estimation: $maxZoom");
+    sendSSE(["log" => "サイズ推定後の最終最大ズーム: $maxZoom"]);
     return $maxZoom;
 }
 
@@ -240,7 +286,6 @@ function processWhiteTransparency($tileDir, $maxZoom) {
             }
             if ($stderr) {
                 $errorLine = trim($stderr);
-                // エラーから対象タイルを特定
                 foreach ($commands as $cmd) {
                     if (strpos($errorLine, $cmd['inputPath']) !== false) {
                         $failedTiles[] = $cmd['inputPath'];
@@ -251,7 +296,7 @@ function processWhiteTransparency($tileDir, $maxZoom) {
                     }
                 }
             }
-            usleep(10000); // 10ms待機
+            usleep(10000);
         }
         fclose($pipes[0]);
         fclose($pipes[1]);
@@ -273,7 +318,6 @@ function processWhiteTransparency($tileDir, $maxZoom) {
         exit;
     }
 
-    // 処理時間を計算
     $endTime = microtime(true);
     $elapsedTime = $endTime - $startTime;
     $avgTimePerTile = $tileCount > 0 ? $elapsedTime / $tileCount : 0;
@@ -300,7 +344,7 @@ if (!isset($_POST["file"]) || !isset($_POST["dir"])) {
 // ファイルパス検証
 $filePath = realpath($_POST["file"]);
 if (!$filePath || !file_exists($filePath)) {
-    $error = ["error" => "ファイルが存在しません", "details" => "Path: $filePath"];
+    $error = ["error" => "ファイルが存在しません", "details" => "Path: " . ($_POST["file"] ?? 'unset')];
     logMessage("File not found: " . json_encode($error, JSON_UNESCAPED_UNICODE));
     sendSSE($error, "error");
     exit;
@@ -312,24 +356,14 @@ sendSSE(["log" => "ファイル確認完了: $filePath"]);
 $fileName = isset($_POST["fileName"]) ? preg_replace('/[^a-zA-Z0-9_-]/', '', $_POST["fileName"]) : pathinfo($filePath, PATHINFO_FILENAME);
 $subDir = preg_replace('/[^a-zA-Z0-9_-]/', '', $_POST["dir"]);
 $resolution = isset($_POST["resolution"]) ? intval($_POST["resolution"]) : null;
-$transparent = 'black'; // 透過色は黒に固定
+$transparent = 'black';
 $sourceEPSG = isset($_POST["srs"]) ? preg_replace('/[^0-9]/', '', $_POST["srs"]) : "2450";
 
 logMessage("Parameters: fileName=$fileName, subDir=$subDir, resolution=$resolution, transparent=$transparent, sourceEPSG=$sourceEPSG");
 sendSSE(["log" => "パラメータ取得: fileName=$fileName, subDir=$subDir"]);
 
-// WebPサポートの確認
-if (!checkWebPSupport()) {
-    $error = ["error" => "GDALにWebPサポートがありません", "details" => "libwebpをインストールしてください"];
-    logMessage("WebP support missing: " . json_encode($error, JSON_UNESCAPED_UNICODE));
-    sendSSE($error, "error");
-    exit;
-}
-logMessage("WebP support confirmed");
-sendSSE(["log" => "WebPサポートを確認しました"]);
-
 // ディスク容量の確認
-$freeSpace = disk_free_space('/tmp') / (1024 * 1024); // MB
+$freeSpace = disk_free_space('/tmp') / (1024 * 1024);
 if ($freeSpace < 1000) {
     $error = ["error" => "ディスク容量不足", "details" => "利用可能なディスク容量: $freeSpace MB"];
     logMessage("Insufficient disk space: " . json_encode($error, JSON_UNESCAPED_UNICODE));
@@ -431,7 +465,7 @@ logMessage("Transformed bbox: " . json_encode($bbox4326));
 sendSSE(["log" => "座標変換完了: " . json_encode($bbox4326)]);
 
 // 最大ズームレベルの決定
-$max_zoom = $resolution ?: calculateMaxZoom($outputFilePath, $sourceEPSG);
+$max_zoom = $resolution ?: calculateMaxZoom($outputFilePath, $filePath, $sourceEPSG);
 
 // ディレクトリ設定
 $fileBaseName = pathinfo($filePath, PATHINFO_FILENAME);
@@ -483,10 +517,11 @@ $tileCommandArgs = [
 $tileCommand = implode(' ', $tileCommandArgs) . ' 2>&1';
 logMessage("Executing gdal2tiles command: $tileCommand");
 $descriptors = [
-    0 => ["pipe", "r"], // 標準入力 (stdin)
-    1 => ["pipe", "w"], // 標準出力 (stdout)
-    2 => ["pipe", "w"]  // 標準エラー出力 (stderr)
-];$process = proc_open($tileCommand, $descriptors, $pipes);
+    0 => ["pipe", "r"],
+    1 => ["pipe", "w"],
+    2 => ["pipe", "w"]
+];
+$process = proc_open($tileCommand, $descriptors, $pipes);
 $output = [];
 if (is_resource($process)) {
     stream_set_blocking($pipes[1], false);
@@ -665,7 +700,7 @@ sendSSE(["log" => "タイルディレクトリの不要なファイルを削除�
 $pmTilesSizeBytes = file_exists($pmTilesPath) ? filesize($pmTilesPath) : 0;
 $pmTilesSizeMB = round($pmTilesSizeBytes / (1024 * 1024), 2);
 logMessage("Actual pmtiles size: $pmTilesSizeMB MB");
-sendSSE(["log" => "サイズ: $pmTilesSizeMB MB / 最大ズーム:$max_zoom"]);
+sendSSE(["log" => "サイズ: $pmTilesSizeMB MB / 最大ズーム: $max_zoom"]);
 
 // 成功レスポンス
 $response = [
