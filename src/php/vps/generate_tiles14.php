@@ -237,7 +237,7 @@ sendSSE(["log" => "入力ファイル検証完了: バンド数=$bandCount, 白�
 $outputFilePath = $filePath;
 $tempOutputPath = null;
 if ($isJpeg) {
-    sendSSE(["log" => "JPEG入力の事前処理を開始します"]);
+    sendSSE(["log" => "JPEG入力の事前処理開始。少々お待ちください。"]);
     $tempOutputPath = "/tmp/" . $fileName . "_processed.tif";
     $preprocessCommand = "gdal_translate -of GTiff -co COMPRESS=DEFLATE -co PREDICTOR=2 " . escapeshellarg($filePath) . " " . escapeshellarg($tempOutputPath);
     exec($preprocessCommand . " 2>&1", $preprocessOutput, $preprocessReturnVar);
@@ -262,7 +262,7 @@ if ($bandCount == 3 && !$hasWhite && !$hasBlack) {
     // 白色と黒色透過処理
     sendSSE(["log" => "白色と黒色透過処理を開始します。少お待ちください。"]);
     $transparentPath = "/tmp/" . $fileName . "_transparent.tif";
-    $transparentCommand = "GDAL_LOG_PROGRESS=1 gdalwarp -dstalpha -srcnodata \"255 255 255,0 0 0\" -overwrite -co COMPRESS=DEFLATE -co PREDICTOR=2 -wo NUM_THREADS=ALL_CPUS " . escapeshellarg($outputFilePath) . " " . escapeshellarg($transparentPath);
+    $transparentCommand = "gdalwarp -dstalpha -srcnodata \"255 255 255,0 0 0\" -overwrite -co COMPRESS=DEFLATE -co PREDICTOR=2 -wo NUM_THREADS=ALL_CPUS " . escapeshellarg($outputFilePath) . " " . escapeshellarg($transparentPath);
     $descriptors = [
         0 => ["pipe", "r"],
         1 => ["pipe", "w"],
@@ -341,7 +341,7 @@ if ($bandCount == 3 && !$hasWhite && !$hasBlack) {
     sendSSE(["log" => "透過ファイルにアルファチャンネルが正しく追加されました"]);
 
     // アルファチャンネル削除
-    sendSSE(["log" => "アルファチャンネルを削除してRGB画像を生成します"]);
+    sendSSE(["log" => "RGB画像を生成します。少々お待ちください。"]);
     $rgbOutputPath = "/tmp/" . $fileName . "_rgb.tif";
     $rgbCommand = "gdal_translate -b 1 -b 2 -b 3 -co COMPRESS=DEFLATE -co PREDICTOR=2 " . escapeshellarg($outputFilePath) . " " . escapeshellarg($rgbOutputPath);
     exec($rgbCommand . " 2>&1", $rgbOutput, $rgbReturnVar);
@@ -483,7 +483,12 @@ if (is_resource($process)) {
         if ($stdout) {
             $log = trim($stdout);
             logMessage("gdal2tiles stdout: $log");
-            sendSSE(["log" => $log]);
+            if ($log === 'Generating Base Tiles:') {
+                $log = 'Generating Base Tiles: 少々お待ちください。';
+            }
+            if ($log !== '.') {
+                sendSSE(["log" => $log]);
+            }
             $output[] = $log;
         }
         if ($stderr) {
