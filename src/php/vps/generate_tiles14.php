@@ -23,7 +23,6 @@ $BASE_URL = "https://kenzkenz.duckdns.org/tiles/";
 define("EARTH_RADIUS_KM", 6371);
 define("EARTH_RADIUS_M", 6378137); // 地球の半径（メートル、Web Mercator用）
 define("MAX_FILE_SIZE_BYTES", 104857600); // 100MB in bytes
-define("MULTIPLIER", 1.0); // 推定サイズの倍率（元画像サイズの1倍）
 $logFile = "/tmp/php_script.log";
 
 // SSE送信関数
@@ -40,12 +39,12 @@ function logMessage($message) {
     file_put_contents($logFile, date("Y-m-d H:i:s") . " - $message\n", FILE_APPEND);
 }
 
-// ImageMagickの確認
-function checkImageMagick() {
+// WebPサポートの確認
+function checkWebPSupport() {
     $output = [];
     $returnVar = 0;
-    exec("convert --version 2>&1", $output, $returnVar);
-    return $returnVar === 0;
+    exec("gdalinfo --formats 2>&1 | grep WEBP", $output, $returnVar);
+    return !empty($output);
 }
 
 // 入力ファイルの検証と形式チェック
@@ -64,17 +63,7 @@ function checkInputFile($filePath) {
     $hasBlack = preg_match("/Minimum=0/", $statsStr);
     $isJpeg = isset($infoJson["metadata"]["IMAGE_STRUCTURE"]["COMPRESSION"]) && $infoJson["metadata"]["IMAGE_STRUCTURE"]["COMPRESSION"] === "JPEG";
     $compression = isset($infoJson["metadata"]["IMAGE_STRUCTURE"]["COMPRESSION"]) ? $infoJson["metadata"]["IMAGE_STRUCTURE"]["COMPRESSION"] : "Unknown";
-    return [
-        "valid" => true,
-        "bandCount" => $bandCount,
-        "hasWhite" => $hasWhite,
-        "hasBlack" => $hasBlack,
-        "isJpeg" => $isJpeg,
-        "compression" => $compression,
-        "width" => isset($infoJson["size"][0]) ? $infoJson["size"][0] : 0,
-        "height" => isset($infoJson["size"][1]) ? $infoJson["size"][1] : 0,
-        "geoTransform" => isset($infoJson["geoTransform"]) ? $infoJson["geoTransform"] : null
-    ];
+    return ["valid" => true, "bandCount" => $bandCount, "hasWhite" => $hasWhite, "hasBlack" => $hasBlack, "isJpeg" => $isJpeg, "compression" => $compression];
 }
 
 // ディレクトリの総ファイルサイズを計算
@@ -105,7 +94,7 @@ function deleteHighestZoomDirectory($tileDir, $currentMaxZoom) {
 }
 
 // 最大ズームレベル計算関数
-function calculateMaxZoom($filePath, $originalFilePath, $sourceEPSG) {
+function calculateMaxZoom($filePath, $sourceEPSG) {
     global $logFile;
     $gdalInfoCommand = "gdalinfo -json " . escapeshellarg($filePath);
     exec($gdalInfoCommand . " 2>&1", $gdalOutput, $gdalReturnVar);
@@ -137,49 +126,6 @@ function calculateMaxZoom($filePath, $originalFilePath, $sourceEPSG) {
     $maxZoom = min($maxZoom, 24);
     logMessage("Calculated max zoom: $originalZoom, limited to: $maxZoom (GSD: $gsd m/pixel)");
     sendSSE(["log" => "計算された最大ズーム: $originalZoom, 制限後: $maxZoom (GSD: $gsd m/pixel)"]);
-
-    // 推定サイズ計算（元画像サイズ × MULTIPLIER）
-    if (!file_exists($originalFilePath)) {
-        logMessage("Original file not found for size estimation: $originalFilePath");
-        sendSSE(["log" => "元ファイルが見つかりません、サイズ推定不可、デフォルトズーム $maxZoom 使用"]);
-        return $maxZoom;
-    }
-    $imageSizeBytes = filesize($originalFilePath);
-    $imageSizeMB = round($imageSizeBytes / (1024 * 1024), 2);
-    $processedSizeBytes = file_exists($filePath) ? filesize($filePath) : 0;
-    $processedSizeMB = round($processedSizeBytes / (1024 * 1024), 2);
-    $estimatedSizeMB = round($imageSizeMB * MULTIPLIER, 2);
-    $estimatedSizeBytes = $estimatedSizeMB * 1024 * 1024;
-    logMessage("Original image: $imageSizeMB MB ($imageSizeBytes bytes, $originalFilePath), Processed image: $processedSizeMB MB ($processedSizeBytes bytes, $filePath), Multiplier: " . MULTIPLIER . ", Estimated size: $estimatedSizeMB MB ($estimatedSizeBytes bytes)");
-    sendSSE(["log" => "元画像サイズ: $imageSizeMB MB ($originalFilePath), 倍率: " . MULTIPLIER . ", 推定サイズ: $estimatedSizeMB MB"]);
-
-    // 100MBを超える場合、ズームを下げる
-    $minZoom = 10;
-    if ($estimatedSizeBytes > MAX_FILE_SIZE_BYTES) {
-        while ($maxZoom >= $minZoom && $estimatedSizeBytes > MAX_FILE_SIZE_BYTES) {
-            $maxZoom--;
-            // ズームを1下げるごとに推定サイズを0.25倍（理論値）
-            $estimatedSizeBytes *= 0.25;
-            $estimatedSizeMB = round($estimatedSizeBytes / (1024 * 1024), 2);
-            logMessage("Reduced max zoom to $maxZoom: Estimated size: $estimatedSizeMB MB ($estimatedSizeBytes bytes)");
-            if ($estimatedSizeBytes > MAX_FILE_SIZE_BYTES) {
-                sendSSE(["log" => "推定サイズ ($estimatedSizeMB MB) が100MBを超過、最大ズームを $maxZoom に下げました"]);
-            } else {
-                sendSSE(["log" => "推定サイズ ($estimatedSizeMB MB) に調整、最大ズーム: $maxZoom"]);
-            }
-        }
-        if ($maxZoom < $minZoom) {
-            logMessage("Reached below minimum zoom level: $minZoom");
-            sendSSE(["log" => "最小ズームレベル $minZoom 以下に達しました、デフォルト $minZoom 使用"]);
-            $maxZoom = $minZoom;
-        }
-    } else {
-        logMessage("Estimated size ($estimatedSizeMB MB) is within 100MB, keeping max zoom: $maxZoom");
-        sendSSE(["log" => "推定サイズ ($estimatedSizeMB MB) は100MB以内、最大ズーム $maxZoom を維持"]);
-    }
-
-    logMessage("Final max zoom after size estimation: $maxZoom");
-    sendSSE(["log" => "サイズ推定後の最終最大ズーム: $maxZoom"]);
     return $maxZoom;
 }
 
@@ -189,140 +135,6 @@ function cleanTempFiles($fileName) {
     exec("rm -f $pattern 2>&1");
     logMessage("Cleaned temp files for $fileName");
     return true;
-}
-
-// 白色透過の並列処理
-function processWhiteTransparency($tileDir, $maxZoom) {
-    global $logFile;
-    sendSSE(["log" => "白色透過処理を並列で開始します"]);
-    logMessage("Starting parallel white transparency processing");
-
-    // ImageMagickがインストールされているか確認
-    if (!checkImageMagick()) {
-        $error = ["error" => "ImageMagickがインストールされていません", "details" => "ImageMagickのconvertコマンドが必要です"];
-        logMessage("ImageMagick check failed: " . json_encode($error, JSON_UNESCAPED_UNICODE));
-        sendSSE($error, "error");
-        exit;
-    }
-
-    // GNU parallelがインストールされているか確認
-    exec("parallel --version 2>&1", $parallelOutput, $parallelReturnVar);
-    if ($parallelReturnVar !== 0) {
-        $error = ["error" => "GNU parallelがインストールされていません", "details" => implode("\n", $parallelOutput)];
-        logMessage("GNU parallel check failed: " . json_encode($error, JSON_UNESCAPED_UNICODE));
-        sendSSE($error, "error");
-        exit;
-    }
-
-    // 処理開始時間を記録
-    $startTime = microtime(true);
-
-    // 並列処理用のコマンドリストを生成
-    $commands = [];
-    $tileCount = 0;
-    for ($zoom = 0; $zoom <= $maxZoom; $zoom++) {
-        $zoomDir = "$tileDir$zoom/";
-        if (!is_dir($zoomDir)) continue;
-
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($zoomDir, RecursiveDirectoryIterator::SKIP_DOTS),
-            RecursiveIteratorIterator::SELF_FIRST
-        );
-        foreach ($iterator as $file) {
-            if ($file->isFile() && $file->getExtension() === 'webp') {
-                $inputPath = $file->getPathname();
-                $outputPath = $inputPath . ".temp.webp";
-                $commands[] = [
-                    'command' => "convert " . escapeshellarg($inputPath) . " -transparent 'rgb(255,255,255)' -strip " . escapeshellarg($outputPath) . " && mv " . escapeshellarg($outputPath) . " " . escapeshellarg($inputPath) . " && echo 'Processed: $inputPath'",
-                    'inputPath' => $inputPath
-                ];
-                $tileCount++;
-            }
-        }
-    }
-
-    if (empty($commands)) {
-        logMessage("No WebP tiles found for white transparency processing");
-        sendSSE(["log" => "白色透過対象のWebPタイルが見つかりませんでした"]);
-        return;
-    }
-
-    logMessage("Found $tileCount WebP tiles for white transparency processing");
-    sendSSE(["log" => "白色透過対象のWebPタイルを $tileCount 個検出しました"]);
-
-    // 進捗追跡用のカウンタ
-    $processedCount = 0;
-    $failedTiles = [];
-
-    // GNU parallelを使用して並列処理（最大4プロセス）
-    $tempCommandFile = "/tmp/parallel_commands_" . uniqid() . ".txt";
-    $commandStrings = array_column($commands, 'command');
-    file_put_contents($tempCommandFile, implode("\n", $commandStrings));
-    $parallelCommand = "parallel --jobs 4 --line-buffer --halt now,fail=1 < " . escapeshellarg($tempCommandFile);
-    $pipes = [];
-    $descriptors = [
-        0 => ["pipe", "r"],
-        1 => ["pipe", "w"],
-        2 => ["pipe", "w"]
-    ];
-    $process = proc_open($parallelCommand, $descriptors, $pipes);
-    if (is_resource($process)) {
-        stream_set_blocking($pipes[1], false);
-        stream_set_blocking($pipes[2], false);
-
-        while (!feof($pipes[1]) || !feof($pipes[2])) {
-            $stdout = fgets($pipes[1]);
-            $stderr = fgets($pipes[2]);
-            if ($stdout) {
-                $line = trim($stdout);
-                if (strpos($line, 'Processed: ') === 0) {
-                    $processedCount++;
-                    $tilePath = substr($line, strlen('Processed: '));
-                    $progressPercent = round(($processedCount / $tileCount) * 100, 2);
-                    $log = "Processed tile $processedCount/$tileCount ($progressPercent%): $tilePath";
-                    logMessage($log);
-                    sendSSE(["log" => $log]);
-                }
-            }
-            if ($stderr) {
-                $errorLine = trim($stderr);
-                foreach ($commands as $cmd) {
-                    if (strpos($errorLine, $cmd['inputPath']) !== false) {
-                        $failedTiles[] = $cmd['inputPath'];
-                        $log = "White transparency failed for tile: {$cmd['inputPath']} - $errorLine";
-                        logMessage($log);
-                        sendSSE(["log" => $log]);
-                        break;
-                    }
-                }
-            }
-            usleep(10000);
-        }
-        fclose($pipes[0]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        $parallelReturnVar = proc_close($process);
-    } else {
-        unlink($tempCommandFile);
-        $error = ["error" => "parallel プロセス起動失敗"];
-        logMessage("Parallel process failed to start: " . json_encode($error, JSON_UNESCAPED_UNICODE));
-        sendSSE($error, "error");
-        exit;
-    }
-    unlink($tempCommandFile);
-
-    if ($parallelReturnVar !== 0) {
-        $error = ["error" => "白色透過並列処理失敗", "details" => "Failed tiles: " . implode(", ", $failedTiles)];
-        logMessage("Parallel white transparency processing failed: " . json_encode($error, JSON_UNESCAPED_UNICODE));
-        sendSSE($error, "error");
-        exit;
-    }
-
-    $endTime = microtime(true);
-    $elapsedTime = $endTime - $startTime;
-    $avgTimePerTile = $tileCount > 0 ? $elapsedTime / $tileCount : 0;
-    logMessage("White transparency processing completed: $processedCount/$tileCount tiles processed in " . round($elapsedTime, 2) . " seconds (Avg: " . round($avgTimePerTile, 4) . " sec/tile)");
-    sendSSE(["log" => "白色透過処理が完了しました: $processedCount/$tileCount タイル処理、所要時間: " . round($elapsedTime, 2) . "秒 (平均: " . round($avgTimePerTile, 4) . "秒/タイル)"]);
 }
 
 // POSTリクエスト確認
@@ -344,7 +156,7 @@ if (!isset($_POST["file"]) || !isset($_POST["dir"])) {
 // ファイルパス検証
 $filePath = realpath($_POST["file"]);
 if (!$filePath || !file_exists($filePath)) {
-    $error = ["error" => "ファイルが存在しません", "details" => "Path: " . ($_POST["file"] ?? 'unset')];
+    $error = ["error" => "ファイルが存在しません", "details" => "Path: $filePath"];
     logMessage("File not found: " . json_encode($error, JSON_UNESCAPED_UNICODE));
     sendSSE($error, "error");
     exit;
@@ -356,14 +168,24 @@ sendSSE(["log" => "ファイル確認完了: $filePath"]);
 $fileName = isset($_POST["fileName"]) ? preg_replace('/[^a-zA-Z0-9_-]/', '', $_POST["fileName"]) : pathinfo($filePath, PATHINFO_FILENAME);
 $subDir = preg_replace('/[^a-zA-Z0-9_-]/', '', $_POST["dir"]);
 $resolution = isset($_POST["resolution"]) ? intval($_POST["resolution"]) : null;
-$transparent = 'black';
+$transparent = 'black'; // 透過色は黒に固定
 $sourceEPSG = isset($_POST["srs"]) ? preg_replace('/[^0-9]/', '', $_POST["srs"]) : "2450";
 
 logMessage("Parameters: fileName=$fileName, subDir=$subDir, resolution=$resolution, transparent=$transparent, sourceEPSG=$sourceEPSG");
 sendSSE(["log" => "パラメータ取得: fileName=$fileName, subDir=$subDir"]);
 
+// WebPサポートの確認
+if (!checkWebPSupport()) {
+    $error = ["error" => "GDALにWebPサポートがありません", "details" => "libwebpをインストールしてください"];
+    logMessage("WebP support missing: " . json_encode($error, JSON_UNESCAPED_UNICODE));
+    sendSSE($error, "error");
+    exit;
+}
+logMessage("WebP support confirmed");
+sendSSE(["log" => "WebPサポートを確認しました"]);
+
 // ディスク容量の確認
-$freeSpace = disk_free_space('/tmp') / (1024 * 1024);
+$freeSpace = disk_free_space('/tmp') / (1024 * 1024); // MB
 if ($freeSpace < 1000) {
     $error = ["error" => "ディスク容量不足", "details" => "利用可能なディスク容量: $freeSpace MB"];
     logMessage("Insufficient disk space: " . json_encode($error, JSON_UNESCAPED_UNICODE));
@@ -411,6 +233,72 @@ if ($isJpeg) {
     logMessage("JPEG preprocessing completed: $outputFilePath");
     sendSSE(["log" => "JPEG事前処理が完了しました"]);
 }
+
+// 白色透過処理
+sendSSE(["log" => "白色透過処理を開始します。少々お待ちください。"]);
+$whiteTransparentPath = "/tmp/" . $fileName . "_white_transparent.tif";
+$whiteTransparentCommand = "gdalwarp -dstalpha -srcnodata \"255 255 255\" -overwrite -co COMPRESS=DEFLATE -co PREDICTOR=2 " . escapeshellarg($outputFilePath) . " " . escapeshellarg($whiteTransparentPath);
+exec($whiteTransparentCommand . " 2>&1", $whiteTransparentOutput, $whiteTransparentReturnVar);
+if ($whiteTransparentReturnVar !== 0) {
+    $error = ["error" => "白色透過処理失敗", "details" => json_encode($whiteTransparentOutput, JSON_UNESCAPED_UNICODE)];
+    logMessage("White transparency processing failed: " . json_encode($error, JSON_UNESCAPED_UNICODE));
+    sendSSE($error, "error");
+    exit;
+}
+logMessage("White transparency processing completed: $whiteTransparentPath");
+sendSSE(["log" => "白色透過処理が完了しました"]);
+$outputFilePath = $whiteTransparentPath;
+
+// 白色透過後の検証
+sendSSE(["log" => "白色透過ファイルのアルファチャンネルを検証中..."]);
+$verifyWhiteCommand = "gdalinfo -json " . escapeshellarg($outputFilePath);
+exec($verifyWhiteCommand . " 2>&1", $verifyWhiteOutput, $verifyWhiteReturnVar);
+$verifyWhiteJson = json_decode(implode("\n", $verifyWhiteOutput), true);
+if ($verifyWhiteJson && isset($verifyWhiteJson["bands"]) && count($verifyWhiteJson["bands"]) >= 4) {
+    logMessage("Alpha channel verified in white transparent file");
+    sendSSE(["log" => "白色透過ファイルにアルファチャンネルが正しく追加されました"]);
+} else {
+    $error = ["error" => "白色透過ファイルのアルファチャンネル追加失敗", "details" => json_encode($verifyWhiteOutput, JSON_UNESCAPED_UNICODE)];
+    logMessage("Alpha channel missing in white transparent file: " . json_encode($error, JSON_UNESCAPED_UNICODE));
+    sendSSE($error, "error");
+    exit;
+}
+
+// アルファチャンネル削除
+sendSSE(["log" => "アルファチャンネルを削除してRGB画像を生成します"]);
+$rgbOutputPath = "/tmp/" . $fileName . "_rgb.tif";
+$rgbCommand = "gdal_translate -b 1 -b 2 -b 3 -co COMPRESS=DEFLATE -co PREDICTOR=2 " . escapeshellarg($outputFilePath) . " " . escapeshellarg($rgbOutputPath);
+exec($rgbCommand . " 2>&1", $rgbOutput, $rgbReturnVar);
+if ($rgbReturnVar !== 0) {
+    $error = ["error" => "アルファチャンネル削除失敗", "details" => json_encode($rgbOutput, JSON_UNESCAPED_UNICODE)];
+    logMessage("Alpha channel removal failed: " . json_encode($error, JSON_UNESCAPED_UNICODE));
+    sendSSE($error, "error");
+    exit;
+}
+logMessage("Alpha channel removed: $rgbOutputPath");
+sendSSE(["log" => "アルファチャンネルを削除しました"]);
+$outputFilePath = $rgbOutputPath;
+
+// RGB画像の検証
+sendSSE(["log" => "RGB画像のバンド数を検証中..."]);
+$verifyRgbCommand = "gdalinfo -json " . escapeshellarg($outputFilePath);
+exec($verifyRgbCommand . " 2>&1", $verifyRgbOutput, $verifyRgbReturnVar);
+$verifyRgbJson = json_decode(implode("\n", $verifyRgbOutput), true);
+if ($verifyRgbJson && isset($verifyRgbJson["bands"]) && count($verifyRgbJson["bands"]) == 3) {
+    logMessage("RGB bands verified in output file");
+    sendSSE(["log" => "RGB画像（3バンド）が正しく生成されました"]);
+} else {
+    $error = ["error" => "RGB画像の生成失敗", "details" => json_encode($verifyRgbOutput, JSON_UNESCAPED_UNICODE)];
+    logMessage("RGB bands missing in output file: " . json_encode($error, JSON_UNESCAPED_UNICODE));
+    sendSSE($error, "error");
+    exit;
+}
+
+// 黒色と白色透過領域の透過（gdal2tiles）
+sendSSE(["log" => "黒色と白色透過領域をgdal2tilesで透過します"]);
+$alpha_value = '0,0,0'; // 黒色と白色透過領域を透過
+logMessage("Transparent color set to (0,0,0) for gdal2tiles (black and white transparent areas)");
+sendSSE(["log" => "透過色を (0,0,0) に設定（gdal2tiles）"]);
 
 // gdalinfoで座標取得
 sendSSE(["log" => "gdalinfo 実行中..."]);
@@ -465,7 +353,7 @@ logMessage("Transformed bbox: " . json_encode($bbox4326));
 sendSSE(["log" => "座標変換完了: " . json_encode($bbox4326)]);
 
 // 最大ズームレベルの決定
-$max_zoom = $resolution ?: calculateMaxZoom($outputFilePath, $filePath, $sourceEPSG);
+$max_zoom = $resolution ?: calculateMaxZoom($outputFilePath, $sourceEPSG);
 
 // ディレクトリ設定
 $fileBaseName = pathinfo($filePath, PATHINFO_FILENAME);
@@ -500,12 +388,12 @@ $isGray = isGrayscale($outputFilePath);
 logMessage("Grayscale check: " . ($isGray ? "Grayscale" : "Color"));
 sendSSE(["log" => "グレースケール判定完了: " . ($isGray ? "グレースケール" : "カラー")]);
 
-// gdal2tilesで黒色透過タイル生成
-sendSSE(["log" => "gdal2tilesで黒色透過タイル生成を開始します"]);
+// gdal2tilesでWebPタイル生成（黒色と白色透過領域を透過）
+sendSSE(["log" => "WebPタイル生成準備中（黒色と白色透過領域を透過）。少々お待ちください。"]);
 $tileCommandArgs = [
     'gdal2tiles.py',
     '--tiledriver', 'WEBP',
-    '-a', '0,0,0',
+    '-a', escapeshellarg($alpha_value),
     '-z', "0-$max_zoom",
     '--s_srs', escapeshellarg("EPSG:$sourceEPSG"),
     '--xyz',
@@ -516,11 +404,7 @@ $tileCommandArgs = [
 ];
 $tileCommand = implode(' ', $tileCommandArgs) . ' 2>&1';
 logMessage("Executing gdal2tiles command: $tileCommand");
-$descriptors = [
-    0 => ["pipe", "r"],
-    1 => ["pipe", "w"],
-    2 => ["pipe", "w"]
-];
+$descriptors = [0 => ["pipe", "r"], 1 => ["pipe", "w"], 2 => ["pipe", "w"]];
 $process = proc_open($tileCommand, $descriptors, $pipes);
 $output = [];
 if (is_resource($process)) {
@@ -561,10 +445,7 @@ if ($tileReturnVar !== 0) {
     exit;
 }
 logMessage("gdal2tiles succeeded: $tileDir");
-sendSSE(["log" => "gdal2tiles による黒色透過タイル生成が完了しました"]);
-
-// 白色透過処理（並列）
-processWhiteTransparency($tileDir, $max_zoom);
+sendSSE(["log" => "gdal2tiles によるWebPタイル生成が完了しました（黒色と白色透過適用）"]);
 
 // タイルの総容量を計算し、必要に応じてズームレベルを削除
 sendSSE(["log" => "WebPタイルの総容量を計算中..."]);
@@ -662,7 +543,7 @@ logMessage("layer.json created: $layerJsonPath");
 sendSSE(["log" => "layer.json を生成しました"]);
 
 // クリーンアップ
-function deleteSourceAndTempFiles($filePath, $tempOutputPath = null) {
+function deleteSourceAndTempFiles($filePath, $tempOutputPath = null, $whiteTransparentPath = null, $rgbOutputPath = null) {
     $dir = dirname($filePath);
     foreach (scandir($dir) as $file) {
         if ($file === '.' || $file === '..') continue;
@@ -672,8 +553,14 @@ function deleteSourceAndTempFiles($filePath, $tempOutputPath = null) {
     if ($tempOutputPath && file_exists($tempOutputPath)) {
         unlink($tempOutputPath);
     }
+    if ($whiteTransparentPath && file_exists($whiteTransparentPath)) {
+        unlink($whiteTransparentPath);
+    }
+    if ($rgbOutputPath && file_exists($rgbOutputPath)) {
+        unlink($rgbOutputPath);
+    }
 }
-deleteSourceAndTempFiles($filePath, $isJpeg ? $tempOutputPath : null);
+deleteSourceAndTempFiles($filePath, $isJpeg ? $tempOutputPath : null, $whiteTransparentPath, $rgbOutputPath);
 logMessage("Source and temp files deleted");
 sendSSE(["log" => "元データと中間データを削除しました"]);
 
@@ -700,7 +587,7 @@ sendSSE(["log" => "タイルディレクトリの不要なファイルを削除�
 $pmTilesSizeBytes = file_exists($pmTilesPath) ? filesize($pmTilesPath) : 0;
 $pmTilesSizeMB = round($pmTilesSizeBytes / (1024 * 1024), 2);
 logMessage("Actual pmtiles size: $pmTilesSizeMB MB");
-sendSSE(["log" => "サイズ: $pmTilesSizeMB MB / 最大ズーム: $max_zoom"]);
+sendSSE(["log" => "サイズ: $pmTilesSizeMB MB / 最大ズーム:$max_zoom"]);
 
 // 成功レスポンス
 $response = [
