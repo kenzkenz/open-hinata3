@@ -29,7 +29,7 @@ $logFile = "/tmp/php_script.log";
 function sendSSE($data, $event = "message") {
     echo "event: $event\n";
     echo "data: " . json_encode($data, JSON_UNESCAPED_UNICODE) . "\n";
-    echo "#\n";
+    echo "#\n\n";
     flush();
 }
 
@@ -224,7 +224,7 @@ if ($isJpeg) {
     $preprocessCommand = "gdal_translate -of GTiff -co COMPRESS=DEFLATE -co PREDICTOR=2 " . escapeshellarg($filePath) . " " . escapeshellarg($tempOutputPath);
     exec($preprocessCommand . " 2>&1", $preprocessOutput, $preprocessReturnVar);
     if ($preprocessReturnVar !== 0) {
-        $error = ["error" => "JPEG事前処理失敗", "details" => json_encode($preprocessOutput, JSON_UNESCAPED_UNICODE)];
+        $error = ["error" => "JPEG事前処理失敗", "details" => implode("\n", $preprocessOutput)];
         logMessage("JPEG preprocessing failed: " . json_encode($error, JSON_UNESCAPED_UNICODE));
         sendSSE($error, "error");
         exit;
@@ -234,32 +234,32 @@ if ($isJpeg) {
     sendSSE(["log" => "JPEG事前処理が完了しました"]);
 }
 
-// 白色透過処理
-sendSSE(["log" => "白色透過処理を開始します。少々お待ちください。"]);
-$whiteTransparentPath = "/tmp/" . $fileName . "_white_transparent.tif";
-$whiteTransparentCommand = "gdalwarp -dstalpha -srcnodata \"255 255 255\" -overwrite -co COMPRESS=DEFLATE -co PREDICTOR=2 " . escapeshellarg($outputFilePath) . " " . escapeshellarg($whiteTransparentPath);
-exec($whiteTransparentCommand . " 2>&1", $whiteTransparentOutput, $whiteTransparentReturnVar);
-if ($whiteTransparentReturnVar !== 0) {
-    $error = ["error" => "白色透過処理失敗", "details" => json_encode($whiteTransparentOutput, JSON_UNESCAPED_UNICODE)];
-    logMessage("White transparency processing failed: " . json_encode($error, JSON_UNESCAPED_UNICODE));
+// 白色と黒色透過処理
+sendSSE(["log" => "白色と黒色透過処理を開始します。少々お待ちください。"]);
+$transparentPath = "/tmp/" . $fileName . "_transparent.tif";
+$transparentCommand = "gdalwarp -dstalpha -srcnodata \"255 255 255,0 0 0\" -overwrite -co COMPRESS=DEFLATE -co PREDICTOR=2 " . escapeshellarg($outputFilePath) . " " . escapeshellarg($transparentPath);
+exec($transparentCommand . " 2>&1", $transparentOutput, $transparentReturnVar);
+if ($transparentReturnVar !== 0) {
+    $error = ["error" => "白色と黒色透過処理失敗", "details" => implode("\n", $transparentOutput)];
+    logMessage("White and black transparency processing failed: " . json_encode($error, JSON_UNESCAPED_UNICODE));
     sendSSE($error, "error");
     exit;
 }
-logMessage("White transparency processing completed: $whiteTransparentPath");
-sendSSE(["log" => "白色透過処理が完了しました"]);
-$outputFilePath = $whiteTransparentPath;
+logMessage("White and black transparency processing completed: $transparentPath");
+sendSSE(["log" => "白色と黒色透過処理が完了しました"]);
+$outputFilePath = $transparentPath;
 
-// 白色透過後の検証
-sendSSE(["log" => "白色透過ファイルのアルファチャンネルを検証中..."]);
-$verifyWhiteCommand = "gdalinfo -json " . escapeshellarg($outputFilePath);
-exec($verifyWhiteCommand . " 2>&1", $verifyWhiteOutput, $verifyWhiteReturnVar);
-$verifyWhiteJson = json_decode(implode("\n", $verifyWhiteOutput), true);
-if ($verifyWhiteJson && isset($verifyWhiteJson["bands"]) && count($verifyWhiteJson["bands"]) >= 4) {
-    logMessage("Alpha channel verified in white transparent file");
-    sendSSE(["log" => "白色透過ファイルにアルファチャンネルが正しく追加されました"]);
+// 透過後の検証
+sendSSE(["log" => "透過ファイルのアルファチャンネルを検証中..."]);
+$verifyCommand = "gdalinfo -json " . escapeshellarg($outputFilePath);
+exec($verifyCommand . " 2>&1", $verifyOutput, $verifyReturnVar);
+$verifyJson = json_decode(implode("\n", $verifyOutput), true);
+if ($verifyJson && isset($verifyJson["bands"]) && count($verifyJson["bands"]) >= 4) {
+    logMessage("Alpha channel verified in transparent file");
+    sendSSE(["log" => "透過ファイルにアルファチャンネルが正しく追加されました"]);
 } else {
-    $error = ["error" => "白色透過ファイルのアルファチャンネル追加失敗", "details" => json_encode($verifyWhiteOutput, JSON_UNESCAPED_UNICODE)];
-    logMessage("Alpha channel missing in white transparent file: " . json_encode($error, JSON_UNESCAPED_UNICODE));
+    $error = ["error" => "透過ファイルのアルファチャンネル追加失敗", "details" => implode("\n", $verifyOutput)];
+    logMessage("Alpha channel missing in transparent file: " . json_encode($error, JSON_UNESCAPED_UNICODE));
     sendSSE($error, "error");
     exit;
 }
@@ -270,7 +270,7 @@ $rgbOutputPath = "/tmp/" . $fileName . "_rgb.tif";
 $rgbCommand = "gdal_translate -b 1 -b 2 -b 3 -co COMPRESS=DEFLATE -co PREDICTOR=2 " . escapeshellarg($outputFilePath) . " " . escapeshellarg($rgbOutputPath);
 exec($rgbCommand . " 2>&1", $rgbOutput, $rgbReturnVar);
 if ($rgbReturnVar !== 0) {
-    $error = ["error" => "アルファチャンネル削除失敗", "details" => json_encode($rgbOutput, JSON_UNESCAPED_UNICODE)];
+    $error = ["error" => "アルファチャンネル削除失敗", "details" => implode("\n", $rgbOutput)];
     logMessage("Alpha channel removal failed: " . json_encode($error, JSON_UNESCAPED_UNICODE));
     sendSSE($error, "error");
     exit;
@@ -288,7 +288,7 @@ if ($verifyRgbJson && isset($verifyRgbJson["bands"]) && count($verifyRgbJson["ba
     logMessage("RGB bands verified in output file");
     sendSSE(["log" => "RGB画像（3バンド）が正しく生成されました"]);
 } else {
-    $error = ["error" => "RGB画像の生成失敗", "details" => json_encode($verifyRgbOutput, JSON_UNESCAPED_UNICODE)];
+    $error = ["error" => "RGB画像の生成失敗", "details" => implode("\n", $verifyRgbOutput)];
     logMessage("RGB bands missing in output file: " . json_encode($error, JSON_UNESCAPED_UNICODE));
     sendSSE($error, "error");
     exit;
@@ -305,7 +305,7 @@ sendSSE(["log" => "gdalinfo 実行中..."]);
 $gdalInfoCommand = "gdalinfo -json " . escapeshellarg($outputFilePath);
 exec($gdalInfoCommand . " 2>&1", $gdalOutput, $gdalReturnVar);
 if ($gdalReturnVar !== 0) {
-    $error = ["error" => "gdalinfo 失敗", "details" => json_encode($gdalOutput, JSON_UNESCAPED_UNICODE)];
+    $error = ["error" => "gdalinfo 失敗", "details" => implode("\n", $gdalOutput)];
     logMessage("gdalinfo failed: " . json_encode($error, JSON_UNESCAPED_UNICODE));
     sendSSE($error, "error");
     exit;
@@ -439,7 +439,7 @@ if (is_resource($process)) {
 }
 
 if ($tileReturnVar !== 0) {
-    $error = ["error" => "gdal2tiles 失敗", "details" => json_encode($output, JSON_UNESCAPED_UNICODE)];
+    $error = ["error" => "gdal2tiles 失敗", "details" => implode("\n", $output)];
     logMessage("gdal2tiles failed: " . json_encode($error, JSON_UNESCAPED_UNICODE));
     sendSSE($error, "error");
     exit;
@@ -497,7 +497,7 @@ $mbTilesCommand = "PYTHONPATH=$pythonPath /var/www/venv/bin/python3 $mbUtilPath 
 exec($mbTilesCommand, $mbTilesOutput, $mbTilesReturnVar);
 logMessage("mb-util output: " . implode("\n", $mbTilesOutput));
 if ($mbTilesReturnVar !== 0) {
-    $error = ["error" => "mb-util 失敗", "details" => json_encode($mbTilesOutput, JSON_UNESCAPED_UNICODE)];
+    $error = ["error" => "mb-util 失敗", "details" => implode("\n", $mbTilesOutput)];
     logMessage("mb-util failed: " . json_encode($error, JSON_UNESCAPED_UNICODE));
     sendSSE($error, "error");
     exit;
@@ -506,7 +506,7 @@ logMessage("mb-util succeeded: $mbTilesPath");
 chmod($mbTilesPath, 0664);
 chown($mbTilesPath, 'www-data');
 chgrp($mbTilesPath, 'www-data');
-sendSSE(["log" => "mb-util succeeded: MBTiles generated"]);
+sendSSE(["log" => "mb-util succeeded: MBTiles生成が完了しました"]);
 
 // go-pmtilesでPMTiles生成
 sendSSE(["log" => "go-pmtiles によるPMTiles生成を開始します"]);
@@ -521,7 +521,7 @@ $pmTilesCommand = "$pmTilesPathCmd convert " . escapeshellarg($mbTilesPath) . " 
 exec($pmTilesCommand, $pmTilesOutput, $pmTilesReturnVar);
 logMessage("go-pmtiles output: " . implode("\n", $pmTilesOutput));
 if ($pmTilesReturnVar !== 0) {
-    $error = ["error" => "go-pmtiles 失敗", "details" => json_encode($pmTilesOutput, JSON_UNESCAPED_UNICODE)];
+    $error = ["error" => "go-pmtiles 失敗", "details" => implode("\n", $pmTilesOutput)];
     logMessage("go-pmtiles failed: " . json_encode($error, JSON_UNESCAPED_UNICODE));
     sendSSE($error, "error");
     exit;
@@ -532,18 +532,8 @@ chown($pmTilesPath, 'www-data');
 chgrp($pmTilesPath, 'www-data');
 sendSSE(["log" => "go-pmtiles によるPMTiles生成が完了しました"]);
 
-// layer.json生成
-$layerJsonPath = "$tileDir/layer.json";
-$layerData = json_encode(["fileName" => $fileName, "bounds" => $bbox4326], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-file_put_contents($layerJsonPath, $layerData);
-chmod($layerJsonPath, 0664);
-chown($layerJsonPath, 'www-data');
-chgrp($layerJsonPath, 'www-data');
-logMessage("layer.json created: $layerJsonPath");
-sendSSE(["log" => "layer.json を生成しました"]);
-
 // クリーンアップ
-function deleteSourceAndTempFiles($filePath, $tempOutputPath = null, $whiteTransparentPath = null, $rgbOutputPath = null) {
+function deleteSourceAndTempFiles($filePath, $tempOutputPath = null, $transparentPath = null, $rgbOutputPath = null) {
     $dir = dirname($filePath);
     foreach (scandir($dir) as $file) {
         if ($file === '.' || $file === '..') continue;
@@ -553,21 +543,21 @@ function deleteSourceAndTempFiles($filePath, $tempOutputPath = null, $whiteTrans
     if ($tempOutputPath && file_exists($tempOutputPath)) {
         unlink($tempOutputPath);
     }
-    if ($whiteTransparentPath && file_exists($whiteTransparentPath)) {
-        unlink($whiteTransparentPath);
+    if ($transparentPath && file_exists($transparentPath)) {
+        unlink($transparentPath);
     }
     if ($rgbOutputPath && file_exists($rgbOutputPath)) {
         unlink($rgbOutputPath);
     }
 }
-deleteSourceAndTempFiles($filePath, $isJpeg ? $tempOutputPath : null, $whiteTransparentPath, $rgbOutputPath);
+deleteSourceAndTempFiles($filePath, $isJpeg ? $tempOutputPath : null, $transparentPath, $rgbOutputPath);
 logMessage("Source and temp files deleted");
 sendSSE(["log" => "元データと中間データを削除しました"]);
 
 // タイルディレクトリクリーンアップ
 function deleteTileDirContents($tileDir, $fileBaseName) {
     global $logFile;
-    $keepFiles = ["$fileBaseName.pmtiles", "layer.json"];
+    $keepFiles = ["$fileBaseName.pmtiles"];
     foreach (scandir($tileDir) as $item) {
         if ($item === '.' || $item === '..') continue;
         $fullPath = "$tileDir/$item";
