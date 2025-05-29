@@ -4586,8 +4586,6 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension) {
     // タイル生成関数
     async function generateTiles(filePath, srsCode = "2450", dir, fileName, resolution, transparent) {
         store.state.loading2 = true;
-        store.state.loadingMessage = '地図タイル作成中です。';
-
         // FormDataを作成
         const formData = new FormData();
         formData.append("file", filePath);
@@ -4640,7 +4638,8 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension) {
 
                                 if (data.log) {
                                     if (!data.log.includes('[ERROR]')) {
-                                        store.state.loadingMessage = data.log.slice(0, 40); // ログをリアルタイム表示
+                                        // store.state.loadingMessage = data.log.slice(0, 40); // ログをリアルタイム表示
+                                        store.state.loadingMessage = store.state.loadingMessage + '<br>' + data.log.slice(0, 40); // ログをリアルタイム表示
                                     }
                                 } else if (data.error) {
                                     console.error("サーバーエラー:", data);
@@ -4701,7 +4700,7 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension) {
                     console.log('タイル作成完了');
                     setTimeout(() => {
                         store.state.loading2 = false;
-                    },4000)
+                    },0)
 
                     if (!result.bbox) {
                         alert('座標系が間違えている可能性があります。EPSG:4326に設定してください。');
@@ -4822,6 +4821,7 @@ async function insertXyztileData(uid, name, url, url2, url3, bbox, size, maxzoom
         console.error('通信エラー:', error);
     }
 }
+
 export function addXyztileLayer(id,name,url,bbox) {
     const map01 = store.state.map01
     const bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]

@@ -28,7 +28,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   :timeout="-1"
                   color="primary">
         <p v-if="s_loading">処理中です。</p>
-        <p v-if="s_loading2">{{s_loadingMessage}}</p>
+        <p v-if="s_loading2"><span v-html="s_loadingMessage"></span></p>
       </v-snackbar>
 
       <v-snackbar v-model="s_snackbarForGroup" :timeout="3000" color="primary">
