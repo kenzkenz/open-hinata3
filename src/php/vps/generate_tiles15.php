@@ -247,15 +247,25 @@ sendSSE(["log" => "中間ファイル削除"]);
 list($max_zoom, $gsd, $width, $height) = calculateMaxZoom($filePath, $sourceEPSG);
 
 // ズーム24以上の場合のリサンプリング
+//$outputFilePath = $filePath;
+//$resampledPath = null;
+//if ($max_zoom > 24) {
+//    sendSSE(["log" => "<span style='color: red'>ズームレベル $max_zoom が24を超過、リサンプリング開始</span>"]);
+//    $resampledPath = "/tmp/" . $fileName . "_resampled.tif";
+//    resampleToZoom24($filePath, $resampledPath, $gsd, $width, $height);
+//    $outputFilePath = $resampledPath;
+//    $max_zoom = 24;
+//    sendSSE(["log" => "リサンプリング後、ズームレベルを24に設定"]);
+//}
+// ズーム24以上の場合のリサンプリング
 $outputFilePath = $filePath;
 $resampledPath = null;
 if ($max_zoom > 24) {
-    sendSSE(["log" => "<span style='color: red'>ズームレベル $max_zoom が24を超過、リサンプリング開始</span>"]);
-    $resampledPath = "/tmp/" . $fileName . "_resampled.tif";
-    resampleToZoom24($filePath, $resampledPath, $gsd, $width, $height);
-    $outputFilePath = $resampledPath;
+    sendSSE(["log" => "<span style='color: red'>ズームレベル $max_zoom が24を超過、最大ズームを24に制限</span>"]);
+    // resampleToZoom24($filePath, $resampledPath, $gsd, $width, $height);
+    // $outputFilePath = $resampledPath;
     $max_zoom = 24;
-    sendSSE(["log" => "リサンプリング後、ズームレベルを24に設定"]);
+    sendSSE(["log" => "最大ズームレベルを24に設定"]);
 }
 
 // JPEG処理
@@ -410,12 +420,14 @@ if (is_resource($process)) {
         $stdout = fgets($pipes[1]);
         $stderr = fgets($pipes[2]);
         if ($stdout && trim($stdout) !== '.') {
-            sendSSE(["log" => trim($stdout) === 'Generating Base Tiles:' ? 'Generating Base Tiles: 少々お待ちください。' : trim($stdout)]);
-            $output[] = trim($stdout);
+            $cleanedStdout = preg_replace('/^\.+|\.+$/', '', trim($stdout)); // 数値の前後の「.」を削除
+            sendSSE(["log" => $cleanedStdout]);
+            $output[] = $cleanedStdout;
         }
         if ($stderr) {
 //            sendSSE(["log" => "[gdal2tiles ERROR] " . trim($stderr)]);
-            sendSSE(["log" => trim($stderr)]);
+//            $cleanedStdout = preg_replace('/^\.+|\.+$/', '', trim($stdout)); // 数値の前後の「.」を削除
+//            sendSSE(["log" => $cleanedStdout]);
             $output[] = "[ERROR] " . trim($stderr);
         }
         usleep(100000);
