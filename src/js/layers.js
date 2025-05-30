@@ -368,7 +368,7 @@ export const cityGeojsonSource = {
     id: 'city-geojson-source', obj: {
         'type': 'geojson',
         // 'data': 'https://kenzkenz.duckdns.org//original-data/chibanzumap.geojson?nocache=' + Date.now()
-        'data': 'https://kenzkenz.duckdns.org//original-data/chibanzumap.geojson?v=1'
+        'data': 'https://kenzkenz.duckdns.org//original-data/chibanzumap.geojson?v=2'
     }
 }
 
