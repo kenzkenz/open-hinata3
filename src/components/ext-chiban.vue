@@ -328,6 +328,7 @@ export default {
       },
       set(value) {
         this.$store.state.chibanText[this.mapName] = value
+        this.$store.state.tokijyoText2025[this.mapName] = value
       }
     },
     s_chibanColor: {
@@ -1071,6 +1072,10 @@ export default {
       async function filterBy(text) {
         if (text) {
           let searchString = text
+              .replace(/\u3000/g, ' ') // 全角スペースを半角に
+              .trim()
+              .replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)) // 全角英数字を半角に
+              .replace(/[\u30FC\u2010-\u2015\u2212]/g, '-'); // 全角ハイフンやダッシュ類を半角ハイフンに変換
           searchString = searchString.replace(/\u3000/g,' ').trim()
           const words = searchString.split(" ")
           // 複数フィールドを結合する
@@ -1145,6 +1150,9 @@ export default {
     }
   },
   watch: {
+    s_chibanText () {
+      this.change()
+    },
     s_extFire () {
       this.change()
       this.changeColor()

@@ -321,6 +321,7 @@ export default {
       },
       set(value) {
         this.$store.state.tokijyoText2025[this.mapName] = value
+        this.$store.state.chibanText[this.mapName] = value
       }
     },
     s_tokijyoLineWidth2025: {
@@ -695,6 +696,9 @@ export default {
     this.changeColor(this.s_tokijyoColor2025)
   },
   watch: {
+    s_tokijyoText2025 () {
+      this.change()
+    },
     s_extFire () {
       this.changeColor(this.s_tokijyoColor2025)
       this.changeColorCircle(this.s_tokijyoCircleColor2025)
