@@ -1081,13 +1081,13 @@ export default {
           // 複数フィールドを結合する
           let combinedFields
           if (vm.item.id.includes('oh-chibanzu-')) {
-            combinedFields = ["concat", ["get", "TEXT"], " ", ["get", "地番"], " ", ["get", "Chiban"], " ", ["get", "TIBAN"], " ", ["get", "TXTCD"],
+            combinedFields = ["concat", ["get", "大字"], " ", ["get", "TEXT"], " ", ["get", "地番"], " ", ["get", "Chiban"], " ", ["get", "TIBAN"], " ", ["get", "TXTCD"],
               " ", ["get", "本番"], " ", ["get", "CHIBAN"], " ", ["get", "表示文字列"], " ", ["get", "番地"], " ", ["get", "TXTCODE1"],
               " ", ["get", "地番本番"], " ", ["get", "SAFIELD002"], " ", ["get", "所在地番"], " ", ["get", "TEXTCODE1"], " ", ["get", "DNO"]];
           } else {
             let chibanPropatie = await fetchData(vm.item.id.split('-')[2])
             chibanPropatie = chibanPropatie[0].chiban
-            combinedFields = ["get", chibanPropatie]
+            combinedFields = ["concat", ["get", "大字"], " ", ["get", chibanPropatie]]
             // combinedFields = ["get", ["get", "chiban"]]
           }
           const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);
