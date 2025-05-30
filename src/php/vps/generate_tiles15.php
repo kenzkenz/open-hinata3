@@ -214,6 +214,18 @@ $transparent = (int)$transparent; // 文字列を整数に変換
 logMessage("Parameters: fileName=$fileName, subDir=$subDir, resolution=$resolution, sourceEPSG=$sourceEPSG, transparent=$transparent");
 sendSSE(["log" => "パラメータ: fileName=$fileName, subDir=$subDir, transparent=$transparent"]);
 
+// 処理中ファイルの作成
+$fileBaseName = pathinfo($filePath, PATHINFO_FILENAME);
+$processingFile = "/tmp/{$fileBaseName}_{$subDir}_processing.txt";
+if (!file_put_contents($processingFile, "Processing: $filePath for $subDir at " . date("Y-m-d H:i:s"))) {
+    sendSSE(["error" => "処理中ファイルの作成に失敗"], "error");
+    exit;
+}
+chmod($processingFile, 0664);
+chown($processingFile, 'www-data');
+chgrp($processingFile, 'www-data');
+sendSSE(["log" => "処理中ファイルを作成: $processingFile"]);
+
 // コマンド存在確認
 checkCommand($gdalTranslate, "gdal_translate");
 checkCommand($gdalWarp, "gdalwarp");
@@ -246,17 +258,6 @@ sendSSE(["log" => "中間ファイル削除"]);
 // 最大ズーム計算
 list($max_zoom, $gsd, $width, $height) = calculateMaxZoom($filePath, $sourceEPSG);
 
-// ズーム24以上の場合のリサンプリング
-//$outputFilePath = $filePath;
-//$resampledPath = null;
-//if ($max_zoom > 24) {
-//    sendSSE(["log" => "<span style='color: red'>ズームレベル $max_zoom が24を超過、リサンプリング開始</span>"]);
-//    $resampledPath = "/tmp/" . $fileName . "_resampled.tif";
-//    resampleToZoom24($filePath, $resampledPath, $gsd, $width, $height);
-//    $outputFilePath = $resampledPath;
-//    $max_zoom = 24;
-//    sendSSE(["log" => "リサンプリング後、ズームレベルを24に設定"]);
-//}
 // ズーム24以上の場合のリサンプリング
 $outputFilePath = $filePath;
 $resampledPath = null;
@@ -425,9 +426,6 @@ if (is_resource($process)) {
             $output[] = $cleanedStdout;
         }
         if ($stderr) {
-//            sendSSE(["log" => "[gdal2tiles ERROR] " . trim($stderr)]);
-//            $cleanedStdout = preg_replace('/^\.+|\.+$/', '', trim($stdout)); // 数値の前後の「.」を削除
-//            sendSSE(["log" => $cleanedStdout]);
             $output[] = "[ERROR] " . trim($stderr);
         }
         usleep(100000);
@@ -493,7 +491,7 @@ chgrp($pmTilesPath, 'www-data');
 sendSSE(["log" => "PMTiles生成完了"]);
 
 // クリーンアップ
-function deleteSourceAndTempFiles($filePath, $tempOutputPath, $transparentPath, $rgbOutputPath, $resampledPath = null) {
+function deleteSourceAndTempFiles($filePath, $tempOutputPath, $transparentPath, $rgbOutputPath, $resampledPath = null, $processingFile = null) {
     $dir = dirname($filePath);
     foreach (scandir($dir) as $file) {
         if ($file !== '.' && $file !== '..' && "$dir/$file" !== $filePath) {
@@ -504,8 +502,13 @@ function deleteSourceAndTempFiles($filePath, $tempOutputPath, $transparentPath, 
     if ($transparentPath && file_exists($transparentPath)) @unlink($transparentPath);
     if ($rgbOutputPath && file_exists($rgbOutputPath)) @unlink($rgbOutputPath);
     if ($resampledPath && file_exists($resampledPath)) @unlink($resampledPath);
+    if ($processingFile && file_exists($processingFile)) {
+        @unlink($processingFile);
+        logMessage("Deleted processing file: $processingFile");
+        sendSSE(["log" => "処理中ファイル削除: $processingFile"]);
+    }
 }
-deleteSourceAndTempFiles($filePath, $tempOutputPath, $transparentPath, $rgbOutputPath, $resampledPath);
+deleteSourceAndTempFiles($filePath, $tempOutputPath, $transparentPath, $rgbOutputPath, $resampledPath, $processingFile);
 sendSSE(["log" => "元データと中間データ削除"]);
 
 // タイルディレクトリクリーンアップ

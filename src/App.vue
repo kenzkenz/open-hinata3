@@ -4491,33 +4491,68 @@ export default {
           // マップ上でポリゴンをクリックしたときのイベントリスナー
           let highlightCounter = 0;
           map.on('click', 'oh-homusyo-2025-polygon', (e) => {
-            if (!this.$store.state.isRenzoku) return
-            if (map.getLayer('oh-point-layer')) return
+            if (!this.$store.state.isRenzoku) return;
+            if (map.getLayer('oh-point-layer')) return;
             if (e.features && e.features.length > 0) {
-              // 最小面積のポリゴンを選ぶ
-              let smallestFeature = e.features[0];
-              let minArea = turf.area(e.features[0]);
-              for (let feature of e.features) {
-                const area = turf.area(feature);
-                if (area < minArea) {
-                  smallestFeature = feature;
-                  minArea = area;
-                }
+              // クリック座標からGeoJSONポイントを作る
+              const point = turf.point([e.lngLat.lng, e.lngLat.lat]);
+              // クリック点を実際に内包するポリゴンだけ抽出
+              const insidePolygons = e.features.filter(f => turf.booleanPointInPolygon(point, f));
+
+              // 最小面積のポリゴンを選択（優先はinsidePolygons→なければe.features全体から）
+              let targetFeature = null;
+              if (insidePolygons.length > 0) {
+                targetFeature = insidePolygons.reduce((a, b) => turf.area(a) < turf.area(b) ? a : b);
+              } else {
+                targetFeature = e.features.reduce((a, b) => turf.area(a) < turf.area(b) ? a : b);
               }
-              const targetId = `${smallestFeature.properties['筆ID']}_${smallestFeature.properties['地番']}`;
+
+              const targetId = `${targetFeature.properties['筆ID']}_${targetFeature.properties['地番']}`;
               console.log(targetId);
-              console.log(this.$store.state.highlightedChibans)
+              console.log(this.$store.state.highlightedChibans);
+
               if (this.$store.state.highlightedChibans.has(targetId)) {
                 // すでに選択されている場合は解除
                 this.$store.state.highlightedChibans.delete(targetId);
               } else {
                 // 新しいIDを追加
                 this.$store.state.highlightedChibans.add(targetId);
-                // alert(targetId)
+                // alert(targetId);
               }
-              highlightSpecificFeatures2025(map,'oh-homusyo-2025-polygon');
+              highlightSpecificFeatures2025(map, 'oh-homusyo-2025-polygon');
             }
           });
+
+
+
+          // map.on('click', 'oh-homusyo-2025-polygon', (e) => {
+          //   if (!this.$store.state.isRenzoku) return
+          //   if (map.getLayer('oh-point-layer')) return
+          //   if (e.features && e.features.length > 0) {
+          //     // 最小面積のポリゴンを選ぶ
+          //     let smallestFeature = e.features[0];
+          //     let minArea = turf.area(e.features[0]);
+          //     for (let feature of e.features) {
+          //       const area = turf.area(feature);
+          //       if (area < minArea) {
+          //         smallestFeature = feature;
+          //         minArea = area;
+          //       }
+          //     }
+          //     const targetId = `${smallestFeature.properties['筆ID']}_${smallestFeature.properties['地番']}`;
+          //     console.log(targetId);
+          //     console.log(this.$store.state.highlightedChibans)
+          //     if (this.$store.state.highlightedChibans.has(targetId)) {
+          //       // すでに選択されている場合は解除
+          //       this.$store.state.highlightedChibans.delete(targetId);
+          //     } else {
+          //       // 新しいIDを追加
+          //       this.$store.state.highlightedChibans.add(targetId);
+          //       // alert(targetId)
+          //     }
+          //     highlightSpecificFeatures2025(map,'oh-homusyo-2025-polygon');
+          //   }
+          // });
           map.on('click', 'oh-amx-a-fude', (e) => {
             if (!this.$store.state.isRenzoku) return
             if (map.getLayer('oh-point-layer')) return
