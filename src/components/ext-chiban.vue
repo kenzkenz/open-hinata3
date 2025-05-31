@@ -1071,12 +1071,14 @@ export default {
       }
       async function filterBy(text) {
         if (text) {
-          let searchString = text
-              .replace(/\u3000/g, ' ') // 全角スペースを半角に
-              .trim()
-              .replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)) // 全角英数字を半角に
-              .replace(/[\u30FC\u2010-\u2015\u2212]/g, '-'); // 全角ハイフンやダッシュ類を半角ハイフンに変換
-          searchString = searchString.replace(/\u3000/g,' ').trim()
+          // let searchString = text
+          //     .replace(/\u3000/g, ' ') // 全角スペースを半角に
+          //     .trim()
+          //     .replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)) // 全角英数字を半角に
+          //     .replace(/[\u30FC\u2010-\u2015\u2212]/g, '-'); // 全角ハイフンやダッシュ類を半角ハイフンに変換
+          // searchString = searchString.replace(/\u3000/g,' ').trim()
+          const searchString = text.replace(/\u3000/g,' ').trim()
+          console.log(searchString)
           const words = searchString.split(" ")
           // 複数フィールドを結合する
           let combinedFields
@@ -1087,9 +1089,15 @@ export default {
           } else {
             let chibanPropatie = await fetchData(vm.item.id.split('-')[2])
             chibanPropatie = chibanPropatie[0].chiban
-            combinedFields = ["concat", ["get", "大字"], " ", ["get", chibanPropatie]]
+            combinedFields = ["concat", ["get", "都道府県"], " ",
+              ["get", "振興局"], " ",
+              ["get", "市町村"], " ",
+              ["get", "区"], " ",["get", "区名"], " ",
+              ["get", "大字"], " ", ["get", "町丁目名"], " ",
+              ["get", chibanPropatie]]
             // combinedFields = ["get", ["get", "chiban"]]
           }
+          console.log(combinedFields)
           const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);
           // いずれかの単語が含まれる場合の条件を作成 (OR条件)
           const matchCondition = ["any", ...filterConditions]
@@ -1132,8 +1140,10 @@ export default {
 
         }
       }
-      filterBy(this.s_chibanText)
-      this.update()
+      setTimeout(() => {
+        filterBy(this.s_chibanText)
+        this.update()
+      },100)
     },
   },
   created() {
