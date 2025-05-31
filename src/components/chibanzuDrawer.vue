@@ -35,6 +35,12 @@
           灰色
         </v-btn>
         <v-btn v-if="user"
+               style="margin-top: 20px;margin-left: 10px;background: orange !important;"
+               @click="public0(5)"
+        >
+          黄色
+        </v-btn>
+        <v-btn v-if="user"
                style="margin-top: 20px;margin-left: 10px;background: rgba(0,0,0,0.2) !important;"
                @click="public0(0)"
         >
