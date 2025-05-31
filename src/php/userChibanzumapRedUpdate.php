@@ -17,7 +17,7 @@ try {
     $cityname = $input['cityname'] ?? null;
     $public = $input['public'] ?? null;
     $uid = $input['uid'] ?? null;
-
+    $nickname = $input['nickname'] ?? null;
     // 入力検証
     if (empty($citycode) || !is_numeric($citycode)) {
         echo json_encode(["error" => "無効な市コード"]);
@@ -45,6 +45,7 @@ try {
                 cityname = :cityname,
                 public = :public,
                 uid = :uid,
+                nickname = :nickname,
                 last_modified_date = NOW()
             WHERE citycode = :citycode
         ";
@@ -55,11 +56,12 @@ try {
             ':cityname' => $cityname,
             ':public' => $public,
             ':uid' => $uid,
+            ':nickname' => $nickname,
         ]);
         $message = "既存のデータ（citycode:" . $citycode . "）を登録しました";
     } else {
         // citycodeが存在しない場合：挿入
-        $sql = "INSERT INTO chibanzumapred (citycode, prefname, cityname, public, uid, last_modified_date) VALUES (:citycode, :prefname, :cityname, :public, :uid, :last_modified_date)";
+        $sql = "INSERT INTO chibanzumapred (citycode, prefname, cityname, public, uid, nickname, last_modified_date) VALUES (:citycode, :prefname, :cityname, :public, :uid, :nickname, :last_modified_date)";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
             ':citycode' => $citycode,
@@ -67,6 +69,7 @@ try {
             ':cityname' => $cityname,
             ':public' => $public,
             ':uid' => $uid,
+            ':nickname' => $nickname,
             ':last_modified_date' => date('Y-m-d H:i:s'), // PHPで現在日時をセット
         ]);
         $message = "新しいデータ（citycode:" . $citycode . "）を登録しました";
