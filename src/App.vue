@@ -560,8 +560,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <div id="right-top-div">
             <v-btn :size="isSmall ? 'small' : 'default'" icon @click="goToCurrentLocation" v-if="mapName === 'map01'"><v-icon>mdi-crosshairs-gps</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" class="watch-position" :color="isTracking ? 'green' : undefined" icon @click="toggleWatchPosition" v-if="mapName === 'map01'"><v-icon>mdi-map-marker-radius</v-icon></v-btn>
-<!--            <v-btn :size="isSmall ? 'small' : 'default'" class="zoom-in" icon @click="zoomIn" v-if="mapName === 'map01'"><v-icon>mdi-plus</v-icon></v-btn>-->
-<!--            <v-btn :size="isSmall ? 'small' : 'default'" class="zoom-out" icon @click="zoomOut" v-if="mapName === 'map01'"><v-icon>mdi-minus</v-icon></v-btn>-->
             <v-btn :size="isSmall ? 'small' : 'default'" class="share" icon @click="share(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-share-variant</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" class="draw" icon @click="draw" v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" class="draw-circle" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>
@@ -5553,4 +5551,51 @@ select {
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
 }
 
+/*ミニツールチップ*/
+.mini-tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+}
+.mini-tooltip-text {
+  visibility: hidden;
+  background: #222;
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 100;
+}
+/* ツールチップ本体をボタン下に */
+.mini-tooltip-bottom {
+  top: 120%; /* 適宜調整 */
+}
+
+/* ホバー時表示 */
+.mini-tooltip-wrapper:hover .mini-tooltip-text,
+.mini-tooltip-wrapper:focus-within .mini-tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* ▲上向き三角 */
+.mini-tooltip-arrow-up {
+  position: absolute;
+  left: 50%;
+  top: -6px;  /* ツールチップ本体の上端中央に出す */
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid #222; /* 本体と同じ色で */
+  content: '';
+  z-index: 101;
+}
 </style>
