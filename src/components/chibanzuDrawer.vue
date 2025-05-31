@@ -469,12 +469,14 @@ export default {
       fileInput.click();
     },
     async public0(no) {
+      // alert(this.$store.state.userId)
       const url = 'https://kenzkenz.xsrv.jp/open-hinata3/php/userChibanzumapRedUpdate.php';
       const data = {
         citycode: this.cityCode,
         prefname: this.prefName,
         cityname: this.cityName,
         public: no,
+        uid: this.$store.state.userId
       };
       try {
         const response = await fetch(url, {
@@ -501,6 +503,7 @@ export default {
         citycode: this.cityCode,
         prefname: this.prefName,
         cityname: this.cityName,
+        uid: this.$store.state.userId
       };
       try {
         const response = await fetch(url, {
