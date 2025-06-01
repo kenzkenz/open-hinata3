@@ -3606,7 +3606,7 @@ export async function zipDownloadSimaText (simaTexts) {
     }
 }
 
-export function downloadSimaText (isUser) {
+export function downloadSimaText (isUser,fileName0) {
     let simaText
     let fileName = 'sima.sim'
     if (isUser) {
@@ -3614,7 +3614,7 @@ export function downloadSimaText (isUser) {
             simaText = JSON.parse(store.state.simaTextForUser).text;
         }catch (e) {
             simaText = store.state.simaTextForUser;
-            fileName = '部分DL.sim'
+            fileName = fileName0 + '部分DL.sim'
         }
     } else {
         simaText = JSON.parse(store.state.simaText).text;

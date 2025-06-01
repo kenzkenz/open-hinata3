@@ -1731,7 +1731,8 @@ export default {
             }
             simaText = extractSimaById(simaText, highlightedSimas)
             this.$store.state.simaTextForUser = simaText
-            downloadSimaText (true)
+            const fileName = simaTexts[0].name
+            downloadSimaText (true, fileName)
           });
     },
     simaDl () {
@@ -2212,12 +2213,15 @@ export default {
       const keysToRemove = ['source', 'layers', 'sources', 'attribution','info']
       let copiedSelectedLayers = JSON.parse(JSON.stringify(this.$store.state.selectedLayers))
       copiedSelectedLayers = removeKeys(copiedSelectedLayers, keysToRemove)
-      // console.log(JSON.stringify(copiedSelectedLayers))
       const selectedLayersJson = JSON.stringify(copiedSelectedLayers)
-      // console.log(this.$store.state.highlightedChibans)
       const chibans = []
       this.$store.state.highlightedChibans.forEach(h => {
         chibans.push(h)
+      })
+      const simas = []
+      this.$store.state.highlightedSimas.forEach(h => {
+        // alert(9)
+        simas.push(h)
       })
       const simaText = this.$store.state.simaText
       const image = this.$store.state.uploadedImage
@@ -2235,7 +2239,7 @@ export default {
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
       ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}
-      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}&geojsontext=${geojsonText}&dxftext=${dxfText}&gpxtext=${gpxText}&drawgeojsontext=${drawGeojsonText}&clickgeojsontext=${clickGeojsonText}&clickCirclegeojsontext=${clickCircleGeojsonText}&vector=${JSON.stringify(vector)}&iswindow=${JSON.stringify(isWindow)}&simatextforuser=${simaTextForUser}`
+      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simas=${JSON.stringify(simas)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}&geojsontext=${geojsonText}&dxftext=${dxfText}&gpxtext=${gpxText}&drawgeojsontext=${drawGeojsonText}&clickgeojsontext=${clickGeojsonText}&clickCirclegeojsontext=${clickCircleGeojsonText}&vector=${JSON.stringify(vector)}&iswindow=${JSON.stringify(isWindow)}&simatextforuser=${simaTextForUser}`
       // console.log(this.param)
       // this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
       // URLを更新
@@ -2304,6 +2308,7 @@ export default {
       const terrainLevel = parseFloat(params.get('terrainLevel'))
       const slj = JSON.parse(params.get('slj'))
       const chibans = params.get('chibans')
+      const simas = params.get('simas')
       const simaText = params.get('simatext')
       const image = params.get('image')
       const extLayer = params.get('extlayer')
@@ -2321,7 +2326,7 @@ export default {
       this.pitch.map02 = pitch02
       this.bearing = bearing
       this.s_terrainLevel = terrainLevel
-      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText,drawGeojsonText,clickGeojsonText,clickCircleGeojsonText,vector,isWindow,simaTextForUser}// 以前のリンクをいかすためpitchを入れている。
+      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simas,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText,drawGeojsonText,clickGeojsonText,clickCircleGeojsonText,vector,isWindow,simaTextForUser}// 以前のリンクをいかすためpitchを入れている。
     },
     init() {
 
@@ -3373,6 +3378,12 @@ export default {
           if (params.chibans) {
             JSON.parse(params.chibans).forEach(c => {
               this.$store.state.highlightedChibans.add(c)
+            })
+          }
+
+          if (params.simas) {
+            JSON.parse(params.simas).forEach(c => {
+              this.$store.state.highlightedSimas.add(c)
             })
           }
 

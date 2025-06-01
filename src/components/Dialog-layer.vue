@@ -968,11 +968,12 @@ export default {
       if (map === this.$store.state.map01) {
         setTimeout(() => {
           const targetLayers = this.$store.state.map01.getStyle().layers
-              .filter(layer => layer.id.startsWith('oh-sima-') && !registeredLayers.has(layer.id))
+              .filter(layer => layer.id.startsWith('oh-sima-') && !layer.id.endsWith('-label-layer') && !registeredLayers.has(layer.id))
               .map(layer => layer.id);
           targetLayers.forEach(layer => {
             registeredLayers.add(layer)
             this.$store.state.map01.on('click', layer, (e) => {
+              console.log(layer)
               if (e.features && e.features.length > 0) {
                 // 最小面積のポリゴンを選ぶ
                 let smallestFeature = e.features[0];

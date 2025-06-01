@@ -3996,6 +3996,7 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
     } else {
         if (document.querySelector('.street-view')) {
             document.querySelector('.street-view').style.height = '0px'
+            document.querySelector('.street-view').style.width = '0px'
         }
         // setTimeout(() => {
         //     if (container && !store.state.mapillaryFlg) {
