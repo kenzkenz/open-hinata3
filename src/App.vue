@@ -42,11 +42,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
           top
           right
       >
-        <input type="range" min="0" max="1" step="0.01" class="range" v-model.number="s_simaOpacity" @input="simaOpacityInput"/>
-        <v-btn color="pink" text @click="simaDl">SIMAダウンロード</v-btn>
+        <input v-if="!user1" type="range" min="0" max="1" step="0.01" class="range" v-model.number="s_simaOpacity" @input="simaOpacityInput"/>
+        <v-btn color="pink" class="tiny-btn" style="margin-bottom: 0px!important;" text @click="simaDl">SIMAダウンロード</v-btn>
+        <v-btn v-if="user1" color="pink" class="tiny-btn" style="margin-left: 10px;margin-bottom: 0px!important;" text @click="simaPartDl">部分ダウンロード</v-btn>
         <v-btn v-if="!user1" style="margin-left: 10px;" color="pink" text @click="simaDelete">削除</v-btn>
         <template v-slot:actions>
-          <v-btn color="pink" text @click="simaClose">閉じる</v-btn>
+          <v-btn color="white" text @click="simaClose">閉じる</v-btn>
         </template>
       </v-snackbar>
 
@@ -622,7 +623,7 @@ import {
   csvGenerateForUserPng,
   ddSimaUpload,
   downloadKML,
-  downloadSimaText, dxfToGeoJSON, extractFirstFeaturePropertiesAndCheckCRS,
+  downloadSimaText, dxfToGeoJSON, extractFirstFeaturePropertiesAndCheckCRS, extractSimaById,
   geojsonAddLayer,
   geoTiffLoad,
   geoTiffLoad2,
@@ -1698,6 +1699,41 @@ export default {
         this.s_dialogForSimaApp = false
       }
     },
+    simaPartDl () {
+      const map01 = this.$store.state.map01
+      let ids = []
+      const features = map01.queryRenderedFeatures();
+      const simaLayers = new Set();
+      features.forEach(f => {
+        if (f.layer.id.includes('-sima-')) {
+          // 3つ目の要素を抽出
+          simaLayers.add(f.layer.id.split('-')[2]);
+        }
+      });
+      // 配列に変換
+      ids = Array.from(simaLayers);
+      const params = new URLSearchParams({ ids: ids });
+      ids.forEach(id => params.append('ids[]', id));
+      fetch(`https://kenzkenz.xsrv.jp/open-hinata3/php/userSimaSelectByIds.php?${params}`, {
+        method: "GET"
+      })
+          .then(response => response.json())
+          .then(datanum => {
+            const simaTexts = datanum.map(data => {
+              return {simaText:data.simatext,name:data.name}
+            })
+            const highlightedSimas = Array.from(this.$store.state.highlightedSimas)
+            console.log('highlightedSimas',highlightedSimas)
+            let simaText = simaTexts[0].simaText
+            if (highlightedSimas.length === 0) {
+              alert('1件も選択されていません。')
+              return
+            }
+            simaText = extractSimaById(simaText, highlightedSimas)
+            this.$store.state.simaTextForUser = simaText
+            downloadSimaText (true)
+          });
+    },
     simaDl () {
       if (this.$store.state.simaText) {
         downloadSimaText(false)
@@ -1710,6 +1746,7 @@ export default {
           }
         })
         ids = [...new Set(ids)]
+        console.log(ids)
         const params = new URLSearchParams({ ids: ids });
         ids.forEach(id => params.append('ids[]', id));
         fetch(`https://kenzkenz.xsrv.jp/open-hinata3/php/userSimaSelectByIds.php?${params}`, {
@@ -1723,12 +1760,7 @@ export default {
               zipDownloadSimaText (simaTexts)
             });
       }
-      // if (this.$store.state.simaText) {
-      //   downloadSimaText(false)
-      // }
-      // if (this.$store.state.simaTextForUser) {
-      //   downloadSimaText(true)
-      // }
+
     },
     draw() {
       const map = this.$store.state.map01

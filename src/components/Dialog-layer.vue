@@ -72,7 +72,7 @@ import {
   geojsonAddLayer,
   highlightSpecificFeatures, highlightSpecificFeatures2025,
   highlightSpecificFeaturesCity, LngLatToAddress,
-  simaToGeoJSON, updateMeasureUnit, dxfToGeoJSON, userPmtileSet
+  simaToGeoJSON, updateMeasureUnit, dxfToGeoJSON, userPmtileSet, highlightSpecificFeaturesSima
 } from "@/js/downLoad";
 import * as Layers from '@/js/layers'
 // import Tree from "vue3-tree"
@@ -965,13 +965,47 @@ export default {
         },0)
       }
 
+      if (map === this.$store.state.map01) {
+        setTimeout(() => {
+          const targetLayers = this.$store.state.map01.getStyle().layers
+              .filter(layer => layer.id.startsWith('oh-sima-') && !registeredLayers.has(layer.id))
+              .map(layer => layer.id);
+          targetLayers.forEach(layer => {
+            registeredLayers.add(layer)
+            this.$store.state.map01.on('click', layer, (e) => {
+              if (e.features && e.features.length > 0) {
+                // 最小面積のポリゴンを選ぶ
+                let smallestFeature = e.features[0];
+                let minArea = turf.area(e.features[0]);
+                for (let feature of e.features) {
+                  const area = turf.area(feature);
+                  if (area < minArea) {
+                    smallestFeature = feature;
+                    minArea = area;
+                  }
+                }
+                const targetId = `${smallestFeature.properties['id']}`;
+                if (this.$store.state.highlightedSimas.has(targetId)) {
+                  this.$store.state.highlightedSimas.delete(targetId);
+                  store.commit('setRightDrawer', false);
+                } else {
+                  this.$store.state.highlightedSimas.add(targetId);
+                }
+                highlightSpecificFeaturesSima(map, layer);
+              }
+            });
+          });
+        },0)
+      }
+
       this.$store.state.map01.getStyle().layers.forEach(layer => {
         if (layer.id.includes('-sima-') && layer.id.includes('polygon')) {
-          if (this.$store.state.simaTextForUser) {
-            this.$store.state.map01.setPaintProperty(layer.id, 'fill-opacity', JSON.parse(this.$store.state.simaTextForUser).opacity)
-          } else {
-            this.$store.state.map01.setPaintProperty(layer.id, 'fill-opacity', 0)
-          }
+          highlightSpecificFeaturesSima(map,layer.id)
+          // if (this.$store.state.simaTextForUser) {
+          //   this.$store.state.map01.setPaintProperty(layer.id, 'fill-opacity', JSON.parse(this.$store.state.simaTextForUser).opacity)
+          // } else {
+          //   this.$store.state.map01.setPaintProperty(layer.id, 'fill-opacity', 0)
+          // }
         }
         if (layer.id.includes('oh-chiban-') || layer.id.includes('oh-chibanzu-')) {
           try {

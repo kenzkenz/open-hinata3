@@ -2333,6 +2333,7 @@ export function highlightSpecificFeatures2025(map,layerId) {
     }, sec)
     isFirstRun = false
 }
+
 export function highlightSpecificFeatures(map,layerId) {
     // alert(999999)
     console.log(store.state.highlightedChibans);
@@ -2342,7 +2343,6 @@ export function highlightSpecificFeatures(map,layerId) {
     } else {
         sec = 0
     }
-
     map.setPaintProperty(
         layerId,
         "fill-color", "rgba(0, 0, 0, 0)",
@@ -2365,6 +2365,40 @@ export function highlightSpecificFeatures(map,layerId) {
         );
     }, sec)
     isFirstRun = false
+}
+
+export function highlightSpecificFeaturesSima(map,layerId) {
+    let sec = 0
+    if (isFirstRun) {
+        sec = 0
+    } else {
+        sec = 0
+    }
+    try {
+        map.setPaintProperty(
+            layerId,
+            "fill-color", "rgba(0, 0, 0, 0)",
+        );
+        setTimeout(() => {
+            map.setPaintProperty(
+                layerId,
+                'fill-color',
+                [
+                    'case',
+                    [
+                        'in',
+                        ['concat', ['get', 'id']],
+                        ['literal', Array.from(store.state.highlightedSimas)]
+                    ],
+                    'rgba(0, 128, 128, 0.5)', // クリックされた地番が選択された場合
+                    'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
+                ]
+            );
+        }, sec)
+        isFirstRun = false
+    }catch (e) {
+        console.log(e)
+    }
 }
 
 let isFirstRunCity1 = true;
@@ -3526,8 +3560,14 @@ export async function zipDownloadSimaText (simaTexts) {
 
 export function downloadSimaText (isUser) {
     let simaText
+    let fileName = 'sima.sim'
     if (isUser) {
-        simaText = JSON.parse(store.state.simaTextForUser).text;
+        try {
+            simaText = JSON.parse(store.state.simaTextForUser).text;
+        }catch (e) {
+            simaText = store.state.simaTextForUser;
+            fileName = '部分DL.sim'
+        }
     } else {
         simaText = JSON.parse(store.state.simaText).text;
     }
@@ -3540,7 +3580,7 @@ export function downloadSimaText (isUser) {
     const blob = new Blob([uint8Array], { type: 'application/octet-stream' }); // MIMEタイプを変更
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = 'sima.sim'; // ファイル名を'sima.sim'に設定
+    link.download = fileName
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -6267,7 +6307,7 @@ export const wsg84ToJgdForGeojson = (geojson,code0) => {
 
 export async function userSimaSet(name, url, id, zahyokei, simaText, isFirst) {
     const map = store.state.map01;
-    try {
+    // try {
         if (!simaText) {
             const files = await Promise.all([fetchFile(url)]);
             const file = files[0];
@@ -6293,7 +6333,11 @@ export async function userSimaSet(name, url, id, zahyokei, simaText, isFirst) {
         if (isFirst) {
             let opacity
             if (store.state.simaTextForUser) {
-                opacity = JSON.parse(store.state.simaTextForUser).opacity
+                try {
+                    opacity = JSON.parse(store.state.simaTextForUser).opacity
+                }catch (e) {
+                    opacity = store.state.simaTextForUser
+                }
             } else {
                 opacity = 0
             }
@@ -6308,10 +6352,10 @@ export async function userSimaSet(name, url, id, zahyokei, simaText, isFirst) {
         // alert(zahyokei)
         const geojson = simaToGeoJSON(simaText, map, zahyokei, false, true);
         return createSourceAndLayers(geojson);
-    } catch (error) {
-        console.error(error);
-        return null;
-    }
+    // } catch (error) {
+    //     console.error(error);
+    //     return null;
+    // }
 
     function createSourceAndLayers(geojson) {
         if (map.getLayer('oh-sima-' + id + '-' + name + '-layer')) {
@@ -6331,7 +6375,8 @@ export async function userSimaSet(name, url, id, zahyokei, simaText, isFirst) {
             source: sourceId,
             filter: ["==", "$type", "Polygon"],
             paint: {
-                'fill-color': 'rgb(50,101,186)',
+                // 'fill-color': 'rgb(50,101,186)',
+                'fill-color': 'rgba(0,0,0,0)',
                 'fill-opacity': 0
             }
         };
@@ -7490,3 +7535,112 @@ export function dxfToGeoJSON(dxf) {
         features,
     };
 }
+
+export function extractSimaById(simaText, targetIds) {
+    if (!Array.isArray(targetIds)) targetIds = [targetIds].map(String);
+    else targetIds = targetIds.map(String);
+
+    const lines = simaText.split(/\r?\n/);
+
+    // 1. 全B01の点IDセット
+    const b01PointSet = new Set();
+    // D00ブロック内容保持
+    const blockMap = {};
+    let inBlock = false, curBlock = [], curId = null;
+    for (const line of lines) {
+        if (line.startsWith('B01,')) {
+            b01PointSet.add(line.split(',')[1]);
+        }
+        if (line.startsWith('D00,')) {
+            inBlock = true; curBlock = [line]; curId = line.split(',')[1];
+        } else if (line.startsWith('D99')) {
+            if (inBlock && curId) {
+                curBlock.push(line);
+                blockMap[curId] = [...curBlock];
+            }
+            inBlock = false; curBlock = []; curId = null;
+        } else if (inBlock) {
+            curBlock.push(line);
+        }
+    }
+
+    // 2. ポリゴンで参照されてる点ID（B01が属するD00がtargetIdのもののみ）
+    const usedA01Ids = new Set();
+    for (const id of targetIds) {
+        const block = blockMap[id];
+        if (block) {
+            for (const l of block) {
+                if (l.startsWith('B01,')) usedA01Ids.add(l.split(',')[1]);
+            }
+        }
+    }
+
+    // 3. ポイントA01: B01に1度も出ず、A01だけでtargetIdに該当するもの
+    //    例：A01,16,... で16がB01に出てこないもの
+    const pointIdSet = new Set(
+        targetIds.filter(id => !b01PointSet.has(id))
+    );
+
+    // 4. 出力判定
+    let inTargetBlock = false;
+    let targetBlockId = null;
+    const output = [];
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        // G00, Z00, A00, A99,END,, はそのまま残す
+        if (
+            line.startsWith('G00,') ||
+            line.startsWith('Z00,') ||
+            line.startsWith('A00') ||
+            (line === 'A99') ||
+            (line === 'A99,END,,')
+        ) {
+            output.push(line);
+            continue;
+        }
+
+        // A01は「ポイントとして抽出すべきもの」または「usedA01Idsに含まれるもの」だけ残す
+        if (line.startsWith('A01,')) {
+            const ptId = line.split(',')[1];
+            if (pointIdSet.has(ptId) || usedA01Ids.has(ptId)) {
+                output.push(line);
+            }
+            continue;
+        }
+
+        // D00（targetIdsのみ残す）→以降D99まで残す
+        if (line.startsWith('D00,')) {
+            const id = line.split(',')[1];
+            if (targetIds.includes(id)) {
+                inTargetBlock = true;
+                targetBlockId = id;
+                output.push(line);
+            } else {
+                inTargetBlock = false;
+                targetBlockId = null;
+            }
+            continue;
+        }
+        // D99（今inTargetBlock中なら残す）
+        if (line.startsWith('D99')) {
+            if (inTargetBlock) output.push(line);
+            inTargetBlock = false;
+            targetBlockId = null;
+            continue;
+        }
+        // D00～D99間（targetBlockのみ出力）
+        if (inTargetBlock) {
+            output.push(line);
+            continue;
+        }
+        // それ以外（B01など）は全消去
+    }
+
+    return output.join('\n');
+}
+
+
+
+
+

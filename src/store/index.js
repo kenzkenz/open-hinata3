@@ -137,6 +137,7 @@ export default createStore({
     mindenGeojson: '',
     isRenzoku: true,
     highlightedChibans: new Set(),
+    highlightedSimas: new Set(),
     dialogForSima: false,
     simaText: '',
     simaTextForUser: '',
