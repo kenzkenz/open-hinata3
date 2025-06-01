@@ -250,6 +250,7 @@ function urlByLayerId (layerId) {
     return [RasterTileUrl,legend,zoom]
 }
 export function popup(e,map,mapName,mapFlg) {
+    // alert(mapName)
     let html = ''
     enableMotionPermission()
     let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
@@ -309,6 +310,7 @@ export function popup(e,map,mapName,mapFlg) {
     }
     // if (features.length > 0) {
     let regionType = ''
+    const f0 = [features[0]]
     features.forEach(feature => {
         const layerId = feature.layer.id
         console.log(feature)
@@ -3044,7 +3046,9 @@ export function popup(e,map,mapName,mapFlg) {
                         store.state.popupFeatureProperties = features[0].properties
                         store.state.popupFeatureCoordinates = coordinates
                         store.state.rightDrawerTitle = '2025登記所地図'
-                        store.commit('setRightDrawer', true)
+                        if (!store.state.isDrawPoint) {
+                            store.commit('setRightDrawer', true)
+                        }
                     } else {
                         store.commit('setRightDrawer', false)
                     }
@@ -3555,34 +3559,44 @@ export function popup(e,map,mapName,mapFlg) {
             }
             case 'click-circle-layer':
             case 'click-circle-symbol-layer':
+            case 'click-circle-line-layer':
+            // case 'click-circle-label-layer':
             {
-                let features = map.queryRenderedFeatures(
-                    map.project(coordinates), {layers: [layerId]}
-                )
-                if (features.length === 0) {
-                    features = map.queryRenderedFeatures(
-                        map.project(e.lngLat), {layers: [layerId]}
-                    )
-                }
-                console.log(features)
-                if (features.length === 0) return
-                // const centerCoordinates = turf.centroid(features[0]).geometry.coordinates
-                // console.log(centerCoordinates)
-                // const lng = centerCoordinates[0]
-                // const lat = centerCoordinates[1]
-                props = features[0].properties
+                coordinates = store.state.coordinates
+                features = JSON.parse(store.state.clickCircleGeojsonText).features
+                const feature = features.find(feature => feature.properties.id === store.state.id)
+                console.log('フィーチャー',feature)
+                if (!feature) return;
+                props = feature.properties
                 console.log(props)
                 const lng = props.lng
                 const lat = props.lat
-                if (html.indexOf('click-circle-layer') === -1) {
-                    html += '<div class="layer-label-div">サークル</div>'
-                    html +=
-                        '<div style="width: 200px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
-                        '<span style="font-size:20px;" class="circle-label">半径' + props.label + 'm</span><br>' +
-                        '<input style="width: 100%;" type="range" min="10" max="1000" step="10" value="' + props.label + '" class="circle-range" lng="' + lng + '" lat="' + lat + '"/>' +
-                        '<input style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input circle-text" placeholder="ここに入力" value="' + props.label2 + '">' +
-                        '<button style="margin-bottom: 10px;" class="circle-delete-all pyramid-btn">削　除</button><br>' +
-                        '</div>'
+                console.log(lng,lat)
+                const geoType = features[0].geometry.type
+                switch (geoType) {
+                    case 'Polygon':
+                        if (html.indexOf('click-circle-layer') === -1) {
+                            html += '<div class="layer-label-div">サークル</div>'
+                            html +=
+                                '<div style="width: 200px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
+                                '<span style="font-size:20px;" class="circle-label">半径' + props.label + 'm</span><br>' +
+                                '<input style="width: 100%;" type="range" min="10" max="1000" step="10" value="' + props.label + '" class="circle-range" lng="' + lng + '" lat="' + lat + '"/>' +
+                                '<input style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input circle-text" placeholder="ここに入力" value="' + props.label2 + '">' +
+                                '<button style="margin-bottom: 10px;height: 30px;font-size: medium;" class="circle-delete-all pyramid-btn">削　除</button><br>' +
+                                '</div>'
+                        }
+                        break
+                    case 'Point':
+                        if (html.indexOf('click-circle-layer') === -1) {
+                            html += '<div class="layer-label-div">ポイント</div>'
+                            html +=
+                                '<div style="width: 200px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
+                                '<input id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力" value="' + props.label + '">' +
+                                '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;" class="point-delete pyramid-btn">削　除</button><br>' +
+                                '<button style="margin-bottom: 10px;height: 30px;font-size: medium;" class="point-delete-all pyramid-btn">全て削除</button><br>' +
+                                '</div>'
+                        }
+                        break
                 }
                 break
             }

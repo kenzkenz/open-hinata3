@@ -6,6 +6,67 @@ import {clickCircleSource, clickPointSource} from "@/js/layers";
 import {closeAllPopups} from "@/js/popup";
 export let currentIndex = 0
 let kasen
+export function geojsonCreate(map, geoType, coordinates, properties = {}) {
+    // 1. 新しいfeatureを生成
+    let feature;
+    switch (geoType) {
+        case 'Point':
+            feature = turf.point(coordinates, properties);
+            break;
+        case 'LineString':
+            feature = turf.lineString(coordinates, properties);
+            break;
+        case 'Polygon':
+            feature = turf.polygon([coordinates], properties); // Polygonは「[[lng,lat],...]」
+            break;
+        default:
+            throw new Error('未対応のgeoType: ' + geoType);
+    }
+
+    // 2. 既存のFeatureCollectionを取得
+    const source = map.getSource(clickCircleSource.iD);
+    let geojsonData = null;
+    try {
+        geojsonData = source._data
+    } catch (e) {
+        geojsonData = null;
+    }
+
+    // 3. 既存featureが無ければ新規追加
+    if (!geojsonData || !geojsonData.features || geojsonData.features.length === 0) {
+        geojsonData = turf.featureCollection([feature]);
+    } else {
+        // 既存FeatureCollectionに追加
+        geojsonData = {
+            ...geojsonData,
+            features: [...geojsonData.features, feature]
+        };
+    }
+    // 4. ソースに再セット
+    source.setData(geojsonData);
+    store.state.clickCircleGeojsonText = JSON.stringify(geojsonData)
+    return feature;
+}
+
+// export function geojsonCreate(map, geoType, coordinates, properties = {}) {
+//     let feature;
+//     switch (geoType) {
+//         case 'Point':
+//             feature = turf.point(coordinates, properties);
+//             break;
+//         case 'LineString':
+//             feature = turf.lineString(coordinates, properties);
+//             break;
+//         case 'Polygon':
+//             feature = turf.polygon([coordinates], properties); // Polygonは「[[lng,lat],...]」
+//             break;
+//         default:
+//             throw new Error('未対応のgeoType: ' + geoType);
+//     }
+//     const geojsonData = turf.featureCollection([feature]);
+//     map.getSource(clickCircleSource.iD).setData(geojsonData);
+//     return feature
+// }
 export function circleCreate (lng, lat, m, text) {
     const center = [lng, lat];
     // const radiusKm = 0.2; // 200m = 0.2km
@@ -19,11 +80,13 @@ export function circleCreate (lng, lat, m, text) {
     circleGeoJson.properties['label2'] = text
     circleGeoJson.properties['lng'] = lng
     circleGeoJson.properties['lat'] = lat
+    circleGeoJson.properties['offsetValue'] = [0, 2]
     const centerFeature = turf.centerOfMass(circleGeoJson);
     centerFeature.properties['label'] = m
     centerFeature.properties['label2'] = text
     centerFeature.properties['lng'] = lng
     centerFeature.properties['lat'] = lat
+    centerFeature.properties['offsetValue'] = [0, 2]
     const circleGeoJsonFeatures = {
         type: 'FeatureCollection',
         features: [centerFeature,circleGeoJson]
@@ -1101,6 +1164,75 @@ export default function pyramid () {
                 store.state.clickCircleGeojsonText = JSON.stringify(circleGeoJsonFeatures)
             }
         });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('input', (e) => {
+            if (e.target && (e.target.classList.contains("point-text"))) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
+                const pointTextElm = document.querySelector('.point-text')
+                const pointTextValue = pointTextElm.value
+                console.log(id,pointTextValue)
+                // いまのGeoJSONを取得
+                const source = map01.getSource(clickCircleSource.iD)
+                if (!source) return;
+                console.log(source)
+                const geojson = source._data
+                console.log(geojson)
+                // featuresからid一致のfeatureを探してプロパティ書き換え
+                let changed = false;
+                if (geojson && geojson.features) {
+                    geojson.features.forEach(feature => {
+                        console.log(String(feature.properties.id),id)
+                        if (feature.properties && String(feature.properties.id) === id) {
+                            feature.properties.label = pointTextValue
+                            changed = true;
+                        }
+                    });
+                    if (changed) {
+                        map01.getSource(clickCircleSource.iD).setData(geojson);
+                        store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+                    }
+                }
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("point-delete"))) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
+                let source = map01.getSource(clickCircleSource.iD)
+                const geojson = source._data
+                if (geojson && geojson.features) {
+                    const newFeatures = geojson.features.filter(feature => {
+                        return !(feature.properties && String(feature.properties.id) === id);
+                    });
+                    if (newFeatures.length !== geojson.features.length) {
+                        geojson.features = newFeatures;
+                        map01.getSource(clickCircleSource.iD).setData(geojson);
+                        store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+                    }
+                }
+                closeAllPopups()
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("point-delete-all"))) {
+                if (!confirm("全て削除しますか？")) {
+                    return
+                }
+                const map01 = store.state.map01
+                let source = map01.getSource(clickCircleSource.iD);
+                // 空のGeoJSON FeatureCollectionを設定する
+                source.setData({
+                    type: "FeatureCollection",
+                    features: []
+                });
+                store.state.clickCircleGeojsonText = ''
+                closeAllPopups()
+            }
+        });
+
     })
 }
 

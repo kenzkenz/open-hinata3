@@ -494,15 +494,10 @@ export const clickCircleLabelLayer = {
     type: 'symbol',
     source: 'click-circle-source',
     filter: ['==', '$type', 'Point'],
-    'layout': {
-        'text-field': [
-            'concat',
-            '半径',
-            ['get', 'label'],
-            'm\n',
-            ['get', 'label2']
-        ],
-        'text-offset': [0, 2],
+    layout: {
+        'text-field': ['get', 'label'],
+        'text-offset': ['get', 'offsetValue'],
+        'text-anchor': 'left'
     },
     'paint': {
         'text-color': 'black',
@@ -522,7 +517,7 @@ export const clickCircSymbolLayer = {
         'text-allow-overlap': true
     },
     paint: {
-        'text-color': 'orange',
+        'text-color': 'black',
         'text-halo-color': '#fff',
         'text-halo-width': 1
     }

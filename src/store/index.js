@@ -4,8 +4,11 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    id: '',
+    coordinates: [],
     gazoName: '',
     isDrawCircle: false,
+    isDrawPoint: false,
     rightDrawerTitle: '',
     selectedPublic: 0,
     geojsonFile: null,

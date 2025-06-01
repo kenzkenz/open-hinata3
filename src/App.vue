@@ -562,8 +562,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
             <v-btn :size="isSmall ? 'small' : 'default'" icon @click="goToCurrentLocation" v-if="mapName === 'map01'"><v-icon>mdi-crosshairs-gps</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" class="watch-position" :color="isTracking ? 'green' : undefined" icon @click="toggleWatchPosition" v-if="mapName === 'map01'"><v-icon>mdi-map-marker-radius</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" class="share" icon @click="share(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-share-variant</v-icon></v-btn>
-            <v-btn :size="isSmall ? 'small' : 'default'" class="draw" icon @click="draw" v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>
-            <v-btn :size="isSmall ? 'small' : 'default'" class="draw-circle" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>
+            <v-btn :size="isSmall ? 'small' : 'default'" class="draw" icon @click="draw" v-if="mapName === 'map01'"><v-icon>mdi-ruler</v-icon></v-btn>
+            <v-btn disabled :size="isSmall ? 'small' : 'default'" class="draw-circle" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>
+            <v-btn :size="isSmall ? 'small' : 'default'" class="draw-point" :color="s_isDrawPoint ? 'green' : undefined" icon @click="toggleDrawPoint" v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>
           </div>
 
           <DialogMenu v-if="mapName === 'map01'" :mapName=mapName />
@@ -960,7 +961,7 @@ import DialogInfo from '@/components/Dialog-info'
 import Dialog2 from '@/components/Dialog2'
 import DialogShare from "@/components/Dialog-share"
 import DialogChibanzuList from "@/components/Dialog-chibanzu-list"
-import pyramid, {circleCreate} from '@/js/pyramid'
+import pyramid, {circleCreate, geojsonCreate} from '@/js/pyramid'
 import glouplayer from '@/js/glouplayer'
 import * as Layers from '@/js/layers'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -1081,6 +1082,14 @@ export default {
       },
       set(value) {
         return this.$store.state.isDrawCircle = value
+      }
+    },
+    s_isDrawPoint: {
+      get() {
+        return this.$store.state.isDrawPoint
+      },
+      set(value) {
+        return this.$store.state.isDrawPoint= value
       }
     },
     s_selectedPublic: {
@@ -1445,8 +1454,13 @@ export default {
     },
   },
   methods: {
+    toggleDrawPoint () {
+      this.s_isDrawPoint = !this.s_isDrawPoint
+      if (this.s_isDrawPoint) this.s_isDrawCircle = false
+    },
     toggleDrawCircle () {
       this.s_isDrawCircle = !this.s_isDrawCircle
+      if (this.s_isDrawCircle) this.s_isDrawPoint = false
     },
     save () {
       this.saveSelectedPointFeature()
@@ -3093,6 +3107,61 @@ export default {
       //     }
       //   }
       // })
+      // ポイント作成-----------------------------------------------------------------------------------
+      function onPointClick(e) {
+        console.log('擬似クリック event:', e);
+        popup(e,map,'map01',vm.s_map2Flg)
+      }
+      map.on('click', 'click-circle-label-layer', onPointClick);
+      map.on('click', (e) => {
+        console.log(e)
+        const lat = e.lngLat.lat
+        const lng = e.lngLat.lng
+        const coordinates = [lng,lat]
+        this.$store.state.coordinates = coordinates
+
+        // クリック位置をピクセル座標に変換
+        const clickPixel = map.project({ lng: lng, lat: lat });
+        // 例：半径20ピクセル以内で既存地物と判定
+        const pixelTolerance = 20;
+        const exists = map.getSource(clickCircleSource.iD)._data.features.some(f => {
+          if (f.geometry.type !== 'Point') return false;
+          const [lng2, lat2] = f.geometry.coordinates;
+          const featurePixel = map.project({ lng: lng2, lat: lat2 });
+          const dx = featurePixel.x - clickPixel.x;
+          const dy = featurePixel.y - clickPixel.y;
+          const pixelDist = Math.sqrt(dx * dx + dy * dy);
+          return pixelDist < pixelTolerance;
+        });
+        const dummyEvent = {
+          lngLat: { lng: lng, lat: lat },
+          // features: [geojson.features]
+        };
+        // const exists = true
+        if (exists) {
+          const features = map.queryRenderedFeatures(e.point)
+          this.$store.state.id = features.find(f => f.layer.id === 'click-circle-symbol-layer').properties.id
+          onPointClick(dummyEvent);
+          return;
+        }
+
+        const id = String(Math.floor(10000 + Math.random() * 90000))
+        this.$store.state.id = id
+        if (this.s_isDrawPoint) {
+          // const coordinates = [lng,lat]
+          // this.$store.state.coordinates = coordinates
+          const properties = {
+            id: id,
+            label:'',
+            offsetValue: [0.6, 0]
+          }
+          geojsonCreate(map, 'Point', coordinates, properties)
+          setTimeout(() => {
+            onPointClick(dummyEvent);
+          },500)
+        }
+      })
+      // サークル作成-----------------------------------------------------------------------------------
       function onCircleClick(e) {
         console.log('擬似クリック event:', e);
         popup(e,map,'map01',vm.s_map2Flg)
@@ -3114,6 +3183,7 @@ export default {
           },500)
         }
       })
+      // ----------------------------------------------------------------------------------------------
 
       map.on('moveend', () => {
         this.$store.state.watchFlg = true
@@ -4532,6 +4602,7 @@ export default {
           // マップ上でポリゴンをクリックしたときのイベントリスナー
           let highlightCounter = 0;
           map.on('click', 'oh-homusyo-2025-polygon', (e) => {
+            if (this.$store.state.isDrawPoint) return;
             if (!this.$store.state.isRenzoku) return;
             if (map.getLayer('oh-point-layer')) return;
             if (e.features && e.features.length > 0) {
@@ -5118,6 +5189,11 @@ export default {
 .draw-circle {
   position: absolute;
   top: 240px;
+  left: 0;
+}
+.draw-point {
+  position: absolute;
+  top: 300px;
   left: 0;
 }
 /*3Dのボタン-------------------------------------------------------------*/
