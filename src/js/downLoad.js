@@ -2368,6 +2368,9 @@ export function highlightSpecificFeatures(map,layerId) {
 }
 
 export function highlightSpecificFeaturesSima(map,layerId) {
+    console.log(layerId)
+    const isPoint = layerId.includes('-point-layer')
+    console.log(isPoint)
     let sec = 0
     if (isFirstRun) {
         sec = 0
@@ -2375,25 +2378,70 @@ export function highlightSpecificFeaturesSima(map,layerId) {
         sec = 0
     }
     try {
-        map.setPaintProperty(
-            layerId,
-            "fill-color", "rgba(0, 0, 0, 0)",
-        );
         setTimeout(() => {
-            map.setPaintProperty(
-                layerId,
-                'fill-color',
-                [
-                    'case',
+            if (layerId.includes('-polygon-layer')) {
+                map.setPaintProperty(
+                    layerId,
+                    'fill-color',
                     [
-                        'in',
-                        ['concat', ['get', 'id']],
-                        ['literal', Array.from(store.state.highlightedSimas)]
-                    ],
-                    'rgba(0, 128, 128, 0.5)', // クリックされた地番が選択された場合
-                    'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
-                ]
-            );
+                        'case',
+                        [
+                            'in',
+                            ['concat', ['get', 'id']],
+                            ['literal', Array.from(store.state.highlightedSimas)]
+                        ],
+                        'rgba(0, 128, 128, 0.5)', // クリックされた地番が選択された場合
+                        'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
+                    ]
+                );
+            } else if (layerId.includes('-point-layer')) {
+                map.setPaintProperty(
+                    layerId,
+                    'circle-color',
+                    [
+                        'case',
+                        [
+                            'in',
+                            ['get', 'id'],
+                            ['literal', Array.from(store.state.highlightedSimas)]
+                        ],
+                        'rgba(0, 128, 128, 1)', // 選択されている場合
+                        'navy'         // されてない場合
+                    ]
+                )
+                map.setPaintProperty(
+                    layerId,
+                    'circle-color',
+                    [
+                        'case',
+                        [
+                            'in',
+                            ['get', 'id'],
+                            ['literal', Array.from(store.state.highlightedSimas)]
+                        ],
+                        'green',  // 含まれている時
+                        'white'   // 含まれていない時
+                    ]
+                )
+                map.setPaintProperty(layerId, 'circle-stroke-width', 3)
+            } else if (layerId.includes('-point-label-layer')) {
+                console.log(layerId)
+                layerId = layerId.replace('-point-label-layer','-point-layer')
+                map.setPaintProperty(
+                    layerId,
+                    'circle-color',
+                    [
+                        'case',
+                        [
+                            'in',
+                            ['get', 'id'],
+                            ['literal', Array.from(store.state.highlightedSimas)]
+                        ],
+                        'green',  // 含まれている時
+                        'white'   // 含まれていない時
+                    ]
+                )
+            }
         }, sec)
         isFirstRun = false
     }catch (e) {
