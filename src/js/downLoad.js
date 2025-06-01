@@ -6439,12 +6439,11 @@ export async function userSimaSet(name, url, id, zahyokei, simaText, isFirst) {
             }
         };
         const labelLayer = {
-            id: 'oh-sima-' + id + '-' + name + '-label-layer',
+            id: 'oh-sima-' + id + '-' + name + '-polygon-label-layer',
             type: 'symbol',
             source: sourceId,
             layout: {
                 'text-field': ['get', 'chiban'],
-                'text-font': ['NotoSansJP-Regular'],
             },
             paint: {
                 'text-color': 'rgba(0, 0, 0, 1)',
@@ -6486,7 +6485,6 @@ export async function userSimaSet(name, url, id, zahyokei, simaText, isFirst) {
             source: sourceId,
             layout: {
                 'text-field': ['get', 'chiban'],
-                'text-font': ['NotoSansJP-Regular'],
                 'text-offset': [0, 1.3], // ラベルを下にずらす
             },
             paint: {

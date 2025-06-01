@@ -968,7 +968,7 @@ export default {
       if (map === this.$store.state.map01) {
         setTimeout(() => {
           const targetLayers = this.$store.state.map01.getStyle().layers
-              .filter(layer => layer.id.startsWith('oh-sima-') && !layer.id.endsWith('-label-layer') && !registeredLayers.has(layer.id))
+              .filter(layer => layer.id.startsWith('oh-sima-') && !layer.id.endsWith('-polygon-label-layer') && !registeredLayers.has(layer.id))
               .map(layer => layer.id);
           targetLayers.forEach(layer => {
             registeredLayers.add(layer)
