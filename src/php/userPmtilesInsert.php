@@ -16,15 +16,16 @@ try {
     $prefname = $_POST['prefname'] ?? null;
     $cityname = $_POST['cityname'] ?? null;
     $public = $_POST['public'] ?? null;
+    $kaiji2 = $_POST['kaiji2'] ?? null;
 
-    // バリデーション: 空チェック
-    if (empty($name) || empty($url) || empty($uid) || empty($chiban) || empty($url2) || empty($bbox) || empty($length)) {
-        echo json_encode(["error" => "name, url, url2, uid, chiban, bbox, lengthは必須です"]);
-        exit;
-    }
+//    // バリデーション: 空チェック
+//    if (empty($name) || empty($url) || empty($uid) || empty($chiban) || empty($url2) || empty($bbox) || empty($length) || empty($kaiji2)) {
+//        echo json_encode(["error" => "name, url, url2, uid, chiban, bbox, lengthは必須です"]);
+//        exit;
+//    }
 
     // SQL: userdbに新規挿入
-    $sql = "INSERT INTO userpmtiles (name, url, url2, uid, chiban, bbox, length, prefcode, citycode, prefname, cityname, public) VALUES (:name, :url, :url2, :uid, :chiban, :bbox, :length, :prefcode, :citycode, :prefname, :cityname, :public)";
+    $sql = "INSERT INTO userpmtiles (name, url, url2, uid, chiban, bbox, length, prefcode, citycode, prefname, cityname, public, kaiji2) VALUES (:name, :url, :url2, :uid, :chiban, :bbox, :length, :prefcode, :citycode, :prefname, :cityname, :public, :kaiji2)";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ':name' => $name,
@@ -39,6 +40,7 @@ try {
         ':prefname' => $prefname,
         ':cityname' => $cityname,
         ':public' => $public,
+        ':kaiji2' => $kaiji2,
     ]);
 
     // 挿入された行のIDを取得

@@ -11,6 +11,7 @@ export default createStore({
     isDrawPoint: false,
     rightDrawerTitle: '',
     selectedPublic: 0,
+    selectedKaiji2: 1,
     geojsonFile: null,
     chibanzuPrefCode: '',
     chibanzuCityCode: '',

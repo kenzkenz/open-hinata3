@@ -145,6 +145,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   label="公開方法を選択してください"
                   outlined
               ></v-select>
+              <v-select
+                  v-model="s_selectedKaiji2"
+                  :items="kaiji2s"
+                  item-title="label"
+                  item-value="kaiji2"
+                  label="２次開示確認"
+                  outlined
+              ></v-select>
             </div>
             <v-btn @click="shpLoad">読込開始</v-btn>
           </v-card-text>
@@ -1048,6 +1056,7 @@ export default {
     shpGeojson: [],
     loadingSnackbar: false,
     publicItems: [{public:-1,label:'オープンデータ（マップ上は緑色、詳細は表示）'},{public:0,label:'完全非公開（マップ上は透明、詳細は非表示）'},{public:3,label:'非公開（マップ上は灰色、詳細は非表示）'},{public:1,label:'公開（マップ上は青色、詳細は表示）'}],
+    kaiji2s: [{kaiji2:1,label:'自分で自治体へ確認する'},{kaiji2:2,label:'運営者（復代理人含む）に一任する'},{kaiji2:3,label:'開示を希望しない'}],
     isPublic: false,
     drawControl: null,
     showDrawUI: false,
@@ -1098,6 +1107,14 @@ export default {
       },
       set(value) {
         return this.$store.state.selectedPublic = value
+      }
+    },
+    s_selectedKaiji2: {
+      get() {
+        return this.$store.state.selectedKaiji2
+      },
+      set(value) {
+        return this.$store.state.selectedKaiji2 = value
       }
     },
     s_geojsonFile: {
@@ -1604,7 +1621,7 @@ export default {
         alert("入力されていません。")
         return
       }
-      pmtilesGenerateForUser2 (this.s_chibanzuGeojson,'',store.state.pmtilesPropertieName,this.s_chibanzuPrefCode,String(this.s_chibanzuCityCode).padStart(5, '0'),this.s_selectedPublic,this.s_geojsonFile)
+      pmtilesGenerateForUser2 (this.s_chibanzuGeojson,'',store.state.pmtilesPropertieName,this.s_chibanzuPrefCode,String(this.s_chibanzuCityCode).padStart(5, '0'),this.s_selectedPublic,this.s_selectedKaiji2,this.s_geojsonFile)
       this.s_showChibanzuDialog = false
     },
     imagePngLoad () {

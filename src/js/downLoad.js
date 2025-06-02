@@ -6887,8 +6887,8 @@ export function userTileSet(name,url,id) {
 //         .catch(error => console.error("エラー:", error));
 //     // -------------------------------------------------------------------------------------------------
 // }
-export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,citycode,selectedPublic,file) {
-    async function insertPmtilesData(uid, name, url, url2,  chiban, bbox, length, prefcode, citycode) {
+export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,citycode,selectedPublic,selectedKaiji2,file) {
+    async function insertPmtilesData(uid, name, url, url2,  chiban, bbox, length, prefcode, citycode,selectedKaiji2) {
         try {
             const prefCode = String(Number(prefcode)).padStart(2, '0')
             let result = Object.entries(muni).find(([key, _]) => {
@@ -6909,6 +6909,7 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
                 // alert(Number(selectedPublic))
                 publicChk (0,Number(selectedPublic))
             }
+            alert(Number(selectedKaiji2))
             const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesInsert.php', new URLSearchParams({
                 uid: uid,
                 name: name,
@@ -6921,7 +6922,8 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
                 citycode: citycode,
                 prefname: prefName,
                 cityname: cityName,
-                public: public0
+                public: public0,
+                kaiji2: Number(selectedKaiji2)
             }));
             if (response.data.error) {
                 console.error('エラー:', response.data.error);
@@ -7034,7 +7036,8 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
                 result.bbox,
                 result.length,
                 prefcode,
-                citycode
+                citycode,
+                selectedKaiji2
             );
             console.log('pmtiles作成完了');
             if (!result.bbox) {
