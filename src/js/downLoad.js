@@ -6909,7 +6909,6 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
                 // alert(Number(selectedPublic))
                 publicChk (0,Number(selectedPublic))
             }
-            alert(Number(selectedKaiji2))
             const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesInsert.php', new URLSearchParams({
                 uid: uid,
                 name: name,

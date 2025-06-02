@@ -90,7 +90,8 @@ export default {
   },
   watch: {
     popupFeatureProperties (newVal) {
-      document.querySelector('.street-view-drawer').innerHTML = '<span style="color: red">現在、street-viewはアクセス増加に伴い停止中です。</span>'
+      // document.querySelector('.street-view-drawer').innerHTML = '<span style="color: red">現在、street-viewはアクセス増加に伴い停止中です。</span>'
+
       // const container = document.querySelector('.street-view-drawer')
       // const [lng, lat] = this.$store.state.popupFeatureCoordinates;
       // async function setupStreetViewWithMotion() {

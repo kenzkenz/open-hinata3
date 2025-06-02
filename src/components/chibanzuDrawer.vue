@@ -269,7 +269,7 @@
 import { mapState, mapMutations } from 'vuex';
 import { db, auth } from '../firebase';
 import firebase from 'firebase/app';
-import {extractFirstFeatureProperties, publicChk} from '@/js/downLoad';
+import {extractFirstFeaturePropertiesAndCheckCRS, publicChk} from '@/js/downLoad';
 import sanitizeHtml from 'sanitize-html'; // sanitize-htmlをインポート
 
 export default {
@@ -442,19 +442,13 @@ export default {
           const reader = new FileReader();
           reader.onload = (event) => {
             try {
-              // const geojsonText = event.target.result;
-              // const geojson = JSON.parse(geojsonText);
-              // const firstFeature = geojson.features[0];
-              // this.s_chibanzuPropaties = Object.keys(firstFeature.properties);
-              // this.s_chibanzuGeojson = geojson;
-              async function aaa () {
-                vm.s_chibanzuPropaties = await extractFirstFeatureProperties(file)
+              (async function () {
+                vm.s_chibanzuPropaties = await extractFirstFeaturePropertiesAndCheckCRS(file)
                 vm.s_showChibanzuDialog = true;
                 vm.s_pmtilesName = vm.cityName;
                 vm.s_chibanzuPrefCode = vm.cityCode.slice(0, 2);
                 vm.s_chibanzuCityCode = String(Number(vm.cityCode));
-              }
-              aaa()
+              })();
             } catch (error) {
               console.error('GeoJSONファイルの読み込みエラー:', error);
             } finally {
@@ -764,5 +758,8 @@ export default {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+::v-deep textarea {
+  font-size: 0.9rem;
 }
 </style>
