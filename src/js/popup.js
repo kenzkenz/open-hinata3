@@ -3565,13 +3565,11 @@ export function popup(e,map,mapName,mapFlg) {
                 coordinates = store.state.coordinates
                 features = JSON.parse(store.state.clickCircleGeojsonText).features
                 const feature = features.find(feature => feature.properties.id === store.state.id)
-                console.log('フィーチャー',feature)
                 if (!feature) return;
                 props = feature.properties
                 console.log(props)
                 const lng = props.lng
                 const lat = props.lat
-                console.log(lng,lat)
                 const geoType = features[0].geometry.type
                 switch (geoType) {
                     case 'Polygon':
@@ -3591,9 +3589,16 @@ export function popup(e,map,mapName,mapFlg) {
                             html += '<div class="layer-label-div">ポイント</div>'
                             html +=
                                 '<div style="width: 200px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
-                                '<input id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力" value="' + props.label + '">' +
-                                '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;" class="point-delete pyramid-btn">削　除</button><br>' +
-                                '<button style="margin-bottom: 10px;height: 30px;font-size: medium;" class="point-delete-all pyramid-btn">全て削除</button><br>' +
+                                '<textarea id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
+                                '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:40%;" class="point-delete pyramid-btn">削　除</button>' +
+                                '<button style="margin-bottom: 10px;height: 30px;font-size: medium;width: 40%;margin-left: 10px;" class="point-delete-all pyramid-btn">全て削除</button><br>' +
+                                '<div class="circle-list">' +
+                                '<div id="' + props.id + '" data-color="red" class="circle red" tabindex="0"></div>' +
+                                '<div id="' + props.id + '" data-color="blue" class="circle blue" tabindex="0"></div>' +
+                                '<div id="' + props.id + '" data-color="green" class="circle green" tabindex="0"></div>' +
+                                '<div id="' + props.id + '" data-color="orange" class="circle orange" tabindex="0"></div>' +
+                                '<div id="' + props.id + '" data-color="black" class="circle black" tabindex="0"></div>' +
+                                '</div>' +
                                 '</div>'
                         }
                         break

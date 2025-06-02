@@ -5750,4 +5750,38 @@ select {
   content: '';
   z-index: 101;
 }
+
+.circle-list {
+  display: flex;
+  gap: 16px; /* 丸同士の間隔 */
+  margin: 0px;
+}
+.circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-block;
+  cursor: pointer;
+  transition: box-shadow 0.12s, transform 0.07s;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+  outline: none;
+}
+.circle.red   { background: red; }
+.circle.blue  { background: blue; }
+.circle.green { background: green; }
+.circle.orange { background: orange; }
+.circle.black { background: black; }
+
+/* ハイライト: クリック時・Tab選択時・ホバー時 */
+.circle:active,
+.circle:focus-visible {
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.8), 0 1px 2px rgba(0,0,0,0.15);
+  transform: scale(0.90) translateY(1px);
+  /* 軽く沈み込む */
+}
+.circle:hover {
+  box-shadow: 0 0 0 6px rgba(200,200,200,0.18), 0 2px 6px rgba(0,0,0,0.13);
+  /* 一瞬明るく */
+}
+
 </style>

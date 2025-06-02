@@ -1175,9 +1175,7 @@ export default function pyramid () {
                 // いまのGeoJSONを取得
                 const source = map01.getSource(clickCircleSource.iD)
                 if (!source) return;
-                console.log(source)
                 const geojson = source._data
-                console.log(geojson)
                 // featuresからid一致のfeatureを探してプロパティ書き換え
                 let changed = false;
                 if (geojson && geojson.features) {
@@ -1232,7 +1230,35 @@ export default function pyramid () {
                 closeAllPopups()
             }
         });
-
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("circle"))) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
+                const color = e.target.getAttribute("data-color")
+                console.log(id,color)
+                // いまのGeoJSONを取得
+                const source = map01.getSource(clickCircleSource.iD)
+                if (!source) return;
+                const geojson = source._data
+                // featuresからid一致のfeatureを探してプロパティ書き換え
+                let changed = false;
+                if (geojson && geojson.features) {
+                    geojson.features.forEach(feature => {
+                        console.log(String(feature.properties.id),id)
+                        if (feature.properties && String(feature.properties.id) === id) {
+                            feature.properties['color'] = color
+                            changed = true;
+                        }
+                    });
+                    if (changed) {
+                        map01.getSource(clickCircleSource.iD).setData(geojson);
+                        store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+                    }
+                    console.log(geojson)
+                }
+            }
+        });
     })
 }
 

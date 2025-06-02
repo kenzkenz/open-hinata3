@@ -497,10 +497,12 @@ export const clickCircleLabelLayer = {
     layout: {
         'text-field': ['get', 'label'],
         'text-offset': ['get', 'offsetValue'],
-        'text-anchor': 'left'
+        'text-anchor': 'left',
+        'text-justify': 'left', // 追加: 複数行のテキストを左寄せにする
+        'text-max-width': 1000 // 非常に大きな値に設定して改行を防ぐ
     },
     'paint': {
-        'text-color': 'black',
+        'text-color': ['get', 'color'],
         'text-halo-color': 'rgba(255,255,255,1)',
         'text-halo-width': 1.0,
     },
@@ -517,7 +519,7 @@ export const clickCircSymbolLayer = {
         'text-allow-overlap': true
     },
     paint: {
-        'text-color': 'black',
+        'text-color': ['get', 'color'],
         'text-halo-color': '#fff',
         'text-halo-width': 1
     }
