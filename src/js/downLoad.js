@@ -7686,6 +7686,116 @@ export function extractSimaById(simaText, targetIds) {
     return output.join('\n');
 }
 
+/**
+ * ポイントのクリック・ドラッグ移動・追加を有効化する
+ * @param {object} map - MapLibre/Mapboxのmapインスタンス
+ * @param {string} layerId - 対象レイヤーID（例: 'click-points-layer'）
+ * @param {string} sourceId - 対象GeoJSONソースID（例: 'click-points-source'）
+ * @param {object} [options]
+ *   @param {function} options.fetchElevation - (lng, lat) => Promise<標高>
+ *   @param {object} options.vm - Vueインスタンス等（状態書き込み用/任意）
+ *   @param {string} options.storeField - 保存するストアフィールド名
+ */
+export function enablePointDragAndAdd(map, layerId, sourceId, options = {}) {
+    let isCursorOnFeature = false;
+    let isDragging = false;
+    let draggedFeatureId = null;
+    const fetchElevation = options.fetchElevation || (async () => 0);
+    const vm = options.vm;
+    const storeField = options.storeField || null;
+    const click = options.click;
+
+    map.on('mousemove', function (e) {
+        const features = map.queryRenderedFeatures(e.point, { layers: [layerId] });
+        if (features.length > 0) {
+            isCursorOnFeature = true;
+            map.getCanvas().style.cursor = 'pointer';
+        } else {
+            isCursorOnFeature = false;
+            // map.getCanvas().style.cursor = '';
+        }
+    });
+
+    map.on('mousedown', function (e) {
+        const features = map.queryRenderedFeatures(e.point, { layers: [layerId] });
+        if (features.length > 0) {
+            isDragging = true;
+            draggedFeatureId = features[0].id;
+            if (!draggedFeatureId) draggedFeatureId = features[0].properties.id;
+            console.log(draggedFeatureId)
+            map.getCanvas().style.cursor = 'grabbing';
+            e.preventDefault();
+        }
+    });
+
+    map.on('mousemove', async function (e) {
+        if (!isDragging || draggedFeatureId === null) return;
+
+        const source = map.getSource(sourceId);
+        if (!source) return;
+
+        const currentData = source._data;
+        if (!currentData) return;
+
+        let elevation = await fetchElevation(e.lngLat.lng, e.lngLat.lat);
+        if (!elevation) elevation = 0
+
+        let feature = currentData.features.find(f => f.id === draggedFeatureId);
+        if (!feature) feature = currentData.features.find(f => f.properties.id === draggedFeatureId);
+
+        if (feature) {
+            feature.geometry.coordinates = [e.lngLat.lng, e.lngLat.lat, elevation];
+            source.setData(currentData);
+            map.getCanvas().style.cursor = 'grabbing';
+            if (vm && storeField) vm.$store.state[storeField] = JSON.stringify(currentData);
+        }
+    });
+
+    map.on('mouseup', function () {
+        if (isDragging) {
+            isDragging = false;
+            draggedFeatureId = null;
+            map.getCanvas().style.cursor = 'pointer';
+        }
+    });
+
+    if (click) {
+        map.on('click', async function (e) {
+            if (isDragging) return; // ドラッグ中のクリックを防止
+            const visibility = map.getLayoutProperty(layerId, 'visibility');
+            if (visibility === 'none') {
+                return;
+            }
+            const source = map.getSource(sourceId);
+            if (!source) return;
+            if (isCursorOnFeature) return;
+            const currentData = source._data || {
+                type: 'FeatureCollection',
+                features: []
+            };
+            const clickedLng = e.lngLat.lng
+            const clickedLat = e.lngLat.lat
+
+            let elevation = await fetchElevation(clickedLng, clickedLat);
+            if (!elevation) elevation = 0
+
+            const newFeature = {
+                type: 'Feature',
+                id: currentData.features.length,
+                geometry: {
+                    type: 'Point',
+                    coordinates: [clickedLng, clickedLat, elevation]
+                },
+                properties: {
+                    id: Math.random().toString().slice(2, 6),
+                }
+            };
+            currentData.features.push(newFeature);
+            source.setData(currentData);
+            if (vm && storeField) vm.$store.state[storeField] = JSON.stringify(currentData)
+        });
+    }
+}
 
 
 

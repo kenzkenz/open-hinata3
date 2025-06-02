@@ -624,7 +624,7 @@ import {
   csvGenerateForUserPng,
   ddSimaUpload,
   downloadKML,
-  downloadSimaText, dxfToGeoJSON, extractFirstFeaturePropertiesAndCheckCRS, extractSimaById,
+  downloadSimaText, dxfToGeoJSON, enablePointDragAndAdd, extractFirstFeaturePropertiesAndCheckCRS, extractSimaById,
   geojsonAddLayer,
   geoTiffLoad,
   geoTiffLoad2,
@@ -4461,94 +4461,110 @@ export default {
             });
           }
 
-          let isCursorOnFeature = false;
-          let isDragging = false;
-          let draggedFeatureId = null;
-
-          map.on('mousemove', function (e) {
-            const features = map.queryRenderedFeatures(e.point, { layers: ['click-points-layer'] });
-            if (features.length > 0) {
-              isCursorOnFeature = true;
-              map.getCanvas().style.cursor = 'pointer';
-            } else {
-              isCursorOnFeature = false;
-              // map.getCanvas().style.cursor = '';
-            }
+          // ------------------------------------------------------------------------------------------------
+          enablePointDragAndAdd(map, 'click-points-layer', 'click-points-source', {
+            fetchElevation: fetchElevation, // async関数
+            vm: this,
+            storeField: 'clickGeojsonText',
+            click: true
           });
-
-          map.on('mousedown', function (e) {
-            const features = map.queryRenderedFeatures(e.point, { layers: ['click-points-layer'] });
-            if (features.length > 0) {
-              isDragging = true;
-              draggedFeatureId = features[0].id;
-              map.getCanvas().style.cursor = 'grabbing';
-              e.preventDefault();
-            }
+          // ------------------------------------------------------------------------------------------------
+          enablePointDragAndAdd(map, 'click-circle-symbol-layer', 'click-circle-source', {
+            // fetchElevation: fetchElevation, // async関数
+            vm: this,
+            storeField: 'clickCircleGeojsonText',
+            click: false
           });
+          // ------------------------------------------------------------------------------------------------
 
-          map.on('mousemove', async function (e) {
-            if (!isDragging || draggedFeatureId === null) return;
-
-            const source = map.getSource('click-points-source');
-            if (!source) return;
-
-            const currentData = source._data;
-            if (!currentData) return;
-
-            let elevation = await fetchElevation(e.lngLat.lng, e.lngLat.lat);
-            if (!elevation) elevation = 0
-
-            const feature = currentData.features.find(f => f.id === draggedFeatureId);
-            if (feature) {
-              feature.geometry.coordinates = [e.lngLat.lng, e.lngLat.lat, elevation];
-              source.setData(currentData);
-              map.getCanvas().style.cursor = 'grabbing';
-              vm.$store.state.clickGeojsonText = JSON.stringify(currentData)
-            }
-          });
-
-          map.on('mouseup', function () {
-            if (isDragging) {
-              isDragging = false;
-              draggedFeatureId = null;
-              map.getCanvas().style.cursor = 'pointer';
-            }
-          });
-
-          map.on('click', async function (e) {
-            if (isDragging) return; // ドラッグ中のクリックを防止
-            const visibility = map.getLayoutProperty('click-points-layer', 'visibility');
-            if (visibility === 'none') {
-              return;
-            }
-            const source = map.getSource('click-points-source');
-            if (!source) return;
-            if (isCursorOnFeature) return;
-            const currentData = source._data || {
-              type: 'FeatureCollection',
-              features: []
-            };
-            const clickedLng = e.lngLat.lng
-            const clickedLat = e.lngLat.lat
-
-            let elevation = await fetchElevation(e.lngLat.lng, e.lngLat.lat);
-            if (!elevation) elevation = 0
-
-            const newFeature = {
-              type: 'Feature',
-              id: currentData.features.length,
-              geometry: {
-                type: 'Point',
-                coordinates: [clickedLng, clickedLat, elevation]
-              },
-              properties: {
-                id: Math.random().toString().slice(2, 6),
-              }
-            };
-            currentData.features.push(newFeature);
-            source.setData(currentData);
-            vm.$store.state.clickGeojsonText = JSON.stringify(currentData)
-          });
+          // let isCursorOnFeature = false;
+          // let isDragging = false;
+          // let draggedFeatureId = null;
+          //
+          // map.on('mousemove', function (e) {
+          //   const features = map.queryRenderedFeatures(e.point, { layers: ['click-points-layer'] });
+          //   if (features.length > 0) {
+          //     isCursorOnFeature = true;
+          //     map.getCanvas().style.cursor = 'pointer';
+          //   } else {
+          //     isCursorOnFeature = false;
+          //     // map.getCanvas().style.cursor = '';
+          //   }
+          // });
+          //
+          // map.on('mousedown', function (e) {
+          //   const features = map.queryRenderedFeatures(e.point, { layers: ['click-points-layer'] });
+          //   if (features.length > 0) {
+          //     isDragging = true;
+          //     draggedFeatureId = features[0].id;
+          //     map.getCanvas().style.cursor = 'grabbing';
+          //     e.preventDefault();
+          //   }
+          // });
+          //
+          // map.on('mousemove', async function (e) {
+          //   if (!isDragging || draggedFeatureId === null) return;
+          //
+          //   const source = map.getSource('click-points-source');
+          //   if (!source) return;
+          //
+          //   const currentData = source._data;
+          //   if (!currentData) return;
+          //
+          //   let elevation = await fetchElevation(e.lngLat.lng, e.lngLat.lat);
+          //   if (!elevation) elevation = 0
+          //
+          //   const feature = currentData.features.find(f => f.id === draggedFeatureId);
+          //   if (feature) {
+          //     feature.geometry.coordinates = [e.lngLat.lng, e.lngLat.lat, elevation];
+          //     source.setData(currentData);
+          //     map.getCanvas().style.cursor = 'grabbing';
+          //     vm.$store.state.clickGeojsonText = JSON.stringify(currentData)
+          //   }
+          // });
+          //
+          // map.on('mouseup', function () {
+          //   if (isDragging) {
+          //     isDragging = false;
+          //     draggedFeatureId = null;
+          //     map.getCanvas().style.cursor = 'pointer';
+          //   }
+          // });
+          //
+          // map.on('click', async function (e) {
+          //   if (isDragging) return; // ドラッグ中のクリックを防止
+          //   const visibility = map.getLayoutProperty('click-points-layer', 'visibility');
+          //   if (visibility === 'none') {
+          //     return;
+          //   }
+          //   const source = map.getSource('click-points-source');
+          //   if (!source) return;
+          //   if (isCursorOnFeature) return;
+          //   const currentData = source._data || {
+          //     type: 'FeatureCollection',
+          //     features: []
+          //   };
+          //   const clickedLng = e.lngLat.lng
+          //   const clickedLat = e.lngLat.lat
+          //
+          //   let elevation = await fetchElevation(e.lngLat.lng, e.lngLat.lat);
+          //   if (!elevation) elevation = 0
+          //
+          //   const newFeature = {
+          //     type: 'Feature',
+          //     id: currentData.features.length,
+          //     geometry: {
+          //       type: 'Point',
+          //       coordinates: [clickedLng, clickedLat, elevation]
+          //     },
+          //     properties: {
+          //       id: Math.random().toString().slice(2, 6),
+          //     }
+          //   };
+          //   currentData.features.push(newFeature);
+          //   source.setData(currentData);
+          //   vm.$store.state.clickGeojsonText = JSON.stringify(currentData)
+          // });
 
           // -----------------------------------------------------------------------------------------------------------
           map.addSource('zones-source', {
