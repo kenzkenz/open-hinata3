@@ -3588,16 +3588,19 @@ export function popup(e,map,mapName,mapFlg) {
                         if (html.indexOf('click-circle-layer') === -1) {
                             html += '<div class="layer-label-div">ポイント</div>'
                             html +=
-                                '<div style="width: 200px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
+                                '<div style="width: 225px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
                                 '<textarea id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
-                                '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:40%;" class="point-delete pyramid-btn">削　除</button>' +
-                                '<button style="margin-bottom: 10px;height: 30px;font-size: medium;width: 40%;margin-left: 10px;" class="point-delete-all pyramid-btn">全て削除</button><br>' +
+                                '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:42%;" class="point-delete pyramid-btn">削　除</button>' +
+                                '<button style="margin-bottom: 10px;height: 30px;font-size: medium;width: 52%;margin-left: 10px;" class="point-delete-all pyramid-btn">全て削除</button><br>' +
+                                '<div style="display: flex;gap: 8px;">' +
                                 '<div class="circle-list">' +
                                 '<div id="' + props.id + '" data-color="red" class="circle red" tabindex="0"></div>' +
+                                '<div id="' + props.id + '" data-color="black" class="circle black" tabindex="0"></div>' +
                                 '<div id="' + props.id + '" data-color="blue" class="circle blue" tabindex="0"></div>' +
                                 '<div id="' + props.id + '" data-color="green" class="circle green" tabindex="0"></div>' +
                                 '<div id="' + props.id + '" data-color="orange" class="circle orange" tabindex="0"></div>' +
-                                '<div id="' + props.id + '" data-color="black" class="circle black" tabindex="0"></div>' +
+                                '</div>' +
+                                '<input type="number" class="oh-cool-input-number" min="1" max="10" step="1" value="1">' +
                                 '</div>' +
                                 '</div>'
                         }

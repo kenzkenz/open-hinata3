@@ -5750,15 +5750,14 @@ select {
   content: '';
   z-index: 101;
 }
-
 .circle-list {
   display: flex;
-  gap: 16px; /* 丸同士の間隔 */
+  gap: 8px; /* 丸同士の間隔 */
   margin: 0px;
 }
 .circle {
-  width: 20px;
-  height: 20px;
+  width: 25px;
+  height: 25px;
   border-radius: 50%;
   display: inline-block;
   cursor: pointer;
@@ -5783,5 +5782,41 @@ select {
   box-shadow: 0 0 0 6px rgba(200,200,200,0.18), 0 2px 6px rgba(0,0,0,0.13);
   /* 一瞬明るく */
 }
+.oh-cool-input-number {
+  padding: 0.4em 0.8em;
+  border: 1px solid #2979ff;
+  border-radius: 8px;
+  outline: none;
+  font-size: 1em;
+  background: #f4f8ff;
+  color: #18365a;
+  transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+  box-shadow: 0 1px 4px rgba(41,121,255,0.08);
+  width: 5em;
+  /* 数値入力矢印を右寄せで少し小さく */
+  /* ChromeやSafari用 */
+  -webkit-appearance: none;
+  appearance: textfield;
+}
+.oh-cool-input-number:focus {
+  border: 2px solid #1565c0;
+  background: #e3f2fd;
+  box-shadow: 0 2px 8px rgba(41,121,255,0.13);
+}
+.oh-cool-input-number::placeholder {
+  color: #90caf9;
+  letter-spacing: 0.04em;
+}
+
+/*!* input[type=number] のデフォルト矢印（上下ボタン）非表示（Chrome, Edge, Safari） *!*/
+/*.oh-cool-input-number::-webkit-inner-spin-button,*/
+/*.oh-cool-input-number::-webkit-outer-spin-button {*/
+/*  -webkit-appearance: none;*/
+/*  margin: 0;*/
+/*}*/
+/*!* Firefox用 *!*/
+/*.oh-cool-input-number[type=number] {*/
+/*  -moz-appearance: textfield;*/
+/*}*/
 
 </style>
