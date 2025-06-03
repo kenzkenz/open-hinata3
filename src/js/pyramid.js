@@ -1235,30 +1235,46 @@ export default function pyramid () {
             if (e.target && (e.target.classList.contains("circle"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
-                const color = e.target.getAttribute("data-color")
-                console.log(id,color)
-                // いまのGeoJSONを取得
-                const source = map01.getSource(clickCircleSource.iD)
-                if (!source) return;
-                const geojson = source._data
-                // featuresからid一致のfeatureを探してプロパティ書き換え
-                let changed = false;
-                if (geojson && geojson.features) {
-                    geojson.features.forEach(feature => {
-                        console.log(String(feature.properties.id),id)
-                        if (feature.properties && String(feature.properties.id) === id) {
-                            feature.properties['color'] = color
-                            changed = true;
-                        }
-                    });
-                    if (changed) {
-                        map01.getSource(clickCircleSource.iD).setData(geojson);
-                        store.state.clickCircleGeojsonText = JSON.stringify(geojson)
-                    }
-                    console.log(geojson)
-                }
+                const value = e.target.getAttribute("data-color")
+                const tgtProp = 'color'
+                console.log(id,value)
+                store.state.clickCircleGeojsonText = geojsonUpdate (map01,clickCircleSource.iD,id,tgtProp,value)
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("font-size-input"))) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
+                const value = Number(e.target.value)
+                const tgtProp = 'text-size'
+                console.log(id,value)
+                const geojsonText = geojsonUpdate (map01,clickCircleSource.iD,id,tgtProp,value)
+                console.log(JSON.parse(geojsonText))
+                store.state.clickCircleGeojsonText = geojsonText
             }
         });
     })
+}
+
+function geojsonUpdate (map,sourceId,id,tgtProp,value) {
+    const source = map.getSource(sourceId)
+    if (!source) return;
+    const geojson = source._data
+    // featuresからid一致のfeatureを探してプロパティ書き換え
+    let changed = false;
+    if (geojson && geojson.features) {
+        geojson.features.forEach(feature => {
+            console.log(String(feature.properties.id),id)
+            if (feature.properties && String(feature.properties.id) === id) {
+                feature.properties[tgtProp] = value
+                changed = true;
+            }
+        });
+        if (changed) {
+            map.getSource(clickCircleSource.iD).setData(geojson);
+            return JSON.stringify(geojson)
+        }
+    }
 }
 

@@ -3570,6 +3570,8 @@ export function popup(e,map,mapName,mapFlg) {
                 console.log(props)
                 const lng = props.lng
                 const lat = props.lat
+                let textSize = props['text-size']
+                if (!textSize) textSize = 16
                 const geoType = features[0].geometry.type
                 switch (geoType) {
                     case 'Polygon':
@@ -3600,7 +3602,7 @@ export function popup(e,map,mapName,mapFlg) {
                                 '<div id="' + props.id + '" data-color="green" class="circle green" tabindex="0"></div>' +
                                 '<div id="' + props.id + '" data-color="orange" class="circle orange" tabindex="0"></div>' +
                                 '</div>' +
-                                '<input type="number" class="oh-cool-input-number" min="1" max="10" step="1" value="1">' +
+                                '<input id="' + props.id + '" type="number" class="oh-cool-input-number font-size-input" min="10" max="100" step="1" value="' + textSize +'">' +
                                 '</div>' +
                                 '</div>'
                         }
