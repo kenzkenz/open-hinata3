@@ -51,6 +51,46 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </template>
       </v-snackbar>
 
+      <v-dialog v-model="printDialog" max-width="500px">
+        <v-card>
+          <v-card-title>
+            タイトル等の設定
+          </v-card-title>
+          <v-card-text>
+            <v-textarea
+                v-model="printTitleText"
+                label="タイトル"
+                auto-grow
+                rows="3"
+                outlined
+            />
+            <v-text-field
+                v-model="textPx"
+                label="フォントサイズ"
+                type="number"
+                variant="outlined"
+                min="0"
+                max="100"
+            />
+            <v-select
+                v-model="titleColor"
+                :items="titleColors"
+                item-title="label"
+                item-value="color"
+                label="色を選択してください"
+            />
+            <v-radio-group v-model="direction" row>
+              <v-radio label="縦" value="vertical"></v-radio>
+              <v-radio label="横" value="horizontal"></v-radio>
+            </v-radio-group>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="printDialog = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
       <v-dialog v-model="s_mapillaryDialog" fullscreen>
         <v-card>
 <!--          <v-card-title style="height: 0">-->
@@ -547,7 +587,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       </v-dialog>
 
       <div id="map00">
-        <img class='loadingImg' src="https://kenzkenz.xsrv.jp/open-hinata3/img/icons/loading2.gif">
+<!--        <img class='loadingImg' src="https://kenzkenz.xsrv.jp/open-hinata3/img/icons/loading2.gif">-->
         <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="(mapName === 'map01'|| mapName === 'map02' && s_map2Flg)" @click="btnPosition">
           <v-progress-linear  v-if="s_loading" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
           <v-progress-linear  v-if="s_loading2" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
@@ -555,34 +595,46 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <div id="pointer1" class="pointer" v-if="mapName === 'map01'"></div>
           <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
 
-          <div class="center-target"></div>
+          <div :style="{fontSize: textPx + 'px',color: titleColor}" v-if="isPrint" class="print-title">
+              <span
+                  v-if="printTitleText && printTitleText.trim().length > 0"
+                  class="print-title-bg"
+                  v-html="printTitleText.replace(/\n/g, '<br>')"
+              ></span>
+          </div>
+
+          <div v-if="!isPrint" class="center-target"></div>
           <!--左上部メニュー-->
           <div id="left-top-div">
+            <span v-if="!isPrint">
             <v-btn :size="isSmall ? 'small' : 'default'" icon @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-menu</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="s_dialogForLogin = !s_dialogForLogin" v-if="mapName === 'map01'"><v-icon>mdi-login</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickSplit" v-if="mapName === 'map01'"><v-icon>mdi-monitor-multiple</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="btnClickMyroom (mapName)"><v-icon v-if="user1">mdi-home</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForGroup = !s_dialogForGroup"><v-icon v-if="user1">mdi-account-supervisor</v-icon></v-btn>
+            <v-btn v-if="!isSmall" :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="handlePrint"><v-icon>mdi-printer</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickLayer(mapName)"><v-icon>mdi-layers</v-icon></v-btn>
+            </span>
+            <span v-if="isPrint" class="print-buttons">
+              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="print">印刷</v-btn>
+              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 10px;" @click="printDialog = true">タイトル</v-btn>
+              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 10px;" @click="handlePrint">閉じる</v-btn>
+            </span>
+
           </div>
           <!--右メニュー-->
           <div id="right-top-div">
+            <span v-if="!isPrint">
             <v-btn :size="isSmall ? 'small' : 'default'" icon @click="goToCurrentLocation" v-if="mapName === 'map01'"><v-icon>mdi-crosshairs-gps</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" class="watch-position" :color="isTracking ? 'green' : undefined" icon @click="toggleWatchPosition" v-if="mapName === 'map01'"><v-icon>mdi-map-marker-radius</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" class="share" icon @click="share(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-share-variant</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" class="draw" icon @click="draw" v-if="mapName === 'map01'"><v-icon>mdi-ruler</v-icon></v-btn>
             <v-btn disabled :size="isSmall ? 'small' : 'default'" class="draw-circle" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>
             <v-btn :size="isSmall ? 'small' : 'default'" class="draw-point" :color="s_isDrawPoint ? 'green' : undefined" icon @click="toggleDrawPoint" v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>
+            </span>
           </div>
 
-          <DialogMenu v-if="mapName === 'map01'" :mapName=mapName />
-          <DialogMyroom v-if="mapName === 'map01'" :mapName=mapName />
-          <DialogLayer :mapName=mapName />
-          <dialog-info :mapName=mapName />
-          <dialog2 :mapName=mapName />
-          <dialogShare v-if="mapName === 'map01'" :mapName=mapName />
-          <DialogChibanzuList :mapName=mapName />
-
+          <span v-if="!isPrint">
           <div :id="'terrain-btn-div-' + mapName" class="terrain-btn-div">
             <div class="terrain-btn-container">
               <v-icon class="terrain-btn-close" @pointerdown="terrainBtnClos">mdi-close</v-icon>
@@ -601,6 +653,16 @@ import SakuraEffect from './components/SakuraEffect.vue';
             zoom={{zoom.toFixed(2)}} {{elevation}}<br>
             {{s_address}}
           </div>
+          </span>
+
+          <DialogMenu v-if="mapName === 'map01'" :mapName=mapName />
+          <DialogMyroom v-if="mapName === 'map01'" :mapName=mapName />
+          <DialogLayer :mapName=mapName />
+          <dialog-info :mapName=mapName />
+          <dialog2 :mapName=mapName />
+          <dialogShare v-if="mapName === 'map01'" :mapName=mapName />
+          <DialogChibanzuList :mapName=mapName />
+
         </div>
       </div>
     </v-main>
@@ -1007,6 +1069,14 @@ export default {
     ChibanzuDrawer
   },
   data: () => ({
+    direction: 'vertical',
+    titleColor: 'black',
+    titleColors: [{color:'black',label:'黒'},{color:'red',label:'赤'},{color:'blue',label:'青'}],
+    textPx: 30,
+    printTitleText: '',
+    printDialog: false,
+    isPrint: false,
+    originalStyle: null,
     file: null,
     mapillaryWidth: '0px',
     mapillarHeight: '0px',
@@ -1309,7 +1379,7 @@ export default {
       }
     },
     isSmall() {
-      return this.windowWidth <= 500;
+      return this.windowWidth <= 720;
     },
     s_map2Flg: {
       get() {
@@ -1471,6 +1541,85 @@ export default {
     },
   },
   methods: {
+    print () {
+      // 印刷ダイアログ表示
+      setTimeout(() => {
+        window.print()
+      }, 200)
+    },
+    handlePrint() {
+
+      this.s_map2Flg = true
+      this.btnClickSplit ()
+
+      const map00Div = document.getElementById('map00');
+      const map01Div = document.getElementById('map01');
+      const map02Div = document.getElementById('map02');
+      if (this.originalStyle) {
+        map00Div.style.width  = this.originalStyle.width
+        map00Div.style.height = this.originalStyle.height
+        this.isPrint = false
+        this.originalStyle = null
+        return
+      }
+      // 元のサイズを保存
+      this.originalStyle = {
+        width: map00Div.style.width,
+        height: map00Div.style.height
+      }
+      // A4サイズ（mm→px）: 210mm x 297mm
+      // 1mm ≒ 3.7795275591px
+      const widthPx = 190 * 3.7795275591;  // 約 794px
+      const heightPx = 260 * 3.7795275591; // 約1123px
+      // リサイズ＆中央に
+      map00Div.style.width  = widthPx + 'px';
+      map00Div.style.height = heightPx + 'px';
+      map00Div.style.margin = '0 auto';
+      map00Div.style.display = 'block';
+
+      // map01Div.style.width  = widthPx / 2 + 'px';
+      // map01Div.style.height = heightPx + 'px';
+      // map01Div.style.margin = '0 auto';
+      // map01Div.style.display = 'block';
+      //
+      // map02Div.style.width  = widthPx / 2 + 'px';
+      // map02Div.style.height = heightPx + 'px';
+      // map02Div.style.margin = '0 auto';
+      // map02Div.style.display = 'block';
+      this.isPrint = true
+
+      function hideAllDialogs(dialogs) {
+        for (const dialogKey in dialogs) {
+          const dialog = dialogs[dialogKey]
+          for (const mapKey in dialog) {
+            if (
+                dialog[mapKey] &&
+                dialog[mapKey].style &&
+                typeof dialog[mapKey].style === 'object'
+            ) {
+              dialog[mapKey].style.display = 'none'
+            }
+          }
+        }
+      }
+      hideAllDialogs(this.$store.state.dialogs)
+
+      function setAllDisplayNone(obj) {
+        for (const mapKey in obj) {
+          const arr = obj[mapKey]
+          if (Array.isArray(arr)) {
+            arr.forEach(item => {
+              if (item && item.style && typeof item.style === 'object') {
+                item.style.display = 'none'
+              }
+            })
+          }
+        }
+      }
+      setAllDisplayNone(this.$store.state.dialogsInfo)
+      setAllDisplayNone(this.$store.state.dialog2)
+
+    },
     toggleDrawPoint () {
       this.s_isDrawPoint = !this.s_isDrawPoint
       if (this.s_isDrawPoint) this.s_isDrawCircle = false
@@ -1944,9 +2093,13 @@ export default {
       history('現在位置取得',window.location.href)
     },
     btnPosition() {
-      if (document.querySelector('#map01').clientWidth < Number(document.querySelector('.terrain-btn-div').style.left.replace('px',''))) {
-        document.querySelector('.terrain-btn-div').style.left = ''
-        document.querySelector('.terrain-btn-div').style.right = '10px'
+      try {
+        if (document.querySelector('#map01').clientWidth < Number(document.querySelector('.terrain-btn-div').style.left.replace('px',''))) {
+          document.querySelector('.terrain-btn-div').style.left = ''
+          document.querySelector('.terrain-btn-div').style.right = '10px'
+        }
+      }catch (e) {
+        console.log(e)
       }
     },
     terrainBtnClos () {
@@ -5817,6 +5970,39 @@ select {
 /*!* Firefox用 *!*/
 /*.oh-cool-input-number[type=number] {*/
 /*  -moz-appearance: textfield;*/
+/*}*/
+
+.print-title {
+  position: absolute;
+  top: 50px;
+  width: 100%;
+  height: 100px;
+  text-align: center;
+  z-index: 2;
+  font-size: 30px;
+  /* 背景は何も指定しない＝透明 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.print-title-bg {
+  display: inline-block;
+  background: #fff;        /* ← 文字部分だけ白背景 */
+  padding: 0 20px 0 20px;
+  border-radius: 8px;      /* 角を丸く（任意） */
+  line-height: 1.3;        /* 文字が複数行なら */
+}
+
+@media print {
+  .print-buttons {
+    display: none
+  }
+}
+
+/*#map00, #map01 {*/
+/*  width: 100%;*/
+/*  height: 100%;*/
+/*  transition: all 0.2s;*/
 /*}*/
 
 </style>

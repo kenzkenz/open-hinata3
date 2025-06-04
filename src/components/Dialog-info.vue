@@ -135,6 +135,7 @@ export default {
       result.style.display = 'none'
     },
     dialogMouseDown (item) {
+      console.log(this.$store.state.dialogsInfo)
       this.$store.commit('incrDialogMaxZindex')
       try {
         const result = this.$store.state.dialogsInfo[this.mapName].find(el => el.id === item.id)
