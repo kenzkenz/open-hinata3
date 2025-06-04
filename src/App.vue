@@ -79,7 +79,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 item-value="color"
                 label="色を選択してください"
             />
-            <v-radio-group v-model="direction" row>
+            <v-radio-group v-model="direction" row @click="directionChange">
               <v-radio label="縦" value="vertical"></v-radio>
               <v-radio label="横" value="horizontal"></v-radio>
             </v-radio-group>
@@ -1546,6 +1546,31 @@ export default {
       setTimeout(() => {
         window.print()
       }, 200)
+    },
+    directionChange() {
+      const map00Div = document.getElementById('map00');
+      const map01Div = document.getElementById('map01');
+      const map02Div = document.getElementById('map02');
+      // A4サイズ（mm→px）: 210mm x 297mm
+      // 1mm ≒ 3.7795275591px
+      let widthPx
+      let heightPx
+      switch (this.direction) {
+        case 'horizontal':
+          widthPx = 190 * 3.7795275591;
+          heightPx = 260 * 3.7795275591;
+          break
+        case 'vertical':
+          widthPx = 260 * 3.7795275591;
+          heightPx = 190 * 3.7795275591;
+          break
+      }
+
+      // リサイズ＆中央に
+      map00Div.style.width  = widthPx + 'px';
+      map00Div.style.height = heightPx + 'px';
+      map00Div.style.margin = '0 auto';
+      map00Div.style.display = 'block';
     },
     handlePrint() {
 
@@ -5325,7 +5350,7 @@ export default {
   position:absolute;
   top:10px;
   left:10px;
-  z-index:1;
+  z-index:3;
 }
 #right-top-div {
   position:absolute;
@@ -5974,9 +5999,8 @@ select {
 
 .print-title {
   position: absolute;
-  top: 50px;
+  top: 30px;
   width: 100%;
-  height: 100px;
   text-align: center;
   z-index: 2;
   font-size: 30px;
@@ -5992,7 +6016,6 @@ select {
   border-radius: 8px;      /* 角を丸く（任意） */
   line-height: 1.3;        /* 文字が複数行なら */
 }
-
 @media print {
   .print-buttons {
     display: none

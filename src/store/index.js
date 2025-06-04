@@ -107,7 +107,7 @@ export default createStore({
     },
     url: 'dumy',
     dialog2Id:1,
-    dialogMaxZindex: 0,
+    dialogMaxZindex: 10,
     cdArea: '',
     syochiikiName: '',
     koureikaritu: '',
