@@ -1079,7 +1079,7 @@ export default {
     attributionControl: null,
     direction: 'vertical',
     titleColor: 'black',
-    titleColors: [{color:'black',label:'黒'},{color:'red',label:'赤'},{color:'blue',label:'青'}],
+    titleColors: [{color:'black',label:'黒'},{color:'red',label:'赤'},{color:'blue',label:'青'},{color:'green',label:'緑'},{color:'orange',label:'オレンジ'}],
     textPx: 30,
     printTitleText: '',
     printDialog: false,
@@ -1155,6 +1155,14 @@ export default {
       'selectedPointFeature',
       'showChibanzuDrawer',
     ]),
+    s_updatePermalinkFire: {
+      get() {
+        return this.$store.state.updatePermalinkFire
+      },
+      set(value) {
+        return this.$store.state.updatePermalinkFire = value
+      }
+    },
     s_gazoName: {
       get() {
         return this.$store.state.gazoName
@@ -1559,7 +1567,7 @@ export default {
         window.print()
       }, 200)
     },
-    directionChange() {
+    directionChange(isReverse) {
       const map00Div = document.getElementById('map00');
       const map01Div = document.getElementById('map01');
       const map02Div = document.getElementById('map02');
@@ -1568,22 +1576,30 @@ export default {
       let widthPx
       let heightPx
       // alert(this.direction)
+
       switch (this.direction) {
         case 'horizontal':
           widthPx = 190 * 3.7795275591;
           heightPx = 260 * 3.7795275591;
-          widthPx = 260 * 3.7795275591;
-          heightPx = 190 * 3.7795275591;
+          // widthPx = 260 * 3.7795275591;
+          // heightPx = 190 * 3.7795275591;
           break
         case 'vertical':
           widthPx = 260 * 3.7795275591;
           heightPx = 190 * 3.7795275591;
-          widthPx = 190 * 3.7795275591;
-          heightPx = 260 * 3.7795275591;
+          // widthPx = 190 * 3.7795275591;
+          // heightPx = 260 * 3.7795275591;
           break
         default:
           widthPx = 190 * 3.7795275591;
           heightPx = 260 * 3.7795275591;
+      }
+
+      if (isReverse) {
+        const w = widthPx
+        const h = heightPx
+        widthPx = h
+        heightPx = w
       }
 
       // リサイズ＆中央に
@@ -1693,7 +1709,12 @@ export default {
       setAllDisplayNone(this.$store.state.dialogsInfo)
       setAllDisplayNone(this.$store.state.dialog2)
 
-      this.directionChange()
+      // if (this.direction === 'vertical') {
+      //   this.direction = 'horizontal'
+      // } else {
+      //   this.direction = 'vertical'
+      // }
+      this.directionChange(true)
 
     },
     toggleDrawPoint () {
@@ -5304,35 +5325,13 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
-    // 'store.state.selectedLayers.map01': {
-    //   handler(layers) {
-    //     const map = this.$store.state.map01
-    //     if (!map) return
-    //
-    //     layers.forEach(layer => {
-    //       if (!map.getSource(layer.id)) {
-    //         map.addSource(layer.id, {
-    //           type: 'geojson',
-    //           data: {
-    //             type: 'FeatureCollection',
-    //             features: layer.features || []
-    //           }
-    //         })
-    //         map.addLayer({
-    //           id: layer.id + '-layer',
-    //           type: 'circle',
-    //           source: layer.id,
-    //           paint: {
-    //             'circle-radius': 6,
-    //             'circle-color': layer.color || '#ff0000'
-    //           }
-    //         })
-    //       }
-    //     })
-    //   },
-    //   immediate: true,
-    //   deep: true
-    // },
+    s_updatePermalinkFire () {
+      try {
+        this.updatePermalink()
+      }catch (e) {
+        console.log(e)
+      }
+    },
     s_isWindow () {
       try {
         this.updatePermalink()

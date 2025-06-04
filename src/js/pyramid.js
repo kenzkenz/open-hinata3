@@ -1290,6 +1290,7 @@ export function geojsonUpdate(map, sourceId, id, tgtProp, value) {
         if (changed) {
             map.getSource(sourceId).setData(geojson);
             console.log(geojson)
+            store.state.updatePermalinkFire = !store.state.updatePermalinkFire
             return JSON.stringify(geojson);
         }
     }

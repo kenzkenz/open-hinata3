@@ -249,7 +249,10 @@ function urlByLayerId (layerId) {
     }
     return [RasterTileUrl,legend,zoom]
 }
+let isFirstClickCircleLabelLayer = true
 export function popup(e,map,mapName,mapFlg) {
+
+
     // alert(mapName)
     let html = ''
     enableMotionPermission()
@@ -3609,6 +3612,33 @@ export function popup(e,map,mapName,mapFlg) {
                         break
                 }
                 break
+            }
+            case 'click-circle-label-layer':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(features)
+                if (features.length === 0) return
+                props = features[0].properties
+                if (isFirstClickCircleLabelLayer) {
+                    if (props.label.includes('https')) {
+                        const match = props.label.match(/https?:\/\/[^\s"']+/);
+                        if (match) {
+                            console.log(match[0])
+                            window.open(match[0], '_blank')
+                        }
+                    }
+                    isFirstClickCircleLabelLayer = false
+                }
+                setTimeout(() => {
+                    isFirstClickCircleLabelLayer = true;
+                }, 500); // 500msだけ再発火防止
             }
         }
 
