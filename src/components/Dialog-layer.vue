@@ -905,6 +905,9 @@ export default {
         // map.moveLayer(fileExtension + '-polygon-points')
       }
       // ---------------------------------------------------------------------------------
+      if (this.$store.state.clickCircleGeojsonText) {
+        clickCircleSource.obj.data = JSON.parse(this.$store.state.clickCircleGeojsonText)
+      }
       if (map.getSource('click-circle-source')) {
         map.removeLayer('click-circle-layer')
         map.removeLayer('click-circle-symbol-layer')
@@ -912,11 +915,6 @@ export default {
         map.removeLayer('click-circle-label-layer')
         map.removeSource('click-circle-source')
       }
-
-      if (this.$store.state.clickCircleGeojsonText) {
-        clickCircleSource.obj.data = JSON.parse(this.$store.state.clickCircleGeojsonText)
-      }
-
       map.addSource('click-circle-source', clickCircleSource.obj)
       map.addLayer(clickCircleLayer)
       map.addLayer(clickCircSymbolLayer)
@@ -1103,7 +1101,6 @@ export default {
 
     document.querySelector('#drag-handle-layerDialog-map01').innerHTML = '<span style="font-size: large;">レイヤー</span>'
     document.querySelector('#drag-handle-layerDialog-map02').innerHTML = '<span style="font-size: large;">レイヤー</span>'
-
 
     if (window.innerWidth > 480) {
       this.menuContentSize.height = '600px'

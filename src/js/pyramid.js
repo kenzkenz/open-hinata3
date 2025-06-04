@@ -1256,25 +1256,41 @@ export default function pyramid () {
         });
     })
 }
-
-function geojsonUpdate (map,sourceId,id,tgtProp,value) {
+// ---------------------------------------------------------------------------------------------------------------------
+export function geojsonUpdate(map, sourceId, id, tgtProp, value) {
     const source = map.getSource(sourceId)
     if (!source) return;
     const geojson = source._data
-    // featuresからid一致のfeatureを探してプロパティ書き換え
     let changed = false;
+
     if (geojson && geojson.features) {
+        // idが一致するfeatureを検索
+        let found = false;
         geojson.features.forEach(feature => {
-            console.log(String(feature.properties.id),id)
             if (feature.properties && String(feature.properties.id) === id) {
                 feature.properties[tgtProp] = value
                 changed = true;
+                found = true;
             }
         });
+        // 見つからなかったら新しく作成
+        if (!found && id === "config") {
+            const newFeature = {
+                "type": "Feature",
+                // geometryは入れない
+                "properties": {
+                    "id": "config",
+                }
+            }
+            // tgtProp, valueもセット
+            newFeature.properties[tgtProp] = value;
+            geojson.features.push(newFeature);
+            changed = true;
+        }
         if (changed) {
-            map.getSource(clickCircleSource.iD).setData(geojson);
-            return JSON.stringify(geojson)
+            map.getSource(sourceId).setData(geojson);
+            console.log(geojson)
+            return JSON.stringify(geojson);
         }
     }
 }
-

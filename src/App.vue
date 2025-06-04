@@ -63,6 +63,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 auto-grow
                 rows="3"
                 outlined
+                @input="configChange('title-text',printTitleText)"
             />
             <v-text-field
                 v-model="textPx"
@@ -71,6 +72,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 variant="outlined"
                 min="0"
                 max="100"
+                @input="configChange('font-size',textPx)"
             />
             <v-select
                 v-model="titleColor"
@@ -78,10 +80,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 item-title="label"
                 item-value="color"
                 label="色を選択してください"
+                @update:modelValue="configChange('fill-color',titleColor)"
             />
-            <v-radio-group v-model="direction" row @click="directionChange">
-              <v-radio label="縦" value="vertical"></v-radio>
-              <v-radio label="横" value="horizontal"></v-radio>
+            <v-radio-group
+                v-model="direction"
+                row
+                @click="directionChange()">
+              <v-radio label="縦" value="vertical" @click="configChange('direction','vertical')"></v-radio>
+              <v-radio label="横" value="horizontal" @click="configChange('direction','horizontal')"></v-radio>
             </v-radio-group>
           </v-card-text>
           <v-card-actions>
@@ -595,7 +601,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <div id="pointer1" class="pointer" v-if="mapName === 'map01'"></div>
           <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
 
-          <div :style="{fontSize: textPx + 'px',color: titleColor}" v-if="isPrint" class="print-title">
+<!--          <div :style="{fontSize: textPx + 'px',color: titleColor}" v-if="isPrint" class="print-title">-->
+          <div :style="{fontSize: textPx + 'px',color: titleColor}" class="print-title">
               <span
                   v-if="printTitleText && printTitleText.trim().length > 0"
                   class="print-title-bg"
@@ -1031,7 +1038,7 @@ import DialogInfo from '@/components/Dialog-info'
 import Dialog2 from '@/components/Dialog2'
 import DialogShare from "@/components/Dialog-share"
 import DialogChibanzuList from "@/components/Dialog-chibanzu-list"
-import pyramid, {circleCreate, geojsonCreate} from '@/js/pyramid'
+import pyramid, {circleCreate, geojsonCreate, geojsonUpdate} from '@/js/pyramid'
 import glouplayer from '@/js/glouplayer'
 import * as Layers from '@/js/layers'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -1542,6 +1549,10 @@ export default {
     },
   },
   methods: {
+    configChange (tgtProp,value) {
+      const map01 = this.$store.state.map01
+      store.state.clickCircleGeojsonText = geojsonUpdate(map01, clickCircleSource.iD, 'config', tgtProp, value)
+    },
     print () {
       // 印刷ダイアログ表示
       setTimeout(() => {
@@ -1556,15 +1567,23 @@ export default {
       // 1mm ≒ 3.7795275591px
       let widthPx
       let heightPx
+      // alert(this.direction)
       switch (this.direction) {
         case 'horizontal':
           widthPx = 190 * 3.7795275591;
           heightPx = 260 * 3.7795275591;
+          widthPx = 260 * 3.7795275591;
+          heightPx = 190 * 3.7795275591;
           break
         case 'vertical':
           widthPx = 260 * 3.7795275591;
           heightPx = 190 * 3.7795275591;
+          widthPx = 190 * 3.7795275591;
+          heightPx = 260 * 3.7795275591;
           break
+        default:
+          widthPx = 190 * 3.7795275591;
+          heightPx = 260 * 3.7795275591;
       }
 
       // リサイズ＆中央に
@@ -1624,13 +1643,13 @@ export default {
       }
       // A4サイズ（mm→px）: 210mm x 297mm
       // 1mm ≒ 3.7795275591px
-      const widthPx = 190 * 3.7795275591;  // 約 794px
-      const heightPx = 260 * 3.7795275591; // 約1123px
-      // リサイズ＆中央に
-      map00Div.style.width  = widthPx + 'px';
-      map00Div.style.height = heightPx + 'px';
-      map00Div.style.margin = '0 auto';
-      map00Div.style.display = 'block';
+      // const widthPx = 190 * 3.7795275591;  // 約 794px
+      // const heightPx = 260 * 3.7795275591; // 約1123px
+      // // リサイズ＆中央に
+      // map00Div.style.width  = widthPx + 'px';
+      // map00Div.style.height = heightPx + 'px';
+      // map00Div.style.margin = '0 auto';
+      // map00Div.style.display = 'block';
 
       // map01Div.style.width  = widthPx / 2 + 'px';
       // map01Div.style.height = heightPx + 'px';
@@ -1673,6 +1692,8 @@ export default {
       }
       setAllDisplayNone(this.$store.state.dialogsInfo)
       setAllDisplayNone(this.$store.state.dialog2)
+
+      this.directionChange()
 
     },
     toggleDrawPoint () {
@@ -3350,7 +3371,7 @@ export default {
         // 例：半径20ピクセル以内で既存地物と判定
         const pixelTolerance = 20;
         const exists = map.getSource(clickCircleSource.iD)._data.features.some(f => {
-          if (f.geometry.type !== 'Point') return false;
+          if (!f.geometry || f.geometry.type !== 'Point') return false;
           const [lng2, lat2] = f.geometry.coordinates;
           const featurePixel = map.project({ lng: lng2, lat: lat2 });
           const dx = featurePixel.x - clickPixel.x;
@@ -3623,9 +3644,20 @@ export default {
             this.$store.state.uploadedVector = JSON.parse(params.vector)
           }
 
-          if (params.clickCircleGeojsonText) {
+          if (params.clickCircleGeojsonText && params.clickCircleGeojsonText !== 'undefined') {
             this.$store.state.clickCircleGeojsonText = params.clickCircleGeojsonText
             console.log(this.$store.state.clickCircleGeojsonText)
+            try {
+              const config = JSON.parse(this.$store.state.clickCircleGeojsonText).features.find(f => f.properties.id === 'config').properties
+              if (config) {
+                this.printTitleText = config['title-text']
+                this.textPx = config['font-size'] || 30
+                this.titleColor = config['fill-color']
+                this.direction = config.direction
+              }
+            }catch (e) {
+              console.log(e)
+            }
           }
 
           if (params.clickGeojsonText) {
