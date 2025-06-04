@@ -1069,6 +1069,7 @@ export default {
     ChibanzuDrawer
   },
   data: () => ({
+    attributionControl: null,
     direction: 'vertical',
     titleColor: 'black',
     titleColors: [{color:'black',label:'黒'},{color:'red',label:'赤'},{color:'blue',label:'青'}],
@@ -1573,6 +1574,30 @@ export default {
       map00Div.style.display = 'block';
     },
     handlePrint() {
+      this.attributionControl = new maplibregl.AttributionControl()
+      this.$store.state.map01.addControl(this.attributionControl, 'bottom-right')
+
+      // 2. attributionコントロールのDOM取得
+      const attribDom = document.querySelector('.maplibregl-ctrl-attrib')
+
+      if (attribDom) {
+        // 3. 好きな右下用のコンテナ（例えばbody直下や専用div）に移動
+        const customContainer = document.getElementById('my-attrib-container')
+        if (customContainer) {
+          customContainer.appendChild(attribDom)
+        } else {
+          // 無ければ自作してbodyに追加
+          const div = document.createElement('div')
+          div.id = 'my-attrib-container'
+          // CSSで右下に配置
+          div.style.position = 'fixed'
+          div.style.right = '16px'
+          div.style.bottom = '16px'
+          div.style.zIndex = '1000'
+          div.appendChild(attribDom)
+          document.body.appendChild(div)
+        }
+      }
 
       this.s_map2Flg = true
       this.btnClickSplit ()
@@ -1585,6 +1610,11 @@ export default {
         map00Div.style.height = this.originalStyle.height
         this.isPrint = false
         this.originalStyle = null
+        this.$store.state.map01.removeControl(this.attributionControl)
+        const customContainer = document.getElementById('my-attrib-container')
+        if (customContainer) {
+          customContainer.remove()
+        }
         return
       }
       // 元のサイズを保存
@@ -6019,6 +6049,18 @@ select {
 @media print {
   .print-buttons {
     display: none
+  }
+}
+@media print {
+  .maplibregl-ctrl-attrib {
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #888 !important;      /* 文字も薄く */
+    border: none !important;
+    opacity: 0.5 !important;     /* うるささ軽減 */
+  }
+  .maplibregl-ctrl-attrib-button{
+    display: none !important;
   }
 }
 
