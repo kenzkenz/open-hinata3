@@ -381,6 +381,9 @@ export default {
         );
       }
     },
+    cityName2() {
+      return this.popupFeatureProperties.N03_004
+    },
     s_isAndroid() {
       return this.$store.state.isAndroid;
     },
@@ -468,7 +471,7 @@ export default {
       const data = {
         citycode: this.cityCode,
         prefname: this.prefName,
-        cityname: this.cityName,
+        cityname: this.cityName2,
         public: no,
         uid: this.$store.state.userId,
         nickname: this.$store.state.myNickname

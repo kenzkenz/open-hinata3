@@ -1039,7 +1039,7 @@ import DialogInfo from '@/components/Dialog-info'
 import Dialog2 from '@/components/Dialog2'
 import DialogShare from "@/components/Dialog-share"
 import DialogChibanzuList from "@/components/Dialog-chibanzu-list"
-import pyramid, {circleCreate, geojsonCreate, geojsonUpdate} from '@/js/pyramid'
+import pyramid, {circleCreate, geojsonCreate, geojsonUpdate, unescapeHTML} from '@/js/pyramid'
 import glouplayer from '@/js/glouplayer'
 import * as Layers from '@/js/layers'
 import 'maplibre-gl/dist/maplibre-gl.css'

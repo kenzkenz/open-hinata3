@@ -3628,7 +3628,7 @@ export function popup(e,map,mapName,mapFlg) {
                 props = features[0].properties
                 if (isFirstClickCircleLabelLayer) {
                     if (props.label.includes('https')) {
-                        const match = props.label.match(/https?:\/\/[^\s"']+/);
+                        const match = props.label.replace(/amp\n/g,'&').match(/https?:\/\/[^\s"']+/);
                         if (match) {
                             console.log(match[0])
                             window.open(match[0], '_blank')

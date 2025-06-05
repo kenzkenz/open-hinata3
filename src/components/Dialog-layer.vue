@@ -64,6 +64,8 @@
 
 <script>
 
+import {escapeHTML} from "@/js/pyramid";
+
 const registeredLayers = new Set()
 
 import {
@@ -906,6 +908,7 @@ export default {
       }
       // ---------------------------------------------------------------------------------
       if (this.$store.state.clickCircleGeojsonText) {
+        console.log(this.$store.state.clickCircleGeojsonText)
         clickCircleSource.obj.data = JSON.parse(this.$store.state.clickCircleGeojsonText)
       }
       if (map.getSource('click-circle-source')) {

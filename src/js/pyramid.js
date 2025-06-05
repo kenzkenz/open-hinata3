@@ -1273,7 +1273,15 @@ export function geojsonUpdate(map, sourceId, id, tgtProp, value) {
             map.getSource(sourceId).setData(geojson);
             console.log(geojson)
             store.state.updatePermalinkFire = !store.state.updatePermalinkFire
-            return JSON.stringify(geojson);
+            return escapeHTML(JSON.stringify(geojson))
         }
     }
+}
+export function escapeHTML(str) {
+    return str
+        .replace(/&/g, 'amp\\n')
+}
+export function unescapeHTML(str) {
+    return str
+        .replace(/amp/g, '&');
 }
