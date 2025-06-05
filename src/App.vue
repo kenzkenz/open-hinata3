@@ -625,6 +625,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             <span v-if="isPrint" class="print-buttons">
               <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="print">印刷</v-btn>
               <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 10px;" @click="printDialog = true">タイトル</v-btn>
+              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 10px;" @click="pngDl">PNG</v-btn>
               <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 10px;" @click="handlePrint">閉じる</v-btn>
             </span>
 
@@ -710,7 +711,7 @@ import {
   highlightSpecificFeatures, highlightSpecificFeatures2025,
   highlightSpecificFeaturesCity,
   jpgLoad,
-  kmzLoadForUser, LngLatToAddress, pmtilesGenerateForUser2,
+  kmzLoadForUser, LngLatToAddress, pmtilesGenerateForUser2, pngDl,
   pngDownload,
   pngLoad,
   simaLoadForUser, tileGenerateForUser,
@@ -1557,6 +1558,9 @@ export default {
     },
   },
   methods: {
+    pngDl () {
+      pngDl()
+    },
     configChange (tgtProp,value) {
       const map01 = this.$store.state.map01
       store.state.clickCircleGeojsonText = geojsonUpdate(map01, clickCircleSource.iD, 'config', tgtProp, value)
@@ -3674,7 +3678,7 @@ export default {
                 this.printTitleText = config['title-text']
                 this.textPx = config['font-size'] || 30
                 this.titleColor = config['fill-color']
-                this.direction = config.direction
+                this.direction = config.direction || 'vertical'
               }
             }catch (e) {
               console.log(e)

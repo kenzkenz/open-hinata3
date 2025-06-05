@@ -1165,35 +1165,6 @@ export default function pyramid () {
             }
         });
         // -------------------------------------------------------------------------------------------------------------
-        mapElm.addEventListener('input', (e) => {
-            if (e.target && (e.target.classList.contains("point-text"))) {
-                const map01 = store.state.map01
-                const id = String(e.target.getAttribute("id"))
-                const pointTextElm = document.querySelector('.point-text')
-                const pointTextValue = pointTextElm.value
-                console.log(id,pointTextValue)
-                // いまのGeoJSONを取得
-                const source = map01.getSource(clickCircleSource.iD)
-                if (!source) return;
-                const geojson = source._data
-                // featuresからid一致のfeatureを探してプロパティ書き換え
-                let changed = false;
-                if (geojson && geojson.features) {
-                    geojson.features.forEach(feature => {
-                        console.log(String(feature.properties.id),id)
-                        if (feature.properties && String(feature.properties.id) === id) {
-                            feature.properties.label = pointTextValue
-                            changed = true;
-                        }
-                    });
-                    if (changed) {
-                        map01.getSource(clickCircleSource.iD).setData(geojson);
-                        store.state.clickCircleGeojsonText = JSON.stringify(geojson)
-                    }
-                }
-            }
-        });
-        // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
             if (e.target && (e.target.classList.contains("point-delete"))) {
                 const map01 = store.state.map01
@@ -1228,6 +1199,17 @@ export default function pyramid () {
                 });
                 store.state.clickCircleGeojsonText = ''
                 closeAllPopups()
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('input', (e) => {
+            if (e.target && (e.target.classList.contains("point-text"))) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
+                const pointTextElm = document.querySelector('.point-text')
+                const value = pointTextElm.value
+                const tgtProp = 'label'
+                store.state.clickCircleGeojsonText = geojsonUpdate (map01,clickCircleSource.iD,id,tgtProp,value)
             }
         });
         // -------------------------------------------------------------------------------------------------------------

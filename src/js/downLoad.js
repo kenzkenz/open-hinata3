@@ -22,6 +22,7 @@ import iconv from "iconv-lite";
 import pako from "pako";
 import {kml} from "@tmcw/togeojson";
 import * as GeoTIFF from 'geotiff';
+import html2canvas from 'html2canvas'
 import muni from "@/js/muni";
 import * as exifr from 'exifr'
 // import publicChk from '@/components/Dialog-myroom'
@@ -5885,6 +5886,40 @@ export function capture(uid,isFirst) {
     const currentZoom = map01.getZoom();
     map01.zoomTo(currentZoom + 0.00000000000000000000000000001);
 }
+
+export function pngDl() {
+    const map01 = store.state.map01
+    const mapContainer = document.getElementById('map01')
+    let fileName = ''
+    try {
+        const config = JSON.parse(store.state.clickCircleGeojsonText).features.find(f => f.properties.id === 'config').properties
+        fileName = config['title-text']
+    }catch (e) {
+        console.log(e)
+    }
+    if (!fileName) {
+        fileName = store.state.address
+        if (!fileName) {
+            fileName = 'oh3'
+        }
+    }
+    // 地図のレンダリング完了を待機
+    document.querySelector('.print-buttons').style.display = 'none'
+    map01.once('idle', async () => {
+        html2canvas(mapContainer, { useCORS: true }).then(canvas => {
+            canvas.toBlob((blob) => {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = fileName + '.png';
+                link.click();
+                document.querySelector('.print-buttons').style.display = 'block'
+            });
+        });
+    });
+    const currentZoom = map01.getZoom();
+    map01.zoomTo(currentZoom + 0.00000000000000000000000000001);
+}
+
 
 export function pngDownload() {
     const map01 = store.state.map01

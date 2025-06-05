@@ -500,7 +500,7 @@ export const clickCircleLabelLayer = {
         'text-offset': ['get', 'offsetValue'],
         'text-anchor': 'left',
         'text-justify': 'left', // 追加: 複数行のテキストを左寄せにする
-        'text-max-width': 1000 // 非常に大きな値に設定して改行を防ぐ
+        'text-max-width': 100 // 非常に大きな値に設定して改行を防ぐ
     },
     'paint': {
         'text-color': ['get', 'color'],
