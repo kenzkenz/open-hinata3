@@ -1047,6 +1047,8 @@ import maplibregl from 'maplibre-gl'
 import { Protocol } from "pmtiles"
 import { useGsiTerrainSource } from 'maplibre-gl-gsi-terrain'
 import {
+  chibanzuSources, cityGeojsonLabelLayer, cityGeojsonLineLayer, cityGeojsonPolygonLayer,
+  cityGeojsonSource,
   clickCircleSource,
   extLayer,
   extSource, geotiffLayer,
@@ -1054,7 +1056,7 @@ import {
   monoLayers,
   monoSources,
   osmBrightLayers,
-  osmBrightSources, zenkokuChibanzuAddLayer
+  osmBrightSources, paleLayer, paleSource, publicSources, zenkokuChibanzuAddLayer
 } from "@/js/layers"
 import muni from '@/js/muni'
 import { kml } from '@tmcw/togeojson';
@@ -3830,23 +3832,42 @@ export default {
           } else {
             this.s_selectedLayers[mapName].unshift(
                 // {
-                //   id: 'oh-vector-layer-mono',
-                //   label: '地理院ベクター・モノクロ',
-                //   sources: monoSources,
-                //   layers: monoLayers,
+                //   id: 'oh-pale-layer',
+                //   label: "地理院淡色地図",
+                //   source: paleSource,
+                //   layers: [paleLayer],
                 //   opacity: 1,
                 //   visibility: true,
-                // }
+                // },
                 {
-                  id: 'oh-vector-layer-osm-bright',
-                  label: 'OSMベクター',
-                  sources: osmBrightSources,
-                  layers: osmBrightLayers,
+                  id: 'oh-vector-layer-mono',
+                  label: '地理院ベクター・モノクロ',
+                  sources: monoSources,
+                  layers: monoLayers,
                   opacity: 1,
                   visibility: true,
-                  attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
                 }
+                // {
+                //   id: 'oh-vector-layer-osm-bright',
+                //   label: 'OSMベクター',
+                //   sources: osmBrightSources,
+                //   layers: osmBrightLayers,
+                //   opacity: 1,
+                //   visibility: true,
+                //   attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
+                // },
             )
+            // this.s_selectedLayers[mapName].unshift(
+            //     {
+            //       id: 'oh-chibanzu-all2',
+            //       label: '⭐️全国地番図公開マップ️',
+            //       sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
+            //       layers: [cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
+            //       ext: {name:'ext-chibanzu'},
+            //       opacity: 1,
+            //       visibility: true
+            //     },
+            // )
           }
           // -----------------------------------------------------------------------------------------------------------
           let fetchFlg = false;

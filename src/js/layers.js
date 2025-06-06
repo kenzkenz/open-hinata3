@@ -266,7 +266,7 @@ function publiLayersCreate (v) {
     }
     return {publicSource,publicPolygonLayer,publicLineLayer,publicLabelLayer,publicPointLayer,publicVertexLayer}
 }
-const publicSources = []
+export const publicSources = []
 const publicPolygonLayers = []
 const publicLineLayers = []
 const publicLabelLayers = []
@@ -380,7 +380,7 @@ export const cityGeojsonSource = {
 //     }
 // }
 
-const cityGeojsonPolygonLayer = {
+export const cityGeojsonPolygonLayer = {
     id: 'oh-city-geojson-poligon-layer',
     type: 'fill',
     source: 'city-geojson-source',
@@ -404,7 +404,7 @@ const cityGeojsonPolygonLayer = {
     maxzoom: 14
 };
 
-const cityGeojsonLineLayer = {
+export const cityGeojsonLineLayer = {
     id: 'oh-city-geojson-line-layer',
     source: 'city-geojson-source',
     // "source-layer": 'polygon',
@@ -421,7 +421,7 @@ const cityGeojsonLineLayer = {
         ]
     },
 }
-const cityGeojsonLabelLayer = {
+export const cityGeojsonLabelLayer = {
     id: 'oh-city-geojson-label-layer',
     type: 'symbol',
     source: 'city-geojson-source',
@@ -2885,13 +2885,13 @@ const stdLayer = {
     'source': 'stdSource',
 }
 // 淡色地図--------------------------------------------------------------------------------------------------------------
-const paleSource = {
+export const paleSource = {
     id: 'pale-source', obj: {
         type: 'raster',
         tiles: ['https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'],
     }
 }
-const paleLayer = {
+export const paleLayer = {
     'id': 'oh-pale-layer',
     'type': 'raster',
     'source': 'pale-source',
@@ -9489,7 +9489,6 @@ let layers01 = [
         id: 'oh-chibanzu-all2',
         label: '⭐️全国地番図公開マップ️',
         sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
-        // layers: [...chibanzuLayers1,...publicLayers0,cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
         layers: [cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
         ext: {name:'ext-chibanzu'}
     },
