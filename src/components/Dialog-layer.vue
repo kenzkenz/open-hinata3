@@ -932,6 +932,12 @@ export default {
           targetLayers.forEach(layer => {
             registeredLayers.add(layer)
             this.$store.state.map01.on('click', layer, (e) => {
+              // まずoh-plateau-tokyo23ku-layerの地物があったらreturn
+              const map = this.$store.state.map01;
+              const featuresOnPlateau = map.queryRenderedFeatures(e.point, { layers: ['oh-plateau-tokyo23ku-layer'] });
+              if (featuresOnPlateau && featuresOnPlateau.length > 0) {
+                return;
+              }
               if (e.features && e.features.length > 0) {
                 // 最小面積のポリゴンを選ぶ
                 let smallestFeature = e.features[0];

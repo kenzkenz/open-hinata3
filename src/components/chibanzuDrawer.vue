@@ -21,7 +21,6 @@
         </h2>
         <p v-else>自治体を選択してください</p>
 
-        <div class="mini-tooltip-wrapper">
           <v-btn v-if="user"
                  style="margin-top: 20px;"
                  color="error"
@@ -29,37 +28,20 @@
           >
             赤色
           </v-btn>
-          <span class="mini-tooltip-text mini-tooltip-bottom">
-            赤色は・・・・
-            <span class="mini-tooltip-arrow-up"></span>
-          </span>
-        </div>
 
-        <div class="mini-tooltip-wrapper">
           <v-btn v-if="user"
                  style="margin-top: 20px;margin-left: 10px;background: gray !important;"
                  @click="public0(3)"
           >
             灰色
           </v-btn>
-          <span class="mini-tooltip-text mini-tooltip-bottom">
-            開示請求により入手できたが公開の可否不明
-            <span class="mini-tooltip-arrow-up"></span>
-          </span>
-        </div>
 
-        <div class="mini-tooltip-wrapper">
-          <v-btn v-if="user"
+         <v-btn v-if="user"
                  style="margin-top: 20px;margin-left: 10px;background: orange !important;"
                  @click="public0(5)"
           >
             黄色
           </v-btn>
-          <span class="mini-tooltip-text mini-tooltip-bottom">
-            開示請求中！
-            <span class="mini-tooltip-arrow-up"></span>
-          </span>
-        </div>
 
         <v-btn v-if="user"
                style="margin-top: 20px;margin-left: 10px;background: rgba(0,0,0,0.2) !important;"

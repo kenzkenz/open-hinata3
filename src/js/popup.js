@@ -3685,6 +3685,7 @@ export function popup(e,map,mapName,mapFlg) {
         }
 
         if(/^oh-chiban-/.test(layerId) || /^oh-chibanL-/.test(layerId)) {
+
             let features = map.queryRenderedFeatures(
                 map.project(coordinates), {layers: [layerId]}
             )

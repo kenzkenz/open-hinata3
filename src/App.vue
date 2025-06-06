@@ -614,13 +614,27 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <!--左上部メニュー-->
           <div id="left-top-div">
             <span v-if="!isPrint">
+            <MiniTooltip text="メニュー">
             <v-btn :size="isSmall ? 'small' : 'default'" icon @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-menu</v-icon></v-btn>
+            </MiniTooltip>
+            <MiniTooltip text="ログイン">
             <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="s_dialogForLogin = !s_dialogForLogin" v-if="mapName === 'map01'"><v-icon>mdi-login</v-icon></v-btn>
+            </MiniTooltip>
+            <MiniTooltip text="2画面表示">
             <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickSplit" v-if="mapName === 'map01'"><v-icon>mdi-monitor-multiple</v-icon></v-btn>
+            </MiniTooltip>
+            <MiniTooltip text="マイ ホーム">
             <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="btnClickMyroom (mapName)"><v-icon v-if="user1">mdi-home</v-icon></v-btn>
+            </MiniTooltip>
+            <MiniTooltip text="グループ機能">
             <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForGroup = !s_dialogForGroup"><v-icon v-if="user1">mdi-account-supervisor</v-icon></v-btn>
+            </MiniTooltip>
+            <MiniTooltip text="印刷">
             <v-btn v-if="!isSmall" :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="handlePrint"><v-icon>mdi-printer</v-icon></v-btn>
+            </MiniTooltip>
+            <MiniTooltip text="レイヤー選択">
             <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickLayer(mapName)"><v-icon>mdi-layers</v-icon></v-btn>
+            </MiniTooltip>
             </span>
             <span v-if="isPrint" class="print-buttons">
               <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="print">印刷</v-btn>
@@ -633,12 +647,24 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <!--右メニュー-->
           <div id="right-top-div">
             <span v-if="!isPrint">
-            <v-btn :size="isSmall ? 'small' : 'default'" icon @click="goToCurrentLocation" v-if="mapName === 'map01'"><v-icon>mdi-crosshairs-gps</v-icon></v-btn>
-            <v-btn :size="isSmall ? 'small' : 'default'" class="watch-position" :color="isTracking ? 'green' : undefined" icon @click="toggleWatchPosition" v-if="mapName === 'map01'"><v-icon>mdi-map-marker-radius</v-icon></v-btn>
-            <v-btn :size="isSmall ? 'small' : 'default'" class="share" icon @click="share(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-share-variant</v-icon></v-btn>
-            <v-btn :size="isSmall ? 'small' : 'default'" class="draw" icon @click="draw" v-if="mapName === 'map01'"><v-icon>mdi-ruler</v-icon></v-btn>
-            <v-btn disabled :size="isSmall ? 'small' : 'default'" class="draw-circle" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>
-            <v-btn :size="isSmall ? 'small' : 'default'" class="draw-point" :color="s_isDrawPoint ? 'green' : undefined" icon @click="toggleDrawPoint" v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>
+              <MiniTooltip text="現在地取得">
+                <v-btn :size="isSmall ? 'small' : 'default'" icon @click="goToCurrentLocation" v-if="mapName === 'map01'"><v-icon>mdi-crosshairs-gps</v-icon></v-btn>
+              </MiniTooltip>
+              <MiniTooltip text="現在地連続取得" :offset-x="-25" :offset-y="86">
+                <v-btn :size="isSmall ? 'small' : 'default'" class="watch-position" :color="isTracking ? 'green' : undefined" icon @click="toggleWatchPosition" v-if="mapName === 'map01'"><v-icon>mdi-map-marker-radius</v-icon></v-btn>
+              </MiniTooltip>
+              <MiniTooltip text="共有" :offset-x="-25" :offset-y="145">
+                <v-btn :size="isSmall ? 'small' : 'default'" class="share" icon @click="share(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-share-variant</v-icon></v-btn>
+              </MiniTooltip>
+              <MiniTooltip text="計測" :offset-x="-25" :offset-y="206">
+                <v-btn :size="isSmall ? 'small' : 'default'" class="draw" icon @click="draw" v-if="mapName === 'map01'"><v-icon>mdi-ruler</v-icon></v-btn>
+              </MiniTooltip>
+              <MiniTooltip text="現在休止中" :offset-x="-25" :offset-y="266">
+                <v-btn disabled :size="isSmall ? 'small' : 'default'" class="draw-circle" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>
+              </MiniTooltip>
+              <MiniTooltip text="テキスト貼りつけ" :offset-x="-25" :offset-y="326">
+                <v-btn :size="isSmall ? 'small' : 'default'" class="draw-point" :color="s_isDrawPoint ? 'green' : undefined" icon @click="toggleDrawPoint" v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>
+              </MiniTooltip>
             </span>
           </div>
 
@@ -1060,6 +1086,7 @@ import {
 } from "@/js/layers"
 import muni from '@/js/muni'
 import { kml } from '@tmcw/togeojson';
+import MiniTooltip from '@/components/MiniTooltip'
 // import store from "@/store";
 import html2canvas from 'html2canvas'
 import {feature} from "@turf/turf";
@@ -1076,7 +1103,8 @@ export default {
     DialogChibanzuList,
     PointInfoDrawer,
     RightDrawer,
-    ChibanzuDrawer
+    ChibanzuDrawer,
+    MiniTooltip
   },
   data: () => ({
     attributionControl: null,
@@ -4483,8 +4511,8 @@ export default {
           })
           //------------------------------------------------------------------------------------------------------------
           // PLATEAU建物東京都23区
-          map.on('mousemove', 'oh-plateau-tokyo23ku-layer', function (e) {
-            map.getCanvas().style.cursor = 'pointer'
+          map.on('click', 'oh-plateau-tokyo23ku-layer', function (e) {
+            // map.getCanvas().style.cursor = 'pointer'
             map.setPaintProperty(
                 'oh-plateau-tokyo23ku-layer',
                 'fill-extrusion-color',
@@ -4505,23 +4533,48 @@ export default {
                 ]
             )
           })
-          map.on('mouseleave', 'oh-plateau-tokyo23ku-layer', function () {
-            map.getCanvas().style.cursor = ''
-            map.setPaintProperty(
-                'oh-plateau-tokyo23ku-layer',
-                'fill-extrusion-color',
-                [
-                  "interpolate",
-                  ["linear"],
-                  ["get", "measuredHeight"],
-                  0, "#d9d9d9",       // 0m: グレー
-                  10, "#a6bddb",      // 10m: 明るいブルー
-                  30, "#74a9cf",      // 30m: 中間ブルー
-                  60, "#2b8cbe",      // 60m: 濃いブルー
-                  100, "#045a8d"      // 100m以上: 非常に濃いブルー
-                ]
-            )
-          })
+          map.on('click', function(e) {
+            // クリック位置のoh-plateau-tokyo23ku-layerのフィーチャーを取得
+            const features = map.queryRenderedFeatures(e.point, { layers: ['oh-plateau-tokyo23ku-layer'] });
+            if (features.length === 0) {
+              // フィーチャーが1つもない時だけ発動
+              try {
+                map.setPaintProperty(
+                    'oh-plateau-tokyo23ku-layer',
+                    'fill-extrusion-color',
+                    [
+                      "interpolate",
+                      ["linear"],
+                      ["get", "measuredHeight"],
+                      0, "#d9d9d9",       // 0m: グレー
+                      10, "#a6bddb",      // 10m: 明るいブルー
+                      30, "#74a9cf",      // 30m: 中間ブルー
+                      60, "#2b8cbe",      // 60m: 濃いブルー
+                      100, "#045a8d"      // 100m以上: 非常に濃いブルー
+                    ]
+                )
+              } catch (e) {
+                console.log(e)
+              }
+            }
+          });
+          // map.on('mouseleave', 'oh-plateau-tokyo23ku-layer', function () {
+          //   map.getCanvas().style.cursor = ''
+          //   map.setPaintProperty(
+          //       'oh-plateau-tokyo23ku-layer',
+          //       'fill-extrusion-color',
+          //       [
+          //         "interpolate",
+          //         ["linear"],
+          //         ["get", "measuredHeight"],
+          //         0, "#d9d9d9",       // 0m: グレー
+          //         10, "#a6bddb",      // 10m: 明るいブルー
+          //         30, "#74a9cf",      // 30m: 中間ブルー
+          //         60, "#2b8cbe",      // 60m: 濃いブルー
+          //         100, "#045a8d"      // 100m以上: 非常に濃いブルー
+          //       ]
+          //   )
+          // })
           // -----------------------------------------------------------------------------------------------------------
           const pitch = !isNaN(this.pitch[mapName]) ? this.pitch[mapName]: 0
           if (pitch !== 0) {
@@ -5967,53 +6020,54 @@ select {
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
 }
 
-/*ミニツールチップ*/
-.mini-tooltip-wrapper {
-  position: relative;
-  display: inline-block;
-}
-.mini-tooltip-text {
-  visibility: hidden;
-  background: #222;
-  color: #fff;
-  font-size: 10px;
-  padding: 2px 8px;
-  border-radius: 3px;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.2s;
-  z-index: 100;
-}
-/* ツールチップ本体をボタン下に */
-.mini-tooltip-bottom {
-  top: 120%; /* 適宜調整 */
-}
+/*!*ミニツールチップ*!*/
+/*.mini-tooltip-wrapper {*/
+/*  position: relative;*/
+/*  display: inline-block;*/
+/*}*/
+/*.mini-tooltip-text {*/
+/*  visibility: hidden;*/
+/*  background: #222;*/
+/*  color: #fff;*/
+/*  font-size: 10px;*/
+/*  padding: 2px 8px;*/
+/*  border-radius: 3px;*/
+/*  position: absolute;*/
+/*  left: 50%;*/
+/*  transform: translateX(-50%);*/
+/*  white-space: nowrap;*/
+/*  pointer-events: none;*/
+/*  opacity: 0;*/
+/*  transition: opacity 0.2s;*/
+/*  z-index: 100;*/
+/*}*/
+/*!* ツールチップ本体をボタン下に *!*/
+/*.mini-tooltip-bottom {*/
+/*  top: 120%; !* 適宜調整 *!*/
+/*}*/
 
-/* ホバー時表示 */
-.mini-tooltip-wrapper:hover .mini-tooltip-text,
-.mini-tooltip-wrapper:focus-within .mini-tooltip-text {
-  visibility: visible;
-  opacity: 1;
-}
+/*!* ホバー時表示 *!*/
+/*.mini-tooltip-wrapper:hover .mini-tooltip-text,*/
+/*.mini-tooltip-wrapper:focus-within .mini-tooltip-text {*/
+/*  visibility: visible;*/
+/*  opacity: 1;*/
+/*}*/
 
-/* ▲上向き三角 */
-.mini-tooltip-arrow-up {
-  position: absolute;
-  left: 50%;
-  top: -6px;  /* ツールチップ本体の上端中央に出す */
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-bottom: 6px solid #222; /* 本体と同じ色で */
-  content: '';
-  z-index: 101;
-}
+/*!* ▲上向き三角 *!*/
+/*.mini-tooltip-arrow-up {*/
+/*  position: absolute;*/
+/*  left: 50%;*/
+/*  top: -6px;  !* ツールチップ本体の上端中央に出す *!*/
+/*  transform: translateX(-50%);*/
+/*  width: 0;*/
+/*  height: 0;*/
+/*  border-left: 6px solid transparent;*/
+/*  border-right: 6px solid transparent;*/
+/*  border-bottom: 6px solid #222; !* 本体と同じ色で *!*/
+/*  content: '';*/
+/*  z-index: 101;*/
+/*}*/
+
 .circle-list {
   display: flex;
   gap: 8px; /* 丸同士の間隔 */
