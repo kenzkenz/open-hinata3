@@ -3454,6 +3454,10 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 store.state.popupFeatureProperties = features[0].properties
                 store.state.popupFeatureCoordinates = coordinates
+                const tgtElm = document.querySelector('.comment-text')
+                if (tgtElm) tgtElm.innerHTML = ''
+                const tgtElm2 = document.querySelector('.v-cool small')
+                if (tgtElm2) tgtElm2.innerHTML = ''
                 setTimeout(() => {
                     store.commit('setRightDrawer', false)
                     store.commit('setChibanzuDrawer', true)

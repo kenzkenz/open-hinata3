@@ -154,7 +154,11 @@
       <v-btn color="error" style="margin-top: 10px;margin-bottom: 10px; width: 100%;" @click="openTerms">地番参考図利用規約</v-btn>
     </div>
 
-    <v-text-field label="表示地番検索（例）5-7" v-model="s_chibanText" @input="change" style="margin-top: 10px"></v-text-field>
+    <v-text-field label="表示地番検索（例）5-7"
+                  v-model="s_chibanText"
+                  @change="change"
+                  style="margin-top: 10px"
+    ></v-text-field>
 
     <v-row dense no-gutters>
       <v-col cols="6">
@@ -1070,6 +1074,7 @@ export default {
         return data;
       }
       async function filterBy(text) {
+        console.log(text)
         if (text) {
           // let searchString = text
           //     .replace(/\u3000/g, ' ') // 全角スペースを半角に
@@ -1081,9 +1086,14 @@ export default {
           console.log(searchString)
           const words = searchString.split(" ")
           // 複数フィールドを結合する
+          console.log(vm.item.id)
           let combinedFields
           if (vm.item.id.includes('oh-chibanzu-')) {
-            combinedFields = ["concat", ["get", "大字"], " ", ["get", "TEXT"], " ", ["get", "地番"], " ", ["get", "Chiban"], " ", ["get", "TIBAN"], " ", ["get", "TXTCD"],
+            combinedFields = ["concat", ["get", "大字"],
+              ["get", "AzaName"]," ",
+              ["get", "TEXT"], " ",
+              ["get", "地番"], " ",  ["get", "Txtcd"], " ",
+              ["get", "Chiban"], " ", ["get", "TIBAN"], " ", ["get", "TXTCD"],
               " ", ["get", "本番"], " ", ["get", "CHIBAN"], " ", ["get", "表示文字列"], " ", ["get", "番地"], " ", ["get", "TXTCODE1"],
               " ", ["get", "地番本番"], " ", ["get", "SAFIELD002"], " ", ["get", "所在地番"], " ", ["get", "TEXTCODE1"], " ", ["get", "DNO"]];
           } else {
@@ -1093,7 +1103,7 @@ export default {
               ["get", "振興局"], " ",
               ["get", "市町村"], " ",
               ["get", "区"], " ",["get", "区名"], " ",
-              ["get", "大字"], " ", ["get", "町丁目名"], " ",
+              ["get", "大字"], " ", ["get", "町丁目名"], " ", ["get", "AzaName"], " ",
               ["get", chibanPropatie]]
             // combinedFields = ["get", ["get", "chiban"]]
           }
