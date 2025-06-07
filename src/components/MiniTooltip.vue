@@ -3,6 +3,7 @@
       ref="wrapper"
       @mouseenter="show"
       @mouseleave="hide"
+      @click="hide"
       @focus="show"
       @blur="hide"
       tabindex="0"

@@ -238,7 +238,7 @@ function publiLayersCreate (v) {
         filter: ["==", "$type", "Point"],
         "source-layer": "oh3",
         paint: {
-            'circle-color': 'rgba(255,0,0,1)', // 赤色で中心点を強調
+            'circle-color': 'rgba(0,0,255,1)', // 赤色で中心点を強調
             'circle-radius': 5, // 固定サイズの点
             'circle-opacity': 1,
             'circle-stroke-width': 1,
