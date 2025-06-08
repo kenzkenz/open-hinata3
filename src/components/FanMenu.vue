@@ -1,11 +1,11 @@
 <template>
-  <div style="display:flex;align-items:center;justify-content:center;position:relative;">
-    <!-- 中心アイコン -->
-    <button
-        class="center-btn"
-        @click="toggle"
-    >🌟</button>
-
+  <div ref="container" style="display:flex;align-items:center;justify-content:center;position:relative;min-height:120px;">
+    <!-- 中心ボタンスロット -->
+    <div ref="centerBtnRef" @click="toggle" style="display:inline-block;">
+      <slot name="center">
+        <button class="center-btn">🌟</button>
+      </slot>
+    </div>
     <!-- 扇状に展開されるサブアイコン -->
     <transition-group name="fade">
       <button
@@ -20,7 +20,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 
 const open = ref(false)
 const items = [
@@ -33,8 +33,24 @@ const items = [
 const arc = 120
 const radius = 90
 
+const centerBtnRef = ref(null)
+const container = ref(null)
+
+const centerPos = ref({ x: 0, y: 0 })
+
+function updateCenter() {
+  if (centerBtnRef.value && container.value) {
+    const btnRect = centerBtnRef.value.getBoundingClientRect()
+    const containerRect = container.value.getBoundingClientRect()
+    centerPos.value = {
+      x: btnRect.left - containerRect.left + btnRect.width / 2,
+      y: btnRect.top - containerRect.top + btnRect.height / 2
+    }
+  }
+}
 function toggle() {
   open.value = !open.value
+  if (open.value) nextTick(updateCenter)
 }
 
 function select(item) {
@@ -44,17 +60,18 @@ function select(item) {
 
 function getBtnStyle(idx, total) {
   if (!open.value) return { opacity: 0, pointerEvents: 'none' }
+  // スロット中心から扇状に
   const startAngle = -250
   const angle = (total === 1)
       ? -90
-      : startAngle + idx * (arc / (total-1))
+      : startAngle + idx * (arc / (total - 1))
   const rad = angle * Math.PI / 180
   const x = Math.cos(rad) * radius
   const y = Math.sin(rad) * radius
   return {
     position: 'absolute',
-    left: `calc(50% + ${x}px - 22px)`,
-    top:  `calc(0px + ${y}px - 22px)`, // ← 親の上端を基準に調整
+    left: `${centerPos.value.x + x - 22}px`,
+    top:  `${centerPos.value.y + y - 22}px`,
     zIndex: 1,
     opacity: 1,
     transition: 'all 0.3s cubic-bezier(.4,2,.6,1)'
@@ -64,8 +81,6 @@ function getBtnStyle(idx, total) {
 
 <style scoped>
 .center-btn {
-  position: absolute;
-  z-index: 2;
   width: 44px; height: 44px;
   border-radius: 50%;
   border: none;
@@ -74,6 +89,9 @@ function getBtnStyle(idx, total) {
   box-shadow: 0 2px 8px #0002;
   cursor: pointer;
   transition: box-shadow 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .center-btn:active {
   box-shadow: 0 1px 3px #0003;

@@ -665,7 +665,13 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <!--              <MiniTooltip text="テキスト貼りつけ" :offset-x="-25" :offset-y="326">-->
 <!--                <v-btn :size="isSmall ? 'small' : 'default'" class="draw-point" :color="s_isDrawPoint ? 'green' : undefined" icon @click="toggleDrawPoint" v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>-->
 <!--              </MiniTooltip>-->
-              <FanMenu class="draw-fan"/>
+<!--              <FanMenu class="draw-fan"/>-->
+              <FanMenu class="draw-fan">
+                <template #center>
+                  <!-- ここに好きなボタン、画像、Vueコンポーネント等を入れてOK -->
+                  <v-btn :size="isSmall ? 'small' : 'default'" :color="s_isDrawPoint ? 'green' : undefined" icon @click="toggleDrawPoint" v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>
+                </template>
+              </FanMenu>
             </span>
           </div>
 
@@ -3861,22 +3867,22 @@ export default {
             });
           } else {
             this.s_selectedLayers[mapName].unshift(
-                // {
-                //   id: 'oh-pale-layer',
-                //   label: "地理院淡色地図",
-                //   source: paleSource,
-                //   layers: [paleLayer],
-                //   opacity: 1,
-                //   visibility: true,
-                // },
                 {
-                  id: 'oh-vector-layer-mono',
-                  label: '地理院ベクター・モノクロ',
-                  sources: monoSources,
-                  layers: monoLayers,
+                  id: 'oh-pale-layer',
+                  label: "地理院淡色地図",
+                  source: paleSource,
+                  layers: [paleLayer],
                   opacity: 1,
                   visibility: true,
-                }
+                },
+                // {
+                //   id: 'oh-vector-layer-mono',
+                //   label: '地理院ベクター・モノクロ',
+                //   sources: monoSources,
+                //   layers: monoLayers,
+                //   opacity: 1,
+                //   visibility: true,
+                // }
                 // {
                 //   id: 'oh-vector-layer-osm-bright',
                 //   label: 'OSMベクター',
@@ -5550,7 +5556,7 @@ export default {
 }
 .draw-fan {
   position: absolute;
-  top: 275px;
+  top: 215px;
   left: 0;
 }
 /*3Dのボタン-------------------------------------------------------------*/
