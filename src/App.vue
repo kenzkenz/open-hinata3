@@ -659,17 +659,28 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <MiniTooltip text="計測" :offset-x="-25" :offset-y="206">
                 <v-btn :size="isSmall ? 'small' : 'default'" class="draw" icon @click="draw" v-if="mapName === 'map01'"><v-icon>mdi-ruler</v-icon></v-btn>
               </MiniTooltip>
-              <MiniTooltip text="現在休止中" :offset-x="-25" :offset-y="266">
-                <v-btn :size="isSmall ? 'small' : 'default'" class="draw-circle" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>
-              </MiniTooltip>
+<!--              <MiniTooltip text="現在休止中" :offset-x="-25" :offset-y="266">-->
+<!--                <v-btn :size="isSmall ? 'small' : 'default'" class="draw-circle" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>-->
+<!--              </MiniTooltip>-->
 <!--              <MiniTooltip text="テキスト貼りつけ" :offset-x="-25" :offset-y="326">-->
 <!--                <v-btn :size="isSmall ? 'small' : 'default'" class="draw-point" :color="s_isDrawPoint ? 'green' : undefined" icon @click="toggleDrawPoint" v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>-->
 <!--              </MiniTooltip>-->
 <!--              <FanMenu class="draw-fan"/>-->
               <FanMenu class="draw-fan">
                 <template #center>
-                  <v-btn :size="isSmall ? 'small' : 'default'" :color="s_isDrawPoint ? 'green' : undefined" icon @click="toggleDrawPoint" v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>
+                  <MiniTooltip text="ドロー" :offset-x="0" :offset-y="4">
+                    <v-btn :size="isSmall ? 'small' : 'default'" icon v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>
+                  </MiniTooltip>
                 </template>
+                <button @click="onA">未</button>
+                <button @click="onA">未</button>
+                <MiniTooltip text="円" :offset-x="0" :offset-y="4">
+                  <v-btn :size="isSmall ? 'small' : 'default'" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>
+                </MiniTooltip>
+                <MiniTooltip text="テキスト貼りつけ" :offset-x="0" :offset-y="4">
+                  <v-btn :size="isSmall ? 'small' : 'default'" :color="s_isDrawPoint ? 'green' : undefined" icon @click="toggleDrawPoint" v-if="mapName === 'map01'">txt</v-btn>
+                </MiniTooltip>
+
               </FanMenu>
             </span>
           </div>
@@ -1595,6 +1606,7 @@ export default {
     },
   },
   methods: {
+    onA() { alert('未実装です。') },
     pngDl () {
       pngDl()
     },
@@ -5555,7 +5567,7 @@ export default {
 }
 .draw-fan {
   position: absolute;
-  top: 215px;
+  top: 155px;
   left: 0;
 }
 /*3Dのボタン-------------------------------------------------------------*/
