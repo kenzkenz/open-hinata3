@@ -1238,7 +1238,7 @@ export function getScreenMeterDivX(map, x, direction = 'width') {
     const from = [coord1.lng, coord1.lat];
     const to = [coord2.lng, coord2.lat];
     const distance = turf.distance(from, to, { units: 'meters' });
-    return distance / x;
+    return Math.floor(distance / x);
 }
 
 export function circleCreate (lng, lat, m) {
