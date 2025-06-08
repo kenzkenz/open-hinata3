@@ -3571,25 +3571,26 @@ export function popup(e,map,mapName,mapFlg) {
             {
                 coordinates = store.state.coordinates
                 features = JSON.parse(store.state.clickCircleGeojsonText).features
+                console.log(features)
                 const feature = features.find(feature => feature.properties.id === store.state.id)
                 if (!feature) return;
-                // alert(888)
                 props = feature.properties
                 console.log(props)
                 const lng = props.lng
                 const lat = props.lat
+                const canterLng = props.canterLng
+                const canterLat = props.canterLat
                 let textSize = props['text-size']
                 if (!textSize) textSize = 16
                 const geoType = features[0].geometry.type
                 switch (geoType) {
                     case 'Polygon':
-                        // alert(999)
                         if (html.indexOf('click-circle-layer') === -1) {
                             html += '<div class="layer-label-div">サークル</div>'
                             html +=
                                 '<div style="width: 200px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
                                 '<span style="font-size:20px;" class="circle-label">半径' + props.label + 'm</span><br>' +
-                                '<input style="width: 100%;" type="range" min="10" max="1000" step="10" value="' + props.label + '" class="circle-range" lng="' + lng + '" lat="' + lat + '"/>' +
+                                '<input style="width: 100%;" type="range" min="10" max="1000" step="10" value="' + props.label + '" class="circle-range" lng="' + canterLng + '" lat="' + canterLat + '"/>' +
                                 '<input style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input circle-text" placeholder="ここに入力" value="' + props.label2 + '">' +
                                 '<button style="margin-bottom: 10px;height: 30px;font-size: medium;" class="circle-delete-all pyramid-btn">削　除</button><br>' +
                                 '</div>'

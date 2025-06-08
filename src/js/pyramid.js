@@ -6,130 +6,7 @@ import {clickCircleSource, clickPointSource} from "@/js/layers";
 import {closeAllPopups} from "@/js/popup";
 export let currentIndex = 0
 let kasen
-export function geojsonCreate(map, geoType, coordinates, properties = {}) {
-    // 1. 新しいfeatureを生成
-    let features,feature,radius
-    switch (geoType) {
-        case 'Point':
-            feature = turf.point(coordinates, properties);
-            break;
-        case 'LineString':
-            feature = turf.lineString(coordinates, properties);
-            break;
-        case 'Polygon':
-            feature = turf.polygon([coordinates], properties); // Polygonは「[[lng,lat],...]」
-            break;
-        case 'Circle':
-            radius = getScreenMeterDivX(map, 40, 'height')
-            console.log('半径',radius)
-            features = circleCreate (coordinates[0], coordinates[1], radius)
-            console.log(features)
-            feature = features[1]
-            feature.properties = properties
-            feature.properties.radius = radius
-            break;
-        default:
-            throw new Error('未対応のgeoType: ' + geoType);
-    }
 
-    // 2. 既存のFeatureCollectionを取得
-    const source = map.getSource(clickCircleSource.iD);
-    let geojsonData = null;
-    try {
-        geojsonData = source._data
-    } catch (e) {
-        geojsonData = null;
-    }
-
-    // 3. 既存featureが無ければ新規追加
-    if (!geojsonData || !geojsonData.features || geojsonData.features.length === 0) {
-        geojsonData = turf.featureCollection([feature]);
-    } else {
-        // 既存FeatureCollectionに追加
-        geojsonData = {
-            ...geojsonData,
-            features: [...geojsonData.features, feature]
-        };
-    }
-    // 4. ソースに再セット
-    source.setData(geojsonData);
-    store.state.clickCircleGeojsonText = JSON.stringify(geojsonData)
-    console.log(store.state.clickCircleGeojsonText)
-    return feature;
-}
-/**
- * 現在の地図画面の幅（または高さ）をメートルで計算し、X分の1を返す
- * @param {maplibregl.Map} map - MapLibreのインスタンス
- * @param {number} x - 分母（例: 10なら画面の幅の10分の1）
- * @param {string} direction - 'width'（幅）または 'height'（高さ）
- * @returns {number} - 画面幅または高さのX分の1（メートル）
- */
-export function getScreenMeterDivX(map, x, direction = 'width') {
-    const canvas = map.getCanvas();
-    const w = canvas.width;
-    const h = canvas.height;
-    let coord1, coord2;
-
-    if (direction === 'width') {
-        // 左端と右端（画面中央高さ）
-        coord1 = map.unproject([0, h / 2]);
-        coord2 = map.unproject([w, h / 2]);
-    } else {
-        // 上端と下端（画面中央幅）
-        coord1 = map.unproject([w / 2, 0]);
-        coord2 = map.unproject([w / 2, h]);
-    }
-
-    // turf.js で距離計算（単位: meters）
-    const from = [coord1.lng, coord1.lat];
-    const to = [coord2.lng, coord2.lat];
-    const distance = turf.distance(from, to, { units: 'meters' });
-    return distance / x;
-}
-
-export function circleCreate (lng, lat, m) {
-    const center = [lng, lat];
-    // const radiusKm = 0.2; // 200m = 0.2km
-    const radiusKm = m / 1000;
-    const steps = 64;
-    const circleGeoJson = turf.circle(center, radiusKm, {
-        steps: steps,
-        units: 'kilometers'
-    });
-    const centerFeature = turf.centerOfMass(circleGeoJson);
-    // const circleGeoJsonFeatures = {
-    //     type: 'FeatureCollection',
-    //     features: [centerFeature,circleGeoJson]
-    // };
-    return [centerFeature,circleGeoJson]
-}
-
-// export function circleCreate (lng, lat, m, text) {
-//     const center = [lng, lat];
-//     // const radiusKm = 0.2; // 200m = 0.2km
-//     const radiusKm = m / 1000;
-//     const steps = 64;
-//     const circleGeoJson = turf.circle(center, radiusKm, {
-//         steps: steps,
-//         units: 'kilometers'
-//     });
-//     circleGeoJson.properties['label'] = m
-//     circleGeoJson.properties['label2'] = text
-//     circleGeoJson.properties['lng'] = lng
-//     circleGeoJson.properties['lat'] = lat
-//     circleGeoJson.properties['offsetValue'] = [0, 2]
-//     const centerFeature = turf.centerOfMass(circleGeoJson);
-//     centerFeature.properties['label'] = m
-//     centerFeature.properties['label2'] = text
-//     centerFeature.properties['lng'] = lng
-//     centerFeature.properties['lat'] = lat
-//     centerFeature.properties['offsetValue'] = [0, 2]
-//     const circleGeoJsonFeatures = {
-//         type: 'FeatureCollection',
-//         features: [centerFeature,circleGeoJson]
-//     };
-//     return circleGeoJsonFeatures
-// }
 export default function pyramid () {
     ['map01','map02'].forEach(mapName => {
         const mapElm = document.querySelector('#' + mapName)
@@ -1192,13 +1069,22 @@ export default function pyramid () {
                 const rangeValue = Number(circleRangeElm.value)
                 const lng = Number(circleRangeElm.getAttribute("lng"))
                 const lat = Number(circleRangeElm.getAttribute("lat"))
-                const circleTextElm = document.querySelector('.circle-text')
-                const textValue = circleTextElm.value
-                const circleGeoJsonFeatures = circleCreate (lng, lat, Number(rangeValue), textValue)
-                map01.getSource(clickCircleSource.iD).setData(circleGeoJsonFeatures);
-                document.querySelector('.circle-label').innerHTML = '半径' + rangeValue + 'm'
-                // document.querySelector('.circle-text').value = textValue
-                store.state.clickCircleGeojsonText = JSON.stringify(circleGeoJsonFeatures)
+                console.log(lng,lat,Number(rangeValue))
+                // const features = circleCreate (lng, lat, Number(rangeValue))
+
+
+                // const map01 = store.state.map01
+                // const circleRangeElm = document.querySelector('.circle-range')
+                // const rangeValue = Number(circleRangeElm.value)
+                // const lng = Number(circleRangeElm.getAttribute("lng"))
+                // const lat = Number(circleRangeElm.getAttribute("lat"))
+                // const circleTextElm = document.querySelector('.circle-text')
+                // const textValue = circleTextElm.value
+                // const circleGeoJsonFeatures = circleCreate (lng, lat, Number(rangeValue), textValue)
+                // map01.getSource(clickCircleSource.iD).setData(circleGeoJsonFeatures);
+                // document.querySelector('.circle-label').innerHTML = '半径' + rangeValue + 'm'
+                // // document.querySelector('.circle-text').value = textValue
+                // store.state.clickCircleGeojsonText = JSON.stringify(circleGeoJsonFeatures)
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1276,6 +1162,98 @@ export default function pyramid () {
     })
 }
 // ---------------------------------------------------------------------------------------------------------------------
+export function geojsonCreate(map, geoType, coordinates, properties = {}) {
+    // 1. 新しいfeatureを生成
+    let features,feature,radius,canterLng,canterLat
+    switch (geoType) {
+        case 'Point':
+            feature = turf.point(coordinates, properties);
+            break;
+        case 'LineString':
+            feature = turf.lineString(coordinates, properties);
+            break;
+        case 'Polygon':
+            feature = turf.polygon([coordinates], properties); // Polygonは「[[lng,lat],...]」
+            break;
+        case 'Circle':
+            radius = getScreenMeterDivX(map, 40, 'height')
+            console.log('半径',radius)
+            features = circleCreate (coordinates[0], coordinates[1], radius)
+            console.log(features.center.geometry.coordinates)
+            canterLng = features.center.geometry.coordinates[0]
+            canterLat = features.center.geometry.coordinates[1]
+            feature = features.circle
+            feature.properties = properties
+            feature.properties.radius = radius
+            feature.properties.canterLng = canterLng
+            feature.properties.canterLat = canterLat
+            break;
+        default:
+            throw new Error('未対応のgeoType: ' + geoType);
+    }
+
+    // 2. 既存のFeatureCollectionを取得
+    const source = map.getSource(clickCircleSource.iD);
+    let geojsonData = null;
+    try {
+        geojsonData = source._data
+    } catch (e) {
+        geojsonData = null;
+    }
+
+    // 3. 既存featureが無ければ新規追加
+    if (!geojsonData || !geojsonData.features || geojsonData.features.length === 0) {
+        geojsonData = turf.featureCollection([feature]);
+    } else {
+        // 既存FeatureCollectionに追加
+        geojsonData = {
+            ...geojsonData,
+            features: [...geojsonData.features, feature]
+        };
+    }
+    // 4. ソースに再セット
+    source.setData(geojsonData);
+    store.state.clickCircleGeojsonText = JSON.stringify(geojsonData)
+    console.log(store.state.clickCircleGeojsonText)
+    return feature;
+}
+
+export function getScreenMeterDivX(map, x, direction = 'width') {
+    const canvas = map.getCanvas();
+    const w = canvas.width;
+    const h = canvas.height;
+    let coord1, coord2;
+
+    if (direction === 'width') {
+        // 左端と右端（画面中央高さ）
+        coord1 = map.unproject([0, h / 2]);
+        coord2 = map.unproject([w, h / 2]);
+    } else {
+        // 上端と下端（画面中央幅）
+        coord1 = map.unproject([w / 2, 0]);
+        coord2 = map.unproject([w / 2, h]);
+    }
+
+    // turf.js で距離計算（単位: meters）
+    const from = [coord1.lng, coord1.lat];
+    const to = [coord2.lng, coord2.lat];
+    const distance = turf.distance(from, to, { units: 'meters' });
+    return distance / x;
+}
+
+export function circleCreate (lng, lat, m) {
+    const center = [lng, lat];
+    // const radiusKm = 0.2; // 200m = 0.2km
+    const radiusKm = m / 1000;
+    const steps = 64;
+    const circleGeoJson = turf.circle(center, radiusKm, {
+        steps: steps,
+        units: 'kilometers'
+    });
+    const centerFeature = turf.centerOfMass(circleGeoJson);
+    return {center:centerFeature,circle:circleGeoJson}
+}
+
 export function geojsonUpdate(map, sourceId, id, tgtProp, value) {
     const source = map.getSource(sourceId)
     if (!source) return;
@@ -1314,6 +1292,7 @@ export function geojsonUpdate(map, sourceId, id, tgtProp, value) {
         }
     }
 }
+
 export function escapeHTML(str) {
     return str
         .replace(/&/g, 'amp\\n')

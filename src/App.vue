@@ -3427,6 +3427,23 @@ export default {
       //     }
       //   }
       // })
+
+
+      function existsNearbyClickCirclePoint(map, e, pixelTolerance = 20) {
+        if (!e || !e.lngLat) return false;
+        const clickPixel = map.project(e.lngLat);
+        const features = map.getSource(clickCircleSource.iD)._data.features || [];
+        return features.some(f => {
+          if (!f.geometry || f.geometry.type !== 'Point') return false;
+          const [lng2, lat2] = f.geometry.coordinates;
+          const featurePixel = map.project({ lng: lng2, lat: lat2 });
+          const dx = featurePixel.x - clickPixel.x;
+          const dy = featurePixel.y - clickPixel.y;
+          const pixelDist = Math.sqrt(dx * dx + dy * dy);
+          return pixelDist < pixelTolerance;
+        });
+      }
+
       // ポイント作成-----------------------------------------------------------------------------------
       function onPointClick(e) {
         console.log('擬似クリック event:', e);
@@ -3440,25 +3457,11 @@ export default {
         const lng = e.lngLat.lng
         const coordinates = [lng,lat]
         this.$store.state.coordinates = coordinates
-
-        // クリック位置をピクセル座標に変換
-        const clickPixel = map.project({ lng: lng, lat: lat });
-        // 例：半径20ピクセル以内で既存地物と判定
-        const pixelTolerance = 20;
-        const exists = map.getSource(clickCircleSource.iD)._data.features.some(f => {
-          if (!f.geometry || f.geometry.type !== 'Point') return false;
-          const [lng2, lat2] = f.geometry.coordinates;
-          const featurePixel = map.project({ lng: lng2, lat: lat2 });
-          const dx = featurePixel.x - clickPixel.x;
-          const dy = featurePixel.y - clickPixel.y;
-          const pixelDist = Math.sqrt(dx * dx + dy * dy);
-          return pixelDist < pixelTolerance;
-        });
         const dummyEvent = {
           lngLat: { lng: lng, lat: lat },
           // features: [geojson.features]
         };
-        // const exists = true
+        const exists = existsNearbyClickCirclePoint(map, e, 20)
         if (exists) {
           const features = map.queryRenderedFeatures(e.point)
           this.$store.state.id = features.find(f => f.layer.id === 'click-circle-symbol-layer').properties.id
@@ -3499,6 +3502,8 @@ export default {
           label:'',
           offsetValue: [0, 2],
           radius: 0,
+          canterLng: 0,
+          canterLat: 0
         }
         geojsonCreate(map, 'Circle', coordinates, properties)
 
