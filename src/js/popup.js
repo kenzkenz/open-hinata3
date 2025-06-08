@@ -3573,6 +3573,7 @@ export function popup(e,map,mapName,mapFlg) {
                 features = JSON.parse(store.state.clickCircleGeojsonText).features
                 const feature = features.find(feature => feature.properties.id === store.state.id)
                 if (!feature) return;
+                // alert(888)
                 props = feature.properties
                 console.log(props)
                 const lng = props.lng
@@ -3582,6 +3583,7 @@ export function popup(e,map,mapName,mapFlg) {
                 const geoType = features[0].geometry.type
                 switch (geoType) {
                     case 'Polygon':
+                        // alert(999)
                         if (html.indexOf('click-circle-layer') === -1) {
                             html += '<div class="layer-label-div">サークル</div>'
                             html +=

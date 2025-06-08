@@ -3434,6 +3434,7 @@ export default {
       }
       map.on('click', 'click-circle-label-layer', onPointClick);
       map.on('click', (e) => {
+        if (!this.s_isDrawPoint) return;
         console.log(e)
         const lat = e.lngLat.lat
         const lng = e.lngLat.lng
@@ -3464,12 +3465,9 @@ export default {
           onPointClick(dummyEvent);
           return;
         }
-
         const id = String(Math.floor(10000 + Math.random() * 90000))
         this.$store.state.id = id
         if (this.s_isDrawPoint) {
-          // const coordinates = [lng,lat]
-          // this.$store.state.coordinates = coordinates
           const properties = {
             id: id,
             label:'',
@@ -3488,20 +3486,33 @@ export default {
       }
       map.on('click', 'click-circle-symbol-layer', onCircleClick);
       map.on('click', (e) => {
-        const lat = e.lngLat.lat
+
+        if (!this.s_isDrawCircle) return
         const lng = e.lngLat.lng
-        if (this.s_isDrawCircle) {
-          const circleGeoJsonFeatures = circleCreate (lng, lat, 200, '')
-          map.getSource(clickCircleSource.iD).setData(circleGeoJsonFeatures);
-          this.$store.state.clickCircleGeojsonText = JSON.stringify(circleGeoJsonFeatures)
-          const dummyEvent = {
-            lngLat: { lng: lng, lat: lat },
-            features: [circleGeoJsonFeatures[1]]
-          };
-          setTimeout(() => {
-            onCircleClick(dummyEvent);
-          },500)
+        const lat = e.lngLat.lat
+        const coordinates = [lng,lat]
+        this.$store.state.coordinates = coordinates
+        const id = String(Math.floor(10000 + Math.random() * 90000))
+        this.$store.state.id = id
+        const properties = {
+          id: id,
+          label:'',
+          offsetValue: [0, 2],
+          radius: 0,
         }
+        geojsonCreate(map, 'Circle', coordinates, properties)
+
+        // const circleGeoJsonFeatures = circleCreate (lng, lat, 200, '')
+        // map.getSource(clickCircleSource.iD).setData(circleGeoJsonFeatures);
+        // this.$store.state.clickCircleGeojsonText = JSON.stringify(circleGeoJsonFeatures)
+        // const dummyEvent = {
+        //   lngLat: { lng: lng, lat: lat },
+        //   features: [circleGeoJsonFeatures[1]]
+        // };
+        // setTimeout(() => {
+        //   onCircleClick(dummyEvent);
+        // },500)
+
       })
       // ----------------------------------------------------------------------------------------------
 
