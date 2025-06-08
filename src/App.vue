@@ -660,11 +660,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 <v-btn :size="isSmall ? 'small' : 'default'" class="draw" icon @click="draw" v-if="mapName === 'map01'"><v-icon>mdi-ruler</v-icon></v-btn>
               </MiniTooltip>
               <MiniTooltip text="現在休止中" :offset-x="-25" :offset-y="266">
-                <v-btn disabled :size="isSmall ? 'small' : 'default'" class="draw-circle" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>
+                <v-btn :size="isSmall ? 'small' : 'default'" class="draw-circle" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>
               </MiniTooltip>
-              <MiniTooltip text="テキスト貼りつけ" :offset-x="-25" :offset-y="326">
-                <v-btn :size="isSmall ? 'small' : 'default'" class="draw-point" :color="s_isDrawPoint ? 'green' : undefined" icon @click="toggleDrawPoint" v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>
-              </MiniTooltip>
+<!--              <MiniTooltip text="テキスト貼りつけ" :offset-x="-25" :offset-y="326">-->
+<!--                <v-btn :size="isSmall ? 'small' : 'default'" class="draw-point" :color="s_isDrawPoint ? 'green' : undefined" icon @click="toggleDrawPoint" v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>-->
+<!--              </MiniTooltip>-->
+              <FanMenu class="draw-fan"/>
             </span>
           </div>
 
@@ -1087,6 +1088,7 @@ import {
 import muni from '@/js/muni'
 import { kml } from '@tmcw/togeojson';
 import MiniTooltip from '@/components/MiniTooltip'
+import FanMenu from '@/components/FanMenu'
 // import store from "@/store";
 import html2canvas from 'html2canvas'
 import {feature} from "@turf/turf";
@@ -5544,6 +5546,11 @@ export default {
 .draw-point {
   position: absolute;
   top: 300px;
+  left: 0;
+}
+.draw-fan {
+  position: absolute;
+  top: 275px;
   left: 0;
 }
 /*3Dのボタン-------------------------------------------------------------*/

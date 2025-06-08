@@ -27,9 +27,9 @@ export const csUrls = [
     {selected: 1,citycode:'30201', name:'和歌山県CS',maxzoom: 24, bbox:[], url:'https://xs489works.xsrv.jp/raster-tiles/pref-wakayama/wakayamapc-cs-tiles/{z}/{x}/{y}.png', page:"<a href='https://wakayamaken.geocloud.jp/mp/22' target='_blank'>和歌山県CS立体図(和歌山県3次元点群データを加工して作成)</a>"},
     {selected: 1,citycode:'31201', name:'鳥取県CS',maxzoom: 24, bbox:[], url:'https://rinya-tottori.geospatial.jp/tile/rinya/2024/csmap_tottori/{z}/{x}/{y}.png', page:"<a href='https://www.geospatial.jp/ckan/dataset/csmap_tottori' target='_blank'>鳥取県CS立体図</a>"},
     {selected: 1,citycode:'33100', name:'岡山県CS',maxzoom: 24, bbox:[], url:'https://www2.ffpri.go.jp/soilmap/tile/cs_okayama/{z}/{x}/{y}.png', page:"https://www2.ffpri.go.jp/soilmap/tile/cs_okayama/{z}/{x}/{y}.png"},
-    {selected: 0,citycode:'34100', name:'広島県CS',maxzoom: 24, bbox:[], url:'https://www2.ffpri.go.jp/soilmap/tile/cs_hiroshima/{z}/{x}/{y}.png', page:"<a href='https://www2.ffpri.go.jp/soilmap/data-src.html' target='_blank'>森林総合研究所CS立体図</a>"},
-    {selected: 0,citycode:'34100', name:'広島県CS1m',maxzoom: 24, bbox:[], url:'https://xs489works.xsrv.jp/raster-tiles/pref-hiroshima/hiroshimapc-cs-tiles/{z}/{x}/{y}.png', page:"<a href='https://hiroshima-dobox.jp/index2' target='_blank'>広島県CS立体図(広島県3次元点群データを加工して作成)</a>\""},
-    {selected: 1,citycode:'34100', name:'広島県CS0.5m',maxzoom: 24, bbox:[], url:'https://shiworks.xsrv.jp/raster-tiles/pref-hiroshima/hiroshimapc-2022-cs-tiles/{z}/{x}/{y}.png', page:"https://shiworks.xsrv.jp/raster-tiles/pref-hiroshima/hiroshimapc-2022-cs-tiles/{z}/{x}/{y}.png"},
+    {selected: 0,citycode:'34100', name:'広島県CS(林野庁0.5m)',maxzoom: 24, bbox:[], url:'https://www2.ffpri.go.jp/soilmap/tile/cs_hiroshima/{z}/{x}/{y}.png', page:"<a href='https://www2.ffpri.go.jp/soilmap/data-src.html' target='_blank'>森林総合研究所CS立体図</a>"},
+    {selected: 0,citycode:'34100', name:'広島県CS(広島県1m)',maxzoom: 24, bbox:[], url:'https://xs489works.xsrv.jp/raster-tiles/pref-hiroshima/hiroshimapc-cs-tiles/{z}/{x}/{y}.png', page:"<a href='https://hiroshima-dobox.jp/index2' target='_blank'>広島県CS立体図(広島県3次元点群データを加工して作成)</a>\""},
+    {selected: 1,citycode:'34100', name:'広島県CS(広島県0.5m)',maxzoom: 24, bbox:[], url:'https://shiworks.xsrv.jp/raster-tiles/pref-hiroshima/hiroshimapc-2022-cs-tiles/{z}/{x}/{y}.png', page:"https://shiworks.xsrv.jp/raster-tiles/pref-hiroshima/hiroshimapc-2022-cs-tiles/{z}/{x}/{y}.png"},
     {selected: 1,tms:1, citycode:'38200', name:'愛媛CS',maxzoom: 24, bbox:[], url:'https://rinya-ehime.geospatial.jp/tile/rinya/2024/csmap_Ehime/{z}/{x}/{y}.png', page:"<a href='https://www.geospatial.jp/ckan/dataset/csmap_ehime' target='_blank'>愛媛県CS立体図</a>"},
     {selected: 1,citycode:'39200', name:'高知県CS',maxzoom: 24, bbox:[], url:'https://rinya-kochi.geospatial.jp/2023/rinya/tile/csmap/{z}/{x}/{y}.png', page:"<a href='https://www.geospatial.jp/ckan/dataset/csmap_kochi' target='_blank'>高知県微地形図（CS立体図）</a>"},
     {selected: 1,citycode:'43100', name:'熊本県大分県CS',maxzoom: 24, bbox:[], url:'https://www2.ffpri.go.jp/soilmap/tile/cs_kumamoto_oita/{z}/{x}/{y}.png', page:"<a href='https://www2.ffpri.go.jp/soilmap/data-src.html' target='_blank'>森林総合研究所 CS立体図</a>"},
@@ -52,14 +52,17 @@ function csLayersCreate (url) {
         minzoom: 0,
         ...(url.maxzoom !== undefined && { maxzoom: url.maxzoom }),
     }
+
     return {csSource,csLayer}
 }
 export const csSources = []
 export const csLayers = []
+export const csLayersSelected = []
 csUrls.forEach(url => {
     const layers = csLayersCreate (url)
     csSources.push(layers.csSource)
     csLayers.push(layers.csLayer)
+    if (url.selected) csLayersSelected.push(layers.csLayer)
 })
 const csLayers2 = csLayers.map((layer,i) => {
     return {
@@ -10875,7 +10878,7 @@ let layers01 = [
                         id: 'oh-cs-all2',
                         label: "CS立体図全部",
                         sources: csSources,
-                        layers: csLayers
+                        layers: csLayersSelected
                     },
                     ...csLayers2
                 ]
