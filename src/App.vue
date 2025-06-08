@@ -668,7 +668,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <!--              <FanMenu class="draw-fan"/>-->
               <FanMenu class="draw-fan">
                 <template #center>
-                  <!-- ここに好きなボタン、画像、Vueコンポーネント等を入れてOK -->
                   <v-btn :size="isSmall ? 'small' : 'default'" :color="s_isDrawPoint ? 'green' : undefined" icon @click="toggleDrawPoint" v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>
                 </template>
               </FanMenu>
