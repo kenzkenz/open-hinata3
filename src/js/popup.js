@@ -3039,7 +3039,7 @@ export function popup(e,map,mapName,mapFlg) {
                 const features = map.queryRenderedFeatures(
                     map.project(coordinates), {layers: ['oh-homusyo-2025-polygon']}
                 )
-                console.log(features)
+                console.log(features[0].properties.市区町村コード.slice(0,2))
                 if (features.length === 0) return
 
                 // ⭐️---------------------------------------------------------------------------------------------------

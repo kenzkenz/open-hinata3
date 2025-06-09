@@ -1,6 +1,8 @@
 <template>
     <div :style="menuContentSize">
+      <p>小字名で抽出します。</p>
       <v-text-field label="抽出" v-model="s_koazaText" @input="koazaInput(mapName)" style="margin-top: 10px"></v-text-field>
+      <p style="margin-top: -10px;"><a href="https://koaza.net/" target="_blank">関東小字地図</a></p>
     </div>
 </template>
 
@@ -9,7 +11,7 @@ export default {
   name: 'ext-koaza',
   props: ['mapName','item'],
   data: () => ({
-    menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text'}
+    menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text','font-size':'16px'}
   }),
   computed: {
     s_watchFlg () {

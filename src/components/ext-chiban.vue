@@ -142,13 +142,13 @@
   <div :style="menuContentSize">
 <!--    <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>-->
 <!--    <div style="font-size: large;margin-bottom: 10px;" v-html="item.label"/>-->
-    <div v-if="item.id === 'oh-chibanzu-all2'" style="font-size: small">
+    <div v-if="item.id === 'oh-chibanzu-all2'" style="font-size: small;margin-bottom: 0px;">
       <div>オープンデータは「緑色」<br>開示請求且つ公開可能は「青色」<br>
       開示請求により入手できたが公開の可否不明は「灰色」。<br>開示請求中は「黄色」。<br>「赤色」は...
       </div>
-<!--      <v-btn style="margin-top: 10px" class="tiny-btn" @click="list">リスト表示</v-btn>-->
-<!--      <v-btn color="error" style="margin-top: 10px;margin-left: 0px;" class="tiny-btn" @click="openTerms">地番参考図利用規約</v-btn>-->
-      <v-btn color="error" style="margin-top: 10px;margin-left: 0px;width: 100%;" @click="openTerms">地番参考図利用規約</v-btn>
+      <v-btn style="margin-top: 10px;margin-bottom: 0px;" class="tiny-btn2" @click="downloadCsvFromPhp">CSVをDL</v-btn>
+      <v-btn color="error" style="margin-top: 10px;margin-left: 5px;margin-bottom: 0px;" class="tiny-btn2" @click="openTerms">地番参考図利用規約</v-btn>
+<!--      <v-btn color="error" style="margin-top: 10px;margin-left: 0px;width: 100%;" @click="openTerms">地番参考図利用規約</v-btn>-->
     </div>
     <div v-else>
       <v-btn color="error" style="margin-top: 10px;margin-bottom: 10px; width: 100%;" @click="openTerms">地番参考図利用規約</v-btn>
@@ -385,6 +385,49 @@ export default {
     },
   },
   methods: {
+    async downloadCsvFromPhp() {
+      try {
+        const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/userChibanzumapSelectForCSV.php');
+        if (!res.ok) throw new Error('サーバーエラー');
+        const json = await res.json();
+        if (!Array.isArray(json) || json.length === 0) {
+          this.$notify ? this.$notify('データがありません') : alert('データがありません');
+          return;
+        }
+        // ファイル名
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const fileName = `chibanzuMap_${y}${m}${day}.csv`;
+
+        // CSV作成
+        const headers = Object.keys(json[0]);
+        let csv = headers.join(',') + '\n';
+        json.forEach(row => {
+          csv += headers.map(h => {
+            let v = (row[h] ?? '').toString();
+            if (v.includes('"')) v = v.replace(/"/g, '""');
+            if (v.search(/("|,|\n)/g) >= 0) v = `"${v}"`;
+            return v;
+          }).join(',') + '\n';
+        });
+
+        // BOM付きでBlob作成（\uFEFFがBOM）
+        const bom = '\uFEFF';
+        const blob = new Blob([bom + csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        URL.revokeObjectURL(url);
+        a.remove();
+      } catch (e) {
+        this.$notify ? this.$notify('失敗: ' + e.message) : alert('失敗: ' + e.message);
+      }
+    },
     openTerms() {
       window.open('./pdf/chibanzukiyaku.pdf', '_blank');
     },

@@ -6509,19 +6509,18 @@ const yotochiikiLayerLabel = {
     'minzoom': 14
 }
 // 関東小字地図-----------------------------------------------------------------------------------------------------
-// mura.pmtiles
 const koazaSource = {
     id: "koaza-source", obj: {
         type: "vector",
-        // url: "pmtiles://https://osaru-san1.github.io/border/koaza.pmtiles",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/koaza/koaza_modified.pmtiles",
+        // url: "pmtiles://https://kenzkenz.xsrv.jp/open-hinata3/php/proxy2.php?url=https://koaza.net/border/koaza.pmtiles",
+        url: "pmtiles://https://kenzkenz2.xsrv.jp/pmtiles/koazachizu/koaza.pmtiles",
     }
 }
 const koazaLayer = {
     id: "oh-koaza",
     type: "fill",
     source: "koaza-source",
-    "source-layer": "polygon",
+    "source-layer": "koaza",
     paint: {
         'fill-color': 'rgba(255,255,255,0.1)'
     },
@@ -6530,7 +6529,7 @@ const koazaLayerLine = {
     id: "oh-koaza-line",
     type: "line",
     source: "koaza-source",
-    "source-layer": "polygon",
+    "source-layer": "koaza",
     paint: {
         'line-color': 'hotpink',
         'line-width': [
@@ -6546,7 +6545,7 @@ const koazaLayerLabel = {
     id: "oh-koaza-label",
     type: "symbol",
     source: "koaza-source",
-    "source-layer": "polygon",
+    "source-layer": "koaza",
     'layout': {
         'text-field': ['get', 'KOAZA_NAME'],
         'text-font': ['NotoSansJP-Regular'],
@@ -6558,18 +6557,19 @@ const koazaLayerLabel = {
     },
     'minzoom': 14
 }
+// ---------------------------------------------------
 const muraSource = {
     id: "mura-source", obj: {
         type: "vector",
-        // url: "pmtiles://https://osaru-san1.github.io/border/mura.pmtiles",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/koaza/mura_modified.pmtiles",
+        // url: "pmtiles://https://koaza.net/border/mura.pmtiles",
+        url: "pmtiles://https://kenzkenz2.xsrv.jp/pmtiles/koazachizu/mura.pmtiles",
     }
 }
 const muraLayer = {
     id: "oh-mura",
     type: "fill",
     source: "mura-source",
-    "source-layer": "polygon",
+    "source-layer": "mura",
     paint: {
         'fill-color': 'rgba(0,0,0,0)'
     },
@@ -6578,7 +6578,7 @@ const muraLayerLine = {
     id: "oh-mura-line",
     type: "line",
     source: "mura-source",
-    "source-layer": "polygon",
+    "source-layer": "mura",
     paint: {
         'line-color': 'blue',
         'line-width': [

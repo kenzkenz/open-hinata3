@@ -672,13 +672,13 @@ import SakuraEffect from './components/SakuraEffect.vue';
                     <v-btn :size="isSmall ? 'small' : 'default'" icon v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>
                   </MiniTooltip>
                 </template>
-                <button @click="onA">未</button>
-                <button @click="onA">未</button>
+                <v-btn disabled icon size="small" @click="onA">未</v-btn>
+                <v-btn disabled icon size="small" @click="onA">未</v-btn>
                 <MiniTooltip text="円" :offset-x="0" :offset-y="4">
-                  <v-btn :size="isSmall ? 'small' : 'default'" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>
+                  <v-btn disabled size="small" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>
                 </MiniTooltip>
                 <MiniTooltip text="テキスト貼りつけ" :offset-x="0" :offset-y="4">
-                  <v-btn :size="isSmall ? 'small' : 'default'" :color="s_isDrawPoint ? 'green' : undefined" icon @click="toggleDrawPoint" v-if="mapName === 'map01'">txt</v-btn>
+                  <v-btn size="small" :color="s_isDrawPoint ? 'green' : undefined" icon @click="toggleDrawPoint" v-if="mapName === 'map01'">txt</v-btn>
                 </MiniTooltip>
 
               </FanMenu>
@@ -3893,44 +3893,46 @@ export default {
               }
             });
           } else {
-            this.s_selectedLayers[mapName].unshift(
-                {
-                  id: 'oh-pale-layer',
-                  label: "地理院淡色地図",
-                  source: paleSource,
-                  layers: [paleLayer],
-                  opacity: 1,
-                  visibility: true,
-                },
-                // {
-                //   id: 'oh-vector-layer-mono',
-                //   label: '地理院ベクター・モノクロ',
-                //   sources: monoSources,
-                //   layers: monoLayers,
-                //   opacity: 1,
-                //   visibility: true,
-                // }
-                // {
-                //   id: 'oh-vector-layer-osm-bright',
-                //   label: 'OSMベクター',
-                //   sources: osmBrightSources,
-                //   layers: osmBrightLayers,
-                //   opacity: 1,
-                //   visibility: true,
-                //   attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
-                // },
-            )
-            // this.s_selectedLayers[mapName].unshift(
-            //     {
-            //       id: 'oh-chibanzu-all2',
-            //       label: '⭐️全国地番図公開マップ️',
-            //       sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
-            //       layers: [cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
-            //       ext: {name:'ext-chibanzu'},
-            //       opacity: 1,
-            //       visibility: true
-            //     },
-            // )
+            if (
+                location.hostname === 'localhost' ||      // ローカル
+                location.hostname === '127.0.0.1' ||      // ローカルIP
+                location.hostname.startsWith('192.168.')  // プライベートIP
+            ) {
+              // ローカル環境の処理
+              console.log('ローカル接続');
+              this.s_selectedLayers[mapName].unshift(
+                  {
+                    id: 'oh-pale-layer',
+                    label: "地理院淡色地図",
+                    source: paleSource,
+                    layers: [paleLayer],
+                    opacity: 1,
+                    visibility: true,
+                  }
+              )
+            } else {
+              // 本番環境の処理
+              console.log('本番環境');
+              this.s_selectedLayers[mapName].unshift(
+                  {
+                    id: 'oh-vector-layer-mono',
+                    label: '地理院ベクター・モノクロ',
+                    sources: monoSources,
+                    layers: monoLayers,
+                    opacity: 1,
+                    visibility: true,
+                  }
+                  // {
+                  //   id: 'oh-vector-layer-osm-bright',
+                  //   label: 'OSMベクター',
+                  //   sources: osmBrightSources,
+                  //   layers: osmBrightLayers,
+                  //   opacity: 1,
+                  //   visibility: true,
+                  //   attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
+                  // },
+              )
+            }
           }
           // -----------------------------------------------------------------------------------------------------------
           let fetchFlg = false;

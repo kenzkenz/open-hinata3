@@ -2145,6 +2145,21 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
     alert(dlMsg)
     store.state.loading = true
     let prefId = String(store.state.prefId).padStart(2, '0');
+    if (prefId === '00') {
+        const features = map.queryRenderedFeatures({ layers: ['oh-homusyo-2025-polygon'] });
+        // 最初のフィーチャの 市区町村コード プロパティから先頭2文字を取得
+        if (features.length > 0) {
+            const firstFeature = features[0];
+            const citycode = firstFeature.properties['市区町村コード'];
+            if (typeof citycode === 'string' && citycode.length >= 2) {
+                prefId = citycode.substring(0, 2);
+            }
+        }
+    }
+
+
+
+
     console.log('初期 prefId:', prefId);
 
     let fgb_URL;
