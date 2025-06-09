@@ -6938,7 +6938,7 @@ export function userTileSet(name,url,id) {
 //     // -------------------------------------------------------------------------------------------------
 // }
 export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,citycode,selectedPublic,selectedKaiji2,file) {
-    async function insertPmtilesData(uid, name, url, url2,  chiban, bbox, length, prefcode, citycode,selectedKaiji2) {
+    async function insertPmtilesData(uid, name, url, url2,  chiban, bbox, length, prefcode, citycode,selectedKaiji2,nickname) {
         try {
             const prefCode = String(Number(prefcode)).padStart(2, '0')
             let result = Object.entries(muni).find(([key, _]) => {
@@ -6972,7 +6972,8 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
                 prefname: prefName,
                 cityname: cityName,
                 public: public0,
-                kaiji2: Number(selectedKaiji2)
+                kaiji2: Number(selectedKaiji2),
+                nickname: nickname
             }));
             if (response.data.error) {
                 console.error('エラー:', response.data.error);
@@ -7076,6 +7077,7 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
             console.log(result);
             const webUrl = 'https://kenzkenz.duckdns.org/' + result.pmtiles_file.replace('/var/www/html/public_html/', '');
             console.log(result.pmtiles_file);
+            console.log(store.state.myNickname)
             insertPmtilesData(
                 store.state.userId,
                 store.state.pmtilesName,
@@ -7086,7 +7088,8 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
                 result.length,
                 prefcode,
                 citycode,
-                selectedKaiji2
+                selectedKaiji2,
+                store.state.myNickname
             );
             console.log('pmtiles作成完了');
             if (!result.bbox) {
