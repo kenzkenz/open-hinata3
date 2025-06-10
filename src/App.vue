@@ -709,6 +709,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   <v-btn size="small" :color="s_isDrawPoint ? 'green' : undefined" icon @click="toggleDrawPoint" v-if="mapName === 'map01'">txt</v-btn>
                 </MiniTooltip>
               </FanMenu>
+
             </span>
           </div>
 
@@ -1638,9 +1639,15 @@ export default {
   },
   methods: {
     async captureAndPostToX() {
+
+      if (window.innerWidth < 1000) {
+        this.openX()
+        return
+      }
+
       // 1. ローディング表示
       store.state.loading2 = true;
-      store.state.loadingMessage = 'キャプチャ中です。';
+      store.state.loadingMessage = '画面をキャプチャ中です。';
 
       // 2. 地図DIV取得
       const mapDiv = document.getElementById(this.mapDivId);
@@ -1682,77 +1689,25 @@ export default {
             encodeURIComponent(tweetText + "\n" + shareUrl);
 
         // 1回目
-        let win = window.open(intentUrl, '_blank');
-        // 4秒後に閉じて再度開く
         setTimeout(() => {
-          if (win) win.close();
+          let win = window.open(intentUrl, '_blank');
+          // 4秒後に閉じて再度開く
           setTimeout(() => {
-            window.open(intentUrl2, '_blank');
-          }, 500);
-        }, 5000);
-
-        store.state.loading2 = false;
+            if (win) win.close();
+            setTimeout(() => {
+              window.open(intentUrl2, '_blank');
+              store.state.loading2 = false;
+            }, 500);
+          }, 3000);
+        },4000)
       });
     },
-
-
-    // async captureAndPostToX() {
-    //   // 1. ローディング表示
-    //   store.state.loading2 = true
-    //   store.state.loadingMessage = 'キャプチャ中です。'
-    //
-    //   // 2. 地図DIV取得
-    //   const mapDiv = document.getElementById(this.mapDivId);
-    //   if (!mapDiv) {
-    //     alert("地図が見つかりません");
-    //     store.state.loading2 = false;
-    //     return;
-    //   }
-    //
-    //   // 3. 地図を微妙に動かしてレンダリング強制（MapLibreのバグ回避）
-    //   const map01 = this.$store.state.map01
-    //   const currentZoom = map01.getZoom();
-    //   map01.zoomTo(currentZoom + 0.00000000000000000000000000001);
-    //
-    //   // 4. idleになったらキャプチャ〜アップロード
-    //   map01.once('idle', async () => {
-    //     const canvas = await html2canvas(mapDiv, { useCORS: true });
-    //     this.imgUrl = canvas.toDataURL("image/png");
-    //     const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
-    //     const formData = new FormData();
-    //     formData.append('file', blob);
-    //     formData.append('spaUrl', window.location.href);
-    //
-    //     // サーバーにアップロード
-    //     const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/x-upload.php', { method: 'POST', body: formData });
-    //     const data = await res.json();
-    //     const shareUrl = data.shareUrl;
-    //
-    //     // 5. intent/tweetを2回開く（2回目でサムネイル出やすくなる）
-    //     const tweetText = this.tweetText || ""; // tweetTextがなければ空文字
-    //     const intentUrl = "https://twitter.com/intent/tweet?text=" +
-    //         encodeURIComponent('少々おまちください。' + "\n" + shareUrl);
-    //     const intentUrl2 = "https://twitter.com/intent/tweet?text=" +
-    //         encodeURIComponent(tweetText + "\n" + shareUrl);
-    //
-    //     // 1回目
-    //     let win = window.open(intentUrl, '_blank');
-    //     // 2秒後に閉じて再度開く
-    //     setTimeout(() => {
-    //       if (win) win.close();
-    //       setTimeout(() => {
-    //         window.open(intentUrl2, '_blank');
-    //       }, 500); // 少し待って2回目
-    //     }, 4000);
-    //
-    //     store.state.loading2 = false;
-    //   });
-    // },
     openDialog() {
       this.showXDialog = true;
       this.captureAndPreview();
     },
     async captureAndPreview() {
+
       store.state.loading2 = true
       store.state.loadingMessage = 'キャプチャ中です。'
       const mapDiv = document.getElementById(this.mapDivId);
@@ -1804,17 +1759,10 @@ export default {
     openX() {
       const intentUrl =
           "https://twitter.com/intent/tweet?text=" +
-          encodeURIComponent(this.tweetText + "\n" + this.$store.state.urlForX);
+          encodeURIComponent('#openhinata3 #OH3' + "\n" + this.$store.state.url);
       // window.open(intentUrl, "_blank");
       // 1回目
       const win = window.open(intentUrl, '_blank');
-      // 2秒後に閉じて再度開く
-      setTimeout(() => {
-        if (win) win.close();
-        setTimeout(() => {
-          window.open(intentUrl, '_blank');
-        }, 500); // 少し待って2回目
-      }, 2000);
     },
     onA() { alert('未実装です。') },
     pngDl () {
@@ -5804,6 +5752,12 @@ export default {
   top: 192px;
   left: 0;
 }
+@media (max-width: 720px) {
+  .draw-fan {
+    top: 197px;
+  }
+}
+
 /*3Dのボタン-------------------------------------------------------------*/
 .terrain-btn-expand-div {
   position:absolute;

@@ -117,7 +117,7 @@ export function zenkokuChibanzuAddLayer (map,zoom) {
                     }
                 }
             })
-            csUrls.forEach(v => {
+            sicyosonChibanzuUrls.forEach(v => {
                 if (v.bbox) {
                     const dataBbox = v.bbox; // [west, south, east, north]
                     const isIntersecting =
@@ -130,7 +130,7 @@ export function zenkokuChibanzuAddLayer (map,zoom) {
                         // if (!v.url) {
                         //     return
                         // }
-                        const layers = csLayersCreate(v)
+                        const layers = chibanzuLayersCreate(v)
                         const allLayers = map.getStyle().layers;
                         const result = allLayers.find(l => {
                             return l.id === layers.chibanzuLayer.id
