@@ -8,7 +8,7 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     // 市区町村コードとpublicを取得
-    $stmt = $pdo->query('SELECT citycode, public FROM chibanzumap');
+    $stmt = $pdo->query('SELECT citycode, public, last_modified_date FROM chibanzumap');
     $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // JSON出力

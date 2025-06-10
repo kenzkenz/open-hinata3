@@ -1,5 +1,3 @@
-// 地理院グリフを使う時は以下のフォントを使う。
-// "text-font": ["NotoSansJP-Regular"],
 import store from '@/store'
 import * as turf from '@turf/turf'
 import { nextTick, toRef, reactive, ref, computed, watch } from 'vue';
@@ -158,6 +156,7 @@ export async function loadColorData() {
             throw new Error(`HTTPエラー: ${response.status}`);
         }
         const data = await response.json();
+        console.log(data)
         // エラーチェック
         if (data.error) {
             throw new Error(data.error);
