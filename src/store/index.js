@@ -106,6 +106,7 @@ export default createStore({
       map01: [],
       map02: [],
     },
+    urlForX: '',
     url: 'dumy',
     dialog2Id:1,
     dialogMaxZindex: 10,

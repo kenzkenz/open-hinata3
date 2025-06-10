@@ -1,5 +1,7 @@
 <template>
-  <div ref="container" style="display:flex;align-items:center;justify-content:center;position:relative;min-height:120px;">
+<!--  <div ref="container" style="display:flex;align-items:center;justify-content:center;position:relative;min-height:120px;">-->
+
+  <div ref="container" style="display:flex;align-items:center;justify-content:center;position:relative;">
     <!-- 中心ボタンスロット -->
     <div ref="centerBtnRef" @click="toggle" style="display:inline-block;">
       <slot name="center">

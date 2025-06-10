@@ -15,7 +15,7 @@
 
       <v-card-text style="margin-top: 20px;">
         <div class="top-div">
-          <h2 style="margin-bottom: 10px;">{{ `${popupFeatureProperties.市区町村名 || ''}${popupFeatureProperties.大字名 || ''}${popupFeatureProperties['丁目名'] || ''}${popupFeatureProperties.地番 || ''}` }}</h2>
+          <h2 style="margin-bottom: 10px;">{{ `${popupFeatureProperties.市区町村名 || ''}${popupFeatureProperties.大字名 || ''}${popupFeatureProperties.大字 || ''}${popupFeatureProperties['丁目名'] || ''}${popupFeatureProperties.地番 || ''}` }}</h2>
           <p v-for="[key, value] in Object.entries(popupFeatureProperties)" :key="key" class="property-text">
             {{ key }}: {{ value }}
           </p>

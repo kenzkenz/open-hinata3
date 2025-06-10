@@ -51,6 +51,31 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </template>
       </v-snackbar>
 
+      <v-dialog v-model="showXDialog" max-width="400">
+        <v-card>
+          <v-card-title>ポスト</v-card-title>
+          <v-card-text style="margin-bottom: -5px;padding-bottom: 0">
+            <div style="color:#888;font-size:0.95em;">
+              画像は自動的にXへ送られませんので、ダウンロードしてご利用下さい。
+            </div>
+            <div style="margin-bottom:8px;">
+              <v-card-actions>
+                <v-btn color="info" @click="downloadImage">画像ダウンロード</v-btn>
+              </v-card-actions>
+            </div>
+            <div v-if="imgUrl" style="margin:10px 0;">
+              <img :src="imgUrl" alt="map preview" style="width:100%;border:1px solid #ccc;"/>
+            </div>
+            <v-btn color="info" @click="openX">ポスト</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn text @click="showXDialog = false">閉じる</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+
       <v-dialog v-model="printDialog" max-width="500px">
         <v-card>
           <v-card-title>
@@ -659,6 +684,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <MiniTooltip text="計測" :offset-x="-25" :offset-y="206">
                 <v-btn :size="isSmall ? 'small' : 'default'" class="draw" icon @click="draw" v-if="mapName === 'map01'"><v-icon>mdi-ruler</v-icon></v-btn>
               </MiniTooltip>
+              <MiniTooltip text="Xにポスト" :offset-x="-25" :offset-y="326">
+                <v-btn :size="isSmall ? 'small' : 'default'" class="share-x" icon @click="captureAndPostToX" v-if="mapName === 'map01'"><v-icon left>fa-solid fa-x</v-icon></v-btn>
+              </MiniTooltip>
 <!--              <MiniTooltip text="現在休止中" :offset-x="-25" :offset-y="266">-->
 <!--                <v-btn :size="isSmall ? 'small' : 'default'" class="draw-circle" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>-->
 <!--              </MiniTooltip>-->
@@ -680,7 +708,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 <MiniTooltip text="テキスト貼りつけ" :offset-x="0" :offset-y="4">
                   <v-btn size="small" :color="s_isDrawPoint ? 'green' : undefined" icon @click="toggleDrawPoint" v-if="mapName === 'map01'">txt</v-btn>
                 </MiniTooltip>
-
               </FanMenu>
             </span>
           </div>
@@ -1125,6 +1152,10 @@ export default {
     MiniTooltip
   },
   data: () => ({
+    showXDialog: false,
+    imgUrl: null,
+    mapDivId: "map01", // ← MapLibreのDIVのID
+    tweetText: "入力可能になりました。画像が表示されない場合もう一回やりなおしてください。\n\n#openhinata3 #OH3",
     attributionControl: null,
     direction: 'vertical',
     titleColor: 'black',
@@ -1606,6 +1637,185 @@ export default {
     },
   },
   methods: {
+    async captureAndPostToX() {
+      // 1. ローディング表示
+      store.state.loading2 = true;
+      store.state.loadingMessage = 'キャプチャ中です。';
+
+      // 2. 地図DIV取得
+      const mapDiv = document.getElementById(this.mapDivId);
+      if (!mapDiv) {
+        alert("地図が見つかりません");
+        store.state.loading2 = false;
+        return;
+      }
+
+      // 3. 地図を微妙に動かしてレンダリング強制
+      const map01 = this.$store.state.map01;
+      const currentZoom = map01.getZoom();
+      map01.zoomTo(currentZoom + 0.00000000000000000000000000001);
+
+      // 4. idleになったらキャプチャ〜アップロード
+      map01.once('idle', async () => {
+        // --- canvas生成・描画・画像化 ---
+        // MapLibreのcanvas要素取得
+        const canvas = map01.getCanvas();
+        const imageData = canvas.toDataURL("image/png");
+        // PNGファイルを追加
+        const blob = await fetch(imageData).then(res => res.blob());
+
+        // アップロード
+        const formData = new FormData();
+        formData.append('file', blob);
+        formData.append('spaUrl', window.location.href);
+
+        // サーバーにアップロード
+        const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/x-upload.php', { method: 'POST', body: formData });
+        const data = await res.json();
+        const shareUrl = data.shareUrl;
+
+        // 5. intent/tweetを2回開く
+        const tweetText = this.tweetText || "";
+        const intentUrl = "https://twitter.com/intent/tweet?text=" +
+            encodeURIComponent('少々おまちください。まだ入力できません。' + "\n\n" + shareUrl);
+        const intentUrl2 = "https://twitter.com/intent/tweet?text=" +
+            encodeURIComponent(tweetText + "\n" + shareUrl);
+
+        // 1回目
+        let win = window.open(intentUrl, '_blank');
+        // 4秒後に閉じて再度開く
+        setTimeout(() => {
+          if (win) win.close();
+          setTimeout(() => {
+            window.open(intentUrl2, '_blank');
+          }, 500);
+        }, 5000);
+
+        store.state.loading2 = false;
+      });
+    },
+
+
+    // async captureAndPostToX() {
+    //   // 1. ローディング表示
+    //   store.state.loading2 = true
+    //   store.state.loadingMessage = 'キャプチャ中です。'
+    //
+    //   // 2. 地図DIV取得
+    //   const mapDiv = document.getElementById(this.mapDivId);
+    //   if (!mapDiv) {
+    //     alert("地図が見つかりません");
+    //     store.state.loading2 = false;
+    //     return;
+    //   }
+    //
+    //   // 3. 地図を微妙に動かしてレンダリング強制（MapLibreのバグ回避）
+    //   const map01 = this.$store.state.map01
+    //   const currentZoom = map01.getZoom();
+    //   map01.zoomTo(currentZoom + 0.00000000000000000000000000001);
+    //
+    //   // 4. idleになったらキャプチャ〜アップロード
+    //   map01.once('idle', async () => {
+    //     const canvas = await html2canvas(mapDiv, { useCORS: true });
+    //     this.imgUrl = canvas.toDataURL("image/png");
+    //     const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+    //     const formData = new FormData();
+    //     formData.append('file', blob);
+    //     formData.append('spaUrl', window.location.href);
+    //
+    //     // サーバーにアップロード
+    //     const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/x-upload.php', { method: 'POST', body: formData });
+    //     const data = await res.json();
+    //     const shareUrl = data.shareUrl;
+    //
+    //     // 5. intent/tweetを2回開く（2回目でサムネイル出やすくなる）
+    //     const tweetText = this.tweetText || ""; // tweetTextがなければ空文字
+    //     const intentUrl = "https://twitter.com/intent/tweet?text=" +
+    //         encodeURIComponent('少々おまちください。' + "\n" + shareUrl);
+    //     const intentUrl2 = "https://twitter.com/intent/tweet?text=" +
+    //         encodeURIComponent(tweetText + "\n" + shareUrl);
+    //
+    //     // 1回目
+    //     let win = window.open(intentUrl, '_blank');
+    //     // 2秒後に閉じて再度開く
+    //     setTimeout(() => {
+    //       if (win) win.close();
+    //       setTimeout(() => {
+    //         window.open(intentUrl2, '_blank');
+    //       }, 500); // 少し待って2回目
+    //     }, 4000);
+    //
+    //     store.state.loading2 = false;
+    //   });
+    // },
+    openDialog() {
+      this.showXDialog = true;
+      this.captureAndPreview();
+    },
+    async captureAndPreview() {
+      store.state.loading2 = true
+      store.state.loadingMessage = 'キャプチャ中です。'
+      const mapDiv = document.getElementById(this.mapDivId);
+      if (!mapDiv) {
+        alert("地図が見つかりません");
+        return;
+      }
+      const map01 = this.$store.state.map01
+      const map02 = this.$store.state.map02
+      const currentZoom = map01.getZoom();
+      map01.zoomTo(currentZoom + 0.00000000000000000000000000001);
+      // map02.zoomTo(currentZoom + 0.00000000000000000000000000001);
+      map01.once('idle', async () => {
+        const canvas = await html2canvas(mapDiv, {useCORS: true});
+        this.imgUrl = canvas.toDataURL("image/png");
+        // サーバーへアップロード
+        const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+        const formData = new FormData();
+        formData.append('file', blob);
+        formData.append('spaUrl', window.location.href);
+
+
+        const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/x-upload.php', { method: 'POST', body: formData });
+        const data = await res.json();
+        this.$store.state.urlForX = data.shareUrl;
+        // alert(this.$store.state.urlForX)
+        store.state.loading2 = false;
+      });
+      // map02.once('idle',async () => {
+      //   const canvas = await html2canvas(mapDiv, { useCORS: true });
+      //   this.imgUrl = canvas.toDataURL("image/png");
+      //   store.state.loading2 = false;
+      // });
+
+    },
+    downloadImage() {
+      // ファイル名
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const fileName = `oh3capture_${y}${m}${day}.png`;
+      if (!this.imgUrl) return;
+      const link = document.createElement("a");
+      link.download = fileName;
+      link.href = this.imgUrl;
+      link.click();
+    },
+    openX() {
+      const intentUrl =
+          "https://twitter.com/intent/tweet?text=" +
+          encodeURIComponent(this.tweetText + "\n" + this.$store.state.urlForX);
+      // window.open(intentUrl, "_blank");
+      // 1回目
+      const win = window.open(intentUrl, '_blank');
+      // 2秒後に閉じて再度開く
+      setTimeout(() => {
+        if (win) win.close();
+        setTimeout(() => {
+          window.open(intentUrl, '_blank');
+        }, 500); // 少し待って2回目
+      }, 2000);
+    },
     onA() { alert('未実装です。') },
     pngDl () {
       pngDl()
@@ -5567,6 +5777,12 @@ export default {
   top: 120px;
   left: 0;
 }
+.share-x {
+  position: absolute;
+  /*top: 240px;*/
+  top: 300px;
+  left: 0;
+}
 .draw {
   position: absolute;
   /*top: 300px;*/
@@ -5585,7 +5801,7 @@ export default {
 }
 .draw-fan {
   position: absolute;
-  top: 155px;
+  top: 192px;
   left: 0;
 }
 /*3Dのボタン-------------------------------------------------------------*/
