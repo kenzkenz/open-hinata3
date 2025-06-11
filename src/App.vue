@@ -8,6 +8,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
+      <div
+          ref="indicator"
+          v-show="isDrawing"
+          class="draw-indicator"
+      ><div id="draw-indicato-text" style="margin-top: 20px;margin-left: 10px;"></div></div>
+
       <ChibanzuDrawer
           :value="showChibanzuDrawer"
       />
@@ -1095,6 +1101,7 @@ export default {
     MiniTooltip
   },
   data: () => ({
+    isDrawing: false,
     showXDialog: false,
     imgUrl: null,
     mapDivId: "map01", // ← MapLibreのDIVのID
@@ -1178,6 +1185,9 @@ export default {
       'selectedPointFeature',
       'showChibanzuDrawer',
     ]),
+    s_isDrawCircle_and_Point() {
+      return [this.s_isDrawCircle, this.s_isDrawPoint];
+    },
     s_updatePermalinkFire: {
       get() {
         return this.$store.state.updatePermalinkFire
@@ -1580,6 +1590,24 @@ export default {
     },
   },
   methods: {
+    onMouseMove(e) {
+      if (!this.isDrawing) return
+      const dot = this.$refs.indicator
+      if (dot) {
+        console.log(e.clientX,e.clientY)
+        dot.style.left = e.clientX + 'px'
+        dot.style.top  = e.clientY + 'px'
+      }
+    },
+    startDraw() {
+      this.isDrawing = true
+      // すぐマウス座標反映
+      document.body.style.cursor = 'none'
+    },
+    endDraw() {
+      this.isDrawing = false
+      document.body.style.cursor = ''
+    },
     async captureAndPostToX() {
 
       if (window.innerWidth < 1000) {
@@ -1876,10 +1904,12 @@ export default {
     toggleDrawPoint () {
       this.s_isDrawPoint = !this.s_isDrawPoint
       if (this.s_isDrawPoint) this.s_isDrawCircle = false
+      document.querySelector('#draw-indicato-text').innerHTML = 'TXT'
     },
     toggleDrawCircle () {
       this.s_isDrawCircle = !this.s_isDrawCircle
       if (this.s_isDrawCircle) this.s_isDrawPoint = false
+      document.querySelector('#draw-indicato-text').innerHTML = 'CIRCLE'
     },
     save () {
       this.saveSelectedPointFeature()
@@ -5475,6 +5505,8 @@ export default {
   mounted() {
     const vm = this
 
+    window.addEventListener('mousemove', this.onMouseMove)
+
     this.mapillarWidth = (window.innerWidth * 1) + 'px'
     this.mapillarHeight = (window.innerHeight * 1) + 'px'
 
@@ -5595,6 +5627,19 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
+    // 配列で監視（どちらか変化したら発動）
+    s_isDrawCircle_and_Point: {
+      handler(val) {
+        // valは [s_isDrawCircle, s_isDrawPoint]
+        if (val[0] || val[1]) {
+          this.startDraw();
+        } else {
+          this.endDraw();
+        }
+      },
+      immediate: true, // 初回も発動したい場合
+      deep: false
+    },
     s_updatePermalinkFire () {
       try {
         this.updatePermalink()
@@ -6382,7 +6427,18 @@ select {
     display: none !important;
   }
 }
-
+.draw-indicator {
+  position: fixed;
+  width: 12px;
+  height: 12px;
+  background: black;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: none; /* 遅延ゼロ */
+  box-shadow: 0 0 8px #fff;
+}
 /*#map00, #map01 {*/
 /*  width: 100%;*/
 /*  height: 100%;*/
