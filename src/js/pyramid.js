@@ -1049,53 +1049,46 @@ export default function pyramid () {
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
-            if (e.target && (e.target.classList.contains("circle-delete-all"))) {
+            if (e.target && (e.target.classList.contains("circle-delete"))) {
                 const map01 = store.state.map01
-                let source01 = map01.getSource('click-circle-source');
-                // 空のGeoJSON FeatureCollectionを設定する
-                source01.setData({
-                    type: "FeatureCollection",
-                    features: []
-                });
+                const id = String(e.target.getAttribute("id"))
+                let source = map01.getSource(clickCircleSource.iD)
+                const geojson = source._data
+                if (geojson && geojson.features) {
+                    const newFeatures = geojson.features.filter(feature => {
+                        return !(feature.properties && String(feature.properties.pairId) === id);
+                    });
+                    if (newFeatures.length !== geojson.features.length) {
+                        geojson.features = newFeatures;
+                        map01.getSource(clickCircleSource.iD).setData(geojson);
+                        store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+                    }
+                }
                 closeAllPopups()
-                store.state.clickCircleGeojsonText = ''
             }
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('input', (e) => {
-            if (e.target && (e.target.classList.contains("circle-range") || e.target.classList.contains("circle-text"))) {
+            if (e.target && (e.target.classList.contains("circle-range") || e.target.classList.contains("circle-text") || e.target.classList.contains("circle200-check"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
                 const circleRangeElm = document.querySelector('.circle-range')
                 const circleTextElm = document.querySelector('.circle-text')
+                const circleChkElm = document.querySelector('.circle200-check')
                 const rangeValue = Number(circleRangeElm.value)
                 const textValue = circleTextElm.value
+                const checked = circleChkElm.checked
+                store.state.circle200Chk = checked
+                const radius = checked ? 200 : Number(rangeValue)
                 const lng = Number(circleRangeElm.getAttribute("lng"))
                 const lat = Number(circleRangeElm.getAttribute("lat"))
-                console.log(lng,lat,Number(rangeValue))
+                console.log(id,lng,lat,Number(rangeValue),textValue)
                 const coordinates = [lng,lat]
                 store.state.coordinates = coordinates
-                geojsonUpdate(map01, 'Circle', clickCircleSource.iD, id, 'label', textValue, Number(rangeValue))
-
-                document.querySelector('.circle-label').innerHTML = '半径' + rangeValue + 'm'
+                store.state.clickCircleGeojsonText = geojsonUpdate(map01, 'Circle', clickCircleSource.iD, id, 'label2', textValue, radius)
+                console.log(store.state.clickCircleGeojsonText)
+                document.querySelector('.circle-label').innerHTML = '半径' + radius + 'm'
                 document.querySelector('.circle-text').value = textValue
-
-
-                // const features = circleCreate (lng, lat, Number(rangeValue))
-
-
-                // const map01 = store.state.map01
-                // const circleRangeElm = document.querySelector('.circle-range')
-                // const rangeValue = Number(circleRangeElm.value)
-                // const lng = Number(circleRangeElm.getAttribute("lng"))
-                // const lat = Number(circleRangeElm.getAttribute("lat"))
-                // const circleTextElm = document.querySelector('.circle-text')
-                // const textValue = circleTextElm.value
-                // const circleGeoJsonFeatures = circleCreate (lng, lat, Number(rangeValue), textValue)
-                // map01.getSource(clickCircleSource.iD).setData(circleGeoJsonFeatures);
-                // document.querySelector('.circle-label').innerHTML = '半径' + rangeValue + 'm'
-                // // document.querySelector('.circle-text').value = textValue
-                // store.state.clickCircleGeojsonText = JSON.stringify(circleGeoJsonFeatures)
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1118,23 +1111,7 @@ export default function pyramid () {
                 closeAllPopups()
             }
         });
-        // -------------------------------------------------------------------------------------------------------------
-        mapElm.addEventListener('click', (e) => {
-            if (e.target && (e.target.classList.contains("point-delete-all"))) {
-                if (!confirm("全て削除しますか？")) {
-                    return
-                }
-                const map01 = store.state.map01
-                let source = map01.getSource(clickCircleSource.iD);
-                // 空のGeoJSON FeatureCollectionを設定する
-                source.setData({
-                    type: "FeatureCollection",
-                    features: []
-                });
-                store.state.clickCircleGeojsonText = ''
-                closeAllPopups()
-            }
-        });
+        // ------------------------------------------------------------------------------------------------------------
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('input', (e) => {
             if (e.target && (e.target.classList.contains("point-text"))) {
@@ -1187,7 +1164,11 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
             feature = turf.polygon([coordinates], properties); // Polygonは「[[lng,lat],...]」
             break;
         case 'Circle':
-            radius = getScreenMeterDivX(map, 40, 'height')
+            if (store.state.circle200Chk) {
+                radius = 200
+            } else {
+                radius = getScreenMeterDivX(map, 40, 'height')
+            }
             console.log('半径',radius)
             features = circleCreate (coordinates[0], coordinates[1], radius)
             console.log(features.center.geometry.coordinates)
@@ -1203,12 +1184,15 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
             //----------
             centerFeature = features.center
             centerFeature.properties['id'] = circleFeature.properties.id + '-point'
-            centerFeature.properties['label'] = radius
+            centerFeature.properties['pairId'] = circleFeature.properties.pairId
+            centerFeature.properties['label'] = '半径' + radius + 'm'
             centerFeature.properties['label2'] = ''
+            centerFeature.properties['offsetValue'] = [0, 1.5]
+            centerFeature.properties['textAnchor'] = 'center'
+            centerFeature.properties['textJustify'] = 'center'
             centerFeature.properties['radius'] = radius
             centerFeature.properties['canterLng'] = canterLng
             centerFeature.properties['canterLat'] = canterLat
-
             break;
         default:
             throw new Error('未対応のgeoType: ' + geoType);
@@ -1225,13 +1209,24 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
 
     // 3. 既存featureが無ければ新規追加
     if (!geojsonData || !geojsonData.features || geojsonData.features.length === 0) {
-        geojsonData = turf.featureCollection([feature]);
+        if (geoType !== 'Circle') {
+            geojsonData = turf.featureCollection([feature]);
+        } else {
+            geojsonData = turf.featureCollection([circleFeature,centerFeature]);
+        }
     } else {
         // 既存FeatureCollectionに追加
-        geojsonData = {
-            ...geojsonData,
-            features: [...geojsonData.features, feature]
-        };
+        if (geoType !== 'Circle') {
+            geojsonData = {
+                ...geojsonData,
+                features: [...geojsonData.features, feature]
+            };
+        } else {
+            geojsonData = {
+                ...geojsonData,
+                features: [...geojsonData.features, circleFeature,centerFeature]
+            };
+        }
     }
     // 4. ソースに再セット
     source.setData(geojsonData);
@@ -1281,20 +1276,23 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
     if (!source) return;
     const geojson = source._data
     let changed = false;
-
     if (geojson && geojson.features) {
         // idが一致するfeatureを検索
         let found = false;
-        let circleFeatureGeoetry,centerFeature
+        let circleFeatureGeometry,centerFeature
         geojson.features.forEach(feature => {
             if (feature.properties && String(feature.properties.id) === id) {
                 feature.properties[tgtProp] = value
                 // ----------------------------------------------------------
                 if (geoType === 'Circle') {
                     const features = circleCreate (feature.properties.canterLng, feature.properties.canterLat, radius)
-                    circleFeatureGeoetry = features.circle.geometry
-                    centerFeature = features.center
-                    feature.geometry = circleFeatureGeoetry
+                    circleFeatureGeometry = features.circle.geometry
+                    feature.geometry = circleFeatureGeometry
+                    feature.properties.label = radius
+                    feature.properties.radius = radius
+                    centerFeature = geojson.features.find(f => f.properties.id === id + '-point' )
+                    console.log(centerFeature)
+                    centerFeature.properties.label = value + '\n半径' + radius + 'm'
                 }
                 // ---------------------------------------------------------
                 changed = true;
@@ -1322,6 +1320,21 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
             return escapeHTML(JSON.stringify(geojson))
         }
     }
+}
+
+export function deleteAll () {
+    if (!confirm("全て削除しますか？")) {
+        return
+    }
+    const map01 = store.state.map01
+    let source = map01.getSource(clickCircleSource.iD);
+    // 空のGeoJSON FeatureCollectionを設定する
+    source.setData({
+        type: "FeatureCollection",
+        features: []
+    });
+    store.state.clickCircleGeojsonText = ''
+    closeAllPopups()
 }
 
 export function escapeHTML(str) {

@@ -1,6 +1,5 @@
 <template>
 <!--  <div ref="container" style="display:flex;align-items:center;justify-content:center;position:relative;min-height:120px;">-->
-
   <div ref="container" style="display:flex;align-items:center;justify-content:center;position:relative;">
     <!-- 中心ボタンスロット -->
     <div ref="centerBtnRef" @click="toggle" style="display:inline-block;">
@@ -50,12 +49,12 @@ function toggle() {
 }
 
 // arcやradiusは固定値で
-const arc = 120
+const arc = 110
 const radius = 90
 
 function getBtnStyle(idx, total) {
   if (!open.value) return { opacity: 0, pointerEvents: 'none' }
-  const startAngle = -250
+  const startAngle = -235
   const angle = (total === 1)
       ? -90
       : startAngle + idx * (arc / (total - 1))

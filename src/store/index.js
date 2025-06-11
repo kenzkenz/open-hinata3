@@ -4,6 +4,7 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    circle200Chk: false,
     updatePermalinkFire: false,
     id: '',
     coordinates: [],

@@ -3569,7 +3569,9 @@ export function popup(e,map,mapName,mapFlg) {
             case 'click-circle-line-layer':
             // case 'click-circle-label-layer':
             {
+                console.log(store.state.id)
                 coordinates = store.state.coordinates
+                console.log(store.state.clickCircleGeojsonText)
                 features = JSON.parse(store.state.clickCircleGeojsonText).features
                 console.log(features)
                 const feature = features.find(feature => feature.properties.id === store.state.id)
@@ -3583,17 +3585,19 @@ export function popup(e,map,mapName,mapFlg) {
                 const radius = Number(props.radius)
                 let textSize = props['text-size']
                 if (!textSize) textSize = 16
-                const geoType = features[0].geometry.type
+                const geoType = feature.geometry.type
+                console.log(geoType)
                 switch (geoType) {
                     case 'Polygon':
                         if (html.indexOf('click-circle-layer') === -1) {
                             html += '<div class="layer-label-div">サークル</div>'
                             html +=
                                 '<div style="width: 200px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
-                                '<span style="font-size:20px;" class="circle-label">半径' + radius + 'm</span><br>' +
+                                '<span style="font-size:20px;" class="circle-label">半径' + radius + 'm</span>' +
+                                '<span style="margin-left: 10px;font-size: 16px;"><input type="checkbox" id="' + props.id + '" class="circle200-check" value=""><label for="' + props.id + '"> 200m</span>' +
                                 '<input id="' + props.id + '" style="width: 100%;" type="range" min="10" max="' + radius * 5 + '" step="10" value="' + radius + '" class="circle-range" lng="' + canterLng + '" lat="' + canterLat + '"/>' +
-                                '<input style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input circle-text" placeholder="ここに入力" value="' + props.label2 + '">' +
-                                '<button style="margin-bottom: 10px;height: 30px;font-size: medium;" class="circle-delete-all pyramid-btn">削　除</button><br>' +
+                                '<input id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input circle-text" placeholder="ここに入力" value="' + props.label2 + '">' +
+                                '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;" class="circle-delete pyramid-btn">削　除</button><br>' +
                                 '</div>'
                         }
                         break
@@ -3603,8 +3607,8 @@ export function popup(e,map,mapName,mapFlg) {
                             html +=
                                 '<div style="width: 225px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
                                 '<textarea id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
-                                '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:42%;" class="point-delete pyramid-btn">削　除</button>' +
-                                '<button style="margin-bottom: 10px;height: 30px;font-size: medium;width: 52%;margin-left: 10px;" class="point-delete-all pyramid-btn">全て削除</button><br>' +
+                                '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:100%;" class="point-delete pyramid-btn">削　除</button>' +
+                                // '<button style="margin-bottom: 10px;height: 30px;font-size: medium;width: 52%;margin-left: 10px;" class="point-delete-all pyramid-btn">全て削除</button><br>' +
                                 '<div style="display: flex;gap: 8px;">' +
                                 '<div class="circle-list">' +
                                 '<div id="' + props.id + '" data-color="red" class="circle red" tabindex="0"></div>' +

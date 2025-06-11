@@ -700,7 +700,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
                     <v-btn :size="isSmall ? 'small' : 'default'" icon v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>
                   </MiniTooltip>
                 </template>
-                <v-btn disabled icon size="small" @click="onA">未</v-btn>
+                <MiniTooltip text="全削除" :offset-x="0" :offset-y="4">
+                  <v-btn size="small" icon @click="deleteAllforDraw" v-if="mapName === 'map01'"><v-icon>mdi-delete</v-icon></v-btn>
+                </MiniTooltip>
                 <v-btn disabled icon size="small" @click="onA">未</v-btn>
                 <MiniTooltip text="円" :offset-x="0" :offset-y="4">
                   <v-btn size="small" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>
@@ -1050,7 +1052,7 @@ import DialogInfo from '@/components/Dialog-info'
 import Dialog2 from '@/components/Dialog2'
 import DialogShare from "@/components/Dialog-share"
 import DialogChibanzuList from "@/components/Dialog-chibanzu-list"
-import pyramid, {circleCreate, geojsonCreate, geojsonUpdate, unescapeHTML} from '@/js/pyramid'
+import pyramid, {circleCreate, deleteAll, geojsonCreate, geojsonUpdate, unescapeHTML} from '@/js/pyramid'
 import glouplayer from '@/js/glouplayer'
 import * as Layers from '@/js/layers'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -1703,6 +1705,9 @@ export default {
       // window.open(intentUrl, "_blank");
       // 1回目
       const win = window.open(intentUrl, '_blank');
+    },
+    deleteAllforDraw () {
+      deleteAll()
     },
     onA() { alert('未実装です。') },
     pngDl () {
@@ -3541,12 +3546,36 @@ export default {
           return pixelDist < pixelTolerance;
         });
       }
+      function existsPolygonAtClick(map, e) {
+        if (!e || !e.lngLat) return false;
+        const clickLngLat = [e.lngLat.lng, e.lngLat.lat];
+        // ポリゴン配列取得（Polygon または MultiPolygon）
+        const features = map.getSource(clickCircleSource.iD)._data.features || [];
+        return features.some(f => {
+          if (!f.geometry) return false;
+          // Polygon or MultiPolygon のどちらにも対応
+          return turf.booleanPointInPolygon(turf.point(clickLngLat), f);
+        });
+      }
+      // 該当featureのid（またはnull）を返す
+      function getPolygonFeatureIdAtClick(map, e) {
+        if (!e || !e.lngLat) return null;
+        const clickLngLat = [e.lngLat.lng, e.lngLat.lat];
+        // ポリゴン配列取得
+        const features = map.getSource(clickCircleSource.iD)._data.features || [];
+        const found = features.find(f => {
+          if (!f.geometry) return false;
+          return turf.booleanPointInPolygon(turf.point(clickLngLat), f);
+        });
+        return found ? found.properties.id : null;
+      }
+
       // ポイント作成-----------------------------------------------------------------------------------
       function onPointClick(e) {
         console.log('擬似クリック event:', e);
         popup(e,map,'map01',vm.s_map2Flg)
       }
-      map.on('click', 'click-circle-label-layer', onPointClick);
+      // map.on('click', 'click-circle-label-layer', onPointClick);
       map.on('click', (e) => {
         if (!this.s_isDrawPoint) return;
         console.log(e)
@@ -3556,7 +3585,6 @@ export default {
         this.$store.state.coordinates = coordinates
         const dummyEvent = {
           lngLat: { lng: lng, lat: lat },
-          // features: [geojson.features]
         };
         const exists = existsNearbyClickCirclePoint(map, e, 20)
         if (exists) {
@@ -3571,7 +3599,9 @@ export default {
           const properties = {
             id: id,
             label:'',
-            offsetValue: [0.6, 0]
+            offsetValue: [0.6, 0],
+            textAnchor: 'left',
+            textJustify: 'left'
           }
           geojsonCreate(map, 'Point', coordinates, properties)
           setTimeout(() => {
@@ -3584,7 +3614,7 @@ export default {
         console.log('擬似クリック event:', e);
         popup(e,map,'map01',vm.s_map2Flg)
       }
-      map.on('click', 'click-circle-symbol-layer', onCircleClick);
+      // map.on('click', 'click-circle-symbol-layer', onCircleClick);
       map.on('click', (e) => {
 
         if (!this.s_isDrawCircle) return
@@ -3593,22 +3623,17 @@ export default {
         const coordinates = [lng,lat]
         this.$store.state.coordinates = coordinates
 
-        // const dummyEvent = {
-        //   lngLat: { lng: lng, lat: lat },
-        //   // features: [geojson.features]
-        // };
-        // const exists = existsNearbyClickCirclePoint(map, e, 20)
-        // if (exists) {
-        //   const features = map.queryRenderedFeatures(e.point)
-        //   this.$store.state.id = features.find(f => f.layer.id === 'click-circle-symbol-layer').properties.id
-        //   onPointClick(dummyEvent);
-        //   return;
-        // }
+        const targetId = getPolygonFeatureIdAtClick(map, e)
+        if (targetId) {
+          this.$store.state.id = targetId
+          return;
+        }
 
         const id = String(Math.floor(10000 + Math.random() * 90000))
         this.$store.state.id = id
         const properties = {
           id: id,
+          pairId: id,
           label:'',
           label2:'',
           offsetValue: [0, 2],
@@ -3617,17 +3642,12 @@ export default {
           canterLat: 0
         }
         geojsonCreate(map, 'Circle', coordinates, properties)
-
-        // const circleGeoJsonFeatures = circleCreate (lng, lat, 200, '')
-        // map.getSource(clickCircleSource.iD).setData(circleGeoJsonFeatures);
-        // this.$store.state.clickCircleGeojsonText = JSON.stringify(circleGeoJsonFeatures)
-        // const dummyEvent = {
-        //   lngLat: { lng: lng, lat: lat },
-        //   features: [circleGeoJsonFeatures[1]]
-        // };
-        // setTimeout(() => {
-        //   onCircleClick(dummyEvent);
-        // },500)
+        const dummyEvent = {
+          lngLat: { lng: lng, lat: lat },
+        };
+        setTimeout(() => {
+          onCircleClick(dummyEvent);
+        },500)
 
       })
       // ----------------------------------------------------------------------------------------------

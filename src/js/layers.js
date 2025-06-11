@@ -704,8 +704,8 @@ export const clickCircleLabelLayer = {
         'text-field': ['get', 'label'],
         'text-size': ['get', 'text-size'],
         'text-offset': ['get', 'offsetValue'],
-        'text-anchor': 'left',
-        'text-justify': 'left', // 追加: 複数行のテキストを左寄せにする
+        'text-anchor': ['get', 'textAnchor'],
+        'text-justify': ['get', 'textJustify'], // 追加: 複数行のテキストを左寄せにする
         'text-max-width': 100 // 非常に大きな値に設定して改行を防ぐ
     },
     'paint': {
