@@ -3965,6 +3965,19 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
     popups.length = 0;
 
     // ポップアップを作成して地図に追加
+    function onPanelEnter () {
+        store.state.isCursorOnPopup = true
+        store.state.panelHoverCount++;
+        store.state.isCursorOnPanel = true;
+        console.log(store.state.isCursorOnPanel)
+    }
+    function onPanelLeave() {
+        store.state.panelHoverCount = Math.max(store.state.panelHoverCount - 1, 0);
+        if (store.state.panelHoverCount === 0) {
+            // store.state.isCursorOnPopup = false
+            store.state.isCursorOnPanel = false;
+        }
+    }
     if (htmlContent !== 'dumy') {
         const popup = new maplibregl.Popup({
             closeButton: true,
@@ -3973,10 +3986,17 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
             .setLngLat(coordinates)
             .setHTML(popupHtml)
             .addTo(map);
-
         // ポップアップイベント設定
         popups.push(popup);
         popup.on('close', closeAllPopups);
+        // DOM取得（MapLibre v2/v3/v4/v5でもほぼ同じ）
+        // Popupのdivは複数存在する場合があるので全てに仕掛けるのが安全
+        setTimeout(() => {
+            document.querySelectorAll('.maplibregl-popup').forEach(div => {
+                div.addEventListener('mouseenter', onPanelEnter);
+                div.addEventListener('mouseleave', onPanelLeave);
+            });
+        },500)
     }
 
     let container = document.querySelector('.street-view');

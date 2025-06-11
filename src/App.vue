@@ -10,7 +10,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
       <div
           ref="indicator"
-          v-show="isDrawing"
+          v-show="isDrawing && !s_isCursorOnPanel"
           class="draw-indicator"
       ><div id="draw-indicato-text" style="margin-top: 20px;margin-left: 10px;"></div></div>
 
@@ -643,7 +643,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
           <div v-if="!isPrint" class="center-target"></div>
           <!--左上部メニュー-->
-          <div id="left-top-div">
+          <div id="left-top-div"
+               @mouseenter="onPanelEnter"
+               @mouseleave="onPanelLeave">
             <span v-if="!isPrint">
             <MiniTooltip text="メニュー">
             <v-btn :size="isSmall ? 'small' : 'default'" icon @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-menu</v-icon></v-btn>
@@ -676,7 +678,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
           </div>
           <!--右メニュー-->
-          <div id="right-top-div">
+          <div id="right-top-div"
+               @mouseenter="onPanelEnter"
+               @mouseleave="onPanelLeave">
             <span v-if="!isPrint">
               <MiniTooltip text="現在地取得">
                 <v-btn :size="isSmall ? 'small' : 'default'" icon @click="goToCurrentLocation" v-if="mapName === 'map01'"><v-icon>mdi-crosshairs-gps</v-icon></v-btn>
@@ -722,7 +726,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </div>
 
           <span v-if="!isPrint">
-          <div :id="'terrain-btn-div-' + mapName" class="terrain-btn-div">
+          <div :id="'terrain-btn-div-' + mapName"
+               class="terrain-btn-div"
+               @mouseenter="onPanelEnter"
+               @mouseleave="onPanelLeave">
             <div class="terrain-btn-container">
               <v-icon class="terrain-btn-close" @pointerdown="terrainBtnClos">mdi-close</v-icon>
               <v-btn type="button" class="terrain-btn-up terrain-btn" @pointerdown="upMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-up fa-lg hover'></i></v-btn>
@@ -1102,6 +1109,8 @@ export default {
   },
   data: () => ({
     isDrawing: false,
+    isCursorOnPanel: false,
+    panelHoverCount: 0, // ←複数パネル対策
     showXDialog: false,
     imgUrl: null,
     mapDivId: "map01", // ← MapLibreのDIVのID
@@ -1588,21 +1597,43 @@ export default {
     s_simaFire () {
       return this.$store.state.simaFire
     },
+    s_isCursorOnPanel () {
+      return this.$store.state.isCursorOnPanel
+    },
   },
   methods: {
-    onMouseMove(e) {
-      if (!this.isDrawing) return
-      const dot = this.$refs.indicator
-      if (dot) {
-        console.log(e.clientX,e.clientY)
-        dot.style.left = e.clientX + 'px'
-        dot.style.top  = e.clientY + 'px'
+    onPanelEnter() {
+      this.$store.state.panelHoverCount++;
+      this.$store.state.isCursorOnPanel = true;
+    },
+    onPanelLeave() {
+      this.$store.state.panelHoverCount = Math.max(this.$store.state.panelHoverCount - 1, 0);
+      if (this.$store.state.panelHoverCount === 0) {
+        this.$store.state.isCursorOnPanel = false;
       }
     },
+    onMouseMove(e) {
+      if (this.isDrawing && !this.$store.state.isCursorOnPanel) {
+        const dot = this.$refs.indicator;
+        if (dot) {
+          dot.style.left = e.clientX + 'px';
+          dot.style.top  = e.clientY + 'px';
+        }
+      }
+    },
+    // onMouseMove(e) {
+    //   if (!this.isDrawing) return
+    //   const dot = this.$refs.indicator
+    //   if (dot) {
+    //     console.log(e.clientX,e.clientY)
+    //     dot.style.left = e.clientX + 'px'
+    //     dot.style.top  = e.clientY + 'px'
+    //   }
+    // },
     startDraw() {
       this.isDrawing = true
       // すぐマウス座標反映
-      document.body.style.cursor = 'none'
+      document.body.style.cursor = ''
     },
     endDraw() {
       this.isDrawing = false
