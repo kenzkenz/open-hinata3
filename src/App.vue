@@ -703,7 +703,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 <v-btn disabled icon size="small" @click="onA">未</v-btn>
                 <v-btn disabled icon size="small" @click="onA">未</v-btn>
                 <MiniTooltip text="円" :offset-x="0" :offset-y="4">
-                  <v-btn disabled size="small" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>
+                  <v-btn size="small" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>
                 </MiniTooltip>
                 <MiniTooltip text="テキスト貼りつけ" :offset-x="0" :offset-y="4">
                   <v-btn size="small" :color="s_isDrawPoint ? 'green' : undefined" icon @click="toggleDrawPoint" v-if="mapName === 'map01'">txt</v-btn>
@@ -924,66 +924,6 @@ export const transformCoordinates = (coordinates) => {
   const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
   return proj4(code, "EPSG:4326", coordinates);
 };
-
-// export function dxfToGeoJSON(dxf) {
-//   const features = [];
-//   dxf.entities.forEach((entity) => {
-//     if (entity.type === 'LINE') {
-//       // entity.start, entity.endが無ければentity.verticesを使う
-//       const start = entity.start || entity.vertices?.[0];
-//       const end = entity.end || entity.vertices?.[1];
-//       if (start && end) {
-//         const line = turf.lineString([
-//           transformCoordinates([start.x, start.y]),
-//           transformCoordinates([end.x, end.y]),
-//         ]);
-//         features.push(line);
-//       }
-//     } else if (entity.type === 'POINT') {
-//       const pos = entity.position || entity;
-//       if (pos.x !== undefined && pos.y !== undefined) {
-//         const point = turf.point(transformCoordinates([pos.x, pos.y]));
-//         features.push(point);
-//       }
-//     } else if (entity.type === 'LWPOLYLINE' || entity.type === 'POLYLINE') {
-//       if (entity.vertices && entity.vertices.length > 1) {
-//         const coordinates = entity.vertices.map(vertex => transformCoordinates([vertex.x, vertex.y]));
-//         const polyline = turf.lineString(coordinates);
-//         features.push(polyline);
-//       }
-//     }
-//     // 必要ならCIRCLE, TEXTなども追記
-//   });
-//   return {
-//     type: 'FeatureCollection',
-//     features,
-//   };
-// }
-
-
-// export function dxfToGeoJSON(dxf) {
-//   const features = [];
-//   dxf.entities.forEach((entity) => {
-//     if (entity.type === 'LINE') {
-//       const line = turf.lineString([
-//         transformCoordinates([entity.start.x, entity.start.y]),
-//         transformCoordinates([entity.end.x, entity.end.y]),
-//       ]);
-//       features.push(line);
-//     } else if (entity.type === 'POINT') {
-//       const point = turf.point(transformCoordinates([entity.position.x, entity.position.y]));
-//       features.push(point);
-//     } else if (entity.type === 'LWPOLYLINE') {
-//       const coordinates = entity.vertices.map(vertex => transformCoordinates([vertex.x, vertex.y]));
-//       const polyline = turf.lineString(coordinates);
-//       features.push(polyline);
-//     }
-//   });
-//   return {
-//     type: 'FeatureCollection',
-//     features,
-//   };
-// }
 
 const popups = []
 function closeAllPopups() {
@@ -1770,7 +1710,7 @@ export default {
     },
     configChange (tgtProp,value) {
       const map01 = this.$store.state.map01
-      store.state.clickCircleGeojsonText = geojsonUpdate(map01, clickCircleSource.iD, 'config', tgtProp, value)
+      store.state.clickCircleGeojsonText = geojsonUpdate(map01, null, clickCircleSource.iD, 'config', tgtProp, value)
     },
     print () {
       // 印刷ダイアログ表示
@@ -3601,7 +3541,6 @@ export default {
           return pixelDist < pixelTolerance;
         });
       }
-
       // ポイント作成-----------------------------------------------------------------------------------
       function onPointClick(e) {
         console.log('擬似クリック event:', e);
@@ -3653,11 +3592,25 @@ export default {
         const lat = e.lngLat.lat
         const coordinates = [lng,lat]
         this.$store.state.coordinates = coordinates
+
+        // const dummyEvent = {
+        //   lngLat: { lng: lng, lat: lat },
+        //   // features: [geojson.features]
+        // };
+        // const exists = existsNearbyClickCirclePoint(map, e, 20)
+        // if (exists) {
+        //   const features = map.queryRenderedFeatures(e.point)
+        //   this.$store.state.id = features.find(f => f.layer.id === 'click-circle-symbol-layer').properties.id
+        //   onPointClick(dummyEvent);
+        //   return;
+        // }
+
         const id = String(Math.floor(10000 + Math.random() * 90000))
         this.$store.state.id = id
         const properties = {
           id: id,
           label:'',
+          label2:'',
           offsetValue: [0, 2],
           radius: 0,
           canterLng: 0,

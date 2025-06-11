@@ -3591,7 +3591,7 @@ export function popup(e,map,mapName,mapFlg) {
                             html +=
                                 '<div style="width: 200px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
                                 '<span style="font-size:20px;" class="circle-label">半径' + radius + 'm</span><br>' +
-                                '<input style="width: 100%;" type="range" min="10" max="' + radius * 5 + '" step="10" value="' + radius + '" class="circle-range" lng="' + canterLng + '" lat="' + canterLat + '"/>' +
+                                '<input id="' + props.id + '" style="width: 100%;" type="range" min="10" max="' + radius * 5 + '" step="10" value="' + radius + '" class="circle-range" lng="' + canterLng + '" lat="' + canterLat + '"/>' +
                                 '<input style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input circle-text" placeholder="ここに入力" value="' + props.label2 + '">' +
                                 '<button style="margin-bottom: 10px;height: 30px;font-size: medium;" class="circle-delete-all pyramid-btn">削　除</button><br>' +
                                 '</div>'

@@ -37,7 +37,7 @@
     "json-loader": "^0.5.7",
     "jszip": "^3.10.1",
     "mapillary-js": "^4.1.2",
-    "maplibre-gl": "^5.4.0",
+    "maplibre-gl": "^5.6.0",
     "maplibre-gl-compass": "^0.3.0",
     "maplibre-gl-gsi-terrain": "^1.2.0",
     "moment": "^2.30.1",

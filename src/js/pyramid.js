@@ -1065,11 +1065,22 @@ export default function pyramid () {
         mapElm.addEventListener('input', (e) => {
             if (e.target && (e.target.classList.contains("circle-range") || e.target.classList.contains("circle-text"))) {
                 const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
                 const circleRangeElm = document.querySelector('.circle-range')
+                const circleTextElm = document.querySelector('.circle-text')
                 const rangeValue = Number(circleRangeElm.value)
+                const textValue = circleTextElm.value
                 const lng = Number(circleRangeElm.getAttribute("lng"))
                 const lat = Number(circleRangeElm.getAttribute("lat"))
                 console.log(lng,lat,Number(rangeValue))
+                const coordinates = [lng,lat]
+                store.state.coordinates = coordinates
+                geojsonUpdate(map01, 'Circle', clickCircleSource.iD, id, 'label', textValue, Number(rangeValue))
+
+                document.querySelector('.circle-label').innerHTML = '半径' + rangeValue + 'm'
+                document.querySelector('.circle-text').value = textValue
+
+
                 // const features = circleCreate (lng, lat, Number(rangeValue))
 
 
@@ -1132,7 +1143,7 @@ export default function pyramid () {
                 const pointTextElm = document.querySelector('.point-text')
                 const value = pointTextElm.value
                 const tgtProp = 'label'
-                store.state.clickCircleGeojsonText = geojsonUpdate (map01,clickCircleSource.iD,id,tgtProp,value)
+                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1143,7 +1154,7 @@ export default function pyramid () {
                 const value = e.target.getAttribute("data-color")
                 const tgtProp = 'color'
                 console.log(id,value)
-                store.state.clickCircleGeojsonText = geojsonUpdate (map01,clickCircleSource.iD,id,tgtProp,value)
+                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1164,7 +1175,7 @@ export default function pyramid () {
 // ---------------------------------------------------------------------------------------------------------------------
 export function geojsonCreate(map, geoType, coordinates, properties = {}) {
     // 1. 新しいfeatureを生成
-    let features,feature,radius,canterLng,canterLat
+    let features,feature,circleFeature,centerFeature,radius,canterLng,canterLat
     switch (geoType) {
         case 'Point':
             feature = turf.point(coordinates, properties);
@@ -1182,11 +1193,22 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
             console.log(features.center.geometry.coordinates)
             canterLng = features.center.geometry.coordinates[0]
             canterLat = features.center.geometry.coordinates[1]
-            feature = features.circle
-            feature.properties = properties
-            feature.properties.radius = radius
-            feature.properties.canterLng = canterLng
-            feature.properties.canterLat = canterLat
+            circleFeature = features.circle
+            circleFeature.properties = properties
+            circleFeature.properties.label = radius
+            circleFeature.properties.label2 = ''
+            circleFeature.properties.radius = radius
+            circleFeature.properties.canterLng = canterLng
+            circleFeature.properties.canterLat = canterLat
+            //----------
+            centerFeature = features.center
+            centerFeature.properties['id'] = circleFeature.properties.id + '-point'
+            centerFeature.properties['label'] = radius
+            centerFeature.properties['label2'] = ''
+            centerFeature.properties['radius'] = radius
+            centerFeature.properties['canterLng'] = canterLng
+            centerFeature.properties['canterLat'] = canterLat
+
             break;
         default:
             throw new Error('未対応のgeoType: ' + geoType);
@@ -1254,7 +1276,7 @@ export function circleCreate (lng, lat, m) {
     return {center:centerFeature,circle:circleGeoJson}
 }
 
-export function geojsonUpdate(map, sourceId, id, tgtProp, value) {
+export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius) {
     const source = map.getSource(sourceId)
     if (!source) return;
     const geojson = source._data
@@ -1263,9 +1285,18 @@ export function geojsonUpdate(map, sourceId, id, tgtProp, value) {
     if (geojson && geojson.features) {
         // idが一致するfeatureを検索
         let found = false;
+        let circleFeatureGeoetry,centerFeature
         geojson.features.forEach(feature => {
             if (feature.properties && String(feature.properties.id) === id) {
                 feature.properties[tgtProp] = value
+                // ----------------------------------------------------------
+                if (geoType === 'Circle') {
+                    const features = circleCreate (feature.properties.canterLng, feature.properties.canterLat, radius)
+                    circleFeatureGeoetry = features.circle.geometry
+                    centerFeature = features.center
+                    feature.geometry = circleFeatureGeoetry
+                }
+                // ---------------------------------------------------------
                 changed = true;
                 found = true;
             }
