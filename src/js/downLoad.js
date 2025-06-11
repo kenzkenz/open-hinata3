@@ -7348,6 +7348,13 @@ export function publicChk (id,public0) {
                     ]);
 
                     const newCodes = Object.keys(isNew).filter(k => isNew[k] === 1);
+
+                    const newLabelColorOnRed = '#39ff14';
+                    const newHaloColorOnRed  = '#000';
+
+                    const newLabelColor = '#fff600';    // 普段のNEW（蛍光イエロー）
+                    const newHaloColor  = '#ff00cc';    // 普段のNEW（蛍光ピンク）
+
                     // 蛍光色・NEW表示のcase式を生成
                     const caseTextField = [
                         'case',
@@ -7358,21 +7365,44 @@ export function publicChk (id,public0) {
                     ];
                     const caseTextColor = [
                         'case',
-                        ...newCodes.flatMap(code => [
-                            ['==', ['get', 'N03_007'], code], '#fff600' // 蛍光イエロー
-                        ]),
-                        '#000' // デフォルト: 黒
+                        ...Object.entries(chibanzuColors).flatMap(([code, color]) => {
+                            if (newCodes.includes(code)) {
+                                if (color === "rgba(255,0,0,0.8)") {
+                                    // NEW かつ 赤背景
+                                    return [['==', ['get', 'N03_007'], code], newLabelColorOnRed];
+                                } else {
+                                    // NEW かつ 非赤背景
+                                    return [['==', ['get', 'N03_007'], code], newLabelColor];
+                                }
+                            }
+                            return [];
+                        }),
+                        '#000' // デフォルト
                     ];
+
                     const caseTextHaloColor = [
                         'case',
-                        ...newCodes.flatMap(code => [
-                            ['==', ['get', 'N03_007'], code], '#ff00cc' // 蛍光ピンク
-                        ]),
-                        '#fff' // デフォルト: 白
+                        ...Object.entries(chibanzuColors).flatMap(([code, color]) => {
+                            if (newCodes.includes(code)) {
+                                if (color === "rgba(255,0,0,0.8)") {
+                                    // NEW かつ 赤背景
+                                    return [['==', ['get', 'N03_007'], code], newHaloColorOnRed];
+                                } else {
+                                    // NEW かつ 非赤背景
+                                    return [['==', ['get', 'N03_007'], code], newHaloColor];
+                                }
+                            }
+                            return [];
+                        }),
+                        '#fff' // デフォルト
                     ];
                     map.setLayoutProperty('oh-city-geojson-label-layer', 'text-field', caseTextField)
                     map.setPaintProperty('oh-city-geojson-label-layer', 'text-color', caseTextColor)
                     map.setPaintProperty('oh-city-geojson-label-layer', 'text-halo-color', caseTextHaloColor)
+                    // ん？下が効いていないようだ。
+                    map.setLayoutProperty('oh-city-geojson-label-layer2', 'text-field', caseTextField)
+                    map.setPaintProperty('oh-city-geojson-label-layer2', 'text-color', caseTextColor)
+                    map.setPaintProperty('oh-city-geojson-label-layer2', 'text-halo-color', caseTextHaloColor)
                 })
                 store.state.loading2 = false
             }

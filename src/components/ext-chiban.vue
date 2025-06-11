@@ -1132,7 +1132,7 @@ export default {
           console.log(vm.item.id)
           let combinedFields
           if (vm.item.id.includes('oh-chibanzu-')) {
-            combinedFields = ["concat", ["get", "大字"],
+            combinedFields = ["concat", ["get", "大字"]," ",["get", "町名"]," ",
               ["get", "AzaName"]," ",
               ["get", "TEXT"], " ",
               ["get", "地番"], " ",  ["get", "Txtcd"], " ",
