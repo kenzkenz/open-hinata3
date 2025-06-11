@@ -3531,6 +3531,23 @@ export default {
       //   }
       // })
 
+      function getNearbyClickCirclePointId(map, e, pixelTolerance = 20) {
+        if (!e || !e.lngLat) return null;
+        const clickPixel = map.project(e.lngLat);
+        const features = map.getSource(clickCircleSource.iD)._data.features || [];
+        for (const f of features) {
+          if (!f.geometry || f.geometry.type !== 'Point') continue;
+          const [lng2, lat2] = f.geometry.coordinates;
+          const featurePixel = map.project({ lng: lng2, lat: lat2 });
+          const dx = featurePixel.x - clickPixel.x;
+          const dy = featurePixel.y - clickPixel.y;
+          const pixelDist = Math.sqrt(dx * dx + dy * dy);
+          if (pixelDist < pixelTolerance) {
+            return f.properties?.id ?? null; // id プロパティを返す。なければ null
+          }
+        }
+        return null;
+      }
 
       function existsNearbyClickCirclePoint(map, e, pixelTolerance = 20) {
         if (!e || !e.lngLat) return false;
@@ -3544,17 +3561,6 @@ export default {
           const dy = featurePixel.y - clickPixel.y;
           const pixelDist = Math.sqrt(dx * dx + dy * dy);
           return pixelDist < pixelTolerance;
-        });
-      }
-      function existsPolygonAtClick(map, e) {
-        if (!e || !e.lngLat) return false;
-        const clickLngLat = [e.lngLat.lng, e.lngLat.lat];
-        // ポリゴン配列取得（Polygon または MultiPolygon）
-        const features = map.getSource(clickCircleSource.iD)._data.features || [];
-        return features.some(f => {
-          if (!f.geometry) return false;
-          // Polygon or MultiPolygon のどちらにも対応
-          return turf.booleanPointInPolygon(turf.point(clickLngLat), f);
         });
       }
       // 該当featureのid（またはnull）を返す
@@ -3577,6 +3583,18 @@ export default {
       }
       // map.on('click', 'click-circle-label-layer', onPointClick);
       map.on('click', (e) => {
+
+        const targetId = getNearbyClickCirclePointId(map, e, 20)
+        if (targetId) {
+          this.$store.state.id = targetId
+          return;
+        }
+        const targetId2 = getPolygonFeatureIdAtClick(map, e)
+        if (targetId2) {
+          this.$store.state.id = targetId2
+          return;
+        }
+
         if (!this.s_isDrawPoint) return;
         console.log(e)
         const lat = e.lngLat.lat
@@ -3586,13 +3604,14 @@ export default {
         const dummyEvent = {
           lngLat: { lng: lng, lat: lat },
         };
-        const exists = existsNearbyClickCirclePoint(map, e, 20)
-        if (exists) {
-          const features = map.queryRenderedFeatures(e.point)
-          this.$store.state.id = features.find(f => f.layer.id === 'click-circle-symbol-layer').properties.id
-          onPointClick(dummyEvent);
-          return;
-        }
+        // const targetId = getNearbyClickCirclePointId(map, e, 20)
+        // if (targetId) {
+        //   // const features = map.queryRenderedFeatures(e.point)
+        //   // this.$store.state.id = features.find(f => f.layer.id === 'click-circle-symbol-layer').properties.id
+        //   this.$store.state.id = targetId
+        //   onPointClick(dummyEvent);
+        //   return;
+        // }
         const id = String(Math.floor(10000 + Math.random() * 90000))
         this.$store.state.id = id
         if (this.s_isDrawPoint) {
@@ -3617,17 +3636,22 @@ export default {
       // map.on('click', 'click-circle-symbol-layer', onCircleClick);
       map.on('click', (e) => {
 
-        if (!this.s_isDrawCircle) return
-        const lng = e.lngLat.lng
-        const lat = e.lngLat.lat
-        const coordinates = [lng,lat]
-        this.$store.state.coordinates = coordinates
-
         const targetId = getPolygonFeatureIdAtClick(map, e)
         if (targetId) {
           this.$store.state.id = targetId
           return;
         }
+        const targetId2 = getNearbyClickCirclePointId(map, e, 20)
+        if (targetId2) {
+          this.$store.state.id = targetId2
+          return;
+        }
+
+        if (!this.s_isDrawCircle) return
+        const lng = e.lngLat.lng
+        const lat = e.lngLat.lat
+        const coordinates = [lng,lat]
+        this.$store.state.coordinates = coordinates
 
         const id = String(Math.floor(10000 + Math.random() * 90000))
         this.$store.state.id = id
