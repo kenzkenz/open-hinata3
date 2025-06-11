@@ -5,6 +5,7 @@ import { nextTick, toRef, reactive, ref, computed, watch } from 'vue';
 // ---------------------------------------------------------------------------------------------------------------------
 // cs https://rinya-ehime.geospatial.jp/tile/rinya/2024/csmap_Ehime/14/14251/9830.png
 export const csUrls = [
+    {selected: 1,citycode:'04000', name:'宮城県CS',maxzoom: 24, bbox:[], url:'https://forestgeo.info/opendata/4_miyagi/topography_2023/{z}/{x}/{y}.webp', page:"<a href='https://miyagi.dataeye.jp/resources/1521' target='_blank'>【宮城県】3次元点群データ_データ一覧_2023</a>"},
     {selected: 1,citycode:'07201', name:'福島県CS',maxzoom: 24, bbox:[], url:'https://www2.ffpri.go.jp/soilmap/tile/cs_fukushima/{z}/{x}/{y}.png', page:"<a href='https://www2.ffpri.go.jp/soilmap/data-src.html' target='_blank'>森林総合研究所 CS立体図</a>"},
     {selected: 1,citycode:'09200', name:'栃木県CS',maxzoom: 24, bbox:[], url:'https://rinya-tochigi.geospatial.jp/2023/rinya/tile/csmap/{z}/{x}/{y}.png', page:"<a href='https://www.geospatial.jp/ckan/dataset/csmap_tochigi' target='_blank'>栃木県微地形図（CS立体図）</a>"},
     {selected: 1,citycode:'13000', name:'東京都23区CS',maxzoom: 24, bbox:[], url:'https://shiworks.xsrv.jp/raster-tiles/tokyo-digitaltwin/tokyopc-23ku-2024-cs-tiles/{z}/{x}/{y}.png', page:"<a href='' target='_blank'>東京都(区部)CS立体図(東京都デジタルツイン実現プロジェクト 区部点群データを加工して作成)</a>"},
@@ -149,40 +150,87 @@ export function zenkokuChibanzuAddLayer (map,zoom) {
 
 // ---------------------------------------------------------------------------------------------------------------------
 // 色データの取得
+// export async function loadColorData() {
+//     try {
+//         const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/userChibanzumapSelect.php');
+//         if (!response.ok) {
+//             throw new Error(`HTTPエラー: ${response.status}`);
+//         }
+//         const data = await response.json();
+//         console.log(data)
+//         // エラーチェック
+//         if (data.error) {
+//             throw new Error(data.error);
+//         }
+//         // citycodeをキー、色を値とするオブジェクトを作成
+//         const colorMap = {};
+//         data.forEach(item => {
+//             const code = parseInt(item.public, 10);
+//             // public値を色に変換
+//             const color = code === -1 ? 'rgba(0,128,0,0.8)' :
+//                 code === 0 ? 'rgba(0,0,0,0)' :
+//                     code === 1 ? 'rgba(0,0,255,0.8)' :
+//                         code === 3 ? 'rgba(128,128,128,0.8)' :
+//                             code === 4 ? 'rgba(255,0,0,0.8)' :
+//                                 code === 5 ? 'rgba(255,165,0,0.8)' : '#CCCCCC';
+//             colorMap[item.citycode] = color;
+//         });
+//         return colorMap;
+//     } catch (error) {
+//         console.error('色データの取得に失敗:', error);
+//         return {};
+//     }
+// }
 export async function loadColorData() {
     try {
-        const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/userChibanzumapSelect.php');
+        const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/userChibanzumapSelect2.php');
         if (!response.ok) {
             throw new Error(`HTTPエラー: ${response.status}`);
         }
         const data = await response.json();
-        console.log(data)
-        // エラーチェック
-        if (data.error) {
-            throw new Error(data.error);
-        }
-        // citycodeをキー、色を値とするオブジェクトを作成
+        // console.log(data)
+        if (data.error) throw new Error(data.error);
+
         const colorMap = {};
+        const isNew = {};
+        const now = new Date();
+
         data.forEach(item => {
-            const code = parseInt(item.public, 10);
             // public値を色に変換
-            const color = code === -1 ? 'rgba(0,128,0,0.8)' :
-                code === 0 ? 'rgba(0,0,0,0)' :
-                    code === 1 ? 'rgba(0,0,255,0.8)' :
-                        code === 3 ? 'rgba(128,128,128,0.8)' :
-                            code === 4 ? 'rgba(255,0,0,0.8)' :
-                                code === 5 ? 'rgba(255,165,0,0.8)' : '#CCCCCC';
+            const code = parseInt(item.public, 10);
+            const color =
+                code === -1 ? 'rgba(0,128,0,0.8)' :
+                    code === 0 ? 'rgba(0,0,0,0)' :
+                        code === 1 ? 'rgba(0,0,255,0.8)' :
+                            code === 3 ? 'rgba(128,128,128,0.8)' :
+                                code === 4 ? 'rgba(255,0,0,0.8)' :
+                                    code === 5 ? 'rgba(255,165,0,0.8)' :
+                                        '#CCCCCC';
+
             colorMap[item.citycode] = color;
+
+            // 新着判定
+            if (item.last_modified_date) {
+                const last = new Date(item.last_modified_date.replace(' ', 'T')); // Safari対策
+                const diffMs = now - last;
+                const diffDays = diffMs / (1000 * 60 * 60 * 24);
+                if (diffDays <= 3) {// 3日間をNEWとする
+                    isNew[item.citycode] = 1;
+                }
+            }
         });
-        return colorMap;
+
+        return { colorMap, isNew };
     } catch (error) {
         console.error('色データの取得に失敗:', error);
-        return {};
+        return { colorMap: {}, isNew: {} };
     }
 }
-
-const chibanzuColors = await loadColorData();
+const abc = await loadColorData();
+const chibanzuColors = abc.colorMap
+const isNew = abc.isNew
 console.log(chibanzuColors)
+console.log(isNew)
 
 function waitForStateValue(getter, checkFn = val => val !== undefined && val !== null, interval = 50) {
     return new Promise((resolve) => {
@@ -445,26 +493,11 @@ export const cityGeojsonSource = {
     }
 }
 
-// export const cityGeojsonSource = {
-//     id: 'city-geojson-source', obj: {
-//         'type': 'vector',
-//         'url': 'pmtiles://https://kenzkenz.duckdns.org//original-data/chibanzumap.pmtiles'
-//     }
-// }
-
 export const cityGeojsonPolygonLayer = {
     id: 'oh-city-geojson-poligon-layer',
     type: 'fill',
     source: 'city-geojson-source',
-    // "source-layer": 'polygon',
     paint: {
-        // 'fill-color':
-        //     [
-        //     'match',
-        //     ['get', 'N03_007'],
-        //     ...Object.entries(chibanzuColors).flat(),
-        //     'rgba(0,0,0,0)' // デフォルト色
-        // ],
         'fill-color': [
             'case',
             ...Object.entries(chibanzuColors).flatMap(([key, color]) => ([
@@ -493,22 +526,67 @@ export const cityGeojsonLineLayer = {
         ]
     },
 }
+// export const cityGeojsonLabelLayer = {
+//     id: 'oh-city-geojson-label-layer',
+//     type: 'symbol',
+//     source: 'city-geojson-source',
+//     layout: {
+//         'text-field': ['get', 'N03_004'],
+//         'text-offset': [0, 1],
+//     },
+//     paint: {
+//         'text-color': '#000',
+//         'text-halo-color': '#fff',
+//         'text-halo-width': 1
+//     },
+//     minzoom: 7
+// }
+// NEWな市町村コード一覧
+const newCodes = Object.keys(isNew).filter(k => isNew[k] === 1);
+
+// 蛍光色・NEW表示のcase式を生成
+const caseTextField = [
+    'case',
+    ...newCodes.flatMap(code => [
+        ['==', ['get', 'N03_007'], code], ['concat', 'NEW\n', ['get', 'N03_004']]
+    ]),
+    ['get', 'N03_004'] // デフォルト: 市区町村名
+];
+
+const caseTextColor = [
+    'case',
+    ...newCodes.flatMap(code => [
+        ['==', ['get', 'N03_007'], code], '#fff600' // 蛍光イエロー
+    ]),
+    '#000' // デフォルト: 黒
+];
+
+const caseTextHaloColor = [
+    'case',
+    ...newCodes.flatMap(code => [
+        ['==', ['get', 'N03_007'], code], '#ff00cc' // 蛍光ピンク
+    ]),
+    '#fff' // デフォルト: 白
+];
+
 export const cityGeojsonLabelLayer = {
     id: 'oh-city-geojson-label-layer',
     type: 'symbol',
     source: 'city-geojson-source',
-    // "source-layer": 'polygon',
     layout: {
-        'text-field': ['get', 'N03_004'],
+        'text-field': caseTextField,
         'text-offset': [0, 1],
     },
     paint: {
-        'text-color': '#000',
-        'text-halo-color': '#fff',
-        'text-halo-width': 1
+        'text-color': caseTextColor,
+        'text-halo-color': caseTextHaloColor,
+        'text-halo-width': 2,
+        'text-halo-blur': 0.5,
     },
-    minzoom: 7
-}
+    minzoom: 7,
+};
+
+
 // --------------------------------------------------------------------------------
 // クリックで追加する円のGeoJSONソースを作成
 export const clickCircleSource ={

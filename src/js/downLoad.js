@@ -12,7 +12,7 @@ import {
     pngSource,
     pngLayer,
     vpsTileSource,
-    vpsTileLayer, chibanzuLayers0, chibanzuLayers, chibanzuSources, sicyosonChibanzuUrls, loadColorData
+    vpsTileLayer, chibanzuLayers0, chibanzuLayers, chibanzuSources, sicyosonChibanzuUrls, loadColorData, caseTextField
 } from "@/js/layers";
 import shpwrite from "@mapbox/shp-write"
 import JSZip from 'jszip'
@@ -7334,15 +7334,45 @@ export function publicChk (id,public0) {
             params: {}
         }).then(function (response) {
             async function aaa () {
-                const chibanzuColors = await loadColorData();
+                const abc = await loadColorData()
+                const chibanzuColors = abc.colorMap
+                const isNew = abc.isNew
                 const maps = [store.state.map01,store.state.map02]
                 maps.forEach(map => {
                     map.setPaintProperty('oh-city-geojson-poligon-layer', 'fill-color', [
-                        'match',
-                        ['get', 'N03_007'],
-                        ...Object.entries(chibanzuColors).flat(),
+                        'case',
+                        ...Object.entries(chibanzuColors).flatMap(([key, color]) => ([
+                            ['==', ['to-number', ['get', 'N03_007']], Number(key)], color
+                        ])),
                         'rgba(0,0,0,0)' // デフォルト色
                     ]);
+
+                    const newCodes = Object.keys(isNew).filter(k => isNew[k] === 1);
+                    // 蛍光色・NEW表示のcase式を生成
+                    const caseTextField = [
+                        'case',
+                        ...newCodes.flatMap(code => [
+                            ['==', ['get', 'N03_007'], code], ['concat', 'NEW\n', ['get', 'N03_004']]
+                        ]),
+                        ['get', 'N03_004'] // デフォルト: 市区町村名
+                    ];
+                    const caseTextColor = [
+                        'case',
+                        ...newCodes.flatMap(code => [
+                            ['==', ['get', 'N03_007'], code], '#fff600' // 蛍光イエロー
+                        ]),
+                        '#000' // デフォルト: 黒
+                    ];
+                    const caseTextHaloColor = [
+                        'case',
+                        ...newCodes.flatMap(code => [
+                            ['==', ['get', 'N03_007'], code], '#ff00cc' // 蛍光ピンク
+                        ]),
+                        '#fff' // デフォルト: 白
+                    ];
+                    map.setLayoutProperty('oh-city-geojson-label-layer', 'text-field', caseTextField)
+                    map.setPaintProperty('oh-city-geojson-label-layer', 'text-color', caseTextColor)
+                    map.setPaintProperty('oh-city-geojson-label-layer', 'text-halo-color', caseTextHaloColor)
                 })
                 store.state.loading2 = false
             }

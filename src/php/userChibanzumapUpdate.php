@@ -18,8 +18,8 @@ try {
     // 1. chibanzumapテーブルをトランケート
     $pdo->exec('TRUNCATE TABLE chibanzumap');
 
-    // 7. chibanzumapredから全データを取得（新規追加）
-    $selectChibanzumapredStmt = $pdo->query('SELECT citycode, prefname, cityname, public, last_modified_date FROM chibanzumapred');
+    // ⭐️ chibanzumapredから全データを取得（新規追加）
+    $selectChibanzumapredStmt = $pdo->query('SELECT nickname, citycode, prefname, cityname, public, last_modified_date FROM chibanzumapred');
     $chibanzumapred = $selectChibanzumapredStmt->fetchAll();
 
     // chibanzumapredのデータ件数を記録
@@ -37,7 +37,8 @@ try {
         $values = [];
         $placeholders = [];
         foreach ($chibanzumapred as $row) {
-            $placeholders[] = '(?, ?, ?, ?, ?)';
+            $placeholders[] = '(?, ?, ?, ?, ?, ?)';
+            $values[] = $row['nickname'];
             $values[] = $row['citycode'];
             $values[] = $row['prefname'] ?? '';
             $values[] = $row['cityname'] ?? '';
@@ -45,14 +46,14 @@ try {
             $values[] = $row['last_modified_date'] ?? '';
         }
 
-        $sql = 'INSERT INTO chibanzumap (citycode, prefname, cityname, public, last_modified_date) VALUES ' . implode(', ', $placeholders);
+        $sql = 'INSERT INTO chibanzumap (nickname, citycode, prefname, cityname, public, last_modified_date) VALUES ' . implode(', ', $placeholders);
         $insertStmt = $pdo->prepare($sql);
         $insertStmt->execute($values);
     } else {
         $result['message'] .= 'chibanzumapredデータがありません。';
     }
 
-    // 2. opendataから全データを取得
+    // ⭐️2. opendataから全データを取得
     $selectStmt = $pdo->query('SELECT citycode, prefname, cityname, public FROM opendata');
     $opendata = $selectStmt->fetchAll();
 
@@ -78,49 +79,20 @@ try {
     $values = [];
     $placeholders = [];
     foreach ($opendata as $row) {
-        $placeholders[] = '(?, ?, ?, ?)';
+        $placeholders[] = '(?, ?, ?, ?, ?)';
         $values[] = $row['citycode'];
         $values[] = $row['prefname'] ?? '';
         $values[] = $row['cityname'] ?? '';
-//        $values[] = $row['public'] ?? '';
         $values[] = -1;
+        $values[] = '1999-01-01 00:00:01';
     }
 
-    $sql = 'INSERT INTO chibanzumap (citycode, prefname, cityname, public) VALUES ' . implode(', ', $placeholders);
+    $sql = 'INSERT INTO chibanzumap (citycode, prefname, cityname, public, last_modified_date) VALUES ' . implode(', ', $placeholders);
     $insertStmt = $pdo->prepare($sql);
     $insertStmt->execute($values);
-
-    // 5. userpmtilesからデータを取得（citycodeでグループ化、publicが0以外の最小、dateが最新、citycodeがNULL/空でない）
-//    $selectUserpmtilesStmt = $pdo->query('
-//        SELECT citycode, prefname, cityname, public
-//        FROM userpmtiles
-//        WHERE (citycode, public, date) IN (
-//            SELECT citycode, MIN(public), MAX(date)
-//            FROM userpmtiles
-//            WHERE citycode IS NOT NULL AND citycode != \'\' AND public != 0
-//            GROUP BY citycode
-//        )'
-//    );
-//    $selectUserpmtilesStmt = $pdo->query('
-//        SELECT t1.citycode, t1.prefname, t1.cityname, t1.public, t1.date
-//        FROM userpmtiles t1
-//        JOIN (
-//            SELECT citycode, MIN(public) AS min_public, MAX(date) AS max_date
-//            FROM userpmtiles
-//            WHERE citycode IS NOT NULL
-//              AND citycode != \'\'
-//              AND public != 0
-//            GROUP BY citycode
-//        ) t2
-//        ON t1.citycode = t2.citycode
-//         AND t1.public = t2.min_public
-//         AND t1.date = t2.max_date
-//        WHERE t1.citycode IS NOT NULL
-//          AND t1.citycode != \'\'
-//          AND t1.public != 0
-//    ');
+    //　⭐️Userpmtiles
     $selectUserpmtilesStmt = $pdo->query('
-        SELECT t1.citycode, t1.prefname, t1.cityname, t1.public, t1.date
+        SELECT t1.nickname, t1.citycode, t1.prefname, t1.cityname, t1.public, t1.date
         FROM userpmtiles t1
         JOIN (
             SELECT
@@ -166,7 +138,8 @@ try {
         $values = [];
         $placeholders = [];
         foreach ($userpmtiles as $row) {
-            $placeholders[] = '(?, ?, ?, ?, ?)';
+            $placeholders[] = '(?, ?, ?, ?, ?, ?)';
+            $values[] = $row['nickname'];
             $values[] = $row['citycode'];
             $values[] = $row['prefname'] ?? '';
             $values[] = $row['cityname'] ?? '';
@@ -174,7 +147,7 @@ try {
             $values[] = $row['date'] ?? '';
         }
 
-        $sql = 'INSERT INTO chibanzumap (citycode, prefname, cityname, public, last_modified_date) VALUES ' . implode(', ', $placeholders);
+        $sql = 'INSERT INTO chibanzumap (nickname, citycode, prefname, cityname, public, last_modified_date) VALUES ' . implode(', ', $placeholders);
         $insertStmt = $pdo->prepare($sql);
         $insertStmt->execute($values);
     } else {
