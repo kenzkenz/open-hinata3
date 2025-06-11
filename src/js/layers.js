@@ -544,6 +544,59 @@ export const cityGeojsonLineLayer = {
 // NEWな市町村コード一覧
 const newCodes = Object.keys(isNew).filter(k => isNew[k] === 1);
 
+// 1. 白字＋黒ハロー
+// const newLabelColorOnRed = '#fff';
+// const newHaloColorOnRed  = '#000';
+
+// 2. 黒字＋白ハロー
+// const newLabelColorOnRed = '#000';
+// const newHaloColorOnRed  = '#fff';
+
+// 3. 黄字＋黒ハロー
+// const newLabelColorOnRed = '#fff600';
+// const newHaloColorOnRed  = '#000';
+
+// 4. 蛍光グリーン＋黒ハロー
+const newLabelColorOnRed = '#39ff14';
+const newHaloColorOnRed  = '#000';
+
+const newLabelColor = '#fff600';    // 普段のNEW（蛍光イエロー）
+const newHaloColor  = '#ff00cc';    // 普段のNEW（蛍光ピンク）
+
+const caseTextColor = [
+    'case',
+    ...Object.entries(chibanzuColors).flatMap(([code, color]) => {
+        if (newCodes.includes(code)) {
+            if (color === "rgba(255,0,0,0.8)") {
+                // NEW かつ 赤背景
+                return [['==', ['get', 'N03_007'], code], newLabelColorOnRed];
+            } else {
+                // NEW かつ 非赤背景
+                return [['==', ['get', 'N03_007'], code], newLabelColor];
+            }
+        }
+        return [];
+    }),
+    '#000' // デフォルト
+];
+
+const caseTextHaloColor = [
+    'case',
+    ...Object.entries(chibanzuColors).flatMap(([code, color]) => {
+        if (newCodes.includes(code)) {
+            if (color === "rgba(255,0,0,0.8)") {
+                // NEW かつ 赤背景
+                return [['==', ['get', 'N03_007'], code], newHaloColorOnRed];
+            } else {
+                // NEW かつ 非赤背景
+                return [['==', ['get', 'N03_007'], code], newHaloColor];
+            }
+        }
+        return [];
+    }),
+    '#fff' // デフォルト
+];
+
 // 蛍光色・NEW表示のcase式を生成
 const caseTextField = [
     'case',
@@ -551,22 +604,6 @@ const caseTextField = [
         ['==', ['get', 'N03_007'], code], ['concat', 'NEW\n', ['get', 'N03_004']]
     ]),
     ['get', 'N03_004'] // デフォルト: 市区町村名
-];
-
-const caseTextColor = [
-    'case',
-    ...newCodes.flatMap(code => [
-        ['==', ['get', 'N03_007'], code], '#fff600' // 蛍光イエロー
-    ]),
-    '#000' // デフォルト: 黒
-];
-
-const caseTextHaloColor = [
-    'case',
-    ...newCodes.flatMap(code => [
-        ['==', ['get', 'N03_007'], code], '#ff00cc' // 蛍光ピンク
-    ]),
-    '#fff' // デフォルト: 白
 ];
 
 export const cityGeojsonLabelLayer = {
@@ -585,7 +622,26 @@ export const cityGeojsonLabelLayer = {
     },
     minzoom: 7,
 };
-
+export const cityGeojsonLabelLayer2 = {
+    id: 'oh-city-geojson-label-layer2',
+    type: 'symbol',
+    source: 'city-geojson-source',
+    layout: {
+        'text-field': caseTextField,
+        'text-offset': [0, 1],
+    },
+    paint: {
+        'text-color': caseTextColor,
+        'text-halo-color': caseTextHaloColor,
+        'text-halo-width': 2,
+        'text-halo-blur': 0.5,
+    },
+    minzoom: 0,
+    filter: [
+        'any',
+        ...newCodes.map(code => ['==', ['get', 'N03_007'], code])
+    ]
+};
 
 // --------------------------------------------------------------------------------
 // クリックで追加する円のGeoJSONソースを作成
@@ -9640,7 +9696,7 @@ let layers01 = [
         id: 'oh-chibanzu-all2',
         label: '⭐️全国地番図公開マップ️',
         sources: [cityGeojsonSource,...chibanzuSources,...publicSources],
-        layers: [cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer],
+        layers: [cityGeojsonPolygonLayer,cityGeojsonLineLayer,cityGeojsonLabelLayer,cityGeojsonLabelLayer2],
         ext: {name:'ext-chibanzu'}
     },
     {
