@@ -113,13 +113,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 label="色を選択してください"
                 @update:modelValue="configChange('fill-color',titleColor)"
             />
-            <v-radio-group
-                v-model="direction"
-                row
-                @click="directionChange()">
-              <v-radio label="縦" value="vertical" @click="configChange('direction','vertical')"></v-radio>
-              <v-radio label="横" value="horizontal" @click="configChange('direction','horizontal')"></v-radio>
-            </v-radio-group>
+            <v-select
+                v-model="titleDirection"
+                :items="titleDirections"
+                item-title="label"
+                item-value="direction"
+                label="印刷方向を選択してください"
+                @update:modelValue="configChange('direction',titleDirection)"
+            />
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -1125,9 +1126,10 @@ export default {
     mapDivId: "map01", // ← MapLibreのDIVのID
     tweetText: "入力可能になりました。画像が表示されない場合もう一回やりなおしてください。\n\n#openhinata3 #OH3",
     attributionControl: null,
-    direction: 'vertical',
     titleColor: 'black',
     titleColors: [{color:'black',label:'黒'},{color:'red',label:'赤'},{color:'blue',label:'青'},{color:'green',label:'緑'},{color:'orange',label:'オレンジ'}],
+    titleDirection: 'vertical',
+    titleDirections: [{direction:'vertical',label:'A4縦'},{direction:'horizontal',label:'A4横'}],
     textPx: 30,
     printTitleText: '',
     printDialog: false,
@@ -1814,6 +1816,9 @@ export default {
     configChange (tgtProp,value) {
       const map01 = this.$store.state.map01
       store.state.clickCircleGeojsonText = geojsonUpdate(map01, null, clickCircleSource.iD, 'config', tgtProp, value)
+      if (tgtProp === 'direction') {
+        this.directionChange()
+      }
     },
     print () {
       // 印刷ダイアログ表示
@@ -1821,7 +1826,7 @@ export default {
         window.print()
       }, 200)
     },
-    directionChange(isReverse) {
+    directionChange() {
       const map00Div = document.getElementById('map00');
       const map01Div = document.getElementById('map01');
       const map02Div = document.getElementById('map02');
@@ -1829,33 +1834,25 @@ export default {
       // 1mm ≒ 3.7795275591px
       let widthPx
       let heightPx
-      // alert(this.direction)
+      console.log(this.titleDirection)
 
-      switch (this.direction) {
+      switch (this.titleDirection) {
         case 'horizontal':
-          widthPx = 190 * 3.7795275591;
-          heightPx = 260 * 3.7795275591;
-          // widthPx = 260 * 3.7795275591;
-          // heightPx = 190 * 3.7795275591;
-          break
-        case 'vertical':
-          widthPx = 260 * 3.7795275591;
-          heightPx = 190 * 3.7795275591;
           // widthPx = 190 * 3.7795275591;
           // heightPx = 260 * 3.7795275591;
+          widthPx = 260 * 3.7795275591;
+          heightPx = 190 * 3.7795275591;
+          break
+        case 'vertical':
+          // widthPx = 260 * 3.7795275591;
+          // heightPx = 190 * 3.7795275591;
+          widthPx = 190 * 3.7795275591;
+          heightPx = 260 * 3.7795275591;
           break
         default:
           widthPx = 190 * 3.7795275591;
           heightPx = 260 * 3.7795275591;
       }
-
-      if (isReverse) {
-        const w = widthPx
-        const h = heightPx
-        widthPx = h
-        heightPx = w
-      }
-
       // リサイズ＆中央に
       map00Div.style.width  = widthPx + 'px';
       map00Div.style.height = heightPx + 'px';
@@ -1911,25 +1908,6 @@ export default {
         width: map00Div.style.width,
         height: map00Div.style.height
       }
-      // A4サイズ（mm→px）: 210mm x 297mm
-      // 1mm ≒ 3.7795275591px
-      // const widthPx = 190 * 3.7795275591;  // 約 794px
-      // const heightPx = 260 * 3.7795275591; // 約1123px
-      // // リサイズ＆中央に
-      // map00Div.style.width  = widthPx + 'px';
-      // map00Div.style.height = heightPx + 'px';
-      // map00Div.style.margin = '0 auto';
-      // map00Div.style.display = 'block';
-
-      // map01Div.style.width  = widthPx / 2 + 'px';
-      // map01Div.style.height = heightPx + 'px';
-      // map01Div.style.margin = '0 auto';
-      // map01Div.style.display = 'block';
-      //
-      // map02Div.style.width  = widthPx / 2 + 'px';
-      // map02Div.style.height = heightPx + 'px';
-      // map02Div.style.margin = '0 auto';
-      // map02Div.style.display = 'block';
       this.isPrint = true
 
       function hideAllDialogs(dialogs) {
@@ -1968,7 +1946,7 @@ export default {
       // } else {
       //   this.direction = 'vertical'
       // }
-      this.directionChange(true)
+      this.directionChange()
 
     },
     toggleLDraw ()  {
@@ -4083,7 +4061,7 @@ export default {
                 this.printTitleText = config['title-text']
                 this.textPx = config['font-size'] || 30
                 this.titleColor = config['fill-color']
-                this.direction = config.direction || 'vertical'
+                this.titleDirection = config['direction'] || 'vertical'
               }
             }catch (e) {
               console.log(e)
