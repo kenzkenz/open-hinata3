@@ -2,6 +2,7 @@
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div class="share-div">
       <v-text-field label="" v-model="s_url" style="margin-top: 10px"></v-text-field>
+      <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="xPost">Xにポスト</v-btn>
       <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="copy">URLをコピー</v-btn>
       <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="qrcopy">QRコードをダウンロード</v-btn>
       <hr>
@@ -30,6 +31,12 @@ export default {
     },
   },
   methods: {
+    xPost () {
+      const intentUrl =
+          "https://twitter.com/intent/tweet?text=" +
+          encodeURIComponent('open-hinata3(OH3)です。\n\n#openhinata3 #OH3\n' + this.$store.state.url);
+      window.open(intentUrl, '_blank');
+    },
     copy () {
       navigator.clipboard.writeText(this.s_url);
       alert('URLをクリップボードにコピーしました!');

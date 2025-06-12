@@ -632,12 +632,24 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <div id="pointer1" class="pointer" v-if="mapName === 'map01'"></div>
           <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
 
-          <div :style="{fontSize: textPx + 'px',color: titleColor}" class="print-title" @click="printDialog = true">
+<!--          <div :style="{fontSize: textPx + 'px',color: titleColor}" class="print-title" @click="printDialog = true">-->
+<!--              <span-->
+<!--                  v-if="printTitleText && printTitleText.trim().length > 0"-->
+<!--                  class="print-title-bg"-->
+<!--                  v-html="printTitleText.replace(/\n/g, '<br>')"-->
+<!--              > </span>-->
+<!--          </div>-->
+
+          <div :style="{fontSize: textPx + 'px', color: titleColor}" class="print-title">
+            <MiniTooltip text="click me" :offset-x="0" :offset-y="4">
               <span
+                  @click="printDialog = true"
                   v-if="printTitleText && printTitleText.trim().length > 0"
                   class="print-title-bg"
                   v-html="printTitleText.replace(/\n/g, '<br>')"
               ></span>
+              <span v-else class="dot" @click="printDialog = true"></span>
+            </MiniTooltip>
           </div>
 
           <div v-if="!isPrint" class="center-target"></div>
@@ -691,11 +703,11 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 <v-btn :size="isSmall ? 'small' : 'default'" class="share" icon @click="share(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-share-variant</v-icon></v-btn>
               </MiniTooltip>
               <MiniTooltip text="計測" :offset-x="-25" :offset-y="206">
-                <v-btn :size="isSmall ? 'small' : 'default'" class="draw" icon @click="draw" v-if="mapName === 'map01'"><v-icon>mdi-ruler</v-icon></v-btn>
+                <v-btn :size="isSmall ? 'small' : 'default'" class="draw" icon @click="draw" v-if="mapName === 'map01'"><v-icon>mdi-ruler-square</v-icon></v-btn>
               </MiniTooltip>
-              <MiniTooltip text="Xにポスト" :offset-x="-25" :offset-y="326">
-                <v-btn :size="isSmall ? 'small' : 'default'" class="share-x" icon @click="captureAndPostToX" v-if="mapName === 'map01'"><v-icon left>fa-solid fa-x</v-icon></v-btn>
-              </MiniTooltip>
+<!--              <MiniTooltip text="Xにポスト" :offset-x="-25" :offset-y="326">-->
+<!--                <v-btn :size="isSmall ? 'small' : 'default'" class="share-x" icon @click="captureAndPostToX" v-if="mapName === 'map01'"><v-icon left>fa-solid fa-x</v-icon></v-btn>-->
+<!--              </MiniTooltip>-->
 <!--              <MiniTooltip text="現在休止中" :offset-x="-25" :offset-y="266">-->
 <!--                <v-btn :size="isSmall ? 'small' : 'default'" class="draw-circle" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>-->
 <!--              </MiniTooltip>-->
@@ -712,7 +724,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 <MiniTooltip text="全削除" :offset-x="0" :offset-y="4">
                   <v-btn size="small" icon @click="deleteAllforDraw" v-if="mapName === 'map01'"><v-icon>mdi-delete</v-icon></v-btn>
                 </MiniTooltip>
-                <v-btn disabled icon size="small" @click="onA">未</v-btn>
+                <MiniTooltip text="線" :offset-x="0" :offset-y="4">
+                  <v-btn disabled size="small" :color="s_isDrawLine ? 'green' : undefined" icon @click="toggleLDrawLine" v-if="mapName === 'map01'"><v-icon>mdi-vector-line</v-icon></v-btn>
+                </MiniTooltip>
                 <MiniTooltip text="円" :offset-x="0" :offset-y="4">
                   <v-btn size="small" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>
                 </MiniTooltip>
@@ -1210,6 +1224,14 @@ export default {
       },
       set(value) {
         return this.$store.state.gazoName = value
+      }
+    },
+    s_isDrawLine: {
+      get() {
+        return this.$store.state.isDrawLine
+      },
+      set(value) {
+        return this.$store.state.isDrawLine = value
       }
     },
     s_isDrawCircle: {
@@ -1931,16 +1953,31 @@ export default {
       this.directionChange(true)
 
     },
-    toggleDrawPoint () {
-      this.s_isDrawPoint = !this.s_isDrawPoint
-      if (this.s_isDrawPoint) this.s_isDrawCircle = false
-      document.querySelector('#draw-indicato-text').innerHTML = 'TXT'
+    toggleLDrawLine () {
+      this.s_isDrawLine = !this.s_isDrawLine
+      if (this.s_isDrawLine) {
+        this.s_isDrawPoint = false
+        this.s_isDrawCircle = false
+      }
+      document.querySelector('#draw-indicato-text').innerHTML = 'LINE'
       store.state.isCursorOnPanel = false
     },
     toggleDrawCircle () {
       this.s_isDrawCircle = !this.s_isDrawCircle
-      if (this.s_isDrawCircle) this.s_isDrawPoint = false
+      if (this.s_isDrawCircle) {
+        this.s_isDrawPoint = false
+        this.s_isDrawLine = false
+      }
       document.querySelector('#draw-indicato-text').innerHTML = 'CIRCLE'
+      store.state.isCursorOnPanel = false
+    },
+    toggleDrawPoint () {
+      this.s_isDrawPoint = !this.s_isDrawPoint
+      if (this.s_isDrawPoint) {
+        this.s_isDrawCircle = false
+        this.s_isDrawLine = false
+      }
+      document.querySelector('#draw-indicato-text').innerHTML = 'TXT'
       store.state.isCursorOnPanel = false
     },
     save () {
@@ -6429,6 +6466,18 @@ select {
 /*  -moz-appearance: textfield;*/
 /*}*/
 
+/* 半透明ドット */
+.dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(100,100,100,0.2);
+  vertical-align: middle;
+  cursor: pointer;
+  /* アニメや影も追加可 */
+}
+
 .print-title {
   position: absolute;
   top: 30px;
@@ -6440,14 +6489,15 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  /*cursor: pointer;*/
 }
 .print-title-bg {
   display: inline-block;
-  background: #fff;        /* ← 文字部分だけ白背景 */
+  background: rgba(255,255,255,0.7);        /* ← 文字部分だけ白背景 */
   padding: 0 20px 0 20px;
   border-radius: 8px;      /* 角を丸く（任意） */
   line-height: 1.3;        /* 文字が複数行なら */
+  cursor: pointer;
 }
 @media print {
   .print-buttons {
