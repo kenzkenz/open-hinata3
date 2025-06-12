@@ -11,6 +11,7 @@ export default createStore({
     id: '',
     coordinates: [],
     gazoName: '',
+    isDraw: false,
     isDrawLine: false,
     isDrawCircle: false,
     isDrawPoint: false,

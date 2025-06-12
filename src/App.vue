@@ -708,17 +708,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <!--              <MiniTooltip text="Xにポスト" :offset-x="-25" :offset-y="326">-->
 <!--                <v-btn :size="isSmall ? 'small' : 'default'" class="share-x" icon @click="captureAndPostToX" v-if="mapName === 'map01'"><v-icon left>fa-solid fa-x</v-icon></v-btn>-->
 <!--              </MiniTooltip>-->
-<!--              <MiniTooltip text="現在休止中" :offset-x="-25" :offset-y="266">-->
-<!--                <v-btn :size="isSmall ? 'small' : 'default'" class="draw-circle" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>-->
-<!--              </MiniTooltip>-->
-<!--              <MiniTooltip text="テキスト貼りつけ" :offset-x="-25" :offset-y="326">-->
-<!--                <v-btn :size="isSmall ? 'small' : 'default'" class="draw-point" :color="s_isDrawPoint ? 'green' : undefined" icon @click="toggleDrawPoint" v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>-->
-<!--              </MiniTooltip>-->
-<!--              <FanMenu class="draw-fan"/>-->
               <FanMenu class="draw-fan">
                 <template #center>
                   <MiniTooltip text="ドロー" :offset-x="0" :offset-y="4">
-                    <v-btn :size="isSmall ? 'small' : 'default'" icon v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>
+                    <v-btn :size="isSmall ? 'small' : 'default'" :color="s_isDraw ? 'green' : undefined" icon @click="toggleLDraw" v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>
                   </MiniTooltip>
                 </template>
                 <MiniTooltip text="全削除" :offset-x="0" :offset-y="4">
@@ -1224,6 +1217,14 @@ export default {
       },
       set(value) {
         return this.$store.state.gazoName = value
+      }
+    },
+    s_isDraw: {
+      get() {
+        return this.$store.state.isDraw
+      },
+      set(value) {
+        return this.$store.state.isDraw = value
       }
     },
     s_isDrawLine: {
@@ -1952,6 +1953,15 @@ export default {
       // }
       this.directionChange(true)
 
+    },
+    toggleLDraw ()  {
+      this.s_isDraw = !this.s_isDraw
+      if (!this.s_isDraw) {
+        this.s_isDrawPoint = false
+        this.s_isDrawCircle = false
+        this.s_isDrawLine = false
+      }
+      document.querySelector('#draw-indicato-text').innerHTML = ''
     },
     toggleLDrawLine () {
       this.s_isDrawLine = !this.s_isDrawLine
