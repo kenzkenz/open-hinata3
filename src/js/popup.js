@@ -3586,7 +3586,7 @@ export function popup(e,map,mapName,mapFlg) {
                 let textSize = props['text-size']
                 if (!textSize) textSize = 16
                 let lineWidth = props['line-width']
-                if (!lineWidth) textSize = 5
+                if (!lineWidth) lineWidth = 5
                 const geoType = feature.geometry.type
                 console.log(geoType)
                 switch (geoType) {

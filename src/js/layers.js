@@ -696,7 +696,7 @@ export const clickCircSymbolLayer = {
     id: 'click-circle-symbol-layer',
     type: 'symbol',
     source: 'click-circle-source',
-    filter: ['==', '$type', 'Point'],
+    filter: ['all', ['==', '$type', 'Point'], ['!has', 'bearing']],
     layout: {
         'text-field': '●', // 太めの点
         'text-size': 32,   // サイズ調整
@@ -707,6 +707,54 @@ export const clickCircSymbolLayer = {
         'text-color': ['get', 'color'],
         'text-halo-color': '#fff',
         'text-halo-width': 1
+    }
+}
+// 矢印シンボルレイヤー----------------------------------------------------------
+export const arrowsLayer = {
+    'id': 'arrows-layer',
+    'type': 'symbol',
+    'source': 'click-circle-source',
+    'layout': {
+        'symbol-placement': 'line',
+        'symbol-spacing': 50000, // 矢印の間隔（ピクセル）
+        'icon-image': 'arrow_black',
+        'icon-size': 1,
+        'icon-rotate': 0, // ラインの方向に合わせて回転
+        'icon-rotation-alignment': 'map',
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true
+    },
+    'paint': {},
+    // 'minzoom': 12 // ズームレベル12以上で表示
+}
+// ----------------------------------------------------------------------------
+// ポイントソース（終点用）
+export const endPointSouce = {
+    id:'end-point-source',
+    obj: {
+        type: 'geojson',
+        data: null
+    }
+}
+// 矢印レイヤー（終点にのみ表示）
+export const arrowsEndpointLayer ={
+    id: 'arrows-endpoint-layer',
+    type: 'symbol',
+    source: 'click-circle-source', // 終点用のソースを使用
+    filter: ['all', ['==', '$type', 'Point'], ['has', 'bearing']],
+    layout: {
+        'symbol-placement': 'point', // ポイントに配置
+        // 'icon-image': 'arrow_black',
+        'icon-image':  ['get', 'arrow'],
+        'icon-size': 1,
+        'icon-rotate': ['get', 'bearing'], // ラインの方向に合わせて回転
+        'icon-rotation-alignment': 'map',
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
+        'icon-offset': [-4, 0] // 矢印を終点から10ピクセル内側にずらす
+    },
+    paint: {
+        'icon-opacity': 1
     }
 }
 // ガイドレイヤー-----------------------------------------------------------------

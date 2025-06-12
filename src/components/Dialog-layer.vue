@@ -87,12 +87,14 @@ import * as turf from '@turf/turf'
 import {gpx, kml} from "@tmcw/togeojson";
 import DxfParser from 'dxf-parser'
 import {
+  arrowsEndpointLayer,
+  arrowsLayer,
   clickCircleLabelLayer,
   clickCircleLayer,
   clickCircleLineLayer,
   clickCircleSource, clickCircSymbolLayer,
   clickPointLayer,
-  clickPointSource, guideLineLayer, guideLineSource,
+  clickPointSource, endPointSouce, guideLineLayer, guideLineSource,
   zenkokuChibanzuAddLayer
 } from "@/js/layers";
 import JSZip from "jszip";
@@ -911,22 +913,34 @@ export default {
         console.log(this.$store.state.clickCircleGeojsonText)
         clickCircleSource.obj.data = JSON.parse(this.$store.state.clickCircleGeojsonText)
       }
+
+
+      console.log('arrow',map.hasImage('arrow'))
+
+
       if (map.getSource('click-circle-source')) {
         map.removeLayer('click-circle-layer')
         map.removeLayer('click-circle-symbol-layer')
         map.removeLayer('click-circle-line-layer')
         map.removeLayer('click-circle-label-layer')
+        // map.removeLayer('arrows-layer')
+        map.removeLayer('arrows-endpoint-layer')
         map.removeSource('click-circle-source')
         map.removeLayer('guide-line-layer')
         map.removeSource('guide-line-source')
+
+        // map.removeSource('end-point-source')
       }
       map.addSource('click-circle-source', clickCircleSource.obj)
       map.addLayer(clickCircleLayer)
       map.addLayer(clickCircSymbolLayer)
       map.addLayer(clickCircleLineLayer)
       map.addLayer(clickCircleLabelLayer)
+      // map.addLayer(arrowsLayer)
+      map.addLayer(arrowsEndpointLayer)
       map.addSource('guide-line-source', guideLineSource.obj)
       map.addLayer(guideLineLayer)
+      // map.addSource('end-point-source', endPointSouce.obj)
       if (map === this.$store.state.map01) {
         setTimeout(() => {
           const targetLayers = this.$store.state.map01.getStyle().layers
@@ -1222,6 +1236,16 @@ export default {
         this.$store.state.lngRange = [sw.lng,ne.lng]
         this.$store.state.latRange = [sw.lat,ne.lat]
         // ------------------------------------------------------------------
+        // map01.on('load', () => {
+          // 矢印画像をロード
+          // map01.loadImage('https://maplibre.org/maplibre-gl-js/docs/assets/custom_marker.png', (error, image) => {
+          //   // if (error) throw error;
+          //   map01.addImage('arrow', image);
+          //   this.addLayers()
+          //   alert(9)
+          //
+          // })
+        // })
         this.addLayers()
       },
       deep: true

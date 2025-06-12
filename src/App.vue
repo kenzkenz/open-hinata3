@@ -3678,21 +3678,6 @@ export default {
         }
         return null;
       }
-
-      function existsNearbyClickCirclePoint(map, e, pixelTolerance = 20) {
-        if (!e || !e.lngLat) return false;
-        const clickPixel = map.project(e.lngLat);
-        const features = map.getSource(clickCircleSource.iD)._data.features || [];
-        return features.some(f => {
-          if (!f.geometry || f.geometry.type !== 'Point') return false;
-          const [lng2, lat2] = f.geometry.coordinates;
-          const featurePixel = map.project({ lng: lng2, lat: lat2 });
-          const dx = featurePixel.x - clickPixel.x;
-          const dy = featurePixel.y - clickPixel.y;
-          const pixelDist = Math.sqrt(dx * dx + dy * dy);
-          return pixelDist < pixelTolerance;
-        });
-      }
       // 該当featureのid（またはnull）を返す: Polygon版
       function getPolygonFeatureIdAtClick(map, e) {
         if (!e || !e.lngLat) return null;
@@ -3832,7 +3817,6 @@ export default {
 
       })
       // ライン作成-------------------------------------------------------------------------------------------------------
-      // let tempLineCoords = [];
       function onLineClick(e) {
         console.log('擬似クリック event:', e);
         popup(e,map,'map01',vm.s_map2Flg)
@@ -3862,6 +3846,7 @@ export default {
           this.$store.state.id = id;
           const properties = {
             id: id,
+            pairId: id,
             label: '',
             offsetValue: [0.6, 0],
             'line-width': 5,
@@ -3869,16 +3854,17 @@ export default {
             textJustify: 'left'
           };
           console.log(this.tempLineCoords)
-          console.log(this.tempLineCoords.slice())
+          console.log('slice',this.tempLineCoords.slice())
           geojsonCreate(map, 'LineString', this.tempLineCoords.slice(), properties);
 
           // 擬似クリックイベント発火（最終点）
           const dummyEvent = {
             lngLat: {
-              lng: this.tempLineCoords[this.tempLineCoords.length - 1][0],
-              lat: this.tempLineCoords[this.tempLineCoords.length - 1][1]
+              lng: this.tempLineCoords[0][0],
+              lat: this.tempLineCoords[0][1]
             }
           };
+          this.$store.state.coordinates = [this.tempLineCoords[0][0], this.tempLineCoords[0][1]];
           setTimeout(() => {
             onLineClick(dummyEvent);
           }, 500);
@@ -3888,8 +3874,6 @@ export default {
         }
       });
       // ガイドライン-----------------------------------------------------------------------------------------------------
-      // let tempLineCoords2 = [];
-      // let isDrawingLine = false;
       map.on('click', (e) => {
         if (!this.s_isDrawLine) return;
         const lng = e.lngLat.lng;
@@ -3915,17 +3899,6 @@ export default {
         };
         map.getSource('guide-line-source').setData(guideLineGeoJson);
       });
-      // function finishLine() {
-      //   isDrawingLine = false;
-      //   // ライン本体を作成＆保存（geojsonCreateなど）
-      //   // ガイドライン消去
-      //   map.getSource('guide-line-source').setData({
-      //     type: 'FeatureCollection',
-      //     features: []
-      //   });
-      //   tempLineCoords2 = [];
-      // }
-
       // 例：ダブルクリックで確定
       map.on('click', (e) => {
         if (this.isDrawingLine && this.tempLineCoordsGuide.length >= 2) {
@@ -4075,68 +4048,21 @@ export default {
       this.mapNames.forEach(mapName => {
         const map = this.$store.state[mapName]
         const params = this.parseUrlParams()
-        map.on('load', () => {
-
-          // map.on("mousemove", "oh-amx-a-fude", (e) => {
-          //   if (e.features.length > 0) {
-          //     let feature = e.features[0];
-          //     let newProperties = {};
-          //
-          //     Object.keys(feature.properties).forEach(key => {
-          //       console.log(key,feature.properties[key].replace(/_/gi, ""))
-          //       newProperties[key] = feature.properties[key].replace(/_/gi, "");
-          //     });
-          //
-          //     // feature.id がない場合、プロパティのハッシュを一意キーとして使用
-          //     let featureKey = JSON.stringify(feature.properties);
-          //
-          //     console.log("Feature Key:", featureKey); // 取得されたキーを確認
-          //
-          //     map.setFeatureState(
-          //         { source: "amx-a-2024-pmtiles", sourceLayer: "fude", id: featureKey },
-          //         newProperties
-          //     );
-          //     // 確認用: 状態が適用されたか取得する
-          //     setTimeout(() => {
-          //       let state = map.getFeatureState({
-          //         source: "amx-a-2024-pmtiles",
-          //         sourceLayer: "fude",
-          //         id: featureKey
-          //       });
-          //       console.log("Updated Feature State:", state);
-          //     }, 100); // 少し待ってから取得
-          //   }
-          // });
-          //
-          // map.on("mouseleave", "oh-amx-a-fude", () => {
-          //   map.removeFeatureState({ source: "amx-a-2024-pmtiles", sourceLayer: "fude" });
-          // });
-
+        map.on('load',async () => {
           map.setProjection({"type": "globe"})
           map.resize()
 
-          // const attributionButton = document.querySelector('#' + mapName +' .maplibregl-ctrl-attrib-button');
-          // if (attributionButton) {
-          //   attributionButton.click(); // 初期状態で折りたたむ
-          // }
+          const black = await map.loadImage('./img/arrow_black.png');
+          const red = await map.loadImage('./img/arrow_red.png');
+          const blue = await map.loadImage('./img/arrow_blue.png');
+          const green = await map.loadImage('./img/arrow_green.png');
+          const orange = await map.loadImage('./img/arrow_orange.png');
+          map.addImage('arrow_black', black.data);
+          map.addImage('arrow_red', red.data);
+          map.addImage('arrow_blue', blue.data);
+          map.addImage('arrow_green', green.data);
+          map.addImage('arrow_orange', orange.data);
 
-          // // 二画面-----------------------------------------------------------
-          // if (mapName === 'map02') {
-          //   if (params.split === 'true') {
-          //     this.mapFlg.map02 = true
-          //     if (window.innerWidth > 1000) {
-          //       this.mapSize.map01.width = '50%'
-          //       this.mapSize.map01.height = '100%'
-          //     } else {
-          //       this.mapSize.map01.width = '100%'
-          //       this.mapSize.map01.height = '50%'
-          //       this.mapSize.map02.width = '100%'
-          //       this.mapSize.map02.height = '50%'
-          //       this.mapSize.map02.top = '50%'
-          //     }
-          //   }
-          // }
-          // ----------------------------------------------------------------
           if (params.simaTextForUser) {
             this.$store.state.simaTextForUser = params.simaTextForUser
           }
@@ -5856,27 +5782,16 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
+    // 配列で監視（いずれかが変化したら発動）
     s_isDrawAll() {
       // computedの結果を監視する形に
       if (this.s_isDrawAll) {
-        this.startDraw();
+        // しばらく中止
+        // this.startDraw();
       } else {
         this.endDraw();
       }
     },
-    // 配列で監視（どちらか変化したら発動）
-    // s_isDrawCircle_and_Point: {
-    //   handler(val) {
-    //     // valは [s_isDrawCircle, s_isDrawPoint]
-    //     if (val[0] || val[1]) {
-    //       this.startDraw();
-    //     } else {
-    //       this.endDraw();
-    //     }
-    //   },
-    //   immediate: true, // 初回も発動したい場合
-    //   deep: false
-    // },
     s_updatePermalinkFire () {
       try {
         this.updatePermalink()

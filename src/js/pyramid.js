@@ -2,7 +2,7 @@ import store from '@/store'
 import axios from "axios"
 import * as turf from '@turf/turf'
 import {convertAndDownloadGeoJSONToSIMA, savePointSima} from "@/js/downLoad";
-import {clickCircleSource, clickPointSource} from "@/js/layers";
+import {clickCircleSource, clickPointSource, endPointSouce} from "@/js/layers";
 import {closeAllPopups} from "@/js/popup";
 export let currentIndex = 0
 let kasen
@@ -953,12 +953,6 @@ export default function pyramid () {
                     carouselImages.style.transform = `translateX(-${offset}px)`;
                 }
                 updateCarousel('prev');
-                // currentIndex = (currentIndex - 1 + totalImages) % totalImages;
-                // updateCarousel();
-                // if (currentIndex > 0) {
-                //     currentIndex--;
-                //     updateCarousel();
-                // }
             }
         })
         // -------------------------------------------------------------------------------------------------------------
@@ -1087,10 +1081,14 @@ export default function pyramid () {
             if (e.target && (e.target.classList.contains("circle"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
+                const arrowId = id + '-arrow'
                 const value = e.target.getAttribute("data-color")
+                const arrowValue = 'arrow_' + value
                 const tgtProp = 'color'
+                const arrowTgtProp = 'arrow'
                 console.log(id,value)
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,arrowId,arrowTgtProp,arrowValue)
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1121,7 +1119,7 @@ export default function pyramid () {
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
-            if (e.target && (e.target.classList.contains("point-delete") || e.target.classList.contains("line-delete"))) {
+            if (e.target && (e.target.classList.contains("point-delete"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
                 let source = map01.getSource(clickCircleSource.iD)
@@ -1142,7 +1140,7 @@ export default function pyramid () {
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
-            if (e.target && (e.target.classList.contains("circle-delete"))) {
+            if (e.target && (e.target.classList.contains("circle-delete")|| e.target.classList.contains("line-delete"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
                 let source = map01.getSource(clickCircleSource.iD)
@@ -1163,16 +1161,49 @@ export default function pyramid () {
         });
     })
 }
+// ラインの最後のセグメントの方向（ベアリング）を計算する関数
+function calculateBearing(coord1, coord2) {
+    const lon1 = coord1[0] * Math.PI / 180;
+    const lat1 = coord1[1] * Math.PI / 180;
+    const lon2 = coord2[0] * Math.PI / 180;
+    const lat2 = coord2[1] * Math.PI / 180;
+    const dLon = lon2 - lon1;
+    const y = Math.sin(dLon) * Math.cos(lat2);
+    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+    let bearing = Math.atan2(y, x) * 180 / Math.PI;
+    bearing = (bearing + 360) % 360; // 正規化
+    return bearing + 270; // 矢印の向きを調整（SVGのデフォルト向きに応じて）
+}
 // ---------------------------------------------------------------------------------------------------------------------
 export function geojsonCreate(map, geoType, coordinates, properties = {}) {
     // 1. 新しいfeatureを生成
     let features,feature,circleFeature,centerFeature,radius,canterLng,canterLat
+    let lastCoord,pointFeature,endpointSource
     switch (geoType) {
         case 'Point':
             feature = turf.point(coordinates, properties);
             break;
         case 'LineString':
             feature = turf.lineString(coordinates, properties);
+            // ラインの終点をポイントとして抽出
+            lastCoord = coordinates[coordinates.length - 1];
+            pointFeature = {
+                type: 'Feature',
+                geometry: {
+                    type: 'Point',
+                    coordinates: lastCoord
+                },
+                properties: {
+                    id: properties.pairId + '-arrow',
+                    pairId: properties.pairId,
+                    arrow: 'arrow_black',
+                    // 最後のセグメントの方向を計算（オプション）
+                    bearing: calculateBearing(
+                        coordinates[coordinates.length - 2],
+                        lastCoord
+                    )
+                }
+            };
             break;
         case 'Polygon':
             feature = turf.polygon([coordinates], properties); // Polygonは「[[lng,lat],...]」
@@ -1223,22 +1254,29 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
 
     // 3. 既存featureが無ければ新規追加
     if (!geojsonData || !geojsonData.features || geojsonData.features.length === 0) {
-        if (geoType !== 'Circle') {
-            geojsonData = turf.featureCollection([feature]);
-        } else {
+        if (geoType === 'Circle') {
             geojsonData = turf.featureCollection([circleFeature,centerFeature]);
+        } else if (geoType === 'LineString') {
+            geojsonData = turf.featureCollection([feature,pointFeature]);
+        } else {
+            geojsonData = turf.featureCollection([feature]);
         }
     } else {
         // 既存FeatureCollectionに追加
-        if (geoType !== 'Circle') {
+        if (geoType === 'Circle') {
             geojsonData = {
                 ...geojsonData,
-                features: [...geojsonData.features, feature]
+                features: [...geojsonData.features, circleFeature,centerFeature]
+            };
+        } else if (geoType === 'LineString') {
+            geojsonData = {
+                ...geojsonData,
+                features: [...geojsonData.features, feature,pointFeature]
             };
         } else {
             geojsonData = {
                 ...geojsonData,
-                features: [...geojsonData.features, circleFeature,centerFeature]
+                features: [...geojsonData.features, feature]
             };
         }
     }
