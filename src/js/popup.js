@@ -3585,6 +3585,8 @@ export function popup(e,map,mapName,mapFlg) {
                 const radius = Number(props.radius)
                 let textSize = props['text-size']
                 if (!textSize) textSize = 16
+                let lineWidth = props['line-width']
+                if (!lineWidth) textSize = 5
                 const geoType = feature.geometry.type
                 console.log(geoType)
                 switch (geoType) {
@@ -3608,7 +3610,6 @@ export function popup(e,map,mapName,mapFlg) {
                                 '<div style="width: 225px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
                                 '<textarea id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
                                 '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:100%;" class="point-delete pyramid-btn">削　除</button>' +
-                                // '<button style="margin-bottom: 10px;height: 30px;font-size: medium;width: 52%;margin-left: 10px;" class="point-delete-all pyramid-btn">全て削除</button><br>' +
                                 '<div style="display: flex;gap: 8px;">' +
                                 '<div class="circle-list">' +
                                 '<div id="' + props.id + '" data-color="red" class="circle red" tabindex="0"></div>' +
@@ -3621,6 +3622,27 @@ export function popup(e,map,mapName,mapFlg) {
                                 '</div>' +
                                 '</div>'
                         }
+                        break
+                    case 'LineString':
+                        if (html.indexOf('click-circle-layer') === -1) {
+                            html += '<div class="layer-label-div">ラインストリング</div>'
+                            html +=
+                                '<div style="width: 225px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
+                                // '<textarea id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
+                                '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:100%;" class="line-delete pyramid-btn">削　除</button>' +
+                                '<div style="display: flex;gap: 8px;">' +
+                                '<div class="circle-list">' +
+                                '<div id="' + props.id + '" data-color="red" class="circle red" tabindex="0"></div>' +
+                                '<div id="' + props.id + '" data-color="black" class="circle black" tabindex="0"></div>' +
+                                '<div id="' + props.id + '" data-color="blue" class="circle blue" tabindex="0"></div>' +
+                                '<div id="' + props.id + '" data-color="green" class="circle green" tabindex="0"></div>' +
+                                '<div id="' + props.id + '" data-color="orange" class="circle orange" tabindex="0"></div>' +
+                                '</div>' +
+                                '<input id="' + props.id + '" type="number" class="oh-cool-input-number line-width-input" min="1" max="100" step="1" value="' + lineWidth +'">' +
+                                '</div>' +
+                                '</div>'
+                        }
+
                         break
                 }
                 break

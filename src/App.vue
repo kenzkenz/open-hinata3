@@ -718,7 +718,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   <v-btn size="small" icon @click="deleteAllforDraw" v-if="mapName === 'map01'"><v-icon>mdi-delete</v-icon></v-btn>
                 </MiniTooltip>
                 <MiniTooltip text="線" :offset-x="0" :offset-y="4">
-                  <v-btn disabled size="small" :color="s_isDrawLine ? 'green' : undefined" icon @click="toggleLDrawLine" v-if="mapName === 'map01'"><v-icon>mdi-vector-line</v-icon></v-btn>
+                  <v-btn size="small" :color="s_isDrawLine ? 'green' : undefined" icon @click="toggleLDrawLine" v-if="mapName === 'map01'"><v-icon>mdi-vector-line</v-icon></v-btn>
                 </MiniTooltip>
                 <MiniTooltip text="円" :offset-x="0" :offset-y="4">
                   <v-btn size="small" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>
@@ -3672,17 +3672,53 @@ export default {
           return pixelDist < pixelTolerance;
         });
       }
-      // 該当featureのid（またはnull）を返す
+      // 該当featureのid（またはnull）を返す: Polygon版
       function getPolygonFeatureIdAtClick(map, e) {
         if (!e || !e.lngLat) return null;
         const clickLngLat = [e.lngLat.lng, e.lngLat.lat];
         // ポリゴン配列取得
         const features = map.getSource(clickCircleSource.iD)._data.features || [];
         const found = features.find(f => {
-          if (!f.geometry) return false;
+          if (!f.geometry|| f.geometry.type !== 'Polygon') return false;
           return turf.booleanPointInPolygon(turf.point(clickLngLat), f);
         });
         return found ? found.properties.id : null;
+      }
+      // 該当featureのid（またはnull）を返す: LineString版
+      function getLineFeatureIdAtClickByPixel(map, e, pixelTolerance = 20) {
+        if (!e || !e.lngLat) return null;
+        const clickPixel = map.project(e.lngLat);
+        const features = map.getSource(clickCircleSource.iD)._data.features || [];
+        const found = features.find(f => {
+          if (!f.geometry || f.geometry.type !== 'LineString') return false;
+          const coords = f.geometry.coordinates;
+          // 各線分ごとに最短ピクセル距離を調べる
+          for (let i = 0; i < coords.length - 1; i++) {
+            const p1 = map.project({ lng: coords[i][0], lat: coords[i][1] });
+            const p2 = map.project({ lng: coords[i + 1][0], lat: coords[i + 1][1] });
+            const d = pointToSegmentDistance(clickPixel, p1, p2);
+            if (d <= pixelTolerance) return true;
+          }
+          return false;
+        });
+        return found ? found.properties.id : null;
+      }
+      // 2点間の線分への最短距離（ピクセル空間で）
+      function pointToSegmentDistance(pt, p1, p2) {
+        const x = pt.x, y = pt.y;
+        const x1 = p1.x, y1 = p1.y;
+        const x2 = p2.x, y2 = p2.y;
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        if (dx === 0 && dy === 0) {
+          // 線分が点の場合
+          return Math.sqrt((x - x1) ** 2 + (y - y1) ** 2);
+        }
+        // t: 線分上の最近点パラメータ（0～1）
+        const t = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy)));
+        const projX = x1 + t * dx;
+        const projY = y1 + t * dy;
+        return Math.sqrt((x - projX) ** 2 + (y - projY) ** 2);
       }
 
       // ポイント作成-----------------------------------------------------------------------------------
@@ -3690,7 +3726,6 @@ export default {
         console.log('擬似クリック event:', e);
         popup(e,map,'map01',vm.s_map2Flg)
       }
-      // map.on('click', 'click-circle-label-layer', onPointClick);
       map.on('click', (e) => {
         const lat = e.lngLat.lat
         const lng = e.lngLat.lng
@@ -3706,24 +3741,10 @@ export default {
           this.$store.state.id = targetId2
           return;
         }
-
         if (!this.s_isDrawPoint) return;
-        console.log(e)
-        // const lat = e.lngLat.lat
-        // const lng = e.lngLat.lng
-        // const coordinates = [lng,lat]
-        // this.$store.state.coordinates = coordinates
         const dummyEvent = {
           lngLat: { lng: lng, lat: lat },
         };
-        // const targetId = getNearbyClickCirclePointId(map, e, 20)
-        // if (targetId) {
-        //   // const features = map.queryRenderedFeatures(e.point)
-        //   // this.$store.state.id = features.find(f => f.layer.id === 'click-circle-symbol-layer').properties.id
-        //   this.$store.state.id = targetId
-        //   onPointClick(dummyEvent);
-        //   return;
-        // }
         const id = String(Math.floor(10000 + Math.random() * 90000))
         this.$store.state.id = id
         if (this.s_isDrawPoint) {
@@ -3789,6 +3810,63 @@ export default {
         },500)
 
       })
+      // ライン作成-------------------------------------------------------------------------------------------------------
+      let tempLineCoords = [];
+      function onLineClick(e) {
+        console.log('擬似クリック event:', e);
+        popup(e,map,'map01',vm.s_map2Flg)
+      }
+      map.on('click', (e) => {
+        const lat = e.lngLat.lat;
+        const lng = e.lngLat.lng;
+        const coordinates = [lng, lat];
+        this.$store.state.coordinates = coordinates;
+
+        // 既存点・ポリゴンのクリック判定
+        const targetId = getLineFeatureIdAtClickByPixel(map,e)
+        if (targetId) {
+          this.$store.state.id = targetId;
+          return;
+        }
+
+        // ライン描画モード
+        if (!this.s_isDrawLine) return;
+
+        // ライン用：クリック座標を一時保存
+        tempLineCoords.push(coordinates);
+
+        if (tempLineCoords.length >= 2) {
+          // 2点そろったらLineString生成
+          const id = String(Math.floor(10000 + Math.random() * 90000));
+          this.$store.state.id = id;
+          const properties = {
+            id: id,
+            label: '',
+            offsetValue: [0.6, 0],
+            'line-width': 5,
+            textAnchor: 'left',
+            textJustify: 'left'
+          };
+          console.log(tempLineCoords)
+          console.log(tempLineCoords.slice())
+          geojsonCreate(map, 'LineString', tempLineCoords.slice(), properties);
+
+          // 擬似クリックイベント発火（最終点）
+          const dummyEvent = {
+            lngLat: {
+              lng: tempLineCoords[tempLineCoords.length - 1][0],
+              lat: tempLineCoords[tempLineCoords.length - 1][1]
+            }
+          };
+          setTimeout(() => {
+            onLineClick(dummyEvent);
+          }, 500);
+
+          // 一時座標クリア（もし連続で描くならコメントアウト）
+          tempLineCoords = [];
+        }
+      });
+
       // ----------------------------------------------------------------------------------------------
 
       map.on('moveend', () => {

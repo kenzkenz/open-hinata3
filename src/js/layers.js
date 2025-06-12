@@ -692,7 +692,8 @@ export const clickCircleLineLayer = {
     type: 'line',
     source: 'click-circle-source',
     paint: {
-        'line-color': 'black',
+        'line-color': ['get', 'color'],
+        'line-width': ['get', 'line-width'],
     }
 }
 export const clickCircleLabelLayer = {
