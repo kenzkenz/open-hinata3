@@ -1145,7 +1145,6 @@ export default function pyramid () {
             if (e.target && (e.target.classList.contains("circle-delete"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
-                alert(999)
                 let source = map01.getSource(clickCircleSource.iD)
                 const geojson = source._data
                 if (geojson && geojson.features) {

@@ -651,34 +651,11 @@ export const clickCircleSource ={
         data: {
             "type": "FeatureCollection",
             "features": [
-                // {
-                //     "type": "Feature",
-                //     "properties": {
-                //         label: '999999999999999'
-                //     },
-                //     "geometry": {
-                //         "type": "Polygon",
-                //         "coordinates": [
-                //             [
-                //                 [139.7671, 37.486372004],      // 北
-                //                 [142.5950136, 36.2547728],     // 北東
-                //                 [144.8271, 35.6812],           // 東
-                //                 [142.5950136, 35.1076272],     // 南東
-                //                 [139.7671, 33.875027996],      // 南
-                //                 [136.9391864, 35.1076272],     // 南西
-                //                 [134.7071, 35.6812],           // 西
-                //                 [136.9391864, 36.2547728],     // 北西
-                //                 [139.7671, 37.486372004]       // クローズ
-                //             ]
-                //         ]
-                //     }
-                // }
             ]
         }
     }
-};
-
-// 円を描画するレイヤーを追加
+}
+// 円を描画するレイヤーを追加--------------------------------------------------
 export const clickCircleLayer = {
     id: 'click-circle-layer',
     type: 'fill',
@@ -730,6 +707,26 @@ export const clickCircSymbolLayer = {
         'text-color': ['get', 'color'],
         'text-halo-color': '#fff',
         'text-halo-width': 1
+    }
+}
+// ガイドレイヤー-----------------------------------------------------------------
+export const guideLineSource = {
+    id: 'guide-line-source', obj: {
+        type: 'geojson',
+        data: {
+            type: 'FeatureCollection',
+            features: []
+        }
+    }
+}
+export const guideLineLayer = {
+    id: 'guide-line-layer',
+    type: 'line',
+    source: 'guide-line-source',
+    paint: {
+        'line-color': '#00f',
+        'line-width': 2,
+        'line-dasharray': [2, 2]
     }
 }
 // --------------------------------------------------------------------------------

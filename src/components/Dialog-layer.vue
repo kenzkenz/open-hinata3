@@ -92,7 +92,7 @@ import {
   clickCircleLineLayer,
   clickCircleSource, clickCircSymbolLayer,
   clickPointLayer,
-  clickPointSource,
+  clickPointSource, guideLineLayer, guideLineSource,
   zenkokuChibanzuAddLayer
 } from "@/js/layers";
 import JSZip from "jszip";
@@ -917,13 +917,16 @@ export default {
         map.removeLayer('click-circle-line-layer')
         map.removeLayer('click-circle-label-layer')
         map.removeSource('click-circle-source')
+        map.removeLayer('guide-line-layer')
+        map.removeSource('guide-line-source')
       }
       map.addSource('click-circle-source', clickCircleSource.obj)
       map.addLayer(clickCircleLayer)
       map.addLayer(clickCircSymbolLayer)
       map.addLayer(clickCircleLineLayer)
       map.addLayer(clickCircleLabelLayer)
-
+      map.addSource('guide-line-source', guideLineSource.obj)
+      map.addLayer(guideLineLayer)
       if (map === this.$store.state.map01) {
         setTimeout(() => {
           const targetLayers = this.$store.state.map01.getStyle().layers

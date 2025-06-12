@@ -1114,6 +1114,9 @@ export default {
     MiniTooltip
   },
   data: () => ({
+    tempLineCoords: [],
+    tempLineCoordsGuide: [],
+    isDrawingLine: false,
     isDrawing: false,
     isCursorOnPanel: false,
     panelHoverCount: 0, // ←複数パネル対策
@@ -1200,9 +1203,12 @@ export default {
       'selectedPointFeature',
       'showChibanzuDrawer',
     ]),
-    s_isDrawCircle_and_Point() {
-      return [this.s_isDrawCircle, this.s_isDrawPoint];
+    s_isDrawAll() {
+      return this.s_isDrawCircle || this.s_isDrawPoint || this.s_isDrawLine;
     },
+    // s_isDrawCircle_and_Point() {
+    //   return [this.s_isDrawCircle, this.s_isDrawPoint];
+    // },
     s_updatePermalinkFire: {
       get() {
         return this.$store.state.updatePermalinkFire
@@ -1624,6 +1630,17 @@ export default {
     },
   },
   methods: {
+    finishLine () {
+      this.isDrawingLine = false;
+      // ライン本体を作成＆保存（geojsonCreateなど）
+      // ガイドライン消去
+      this.$store.state.map01.getSource('guide-line-source').setData({
+        type: 'FeatureCollection',
+        features: []
+      });
+      this.tempLineCoords = []
+      this.tempLineCoordsGuide = [];
+    },
     onPanelEnter() {
       this.$store.state.panelHoverCount++;
       this.$store.state.isCursorOnPanel = true;
@@ -1962,6 +1979,7 @@ export default {
         this.s_isDrawLine = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = ''
+      this.finishLine()
     },
     toggleLDrawLine () {
       this.s_isDrawLine = !this.s_isDrawLine
@@ -1971,6 +1989,7 @@ export default {
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'LINE'
       store.state.isCursorOnPanel = false
+      this.finishLine()
     },
     toggleDrawCircle () {
       this.s_isDrawCircle = !this.s_isDrawCircle
@@ -1980,6 +1999,7 @@ export default {
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'CIRCLE'
       store.state.isCursorOnPanel = false
+      this.finishLine()
     },
     toggleDrawPoint () {
       this.s_isDrawPoint = !this.s_isDrawPoint
@@ -1989,6 +2009,7 @@ export default {
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'TXT'
       store.state.isCursorOnPanel = false
+      this.finishLine()
     },
     save () {
       this.saveSelectedPointFeature()
@@ -3811,7 +3832,7 @@ export default {
 
       })
       // ライン作成-------------------------------------------------------------------------------------------------------
-      let tempLineCoords = [];
+      // let tempLineCoords = [];
       function onLineClick(e) {
         console.log('擬似クリック event:', e);
         popup(e,map,'map01',vm.s_map2Flg)
@@ -3833,9 +3854,9 @@ export default {
         if (!this.s_isDrawLine) return;
 
         // ライン用：クリック座標を一時保存
-        tempLineCoords.push(coordinates);
+        this.tempLineCoords.push(coordinates);
 
-        if (tempLineCoords.length >= 2) {
+        if (this.tempLineCoords.length >= 2) {
           // 2点そろったらLineString生成
           const id = String(Math.floor(10000 + Math.random() * 90000));
           this.$store.state.id = id;
@@ -3847,15 +3868,15 @@ export default {
             textAnchor: 'left',
             textJustify: 'left'
           };
-          console.log(tempLineCoords)
-          console.log(tempLineCoords.slice())
-          geojsonCreate(map, 'LineString', tempLineCoords.slice(), properties);
+          console.log(this.tempLineCoords)
+          console.log(this.tempLineCoords.slice())
+          geojsonCreate(map, 'LineString', this.tempLineCoords.slice(), properties);
 
           // 擬似クリックイベント発火（最終点）
           const dummyEvent = {
             lngLat: {
-              lng: tempLineCoords[tempLineCoords.length - 1][0],
-              lat: tempLineCoords[tempLineCoords.length - 1][1]
+              lng: this.tempLineCoords[this.tempLineCoords.length - 1][0],
+              lat: this.tempLineCoords[this.tempLineCoords.length - 1][1]
             }
           };
           setTimeout(() => {
@@ -3863,10 +3884,55 @@ export default {
           }, 500);
 
           // 一時座標クリア（もし連続で描くならコメントアウト）
-          tempLineCoords = [];
+          this.tempLineCoords = [];
         }
       });
+      // ガイドライン-----------------------------------------------------------------------------------------------------
+      // let tempLineCoords2 = [];
+      // let isDrawingLine = false;
+      map.on('click', (e) => {
+        if (!this.s_isDrawLine) return;
+        const lng = e.lngLat.lng;
+        const lat = e.lngLat.lat;
+        this.tempLineCoordsGuide.push([lng, lat]);
+        this.isDrawingLine = true;
+        // 2点以上になったら本採用など
+      });
+      map.on('mousemove', (e) => {
+        if (!this.isDrawingLine || this.tempLineCoordsGuide.length === 0) return;
+        // 仮ライン：既存＋現在マウス座標
+        const guideCoords = this.tempLineCoordsGuide.concat([[e.lngLat.lng, e.lngLat.lat]]);
+        const guideLineGeoJson = {
+          type: 'FeatureCollection',
+          features: [{
+            type: 'Feature',
+            geometry: {
+              type: 'LineString',
+              coordinates: guideCoords
+            },
+            properties: {}
+          }]
+        };
+        map.getSource('guide-line-source').setData(guideLineGeoJson);
+      });
+      // function finishLine() {
+      //   isDrawingLine = false;
+      //   // ライン本体を作成＆保存（geojsonCreateなど）
+      //   // ガイドライン消去
+      //   map.getSource('guide-line-source').setData({
+      //     type: 'FeatureCollection',
+      //     features: []
+      //   });
+      //   tempLineCoords2 = [];
+      // }
 
+      // 例：ダブルクリックで確定
+      map.on('click', (e) => {
+        if (this.isDrawingLine && this.tempLineCoordsGuide.length >= 2) {
+          this.finishLine();
+          // ここでgeojsonCreate(…)などで本採用
+        }
+      });
       // ----------------------------------------------------------------------------------------------
 
       map.on('moveend', () => {
@@ -5790,19 +5856,27 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
-    // 配列で監視（どちらか変化したら発動）
-    s_isDrawCircle_and_Point: {
-      handler(val) {
-        // valは [s_isDrawCircle, s_isDrawPoint]
-        if (val[0] || val[1]) {
-          this.startDraw();
-        } else {
-          this.endDraw();
-        }
-      },
-      immediate: true, // 初回も発動したい場合
-      deep: false
+    s_isDrawAll() {
+      // computedの結果を監視する形に
+      if (this.s_isDrawAll) {
+        this.startDraw();
+      } else {
+        this.endDraw();
+      }
     },
+    // 配列で監視（どちらか変化したら発動）
+    // s_isDrawCircle_and_Point: {
+    //   handler(val) {
+    //     // valは [s_isDrawCircle, s_isDrawPoint]
+    //     if (val[0] || val[1]) {
+    //       this.startDraw();
+    //     } else {
+    //       this.endDraw();
+    //     }
+    //   },
+    //   immediate: true, // 初回も発動したい場合
+    //   deep: false
+    // },
     s_updatePermalinkFire () {
       try {
         this.updatePermalink()
