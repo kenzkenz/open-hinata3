@@ -632,8 +632,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <div id="pointer1" class="pointer" v-if="mapName === 'map01'"></div>
           <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
 
-<!--          <div :style="{fontSize: textPx + 'px',color: titleColor}" v-if="isPrint" class="print-title">-->
-          <div :style="{fontSize: textPx + 'px',color: titleColor}" class="print-title">
+          <div :style="{fontSize: textPx + 'px',color: titleColor}" class="print-title" @click="printDialog = true">
               <span
                   v-if="printTitleText && printTitleText.trim().length > 0"
                   class="print-title-bg"
@@ -6016,7 +6015,7 @@ font {
   border-radius:8px;
 }
 .maplibregl-popup {
-  z-index: 1;
+  z-index: 3;
 }
 .popup-table {
   margin-bottom: 10px;
@@ -6441,6 +6440,7 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
 }
 .print-title-bg {
   display: inline-block;

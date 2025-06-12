@@ -7876,7 +7876,7 @@ export function enablePointDragAndAdd(map, layerId, sourceId, options = {}) {
                 // ポリゴンfeatureを全て検索（type: Polygon or MultiPolygon, properties.pairId一致）
                 for (const f of currentData.features) {
                     if (
-                        (f.geometry.type === 'Polygon' || f.geometry.type === 'MultiPolygon') &&
+                        (!f.geometry || f.geometry.type === 'Polygon' || f.geometry.type === 'MultiPolygon') &&
                         f.properties.pairId === pairId
                     ) {
                         f.properties['canterLng'] = lng1
