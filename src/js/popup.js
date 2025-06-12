@@ -3966,7 +3966,6 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
 
     // ポップアップを作成して地図に追加
     function onPanelEnter () {
-        store.state.isCursorOnPopup = true
         store.state.panelHoverCount++;
         store.state.isCursorOnPanel = true;
         console.log(store.state.isCursorOnPanel)
@@ -3974,7 +3973,6 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
     function onPanelLeave() {
         store.state.panelHoverCount = Math.max(store.state.panelHoverCount - 1, 0);
         if (store.state.panelHoverCount === 0) {
-            // store.state.isCursorOnPopup = false
             store.state.isCursorOnPanel = false;
         }
     }

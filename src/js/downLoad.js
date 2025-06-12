@@ -7866,6 +7866,9 @@ export function enablePointDragAndAdd(map, layerId, sourceId, options = {}) {
             // ポイント移動
             pointFeature.geometry.coordinates = [lng1, lat1, elevation];
 
+            pointFeature.properties['canterLng'] = lng1
+            pointFeature.properties['canterLat'] = lat1
+
             // pairId取得
             const pairId = pointFeature.properties.pairId;
 
@@ -7876,6 +7879,8 @@ export function enablePointDragAndAdd(map, layerId, sourceId, options = {}) {
                         (f.geometry.type === 'Polygon' || f.geometry.type === 'MultiPolygon') &&
                         f.properties.pairId === pairId
                     ) {
+                        f.properties['canterLng'] = lng1
+                        f.properties['canterLat'] = lat1
                         // 各座標にdx,dyを加算
                         if (f.geometry.type === 'Polygon') {
                             f.geometry.coordinates = f.geometry.coordinates.map(ring =>

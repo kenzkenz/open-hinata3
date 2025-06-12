@@ -1064,6 +1064,7 @@ export default function pyramid () {
                         store.state.clickCircleGeojsonText = JSON.stringify(geojson)
                     }
                 }
+                store.state.isCursorOnPanel = false
                 closeAllPopups()
             }
         });
@@ -1108,7 +1109,9 @@ export default function pyramid () {
                         store.state.clickCircleGeojsonText = JSON.stringify(geojson)
                     }
                 }
+                store.state.isCursorOnPanel = false
                 closeAllPopups()
+
             }
         });
         // ------------------------------------------------------------------------------------------------------------
@@ -1142,8 +1145,8 @@ export default function pyramid () {
                 const value = Number(e.target.value)
                 const tgtProp = 'text-size'
                 console.log(id,value)
-                const geojsonText = geojsonUpdate (map01,clickCircleSource.iD,id,tgtProp,value)
-                console.log(JSON.parse(geojsonText))
+                const geojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+                console.log(geojsonText)
                 store.state.clickCircleGeojsonText = geojsonText
             }
         });

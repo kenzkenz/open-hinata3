@@ -1936,11 +1936,13 @@ export default {
       this.s_isDrawPoint = !this.s_isDrawPoint
       if (this.s_isDrawPoint) this.s_isDrawCircle = false
       document.querySelector('#draw-indicato-text').innerHTML = 'TXT'
+      store.state.isCursorOnPanel = false
     },
     toggleDrawCircle () {
       this.s_isDrawCircle = !this.s_isDrawCircle
       if (this.s_isDrawCircle) this.s_isDrawPoint = false
       document.querySelector('#draw-indicato-text').innerHTML = 'CIRCLE'
+      store.state.isCursorOnPanel = false
     },
     save () {
       this.saveSelectedPointFeature()
@@ -3644,7 +3646,10 @@ export default {
       }
       // map.on('click', 'click-circle-label-layer', onPointClick);
       map.on('click', (e) => {
-
+        const lat = e.lngLat.lat
+        const lng = e.lngLat.lng
+        const coordinates = [lng,lat]
+        this.$store.state.coordinates = coordinates
         const targetId = getNearbyClickCirclePointId(map, e, 20)
         if (targetId) {
           this.$store.state.id = targetId
@@ -3658,10 +3663,10 @@ export default {
 
         if (!this.s_isDrawPoint) return;
         console.log(e)
-        const lat = e.lngLat.lat
-        const lng = e.lngLat.lng
-        const coordinates = [lng,lat]
-        this.$store.state.coordinates = coordinates
+        // const lat = e.lngLat.lat
+        // const lng = e.lngLat.lng
+        // const coordinates = [lng,lat]
+        // this.$store.state.coordinates = coordinates
         const dummyEvent = {
           lngLat: { lng: lng, lat: lat },
         };
@@ -3696,7 +3701,10 @@ export default {
       }
       // map.on('click', 'click-circle-symbol-layer', onCircleClick);
       map.on('click', (e) => {
-
+        const lng = e.lngLat.lng
+        const lat = e.lngLat.lat
+        const coordinates = [lng,lat]
+        this.$store.state.coordinates = coordinates
         const targetId = getPolygonFeatureIdAtClick(map, e)
         if (targetId) {
           this.$store.state.id = targetId
@@ -3709,10 +3717,10 @@ export default {
         }
 
         if (!this.s_isDrawCircle) return
-        const lng = e.lngLat.lng
-        const lat = e.lngLat.lat
-        const coordinates = [lng,lat]
-        this.$store.state.coordinates = coordinates
+        // const lng = e.lngLat.lng
+        // const lat = e.lngLat.lat
+        // const coordinates = [lng,lat]
+        // this.$store.state.coordinates = coordinates
 
         const id = String(Math.floor(10000 + Math.random() * 90000))
         this.$store.state.id = id
@@ -6462,11 +6470,11 @@ select {
   position: fixed;
   width: 12px;
   height: 12px;
-  background: black;
+  background: deeppink;
   border-radius: 50%;
   pointer-events: none;
   z-index: 9999;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -20%);
   transition: none; /* 遅延ゼロ */
   box-shadow: 0 0 8px #fff;
 }
