@@ -741,10 +741,28 @@ export const arrowsEndpointLayer ={
     id: 'arrows-endpoint-layer',
     type: 'symbol',
     source: 'click-circle-source', // 終点用のソースを使用
-    filter: ['all', ['==', '$type', 'Point'], ['has', 'bearing']],
+    // filter: [
+    //     'all',
+    //     ['has', 'bearing'],
+    //     ['any',
+    //         ['==', ['get', 'arrow-type'], 'end'],
+    //         ['==', ['get', 'arrow-type'], 'both']
+    //     ]
+    // ],
+    filter: [
+        'all',
+        ['has', 'bearing'],
+        ['any',
+            ['all',
+                ['==', ['get', 'arrow-type'], 'end'],
+                ['has', 'endpoint'],
+                ['==', ['get', 'endpoint'], 'end']
+            ],
+            ['==', ['get', 'arrow-type'], 'both']
+        ]
+    ],
     layout: {
         'symbol-placement': 'point', // ポイントに配置
-        // 'icon-image': 'arrow_black',
         'icon-image':  ['get', 'arrow'],
         'icon-size': 1,
         'icon-rotate': ['get', 'bearing'], // ラインの方向に合わせて回転

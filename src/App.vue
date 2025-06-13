@@ -6509,7 +6509,25 @@ select {
   color: #90caf9;
   letter-spacing: 0.04em;
 }
-
+.oh-cool-select {
+  padding: 0.4em 0.8em;
+  border: 1px solid #2979ff;
+  border-radius: 8px;
+  outline: none;
+  font-size: 1em;
+  background: #f4f8ff;
+  color: #18365a;
+  transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+  box-shadow: 0 1px 4px rgba(41,121,255,0.08);
+  width: 8em; /* 適宜調整 */
+  appearance: none;
+  /* 下矢印を消したい場合は独自アイコンを使ってもOK */
+}
+.oh-cool-select:focus {
+  border: 2px solid #1565c0;
+  background: #e3f2fd;
+  box-shadow: 0 2px 8px rgba(41,121,255,0.13);
+}
 /*!* input[type=number] のデフォルト矢印（上下ボタン）非表示（Chrome, Edge, Safari） *!*/
 /*.oh-cool-input-number::-webkit-inner-spin-button,*/
 /*.oh-cool-input-number::-webkit-outer-spin-button {*/

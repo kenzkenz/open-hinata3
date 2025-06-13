@@ -1132,6 +1132,19 @@ export default function pyramid () {
             }
         });
         // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('change', (e) => {
+            if (e.target && (e.target.classList.contains("oh-cool-select"))) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
+                const arrowId = id + '-arrow'
+                const value = e.target.value
+                const tgtProp = 'arrow-type'
+                console.log(id,value)
+                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,arrowId,tgtProp,value)
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
             if (e.target && (e.target.classList.contains("point-delete"))) {
                 const map01 = store.state.map01
@@ -1192,16 +1205,16 @@ function calculateBearing(coord1, coord2) {
 export function geojsonCreate(map, geoType, coordinates, properties = {}) {
     // 1. 新しいfeatureを生成
     let features,feature,circleFeature,centerFeature,radius,canterLng,canterLat
-    let lastCoord,pointFeature,endpointSource
+    let lastCoord,firstCoord,lastPointFeature,firstPointFeature
     switch (geoType) {
         case 'Point':
             feature = turf.point(coordinates, properties);
             break;
         case 'LineString':
             feature = turf.lineString(coordinates, properties);
-            // ラインの終点をポイントとして抽出
+            // ラインの終点をポイントとして抽出------------------------------------------------------------------------------
             lastCoord = coordinates[coordinates.length - 1];
-            pointFeature = {
+            lastPointFeature = {
                 type: 'Feature',
                 geometry: {
                     type: 'Point',
@@ -1210,6 +1223,29 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
                 properties: {
                     id: properties.pairId + '-arrow',
                     pairId: properties.pairId,
+                    endpoint: 'end',
+                    'arrow-type': 'end',
+                    arrow: 'arrow_black',
+                    // 最後のセグメントの方向を計算（オプション）
+                    bearing: calculateBearing(
+                        coordinates[coordinates.length - 2],
+                        lastCoord
+                    )
+                }
+            };
+            // ラインの初点をポイントとして抽出------------------------------------------------------------------------------
+            firstCoord = coordinates[0];
+            firstPointFeature = {
+                type: 'Feature',
+                geometry: {
+                    type: 'Point',
+                    coordinates: firstCoord
+                },
+                properties: {
+                    id: properties.pairId + '-arrow',
+                    pairId: properties.pairId,
+                    endpoint: 'start',
+                    'arrow-type': 'end',
                     arrow: 'arrow_black',
                     // 最後のセグメントの方向を計算（オプション）
                     bearing: calculateBearing(
@@ -1271,7 +1307,7 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
         if (geoType === 'Circle') {
             geojsonData = turf.featureCollection([circleFeature,centerFeature]);
         } else if (geoType === 'LineString') {
-            geojsonData = turf.featureCollection([feature,pointFeature]);
+            geojsonData = turf.featureCollection([feature,lastPointFeature,firstPointFeature]);
         } else {
             geojsonData = turf.featureCollection([feature]);
         }
@@ -1285,7 +1321,7 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
         } else if (geoType === 'LineString') {
             geojsonData = {
                 ...geojsonData,
-                features: [...geojsonData.features, feature,pointFeature]
+                features: [...geojsonData.features, feature,lastPointFeature,firstPointFeature]
             };
         } else {
             geojsonData = {

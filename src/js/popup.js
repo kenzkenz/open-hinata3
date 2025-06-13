@@ -3587,6 +3587,19 @@ export function popup(e,map,mapName,mapFlg) {
                 if (!textSize) textSize = 16
                 let lineWidth = props['line-width']
                 if (!lineWidth) lineWidth = 5
+                const arrowType = props['arrow-type'] || 'end'
+                let selectedEnd,selectedNone,selectedBoth
+                switch (arrowType) {
+                    case 'end':
+                        selectedEnd = 'selected'
+                        break
+                    case 'none':
+                        selectedNone = 'selected'
+                        break
+                    case 'both':
+                        selectedBoth = 'selected'
+                        break
+                }
                 const geoType = feature.geometry.type
                 console.log(geoType)
                 switch (geoType) {
@@ -3628,7 +3641,11 @@ export function popup(e,map,mapName,mapFlg) {
                             html += '<div class="layer-label-div">ラインストリング</div>'
                             html +=
                                 '<div style="width: 225px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
-                                // '<textarea id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
+                                '<select id="' + props.id + '" class="oh-cool-select">' +
+                                '<option value="end" ' + selectedEnd + '>矢印有り</option>' +
+                                '<option value="none" ' + selectedNone + '>矢印無し</option>' +
+                                '<option value="both" ' + selectedBoth + '>両矢印</option>' +
+                                '</select>' +
                                 '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:100%;" class="line-delete pyramid-btn">削　除</button>' +
                                 '<div style="display: flex;gap: 8px;">' +
                                 '<div class="circle-list">' +
