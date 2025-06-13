@@ -796,6 +796,28 @@ export const arrowsEndpointLayer ={
         'icon-opacity': 1
     }
 }
+// 頂点レイヤー------------------------------------------------------------------
+export const vertexSource = {
+    id: 'vertex-source', obj: {
+        type: 'geojson',
+        data: {
+            type: 'FeatureCollection',
+            features: []
+        }
+    }
+}
+export const vertexLayer = {
+    id: 'vertex-layer',
+    type: 'circle',
+    source: 'vertex-source',
+    paint: {
+        'circle-radius': 7,
+        'circle-color': '#2196f3',
+        'circle-stroke-color': '#fff',
+        'circle-stroke-width': 2
+    },
+    filter: ['==', '$type', 'Point']
+}
 // ガイドレイヤー-----------------------------------------------------------------
 export const guideLineSource = {
     id: 'guide-line-source', obj: {

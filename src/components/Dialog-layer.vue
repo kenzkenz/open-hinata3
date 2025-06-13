@@ -94,7 +94,7 @@ import {
   clickCircleLineLayer, clickCirclePolygonLineLayer,
   clickCircleSource, clickCircPolygonSymbolLayer, clickCircSymbolLayer,
   clickPointLayer,
-  clickPointSource, endPointSouce, guideLineLayer, guideLineSource,
+  clickPointSource, endPointSouce, guideLineLayer, guideLineSource, vertexLayer, vertexSource,
   zenkokuChibanzuAddLayer
 } from "@/js/layers";
 import JSZip from "jszip";
@@ -930,6 +930,8 @@ export default {
         map.removeSource('click-circle-source')
         map.removeLayer('guide-line-layer')
         map.removeSource('guide-line-source')
+        map.removeLayer('vertex-layer')
+        map.removeSource('vertex-source')
 
         // map.removeSource('end-point-source')
       }
@@ -944,6 +946,8 @@ export default {
       map.addLayer(arrowsEndpointLayer)
       map.addSource('guide-line-source', guideLineSource.obj)
       map.addLayer(guideLineLayer)
+      map.addSource('vertex-source', vertexSource.obj)
+      map.addLayer(vertexLayer)
       // map.addSource('end-point-source', endPointSouce.obj)
       if (map === this.$store.state.map01) {
         setTimeout(() => {

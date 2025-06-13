@@ -2,7 +2,7 @@ import store from '@/store'
 import axios from "axios"
 import * as turf from '@turf/turf'
 import {convertAndDownloadGeoJSONToSIMA, savePointSima} from "@/js/downLoad";
-import {clickCircleSource, clickPointSource, endPointSouce} from "@/js/layers";
+import {clickCircleSource, clickPointSource, endPointSouce, vertexSource} from "@/js/layers";
 import {closeAllPopups} from "@/js/popup";
 export let currentIndex = 0
 let kasen
@@ -1271,9 +1271,11 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
                     )
                 }
             };
+            // getVertexPoints(map,geoType,coordinates, false)
             break;
         case 'Polygon':
-            feature = turf.polygon(coordinates, properties); // Polygonは「[[lng,lat],...]」
+            feature = turf.polygon(coordinates, properties);
+            // getVertexPoints(map,geoType,coordinates, true)
             break;
         case 'Circle':
             if (store.state.circle200Chk) {
@@ -1353,6 +1355,174 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
     console.log(store.state.clickCircleGeojsonText)
     return feature;
 }
+
+export function getAllVertexPoints(map, geojson) {
+    const source = map.getSource(vertexSource.id);
+    if (!geojson || !geojson.features) {
+        // ★ ソースを空にする
+        source.setData({
+            type: 'FeatureCollection',
+            features: []
+        });
+        return;
+    }
+    const features = [];
+    geojson.features.forEach((feature, featIdx) => {
+        const { geometry, properties, id } = feature;
+        if (!geometry) return;
+        if (properties && typeof properties.radius !== "undefined") return;
+
+        const { type, coordinates } = geometry;
+        if (type === 'LineString') {
+            coordinates.forEach(([lng, lat], i) => {
+                features.push({
+                    type: 'Feature',
+                    id: `${featIdx}_${i}`,
+                    geometry: { type: 'Point', coordinates: [lng, lat] },
+                    properties: {
+                        vertexIndex: i,
+                        featureIndex: featIdx,
+                        parentId: id ?? null,
+                        ...(properties ? { parentProps: properties } : {})
+                    }
+                });
+            });
+        } else if (type === 'Polygon') {
+            const ring = coordinates[0] || [];
+            let pts = ring;
+            if (
+                pts.length > 1 &&
+                pts[0][0] === pts[pts.length - 1][0] &&
+                pts[0][1] === pts[pts.length - 1][1]
+            ) {
+                pts = pts.slice(0, -1);
+            }
+            pts.forEach(([lng, lat], i) => {
+                features.push({
+                    type: 'Feature',
+                    id: `${featIdx}_${i}`,
+                    geometry: { type: 'Point', coordinates: [lng, lat] },
+                    properties: {
+                        vertexIndex: i,
+                        featureIndex: featIdx,
+                        parentId: id ?? null,
+                        ...(properties ? { parentProps: properties } : {})
+                    }
+                });
+            });
+        } else if (type === 'MultiPolygon') {
+            coordinates.forEach((poly, polyIdx) => {
+                const ring = poly[0] || [];
+                let pts = ring;
+                if (
+                    pts.length > 1 &&
+                    pts[0][0] === pts[pts.length - 1][0] &&
+                    pts[0][1] === pts[pts.length - 1][1]
+                ) {
+                    pts = pts.slice(0, -1);
+                }
+                pts.forEach(([lng, lat], i) => {
+                    features.push({
+                        type: 'Feature',
+                        id: `${featIdx}_${polyIdx}_${i}`,
+                        geometry: { type: 'Point', coordinates: [lng, lat] },
+                        properties: {
+                            vertexIndex: i,
+                            featureIndex: featIdx,
+                            polygonIndex: polyIdx,
+                            parentId: id ?? null,
+                            ...(properties ? { parentProps: properties } : {})
+                        }
+                    });
+                });
+            });
+        }
+    });
+    source.setData({
+        type: 'FeatureCollection',
+        features
+    });
+}
+
+
+
+export function getVertexPoints(map, geoType, coords, isPolygon = false) {
+    // Polygonの場合、coords[0]（外環）を使用
+    if (geoType === 'Circle') return
+    let points = coords;
+    if (isPolygon) {
+        points = coords[0];
+        if (
+            points.length > 1 &&
+            points[0][0] === points[points.length - 1][0] &&
+            points[0][1] === points[points.length - 1][1]
+        ) {
+            points = points.slice(0, -1);
+        }
+    }
+    const source = map.getSource(vertexSource.id);
+    let geojsonData = null;
+    try {
+        geojsonData = source._data
+    } catch (e) {
+        geojsonData = null;
+    }
+    const features = points.map(([lng, lat], i) => ({
+        type: 'Feature',
+        id: i,
+        geometry: {
+            type: 'Point',
+            coordinates: [lng, lat]
+        },
+        properties: { vertexIndex: i }
+    }));
+    geojsonData = {
+        ...geojsonData,
+        features: [...geojsonData.features, ...features]
+    };
+    source.setData(geojsonData);
+}
+
+// export function getVertexPoints(map, geoType, coords, isPolygon = false) {
+//     // coords: [[lng,lat], ...]
+//     // ポリゴンなら閉じている場合があるので最後ダブり除外
+//     let points = coords;
+//     if (isPolygon && coords.length > 1 && coords[0][0] === coords[coords.length-1][0] && coords[0][1] === coords[coords.length-1][1]) {
+//         points = coords.slice(0, -1);
+//     }
+//     const source = map.getSource(vertexSource.id);
+//     let geojsonData = null;
+//     try {
+//         geojsonData = source._data
+//     } catch (e) {
+//         geojsonData = null;
+//     }
+//     const features =
+//         points.map(([lng, lat], i) => ({
+//             type: 'Feature',
+//             id: i,
+//             geometry: {
+//                 type: 'Point',
+//                 coordinates: [lng, lat]
+//             },
+//             properties: { vertexIndex: i }
+//         }));
+//     if (geoType === 'Polygon') {
+//         geojsonData = {
+//             ...geojsonData,
+//             features: [...geojsonData.features, ...features]
+//         };
+//     } else if (geoType === 'LineString') {
+//         geojsonData = {
+//             ...geojsonData,
+//             features: [...geojsonData.features, ...features]
+//         };
+//     }
+//     source.setData(geojsonData);
+//     // store.state.clickCircleGeojsonText = JSON.stringify(geojsonData)
+//     // console.log(store.state.clickCircleGeojsonText)
+//     // return feature;
+// }
 
 export function getScreenMeterDivX(map, x, direction = 'width') {
     const canvas = map.getCanvas();

@@ -718,6 +718,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 <MiniTooltip text="全削除" :offset-x="0" :offset-y="4">
                   <v-btn size="small" icon @click="deleteAllforDraw" v-if="mapName === 'map01'"><v-icon>mdi-delete</v-icon></v-btn>
                 </MiniTooltip>
+                <MiniTooltip text="編集" :offset-x="0" :offset-y="4">
+                  <v-btn size="small" :color="s_editEnabled ? 'green' : undefined" icon @click="toggleEditEnabled" v-if="mapName === 'map01'"><v-icon>mdi-vector-polyline-edit</v-icon></v-btn>
+                </MiniTooltip>
                 <MiniTooltip text="ポリゴン" :offset-x="0" :offset-y="4">
                   <v-btn size="small" :color="s_isDrawPolygon ? 'green' : undefined" icon @click="toggleLDrawPolygon" v-if="mapName === 'map01'"><v-icon>mdi-hexagon</v-icon></v-btn>
                 </MiniTooltip>
@@ -1093,7 +1096,7 @@ import pyramid, {
   colorNameToRgba,
   deleteAll,
   geojsonCreate,
-  geojsonUpdate,
+  geojsonUpdate, getAllVertexPoints,
   unescapeHTML
 } from '@/js/pyramid'
 import glouplayer from '@/js/glouplayer'
@@ -1257,6 +1260,14 @@ export default {
       },
       set(value) {
         return this.$store.state.isDraw = value
+      }
+    },
+    s_editEnabled: {
+      get() {
+        return this.$store.state.editEnabled
+      },
+      set(value) {
+        return this.$store.state.editEnabled = value
       }
     },
     s_isDrawPolygon: {
@@ -1988,8 +1999,21 @@ export default {
         this.s_isDrawCircle = false
         this.s_isDrawLine = false
         this.s_isDrawPolygon = false
+        this.s_editEnabled = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = ''
+      this.finishLine()
+    },
+    toggleEditEnabled () {
+      this.s_editEnabled = !this.s_editEnabled
+      if (this.s_editEnabled) {
+        this.s_isDrawPoint = false
+        this.s_isDrawCircle = false
+        this.s_isDrawLine = false
+        this.s_isDrawPolygon = false
+      }
+      document.querySelector('#draw-indicato-text').innerHTML = 'POLYGON'
+      store.state.isCursorOnPanel = false
       this.finishLine()
     },
     toggleLDrawPolygon () {
@@ -1998,6 +2022,7 @@ export default {
         this.s_isDrawPoint = false
         this.s_isDrawCircle = false
         this.s_isDrawLine = false
+        this.s_editEnabled = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'POLYGON'
       store.state.isCursorOnPanel = false
@@ -2009,6 +2034,7 @@ export default {
         this.s_isDrawPoint = false
         this.s_isDrawCircle = false
         this.s_isDrawPolygon = false
+        this.s_editEnabled = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'LINE'
       store.state.isCursorOnPanel = false
@@ -2020,6 +2046,7 @@ export default {
         this.s_isDrawPoint = false
         this.s_isDrawLine = false
         this.s_isDrawPolygon = false
+        this.s_editEnabled = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'CIRCLE'
       store.state.isCursorOnPanel = false
@@ -2031,6 +2058,7 @@ export default {
         this.s_isDrawCircle = false
         this.s_isDrawLine = false
         this.s_isDrawPolygon = false
+        this.s_editEnabled = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'TXT'
       store.state.isCursorOnPanel = false
@@ -5901,6 +5929,15 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
+    s_editEnabled (value) {
+      const map01 = this.$store.state.map01
+      if (value) {
+        const geojson = JSON.parse(this.$store.state.clickCircleGeojsonText)
+        getAllVertexPoints(map01, geojson)
+      } else {
+        getAllVertexPoints(map01)
+      }
+    },
     // 配列で監視（いずれかが変化したら発動）
     s_isDrawAll() {
       // computedの結果を監視する形に

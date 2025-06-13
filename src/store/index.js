@@ -4,6 +4,7 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    editEnabled: false,
     isCursorOnPanel: false,
     panelHoverCount: 0,
     circle200Chk: false,
