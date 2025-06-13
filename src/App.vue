@@ -3704,7 +3704,8 @@ export default {
         const projY = y1 + t * dy;
         return Math.sqrt((x - projX) ** 2 + (y - projY) ** 2);
       }
-
+      let clickTimer = null;
+      const CLICK_DELAY = 50; // ms
       // ポイント作成-----------------------------------------------------------------------------------
       function onPointClick(e) {
         console.log('擬似クリック event:', e);
@@ -3799,27 +3800,39 @@ export default {
         console.log('擬似クリック event:', e);
         popup(e,map,'map01',vm.s_map2Flg)
       }
+      // ライン描画
       map.on('click', (e) => {
-        const lat = e.lngLat.lat;
-        const lng = e.lngLat.lng;
-        const coordinates = [lng, lat];
-        this.$store.state.coordinates = coordinates;
-
-        // 既存点・ポリゴンのクリック判定
-        const targetId = getLineFeatureIdAtClickByPixel(map,e)
-        if (targetId) {
-          this.$store.state.id = targetId;
-          return;
-        }
-
-        // ライン描画モード
         if (!this.s_isDrawLine) return;
+        if (clickTimer !== null) return; // 2回目のクリック時は無視
 
-        // ライン用：クリック座標を一時保存
-        this.tempLineCoords.push(coordinates);
-
+        clickTimer = setTimeout(() => {
+          const lat = e.lngLat.lat;
+          const lng = e.lngLat.lng;
+          const coordinates = [lng, lat];
+          // 既存点・ポリゴンのクリック判定
+          const targetId = getLineFeatureIdAtClickByPixel(map, e);
+          if (targetId) {
+            this.$store.state.id = targetId;
+            return;
+          }
+          // 節点追加
+          this.tempLineCoords.push(coordinates);
+          // alert(this.tempLineCoords.length)
+          // 必要ならガイドライン等を描画
+          console.log('シングルクリック！');
+          clickTimer = null;
+        }, CLICK_DELAY);
+      });
+      // ダブルクリック時：ライン確定
+      map.on('dblclick', (e) => {
+        if (!this.s_isDrawLine) return;
+        if (clickTimer !== null) {
+          clearTimeout(clickTimer); // シングルの予定をキャンセル
+          clickTimer = null;
+        }
+        e.preventDefault(); // 地図ズーム防止
         if (this.tempLineCoords.length >= 2) {
-          // 2点そろったらLineString生成
+          // ライン作成
           const id = String(Math.floor(10000 + Math.random() * 90000));
           this.$store.state.id = id;
           const properties = {
@@ -3831,11 +3844,8 @@ export default {
             textAnchor: 'left',
             textJustify: 'left'
           };
-          console.log(this.tempLineCoords)
-          console.log('slice',this.tempLineCoords.slice())
           geojsonCreate(map, 'LineString', this.tempLineCoords.slice(), properties);
-
-          // 擬似クリックイベント発火（最終点）
+          // 擬似クリックイベント発火（最初の点）
           const dummyEvent = {
             lngLat: {
               lng: this.tempLineCoords[0][0],
@@ -3846,11 +3856,64 @@ export default {
           setTimeout(() => {
             onLineClick(dummyEvent);
           }, 500);
-
-          // 一時座標クリア（もし連続で描くならコメントアウト）
+          this.finishLine()
+          // 終了
           this.tempLineCoords = [];
         }
       });
+
+      // map.on('click', (e) => {
+      //   const lat = e.lngLat.lat;
+      //   const lng = e.lngLat.lng;
+      //   const coordinates = [lng, lat];
+      //   this.$store.state.coordinates = coordinates;
+      //
+      //   // 既存点・ポリゴンのクリック判定
+      //   const targetId = getLineFeatureIdAtClickByPixel(map,e)
+      //   if (targetId) {
+      //     this.$store.state.id = targetId;
+      //     return;
+      //   }
+      //
+      //   // ライン描画モード
+      //   if (!this.s_isDrawLine) return;
+      //
+      //   // ライン用：クリック座標を一時保存
+      //   this.tempLineCoords.push(coordinates);
+      //
+      //   if (this.tempLineCoords.length >= 2) {
+      //     // 2点そろったらLineString生成
+      //     const id = String(Math.floor(10000 + Math.random() * 90000));
+      //     this.$store.state.id = id;
+      //     const properties = {
+      //       id: id,
+      //       pairId: id,
+      //       label: '',
+      //       offsetValue: [0.6, 0],
+      //       'line-width': 5,
+      //       textAnchor: 'left',
+      //       textJustify: 'left'
+      //     };
+      //     console.log(this.tempLineCoords)
+      //     console.log('slice',this.tempLineCoords.slice())
+      //     geojsonCreate(map, 'LineString', this.tempLineCoords.slice(), properties);
+      //
+      //     // 擬似クリックイベント発火（最終点）
+      //     const dummyEvent = {
+      //       lngLat: {
+      //         lng: this.tempLineCoords[0][0],
+      //         lat: this.tempLineCoords[0][1]
+      //       }
+      //     };
+      //     this.$store.state.coordinates = [this.tempLineCoords[0][0], this.tempLineCoords[0][1]];
+      //     setTimeout(() => {
+      //       onLineClick(dummyEvent);
+      //     }, 500);
+      //
+      //     // 一時座標クリア（もし連続で描くならコメントアウト）
+      //     this.tempLineCoords = [];
+      //   }
+      // });
       // ガイドライン-----------------------------------------------------------------------------------------------------
       map.on('click', (e) => {
         if (!this.s_isDrawLine) return;
@@ -3880,7 +3943,7 @@ export default {
       // 例：ダブルクリックで確定
       map.on('click', (e) => {
         if (this.isDrawingLine && this.tempLineCoordsGuide.length >= 2) {
-          this.finishLine();
+          // this.finishLine();
           // ここでgeojsonCreate(…)などで本採用
         }
       });

@@ -1254,8 +1254,8 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
                     arrow: 'arrow_black',
                     // 最後のセグメントの方向を計算（オプション）
                     bearing: calculateBearing(
-                        coordinates[coordinates.length - 2],
-                        lastCoord,
+                        coordinates[0],
+                        coordinates[1],
                         'start'
                     )
                 }

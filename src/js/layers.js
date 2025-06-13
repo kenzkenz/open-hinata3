@@ -660,6 +660,7 @@ export const clickCircleLayer = {
     id: 'click-circle-layer',
     type: 'fill',
     source: 'click-circle-source',
+    filter: ['==', '$type', 'Point'],
     paint: {
         'fill-color': 'rgba(255,122,0,0.3)',
     }
@@ -741,14 +742,6 @@ export const arrowsEndpointLayer ={
     id: 'arrows-endpoint-layer',
     type: 'symbol',
     source: 'click-circle-source', // 終点用のソースを使用
-    // filter: [
-    //     'all',
-    //     ['has', 'bearing'],
-    //     ['any',
-    //         ['==', ['get', 'arrow-type'], 'end'],
-    //         ['==', ['get', 'arrow-type'], 'both']
-    //     ]
-    // ],
     filter: [
         'all',
         ['has', 'bearing'],
