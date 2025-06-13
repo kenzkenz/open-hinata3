@@ -798,22 +798,35 @@ import {
   csvGenerateForUserPng,
   ddSimaUpload,
   downloadKML,
-  downloadSimaText, dxfToGeoJSON, enablePointDragAndAdd, extractFirstFeaturePropertiesAndCheckCRS, extractSimaById,
+  downloadSimaText,
+  dxfToGeoJSON,
+  enableFeatureDragAndAdd,
+  enablePointDragAndAdd,
+  extractFirstFeaturePropertiesAndCheckCRS,
+  extractSimaById,
   geojsonAddLayer,
   geoTiffLoad,
   geoTiffLoad2,
   getCRS,
   handleFileUpload,
-  highlightSpecificFeatures, highlightSpecificFeatures2025,
+  highlightSpecificFeatures,
+  highlightSpecificFeatures2025,
   highlightSpecificFeaturesCity,
   jpgLoad,
-  kmzLoadForUser, LngLatToAddress, pmtilesGenerateForUser2, pngDl,
+  kmzLoadForUser,
+  LngLatToAddress,
+  pmtilesGenerateForUser2,
+  pngDl,
   pngDownload,
   pngLoad,
-  simaLoadForUser, tileGenerateForUser,
+  simaLoadForUser,
+  tileGenerateForUser,
   tileGenerateForUserPdf,
-  transformGeoJSONToEPSG4326, userKmzSet, userSimaSet,
-  zahyokei, zipDownloadSimaText
+  transformGeoJSONToEPSG4326,
+  userKmzSet,
+  userSimaSet,
+  zahyokei,
+  zipDownloadSimaText
 } from '@/js/downLoad'
 
 function xmlToGeojson(xmlString) {
@@ -5287,14 +5300,28 @@ export default {
           }
 
           // ------------------------------------------------------------------------------------------------
-          enablePointDragAndAdd(map, 'click-points-layer', 'click-points-source', {
+          enableFeatureDragAndAdd(map, 'click-points-layer', 'click-points-source', {
             fetchElevation: fetchElevation, // async関数
             vm: this,
             storeField: 'clickGeojsonText',
             click: true
           });
           // ------------------------------------------------------------------------------------------------
-          enablePointDragAndAdd(map, 'click-circle-symbol-layer', 'click-circle-source', {
+          enableFeatureDragAndAdd(map, 'click-circle-symbol-layer', 'click-circle-source', {
+            // fetchElevation: fetchElevation, // async関数
+            vm: this,
+            storeField: 'clickCircleGeojsonText',
+            click: false
+          });
+          // ------------------------------------------------------------------------------------------------
+          enableFeatureDragAndAdd(map, 'click-circle-layer', 'click-circle-source', {
+            // fetchElevation: fetchElevation, // async関数
+            vm: this,
+            storeField: 'clickCircleGeojsonText',
+            click: false
+          });
+          // ------------------------------------------------------------------------------------------------
+          enableFeatureDragAndAdd(map, 'click-circle-line-layer', 'click-circle-source', {
             // fetchElevation: fetchElevation, // async関数
             vm: this,
             storeField: 'clickCircleGeojsonText',

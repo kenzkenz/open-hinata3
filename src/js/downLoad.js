@@ -7802,25 +7802,49 @@ export function extractSimaById(simaText, targetIds) {
 }
 
 /**
- * ポイントのクリック・ドラッグ移動・追加を有効化する
+ * ポイント/ライン/ポリゴンのクリック・ドラッグ移動・追加を有効化
+ * ペアID連動対応・どこを掴んでも“その位置から”気持ちよく動く
  * @param {object} map - MapLibre/Mapboxのmapインスタンス
- * @param {string} layerId - 対象レイヤーID（例: 'click-points-layer'）
- * @param {string} sourceId - 対象GeoJSONソースID（例: 'click-points-source'）
+ * @param {string} layerId - 対象レイヤーID
+ * @param {string} sourceId - 対象GeoJSONソースID
  * @param {object} [options]
  *   @param {function} options.fetchElevation - (lng, lat) => Promise<標高>
  *   @param {object} options.vm - Vueインスタンス等（状態書き込み用/任意）
  *   @param {string} options.storeField - 保存するストアフィールド名
+ *   @param {boolean} options.enableAdd - クリック追加（Pointのみ）有効化
  */
-export function enablePointDragAndAdd(map, layerId, sourceId, options = {}) {
+export function enableFeatureDragAndAdd(map, layerId, sourceId, options = {}) {
     let isCursorOnFeature = false;
     let isDragging = false;
-    let draggedFeatureId = null;
-    let dragStartCoord = null; // ドラッグ開始時のポイント座標
+    let draggedFeature = null;
+    let dragStartCoord = null;
+    let dragOffset = null;
     const fetchElevation = options.fetchElevation || (async () => 0);
     const vm = options.vm;
     const storeField = options.storeField || null;
-    const click = options.click;
+    const enableAdd = options.enableAdd ?? true; // 追加有無
+    const click = options.click; // 旧互換
 
+    // 指定featureの「ドラッグ基準点（中心）」座標を返す
+    function getCenterCoord(feature) {
+        if (!feature.geometry) return null;
+        const g = feature.geometry;
+        if (g.type === 'Point') {
+            return g.coordinates.slice();
+        }
+        if (g.type === 'LineString') {
+            return g.coordinates[0].slice();
+        }
+        if (g.type === 'Polygon') {
+            return g.coordinates[0][0].slice();
+        }
+        if (g.type === 'MultiPolygon') {
+            return g.coordinates[0][0][0].slice();
+        }
+        return null;
+    }
+
+    // hover判定
     map.on('mousemove', function (e) {
         const features = map.queryRenderedFeatures(e.point, { layers: [layerId] });
         if (features.length > 0) {
@@ -7828,100 +7852,119 @@ export function enablePointDragAndAdd(map, layerId, sourceId, options = {}) {
             map.getCanvas().style.cursor = 'pointer';
         } else {
             isCursorOnFeature = false;
-            // map.getCanvas().style.cursor = '';
+            map.getCanvas().style.cursor = '';
         }
     });
 
+    // ドラッグ開始
     map.on('mousedown', function (e) {
         const features = map.queryRenderedFeatures(e.point, { layers: [layerId] });
         if (features.length > 0) {
             isDragging = true;
-            draggedFeatureId = features[0].id || features[0].properties.id;
-            dragStartCoord = features[0].geometry.coordinates.slice(); // [lng, lat, ...]
+            draggedFeature = features[0];
+            dragStartCoord = getCenterCoord(draggedFeature);
+
+            // ★クリック点と基準点（中心）のオフセットを記録
+            dragOffset = [
+                e.lngLat.lng - dragStartCoord[0],
+                e.lngLat.lat - dragStartCoord[1]
+            ];
             map.getCanvas().style.cursor = 'grabbing';
             e.preventDefault();
         }
     });
 
+    // ドラッグ中
     map.on('mousemove', async function (e) {
-        if (!isDragging || draggedFeatureId === null) return;
-
+        if (!isDragging || !draggedFeature) return;
         const source = map.getSource(sourceId);
         if (!source) return;
         const currentData = source._data;
         if (!currentData) return;
 
-        let elevation = await fetchElevation(e.lngLat.lng, e.lngLat.lat);
+        // オフセットを考慮した移動先
+        const targetLng = e.lngLat.lng - dragOffset[0];
+        const targetLat = e.lngLat.lat - dragOffset[1];
+
+        let elevation = await fetchElevation(targetLng, targetLat);
         if (!elevation) elevation = 0;
 
-        let pointFeature = currentData.features.find(f => f.id === draggedFeatureId || f.properties.id === draggedFeatureId);
+        // dx/dy＝ドラッグ開始基準点→新しい基準点
+        const [lng0, lat0] = dragStartCoord;
+        const dx = targetLng - lng0;
+        const dy = targetLat - lat0;
 
-        if (pointFeature) {
-            // 差分計算
-            const [lng0, lat0] = dragStartCoord;
-            const [lng1, lat1] = [e.lngLat.lng, e.lngLat.lat];
-            const dx = lng1 - lng0;
-            const dy = lat1 - lat0;
+        // 対象feature群（ペアID含む）
+        const dragId = draggedFeature.id || (draggedFeature.properties && draggedFeature.properties.id);
+        const dragPairId = draggedFeature.properties && draggedFeature.properties.pairId;
 
-            // ポイント移動
-            pointFeature.geometry.coordinates = [lng1, lat1, elevation];
-
-            pointFeature.properties['canterLng'] = lng1
-            pointFeature.properties['canterLat'] = lat1
-
-            // pairId取得
-            const pairId = pointFeature.properties.pairId;
-
-            if (pairId) {
-                // ポリゴンfeatureを全て検索（type: Polygon or MultiPolygon, properties.pairId一致）
-                for (const f of currentData.features) {
-                    if (
-                        (!f.geometry || f.geometry.type === 'Polygon' || f.geometry.type === 'MultiPolygon') &&
-                        f.properties.pairId === pairId
-                    ) {
-                        f.properties['canterLng'] = lng1
-                        f.properties['canterLat'] = lat1
-                        // 各座標にdx,dyを加算
-                        if (f.geometry.type === 'Polygon') {
-                            f.geometry.coordinates = f.geometry.coordinates.map(ring =>
-                                ring.map(([lng, lat, ...rest]) => [lng + dx, lat + dy, ...rest])
-                            );
-                        } else if (f.geometry.type === 'MultiPolygon') {
-                            f.geometry.coordinates = f.geometry.coordinates.map(poly =>
-                                poly.map(ring =>
-                                    ring.map(([lng, lat, ...rest]) => [lng + dx, lat + dy, ...rest])
-                                )
-                            );
-                        }
-                    }
-                }
+        const moveTargets = [];
+        for (const f of currentData.features) {
+            const fid = f.id || (f.properties && f.properties.id);
+            const fpair = f.properties && f.properties.pairId;
+            if (fid === dragId || (dragPairId && dragPairId === fpair)) {
+                moveTargets.push(f);
             }
-
-            // ドラッグ開始座標も更新
-            dragStartCoord = [lng1, lat1];
-
-            source.setData(currentData);
-            map.getCanvas().style.cursor = 'grabbing';
-            if (vm && storeField) vm.$store.state[storeField] = JSON.stringify(currentData);
         }
+
+        // 実際の座標移動
+        for (const f of moveTargets) {
+            const g = f.geometry;
+            if (g.type === 'Point') {
+                g.coordinates = [g.coordinates[0] + dx, g.coordinates[1] + dy, elevation];
+                f.properties['canterLng'] = g.coordinates[0];
+                f.properties['canterLat'] = g.coordinates[1];
+            }
+            else if (g.type === 'LineString') {
+                g.coordinates = g.coordinates.map(([lng, lat, ...rest]) =>
+                    [lng + dx, lat + dy, ...rest]
+                );
+                f.properties['canterLng'] = g.coordinates[0][0];
+                f.properties['canterLat'] = g.coordinates[0][1];
+            }
+            else if (g.type === 'Polygon') {
+                g.coordinates = g.coordinates.map(ring =>
+                    ring.map(([lng, lat, ...rest]) => [lng + dx, lat + dy, ...rest])
+                );
+                f.properties['canterLng'] = g.coordinates[0][0][0];
+                f.properties['canterLat'] = g.coordinates[0][0][1];
+            }
+            else if (g.type === 'MultiPolygon') {
+                g.coordinates = g.coordinates.map(poly =>
+                    poly.map(ring =>
+                        ring.map(([lng, lat, ...rest]) => [lng + dx, lat + dy, ...rest])
+                    )
+                );
+                f.properties['canterLng'] = g.coordinates[0][0][0][0];
+                f.properties['canterLat'] = g.coordinates[0][0][0][1];
+            }
+        }
+
+        // drag開始座標を新しい基準点に更新
+        dragStartCoord = [targetLng, targetLat];
+
+        source.setData(currentData);
+        map.getCanvas().style.cursor = 'grabbing';
+        if (vm && storeField) vm.$store.state[storeField] = JSON.stringify(currentData);
     });
 
+    // ドラッグ終了
     map.on('mouseup', function () {
         if (isDragging) {
             isDragging = false;
-            draggedFeatureId = null;
+            draggedFeature = null;
             dragStartCoord = null;
+            dragOffset = null;
             map.getCanvas().style.cursor = 'pointer';
         }
     });
 
-    if (click) {
+    // クリック追加（Pointのみ。Line/Polygonは別途draw系で）
+    if (enableAdd || click) {
         map.on('click', async function (e) {
-            if (isDragging) return; // ドラッグ中のクリックを防止
+            if (isDragging) return;
             const visibility = map.getLayoutProperty(layerId, 'visibility');
-            if (visibility === 'none') {
-                return;
-            }
+            if (visibility === 'none') return;
             const source = map.getSource(sourceId);
             if (!source) return;
             if (isCursorOnFeature) return;
@@ -7944,20 +7987,202 @@ export function enablePointDragAndAdd(map, layerId, sourceId, options = {}) {
                 },
                 properties: {
                     id: Math.random().toString().slice(2, 6),
-                    // pairId: '' // 必要に応じてここでセット
+                    // pairId: ''
                 }
             };
             currentData.features.push(newFeature);
             source.setData(currentData);
-            if (vm && storeField) vm.$store.state[storeField] = JSON.stringify(currentData)
+            if (vm && storeField) vm.$store.state[storeField] = JSON.stringify(currentData);
         });
     }
 }
+
+
+
+// export function enableFeatureDragAndAdd(map, layerId, sourceId, options = {}) {
+//     let isCursorOnFeature = false;
+//     let isDragging = false;
+//     let draggedFeature = null;
+//     let dragStartCoord = null;
+//     const fetchElevation = options.fetchElevation || (async () => 0);
+//     const vm = options.vm;
+//     const storeField = options.storeField || null;
+//     const click = options.click;
+//
+//     // 判定：座標を1つ返す（ドラッグ起点）
+//     function getCenterCoord(feature) {
+//         if (!feature.geometry) return null;
+//         const g = feature.geometry;
+//         if (g.type === 'Point') {
+//             return g.coordinates.slice();
+//         }
+//         if (g.type === 'LineString') {
+//             return g.coordinates[0].slice();
+//         }
+//         if (g.type === 'Polygon') {
+//             return g.coordinates[0][0].slice();
+//         }
+//         if (g.type === 'MultiPolygon') {
+//             return g.coordinates[0][0][0].slice();
+//         }
+//         return null;
+//     }
+//
+//     // on mousemove: hover検出
+//     map.on('mousemove', function (e) {
+//         const features = map.queryRenderedFeatures(e.point, { layers: [layerId] });
+//         if (features.length > 0) {
+//             isCursorOnFeature = true;
+//             map.getCanvas().style.cursor = 'pointer';
+//         } else {
+//             isCursorOnFeature = false;
+//         }
+//     });
+//
+//     // on mousedown: drag開始
+//     map.on('mousedown', function (e) {
+//         const features = map.queryRenderedFeatures(e.point, { layers: [layerId] })
+//         console.log('フィーチャー',features)
+//         if (features.length > 0) {
+//             isDragging = true;
+//             draggedFeature = features[0];
+//             dragStartCoord = getCenterCoord(draggedFeature);
+//             map.getCanvas().style.cursor = 'grabbing';
+//             e.preventDefault();
+//         }
+//     });
+//
+//     // on mousemove: drag中
+//     map.on('mousemove', async function (e) {
+//         if (!isDragging || !draggedFeature) return;
+//         const source = map.getSource(sourceId);
+//         if (!source) return;
+//         const currentData = source._data;
+//         if (!currentData) return;
+//
+//         const startCoord = dragStartCoord;
+//         if (!startCoord) return;
+//
+//         let elevation = await fetchElevation(e.lngLat.lng, e.lngLat.lat);
+//         if (!elevation) elevation = 0;
+//
+//         // 差分
+//         const [lng0, lat0] = startCoord;
+//         const [lng1, lat1] = [e.lngLat.lng, e.lngLat.lat];
+//         const dx = lng1 - lng0;
+//         const dy = lat1 - lat0;
+//
+//         // 移動対象features収集
+//         const dragId = draggedFeature.id || (draggedFeature.properties && draggedFeature.properties.id);
+//         const dragPairId = draggedFeature.properties && draggedFeature.properties.pairId;
+//
+//         const moveTargets = [];
+//         for (const f of currentData.features) {
+//             const fid = f.id || (f.properties && f.properties.id);
+//             const fpair = f.properties && f.properties.pairId;
+//             // 自分 or ペア
+//             if (fid === dragId || (dragPairId && dragPairId === fpair)) {
+//                 moveTargets.push(f);
+//             }
+//         }
+//
+//         // 移動処理
+//         for (const f of moveTargets) {
+//             const g = f.geometry;
+//             if (g.type === 'Point') {
+//                 g.coordinates = [g.coordinates[0] + dx, g.coordinates[1] + dy, elevation];
+//                 f.properties['canterLng'] = g.coordinates[0];
+//                 f.properties['canterLat'] = g.coordinates[1];
+//             }
+//             else if (g.type === 'LineString') {
+//                 g.coordinates = g.coordinates.map(([lng, lat, ...rest], i) =>
+//                     i === 0
+//                         ? [lng + dx, lat + dy, ...rest]
+//                         : [lng + dx, lat + dy, ...rest]
+//                 );
+//                 f.properties['canterLng'] = g.coordinates[0][0];
+//                 f.properties['canterLat'] = g.coordinates[0][1];
+//             }
+//             else if (g.type === 'Polygon') {
+//                 g.coordinates = g.coordinates.map(ring =>
+//                     ring.map(([lng, lat, ...rest]) => [lng + dx, lat + dy, ...rest])
+//                 );
+//                 f.properties['canterLng'] = g.coordinates[0][0][0];
+//                 f.properties['canterLat'] = g.coordinates[0][0][1];
+//             }
+//             else if (g.type === 'MultiPolygon') {
+//                 g.coordinates = g.coordinates.map(poly =>
+//                     poly.map(ring =>
+//                         ring.map(([lng, lat, ...rest]) => [lng + dx, lat + dy, ...rest])
+//                     )
+//                 );
+//                 f.properties['canterLng'] = g.coordinates[0][0][0][0];
+//                 f.properties['canterLat'] = g.coordinates[0][0][0][1];
+//             }
+//         }
+//
+//         // drag開始座標更新
+//         dragStartCoord = [lng1, lat1];
+//
+//         source.setData(currentData);
+//         map.getCanvas().style.cursor = 'grabbing';
+//         if (vm && storeField) vm.$store.state[storeField] = JSON.stringify(currentData);
+//     });
+//
+//     // on mouseup: drag終了
+//     map.on('mouseup', function () {
+//         if (isDragging) {
+//             isDragging = false;
+//             draggedFeature = null;
+//             dragStartCoord = null;
+//             map.getCanvas().style.cursor = 'pointer';
+//         }
+//     });
+//
+//     // クリック追加（Pointのみ。LineString,Polygon追加は既存のdraw系プラグイン等を使う前提）
+//     if (click) {
+//         map.on('click', async function (e) {
+//             if (isDragging) return;
+//             const visibility = map.getLayoutProperty(layerId, 'visibility');
+//             if (visibility === 'none') return;
+//             const source = map.getSource(sourceId);
+//             if (!source) return;
+//             if (isCursorOnFeature) return;
+//             const currentData = source._data || {
+//                 type: 'FeatureCollection',
+//                 features: []
+//             };
+//             const clickedLng = e.lngLat.lng;
+//             const clickedLat = e.lngLat.lat;
+//
+//             let elevation = await fetchElevation(clickedLng, clickedLat);
+//             if (!elevation) elevation = 0;
+//
+//             const newFeature = {
+//                 type: 'Feature',
+//                 id: currentData.features.length,
+//                 geometry: {
+//                     type: 'Point',
+//                     coordinates: [clickedLng, clickedLat, elevation]
+//                 },
+//                 properties: {
+//                     id: Math.random().toString().slice(2, 6),
+//                     // pairId: ''
+//                 }
+//             };
+//             currentData.features.push(newFeature);
+//             source.setData(currentData);
+//             if (vm && storeField) vm.$store.state[storeField] = JSON.stringify(currentData);
+//         });
+//     }
+// }
+
 
 // export function enablePointDragAndAdd(map, layerId, sourceId, options = {}) {
 //     let isCursorOnFeature = false;
 //     let isDragging = false;
 //     let draggedFeatureId = null;
+//     let dragStartCoord = null; // ドラッグ開始時のポイント座標
 //     const fetchElevation = options.fetchElevation || (async () => 0);
 //     const vm = options.vm;
 //     const storeField = options.storeField || null;
@@ -7978,9 +8203,8 @@ export function enablePointDragAndAdd(map, layerId, sourceId, options = {}) {
 //         const features = map.queryRenderedFeatures(e.point, { layers: [layerId] });
 //         if (features.length > 0) {
 //             isDragging = true;
-//             draggedFeatureId = features[0].id;
-//             if (!draggedFeatureId) draggedFeatureId = features[0].properties.id;
-//             console.log(draggedFeatureId)
+//             draggedFeatureId = features[0].id || features[0].properties.id;
+//             dragStartCoord = features[0].geometry.coordinates.slice(); // [lng, lat, ...]
 //             map.getCanvas().style.cursor = 'grabbing';
 //             e.preventDefault();
 //         }
@@ -7991,18 +8215,58 @@ export function enablePointDragAndAdd(map, layerId, sourceId, options = {}) {
 //
 //         const source = map.getSource(sourceId);
 //         if (!source) return;
-//
 //         const currentData = source._data;
 //         if (!currentData) return;
 //
 //         let elevation = await fetchElevation(e.lngLat.lng, e.lngLat.lat);
-//         if (!elevation) elevation = 0
+//         if (!elevation) elevation = 0;
 //
-//         let feature = currentData.features.find(f => f.id === draggedFeatureId);
-//         if (!feature) feature = currentData.features.find(f => f.properties.id === draggedFeatureId);
+//         let pointFeature = currentData.features.find(f => f.id === draggedFeatureId || f.properties.id === draggedFeatureId);
 //
-//         if (feature) {
-//             feature.geometry.coordinates = [e.lngLat.lng, e.lngLat.lat, elevation];
+//         if (pointFeature) {
+//             // 差分計算
+//             const [lng0, lat0] = dragStartCoord;
+//             const [lng1, lat1] = [e.lngLat.lng, e.lngLat.lat];
+//             const dx = lng1 - lng0;
+//             const dy = lat1 - lat0;
+//
+//             // ポイント移動
+//             pointFeature.geometry.coordinates = [lng1, lat1, elevation];
+//
+//             pointFeature.properties['canterLng'] = lng1
+//             pointFeature.properties['canterLat'] = lat1
+//
+//             // pairId取得
+//             const pairId = pointFeature.properties.pairId;
+//
+//             if (pairId) {
+//                 // ポリゴンfeatureを全て検索（type: Polygon or MultiPolygon, properties.pairId一致）
+//                 for (const f of currentData.features) {
+//                     if (
+//                         (!f.geometry || f.geometry.type === 'Polygon' || f.geometry.type === 'MultiPolygon') &&
+//                         f.properties.pairId === pairId
+//                     ) {
+//                         f.properties['canterLng'] = lng1
+//                         f.properties['canterLat'] = lat1
+//                         // 各座標にdx,dyを加算
+//                         if (f.geometry.type === 'Polygon') {
+//                             f.geometry.coordinates = f.geometry.coordinates.map(ring =>
+//                                 ring.map(([lng, lat, ...rest]) => [lng + dx, lat + dy, ...rest])
+//                             );
+//                         } else if (f.geometry.type === 'MultiPolygon') {
+//                             f.geometry.coordinates = f.geometry.coordinates.map(poly =>
+//                                 poly.map(ring =>
+//                                     ring.map(([lng, lat, ...rest]) => [lng + dx, lat + dy, ...rest])
+//                                 )
+//                             );
+//                         }
+//                     }
+//                 }
+//             }
+//
+//             // ドラッグ開始座標も更新
+//             dragStartCoord = [lng1, lat1];
+//
 //             source.setData(currentData);
 //             map.getCanvas().style.cursor = 'grabbing';
 //             if (vm && storeField) vm.$store.state[storeField] = JSON.stringify(currentData);
@@ -8013,6 +8277,7 @@ export function enablePointDragAndAdd(map, layerId, sourceId, options = {}) {
 //         if (isDragging) {
 //             isDragging = false;
 //             draggedFeatureId = null;
+//             dragStartCoord = null;
 //             map.getCanvas().style.cursor = 'pointer';
 //         }
 //     });
@@ -8031,11 +8296,11 @@ export function enablePointDragAndAdd(map, layerId, sourceId, options = {}) {
 //                 type: 'FeatureCollection',
 //                 features: []
 //             };
-//             const clickedLng = e.lngLat.lng
-//             const clickedLat = e.lngLat.lat
+//             const clickedLng = e.lngLat.lng;
+//             const clickedLat = e.lngLat.lat;
 //
 //             let elevation = await fetchElevation(clickedLng, clickedLat);
-//             if (!elevation) elevation = 0
+//             if (!elevation) elevation = 0;
 //
 //             const newFeature = {
 //                 type: 'Feature',
@@ -8046,6 +8311,7 @@ export function enablePointDragAndAdd(map, layerId, sourceId, options = {}) {
 //                 },
 //                 properties: {
 //                     id: Math.random().toString().slice(2, 6),
+//                     // pairId: '' // 必要に応じてここでセット
 //                 }
 //             };
 //             currentData.features.push(newFeature);
@@ -8054,7 +8320,3 @@ export function enablePointDragAndAdd(map, layerId, sourceId, options = {}) {
 //         });
 //     }
 // }
-
-
-
-
