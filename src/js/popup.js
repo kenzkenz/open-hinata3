@@ -3583,10 +3583,8 @@ export function popup(e,map,mapName,mapFlg) {
                 const canterLng = props.canterLng
                 const canterLat = props.canterLat
                 const radius = Number(props.radius)
-                let textSize = props['text-size']
-                if (!textSize) textSize = 16
-                let lineWidth = props['line-width']
-                if (!lineWidth) lineWidth = 5
+                const textSize = props['text-size'] || 16
+                const lineWidth = props['line-width'] || 5
                 const arrowType = props['arrow-type'] || 'end'
                 let selectedEnd,selectedNone,selectedBoth
                 switch (arrowType) {
@@ -3604,23 +3602,54 @@ export function popup(e,map,mapName,mapFlg) {
                 console.log(geoType)
                 switch (geoType) {
                     case 'Polygon':
-                        if (html.indexOf('click-circle-layer') === -1) {
-                            html += '<div class="layer-label-div">サークル</div>'
-                            html +=
-                                '<div style="width: 200px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
-                                '<span style="font-size:20px;" class="circle-label">半径' + radius + 'm</span>' +
-                                '<span style="margin-left: 10px;font-size: 16px;"><input type="checkbox" id="' + props.id + '" class="circle200-check" value=""><label for="' + props.id + '"> 200m</span>' +
-                                '<input id="' + props.id + '" style="width: 100%;" type="range" min="10" max="' + radius * 5 + '" step="10" value="' + radius + '" class="circle-range" lng="' + canterLng + '" lat="' + canterLat + '"/>' +
-                                '<input id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input circle-text" placeholder="ここに入力" value="' + props.label2 + '">' +
-                                '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;" class="circle-delete pyramid-btn">削　除</button><br>' +
-                                '</div>'
+                        if (radius) {
+                            if (html.indexOf('click-circle-layer') === -1) {
+                                html += '<div class="layer-label-div">サークル</div>'
+                                html +=
+                                    '<div style="width: 240px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
+                                    '<span style="font-size:20px;" class="circle-label">半径' + radius + 'm</span>' +
+                                    '<span style="margin-left: 10px;font-size: 16px;"><input type="checkbox" id="' + props.id + '" class="circle200-check" value=""><label for="' + props.id + '"> 200m</span>' +
+                                    '<input id="' + props.id + '" style="width: 100%;" type="range" min="10" max="' + radius * 5 + '" step="10" value="' + radius + '" class="circle-range" lng="' + canterLng + '" lat="' + canterLat + '"/>' +
+                                    '<input id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input circle-text" placeholder="ここに入力" value="' + props.label2 + '">' +
+                                    '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;" class="circle-delete pyramid-btn">削　除</button><br>' +
+                                    '<div style="display: flex;gap: 8px;">' +
+                                    '<div class="circle-list">' +
+                                    '<div id="' + props.id + '" data-color="red" class="circle-color circle red" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="black" class="circle-color circle black" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="blue" class="circle-color circle blue" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="green" class="circle-color circle green" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="orange" class="circle-color circle orange" tabindex="0"></div>' +
+                                    '</div>' +
+                                    '<input id="' + props.id + '" type="number" class="oh-cool-input-number line-width-input" min="1" max="100" step="1" value="' + lineWidth +'">' +
+                                    '</div>' +
+                                    '</div>'
+                            }
+                        } else {
+                            if (html.indexOf('click-circle-layer') === -1) {
+                                html += '<div class="layer-label-div">ポリゴン</div>'
+                                html +=
+                                    '<div style="width: 240px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
+                                    '<input id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input polygon-text" placeholder="ここに入力" value="' + props.label + '">' +
+                                    '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;" class="circle-delete pyramid-btn">削　除</button><br>' +
+                                    '<div style="display: flex;gap: 8px;">' +
+                                    '<div class="circle-list">' +
+                                    '<div id="' + props.id + '" data-color="red" class="circle-color circle red" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="black" class="circle-color circle black" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="blue" class="circle-color circle blue" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="green" class="circle-color circle green" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="orange" class="circle-color circle orange" tabindex="0"></div>' +
+                                    '</div>' +
+                                    '<input id="' + props.id + '" type="number" class="oh-cool-input-number line-width-input" min="1" max="100" step="1" value="' + lineWidth +'">' +
+                                    '</div>' +
+                                    '</div>'
+                            }
                         }
                         break
                     case 'Point':
                         if (html.indexOf('click-circle-layer') === -1) {
                             html += '<div class="layer-label-div">ポイント</div>'
                             html +=
-                                '<div style="width: 225px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
+                                '<div style="width: 230px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
                                 '<textarea id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
                                 '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:100%;" class="point-delete pyramid-btn">削　除</button>' +
                                 '<div style="display: flex;gap: 8px;">' +

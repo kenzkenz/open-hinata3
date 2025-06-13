@@ -1067,6 +1067,17 @@ export default function pyramid () {
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('input', (e) => {
+            if (e.target && (e.target.classList.contains("polygon-text"))) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
+                const polygonTextElm = document.querySelector('.polygon-text')
+                const value = polygonTextElm.value
+                const tgtProp = 'label'
+                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('input', (e) => {
             if (e.target && (e.target.classList.contains("point-text"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
@@ -1078,14 +1089,14 @@ export default function pyramid () {
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
-            if (e.target && (e.target.classList.contains("point-color"))) {
+            if (e.target && (e.target.classList.contains("point-color")) || (e.target.classList.contains("circle-color"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
-                const arrowId = id + '-arrow'
-                const value = e.target.getAttribute("data-color")
-                const arrowValue = 'arrow_' + value
+                let value = e.target.getAttribute("data-color")
+                if (e.target.classList.contains("circle-color")) {
+                    value = colorNameToRgba(value, 0.6)
+                }
                 const tgtProp = 'color'
-                const arrowTgtProp = 'arrow'
                 console.log(id,value)
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
             }
@@ -1262,7 +1273,7 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
             };
             break;
         case 'Polygon':
-            feature = turf.polygon([coordinates], properties); // Polygonは「[[lng,lat],...]」
+            feature = turf.polygon(coordinates, properties); // Polygonは「[[lng,lat],...]」
             break;
         case 'Circle':
             if (store.state.circle200Chk) {
@@ -1452,4 +1463,18 @@ export function escapeHTML(str) {
 export function unescapeHTML(str) {
     return str
         .replace(/amp/g, '&');
+}
+
+export function colorNameToRgba(colorName, alpha = 1) {
+    // 定義: 色名 → [R, G, B]
+    const colorTable = {
+        orange: [255, 165, 0],
+        green: [0, 128, 0],
+        blue: [0, 0, 255],
+        black: [0, 0, 0],
+        red: [255, 0, 0]
+    };
+    const rgb = colorTable[colorName.toLowerCase()];
+    if (!rgb) return null; // 未定義色名の場合
+    return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;
 }

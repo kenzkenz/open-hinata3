@@ -718,7 +718,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 <MiniTooltip text="全削除" :offset-x="0" :offset-y="4">
                   <v-btn size="small" icon @click="deleteAllforDraw" v-if="mapName === 'map01'"><v-icon>mdi-delete</v-icon></v-btn>
                 </MiniTooltip>
-                <MiniTooltip text="線" :offset-x="0" :offset-y="4">
+                <MiniTooltip text="ポリゴン" :offset-x="0" :offset-y="4">
+                  <v-btn size="small" :color="s_isDrawPolygon ? 'green' : undefined" icon @click="toggleLDrawPolygon" v-if="mapName === 'map01'"><v-icon>mdi-hexagon</v-icon></v-btn>
+                </MiniTooltip>
+                <MiniTooltip text="ライン" :offset-x="0" :offset-y="4">
                   <v-btn size="small" :color="s_isDrawLine ? 'green' : undefined" icon @click="toggleLDrawLine" v-if="mapName === 'map01'"><v-icon>mdi-vector-line</v-icon></v-btn>
                 </MiniTooltip>
                 <MiniTooltip text="円" :offset-x="0" :offset-y="4">
@@ -1072,7 +1075,14 @@ import DialogInfo from '@/components/Dialog-info'
 import Dialog2 from '@/components/Dialog2'
 import DialogShare from "@/components/Dialog-share"
 import DialogChibanzuList from "@/components/Dialog-chibanzu-list"
-import pyramid, {circleCreate, deleteAll, geojsonCreate, geojsonUpdate, unescapeHTML} from '@/js/pyramid'
+import pyramid, {
+  circleCreate,
+  colorNameToRgba,
+  deleteAll,
+  geojsonCreate,
+  geojsonUpdate,
+  unescapeHTML
+} from '@/js/pyramid'
 import glouplayer from '@/js/glouplayer'
 import * as Layers from '@/js/layers'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -1115,6 +1125,7 @@ export default {
     MiniTooltip
   },
   data: () => ({
+    tempPolygonCoords: [],
     tempLineCoords: [],
     tempLineCoordsGuide: [],
     isDrawingLine: false,
@@ -1233,6 +1244,14 @@ export default {
       },
       set(value) {
         return this.$store.state.isDraw = value
+      }
+    },
+    s_isDrawPolygon: {
+      get() {
+        return this.$store.state.isDrawPolygon
+      },
+      set(value) {
+        return this.$store.state.isDrawPolygon = value
       }
     },
     s_isDrawLine: {
@@ -1955,8 +1974,20 @@ export default {
         this.s_isDrawPoint = false
         this.s_isDrawCircle = false
         this.s_isDrawLine = false
+        this.s_isDrawPolygon = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = ''
+      this.finishLine()
+    },
+    toggleLDrawPolygon () {
+      this.s_isDrawPolygon = !this.s_isDrawPolygon
+      if (this.s_isDrawPolygon) {
+        this.s_isDrawPoint = false
+        this.s_isDrawCircle = false
+        this.s_isDrawLine = false
+      }
+      document.querySelector('#draw-indicato-text').innerHTML = 'POLYGON'
+      store.state.isCursorOnPanel = false
       this.finishLine()
     },
     toggleLDrawLine () {
@@ -1964,6 +1995,7 @@ export default {
       if (this.s_isDrawLine) {
         this.s_isDrawPoint = false
         this.s_isDrawCircle = false
+        this.s_isDrawPolygon = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'LINE'
       store.state.isCursorOnPanel = false
@@ -1974,6 +2006,7 @@ export default {
       if (this.s_isDrawCircle) {
         this.s_isDrawPoint = false
         this.s_isDrawLine = false
+        this.s_isDrawPolygon = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'CIRCLE'
       store.state.isCursorOnPanel = false
@@ -1984,6 +2017,7 @@ export default {
       if (this.s_isDrawPoint) {
         this.s_isDrawCircle = false
         this.s_isDrawLine = false
+        this.s_isDrawPolygon = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'TXT'
       store.state.isCursorOnPanel = false
@@ -3748,10 +3782,8 @@ export default {
       })
       // サークル作成-----------------------------------------------------------------------------------
       function onCircleClick(e) {
-        console.log('擬似クリック event:', e);
         popup(e,map,'map01',vm.s_map2Flg)
       }
-      // map.on('click', 'click-circle-symbol-layer', onCircleClick);
       map.on('click', (e) => {
         const lng = e.lngLat.lng
         const lat = e.lngLat.lat
@@ -3769,10 +3801,6 @@ export default {
         }
 
         if (!this.s_isDrawCircle) return
-        // const lng = e.lngLat.lng
-        // const lat = e.lngLat.lat
-        // const coordinates = [lng,lat]
-        // this.$store.state.coordinates = coordinates
 
         const id = String(Math.floor(10000 + Math.random() * 90000))
         this.$store.state.id = id
@@ -3782,7 +3810,9 @@ export default {
           label:'',
           label2:'',
           offsetValue: [0, 2],
+          'line-width': 1,
           radius: 0,
+          color: colorNameToRgba('orange', 0.6),
           canterLng: 0,
           canterLat: 0
         }
@@ -3804,7 +3834,6 @@ export default {
       map.on('click', (e) => {
         if (!this.s_isDrawLine) return;
         if (clickTimer !== null) return; // 2回目のクリック時は無視
-
         clickTimer = setTimeout(() => {
           const lat = e.lngLat.lat;
           const lng = e.lngLat.lng;
@@ -3861,62 +3890,84 @@ export default {
           this.tempLineCoords = [];
         }
       });
+      // ポリゴン描画：シングルクリックで節点追加
+      function onPolygonClick(e) {
+        console.log('擬似クリック event:', e);
+        popup(e,map,'map01',vm.s_map2Flg)
+      }
+      map.on('click', (e) => {
+        if (!this.s_isDrawPolygon) return;
+        if (clickTimer !== null) return;
+        clickTimer = setTimeout(() => {
+          const lat = e.lngLat.lat;
+          const lng = e.lngLat.lng;
+          const coordinates = [lng, lat];
 
-      // map.on('click', (e) => {
-      //   const lat = e.lngLat.lat;
-      //   const lng = e.lngLat.lng;
-      //   const coordinates = [lng, lat];
-      //   this.$store.state.coordinates = coordinates;
-      //
-      //   // 既存点・ポリゴンのクリック判定
-      //   const targetId = getLineFeatureIdAtClickByPixel(map,e)
-      //   if (targetId) {
-      //     this.$store.state.id = targetId;
-      //     return;
-      //   }
-      //
-      //   // ライン描画モード
-      //   if (!this.s_isDrawLine) return;
-      //
-      //   // ライン用：クリック座標を一時保存
-      //   this.tempLineCoords.push(coordinates);
-      //
-      //   if (this.tempLineCoords.length >= 2) {
-      //     // 2点そろったらLineString生成
-      //     const id = String(Math.floor(10000 + Math.random() * 90000));
-      //     this.$store.state.id = id;
-      //     const properties = {
-      //       id: id,
-      //       pairId: id,
-      //       label: '',
-      //       offsetValue: [0.6, 0],
-      //       'line-width': 5,
-      //       textAnchor: 'left',
-      //       textJustify: 'left'
-      //     };
-      //     console.log(this.tempLineCoords)
-      //     console.log('slice',this.tempLineCoords.slice())
-      //     geojsonCreate(map, 'LineString', this.tempLineCoords.slice(), properties);
-      //
-      //     // 擬似クリックイベント発火（最終点）
-      //     const dummyEvent = {
-      //       lngLat: {
-      //         lng: this.tempLineCoords[0][0],
-      //         lat: this.tempLineCoords[0][1]
-      //       }
-      //     };
-      //     this.$store.state.coordinates = [this.tempLineCoords[0][0], this.tempLineCoords[0][1]];
-      //     setTimeout(() => {
-      //       onLineClick(dummyEvent);
-      //     }, 500);
-      //
-      //     // 一時座標クリア（もし連続で描くならコメントアウト）
-      //     this.tempLineCoords = [];
-      //   }
-      // });
+          // 既存点・ポリゴンのクリック判定
+          const targetId = getPolygonFeatureIdAtClick(map, e); // ポリゴン用関数
+          if (targetId) {
+            this.$store.state.id = targetId;
+            return;
+          }
+          console.log(coordinates)
+          // 節点追加
+          this.tempPolygonCoords.push(coordinates);
+          console.log('シングルクリック！（ポリゴン）', this.tempPolygonCoords);
+          clickTimer = null;
+        }, CLICK_DELAY);
+      });
+      // ダブルクリックでポリゴン確定
+      map.on('dblclick', (e) => {
+        if (!this.s_isDrawPolygon) return;
+        if (clickTimer !== null) {
+          clearTimeout(clickTimer);
+          clickTimer = null;
+        }
+        e.preventDefault();
+
+        if (this.tempPolygonCoords.length >= 3) {
+          // ポリゴンは必ず閉じる（最初の点を最後に追加）
+          if (
+              this.tempPolygonCoords.length < 4 ||
+              this.tempPolygonCoords[0][0] !== this.tempPolygonCoords[this.tempPolygonCoords.length - 1][0] ||
+              this.tempPolygonCoords[0][1] !== this.tempPolygonCoords[this.tempPolygonCoords.length - 1][1]
+          ) {
+            this.tempPolygonCoords.push([...this.tempPolygonCoords[0]]);
+          }
+
+          // GeoJSONのPolygonは2重配列
+          const coords = [this.tempPolygonCoords.slice()];
+
+          const id = String(Math.floor(10000 + Math.random() * 90000));
+          this.$store.state.id = id;
+          const properties = {
+            id: id,
+            pairId: id,
+            label: '',
+            color: colorNameToRgba('orange', 0.6),
+            'line-width': 1,
+          };
+          geojsonCreate(map, 'Polygon', coords, properties);
+
+          // 擬似クリックイベント発火（最初の点）
+          const dummyEvent = {
+            lngLat: {
+              lng: this.tempPolygonCoords[0][0],
+              lat: this.tempPolygonCoords[0][1]
+            }
+          };
+          this.$store.state.coordinates = [this.tempPolygonCoords[0][0], this.tempPolygonCoords[0][1]];
+          setTimeout(() => {
+            onPolygonClick(dummyEvent);
+          }, 500);
+
+          this.finishLine();
+          this.tempPolygonCoords = [];
+        }
+      });
       // ガイドライン-----------------------------------------------------------------------------------------------------
       map.on('click', (e) => {
-        if (!this.s_isDrawLine) return;
+        if (!this.s_isDrawLine && !this.s_isDrawPolygon) return;
         const lng = e.lngLat.lng;
         const lat = e.lngLat.lat;
         this.tempLineCoordsGuide.push([lng, lat]);
@@ -3924,7 +3975,7 @@ export default {
         // 2点以上になったら本採用など
       });
       map.on('mousemove', (e) => {
-        if (!this.isDrawingLine || this.tempLineCoordsGuide.length === 0) return;
+        if ((!this.isDrawingLine || this.tempLineCoordsGuide.length === 0)) return;
         // 仮ライン：既存＋現在マウス座標
         const guideCoords = this.tempLineCoordsGuide.concat([[e.lngLat.lng, e.lngLat.lat]]);
         const guideLineGeoJson = {

@@ -50,7 +50,7 @@ function toggle() {
 
 // arcやradiusは固定値で
 const arc = 110
-const radius = 90
+const radius = 100
 
 function getBtnStyle(idx, total) {
   if (!open.value) return { opacity: 0, pointerEvents: 'none' }

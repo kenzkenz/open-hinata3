@@ -660,15 +660,43 @@ export const clickCircleLayer = {
     id: 'click-circle-layer',
     type: 'fill',
     source: 'click-circle-source',
-    filter: ['==', '$type', 'Point'],
+    filter: ['==', '$type', 'Polygon'],
     paint: {
-        'fill-color': 'rgba(255,122,0,0.3)',
+        'fill-color': ['get', 'color'],
+    }
+}
+export const clickCirclePolygonLineLayer = {
+    id: 'click-circle-polygon-line-layer',
+    type: 'line',
+    source: 'click-circle-source',
+    filter: ['==', '$type', 'Polygon'],
+    paint: {
+        'line-color': 'black',
+        'line-width': ['get', 'line-width'],
+    }
+}
+export const clickCircPolygonSymbolLayer = {
+    id: 'click-circle-polygon-symbol-layer',
+    type: 'symbol',
+    source: 'click-circle-source',
+    filter: ['all', ['==', '$type', 'Polygon'], ['!has', 'bearing']],
+    layout: {
+        'text-field': ['get', 'label'],
+        'text-size': 30,   // サイズ調整
+        'text-anchor': 'center',
+        'text-allow-overlap': true
+    },
+    paint: {
+        'text-color': 'black',
+        'text-halo-color': '#fff',
+        'text-halo-width': 1
     }
 }
 export const clickCircleLineLayer = {
     id: 'click-circle-line-layer',
     type: 'line',
     source: 'click-circle-source',
+    filter: ['==', '$type', 'LineString'],
     paint: {
         'line-color': ['get', 'color'],
         'line-width': ['get', 'line-width'],

@@ -91,8 +91,8 @@ import {
   arrowsLayer,
   clickCircleLabelLayer,
   clickCircleLayer,
-  clickCircleLineLayer,
-  clickCircleSource, clickCircSymbolLayer,
+  clickCircleLineLayer, clickCirclePolygonLineLayer,
+  clickCircleSource, clickCircPolygonSymbolLayer, clickCircSymbolLayer,
   clickPointLayer,
   clickPointSource, endPointSouce, guideLineLayer, guideLineSource,
   zenkokuChibanzuAddLayer
@@ -920,6 +920,8 @@ export default {
 
       if (map.getSource('click-circle-source')) {
         map.removeLayer('click-circle-layer')
+        map.removeLayer('click-circle-polygon-line-layer')
+        map.removeLayer('click-circle-polygon-symbol-layer')
         map.removeLayer('click-circle-symbol-layer')
         map.removeLayer('click-circle-line-layer')
         map.removeLayer('click-circle-label-layer')
@@ -933,6 +935,8 @@ export default {
       }
       map.addSource('click-circle-source', clickCircleSource.obj)
       map.addLayer(clickCircleLayer)
+      map.addLayer(clickCirclePolygonLineLayer)
+      map.addLayer(clickCircPolygonSymbolLayer)
       map.addLayer(clickCircSymbolLayer)
       map.addLayer(clickCircleLineLayer)
       map.addLayer(clickCircleLabelLayer)
