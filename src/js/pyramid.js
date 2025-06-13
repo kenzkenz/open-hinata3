@@ -1189,7 +1189,7 @@ export default function pyramid () {
     })
 }
 // ラインの最後のセグメントの方向（ベアリング）を計算する関数
-function calculateBearing(coord1, coord2) {
+function calculateBearing(coord1, coord2, endpoint) {
     const lon1 = coord1[0] * Math.PI / 180;
     const lat1 = coord1[1] * Math.PI / 180;
     const lon2 = coord2[0] * Math.PI / 180;
@@ -1199,7 +1199,11 @@ function calculateBearing(coord1, coord2) {
     const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
     let bearing = Math.atan2(y, x) * 180 / Math.PI;
     bearing = (bearing + 360) % 360; // 正規化
-    return bearing + 270; // 矢印の向きを調整（SVGのデフォルト向きに応じて）
+    if (endpoint === 'end') {
+        return bearing + 270; // 矢印の向きを調整
+    } else {
+        return bearing + 90;
+    }
 }
 // ---------------------------------------------------------------------------------------------------------------------
 export function geojsonCreate(map, geoType, coordinates, properties = {}) {
@@ -1229,7 +1233,8 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
                     // 最後のセグメントの方向を計算（オプション）
                     bearing: calculateBearing(
                         coordinates[coordinates.length - 2],
-                        lastCoord
+                        lastCoord,
+                        'end'
                     )
                 }
             };
@@ -1250,7 +1255,8 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
                     // 最後のセグメントの方向を計算（オプション）
                     bearing: calculateBearing(
                         coordinates[coordinates.length - 2],
-                        lastCoord
+                        lastCoord,
+                        'start'
                     )
                 }
             };
