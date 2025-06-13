@@ -7858,6 +7858,7 @@ export function enableFeatureDragAndAdd(map, layerId, sourceId, options = {}) {
 
     // ドラッグ開始
     map.on('mousedown', function (e) {
+        if (store.state.editEnabled) return
         const features = map.queryRenderedFeatures(e.point, { layers: [layerId] });
         if (features.length > 0) {
             isDragging = true;

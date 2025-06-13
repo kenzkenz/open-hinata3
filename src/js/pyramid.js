@@ -1438,6 +1438,7 @@ export function getAllVertexPoints(map, geojson) {
             });
         }
     });
+    console.log('フィーチャーズ',features)
     source.setData({
         type: 'FeatureCollection',
         features
