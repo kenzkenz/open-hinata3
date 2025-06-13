@@ -1123,6 +1123,7 @@ import MiniTooltip from '@/components/MiniTooltip'
 import FanMenu from '@/components/FanMenu'
 // import store from "@/store";
 import html2canvas from 'html2canvas'
+import debounce from 'lodash/debounce'
 import {feature} from "@turf/turf";
 
 export default {
@@ -4039,12 +4040,11 @@ export default {
       //     // ここでgeojsonCreate(…)などで本採用
       //   }
       // });
-      // ストア経由でテキストで管理
+      // 頂点レイヤーを動かすと同時にメインレイヤーを更新する。
       let isDragging = false;
       let draggedFeatureId = null;
       let vertexIndex = null;
       let dragOrigin = null;
-
       map.on('mousedown', 'vertex-layer', function(e) {
         if (!store.state.editEnabled) return;
         if (!e.features?.length) return;
@@ -4068,64 +4068,40 @@ export default {
         }
       });
 
-      map.on('mousemove', function(e) {
+      map.on('mousemove', debounce(function(e) {
         if (!isDragging || draggedFeatureId === null) return;
-        const source = map.getSource('vertex-source');
-        if (!source) {
-          console.error('Source vertex-source not found');
-          return;
-        }
-        // 現在のソースデータを取得
-        const data = source._data; // GeoJSONデータ
-        if (!data || !data.features) {
-          console.warn('No features found in vertex-source');
-          return;
-        }
+        const vertexSourceGeojson = map.getSource('vertex-source')._data;
+        const mainSourceGeojson = map.getSource('click-circle-source')._data;
         // ドラッグ中のフィーチャーを検索
-        let feature = data.features.find(f => {
-          return f.properties.parentProps.id === draggedFeatureId && f.properties.vertexIndex === vertexIndex
+        let feature = vertexSourceGeojson.features.find(f => {
+          return f.properties.parentProps.id === draggedFeatureId && f.properties.vertexIndex === vertexIndex;
         });
-        if (!feature) {
-          console.warn(`Feature with ID ${draggedFeatureId} not found`);
-          return;
-        }
         // 新しい座標を適用
         feature.geometry.coordinates = [e.lngLat.lng, e.lngLat.lat];
         // ソースデータを更新
         try {
-          source.setData(data);
+          map.getSource('vertex-source').setData(vertexSourceGeojson);
+          const vertexSource = map.getSource('vertex-source');
+          const features = vertexSource._data.features;
+          features.forEach(f => {
+            const { featureIndex, vertexIndex, polygonIndex } = f.properties;
+            if (mainSourceGeojson.features[featureIndex]?.geometry.type === 'LineString') {
+              mainSourceGeojson.features[featureIndex].geometry.coordinates[vertexIndex] = f.geometry.coordinates;
+            } else if (mainSourceGeojson.features[featureIndex]?.geometry.type === 'Polygon') {
+              mainSourceGeojson.features[featureIndex].geometry.coordinates[0][vertexIndex] = f.geometry.coordinates;
+            } else if (mainSourceGeojson.features[featureIndex]?.geometry.type === 'MultiPolygon') {
+              mainSourceGeojson.features[featureIndex].geometry.coordinates[polygonIndex][0][vertexIndex] = f.geometry.coordinates;
+            }
+          });
+          map.getSource('click-circle-source').setData(mainSourceGeojson);
+          store.state.clickCircleGeojsonText = JSON.stringify(mainSourceGeojson);
         } catch (error) {
           console.error('Failed to update source data:', error);
         }
-      });
+      }, 8)); // デバウンスの数値をあげるとかくかくになる。
 
       map.on('mouseup', function() {
         if (!isDragging) return;
-        // ★ 1. ストアからGeoJSONテキストをパース
-        let mainGeojson;
-        mainGeojson = JSON.parse(store.state.clickCircleGeojsonText);
-        // 2. 頂点情報を本体GeoJSONへ反映
-        const vertexSource = map.getSource('vertex-source');
-        const features = vertexSource._data.features;
-        features.forEach(f => {
-          const { featureIndex, vertexIndex, polygonIndex } = f.properties;
-          if (mainGeojson.features[featureIndex]?.geometry.type === 'LineString') {
-            mainGeojson.features[featureIndex].geometry.coordinates[vertexIndex] = f.geometry.coordinates;
-          } else if (mainGeojson.features[featureIndex]?.geometry.type === 'Polygon') {
-
-            mainGeojson.features[featureIndex].geometry.coordinates[0][vertexIndex] = f.geometry.coordinates;
-          } else if (mainGeojson.features[featureIndex]?.geometry.type === 'MultiPolygon') {
-            mainGeojson.features[featureIndex].geometry.coordinates[polygonIndex][0][vertexIndex] = f.geometry.coordinates;
-          }
-        });
-        console.log(features.length,mainGeojson.features[0].geometry.coordinates[0])
-        // mainGeojson = mainGeojson.features.pop()
-        // 3. テキスト化してストアへ上書き
-        store.state.clickCircleGeojsonText = JSON.stringify(mainGeojson);
-        // 4. 本体描画も更新
-        map.getSource('click-circle-source').setData(mainGeojson);
-        // 5. 頂点レイヤーも再生成・setData
-        getAllVertexPoints(map, mainGeojson);
         isDragging = false;
         draggedFeatureId = null;
         dragOrigin = null;
@@ -4133,80 +4109,57 @@ export default {
         map.getCanvas().style.cursor = '';
       });
 
-
-      // map.on('mousemove', function(e) {
-      //   if (!isDragging || !store.state.editEnabled) return;
-      //   const vertexSource = map.getSource('vertex-source');
-      //   const features = vertexSource._data.features;
-      //   // const id = features[0].properties.parentProps.id
-      //   // const leftId = id.split('_')[0]
-      //   const feature = features.find(f => f.properties.parentProps.id === draggedFeatureId);
-      //   const [lng0, lat0] = feature.geometry.coordinates;
-      //   const dx = e.lngLat.lng - dragOrigin.lng;
-      //   const dy = e.lngLat.lat - dragOrigin.lat;
-      //   feature.geometry.coordinates = [lng0 + dx, lat0 + dy];
-      //   console.log(features.length)
-      //   vertexSource.setData({
-      //     type: 'FeatureCollection',
-      //     features
-      //   });
-      //   console.log(vertexSource)
-      //   dragOrigin = e.lngLat;
-      // });
-      //
-      // map.on('mouseup', function(e) {
-      //   if (isDragging && store.state.editEnabled) {
-      //     // ★ 1. ストアからGeoJSONテキストをパース
-      //     let mainGeojson;
-      //     try {
-      //       mainGeojson = JSON.parse(store.state.clickCircleGeojsonText);
-      //     } catch (err) {
-      //       isDragging = false;
-      //       draggedFeatureId = null;
-      //       dragOrigin = null;
-      //       map.getCanvas().style.cursor = 'pointer';
-      //       return;
-      //     }
-      //
-      //     // 2. 頂点情報を本体GeoJSONへ反映
-      //     const vertexSource = map.getSource('vertex-source');
-      //     const features = vertexSource._data.features;
-      //     features.forEach(f => {
-      //       const { featureIndex, vertexIndex, polygonIndex } = f.properties;
-      //       if (mainGeojson.features[featureIndex]?.geometry.type === 'LineString') {
-      //         mainGeojson.features[featureIndex].geometry.coordinates[vertexIndex] = f.geometry.coordinates;
-      //       } else if (mainGeojson.features[featureIndex]?.geometry.type === 'Polygon') {
-      //
-      //         mainGeojson.features[featureIndex].geometry.coordinates[0][vertexIndex] = f.geometry.coordinates;
-      //       } else if (mainGeojson.features[featureIndex]?.geometry.type === 'MultiPolygon') {
-      //         mainGeojson.features[featureIndex].geometry.coordinates[polygonIndex][0][vertexIndex] = f.geometry.coordinates;
-      //       }
-      //     });
-      //     console.log(features.length,mainGeojson.features[0].geometry.coordinates[0])
-      //     // mainGeojson = mainGeojson.features.pop()
-      //     // 3. テキスト化してストアへ上書き
-      //     store.state.clickCircleGeojsonText = JSON.stringify(mainGeojson);
-      //
-      //     // 4. 本体描画も更新
-      //     map.getSource('vertex-source').setData(mainGeojson);
-      //
-      //     // 5. 頂点レイヤーも再生成・setData
-      //     getAllVertexPoints(map, mainGeojson);
-      //
-      //     console.log(999)
-      //
-      //     isDragging = false;
-      //     draggedFeatureId = null;
-      //     dragOrigin = null;
-      //     map.getCanvas().style.cursor = 'pointer';
-      //   }
-      // });
-
-
-      // map.on('mousedown', 'vertex-layer', e => { console.log('mousedown', e); });
-      // map.on('mousemove', e => { console.log('mousemove', e); });
-      // map.on('mouseup', e => { console.log('mouseup', e); });
-      // ----------------------------------------------------------------------------------------------
+      // 頂点をダブルクリックで削除----------------------------------------------------------------------------------------------
+      map.on('dblclick', 'vertex-layer', function(e) {
+        e.preventDefault();
+        if (!store.state.editEnabled) return;
+        if (!e.features?.length) return;
+        try {
+          const { parentProps, featureIndex, vertexIndex, polygonIndex } = e.features[0].properties;
+          const parentId = JSON.parse(parentProps).id;
+          // GeoJSONを取得
+          const mainSourceGeojson = map.getSource('click-circle-source')._data;
+          // 対象本体Feature
+          const feature = mainSourceGeojson.features[featureIndex];
+          if (!feature) return;
+          let modified = false;
+          // LineString
+          if (feature.geometry.type === 'LineString') {
+            if (feature.geometry.coordinates.length > 2) { // 最小2
+              feature.geometry.coordinates.splice(vertexIndex, 1);
+              modified = true;
+            }
+          }
+          // Polygon
+          else if (feature.geometry.type === 'Polygon') {
+            let ring = feature.geometry.coordinates[0];
+            if (ring.length > 4) { // 最小4（閉じてるから）
+              ring.splice(vertexIndex, 1);
+              modified = true;
+            }
+          }
+          // MultiPolygon
+          else if (feature.geometry.type === 'MultiPolygon') {
+            let ring = feature.geometry.coordinates[polygonIndex][0];
+            if (ring.length > 4) {
+              ring.splice(vertexIndex, 1);
+              modified = true;
+            }
+          }
+          if (modified) {
+            // 本体更新
+            map.getSource('click-circle-source').setData(mainSourceGeojson);
+            // 頂点レイヤーも再生成
+            getAllVertexPoints(map, mainSourceGeojson);
+            store.state.clickCircleGeojsonText = JSON.stringify(mainSourceGeojson);
+            // もしくは↓直接セット
+            // 再構築したvertex features配列を作り直してsetData
+            // ...既存の頂点生成ロジックでOK
+          }
+        } catch (error) {
+          console.error('Failed to delete vertex:', error);
+        }
+      }, { passive: false });
 
       map.on('moveend', () => {
         this.$store.state.watchFlg = true
