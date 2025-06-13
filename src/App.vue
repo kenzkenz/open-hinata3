@@ -5862,7 +5862,7 @@ export default {
   position:absolute;
   top:10px;
   right:10px;
-  z-index:1;
+  z-index:3;
 }
 .zoom-div {
   position: absolute;

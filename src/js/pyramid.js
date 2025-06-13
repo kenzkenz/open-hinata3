@@ -1078,7 +1078,21 @@ export default function pyramid () {
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
-            if (e.target && (e.target.classList.contains("circle"))) {
+            if (e.target && (e.target.classList.contains("point-color"))) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
+                const arrowId = id + '-arrow'
+                const value = e.target.getAttribute("data-color")
+                const arrowValue = 'arrow_' + value
+                const tgtProp = 'color'
+                const arrowTgtProp = 'arrow'
+                console.log(id,value)
+                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("line-color"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
                 const arrowId = id + '-arrow'

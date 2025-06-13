@@ -3612,11 +3612,11 @@ export function popup(e,map,mapName,mapFlg) {
                                 '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:100%;" class="point-delete pyramid-btn">削　除</button>' +
                                 '<div style="display: flex;gap: 8px;">' +
                                 '<div class="circle-list">' +
-                                '<div id="' + props.id + '" data-color="red" class="circle red" tabindex="0"></div>' +
-                                '<div id="' + props.id + '" data-color="black" class="circle black" tabindex="0"></div>' +
-                                '<div id="' + props.id + '" data-color="blue" class="circle blue" tabindex="0"></div>' +
-                                '<div id="' + props.id + '" data-color="green" class="circle green" tabindex="0"></div>' +
-                                '<div id="' + props.id + '" data-color="orange" class="circle orange" tabindex="0"></div>' +
+                                '<div id="' + props.id + '" data-color="red" class="point-color circle red" tabindex="0"></div>' +
+                                '<div id="' + props.id + '" data-color="black" class="point-color circle black" tabindex="0"></div>' +
+                                '<div id="' + props.id + '" data-color="blue" class="point-color circle blue" tabindex="0"></div>' +
+                                '<div id="' + props.id + '" data-color="green" class="point-color circle green" tabindex="0"></div>' +
+                                '<div id="' + props.id + '" data-color="orange" class="point-color circle orange" tabindex="0"></div>' +
                                 '</div>' +
                                 '<input id="' + props.id + '" type="number" class="oh-cool-input-number font-size-input" min="10" max="100" step="1" value="' + textSize +'">' +
                                 '</div>' +
@@ -3632,11 +3632,11 @@ export function popup(e,map,mapName,mapFlg) {
                                 '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:100%;" class="line-delete pyramid-btn">削　除</button>' +
                                 '<div style="display: flex;gap: 8px;">' +
                                 '<div class="circle-list">' +
-                                '<div id="' + props.id + '" data-color="red" class="circle red" tabindex="0"></div>' +
-                                '<div id="' + props.id + '" data-color="black" class="circle black" tabindex="0"></div>' +
-                                '<div id="' + props.id + '" data-color="blue" class="circle blue" tabindex="0"></div>' +
-                                '<div id="' + props.id + '" data-color="green" class="circle green" tabindex="0"></div>' +
-                                '<div id="' + props.id + '" data-color="orange" class="circle orange" tabindex="0"></div>' +
+                                '<div id="' + props.id + '" data-color="red" class="line-color circle red" tabindex="0"></div>' +
+                                '<div id="' + props.id + '" data-color="black" class="line-color circle black" tabindex="0"></div>' +
+                                '<div id="' + props.id + '" data-color="blue" class="line-color circle blue" tabindex="0"></div>' +
+                                '<div id="' + props.id + '" data-color="green" class="line-color circle green" tabindex="0"></div>' +
+                                '<div id="' + props.id + '" data-color="orange" class="line-color circle orange" tabindex="0"></div>' +
                                 '</div>' +
                                 '<input id="' + props.id + '" type="number" class="oh-cool-input-number line-width-input" min="1" max="100" step="1" value="' + lineWidth +'">' +
                                 '</div>' +
