@@ -3752,7 +3752,7 @@ export default {
         return Math.sqrt((x - projX) ** 2 + (y - projY) ** 2);
       }
       let clickTimer = null;
-      const CLICK_DELAY = 50; // ms
+      const CLICK_DELAY = 150; // ms
       // ポイント作成-----------------------------------------------------------------------------------
       function onPointClick(e) {
         console.log('擬似クリック event:', e);

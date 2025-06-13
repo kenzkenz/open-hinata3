@@ -7960,7 +7960,7 @@ export function enableFeatureDragAndAdd(map, layerId, sourceId, options = {}) {
     });
 
     // クリック追加（Pointのみ。Line/Polygonは別途draw系で）
-    if (enableAdd || click) {
+    if (click) {
         map.on('click', async function (e) {
             if (isDragging) return;
             const visibility = map.getLayoutProperty(layerId, 'visibility');

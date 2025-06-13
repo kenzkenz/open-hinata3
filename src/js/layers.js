@@ -679,7 +679,7 @@ export const clickCircPolygonSymbolLayer = {
     id: 'click-circle-polygon-symbol-layer',
     type: 'symbol',
     source: 'click-circle-source',
-    filter: ['all', ['==', '$type', 'Polygon'], ['!has', 'bearing']],
+    filter: ['all', ['==', '$type', 'Polygon'], ['!has', 'bearing'], ['!has', 'radius']],
     layout: {
         'text-field': ['get', 'label'],
         'text-size': 30,   // サイズ調整
