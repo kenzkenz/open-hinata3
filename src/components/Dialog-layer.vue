@@ -971,6 +971,7 @@ export default {
           targetLayers.forEach(layer => {
             registeredLayers.add(layer)
             this.$store.state.map01.on('click', layer, (e) => {
+              if (this.$store.state.isDraw) return
               // まずoh-plateau-tokyo23ku-layerの地物があったらreturn
               const map = this.$store.state.map01;
               const featuresOnPlateau = map.queryRenderedFeatures(e.point, { layers: ['oh-plateau-tokyo23ku-layer'] });

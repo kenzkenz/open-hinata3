@@ -30,6 +30,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
           @save="savePointDescription"
       />
 
+      <v-snackbar v-model="snackbar" :timeout="3000" color="primary">
+        {{ snackbarText }}
+      </v-snackbar>
+
       <v-snackbar v-model="loadingSnackbar"
                   :timeout="-1"
                   color="primary">
@@ -1092,6 +1096,7 @@ import Dialog2 from '@/components/Dialog2'
 import DialogShare from "@/components/Dialog-share"
 import DialogChibanzuList from "@/components/Dialog-chibanzu-list"
 import pyramid, {
+  autoCloseAllPolygons,
   circleCreate,
   colorNameToRgba,
   deleteAll,
@@ -1142,6 +1147,8 @@ export default {
     MiniTooltip
   },
   data: () => ({
+    snackbar: false,
+    snackbarText: '',
     tempPolygonCoords: [],
     tempLineCoords: [],
     tempLineCoordsGuide: [],
@@ -1851,6 +1858,7 @@ export default {
       const win = window.open(intentUrl, '_blank');
     },
     deleteAllforDraw () {
+      this.s_editEnabled = false
       deleteAll()
     },
     onA() { alert('未実装です。') },
@@ -2000,7 +2008,9 @@ export default {
         this.s_isDrawCircle = false
         this.s_isDrawLine = false
         this.s_isDrawPolygon = false
-        this.s_editEnabled = false
+      } else {
+        this.snackbarText = 'ドロー時は各種クリックが制限されます。'
+        this.snackbar = true
       }
       document.querySelector('#draw-indicato-text').innerHTML = ''
       this.finishLine()
@@ -2013,7 +2023,6 @@ export default {
         this.s_isDrawLine = false
         this.s_isDrawPolygon = false
       }
-      document.querySelector('#draw-indicato-text').innerHTML = 'POLYGON'
       store.state.isCursorOnPanel = false
       this.finishLine()
     },
@@ -3869,23 +3878,25 @@ export default {
       })
       // ライン作成-------------------------------------------------------------------------------------------------------
       function onLineClick(e) {
-        console.log('擬似クリック event:', e);
         popup(e,map,'map01',vm.s_map2Flg)
       }
       // ライン描画
       map.on('click', (e) => {
+        const lat = e.lngLat.lat;
+        const lng = e.lngLat.lng;
+        const coordinates = [lng, lat];
+        this.$store.state.coordinates = coordinates
+        // 既存点・ポリゴンのクリック判定
+        const targetId = getLineFeatureIdAtClickByPixel(map, e);
+        if (targetId) {
+          this.$store.state.id = targetId;
+          // alert(999)
+          return;
+        }
         if (!this.s_isDrawLine) return;
         if (clickTimer !== null) return; // 2回目のクリック時は無視
         clickTimer = setTimeout(() => {
-          const lat = e.lngLat.lat;
-          const lng = e.lngLat.lng;
-          const coordinates = [lng, lat];
-          // 既存点・ポリゴンのクリック判定
-          const targetId = getLineFeatureIdAtClickByPixel(map, e);
-          if (targetId) {
-            this.$store.state.id = targetId;
-            return;
-          }
+
           // 節点追加
           this.tempLineCoords.push(coordinates);
           // alert(this.tempLineCoords.length)
@@ -3934,7 +3945,6 @@ export default {
       });
       // ポリゴン描画：シングルクリックで節点追加
       function onPolygonClick(e) {
-        console.log('擬似クリック event:', e);
         popup(e,map,'map01',vm.s_map2Flg)
       }
       map.on('click', (e) => {
@@ -4093,7 +4103,9 @@ export default {
               mainSourceGeojson.features[featureIndex].geometry.coordinates[polygonIndex][0][vertexIndex] = f.geometry.coordinates;
             }
           });
+          autoCloseAllPolygons(mainSourceGeojson)
           map.getSource('click-circle-source').setData(mainSourceGeojson);
+          setAllMidpoints(map, mainSourceGeojson);
           store.state.clickCircleGeojsonText = JSON.stringify(mainSourceGeojson);
         } catch (error) {
           console.error('Failed to update source data:', error);
@@ -4111,55 +4123,173 @@ export default {
 
       // 頂点をダブルクリックで削除----------------------------------------------------------------------------------------------
       map.on('dblclick', 'vertex-layer', function(e) {
-        e.preventDefault();
+        e.preventDefault(); // ←これでズーム等のデフォルトイベントを止める！
         if (!store.state.editEnabled) return;
         if (!e.features?.length) return;
-        try {
-          const { parentProps, featureIndex, vertexIndex, polygonIndex } = e.features[0].properties;
-          const parentId = JSON.parse(parentProps).id;
-          // GeoJSONを取得
-          const mainSourceGeojson = map.getSource('click-circle-source')._data;
-          // 対象本体Feature
-          const feature = mainSourceGeojson.features[featureIndex];
-          if (!feature) return;
-          let modified = false;
-          // LineString
-          if (feature.geometry.type === 'LineString') {
-            if (feature.geometry.coordinates.length > 2) { // 最小2
-              feature.geometry.coordinates.splice(vertexIndex, 1);
-              modified = true;
-            }
+        const { featureIndex, vertexIndex, polygonIndex } = e.features[0].properties;
+        const mainSourceGeojson = map.getSource('click-circle-source')._data;
+        const feature = mainSourceGeojson.features[featureIndex];
+        if (!feature) return;
+        let modified = false;
+
+        if (feature.geometry.type === 'LineString') {
+          if (feature.geometry.coordinates.length > 2) {
+            feature.geometry.coordinates.splice(vertexIndex, 1);
+            modified = true;
           }
-          // Polygon
-          else if (feature.geometry.type === 'Polygon') {
-            let ring = feature.geometry.coordinates[0];
-            if (ring.length > 4) { // 最小4（閉じてるから）
-              ring.splice(vertexIndex, 1);
-              modified = true;
-            }
+        } else if (feature.geometry.type === 'Polygon') {
+          let ring = feature.geometry.coordinates[0];
+          const closed = ring.length > 2 &&
+              ring[0][0] === ring[ring.length - 1][0] &&
+              ring[0][1] === ring[ring.length - 1][1];
+          if (closed) ring = ring.slice(0, -1); // 一旦閉じ解除
+
+          // 最小4点（閉じたポリゴン）未満なら削除禁止
+          if (ring.length > 3) {
+            ring.splice(vertexIndex, 1);
+            modified = true;
           }
-          // MultiPolygon
-          else if (feature.geometry.type === 'MultiPolygon') {
-            let ring = feature.geometry.coordinates[polygonIndex][0];
-            if (ring.length > 4) {
-              ring.splice(vertexIndex, 1);
-              modified = true;
-            }
+          // 必ず再閉じ
+          feature.geometry.coordinates[0] = ring.concat([ring[0]]);
+        } else if (feature.geometry.type === 'MultiPolygon') {
+          let ring = feature.geometry.coordinates[polygonIndex][0];
+          const closed = ring.length > 2 &&
+              ring[0][0] === ring[ring.length - 1][0] &&
+              ring[0][1] === ring[ring.length - 1][1];
+          if (closed) ring = ring.slice(0, -1);
+
+          if (ring.length > 3) {
+            ring.splice(vertexIndex, 1);
+            modified = true;
           }
-          if (modified) {
-            // 本体更新
-            map.getSource('click-circle-source').setData(mainSourceGeojson);
-            // 頂点レイヤーも再生成
-            getAllVertexPoints(map, mainSourceGeojson);
-            store.state.clickCircleGeojsonText = JSON.stringify(mainSourceGeojson);
-            // もしくは↓直接セット
-            // 再構築したvertex features配列を作り直してsetData
-            // ...既存の頂点生成ロジックでOK
-          }
-        } catch (error) {
-          console.error('Failed to delete vertex:', error);
+          feature.geometry.coordinates[polygonIndex][0] = ring.concat([ring[0]]);
+        }
+
+        if (modified) {
+          autoCloseAllPolygons(mainSourceGeojson)
+          map.getSource('click-circle-source').setData(mainSourceGeojson);
+          getAllVertexPoints(map, mainSourceGeojson);
+          setAllMidpoints(map, mainSourceGeojson);
         }
       }, { passive: false });
+
+      // map.on('dblclick', 'vertex-layer', function(e) {
+      //   e.preventDefault();
+      //   if (!store.state.editEnabled) return;
+      //   if (!e.features?.length) return;
+      //   try {
+      //     const { parentProps, featureIndex, vertexIndex, polygonIndex } = e.features[0].properties;
+      //     const parentId = JSON.parse(parentProps).id;
+      //     // GeoJSONを取得
+      //     const mainSourceGeojson = map.getSource('click-circle-source')._data;
+      //     // 対象本体Feature
+      //     const feature = mainSourceGeojson.features[featureIndex];
+      //     if (!feature) return;
+      //     let modified = false;
+      //     // LineString
+      //     if (feature.geometry.type === 'LineString') {
+      //       if (feature.geometry.coordinates.length > 2) { // 最小2
+      //         feature.geometry.coordinates.splice(vertexIndex, 1);
+      //         modified = true;
+      //       }
+      //     }
+      //     // Polygon
+      //     else if (feature.geometry.type === 'Polygon') {
+      //       let ring = feature.geometry.coordinates[0];
+      //       if (ring.length > 4) { // 最小4（閉じてるから）
+      //         ring.splice(vertexIndex, 1);
+      //         modified = true;
+      //       }
+      //     }
+      //     // MultiPolygon
+      //     else if (feature.geometry.type === 'MultiPolygon') {
+      //       let ring = feature.geometry.coordinates[polygonIndex][0];
+      //       if (ring.length > 4) {
+      //         ring.splice(vertexIndex, 1);
+      //         modified = true;
+      //       }
+      //     }
+      //     if (modified) {
+      //       // 本体更新
+      //       map.getSource('click-circle-source').setData(mainSourceGeojson);
+      //       // 頂点レイヤーも再生成
+      //       getAllVertexPoints(map, mainSourceGeojson);
+      //       setAllMidpoints(map, mainSourceGeojson);
+      //       store.state.clickCircleGeojsonText = JSON.stringify(mainSourceGeojson);
+      //
+      //     }
+      //   } catch (error) {
+      //     console.error('Failed to delete vertex:', error);
+      //   }
+      // }, { passive: false });
+
+
+      map.on('click', 'midpoint-layer', function(e) {
+        if (!store.state.editEnabled) return;
+        if (!e.features?.length) return;
+        const f = e.features[0];
+        const { insertIndex, featureIndex, polygonIndex } = f.properties;
+        const [lng, lat] = f.geometry.coordinates;
+        const mainSourceGeojson = map.getSource('click-circle-source')._data;
+        const feature = mainSourceGeojson.features[featureIndex];
+        if (!feature) return;
+
+        if (feature.geometry.type === 'LineString') {
+          feature.geometry.coordinates.splice(insertIndex, 0, [lng, lat]);
+        } else if (feature.geometry.type === 'Polygon') {
+          let ring = feature.geometry.coordinates[0];
+          const closed = ring.length > 2 &&
+              ring[0][0] === ring[ring.length - 1][0] &&
+              ring[0][1] === ring[ring.length - 1][1];
+          if (closed) ring = ring.slice(0, -1);
+
+          ring.splice(insertIndex, 0, [lng, lat]);
+          feature.geometry.coordinates[0] = ring.concat([ring[0]]);
+        } else if (feature.geometry.type === 'MultiPolygon') {
+          let ring = feature.geometry.coordinates[polygonIndex][0];
+          const closed = ring.length > 2 &&
+              ring[0][0] === ring[ring.length - 1][0] &&
+              ring[0][1] === ring[ring.length - 1][1];
+          if (closed) ring = ring.slice(0, -1);
+
+          ring.splice(insertIndex, 0, [lng, lat]);
+          feature.geometry.coordinates[polygonIndex][0] = ring.concat([ring[0]]);
+        }
+
+        map.getSource('click-circle-source').setData(mainSourceGeojson);
+        getAllVertexPoints(map, mainSourceGeojson);
+        setAllMidpoints(map, mainSourceGeojson);
+      });
+
+
+      //
+      // map.on('click', 'midpoint-layer', function(e) {
+      //   if (!store.state.editEnabled) return;
+      //   if (!e.features?.length) return;
+      //   // 中点Feature
+      //   const f = e.features[0];
+      //   const { insertIndex, featureIndex, polygonIndex } = f.properties;
+      //   const [lng, lat] = f.geometry.coordinates;
+      //   // 本体取得
+      //   const mainSourceGeojson = map.getSource('click-circle-source')._data;
+      //   const feature = mainSourceGeojson.features[featureIndex];
+      //   if (!feature) return;
+      //
+      //   // 挿入
+      //   if (feature.geometry.type === 'LineString') {
+      //     feature.geometry.coordinates.splice(insertIndex, 0, [lng, lat]);
+      //   } else if (feature.geometry.type === 'Polygon') {
+      //     feature.geometry.coordinates[0].splice(insertIndex, 0, [lng, lat]);
+      //   } else if (feature.geometry.type === 'MultiPolygon') {
+      //     feature.geometry.coordinates[polygonIndex][0].splice(insertIndex, 0, [lng, lat]);
+      //   }
+      //   // 反映
+      //   map.getSource('click-circle-source').setData(mainSourceGeojson);
+      //   getAllVertexPoints(map, mainSourceGeojson);
+      //   setAllMidpoints(map, mainSourceGeojson);
+      // });
+
+
 
       map.on('moveend', () => {
         this.$store.state.watchFlg = true
@@ -4297,13 +4427,14 @@ export default {
         }
       });
       // -----------------------------------------------------------------------------------------------------------------
-      // on load
+      // on load オンロード
       this.mapNames.forEach(mapName => {
         const map = this.$store.state[mapName]
         const params = this.parseUrlParams()
         map.on('load',async () => {
           map.setProjection({"type": "globe"})
           map.resize()
+          map.doubleClickZoom.disable()
 
           const black = await map.loadImage('./img/arrow_black.png');
           const red = await map.loadImage('./img/arrow_red.png');
@@ -5618,6 +5749,7 @@ export default {
           // マップ上でポリゴンをクリックしたときのイベントリスナー
           let highlightCounter = 0;
           map.on('click', 'oh-homusyo-2025-polygon', (e) => {
+            if (this.s_isDraw) return
             if (this.$store.state.isDrawPoint) return;
             if (!this.$store.state.isRenzoku) return;
             if (map.getLayer('oh-point-layer')) return;
@@ -5859,6 +5991,7 @@ export default {
           'oh-chibanzu-甲府市','oh-chibanzu-名古屋市','oh-chibanzu-唐津市']
         layers.forEach(layer => {
           map.on('click', layer, (e) => {
+            if (this.s_isDraw) return
             if (!this.$store.state.isRenzoku) return
             if (map.getLayer('oh-point-layer')) return
             if (e.features && e.features.length > 0) {
@@ -6052,9 +6185,14 @@ export default {
     s_editEnabled (value) {
       const map01 = this.$store.state.map01
       if (value) {
-        const geojson = JSON.parse(this.$store.state.clickCircleGeojsonText)
-        getAllVertexPoints(map01, geojson)
-        setAllMidpoints(map01, geojson)
+        const geojsonText = this.$store.state.clickCircleGeojsonText
+        if (geojsonText) {
+          const geojson = JSON.parse(geojsonText)
+          getAllVertexPoints(map01, geojson)
+          setAllMidpoints(map01, geojson)
+        } else {
+          this.s_editEnabled = false
+        }
       } else {
         getAllVertexPoints(map01)
         setAllMidpoints(map01)

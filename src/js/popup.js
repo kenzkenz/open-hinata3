@@ -251,8 +251,7 @@ function urlByLayerId (layerId) {
 }
 let isFirstClickCircleLabelLayer = true
 export function popup(e,map,mapName,mapFlg) {
-
-
+    if (store.state.editEnabled) return;
     // alert(mapName)
     let html = ''
     enableMotionPermission()

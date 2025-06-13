@@ -1458,7 +1458,11 @@ export function setAllMidpoints(map, geojson) {
     geojson.features.forEach((feature, featIdx) => {
         const { geometry, properties } = feature;
         if (!geometry) return;
-        if (properties && typeof properties.radius !== "undefined") return; // サークル除外
+        // 1. サークル判定
+        if (properties && typeof properties.radius !== "undefined") return;
+        // 2. Pointタイプ地物は絶対に対象外
+        if (geometry.type === 'Point') return;
+
         const { type, coordinates } = geometry;
         if (type === 'LineString') {
             features.push(...makeMidpointsFeatureCollection(coordinates, false, featIdx, 0));
@@ -1475,10 +1479,22 @@ export function setAllMidpoints(map, geojson) {
         features
     });
 }
-
 function makeMidpointsFeatureCollection(coords, isPolygon = false, featureIndex = 0, polygonIndex = 0) {
     const midpoints = [];
-    const len = coords.length;
+    let len = coords.length;
+    let isClosed = false;
+
+    if (
+        isPolygon &&
+        len > 2 &&
+        coords[0][0] === coords[len - 1][0] &&
+        coords[0][1] === coords[len - 1][1]
+    ) {
+        len -= 1; // 最後は除外してループ
+        isClosed = true;
+    }
+
+    // 各辺ごと
     for (let i = 0; i < len - 1; i++) {
         const [lng1, lat1] = coords[i];
         const [lng2, lat2] = coords[i + 1];
@@ -1496,7 +1512,8 @@ function makeMidpointsFeatureCollection(coords, isPolygon = false, featureIndex 
             }
         });
     }
-    if (isPolygon && len > 2) {
+    // 閉じたポリゴンのn-1→0の中点を追加
+    if (isPolygon && isClosed && len > 2) {
         const [lng1, lat1] = coords[len - 1];
         const [lng2, lat2] = coords[0];
         midpoints.push({
@@ -1515,6 +1532,107 @@ function makeMidpointsFeatureCollection(coords, isPolygon = false, featureIndex 
     }
     return midpoints;
 }
+/**
+ * Polygon/Multipolygonの閉じ忘れ（最初と最後が違う）を自動修復
+ * @param {object} geojson - 編集中のFeatureCollection
+ */
+export function autoCloseAllPolygons(geojson) {
+    if (!geojson || !geojson.features) return;
+    geojson.features.forEach((feature) => {
+        if (!feature.geometry) return;
+        const { type, coordinates } = feature.geometry;
+        // Polygon
+        if (type === 'Polygon') {
+            if (Array.isArray(coordinates[0]) && coordinates[0].length > 2) {
+                const ring = coordinates[0];
+                const first = ring[0], last = ring[ring.length - 1];
+                if (first[0] !== last[0] || first[1] !== last[1]) {
+                    feature.geometry.coordinates[0] = ring.concat([first]);
+                }
+            }
+        }
+        // MultiPolygon
+        else if (type === 'MultiPolygon') {
+            coordinates.forEach((poly, polyIdx) => {
+                if (Array.isArray(poly[0]) && poly[0].length > 2) {
+                    const ring = poly[0];
+                    const first = ring[0], last = ring[ring.length - 1];
+                    if (first[0] !== last[0] || first[1] !== last[1]) {
+                        feature.geometry.coordinates[polyIdx][0] = ring.concat([first]);
+                    }
+                }
+            });
+        }
+    });
+}
+
+
+// export function setAllMidpoints(map, geojson) {
+//     if (!geojson || !geojson.features) {
+//         map.getSource('midpoint-source').setData({ type: 'FeatureCollection', features: [] });
+//         return;
+//     }
+//     const features = [];
+//     geojson.features.forEach((feature, featIdx) => {
+//         const { geometry, properties } = feature;
+//         if (!geometry) return;
+//         if (properties && typeof properties.radius !== "undefined") return; // サークル除外
+//         const { type, coordinates } = geometry;
+//         if (type === 'LineString') {
+//             features.push(...makeMidpointsFeatureCollection(coordinates, false, featIdx, 0));
+//         } else if (type === 'Polygon') {
+//             features.push(...makeMidpointsFeatureCollection(coordinates[0], true, featIdx, 0));
+//         } else if (type === 'MultiPolygon') {
+//             coordinates.forEach((poly, polyIdx) => {
+//                 features.push(...makeMidpointsFeatureCollection(poly[0], true, featIdx, polyIdx));
+//             });
+//         }
+//     });
+//     map.getSource('midpoint-source').setData({
+//         type: 'FeatureCollection',
+//         features
+//     });
+// }
+
+// function makeMidpointsFeatureCollection(coords, isPolygon = false, featureIndex = 0, polygonIndex = 0) {
+//     const midpoints = [];
+//     const len = coords.length;
+//     for (let i = 0; i < len - 1; i++) {
+//         const [lng1, lat1] = coords[i];
+//         const [lng2, lat2] = coords[i + 1];
+//         midpoints.push({
+//             type: 'Feature',
+//             id: `mp_${featureIndex}_${polygonIndex}_${i}`,
+//             geometry: {
+//                 type: 'Point',
+//                 coordinates: [ (lng1+lng2)/2, (lat1+lat2)/2 ]
+//             },
+//             properties: {
+//                 insertIndex: i+1,
+//                 featureIndex,
+//                 polygonIndex
+//             }
+//         });
+//     }
+//     if (isPolygon && len > 2) {
+//         const [lng1, lat1] = coords[len - 1];
+//         const [lng2, lat2] = coords[0];
+//         midpoints.push({
+//             type: 'Feature',
+//             id: `mp_${featureIndex}_${polygonIndex}_end`,
+//             geometry: {
+//                 type: 'Point',
+//                 coordinates: [ (lng1+lng2)/2, (lat1+lat2)/2 ]
+//             },
+//             properties: {
+//                 insertIndex: len,
+//                 featureIndex,
+//                 polygonIndex
+//             }
+//         });
+//     }
+//     return midpoints;
+// }
 
 
 export function getVertexPoints(map, geoType, coords, isPolygon = false) {
@@ -1653,6 +1771,8 @@ export function deleteAll () {
         features: []
     });
     store.state.clickCircleGeojsonText = ''
+    getAllVertexPoints(map01)
+    setAllMidpoints(map01)
     closeAllPopups()
 }
 

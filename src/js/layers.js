@@ -835,7 +835,7 @@ export const midpointLayer = {
     source: 'midpoint-source',
     paint: {
         'circle-radius': 6,
-        'circle-color': '#ff9800',
+        'circle-color': 'green',
         'circle-opacity': 0.8
     },
     layout: {},

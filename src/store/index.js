@@ -485,12 +485,15 @@ export default createStore({
       }
     },
     setPointInfoDrawer (state, val) {
+      if (state.isDraw) return;
       state.showPointInfoDrawer = val
     },
     setRightDrawer (state, val) {
+      if (state.isDraw) return
       state.showRightDrawer = val
     },
     setChibanzuDrawer (state, val) {
+      if (state.isDraw) return;
       state.showChibanzuDrawer = val
     },
     setSelectedPointFeature (state, feature) {

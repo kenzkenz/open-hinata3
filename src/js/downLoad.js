@@ -2467,6 +2467,7 @@ export function highlightSpecificFeaturesSima(map,layerId) {
 
 let isFirstRunCity1 = true;
 export function highlightSpecificFeaturesCity(map,layerId) {
+    // alert(999)
     // console.log(store.state.highlightedChibans);
     // console.log(Array.from(store.state.highlightedChibans))
     // console.log(layerId)
