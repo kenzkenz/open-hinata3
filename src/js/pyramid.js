@@ -1444,7 +1444,77 @@ export function getAllVertexPoints(map, geojson) {
         features
     });
 }
+/**
+ * 本体GeoJSONから全中点を生成してmidpoint-sourceにsetData
+ * @param {object} map - MapLibreインスタンス
+ * @param {object} geojson - 編集中の本体GeoJSON
+ */
+export function setAllMidpoints(map, geojson) {
+    if (!geojson || !geojson.features) {
+        map.getSource('midpoint-source').setData({ type: 'FeatureCollection', features: [] });
+        return;
+    }
+    const features = [];
+    geojson.features.forEach((feature, featIdx) => {
+        const { geometry, properties } = feature;
+        if (!geometry) return;
+        if (properties && typeof properties.radius !== "undefined") return; // サークル除外
+        const { type, coordinates } = geometry;
+        if (type === 'LineString') {
+            features.push(...makeMidpointsFeatureCollection(coordinates, false, featIdx, 0));
+        } else if (type === 'Polygon') {
+            features.push(...makeMidpointsFeatureCollection(coordinates[0], true, featIdx, 0));
+        } else if (type === 'MultiPolygon') {
+            coordinates.forEach((poly, polyIdx) => {
+                features.push(...makeMidpointsFeatureCollection(poly[0], true, featIdx, polyIdx));
+            });
+        }
+    });
+    map.getSource('midpoint-source').setData({
+        type: 'FeatureCollection',
+        features
+    });
+}
 
+function makeMidpointsFeatureCollection(coords, isPolygon = false, featureIndex = 0, polygonIndex = 0) {
+    const midpoints = [];
+    const len = coords.length;
+    for (let i = 0; i < len - 1; i++) {
+        const [lng1, lat1] = coords[i];
+        const [lng2, lat2] = coords[i + 1];
+        midpoints.push({
+            type: 'Feature',
+            id: `mp_${featureIndex}_${polygonIndex}_${i}`,
+            geometry: {
+                type: 'Point',
+                coordinates: [ (lng1+lng2)/2, (lat1+lat2)/2 ]
+            },
+            properties: {
+                insertIndex: i+1,
+                featureIndex,
+                polygonIndex
+            }
+        });
+    }
+    if (isPolygon && len > 2) {
+        const [lng1, lat1] = coords[len - 1];
+        const [lng2, lat2] = coords[0];
+        midpoints.push({
+            type: 'Feature',
+            id: `mp_${featureIndex}_${polygonIndex}_end`,
+            geometry: {
+                type: 'Point',
+                coordinates: [ (lng1+lng2)/2, (lat1+lat2)/2 ]
+            },
+            properties: {
+                insertIndex: len,
+                featureIndex,
+                polygonIndex
+            }
+        });
+    }
+    return midpoints;
+}
 
 
 export function getVertexPoints(map, geoType, coords, isPolygon = false) {
@@ -1483,47 +1553,6 @@ export function getVertexPoints(map, geoType, coords, isPolygon = false) {
     };
     source.setData(geojsonData);
 }
-
-// export function getVertexPoints(map, geoType, coords, isPolygon = false) {
-//     // coords: [[lng,lat], ...]
-//     // ポリゴンなら閉じている場合があるので最後ダブり除外
-//     let points = coords;
-//     if (isPolygon && coords.length > 1 && coords[0][0] === coords[coords.length-1][0] && coords[0][1] === coords[coords.length-1][1]) {
-//         points = coords.slice(0, -1);
-//     }
-//     const source = map.getSource(vertexSource.id);
-//     let geojsonData = null;
-//     try {
-//         geojsonData = source._data
-//     } catch (e) {
-//         geojsonData = null;
-//     }
-//     const features =
-//         points.map(([lng, lat], i) => ({
-//             type: 'Feature',
-//             id: i,
-//             geometry: {
-//                 type: 'Point',
-//                 coordinates: [lng, lat]
-//             },
-//             properties: { vertexIndex: i }
-//         }));
-//     if (geoType === 'Polygon') {
-//         geojsonData = {
-//             ...geojsonData,
-//             features: [...geojsonData.features, ...features]
-//         };
-//     } else if (geoType === 'LineString') {
-//         geojsonData = {
-//             ...geojsonData,
-//             features: [...geojsonData.features, ...features]
-//         };
-//     }
-//     source.setData(geojsonData);
-//     // store.state.clickCircleGeojsonText = JSON.stringify(geojsonData)
-//     // console.log(store.state.clickCircleGeojsonText)
-//     // return feature;
-// }
 
 export function getScreenMeterDivX(map, x, direction = 'width') {
     const canvas = map.getCanvas();

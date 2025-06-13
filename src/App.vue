@@ -1096,7 +1096,7 @@ import pyramid, {
   colorNameToRgba,
   deleteAll,
   geojsonCreate,
-  geojsonUpdate, getAllVertexPoints,
+  geojsonUpdate, getAllVertexPoints, setAllMidpoints,
   unescapeHTML
 } from '@/js/pyramid'
 import glouplayer from '@/js/glouplayer'
@@ -6054,8 +6054,10 @@ export default {
       if (value) {
         const geojson = JSON.parse(this.$store.state.clickCircleGeojsonText)
         getAllVertexPoints(map01, geojson)
+        setAllMidpoints(map01, geojson)
       } else {
         getAllVertexPoints(map01)
+        setAllMidpoints(map01)
       }
     },
     // 配列で監視（いずれかが変化したら発動）

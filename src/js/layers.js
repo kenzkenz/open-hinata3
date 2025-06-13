@@ -818,6 +818,29 @@ export const vertexLayer = {
     },
     filter: ['==', '$type', 'Point']
 }
+// 中点レイヤー--------------------------------------------------------------------
+export const midpointSource = {
+    id: 'midpoint-source', obj: {
+        type: 'geojson',
+        data: {
+            type: 'FeatureCollection',
+            features: []
+        }
+    }
+}
+// シンプルなcircleレイヤーで中点表示
+export const midpointLayer = {
+    id: 'midpoint-layer',
+    type: 'circle',
+    source: 'midpoint-source',
+    paint: {
+        'circle-radius': 6,
+        'circle-color': '#ff9800',
+        'circle-opacity': 0.8
+    },
+    layout: {},
+    filter: ['==', '$type', 'Point']
+}
 // ガイドレイヤー-----------------------------------------------------------------
 export const guideLineSource = {
     id: 'guide-line-source', obj: {
