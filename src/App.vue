@@ -1149,6 +1149,9 @@ export default {
     MiniTooltip
   },
   data: () => ({
+    mainGeojson: { type: 'FeatureCollection', features: [] },
+    history: [],
+    redoStack: [],
     snackbar: false,
     snackbarText: '',
     tempPolygonCoords: [],
@@ -1699,6 +1702,34 @@ export default {
     },
   },
   methods: {
+    saveHistory() {
+      // ディープコピーで保存！
+      this.history.push(JSON.parse(JSON.stringify(this.mainGeojson)));
+      // Undo後の新編集はredo履歴クリア
+      this.redoStack = [];
+    },
+    undo() {
+      if (this.history.length > 0) {
+        const map = this.$store.state.map01
+        this.redoStack.push(JSON.parse(JSON.stringify(this.mainGeojson)));
+        this.mainGeojson = this.history.pop();
+        // 反映
+        map.getSource('click-circle-source').setData(this.mainGeojson);
+        getAllVertexPoints(map, this.mainGeojson);
+        setAllMidpoints(map, this.mainGeojson);
+      }
+    },
+    redo() {
+      if (this.redoStack.length > 0) {
+        const map = this.$store.state.map01
+        this.history.push(JSON.parse(JSON.stringify(this.mainGeojson)));
+        this.mainGeojson = this.redoStack.pop();
+        // 反映
+        map.getSource('click-circle-source').setData(this.mainGeojson);
+        getAllVertexPoints(map, this.mainGeojson);
+        setAllMidpoints(map, this.mainGeojson);
+      }
+    },
     finishLine () {
       this.isDrawingLine = false;
       // ライン本体を作成＆保存（geojsonCreateなど）
