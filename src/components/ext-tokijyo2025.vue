@@ -213,7 +213,7 @@
       </v-btn>
     </v-row>
     <div style="text-align: center" v-if="!s_isUnder500">
-      <div style="font-size: 12px;margin-top: 10px;"><div v-html="item.attribution"></div>{{ s_zahyokei }}</div>
+      <div style="font-size: 12px;margin-top: 10px;"><div v-html="item.attribution"></div></div>
     </div>
   </div>
 </template>

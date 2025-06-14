@@ -4,6 +4,8 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    jdpCode: '',
+    jdpCoordinates: [],
     editEnabled: false,
     isCursorOnPanel: false,
     panelHoverCount: 0,

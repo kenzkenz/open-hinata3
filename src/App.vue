@@ -637,12 +637,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <div id="pointer1" class="pointer" v-if="mapName === 'map01'"></div>
           <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
 
-<!--          <div :style="{fontSize: textPx + 'px',color: titleColor}" class="print-title" @click="printDialog = true">-->
-<!--              <span-->
-<!--                  v-if="printTitleText && printTitleText.trim().length > 0"-->
-<!--                  class="print-title-bg"-->
-<!--                  v-html="printTitleText.replace(/\n/g, '<br>')"-->
-<!--              > </span>-->
+<!--          <div class="drawing-finish-div">-->
+<!--            <v-btn v-if="mapName === 'map01'" class="drawing-finish-btn">確定</v-btn>-->
 <!--          </div>-->
 
           <div :style="{fontSize: textPx + 'px', color: titleColor}" class="print-title">
@@ -763,6 +759,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <div class="zoom-div">
             zoom={{zoom.toFixed(2)}} {{elevation}}<br>
             {{s_address}}
+            <br>
+            {{s_zahyokei}}
+            {{s_jdpCoordinates}}
           </div>
           </span>
 
@@ -818,7 +817,7 @@ import {
   handleFileUpload,
   highlightSpecificFeatures,
   highlightSpecificFeatures2025,
-  highlightSpecificFeaturesCity,
+  highlightSpecificFeaturesCity, japanCoord,
   jpgLoad,
   kmzLoadForUser,
   LngLatToAddress,
@@ -1240,6 +1239,20 @@ export default {
       'selectedPointFeature',
       'showChibanzuDrawer',
     ]),
+    s_jdpCode () {
+      return this.$store.state.jdpCode
+    },
+    s_jdpCoordinates () {
+      if (this.$store.state.jdpCoordinates) {
+        if (this.$store.state.jdpCoordinates[0]) {
+          return `${this.$store.state.jdpCoordinates[1].toFixed(3)}, ${this.$store.state.jdpCoordinates[0].toFixed(3)}`
+        } else {
+          return ''
+        }
+      } else {
+        return ''
+      }
+    },
     s_isDrawAll() {
       return this.s_isDrawCircle || this.s_isDrawPoint || this.s_isDrawLine;
     },
@@ -2022,6 +2035,8 @@ export default {
         this.s_isDrawCircle = false
         this.s_isDrawLine = false
         this.s_isDrawPolygon = false
+        this.snackbarText = '編集時は移動、ポップアップができません。'
+        this.snackbar = true
       }
       store.state.isCursorOnPanel = false
       this.finishLine()
@@ -2897,6 +2912,8 @@ export default {
             }
           })
       history('updatePermalink',window.location.href)
+
+      console.log('平面直角座標系',japanCoord([lng,lat]))
     },
     createShortUrl() {
       let params = new URLSearchParams()
@@ -4436,16 +4453,22 @@ export default {
           map.resize()
           map.doubleClickZoom.disable()
 
-          const black = await map.loadImage('./img/arrow_black.png');
-          const red = await map.loadImage('./img/arrow_red.png');
-          const blue = await map.loadImage('./img/arrow_blue.png');
-          const green = await map.loadImage('./img/arrow_green.png');
-          const orange = await map.loadImage('./img/arrow_orange.png');
-          map.addImage('arrow_black', black.data);
-          map.addImage('arrow_red', red.data);
-          map.addImage('arrow_blue', blue.data);
-          map.addImage('arrow_green', green.data);
-          map.addImage('arrow_orange', orange.data);
+          const arrowColors = ['black', 'red', 'blue', 'green', 'orange'];
+          for (const color of arrowColors) {
+            const img = await map.loadImage(`./img/arrow_${color}.png`);
+            map.addImage(`arrow_${color}`, img.data);
+          }
+
+          // const black = await map.loadImage('./img/arrow_black.png');
+          // const red = await map.loadImage('./img/arrow_red.png');
+          // const blue = await map.loadImage('./img/arrow_blue.png');
+          // const green = await map.loadImage('./img/arrow_green.png');
+          // const orange = await map.loadImage('./img/arrow_orange.png');
+          // map.addImage('arrow_black', black.data);
+          // map.addImage('arrow_red', red.data);
+          // map.addImage('arrow_blue', blue.data);
+          // map.addImage('arrow_green', green.data);
+          // map.addImage('arrow_orange', orange.data);
 
           if (params.simaTextForUser) {
             this.$store.state.simaTextForUser = params.simaTextForUser
@@ -7039,10 +7062,11 @@ select {
   transition: none; /* 遅延ゼロ */
   box-shadow: 0 0 8px #fff;
 }
-/*#map00, #map01 {*/
-/*  width: 100%;*/
-/*  height: 100%;*/
-/*  transition: all 0.2s;*/
-/*}*/
+.drawing-finish-div {
+  position: absolute;
+  top: 200px;
+  left: 200px;
+  z-index: 3;
+}
 
 </style>

@@ -836,7 +836,9 @@ export const midpointLayer = {
     paint: {
         'circle-radius': 6,
         'circle-color': 'green',
-        'circle-opacity': 0.8
+        'circle-opacity': 0.8,
+        'circle-stroke-color': '#fff',
+        'circle-stroke-width': 1
     },
     layout: {},
     filter: ['==', '$type', 'Point']
