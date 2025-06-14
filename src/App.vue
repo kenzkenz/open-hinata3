@@ -709,36 +709,35 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <!--              <MiniTooltip text="Xにポスト" :offset-x="-25" :offset-y="326">-->
 <!--                <v-btn :size="isSmall ? 'small' : 'default'" class="share-x" icon @click="captureAndPostToX" v-if="mapName === 'map01'"><v-icon left>fa-solid fa-x</v-icon></v-btn>-->
 <!--              </MiniTooltip>-->
-              <FanMenu class="draw-fan">
-                <template #center>
+              <FanMenu layout="vertical" :offset-x="-60" class="draw-fan">
+
+                <template v-slot:center>
                   <MiniTooltip text="ドロー" :offset-x="0" :offset-y="4">
                     <v-btn :size="isSmall ? 'small' : 'default'" :color="s_isDraw ? 'green' : undefined" icon @click="toggleLDraw" v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>
                   </MiniTooltip>
                 </template>
-                <MiniTooltip text="全削除" :offset-x="0" :offset-y="4">
-                  <v-btn color="error" size="small" icon @click="deleteAllforDraw" v-if="mapName === 'map01'"><v-icon>mdi-delete</v-icon></v-btn>
-                </MiniTooltip>
-                <MiniTooltip text="元に戻す" :offset-x="0" :offset-y="4">
-                  <v-btn size="small" icon @click="undo" v-if="mapName === 'map01'"><b>元戻</b></v-btn>
-                </MiniTooltip>
-                <MiniTooltip text="確定" :offset-x="0" :offset-y="4">
-                  <v-btn size="small" icon @click="finishDrawing" v-if="mapName === 'map01'"><b>確定</b></v-btn>
-                </MiniTooltip>
-                <MiniTooltip text="編集" :offset-x="0" :offset-y="4">
-                  <v-btn size="small" :color="s_editEnabled ? 'green' : undefined" icon @click="toggleEditEnabled" v-if="mapName === 'map01'"><b>編集</b></v-btn>
-                </MiniTooltip>
-                <MiniTooltip text="多角形" :offset-x="0" :offset-y="4">
-                  <v-btn size="small" :color="s_isDrawPolygon ? 'green' : undefined" icon @click="toggleLDrawPolygon" v-if="mapName === 'map01'"><b>多角</b></v-btn>
-                </MiniTooltip>
-                <MiniTooltip text="線" :offset-x="0" :offset-y="4">
-                  <v-btn size="small" :color="s_isDrawLine ? 'green' : undefined" icon @click="toggleLDrawLine" v-if="mapName === 'map01'"><b>線</b></v-btn>
-                </MiniTooltip>
-                <MiniTooltip text="円" :offset-x="0" :offset-y="4">
-                  <v-btn size="small" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><b>円</b></v-btn>
-                </MiniTooltip>
-                <MiniTooltip text="文字貼りつけ" :offset-x="0" :offset-y="4">
-                  <v-btn size="small" :color="s_isDrawPoint ? 'green' : undefined" icon @click="toggleDrawPoint" v-if="mapName === 'map01'"><b>文字</b></v-btn>
-                </MiniTooltip>
+
+               <template v-slot:default>
+                  <div v-if="mapName === 'map01'">
+                    <div v-for="btn in buttons" :key="btn.key">
+                      <MiniTooltip :text="btn.text" :offset-x="0" :offset-y="2">
+                        <v-btn
+                          :size="'small'"
+                          :icon="true"
+                          :color="btn.color"
+                          @click="btn.click"
+                        >
+                          <template v-if="btn.icon">
+                            <v-icon>{{ btn.icon }}</v-icon>
+                          </template>
+                          <template v-else>
+                            <b>{{ btn.label }}</b>
+                          </template>
+                        </v-btn>
+                      </MiniTooltip>
+                    </div>
+                  </div>
+                </template>
               </FanMenu>
 
             </span>
@@ -1248,6 +1247,20 @@ export default {
       'selectedPointFeature',
       'showChibanzuDrawer',
     ]),
+    buttons() {
+      const btns =
+      [
+        { key: 'point', text: '文字貼りつけ', label: '文字', color: this.s_isDrawPoint ? 'green' : undefined, click: this.toggleDrawPoint },
+        { key: 'circle', text: '円', label: '円', color: this.s_isDrawCircle ? 'green' : undefined, click: this.toggleDrawCircle },
+        { key: 'line', text: '線', label: '線', color: this.s_isDrawLine ? 'green' : undefined, click: this.toggleLDrawLine },
+        { key: 'polygon', text: '多角形', label: '多角', color: this.s_isDrawPolygon ? 'green' : undefined, click: this.toggleLDrawPolygon },
+        { key: 'edit', text: '編集', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
+        { key: 'finish', text: '確定', label: '確定', click: this.finishDrawing },
+        { key: 'undo', text: '元に戻す', label: '元戻', click: this.undo },
+        { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw }
+      ]
+      return btns
+    },
     s_saveHistoryFire () {
       return this.$store.state.saveHistoryFire
     },
@@ -6484,14 +6497,14 @@ export default {
 }
 .draw-fan {
   position: absolute;
-  top: 192px;
+  top: 240px;
   left: 0;
 }
-@media (max-width: 720px) {
-  .draw-fan {
-    top: 197px;
-  }
-}
+/*@media (max-width: 720px) {*/
+/*  .draw-fan {*/
+/*    top: 197px;*/
+/*  }*/
+/*}*/
 
 /*3Dのボタン-------------------------------------------------------------*/
 .terrain-btn-expand-div {
