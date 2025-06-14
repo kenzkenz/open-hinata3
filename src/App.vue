@@ -1715,8 +1715,6 @@ export default {
       this.history.push(JSON.parse(JSON.stringify(mainSourceGeojson)));
       // Undo後の新編集はredo履歴クリア
       this.redoStack = [];
-
-      // this.updatePermalink()
     },
     undo() {
       if (this.history.length > 0) {
@@ -3895,7 +3893,6 @@ export default {
       const CLICK_DELAY = 150; // ms
       // ポイント作成-----------------------------------------------------------------------------------
       function onPointClick(e) {
-        console.log('擬似クリック event:', e);
         popup(e,map,'map01',vm.s_map2Flg)
       }
       map.on('click', (e) => {
@@ -4057,12 +4054,14 @@ export default {
           const lng = e.lngLat.lng;
           const coordinates = [lng, lat];
 
+          // とりあえずコメントアウト
           // 既存点・ポリゴンのクリック判定
-          const targetId = getPolygonFeatureIdAtClick(map, e); // ポリゴン用関数
-          if (targetId) {
-            this.$store.state.id = targetId;
-            return;
-          }
+          // const targetId = getPolygonFeatureIdAtClick(map, e); // ポリゴン用関数
+          // if (targetId) {
+          //   this.$store.state.id = targetId;
+          //   return;
+          // }
+
           console.log(coordinates)
           // 節点追加
           this.tempPolygonCoords.push(coordinates);

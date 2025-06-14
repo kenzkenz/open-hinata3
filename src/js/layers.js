@@ -10668,7 +10668,7 @@ let layers01 = [
                 label: "迅速測図",
                 sources: [jinsokuSource],
                 layers: [jinsokuLayer],
-                ext: {name:'ext-jinsoku'}
+                // ext: {name:'ext-jinsoku'}
             },
             {
                 id: 'oh-jissoku',

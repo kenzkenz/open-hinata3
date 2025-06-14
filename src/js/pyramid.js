@@ -1372,6 +1372,7 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
     source.setData(geojsonData);
     store.state.clickCircleGeojsonText = JSON.stringify(geojsonData)
     console.log(store.state.clickCircleGeojsonText)
+    store.state.saveHistoryFire = !store.state.saveHistoryFire
     return feature;
 }
 
@@ -1728,6 +1729,7 @@ export function circleCreate (lng, lat, m) {
 }
 
 export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius) {
+    store.state.saveHistoryFire = !store.state.saveHistoryFire
     const source = map.getSource(sourceId)
     if (!source) return;
     const geojson = source._data
