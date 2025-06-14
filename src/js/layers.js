@@ -692,6 +692,23 @@ export const clickCircPolygonSymbolLayer = {
         'text-halo-width': 1
     }
 }
+export const clickCircPolygonSymbolAreaLayer = {
+    id: 'click-circle-polygon-symbol-area-layer',
+    type: 'symbol',
+    source: 'click-circle-source',
+    filter: ['all', ['has', 'isArea'], ['!=', ['get', 'isArea'], false]],
+    layout: {
+        'text-field': ['get', 'area'],
+        'text-size': 30,   // サイズ調整
+        'text-anchor': 'center',
+        'text-allow-overlap': true
+    },
+    paint: {
+        'text-color': 'black',
+        'text-halo-color': '#fff',
+        'text-halo-width': 1
+    }
+}
 export const clickCircleLineLayer = {
     id: 'click-circle-line-layer',
     type: 'line',

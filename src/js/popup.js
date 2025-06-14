@@ -21,25 +21,45 @@ function isIphone() {
 }
 
 // Turf.jsを使用して面積、周長、頂点数を計算する関数
-function calculatePolygonMetrics(polygon) {
+export function calculatePolygonMetrics(polygon) {
     try {
-        // 面積の計算
-        const area = '約' + turf.area(polygon).toFixed(1) + 'm2'; // Turf.jsで面積を計算
+        // 面積の計算（㎡単位で取得）
+        const areaRaw = turf.area(polygon); // m2
 
-        // 周長の計算
-        const perimeter = '約' + turf.length(polygon, { units: 'meters' }).toFixed(1) + 'm'; // Turf.jsで周長を計算
+        // 面積のフォーマット
+        let area;
+        if (areaRaw >= 1_000_000) {
+            // 100万m²以上はkm²で
+            area = '約' + (areaRaw / 1_000_000).toFixed(2) + 'km²';
+        } else if (areaRaw >= 10_000) {
+            // 1万m²以上は1k m²表記
+            area = '約' + (areaRaw / 1_000).toFixed(1) + 'k m²';
+        } else {
+            // それ未満はそのままm²
+            area = '約' + areaRaw.toFixed(1) + 'm²';
+        }
 
-        // 頂点数の計算 (GeoJSON座標から取得)
-        const coordinates = polygon.geometry.coordinates[0]; // 外周の座標を取得
+        // 周長の計算（m単位で取得）
+        const perimRaw = turf.length(polygon, { units: 'meters' });
+
+        // 周長のフォーマット
+        let perimeter;
+        if (perimRaw >= 1000) {
+            perimeter = '約' + (perimRaw / 1000).toFixed(2) + 'km';
+        } else {
+            perimeter = '約' + perimRaw.toFixed(1) + 'm';
+        }
+
+        // 頂点数の計算
+        const coordinates = polygon.geometry.coordinates[0];
         let vertexCount = coordinates.length;
-
-        // GeoJSONでは最初と最後の座標が同じなので、閉じたポリゴンの場合は1点減らす
-        if (coordinates[0][0] === coordinates[vertexCount - 1][0] &&
-            coordinates[0][1] === coordinates[vertexCount - 1][1]) {
+        if (
+            coordinates[0][0] === coordinates[vertexCount - 1][0] &&
+            coordinates[0][1] === coordinates[vertexCount - 1][1]
+        ) {
             vertexCount -= 1;
         }
 
-        // 結果を返す
         return {
             area: area,
             perimeter: perimeter,
@@ -49,6 +69,31 @@ function calculatePolygonMetrics(polygon) {
         console.error('面積・周長・頂点数の計算中にエラーが発生しました:', error);
     }
 }
+
+// export function calculatePolygonMetrics(polygon) {
+//     try {
+//         // 面積の計算
+//         const area = '約' + turf.area(polygon).toFixed(1) + 'm2'; // Turf.jsで面積を計算
+//         // 周長の計算
+//         const perimeter = '約' + turf.length(polygon, { units: 'meters' }).toFixed(1) + 'm'; // Turf.jsで周長を計算
+//         // 頂点数の計算 (GeoJSON座標から取得)
+//         const coordinates = polygon.geometry.coordinates[0]; // 外周の座標を取得
+//         let vertexCount = coordinates.length;
+//         // GeoJSONでは最初と最後の座標が同じなので、閉じたポリゴンの場合は1点減らす
+//         if (coordinates[0][0] === coordinates[vertexCount - 1][0] &&
+//             coordinates[0][1] === coordinates[vertexCount - 1][1]) {
+//             vertexCount -= 1;
+//         }
+//         // 結果を返す
+//         return {
+//             area: area,
+//             perimeter: perimeter,
+//             vertexCount: vertexCount
+//         };
+//     } catch (error) {
+//         console.error('面積・周長・頂点数の計算中にエラーが発生しました:', error);
+//     }
+// }
 
 const legend_shinsuishin = [
     { r: 247, g: 245, b: 169, title: '0.5m未満' },
@@ -3585,6 +3630,8 @@ export function popup(e,map,mapName,mapFlg) {
                 const textSize = props['text-size'] || 16
                 const lineWidth = props['line-width'] || 5
                 const arrowType = props['arrow-type'] || 'end'
+                const isArea = props.isArea || false
+                console.log('isArea',isArea)
                 let selectedEnd,selectedNone,selectedBoth
                 switch (arrowType) {
                     case 'end':
@@ -3625,10 +3672,14 @@ export function popup(e,map,mapName,mapFlg) {
                             }
                         } else {
                             if (html.indexOf('click-circle-layer') === -1) {
+                                let checked = ''
+                                if (isArea) checked = 'checked'
                                 html += '<div class="layer-label-div">ポリゴン</div>'
                                 html +=
                                     '<div style="width: 240px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
-                                    '<input id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input polygon-text" placeholder="ここに入力" value="' + props.label + '">' +
+                                    // '<input id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input polygon-text" placeholder="ここに入力" value="' + props.label + '">' +
+                                    '<span style="margin-left: 10px;font-size: 16px;"><input ' + checked + ' type="checkbox" id="' + props.id + '" class="polygon-area-check" value=""><label for="' + props.id + '"> 面積表示</span>' +
+
                                     '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;" class="circle-delete pyramid-btn">削　除</button><br>' +
                                     '<div style="display: flex;gap: 8px;">' +
                                     '<div class="circle-list">' +

@@ -716,22 +716,25 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   </MiniTooltip>
                 </template>
                 <MiniTooltip text="全削除" :offset-x="0" :offset-y="4">
-                  <v-btn size="small" icon @click="deleteAllforDraw" v-if="mapName === 'map01'"><v-icon>mdi-delete</v-icon></v-btn>
+                  <v-btn color="error" size="small" icon @click="deleteAllforDraw" v-if="mapName === 'map01'"><v-icon>mdi-delete</v-icon></v-btn>
+                </MiniTooltip>
+                <MiniTooltip text="確定" :offset-x="0" :offset-y="4">
+                  <v-btn size="small" icon @click="finishDrawing" v-if="mapName === 'map01'"><b>確定</b></v-btn>
                 </MiniTooltip>
                 <MiniTooltip text="編集" :offset-x="0" :offset-y="4">
-                  <v-btn size="small" :color="s_editEnabled ? 'green' : undefined" icon @click="toggleEditEnabled" v-if="mapName === 'map01'"><v-icon>mdi-vector-polyline-edit</v-icon></v-btn>
+                  <v-btn size="small" :color="s_editEnabled ? 'green' : undefined" icon @click="toggleEditEnabled" v-if="mapName === 'map01'"><b>編集</b></v-btn>
                 </MiniTooltip>
-                <MiniTooltip text="ポリゴン" :offset-x="0" :offset-y="4">
-                  <v-btn size="small" :color="s_isDrawPolygon ? 'green' : undefined" icon @click="toggleLDrawPolygon" v-if="mapName === 'map01'"><v-icon>mdi-hexagon</v-icon></v-btn>
+                <MiniTooltip text="多角形" :offset-x="0" :offset-y="4">
+                  <v-btn size="small" :color="s_isDrawPolygon ? 'green' : undefined" icon @click="toggleLDrawPolygon" v-if="mapName === 'map01'"><b>多角</b></v-btn>
                 </MiniTooltip>
-                <MiniTooltip text="ライン" :offset-x="0" :offset-y="4">
-                  <v-btn size="small" :color="s_isDrawLine ? 'green' : undefined" icon @click="toggleLDrawLine" v-if="mapName === 'map01'"><v-icon>mdi-vector-line</v-icon></v-btn>
+                <MiniTooltip text="線" :offset-x="0" :offset-y="4">
+                  <v-btn size="small" :color="s_isDrawLine ? 'green' : undefined" icon @click="toggleLDrawLine" v-if="mapName === 'map01'"><b>線</b></v-btn>
                 </MiniTooltip>
                 <MiniTooltip text="円" :offset-x="0" :offset-y="4">
-                  <v-btn size="small" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><v-icon>mdi-adjust</v-icon></v-btn>
+                  <v-btn size="small" :color="s_isDrawCircle ? 'green' : undefined" icon @click="toggleDrawCircle" v-if="mapName === 'map01'"><b>円</b></v-btn>
                 </MiniTooltip>
-                <MiniTooltip text="テキスト貼りつけ" :offset-x="0" :offset-y="4">
-                  <v-btn size="small" :color="s_isDrawPoint ? 'green' : undefined" icon @click="toggleDrawPoint" v-if="mapName === 'map01'">txt</v-btn>
+                <MiniTooltip text="文字貼りつけ" :offset-x="0" :offset-y="4">
+                  <v-btn size="small" :color="s_isDrawPoint ? 'green' : undefined" icon @click="toggleDrawPoint" v-if="mapName === 'map01'"><b>文字</b></v-btn>
                 </MiniTooltip>
               </FanMenu>
 
@@ -783,7 +786,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 import { db } from '@/firebase'
 import store from '@/store'
 import { toRaw } from 'vue'
-import {mouseMoveForPopup, popup} from "@/js/popup"
+import {calculatePolygonMetrics, mouseMoveForPopup, popup} from "@/js/popup"
 import { CompassControl } from 'maplibre-gl-compass'
 import shp from "shpjs"
 import JSZip from 'jszip'
@@ -2026,6 +2029,39 @@ export default {
         this.snackbar = true
       }
       document.querySelector('#draw-indicato-text').innerHTML = ''
+      this.finishLine()
+    },
+    finishDrawing() {
+      const map01 = this.$store.state.map01
+      const id = String(Math.floor(10000 + Math.random() * 90000));
+      this.$store.state.id = id;
+      let coords,properties
+      if (this.s_isDrawPolygon) {
+        if (!this.tempPolygonCoords || this.tempPolygonCoords.length < 2) return; // 最低2点以上だけ確定
+        coords = [this.tempPolygonCoords.concat([this.tempPolygonCoords[0]])]
+        properties = {
+          id: id,
+          pairId: id,
+          label: '',
+          color: colorNameToRgba('orange', 0.6),
+          'line-width': 1,
+        };
+        geojsonCreate(map01, 'Polygon', coords, properties);
+        this.tempPolygonCoords = [];
+      } else if (this.s_isDrawLine) {
+        if (!this.tempLineCoords || this.tempLineCoords.length < 2) return; // 最低2点以上だけ確定
+        properties = {
+          id: id,
+          pairId: id,
+          label: '',
+          offsetValue: [0.6, 0],
+          'line-width': 5,
+          textAnchor: 'left',
+          textJustify: 'left'
+        };
+        geojsonCreate(map01, 'LineString', this.tempLineCoords.slice(), properties);
+        this.tempLineCoords = []
+      }
       this.finishLine()
     },
     toggleEditEnabled () {
@@ -4121,6 +4157,15 @@ export default {
             }
           });
           autoCloseAllPolygons(mainSourceGeojson)
+
+          const tgtFeature = mainSourceGeojson.features.find(f => f.properties.id === draggedFeatureId)
+
+          console.log(mainSourceGeojson)
+          console.log(draggedFeatureId)
+
+          const calc = calculatePolygonMetrics(tgtFeature)
+          tgtFeature.properties['area'] = calc.area
+
           map.getSource('click-circle-source').setData(mainSourceGeojson);
           setAllMidpoints(map, mainSourceGeojson);
           store.state.clickCircleGeojsonText = JSON.stringify(mainSourceGeojson);

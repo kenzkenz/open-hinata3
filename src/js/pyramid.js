@@ -3,7 +3,7 @@ import axios from "axios"
 import * as turf from '@turf/turf'
 import {convertAndDownloadGeoJSONToSIMA, savePointSima} from "@/js/downLoad";
 import {clickCircleSource, clickPointSource, endPointSouce, vertexSource} from "@/js/layers";
-import {closeAllPopups} from "@/js/popup";
+import {calculatePolygonMetrics, closeAllPopups} from "@/js/popup";
 export let currentIndex = 0
 let kasen
 
@@ -1043,6 +1043,17 @@ export default function pyramid () {
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('input', (e) => {
+            if (e.target.classList.contains("polygon-area-check")) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
+                const chkElm = document.querySelector('.polygon-area-check')
+                const checked = chkElm.checked
+                store.state.clickCircleGeojsonText = geojsonUpdate(map01, null, clickCircleSource.iD, id, 'isArea', checked)
+                console.log(store.state.clickCircleGeojsonText)
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('input', (e) => {
             if (e.target && (e.target.classList.contains("circle-range") || e.target.classList.contains("circle-text") || e.target.classList.contains("circle200-check"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
@@ -1221,6 +1232,7 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
     // 1. 新しいfeatureを生成
     let features,feature,circleFeature,centerFeature,radius,canterLng,canterLat
     let lastCoord,firstCoord,lastPointFeature,firstPointFeature
+    let calc
     switch (geoType) {
         case 'Point':
             feature = turf.point(coordinates, properties);
@@ -1275,7 +1287,8 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
             break;
         case 'Polygon':
             feature = turf.polygon(coordinates, properties);
-            // getVertexPoints(map,geoType,coordinates, true)
+            calc = calculatePolygonMetrics(feature)
+            feature.properties['area'] = calc.area
             break;
         case 'Circle':
             if (store.state.circle200Chk) {

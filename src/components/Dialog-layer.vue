@@ -93,7 +93,7 @@ import {
   clickCircleLayer,
   clickCircleLineLayer,
   clickCirclePolygonLineLayer,
-  clickCircleSource,
+  clickCircleSource, clickCircPolygonSymbolAreaLayer,
   clickCircPolygonSymbolLayer,
   clickCircSymbolLayer,
   clickPointLayer,
@@ -932,6 +932,7 @@ export default {
         map.removeLayer('click-circle-layer')
         map.removeLayer('click-circle-polygon-line-layer')
         map.removeLayer('click-circle-polygon-symbol-layer')
+        map.removeLayer('click-circle-polygon-symbol-area-layer')
         map.removeLayer('click-circle-symbol-layer')
         map.removeLayer('click-circle-line-layer')
         map.removeLayer('click-circle-label-layer')
@@ -951,6 +952,7 @@ export default {
       map.addLayer(clickCircleLayer)
       map.addLayer(clickCirclePolygonLineLayer)
       map.addLayer(clickCircPolygonSymbolLayer)
+      map.addLayer(clickCircPolygonSymbolAreaLayer)
       map.addLayer(clickCircSymbolLayer)
       map.addLayer(clickCircleLineLayer)
       map.addLayer(clickCircleLabelLayer)
