@@ -3679,7 +3679,6 @@ export function popup(e,map,mapName,mapFlg) {
                                     '<div style="width: 240px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
                                     // '<input id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input polygon-text" placeholder="ここに入力" value="' + props.label + '">' +
                                     '<span style="margin-left: 10px;font-size: 16px;"><input ' + checked + ' type="checkbox" id="' + props.id + '" class="polygon-area-check" value=""><label for="' + props.id + '"> 面積表示</span>' +
-
                                     '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;" class="circle-delete pyramid-btn">削　除</button><br>' +
                                     '<div style="display: flex;gap: 8px;">' +
                                     '<div class="circle-list">' +

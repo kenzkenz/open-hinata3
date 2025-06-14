@@ -1169,43 +1169,49 @@ export default function pyramid () {
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
             if (e.target && (e.target.classList.contains("point-delete"))) {
-                const map01 = store.state.map01
-                const id = String(e.target.getAttribute("id"))
-                let source = map01.getSource(clickCircleSource.iD)
-                const geojson = source._data
-                if (geojson && geojson.features) {
-                    const newFeatures = geojson.features.filter(feature => {
-                        return !(feature.properties && String(feature.properties.id) === id);
-                    });
-                    if (newFeatures.length !== geojson.features.length) {
-                        geojson.features = newFeatures;
-                        map01.getSource(clickCircleSource.iD).setData(geojson);
-                        store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+                store.state.saveHistoryFire = !store.state.saveHistoryFire
+                setTimeout(() => {
+                    const map01 = store.state.map01
+                    const id = String(e.target.getAttribute("id"))
+                    let source = map01.getSource(clickCircleSource.iD)
+                    const geojson = source._data
+                    if (geojson && geojson.features) {
+                        const newFeatures = geojson.features.filter(feature => {
+                            return !(feature.properties && String(feature.properties.id) === id);
+                        });
+                        if (newFeatures.length !== geojson.features.length) {
+                            geojson.features = newFeatures;
+                            map01.getSource(clickCircleSource.iD).setData(geojson);
+                            store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+                        }
                     }
-                }
-                store.state.isCursorOnPanel = false
-                closeAllPopups()
+                    store.state.isCursorOnPanel = false
+                    closeAllPopups()
+                },100)
             }
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
             if (e.target && (e.target.classList.contains("circle-delete")|| e.target.classList.contains("line-delete"))) {
-                const map01 = store.state.map01
-                const id = String(e.target.getAttribute("id"))
-                let source = map01.getSource(clickCircleSource.iD)
-                const geojson = source._data
-                if (geojson && geojson.features) {
-                    const newFeatures = geojson.features.filter(feature => {
-                        return !(feature.properties && String(feature.properties.pairId) === id);
-                    });
-                    if (newFeatures.length !== geojson.features.length) {
-                        geojson.features = newFeatures;
-                        map01.getSource(clickCircleSource.iD).setData(geojson);
-                        store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+                store.state.saveHistoryFire = !store.state.saveHistoryFire
+                setTimeout(() => {
+                    const map01 = store.state.map01
+                    const id = String(e.target.getAttribute("id"))
+                    let source = map01.getSource(clickCircleSource.iD)
+                    const geojson = source._data
+                    if (geojson && geojson.features) {
+                        const newFeatures = geojson.features.filter(feature => {
+                            return !(feature.properties && String(feature.properties.pairId) === id);
+                        });
+                        if (newFeatures.length !== geojson.features.length) {
+                            geojson.features = newFeatures;
+                            map01.getSource(clickCircleSource.iD).setData(geojson);
+                            store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+                        }
                     }
-                }
-                store.state.isCursorOnPanel = false
-                closeAllPopups()
+                    store.state.isCursorOnPanel = false
+                    closeAllPopups()
+                },100)
             }
         });
     })

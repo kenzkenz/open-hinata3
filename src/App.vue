@@ -718,6 +718,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 <MiniTooltip text="全削除" :offset-x="0" :offset-y="4">
                   <v-btn color="error" size="small" icon @click="deleteAllforDraw" v-if="mapName === 'map01'"><v-icon>mdi-delete</v-icon></v-btn>
                 </MiniTooltip>
+                <MiniTooltip text="元に戻す" :offset-x="0" :offset-y="4">
+                  <v-btn size="small" icon @click="undo" v-if="mapName === 'map01'"><b>元戻</b></v-btn>
+                </MiniTooltip>
                 <MiniTooltip text="確定" :offset-x="0" :offset-y="4">
                   <v-btn size="small" icon @click="finishDrawing" v-if="mapName === 'map01'"><b>確定</b></v-btn>
                 </MiniTooltip>
@@ -1245,6 +1248,9 @@ export default {
       'selectedPointFeature',
       'showChibanzuDrawer',
     ]),
+    s_saveHistoryFire () {
+      return this.$store.state.saveHistoryFire
+    },
     s_jdpCode () {
       return this.$store.state.jdpCode
     },
@@ -1704,30 +1710,39 @@ export default {
   methods: {
     saveHistory() {
       // ディープコピーで保存！
-      this.history.push(JSON.parse(JSON.stringify(this.mainGeojson)));
+      const map = this.$store.state.map01
+      const mainSourceGeojson = map.getSource('click-circle-source')._data;
+      this.history.push(JSON.parse(JSON.stringify(mainSourceGeojson)));
       // Undo後の新編集はredo履歴クリア
       this.redoStack = [];
+
+      // this.updatePermalink()
     },
     undo() {
       if (this.history.length > 0) {
         const map = this.$store.state.map01
-        this.redoStack.push(JSON.parse(JSON.stringify(this.mainGeojson)));
+        const mainSourceGeojson = map.getSource('click-circle-source')._data;
+        this.redoStack.push(JSON.parse(JSON.stringify(mainSourceGeojson)));
         this.mainGeojson = this.history.pop();
         // 反映
         map.getSource('click-circle-source').setData(this.mainGeojson);
-        getAllVertexPoints(map, this.mainGeojson);
-        setAllMidpoints(map, this.mainGeojson);
+        store.state.clickCircleGeojsonText = JSON.stringify(this.mainGeojson)
+        this.updatePermalink()
+
+        if (this.s_editEnabled) {
+          getAllVertexPoints(map, this.mainGeojson);
+          setAllMidpoints(map, this.mainGeojson);
+        }
       }
     },
     redo() {
       if (this.redoStack.length > 0) {
         const map = this.$store.state.map01
-        this.history.push(JSON.parse(JSON.stringify(this.mainGeojson)));
+        const mainSourceGeojson = map.getSource('click-circle-source')._data;
+        this.history.push(JSON.parse(JSON.stringify(mainSourceGeojson)));
         this.mainGeojson = this.redoStack.pop();
         // 反映
         map.getSource('click-circle-source').setData(this.mainGeojson);
-        getAllVertexPoints(map, this.mainGeojson);
-        setAllMidpoints(map, this.mainGeojson);
       }
     },
     finishLine () {
@@ -1906,6 +1921,7 @@ export default {
     },
     deleteAllforDraw () {
       this.s_editEnabled = false
+      this.saveHistory()
       deleteAll()
     },
     onA() { alert('未実装です。') },
@@ -2063,6 +2079,7 @@ export default {
       this.finishLine()
     },
     finishDrawing() {
+      this.saveHistory()
       const map01 = this.$store.state.map01
       const id = String(Math.floor(10000 + Math.random() * 90000));
       this.$store.state.id = id;
@@ -2096,6 +2113,7 @@ export default {
       this.finishLine()
     },
     toggleEditEnabled () {
+      this.saveHistory()
       this.s_editEnabled = !this.s_editEnabled
       if (this.s_editEnabled) {
         this.s_isDrawPoint = false
@@ -4181,8 +4199,14 @@ export default {
             const { featureIndex, vertexIndex, polygonIndex } = f.properties;
             if (mainSourceGeojson.features[featureIndex]?.geometry.type === 'LineString') {
               mainSourceGeojson.features[featureIndex].geometry.coordinates[vertexIndex] = f.geometry.coordinates;
+            // } else if (mainSourceGeojson.features[featureIndex]?.geometry.type === 'Polygon') {
+            //   mainSourceGeojson.features[featureIndex].geometry.coordinates[0][vertexIndex] = f.geometry.coordinates;
             } else if (mainSourceGeojson.features[featureIndex]?.geometry.type === 'Polygon') {
-              mainSourceGeojson.features[featureIndex].geometry.coordinates[0][vertexIndex] = f.geometry.coordinates;
+              let coords = mainSourceGeojson.features[featureIndex].geometry.coordinates[0];
+              coords[vertexIndex] = f.geometry.coordinates;
+              if (vertexIndex === 0) {
+                coords[coords.length - 1] = f.geometry.coordinates;
+              }
             } else if (mainSourceGeojson.features[featureIndex]?.geometry.type === 'MultiPolygon') {
               mainSourceGeojson.features[featureIndex].geometry.coordinates[polygonIndex][0][vertexIndex] = f.geometry.coordinates;
             }
@@ -6281,6 +6305,9 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
+    s_saveHistoryFire () {
+      this.saveHistory()
+    },
     s_editEnabled (value) {
       const map01 = this.$store.state.map01
       if (value) {

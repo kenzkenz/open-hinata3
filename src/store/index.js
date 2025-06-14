@@ -4,6 +4,7 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    saveHistoryFire: false,
     jdpCode: '',
     jdpCoordinates: [],
     editEnabled: false,
