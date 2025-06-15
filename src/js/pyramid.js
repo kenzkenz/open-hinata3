@@ -1371,6 +1371,7 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
     // 4. ソースに再セット
     source.setData(geojsonData);
     store.state.clickCircleGeojsonText = JSON.stringify(geojsonData)
+    generateSegmentLabelGeoJSON(geojsonData)
     console.log(store.state.clickCircleGeojsonText)
     store.state.saveHistoryFire = !store.state.saveHistoryFire
     return feature;
@@ -1778,6 +1779,39 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
             return escapeHTML(JSON.stringify(geojson))
         }
     }
+}
+
+// ラインのラベル用に距離を計算したgeojsonを作る、
+export function generateSegmentLabelGeoJSON(lineGeoJSON) {
+    const coords = lineGeoJSON.geometry.coordinates;
+    const features = [];
+
+    for (let i = 0; i < coords.length - 1; i++) {
+        const from = coords[i];
+        const to = coords[i + 1];
+        const segment = turf.lineString([from, to]);
+
+        const center = turf.midpoint(turf.point(from), turf.point(to));
+        const dist = turf.length(segment, { units: 'kilometers' });
+
+        const label = dist >= 1
+            ? `約${dist.toFixed(2)}km`
+            : `約${(dist * 1000).toFixed(0)}m`;
+
+        features.push({
+            type: 'Feature',
+            geometry: center.geometry,
+            properties: {
+                label: label,
+                index: i + 1
+            }
+        });
+    }
+
+    return {
+        type: 'FeatureCollection',
+        features
+    };
 }
 
 export function deleteAll () {

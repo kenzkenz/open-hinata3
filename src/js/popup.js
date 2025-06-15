@@ -25,7 +25,6 @@ export function calculatePolygonMetrics(polygon) {
     try {
         // 面積の計算（㎡単位で取得）
         const areaRaw = turf.area(polygon); // m2
-
         // 面積のフォーマット
         let area;
         if (areaRaw >= 1_000_000) {
@@ -38,10 +37,8 @@ export function calculatePolygonMetrics(polygon) {
             // それ未満はそのままm²
             area = '約' + areaRaw.toFixed(1) + 'm²';
         }
-
         // 周長の計算（m単位で取得）
         const perimRaw = turf.length(polygon, { units: 'meters' });
-
         // 周長のフォーマット
         let perimeter;
         if (perimRaw >= 1000) {
@@ -49,7 +46,6 @@ export function calculatePolygonMetrics(polygon) {
         } else {
             perimeter = '約' + perimRaw.toFixed(1) + 'm';
         }
-
         // 頂点数の計算
         const coordinates = polygon.geometry.coordinates[0];
         let vertexCount = coordinates.length;
@@ -59,7 +55,6 @@ export function calculatePolygonMetrics(polygon) {
         ) {
             vertexCount -= 1;
         }
-
         return {
             area: area,
             perimeter: perimeter,
@@ -70,30 +65,54 @@ export function calculatePolygonMetrics(polygon) {
     }
 }
 
-// export function calculatePolygonMetrics(polygon) {
-//     try {
-//         // 面積の計算
-//         const area = '約' + turf.area(polygon).toFixed(1) + 'm2'; // Turf.jsで面積を計算
-//         // 周長の計算
-//         const perimeter = '約' + turf.length(polygon, { units: 'meters' }).toFixed(1) + 'm'; // Turf.jsで周長を計算
-//         // 頂点数の計算 (GeoJSON座標から取得)
-//         const coordinates = polygon.geometry.coordinates[0]; // 外周の座標を取得
-//         let vertexCount = coordinates.length;
-//         // GeoJSONでは最初と最後の座標が同じなので、閉じたポリゴンの場合は1点減らす
-//         if (coordinates[0][0] === coordinates[vertexCount - 1][0] &&
-//             coordinates[0][1] === coordinates[vertexCount - 1][1]) {
-//             vertexCount -= 1;
-//         }
-//         // 結果を返す
-//         return {
-//             area: area,
-//             perimeter: perimeter,
-//             vertexCount: vertexCount
-//         };
-//     } catch (error) {
-//         console.error('面積・周長・頂点数の計算中にエラーが発生しました:', error);
-//     }
-// }
+/**
+ * LineString の各区間の距離と、始点・終点の座標を返す
+ * @param {GeoJSON} lineGeoJSON - LineString形式のGeoJSON
+ * @returns {{
+ *   segments: { index: number, from: number[], to: number[], distance: string }[],
+ *   total: string
+ * }}
+ */
+export function calculateLineSegmentDetails(lineGeoJSON) {
+    try {
+        const coords = lineGeoJSON.geometry.coordinates;
+        if (!coords || coords.length < 2) throw new Error("2点以上の座標が必要です");
+
+        let totalLength = 0;
+        const segments = [];
+
+        for (let i = 0; i < coords.length - 1; i++) {
+            const from = coords[i];
+            const to = coords[i + 1];
+            const segment = turf.lineString([from, to]);
+            const dist = turf.length(segment, { units: 'kilometers' }); // km単位
+            totalLength += dist;
+
+            const distanceLabel = dist >= 1
+                ? `約${dist.toFixed(2)}km`
+                : `約${(dist * 1000).toFixed(0)}m`;
+
+            segments.push({
+                index: i + 1,
+                from: from,  // [lng, lat]
+                to: to,      // [lng, lat]
+                distance: distanceLabel
+            });
+        }
+
+        const totalFormatted = totalLength >= 1
+            ? `合計距離: 約${totalLength.toFixed(2)}km`
+            : `合計距離: 約${(totalLength * 1000).toFixed(0)}m`;
+
+        return {
+            segments,
+            total: totalFormatted
+        };
+    } catch (error) {
+        console.error('区間情報の計算中にエラーが発生しました:', error);
+        return null;
+    }
+}
 
 const legend_shinsuishin = [
     { r: 247, g: 245, b: 169, title: '0.5m未満' },

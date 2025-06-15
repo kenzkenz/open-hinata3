@@ -102,7 +102,7 @@ import {
   guideLineLayer,
   guideLineSource,
   midpointLayer,
-  midpointSource,
+  midpointSource, segmentLabeleLayer, segmentLabelSource,
   vertexLayer,
   vertexSource,
   zenkokuChibanzuAddLayer
@@ -945,6 +945,8 @@ export default {
         map.removeSource('vertex-source')
         map.removeLayer('midpoint-layer')
         map.removeSource('midpoint-source')
+        map.removeLayer('segment-label-layer')
+        map.removeSource('segment-label-source')
 
         // map.removeSource('end-point-source')
       }
@@ -964,6 +966,8 @@ export default {
       map.addLayer(vertexLayer)
       map.addSource('midpoint-source', midpointSource.obj)
       map.addLayer(midpointLayer)
+      map.addSource('segment-label-source', segmentLabelSource.obj)
+      map.addLayer(segmentLabeleLayer)
       // map.addSource('end-point-source', endPointSouce.obj)
       if (map === this.$store.state.map01) {
         setTimeout(() => {

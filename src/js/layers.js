@@ -860,6 +860,33 @@ export const midpointLayer = {
     layout: {},
     filter: ['==', '$type', 'Point']
 }
+// 距離ラベルレイヤー-----------------------------------------------------------------
+export const segmentLabelSource = {
+    id: 'segment-label-source', obj: {
+        type: 'geojson',
+        data: {
+            type: 'FeatureCollection',
+            features: []
+        }
+    }
+}
+export const segmentLabeleLayer = {
+    id: 'segment-label-layer',
+    type: 'symbol',
+    source: 'segment-label-source',
+    layout: {
+        'text-field': ['get', 'label'],
+        'text-size': 14,
+        'text-offset': [0, 0.6],
+        'text-anchor': 'top'
+    },
+    paint: {
+        'text-color': '#000000',
+        'text-halo-color': '#ffffff',
+        'text-halo-width': 1
+    }
+}
+
 // ガイドレイヤー-----------------------------------------------------------------
 export const guideLineSource = {
     id: 'guide-line-source', obj: {
