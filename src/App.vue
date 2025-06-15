@@ -704,9 +704,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
             <MiniTooltip text="グループ機能">
             <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForGroup = !s_dialogForGroup"><v-icon v-if="user1">mdi-account-supervisor</v-icon></v-btn>
             </MiniTooltip>
-            <MiniTooltip text="印刷">
-            <v-btn v-if="!isSmall" :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="handlePrint"><v-icon>mdi-printer</v-icon></v-btn>
-            </MiniTooltip>
+<!--            <MiniTooltip text="印刷">-->
+<!--              <v-btn v-if="!isSmall" :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="handlePrint"><v-icon>mdi-printer</v-icon></v-btn>-->
+<!--            </MiniTooltip>-->
             <MiniTooltip text="レイヤー選択">
             <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickLayer(mapName)"><v-icon>mdi-layers</v-icon></v-btn>
             </MiniTooltip>
@@ -724,7 +724,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                @mouseenter="onPanelEnter"
                @mouseleave="onPanelLeave">
             <span v-if="!isPrint">
-              <MiniTooltip text="現在地取得">
+              <MiniTooltip text="現在地取得" :offset-x="0" :offset-y="-2">
                 <v-btn :size="isSmall ? 'small' : 'default'" icon @click="goToCurrentLocation" v-if="mapName === 'map01'"><v-icon>mdi-crosshairs-gps</v-icon></v-btn>
               </MiniTooltip>
               <MiniTooltip text="現在地連続取得" :offset-x="-25" :offset-y="86">
@@ -742,7 +742,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <FanMenu layout="vertical" :offset-x="-60" class="draw-fan">
 
                 <template v-slot:center>
-                  <MiniTooltip text="ドロー" :offset-x="0" :offset-y="4">
+                  <MiniTooltip text="ドロー" :offset-x="0" :offset-y="2">
                     <v-btn :size="isSmall ? 'small' : 'default'" :color="s_isDraw ? 'green' : undefined" icon @click="toggleLDraw" v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>
                   </MiniTooltip>
                 </template>
@@ -769,6 +769,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   </div>
                 </template>
               </FanMenu>
+
+              <MiniTooltip text="印刷" :offset-x="-25" :offset-y="262">
+                <v-btn :size="isSmall ? 'small' : 'default'" class="printer" icon @click="handlePrint" v-if="mapName === 'map01'"><v-icon>mdi-printer</v-icon></v-btn>
+              </MiniTooltip>
 
             </span>
           </div>
@@ -4072,11 +4076,8 @@ export default {
         if (!this.s_isDrawLine) return;
         if (clickTimer !== null) return; // 2回目のクリック時は無視
         clickTimer = setTimeout(() => {
-
           // 節点追加
           this.tempLineCoords.push(coordinates);
-          // alert(this.tempLineCoords.length)
-          // 必要ならガイドライン等を描画
           console.log('シングルクリック！');
           clickTimer = null;
         }, CLICK_DELAY);
@@ -6574,7 +6575,11 @@ export default {
 /*    top: 197px;*/
 /*  }*/
 /*}*/
-
+.printer {
+  position: absolute;
+  top: 240px;
+  left: 0;
+}
 /*3Dのボタン-------------------------------------------------------------*/
 .terrain-btn-expand-div {
   position:absolute;
@@ -6634,7 +6639,7 @@ export default {
 }
 .terrain-btn-down{
   position:absolute;
-  bottom:10px;
+  bottom:4px;
   left:50%;
   padding:0;
   width: 50px;
