@@ -1819,3 +1819,31 @@ export function colorNameToRgba(colorName, alpha = 1) {
     if (!rgb) return null; // 未定義色名の場合
     return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;
 }
+
+export let lastGeojson = null;
+
+export function watchGeojsonChange() {
+    const map = store.state.map01;
+    requestAnimationFrame(() => {
+        console.log('⏱ 実行中');
+
+        const source = map.getSource('click-circle-source');
+        if (!source) {
+            // ソースがまだない → 次フレームで再チェック
+            watchGeojsonChange();
+            return;
+        }
+
+        const current = source._data;
+
+        if (JSON.stringify(current) !== JSON.stringify(lastGeojson)) {
+            // 差分あり
+            lastGeojson = JSON.parse(JSON.stringify(current)); // ← ちゃんとコピーしないと比較できない
+            console.log('🟢 GeoJSON changed!', current);
+            alert('GeoJSON changed!');
+            store.state.saveHistoryFire = !store.state.saveHistoryFire
+        }
+
+        watchGeojsonChange(); // 🔁 次のフレームへ
+    });
+}

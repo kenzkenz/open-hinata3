@@ -85,6 +85,36 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </v-card>
       </v-dialog>
 
+      <v-dialog v-model="dialogForSaveDXF2" max-width="500px">
+        <v-card>
+          <v-card-title>
+            DXF作成
+          </v-card-title>
+          <v-card-text>
+            <div v-if="s_isAndroid" class="select-container">
+              <select id="selectBox" v-model="s_zahyokei" class="custom-select">
+                <option value="" disabled selected>座標を選択してください。</option>
+                <option v-for="number in 19" :key="number" :value="`公共座標${number}系`">
+                  公共座標{{ number }}系
+                </option>
+              </select>
+            </div>
+            <div v-else>
+              <v-select class="scrollable-content"
+                        v-model="s_zahyokei"
+                        :items="items"
+                        label="座標系を選択してください"
+                        outlined
+              ></v-select>
+            </div>
+            <v-btn @click="saveDxf">DXF出力開始</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="dialogForSaveDXF2 = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
 
       <v-dialog v-model="printDialog" max-width="500px">
         <v-card>
@@ -809,7 +839,7 @@ import {
   csvGenerateForUserPng,
   ddSimaUpload,
   downloadKML,
-  downloadSimaText,
+  downloadSimaText, DXFDownload,
   dxfToGeoJSON,
   enableFeatureDragAndAdd,
   enablePointDragAndAdd,
@@ -1105,8 +1135,8 @@ import pyramid, {
   colorNameToRgba,
   deleteAll,
   geojsonCreate,
-  geojsonUpdate, getAllVertexPoints, setAllMidpoints,
-  unescapeHTML
+  geojsonUpdate, getAllVertexPoints, lastGeojson, setAllMidpoints,
+  unescapeHTML, watchGeojsonChange
 } from '@/js/pyramid'
 import glouplayer from '@/js/glouplayer'
 import * as Layers from '@/js/layers'
@@ -1238,7 +1268,8 @@ export default {
     historyCount: 0,
     drawerVisible: false,
     selectedFeature: null,
-    showLayerDialog: false
+    showLayerDialog: false,
+    dialogForSaveDXF2: false
   }),
   computed: {
     ...mapState([
@@ -1250,13 +1281,15 @@ export default {
     buttons() {
       const btns =
       [
-        { key: 'point', text: '文字貼りつけ', label: '文字', color: this.s_isDrawPoint ? 'green' : undefined, click: this.toggleDrawPoint },
-        { key: 'circle', text: '円', label: '円', color: this.s_isDrawCircle ? 'green' : undefined, click: this.toggleDrawCircle },
-        { key: 'line', text: '線', label: '線', color: this.s_isDrawLine ? 'green' : undefined, click: this.toggleLDrawLine },
-        { key: 'polygon', text: '多角形', label: '多角', color: this.s_isDrawPolygon ? 'green' : undefined, click: this.toggleLDrawPolygon },
-        { key: 'edit', text: '編集', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
+        { key: 'point', text: '文字貼りつけ', label: '文字', color: this.s_isDrawPoint ? 'green' : 'blue', click: this.toggleDrawPoint },
+        { key: 'circle', text: '円', label: '円', color: this.s_isDrawCircle ? 'green' : 'blue', click: this.toggleDrawCircle },
+        { key: 'line', text: '線', label: '線', color: this.s_isDrawLine ? 'green' : 'blue', click: this.toggleLDrawLine },
+        { key: 'polygon', text: '多角形', label: '多角', color: this.s_isDrawPolygon ? 'green' : 'blue', click: this.toggleLDrawPolygon },
         { key: 'finish', text: '確定', label: '確定', click: this.finishDrawing },
+        { key: 'edit', text: '編集', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
         { key: 'undo', text: '元に戻す', label: '元戻', click: this.undo },
+        { key: 'redo', text: 'やり直す', label: 'やり直', click: this.redo },
+        { key: 'dxf', text: 'DXFで出力', label: 'dxf', color: 'white', click: this.dialogForSaveDXFOpen },
         { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw }
       ]
       return btns
@@ -1721,30 +1754,49 @@ export default {
     },
   },
   methods: {
+    dialogForSaveDXFOpen () {
+      this.dialogForSaveDXF2 = true
+    },
+    saveDxf() {
+      DXFDownload()
+      this.dialogForSaveDXF2 = false
+    },
     saveHistory() {
       // ディープコピーで保存！
       const map = this.$store.state.map01
-      const mainSourceGeojson = map.getSource('click-circle-source')._data;
+      let mainSourceGeojson = map.getSource('click-circle-source')._data;
+      // if (mainSourceGeojson.features.length === 0) {
+      //   mainSourceGeojson = JSON.parse(store.state.clickCircleGeojsonText)
+      // }
       this.history.push(JSON.parse(JSON.stringify(mainSourceGeojson)));
       // Undo後の新編集はredo履歴クリア
       this.redoStack = [];
     },
     undo() {
+      const map = this.$store.state.map01
+      const mainSourceGeojson = map.getSource('click-circle-source')._data;
       if (this.history.length > 0) {
-        const map = this.$store.state.map01
-        const mainSourceGeojson = map.getSource('click-circle-source')._data;
         this.redoStack.push(JSON.parse(JSON.stringify(mainSourceGeojson)));
         this.mainGeojson = this.history.pop();
         // 反映
         map.getSource('click-circle-source').setData(this.mainGeojson);
         store.state.clickCircleGeojsonText = JSON.stringify(this.mainGeojson)
         this.updatePermalink()
-
         if (this.s_editEnabled) {
           getAllVertexPoints(map, this.mainGeojson);
           setAllMidpoints(map, this.mainGeojson);
         }
+      // } else if (this.history.length === 0) {
+      //   map.getSource('click-circle-source').setData({
+      //     type: 'FeatureCollection',
+      //     features: []
+      //   });
       }
+      this.updatePermalink()
+      // ↓これは正しいか。不具合が出たらすぐに削除すること。
+      // if (this.redoStack.length === 1) {
+      //   this.undo()
+      // }
     },
     redo() {
       if (this.redoStack.length > 0) {
@@ -1754,6 +1806,8 @@ export default {
         this.mainGeojson = this.redoStack.pop();
         // 反映
         map.getSource('click-circle-source').setData(this.mainGeojson);
+        this.$store.state.clickCircleGeojsonText = JSON.stringify(this.mainGeojson)
+        this.updatePermalink()
       }
     },
     finishLine () {
@@ -4558,9 +4612,11 @@ export default {
       // -----------------------------------------------------------------------------------------------------------------
       // on load オンロード
       this.mapNames.forEach(mapName => {
+
         const map = this.$store.state[mapName]
         const params = this.parseUrlParams()
         map.on('load',async () => {
+
           map.setProjection({"type": "globe"})
           map.resize()
           map.doubleClickZoom.disable()

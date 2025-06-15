@@ -7866,3 +7866,85 @@ export function japanCoord (coordinates) {
         }
     }
 }
+
+export function DXFDownload() {
+    const map01 = store.state.map01
+    const source = map01.getSource('click-circle-source');
+    if (!source || !source._data) {
+        alert('ソースが見つかりません');
+        return;
+    }
+    const originalGeojson = source._data;
+    // endpointプロパティがないフィーチャだけを残す
+    const filteredFeatures = originalGeojson.features.filter(
+        feature => !('endpoint' in feature.properties)
+    );
+    const filteredGeojson = {
+        type: 'FeatureCollection',
+        features: filteredFeatures
+    };
+    const toEPSG = zahyokei.find(item => item.kei === store.state.zahyokei).code
+    const convertedGeojson = convertFromEPSG4326(filteredGeojson, 'EPSG:2444')
+    const dxfString = geojsonToDXF(convertedGeojson)
+    // Blobとしてダウンロード処理
+    const blob = new Blob([dxfString], {
+        type: 'application/json'
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = getNowFileNameTimestamp() + '.dxf';
+    a.click();
+    URL.revokeObjectURL(url); // 後片付け
+}
+
+/**
+ * GeoJSONの座標を EPSG:4326 から任意の EPSG に変換する
+ * @param {object} geojson - GeoJSON FeatureCollection
+ * @param {string} toEPSG - 変換先のEPSGコード（例: 'EPSG:2450'）
+ * @returns {object} - 変換後のGeoJSON
+ */
+export function convertFromEPSG4326(geojson, toEPSG) {
+    const fromEPSG = 'EPSG:4326';
+
+    const transformCoords = (coords) => {
+        if (typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+            return proj4(fromEPSG, toEPSG, coords);
+        }
+        return coords.map(transformCoords);
+    };
+
+    const transformGeometry = (geometry) => {
+        if (!geometry) return null;
+
+        if (geometry.type === 'GeometryCollection') {
+            return {
+                ...geometry,
+                geometries: geometry.geometries.map(transformGeometry),
+            };
+        }
+
+        return {
+            ...geometry,
+            coordinates: transformCoords(geometry.coordinates),
+        };
+    };
+
+    return {
+        ...geojson,
+        features: geojson.features.map((feature) => ({
+            ...feature,
+            geometry: transformGeometry(feature.geometry),
+        })),
+    };
+}
+
+export function getNowFileNameTimestamp() {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0'); // 月は0始まり
+    const dd = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mi = String(now.getMinutes()).padStart(2, '0');
+    return `${yyyy}${mm}${dd}_${hh}${mi}`;
+}
