@@ -718,6 +718,12 @@ export const clickCircleLineLayer = {
         'line-color': ['get', 'color'],
         'line-width': ['get', 'line-width'],
     }
+    // paint: {
+    //     'line-color': '#ff0',              // 黄色蛍光ペン風（または #0ff, #f0f）
+    //     'line-width': 16,                  // 太めに
+    //     'line-opacity': 0.3,               // 半透明
+    //     'line-blur': 2                     // にじみ（ぼかし）
+    // }
 }
 export const clickCircleLabelLayer = {
     id: 'click-circle-label-layer',
