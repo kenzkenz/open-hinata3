@@ -1190,10 +1190,12 @@ export default {
     redoStack: [],
     snackbar: false,
     snackbarText: '',
+    tempFreehandCoords: [],
     tempPolygonCoords: [],
     tempLineCoords: [],
     tempLineCoordsGuide: [],
     isDrawingLine: false,
+    isDrawingFree: false,
     isDrawing: false,
     isCursorOnPanel: false,
     panelHoverCount: 0, // ←複数パネル対策
@@ -1835,14 +1837,20 @@ export default {
     },
     finishLine () {
       this.isDrawingLine = false;
-      // ライン本体を作成＆保存（geojsonCreateなど）
+      this.isDrawingFree = false;
       // ガイドライン消去
       this.$store.state.map01.getSource('guide-line-source').setData({
         type: 'FeatureCollection',
         features: []
       });
+      // フリーハンドプレビューレイヤー消去
+      this.$store.state.map01.getSource('freehand-preview-source').setData({
+        type: 'FeatureCollection',
+        features: []
+      });
       this.tempLineCoords = []
-      this.tempLineCoordsGuide = [];
+      this.tempLineCoordsGuide = []
+      this.tempFreehandCoords = []
     },
     onPanelEnter() {
       this.$store.state.panelHoverCount++;
@@ -4225,24 +4233,24 @@ export default {
       });
       // フリーハンド-----------------------------------------------------------------------------------------------------
       let isDrawing = false;
-      let freehandCoords = [];
 
       map.on('mousedown', (e) => {
-        if (!this.s_isDrawLine) return;
+        if (!this.s_isDrawFree) return;
 
         isDrawing = true;
-        freehandCoords = [];
+        this.tempFreehandCoords = [];
         const start = [e.lngLat.lng, e.lngLat.lat];
-        freehandCoords.push(start);
+        this.tempFreehandCoords.push(start);
 
         map.getCanvas().style.cursor = 'crosshair';
+        map.dragPan.disable(); // 🛑 パンを無効化
       });
 
       map.on('mousemove', (e) => {
         if (!isDrawing) return;
 
         const coord = [e.lngLat.lng, e.lngLat.lat];
-        freehandCoords.push(coord);
+        this.tempFreehandCoords.push(coord);
 
         // 線のプレビューを動的に表示（必要であれば）
         const tempLine = {
@@ -4251,20 +4259,21 @@ export default {
             type: 'Feature',
             geometry: {
               type: 'LineString',
-              coordinates: freehandCoords
+              coordinates: this.tempFreehandCoords
             },
             properties: {}
           }]
         };
-        map.getSource('freehand-preview').setData(tempLine);
+        map.getSource('freehand-preview-source').setData(tempLine);
       });
 
       map.on('mouseup', (e) => {
         if (!isDrawing) return;
         isDrawing = false;
         map.getCanvas().style.cursor = '';
+        map.dragPan.disable(); // 🛑 パンを無効化
 
-        if (freehandCoords.length >= 2) {
+        if (this.tempFreehandCoords.length >= 2) {
           const id = String(Math.floor(10000 + Math.random() * 90000));
           this.$store.state.id = id;
 
@@ -4278,17 +4287,17 @@ export default {
             textJustify: 'left'
           };
 
-          geojsonCreate(map, 'LineString', freehandCoords.slice(), properties);
+          geojsonCreate(map, 'LineString', this.tempFreehandCoords.slice(), properties);
 
           // 任意: 擬似クリック
-          this.$store.state.coordinates = freehandCoords[0];
-          const dummyEvent = { lngLat: { lng: freehandCoords[0][0], lat: freehandCoords[0][1] } };
+          this.$store.state.coordinates = this.tempFreehandCoords[0];
+          const dummyEvent = { lngLat: { lng: this.tempFreehandCoords[0][0], lat: this.tempFreehandCoords[0][1] } };
           setTimeout(() => {
             onLineClick(dummyEvent);
           }, 500);
         }
-
-        freehandCoords = [];
+        this.finishLine();
+        this.tempFreehandCoords = [];
       });
       // ガイドライン-----------------------------------------------------------------------------------------------------
       map.on('click', (e) => {
@@ -4316,13 +4325,6 @@ export default {
         };
         map.getSource('guide-line-source').setData(guideLineGeoJson);
       });
-      // 例：ダブルクリックで確定
-      // map.on('click', (e) => {
-      //   if (this.isDrawingLine && this.tempLineCoordsGuide.length >= 2) {
-      //     // this.finishLine();
-      //     // ここでgeojsonCreate(…)などで本採用
-      //   }
-      // });
 
       // 頂点レイヤーを動かすと同時にメインレイヤーを更新する。----------------------------------------------
       let isDragging = false;
@@ -4464,57 +4466,6 @@ export default {
         }
       }, { passive: false });
 
-      // map.on('dblclick', 'vertex-layer', function(e) {
-      //   e.preventDefault();
-      //   if (!store.state.editEnabled) return;
-      //   if (!e.features?.length) return;
-      //   try {
-      //     const { parentProps, featureIndex, vertexIndex, polygonIndex } = e.features[0].properties;
-      //     const parentId = JSON.parse(parentProps).id;
-      //     // GeoJSONを取得
-      //     const mainSourceGeojson = map.getSource('click-circle-source')._data;
-      //     // 対象本体Feature
-      //     const feature = mainSourceGeojson.features[featureIndex];
-      //     if (!feature) return;
-      //     let modified = false;
-      //     // LineString
-      //     if (feature.geometry.type === 'LineString') {
-      //       if (feature.geometry.coordinates.length > 2) { // 最小2
-      //         feature.geometry.coordinates.splice(vertexIndex, 1);
-      //         modified = true;
-      //       }
-      //     }
-      //     // Polygon
-      //     else if (feature.geometry.type === 'Polygon') {
-      //       let ring = feature.geometry.coordinates[0];
-      //       if (ring.length > 4) { // 最小4（閉じてるから）
-      //         ring.splice(vertexIndex, 1);
-      //         modified = true;
-      //       }
-      //     }
-      //     // MultiPolygon
-      //     else if (feature.geometry.type === 'MultiPolygon') {
-      //       let ring = feature.geometry.coordinates[polygonIndex][0];
-      //       if (ring.length > 4) {
-      //         ring.splice(vertexIndex, 1);
-      //         modified = true;
-      //       }
-      //     }
-      //     if (modified) {
-      //       // 本体更新
-      //       map.getSource('click-circle-source').setData(mainSourceGeojson);
-      //       // 頂点レイヤーも再生成
-      //       getAllVertexPoints(map, mainSourceGeojson);
-      //       setAllMidpoints(map, mainSourceGeojson);
-      //       store.state.clickCircleGeojsonText = JSON.stringify(mainSourceGeojson);
-      //
-      //     }
-      //   } catch (error) {
-      //     console.error('Failed to delete vertex:', error);
-      //   }
-      // }, { passive: false });
-
-
       map.on('click', 'midpoint-layer', function(e) {
         if (!store.state.editEnabled) return;
         if (!e.features?.length) return;
@@ -4551,36 +4502,6 @@ export default {
         getAllVertexPoints(map, mainSourceGeojson);
         setAllMidpoints(map, mainSourceGeojson);
       });
-
-
-      //
-      // map.on('click', 'midpoint-layer', function(e) {
-      //   if (!store.state.editEnabled) return;
-      //   if (!e.features?.length) return;
-      //   // 中点Feature
-      //   const f = e.features[0];
-      //   const { insertIndex, featureIndex, polygonIndex } = f.properties;
-      //   const [lng, lat] = f.geometry.coordinates;
-      //   // 本体取得
-      //   const mainSourceGeojson = map.getSource('click-circle-source')._data;
-      //   const feature = mainSourceGeojson.features[featureIndex];
-      //   if (!feature) return;
-      //
-      //   // 挿入
-      //   if (feature.geometry.type === 'LineString') {
-      //     feature.geometry.coordinates.splice(insertIndex, 0, [lng, lat]);
-      //   } else if (feature.geometry.type === 'Polygon') {
-      //     feature.geometry.coordinates[0].splice(insertIndex, 0, [lng, lat]);
-      //   } else if (feature.geometry.type === 'MultiPolygon') {
-      //     feature.geometry.coordinates[polygonIndex][0].splice(insertIndex, 0, [lng, lat]);
-      //   }
-      //   // 反映
-      //   map.getSource('click-circle-source').setData(mainSourceGeojson);
-      //   getAllVertexPoints(map, mainSourceGeojson);
-      //   setAllMidpoints(map, mainSourceGeojson);
-      // });
-
-
 
       map.on('moveend', () => {
         this.$store.state.watchFlg = true
