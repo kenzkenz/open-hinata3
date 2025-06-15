@@ -4196,6 +4196,73 @@ export default {
           this.tempPolygonCoords = [];
         }
       });
+      // フリーハンド-----------------------------------------------------------------------------------------------------
+      let isDrawing = false;
+      let freehandCoords = [];
+
+      map.on('mousedown', (e) => {
+        if (!this.s_isDrawLine) return;
+
+        isDrawing = true;
+        freehandCoords = [];
+        const start = [e.lngLat.lng, e.lngLat.lat];
+        freehandCoords.push(start);
+
+        map.getCanvas().style.cursor = 'crosshair';
+      });
+
+      map.on('mousemove', (e) => {
+        if (!isDrawing) return;
+
+        const coord = [e.lngLat.lng, e.lngLat.lat];
+        freehandCoords.push(coord);
+
+        // 線のプレビューを動的に表示（必要であれば）
+        const tempLine = {
+          type: 'FeatureCollection',
+          features: [{
+            type: 'Feature',
+            geometry: {
+              type: 'LineString',
+              coordinates: freehandCoords
+            },
+            properties: {}
+          }]
+        };
+        map.getSource('freehand-preview').setData(tempLine);
+      });
+
+      map.on('mouseup', (e) => {
+        if (!isDrawing) return;
+        isDrawing = false;
+        map.getCanvas().style.cursor = '';
+
+        if (freehandCoords.length >= 2) {
+          const id = String(Math.floor(10000 + Math.random() * 90000));
+          this.$store.state.id = id;
+
+          const properties = {
+            id: id,
+            pairId: id,
+            label: '',
+            offsetValue: [0.6, 0],
+            'line-width': 5,
+            textAnchor: 'left',
+            textJustify: 'left'
+          };
+
+          geojsonCreate(map, 'LineString', freehandCoords.slice(), properties);
+
+          // 任意: 擬似クリック
+          this.$store.state.coordinates = freehandCoords[0];
+          const dummyEvent = { lngLat: { lng: freehandCoords[0][0], lat: freehandCoords[0][1] } };
+          setTimeout(() => {
+            onLineClick(dummyEvent);
+          }, 500);
+        }
+
+        freehandCoords = [];
+      });
       // ガイドライン-----------------------------------------------------------------------------------------------------
       map.on('click', (e) => {
         if (!this.s_isDrawLine && !this.s_isDrawPolygon) return;
