@@ -3742,7 +3742,7 @@ export function popup(e,map,mapName,mapFlg) {
                                 '</div>'
                         }
                         break
-                    case 'LineString':
+                    case 'LineString': {
                         let checked = ''
                         if (isKeiko) checked = 'checked'
                         if (html.indexOf('click-circle-layer') === -1) {
@@ -3768,12 +3768,12 @@ export function popup(e,map,mapName,mapFlg) {
                                 '<div id="' + props.id + '" data-color="green" class="line-color circle green" tabindex="0"></div>' +
                                 '<div id="' + props.id + '" data-color="orange" class="line-color circle orange" tabindex="0"></div>' +
                                 '</div>' +
-                                '<input id="' + props.id + '" type="number" class="oh-cool-input-number line-width-input" min="1" max="100" step="1" value="' + lineWidth +'">' +
+                                '<input id="' + props.id + '" type="number" class="oh-cool-input-number line-width-input" min="1" max="100" step="1" value="' + lineWidth + '">' +
                                 '</div>' +
                                 '</div>'
                         }
-
                         break
+                    }
                 }
                 break
             }
