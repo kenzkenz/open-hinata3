@@ -774,19 +774,21 @@ export const arrowsLayer = {
     // 'minzoom': 12 // ズームレベル12以上で表示
 }
 // ----------------------------------------------------------------------------
-// ポイントソース（終点用）
+// 矢印ソース
 export const endPointSouce = {
-    id:'end-point-source',
-    obj: {
+    id: 'end-point-source', obj: {
         type: 'geojson',
-        data: null
+        data: {
+            type: 'FeatureCollection',
+            features: []
+        }
     }
 }
 // 矢印レイヤー（終点にのみ表示）
 export const arrowsEndpointLayer ={
     id: 'arrows-endpoint-layer',
     type: 'symbol',
-    source: 'click-circle-source', // 終点用のソースを使用
+    source: 'end-point-source',
     filter: [
         'all',
         ['has', 'bearing'],

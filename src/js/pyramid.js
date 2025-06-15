@@ -1246,50 +1246,49 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
         case 'LineString':
             feature = turf.lineString(coordinates, properties);
             // ラインの終点をポイントとして抽出------------------------------------------------------------------------------
-            lastCoord = coordinates[coordinates.length - 1];
-            lastPointFeature = {
-                type: 'Feature',
-                geometry: {
-                    type: 'Point',
-                    coordinates: lastCoord
-                },
-                properties: {
-                    id: properties.pairId + '-arrow',
-                    pairId: properties.pairId,
-                    endpoint: 'end',
-                    'arrow-type': 'end',
-                    arrow: 'arrow_black',
-                    // 最後のセグメントの方向を計算（オプション）
-                    bearing: calculateBearing(
-                        coordinates[coordinates.length - 2],
-                        lastCoord,
-                        'end'
-                    )
-                }
-            };
-            // ラインの初点をポイントとして抽出------------------------------------------------------------------------------
-            firstCoord = coordinates[0];
-            firstPointFeature = {
-                type: 'Feature',
-                geometry: {
-                    type: 'Point',
-                    coordinates: firstCoord
-                },
-                properties: {
-                    id: properties.pairId + '-arrow',
-                    pairId: properties.pairId,
-                    endpoint: 'start',
-                    'arrow-type': 'end',
-                    arrow: 'arrow_black',
-                    // 最後のセグメントの方向を計算（オプション）
-                    bearing: calculateBearing(
-                        coordinates[0],
-                        coordinates[1],
-                        'start'
-                    )
-                }
-            };
-            // getVertexPoints(map,geoType,coordinates, false)
+            // lastCoord = coordinates[coordinates.length - 1];
+            // lastPointFeature = {
+            //     type: 'Feature',
+            //     geometry: {
+            //         type: 'Point',
+            //         coordinates: lastCoord
+            //     },
+            //     properties: {
+            //         id: properties.pairId + '-arrow',
+            //         pairId: properties.pairId,
+            //         endpoint: 'end',
+            //         'arrow-type': 'end',
+            //         arrow: 'arrow_black',
+            //         // 最後のセグメントの方向を計算（オプション）
+            //         bearing: calculateBearing(
+            //             coordinates[coordinates.length - 2],
+            //             lastCoord,
+            //             'end'
+            //         )
+            //     }
+            // };
+            // // ラインの初点をポイントとして抽出------------------------------------------------------------------------------
+            // firstCoord = coordinates[0];
+            // firstPointFeature = {
+            //     type: 'Feature',
+            //     geometry: {
+            //         type: 'Point',
+            //         coordinates: firstCoord
+            //     },
+            //     properties: {
+            //         id: properties.pairId + '-arrow',
+            //         pairId: properties.pairId,
+            //         endpoint: 'start',
+            //         'arrow-type': 'end',
+            //         arrow: 'arrow_black',
+            //         // 最後のセグメントの方向を計算（オプション）
+            //         bearing: calculateBearing(
+            //             coordinates[0],
+            //             coordinates[1],
+            //             'start'
+            //         )
+            //     }
+            // };
             break;
         case 'Polygon':
             feature = turf.polygon(coordinates, properties);
@@ -1345,7 +1344,8 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
         if (geoType === 'Circle') {
             geojsonData = turf.featureCollection([circleFeature,centerFeature]);
         } else if (geoType === 'LineString') {
-            geojsonData = turf.featureCollection([feature,lastPointFeature,firstPointFeature]);
+            // geojsonData = turf.featureCollection([feature,lastPointFeature,firstPointFeature]);
+            geojsonData = turf.featureCollection([feature]);
         } else {
             geojsonData = turf.featureCollection([feature]);
         }
@@ -1368,7 +1368,10 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
             };
         }
     }
-    if (geoType === 'LineString') generateSegmentLabelGeoJSON(geojsonData)
+    if (geoType === 'LineString') {
+        generateSegmentLabelGeoJSON(geojsonData)
+        generateStartEndPointsFromGeoJSON(geojsonData)
+    }
     // 4. ソースに再セット
     source.setData(geojsonData);
     store.state.clickCircleGeojsonText = JSON.stringify(geojsonData)
@@ -1813,15 +1816,74 @@ export function generateSegmentLabelGeoJSON(geojson) {
             });
         }
     });
-
     const labelGeojson = {
         type: 'FeatureCollection',
         features
     };
-
     // ラベル用ソースに反映
     map01.getSource('segment-label-source').setData(labelGeojson);
 }
+// ラインに矢印のポイントを作る
+export function generateStartEndPointsFromGeoJSON(geojson) {
+    const map01 = store.state.map01;
+    const pointFeatures = [];
+
+    geojson.features.forEach((feature) => {
+        if (feature.geometry.type !== 'LineString') return;
+
+        const coordinates = feature.geometry.coordinates;
+        const properties = feature.properties || {};
+
+        if (coordinates.length < 2) return;
+
+        // 始点
+        const firstCoord = coordinates[0];
+        const secondCoord = coordinates[1]; // for bearing
+        pointFeatures.push({
+            type: 'Feature',
+            geometry: {
+                type: 'Point',
+                coordinates: firstCoord
+            },
+            properties: {
+                id: (properties.pairId || properties.id || 'line') + '-start',
+                pairId: properties.pairId || null,
+                endpoint: 'start',
+                'arrow-type': 'end',
+                arrow: 'arrow_black',
+                bearing: calculateBearing(firstCoord, secondCoord, 'start')
+            }
+        });
+
+        // 終点
+        const lastCoord = coordinates[coordinates.length - 1];
+        const secondLastCoord = coordinates[coordinates.length - 2];
+        pointFeatures.push({
+            type: 'Feature',
+            geometry: {
+                type: 'Point',
+                coordinates: lastCoord
+            },
+            properties: {
+                id: (properties.pairId || properties.id || 'line') + '-end',
+                pairId: properties.pairId || null,
+                endpoint: 'end',
+                'arrow-type': 'end',
+                arrow: 'arrow_black',
+                bearing: calculateBearing(secondLastCoord, lastCoord, 'end')
+            }
+        });
+    });
+
+    const pointGeoJSON = {
+        type: 'FeatureCollection',
+        features: pointFeatures
+    };
+
+    // MapLibre のソースに反映
+    map01.getSource('end-point-source').setData(pointGeoJSON);
+}
+
 
 // export function generateSegmentLabelGeoJSON(feature) {
 //     const map01 = store.state.map01

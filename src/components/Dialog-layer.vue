@@ -64,7 +64,7 @@
 
 <script>
 
-import {escapeHTML, generateSegmentLabelGeoJSON} from "@/js/pyramid";
+import {escapeHTML, generateSegmentLabelGeoJSON, generateStartEndPointsFromGeoJSON} from "@/js/pyramid";
 
 const registeredLayers = new Set()
 
@@ -934,9 +934,9 @@ export default {
         map.removeLayer('click-circle-symbol-layer')
         map.removeLayer('click-circle-line-layer')
         map.removeLayer('click-circle-label-layer')
-        // map.removeLayer('arrows-layer')
-        map.removeLayer('arrows-endpoint-layer')
         map.removeSource('click-circle-source')
+        map.removeLayer('arrows-endpoint-layer')
+        map.removeSource('end-point-source')
         map.removeLayer('guide-line-layer')
         map.removeSource('guide-line-source')
         map.removeLayer('vertex-layer')
@@ -956,7 +956,7 @@ export default {
       map.addLayer(clickCircSymbolLayer)
       map.addLayer(clickCircleLineLayer)
       map.addLayer(clickCircleLabelLayer)
-      // map.addLayer(arrowsLayer)
+      map.addSource('end-point-source', endPointSouce.obj)
       map.addLayer(arrowsEndpointLayer)
       map.addSource('guide-line-source', guideLineSource.obj)
       map.addLayer(guideLineLayer)
@@ -968,7 +968,9 @@ export default {
       map.addLayer(segmentLabeleLayer)
 
       if (this.$store.state.clickCircleGeojsonText) {
-        generateSegmentLabelGeoJSON(JSON.parse(this.$store.state.clickCircleGeojsonText))
+        const geojson = JSON.parse(this.$store.state.clickCircleGeojsonText)
+        generateSegmentLabelGeoJSON(geojson)
+        generateStartEndPointsFromGeoJSON(geojson)
       }
 
       if (map === this.$store.state.map01) {

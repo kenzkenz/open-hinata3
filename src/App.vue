@@ -1133,7 +1133,7 @@ import pyramid, {
   autoCloseAllPolygons,
   circleCreate,
   colorNameToRgba,
-  deleteAll, generateSegmentLabelGeoJSON,
+  deleteAll, generateSegmentLabelGeoJSON, generateStartEndPointsFromGeoJSON,
   geojsonCreate,
   geojsonUpdate, getAllVertexPoints, lastGeojson, setAllMidpoints,
   unescapeHTML, watchGeojsonChange
@@ -1787,6 +1787,7 @@ export default {
           setAllMidpoints(map, this.mainGeojson);
         }
         generateSegmentLabelGeoJSON(this.mainGeojson)
+        generateStartEndPointsFromGeoJSON(this.mainGeojson)
       // } else if (this.history.length === 0) {
       //   map.getSource('click-circle-source').setData({
       //     type: 'FeatureCollection',
@@ -1813,6 +1814,7 @@ export default {
           setAllMidpoints(map, this.mainGeojson);
         }
         generateSegmentLabelGeoJSON(this.mainGeojson)
+        generateStartEndPointsFromGeoJSON(this.mouseDown)
         this.updatePermalink()
       }
     },
@@ -4298,6 +4300,7 @@ export default {
           setAllMidpoints(map, mainSourceGeojson);
           store.state.clickCircleGeojsonText = JSON.stringify(mainSourceGeojson);
           generateSegmentLabelGeoJSON(mainSourceGeojson)
+          generateStartEndPointsFromGeoJSON(mainSourceGeojson)
         } catch (error) {
           console.error('Failed to update source data:', error);
         }
