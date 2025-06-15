@@ -3630,6 +3630,7 @@ export function popup(e,map,mapName,mapFlg) {
             case 'click-circle-layer':
             case 'click-circle-symbol-layer':
             case 'click-circle-line-layer':
+            case 'click-circle-keiko-line-layer':
             // case 'click-circle-label-layer':
             {
                 console.log(store.state.id)
@@ -3650,11 +3651,14 @@ export function popup(e,map,mapName,mapFlg) {
                 const lineWidth = props['line-width'] || 5
                 const arrowType = props['arrow-type'] || 'end'
                 const isArea = props.isArea || false
+                const isKeiko = props.isKeiko || false
                 const isFreeHand = props['free-hand'] || false
                 let display = 'block'
+                let display2 = 'none'
                 let lineType = 'ラインストリング'
                 if (isFreeHand) {
                     display = 'none'
+                    display2 = 'block'
                     lineType = 'フリーハンド'
                 }
                 let selectedEnd,selectedNone,selectedBoth
@@ -3739,6 +3743,8 @@ export function popup(e,map,mapName,mapFlg) {
                         }
                         break
                     case 'LineString':
+                        let checked = ''
+                        if (isKeiko) checked = 'checked'
                         if (html.indexOf('click-circle-layer') === -1) {
                             html += '<div class="layer-label-div">' + lineType + '</div>'
                             html +=
@@ -3749,6 +3755,9 @@ export function popup(e,map,mapName,mapFlg) {
                                 '<option value="none" ' + selectedNone + '>矢印無し</option>' +
                                 '<option value="both" ' + selectedBoth + '>両矢印</option>' +
                                 '</select>' +
+                                '</div>' +
+                                '<div style="display: ' + display2 + '">' +
+                                '<span style="margin-left: 10px;font-size: 16px;"><input ' + checked + ' type="checkbox" id="keiko-' + props.id + '" class="keiko-check"><label for="keiko-' + props.id + '"> 蛍光ペン</span>' +
                                 '</div>' +
                                 '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:100%;" class="line-delete pyramid-btn">削　除</button>' +
                                 '<div style="display: flex;gap: 8px;">' +
@@ -4366,7 +4375,7 @@ export function mouseMoveForPopup (e,map) {
             getLegendItem(legend, RasterTileUrl, lat, lng,z).then(function (v) {
                 let res = (v ? v.title : '')
                 if (res === '') {
-                    // map.getCanvas().style.cursor = "default"
+                    // map.getCanvas().style.cursor = ""
                     return
                 }
                 map.getCanvas().style.cursor = "pointer"

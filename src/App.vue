@@ -1853,23 +1853,23 @@ export default {
       this.tempFreehandCoords = []
     },
     onPanelEnter() {
-      this.$store.state.panelHoverCount++;
-      this.$store.state.isCursorOnPanel = true;
+      // this.$store.state.panelHoverCount++;
+      // this.$store.state.isCursorOnPanel = true;
     },
     onPanelLeave() {
-      this.$store.state.panelHoverCount = Math.max(this.$store.state.panelHoverCount - 1, 0);
-      if (this.$store.state.panelHoverCount === 0) {
-        this.$store.state.isCursorOnPanel = false;
-      }
+      // this.$store.state.panelHoverCount = Math.max(this.$store.state.panelHoverCount - 1, 0);
+      // if (this.$store.state.panelHoverCount === 0) {
+      //   this.$store.state.isCursorOnPanel = false;
+      // }
     },
     onMouseMove(e) {
-      if (this.isDrawing && !this.$store.state.isCursorOnPanel) {
-        const dot = this.$refs.indicator;
-        if (dot) {
-          dot.style.left = e.clientX + 'px';
-          dot.style.top  = e.clientY + 'px';
-        }
-      }
+      // if (this.isDrawing && !this.$store.state.isCursorOnPanel) {
+      //   const dot = this.$refs.indicator;
+      //   if (dot) {
+      //     dot.style.left = e.clientX + 'px';
+      //     dot.style.top  = e.clientY + 'px';
+      //   }
+      // }
     },
     // onMouseMove(e) {
     //   if (!this.isDrawing) return
@@ -4012,11 +4012,10 @@ export default {
         const lng = e.lngLat.lng;
         const coordinates = [lng, lat];
         this.$store.state.coordinates = coordinates
-        // 既存点・ポリゴンのクリック判定
+        // クリック判定
         const targetId = getLineFeatureIdAtClickByPixel(map, e);
         if (targetId) {
           this.$store.state.id = targetId;
-          // alert(999)
           return;
         }
         if (!this.s_isDrawLine) return;
@@ -4191,7 +4190,7 @@ export default {
           const properties = {
             id: id,
             'free-hand': 1,
-            keiko: 1,
+            keiko: 0,
             label: '',
             color: 'orange',
             'keiko-color': '#ff0',
@@ -5369,33 +5368,41 @@ export default {
               this.elevation = ''
             }
           });
-
           //------------------------------------------------------------------------------------------------------------
           map.on('mousemove', (e) => {
-            if (this.showDrawUI) return
-            // console.log(e)
-            // クリック可能なすべてのレイヤーからフィーチャーを取得
             const features = map.queryRenderedFeatures(e.point);
-            if (features.length) {
-              const feature = features[0]; // 最初のフィーチャーのみ取得
-              const layerId = feature.layer.id;
-              // console.log(layerId)
-              if (layerId.indexOf('vector') !== -1) {
-                if (map.getCanvas().style.cursor !== 'wait') {
-                  map.getCanvas().style.cursor = 'default';
-                }
-              } else {
-                if (map.getCanvas().style.cursor !== 'wait') {
-                  map.getCanvas().style.cursor = 'pointer';
-                }
-              }
+            const isOverTarget = features.some(f => f.layer.id !== 'zones-layer');
+            if (isOverTarget) {
+              map.getCanvas().classList.add('force-pointer');
             } else {
-              map.getCanvas().style.cursor = 'default';
-              if (map.getCanvas().style.cursor !== 'wait') {
-                map.getCanvas().style.cursor = 'default';
-              }
+              map.getCanvas().classList.remove('force-pointer');
             }
           });
+          // map.on('mousemove', (e) => {
+          //   // if (this.showDrawUI) return
+          //   // console.log(e)
+          //   // クリック可能なすべてのレイヤーからフィーチャーを取得
+          //   const features = map.queryRenderedFeatures(e.point);
+          //   if (features.length) {
+          //     const feature = features[0]; // 最初のフィーチャーのみ取得
+          //     const layerId = feature.layer.id;
+          //     // console.log(layerId)
+          //     if (layerId.indexOf('vector') !== -1) {
+          //       if (map.getCanvas().style.cursor !== 'wait') {
+          //         map.getCanvas().style.cursor = '';
+          //       }
+          //     } else {
+          //       if (map.getCanvas().style.cursor !== 'wait') {
+          //         map.getCanvas().style.cursor = 'pointer';
+          //       }
+          //     }
+          //   } else {
+          //     map.getCanvas().style.cursor = 'default';
+          //     if (map.getCanvas().style.cursor !== 'wait') {
+          //       map.getCanvas().style.cursor = '';
+          //     }
+          //   }
+          // });
           //------------------------------------------------------------------------------------------------------------
           // ポップアップ
           map.on('click', (e) => {
@@ -5741,95 +5748,12 @@ export default {
             click: false
           });
           // ------------------------------------------------------------------------------------------------
-
-          // let isCursorOnFeature = false;
-          // let isDragging = false;
-          // let draggedFeatureId = null;
-          //
-          // map.on('mousemove', function (e) {
-          //   const features = map.queryRenderedFeatures(e.point, { layers: ['click-points-layer'] });
-          //   if (features.length > 0) {
-          //     isCursorOnFeature = true;
-          //     map.getCanvas().style.cursor = 'pointer';
-          //   } else {
-          //     isCursorOnFeature = false;
-          //     // map.getCanvas().style.cursor = '';
-          //   }
-          // });
-          //
-          // map.on('mousedown', function (e) {
-          //   const features = map.queryRenderedFeatures(e.point, { layers: ['click-points-layer'] });
-          //   if (features.length > 0) {
-          //     isDragging = true;
-          //     draggedFeatureId = features[0].id;
-          //     map.getCanvas().style.cursor = 'grabbing';
-          //     e.preventDefault();
-          //   }
-          // });
-          //
-          // map.on('mousemove', async function (e) {
-          //   if (!isDragging || draggedFeatureId === null) return;
-          //
-          //   const source = map.getSource('click-points-source');
-          //   if (!source) return;
-          //
-          //   const currentData = source._data;
-          //   if (!currentData) return;
-          //
-          //   let elevation = await fetchElevation(e.lngLat.lng, e.lngLat.lat);
-          //   if (!elevation) elevation = 0
-          //
-          //   const feature = currentData.features.find(f => f.id === draggedFeatureId);
-          //   if (feature) {
-          //     feature.geometry.coordinates = [e.lngLat.lng, e.lngLat.lat, elevation];
-          //     source.setData(currentData);
-          //     map.getCanvas().style.cursor = 'grabbing';
-          //     vm.$store.state.clickGeojsonText = JSON.stringify(currentData)
-          //   }
-          // });
-          //
-          // map.on('mouseup', function () {
-          //   if (isDragging) {
-          //     isDragging = false;
-          //     draggedFeatureId = null;
-          //     map.getCanvas().style.cursor = 'pointer';
-          //   }
-          // });
-          //
-          // map.on('click', async function (e) {
-          //   if (isDragging) return; // ドラッグ中のクリックを防止
-          //   const visibility = map.getLayoutProperty('click-points-layer', 'visibility');
-          //   if (visibility === 'none') {
-          //     return;
-          //   }
-          //   const source = map.getSource('click-points-source');
-          //   if (!source) return;
-          //   if (isCursorOnFeature) return;
-          //   const currentData = source._data || {
-          //     type: 'FeatureCollection',
-          //     features: []
-          //   };
-          //   const clickedLng = e.lngLat.lng
-          //   const clickedLat = e.lngLat.lat
-          //
-          //   let elevation = await fetchElevation(e.lngLat.lng, e.lngLat.lat);
-          //   if (!elevation) elevation = 0
-          //
-          //   const newFeature = {
-          //     type: 'Feature',
-          //     id: currentData.features.length,
-          //     geometry: {
-          //       type: 'Point',
-          //       coordinates: [clickedLng, clickedLat, elevation]
-          //     },
-          //     properties: {
-          //       id: Math.random().toString().slice(2, 6),
-          //     }
-          //   };
-          //   currentData.features.push(newFeature);
-          //   source.setData(currentData);
-          //   vm.$store.state.clickGeojsonText = JSON.stringify(currentData)
-          // });
+          enableFeatureDragAndAdd(map, 'click-circle-keiko-line-layer', 'click-circle-source', {
+            // fetchElevation: fetchElevation, // async関数
+            vm: this,
+            storeField: 'clickCircleGeojsonText',
+            click: false
+          });
 
           // -----------------------------------------------------------------------------------------------------------
           map.addSource('zones-source', {
@@ -6644,6 +6568,15 @@ export default {
 </style>
 
 <style>
+label {
+  cursor: pointer;
+}
+.maplibregl-canvas.force-pointer {
+  cursor: pointer !important;
+}
+.maplibregl-canvas {
+  cursor: default !important;
+}
 :root {
   --main-color: rgb(50,101,186);
   /*--main-color: #f17ecd;*/

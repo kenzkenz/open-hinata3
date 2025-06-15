@@ -924,8 +924,6 @@ export default {
         clickCircleSource.obj.data = JSON.parse(this.$store.state.clickCircleGeojsonText)
       }
 
-      console.log('arrow',map.hasImage('arrow'))
-
       if (map.getSource('click-circle-source')) {
         map.removeLayer('click-circle-layer')
         map.removeLayer('click-circle-polygon-line-layer')

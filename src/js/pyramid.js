@@ -1043,6 +1043,18 @@ export default function pyramid () {
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('input', (e) => {
+            if (e.target.classList.contains("keiko-check")) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id")).replace('keiko-','')
+                const chkElm = document.querySelector('.keiko-check')
+                const checked = chkElm.checked
+                console.log(id,checked)
+                store.state.clickCircleGeojsonText = geojsonUpdate(map01, null, clickCircleSource.iD, id, 'isKeiko', checked)
+                console.log(store.state.clickCircleGeojsonText)
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('input', (e) => {
             if (e.target.classList.contains("polygon-area-check")) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
