@@ -3460,95 +3460,6 @@ export default {
         });
       });
 
-
-
-      // maplibregl.addProtocol("transparentPmtiles", (params) => {
-      //   console.log("Received URL:", params.url);
-      //   // alert(params.url)
-      //   return new Promise((resolve, reject) => {
-      //     try {
-      //       // URLの検証と変換
-      //       if (!params.url.startsWith("transparentPmtiles://")) {
-      //         reject(new Error("Invalid protocol: URL must start with transparentPmtiles://"));
-      //         return;
-      //       }
-      //       let pmtilesUrl = params.url.replace("transparentPmtiles://", "pmtiles://");
-      //       console.log("Converted URL:", pmtilesUrl);
-      //
-      //       pmtilesUrl = 'pmtiles://https://kenzkenz.duckdns.org/tiles/dqyHV8DykbdSVvDXrHc7xweuKT02/6832d162d9b5c/6832d162d9b5c.pmtiles/{z}/{x}/{y}'
-      //
-      //       // PMTilesファイルのURLを抽出して検証
-      //       const urlMatch = pmtilesUrl.match(/^pmtiles:\/\/(.+)\/\{z\}\/\{x\}\/\{y\}$/);
-      //       if (!urlMatch) {
-      //         reject(new Error("Invalid PMTiles URL format: Expected pmtiles://<file_url>/{z}/{x}/{y}"));
-      //         return;
-      //       }
-      //       const fileUrl = urlMatch[1];
-      //       console.log("PMTiles file URL:", fileUrl);
-      //
-      //       pmtilesProtocol.tile({ ...params, url: pmtilesUrl }, (err, data) => {
-      //         if (err) {
-      //           console.error("PMTiles error details:", err);
-      //           reject(new Error(`PMTiles error: ${err ? err.message || err.toString() : 'Unknown error'}`));
-      //           return;
-      //         }
-      //         if (!data) {
-      //           reject(new Error("No data returned from PMTiles"));
-      //           return;
-      //         }
-      //
-      //         const blob = new Blob([data], { type: "image/png" });
-      //         createImageBitmap(blob)
-      //             .then(image => {
-      //               const canvas = document.createElement("canvas");
-      //               canvas.width = image.width;
-      //               canvas.height = image.height;
-      //               const ctx = canvas.getContext("2d");
-      //               if (!ctx) {
-      //                 reject(new Error("Failed to get canvas 2D context"));
-      //                 return;
-      //               }
-      //               ctx.drawImage(image, 0, 0);
-      //               const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      //               const data = imgData.data;
-      //               for (let i = 0; i < data.length; i += 4) {
-      //                 const r = data[i];
-      //                 const g = data[i + 1];
-      //                 const b = data[i + 2];
-      //                 if ((r === 0 && g === 0 && b === 0) ||
-      //                     (r === 0 && g === 0 && b >= 254) ||
-      //                     (r === 255 && g === 255 && b === 255)) {
-      //                   data[i + 3] = 0;
-      //                 }
-      //               }
-      //               ctx.putImageData(imgData, 0, 0);
-      //               canvas.toBlob((blob) => {
-      //                 if (!blob) {
-      //                   reject(new Error("Blob creation failed"));
-      //                   return;
-      //                 }
-      //                 const reader = new FileReader();
-      //                 reader.onload = function () {
-      //                   resolve({ data: reader.result, contentType: "image/png" });
-      //                 };
-      //                 reader.onerror = function () {
-      //                   reject(new Error("FileReader error while reading blob"));
-      //                 };
-      //                 reader.readAsArrayBuffer(blob);
-      //               }, "image/png");
-      //             })
-      //             .catch(error => {
-      //               reject(new Error(`Image processing error: ${error.message}`));
-      //             });
-      //       });
-      //     } catch (error) {
-      //       reject(new Error(`Unexpected error: ${error.message}`));
-      //     }
-      //   });
-      // });
-
-
-
       maplibregl.addProtocol("transparentBlack", (params) => {
         return new Promise((resolve, reject) => {
           try {
@@ -4279,15 +4190,16 @@ export default {
 
           const properties = {
             id: id,
-            pairId: id,
+            'free-hand': 1,
             label: '',
+            color: 'orange',
             offsetValue: [0.6, 0],
             'line-width': 5,
             textAnchor: 'left',
             textJustify: 'left'
           };
 
-          geojsonCreate(map, 'LineString', this.tempFreehandCoords.slice(), properties);
+          geojsonCreate(map, 'FreeHand', this.tempFreehandCoords.slice(), properties);
 
           // 任意: 擬似クリック
           this.$store.state.coordinates = this.tempFreehandCoords[0];

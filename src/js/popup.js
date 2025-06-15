@@ -3650,7 +3650,13 @@ export function popup(e,map,mapName,mapFlg) {
                 const lineWidth = props['line-width'] || 5
                 const arrowType = props['arrow-type'] || 'end'
                 const isArea = props.isArea || false
-                console.log('isArea',isArea)
+                const isFreeHand = props['free-hand'] || false
+                let display = 'block'
+                let lineType = 'ラインストリング'
+                if (isFreeHand) {
+                    display = 'none'
+                    lineType = 'フリーハンド'
+                }
                 let selectedEnd,selectedNone,selectedBoth
                 switch (arrowType) {
                     case 'end':
@@ -3696,7 +3702,6 @@ export function popup(e,map,mapName,mapFlg) {
                                 html += '<div class="layer-label-div">ポリゴン</div>'
                                 html +=
                                     '<div style="width: 240px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
-                                    // '<input id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input polygon-text" placeholder="ここに入力" value="' + props.label + '">' +
                                     '<span style="margin-left: 10px;font-size: 16px;"><input ' + checked + ' type="checkbox" id="' + props.id + '" class="polygon-area-check" value=""><label for="' + props.id + '"> 面積表示</span>' +
                                     '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;" class="circle-delete pyramid-btn">削　除</button><br>' +
                                     '<div style="display: flex;gap: 8px;">' +
@@ -3735,14 +3740,16 @@ export function popup(e,map,mapName,mapFlg) {
                         break
                     case 'LineString':
                         if (html.indexOf('click-circle-layer') === -1) {
-                            html += '<div class="layer-label-div">ラインストリング</div>'
+                            html += '<div class="layer-label-div">' + lineType + '</div>'
                             html +=
                                 '<div style="width: 225px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
+                                '<div style="display: ' + display + '">' +
                                 '<select id="' + props.id + '" class="oh-cool-select">' +
                                 '<option value="end" ' + selectedEnd + '>矢印有り</option>' +
                                 '<option value="none" ' + selectedNone + '>矢印無し</option>' +
                                 '<option value="both" ' + selectedBoth + '>両矢印</option>' +
                                 '</select>' +
+                                '</div>' +
                                 '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:100%;" class="line-delete pyramid-btn">削　除</button>' +
                                 '<div style="display: flex;gap: 8px;">' +
                                 '<div class="circle-list">' +

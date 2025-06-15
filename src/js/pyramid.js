@@ -1287,52 +1287,9 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
         case 'Point':
             feature = turf.point(coordinates, properties);
             break;
+        case 'FreeHand':
         case 'LineString':
             feature = turf.lineString(coordinates, properties);
-            // ラインの終点をポイントとして抽出------------------------------------------------------------------------------
-            // lastCoord = coordinates[coordinates.length - 1];
-            // lastPointFeature = {
-            //     type: 'Feature',
-            //     geometry: {
-            //         type: 'Point',
-            //         coordinates: lastCoord
-            //     },
-            //     properties: {
-            //         id: properties.pairId + '-arrow',
-            //         pairId: properties.pairId,
-            //         endpoint: 'end',
-            //         'arrow-type': 'end',
-            //         arrow: 'arrow_black',
-            //         // 最後のセグメントの方向を計算（オプション）
-            //         bearing: calculateBearing(
-            //             coordinates[coordinates.length - 2],
-            //             lastCoord,
-            //             'end'
-            //         )
-            //     }
-            // };
-            // // ラインの初点をポイントとして抽出------------------------------------------------------------------------------
-            // firstCoord = coordinates[0];
-            // firstPointFeature = {
-            //     type: 'Feature',
-            //     geometry: {
-            //         type: 'Point',
-            //         coordinates: firstCoord
-            //     },
-            //     properties: {
-            //         id: properties.pairId + '-arrow',
-            //         pairId: properties.pairId,
-            //         endpoint: 'start',
-            //         'arrow-type': 'end',
-            //         arrow: 'arrow_black',
-            //         // 最後のセグメントの方向を計算（オプション）
-            //         bearing: calculateBearing(
-            //             coordinates[0],
-            //             coordinates[1],
-            //             'start'
-            //         )
-            //     }
-            // };
             break;
         case 'Polygon':
             feature = turf.polygon(coordinates, properties);
@@ -1387,8 +1344,7 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
     if (!geojsonData || !geojsonData.features || geojsonData.features.length === 0) {
         if (geoType === 'Circle') {
             geojsonData = turf.featureCollection([circleFeature,centerFeature]);
-        } else if (geoType === 'LineString') {
-            // geojsonData = turf.featureCollection([feature,lastPointFeature,firstPointFeature]);
+        } else if (geoType === 'LineString' || geoType === 'FreeHand') {
             geojsonData = turf.featureCollection([feature]);
         } else {
             geojsonData = turf.featureCollection([feature]);
@@ -1400,7 +1356,7 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
                 ...geojsonData,
                 features: [...geojsonData.features, circleFeature,centerFeature]
             };
-        } else if (geoType === 'LineString') {
+        } else if (geoType === 'LineString' || geoType === 'FreeHand') {
             geojsonData = {
                 ...geojsonData,
                 features: [...geojsonData.features, feature]
@@ -1834,7 +1790,7 @@ export function generateSegmentLabelGeoJSON(geojson) {
     const features = [];
 
     geojson.features.forEach((feature) => {
-        if (!feature || feature.geometry.type !== 'LineString') return;
+        if (!feature || feature.geometry.type !== 'LineString' || feature.properties['free-hand']) return;
 
         const coords = feature.geometry.coordinates;
 
@@ -1874,7 +1830,7 @@ export function generateStartEndPointsFromGeoJSON(geojson) {
     const pointFeatures = [];
 
     geojson.features.forEach((feature) => {
-        if (!feature || feature.geometry.type !== 'LineString') return;
+        if (!feature || feature.geometry.type !== 'LineString' || feature.properties['free-hand']) return;
 
         const coordinates = feature.geometry.coordinates;
         const properties = feature.properties || {};
