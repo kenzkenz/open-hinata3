@@ -1048,8 +1048,14 @@ export default function pyramid () {
                 const id = String(e.target.getAttribute("id")).replace('keiko-','')
                 const chkElm = document.querySelector('.keiko-check')
                 const checked = chkElm.checked
+                let value
+                if (checked) {
+                    value = 1
+                } else {
+                    value = 0
+                }
                 console.log(id,checked)
-                store.state.clickCircleGeojsonText = geojsonUpdate(map01, null, clickCircleSource.iD, id, 'isKeiko', checked)
+                store.state.clickCircleGeojsonText = geojsonUpdate(map01, null, clickCircleSource.iD, id, 'keiko', value)
                 console.log(store.state.clickCircleGeojsonText)
             }
         });
@@ -1168,20 +1174,28 @@ export default function pyramid () {
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
             if (e.target && (e.target.classList.contains("line-color"))) {
+                const neonColors = {
+                    orange: '#FF8000',   // Neon Orange
+                    green:  '#39FF14',   // Neon Green
+                    blue:   '#1F51FF',   // Neon Blue
+                    black:  '#1C1C1C',   // Deep Glow Black (substitute)
+                    red:    '#FF073A'    // Neon Red
+                };
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
                 const startId = id + '-start'
                 const endId = id + '-end'
-                const arrowId = id + '-arrow'
                 const value = e.target.getAttribute("data-color")
                 const arrowValue = 'arrow_' + value
                 const tgtProp = 'color'
                 const arrowTgtProp = 'arrow'
+                const keikoValue = neonColors[value]
                 console.log(id,value)
                 console.log(geojsonUpdate (map01,null,endPointSouce.id,startId,arrowTgtProp,arrowValue))
                 console.log(geojsonUpdate (map01,null,endPointSouce.id,endId,arrowTgtProp,arrowValue))
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,arrowTgtProp,arrowValue)
+                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,'keiko-color',keikoValue)
             }
         });
         // -------------------------------------------------------------------------------------------------------------

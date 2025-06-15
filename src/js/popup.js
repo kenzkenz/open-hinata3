@@ -3651,7 +3651,7 @@ export function popup(e,map,mapName,mapFlg) {
                 const lineWidth = props['line-width'] || 5
                 const arrowType = props['arrow-type'] || 'end'
                 const isArea = props.isArea || false
-                const isKeiko = props.isKeiko || false
+                const isKeiko = props.keiko || false
                 const isFreeHand = props['free-hand'] || false
                 let display = 'block'
                 let display2 = 'none'
