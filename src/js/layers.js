@@ -888,7 +888,27 @@ export const segmentLabeleLayer = {
         'text-halo-width': 1
     }
 }
+// フリーハンドプレビューレイヤー----------------------------------------------------------------
+export const freehandPreviewSource = {
+    id: 'freehand-preview-source', obj: {
+        type: 'geojson',
+        data: {
+            type: 'FeatureCollection',
+            features: []
+        }
+    }
+}
 
+export const freehandPreviewLayer = {
+    id: 'freehand-preview-layer',
+    type: 'line',
+    source: 'freehand-preview-source',
+    paint: {
+        'line-color': '#f00',
+        'line-width': 2,
+        'line-dasharray': [2, 2]
+    }
+}
 // ガイドレイヤー-----------------------------------------------------------------
 export const guideLineSource = {
     id: 'guide-line-source', obj: {
@@ -917,14 +937,6 @@ export const clickPointSource ={
         data: {
             type: 'FeatureCollection',
             features: [
-                // {
-                //     type: 'Feature',
-                //     geometry: {
-                //         type: 'Point',
-                //         coordinates: [139.6917, 35.6895] // 東京の座標
-                //     },
-                //     properties: {}
-                // }
             ]
         }
     }
