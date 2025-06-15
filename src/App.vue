@@ -1289,6 +1289,7 @@ export default {
         { key: 'circle', text: '円', label: '円', color: this.s_isDrawCircle ? 'green' : 'blue', click: this.toggleDrawCircle },
         { key: 'line', text: '線', label: '線', color: this.s_isDrawLine ? 'green' : 'blue', click: this.toggleLDrawLine },
         { key: 'polygon', text: '多角形', label: '多角', color: this.s_isDrawPolygon ? 'green' : 'blue', click: this.toggleLDrawPolygon },
+        { key: 'free', text: '自由に描く', label: '自由', color: this.s_isDrawFree ? 'green' : 'blue', click: this.toggleLDrawFree},
         { key: 'finish', text: '確定', label: '確定', click: this.finishDrawing },
         { key: 'edit', text: '編集', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
         { key: 'undo', text: '元に戻す', label: '元戻', click: this.undo },
@@ -1351,6 +1352,14 @@ export default {
       },
       set(value) {
         return this.$store.state.editEnabled = value
+      }
+    },
+    s_isDrawFree: {
+      get() {
+        return this.$store.state.isDrawFree
+      },
+      set(value) {
+        return this.$store.state.isDrawFree = value
       }
     },
     s_isDrawPolygon: {
@@ -2199,9 +2208,23 @@ export default {
         this.s_isDrawCircle = false
         this.s_isDrawLine = false
         this.s_isDrawPolygon = false
+        this.s_isDrawFree = false
         this.snackbarText = '編集時は移動、ポップアップができません。'
         this.snackbar = true
       }
+      store.state.isCursorOnPanel = false
+      this.finishLine()
+    },
+    toggleLDrawFree () {
+      this.s_isDrawFree = !this.s_isDrawFree
+      if (this.s_isDrawFree) {
+        this.s_isDrawPoint = false
+        this.s_isDrawCircle = false
+        this.s_isDrawLine = false
+        this.s_isDrawPolygon = false
+        this.s_editEnabled = false
+      }
+      document.querySelector('#draw-indicato-text').innerHTML = 'FREE'
       store.state.isCursorOnPanel = false
       this.finishLine()
     },
@@ -2211,6 +2234,7 @@ export default {
         this.s_isDrawPoint = false
         this.s_isDrawCircle = false
         this.s_isDrawLine = false
+        this.s_isDrawFree = false
         this.s_editEnabled = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'POLYGON'
@@ -2223,6 +2247,7 @@ export default {
         this.s_isDrawPoint = false
         this.s_isDrawCircle = false
         this.s_isDrawPolygon = false
+        this.s_isDrawFree = false
         this.s_editEnabled = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'LINE'
@@ -2235,6 +2260,7 @@ export default {
         this.s_isDrawPoint = false
         this.s_isDrawLine = false
         this.s_isDrawPolygon = false
+        this.s_isDrawFree = false
         this.s_editEnabled = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'CIRCLE'
@@ -2247,6 +2273,7 @@ export default {
         this.s_isDrawCircle = false
         this.s_isDrawLine = false
         this.s_isDrawPolygon = false
+        this.s_isDrawFree = false
         this.s_editEnabled = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'TXT'
