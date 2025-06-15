@@ -1368,10 +1368,10 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
             };
         }
     }
+    if (geoType === 'LineString') generateSegmentLabelGeoJSON(geojsonData)
     // 4. ソースに再セット
     source.setData(geojsonData);
     store.state.clickCircleGeojsonText = JSON.stringify(geojsonData)
-    generateSegmentLabelGeoJSON(geojsonData)
     console.log(store.state.clickCircleGeojsonText)
     store.state.saveHistoryFire = !store.state.saveHistoryFire
     return feature;
@@ -1782,37 +1782,79 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
 }
 
 // ラインのラベル用に距離を計算したgeojsonを作る、
-export function generateSegmentLabelGeoJSON(lineGeoJSON) {
-    const coords = lineGeoJSON.geometry.coordinates;
+export function generateSegmentLabelGeoJSON(geojson) {
+    const map01 = store.state.map01;
     const features = [];
 
-    for (let i = 0; i < coords.length - 1; i++) {
-        const from = coords[i];
-        const to = coords[i + 1];
-        const segment = turf.lineString([from, to]);
+    geojson.features.forEach((feature) => {
+        if (feature.geometry.type !== 'LineString') return;
 
-        const center = turf.midpoint(turf.point(from), turf.point(to));
-        const dist = turf.length(segment, { units: 'kilometers' });
+        const coords = feature.geometry.coordinates;
 
-        const label = dist >= 1
-            ? `約${dist.toFixed(2)}km`
-            : `約${(dist * 1000).toFixed(0)}m`;
+        for (let i = 0; i < coords.length - 1; i++) {
+            const from = coords[i];
+            const to = coords[i + 1];
+            const segment = turf.lineString([from, to]);
 
-        features.push({
-            type: 'Feature',
-            geometry: center.geometry,
-            properties: {
-                label: label,
-                index: i + 1
-            }
-        });
-    }
+            const center = turf.midpoint(turf.point(from), turf.point(to));
+            const dist = turf.length(segment, { units: 'kilometers' });
 
-    return {
+            const distance = dist >= 1
+                ? `約${dist.toFixed(2)}km`
+                : `約${(dist * 1000).toFixed(0)}m`;
+
+            features.push({
+                type: 'Feature',
+                geometry: center.geometry,
+                properties: {
+                    distance: distance,
+                    index: i + 1
+                }
+            });
+        }
+    });
+
+    const labelGeojson = {
         type: 'FeatureCollection',
         features
     };
+
+    // ラベル用ソースに反映
+    map01.getSource('segment-label-source').setData(labelGeojson);
 }
+
+// export function generateSegmentLabelGeoJSON(feature) {
+//     const map01 = store.state.map01
+//     const coords = feature.geometry.coordinates;
+//     const features = [];
+//
+//     for (let i = 0; i < coords.length - 1; i++) {
+//         const from = coords[i];
+//         const to = coords[i + 1];
+//         const segment = turf.lineString([from, to]);
+//
+//         const center = turf.midpoint(turf.point(from), turf.point(to));
+//         const dist = turf.length(segment, { units: 'kilometers' });
+//
+//         const distance = dist >= 1
+//             ? `約${dist.toFixed(2)}km`
+//             : `約${(dist * 1000).toFixed(0)}m`;
+//
+//         features.push({
+//             type: 'Feature',
+//             geometry: center.geometry,
+//             properties: {
+//                 distance: distance,
+//                 index: i + 1
+//             }
+//         });
+//     }
+//     const geojson = {
+//         type: 'FeatureCollection',
+//         features
+//     };
+//     map01.getSource('segment-label-source').setData(geojson);
+// }
 
 export function deleteAll () {
     if (!confirm("全て削除しますか？")) {

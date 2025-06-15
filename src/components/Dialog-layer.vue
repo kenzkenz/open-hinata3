@@ -64,7 +64,7 @@
 
 <script>
 
-import {escapeHTML} from "@/js/pyramid";
+import {escapeHTML, generateSegmentLabelGeoJSON} from "@/js/pyramid";
 
 const registeredLayers = new Set()
 
@@ -924,9 +924,7 @@ export default {
         clickCircleSource.obj.data = JSON.parse(this.$store.state.clickCircleGeojsonText)
       }
 
-
       console.log('arrow',map.hasImage('arrow'))
-
 
       if (map.getSource('click-circle-source')) {
         map.removeLayer('click-circle-layer')
@@ -968,7 +966,11 @@ export default {
       map.addLayer(midpointLayer)
       map.addSource('segment-label-source', segmentLabelSource.obj)
       map.addLayer(segmentLabeleLayer)
-      // map.addSource('end-point-source', endPointSouce.obj)
+
+      if (this.$store.state.clickCircleGeojsonText) {
+        generateSegmentLabelGeoJSON(JSON.parse(this.$store.state.clickCircleGeojsonText))
+      }
+
       if (map === this.$store.state.map01) {
         setTimeout(() => {
           const targetLayers = this.$store.state.map01.getStyle().layers

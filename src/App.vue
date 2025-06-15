@@ -1133,7 +1133,7 @@ import pyramid, {
   autoCloseAllPolygons,
   circleCreate,
   colorNameToRgba,
-  deleteAll,
+  deleteAll, generateSegmentLabelGeoJSON,
   geojsonCreate,
   geojsonUpdate, getAllVertexPoints, lastGeojson, setAllMidpoints,
   unescapeHTML, watchGeojsonChange
@@ -1786,6 +1786,7 @@ export default {
           getAllVertexPoints(map, this.mainGeojson);
           setAllMidpoints(map, this.mainGeojson);
         }
+        generateSegmentLabelGeoJSON(this.mainGeojson)
       // } else if (this.history.length === 0) {
       //   map.getSource('click-circle-source').setData({
       //     type: 'FeatureCollection',
@@ -1807,6 +1808,11 @@ export default {
         // 反映
         map.getSource('click-circle-source').setData(this.mainGeojson);
         this.$store.state.clickCircleGeojsonText = JSON.stringify(this.mainGeojson)
+        if (this.s_editEnabled) {
+          getAllVertexPoints(map, this.mainGeojson);
+          setAllMidpoints(map, this.mainGeojson);
+        }
+        generateSegmentLabelGeoJSON(this.mainGeojson)
         this.updatePermalink()
       }
     },
@@ -4218,7 +4224,8 @@ export default {
       //     // ここでgeojsonCreate(…)などで本採用
       //   }
       // });
-      // 頂点レイヤーを動かすと同時にメインレイヤーを更新する。
+
+      // 頂点レイヤーを動かすと同時にメインレイヤーを更新する。----------------------------------------------
       let isDragging = false;
       let draggedFeatureId = null;
       let vertexIndex = null;
@@ -4290,6 +4297,7 @@ export default {
           map.getSource('click-circle-source').setData(mainSourceGeojson);
           setAllMidpoints(map, mainSourceGeojson);
           store.state.clickCircleGeojsonText = JSON.stringify(mainSourceGeojson);
+          generateSegmentLabelGeoJSON(mainSourceGeojson)
         } catch (error) {
           console.error('Failed to update source data:', error);
         }

@@ -875,7 +875,7 @@ export const segmentLabeleLayer = {
     type: 'symbol',
     source: 'segment-label-source',
     layout: {
-        'text-field': ['get', 'label'],
+        'text-field': ['get', 'distance'],
         'text-size': 14,
         'text-offset': [0, 0.6],
         'text-anchor': 'top'
