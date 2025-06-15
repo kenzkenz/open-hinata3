@@ -4191,8 +4191,10 @@ export default {
           const properties = {
             id: id,
             'free-hand': 1,
+            keiko: 1,
             label: '',
             color: 'orange',
+            'keiko-color': '#ff0',
             offsetValue: [0.6, 0],
             'line-width': 5,
             textAnchor: 'left',

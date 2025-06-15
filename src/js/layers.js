@@ -713,17 +713,34 @@ export const clickCircleLineLayer = {
     id: 'click-circle-line-layer',
     type: 'line',
     source: 'click-circle-source',
-    filter: ['==', '$type', 'LineString'],
+    // filter: ['==', '$type', 'LineString'],
+    filter: [
+        'all',
+        [
+            'any',
+            ['==', ['get', 'keiko'], 0],
+            ['!', ['has', 'keiko']]
+        ]
+    ],
     paint: {
         'line-color': ['get', 'color'],
         'line-width': ['get', 'line-width'],
     }
-    // paint: {
-    //     'line-color': '#ff0',              // 黄色蛍光ペン風（または #0ff, #f0f）
-    //     'line-width': 16,                  // 太めに
-    //     'line-opacity': 0.3,               // 半透明
-    //     'line-blur': 2                     // にじみ（ぼかし）
-    // }
+}
+export const clickCircleKeikoLineLayer = {
+    id: 'click-circle-keiko-line-layer',
+    type: 'line',
+    source: 'click-circle-source',
+    filter: [
+        'all',
+        ['==', ['get', 'keiko'], 1]
+    ],
+    paint: {
+        'line-color': ['get', 'keiko-color'], // 黄色蛍光ペン風（または #0ff, #f0f）
+        'line-width': 16,                  // 太めに
+        'line-opacity': 0.3,               // 半透明
+        'line-blur': 2                     // にじみ（ぼかし）
+    }
 }
 export const clickCircleLabelLayer = {
     id: 'click-circle-label-layer',

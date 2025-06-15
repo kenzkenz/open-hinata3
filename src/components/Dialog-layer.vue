@@ -88,7 +88,7 @@ import {gpx, kml} from "@tmcw/togeojson";
 import DxfParser from 'dxf-parser'
 import {
   arrowsEndpointLayer,
-  arrowsLayer,
+  arrowsLayer, clickCircleKeikoLineLayer,
   clickCircleLabelLayer,
   clickCircleLayer,
   clickCircleLineLayer,
@@ -933,6 +933,7 @@ export default {
         map.removeLayer('click-circle-polygon-symbol-area-layer')
         map.removeLayer('click-circle-symbol-layer')
         map.removeLayer('click-circle-line-layer')
+        map.removeLayer('click-circle-keiko-line-layer')
         map.removeLayer('click-circle-label-layer')
         map.removeSource('click-circle-source')
         map.removeLayer('arrows-endpoint-layer')
@@ -955,6 +956,7 @@ export default {
       map.addLayer(clickCircPolygonSymbolAreaLayer)
       map.addLayer(clickCircSymbolLayer)
       map.addLayer(clickCircleLineLayer)
+      map.addLayer(clickCircleKeikoLineLayer)
       map.addLayer(clickCircleLabelLayer)
       map.addSource('end-point-source', endPointSouce.obj)
       map.addLayer(arrowsEndpointLayer)
