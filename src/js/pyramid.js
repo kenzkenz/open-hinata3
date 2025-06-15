@@ -1114,21 +1114,6 @@ export default function pyramid () {
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
-            if (e.target && (e.target.classList.contains("line-color"))) {
-                const map01 = store.state.map01
-                const id = String(e.target.getAttribute("id"))
-                const arrowId = id + '-arrow'
-                const value = e.target.getAttribute("data-color")
-                const arrowValue = 'arrow_' + value
-                const tgtProp = 'color'
-                const arrowTgtProp = 'arrow'
-                console.log(id,value)
-                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
-                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,arrowId,arrowTgtProp,arrowValue)
-            }
-        });
-        // -------------------------------------------------------------------------------------------------------------
-        mapElm.addEventListener('click', (e) => {
             if (e.target && (e.target.classList.contains("font-size-input"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
@@ -1158,12 +1143,33 @@ export default function pyramid () {
             if (e.target && (e.target.classList.contains("oh-cool-select"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
-                const arrowId = id + '-arrow'
+                const startId = id + '-start'
+                const endId = id + '-end'
                 const value = e.target.value
                 const tgtProp = 'arrow-type'
                 console.log(id,value)
+                console.log(geojsonUpdate (map01,null,endPointSouce.id,startId,tgtProp,value))
+                console.log(geojsonUpdate (map01,null,endPointSouce.id,endId,tgtProp,value))
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
-                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,arrowId,tgtProp,value)
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("line-color"))) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
+                const startId = id + '-start'
+                const endId = id + '-end'
+                const arrowId = id + '-arrow'
+                const value = e.target.getAttribute("data-color")
+                const arrowValue = 'arrow_' + value
+                const tgtProp = 'color'
+                const arrowTgtProp = 'arrow'
+                console.log(id,value)
+                console.log(geojsonUpdate (map01,null,endPointSouce.id,startId,arrowTgtProp,arrowValue))
+                console.log(geojsonUpdate (map01,null,endPointSouce.id,endId,arrowTgtProp,arrowValue))
+                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,arrowTgtProp,arrowValue)
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1207,6 +1213,43 @@ export default function pyramid () {
                             geojson.features = newFeatures;
                             map01.getSource(clickCircleSource.iD).setData(geojson);
                             store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+                        }
+                    }
+                    store.state.isCursorOnPanel = false
+                    closeAllPopups()
+                },100)
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("line-delete"))) {
+                store.state.saveHistoryFire = !store.state.saveHistoryFire
+                setTimeout(() => {
+                    const map01 = store.state.map01
+                    const id = String(e.target.getAttribute("id"))
+                    const startId = id + '-start'
+                    const endId = id + '-end'
+                    const source = map01.getSource(clickCircleSource.iD)
+                    const allowSource = map01.getSource(endPointSouce.id)
+                    const geojson = source._data
+                    const allowGeojson = allowSource._data
+                    if (geojson && geojson.features) {
+                        const newFeatures = geojson.features.filter(feature => {
+                            return !(feature.properties && String(feature.properties.id) === id);
+                        });
+                        if (newFeatures.length !== geojson.features.length) {
+                            geojson.features = newFeatures;
+                            map01.getSource(clickCircleSource.iD).setData(geojson);
+                            store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+                        }
+                    }
+                    if (allowGeojson && allowGeojson.features) {
+                        const newFeatures = allowGeojson.features.filter(feature => {
+                            return !(feature.properties && String(feature.properties.id) === startId) && !(feature.properties && String(feature.properties.id) === endId);
+                        });
+                        if (newFeatures.length !== allowGeojson.features.length) {
+                            allowGeojson.features = newFeatures;
+                            map01.getSource(endPointSouce.id).setData(allowGeojson);
                         }
                     }
                     store.state.isCursorOnPanel = false
@@ -1359,7 +1402,7 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
         } else if (geoType === 'LineString') {
             geojsonData = {
                 ...geojsonData,
-                features: [...geojsonData.features, feature,lastPointFeature,firstPointFeature]
+                features: [...geojsonData.features, feature]
             };
         } else {
             geojsonData = {
@@ -1790,7 +1833,7 @@ export function generateSegmentLabelGeoJSON(geojson) {
     const features = [];
 
     geojson.features.forEach((feature) => {
-        if (feature.geometry.type !== 'LineString') return;
+        if (!feature || feature.geometry.type !== 'LineString') return;
 
         const coords = feature.geometry.coordinates;
 
@@ -1823,20 +1866,21 @@ export function generateSegmentLabelGeoJSON(geojson) {
     // ラベル用ソースに反映
     map01.getSource('segment-label-source').setData(labelGeojson);
 }
+
 // ラインに矢印のポイントを作る
 export function generateStartEndPointsFromGeoJSON(geojson) {
     const map01 = store.state.map01;
     const pointFeatures = [];
 
     geojson.features.forEach((feature) => {
-        if (feature.geometry.type !== 'LineString') return;
+        if (!feature || feature.geometry.type !== 'LineString') return;
 
         const coordinates = feature.geometry.coordinates;
         const properties = feature.properties || {};
 
         if (coordinates.length < 2) return;
 
-        // 始点
+        // 始点--------------------------------------------------------
         const firstCoord = coordinates[0];
         const secondCoord = coordinates[1]; // for bearing
         pointFeatures.push({
@@ -1846,16 +1890,15 @@ export function generateStartEndPointsFromGeoJSON(geojson) {
                 coordinates: firstCoord
             },
             properties: {
-                id: (properties.pairId || properties.id || 'line') + '-start',
+                id: properties.id  + '-start',
                 pairId: properties.pairId || null,
                 endpoint: 'start',
-                'arrow-type': 'end',
-                arrow: 'arrow_black',
+                'arrow-type': properties['arrow-type'] || 'end',
+                arrow: properties.arrow || 'arrow_black',
                 bearing: calculateBearing(firstCoord, secondCoord, 'start')
             }
         });
-
-        // 終点
+        // 終点-----------------------------------------------------------
         const lastCoord = coordinates[coordinates.length - 1];
         const secondLastCoord = coordinates[coordinates.length - 2];
         pointFeatures.push({
@@ -1865,11 +1908,11 @@ export function generateStartEndPointsFromGeoJSON(geojson) {
                 coordinates: lastCoord
             },
             properties: {
-                id: (properties.pairId || properties.id || 'line') + '-end',
+                id: properties.id + '-end',
                 pairId: properties.pairId || null,
                 endpoint: 'end',
-                'arrow-type': 'end',
-                arrow: 'arrow_black',
+                'arrow-type': properties['arrow-type'] || 'end',
+                arrow: properties.arrow || 'arrow_black',
                 bearing: calculateBearing(secondLastCoord, lastCoord, 'end')
             }
         });
@@ -1924,6 +1967,12 @@ export function deleteAll () {
     }
     const map01 = store.state.map01
     let source = map01.getSource(clickCircleSource.iD);
+    // 空のGeoJSON FeatureCollectionを設定する
+    source.setData({
+        type: "FeatureCollection",
+        features: []
+    });
+    source = map01.getSource(endPointSouce.id);
     // 空のGeoJSON FeatureCollectionを設定する
     source.setData({
         type: "FeatureCollection",

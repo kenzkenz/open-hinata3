@@ -791,7 +791,7 @@ export const arrowsEndpointLayer ={
     source: 'end-point-source',
     filter: [
         'all',
-        ['has', 'bearing'],
+        // ['has', 'bearing'],
         ['any',
             ['all',
                 ['==', ['get', 'arrow-type'], 'end'],

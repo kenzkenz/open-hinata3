@@ -1814,7 +1814,7 @@ export default {
           setAllMidpoints(map, this.mainGeojson);
         }
         generateSegmentLabelGeoJSON(this.mainGeojson)
-        generateStartEndPointsFromGeoJSON(this.mouseDown)
+        generateStartEndPointsFromGeoJSON(this.mainGeojson)
         this.updatePermalink()
       }
     },
