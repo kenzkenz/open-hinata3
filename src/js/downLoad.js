@@ -25,6 +25,7 @@ import * as GeoTIFF from 'geotiff';
 import html2canvas from 'html2canvas'
 import muni from "@/js/muni";
 import * as exifr from 'exifr'
+import {generateSegmentLabelGeoJSON} from "@/js/pyramid";
 // import publicChk from '@/components/Dialog-myroom'
 // 複数のクリックされた地番を強調表示するためのセット
 // export let highlightedChibans = new Set();
@@ -7732,8 +7733,13 @@ export function enableFeatureDragAndAdd(map, layerId, sourceId, options = {}) {
     map.on('mousemove', async function (e) {
         if (!isDragging || !draggedFeature) return;
         const source = map.getSource(sourceId);
+        let allowSource
+        if (sourceId === 'click-circle-source') {
+            allowSource = map.getSource('end-point-source')
+        }
         if (!source) return;
         const currentData = source._data;
+        const currentAllowData = allowSource._data;
         if (!currentData) return;
 
         // オフセットを考慮した移動先
@@ -7757,6 +7763,13 @@ export function enableFeatureDragAndAdd(map, layerId, sourceId, options = {}) {
             const fid = f.id || (f.properties && f.properties.id);
             const fpair = f.properties && f.properties.pairId;
             if (fid === dragId || (dragPairId && dragPairId === fpair)) {
+                moveTargets.push(f);
+            }
+        }
+        for (const f of currentAllowData.features) {
+            const startId = dragId + '-start'
+            const endId = dragId + '-end'
+            if (startId === f.properties.id || endId === f.properties.id) {
                 moveTargets.push(f);
             }
         }
@@ -7798,6 +7811,8 @@ export function enableFeatureDragAndAdd(map, layerId, sourceId, options = {}) {
         dragStartCoord = [targetLng, targetLat];
 
         source.setData(currentData);
+        allowSource.setData(currentAllowData);
+        generateSegmentLabelGeoJSON(currentData)
         map.getCanvas().style.cursor = 'grabbing';
         if (vm && storeField) vm.$store.state[storeField] = JSON.stringify(currentData);
     });

@@ -733,9 +733,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <MiniTooltip text="共有" :offset-x="-25" :offset-y="145">
                 <v-btn :size="isSmall ? 'small' : 'default'" class="share" icon @click="share(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-share-variant</v-icon></v-btn>
               </MiniTooltip>
-              <MiniTooltip text="計測" :offset-x="-25" :offset-y="206">
-                <v-btn :size="isSmall ? 'small' : 'default'" class="draw" icon @click="draw" v-if="mapName === 'map01'"><v-icon>mdi-ruler-square</v-icon></v-btn>
-              </MiniTooltip>
+<!--              <MiniTooltip text="計測" :offset-x="-25" :offset-y="206">-->
+<!--                <v-btn :size="isSmall ? 'small' : 'default'" class="draw" icon @click="draw" v-if="mapName === 'map01'"><v-icon>mdi-ruler-square</v-icon></v-btn>-->
+<!--              </MiniTooltip>-->
 <!--              <MiniTooltip text="Xにポスト" :offset-x="-25" :offset-y="326">-->
 <!--                <v-btn :size="isSmall ? 'small' : 'default'" class="share-x" icon @click="captureAndPostToX" v-if="mapName === 'map01'"><v-icon left>fa-solid fa-x</v-icon></v-btn>-->
 <!--              </MiniTooltip>-->
@@ -1788,7 +1788,8 @@ export default {
         }
         generateSegmentLabelGeoJSON(this.mainGeojson)
         generateStartEndPointsFromGeoJSON(this.mainGeojson)
-      // } else if (this.history.length === 0) {
+        generateSegmentLabelGeoJSON(this.mainGeojson)
+        // } else if (this.history.length === 0) {
       //   map.getSource('click-circle-source').setData({
       //     type: 'FeatureCollection',
       //     features: []
@@ -1815,6 +1816,7 @@ export default {
         }
         generateSegmentLabelGeoJSON(this.mainGeojson)
         generateStartEndPointsFromGeoJSON(this.mainGeojson)
+        generateSegmentLabelGeoJSON(this.mainGeojson)
         this.updatePermalink()
       }
     },
@@ -6564,7 +6566,7 @@ export default {
 }
 .draw-fan {
   position: absolute;
-  top: 240px;
+  top: 180px;
   left: 0;
 }
 /*@media (max-width: 720px) {*/

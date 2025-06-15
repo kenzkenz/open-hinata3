@@ -1252,6 +1252,7 @@ export default function pyramid () {
                             map01.getSource(endPointSouce.id).setData(allowGeojson);
                         }
                     }
+                    generateSegmentLabelGeoJSON(geojson)
                     store.state.isCursorOnPanel = false
                     closeAllPopups()
                 },100)
@@ -1981,6 +1982,10 @@ export function deleteAll () {
     store.state.clickCircleGeojsonText = ''
     getAllVertexPoints(map01)
     setAllMidpoints(map01)
+    generateSegmentLabelGeoJSON({
+        type: "FeatureCollection",
+        features: []
+    })
     closeAllPopups()
 }
 
