@@ -5,8 +5,8 @@ import firebase from "firebase";
 export default createStore({
   state: {
     seaLevel: {
-      map01: 0,
-      map02: 0,
+      map01: 1,
+      map02: 1,
     },
     saveHistoryFire: false,
     jdpCode: '',
@@ -713,6 +713,11 @@ export default createStore({
           case 'extMinden':
             if (payload.order === 0) {
               variable = 'mindenKm'
+            }
+            break
+          case 'extSeaLevel':
+            if (payload.order === 0) {
+              variable = 'seaLevel'
             }
             break
         }
