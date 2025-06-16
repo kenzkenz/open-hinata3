@@ -4,6 +4,8 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    tgtFeature: null,
+    pointSima: false,
     seaLevel: {
       map01: 1,
       map02: 1,

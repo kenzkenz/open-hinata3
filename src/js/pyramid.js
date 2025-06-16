@@ -1308,20 +1308,8 @@ export default function pyramid () {
                 const tgtFeature = geojson.features.find(feature => {
                     return feature.properties.id === id
                 })
-                // const pointGeojson = turf.explode(tgtFeature)
-                const pointGeojson = splitLineStringIntoPoints(tgtFeature, 20)
-                async function updateAllElevations() {
-                    await Promise.all(pointGeojson.features.map(async (feature) => {
-                        const [lon, lat] = feature.geometry.coordinates;
-                        const z = await fetchElevation(lon, lat);
-                        feature.geometry.coordinates[2] = Number(z);
-                    }));
-                    const epsg = zahyokei.find(item => item.kei === store.state.zahyokei).code
-                    const convertedGeojson = convertFromEPSG4326(pointGeojson, epsg)
-                    const simaText = geoJSONToSIMA(convertedGeojson)
-                    downloadTextFile(`${getNowFileNameTimestamp()}.sim`, simaText, 'shift-jis')
-                }
-                updateAllElevations();
+                store.state.tgtFeature = tgtFeature
+                store.state.pointSima = true
             }
         });
     })

@@ -61,26 +61,24 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </template>
       </v-snackbar>
 
-      <v-dialog v-model="showXDialog" max-width="400">
+      <v-dialog v-model="s_pointSima" max-width="400">
         <v-card>
-          <v-card-title>ポスト</v-card-title>
+          <v-card-title>区切り数を決定</v-card-title>
           <v-card-text style="margin-bottom: -5px;padding-bottom: 0">
-            <div style="color:#888;font-size:0.95em;">
-              画像は自動的にXへ送られませんので、ダウンロードしてご利用下さい。
-            </div>
-            <div style="margin-bottom:8px;">
-              <v-card-actions>
-                <v-btn color="info" @click="downloadImage">画像ダウンロード</v-btn>
-              </v-card-actions>
-            </div>
-            <div v-if="imgUrl" style="margin:10px 0;">
-              <img :src="imgUrl" alt="map preview" style="width:100%;border:1px solid #ccc;"/>
-            </div>
-            <v-btn color="info" @click="openX">ポスト</v-btn>
+            <v-text-field
+                v-model="segments"
+                type="number"
+                label="区切り数を入力"
+                :min="0"
+                :max="300"
+                :step="1"
+            />
+            <v-btn @click="pointSimaCreate">SIMA作成</v-btn>
+            <v-btn style="margin-left: 20px" @click="pointCsvCreate">CSV作成</v-btn>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn text @click="showXDialog = false">閉じる</v-btn>
+            <v-btn text @click="s_pointSima = false">閉じる</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -839,20 +837,20 @@ import RightDrawer from '@/components/rightDrawer.vue'
 import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
 import {
-  capture,
+  capture, convertFromEPSG4326,
   csvGenerateForUserPng,
-  ddSimaUpload,
+  ddSimaUpload, downloadGeoJSONAsCSV,
   downloadKML,
-  downloadSimaText, DXFDownload,
+  downloadSimaText, downloadTextFile, DXFDownload,
   dxfToGeoJSON,
   enableFeatureDragAndAdd,
   enablePointDragAndAdd,
   extractFirstFeaturePropertiesAndCheckCRS,
   extractSimaById,
-  geojsonAddLayer,
+  geojsonAddLayer, geoJSONToSIMA,
   geoTiffLoad,
   geoTiffLoad2,
-  getCRS,
+  getCRS, getNowFileNameTimestamp,
   handleFileUpload,
   highlightSpecificFeatures,
   highlightSpecificFeatures2025,
@@ -864,7 +862,7 @@ import {
   pngDl,
   pngDownload,
   pngLoad,
-  simaLoadForUser,
+  simaLoadForUser, splitLineStringIntoPoints,
   tileGenerateForUser,
   tileGenerateForUserPdf,
   transformGeoJSONToEPSG4326,
@@ -1185,6 +1183,7 @@ export default {
     MiniTooltip
   },
   data: () => ({
+    segments: 30,
     mainGeojson: { type: 'FeatureCollection', features: [] },
     history: [],
     redoStack: [],
@@ -1300,6 +1299,14 @@ export default {
         { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw }
       ]
       return btns
+    },
+    s_pointSima: {
+      get() {
+        return this.$store.state.pointSima
+      },
+      set(value) {
+        return this.$store.state.pointSima = value
+      }
     },
     s_saveHistoryFire () {
       return this.$store.state.saveHistoryFire
@@ -1769,6 +1776,38 @@ export default {
     },
   },
   methods: {
+    pointCsvCreate (){
+      this.$store.state.pointSima = false
+      const pointGeojson = splitLineStringIntoPoints(this.$store.state.tgtFeature, this.segments)
+      async function updateAllElevations() {
+        await Promise.all(pointGeojson.features.map(async (feature) => {
+          const [lon, lat] = feature.geometry.coordinates;
+          const z = await fetchElevation(lon, lat);
+          feature.geometry.coordinates[2] = Number(z);
+        }));
+        const epsg = zahyokei.find(item => item.kei === store.state.zahyokei).code
+        const convertedGeojson = convertFromEPSG4326(pointGeojson, epsg)
+        console.log(convertedGeojson)
+        downloadGeoJSONAsCSV(convertedGeojson,getNowFileNameTimestamp())
+      }
+      updateAllElevations();
+    },
+    pointSimaCreate () {
+      this.$store.state.pointSima = false
+      const pointGeojson = splitLineStringIntoPoints(this.$store.state.tgtFeature, this.segments)
+      async function updateAllElevations() {
+        await Promise.all(pointGeojson.features.map(async (feature) => {
+          const [lon, lat] = feature.geometry.coordinates;
+          const z = await fetchElevation(lon, lat);
+          feature.geometry.coordinates[2] = Number(z);
+        }));
+        const epsg = zahyokei.find(item => item.kei === store.state.zahyokei).code
+        const convertedGeojson = convertFromEPSG4326(pointGeojson, epsg)
+        const simaText = geoJSONToSIMA(convertedGeojson)
+        downloadTextFile(`${getNowFileNameTimestamp()}.sim`, simaText, 'shift-jis')
+      }
+      updateAllElevations();
+    },
     dialogForSaveDXFOpen () {
       this.dialogForSaveDXF2 = true
     },

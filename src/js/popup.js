@@ -3765,7 +3765,8 @@ export function popup(e,map,mapName,mapFlg) {
                                 '<span style="margin-left: 10px;font-size: 16px;"><input ' + checked + ' type="checkbox" id="keiko-' + props.id + '" class="keiko-check"><label for="keiko-' + props.id + '"> 蛍光ペン</span>' +
                                 '</div>' +
                                 '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:47%;" class="line-delete pyramid-btn">削　除</button>' +
-                                '<button id="' + props.id + '" style="margin-bottom: 10px;margin-left:10px;height: 30px;font-size: medium;width:47%;" class="line-sima pyramid-btn">SIMA</button>' +
+                                '<button id="' + props.id + '" style="margin-bottom: 10px;margin-left:10px;height: 30px;font-size: medium;width:47%;" class="line-sima pyramid-btn">SIMA&CSV' +
+                                '</button>' +
                                 '<div style="display: flex;gap: 8px;">' +
                                 '<div class="circle-list">' +
                                 '<div id="' + props.id + '" data-color="red" class="line-color circle red" tabindex="0"></div>' +

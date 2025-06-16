@@ -1305,7 +1305,7 @@ export function saveDxf (map, layerId, sourceId, fields, detailGeojson, kei2) {
     }
 }
 
-function downloadGeoJSONAsCSV(geojson, filename = 'data.csv') {
+export function downloadGeoJSONAsCSV(geojson, filename = 'data.csv') {
     if (!geojson || !geojson.features || !Array.isArray(geojson.features)) {
         throw new Error('Invalid GeoJSON data');
     }
@@ -1313,18 +1313,18 @@ function downloadGeoJSONAsCSV(geojson, filename = 'data.csv') {
     // 1. 属性のキーを取得（最初のfeatureから）
     const properties = geojson.features[0]?.properties || {};
     const propertyKeys = Object.keys(properties);
-    // const headers = ['latitude', 'longitude', ...propertyKeys];
-    const headers = propertyKeys;
+    const headers = ['lat', 'lon', 'z'];
+    // const headers = propertyKeys;
 
     // 2. 各フィーチャのデータを抽出
     const rows = geojson.features.map(feature => {
         const coords = feature.geometry?.coordinates || [];
         let latitude = '';
         let longitude = '';
-
+        let z = ''
         // Pointの場合
         if (feature.geometry?.type === 'Point') {
-            [longitude, latitude] = coords;
+            [longitude, latitude, z] = coords;
         }
         // PolygonまたはLineStringの場合（代表点を使用）
         else if (feature.geometry?.type === 'Polygon' || feature.geometry?.type === 'LineString') {
@@ -1334,8 +1334,8 @@ function downloadGeoJSONAsCSV(geojson, filename = 'data.csv') {
         // 各プロパティの値を取得
         const propValues = propertyKeys.map(key => feature.properties[key] || '');
 
-        // return [latitude, longitude, ...propValues];
-        return propValues;
+        return [latitude, longitude, z];
+        // return propValues;
     });
 
     // 3. CSV形式に変換
@@ -1344,6 +1344,7 @@ function downloadGeoJSONAsCSV(geojson, filename = 'data.csv') {
         ...rows.map(row => row.join(',')) // 各行
     ].join('\n');
 
+
     // 4. CSVをダウンロード
     const firstChiban = getChibanAndHoka(geojson).firstChiban
     const hoka = getChibanAndHoka(geojson).hoka
@@ -1351,7 +1352,7 @@ function downloadGeoJSONAsCSV(geojson, filename = 'data.csv') {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', firstChiban + hoka);
+    link.setAttribute('download', filename);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
