@@ -4,6 +4,7 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    currentFreeHandColor: '',
     tgtFeature: null,
     pointSima: false,
     seaLevel: {

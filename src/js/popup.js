@@ -3729,7 +3729,7 @@ export function popup(e,map,mapName,mapFlg) {
                             html += '<div class="layer-label-div">ポイント</div>'
                             html +=
                                 '<div style="width: 230px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
-                                '<textarea id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
+                                '<textarea id="' + props.id + '" rows="5" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
                                 '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:100%;" class="point-delete pyramid-btn">削　除</button>' +
                                 '<div style="display: flex;gap: 8px;">' +
                                 '<div class="circle-list">' +
@@ -3765,8 +3765,9 @@ export function popup(e,map,mapName,mapFlg) {
                                 '<span style="margin-left: 10px;font-size: 16px;"><input ' + checked + ' type="checkbox" id="keiko-' + props.id + '" class="keiko-check"><label for="keiko-' + props.id + '"> 蛍光ペン</span>' +
                                 '</div>' +
                                 '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:47%;" class="line-delete pyramid-btn">削　除</button>' +
-                                '<button id="' + props.id + '" style="margin-bottom: 10px;margin-left:10px;height: 30px;font-size: medium;width:47%;" class="line-sima pyramid-btn">SIMA&CSV' +
-                                '</button>' +
+                                '<div class="tooltip-wrapper" data-tooltip="標高値も取得できます。" style="position:relative; display:inline-block;width:47%;">' +
+                                '<button id="' + props.id + '" style="margin-bottom: 10px;margin-left:10px;height: 30px;font-size: medium;width:100%;" class="line-sima pyramid-btn">SIMA&CSV</button>' +
+                                '</div>' +
                                 '<div style="display: flex;gap: 8px;">' +
                                 '<div class="circle-list">' +
                                 '<div id="' + props.id + '" data-color="red" class="line-color circle red" tabindex="0"></div>' +

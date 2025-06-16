@@ -74,7 +74,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 :step="1"
             />
             <v-btn @click="pointSimaCreate">SIMA作成</v-btn>
-            <v-btn style="margin-left: 20px" @click="pointCsvCreate">CSV作成</v-btn>
+            <v-btn style="margin-left: 10px" @click="pointCsvCreate">CSV作成</v-btn>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -1788,7 +1788,7 @@ export default {
         const epsg = zahyokei.find(item => item.kei === store.state.zahyokei).code
         const convertedGeojson = convertFromEPSG4326(pointGeojson, epsg)
         console.log(convertedGeojson)
-        downloadGeoJSONAsCSV(convertedGeojson,getNowFileNameTimestamp())
+        downloadGeoJSONAsCSV(convertedGeojson,getNowFileNameTimestamp() + '.csv')
       }
       updateAllElevations();
     },
@@ -4212,7 +4212,9 @@ export default {
               type: 'LineString',
               coordinates: this.tempFreehandCoords
             },
-            properties: {}
+            properties: {
+              'keiko-color': this.$store.state.currentFreeHandColor || '#FF8000',
+            }
           }]
         };
         map.getSource('freehand-preview-source').setData(tempLine);
@@ -4235,7 +4237,8 @@ export default {
             keiko: 1,
             label: '',
             color: 'orange',
-            'keiko-color': '#FF8000',
+            // 'keiko-color': '#FF8000',
+            'keiko-color': this.$store.state.currentFreeHandColor || '#FF8000',
             offsetValue: [0.6, 0],
             'line-width': 5,
             textAnchor: 'left',
@@ -4265,78 +4268,6 @@ export default {
           this.tempFreehandCoords = [];
         }
       });
-
-      // // フリーハンド-----------------------------------------------------------------------------------------------------
-      // let isDrawing = false;
-      //
-      // map.on('mousedown', (e) => {
-      //   if (!this.s_isDrawFree) return;
-      //
-      //   isDrawing = true;
-      //   this.tempFreehandCoords = [];
-      //   const start = [e.lngLat.lng, e.lngLat.lat];
-      //   this.tempFreehandCoords.push(start);
-      //
-      //   map.getCanvas().style.cursor = 'crosshair';
-      //   map.dragPan.disable(); // 🛑 パンを無効化
-      // });
-      //
-      // map.on('mousemove', (e) => {
-      //   if (!isDrawing) return;
-      //
-      //   const coord = [e.lngLat.lng, e.lngLat.lat];
-      //   this.tempFreehandCoords.push(coord);
-      //
-      //   // 線のプレビューを動的に表示（必要であれば）
-      //   const tempLine = {
-      //     type: 'FeatureCollection',
-      //     features: [{
-      //       type: 'Feature',
-      //       geometry: {
-      //         type: 'LineString',
-      //         coordinates: this.tempFreehandCoords
-      //       },
-      //       properties: {}
-      //     }]
-      //   };
-      //   map.getSource('freehand-preview-source').setData(tempLine);
-      // });
-      //
-      // map.on('mouseup', (e) => {
-      //   if (!isDrawing) return;
-      //   isDrawing = false;
-      //   map.getCanvas().style.cursor = '';
-      //   map.dragPan.disable(); // 🛑 パンを無効化
-      //
-      //   if (this.tempFreehandCoords.length >= 2) {
-      //     const id = String(Math.floor(10000 + Math.random() * 90000));
-      //     this.$store.state.id = id;
-      //
-      //     const properties = {
-      //       id: id,
-      //       'free-hand': 1,
-      //       keiko: 1,
-      //       label: '',
-      //       color: 'orange',
-      //       'keiko-color': '#FF8000',
-      //       offsetValue: [0.6, 0],
-      //       'line-width': 5,
-      //       textAnchor: 'left',
-      //       textJustify: 'left'
-      //     };
-      //
-      //     geojsonCreate(map, 'FreeHand', this.tempFreehandCoords.slice(), properties);
-      //
-      //     // 任意: 擬似クリック
-      //     this.$store.state.coordinates = this.tempFreehandCoords[0];
-      //     const dummyEvent = { lngLat: { lng: this.tempFreehandCoords[0][0], lat: this.tempFreehandCoords[0][1] } };
-      //     setTimeout(() => {
-      //       onLineClick(dummyEvent);
-      //     }, 500);
-      //   }
-      //   this.finishLine();
-      //   this.tempFreehandCoords = [];
-      // });
       // ガイドライン-----------------------------------------------------------------------------------------------------
       map.on('click', (e) => {
         if (!this.s_isDrawLine && !this.s_isDrawPolygon) return;
@@ -7244,5 +7175,23 @@ select {
   left: 200px;
   z-index: 3;
 }
+
+.tooltip-wrapper[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: -1.8em;
+  left: 50%;
+  transform: translateX(-50%);
+  /*background: var(--main-color);*/
+  background: black;
+  color: white;
+  font-size: 10px;
+  /*padding: 2px 6px;*/
+  border-radius: 3px;
+  white-space: nowrap;
+  z-index: 9999;
+  padding: 2px 10px 2px 10px;
+}
+
 
 </style>

@@ -763,21 +763,33 @@ export const clickCircleLabelLayer = {
 }
 export const clickCircSymbolLayer = {
     id: 'click-circle-symbol-layer',
-    type: 'symbol',
+    type: 'circle',
     source: 'click-circle-source',
     filter: ['all', ['==', '$type', 'Point'], ['!has', 'bearing']],
-    layout: {
-        'text-field': '●', // 太めの点
-        'text-size': 32,   // サイズ調整
-        'text-anchor': 'center',
-        'text-allow-overlap': true
-    },
     paint: {
-        'text-color': ['get', 'color'],
-        'text-halo-color': '#fff',
-        'text-halo-width': 1
+        'circle-radius': 8,
+        'circle-color': ['get', 'color'],
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#ffffff'
     }
 }
+// export const clickCircSymbolLayer = {
+//     id: 'click-circle-symbol-layer',
+//     type: 'symbol',
+//     source: 'click-circle-source',
+//     filter: ['all', ['==', '$type', 'Point'], ['!has', 'bearing']],
+//     layout: {
+//         'text-field': '●', // 太めの点
+//         'text-size': 32,   // サイズ調整
+//         'text-anchor': 'center',
+//         'text-allow-overlap': true
+//     },
+//     paint: {
+//         'text-color': ['get', 'color'],
+//         'text-halo-color': '#fff',
+//         'text-halo-width': 1
+//     }
+// }
 // 矢印シンボルレイヤー----------------------------------------------------------
 export const arrowsLayer = {
     'id': 'arrows-layer',
@@ -928,7 +940,7 @@ export const freehandPreviewLayer = {
     type: 'line',
     source: 'freehand-preview-source',
     paint: {
-        'line-color': '#FF8000',
+        'line-color': ['get', 'keiko-color'],
         'line-width': 15,
         'line-opacity': 0.3,
         // 'line-dasharray': [2, 2]
