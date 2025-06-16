@@ -4145,26 +4145,26 @@ export default {
       });
       // フリーハンド-----------------------------------------------------------------------------------------------------
       let isDrawing = false;
-
-      map.on('mousedown', (e) => {
+      // pointerdown（開始）
+      map.getCanvas().addEventListener('pointerdown', (e) => {
         if (!this.s_isDrawFree) return;
 
+        const point = map.unproject([e.clientX, e.clientY]);
         isDrawing = true;
         this.tempFreehandCoords = [];
-        const start = [e.lngLat.lng, e.lngLat.lat];
-        this.tempFreehandCoords.push(start);
+        this.tempFreehandCoords.push([point.lng, point.lat]);
 
         map.getCanvas().style.cursor = 'crosshair';
-        map.dragPan.disable(); // 🛑 パンを無効化
+        map.dragPan.disable(); // パン無効化
       });
 
-      map.on('mousemove', (e) => {
+      // pointermove（描画中）
+      map.getCanvas().addEventListener('pointermove', (e) => {
         if (!isDrawing) return;
 
-        const coord = [e.lngLat.lng, e.lngLat.lat];
-        this.tempFreehandCoords.push(coord);
+        const point = map.unproject([e.clientX, e.clientY]);
+        this.tempFreehandCoords.push([point.lng, point.lat]);
 
-        // 線のプレビューを動的に表示（必要であれば）
         const tempLine = {
           type: 'FeatureCollection',
           features: [{
@@ -4179,11 +4179,12 @@ export default {
         map.getSource('freehand-preview-source').setData(tempLine);
       });
 
-      map.on('mouseup', (e) => {
+      // pointerup（終了）
+      map.getCanvas().addEventListener('pointerup', (e) => {
         if (!isDrawing) return;
         isDrawing = false;
         map.getCanvas().style.cursor = '';
-        map.dragPan.disable(); // 🛑 パンを無効化
+        map.dragPan.enable(); // パン再有効化
 
         if (this.tempFreehandCoords.length >= 2) {
           const id = String(Math.floor(10000 + Math.random() * 90000));
@@ -4204,16 +4205,99 @@ export default {
 
           geojsonCreate(map, 'FreeHand', this.tempFreehandCoords.slice(), properties);
 
-          // 任意: 擬似クリック
+          // 擬似クリック
           this.$store.state.coordinates = this.tempFreehandCoords[0];
           const dummyEvent = { lngLat: { lng: this.tempFreehandCoords[0][0], lat: this.tempFreehandCoords[0][1] } };
           setTimeout(() => {
             onLineClick(dummyEvent);
           }, 500);
         }
+
         this.finishLine();
         this.tempFreehandCoords = [];
       });
+
+      // pointerleave（指やカーソルが外れたとき）も描画終了しておく
+      map.getCanvas().addEventListener('pointerleave', () => {
+        if (isDrawing) {
+          isDrawing = false;
+          map.dragPan.enable();
+          map.getCanvas().style.cursor = '';
+          this.tempFreehandCoords = [];
+        }
+      });
+
+      // // フリーハンド-----------------------------------------------------------------------------------------------------
+      // let isDrawing = false;
+      //
+      // map.on('mousedown', (e) => {
+      //   if (!this.s_isDrawFree) return;
+      //
+      //   isDrawing = true;
+      //   this.tempFreehandCoords = [];
+      //   const start = [e.lngLat.lng, e.lngLat.lat];
+      //   this.tempFreehandCoords.push(start);
+      //
+      //   map.getCanvas().style.cursor = 'crosshair';
+      //   map.dragPan.disable(); // 🛑 パンを無効化
+      // });
+      //
+      // map.on('mousemove', (e) => {
+      //   if (!isDrawing) return;
+      //
+      //   const coord = [e.lngLat.lng, e.lngLat.lat];
+      //   this.tempFreehandCoords.push(coord);
+      //
+      //   // 線のプレビューを動的に表示（必要であれば）
+      //   const tempLine = {
+      //     type: 'FeatureCollection',
+      //     features: [{
+      //       type: 'Feature',
+      //       geometry: {
+      //         type: 'LineString',
+      //         coordinates: this.tempFreehandCoords
+      //       },
+      //       properties: {}
+      //     }]
+      //   };
+      //   map.getSource('freehand-preview-source').setData(tempLine);
+      // });
+      //
+      // map.on('mouseup', (e) => {
+      //   if (!isDrawing) return;
+      //   isDrawing = false;
+      //   map.getCanvas().style.cursor = '';
+      //   map.dragPan.disable(); // 🛑 パンを無効化
+      //
+      //   if (this.tempFreehandCoords.length >= 2) {
+      //     const id = String(Math.floor(10000 + Math.random() * 90000));
+      //     this.$store.state.id = id;
+      //
+      //     const properties = {
+      //       id: id,
+      //       'free-hand': 1,
+      //       keiko: 1,
+      //       label: '',
+      //       color: 'orange',
+      //       'keiko-color': '#FF8000',
+      //       offsetValue: [0.6, 0],
+      //       'line-width': 5,
+      //       textAnchor: 'left',
+      //       textJustify: 'left'
+      //     };
+      //
+      //     geojsonCreate(map, 'FreeHand', this.tempFreehandCoords.slice(), properties);
+      //
+      //     // 任意: 擬似クリック
+      //     this.$store.state.coordinates = this.tempFreehandCoords[0];
+      //     const dummyEvent = { lngLat: { lng: this.tempFreehandCoords[0][0], lat: this.tempFreehandCoords[0][1] } };
+      //     setTimeout(() => {
+      //       onLineClick(dummyEvent);
+      //     }, 500);
+      //   }
+      //   this.finishLine();
+      //   this.tempFreehandCoords = [];
+      // });
       // ガイドライン-----------------------------------------------------------------------------------------------------
       map.on('click', (e) => {
         if (!this.s_isDrawLine && !this.s_isDrawPolygon) return;
