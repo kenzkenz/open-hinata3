@@ -377,7 +377,9 @@ export function popup(e,map,mapName,mapFlg) {
     // if (features.length > 0) {
     let regionType = ''
     const f0 = [features[0]]
-    features.forEach(feature => {
+    let isBreak = false
+    for (const feature of features) {
+    // features.forEach(feature => {
         const layerId = feature.layer.id
         console.log(feature)
         console.log(layerId)
@@ -3633,6 +3635,8 @@ export function popup(e,map,mapName,mapFlg) {
             case 'click-circle-keiko-line-layer':
             // case 'click-circle-label-layer':
             {
+                html = ''
+                isBreak = true
                 console.log(store.state.id)
                 coordinates = store.state.coordinates
                 console.log(store.state.clickCircleGeojsonText)
@@ -3652,6 +3656,7 @@ export function popup(e,map,mapName,mapFlg) {
                 const arrowType = props['arrow-type'] || 'end'
                 const isArea = props.isArea || false
                 const isKeiko = props.keiko || false
+                const isCalc = props.calc || false
                 const isFreeHand = props['free-hand'] || false
                 let display = 'block'
                 let display2 = 'none'
@@ -3743,8 +3748,9 @@ export function popup(e,map,mapName,mapFlg) {
                         }
                         break
                     case 'LineString': {
-                        let checked = ''
+                        let checked,calcChecked
                         if (isKeiko) checked = 'checked'
+                        if (isCalc) calcChecked = 'checked'
                         if (html.indexOf('click-circle-layer') === -1) {
                             html += '<div class="layer-label-div">' + lineType + '</div>'
                             html +=
@@ -3755,6 +3761,7 @@ export function popup(e,map,mapName,mapFlg) {
                                 '<option value="none" ' + selectedNone + '>矢印無し</option>' +
                                 '<option value="both" ' + selectedBoth + '>両矢印</option>' +
                                 '</select>' +
+                                '<span style="margin-left: 10px;font-size: 16px;"><input ' + calcChecked + ' type="checkbox" id="calc-' + props.id + '" class="calc-check"><label for="calc-' + props.id + '"> 距離計測</span>' +
                                 '</div>' +
                                 '<div style="display: ' + display2 + '">' +
                                 '<span style="margin-left: 10px;font-size: 16px;"><input ' + checked + ' type="checkbox" id="keiko-' + props.id + '" class="keiko-check"><label for="keiko-' + props.id + '"> 蛍光ペン</span>' +
@@ -3805,6 +3812,10 @@ export function popup(e,map,mapName,mapFlg) {
                 }, 500); // 500msだけ再発火防止
             }
         }
+        if (isBreak) {
+            isBreak = false
+            break;
+        } // 完全に抜ける}
 
         if(/^oh-chibanzu-/.test(layerId)) {
             let features = map.queryRenderedFeatures(
@@ -3902,7 +3913,7 @@ export function popup(e,map,mapName,mapFlg) {
                     '</div>'
             }
         }
-    })
+    }
 
     if (mapFlg.map02) {
         const layer = store.state.map02.getStyle().layers.at(-1)

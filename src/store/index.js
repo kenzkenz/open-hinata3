@@ -4,6 +4,10 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    seaLevel: {
+      map01: 0,
+      map02: 0,
+    },
     saveHistoryFire: false,
     jdpCode: '',
     jdpCoordinates: [],

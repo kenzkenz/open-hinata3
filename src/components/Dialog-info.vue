@@ -61,6 +61,7 @@
           ].includes(item.ext.name)"/>
     <extKijyunten :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extKijyunten'"/>
     <extSaga :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extSaga'"/>
+    <extSaaLevel :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extSeaLevel'"/>
   </div>
 </template>
 
@@ -87,6 +88,7 @@ import extGaiku from "@/components/ext-gaiku"
 import extKijyunten from "@/components/ext-kijyunten"
 import extChiriin from "@/components/ext-chiriin"
 import extSaga from "@/components/ext-saga"
+import extSaaLevel from "@/components/ext-sea-level"
 
 
 export default {
@@ -113,7 +115,8 @@ export default {
     extKijyunten,
     extIwata,
     extChiriin,
-    extSaga
+    extSaga,
+    extSaaLevel
   },
   props: ['mapName'],
   data: () => ({

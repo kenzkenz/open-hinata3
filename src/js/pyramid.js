@@ -1043,6 +1043,24 @@ export default function pyramid () {
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('input', (e) => {
+            if (e.target.classList.contains("calc-check")) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id")).replace('calc-','')
+                const chkElm = document.querySelector('.calc-check')
+                const checked = chkElm.checked
+                let value
+                if (checked) {
+                    value = 1
+                } else {
+                    value = 0
+                }
+                const gejsonText = geojsonUpdate(map01, null, clickCircleSource.iD, id, 'calc', value)
+                store.state.clickCircleGeojsonText = gejsonText
+                generateSegmentLabelGeoJSON(JSON.parse(gejsonText))
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('input', (e) => {
             if (e.target.classList.contains("keiko-check")) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id")).replace('keiko-','')
@@ -1825,6 +1843,7 @@ export function generateSegmentLabelGeoJSON(geojson) {
                 type: 'Feature',
                 geometry: center.geometry,
                 properties: {
+                    calc: feature.properties.calc || 0,
                     distance: distance,
                     index: i + 1
                 }

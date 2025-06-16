@@ -7899,7 +7899,7 @@ export function DXFDownload() {
         features: filteredFeatures
     };
     const toEPSG = zahyokei.find(item => item.kei === store.state.zahyokei).code
-    const convertedGeojson = convertFromEPSG4326(filteredGeojson, 'EPSG:2444')
+    const convertedGeojson = convertFromEPSG4326(filteredGeojson, toEPSG)
     const dxfString = geojsonToDXF(convertedGeojson)
     // Blobとしてダウンロード処理
     const blob = new Blob([dxfString], {
@@ -7921,7 +7921,7 @@ export function DXFDownload() {
  */
 export function convertFromEPSG4326(geojson, toEPSG) {
     const fromEPSG = 'EPSG:4326';
-
+    // alert(toEPSG)
     const transformCoords = (coords) => {
         if (typeof coords[0] === 'number' && typeof coords[1] === 'number') {
             return proj4(fromEPSG, toEPSG, coords);

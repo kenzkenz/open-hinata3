@@ -899,6 +899,7 @@ export const segmentLabeleLayer = {
     id: 'segment-label-layer',
     type: 'symbol',
     source: 'segment-label-source',
+    filter: ['==', ['get', 'calc'], 1],
     layout: {
         'text-field': ['get', 'distance'],
         'text-size': 18,
@@ -9880,9 +9881,46 @@ export const ohLabelLayer = {
         'text-halo-width': 1.2
     }
 }
+// ---------------------------------------------------------------------------------------------------------------------
+export const seaLevelSource = {
+    id:"gsi-terrain-rgb",obj: {
+        type: "raster-dem",
+        tiles: [
+            "https://xs489works.xsrv.jp/raster-tiles/gsi/gsi-dem-terrain-rgb/{z}/{x}/{y}.png",
+        ],
+        tileSize: 256,
+        attribution:
+            "<a href='https://maps.gsi.go.jp/development/ichiran.html#dem' target='_blank'>国土地理院 標高タイル</a>",
+    }
+}
 
+export const seaLevellLayer = {
+    id: "sea-level",
+    type: "color-relief",
+    source: "gsi-terrain-rgb",
+    paint: {
+        "color-relief-color": [
+            "interpolate",
+            ["linear"],
+            ["elevation"],
+            0,
+            "rgba(0,0,152,0.5)",
+            1,
+            "rgba(0,0,0,0)",
+        ],
+        "color-relief-opacity": 1,
+    },
+}
 // ---------------------------------------------------------------------------------------------------------------------
 let layers01 = [
+    {
+        id: 'oh-sea-level',
+        label: "海面上昇シミュレーション",
+        sources: [seaLevelSource],
+        layers: [seaLevellLayer],
+        attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html#dem' target='_blank'>国土地理院 標高タイル</a>",
+        ext: {name:'extSeaLevel'}
+    },
     {
         id: 'oh-homusyo-2025-layer',
         label: "2025登記所地図",
