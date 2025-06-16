@@ -593,7 +593,6 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
                 }
             });
         });
-
         i++;
     });
 
@@ -7963,3 +7962,237 @@ export function getNowFileNameTimestamp() {
     const mi = String(now.getMinutes()).padStart(2, '0');
     return `${yyyy}${mm}${dd}_${hh}${mi}`;
 }
+
+// 緯度経度をタイル座標 (z, x, y) に変換
+function lonLatToTile(lon, lat, zoom) {
+    const n = Math.pow(2, zoom);
+    const xTile = Math.floor((lon + 180.0) / 360.0 * n);
+    const yTile = Math.floor(
+        (1.0 - Math.log(Math.tan((lat * Math.PI) / 180.0) + 1.0 / Math.cos((lat * Math.PI) / 180.0)) / Math.PI) /
+        2.0 *
+        n
+    );
+    return { xTile, yTile };
+}
+
+// タイル内のピクセル座標を計算
+function calculatePixelInTile(lon, lat, zoom, xTile, yTile, tileSize = 256) {
+    const n = Math.pow(2, zoom);
+    const x = ((lon + 180.0) / 360.0 * n - xTile) * tileSize;
+    const y =
+        ((1.0 - Math.log(Math.tan((lat * Math.PI) / 180.0) + 1.0 / Math.cos((lat * Math.PI) / 180.0)) / Math.PI) / 2.0 *
+            n -
+            yTile) *
+        tileSize;
+    return { x: Math.floor(x), y: Math.floor(y) };
+}
+
+// 修正版: RGB値を標高にデコードする関数
+function decodeElevationFromRGB(r, g, b) {
+    const scale = 0.01; // スケール値（仮定）
+    const offset = 0;   // オフセット値（仮定）
+    return (r * 256 * 256 + g * 256 + b) * scale + offset; // RGB値を計算
+}
+
+// 標高データをタイル画像から取得し、キャンバスに出力
+async function fetchElevationFromImage(imageUrl, lon, lat, zoom) {
+    const { xTile, yTile } = lonLatToTile(lon, lat, zoom);
+
+    const img = new Image();
+    img.crossOrigin = "Anonymous"; // クロスオリジン対応
+    img.src = imageUrl;
+
+    return new Promise((resolve, reject) => {
+        img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.style.display = "none"
+            const ctx = canvas.getContext("2d");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            // タイル内のピクセル座標を計算
+            const { x, y } = calculatePixelInTile(lon, lat, zoom, xTile, yTile, img.width);
+
+            // ピクセルデータを取得
+            const imageData = ctx.getImageData(x, y, 1, 1).data;
+            const [r, g, b] = imageData; // R, G, B 値を取得
+            const elevation = decodeElevationFromRGB(r, g, b); // 標高を計算
+
+            // キャンバスに描画
+            ctx.fillStyle = "red";
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.font = "12px Arial";
+            ctx.fillStyle = "white";
+            ctx.fillText(`${elevation}m`, x + 10, y - 10);
+            document.body.appendChild(canvas);
+
+            resolve(elevation);
+        };
+
+        img.onerror = (err) => {
+            reject(`画像の読み込みに失敗しました: ${err}`);
+        };
+    });
+}
+
+// 標高を取得する関数
+export async function fetchElevation(lon, lat, zoom = 15) {
+    const baseUrl = "https://tiles.gsj.jp/tiles/elev/mixed/{z}/{y}/{x}.png";
+    const { xTile, yTile } = lonLatToTile(lon, lat, zoom);
+    // y と x を反転してタイルURLを生成
+    const tileUrl = baseUrl.replace("{z}", zoom).replace("{x}", xTile).replace("{y}", yTile);
+    try {
+        const elevation = await fetchElevationFromImage(tileUrl, lon, lat, zoom);
+        // console.log(`標高: ${elevation}m`);
+        return elevation;
+    } catch (error) {
+        // console.error("エラー:", error);
+    }
+}
+// geoJSONToSIMA
+export function geoJSONToSIMA(geojson) {
+    let simaData = 'G00,01,open-hinata3,\n';
+    simaData += 'Z00,座標ﾃﾞｰﾀ,,\n';
+    simaData += 'A00,\n';
+
+    let A01Text = '';
+    let B01Text = '';
+    let i = 1;
+    let j = 1;
+    const coordinateMap = new Map();
+
+    geojson.features.forEach((feature) => {
+        const geomType = feature.geometry?.type;
+        const props = feature.properties || {};
+
+        // -------- Point / MultiPoint --------
+        if (geomType === 'Point' || geomType === 'MultiPoint') {
+            const points = geomType === 'Point'
+                ? [feature.geometry.coordinates]
+                : feature.geometry.coordinates;
+
+            points.forEach((coord) => {
+                const [x, y, z] = coord;
+                if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+
+                const key = `${x},${y},${z ?? ''}`;
+                if (!coordinateMap.has(key)) {
+                    coordinateMap.set(key, j);
+                    const name = props.地番 || props.chiban || `点${j}`;
+                    A01Text += `A01,${j},${name},${y.toFixed(3)},${x.toFixed(3)},${Number.isFinite(z) ? z.toFixed(3) : ''},\n`;
+                    j++;
+                }
+            });
+            return;
+        }
+
+        // -------- Polygon / MultiPolygon --------
+        const chiban = props.地番 || props.chiban || `地番${i}`;
+        B01Text += `D00,${i},${chiban},1,\n`;
+
+        let coordinates = [];
+        if (geomType === 'Polygon') {
+            coordinates = feature.geometry.coordinates.map(ring => {
+                if (
+                    ring.length > 1 &&
+                    (ring[0][0] !== ring[ring.length - 1][0] || ring[0][1] !== ring[ring.length - 1][1])
+                ) {
+                    ring.push(ring[0]);
+                }
+                return ring;
+            });
+        } else if (geomType === 'MultiPolygon') {
+            coordinates = feature.geometry.coordinates.flat().map(ring => {
+                if (
+                    ring.length > 1 &&
+                    (ring[0][0] !== ring[ring.length - 1][0] || ring[0][1] !== ring[ring.length - 1][1])
+                ) {
+                    ring.push(ring[0]);
+                }
+                return ring;
+            });
+        } else {
+            console.warn('Unsupported geometry:', geomType);
+            return;
+        }
+
+        coordinates.forEach((ring, ringIndex) => {
+            const len = ring.length;
+            ring.forEach((coord, index) => {
+                const [x, y, z] = coord;
+                if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+
+                const key = `${x},${y},${z ?? ''}`;
+                if (!coordinateMap.has(key)) {
+                    coordinateMap.set(key, j);
+                    A01Text += `A01,${j},${j},${y.toFixed(3)},${x.toFixed(3)},${Number.isFinite(z) ? z.toFixed(3) : ''},\n`;
+                    j++;
+                }
+                const current = coordinateMap.get(key);
+                const isLast = index === len - 1 && ringIndex === coordinates.length - 1;
+                B01Text += `B01,${current},${current},\n`;
+                if (isLast) B01Text += `D99,\n`;
+            });
+        });
+
+        i++;
+    });
+
+    simaData += A01Text + B01Text;
+    return simaData;
+}
+// ダウンロード汎用関数
+export function downloadTextFile(fileName, textContent, encoding = 'utf-8') {
+    let blob;
+
+    if (encoding.toLowerCase() === 'shift-jis' || encoding.toLowerCase() === 'sjis') {
+        // Shift_JISへの変換（window.Encoding を使用）
+        const utf8Array = window.Encoding.stringToCode(textContent);
+        const shiftJISArray = window.Encoding.convert(utf8Array, 'SJIS');
+        const uint8Array = new Uint8Array(shiftJISArray);
+        blob = new Blob([uint8Array], { type: 'application/octet-stream' });
+    } else {
+        // UTF-8（BOMなし）
+        blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+export function splitLineStringIntoPoints(lineStringGeoJSON, numPoints) {
+    if (!lineStringGeoJSON || lineStringGeoJSON.geometry.type !== 'LineString') {
+        console.error('入力はLineStringのGeoJSONである必要があります');
+        return null;
+    }
+
+    if (numPoints < 2) {
+        console.error('ポイント数は2以上である必要があります');
+        return null;
+    }
+
+    const line = turf.lineString(lineStringGeoJSON.geometry.coordinates);
+    const totalLength = turf.length(line, { units: 'kilometers' }); // 総距離（km）
+
+    const segmentLength = totalLength / (numPoints - 1);
+    const points = [];
+
+    for (let i = 0; i < numPoints; i++) {
+        const distance = i * segmentLength;
+        const point = turf.along(line, distance, { units: 'kilometers' });
+        points.push(point);
+    }
+
+    return turf.featureCollection(points);
+}
+

@@ -3637,11 +3637,8 @@ export function popup(e,map,mapName,mapFlg) {
             {
                 html = ''
                 isBreak = true
-                console.log(store.state.id)
                 coordinates = store.state.coordinates
-                console.log(store.state.clickCircleGeojsonText)
                 features = JSON.parse(store.state.clickCircleGeojsonText).features
-                console.log(features)
                 const feature = features.find(feature => feature.properties.id === store.state.id)
                 if (!feature) return;
                 props = feature.properties
@@ -3748,6 +3745,7 @@ export function popup(e,map,mapName,mapFlg) {
                         }
                         break
                     case 'LineString': {
+                        // ラインストリングとフリーハンド
                         let checked,calcChecked
                         if (isKeiko) checked = 'checked'
                         if (isCalc) calcChecked = 'checked'
@@ -3766,7 +3764,8 @@ export function popup(e,map,mapName,mapFlg) {
                                 '<div style="display: ' + display2 + '">' +
                                 '<span style="margin-left: 10px;font-size: 16px;"><input ' + checked + ' type="checkbox" id="keiko-' + props.id + '" class="keiko-check"><label for="keiko-' + props.id + '"> 蛍光ペン</span>' +
                                 '</div>' +
-                                '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:100%;" class="line-delete pyramid-btn">削　除</button>' +
+                                '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:47%;" class="line-delete pyramid-btn">削　除</button>' +
+                                '<button id="' + props.id + '" style="margin-bottom: 10px;margin-left:10px;height: 30px;font-size: medium;width:47%;" class="line-sima pyramid-btn">SIMA</button>' +
                                 '<div style="display: flex;gap: 8px;">' +
                                 '<div class="circle-list">' +
                                 '<div id="' + props.id + '" data-color="red" class="line-color circle red" tabindex="0"></div>' +

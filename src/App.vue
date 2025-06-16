@@ -1111,7 +1111,7 @@ async function fetchElevationFromImage(imageUrl, lon, lat, zoom) {
 }
 
 // 標高を取得する関数
-async function fetchElevation(lon, lat, zoom = 15) {
+export async function fetchElevation(lon, lat, zoom = 15) {
   const baseUrl = "https://tiles.gsj.jp/tiles/elev/mixed/{z}/{y}/{x}.png";
   const { xTile, yTile } = lonLatToTile(lon, lat, zoom);
   // y と x を反転してタイルURLを生成

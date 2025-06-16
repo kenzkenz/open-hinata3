@@ -1,9 +1,16 @@
 import store from '@/store'
 import axios from "axios"
 import * as turf from '@turf/turf'
-import {convertAndDownloadGeoJSONToSIMA, savePointSima} from "@/js/downLoad";
+import {
+    convertAndDownloadGeoJSONToSIMA,
+    convertFromEPSG4326, downloadTextFile,
+    geoJSONToSIMA, getNowFileNameTimestamp,
+    savePointSima, splitLineStringIntoPoints,
+    zahyokei
+} from "@/js/downLoad";
 import {clickCircleSource, clickPointSource, endPointSouce, vertexSource} from "@/js/layers";
 import {calculatePolygonMetrics, closeAllPopups} from "@/js/popup";
+import { fetchElevation } from '@/js/downLoad';
 export let currentIndex = 0
 let kasen
 
@@ -1289,6 +1296,32 @@ export default function pyramid () {
                     store.state.isCursorOnPanel = false
                     closeAllPopups()
                 },100)
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("line-sima"))) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
+                let source = map01.getSource(clickCircleSource.iD)
+                const geojson = source._data
+                const tgtFeature = geojson.features.find(feature => {
+                    return feature.properties.id === id
+                })
+                // const pointGeojson = turf.explode(tgtFeature)
+                const pointGeojson = splitLineStringIntoPoints(tgtFeature, 20)
+                async function updateAllElevations() {
+                    await Promise.all(pointGeojson.features.map(async (feature) => {
+                        const [lon, lat] = feature.geometry.coordinates;
+                        const z = await fetchElevation(lon, lat);
+                        feature.geometry.coordinates[2] = Number(z);
+                    }));
+                    const epsg = zahyokei.find(item => item.kei === store.state.zahyokei).code
+                    const convertedGeojson = convertFromEPSG4326(pointGeojson, epsg)
+                    const simaText = geoJSONToSIMA(convertedGeojson)
+                    downloadTextFile(`${getNowFileNameTimestamp()}.sim`, simaText, 'shift-jis')
+                }
+                updateAllElevations();
             }
         });
     })
