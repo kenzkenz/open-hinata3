@@ -1054,9 +1054,7 @@ export default function pyramid () {
                 } else {
                     value = 0
                 }
-                console.log(id,checked)
                 store.state.clickCircleGeojsonText = geojsonUpdate(map01, null, clickCircleSource.iD, id, 'keiko', value)
-                console.log(store.state.clickCircleGeojsonText)
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1067,7 +1065,6 @@ export default function pyramid () {
                 const chkElm = document.querySelector('.polygon-area-check')
                 const checked = chkElm.checked
                 store.state.clickCircleGeojsonText = geojsonUpdate(map01, null, clickCircleSource.iD, id, 'isArea', checked)
-                console.log(store.state.clickCircleGeojsonText)
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1085,11 +1082,9 @@ export default function pyramid () {
                 const radius = checked ? 200 : Number(rangeValue)
                 const lng = Number(circleRangeElm.getAttribute("lng"))
                 const lat = Number(circleRangeElm.getAttribute("lat"))
-                console.log(id,lng,lat,Number(rangeValue),textValue)
                 const coordinates = [lng,lat]
                 store.state.coordinates = coordinates
                 store.state.clickCircleGeojsonText = geojsonUpdate(map01, 'Circle', clickCircleSource.iD, id, 'label2', textValue, radius)
-                console.log(store.state.clickCircleGeojsonText)
                 document.querySelector('.circle-label').innerHTML = '半径' + radius + 'm'
                 document.querySelector('.circle-text').value = textValue
             }
@@ -1126,7 +1121,6 @@ export default function pyramid () {
                     value = colorNameToRgba(value, 0.6)
                 }
                 const tgtProp = 'color'
-                console.log(id,value)
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
             }
         });
@@ -1137,9 +1131,7 @@ export default function pyramid () {
                 const id = String(e.target.getAttribute("id"))
                 const value = Number(e.target.value)
                 const tgtProp = 'text-size'
-                console.log(id,value)
                 const geojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
-                console.log(geojsonText)
                 store.state.clickCircleGeojsonText = geojsonText
             }
         });
@@ -1150,9 +1142,7 @@ export default function pyramid () {
                 const id = String(e.target.getAttribute("id"))
                 const value = Number(e.target.value)
                 const tgtProp = 'line-width'
-                console.log(id,value)
                 const geojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
-                console.log(geojsonText)
                 store.state.clickCircleGeojsonText = geojsonText
             }
         });
@@ -1166,8 +1156,8 @@ export default function pyramid () {
                 const value = e.target.value
                 const tgtProp = 'arrow-type'
                 console.log(id,value)
-                console.log(geojsonUpdate (map01,null,endPointSouce.id,startId,tgtProp,value))
-                console.log(geojsonUpdate (map01,null,endPointSouce.id,endId,tgtProp,value))
+                geojsonUpdate (map01,null,endPointSouce.id,startId,tgtProp,value)
+                geojsonUpdate (map01,null,endPointSouce.id,endId,tgtProp,value)
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
             }
         });
@@ -1190,9 +1180,8 @@ export default function pyramid () {
                 const tgtProp = 'color'
                 const arrowTgtProp = 'arrow'
                 const keikoValue = neonColors[value]
-                console.log(id,value)
-                console.log(geojsonUpdate (map01,null,endPointSouce.id,startId,arrowTgtProp,arrowValue))
-                console.log(geojsonUpdate (map01,null,endPointSouce.id,endId,arrowTgtProp,arrowValue))
+                geojsonUpdate (map01,null,endPointSouce.id,startId,arrowTgtProp,arrowValue)
+                geojsonUpdate (map01,null,endPointSouce.id,endId,arrowTgtProp,arrowValue)
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,arrowTgtProp,arrowValue)
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,'keiko-color',keikoValue)

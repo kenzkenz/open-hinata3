@@ -2231,6 +2231,8 @@ export default {
         this.s_isDrawLine = false
         this.s_isDrawPolygon = false
         this.s_editEnabled = false
+        this.snackbarText = 'ドラッグで線を書きます！クリックじゃありません！'
+        this.snackbar = true
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'FREE'
       store.state.isCursorOnPanel = false
@@ -4190,10 +4192,10 @@ export default {
           const properties = {
             id: id,
             'free-hand': 1,
-            keiko: 0,
+            keiko: 1,
             label: '',
             color: 'orange',
-            'keiko-color': '#ff0',
+            'keiko-color': '#FF8000',
             offsetValue: [0.6, 0],
             'line-width': 5,
             textAnchor: 'left',

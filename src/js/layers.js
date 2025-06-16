@@ -736,9 +736,9 @@ export const clickCircleKeikoLineLayer = {
         ['==', ['get', 'keiko'], 1]
     ],
     paint: {
-        'line-color': ['get', 'color'], // 黄色蛍光ペン風（または #0ff, #f0f）
-        'line-width': 16,                  // 太めに
-        'line-opacity': 0.3,               // 半透明
+        'line-color': ['get', 'keiko-color'],
+         'line-width': ['*', ['get', 'line-width'], 3],
+        'line-opacity': 0.3,
         'line-blur': 2                     // にじみ（ぼかし）
     }
 }
@@ -927,9 +927,10 @@ export const freehandPreviewLayer = {
     type: 'line',
     source: 'freehand-preview-source',
     paint: {
-        'line-color': '#f00',
-        'line-width': 2,
-        'line-dasharray': [2, 2]
+        'line-color': '#FF8000',
+        'line-width': 15,
+        'line-opacity': 0.3,
+        // 'line-dasharray': [2, 2]
     }
 }
 // ガイドレイヤー-----------------------------------------------------------------
