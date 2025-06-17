@@ -1169,6 +1169,7 @@ export default function pyramid () {
                 const tgtProp = 'line-width'
                 const geojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
                 store.state.clickCircleGeojsonText = geojsonText
+                store.state.currentFreeHandWidth = value
             }
         });
         // -------------------------------------------------------------------------------------------------------------

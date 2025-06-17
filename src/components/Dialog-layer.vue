@@ -920,7 +920,6 @@ export default {
       }
       // ---------------------------------------------------------------------------------
       if (this.$store.state.clickCircleGeojsonText) {
-        console.log(this.$store.state.clickCircleGeojsonText)
         clickCircleSource.obj.data = JSON.parse(this.$store.state.clickCircleGeojsonText)
       }
 

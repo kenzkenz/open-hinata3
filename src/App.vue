@@ -4214,6 +4214,7 @@ export default {
             },
             properties: {
               'keiko-color': this.$store.state.currentFreeHandColor || '#FF8000',
+              'line-width': this.$store.state.currentFreeHandWidth || 5,
             }
           }]
         };
@@ -4240,7 +4241,7 @@ export default {
             // 'keiko-color': '#FF8000',
             'keiko-color': this.$store.state.currentFreeHandColor || '#FF8000',
             offsetValue: [0.6, 0],
-            'line-width': 5,
+            'line-width': this.$store.state.currentFreeHandWidth || 5,
             textAnchor: 'left',
             textJustify: 'left'
           };

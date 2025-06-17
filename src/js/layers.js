@@ -941,7 +941,7 @@ export const freehandPreviewLayer = {
     source: 'freehand-preview-source',
     paint: {
         'line-color': ['get', 'keiko-color'],
-        'line-width': 15,
+        'line-width': ['*', ['get', 'line-width'], 3],
         'line-opacity': 0.3,
         // 'line-dasharray': [2, 2]
     }
