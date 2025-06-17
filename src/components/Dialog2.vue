@@ -8,6 +8,7 @@
       <DialogPyramid :item="item" :mapName="mapName" v-if="item.name === 'pyramid'" />
       <DialogJinkosuii :item="item" :mapName="mapName" v-if="item.name === 'jinkosuii'" />
       <DialogKyakususuii :item="item" :mapName="mapName" v-if="item.name === 'kyakususuii'" />
+      <DialogElevation :item="item" :mapName="mapName" v-if="item.name === 'elevation'" />
     </div>
   </div>
 </template>
@@ -16,6 +17,7 @@
 import DialogPyramid from "@/components/Dialog-pyramid"
 import DialogJinkosuii from "@/components/Dialog-jinkosuii"
 import DialogKyakususuii from "@/components/Dialog-kyakususuii"
+import DialogElevation from "@/components/Dialog-elevation"
 
 export default {
   name: 'dialog-2',
@@ -23,7 +25,8 @@ export default {
   components: {
     DialogPyramid,
     DialogJinkosuii,
-    DialogKyakususuii
+    DialogKyakususuii,
+    DialogElevation
   },
   data () {
     return {

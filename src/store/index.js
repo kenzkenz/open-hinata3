@@ -4,6 +4,8 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    elevationGeojson: '',
+    isMoveMode: false,
     currentFreeHandWidth: '',
     currentFreeHandColor: '',
     tgtFeature: null,

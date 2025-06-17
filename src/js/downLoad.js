@@ -8171,6 +8171,12 @@ export function downloadTextFile(fileName, textContent, encoding = 'utf-8') {
     URL.revokeObjectURL(url);
 }
 
+/**
+ * 各地点に距離情報を追加する（標高なし）
+ * @param {Array} points - 各要素に coord:[lon,lat] を含む配列
+ * @returns {Array} - 距離情報付きの配列
+ */
+
 export function splitLineStringIntoPoints(lineStringGeoJSON, numPoints) {
     if (!lineStringGeoJSON || lineStringGeoJSON.geometry.type !== 'LineString') {
         console.error('入力はLineStringのGeoJSONである必要があります');
@@ -8187,13 +8193,50 @@ export function splitLineStringIntoPoints(lineStringGeoJSON, numPoints) {
 
     const segmentLength = totalLength / (numPoints - 1);
     const points = [];
+    let accumulated = 0;
 
     for (let i = 0; i < numPoints; i++) {
         const distance = i * segmentLength;
         const point = turf.along(line, distance, { units: 'kilometers' });
+
+        // プロパティ追加
+        point.properties.segment_distance = i === 0 ? 0 : segmentLength;
+        point.properties.accumulated_distance = accumulated;
+        point.properties.total_distance = totalLength;
+
+        accumulated += segmentLength;
+
         points.push(point);
     }
 
+    console.log(turf.featureCollection(points));
     return turf.featureCollection(points);
 }
+
+
+// export function splitLineStringIntoPoints(lineStringGeoJSON, numPoints) {
+//     if (!lineStringGeoJSON || lineStringGeoJSON.geometry.type !== 'LineString') {
+//         console.error('入力はLineStringのGeoJSONである必要があります');
+//         return null;
+//     }
+//
+//     if (numPoints < 2) {
+//         console.error('ポイント数は2以上である必要があります');
+//         return null;
+//     }
+//
+//     const line = turf.lineString(lineStringGeoJSON.geometry.coordinates);
+//     const totalLength = turf.length(line, { units: 'kilometers' }); // 総距離（km）
+//
+//     const segmentLength = totalLength / (numPoints - 1);
+//     const points = [];
+//
+//     for (let i = 0; i < numPoints; i++) {
+//         const distance = i * segmentLength;
+//         const point = turf.along(line, distance, { units: 'kilometers' });
+//         points.push(point);
+//     }
+//     console.log(turf.featureCollection(points))
+//     return turf.featureCollection(points);
+// }
 

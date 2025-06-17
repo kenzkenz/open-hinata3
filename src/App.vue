@@ -75,6 +75,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             />
             <v-btn @click="pointSimaCreate">SIMA作成</v-btn>
             <v-btn style="margin-left: 10px" @click="pointCsvCreate">CSV作成</v-btn>
+            <v-btn style="margin-left: 10px" @click="elevationCreate">標高図作成</v-btn>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -1301,7 +1302,8 @@ export default {
         { key: 'undo', text: '元に戻す', label: '元戻', click: this.undo },
         { key: 'redo', text: 'やり直す', label: 'やり直', click: this.redo, style: 'font-size: 12px' },
         { key: 'dxf', text: 'DXFで出力', label: 'dxf', color: 'white', click: this.dialogForSaveDXFOpen },
-        { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw }
+        { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
+      //   { key: 'test', text: 'test', icon: '', color: '', click: this.test }
       ]
       return btns
     },
@@ -1781,6 +1783,83 @@ export default {
     },
   },
   methods: {
+    test () {
+      const vm = this
+      const map = this.$store.state.map01
+      this.$store.state.isMoveMode = !this.$store.state.isMoveMode;
+      // 初期化時に移動モードに応じてインタラクションを設定
+      function updateMapInteractions() {
+        if (vm.$store.state.isMoveMode) {
+          map.dragPan.disable(); // パンを無効化
+          map.touchZoomRotate.disable(); // タッチでのズーム/回転を無効化
+          map.scrollZoom.disable(); // スクロールズームを無効化
+        } else {
+          map.dragPan.enable(); // パンを有効化
+          map.touchZoomRotate.enable(); // タッチでのズーム/回転を有効化
+          map.scrollZoom.enable(); // スクロールズームを有効化
+        }
+      }
+      updateMapInteractions()
+    },
+    elevationCreate () {
+      const vm = this
+      this.$store.state.pointSima = false
+      const pointGeojson = splitLineStringIntoPoints(this.$store.state.tgtFeature, this.segments)
+      async function updateAllElevations() {
+        await Promise.all(pointGeojson.features.map(async (feature) => {
+          const [lon, lat] = feature.geometry.coordinates;
+          const z = await fetchElevation(lon, lat);
+          feature.geometry.coordinates[2] = Number(z);
+        }));
+        vm.$store.state.elevationGeojson = pointGeojson
+        store.commit('incrDialog2Id');
+        store.commit('incrDialogMaxZindex');
+        let left
+        if (window.innerWidth < 600) {
+          left = (window.innerWidth / 2 - 175) + 'px'
+        } else {
+          left = (document.querySelector('#map01').clientWidth - 560) + 'px'
+        }
+        const diialog =
+            {
+              id: store.state.dialog2Id,
+              name: 'elevation',
+              style: {
+                display: 'block',
+                top: '60px',
+                left: left,
+                'z-index': store.state.dialogMaxZindex
+              }
+            }
+        store.commit('pushDialogs2', {mapName: 'map01', dialog: diialog})
+      }
+      updateAllElevations();
+
+
+
+
+
+      // store.commit('incrDialog2Id');
+      // store.commit('incrDialogMaxZindex');
+      // let left
+      // if (window.innerWidth < 600) {
+      //   left = (window.innerWidth / 2 - 175) + 'px'
+      // } else {
+      //   left = (document.querySelector('#map01').clientWidth - 560) + 'px'
+      // }
+      // const diialog =
+      //     {
+      //       id: store.state.dialog2Id,
+      //       name: 'elevation',
+      //       style: {
+      //         display: 'block',
+      //         top: '60px',
+      //         left: left,
+      //         'z-index': store.state.dialogMaxZindex
+      //       }
+      //     }
+      // store.commit('pushDialogs2', {mapName: 'map01', dialog: diialog})
+    },
     pointCsvCreate (){
       this.$store.state.pointSima = false
       const pointGeojson = splitLineStringIntoPoints(this.$store.state.tgtFeature, this.segments)
