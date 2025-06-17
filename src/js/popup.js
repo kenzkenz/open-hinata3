@@ -3728,7 +3728,7 @@ export function popup(e,map,mapName,mapFlg) {
                         break
                     case 'Point':
                         if (html.indexOf('click-circle-layer') === -1) {
-                            const keywordList = ['道路', '水路', '畑', '住宅', 'コン杭', 'プレート','プラ杭','鋲','忘失','怪しい'];
+                            const keywordList = ['道路', '水路', '畑', '宅地', '田', '雑種地', 'コン杭', 'プレート','プラ杭','鋲'];
 
                             html += '<div class="layer-label-div">ポイント</div>';
                             html += '<div style="display: flex; width: 100%;">';
@@ -3759,8 +3759,6 @@ export function popup(e,map,mapName,mapFlg) {
                             keywordList.forEach(word => {
                                 html += '<div id="' + props.id + '"  class="keyword-item" ' +
                                     'onclick="document.getElementById(\'' + props.id + '\').value = \'' + word + '\'">' + word + '</div>';
-                                // html += '<div class="keyword-item" style="font-size:18px;padding: 4px; cursor: pointer; border-bottom: 1px solid #ccc;" ' +
-                                //     'onclick="document.getElementById(\'' + props.id + '\').value = \'' + word + '\'">' + word + '</div>';
                             });
 
                             html += '</div>'; // 右パネル終わり
@@ -4209,18 +4207,36 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
             store.state.isCursorOnPanel = false;
         }
     }
+    const center = map.getCenter(); // 中心の緯度経度
+    let position = coordinates
+    let isSmartPhone = false
+    if (window.innerWidth < 450) isSmartPhone = true
+    if (isSmartPhone) {
+        position = center
+    }
+
     if (htmlContent !== 'dumy') {
         const popup = new maplibregl.Popup({
             closeButton: true,
-            maxWidth: "350px"
+            maxWidth: "350px",
         })
-            .setLngLat(coordinates)
+            .setLngLat(position)
             .setHTML(popupHtml)
             .addTo(map);
         // ポップアップイベント設定
         popups.push(popup);
         popup.on('close', closeAllPopups);
-        // DOM取得（MapLibre v2/v3/v4/v5でもほぼ同じ）
+
+        // 次の描画タイミングで高さを取得して再配置
+        if (isSmartPhone) {
+            requestAnimationFrame(() => {
+                const h = popup.getElement().offsetHeight;
+                const screen = map.getCanvas().getBoundingClientRect();
+                const lngLat = map.unproject([screen.width / 2, screen.height / 2 + h / 2]);
+                popup.setLngLat(lngLat);
+            });
+        }
+
         // Popupのdivは複数存在する場合があるので全てに仕掛けるのが安全
         setTimeout(() => {
             document.querySelectorAll('.maplibregl-popup').forEach(div => {

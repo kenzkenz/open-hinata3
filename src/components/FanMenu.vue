@@ -71,7 +71,7 @@ export default {
 
       const arc = 150
       const radius = 120
-      const spacing = 60
+      const spacing = 100
       const size = 44
 
       let x = 0

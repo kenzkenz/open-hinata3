@@ -1163,7 +1163,7 @@ export default function pyramid () {
             }
         });
         // -------------------------------------------------------------------------------------------------------------
-        mapElm.addEventListener('click', (e) => {
+        mapElm.addEventListener('input', (e) => {
             if (e.target && (e.target.classList.contains("font-size-input"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
@@ -1174,7 +1174,7 @@ export default function pyramid () {
             }
         });
         // -------------------------------------------------------------------------------------------------------------
-        mapElm.addEventListener('click', (e) => {
+        mapElm.addEventListener('input', (e) => {
             if (e.target && (e.target.classList.contains("line-width-input"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))

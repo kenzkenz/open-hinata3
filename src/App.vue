@@ -749,11 +749,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   <div v-if="mapName === 'map01'">
                     <div v-for="btn in buttons" :key="btn.key">
                       <MiniTooltip :text="btn.text" :offset-x="0" :offset-y="2">
+<!--                        :size="'small'"-->
                         <v-btn
-                          :size="'small'"
                           :icon="true"
                           :color="btn.color"
                           @click="btn.click"
+                          :style="btn.style"
                         >
                           <template v-if="btn.icon">
                             <v-icon>{{ btn.icon }}</v-icon>
@@ -871,6 +872,10 @@ import {
   zahyokei,
   zipDownloadSimaText
 } from '@/js/downLoad'
+
+function onLineClick(e,map,map2Flg) {
+  popup(e,map,'map01',map2Flg)
+}
 
 function xmlToGeojson(xmlString) {
   const parser = new DOMParser();
@@ -1291,10 +1296,10 @@ export default {
         { key: 'line', text: '線', label: '線', color: this.s_isDrawLine ? 'green' : 'blue', click: this.toggleLDrawLine },
         { key: 'polygon', text: '多角形', label: '多角', color: this.s_isDrawPolygon ? 'green' : 'blue', click: this.toggleLDrawPolygon },
         { key: 'free', text: '自由に描く', label: '自由', color: this.s_isDrawFree ? 'green' : 'blue', click: this.toggleLDrawFree},
-        { key: 'finish', text: '確定', label: '確定', click: this.finishDrawing },
+        { key: 'finish', text: 'スマホ、タブの時に使用', label: '確定', click: this.finishDrawing, style: 'background-color: orange!important' },
         { key: 'edit', text: '編集', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
         { key: 'undo', text: '元に戻す', label: '元戻', click: this.undo },
-        { key: 'redo', text: 'やり直す', label: 'やり直', click: this.redo },
+        { key: 'redo', text: 'やり直す', label: 'やり直', click: this.redo, style: 'font-size: 12px' },
         { key: 'dxf', text: 'DXFで出力', label: 'dxf', color: 'white', click: this.dialogForSaveDXFOpen },
         { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw }
       ]
@@ -2230,6 +2235,16 @@ export default {
           'line-width': 1,
         };
         geojsonCreate(map01, 'Polygon', coords, properties);
+        const dummyEvent = {
+          lngLat: {
+            lng: this.tempPolygonCoords[0][0],
+            lat: this.tempPolygonCoords[0][1]
+          }
+        };
+        this.$store.state.coordinates = [this.tempPolygonCoords[0][0], this.tempPolygonCoords[0][1]];
+        setTimeout(() => {
+          onLineClick(dummyEvent,map01,this.s_map2Flg);
+        }, 500);
         this.tempPolygonCoords = [];
       } else if (this.s_isDrawLine) {
         if (!this.tempLineCoords || this.tempLineCoords.length < 2) return; // 最低2点以上だけ確定
@@ -2243,6 +2258,16 @@ export default {
           textJustify: 'left'
         };
         geojsonCreate(map01, 'LineString', this.tempLineCoords.slice(), properties);
+        const dummyEvent = {
+          lngLat: {
+            lng: this.tempLineCoords[0][0],
+            lat: this.tempLineCoords[0][1]
+          }
+        };
+        this.$store.state.coordinates = [this.tempLineCoords[0][0], this.tempLineCoords[0][1]];
+        setTimeout(() => {
+          onLineClick(dummyEvent,map01,this.s_map2Flg);
+        }, 500);
         this.tempLineCoords = []
       }
       this.finishLine()
@@ -7204,10 +7229,48 @@ select {
   cursor: pointer;
   border-bottom: 1px solid #ccc;
   transition: background-color 0.2s;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 .keyword-item:hover {
   background-color: #e0f0ff;
 }
+
+/*.maplibregl-popup-content {*/
+/*  font-size: 16px;*/
+/*  max-width: 90vw;*/
+/*  max-height: 80vh;*/
+/*  overflow-y: auto;*/
+/*  border-radius: 12px;*/
+/*}*/
+
+@media (max-width: 450px) {
+  .maplibregl-popup {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 9999;
+  }
+  .maplibregl-popup-tip {
+    display: none !important; /* 吹き出し非表示でモーダル感UP */
+  }
+  .maplibregl-popup-content {
+    width: 400px !important;         /* ★固定幅 */
+    max-width: 90vw !important;      /* 必要なら調整 */
+    min-width: 300px !important;     /* 最小幅も確保 */
+    overflow-y: auto;
+
+    /* ★ 位置調整 */
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  textarea,
+  input {
+    font-size: 16px !important;
+  }
+}
+
 
 </style>
