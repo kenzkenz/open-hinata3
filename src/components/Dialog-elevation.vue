@@ -28,6 +28,9 @@ export default {
   watch: {
   },
   mounted () {
+    const tooltip0 = d3.select("body")
+        .append("div")
+        .attr("class", "d3tooltip");
     const vm = this
     let isAspect1to1 = false; // 縦横等倍モード
     resasD3()
@@ -255,6 +258,8 @@ export default {
         markerLine.attr("opacity", 0);
       });
 
+
+
       map.on('mousemove', (e) => {
         const features = vm.$store.state.elevationGeojson.features;
         const line = turf.lineString(features.map(f => f.geometry.coordinates));
@@ -277,6 +282,51 @@ export default {
         markerLine.attr("opacity", 0);
         map.getSource('elevation-source').setData(turf.featureCollection([]));
       });
+
+      map.on('mousemove', (e) => {
+        const features = vm.$store.state.elevationGeojson.features;
+        const line = turf.lineString(features.map(f => f.geometry.coordinates));
+        const snapped = turf.nearestPointOnLine(line, turf.point([e.lngLat.lng, e.lngLat.lat]), { units: 'kilometers' });
+        const d = snapped.properties.location;
+
+        const closest = features.reduce((a, b) =>
+            Math.abs(a.properties.accumulated_distance - d) <
+            Math.abs(b.properties.accumulated_distance - d) ? a : b
+        );
+
+        const redLngLat = {
+          lng: closest.geometry.coordinates[0],
+          lat: closest.geometry.coordinates[1]
+        };
+
+        // 画面座標に変換
+        const mousePixel = map.project(e.lngLat);
+        const redPixel = map.project(redLngLat);
+
+        const pixelDist = Math.hypot(mousePixel.x - redPixel.x, mousePixel.y - redPixel.y);
+
+        // 近ければツールチップ表示（例: 60px以内）
+        if (pixelDist < 60) {
+          map.getSource('elevation-source').setData(turf.point(closest.geometry.coordinates));
+
+          tooltip0
+              .html(
+                  `距離: ${(closest.properties.accumulated_distance * 1000).toFixed(0)} m<br>` +
+                  `標高: ${(closest.geometry.coordinates[2] ?? 0).toFixed(1)} m`
+              )
+              .style("left", `${e.originalEvent.pageX + 10}px`)
+              .style("top", `${e.originalEvent.pageY - 28}px`)
+              .style("visibility", "visible")
+              .style("opacity", 0.8)
+              .classed("show", true);
+        } else {
+          tooltip0
+              .style("visibility", "hidden")
+              .style("opacity", 0)
+              .classed("show", false);
+        }
+      });
+
     }
 
   }
