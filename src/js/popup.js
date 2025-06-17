@@ -3833,7 +3833,7 @@ export function popup(e,map,mapName,mapFlg) {
                                 '</div>' +
                                 '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:47%;" class="line-delete pyramid-btn">削　除</button>' +
                                 '<div class="tooltip-wrapper" data-tooltip="標高値も取得できます。" style="position:relative; display:inline-block;width:47%;">' +
-                                '<button id="' + props.id + '" style="margin-bottom: 10px;margin-left:10px;height: 30px;font-size: medium;width:100%;" class="line-sima pyramid-btn">SIMA&CSV</button>' +
+                                '<button id="' + props.id + '" style="margin-bottom: 10px;margin-left:10px;height: 30px;font-size: medium;width:100%;" class="line-sima pyramid-btn">各種出力</button>' +
                                 '</div>' +
                                 '<div style="display: flex;gap: 8px;">' +
                                 '<div class="circle-list">' +

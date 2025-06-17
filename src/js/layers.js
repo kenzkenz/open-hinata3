@@ -966,6 +966,27 @@ export const guideLineLayer = {
         'line-dasharray': [2, 2]
     }
 }
+// 標高レイヤーー-----------------------------------------------------------------
+export const elevationSource = {
+    id:'elevation-source',obj: {
+        type: 'geojson',
+        data: {
+            type: 'FeatureCollection',
+            features: []
+        }
+    }
+}
+export const elevationLayer = {
+    id: 'elevation-layer',
+    type: 'circle',
+    source: 'elevation-source',
+    paint: {
+        'circle-radius': 8,
+        'circle-color': '#ff0000',
+        'circle-stroke-color': '#fff',
+        'circle-stroke-width': 1
+    }
+}
 // --------------------------------------------------------------------------------
 // クリックで追加するポイントのGeoJSONソースを作成
 export const clickPointSource ={

@@ -63,7 +63,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
       <v-dialog v-model="s_pointSima" max-width="400">
         <v-card>
-          <v-card-title>区切り数を決定</v-card-title>
+          <v-card-title>各種出力</v-card-title>
           <v-card-text style="margin-bottom: -5px;padding-bottom: 0">
             <v-text-field
                 v-model="segments"

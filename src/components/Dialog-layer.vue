@@ -97,7 +97,7 @@ import {
   clickCircPolygonSymbolLayer,
   clickCircSymbolLayer,
   clickPointLayer,
-  clickPointSource,
+  clickPointSource, elevationLayer, elevationSource,
   endPointSouce, freehandPreviewLayer, freehandPreviewSource,
   guideLineLayer,
   guideLineSource,
@@ -945,6 +945,8 @@ export default {
         map.removeSource('segment-label-source')
         map.removeLayer('freehand-preview-layer')
         map.removeSource('freehand-preview-source')
+        map.removeLayer('elevation-layer')
+        map.removeSource('elevation-source')
       }
       map.addSource('click-circle-source', clickCircleSource.obj)
       map.addLayer(clickCircleLayer)
@@ -967,6 +969,8 @@ export default {
       map.addLayer(segmentLabeleLayer)
       map.addSource('freehand-preview-source', freehandPreviewSource.obj)
       map.addLayer(freehandPreviewLayer)
+      map.addSource('elevation-source', elevationSource.obj)
+      map.addLayer(elevationLayer)
 
       if (this.$store.state.clickCircleGeojsonText) {
         const geojson = JSON.parse(this.$store.state.clickCircleGeojsonText)
