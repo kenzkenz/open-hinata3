@@ -3993,9 +3993,13 @@ export default {
             textJustify: 'left'
           }
           geojsonCreate(map, 'Point', coordinates, properties)
-          setTimeout(() => {
+          // 地図がアイドル状態（描画が完了）になるのを待つ
+          map.once('idle', () => {
             onPointClick(dummyEvent);
-          },500)
+          });
+          // setTimeout(() => {
+          //   onPointClick(dummyEvent);
+          // },500)
         }
       })
       // サークル作成-----------------------------------------------------------------------------------
@@ -7194,5 +7198,16 @@ select {
   padding: 2px 10px 2px 10px;
 }
 
+.keyword-item {
+  font-size: 18px;
+  padding: 4px;
+  cursor: pointer;
+  border-bottom: 1px solid #ccc;
+  transition: background-color 0.2s;
+}
+
+.keyword-item:hover {
+  background-color: #e0f0ff;
+}
 
 </style>

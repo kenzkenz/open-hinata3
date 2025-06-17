@@ -1126,6 +1126,19 @@ export default function pyramid () {
             }
         });
         // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("keyword-item"))) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
+                const pointTextElm = document.querySelector('.oh-cool-input')
+                const value = pointTextElm.value
+                const tgtProp = 'label'
+                setTimeout(() => {
+                    store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+                },100)
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('input', (e) => {
             if (e.target && (e.target.classList.contains("point-text"))) {
                 const map01 = store.state.map01
