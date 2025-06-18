@@ -3224,7 +3224,7 @@ export default {
               try {
                 const splitMuni = muni[Number(response.data.results.muniCd)].split(',')
                 vm.s_address = splitMuni[1] + splitMuni[3] + response.data.results.lv01Nm
-                console.log(splitMuni[0])
+                // console.log(splitMuni[0])
                 vm.$store.state.prefId = splitMuni[0]
               }catch (e){
                 console.log(e)
@@ -3232,8 +3232,7 @@ export default {
             }
           })
       history('updatePermalink',window.location.href)
-
-      console.log('平面直角座標系',japanCoord([lng,lat]))
+      // console.log('平面直角座標系',japanCoord([lng,lat]))
     },
     createShortUrl() {
       let params = new URLSearchParams()
