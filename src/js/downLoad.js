@@ -7712,20 +7712,24 @@ export function enableFeatureDragAndAdd(map, layerId, sourceId, options = {}) {
 
     // ドラッグ開始
     map.on('mousedown', function (e) {
-        if (store.state.editEnabled) return
-        const features = map.queryRenderedFeatures(e.point, { layers: [layerId] });
-        if (features.length > 0) {
-            isDragging = true;
-            draggedFeature = features[0];
-            dragStartCoord = getCenterCoord(draggedFeature);
+        try {
+            if (store.state.editEnabled) return
+            const features = map.queryRenderedFeatures(e.point, { layers: [layerId] });
+            if (features.length > 0) {
+                isDragging = true;
+                draggedFeature = features[0];
+                dragStartCoord = getCenterCoord(draggedFeature);
 
-            // ★クリック点と基準点（中心）のオフセットを記録
-            dragOffset = [
-                e.lngLat.lng - dragStartCoord[0],
-                e.lngLat.lat - dragStartCoord[1]
-            ];
-            map.getCanvas().style.cursor = 'grabbing';
-            e.preventDefault();
+                // ★クリック点と基準点（中心）のオフセットを記録
+                dragOffset = [
+                    e.lngLat.lng - dragStartCoord[0],
+                    e.lngLat.lat - dragStartCoord[1]
+                ];
+                map.getCanvas().style.cursor = 'grabbing';
+                e.preventDefault();
+            }
+        }catch (e) {
+            console.log(e)
         }
     });
 
