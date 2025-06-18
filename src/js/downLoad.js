@@ -8057,6 +8057,7 @@ export async function fetchElevation(lon, lat, zoom = 15) {
         // console.error("エラー:", error);
     }
 }
+
 // geoJSONToSIMA
 export function geoJSONToSIMA(geojson) {
     let simaData = 'G00,01,open-hinata3,\n';

@@ -7,7 +7,6 @@
         <button class="center-btn">🌟</button>
       </slot>
     </div>
-
     <!-- サブボタン -->
     <transition-group name="fade" tag="div">
       <div

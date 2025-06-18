@@ -4,6 +4,8 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    popupDialog: false,
+    popupHtml: '',
     elevationGeojson: '',
     isMoveMode: false,
     currentFreeHandWidth: '',

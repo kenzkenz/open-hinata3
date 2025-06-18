@@ -3760,55 +3760,8 @@ export function popup(e,map,mapName,mapFlg) {
                                 html += '<div id="' + props.id + '"  class="keyword-item" ' +
                                     'onclick="document.getElementById(\'' + props.id + '\').value = \'' + word + '\'">' + word + '</div>';
                             });
-
                             html += '</div>'; // 右パネル終わり
                             html += '</div>'; // flex container end
-
-
-                            // html += '<div class="layer-label-div">ポイント</div>';
-                            // html += '<div style="display: flex; width: 100%;">';
-                            //
-                            // // 左側：220px固定
-                            // html += '<div style="width: 220px;">';
-                            // html +=
-                            //     '<div class="click-circle-layer" style="font-weight: normal; color: #333; line-height: 25px;">' +
-                            //     '<textarea id="' + props.id + '" rows="5" style="width: 100%; margin-bottom: 10px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
-                            //     '<button id="' + props.id + '" style="margin-bottom: 10px; height: 30px; font-size: medium; width: 100%;" class="point-delete pyramid-btn">削除</button>' +
-                            //     '<div style="display: flex; gap: 8px;">' +
-                            //     '<div class="circle-list">' +
-                            //     '<div id="' + props.id + '" data-color="red" class="point-color circle red" tabindex="0"></div>' +
-                            //     '<div id="' + props.id + '" data-color="black" class="point-color circle black" tabindex="0"></div>' +
-                            //     '<div id="' + props.id + '" data-color="blue" class="point-color circle blue" tabindex="0"></div>' +
-                            //     '<div id="' + props.id + '" data-color="green" class="point-color circle green" tabindex="0"></div>' +
-                            //     '<div id="' + props.id + '" data-color="orange" class="point-color circle orange" tabindex="0"></div>' +
-                            //     '</div>' +
-                            //     '<input id="' + props.id + '" type="number" class="oh-cool-input-number font-size-input" min="10" max="100" step="1" value="' + textSize + '">' +
-                            //     '</div>' +
-                            //     '</div>';
-                            // html += '</div>';
-                            //
-                            // // 右側
-                            // html += '<div style="flex: 1; width: 100px;margin-left: 10px">' +
-                            //         'ここに単語をリストアップする。各行にクリックイベントを持たせる' +
-                            //         '</div>';
-                            // html += '</div>'; // flex container end
-
-                            // html += '<div class="layer-label-div">ポイント</div>'
-                            // html +=
-                            //     '<div style="width: 310px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
-                            //     '<textarea id="' + props.id + '" rows="5" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
-                            //     '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:100%;" class="point-delete pyramid-btn">削除</button>' +
-                            //     '<div style="display: flex;gap: 8px;">' +
-                            //     '<div class="circle-list">' +
-                            //     '<div id="' + props.id + '" data-color="red" class="point-color circle red" tabindex="0"></div>' +
-                            //     '<div id="' + props.id + '" data-color="black" class="point-color circle black" tabindex="0"></div>' +
-                            //     '<div id="' + props.id + '" data-color="blue" class="point-color circle blue" tabindex="0"></div>' +
-                            //     '<div id="' + props.id + '" data-color="green" class="point-color circle green" tabindex="0"></div>' +
-                            //     '<div id="' + props.id + '" data-color="orange" class="point-color circle orange" tabindex="0"></div>' +
-                            //     '</div>' +
-                            //     '<input id="' + props.id + '" type="number" class="oh-cool-input-number font-size-input" min="10" max="100" step="1" value="' + textSize +'">' +
-                            //     '</div>' +
-                            //     '</div>'
                         }
                         break
                     case 'LineString': {
@@ -3850,35 +3803,14 @@ export function popup(e,map,mapName,mapFlg) {
                         break
                     }
                 }
+                if (window.innerWidth < 500) {
+                    store.state.popupHtml = html
+                    store.state.popupDialog = true
+                    html = ''
+                }
+
                 break
             }
-            // case 'click-circle-label-layer':
-            // {
-            //     let features = map.queryRenderedFeatures(
-            //         map.project(coordinates), {layers: [layerId]}
-            //     )
-            //     if (features.length === 0) {
-            //         features = map.queryRenderedFeatures(
-            //             map.project(e.lngLat), {layers: [layerId]}
-            //         )
-            //     }
-            //     console.log(features)
-            //     if (features.length === 0) return
-            //     props = features[0].properties
-            //     if (isFirstClickCircleLabelLayer) {
-            //         if (props.label.includes('https')) {
-            //             const match = props.label.replace(/amp\n/g,'&').match(/https?:\/\/[^\s"']+/);
-            //             if (match) {
-            //                 console.log(match[0])
-            //                 window.open(match[0], '_blank')
-            //             }
-            //         }
-            //         isFirstClickCircleLabelLayer = false
-            //     }
-            //     setTimeout(() => {
-            //         isFirstClickCircleLabelLayer = true;
-            //     }, 500); // 500msだけ再発火防止
-            // }
         }
         if (isBreak) {
             isBreak = false

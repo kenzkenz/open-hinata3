@@ -61,6 +61,19 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </template>
       </v-snackbar>
 
+      <v-dialog attach="#map01" v-model="s_popupDialog" max-width="500" persistent>
+        <v-card>
+          <v-card-text>
+            <!-- ここに既存のhtml文字列を表示 -->
+            <div v-html="s_popupHtml"></div>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn text @click="s_popupDialog = false">閉じる</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
       <v-dialog v-model="s_pointSima" max-width="400">
         <v-card>
           <v-card-title>各種出力</v-card-title>
@@ -666,10 +679,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <div id="pointer1" class="pointer" v-if="mapName === 'map01'"></div>
           <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
 
-<!--          <div class="drawing-finish-div">-->
-<!--            <v-btn v-if="mapName === 'map01'" class="drawing-finish-btn">確定</v-btn>-->
-<!--          </div>-->
-
           <div :style="{fontSize: textPx + 'px', color: titleColor}" class="print-title">
             <MiniTooltip text="click me" :offset-x="0" :offset-y="4">
               <span
@@ -738,7 +747,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <!--              <MiniTooltip text="Xにポスト" :offset-x="-25" :offset-y="326">-->
 <!--                <v-btn :size="isSmall ? 'small' : 'default'" class="share-x" icon @click="captureAndPostToX" v-if="mapName === 'map01'"><v-icon left>fa-solid fa-x</v-icon></v-btn>-->
 <!--              </MiniTooltip>-->
-              <FanMenu layout="vertical" :offset-x="-60" class="draw-fan">
+              <FanMenu layout="vertical" :offset-x="fanMenuOffsetX" class="draw-fan">
 
                 <template v-slot:center>
                   <MiniTooltip text="ドロー" :offset-x="0" :offset-y="2">
@@ -1190,6 +1199,7 @@ export default {
     MiniTooltip
   },
   data: () => ({
+    fanMenuOffsetX: -60,
     segments: 30,
     mainGeojson: { type: 'FeatureCollection', features: [] },
     history: [],
@@ -1307,6 +1317,22 @@ export default {
       //   { key: 'test', text: 'test', icon: '', color: '', click: this.test }
       ]
       return btns
+    },
+    s_popupDialog: {
+      get() {
+        return this.$store.state.popupDialog
+      },
+      set(value) {
+        return this.$store.state.popupDialog = value
+      }
+    },
+    s_popupHtml: {
+      get() {
+        return this.$store.state.popupHtml
+      },
+      set(value) {
+        return this.$store.state.popupHtml = value
+      }
     },
     s_pointSima: {
       get() {
@@ -1819,7 +1845,7 @@ export default {
         if (window.innerWidth < 600) {
           left = (window.innerWidth / 2 - 175) + 'px'
         } else {
-          left = (document.querySelector('#map01').clientWidth - 560) + 'px'
+          left = (document.querySelector('#map01').clientWidth - 660) + 'px'
         }
         const diialog =
             {
@@ -6275,6 +6301,8 @@ export default {
   mounted() {
     const vm = this
 
+    if (window.innerWidth < 500 ) this.fanMenuOffsetX = 0
+
     window.addEventListener('mousemove', this.onMouseMove)
 
     this.mapillarWidth = (window.innerWidth * 1) + 'px'
@@ -7072,54 +7100,6 @@ select {
   /* 吹き出し部分にも薄く影をつける */
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
 }
-
-/*!*ミニツールチップ*!*/
-/*.mini-tooltip-wrapper {*/
-/*  position: relative;*/
-/*  display: inline-block;*/
-/*}*/
-/*.mini-tooltip-text {*/
-/*  visibility: hidden;*/
-/*  background: #222;*/
-/*  color: #fff;*/
-/*  font-size: 10px;*/
-/*  padding: 2px 8px;*/
-/*  border-radius: 3px;*/
-/*  position: absolute;*/
-/*  left: 50%;*/
-/*  transform: translateX(-50%);*/
-/*  white-space: nowrap;*/
-/*  pointer-events: none;*/
-/*  opacity: 0;*/
-/*  transition: opacity 0.2s;*/
-/*  z-index: 100;*/
-/*}*/
-/*!* ツールチップ本体をボタン下に *!*/
-/*.mini-tooltip-bottom {*/
-/*  top: 120%; !* 適宜調整 *!*/
-/*}*/
-
-/*!* ホバー時表示 *!*/
-/*.mini-tooltip-wrapper:hover .mini-tooltip-text,*/
-/*.mini-tooltip-wrapper:focus-within .mini-tooltip-text {*/
-/*  visibility: visible;*/
-/*  opacity: 1;*/
-/*}*/
-
-/*!* ▲上向き三角 *!*/
-/*.mini-tooltip-arrow-up {*/
-/*  position: absolute;*/
-/*  left: 50%;*/
-/*  top: -6px;  !* ツールチップ本体の上端中央に出す *!*/
-/*  transform: translateX(-50%);*/
-/*  width: 0;*/
-/*  height: 0;*/
-/*  border-left: 6px solid transparent;*/
-/*  border-right: 6px solid transparent;*/
-/*  border-bottom: 6px solid #222; !* 本体と同じ色で *!*/
-/*  content: '';*/
-/*  z-index: 101;*/
-/*}*/
 
 .circle-list {
   display: flex;

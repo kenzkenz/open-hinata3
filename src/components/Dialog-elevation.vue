@@ -52,7 +52,6 @@ export default {
     }
 
     function resasD3 (withAnimation = false) {
-      console.log(999)
       const elements = document.querySelectorAll('#' + vm.mapName + ' .dialog2-div')
       const len = elements.length
       if (len > 1) {
