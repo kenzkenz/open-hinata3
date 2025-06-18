@@ -83,7 +83,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 type="number"
                 label="区切り数を入力"
                 :min="0"
-                :max="300"
+                :max="500"
                 :step="1"
             />
             <v-btn @click="pointSimaCreate">SIMA作成</v-btn>
@@ -754,23 +754,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </div>
               </div>
 
-
-
-<!--              <MiniTooltip text="現在地取得" :offset-x="0" :offset-y="-2" class="current-position" >-->
-<!--                <v-btn :size="isSmall ? 'small' : 'default'" icon @click="goToCurrentLocation" v-if="mapName === 'map01'"><v-icon>mdi-crosshairs-gps</v-icon></v-btn>-->
-<!--              </MiniTooltip>-->
-<!--              <MiniTooltip text="現在地連続取得" :offset-x="-25" :offset-y="86">-->
-<!--              </MiniTooltip>-->
-<!--              <MiniTooltip text="共有" :offset-x="-25" :offset-y="145">-->
-<!--                <v-btn :size="isSmall ? 'small' : 'default'" class="share" icon @click="share(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-share-variant</v-icon></v-btn>-->
-<!--              </MiniTooltip>-->
-<!--              <MiniTooltip text="計測" :offset-x="-25" :offset-y="206">-->
-<!--                <v-btn :size="isSmall ? 'small' : 'default'" class="draw" icon @click="draw" v-if="mapName === 'map01'"><v-icon>mdi-ruler-square</v-icon></v-btn>-->
-<!--              </MiniTooltip>-->
-<!--              <MiniTooltip text="Xにポスト" :offset-x="-25" :offset-y="326">-->
-<!--                <v-btn :size="isSmall ? 'small' : 'default'" class="share-x" icon @click="captureAndPostToX" v-if="mapName === 'map01'"><v-icon left>fa-solid fa-x</v-icon></v-btn>-->
-<!--              </MiniTooltip>-->
-              <FanMenu layout="vertical" :offset-x="fanMenuOffsetX" class="draw-fan">
+              <FanMenu layout="vertical" :offset-x="fanMenuOffsetX">
 
                 <template v-slot:center>
                   <MiniTooltip text="ドロー" :offset-x="0" :offset-y="2">
@@ -789,7 +773,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
                <template v-slot:default>
                   <div v-if="mapName === 'map01'">
-                    <div v-for="btn in buttons" :key="btn.key">
+                    <div v-for="btn in buttons1" :key="btn.key">
                       <MiniTooltip :text="btn.text" :offset-x="0" :offset-y="2">
                         <v-btn
                           :icon="true"
@@ -1228,7 +1212,7 @@ export default {
   data: () => ({
     isRightDiv: true,
     fanMenuOffsetX: -60,
-    segments: 30,
+    segments: 100,
     mainGeojson: { type: 'FeatureCollection', features: [] },
     history: [],
     redoStack: [],
@@ -1320,8 +1304,8 @@ export default {
     selectedFeature: null,
     showLayerDialog: false,
     dialogForSaveDXF2: false,
-    buttons0: [],
-    buttons: [],
+    // buttons0: [],
+    // buttons: [],
   }),
   computed: {
     ...mapState([
@@ -1330,6 +1314,58 @@ export default {
       'selectedPointFeature',
       'showChibanzuDrawer',
     ]),
+    buttons0() {
+      const btns =
+          [
+            { key: 'currentPosition', text: '現在地取得', icon: 'mdi-crosshairs-gps', click: this.goToCurrentLocation },
+            { key: 'watchPosition', text: '現在地連続取得', icon: 'mdi-map-marker-radius', color: this.isTracking ? 'green' : 'primary', click: this.toggleWatchPosition },
+            { key: 'share', text: '共有', icon: 'mdi-share-variant', color: 'primary', click: this.share },
+            { key: 'print', text: '印刷', icon: 'mdi-printer', color: 'primary', click: this.handlePrint },
+
+          ]
+      return btns
+    },
+    buttons1() {
+      let btns =
+      [
+        { key: 'point', text: '文字貼りつけ', label: '文字', color: this.s_isDrawPoint ? 'green' : 'blue', click: this.toggleDrawPoint },
+        { key: 'circle', text: '円', label: '円', color: this.s_isDrawCircle ? 'green' : 'blue', click: this.toggleDrawCircle },
+        { key: 'line', text: '線', label: '線', color: this.s_isDrawLine ? 'green' : 'blue', click: this.toggleLDrawLine },
+        { key: 'polygon', text: '多角形', label: '多角', color: this.s_isDrawPolygon ? 'green' : 'blue', click: this.toggleLDrawPolygon },
+        { key: 'free', text: '自由に描く', label: '自由', color: this.s_isDrawFree ? 'green' : 'blue', click: this.toggleLDrawFree},
+        { key: 'finish', text: 'スマホ、タブの時に使用', label: '確定', click: this.finishDrawing, style: 'background-color: orange!important;' },
+        { key: 'edit', text: '編集', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
+        { key: 'undo', text: '元に戻す', label: '元戻', click: this.undo },
+        { key: 'redo', text: 'やり直す', label: 'やり直', click: this.redo, style: 'font-size: 12px' },
+        { key: 'dxf', text: 'DXFで出力', label: 'dxf', color: 'white', click: this.dialogForSaveDXFOpen },
+        { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
+        { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
+      ]
+      if (window.innerWidth < 500) {
+        btns = btns.filter(btn => btn.key !== 'edit' && btn.key !== 'dxf' )
+      } else {
+        btns = btns.filter(btn => btn.key !== 'finish' && btn.key !== 'close')
+      }
+      return btns
+    },
+    buttonsMini() {
+      const btns =
+          [
+            { key: 'point', text: '文字貼りつけ', label: '文字', color: this.s_isDrawPoint ? 'green' : 'blue', click: this.toggleDrawPoint },
+            { key: 'circle', text: '円', label: '円', color: this.s_isDrawCircle ? 'green' : 'blue', click: this.toggleDrawCircle },
+            { key: 'line', text: '線', label: '線', color: this.s_isDrawLine ? 'green' : 'blue', click: this.toggleLDrawLine },
+            { key: 'polygon', text: '多角形', label: '多角', color: this.s_isDrawPolygon ? 'green' : 'blue', click: this.toggleLDrawPolygon },
+            { key: 'free', text: '自由に描く', label: '自由', color: this.s_isDrawFree ? 'green' : 'blue', click: this.toggleLDrawFree},
+            { key: 'finish', text: 'スマホ、タブの時に使用', label: '確定', click: this.finishDrawing, style: 'background-color: orange!important;' },
+            { key: 'edit', text: '編集', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
+            { key: 'undo', text: '元に戻す', label: '元戻', click: this.undo },
+            { key: 'redo', text: 'やり直す', label: 'やり直', click: this.redo, style: 'font-size: 12px' },
+            { key: 'dxf', text: 'DXFで出力', label: 'dxf', color: 'white', click: this.dialogForSaveDXFOpen },
+            { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
+            { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
+          ]
+      return btns
+    },
     s_popupDialog: {
       get() {
         return this.$store.state.popupDialog
@@ -6316,57 +6352,57 @@ export default {
     this.$store.state.isAndroid = /android/i.test(userAgent);
     if (window.innerWidth < 500) this.$store.state.isUnder500 = true
 
-    this.buttons0 = [
-      {
-        key: 'currentPosition',
-        text: '現在地取得',
-        icon: 'mdi-crosshairs-gps',
-        click: this.goToCurrentLocation
-      },
-      {
-        key: 'watchPosition',
-        text: '現在地連続取得',
-        icon: 'mdi-map-marker-radius',
-        color: this.isTracking ? 'green' : 'primary',
-        click: this.toggleWatchPosition
-      },
-      {
-        key: 'share',
-        text: '共有',
-        icon: 'mdi-share-variant',
-        color: 'primary',
-        click: this.share
-      },
-      {
-        key: 'print',
-        text: '印刷',
-        icon: 'mdi-printer',
-        color: 'primary',
-        click: this.handlePrint
-      }
-    ]
-    let btns =
-        [
-          { key: 'point', text: '文字貼りつけ', label: '文字', color: this.s_isDrawPoint ? 'green' : 'blue', click: this.toggleDrawPoint },
-          { key: 'circle', text: '円', label: '円', color: this.s_isDrawCircle ? 'green' : 'blue', click: this.toggleDrawCircle },
-          { key: 'line', text: '線', label: '線', color: this.s_isDrawLine ? 'green' : 'blue', click: this.toggleLDrawLine },
-          { key: 'polygon', text: '多角形', label: '多角', color: this.s_isDrawPolygon ? 'green' : 'blue', click: this.toggleLDrawPolygon },
-          { key: 'free', text: '自由に描く', label: '自由', color: this.s_isDrawFree ? 'green' : 'blue', click: this.toggleLDrawFree},
-          { key: 'finish', text: 'スマホ、タブの時に使用', label: '確定', click: this.finishDrawing, style: 'background-color: orange!important;' },
-          { key: 'edit', text: '編集', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
-          { key: 'undo', text: '元に戻す', label: '元戻', click: this.undo },
-          { key: 'redo', text: 'やり直す', label: 'やり直', click: this.redo, style: 'font-size: 12px' },
-          { key: 'dxf', text: 'DXFで出力', label: 'dxf', color: 'white', click: this.dialogForSaveDXFOpen },
-          { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
-          { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
-        ]
-    if (window.innerWidth < 500) {
-      btns = btns.filter(btn => btn.key !== 'edit' && btn.key !== 'dxf' )
-    } else {
-      btns = btns.filter(btn => btn.key !== 'finish' && btn.key !== 'close')
-    }
-    this.buttons = btns
-
+    // this.buttons0 = [
+    //   {
+    //     key: 'currentPosition',
+    //     text: '現在地取得',
+    //     icon: 'mdi-crosshairs-gps',
+    //     click: this.goToCurrentLocation
+    //   },
+    //   {
+    //     key: 'watchPosition',
+    //     text: '現在地連続取得',
+    //     icon: 'mdi-map-marker-radius',
+    //     color: this.isTracking ? 'green' : 'primary',
+    //     click: this.toggleWatchPosition
+    //   },
+    //   {
+    //     key: 'share',
+    //     text: '共有',
+    //     icon: 'mdi-share-variant',
+    //     color: 'primary',
+    //     click: this.share
+    //   },
+    //   {
+    //     key: 'print',
+    //     text: '印刷',
+    //     icon: 'mdi-printer',
+    //     color: 'primary',
+    //     click: this.handlePrint
+    //   }
+    // ]
+    // let btns =
+    //     [
+    //       { key: 'point', text: '文字貼りつけ', label: '文字', color: this.s_isDrawPoint ? 'green' : 'blue', click: this.toggleDrawPoint },
+    //       { key: 'circle', text: '円', label: '円', color: this.s_isDrawCircle ? 'green' : 'blue', click: this.toggleDrawCircle },
+    //       { key: 'line', text: '線', label: '線', color: this.s_isDrawLine ? 'green' : 'blue', click: this.toggleLDrawLine },
+    //       { key: 'polygon', text: '多角形', label: '多角', color: this.s_isDrawPolygon ? 'green' : 'blue', click: this.toggleLDrawPolygon },
+    //       { key: 'free', text: '自由に描く', label: '自由', color: this.s_isDrawFree ? 'green' : 'blue', click: this.toggleLDrawFree},
+    //       { key: 'finish', text: 'スマホ、タブの時に使用', label: '確定', click: this.finishDrawing, style: 'background-color: orange!important;' },
+    //       { key: 'edit', text: '編集', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
+    //       { key: 'undo', text: '元に戻す', label: '元戻', click: this.undo },
+    //       { key: 'redo', text: 'やり直す', label: 'やり直', click: this.redo, style: 'font-size: 12px' },
+    //       { key: 'dxf', text: 'DXFで出力', label: 'dxf', color: 'white', click: this.dialogForSaveDXFOpen },
+    //       { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
+    //       { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
+    //     ]
+    // if (window.innerWidth < 500) {
+    //   btns = btns.filter(btn => btn.key !== 'edit' && btn.key !== 'dxf' )
+    // } else {
+    //   btns = btns.filter(btn => btn.key !== 'finish' && btn.key !== 'close')
+    // }
+    // this.buttons = btns
+    if (window.innerWidth < 500 ) this.fanMenuOffsetX = 0
   },
   beforeUnmount() {
     window.removeEventListener("resize", this.onResize);
@@ -6374,7 +6410,7 @@ export default {
   mounted() {
     const vm = this
 
-    if (window.innerWidth < 500 ) this.fanMenuOffsetX = -50
+
 
     window.addEventListener('mousemove', this.onMouseMove)
 
@@ -6681,11 +6717,11 @@ export default {
   top: 300px;
   left: 0;
 }
-.draw-fan {
-  position: absolute;
-  top: 255px;
-  left: 0px;
-}
+/*.draw-fan {*/
+/*  position: absolute;*/
+/*  top: 255px;*/
+/*  left: 0px;*/
+/*}*/
 @media (max-width: 720px) {
   .draw-fan {
     top: 0px;

@@ -1033,6 +1033,7 @@ export default function pyramid () {
                 source01.setData(pointsGeojson) // 正しい GeoJSON を設定
                 // source02.setData(pointsGeojson)
                 store.state.clickGeojsonText = JSON.stringify(pointsGeojson)
+                store.state.popupDialog = false
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1046,6 +1047,7 @@ export default function pyramid () {
                     features: []
                 });
                 store.state.clickGeojsonText = ''
+                store.state.popupDialog = false
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1248,6 +1250,7 @@ export default function pyramid () {
                     }
                     store.state.isCursorOnPanel = false
                     closeAllPopups()
+                    store.state.popupDialog = false
                 },100)
             }
         });
@@ -1272,6 +1275,7 @@ export default function pyramid () {
                     }
                     store.state.isCursorOnPanel = false
                     closeAllPopups()
+                    store.state.popupDialog = false
                 },100)
             }
         });
@@ -1310,6 +1314,7 @@ export default function pyramid () {
                     generateSegmentLabelGeoJSON(geojson)
                     store.state.isCursorOnPanel = false
                     closeAllPopups()
+                    store.state.popupDialog = false
                 },100)
             }
         });

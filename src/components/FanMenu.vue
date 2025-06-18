@@ -67,7 +67,7 @@ export default {
     },
     getBtnStyle(idx, total) {
       if (!this.open) return { opacity: 0, pointerEvents: 'none' }
-      let spacing = 0
+      let spacing = 50
       if (window.innerWidth < 500) spacing = 300
 
       const arc = 150
