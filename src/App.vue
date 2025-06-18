@@ -1172,6 +1172,7 @@ import FanMenu from '@/components/FanMenu'
 import html2canvas from 'html2canvas'
 import debounce from 'lodash/debounce'
 import {feature} from "@turf/turf";
+import {forEach} from "lodash";
 
 export default {
   name: 'App',
@@ -1834,31 +1835,6 @@ export default {
         store.commit('pushDialogs2', {mapName: 'map01', dialog: diialog})
       }
       updateAllElevations();
-
-
-
-
-
-      // store.commit('incrDialog2Id');
-      // store.commit('incrDialogMaxZindex');
-      // let left
-      // if (window.innerWidth < 600) {
-      //   left = (window.innerWidth / 2 - 175) + 'px'
-      // } else {
-      //   left = (document.querySelector('#map01').clientWidth - 560) + 'px'
-      // }
-      // const diialog =
-      //     {
-      //       id: store.state.dialog2Id,
-      //       name: 'elevation',
-      //       style: {
-      //         display: 'block',
-      //         top: '60px',
-      //         left: left,
-      //         'z-index': store.state.dialogMaxZindex
-      //       }
-      //     }
-      // store.commit('pushDialogs2', {mapName: 'map01', dialog: diialog})
     },
     pointCsvCreate (){
       this.$store.state.pointSima = false
@@ -3391,7 +3367,6 @@ export default {
         isTouching = false; // タッチ中フラグをOFF
         initialScrollTop = 0; // 初期スクロール位置をリセット
       });
-
 
       // ======================================================================
       let protocol = new Protocol();
@@ -5861,8 +5836,26 @@ export default {
                   this.$store.state.gpxText = gpxText
                   const parser = new DOMParser();
                   const gpxDoc = parser.parseFromString(gpxText, 'application/xml');
-                  const geojson = gpx(gpxDoc);
-                  geojsonAddLayer (map, geojson, true, fileExtension)
+                  const gpxGeojson = gpx(gpxDoc);
+                  const id = String(Math.floor(10000 + Math.random() * 90000));
+                  gpxGeojson.features.forEach(feature => {
+                    feature.properties['id'] = id
+                    feature.properties['color'] = 'blue'
+                    feature.properties['line-width'] = 5
+                    feature.properties['arrow-type'] = 'none'
+                  })
+                  const drawGeojson = map.getSource(clickCircleSource.iD)._data
+                  drawGeojson.features.push(...gpxGeojson.features);
+                  map.getSource(clickCircleSource.iD).setData(drawGeojson);
+                  this.$store.state.clickCircleGeojsonText = JSON.stringify(drawGeojson)
+                  const bbox = turf.bbox(gpxGeojson);
+                  map.fitBounds(bbox, {
+                    padding: 40,
+                    duration: 1000,
+                    linear: false
+                  });
+
+                  // geojsonAddLayer (map, geojson, true, fileExtension)
                   break
                 }
                 case 'xml':

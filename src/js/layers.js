@@ -713,7 +713,6 @@ export const clickCircleLineLayer = {
     id: 'click-circle-line-layer',
     type: 'line',
     source: 'click-circle-source',
-    // filter: ['==', '$type', 'LineString'],
     filter: [
         'all',
         [

@@ -32,6 +32,7 @@ export default {
         .append("div")
         .attr("class", "d3tooltip");
     const vm = this
+    const map = vm.$store.state.map01
     let isAspect1to1 = false; // 縦横等倍モード
     resasD3()
     const toggleAspect = document.querySelector('#' + vm.mapName + ' .toggle-aspect')
@@ -229,8 +230,6 @@ export default {
             .attr("r", 3);
       }
 
-      const map = vm.$store.state.map01
-
       const markerLine = g.append("line")
           .attr("class", "marker-line")
           .attr("y1", 0)
@@ -258,25 +257,26 @@ export default {
         markerLine.attr("opacity", 0);
       });
 
-
-
-      map.on('mousemove', (e) => {
+      // イベントハンドラを定義して保存（解除のため）
+      vm.elevationMoveHandler = function (e) {
         const features = vm.$store.state.elevationGeojson.features;
         const line = turf.lineString(features.map(f => f.geometry.coordinates));
         const snapped = turf.nearestPointOnLine(line, turf.point([e.lngLat.lng, e.lngLat.lat]), { units: 'kilometers' });
         const d = snapped.properties.location;
 
-        const closest = data.reduce((a, b) =>
-            Math.abs(a.distance - d) < Math.abs(b.distance - d) ? a : b
-        );
+          const closest = data.reduce((a, b) =>
+              Math.abs(a.distance - d) < Math.abs(b.distance - d) ? a : b
+          );
 
-        map.getSource('elevation-source').setData(turf.point(closest.coord));
+          map.getSource('elevation-source').setData(turf.point(closest.coord));
 
-        markerLine
-            .attr("x1", x(closest.distance))
-            .attr("x2", x(closest.distance))
-            .attr("opacity", 1);
-      });
+          markerLine
+              .attr("x1", x(closest.distance))
+              .attr("x2", x(closest.distance))
+              .attr("opacity", 1);
+      }
+      // 登録
+      map.on('mousemove', vm.elevationMoveHandler);
 
       map.on('mouseout', () => {
         markerLine.attr("opacity", 0);
@@ -327,6 +327,26 @@ export default {
         }
       });
 
+    }
+
+  },
+  beforeUnmount() {
+    const map = this.$store.state.map01;
+    if (map && map.getSource('elevation-source')) {
+      map.getSource('elevation-source').setData({
+        type: "FeatureCollection",
+        features: []
+      });
+      // this.$store.state.elevationGeojson = {
+      //   type: "FeatureCollection",
+      //   features: []
+      // }
+    }
+    // --- MapLibreイベント削除 ---
+    if (map) {
+      if (this.elevationMoveHandler) {
+        map.off('mousemove', this.elevationMoveHandler);
+      }
     }
 
   }

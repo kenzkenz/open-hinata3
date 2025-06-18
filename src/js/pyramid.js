@@ -1954,40 +1954,6 @@ export function generateStartEndPointsFromGeoJSON(geojson) {
     map01.getSource('end-point-source').setData(pointGeoJSON);
 }
 
-
-// export function generateSegmentLabelGeoJSON(feature) {
-//     const map01 = store.state.map01
-//     const coords = feature.geometry.coordinates;
-//     const features = [];
-//
-//     for (let i = 0; i < coords.length - 1; i++) {
-//         const from = coords[i];
-//         const to = coords[i + 1];
-//         const segment = turf.lineString([from, to]);
-//
-//         const center = turf.midpoint(turf.point(from), turf.point(to));
-//         const dist = turf.length(segment, { units: 'kilometers' });
-//
-//         const distance = dist >= 1
-//             ? `約${dist.toFixed(2)}km`
-//             : `約${(dist * 1000).toFixed(0)}m`;
-//
-//         features.push({
-//             type: 'Feature',
-//             geometry: center.geometry,
-//             properties: {
-//                 distance: distance,
-//                 index: i + 1
-//             }
-//         });
-//     }
-//     const geojson = {
-//         type: 'FeatureCollection',
-//         features
-//     };
-//     map01.getSource('segment-label-source').setData(geojson);
-// }
-
 export function deleteAll () {
     if (!confirm("全て削除しますか？")) {
         return
