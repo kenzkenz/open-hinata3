@@ -731,16 +731,39 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <div id="right-top-div"
                @mouseenter="onPanelEnter"
                @mouseleave="onPanelLeave">
-            <span v-if="!isPrint">
-              <MiniTooltip text="現在地取得" :offset-x="0" :offset-y="-2">
-                <v-btn :size="isSmall ? 'small' : 'default'" icon @click="goToCurrentLocation" v-if="mapName === 'map01'"><v-icon>mdi-crosshairs-gps</v-icon></v-btn>
-              </MiniTooltip>
-              <MiniTooltip text="現在地連続取得" :offset-x="-25" :offset-y="86">
-                <v-btn :size="isSmall ? 'small' : 'default'" class="watch-position" :color="isTracking ? 'green' : undefined" icon @click="toggleWatchPosition" v-if="mapName === 'map01'"><v-icon>mdi-map-marker-radius</v-icon></v-btn>
-              </MiniTooltip>
-              <MiniTooltip text="共有" :offset-x="-25" :offset-y="145">
-                <v-btn :size="isSmall ? 'small' : 'default'" class="share" icon @click="share(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-share-variant</v-icon></v-btn>
-              </MiniTooltip>
+            <span v-if="!isPrint" style="position: relative">
+              <div v-if="isRightDiv">
+
+              <div v-for="btn in buttons0" :key="btn.key" style="margin-bottom:10px;">
+                <MiniTooltip :text="btn.text" :offset-x="0" :offset-y="2">
+                  <v-btn
+                      :icon="true"
+                      :color="btn.color"
+                      @click="btn.click"
+                      :style="btn.style"
+                      :size="isSmall ? 'small' : 'default'"
+                  >
+                    <template v-if="btn.icon">
+                      <v-icon>{{ btn.icon }}</v-icon>
+                    </template>
+                    <template v-else>
+                      <b>{{ btn.label }}</b>
+                    </template>
+                  </v-btn>
+                </MiniTooltip>
+              </div>
+              </div>
+
+
+
+<!--              <MiniTooltip text="現在地取得" :offset-x="0" :offset-y="-2" class="current-position" >-->
+<!--                <v-btn :size="isSmall ? 'small' : 'default'" icon @click="goToCurrentLocation" v-if="mapName === 'map01'"><v-icon>mdi-crosshairs-gps</v-icon></v-btn>-->
+<!--              </MiniTooltip>-->
+<!--              <MiniTooltip text="現在地連続取得" :offset-x="-25" :offset-y="86">-->
+<!--              </MiniTooltip>-->
+<!--              <MiniTooltip text="共有" :offset-x="-25" :offset-y="145">-->
+<!--                <v-btn :size="isSmall ? 'small' : 'default'" class="share" icon @click="share(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-share-variant</v-icon></v-btn>-->
+<!--              </MiniTooltip>-->
 <!--              <MiniTooltip text="計測" :offset-x="-25" :offset-y="206">-->
 <!--                <v-btn :size="isSmall ? 'small' : 'default'" class="draw" icon @click="draw" v-if="mapName === 'map01'"><v-icon>mdi-ruler-square</v-icon></v-btn>-->
 <!--              </MiniTooltip>-->
@@ -751,7 +774,16 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
                 <template v-slot:center>
                   <MiniTooltip text="ドロー" :offset-x="0" :offset-y="2">
-                    <v-btn :size="isSmall ? 'small' : 'default'" :color="s_isDraw ? 'green' : undefined" icon @click="toggleLDraw" v-if="mapName === 'map01'"><v-icon>mdi-pencil</v-icon></v-btn>
+                    <v-btn
+                        id="centerDrawBtn"
+                        :size="isSmall ? 'small' : 'default'"
+                        :color="s_isDraw ? 'green' : undefined"
+                        icon
+                        @click="toggleLDraw"
+                        v-if="mapName === 'map01'"
+                    >
+                      <v-icon>mdi-pencil</v-icon>
+                    </v-btn>
                   </MiniTooltip>
                 </template>
 
@@ -759,7 +791,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   <div v-if="mapName === 'map01'">
                     <div v-for="btn in buttons" :key="btn.key">
                       <MiniTooltip :text="btn.text" :offset-x="0" :offset-y="2">
-<!--                        :size="'small'"-->
                         <v-btn
                           :icon="true"
                           :color="btn.color"
@@ -778,10 +809,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   </div>
                 </template>
               </FanMenu>
-
-              <MiniTooltip text="印刷" :offset-x="-25" :offset-y="262">
-                <v-btn :size="isSmall ? 'small' : 'default'" class="printer" icon @click="handlePrint" v-if="mapName === 'map01'"><v-icon>mdi-printer</v-icon></v-btn>
-              </MiniTooltip>
 
             </span>
           </div>
@@ -1199,6 +1226,7 @@ export default {
     MiniTooltip
   },
   data: () => ({
+    isRightDiv: true,
     fanMenuOffsetX: -60,
     segments: 30,
     mainGeojson: { type: 'FeatureCollection', features: [] },
@@ -1291,7 +1319,9 @@ export default {
     drawerVisible: false,
     selectedFeature: null,
     showLayerDialog: false,
-    dialogForSaveDXF2: false
+    dialogForSaveDXF2: false,
+    buttons0: [],
+    buttons: [],
   }),
   computed: {
     ...mapState([
@@ -1300,24 +1330,6 @@ export default {
       'selectedPointFeature',
       'showChibanzuDrawer',
     ]),
-    buttons() {
-      const btns =
-      [
-        { key: 'point', text: '文字貼りつけ', label: '文字', color: this.s_isDrawPoint ? 'green' : 'blue', click: this.toggleDrawPoint },
-        { key: 'circle', text: '円', label: '円', color: this.s_isDrawCircle ? 'green' : 'blue', click: this.toggleDrawCircle },
-        { key: 'line', text: '線', label: '線', color: this.s_isDrawLine ? 'green' : 'blue', click: this.toggleLDrawLine },
-        { key: 'polygon', text: '多角形', label: '多角', color: this.s_isDrawPolygon ? 'green' : 'blue', click: this.toggleLDrawPolygon },
-        { key: 'free', text: '自由に描く', label: '自由', color: this.s_isDrawFree ? 'green' : 'blue', click: this.toggleLDrawFree},
-        { key: 'finish', text: 'スマホ、タブの時に使用', label: '確定', click: this.finishDrawing, style: 'background-color: orange!important' },
-        { key: 'edit', text: '編集', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
-        { key: 'undo', text: '元に戻す', label: '元戻', click: this.undo },
-        { key: 'redo', text: 'やり直す', label: 'やり直', click: this.redo, style: 'font-size: 12px' },
-        { key: 'dxf', text: 'DXFで出力', label: 'dxf', color: 'white', click: this.dialogForSaveDXFOpen },
-        { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
-      //   { key: 'test', text: 'test', icon: '', color: '', click: this.test }
-      ]
-      return btns
-    },
     s_popupDialog: {
       get() {
         return this.$store.state.popupDialog
@@ -2285,6 +2297,10 @@ export default {
       this.directionChange()
 
     },
+    drawClose () {
+      document.querySelector('#centerDrawBtn').click()
+      this.isRightDiv = true
+    },
     toggleLDraw ()  {
       this.s_isDraw = !this.s_isDraw
       if (!this.s_isDraw) {
@@ -2292,9 +2308,15 @@ export default {
         this.s_isDrawCircle = false
         this.s_isDrawLine = false
         this.s_isDrawPolygon = false
+        if (window.innerWidth < 500) {
+          this.isRightDiv = true
+        }
       } else {
         this.snackbarText = 'ドロー時は各種クリックが制限されます。'
         this.snackbar = true
+        if (window.innerWidth < 500) {
+          this.isRightDiv = false
+        }
       }
       document.querySelector('#draw-indicato-text').innerHTML = ''
       this.finishLine()
@@ -2776,7 +2798,8 @@ export default {
         this.showDrawUI = false
       }
     },
-    share(mapName) {
+    share() {
+      const mapName = 'map01'
       if (this.$store.state.dialogs.shareDialog[mapName].style.display === 'none') {
         this.$store.commit('incrDialogMaxZindex')
         this.$store.state.dialogs.shareDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
@@ -6291,8 +6314,58 @@ export default {
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
     console.log(/android/i.test(userAgent))
     this.$store.state.isAndroid = /android/i.test(userAgent);
-
     if (window.innerWidth < 500) this.$store.state.isUnder500 = true
+
+    this.buttons0 = [
+      {
+        key: 'currentPosition',
+        text: '現在地取得',
+        icon: 'mdi-crosshairs-gps',
+        click: this.goToCurrentLocation
+      },
+      {
+        key: 'watchPosition',
+        text: '現在地連続取得',
+        icon: 'mdi-map-marker-radius',
+        color: this.isTracking ? 'green' : 'primary',
+        click: this.toggleWatchPosition
+      },
+      {
+        key: 'share',
+        text: '共有',
+        icon: 'mdi-share-variant',
+        color: 'primary',
+        click: this.share
+      },
+      {
+        key: 'print',
+        text: '印刷',
+        icon: 'mdi-printer',
+        color: 'primary',
+        click: this.handlePrint
+      }
+    ]
+    let btns =
+        [
+          { key: 'point', text: '文字貼りつけ', label: '文字', color: this.s_isDrawPoint ? 'green' : 'blue', click: this.toggleDrawPoint },
+          { key: 'circle', text: '円', label: '円', color: this.s_isDrawCircle ? 'green' : 'blue', click: this.toggleDrawCircle },
+          { key: 'line', text: '線', label: '線', color: this.s_isDrawLine ? 'green' : 'blue', click: this.toggleLDrawLine },
+          { key: 'polygon', text: '多角形', label: '多角', color: this.s_isDrawPolygon ? 'green' : 'blue', click: this.toggleLDrawPolygon },
+          { key: 'free', text: '自由に描く', label: '自由', color: this.s_isDrawFree ? 'green' : 'blue', click: this.toggleLDrawFree},
+          { key: 'finish', text: 'スマホ、タブの時に使用', label: '確定', click: this.finishDrawing, style: 'background-color: orange!important;' },
+          { key: 'edit', text: '編集', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
+          { key: 'undo', text: '元に戻す', label: '元戻', click: this.undo },
+          { key: 'redo', text: 'やり直す', label: 'やり直', click: this.redo, style: 'font-size: 12px' },
+          { key: 'dxf', text: 'DXFで出力', label: 'dxf', color: 'white', click: this.dialogForSaveDXFOpen },
+          { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
+          { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
+        ]
+    if (window.innerWidth < 500) {
+      btns = btns.filter(btn => btn.key !== 'edit' && btn.key !== 'dxf' )
+    } else {
+      btns = btns.filter(btn => btn.key !== 'finish' && btn.key !== 'close')
+    }
+    this.buttons = btns
 
   },
   beforeUnmount() {
@@ -6301,7 +6374,7 @@ export default {
   mounted() {
     const vm = this
 
-    if (window.innerWidth < 500 ) this.fanMenuOffsetX = 0
+    if (window.innerWidth < 500 ) this.fanMenuOffsetX = -50
 
     window.addEventListener('mousemove', this.onMouseMove)
 
@@ -6560,10 +6633,15 @@ export default {
       -1px  1px 0 #ffffff,
       1px  1px 0 #ffffff;
 }
+.current-position {
+  position: absolute;
+  top: 0px;
+  left: -50px;
+}
 .watch-position {
   position: absolute;
   top: 60px;
-  left: 0;
+  left: 0px;
 }
 .zoom-in {
   position: absolute;
@@ -6579,7 +6657,7 @@ export default {
   position: absolute;
   /*top: 240px;*/
   top: 120px;
-  left: 0;
+  left: -50px;
 }
 .share-x {
   position: absolute;
@@ -6605,14 +6683,14 @@ export default {
 }
 .draw-fan {
   position: absolute;
-  top: 180px;
-  left: 0;
+  top: 255px;
+  left: 0px;
 }
-/*@media (max-width: 720px) {*/
-/*  .draw-fan {*/
-/*    top: 197px;*/
-/*  }*/
-/*}*/
+@media (max-width: 720px) {
+  .draw-fan {
+    top: 0px;
+  }
+}
 .printer {
   position: absolute;
   top: 240px;
