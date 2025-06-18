@@ -1341,29 +1341,11 @@ export default {
         { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
         { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
       ]
-      if (window.innerWidth < 500) {
+      if (window.innerWidth < 1000) {
         btns = btns.filter(btn => btn.key !== 'edit' && btn.key !== 'dxf' )
       } else {
         btns = btns.filter(btn => btn.key !== 'finish' && btn.key !== 'close')
       }
-      return btns
-    },
-    buttonsMini() {
-      const btns =
-          [
-            { key: 'point', text: '文字貼りつけ', label: '文字', color: this.s_isDrawPoint ? 'green' : 'blue', click: this.toggleDrawPoint },
-            { key: 'circle', text: '円', label: '円', color: this.s_isDrawCircle ? 'green' : 'blue', click: this.toggleDrawCircle },
-            { key: 'line', text: '線', label: '線', color: this.s_isDrawLine ? 'green' : 'blue', click: this.toggleLDrawLine },
-            { key: 'polygon', text: '多角形', label: '多角', color: this.s_isDrawPolygon ? 'green' : 'blue', click: this.toggleLDrawPolygon },
-            { key: 'free', text: '自由に描く', label: '自由', color: this.s_isDrawFree ? 'green' : 'blue', click: this.toggleLDrawFree},
-            { key: 'finish', text: 'スマホ、タブの時に使用', label: '確定', click: this.finishDrawing, style: 'background-color: orange!important;' },
-            { key: 'edit', text: '編集', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
-            { key: 'undo', text: '元に戻す', label: '元戻', click: this.undo },
-            { key: 'redo', text: 'やり直す', label: 'やり直', click: this.redo, style: 'font-size: 12px' },
-            { key: 'dxf', text: 'DXFで出力', label: 'dxf', color: 'white', click: this.dialogForSaveDXFOpen },
-            { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
-            { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
-          ]
       return btns
     },
     s_popupDialog: {

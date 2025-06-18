@@ -1266,7 +1266,7 @@ export default {
         // const dxfText = params.get('dxftext')
         const gpxText = params.get('gpxtext')
         const vector0 = params.get('vector')
-
+        const clickCirclegeojsontext = params.get('clickCirclegeojsontext')
         map.jumpTo({
           center: [lng, lat],
           zoom: zoom
@@ -1396,6 +1396,7 @@ export default {
 
         if (geojsonText) vm.$store.state.geojsonText = geojsonText
         if (gpxText) vm.$store.state.gpxText = gpxText
+        if (clickCirclegeojsontext) vm.$store.state.clickCircleGeojsonText = clickCirclegeojsontext
 
         const slj0 = JSON.parse(params.get('slj'))
         const mapNames = ['map01', 'map02']
