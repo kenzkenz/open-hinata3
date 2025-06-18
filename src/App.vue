@@ -1306,6 +1306,9 @@ export default {
     dialogForSaveDXF2: false,
     // buttons0: [],
     // buttons: [],
+    // -----------------------------------------
+    uploadedImageUrl: null,
+    showFloatingImage: false
   }),
   computed: {
     ...mapState([
