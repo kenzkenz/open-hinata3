@@ -1928,6 +1928,12 @@ export default {
             .setLngLat(gcp.mapCoord)
             .addTo(map);
 
+        marker.on('dragend', () => {
+          const lngLat = marker.getLngLat();
+          gcp.mapCoord = [lngLat.lng, lngLat.lat];  // 🔥 GCPを更新！
+          console.log('新しい座標:', lngLat);
+        });
+
         this.mapCoordMarkers.push(marker);
       });
     },
