@@ -702,11 +702,13 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   @click="onImageClick"
               />
               <!-- マーカー -->
+
               <div
                   v-for="item in gcpWithImageCoord"
                   :key="'image-marker-' + item.index"
                   class="image-marker"
                   :style="getImageMarkerStyle(item.gcp.imageCoord)"
+                  @mousedown="startDragging($event, item.index)"
               >
                 {{ item.index + 1 }}
               </div>
@@ -1893,6 +1895,33 @@ export default {
     },
   },
   methods: {
+    startDragging(event, index) {
+      const imgBox = event.target.closest('.floating-image-panel');
+      if (!imgBox) return;
+
+      const onMouseMove = (e) => {
+        const rect = imgBox.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        this.gcpList[index].imageCoord = [x, y];
+
+        // 👇 ここでログ出す（ドラッグ中リアルタイム）
+        console.log(`GCP[${index}].imageCoord = [${x.toFixed(1)}, ${y.toFixed(1)}]`);
+      };
+
+      const onMouseUp = () => {
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+
+        const [x, y] = this.gcpList[index].imageCoord;
+        // 👇 ドラッグ終了後に最終位置をログ出す
+        console.log(`GCP[${index}] ドラッグ完了 → [${x.toFixed(1)}, ${y.toFixed(1)}]`);
+      };
+
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    },
     updateMapMarkers() {
       const map = this.$store.state.map01;
 
@@ -7577,6 +7606,20 @@ select {
   }
 }
 
+/*.image-marker {*/
+/*  position: absolute;*/
+/*  background: red;*/
+/*  color: white;*/
+/*  border-radius: 50%;*/
+/*  width: 20px;*/
+/*  height: 20px;*/
+/*  text-align: center;*/
+/*  line-height: 20px;*/
+/*  font-size: 12px;*/
+/*  pointer-events: none;*/
+/*  box-shadow: 0 0 2px rgba(0,0,0,0.6);*/
+/*  z-index: 9999;*/
+/*}*/
 .image-marker {
   position: absolute;
   background: red;
@@ -7587,9 +7630,9 @@ select {
   text-align: center;
   line-height: 20px;
   font-size: 12px;
-  pointer-events: none;
-  box-shadow: 0 0 2px rgba(0,0,0,0.6);
-  z-index: 9999;
+  font-weight: bold;
+  cursor: move;
+  z-index: 999;
 }
 
 
