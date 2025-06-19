@@ -680,9 +680,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
 
 
-
-
-
           <div
               v-if="showFloatingImage && mapName === 'map01'"
               class="floating-image-panel"
@@ -691,13 +688,13 @@ import SakuraEffect from './components/SakuraEffect.vue';
               top: 60px;
               left: 60px;
               z-index: 10;
-              background: #ffffff; /* ← ✅ 白背景 */
+              background: #ffffff;
               border: 1px solid #ccc;
               padding: 4px;
               border-radius: 8px;
               pointer-events: auto;"
           >
-            <div style="position: relative; display: inline-block;">
+            <div style="position: relative; display: inline-block; pointer-events: auto;">
               <!-- 画像 -->
               <img
                   id="warp-image"
@@ -705,12 +702,16 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   ref="floatingImage"
                   @load="onImageLoad"
                   :src="uploadedImageUrl"
-                  style="max-width: 50vw; max-height: 50vh; opacity: 0.9; display: block;"
+                  :style="{ maxWidth: '50vw', maxHeight: '50vh', opacity: showOriginal ? 0.9 : 0, display: 'block' }"
                   @click="onImageClick"
               />
               <!-- 上：仮ワープした画像を描くCanvas -->
-<!--              <canvas ref="warpCanvas" class="warp-canvas"></canvas>-->
-              <canvas ref="warpCanvas" id="warp-canvas"></canvas>
+              <canvas
+                  ref="warpCanvas"
+                  id="warp-canvas"
+                  :style="{ maxWidth: '50vw', maxHeight: '50vh', opacity: showWarpCanvas ? 1 : 0, position: 'absolute', top: 0, left: 0 }"
+                  @click="onImageClick"
+              ></canvas>
 
               <!-- マーカー -->
               <div
@@ -719,6 +720,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   class="image-marker"
                   :style="getImageMarkerStyle(item.gcp.imageCoord)"
                   @mousedown="startDragging($event, item.index)"
+                  style="pointer-events: auto;"
               >
                 {{ item.index + 1 }}
               </div>
@@ -729,7 +731,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <table style="font-size: 13px; width: 100%; border-collapse: collapse;">
                 <thead>
                 <tr :style="{ background: primaryColor, color: 'white' }">
-                <th style="padding: 6px;">#</th>
+                  <th style="padding: 6px;">#</th>
                   <th style="padding: 6px;">画像X</th>
                   <th style="padding: 6px;">画像Y</th>
                   <th style="padding: 6px;">経度Lng</th>
@@ -786,14 +788,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <v-btn class="tiny-btn" style="margin-left: 5px;" small color="primary" @click="loadGcpFromLocal">GCP復元</v-btn>
               <v-btn
                   style="margin-left: 5px;"
-                    v-if="gcpList.filter(gcp =>
-    gcp.imageCoord?.length === 2 &&
-    gcp.mapCoord?.length === 2 &&
-    typeof gcp.imageCoord[0] === 'number' &&
-    typeof gcp.imageCoord[1] === 'number' &&
-    typeof gcp.mapCoord[0] === 'number' &&
-    typeof gcp.mapCoord[1] === 'number'
-  ).length >= 4"
+                  v-if="gcpList.filter(gcp =>
+                    gcp.imageCoord?.length === 2 &&
+                    gcp.mapCoord?.length === 2 &&
+                    typeof gcp.imageCoord[0] === 'number' &&
+                    typeof gcp.imageCoord[1] === 'number' &&
+                    typeof gcp.mapCoord[0] === 'number' &&
+                    typeof gcp.mapCoord[1] === 'number'
+                  ).length >= 4"
                   class="tiny-btn"
                   small
                   color="primary"
@@ -811,7 +813,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
               >
                 クリア
               </v-btn>
-
             </div>
           </div>
 
