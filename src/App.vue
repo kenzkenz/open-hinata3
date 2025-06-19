@@ -1946,6 +1946,9 @@ export default {
       };
     },
     onMapClick(e) {
+      if (!this.gcpList.length) {
+        return;
+      }
       const last = this.gcpList.find(gcp => gcp.mapCoord === null);
       if (!last) {
         alert("先に画像側で対応点をクリックしてください");
