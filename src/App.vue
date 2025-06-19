@@ -2078,9 +2078,6 @@ export default {
           }
           console.log('Image size:', src.cols, src.rows);
 
-          canvas.width = src.cols;
-          canvas.height = src.rows;
-
           if (this.gcpList.length < 4) {
             console.warn('GCPが4点以上必要です');
             return;
@@ -2092,14 +2089,22 @@ export default {
           console.log('From points:', from);
           console.log('To points:', to);
 
-          const isValidCoord = (coord, width, height) =>
-              coord[0] >= 0 && coord[0] < width && coord[1] >= 0 && coord[1] < height;
+          const minX = Math.min(...to.map(p => p[0]));
+          const maxX = Math.max(...to.map(p => p[0]));
+          const minY = Math.min(...to.map(p => p[1]));
+          const maxY = Math.max(...to.map(p => p[1]));
 
-          if (!from.every(coord => isValidCoord(coord, src.cols, src.rows)) ||
-              !to.every(coord => isValidCoord(coord, src.cols, src.rows))) {
-            console.error('Invalid coordinates for transformation:', { from, to });
-            return;
-          }
+          const scaleX = src.cols / (maxX - minX);
+          const scaleY = src.rows / (maxY - minY);
+          const scaledTo = to.map(p => [
+            (p[0] - minX) * scaleX,
+            (p[1] - minY) * scaleY
+          ]);
+          console.log('Scaled To points:', scaledTo);
+
+          canvas.width = src.cols; // 580
+          canvas.height = src.rows; // 506
+          const size = new window.cv.Size(src.cols, src.rows);
 
           try {
             const dst = new window.cv.Mat();
@@ -2110,10 +2115,10 @@ export default {
               from[3][0], from[3][1]
             ].map(Number));
             const dstQuad = window.cv.matFromArray(4, 1, window.cv.CV_32FC2, [
-              to[0][0], to[0][1],
-              to[1][0], to[1][1],
-              to[2][0], to[2][1],
-              to[3][0], to[3][1]
+              scaledTo[0][0], scaledTo[0][1],
+              scaledTo[1][0], scaledTo[1][1],
+              scaledTo[2][0], scaledTo[2][1],
+              scaledTo[3][0], scaledTo[3][1]
             ].map(Number));
 
             const warpMat = window.cv.getPerspectiveTransform(srcQuad, dstQuad);
@@ -2126,7 +2131,6 @@ export default {
               return;
             }
 
-            const size = new window.cv.Size(src.cols, src.rows);
             window.cv.warpPerspective(src, dst, warpMat, size, window.cv.INTER_LINEAR, window.cv.BORDER_CONSTANT, new window.cv.Scalar());
 
             if (dst.empty()) {
@@ -2148,6 +2152,101 @@ export default {
         });
       });
     },
+    // previewAffineWarp() {
+    //   this.$nextTick(() => {
+    //     ensureOpenCvReady(() => {
+    //       const canvas = document.getElementById('warp-canvas');
+    //       const map = this.$store.state.map01;
+    //       const img = document.getElementById('warp-image');
+    //
+    //       if (!canvas || !img || !map || typeof window.cv === 'undefined') {
+    //         console.warn('必要な要素またはOpenCVが読み込まれていません');
+    //         return;
+    //       }
+    //
+    //       if (!img.complete) {
+    //         img.onload = () => this.previewAffineWarp();
+    //         return;
+    //       }
+    //
+    //       const src = window.cv.imread('warp-image');
+    //       if (src.empty() || src.cols === 0 || src.rows === 0) {
+    //         console.error('Failed to load image into Mat');
+    //         src.delete();
+    //         return;
+    //       }
+    //       console.log('Image size:', src.cols, src.rows);
+    //
+    //       canvas.width = src.cols;
+    //       canvas.height = src.rows;
+    //
+    //       if (this.gcpList.length < 4) {
+    //         console.warn('GCPが4点以上必要です');
+    //         return;
+    //       }
+    //
+    //       const from = this.gcpList.slice(0, 4).map(gcp => gcp.imageCoord);
+    //       const to = this.gcpList.slice(0, 4).map(gcp => convertLngLatToImageXY(gcp.mapCoord, map, img));
+    //
+    //       console.log('From points:', from);
+    //       console.log('To points:', to);
+    //
+    //       const isValidCoord = (coord, width, height) =>
+    //           coord[0] >= 0 && coord[0] < width && coord[1] >= 0 && coord[1] < height;
+    //
+    //       if (!from.every(coord => isValidCoord(coord, src.cols, src.rows)) ||
+    //           !to.every(coord => isValidCoord(coord, src.cols, src.rows))) {
+    //         console.error('Invalid coordinates for transformation:', { from, to });
+    //         return;
+    //       }
+    //
+    //       try {
+    //         const dst = new window.cv.Mat();
+    //         const srcQuad = window.cv.matFromArray(4, 1, window.cv.CV_32FC2, [
+    //           from[0][0], from[0][1],
+    //           from[1][0], from[1][1],
+    //           from[2][0], from[2][1],
+    //           from[3][0], from[3][1]
+    //         ].map(Number));
+    //         const dstQuad = window.cv.matFromArray(4, 1, window.cv.CV_32FC2, [
+    //           to[0][0], to[0][1],
+    //           to[1][0], to[1][1],
+    //           to[2][0], to[2][1],
+    //           to[3][0], to[3][1]
+    //         ].map(Number));
+    //
+    //         const warpMat = window.cv.getPerspectiveTransform(srcQuad, dstQuad);
+    //         if (warpMat.empty()) {
+    //           console.error('Invalid transformation matrix');
+    //           srcQuad.delete();
+    //           dstQuad.delete();
+    //           src.delete();
+    //           dst.delete();
+    //           return;
+    //         }
+    //
+    //         const size = new window.cv.Size(src.cols, src.rows);
+    //         window.cv.warpPerspective(src, dst, warpMat, size, window.cv.INTER_LINEAR, window.cv.BORDER_CONSTANT, new window.cv.Scalar());
+    //
+    //         if (dst.empty()) {
+    //           console.error('Transformation failed, output Mat is empty');
+    //         } else {
+    //           window.cv.imshow('warp-canvas', dst);
+    //           console.log('Transformation applied');
+    //         }
+    //
+    //         src.delete();
+    //         dst.delete();
+    //         srcQuad.delete();
+    //         dstQuad.delete();
+    //         warpMat.delete();
+    //         this.showWarpCanvas = true;
+    //       } catch (e) {
+    //         console.error('OpenCV処理中にエラーが発生しました:', e);
+    //       }
+    //     });
+    //   });
+    // },
     clearWarpCanvas() {
       const canvas = document.querySelector('#warp-canvas');
       if (!canvas) return;
