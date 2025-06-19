@@ -702,7 +702,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   @click="onImageClick"
               />
               <!-- 上：仮ワープした画像を描くCanvas -->
-              <canvas ref="warpCanvas" class="warp-canvas"></canvas>
+<!--              <canvas ref="warpCanvas" class="warp-canvas"></canvas>-->
+              <canvas ref="warpCanvas" class="warp-canvas" width="100" height="100"></canvas>
+
               <!-- マーカー -->
               <div
                   v-for="item in gcpWithImageCoord"
@@ -775,7 +777,25 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <v-btn class="tiny-btn" style="margin-left: 5px;" small color="primary" @click="resetGcp">GCPリセット</v-btn>
               <v-btn class="tiny-btn" style="margin-left: 5px;" small color="primary" @click="saveGcpToLocal">GCP保存</v-btn>
               <v-btn class="tiny-btn" style="margin-left: 5px;" small color="primary" @click="loadGcpFromLocal">GCP復元</v-btn>
-              <v-btn v-if="gcpList.length === 3" class="tiny-btn" style="margin-left: 5px;" small color="primary" @click="previewAffineWarp">位置合わせプレビュー	</v-btn>
+              <v-btn
+                  style="margin-left: 5px;"
+                  v-if="gcpList.filter(gcp =>
+                    gcp.imageCoord?.length === 2 &&
+                    gcp.mapCoord?.length === 2 &&
+                    typeof gcp.imageCoord[0] === 'number' &&
+                    typeof gcp.imageCoord[1] === 'number' &&
+                    typeof gcp.mapCoord[0] === 'number' &&
+                    typeof gcp.mapCoord[1] === 'number'
+                  ).length === 3"
+                  class="tiny-btn"
+                  small
+                  color="primary"
+                  @click="previewAffineWarp"
+              >
+                位置合わせプレビュー
+              </v-btn>
+              <v-btn v-if="showWarpCanvas" class="tiny-btn" style="margin-left: 5px;" small color="grey" @click="clearWarpCanvas"></v-btn>
+
             </div>
           </div>
 
@@ -1293,6 +1313,7 @@ import FanMenu from '@/components/FanMenu'
 // import store from "@/store";
 import html2canvas from 'html2canvas'
 import debounce from 'lodash/debounce'
+import * as math from 'mathjs'
 import {feature} from "@turf/turf";
 import {forEach} from "lodash";
 
@@ -1414,8 +1435,8 @@ export default {
     gcpList: [],  // ← GCP座標リスト
     mapCoordMarkers: [], // 地図上に置いたマーカー一覧
     hoveredRow: null,
-    primaryColor: '#1976d2'  // ← OH3 の Vuetify デフォルト blue（変更OK）
-
+    primaryColor: '#1976d2',
+    showWarpCanvas: false,
   }),
   computed: {
     ...mapState([
@@ -1956,55 +1977,102 @@ export default {
   },
   methods: {
     previewAffineWarp() {
-      if (this.gcpList.length !== 3) {
-        console.warn("GCPはちょうど3点必要です");
-        return;
-      }
-
-      const img = this.$refs.floatingImage;
-      const canvas = this.$refs.warpCanvas;
-      const ctx = canvas.getContext("2d");
-
-      // 画像サイズに合わせてキャンバスサイズを調整
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      canvas.style.width = img.clientWidth + "px";
-      canvas.style.height = img.clientHeight + "px";
-      canvas.style.position = "absolute";
-      canvas.style.top = 0;
-      canvas.style.left = 0;
-      canvas.style.pointerEvents = "none"; // マウスイベント貫通
-
-      // 元画像の3点 (画像内座標)
-      const src = this.gcpList.map(g => g.imageCoord);
-      // 目標の3点 (地図座標→画像内ピクセルへ変換すべきだが今回は仮で同一スケールでOKとする)
-      const dst = this.gcpList.map(g => {
-        const lngLat = g.mapCoord;
-        // 地図上の位置を、画像サイズと同スケール前提で仮想的に変換（簡易処理）
-        return [lngLat[0], lngLat[1]]; // 今は仮ワープのため視覚的確認のみ
-      });
-
-      // アフィン変換行列を求める（3点で一意に定まる）
-      function computeAffineTransform(src, dst) {
-        const matrix = [];
-        for (let i = 0; i < 3; i++) {
-          const [x, y] = src[i];
-          matrix.push([x, y, 1, 0, 0, 0]);
-          matrix.push([0, 0, 0, x, y, 1]);
+      this.$nextTick(() => {
+        // const canvas = this.$refs.warpCanvas;
+        const canvas = document.querySelector('.warp-canvas')
+        if (!canvas || !canvas.getContext) {
+          console.warn('Canvas が取得できません');
+          return;
         }
-        const A = math.matrix(matrix);
-        const b = math.matrix([dst[0][0], dst[0][1], dst[1][0], dst[1][1], dst[2][0], dst[2][1]]);
-        const T = math.lusolve(A, b).map(e => e[0]); // [a, b, c, d, e, f]
-        return T;
+        console.warn('Canvas が取得できました！');
+
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'rgba(0, 128, 255, 0.4)';
+        ctx.fillRect(10, 10, 100, 100);
+      });
+    },
+    // async previewAffineWarp() {
+    //   if (this.gcpList.length !== 3) {
+    //     alert('GCPは3点必要です');
+    //     return;
+    //   }
+    //   const gcp = this.gcpList;
+    //   // 画像座標: [x, y]
+    //   const src = gcp.map(g => g.imageCoord);
+    //   // 地図座標: [lng, lat] → キャンバス上では [x, y] として使う
+    //   const dst = gcp.map(g => g.mapCoord);
+    //
+    //   if (src.some(p => !p) || dst.some(p => !p)) {
+    //     alert('すべてのGCPに画像・地図の座標を設定してください');
+    //     return;
+    //   }
+    //
+    //   // 行列A * coeffs = B を作る
+    //   const A = [];
+    //   const bx = [];
+    //   const by = [];
+    //
+    //   for (let i = 0; i < 3; i++) {
+    //     const [x, y] = src[i];
+    //     A.push([x, y, 1]);
+    //     bx.push(dst[i][0]); // 地図lng → 仮warp先x
+    //     by.push(dst[i][1]); // 地図lat → 仮warp先y
+    //   }
+    //
+    //   // 解く（affine行列の各行）
+    //   const affineX = math.lusolve(A, bx).map(x => x[0]); // [a, b, c]
+    //   const affineY = math.lusolve(A, by).map(x => x[0]); // [d, e, f]
+    //
+    //   // Canvas 準備
+    //   const img = this.$refs.floatingImage;
+    //   const canvas = this.$refs.warpCanvas;
+    //   const ctx = canvas.getContext('2d');
+    //
+    //   canvas.width = img.naturalWidth;
+    //   canvas.height = img.naturalHeight;
+    //   canvas.style.position = 'absolute';
+    //   canvas.style.left = '0';
+    //   canvas.style.top = '0';
+    //   canvas.style.pointerEvents = 'none'; // マーカーと競合しない
+    //
+    //   // 画像をメモリに描画（仮オフスクリーン）
+    //   const off = document.createElement('canvas');
+    //   off.width = img.naturalWidth;
+    //   off.height = img.naturalHeight;
+    //   const offCtx = off.getContext('2d');
+    //   offCtx.drawImage(img, 0, 0);
+    //
+    //   const srcImgData = offCtx.getImageData(0, 0, off.width, off.height);
+    //   const dstImgData = ctx.createImageData(canvas.width, canvas.height);
+    //
+    //   // 1pxごとに変換（簡略化のため nearest-neighbor）
+    //   for (let y = 0; y < canvas.height; y++) {
+    //     for (let x = 0; x < canvas.width; x++) {
+    //       const tx = affineX[0] * x + affineX[1] * y + affineX[2];
+    //       const ty = affineY[0] * x + affineY[1] * y + affineY[2];
+    //
+    //       const sx = Math.round(tx);
+    //       const sy = Math.round(ty);
+    //
+    //       if (sx >= 0 && sx < off.width && sy >= 0 && sy < off.height) {
+    //         const srcIdx = (sy * off.width + sx) * 4;
+    //         const dstIdx = (y * canvas.width + x) * 4;
+    //         dstImgData.data.set(srcImgData.data.slice(srcIdx, srcIdx + 4), dstIdx);
+    //       }
+    //     }
+    //   }
+    //
+    //   ctx.putImageData(dstImgData, 0, 0);
+    //   this.showWarpCanvas = true;
+    // },
+    clearWarpCanvas() {
+      const canvas = this.$refs.warpCanvas?.value;  // ✅ ここに .value をつける
+      const ctx = canvas?.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
-
-      const [a, b, c, d, e, f] = computeAffineTransform(src, dst);
-
-      // 描画（Canvasにアフィン変換を適用）
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.setTransform(a, d, b, e, c, f); // 注意：setTransform(a, b, c, d, e, f)
-      ctx.drawImage(img, 0, 0);
-      ctx.setTransform(1, 0, 0, 1, 0, 0); // リセット
+      this.showWarpCanvas = false;
     },
     removeFloatingImage() {
       if (!confirm('本当に画像とGCPをすべて削除しますか？')) return;
