@@ -681,6 +681,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
 
 
+
+
           <div
               v-if="showFloatingImage && mapName === 'map01'"
               class="floating-image-panel"
@@ -701,6 +703,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   id="warp-image"
                   class="floating-image"
                   ref="floatingImage"
+                  @load="onImageLoad"
                   :src="uploadedImageUrl"
                   style="max-width: 50vw; max-height: 50vh; opacity: 0.9; display: block;"
                   @click="onImageClick"
@@ -804,7 +807,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   style="margin-left: 5px;"
                   small
                   color="grey"
-                  @click="clearWarpCanvas"
+                  @click="clearWarp"
               >
                 クリア
               </v-btn>
@@ -2056,7 +2059,13 @@ export default {
     },
   },
   methods: {
+    onImageLoad() {
+      this.imageLoaded = true;
+      console.log('Image loaded');
+    },
     previewAffineWarp() {
+      this.showOriginal = false;
+      this.showWarpCanvas = true;
       this.$nextTick(() => {
         ensureOpenCvReady(() => {
           const canvas = document.getElementById('warp-canvas');
@@ -2105,8 +2114,8 @@ export default {
           ]);
           console.log('Scaled To points:', scaledTo);
 
-          canvas.width = src.cols; // 580
-          canvas.height = src.rows; // 506
+          canvas.width = src.cols;
+          canvas.height = src.rows;
           const size = new window.cv.Size(src.cols, src.rows);
 
           try {
@@ -2141,6 +2150,8 @@ export default {
             } else {
               window.cv.imshow('warp-canvas', dst);
               console.log('Transformation applied');
+              this.showOriginal = false; // 変換前を非表示
+              this.showWarpCanvas = true; // 変換後を表示
             }
 
             src.delete();
@@ -2148,12 +2159,23 @@ export default {
             srcQuad.delete();
             dstQuad.delete();
             warpMat.delete();
-            this.showWarpCanvas = true;
           } catch (e) {
             console.error('OpenCV処理中にエラーが発生しました:', e);
           }
         });
       });
+    },
+    clearWarp() {
+      this.showOriginal = true;
+      this.showWarpCanvas = false;
+      const canvas = document.getElementById('warp-canvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // キャンバスをクリア
+      }
+      this.showOriginal = true; // 変換前を表示
+      this.showWarpCanvas = false; // 変換後を非表示
+      this.showWarpCanvas = false;
     },
     // previewAffineWarp() {
     //   this.$nextTick(() => {
@@ -2180,9 +2202,6 @@ export default {
     //       }
     //       console.log('Image size:', src.cols, src.rows);
     //
-    //       canvas.width = src.cols;
-    //       canvas.height = src.rows;
-    //
     //       if (this.gcpList.length < 4) {
     //         console.warn('GCPが4点以上必要です');
     //         return;
@@ -2194,14 +2213,22 @@ export default {
     //       console.log('From points:', from);
     //       console.log('To points:', to);
     //
-    //       const isValidCoord = (coord, width, height) =>
-    //           coord[0] >= 0 && coord[0] < width && coord[1] >= 0 && coord[1] < height;
+    //       const minX = Math.min(...to.map(p => p[0]));
+    //       const maxX = Math.max(...to.map(p => p[0]));
+    //       const minY = Math.min(...to.map(p => p[1]));
+    //       const maxY = Math.max(...to.map(p => p[1]));
     //
-    //       if (!from.every(coord => isValidCoord(coord, src.cols, src.rows)) ||
-    //           !to.every(coord => isValidCoord(coord, src.cols, src.rows))) {
-    //         console.error('Invalid coordinates for transformation:', { from, to });
-    //         return;
-    //       }
+    //       const scaleX = src.cols / (maxX - minX);
+    //       const scaleY = src.rows / (maxY - minY);
+    //       const scaledTo = to.map(p => [
+    //         (p[0] - minX) * scaleX,
+    //         (p[1] - minY) * scaleY
+    //       ]);
+    //       console.log('Scaled To points:', scaledTo);
+    //
+    //       canvas.width = src.cols; // 580
+    //       canvas.height = src.rows; // 506
+    //       const size = new window.cv.Size(src.cols, src.rows);
     //
     //       try {
     //         const dst = new window.cv.Mat();
@@ -2212,10 +2239,10 @@ export default {
     //           from[3][0], from[3][1]
     //         ].map(Number));
     //         const dstQuad = window.cv.matFromArray(4, 1, window.cv.CV_32FC2, [
-    //           to[0][0], to[0][1],
-    //           to[1][0], to[1][1],
-    //           to[2][0], to[2][1],
-    //           to[3][0], to[3][1]
+    //           scaledTo[0][0], scaledTo[0][1],
+    //           scaledTo[1][0], scaledTo[1][1],
+    //           scaledTo[2][0], scaledTo[2][1],
+    //           scaledTo[3][0], scaledTo[3][1]
     //         ].map(Number));
     //
     //         const warpMat = window.cv.getPerspectiveTransform(srcQuad, dstQuad);
@@ -2228,7 +2255,6 @@ export default {
     //           return;
     //         }
     //
-    //         const size = new window.cv.Size(src.cols, src.rows);
     //         window.cv.warpPerspective(src, dst, warpMat, size, window.cv.INTER_LINEAR, window.cv.BORDER_CONSTANT, new window.cv.Scalar());
     //
     //         if (dst.empty()) {
@@ -2250,15 +2276,15 @@ export default {
     //     });
     //   });
     // },
-    clearWarpCanvas() {
-      const canvas = document.querySelector('#warp-canvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-      }
-      this.showWarpCanvas = false;
-    },
+    // clearWarpCanvas() {
+    //   const canvas = document.querySelector('#warp-canvas');
+    //   if (!canvas) return;
+    //   const ctx = canvas.getContext('2d');
+    //   if (ctx) {
+    //     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    //   }
+    //   this.showWarpCanvas = false;
+    // },
     removeFloatingImage() {
       if (!confirm('本当に画像とGCPをすべて削除しますか？')) return;
 
