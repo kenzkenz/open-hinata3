@@ -2118,6 +2118,44 @@ export default {
 
 
     },
+    generateWorldFile() {
+      // GCPデータからワールドファイルを生成
+      if (this.gcpList.length < 4) {
+        console.warn('GCPが4点以上必要です');
+        return null;
+      }
+
+      // 最初の4点を基準に計算
+      const gcpImageCoords = this.gcpList.slice(0, 4).map(gcp => gcp.imageCoord);
+      const gcpMapCoords = this.gcpList.slice(0, 4).map(gcp => gcp.mapCoord);
+
+      // 画像サイズ (canvasから取得)
+      const canvas = this.$refs.warpCanvas;
+      const width = canvas.width;
+      const height = canvas.height;
+
+      // ピクセルサイズの推定 (簡易的なアフィン変換近似)
+      const dx = gcpMapCoords[1][0] - gcpMapCoords[0][0]; // X方向の差分
+      const dy = gcpMapCoords[2][1] - gcpMapCoords[0][1]; // Y方向の差分
+      const pixelSizeX = dx / (gcpImageCoords[1][0] - gcpImageCoords[0][0]) || 0.0001; // デフォルト値
+      const pixelSizeY = dy / (gcpImageCoords[2][1] - gcpImageCoords[0][1]) || -0.0001; // 負値でY軸反転
+
+      // 左下の地理座標 (最初のGCPを基準に調整)
+      const xOrigin = gcpMapCoords[0][0] - (gcpImageCoords[0][0] * pixelSizeX);
+      const yOrigin = gcpMapCoords[0][1] - (height - gcpImageCoords[0][1]) * pixelSizeY;
+
+      // ワールドファイルの内容を文字列で生成
+      const worldFileContent = `
+      ${pixelSizeX.toFixed(10)}
+      0.0000000000
+      0.0000000000
+      ${pixelSizeY.toFixed(10)}
+      ${xOrigin.toFixed(10)}
+      ${yOrigin.toFixed(10)}
+      `.trim();
+
+      return worldFileContent;
+    },
     previewAffineWarp() {
       this.showOriginal = false;
       this.showWarpCanvas = true;

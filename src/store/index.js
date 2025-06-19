@@ -425,6 +425,9 @@ export default createStore({
   getters: {
   },
   mutations: {
+    setTiffAndWorldFile(state, files) {
+      state.tiffAndWorldFile = files;
+    },
     setCurrentGroupLayers(state, layers) {
       state.currentGroupLayers = layers;
     },
