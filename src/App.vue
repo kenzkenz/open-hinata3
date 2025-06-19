@@ -2111,24 +2111,65 @@ export default {
       console.log('Image loaded');
     },
     openTileUploadDialog() {
+      // ダイアログを開く前に変換後の画像とワールドファイルをstoreに保存
+      if (this.showWarpCanvas) {
+        const canvas = document.querySelector("#warp-canvas");
+        if (!canvas || !canvas.toBlob) {
+          console.error('Canvas or toBlob is not available. Canvas:', canvas);
+          return;
+        }
+
+        // キャンバスの準備を確認
+        if (canvas.width === 0 || canvas.height === 0) {
+          console.error('Canvas dimensions are invalid:', { width: canvas.width, height: canvas.height });
+          return;
+        }
+
+        canvas.toBlob(blob => {
+          if (!blob) {
+            console.error('Failed to create blob from canvas');
+            return;
+          }
+          const convertedImage = new File([blob], `${this.gazoNameFromStore}_converted.png`, { type: 'image/png' });
+          const worldFileContent = this.generateWorldFile();
+          if (!worldFileContent) {
+            console.error('World file generation failed');
+            return;
+          }
+          const worldFile = new Blob([worldFileContent], { type: 'text/plain' });
+
+          // storeに保存
+          this.$store.commit('setTiffAndWorldFile', [convertedImage, worldFile]);
+
+          // ワールドファイルの内容をコンソールログで表示
+          console.log('World File Content:', worldFileContent);
+        }, 'image/png');
+      }
       this.showTileDialog = true;
-
-
-
-
-
     },
     generateWorldFile() {
       if (this.gcpList.length < 4) {
         console.warn('GCPが4点以上必要です');
         return null;
       }
+
       const gcpImageCoords = this.gcpList.slice(0, 4).map(gcp => gcp.imageCoord);
       const gcpMapCoords = this.gcpList.slice(0, 4).map(gcp => gcp.mapCoord);
 
-      const canvas = this.$refs.warpCanvas;
+      // デバッグ: 入力データの確認
+      console.log('gcpImageCoords:', gcpImageCoords);
+      console.log('gcpMapCoords:', gcpMapCoords);
+
+      const canvas = document.querySelector("#warp-canvas");
+      if (!canvas || canvas.width === 0 || canvas.height === 0) {
+        console.error('Invalid canvas state:', { width: canvas?.width, height: canvas?.height });
+        return null;
+      }
       const width = canvas.width;
       const height = canvas.height;
+
+      // デバッグ: キャンバスサイズ
+      console.log('Canvas dimensions:', { width, height });
 
       // 緯度経度をWebメルカトル (EPSG:3857) に変換
       const toMercator = (lng, lat) => {
@@ -2139,25 +2180,40 @@ export default {
 
       const mercatorCoords = gcpMapCoords.map(coord => toMercator(coord[0], coord[1]));
 
+      // デバッグ: 変換後の座標
+      console.log('mercatorCoords:', mercatorCoords);
+
       // ピクセルサイズの推定 (メートル単位)
       const dx = mercatorCoords[1][0] - mercatorCoords[0][0];
       const dy = mercatorCoords[2][1] - mercatorCoords[0][1];
       const pixelSizeX = dx / (gcpImageCoords[1][0] - gcpImageCoords[0][0]) || 1;
       const pixelSizeY = dy / (gcpImageCoords[2][1] - gcpImageCoords[0][1]) || -1;
 
+      // デバッグ: ピクセルサイズ
+      console.log('pixelSizeX:', pixelSizeX, 'pixelSizeY:', pixelSizeY);
+
       // 左下のWebメルカトル座標
       const xOrigin = mercatorCoords[0][0] - (gcpImageCoords[0][0] * pixelSizeX);
-      const yOrigin = mercatorCoords[0][1] - (height - gcpImageCoords[0][1]) * pixelSizeY;
+      const yOrigin = mercatorCoords[0][1] - (height - (gcpImageCoords[0][1] || 0)) * pixelSizeY; // gcpImageCoords[0][1]がundefinedの場合0をデフォルト
+
+      // デバッグ: 原点
+      console.log('xOrigin:', xOrigin, 'yOrigin:', yOrigin);
+
+      // NaNチェックとデフォルト値
+      if (isNaN(xOrigin) || isNaN(yOrigin)) {
+        console.error('NaN detected in origin calculation:', { xOrigin, yOrigin, height, gcpImageCoords });
+        return null;
+      }
 
       // ワールドファイルの内容
       const worldFileContent = `
-            ${pixelSizeX.toFixed(10)}
-            0.0000000000
-            0.0000000000
-            ${pixelSizeY.toFixed(10)}
-            ${xOrigin.toFixed(10)}
-            ${yOrigin.toFixed(10)}
-            `.trim();
+${pixelSizeX.toFixed(10)}
+0.0000000000
+0.0000000000
+${pixelSizeY.toFixed(10)}
+${xOrigin.toFixed(10)}
+${yOrigin.toFixed(10)}
+      `.trim();
 
       return worldFileContent;
     },
