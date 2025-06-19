@@ -1447,8 +1447,8 @@ export default {
         { key: 'free', text: '自由に描く', label: '自由', color: this.s_isDrawFree ? 'green' : 'blue', click: this.toggleLDrawFree},
         { key: 'finish', text: 'スマホ、タブの時に使用', label: '確定', click: this.finishDrawing, style: 'background-color: orange!important;' },
         { key: 'edit', text: '編集', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
-        { key: 'undo', text: '元に戻す', label: '元戻', click: this.undo },
-        { key: 'redo', text: 'やり直す', label: 'やり直', click: this.redo, style: 'font-size: 12px' },
+        { key: 'undo', text: '元に戻す', icon: 'mdi-undo', label: '元戻', click: this.undo },
+        { key: 'redo', text: 'やり直す', icon: 'mdi-redo', label: 'やり直', click: this.redo },
         { key: 'dxf', text: 'DXFで出力', label: 'dxf', color: 'white', click: this.dialogForSaveDXFOpen },
         { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
         { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
