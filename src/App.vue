@@ -679,6 +679,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <div id="pointer1" class="pointer" v-if="mapName === 'map01'"></div>
           <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
 
+
+
           <div
               v-if="showFloatingImage && mapName === 'map01'"
               class="floating-image-panel"
@@ -696,6 +698,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             <div style="position: relative; display: inline-block;">
               <!-- 画像 -->
               <img
+                  class="floating-image"
                   ref="floatingImage"
                   :src="uploadedImageUrl"
                   style="max-width: 50vw; max-height: 50vh; opacity: 0.9; display: block;"
@@ -703,7 +706,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               />
               <!-- 上：仮ワープした画像を描くCanvas -->
 <!--              <canvas ref="warpCanvas" class="warp-canvas"></canvas>-->
-              <canvas ref="warpCanvas" class="warp-canvas" width="100" height="100"></canvas>
+              <canvas ref="warpCanvas" class="warp-canvas"></canvas>
 
               <!-- マーカー -->
               <div
@@ -1270,6 +1273,28 @@ export async function fetchElevation(lon, lat, zoom = 15) {
     // console.error("エラー:", error);
   }
 }
+
+function computeAffineMatrix(from, to) {
+  const A = math.matrix([
+    [from[0][0], from[0][1], 1],
+    [from[1][0], from[1][1], 1],
+    [from[2][0], from[2][1], 1]
+  ]);
+  const Bx = math.matrix([to[0][0], to[1][0], to[2][0]]);
+  const By = math.matrix([to[0][1], to[1][1], to[2][1]]);
+  const Ainv = math.inv(A);
+  const coeffX = math.multiply(Ainv, Bx);
+  const coeffY = math.multiply(Ainv, By);
+  return {
+    a: coeffX.get([0]),
+    b: coeffX.get([1]),
+    c: coeffX.get([2]),
+    d: coeffY.get([0]),
+    e: coeffY.get([1]),
+    f: coeffY.get([2])
+  };
+}
+
 
 import axios from "axios"
 import DialogMenu from '@/components/Dialog-menu'
@@ -1978,20 +2003,132 @@ export default {
   methods: {
     previewAffineWarp() {
       this.$nextTick(() => {
-        // const canvas = this.$refs.warpCanvas;
-        const canvas = document.querySelector('.warp-canvas')
-        if (!canvas || !canvas.getContext) {
-          console.warn('Canvas が取得できません');
+        const canvas = document.querySelector('.warp-canvas');
+        const img = document.querySelector('.floating-image');
+        const map = this.$store.state.map01;
+
+        if (!canvas || !canvas.getContext || !img || !map) {
+          console.warn('必要な要素が取得できません');
           return;
         }
-        console.warn('Canvas が取得できました！');
+
+        // canvas サイズを画像と同期
+        canvas.width = img.clientWidth;
+        canvas.height = img.clientHeight;
 
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = 'rgba(0, 128, 255, 0.4)';
-        ctx.fillRect(10, 10, 100, 100);
+
+        // GCP が3点あることを確認
+        if (this.gcpList.length !== 3) {
+          console.warn('GCPが3点ではありません');
+          return;
+        }
+
+        const from = this.gcpList.map(gcp => gcp.imageCoord);
+
+        // 地図座標を画像ピクセル内の位置に変換
+        function convertLngLatToImageXY(lngLat, map, imageElement) {
+          const projected = map.project({ lng: lngLat[0], lat: lngLat[1] });
+          const mapRect = map.getContainer().getBoundingClientRect();
+          const imgRect = imageElement.getBoundingClientRect();
+          return [
+            projected.x - (mapRect.left - imgRect.left),
+            projected.y - (mapRect.top - imgRect.top)
+          ];
+        }
+
+        const to = this.gcpList.map(gcp => convertLngLatToImageXY(gcp.mapCoord, map, img));
+
+        // アフィン変換行列の計算
+        function computeAffineMatrix(from, to) {
+          const A = math.matrix([
+            [from[0][0], from[0][1], 1],
+            [from[1][0], from[1][1], 1],
+            [from[2][0], from[2][1], 1]
+          ]);
+          const Bx = math.matrix([to[0][0], to[1][0], to[2][0]]);
+          const By = math.matrix([to[0][1], to[1][1], to[2][1]]);
+          const Ainv = math.inv(A);
+          const coeffX = math.multiply(Ainv, Bx);
+          const coeffY = math.multiply(Ainv, By);
+          return {
+            a: coeffX.get([0]),
+            b: coeffX.get([1]),
+            c: coeffX.get([2]),
+            d: coeffY.get([0]),
+            e: coeffY.get([1]),
+            f: coeffY.get([2])
+          };
+        }
+
+        const { a, b, c, d, e, f } = computeAffineMatrix(from, to);
+
+        // 変換を設定して描画
+        ctx.setTransform(a, d, b, e, c, f);
+        ctx.drawImage(img, 0, 0);
+        ctx.setTransform(1, 0, 0, 1, 0, 0); // 元に戻す
       });
     },
+
+    // previewAffineWarp() {
+    //   this.$nextTick(() => {
+    //     const canvas = document.querySelector('.warp-canvas');
+    //     if (!canvas || !canvas.getContext) {
+    //       console.warn('Canvas が取得できません');
+    //       return;
+    //     }
+    //
+    //     const img = document.querySelector('.floating-image');
+    //     if (canvas && img) {
+    //       // 🔁 先に canvas サイズを画像に合わせる
+    //       canvas.width = img.clientWidth;
+    //       canvas.height = img.clientHeight;
+    //     }
+    //
+    //     const ctx = canvas.getContext('2d');
+    //     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    //     ctx.fillStyle = 'rgba(0, 128, 255, 0.4)';
+    //     ctx.fillRect(10, 10, 100, 100); // ← これは確認用なのでそのままでOK
+    //
+    //     // 📌 from, to は事前に定義・整形して渡す必要あり
+    //     const from = this.gcpList.map(g => g.imageCoord);
+    //     const to = this.gcpList.map(g => g.mapCoord);
+    //
+    //     if (from.length === 3 && to.length === 3) {
+    //       const matrix = computeAffineMatrix(from, to);
+    //       console.log('アフィン変換行列:', matrix);
+    //       // ここで matrix を使って img → canvas に描画するロジックを追加する
+    //     } else {
+    //       console.warn('GCPが3点ではありません');
+    //     }
+    //   });
+    // },
+
+    // previewAffineWarp() {
+    //   this.$nextTick(() => {
+    //     // const canvas = this.$refs.warpCanvas;
+    //     const canvas = document.querySelector('.warp-canvas')
+    //     if (!canvas || !canvas.getContext) {
+    //       console.warn('Canvas が取得できません');
+    //       return;
+    //     }
+    //     console.warn('Canvas が取得できました！');
+    //
+    //     const ctx = canvas.getContext('2d');
+    //     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    //     ctx.fillStyle = 'rgba(0, 128, 255, 0.4)';
+    //     ctx.fillRect(10, 10, 100, 100);
+    //
+    //     const img = document.querySelector('.floating-image')
+    //
+    //     if (canvas && img) {
+    //       canvas.width = img.clientWidth;
+    //       canvas.height = img.clientHeight;
+    //     }
+    //
+    //   });
+    // },
     // async previewAffineWarp() {
     //   if (this.gcpList.length !== 3) {
     //     alert('GCPは3点必要です');
@@ -7910,5 +8047,13 @@ select {
   z-index: 999;
 }
 
+.warp-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /*background: rgba(255, 0, 0, 0.3); !* ← 目立つ赤で確認用 *!*/
+  z-index: 2; /* マーカーより上に出したいとき調整 */
+  pointer-events: none; /* マーカークリックなどを通す */
+}
 
 </style>
