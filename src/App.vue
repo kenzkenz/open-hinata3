@@ -61,6 +61,34 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </template>
       </v-snackbar>
 
+      <v-dialog
+          v-model="showTileDialog"
+          max-width="400"
+          persistent
+      >
+        <v-card>
+          <v-card-title class="headline">タイル化アップロード</v-card-title>
+          <v-card-text>
+            <v-text-field v-model="s_gazoName" placeholder="名称" ></v-text-field>
+            <v-select class="scrollable-content"
+                      v-model="s_transparent"
+                      :items="transparentType"
+                      item-title="label"
+                      item-value="value"
+                      label="透過方法を選択してください"
+                      outlined
+                      v-if="user1"
+            />
+            <v-btn @click="startTiling">png読込開始</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn text @click="showTileDialog = false">閉じる</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+
       <v-dialog attach="#map01" v-model="s_popupDialog" max-width="500" persistent>
         <v-card>
           <v-card-text>
@@ -1521,6 +1549,7 @@ export default {
     cvReady: false,
     imageLoaded: false,
     showOriginal: true,
+    showTileDialog: false,
   }),
   computed: {
     ...mapState([
@@ -2060,6 +2089,9 @@ export default {
     },
   },
   methods: {
+    startTiling () {
+
+    },
     onImageLoad() {
       this.imageLoaded = true;
       console.log('Image loaded');
@@ -6465,6 +6497,7 @@ export default {
                       reader.onload = evt => {
                         this.uploadedImageUrl = evt.target.result;
                         this.showFloatingImage = true;
+                        this.s_gazoName = fileName
                         // alert('読み込み終了')
                       };
                       reader.readAsDataURL(file);
