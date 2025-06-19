@@ -701,6 +701,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   style="max-width: 50vw; max-height: 50vh; opacity: 0.9; display: block;"
                   @click="onImageClick"
               />
+              <!-- 上：仮ワープした画像を描くCanvas -->
+              <canvas ref="warpCanvas" class="warp-canvas"></canvas>
               <!-- マーカー -->
               <div
                   v-for="item in gcpWithImageCoord"
@@ -773,6 +775,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <v-btn class="tiny-btn" style="margin-left: 5px;" small color="primary" @click="resetGcp">GCPリセット</v-btn>
               <v-btn class="tiny-btn" style="margin-left: 5px;" small color="primary" @click="saveGcpToLocal">GCP保存</v-btn>
               <v-btn class="tiny-btn" style="margin-left: 5px;" small color="primary" @click="loadGcpFromLocal">GCP復元</v-btn>
+              <v-btn v-if="gcpList.length === 3" class="tiny-btn" style="margin-left: 5px;" small color="primary" @click="previewAffineWarp">位置合わせプレビュー	</v-btn>
             </div>
           </div>
 
@@ -1952,6 +1955,89 @@ export default {
     },
   },
   methods: {
+    previewAffineWarp() {
+      if (this.gcpList.length !== 3) {
+        console.warn("GCPはちょうど3点必要です");
+        return;
+      }
+
+      const img = this.$refs.floatingImage;
+      const canvas = this.$refs.warpCanvas;
+      const ctx = canvas.getContext("2d");
+
+      // 画像サイズに合わせてキャンバスサイズを調整
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.style.width = img.clientWidth + "px";
+      canvas.style.height = img.clientHeight + "px";
+      canvas.style.position = "absolute";
+      canvas.style.top = 0;
+      canvas.style.left = 0;
+      canvas.style.pointerEvents = "none"; // マウスイベント貫通
+
+      // 元画像の3点 (画像内座標)
+      const src = this.gcpList.map(g => g.imageCoord);
+      // 目標の3点 (地図座標→画像内ピクセルへ変換すべきだが今回は仮で同一スケールでOKとする)
+      const dst = this.gcpList.map(g => {
+        const lngLat = g.mapCoord;
+        // 地図上の位置を、画像サイズと同スケール前提で仮想的に変換（簡易処理）
+        return [lngLat[0], lngLat[1]]; // 今は仮ワープのため視覚的確認のみ
+      });
+
+      // アフィン変換行列を求める（3点で一意に定まる）
+      function computeAffineTransform(src, dst) {
+        const matrix = [];
+        for (let i = 0; i < 3; i++) {
+          const [x, y] = src[i];
+          matrix.push([x, y, 1, 0, 0, 0]);
+          matrix.push([0, 0, 0, x, y, 1]);
+        }
+        const A = math.matrix(matrix);
+        const b = math.matrix([dst[0][0], dst[0][1], dst[1][0], dst[1][1], dst[2][0], dst[2][1]]);
+        const T = math.lusolve(A, b).map(e => e[0]); // [a, b, c, d, e, f]
+        return T;
+      }
+
+      const [a, b, c, d, e, f] = computeAffineTransform(src, dst);
+
+      // 描画（Canvasにアフィン変換を適用）
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.setTransform(a, d, b, e, c, f); // 注意：setTransform(a, b, c, d, e, f)
+      ctx.drawImage(img, 0, 0);
+      ctx.setTransform(1, 0, 0, 1, 0, 0); // リセット
+    },
+    removeFloatingImage() {
+      if (!confirm('本当に画像とGCPをすべて削除しますか？')) return;
+
+      this.uploadedImageUrl = null;
+      this.gcpList = [];
+      this.hoveredRow = null;
+
+      // マーカー類の削除（関数が分かれていると仮定）
+      this.removeImageMarkers?.();
+      this.removeMapMarkers?.();
+
+      // 保存済みデータもクリア
+      localStorage.removeItem('savedGcp');
+      localStorage.removeItem('savedImage');
+
+      // 仮ワープ表示を消す処理があるならここで（例）
+      this.removeWarpPreview?.();
+
+      console.log('画像とGCPをすべて削除しました');
+    },
+    removeImageMarkers() {
+      // 画像側のマーカーDOMを全て削除
+      const container = this.$el.querySelector('.floating-image-panel');
+      const markers = container?.querySelectorAll('.image-marker');
+      markers?.forEach(marker => marker.remove());
+    },
+    removeMapMarkers() {
+      if (this.mapCoordMarkers && this.mapCoordMarkers.length > 0) {
+        this.mapCoordMarkers.forEach(marker => marker.remove());
+        this.mapCoordMarkers = [];
+      }
+    },
     // ✅ GCPをlocalStorageに保存
     saveGcpToLocal() {
       try {
