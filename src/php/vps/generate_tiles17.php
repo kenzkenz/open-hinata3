@@ -327,19 +327,21 @@ if ($transparent === 1) {
 }
 
 // アルファチャンネル削除（transparent=1の場合のみ）
-$rgbOutputPath = null;
-if ($transparent === 1) {
-    $rgbOutputPath = "/tmp/" . $fileName . "_rgb.tif";
-    sendSSE(["log" => "RGB画像生成"]);
-    $rgbCommand = "$gdalTranslate -b 1 -b 2 -b 3 -co COMPRESS=DEFLATE -co PREDICTOR=2 " . escapeshellarg($outputFilePath) . " " . escapeshellarg($rgbOutputPath);
-    exec($rgbCommand, $rgbOutput, $rgbReturnVar);
-    if ($rgbReturnVar !== 0 || !file_exists($rgbOutputPath)) {
-        logMessage("RGB generation failed: " . implode("\n", $rgbOutput));
-        sendSSE(["error" => "RGB生成失敗", "details" => implode("\n", $rgbOutput)], "error");
-        exit;
+if ($sourceEPSG !== '3857') {
+    $rgbOutputPath = null;
+    if ($transparent === 1) {
+        $rgbOutputPath = "/tmp/" . $fileName . "_rgb.tif";
+        sendSSE(["log" => "RGB画像生成"]);
+        $rgbCommand = "$gdalTranslate -b 1 -b 2 -b 3 -co COMPRESS=DEFLATE -co PREDICTOR=2 " . escapeshellarg($outputFilePath) . " " . escapeshellarg($rgbOutputPath);
+        exec($rgbCommand, $rgbOutput, $rgbReturnVar);
+        if ($rgbReturnVar !== 0 || !file_exists($rgbOutputPath)) {
+            logMessage("RGB generation failed: " . implode("\n", $rgbOutput));
+            sendSSE(["error" => "RGB生成失敗", "details" => implode("\n", $rgbOutput)], "error");
+            exit;
+        }
+        $outputFilePath = $rgbOutputPath;
+        sendSSE(["log" => "RGB画像生成完了"]);
     }
-    $outputFilePath = $rgbOutputPath;
-    sendSSE(["log" => "RGB画像生成完了"]);
 }
 
 // 座標取得

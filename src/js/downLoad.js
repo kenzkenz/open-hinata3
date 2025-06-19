@@ -4959,12 +4959,32 @@ export function addXyztileLayer(id,name,url,bbox) {
             }
         );
     })
-    if (bbox) {
-        map01.fitBounds([
-            [bbox[0], bbox[1]], // minX, minY
-            [bbox[2], bbox[3]]  // maxX, maxY
-        ], { padding: 20 });
+
+
+    function fitBoundsAndThen(map, bbox, callback) {
+        const onMoveEnd = () => {
+            map.off('moveend', onMoveEnd); // 一度だけ実行
+            callback();
+        };
+        map.on('moveend', onMoveEnd);
+        map.fitBounds([
+            [bbox[0], bbox[1]],
+            [bbox[2], bbox[3]]
+        ], {
+            padding: 20,
+            duration: 1000 // アニメーション時間（ms）必要に応じて調整
+        });
     }
+    fitBoundsAndThen(map01, bbox, () => {
+        const currentZoom = map01.getZoom();
+        map01.zoomTo(currentZoom + 0.00000000000000000000000000001);
+    });
+    // if (bbox) {
+    //     map01.fitBounds([
+    //         [bbox[0], bbox[1]], // minX, minY
+    //         [bbox[2], bbox[3]]  // maxX, maxY
+    //     ], { padding: 20 });
+    // }
     store.state.fetchImagesFire = !store.state.fetchImagesFire
 }
 

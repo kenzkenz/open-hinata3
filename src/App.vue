@@ -67,7 +67,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           persistent
       >
         <v-card>
-          <v-card-title class="headline">タイル化アップロード</v-card-title>
+          <v-card-title class="headline">アップロード</v-card-title>
           <v-card-text>
             <v-text-field v-model="s_gazoName" placeholder="名称" ></v-text-field>
             <v-select class="scrollable-content"
@@ -77,16 +77,16 @@ import SakuraEffect from './components/SakuraEffect.vue';
                       outlined
                       v-if="user1"
             ></v-select>
-            <v-select class="scrollable-content"
-                      v-model="s_transparent"
-                      :items="transparentType"
-                      item-title="label"
-                      item-value="value"
-                      label="透過方法を選択してください"
-                      outlined
-                      v-if="user1"
-            />
-            <v-btn @click="startTiling">png読込開始</v-btn>
+<!--            <v-select class="scrollable-content"-->
+<!--                      v-model="s_transparent"-->
+<!--                      :items="transparentType"-->
+<!--                      item-title="label"-->
+<!--                      item-value="value"-->
+<!--                      label="透過方法を選択してください"-->
+<!--                      outlined-->
+<!--                      v-if="user1"-->
+<!--            />-->
+            <v-btn @click="startTiling">アップロード</v-btn>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -762,7 +762,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             </div>
 
             <!-- ✅ 改良GCP一覧テーブル -->
-            <div class="gcp-list-table" style="margin-top: 10px; max-height: 160px; overflow-y: auto;">
+            <div class="gcp-list-table" style="margin-top: 10px; max-height: 180px; overflow-y: auto;">
               <table style="font-size: 13px; width: 100%; border-collapse: collapse;">
                 <thead>
                 <tr :style="{ background: primaryColor, color: 'white' }">
@@ -2111,6 +2111,7 @@ export default {
   },
   methods: {
     startTiling () {
+      this.transparentType = '1'
       tileGenerateForUser('png','pgw',true)
       this.showTileDialog = false
     },
@@ -2159,8 +2160,8 @@ export default {
       this.showTileDialog = true;
     },
     generateWorldFile() {
-      if (this.gcpList.length < 3) {
-        console.warn('GCPが3点以上必要です');
+      if (this.gcpList.length < 4) {
+        console.warn('GCPが4点以上必要です');
         return null;
       }
 
@@ -2269,6 +2270,7 @@ export default {
           }
 
           const src = window.cv.imread('warp-image');
+
           if (src.empty() || src.cols === 0 || src.rows === 0) {
             console.error('Failed to load image into Mat');
             src.delete();
@@ -2336,8 +2338,24 @@ export default {
             } else {
               window.cv.imshow('warp-canvas', dst);
               console.log('Transformation applied');
-              this.showOriginal = false; // 変換前を非表示
-              this.showWarpCanvas = true; // 変換後を表示
+
+              // ✅ 黒っぽいピクセルを透過（Canvas操作）
+              const ctx = canvas.getContext('2d');
+              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const data = imageData.data;
+              const threshold = 50; // ← ここを変えると検出の厳しさが変わる
+
+              for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                const avg = (r + g + b) / 3;
+                if (avg < threshold) {
+                  data[i + 3] = 0; // alpha = 0 に
+                }
+              }
+
+              ctx.putImageData(imageData, 0, 0);
             }
 
             src.delete();
@@ -2351,6 +2369,7 @@ export default {
         });
       });
     },
+
     clearWarp() {
       this.showOriginal = true;
       this.showWarpCanvas = false;
@@ -2474,23 +2493,57 @@ export default {
     removeFloatingImage() {
       if (!confirm('本当に画像とGCPをすべて削除しますか？')) return;
 
+      // アップロード画像とGCP関連
       this.uploadedImageUrl = null;
       this.gcpList = [];
       this.hoveredRow = null;
 
-      // マーカー類の削除（関数が分かれていると仮定）
+      // マーカー類の削除（存在する場合に限り）
       this.removeImageMarkers?.();
       this.removeMapMarkers?.();
 
-      // 保存済みデータもクリア
+      // 保存済みローカルデータの削除
       localStorage.removeItem('savedGcp');
       localStorage.removeItem('savedImage');
 
-      // 仮ワープ表示を消す処理があるならここで（例）
-      this.removeWarpPreview?.();
+      // 仮ワープCanvasの消去
+      const canvas = document.querySelector('#warp-canvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx?.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.width = 0; // サイズを0にして明示的に無効化
+        canvas.height = 0;
+      }
 
-      console.log('画像とGCPをすべて削除しました');
+      // Blobや一時ファイルがあればnullにして明示的に削除（例: Vuexに保持している場合）
+      this.$store.commit('setTiffAndWorldFile', null);
+
+      // 自分自身の表示も消す
+      this.showFloatingImage = false;
+
+      console.log('画像・GCP・Canvas・一時データをすべて削除しました');
     },
+
+    // removeFloatingImage() {
+    //   if (!confirm('本当に画像とGCPをすべて削除しますか？')) return;
+    //
+    //   this.uploadedImageUrl = null;
+    //   this.gcpList = [];
+    //   this.hoveredRow = null;
+    //
+    //   // マーカー類の削除（関数が分かれていると仮定）
+    //   this.removeImageMarkers?.();
+    //   this.removeMapMarkers?.();
+    //
+    //   // 保存済みデータもクリア
+    //   localStorage.removeItem('savedGcp');
+    //   localStorage.removeItem('savedImage');
+    //
+    //   // 仮ワープ表示を消す処理があるならここで（例）
+    //   this.removeWarpPreview?.();
+    //
+    //   console.log('画像とGCPをすべて削除しました');
+    // },
     removeImageMarkers() {
       // 画像側のマーカーDOMを全て削除
       const container = this.$el.querySelector('.floating-image-panel');
