@@ -1514,6 +1514,9 @@ export default {
     hoveredRow: null,
     primaryColor: '#1976d2',
     showWarpCanvas: false,
+    cvReady: false,
+    imageLoaded: false,
+    showOriginal: true,
   }),
   computed: {
     ...mapState([
@@ -7030,6 +7033,10 @@ export default {
   mounted() {
     const vm = this
 
+    ensureOpenCvReady(() => {
+      this.cvReady = true;
+      console.log('OpenCV.js ready');
+    });
 
 
     window.addEventListener('mousemove', this.onMouseMove)
