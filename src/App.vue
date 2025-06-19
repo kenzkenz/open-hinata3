@@ -841,6 +841,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
               >
                 クリア
               </v-btn>
+              <v-btn
+                  v-if="showUploadButton"
+                  class="tiny-btn"
+                  style="margin-left: 5px;"
+                  color="primary"
+                  @click="openTileUploadDialog"
+              >
+                アップロード
+              </v-btn>
             </div>
           </div>
 
@@ -1550,6 +1559,7 @@ export default {
     imageLoaded: false,
     showOriginal: true,
     showTileDialog: false,
+    // showUploadButton: false,
   }),
   computed: {
     ...mapState([
@@ -2087,6 +2097,10 @@ export default {
     s_isCursorOnPanel () {
       return this.$store.state.isCursorOnPanel
     },
+    showUploadButton() {
+      // アップロードボタンの表示条件
+      return this.gcpList && this.gcpList.length >= 4 && this.showWarpCanvas;
+    },
   },
   methods: {
     startTiling () {
@@ -2095,6 +2109,14 @@ export default {
     onImageLoad() {
       this.imageLoaded = true;
       console.log('Image loaded');
+    },
+    openTileUploadDialog() {
+      this.showTileDialog = true;
+
+
+
+
+
     },
     previewAffineWarp() {
       this.showOriginal = false;
