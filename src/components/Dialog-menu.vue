@@ -290,7 +290,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v1.130
+        v1.131
       </p>
 
       <div v-if="user1">
@@ -1442,6 +1442,7 @@ export default {
             // flyToアニメーション完了後にユーザー操作を再度有効化
             map.once('moveend', () => {
               map.scrollZoom.enable();
+              // alert('pan')
               map.dragPan.enable();
               map.keyboard.enable();
               map.doubleClickZoom.enable();

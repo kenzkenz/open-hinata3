@@ -836,7 +836,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   color="primary"
                   @click="previewAffineWarp"
               >
-                プレビュー
+                変&nbsp;&nbsp;換
               </v-btn>
               <v-btn
                   v-if="showWarpCanvas"
@@ -859,8 +859,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </v-btn>
             </div>
           </div>
-
-
 
           <div :style="{fontSize: textPx + 'px', color: titleColor}" class="print-title">
             <MiniTooltip text="click me" :offset-x="0" :offset-y="4">
@@ -1603,6 +1601,7 @@ export default {
         { key: 'edit', text: '編集', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
         { key: 'undo', text: '元に戻す', icon: 'mdi-undo', label: '元戻', click: this.undo },
         { key: 'redo', text: 'やり直す', icon: 'mdi-redo', label: 'やり直', click: this.redo },
+        { key: 'fix', text: '画面固定', label: '固定', color: this.s_isDrawFix ? 'green' : 'blue', click: this.toggleDrawFix },
         { key: 'dxf', text: 'DXFで出力', label: 'dxf', color: 'white', click: this.dialogForSaveDXFOpen },
         { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
         { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
@@ -1610,7 +1609,7 @@ export default {
       if (window.innerWidth < 1000) {
         btns = btns.filter(btn => btn.key !== 'edit' && btn.key !== 'dxf' )
       } else {
-        btns = btns.filter(btn => btn.key !== 'finish' && btn.key !== 'close')
+        btns = btns.filter(btn => btn.key !== 'close')
       }
       return btns
     },
@@ -1691,6 +1690,14 @@ export default {
       },
       set(value) {
         return this.$store.state.editEnabled = value
+      }
+    },
+    s_isDrawFix: {
+      get() {
+        return this.$store.state.isDrawFix
+      },
+      set(value) {
+        return this.$store.state.isDrawFix = value
       }
     },
     s_isDrawFree: {
@@ -2741,6 +2748,7 @@ export default {
           map.touchZoomRotate.disable(); // タッチでのズーム/回転を無効化
           map.scrollZoom.disable(); // スクロールズームを無効化
         } else {
+          alert('pan')
           map.dragPan.enable(); // パンを有効化
           map.touchZoomRotate.enable(); // タッチでのズーム/回転を有効化
           map.scrollZoom.enable(); // スクロールズームを有効化
@@ -3283,6 +3291,24 @@ export default {
       }
       this.finishLine()
     },
+    toggleDrawFix () {
+      const map =this.$store.state.map01
+      this.s_isDrawFix = !this.s_isDrawFix
+      if (this.s_isDrawFix) {
+        this.snackbarText = '画面を固定します。もう一度クリックで解除'
+        this.snackbar = true
+        map.dragPan.disable()
+      } else {
+        map.dragPan.enable()
+      }
+      store.state.isCursorOnPanel = false
+      this.finishLine()
+      const originalEnable = map.dragPan.enable;
+      map.dragPan.enable = function (...args) {
+        console.trace('dragPan.enable() called');
+        return originalEnable.apply(this, args);
+      };
+    },
     toggleEditEnabled () {
       this.saveHistory()
       this.s_editEnabled = !this.s_editEnabled
@@ -3298,6 +3324,21 @@ export default {
       store.state.isCursorOnPanel = false
       this.finishLine()
     },
+    // toggleLDrawFix () {
+    //   this.s_isDrawFree = !this.s_isDrawFree
+    //   if (this.s_isDrawFree) {
+    //     this.s_isDrawPoint = false
+    //     this.s_isDrawCircle = false
+    //     this.s_isDrawLine = false
+    //     this.s_isDrawPolygon = false
+    //     this.s_editEnabled = false
+    //     this.snackbarText = 'ドラッグで線を書きます！クリックじゃありません！'
+    //     this.snackbar = true
+    //   }
+    //   document.querySelector('#draw-indicato-text').innerHTML = 'FREE'
+    //   store.state.isCursorOnPanel = false
+    //   this.finishLine()
+    // },
     toggleLDrawFree () {
       this.s_isDrawFree = !this.s_isDrawFree
       if (this.s_isDrawFree) {
@@ -3807,6 +3848,7 @@ export default {
               // flyToアニメーション完了後にユーザー操作を再度有効化
               map.once('moveend', () => {
                 map.scrollZoom.enable();
+                // alert('pan')
                 map.dragPan.enable();
                 map.keyboard.enable();
                 map.doubleClickZoom.enable();
@@ -5265,6 +5307,7 @@ export default {
         if (!isDrawing) return;
         isDrawing = false;
         map.getCanvas().style.cursor = '';
+        // alert('pan')
         map.dragPan.enable(); // パン再有効化
 
         if (this.tempFreehandCoords.length >= 2) {
@@ -5303,6 +5346,7 @@ export default {
       map.getCanvas().addEventListener('pointerleave', () => {
         if (isDrawing) {
           isDrawing = false;
+          // alert('pan')
           map.dragPan.enable();
           map.getCanvas().style.cursor = '';
           this.tempFreehandCoords = [];
@@ -5419,6 +5463,7 @@ export default {
         isDragging = false;
         draggedFeatureId = null;
         dragOrigin = null;
+        // alert('pan')
         map.dragPan.enable();
         map.getCanvas().style.cursor = '';
       });
