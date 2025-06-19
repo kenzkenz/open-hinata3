@@ -679,6 +679,48 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <div id="pointer1" class="pointer" v-if="mapName === 'map01'"></div>
           <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
 
+          <div
+              v-if="showFloatingImage && mapName === 'map01'"
+              class="floating-image-panel"
+              style="
+              position: absolute;
+              top: 60px;
+              left: 60px;
+              z-index: 10;
+              background: rgba(255, 255, 255, 0.6);
+              border: 1px solid #ccc;
+              padding: 4px;
+              border-radius: 8px;
+              pointer-events: auto;"
+          >
+            <div style="position: relative; display: inline-block;">
+              <!-- 画像 -->
+              <img
+                  ref="floatingImage"
+                  :src="uploadedImageUrl"
+                  style="max-width: 50vw; max-height: 50vh; opacity: 0.9; display: block;"
+                  @click="onImageClick"
+              />
+              <!-- マーカー -->
+              <div
+                  v-for="item in gcpWithImageCoord"
+                  :key="'image-marker-' + item.index"
+                  class="image-marker"
+                  :style="getImageMarkerStyle(item.gcp.imageCoord)"
+              >
+                {{ item.index + 1 }}
+              </div>
+            </div>
+
+            <!-- 将来用のボタン -->
+            <div style="margin-top: 4px; text-align: center;">
+              <v-btn small color="red" @click="removeFloatingImage">画像を消す</v-btn>
+              <v-btn style="margin-left: 10px;" small color="blue" @click="resetGcp">GCPリセット</v-btn>
+            </div>
+          </div>
+
+
+
           <div :style="{fontSize: textPx + 'px', color: titleColor}" class="print-title">
             <MiniTooltip text="click me" :offset-x="0" :offset-y="4">
               <span
@@ -1308,7 +1350,10 @@ export default {
     // buttons: [],
     // -----------------------------------------
     uploadedImageUrl: null,
-    showFloatingImage: false
+    showFloatingImage: false,
+    gcpList: [],  // ← GCP座標リスト
+    mapCoordMarkers: [], // 地図上に置いたマーカー一覧
+
   }),
   computed: {
     ...mapState([
@@ -1317,6 +1362,11 @@ export default {
       'selectedPointFeature',
       'showChibanzuDrawer',
     ]),
+    gcpWithImageCoord() {
+      return this.gcpList
+          .map((gcp, index) => ({ gcp, index }))
+          .filter(item => item.gcp.imageCoord !== null);
+    },
     buttons0() {
       const btns =
           [
@@ -1843,6 +1893,80 @@ export default {
     },
   },
   methods: {
+    updateMapMarkers() {
+      const map = this.$store.state.map01;
+
+      // 既存マーカーを削除
+      this.mapCoordMarkers.forEach(marker => marker.remove());
+      this.mapCoordMarkers = [];
+
+      this.gcpList.forEach((gcp, index) => {
+        if (!gcp.mapCoord) return;
+
+        // 番号付きの要素を作る
+        const el = document.createElement('div');
+        el.innerText = String(index + 1);
+        el.style.cssText = `
+        background: blue;
+        color: white;
+        border-radius: 50%;
+        width: 22px;
+        height: 22px;
+        text-align: center;
+        line-height: 22px;
+        font-size: 12px;
+        font-weight: bold;
+        box-shadow: 0 0 2px rgba(0,0,0,0.6);
+        cursor: move;
+      `;
+
+        const marker = new maplibregl.Marker({
+          element: el,
+          anchor: 'center',
+          draggable: true  // ← ドラッグ可能に
+        })
+            .setLngLat(gcp.mapCoord)
+            .addTo(map);
+
+        this.mapCoordMarkers.push(marker);
+      });
+    },
+    getImageMarkerStyle([x, y]) {
+      return {
+        position: 'absolute',
+        left: `${x}px`,
+        top: `${y}px`,
+        transform: 'translate(-50%, -50%)',
+      };
+    },
+    onMapClick(e) {
+      const last = this.gcpList.find(gcp => gcp.mapCoord === null);
+      if (!last) {
+        alert("先に画像側で対応点をクリックしてください");
+        return;
+      }
+      const lngLat = [e.lngLat.lng, e.lngLat.lat];
+      last.mapCoord = lngLat;
+      console.log(`地図クリック: [${lngLat[0].toFixed(6)}, ${lngLat[1].toFixed(6)}] をセット`);
+
+    },
+    onImageClick(event) {
+      const imgEl = event.target;
+      const rect = imgEl.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      this.gcpList.push({
+        imageCoord: [x, y],
+        mapCoord: null
+      });
+      console.log(`画像クリック: [${x.toFixed(1)}, ${y.toFixed(1)}] を追加`);
+      // GCP登録時に次の操作を明示
+      // if (this.gcpList.length === 0 || this.gcpList[this.gcpList.length - 1].mapCoord !== null) {
+      //   this.gcpStep = 'image'; // 次は画像をクリックしてください
+      // } else {
+      //   this.gcpStep = 'map'; // 次は地図をクリックしてください
+      // }
+    },
     test () {
       const vm = this
       const map = this.$store.state.map01
@@ -4767,6 +4891,11 @@ export default {
         const map = this.$store.state[mapName]
         const params = this.parseUrlParams()
         map.on('load',async () => {
+          if (mapName === 'map01') {
+            map.on('click', (e) => {
+              this.onMapClick(e);
+            });
+          }
 
           map.setProjection({"type": "globe"})
           map.resize()
@@ -5805,7 +5934,18 @@ export default {
                     this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
                     this.s_dialogForJpgApp = true
                   } else if (files.length === 1){
-                    alert('ワールドファイルが必要です。')
+                    // alert('ワールドファイルが必要です。')
+                    if (this.$store.state.userId) {
+                      const reader = new FileReader();
+                      reader.onload = evt => {
+                        this.uploadedImageUrl = evt.target.result;
+                        this.showFloatingImage = true;
+                        // alert('読み込み終了')
+                      };
+                      reader.readAsDataURL(file);
+                    } else {
+                      alert('ログイン専用機能です')
+                    }
                   }
                   break
                 }
@@ -6519,6 +6659,12 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
+    gcpList: {
+      deep: true,
+      handler() {
+        this.updateMapMarkers();
+      }
+    },
     s_saveHistoryFire () {
       this.saveHistory()
     },
@@ -7420,6 +7566,21 @@ select {
   input {
     font-size: 16px !important;
   }
+}
+
+.image-marker {
+  position: absolute;
+  background: red;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  text-align: center;
+  line-height: 20px;
+  font-size: 12px;
+  pointer-events: none;
+  box-shadow: 0 0 2px rgba(0,0,0,0.6);
+  z-index: 9999;
 }
 
 
