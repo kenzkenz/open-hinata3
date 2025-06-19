@@ -687,7 +687,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               top: 60px;
               left: 60px;
               z-index: 10;
-              background: rgba(255, 255, 255, 0.6);
+              background: #ffffff; /* ← ✅ 白背景 */
               border: 1px solid #ccc;
               padding: 4px;
               border-radius: 8px;
@@ -702,7 +702,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   @click="onImageClick"
               />
               <!-- マーカー -->
-
               <div
                   v-for="item in gcpWithImageCoord"
                   :key="'image-marker-' + item.index"
@@ -714,10 +713,66 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </div>
             </div>
 
+            <!-- ✅ 改良GCP一覧テーブル -->
+            <div class="gcp-list-table" style="margin-top: 10px; max-height: 160px; overflow-y: auto;">
+              <table style="font-size: 13px; width: 100%; border-collapse: collapse;">
+                <thead>
+                <tr :style="{ background: primaryColor, color: 'white' }">
+                <th style="padding: 6px;">#</th>
+                  <th style="padding: 6px;">画像X</th>
+                  <th style="padding: 6px;">画像Y</th>
+                  <th style="padding: 6px;">経度Lng</th>
+                  <th style="padding: 6px;">緯度Lat</th>
+                  <th style="padding: 6px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr
+                    v-for="(gcp, i) in gcpList"
+                    :key="i"
+                    style="border-bottom: 1px solid #e0e0e0; background: #ffffff;"
+                    @mouseover="hoveredRow = i"
+                    @mouseleave="hoveredRow = null"
+                    :style="{ background: hoveredRow === i ? '#f9f9f9' : '#ffffff' }"
+                >
+                  <td style="padding: 6px; text-align: center;">{{ i + 1 }}</td>
+                  <td style="padding: 6px;">
+                    <input type="number" style="width: 70px;" :value="gcp.imageCoord?.[0] ?? ''"
+                           @input="updateImageCoordX(i, $event.target.value)">
+                  </td>
+                  <td style="padding: 6px;">
+                    <input type="number" style="width: 70px;" :value="gcp.imageCoord?.[1] ?? ''"
+                           @input="updateImageCoordY(i, $event.target.value)">
+                  </td>
+                  <td style="padding: 6px;">
+                    <input type="number" style="width: 90px;" :value="gcp.mapCoord?.[0] ?? ''"
+                           @input="updateMapCoordLng(i, $event.target.value)">
+                  </td>
+                  <td style="padding: 6px;">
+                    <input type="number" style="width: 90px;" :value="gcp.mapCoord?.[1] ?? ''"
+                           @input="updateMapCoordLat(i, $event.target.value)">
+                  </td>
+                  <td style="padding: 6px; text-align: center;">
+                    <button @click="removeGcp(i)" style="
+                      background: none;
+                      border: none;
+                      color: black;
+                      font-weight: bold;
+                      font-size: 20px;
+                      cursor: pointer;
+                      line-height: 1;
+                    ">×</button>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
             <!-- 将来用のボタン -->
-            <div style="margin-top: 4px; text-align: center;">
-              <v-btn small color="red" @click="removeFloatingImage">画像を消す</v-btn>
-              <v-btn style="margin-left: 10px;" small color="blue" @click="resetGcp">GCPリセット</v-btn>
+            <div style="margin-top: 4px; text-align: left; padding: 10px;">
+              <v-btn class="tiny-btn" small color="red" @click="removeFloatingImage">画像を消す</v-btn>
+              <v-btn class="tiny-btn" style="margin-left: 5px;" small color="primary" @click="resetGcp">GCPリセット</v-btn>
+              <v-btn class="tiny-btn" style="margin-left: 5px;" small color="primary" @click="saveGcpToLocal">GCP保存</v-btn>
+              <v-btn class="tiny-btn" style="margin-left: 5px;" small color="primary" @click="loadGcpFromLocal">GCP復元</v-btn>
             </div>
           </div>
 
@@ -1355,6 +1410,8 @@ export default {
     showFloatingImage: false,
     gcpList: [],  // ← GCP座標リスト
     mapCoordMarkers: [], // 地図上に置いたマーカー一覧
+    hoveredRow: null,
+    primaryColor: '#1976d2'  // ← OH3 の Vuetify デフォルト blue（変更OK）
 
   }),
   computed: {
@@ -1895,6 +1952,70 @@ export default {
     },
   },
   methods: {
+    // ✅ GCPをlocalStorageに保存
+    saveGcpToLocal() {
+      try {
+        localStorage.setItem('oh3_gcp_backup', JSON.stringify(this.gcpList));
+        alert('GCPを保存しました');
+      } catch (e) {
+        alert('保存に失敗しました');
+      }
+    },
+    // ✅ localStorageから復元
+    loadGcpFromLocal() {
+      const raw = localStorage.getItem('oh3_gcp_backup');
+      if (!raw) {
+        alert('保存されたGCPが見つかりません');
+        return;
+      }
+      try {
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) throw new Error();
+        this.gcpList = parsed;
+        // 地図マーカーを再描画（画像マーカーは自動）
+        this.updateMapMarkers?.();
+        alert('GCPを復元しました');
+      } catch (e) {
+        alert('復元に失敗しました');
+      }
+    },
+    resetGcp() {
+      if (!confirm('GCPをリセットしてよろしいですか？')) return;
+      // GCP一覧を初期化
+      this.gcpList = [];
+      // 地図側マーカーが存在すれば削除
+      if (this.mapCoordMarkers && Array.isArray(this.mapCoordMarkers)) {
+        this.mapCoordMarkers.forEach(marker => marker.remove());
+        this.mapCoordMarkers = [];
+      }
+      // ※画像側マーカーは gcpList が空になれば v-for 側で自動的に非表示になる
+    },
+    removeGcp(index) {
+      this.gcpList.splice(index, 1);
+      this.updateMapMarkers(); // 地図側更新
+    },
+    updateImageCoordX(i, val) {
+      const num = parseFloat(val);
+      if (!this.gcpList[i].imageCoord) this.gcpList[i].imageCoord = [0, 0];
+      this.gcpList[i].imageCoord[0] = isNaN(num) ? 0 : num;
+    },
+    updateImageCoordY(i, val) {
+      const num = parseFloat(val);
+      if (!this.gcpList[i].imageCoord) this.gcpList[i].imageCoord = [0, 0];
+      this.gcpList[i].imageCoord[1] = isNaN(num) ? 0 : num;
+    },
+    updateMapCoordLng(i, val) {
+      const num = parseFloat(val);
+      if (!this.gcpList[i].mapCoord) this.gcpList[i].mapCoord = [0, 0];
+      this.gcpList[i].mapCoord[0] = isNaN(num) ? 0 : num;
+      this.updateMapMarkers(); // 地図マーカー再描画（オプション）
+    },
+    updateMapCoordLat(i, val) {
+      const num = parseFloat(val);
+      if (!this.gcpList[i].mapCoord) this.gcpList[i].mapCoord = [0, 0];
+      this.gcpList[i].mapCoord[1] = isNaN(num) ? 0 : num;
+      this.updateMapMarkers(); // 地図マーカー再描画（オプション）
+    },
     startDragging(event, index) {
       const imgBox = event.target.closest('.floating-image-panel');
       if (!imgBox) return;
