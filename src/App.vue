@@ -71,6 +71,13 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-card-text>
             <v-text-field v-model="s_gazoName" placeholder="名称" ></v-text-field>
             <v-select class="scrollable-content"
+                      v-model="s_resolution"
+                      :items="resolutions"
+                      label="画像取込最大解像度"
+                      outlined
+                      v-if="user1"
+            ></v-select>
+            <v-select class="scrollable-content"
                       v-model="s_transparent"
                       :items="transparentType"
                       item-title="label"
@@ -2104,7 +2111,8 @@ export default {
   },
   methods: {
     startTiling () {
-
+      tileGenerateForUser('png','pgw',true)
+      this.showTileDialog = false
     },
     onImageLoad() {
       this.imageLoaded = true;
@@ -2130,90 +2138,114 @@ export default {
             console.error('Failed to create blob from canvas');
             return;
           }
-          const convertedImage = new File([blob], `${this.gazoNameFromStore}_converted.png`, { type: 'image/png' });
+          const baseName = this.gazoNameFromStore || 'converted'; // デフォルト名を考慮
+          const convertedImage = new File([blob], `${baseName}.png`, { type: 'image/png' });
           const worldFileContent = this.generateWorldFile();
           if (!worldFileContent) {
             console.error('World file generation failed');
             return;
           }
-          const worldFile = new Blob([worldFileContent], { type: 'text/plain' });
+          // ワールドファイルを同名.pgwとして保存
+          const worldFile = new File([worldFileContent], `${baseName}.pgw`, { type: 'text/plain' });
 
           // storeに保存
           this.$store.commit('setTiffAndWorldFile', [convertedImage, worldFile]);
 
           // ワールドファイルの内容をコンソールログで表示
           console.log('World File Content:', worldFileContent);
+          console.log('Saved Files:', { image: convertedImage.name, world: worldFile.name }); // デバッグ用
         }, 'image/png');
       }
       this.showTileDialog = true;
     },
     generateWorldFile() {
-      if (this.gcpList.length < 4) {
-        console.warn('GCPが4点以上必要です');
+      if (this.gcpList.length < 3) {
+        console.warn('GCPが3点以上必要です');
         return null;
       }
 
-      const gcpImageCoords = this.gcpList.slice(0, 4).map(gcp => gcp.imageCoord);
-      const gcpMapCoords = this.gcpList.slice(0, 4).map(gcp => gcp.mapCoord);
+      const gcpImageCoords = this.gcpList.map(gcp => gcp.imageCoord);
+      const gcpMapCoords = this.gcpList.map(gcp => {
+        const [lng, lat] = gcp.mapCoord;
+        // WGS84 → Webメルカトル
+        const x = lng * 20037508.34 / 180;
+        const y = Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180);
+        const yMeters = y * 20037508.34 / 180;
+        return [x, yMeters];
+      });
 
-      // デバッグ: 入力データの確認
-      console.log('gcpImageCoords:', gcpImageCoords);
-      console.log('gcpMapCoords:', gcpMapCoords);
+      const N = gcpImageCoords.length;
+      const M = 6; // アフィン係数6個
 
-      const canvas = document.querySelector("#warp-canvas");
-      if (!canvas || canvas.width === 0 || canvas.height === 0) {
-        console.error('Invalid canvas state:', { width: canvas?.width, height: canvas?.height });
-        return null;
+      const A = new Array(M).fill(0).map(() => new Array(M).fill(0));
+      const b = new Array(M).fill(0);
+
+      for (let i = 0; i < N; i++) {
+        const [x, y] = gcpImageCoords[i];
+        const [X, Y] = gcpMapCoords[i];
+
+        const rowX = [x, y, 1, 0, 0, 0]; // X = Ax + By + C
+        const rowY = [0, 0, 0, x, y, 1]; // Y = Dx + Ey + F
+
+        for (let j = 0; j < M; j++) {
+          for (let k = 0; k < M; k++) {
+            A[j][k] += rowX[j] * rowX[k] + rowY[j] * rowY[k];
+          }
+          b[j] += rowX[j] * X + rowY[j] * Y;
+        }
       }
-      const width = canvas.width;
-      const height = canvas.height;
 
-      // デバッグ: キャンバスサイズ
-      console.log('Canvas dimensions:', { width, height });
+      // 解く（ガウス消去法）
+      const solve = (A, b) => {
+        const n = b.length;
+        for (let i = 0; i < n; i++) {
+          // Pivot
+          let maxRow = i;
+          for (let k = i + 1; k < n; k++) {
+            if (Math.abs(A[k][i]) > Math.abs(A[maxRow][i])) {
+              maxRow = k;
+            }
+          }
+          [A[i], A[maxRow]] = [A[maxRow], A[i]];
+          [b[i], b[maxRow]] = [b[maxRow], b[i]];
 
-      // 緯度経度をWebメルカトル (EPSG:3857) に変換
-      const toMercator = (lng, lat) => {
-        const x = lng * 20037508.34 / 180; // メートル単位
-        const y = Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180) * 20037508.34 / 180;
-        return [x, y];
+          // Eliminate
+          for (let k = i + 1; k < n; k++) {
+            const factor = A[k][i] / A[i][i];
+            for (let j = i; j < n; j++) {
+              A[k][j] -= factor * A[i][j];
+            }
+            b[k] -= factor * b[i];
+          }
+        }
+
+        // Back substitution
+        const x = new Array(n);
+        for (let i = n - 1; i >= 0; i--) {
+          let sum = 0;
+          for (let j = i + 1; j < n; j++) {
+            sum += A[i][j] * x[j];
+          }
+          x[i] = (b[i] - sum) / A[i][i];
+        }
+
+        return x;
       };
 
-      const mercatorCoords = gcpMapCoords.map(coord => toMercator(coord[0], coord[1]));
+      const coeffs = solve(A, b);
+      const [A_, B_, C_, D_, E_, F_] = coeffs;
 
-      // デバッグ: 変換後の座標
-      console.log('mercatorCoords:', mercatorCoords);
+      // デバッグ表示
+      console.log('Affine Coefficients:', coeffs);
 
-      // ピクセルサイズの推定 (メートル単位)
-      const dx = mercatorCoords[1][0] - mercatorCoords[0][0];
-      const dy = mercatorCoords[2][1] - mercatorCoords[0][1];
-      const pixelSizeX = dx / (gcpImageCoords[1][0] - gcpImageCoords[0][0]) || 1;
-      const pixelSizeY = dy / (gcpImageCoords[2][1] - gcpImageCoords[0][1]) || -1;
-
-      // デバッグ: ピクセルサイズ
-      console.log('pixelSizeX:', pixelSizeX, 'pixelSizeY:', pixelSizeY);
-
-      // 左下のWebメルカトル座標
-      const xOrigin = mercatorCoords[0][0] - (gcpImageCoords[0][0] * pixelSizeX);
-      const yOrigin = mercatorCoords[0][1] - (height - (gcpImageCoords[0][1] || 0)) * pixelSizeY; // gcpImageCoords[0][1]がundefinedの場合0をデフォルト
-
-      // デバッグ: 原点
-      console.log('xOrigin:', xOrigin, 'yOrigin:', yOrigin);
-
-      // NaNチェックとデフォルト値
-      if (isNaN(xOrigin) || isNaN(yOrigin)) {
-        console.error('NaN detected in origin calculation:', { xOrigin, yOrigin, height, gcpImageCoords });
-        return null;
-      }
-
-      // ワールドファイルの内容
       const worldFileContent = `
-${pixelSizeX.toFixed(10)}
-0.0000000000
-0.0000000000
-${pixelSizeY.toFixed(10)}
-${xOrigin.toFixed(10)}
-${yOrigin.toFixed(10)}
-      `.trim();
+            ${A_.toFixed(10)}
+            ${D_.toFixed(10)}
+            ${B_.toFixed(10)}
+            ${E_.toFixed(10)}
+            ${C_.toFixed(10)}
+            ${F_.toFixed(10)}
+            `.trim();
 
       return worldFileContent;
     },
@@ -6618,7 +6650,7 @@ ${yOrigin.toFixed(10)}
                       reader.onload = evt => {
                         this.uploadedImageUrl = evt.target.result;
                         this.showFloatingImage = true;
-                        this.s_gazoName = fileName
+                        this.s_gazoName = fileName.split('.')[0]
                         // alert('読み込み終了')
                       };
                       reader.readAsDataURL(file);

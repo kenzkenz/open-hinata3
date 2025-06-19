@@ -4688,9 +4688,9 @@ export async function tileGenerateForUserPdf () {
     // -------------------------------------------------------------------------------------------------
 }
 
-export async function tileGenerateForUser(imageExtension, worldFileExtension) {
+export async function tileGenerateForUser(imageExtension, worldFileExtension, is3857) {
     // タイル生成関数
-    async function generateTiles(filePath, srsCode = "2450", dir, fileName, resolution, transparent) {
+    async function generateTiles(filePath, srsCode = "3857", dir, fileName, resolution, transparent) {
         store.state.loading2 = true;
         // FormDataを作成
         const formData = new FormData();
@@ -4702,8 +4702,8 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension) {
         formData.append("transparent", transparent || '1');
 
         try {
-            // generate_tiles11.phpにリクエスト送信
-            const response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles15.php", {
+            // generate_tiles11.phpにリクエスト送信 generate_tiles15.phpが安定版
+            const response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles17.php", {
                 method: "POST",
                 body: formData,
             });
@@ -4846,7 +4846,8 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension) {
     // アップロード処理
     store.state.loading2 = true;
     store.state.loadingMessage = 'アップロード中です。少々お待ちください。';
-    const srsCode = zahyokei.find(item => item.kei === store.state.zahyokei)?.code || "2450";
+    let srsCode = zahyokei.find(item => item.kei === store.state.zahyokei)?.code || "EPSG:3857";
+    if (is3857) srsCode = 'EPSG:3857'
     const files = store.state.tiffAndWorldFile || [];
     let imageFile = null, worldFile = null;
 
