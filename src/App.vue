@@ -698,6 +698,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             <div style="position: relative; display: inline-block;">
               <!-- 画像 -->
               <img
+                  id="warp-image"
                   class="floating-image"
                   ref="floatingImage"
                   :src="uploadedImageUrl"
@@ -706,7 +707,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               />
               <!-- 上：仮ワープした画像を描くCanvas -->
 <!--              <canvas ref="warpCanvas" class="warp-canvas"></canvas>-->
-              <canvas ref="warpCanvas" class="warp-canvas"></canvas>
+              <canvas ref="warpCanvas" id="warp-canvas"></canvas>
 
               <!-- マーカー -->
               <div
@@ -782,14 +783,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <v-btn class="tiny-btn" style="margin-left: 5px;" small color="primary" @click="loadGcpFromLocal">GCP復元</v-btn>
               <v-btn
                   style="margin-left: 5px;"
-                  v-if="gcpList.filter(gcp =>
-                    gcp.imageCoord?.length === 2 &&
-                    gcp.mapCoord?.length === 2 &&
-                    typeof gcp.imageCoord[0] === 'number' &&
-                    typeof gcp.imageCoord[1] === 'number' &&
-                    typeof gcp.mapCoord[0] === 'number' &&
-                    typeof gcp.mapCoord[1] === 'number'
-                  ).length === 3"
+                    v-if="gcpList.filter(gcp =>
+    gcp.imageCoord?.length === 2 &&
+    gcp.mapCoord?.length === 2 &&
+    typeof gcp.imageCoord[0] === 'number' &&
+    typeof gcp.imageCoord[1] === 'number' &&
+    typeof gcp.mapCoord[0] === 'number' &&
+    typeof gcp.mapCoord[1] === 'number'
+  ).length >= 4"
                   class="tiny-btn"
                   small
                   color="primary"
@@ -1303,6 +1304,15 @@ function computeAffineMatrix(from, to) {
     f: coeffY.get([2])
   };
 }
+
+function ensureOpenCvReady(callback) {
+  if (window.cv && window.cv.imread) {
+    callback();
+  } else {
+    setTimeout(() => ensureOpenCvReady(callback), 100);
+  }
+}
+
 
 // function convertLngLatToImageXY(lngLat, map, imageElement) {
 //   const projected = map.project({ lng: lngLat[0], lat: lngLat[1] });
@@ -2045,125 +2055,101 @@ export default {
   methods: {
     previewAffineWarp() {
       this.$nextTick(() => {
-        const canvas = document.querySelector('.warp-canvas');
-        const img = document.querySelector('.floating-image');
-        const map = this.$store.state.map01;
+        ensureOpenCvReady(() => {
+          const canvas = document.getElementById('warp-canvas');
+          const map = this.$store.state.map01;
+          const img = document.getElementById('warp-image');
 
-        if (!canvas || !canvas.getContext || !img || !map) {
-          console.warn('必要な要素が取得できません', { canvas, img, map });
-          return;
-        }
+          if (!canvas || !img || !map || typeof window.cv === 'undefined') {
+            console.warn('必要な要素またはOpenCVが読み込まれていません');
+            return;
+          }
 
-        const ctx = canvas.getContext('2d');
+          if (!img.complete) {
+            img.onload = () => this.previewAffineWarp();
+            return;
+          }
 
-        if (!img.complete) {
-          img.onload = () => this.previewAffineWarp();
-          console.log('画像ロード待機中');
-          return;
-        }
+          const src = window.cv.imread('warp-image');
+          if (src.empty() || src.cols === 0 || src.rows === 0) {
+            console.error('Failed to load image into Mat');
+            src.delete();
+            return;
+          }
+          console.log('Image size:', src.cols, src.rows);
 
-        canvas.width = img.clientWidth;
-        canvas.height = img.clientHeight;
-        console.log('Canvas size:', canvas.width, canvas.height);
-        console.log('Image size:', img.clientWidth, img.clientHeight);
+          canvas.width = src.cols;
+          canvas.height = src.rows;
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+          if (this.gcpList.length < 4) {
+            console.warn('GCPが4点以上必要です');
+            return;
+          }
 
-        if (this.gcpList.length !== 3) {
-          console.warn('GCPが3点ではありません', this.gcpList);
-          return;
-        }
+          const from = this.gcpList.slice(0, 4).map(gcp => gcp.imageCoord);
+          const to = this.gcpList.slice(0, 4).map(gcp => convertLngLatToImageXY(gcp.mapCoord, map, img));
 
-        const from = this.gcpList.map(gcp => gcp.imageCoord);
-        const to = this.gcpList.map(gcp => convertLngLatToImageXY(gcp.mapCoord, map, img));
-        console.log('From coords:', from);
-        console.log('To coords:', to);
+          console.log('From points:', from);
+          console.log('To points:', to);
 
-        // GCP をプロット（デバッグ用）
-        ctx.fillStyle = 'red';
-        from.forEach(([x, y]) => ctx.fillRect(x - 2, y - 2, 4, 4));
-        ctx.fillStyle = 'blue';
-        to.forEach(([x, y]) => ctx.fillRect(x - 2, y - 2, 4, 4));
+          const isValidCoord = (coord, width, height) =>
+              coord[0] >= 0 && coord[0] < width && coord[1] >= 0 && coord[1] < height;
 
-        // try {
-        //   const { a, b, c, d, e, f } = computeAffineMatrix(from, to);
-        //   console.log('Affine Matrix:', { a, b, c, d, e, f });
-        //
-        //   ctx.setTransform(a, b, c, d, e, f);
-        //   ctx.drawImage(img, 0, 0);
-        //   ctx.setTransform(1, 0, 0, 1, 0, 0);
-        // } catch (error) {
-        //   console.error('Affine warp error:', error);
-        //   return;
-        // }
-        try {
-          const { a, b, c, d, e, f } = computeAffineMatrix(from, to);
-          console.log('Affine Matrix:', { a, b, c, d, e, f });
+          if (!from.every(coord => isValidCoord(coord, src.cols, src.rows)) ||
+              !to.every(coord => isValidCoord(coord, src.cols, src.rows))) {
+            console.error('Invalid coordinates for transformation:', { from, to });
+            return;
+          }
 
-          // ここにデバッグコードを追加
+          try {
+            const dst = new window.cv.Mat();
+            const srcQuad = window.cv.matFromArray(4, 1, window.cv.CV_32FC2, [
+              from[0][0], from[0][1],
+              from[1][0], from[1][1],
+              from[2][0], from[2][1],
+              from[3][0], from[3][1]
+            ].map(Number));
+            const dstQuad = window.cv.matFromArray(4, 1, window.cv.CV_32FC2, [
+              to[0][0], to[0][1],
+              to[1][0], to[1][1],
+              to[2][0], to[2][1],
+              to[3][0], to[3][1]
+            ].map(Number));
 
-          ctx.setTransform(a, b, c, d, e, f);
-          const minX = Math.min(...to.map(coord => coord[0]));
-          const minY = Math.min(...to.map(coord => coord[1]));
-          ctx.drawImage(img, -minX, -minY);
-          ctx.setTransform(1, 0, 0, 1, 0, 0);
-          ctx.fillStyle = 'red';
-          from.forEach(([x, y]) => ctx.fillRect(x - 2, y - 2, 4, 4));
-          ctx.fillStyle = 'blue';
-          to.forEach(([x, y]) => ctx.fillRect(x - 2 + minX, y - 2 + minY, 4, 4)); // To 座標をオフセット
+            const warpMat = window.cv.getPerspectiveTransform(srcQuad, dstQuad);
+            if (warpMat.empty()) {
+              console.error('Invalid transformation matrix');
+              srcQuad.delete();
+              dstQuad.delete();
+              src.delete();
+              dst.delete();
+              return;
+            }
 
-        } catch (error) {
-          console.error('Affine warp error:', error);
-          return;
-        }
-        this.showWarpCanvas = true;
+            const size = new window.cv.Size(src.cols, src.rows);
+            window.cv.warpPerspective(src, dst, warpMat, size, window.cv.INTER_LINEAR, window.cv.BORDER_CONSTANT, new window.cv.Scalar());
+
+            if (dst.empty()) {
+              console.error('Transformation failed, output Mat is empty');
+            } else {
+              window.cv.imshow('warp-canvas', dst);
+              console.log('Transformation applied');
+            }
+
+            src.delete();
+            dst.delete();
+            srcQuad.delete();
+            dstQuad.delete();
+            warpMat.delete();
+            this.showWarpCanvas = true;
+          } catch (e) {
+            console.error('OpenCV処理中にエラーが発生しました:', e);
+          }
+        });
       });
     },
-    // previewAffineWarp() {
-    //   this.$nextTick(() => {
-    //     const canvas = document.querySelector('.warp-canvas');
-    //     const img = document.querySelector('.floating-image');
-    //     const map = this.$store.state.map01;
-    //
-    //     if (!canvas || !canvas.getContext || !img || !map) {
-    //       console.warn('必要な要素が取得できません');
-    //       return;
-    //     }
-    //
-    //     const ctx = canvas.getContext('2d');
-    //
-    //     if (!img.complete) {
-    //       img.onload = () => this.previewAffineWarp();
-    //       return;
-    //     }
-    //
-    //     canvas.width = img.clientWidth;
-    //     canvas.height = img.clientHeight;
-    //     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    //
-    //     if (this.gcpList.length !== 3) {
-    //       console.warn('GCPが3点ではありません');
-    //       return;
-    //     }
-    //
-    //     const from = this.gcpList.map(gcp => gcp.imageCoord);
-    //     const to = this.gcpList.map(gcp =>
-    //         convertLngLatToImageXY(gcp.mapCoord, map, img)
-    //     );
-    //
-    //     const { a, b, c, d, e, f } = computeAffineMatrix(from, to);
-    //
-    //     // ✅ 順序修正
-    //     ctx.setTransform(a, b, c, d, e, f);
-    //     ctx.drawImage(img, 0, 0);
-    //     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    //
-    //     this.showWarpCanvas = true;
-    //   });
-    // },
-
     clearWarpCanvas() {
-      const canvas = document.querySelector('.warp-canvas');
+      const canvas = document.querySelector('#warp-canvas');
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       if (ctx) {
@@ -2171,62 +2157,6 @@ export default {
       }
       this.showWarpCanvas = false;
     },
-
-//     previewAffineWarp() {
-//       this.$nextTick(() => {
-//         const canvas = document.querySelector('.warp-canvas');
-//         const img = document.querySelector('.floating-image');
-//         const map = this.$store.state.map01;
-//
-//         if (!canvas || !canvas.getContext || !img || !map) {
-//           console.warn('必要な要素が取得できません');
-//           return;
-//         }
-//
-//         const ctx = canvas.getContext('2d');
-//
-//         // ↓ imgがロード済かどうかで分岐（新規描画時も対応）
-//         if (!img.complete) {
-//           img.onload = () => this.previewAffineWarp();
-//           return;
-//         }
-//
-//         // キャンバスサイズを画像サイズと同期
-//         canvas.width = img.clientWidth;
-//         canvas.height = img.clientHeight;
-//         ctx.clearRect(0, 0, canvas.width, canvas.height);
-//
-//         if (this.gcpList.length !== 3) {
-//           console.warn('GCPが3点ではありません');
-//           return;
-//         }
-//
-//         const from = this.gcpList.map(gcp => gcp.imageCoord);
-//         const to = this.gcpList.map(gcp =>
-//             convertLngLatToImageXY(gcp.mapCoord, map, img)
-//         );
-//
-//         const { a, b, c, d, e, f } = computeAffineMatrix(from, to);
-//
-// // ✅ 修正: 正しい順序でセット
-//         ctx.setTransform(a, b, c, d, e, f);
-//         ctx.drawImage(img, 0, 0);
-//         ctx.setTransform(1, 0, 0, 1, 0, 0); // リセット
-//
-//
-//         this.showWarpCanvas = true;
-//
-//       });
-//     },
-//     clearWarpCanvas() {
-//       const canvas = document.querySelector('.warp-canvas');
-//       if (!canvas) return;
-//       const ctx = canvas.getContext('2d');
-//       if (ctx) {
-//         ctx.clearRect(0, 0, canvas.width, canvas.height);
-//       }
-//       this.showWarpCanvas = false;
-//     },
     removeFloatingImage() {
       if (!confirm('本当に画像とGCPをすべて削除しますか？')) return;
 
@@ -8063,7 +7993,7 @@ select {
   z-index: 999;
 }
 
-.warp-canvas {
+#warp-canvas {
   position: absolute;
   top: 0;
   left: 0;
