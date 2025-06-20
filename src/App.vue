@@ -1564,7 +1564,7 @@ export default {
     imageLoaded: false,
     showOriginal: true,
     showTileDialog: false,
-    // showUploadButton: false,
+    originalEnable: null
   }),
   computed: {
     ...mapState([
@@ -3298,16 +3298,22 @@ export default {
         this.snackbarText = '画面を固定します。もう一度クリックで解除'
         this.snackbar = true
         map.dragPan.disable()
+        this.finishLine()
+        const originalEnable = map.dragPan.enable;
+        map.dragPan.enable = function (...args) {
+          console.trace('dragPan.enable() called');
+          setTimeout(() => {
+            map.dragPan.disable();
+            console.log('dragPan was force-disabled again');
+          }, 50);
+          return originalEnable.apply(this, args);
+        };
       } else {
+        // フックを解除。this.originalEnableはオンロードの先頭に書いている。
+        map.dragPan.enable = this.originalEnable
         map.dragPan.enable()
       }
       store.state.isCursorOnPanel = false
-      this.finishLine()
-      const originalEnable = map.dragPan.enable;
-      map.dragPan.enable = function (...args) {
-        console.trace('dragPan.enable() called');
-        return originalEnable.apply(this, args);
-      };
     },
     toggleEditEnabled () {
       this.saveHistory()
@@ -5703,6 +5709,7 @@ export default {
             map.on('click', (e) => {
               this.onMapClick(e);
             });
+            this.originalEnable = map.dragPan.enable;
           }
 
           map.setProjection({"type": "globe"})
