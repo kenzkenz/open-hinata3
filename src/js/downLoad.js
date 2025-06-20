@@ -7757,6 +7757,7 @@ export function enableFeatureDragAndAdd(map, layerId, sourceId, options = {}) {
     // ドラッグ中
     map.on('mousemove', async function (e) {
         if (!isDragging || !draggedFeature) return;
+        store.state.finishLineFire = !store.state.finishLineFire
         const source = map.getSource(sourceId);
         let allowSource
         if (sourceId === 'click-circle-source') {
@@ -8238,31 +8239,3 @@ export function splitLineStringIntoPoints(lineStringGeoJSON, numPoints) {
     console.log(turf.featureCollection(points));
     return turf.featureCollection(points);
 }
-
-
-// export function splitLineStringIntoPoints(lineStringGeoJSON, numPoints) {
-//     if (!lineStringGeoJSON || lineStringGeoJSON.geometry.type !== 'LineString') {
-//         console.error('入力はLineStringのGeoJSONである必要があります');
-//         return null;
-//     }
-//
-//     if (numPoints < 2) {
-//         console.error('ポイント数は2以上である必要があります');
-//         return null;
-//     }
-//
-//     const line = turf.lineString(lineStringGeoJSON.geometry.coordinates);
-//     const totalLength = turf.length(line, { units: 'kilometers' }); // 総距離（km）
-//
-//     const segmentLength = totalLength / (numPoints - 1);
-//     const points = [];
-//
-//     for (let i = 0; i < numPoints; i++) {
-//         const distance = i * segmentLength;
-//         const point = turf.along(line, distance, { units: 'kilometers' });
-//         points.push(point);
-//     }
-//     console.log(turf.featureCollection(points))
-//     return turf.featureCollection(points);
-// }
-

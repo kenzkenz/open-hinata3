@@ -1603,6 +1603,9 @@ export default {
       'selectedPointFeature',
       'showChibanzuDrawer',
     ]),
+    s_finishLineFire () {
+      return this.$store.state.finishLineFire
+    },
     gcpWithImageCoord() {
       return this.gcpList
           .map((gcp, index) => ({ gcp, index }))
@@ -2538,9 +2541,10 @@ export default {
     //   }
     //   this.showWarpCanvas = false;
     // },
+
     removeFloatingImage() {
       if (!confirm('本当に画像とGCPをすべて削除しますか？')) return;
-
+      this.clearWarp()
       // アップロード画像とGCP関連
       this.uploadedImageUrl = null;
       this.gcpList = [];
@@ -2554,13 +2558,14 @@ export default {
       localStorage.removeItem('savedGcp');
       localStorage.removeItem('savedImage');
 
-      // 仮ワープCanvasの消去
+      // 仮ワープCanvasの消去（サイズは維持し、クリアのみ）
       const canvas = document.querySelector('#warp-canvas');
       if (canvas) {
         const ctx = canvas.getContext('2d');
         ctx?.clearRect(0, 0, canvas.width, canvas.height);
-        canvas.width = 0; // サイズを0にして明示的に無効化
-        canvas.height = 0;
+        // 👇 サイズは0にしないことで次回の描画が可能になる
+        // canvas.width = 0;
+        // canvas.height = 0;
       }
 
       // Blobや一時ファイルがあればnullにして明示的に削除（例: Vuexに保持している場合）
@@ -2571,6 +2576,41 @@ export default {
 
       console.log('画像・GCP・Canvas・一時データをすべて削除しました');
     },
+
+
+    // removeFloatingImage() {
+    //   if (!confirm('本当に画像とGCPをすべて削除しますか？')) return;
+    //
+    //   // アップロード画像とGCP関連
+    //   this.uploadedImageUrl = null;
+    //   this.gcpList = [];
+    //   this.hoveredRow = null;
+    //
+    //   // マーカー類の削除（存在する場合に限り）
+    //   this.removeImageMarkers?.();
+    //   this.removeMapMarkers?.();
+    //
+    //   // 保存済みローカルデータの削除
+    //   localStorage.removeItem('savedGcp');
+    //   localStorage.removeItem('savedImage');
+    //
+    //   // 仮ワープCanvasの消去
+    //   const canvas = document.querySelector('#warp-canvas');
+    //   if (canvas) {
+    //     const ctx = canvas.getContext('2d');
+    //     ctx?.clearRect(0, 0, canvas.width, canvas.height);
+    //     canvas.width = 0; // サイズを0にして明示的に無効化
+    //     canvas.height = 0;
+    //   }
+    //
+    //   // Blobや一時ファイルがあればnullにして明示的に削除（例: Vuexに保持している場合）
+    //   this.$store.commit('setTiffAndWorldFile', null);
+    //
+    //   // 自分自身の表示も消す
+    //   this.showFloatingImage = false;
+    //
+    //   console.log('画像・GCP・Canvas・一時データをすべて削除しました');
+    // },
 
     // removeFloatingImage() {
     //   if (!confirm('本当に画像とGCPをすべて削除しますか？')) return;
@@ -3256,6 +3296,7 @@ export default {
     },
     drawClose () {
       document.querySelector('#centerDrawBtn').click()
+      document.querySelector('.center-wrapper').style.opacity = '1'
       this.isRightDiv = true
     },
     toggleLDraw ()  {
@@ -3267,12 +3308,14 @@ export default {
         this.s_isDrawPolygon = false
         if (window.innerWidth < 500) {
           this.isRightDiv = true
+          document.querySelector('.center-wrapper').style.opacity = '1'
         }
       } else {
         this.snackbarText = 'ドロー時は各種クリックが制限されます。'
         this.snackbar = true
         if (window.innerWidth < 500) {
           this.isRightDiv = false
+          document.querySelector('.center-wrapper').style.opacity = '0'
         }
       }
       document.querySelector('#draw-indicato-text').innerHTML = ''
@@ -3341,6 +3384,7 @@ export default {
         map.dragPan.disable()
         this.finishLine()
         const originalEnable = map.dragPan.enable;
+        // -----------------------------------------
         map.dragPan.enable = function (...args) {
           console.trace('dragPan.enable() called');
           setTimeout(() => {
@@ -3349,10 +3393,17 @@ export default {
           }, 50);
           return originalEnable.apply(this, args);
         };
+        // -----------------------------------------
       } else {
         // フックを解除。this.originalEnableはオンロードの先頭に書いている。
+        console.log(this.originalEnable)
         map.dragPan.enable = this.originalEnable
         map.dragPan.enable()
+
+        // const canvas = map.getCanvasContainer();
+        // map.dragPan = new maplibregl.DragPanHandler(map, canvas);
+        // map.dragPan.enable();
+
       }
       store.state.isCursorOnPanel = false
     },
@@ -4278,7 +4329,7 @@ export default {
             }
           })
       history('updatePermalink',window.location.href)
-      // console.log('平面直角座標系',japanCoord([lng,lat]))
+      japanCoord([lng,lat])
     },
     createShortUrl() {
       let params = new URLSearchParams()
@@ -7522,6 +7573,10 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
+    s_finishLineFire () {
+      // あれ？これでよかったのか？
+      this.finishLine()
+    },
     gcpList: {
       deep: true,
       handler() {
@@ -7716,11 +7771,11 @@ export default {
 /*  top: 255px;*/
 /*  left: 0px;*/
 /*}*/
-@media (max-width: 720px) {
-  .draw-fan {
-    top: 0px;
-  }
-}
+/*@media (max-width: 720px) {*/
+/*  .draw-fan {*/
+/*    top: 0px;*/
+/*  }*/
+/*}*/
 .printer {
   position: absolute;
   top: 240px;
