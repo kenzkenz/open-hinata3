@@ -1641,7 +1641,7 @@ export default {
         { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
       ]
       if (window.innerWidth < 500) {
-        btns = btns.filter(btn => btn.key !== 'edit' && btn.key !== 'dxf')
+        btns = btns.filter(btn => btn.key !== 'edit99' && btn.key !== 'dxf')
       } else if (window.innerWidth < 1000) {
         btns = btns.filter(btn => btn.key !== 'dxf' )
       } else {
@@ -5518,94 +5518,317 @@ export default {
         map.getSource('guide-line-source').setData(guideLineGeoJson);
       });
 
-      // 頂点レイヤーを動かすと同時にメインレイヤーを更新する。----------------------------------------------
+
+      // ⭐️⭐️⭐️
+
       let isDragging = false;
       let draggedFeatureId = null;
       let vertexIndex = null;
       let dragOrigin = null;
-      map.on('mousedown', 'vertex-layer', function(e) {
-        if (!store.state.editEnabled) return;
-        if (!e.features?.length) return;
+
+      // function getLngLatFromEvent(e) {
+      //   // if (e.lngLat) return e.lngLat;
+      //
+      //   const touch = e.originalEvent?.touches?.[0];
+      //   if (!touch) return null;
+      //
+      //   const canvas = map.getCanvas();
+      //   const rect = canvas.getBoundingClientRect();
+      //
+      //   // ✅ MapLibreのunprojectは「CSSピクセル」でOK。devicePixelRatioかけてはいけない！
+      //   return map.unproject({
+      //     x: touch.clientX - rect.left,
+      //     y: touch.clientY - rect.top
+      //   });
+      // }
+
+
+      function getLngLatFromEvent(e) {
+        // 🖱️ マウス操作（PCブラウザ）
+        if (!e.originalEvent?.touches) {
+          return e.lngLat;
+        }
+
+        // ☝️ タッチ操作（iOS / Android）
+        const touch = e.originalEvent.touches[0];
+        const rect = map.getCanvas().getBoundingClientRect();
+
+        return map.unproject({
+          x: touch.clientX - rect.left,
+          y: touch.clientY - rect.top
+        });
+      }
+
+// ✅ 地図座標取得（map.unproject）用のピクセル座標（物理ピクセル単位）
+      function getUnprojectPointFromTouch(e) {
+        const touch = e.originalEvent?.touches?.[0];
+        if (!touch) return null;
+
+        const rect = map.getCanvas().getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+
+        return {
+          x: (touch.clientX - rect.left) * dpr,
+          y: (touch.clientY - rect.top) * dpr
+        };
+      }
+
+// ✅ queryRenderedFeatures 用の CSSピクセル座標（補正なし）
+      function getCanvasPointFromTouch(e) {
+        const touch = e.originalEvent?.touches?.[0];
+        if (!touch) return null;
+
+        const rect = map.getCanvas().getBoundingClientRect();
+        return {
+          x: touch.clientX - rect.left,
+          y: touch.clientY - rect.top
+        };
+      }
+
+// ✅ マウスまたはタッチイベント → 地図座標（LngLat）
+//       function getLngLatFromEvent(e) {
+//         if (e.lngLat) return e.lngLat;
+//
+//         const point = getUnprojectPointFromTouch(e);
+//         if (!point) return null;
+//
+//         return map.unproject(point);
+//       }
+
+// ✅ 頂点ドラッグ開始処理
+      function tryStartDragging(e, cssPoint = null) {
+        const lngLat = getLngLatFromEvent(e);
+        if (!lngLat) {
+          isDragging = false;
+          return;
+        }
+
+        const canvasPoint = cssPoint || (e.point ?? map.project(lngLat));
+
+        const features = map.queryRenderedFeatures([
+          [canvasPoint.x - 15, canvasPoint.y - 15],
+          [canvasPoint.x + 15, canvasPoint.y + 15]
+        ], {
+          layers: ['vertex-layer']
+        });
+
+        if (!features.length || !store.state.editEnabled) {
+          isDragging = false;
+          return;
+        }
+
         try {
-          console.log(e.features[0].properties)
-          const parentProps = JSON.parse(e.features[0].properties.parentProps);
+          const feature = features[0];
+          const parentProps = JSON.parse(feature.properties.parentProps);
           if (!parentProps?.id) {
-            console.warn('Missing feature ID in parentProps');
+            isDragging = false;
             return;
           }
+
           map.dragPan.disable();
           isDragging = true;
           draggedFeatureId = parentProps.id;
-          vertexIndex = e.features[0].properties.vertexIndex
-          console.log(draggedFeatureId,vertexIndex)
-          dragOrigin = e.lngLat;
+          vertexIndex = Number(feature.properties.vertexIndex);
+          dragOrigin = lngLat;
           map.getCanvas().style.cursor = 'grabbing';
-        } catch (error) {
-          console.error('Invalid parentProps JSON:', error);
+        } catch (err) {
+          console.error('parentProps JSON parse error:', err);
+          isDragging = false;
+        }
+      }
+
+// 🖱️ PC: mousedown
+      map.on('mousedown', 'vertex-layer', tryStartDragging);
+
+// ☝️ タッチ: touchstart（1本指のみ、CSSピクセルで渡す）
+      map.on('touchstart', (e) => {
+        if (e.originalEvent?.touches?.length !== 1) {
+          isDragging = false;
           return;
         }
-      });
 
-      map.on('mousemove', debounce(function(e) {
-        if (!isDragging || draggedFeatureId === null) return;
-        const vertexSourceGeojson = map.getSource('vertex-source')._data;
-        const mainSourceGeojson = map.getSource('click-circle-source')._data;
-        // ドラッグ中のフィーチャーを検索
-        let feature = vertexSourceGeojson.features.find(f => {
-          return f.properties.parentProps.id === draggedFeatureId && f.properties.vertexIndex === vertexIndex;
-        });
-        // 新しい座標を適用
-        feature.geometry.coordinates = [e.lngLat.lng, e.lngLat.lat];
-        // ソースデータを更新
-        try {
-          map.getSource('vertex-source').setData(vertexSourceGeojson);
-          const vertexSource = map.getSource('vertex-source');
-          const features = vertexSource._data.features;
-          features.forEach(f => {
-            const { featureIndex, vertexIndex, polygonIndex } = f.properties;
-            if (mainSourceGeojson.features[featureIndex]?.geometry.type === 'LineString') {
-              mainSourceGeojson.features[featureIndex].geometry.coordinates[vertexIndex] = f.geometry.coordinates;
-            // } else if (mainSourceGeojson.features[featureIndex]?.geometry.type === 'Polygon') {
-            //   mainSourceGeojson.features[featureIndex].geometry.coordinates[0][vertexIndex] = f.geometry.coordinates;
-            } else if (mainSourceGeojson.features[featureIndex]?.geometry.type === 'Polygon') {
-              let coords = mainSourceGeojson.features[featureIndex].geometry.coordinates[0];
-              coords[vertexIndex] = f.geometry.coordinates;
-              if (vertexIndex === 0) {
-                coords[coords.length - 1] = f.geometry.coordinates;
-              }
-            } else if (mainSourceGeojson.features[featureIndex]?.geometry.type === 'MultiPolygon') {
-              mainSourceGeojson.features[featureIndex].geometry.coordinates[polygonIndex][0][vertexIndex] = f.geometry.coordinates;
-            }
-          });
-          autoCloseAllPolygons(mainSourceGeojson)
-
-          const tgtFeature = mainSourceGeojson.features.find(f => f.properties.id === draggedFeatureId)
-
-          console.log(mainSourceGeojson)
-          console.log(draggedFeatureId)
-
-          const calc = calculatePolygonMetrics(tgtFeature)
-          tgtFeature.properties['area'] = calc.area
-
-          map.getSource('click-circle-source').setData(mainSourceGeojson);
-          setAllMidpoints(map, mainSourceGeojson);
-          store.state.clickCircleGeojsonText = JSON.stringify(mainSourceGeojson);
-          generateSegmentLabelGeoJSON(mainSourceGeojson)
-          generateStartEndPointsFromGeoJSON(mainSourceGeojson)
-        } catch (error) {
-          console.error('Failed to update source data:', error);
+        if (store.state.editEnabled) {
+          e.originalEvent.preventDefault();
         }
-      }, 8)); // デバウンスの数値をあげるとかくかくになる。
 
-      map.on('mouseup', function() {
-        if (!isDragging) return;
-        isDragging = false;
-        draggedFeatureId = null;
-        dragOrigin = null;
-        // alert('pan')
-        map.dragPan.enable();
-        map.getCanvas().style.cursor = '';
+        const point = getCanvasPointFromTouch(e);
+        if (!point) return;
+        tryStartDragging(e, point);
       });
+
+// 🚚 頂点移動処理（mousemove + touchmove）
+      ['mousemove', 'touchmove'].forEach(eventName => {
+        map.on(eventName, debounce(function (e) {
+          if (e.originalEvent?.touches?.length > 1) return;
+
+          if (eventName === 'touchmove' && store.state.editEnabled) {
+            e.originalEvent.preventDefault();
+          }
+
+          if (!isDragging || draggedFeatureId === null) return;
+
+          const lngLat = getLngLatFromEvent(e);
+          if (!lngLat) return;
+
+          const vertexSourceGeojson = map.getSource('vertex-source')?._data;
+          const mainSourceGeojson = map.getSource('click-circle-source')?._data;
+          if (!vertexSourceGeojson || !mainSourceGeojson) return;
+
+          const feature = vertexSourceGeojson.features.find(f =>
+              f.properties.parentProps.id === draggedFeatureId &&
+              Number(f.properties.vertexIndex) === vertexIndex
+          );
+          if (!feature) {
+            isDragging = false;
+            return;
+          }
+
+          feature.geometry.coordinates = [lngLat.lng, lngLat.lat];
+
+          try {
+            map.getSource('vertex-source').setData(vertexSourceGeojson);
+
+            vertexSourceGeojson.features.forEach(f => {
+              const featureIndex = Number(f.properties.featureIndex);
+              const vertexIdx = Number(f.properties.vertexIndex);
+              const polygonIdx = Number(f.properties.polygonIndex);
+              const tgt = mainSourceGeojson.features[featureIndex];
+              if (!tgt) return;
+
+              if (tgt.geometry.type === 'LineString') {
+                tgt.geometry.coordinates[vertexIdx] = f.geometry.coordinates;
+              } else if (tgt.geometry.type === 'Polygon') {
+                const coords = tgt.geometry.coordinates[0];
+                coords[vertexIdx] = f.geometry.coordinates;
+                if (vertexIdx === 0) coords[coords.length - 1] = f.geometry.coordinates;
+              } else if (tgt.geometry.type === 'MultiPolygon') {
+                tgt.geometry.coordinates[polygonIdx][0][vertexIdx] = f.geometry.coordinates;
+              }
+            });
+
+            autoCloseAllPolygons(mainSourceGeojson);
+
+            const tgtFeature = mainSourceGeojson.features.find(f => f.properties.id === draggedFeatureId);
+            if (tgtFeature) {
+              const calc = calculatePolygonMetrics(tgtFeature);
+              tgtFeature.properties.area = calc.area;
+            }
+
+            map.getSource('click-circle-source').setData(mainSourceGeojson);
+            setAllMidpoints(map, mainSourceGeojson);
+            store.state.clickCircleGeojsonText = JSON.stringify(mainSourceGeojson);
+            generateSegmentLabelGeoJSON(mainSourceGeojson);
+            generateStartEndPointsFromGeoJSON(mainSourceGeojson);
+          } catch (err) {
+            console.error('更新エラー:', err);
+          }
+        }, 15));
+      });
+
+// 🛑 終了処理：mouseup / touchend / touchcancel
+      ['mouseup', 'touchend', 'touchcancel'].forEach(eventName => {
+        map.on(eventName, () => {
+          if (!isDragging) return;
+          isDragging = false;
+          draggedFeatureId = null;
+          vertexIndex = null;
+          dragOrigin = null;
+          map.dragPan.enable();
+          map.getCanvas().style.cursor = '';
+        });
+      });
+
+
+
+
+      // // 頂点レイヤーを動かすと同時にメインレイヤーを更新する。----------------------------------------------
+      // let isDragging = false;
+      // let draggedFeatureId = null;
+      // let vertexIndex = null;
+      // let dragOrigin = null;
+      // map.on('mousedown', 'vertex-layer', function(e) {
+      //   if (!store.state.editEnabled) return;
+      //   if (!e.features?.length) return;
+      //   try {
+      //     console.log(e.features[0].properties)
+      //     const parentProps = JSON.parse(e.features[0].properties.parentProps);
+      //     if (!parentProps?.id) {
+      //       console.warn('Missing feature ID in parentProps');
+      //       return;
+      //     }
+      //     map.dragPan.disable();
+      //     isDragging = true;
+      //     draggedFeatureId = parentProps.id;
+      //     vertexIndex = e.features[0].properties.vertexIndex
+      //     console.log(draggedFeatureId,vertexIndex)
+      //     dragOrigin = e.lngLat;
+      //     map.getCanvas().style.cursor = 'grabbing';
+      //   } catch (error) {
+      //     console.error('Invalid parentProps JSON:', error);
+      //     return;
+      //   }
+      // });
+      //
+      // map.on('mousemove', debounce(function(e) {
+      //   if (!isDragging || draggedFeatureId === null) return;
+      //   const vertexSourceGeojson = map.getSource('vertex-source')._data;
+      //   const mainSourceGeojson = map.getSource('click-circle-source')._data;
+      //   // ドラッグ中のフィーチャーを検索
+      //   let feature = vertexSourceGeojson.features.find(f => {
+      //     return f.properties.parentProps.id === draggedFeatureId && f.properties.vertexIndex === vertexIndex;
+      //   });
+      //   // 新しい座標を適用
+      //   feature.geometry.coordinates = [e.lngLat.lng, e.lngLat.lat];
+      //   // ソースデータを更新
+      //   try {
+      //     map.getSource('vertex-source').setData(vertexSourceGeojson);
+      //     const vertexSource = map.getSource('vertex-source');
+      //     const features = vertexSource._data.features;
+      //     features.forEach(f => {
+      //       const { featureIndex, vertexIndex, polygonIndex } = f.properties;
+      //       if (mainSourceGeojson.features[featureIndex]?.geometry.type === 'LineString') {
+      //         mainSourceGeojson.features[featureIndex].geometry.coordinates[vertexIndex] = f.geometry.coordinates;
+      //       // } else if (mainSourceGeojson.features[featureIndex]?.geometry.type === 'Polygon') {
+      //       //   mainSourceGeojson.features[featureIndex].geometry.coordinates[0][vertexIndex] = f.geometry.coordinates;
+      //       } else if (mainSourceGeojson.features[featureIndex]?.geometry.type === 'Polygon') {
+      //         let coords = mainSourceGeojson.features[featureIndex].geometry.coordinates[0];
+      //         coords[vertexIndex] = f.geometry.coordinates;
+      //         if (vertexIndex === 0) {
+      //           coords[coords.length - 1] = f.geometry.coordinates;
+      //         }
+      //       } else if (mainSourceGeojson.features[featureIndex]?.geometry.type === 'MultiPolygon') {
+      //         mainSourceGeojson.features[featureIndex].geometry.coordinates[polygonIndex][0][vertexIndex] = f.geometry.coordinates;
+      //       }
+      //     });
+      //     autoCloseAllPolygons(mainSourceGeojson)
+      //
+      //     const tgtFeature = mainSourceGeojson.features.find(f => f.properties.id === draggedFeatureId)
+      //
+      //     console.log(mainSourceGeojson)
+      //     console.log(draggedFeatureId)
+      //
+      //     const calc = calculatePolygonMetrics(tgtFeature)
+      //     tgtFeature.properties['area'] = calc.area
+      //
+      //     map.getSource('click-circle-source').setData(mainSourceGeojson);
+      //     setAllMidpoints(map, mainSourceGeojson);
+      //     store.state.clickCircleGeojsonText = JSON.stringify(mainSourceGeojson);
+      //     generateSegmentLabelGeoJSON(mainSourceGeojson)
+      //     generateStartEndPointsFromGeoJSON(mainSourceGeojson)
+      //   } catch (error) {
+      //     console.error('Failed to update source data:', error);
+      //   }
+      // }, 8)); // デバウンスの数値をあげるとかくかくになる。
+      //
+      // map.on('mouseup', function() {
+      //   if (!isDragging) return;
+      //   isDragging = false;
+      //   draggedFeatureId = null;
+      //   dragOrigin = null;
+      //   // alert('pan')
+      //   map.dragPan.enable();
+      //   map.getCanvas().style.cursor = '';
+      // });
 
       // 頂点をダブルクリックで削除----------------------------------------------------------------------------------------------
       map.on('dblclick', 'vertex-layer', function(e) {
