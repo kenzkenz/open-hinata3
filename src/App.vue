@@ -5834,10 +5834,12 @@ export default {
       // -----------------------------------------------------------------------------------------------------------------
       // on load オンロード
       this.mapNames.forEach(mapName => {
-
         const map = this.$store.state[mapName]
         const params = this.parseUrlParams()
         map.on('load',async () => {
+
+
+
           if (mapName === 'map01') {
             map.on('click', (e) => {
               this.onMapClick(e);
