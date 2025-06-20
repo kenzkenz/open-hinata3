@@ -1602,7 +1602,7 @@ export default {
         { key: 'undo', text: '元に戻す', icon: 'mdi-undo', label: '元戻', click: this.undo },
         { key: 'redo', text: 'やり直す', icon: 'mdi-redo', label: 'やり直', click: this.redo },
         { key: 'fix', text: '画面固定', label: '固定', color: this.s_isDrawFix ? 'green' : 'blue', click: this.toggleDrawFix },
-        { key: 'dxf', text: 'DXFで出力', label: 'dxf', color: 'white', click: this.dialogForSaveDXFOpen },
+        { key: 'dxf', text: 'DXFで出力', label: 'dxf', style: 'background-color: navy!important;', click: this.dialogForSaveDXFOpen },
         { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
         { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
       ]
@@ -5080,9 +5080,9 @@ export default {
           map.once('idle', () => {
             onPointClick(dummyEvent);
           });
-          // setTimeout(() => {
-          //   onPointClick(dummyEvent);
-          // },500)
+          setTimeout(() => {
+            onPointClick(dummyEvent);
+          },500)
         }
       })
       // サークル作成-----------------------------------------------------------------------------------
