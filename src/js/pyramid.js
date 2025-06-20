@@ -1226,7 +1226,7 @@ export default function pyramid () {
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,arrowTgtProp,arrowValue)
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,'keiko-color',keikoValue)
-                store.state.currentFreeHandColor = keikoValue
+                store.state.currentFreeHandKeikoColor = keikoValue
             }
         });
         // -------------------------------------------------------------------------------------------------------------

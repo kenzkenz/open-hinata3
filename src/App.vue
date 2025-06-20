@@ -5300,7 +5300,9 @@ export default {
               coordinates: this.tempFreehandCoords
             },
             properties: {
-              'keiko-color': this.$store.state.currentFreeHandColor || '#FF8000',
+              'keiko': 0,
+              'color': this.$store.state.currentFreeHandColor || 'black',
+              'keiko-color': this.$store.state.currentFreeHandKeikoColor || '#1C1C1C',
               'line-width': this.$store.state.currentFreeHandWidth || 5,
             }
           }]
@@ -5323,11 +5325,11 @@ export default {
           const properties = {
             id: id,
             'free-hand': 1,
-            keiko: 1,
+            keiko: 0,
             label: '',
-            color: 'orange',
+            color: 'black',
             // 'keiko-color': '#FF8000',
-            'keiko-color': this.$store.state.currentFreeHandColor || '#FF8000',
+            'keiko-color': this.$store.state.currentFreeHandKeikoColor || '#008000',
             offsetValue: [0.6, 0],
             'line-width': this.$store.state.currentFreeHandWidth || 5,
             textAnchor: 'left',

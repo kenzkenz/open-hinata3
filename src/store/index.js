@@ -9,7 +9,8 @@ export default createStore({
     elevationGeojson: '',
     isMoveMode: false,
     currentFreeHandWidth: '',
-    currentFreeHandColor: '',
+    currentFreeHandColor: 'black',
+    currentFreeHandKeikoColor: '#1C1C1C',
     tgtFeature: null,
     pointSima: false,
     seaLevel: {

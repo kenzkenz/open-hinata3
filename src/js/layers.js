@@ -923,7 +923,7 @@ export const segmentLabeleLayer = {
         'text-halo-width': 1
     }
 }
-// フリーハンドプレビューレイヤー----------------------------------------------------------------
+// フリーハンドプレビューレイヤー（ガイド）----------------------------------------------------------------
 export const freehandPreviewSource = {
     id: 'freehand-preview-source', obj: {
         type: 'geojson',
@@ -939,9 +939,26 @@ export const freehandPreviewLayer = {
     type: 'line',
     source: 'freehand-preview-source',
     paint: {
-        'line-color': ['get', 'keiko-color'],
-        'line-width': ['*', ['get', 'line-width'], 3],
-        'line-opacity': 0.3,
+        'line-color': [
+            'case',
+            ['==', ['get', 'keiko'], 0],
+            ['get', 'color'],          // keiko が 0 のとき
+            ['get', 'keiko-color']     // それ以外
+        ],
+        // 'line-color': 'black',
+        'line-width': [
+            'case',
+            ['==', ['get', 'keiko'], 0],
+            ['get', 'line-width'],
+            ['*', ['get', 'line-width'], 3]
+        ],
+        'line-opacity': [
+            'case',
+            ['==', ['get', 'keiko'], 0],
+            0.6,          // keiko が 0 のとき
+            0.3     // それ以外
+        ],
+        // 'line-opacity': 0.3,
         // 'line-dasharray': [2, 2]
     }
 }
