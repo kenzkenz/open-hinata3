@@ -100,7 +100,7 @@ import {
   clickPointSource, elevationLayer, elevationSource,
   endPointSouce, freehandPreviewLayer, freehandPreviewSource,
   guideLineLayer,
-  guideLineSource,
+  guideLineSource, guideLineVertexLayer,
   midpointLayer,
   midpointSource, segmentLabeleLayer, segmentLabelSource,
   vertexLayer,
@@ -936,6 +936,7 @@ export default {
         map.removeLayer('arrows-endpoint-layer')
         map.removeSource('end-point-source')
         map.removeLayer('guide-line-layer')
+        map.removeLayer('guide-line-vertex-layer')
         map.removeSource('guide-line-source')
         map.removeLayer('vertex-layer')
         map.removeSource('vertex-source')
@@ -961,6 +962,7 @@ export default {
       map.addLayer(arrowsEndpointLayer)
       map.addSource('guide-line-source', guideLineSource.obj)
       map.addLayer(guideLineLayer)
+      map.addLayer(guideLineVertexLayer)
       map.addSource('vertex-source', vertexSource.obj)
       map.addLayer(vertexLayer)
       map.addSource('midpoint-source', midpointSource.obj)

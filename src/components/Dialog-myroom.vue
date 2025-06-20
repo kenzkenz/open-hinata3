@@ -213,12 +213,13 @@
               </v-window-item>
               <v-window-item value="6">
                 <v-card>
-                  <p style="margin-bottom: 10px;">各デバイスの最後に開いた画面に復帰します。ただいま試験運用中です。</p>
+                  <p style="margin-bottom: 10px;">各デバイスの最後に開いた画面に復帰します。</p>
                   <v-btn style="margin-bottom: 10px; width: 180px;" @click="device('Windows')">Windowsでの最後</v-btn>
                   <v-btn style="margin-left: 10px;margin-bottom: 10px; width: 180px" @click="device('Macintosh')">Macでの最後</v-btn><br>
 
                   <v-btn style="margin-bottom: 10px; width: 180px" @click="device('Android')">Androidでの最後</v-btn>
                   <v-btn style="margin-left: 10px;margin-bottom: 10px; width: 180px" @click="device('iPhone')">iPhoneでの最後</v-btn>
+                  <v-btn style="margin-left: 0px;margin-bottom: 10px; width: 180px" @click="device('iPad')">iPadでの最後</v-btn>
 
                   <p style="margin-top:10px;margin-bottom: 10px;">全デバイスの履歴です。クリックすると復帰します。1000行までです。</p>
                   <v-btn style="margin-left: 0px;margin-bottom: 10px;" class="tiny-btn" @click="reload">再読み込み</v-btn>

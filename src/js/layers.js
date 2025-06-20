@@ -982,6 +982,19 @@ export const guideLineLayer = {
         'line-dasharray': [2, 2]
     }
 }
+export const guideLineVertexLayer = {
+    id: 'guide-line-vertex-layer',
+    type: 'circle',
+    source: 'guide-line-source',
+    // filter: ['==', '$type', 'Point'],
+    paint: {
+        'circle-radius': 4,
+        'circle-color': '#00f',
+        'circle-stroke-width': 1,
+        'circle-stroke-color': '#fff'
+    }
+}
+
 // 標高レイヤーー-----------------------------------------------------------------
 export const elevationSource = {
     id:'elevation-source',obj: {

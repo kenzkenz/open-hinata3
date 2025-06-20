@@ -1602,6 +1602,7 @@ export default {
       'showRightDrawer',
       'selectedPointFeature',
       'showChibanzuDrawer',
+      'clickCircleGeojsonText',
     ]),
     s_finishLineFire () {
       return this.$store.state.finishLineFire
@@ -1639,8 +1640,10 @@ export default {
         { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
         { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
       ]
-      if (window.innerWidth < 1000) {
-        btns = btns.filter(btn => btn.key !== 'edit' && btn.key !== 'dxf' )
+      if (window.innerWidth < 500) {
+        btns = btns.filter(btn => btn.key !== 'edit' && btn.key !== 'dxf')
+      } else if (window.innerWidth < 1000) {
+        btns = btns.filter(btn => btn.key !== 'dxf' )
       } else {
         btns = btns.filter(btn => btn.key !== 'close')
       }
@@ -3646,6 +3649,16 @@ export default {
         alert("入力されていません。")
         return
       }
+      if (this.s_selectedPublic === -1) {
+        if (!confirm("緑色(オープンデータ)で公開しようとしています。全ユーザーが閲覧可能になります。良いですか？")) {
+          return
+        }
+      }
+      if (this.s_selectedPublic === 1) {
+        if (!confirm("青色(公開)で公開しようとしています。全ユーザーが閲覧可能になります。良いですか？")) {
+          return
+        }
+      }
       pmtilesGenerateForUser2 (this.s_chibanzuGeojson,'',store.state.pmtilesPropertieName,this.s_chibanzuPrefCode,String(this.s_chibanzuCityCode).padStart(5, '0'),this.s_selectedPublic,this.s_selectedKaiji2,this.s_geojsonFile)
       this.s_showChibanzuDialog = false
     },
@@ -5285,7 +5298,33 @@ export default {
           this.tempLineCoords = [];
         }
       });
-      // ポリゴン描画：シングルクリックで節点追加
+      // let isFirstTouch = true;
+      map.on('touchstart', (e) => {
+        if (!this.s_isDrawLine && !this.s_isDrawPolygon) return;
+        // if (!isFirstTouch) return;
+        // isFirstTouch = false;
+        const touch = e.touches?.[0] || e.originalEvent?.touches?.[0];
+        if (!touch) return;
+        const rect = map.getCanvas().getBoundingClientRect();
+        const point = {
+          x: touch.clientX - rect.left,
+          y: touch.clientY - rect.top
+        };
+        const lngLat = map.unproject(point);
+        const vertexGeojson = {
+          type: 'FeatureCollection',
+          features: [{
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [lngLat.lng, lngLat.lat]
+            },
+            properties: {}
+          }]
+        };
+        map.getSource('guide-line-source')?.setData(vertexGeojson);
+      });
+      // ポリゴン描画：シングルクリックで節点追加---------------------------------------------------------
       function onPolygonClick(e) {
         popup(e,map,'map01',vm.s_map2Flg)
       }
@@ -7573,6 +7612,9 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
+    clickCircleGeojsonText () {
+      this.updatePermalink()
+    },
     s_finishLineFire () {
       // あれ？これでよかったのか？
       this.finishLine()
