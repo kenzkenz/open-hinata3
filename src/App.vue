@@ -5838,7 +5838,8 @@ export default {
         const params = this.parseUrlParams()
         map.on('load',async () => {
 
-
+          // iPadでもMapLibreのパンやズームを活かしつつイベントも拾う
+          // map.getCanvas().style.touchAction = 'manipulation';
 
           if (mapName === 'map01') {
             map.on('click', (e) => {
