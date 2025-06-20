@@ -823,14 +823,36 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <v-btn class="tiny-btn" style="margin-left: 5px;" small color="primary" @click="loadGcpFromLocal">GCP復元</v-btn>
               <v-btn
                   style="margin-left: 5px;"
-                  v-if="gcpList.filter(gcp =>
-                    gcp.imageCoord?.length === 2 &&
-                    gcp.mapCoord?.length === 2 &&
-                    typeof gcp.imageCoord[0] === 'number' &&
-                    typeof gcp.imageCoord[1] === 'number' &&
-                    typeof gcp.mapCoord[0] === 'number' &&
-                    typeof gcp.mapCoord[1] === 'number'
-                  ).length >= 4"
+                  v-if="(() => {
+                    const imageCount = gcpList.filter(gcp =>
+                      Array.isArray(gcp.imageCoord) &&
+                      gcp.imageCoord.length === 2 &&
+                      typeof gcp.imageCoord[0] === 'number' &&
+                      typeof gcp.imageCoord[1] === 'number'
+                    ).length;
+
+                    const mapCount = gcpList.filter(gcp =>
+                      Array.isArray(gcp.mapCoord) &&
+                      gcp.mapCoord.length === 2 &&
+                      typeof gcp.mapCoord[0] === 'number' &&
+                      typeof gcp.mapCoord[1] === 'number'
+                    ).length;
+
+                    const bothCount = gcpList.filter(gcp =>
+                      Array.isArray(gcp.imageCoord) &&
+                      Array.isArray(gcp.mapCoord) &&
+                      gcp.imageCoord.length === 2 &&
+                      gcp.mapCoord.length === 2 &&
+                      typeof gcp.imageCoord[0] === 'number' &&
+                      typeof gcp.imageCoord[1] === 'number' &&
+                      typeof gcp.mapCoord[0] === 'number' &&
+                      typeof gcp.mapCoord[1] === 'number'
+                    ).length;
+
+                    return imageCount === bothCount &&
+                           mapCount === bothCount &&
+                           (bothCount === 2 || bothCount >= 4);
+                  })()"
                   class="tiny-btn"
                   small
                   color="primary"
@@ -1359,21 +1381,29 @@ function ensureOpenCvReady(callback) {
   }
 }
 
+function autoCompleteGcpToRectangle(gcpList) {
+  if (gcpList.length !== 2) return gcpList;
 
-// function convertLngLatToImageXY(lngLat, map, imageElement) {
-//   const projected = map.project({ lng: lngLat[0], lat: lngLat[1] });
-//   const mapRect = map.getContainer().getBoundingClientRect();
-//   const imgRect = imageElement.getBoundingClientRect();
-//
-//   const x = projected.x - (mapRect.left - imgRect.left);
-//   const y = projected.y - (mapRect.top - imgRect.top);
-//
-//   if (isNaN(x) || isNaN(y)) {
-//     console.warn('画像座標への変換に失敗', lngLat, projected, mapRect, imgRect);
-//   }
-//
-//   return [x, y];
-// }
+  const [gcp1, gcp2] = gcpList;
+  const [x1, y1] = gcp1.imageCoord;
+  const [x2, y2] = gcp2.imageCoord;
+  const [mx1, my1] = gcp1.mapCoord;
+  const [mx2, my2] = gcp2.mapCoord;
+
+  return [
+    gcp1, // A: 左上
+    gcp2, // C: 右下
+    {     // B: 右上
+      imageCoord: [x2, y1],
+      mapCoord: [mx2, my1]
+    },
+    {     // D: 左下
+      imageCoord: [x1, y2],
+      mapCoord: [mx1, my2]
+    }
+  ];
+}
+
 function convertLngLatToImageXY(lngLat, map, imageElement) {
   const { lng, lat } = { lng: lngLat[0], lat: lngLat[1] };
   const projected = map.project([lng, lat], map.getZoom());
@@ -2258,6 +2288,17 @@ export default {
       return worldFileContent;
     },
     previewAffineWarp() {
+      let gcpListToUse;
+
+      if (this.gcpList.length === 2) {
+        this.gcpList = autoCompleteGcpToRectangle(this.gcpList);
+      } else if (this.gcpList.length >= 4) {
+        // gcpListToUse = this.gcpList;
+        console.log()
+      } else {
+        console.warn('GCPは2点または4点以上が必要です（3点は不可）');
+        return;
+      }
       this.showOriginal = false;
       this.showWarpCanvas = true;
       this.$nextTick(() => {
