@@ -7719,11 +7719,13 @@ export function enableFeatureDragAndAdd(map, layerId, sourceId, options = {}) {
                 x: touch.clientX - rect.left,
                 y: touch.clientY - rect.top
             };
-        } else if (e.point) {
-            return e.point;
         }
+        if (e.point) return e.point;
         return null;
     }
+
+
+
 
     function getLngLatFromEvent(e) {
         if (e.originalEvent?.touches?.[0]) {
@@ -7745,20 +7747,27 @@ export function enableFeatureDragAndAdd(map, layerId, sourceId, options = {}) {
         const point = getPointFromEvent(e);
         if (!point) return;
 
-        const features = map.queryRenderedFeatures(point, { layers: [layerId] });
+        // 狭い範囲（5x5ピクセル）で地物をクエリ
+        const features = map.queryRenderedFeatures(
+            [
+                [point.x - 5, point.y - 5],
+                [point.x + 5, point.y + 5]
+            ],
+            { layers: [layerId] }
+        );
 
-        if (features.length > 0) {
-            isDragging = true;
-            draggedFeature = features[0];
-            dragStartCoord = getCenterCoord(draggedFeature);
-            const lngLat = getLngLatFromEvent(e);
-            dragOffset = [
-                lngLat.lng - dragStartCoord[0],
-                lngLat.lat - dragStartCoord[1]
-            ];
-            map.getCanvas().style.cursor = 'grabbing';
-            if (e.preventDefault) e.preventDefault();
-        }
+        if (features.length === 0) return;
+
+        isDragging = true;
+        draggedFeature = features[0];
+        dragStartCoord = getCenterCoord(draggedFeature);
+        const lngLat = getLngLatFromEvent(e);
+        dragOffset = [
+            lngLat.lng - dragStartCoord[0],
+            lngLat.lat - dragStartCoord[1]
+        ];
+        map.getCanvas().style.cursor = 'grabbing';
+        if (e.preventDefault) e.preventDefault();
     }
 
     map.on('mousedown', handleDragStart);
@@ -7887,6 +7896,7 @@ export function enableFeatureDragAndAdd(map, layerId, sourceId, options = {}) {
         });
     }
 }
+
 
 
 

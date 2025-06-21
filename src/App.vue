@@ -926,7 +926,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="print">印刷</v-btn>
               <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 10px;" @click="printDialog = true">タイトル</v-btn>
               <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 10px;" @click="pngDl">PNG</v-btn>
-              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 10px;" @click="handlePrint">閉じる</v-btn>
+              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 10px;" @click="handlePrint(true)">閉じる</v-btn>
             </span>
 
           </div>
@@ -3207,9 +3207,15 @@ export default {
       map00Div.style.margin = '0 auto';
       map00Div.style.display = 'block';
     },
-    handlePrint() {
+    handlePrint(isClose) {
       this.attributionControl = new maplibregl.AttributionControl()
       this.$store.state.map01.addControl(this.attributionControl, 'bottom-right')
+
+      if (isClose === true) {
+        document.querySelector('.maplibregl-ctrl-scale').style.display = 'none'
+      } else {
+        document.querySelector('.maplibregl-ctrl-scale').style.display = 'block'
+      }
 
       // 2. attributionコントロールのDOM取得
       const attribDom = document.querySelector('.maplibregl-ctrl-attrib')
@@ -6069,6 +6075,12 @@ export default {
               this.onMapClick(e);
             });
             this.originalEnable = map.dragPan.enable;
+            const scale = new maplibregl.ScaleControl({
+              maxWidth: 100,      // スケールバーの最大幅（ピクセル）
+              unit: 'metric'      // 単位： 'metric'（メートル）または 'imperial'（マイル）
+            });
+            map.addControl(scale, 'bottom-left');
+            document.querySelector('.maplibregl-ctrl-scale').style.display = 'none'
           }
 
           map.setProjection({"type": "globe"})
