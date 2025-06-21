@@ -3433,6 +3433,7 @@ export default {
       store.state.isCursorOnPanel = false
     },
     toggleEditEnabled () {
+      const vm = this
       this.saveHistory()
       this.s_editEnabled = !this.s_editEnabled
       if (this.s_editEnabled) {
@@ -3446,6 +3447,38 @@ export default {
       }
       store.state.isCursorOnPanel = false
       this.finishLine()
+
+      updateDragHandles()
+
+      function updateDragHandles() {
+        const map = vm.$store.state.map01
+        const originalGeojson = map.getSource('click-circle-source')._data
+        const source = map.getSource('drag-handles-source');
+        if (!source) {
+          console.warn('drag-handles-source が存在しません');
+          return;
+        }
+        if (!vm.s_editEnabled) {
+          // 編集モードOFF → 空にして消す
+          source.setData({ type: 'FeatureCollection', features: [] });
+          return;
+        }
+        // 編集モードON → 中心点を作ってセット
+        const centerFeatures = originalGeojson.features.map((f) => {
+          const center = turf.center(f); // 中心点（Point）
+          return {
+            type: 'Feature',
+            geometry: center.geometry,
+            properties: {
+              targetId: f.properties.id || f.id || Math.random().toString(36).slice(2)
+            }
+          };
+        });
+        source.setData({
+          type: 'FeatureCollection',
+          features: centerFeatures
+        });
+      }
     },
     // toggleLDrawFix () {
     //   this.s_isDrawFree = !this.s_isDrawFree
