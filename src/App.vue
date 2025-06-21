@@ -1083,7 +1083,7 @@ import {
   ddSimaUpload, downloadGeoJSONAsCSV,
   downloadKML,
   downloadSimaText, downloadTextFile, DXFDownload,
-  dxfToGeoJSON,
+  dxfToGeoJSON, enableDragHandles,
   enableFeatureDragAndAdd,
   enablePointDragAndAdd,
   extractFirstFeaturePropertiesAndCheckCRS,
@@ -3449,36 +3449,72 @@ export default {
       this.finishLine()
 
       updateDragHandles()
-
       function updateDragHandles() {
-        const map = vm.$store.state.map01
-        const originalGeojson = map.getSource('click-circle-source')._data
+        const map = vm.$store.state.map01;
+        const originalGeojson = map.getSource('click-circle-source')._data;
         const source = map.getSource('drag-handles-source');
+
         if (!source) {
           console.warn('drag-handles-source が存在しません');
           return;
         }
+
         if (!vm.s_editEnabled) {
           // 編集モードOFF → 空にして消す
           source.setData({ type: 'FeatureCollection', features: [] });
           return;
         }
-        // 編集モードON → 中心点を作ってセット
-        const centerFeatures = originalGeojson.features.map((f) => {
-          const center = turf.center(f); // 中心点（Point）
-          return {
-            type: 'Feature',
-            geometry: center.geometry,
-            properties: {
-              targetId: f.properties.id || f.id || Math.random().toString(36).slice(2)
-            }
-          };
-        });
+
+        // 編集モードON → isCircleCenter が true の地物を除外して中心点を生成
+        const centerFeatures = originalGeojson.features
+            .filter(f => !f.properties?.isCircleCenter) // ← この行で除外
+            .map(f => {
+              const center = turf.center(f); // 中心点（Point）
+              return {
+                type: 'Feature',
+                geometry: center.geometry,
+                properties: {
+                  targetId: f.properties.id
+                }
+              };
+            });
+
         source.setData({
           type: 'FeatureCollection',
           features: centerFeatures
         });
       }
+
+
+      //   function updateDragHandles() {
+    //     const map = vm.$store.state.map01
+    //     const originalGeojson = map.getSource('click-circle-source')._data
+    //     const source = map.getSource('drag-handles-source');
+    //     if (!source) {
+    //       console.warn('drag-handles-source が存在しません');
+    //       return;
+    //     }
+    //     if (!vm.s_editEnabled) {
+    //       // 編集モードOFF → 空にして消す
+    //       source.setData({ type: 'FeatureCollection', features: [] });
+    //       return;
+    //     }
+    //     // 編集モードON → 中心点を作ってセット
+    //     const centerFeatures = originalGeojson.features.map((f) => {
+    //       const center = turf.center(f); // 中心点（Point）
+    //       return {
+    //         type: 'Feature',
+    //         geometry: center.geometry,
+    //         properties: {
+    //           targetId: f.properties.id
+    //         }
+    //       };
+    //     });
+    //     source.setData({
+    //       type: 'FeatureCollection',
+    //       features: centerFeatures
+    //     });
+    //   }
     },
     // toggleLDrawFix () {
     //   this.s_isDrawFree = !this.s_isDrawFree
@@ -6113,6 +6149,11 @@ export default {
       map.on('zoom', updateScale);
       map.on('move', updateScale);
       map.once('load', updateScale);
+
+
+      enableDragHandles(map)
+
+
       // -----------------------------------------------------------------------------------------------------------------
       // on load オンロード
       this.mapNames.forEach(mapName => {
@@ -6145,7 +6186,8 @@ export default {
             const img = await map.loadImage(`./img/arrow_${color}.png`);
             map.addImage(`arrow_${color}`, img.data);
           }
-
+          const dragIcon = await map.loadImage('./img/drag.png')
+          map.addImage('drag-icon', dragIcon.data);
           // const black = await map.loadImage('./img/arrow_black.png');
           // const red = await map.loadImage('./img/arrow_red.png');
           // const blue = await map.loadImage('./img/arrow_blue.png');
@@ -7327,40 +7369,40 @@ export default {
           }
 
           // ------------------------------------------------------------------------------------------------
-          enableFeatureDragAndAdd(map, 'click-points-layer', 'click-points-source', {
-            fetchElevation: fetchElevation, // async関数
-            vm: this,
-            storeField: 'clickGeojsonText',
-            click: true
-          });
-          // ------------------------------------------------------------------------------------------------
-          enableFeatureDragAndAdd(map, 'click-circle-symbol-layer', 'click-circle-source', {
-            // fetchElevation: fetchElevation, // async関数
-            vm: this,
-            storeField: 'clickCircleGeojsonText',
-            click: false
-          });
-          // ------------------------------------------------------------------------------------------------
-          enableFeatureDragAndAdd(map, 'click-circle-layer', 'click-circle-source', {
-            // fetchElevation: fetchElevation, // async関数
-            vm: this,
-            storeField: 'clickCircleGeojsonText',
-            click: false
-          });
-          // ------------------------------------------------------------------------------------------------
-          enableFeatureDragAndAdd(map, 'click-circle-line-layer', 'click-circle-source', {
-            // fetchElevation: fetchElevation, // async関数
-            vm: this,
-            storeField: 'clickCircleGeojsonText',
-            click: false
-          });
-          // ------------------------------------------------------------------------------------------------
-          enableFeatureDragAndAdd(map, 'click-circle-keiko-line-layer', 'click-circle-source', {
-            // fetchElevation: fetchElevation, // async関数
-            vm: this,
-            storeField: 'clickCircleGeojsonText',
-            click: false
-          });
+          // enableFeatureDragAndAdd(map, 'click-points-layer', 'click-points-source', {
+          //   fetchElevation: fetchElevation, // async関数
+          //   vm: this,
+          //   storeField: 'clickGeojsonText',
+          //   click: true
+          // });
+          // // ------------------------------------------------------------------------------------------------
+          // enableFeatureDragAndAdd(map, 'click-circle-symbol-layer', 'click-circle-source', {
+          //   // fetchElevation: fetchElevation, // async関数
+          //   vm: this,
+          //   storeField: 'clickCircleGeojsonText',
+          //   click: false
+          // });
+          // // ------------------------------------------------------------------------------------------------
+          // enableFeatureDragAndAdd(map, 'click-circle-layer', 'click-circle-source', {
+          //   // fetchElevation: fetchElevation, // async関数
+          //   vm: this,
+          //   storeField: 'clickCircleGeojsonText',
+          //   click: false
+          // });
+          // // ------------------------------------------------------------------------------------------------
+          // enableFeatureDragAndAdd(map, 'click-circle-line-layer', 'click-circle-source', {
+          //   // fetchElevation: fetchElevation, // async関数
+          //   vm: this,
+          //   storeField: 'clickCircleGeojsonText',
+          //   click: false
+          // });
+          // // ------------------------------------------------------------------------------------------------
+          // enableFeatureDragAndAdd(map, 'click-circle-keiko-line-layer', 'click-circle-source', {
+          //   // fetchElevation: fetchElevation, // async関数
+          //   vm: this,
+          //   storeField: 'clickCircleGeojsonText',
+          //   click: false
+          // });
 
           // -----------------------------------------------------------------------------------------------------------
           map.addSource('zones-source', {

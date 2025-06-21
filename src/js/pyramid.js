@@ -1390,6 +1390,7 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
             circleFeature.properties.canterLat = canterLat
             //----------
             centerFeature = features.center
+            centerFeature.properties['isCircleCenter'] = 1
             centerFeature.properties['id'] = circleFeature.properties.id + '-point'
             centerFeature.properties['pairId'] = circleFeature.properties.pairId
             centerFeature.properties['label'] = '半径' + radius + 'm'

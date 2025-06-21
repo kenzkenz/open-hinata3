@@ -910,14 +910,23 @@ export const dragHandlesSource = {
 }
 export const dragHandleslayer = {
     id: 'drag-handles-layer',
-    type: 'circle',
+    type: 'symbol',
     source: 'drag-handles-source',
-    paint: {
-        'circle-radius': 6,
-        'circle-color': '#FF0000',
-        'circle-stroke-width': 2,
-        'circle-stroke-color': '#FFFFFF'
+    layout: {
+        'icon-image': 'drag-icon',
+        'icon-size': 0.1,            // タッチ対応で少し大きめに
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true
     }
+    // id: 'drag-handles-layer',
+    // type: 'circle',
+    // source: 'drag-handles-source',
+    // paint: {
+    //     'circle-radius': 6,
+    //     'circle-color': '#FF0000',
+    //     'circle-stroke-width': 2,
+    //     'circle-stroke-color': '#FFFFFF'
+    // }
 }
 // 距離ラベルレイヤー-----------------------------------------------------------------
 export const segmentLabelSource = {
