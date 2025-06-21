@@ -423,6 +423,9 @@ export default {
     LayerManager
   },
   data: () => ({
+    newName: '',
+    message: '',
+    alertType: 'info',
     layerName: '',
     joinLoading: false,
     invitedGroupName: "", // 招待されたグループ名
