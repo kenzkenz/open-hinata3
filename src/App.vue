@@ -3447,74 +3447,6 @@ export default {
       }
       store.state.isCursorOnPanel = false
       this.finishLine()
-
-      updateDragHandles()
-      function updateDragHandles() {
-        const map = vm.$store.state.map01;
-        const originalGeojson = map.getSource('click-circle-source')._data;
-        const source = map.getSource('drag-handles-source');
-
-        if (!source) {
-          console.warn('drag-handles-source が存在しません');
-          return;
-        }
-
-        if (!vm.s_editEnabled) {
-          // 編集モードOFF → 空にして消す
-          source.setData({ type: 'FeatureCollection', features: [] });
-          return;
-        }
-
-        // 編集モードON → isCircleCenter が true の地物を除外して中心点を生成
-        const centerFeatures = originalGeojson.features
-            .filter(f => !f.properties?.isCircleCenter) // ← この行で除外
-            .map(f => {
-              const center = turf.center(f); // 中心点（Point）
-              return {
-                type: 'Feature',
-                geometry: center.geometry,
-                properties: {
-                  targetId: f.properties.id
-                }
-              };
-            });
-
-        source.setData({
-          type: 'FeatureCollection',
-          features: centerFeatures
-        });
-      }
-
-
-      //   function updateDragHandles() {
-    //     const map = vm.$store.state.map01
-    //     const originalGeojson = map.getSource('click-circle-source')._data
-    //     const source = map.getSource('drag-handles-source');
-    //     if (!source) {
-    //       console.warn('drag-handles-source が存在しません');
-    //       return;
-    //     }
-    //     if (!vm.s_editEnabled) {
-    //       // 編集モードOFF → 空にして消す
-    //       source.setData({ type: 'FeatureCollection', features: [] });
-    //       return;
-    //     }
-    //     // 編集モードON → 中心点を作ってセット
-    //     const centerFeatures = originalGeojson.features.map((f) => {
-    //       const center = turf.center(f); // 中心点（Point）
-    //       return {
-    //         type: 'Feature',
-    //         geometry: center.geometry,
-    //         properties: {
-    //           targetId: f.properties.id
-    //         }
-    //       };
-    //     });
-    //     source.setData({
-    //       type: 'FeatureCollection',
-    //       features: centerFeatures
-    //     });
-    //   }
     },
     // toggleLDrawFix () {
     //   this.s_isDrawFree = !this.s_isDrawFree
@@ -7925,6 +7857,40 @@ export default {
         getAllVertexPoints(map01)
         setAllMidpoints(map01)
       }
+      // ----------------------------------------------------------
+      const vm = this
+      function updateDragHandles() {
+        const map = vm.$store.state.map01;
+        const originalGeojson = map.getSource('click-circle-source')._data;
+        const source = map.getSource('drag-handles-source');
+        if (!source) {
+          console.warn('drag-handles-source が存在しません');
+          return;
+        }
+        if (!vm.s_editEnabled) {
+          // 編集モードOFF → 空にして消す
+          source.setData({ type: 'FeatureCollection', features: [] });
+          return;
+        }
+        // 編集モードON → isCircleCenter が true の地物を除外して中心点を生成
+        const centerFeatures = originalGeojson.features
+            .filter(f => !f.properties?.isCircleCenter) // ← この行で除外
+            .map(f => {
+              const center = turf.center(f); // 中心点（Point）
+              return {
+                type: 'Feature',
+                geometry: center.geometry,
+                properties: {
+                  targetId: f.properties.id
+                }
+              };
+            });
+        source.setData({
+          type: 'FeatureCollection',
+          features: centerFeatures
+        });
+      }
+      updateDragHandles()
     },
     // 配列で監視（いずれかが変化したら発動）
     s_isDrawAll() {

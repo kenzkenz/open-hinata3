@@ -252,7 +252,8 @@ import { mapState, mapMutations } from 'vuex';
 import { db, auth } from '../firebase';
 import firebase from 'firebase/app';
 import {extractFirstFeaturePropertiesAndCheckCRS, publicChk} from '@/js/downLoad';
-import sanitizeHtml from 'sanitize-html'; // sanitize-htmlをインポート
+import sanitizeHtml from 'sanitize-html';
+import store from "@/store"; // sanitize-htmlをインポート
 
 export default {
   name: 'chibanzuDrawer',
@@ -275,6 +276,7 @@ export default {
       'showChibanzuDrawer',
       'popupFeatureProperties',
       'popupFeatureCoordinates',
+      'myNickname',
     ]),
     s_geojsonFile: {
       get() {
@@ -383,6 +385,11 @@ export default {
         }
       },
     },
+    // displayNameToShow() {
+    //   return this.$store.state.myNickname
+    //       ? this.$store.state.myNickname
+    //       : (this.user1 && this.user1.displayName) || ''
+    // },
   },
   created() {
     auth.onAuthStateChanged((user) => {
@@ -404,6 +411,9 @@ export default {
     }
   },
   watch: {
+    myNickname () {
+      this.user.nickname = this.myNickname
+    },
     cityCode(newVal) {
       if (newVal) {
         this.loadComments();

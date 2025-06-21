@@ -80,12 +80,8 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <v-card>
           <v-card-title>
             ログイン管理
-            <span v-if="user1 && user1.displayName" style="margin-left:20px;font-size: 16px;">
-              ようこそ、{{
-                this.newName
-                ? this.newName
-                : (this.user1 && this.user1.displayName)
-              }}さん！
+            <span v-if="(user1 && user1.displayName) || s_myNickname" style="margin-left:20px;font-size: 16px;">
+              ようこそ、{{displayNameToShow}}さん！
             </span>
           </v-card-title>
 
@@ -95,7 +91,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-btn style="margin-left: 10px;" v-if="!user1" @click="signUpDiv=!signUpDiv,loginDiv=false">新規登録</v-btn>
               <span v-if="!user1" style="margin-left: 20px;">新規登録は無料です。</span>
 
-              <div v-if="user1" >
+              <div v-if="user1 && newName" >
                 <hr style="margin-top: 20px;margin-bottom: 20px;">
                 <p style="margin-bottom: 10px;">ニックネームを変更します。</p>
                 <v-text-field
@@ -317,7 +313,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v1.143
+        v1.145
       </p>
 
       <div v-if="user1">
@@ -385,6 +381,7 @@ import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfi
 import firebase from '@/firebase'
 import { nextTick } from 'vue'
 import store from "@/store";
+import {mapState} from "vuex";
 
 const getFirebaseUid = async () => {
   if (!user.value) return;
@@ -510,6 +507,32 @@ export default {
     ],
   }),
   computed: {
+    ...mapState([
+      'myNickname',
+    ]),
+    s_myNickname() {
+      return this.$store.state.myNickname;
+    },
+    displayNameToShow() {
+      // いったんすべて読み取っておく
+      // alert(this.s_myNickname)
+      const n1 = this.newName
+      const n2 = this.s_myNickname
+      const n3 = this.user1 && this.user1.displayName
+      // そのあとで優先順位をつけて返す
+      return n1 || n2 || n3 || ''
+
+    },
+    // displayNameToShow() {
+    //   return this.newName
+    //       || this.nickname
+    //       || (this.user1 && this.user1.displayName)
+    // },
+    // displayNameToShow() {
+    //   return this.newName
+    //       ? this.newName
+    //       : (this.user1 && this.user1.displayName) || ''
+    // },
     s_soloFlg() {
       return this.$store.state.soloFlg;
     },
@@ -707,11 +730,17 @@ export default {
         this.alertType = 'error'
         return
       }
+      if (!this.newName) {
+        this.message = '新ニックネームを入力してください'
+        this.alertType = 'error'
+        return;
+      }
       user.updateProfile({ displayName: this.newName })
           .then(() => {
-            this.message = 'ニックネームを変更しました。<br>変更を反映させるためにOH3を一度閉じて<br>再読み込みしてください。'
+            this.message = 'ニックネームを変更しました。<br>念の為OH3を一度閉じて<br>再読み込みしてください。'
             this.alertType = 'success'
             store.state.myNickname = this.newName
+            document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー　ようこそ' + this.displayNameToShow + 'さん</span>'
           })
           .catch(err => {
             console.error(err)
@@ -1274,8 +1303,13 @@ export default {
 
           this.createDirectory()
           alert(`登録成功！ようこそ、${this.nickname} さん！`)
+          store.state.myNickname = this.nickname
           this.errorMsg = ''
           this.signUpDiv = false
+
+
+
+
         } catch (error) {
           console.error("サインアップ失敗:", error.message)
           switch (error.code) {
@@ -1620,7 +1654,7 @@ export default {
       if (user && user.email) {
         console.log("✅ ログイン中のユーザー:", user.email);
         this.emailInput = user.email;
-        store.state.myNickname = user.displayName || '名無し'
+        store.state.myNickname = user.displayName || ''
         this.newName = user.displayName
         // alert(store.state.myNickname)
         // Vue のリアクティブシステムが更新されるのを待機

@@ -7716,13 +7716,11 @@ export function enableDragHandles(map) {
         dragOrigin = getTouchOrMouseLngLat(e);
         isDragging = true;
 
-        // パンの元状態を保存し、パンが有効なら無効化
         panWasInitiallyEnabled = map.dragPan.isEnabled();
         if (panWasInitiallyEnabled) {
             map.dragPan.disable();
         }
 
-        // 各 source の元データを複製
         const circleSrc = map.getSource('click-circle-source');
         const handleSrc = map.getSource('drag-handles-source');
         const endPointSrc = map.getSource('end-point-source');
@@ -7756,12 +7754,26 @@ export function enableDragHandles(map) {
             if (geom.type === 'Point') {
                 geom.coordinates[0] += dx;
                 geom.coordinates[1] += dy;
+                // canterLng, canterLat プロパティがある場合は更新
+                if (typeof moved.properties.canterLng === 'number' && typeof moved.properties.canterLat === 'number') {
+                    moved.properties.canterLng = geom.coordinates[0];
+                    moved.properties.canterLat = geom.coordinates[1];
+                }
             } else if (geom.type === 'LineString' || geom.type === 'Polygon') {
                 const moveCoord = coords => coords.map(([lng, lat]) => [lng + dx, lat + dy]);
                 if (geom.type === 'LineString') {
                     geom.coordinates = moveCoord(geom.coordinates);
                 } else if (geom.type === 'Polygon') {
                     geom.coordinates = geom.coordinates.map(ring => moveCoord(ring));
+                }
+                // 中心座標プロパティがある場合は中心点を再計算して更新
+                if (typeof moved.properties.canterLng === 'number' && typeof moved.properties.canterLat === 'number') {
+                    // 単純に重心を計算
+                    const allCoords = (geom.type === 'LineString' ? geom.coordinates : geom.coordinates.flat());
+                    const sum = allCoords.reduce((acc, [lng, lat]) => [acc[0] + lng, acc[1] + lat], [0, 0]);
+                    const len = allCoords.length;
+                    moved.properties.canterLng = sum[0] / len;
+                    moved.properties.canterLat = sum[1] / len;
                 }
             }
             return moved;
@@ -7794,40 +7806,23 @@ export function enableDragHandles(map) {
                     if (geom.type === 'LineString') {
                         geom.coordinates = moveCoord(geom.coordinates);
                     } else if (geom.type === 'Polygon') {
-                        geom.coordinates = geom.geometry.coordinates.map(ring => moveCoord(ring));
+                        geom.coordinates = geom.coordinates.map(ring => moveCoord(ring));
                     }
                 }
 
                 return moved;
             });
 
-            map.getSource('end-point-source').setData({
-                type: 'FeatureCollection',
-                features: movedEndPoints
-            });
+            map.getSource('end-point-source').setData({ type: 'FeatureCollection', features: movedEndPoints });
         }
 
         // 更新反映
-        map.getSource('click-circle-source').setData({
-            type: 'FeatureCollection',
-            features: movedFeatures
-        });
-
-        map.getSource('drag-handles-source').setData({
-            type: 'FeatureCollection',
-            features: movedHandles
-        });
+        map.getSource('click-circle-source').setData({ type: 'FeatureCollection', features: movedFeatures });
+        map.getSource('drag-handles-source').setData({ type: 'FeatureCollection', features: movedHandles });
 
         // 頂点・中点を再生成
-        getAllVertexPoints(map, {
-            type: 'FeatureCollection',
-            features: movedFeatures
-        });
-
-        setAllMidpoints(map, {
-            type: 'FeatureCollection',
-            features: movedFeatures
-        });
+        getAllVertexPoints(map, { type: 'FeatureCollection', features: movedFeatures });
+        setAllMidpoints(map, { type: 'FeatureCollection', features: movedFeatures });
 
         e.preventDefault?.();
     }
@@ -7837,7 +7832,6 @@ export function enableDragHandles(map) {
         dragOrigin = null;
         dragTargetId = null;
 
-        // パンがもともと有効だった場合だけ復元
         if (panWasInitiallyEnabled) {
             map.dragPan.enable();
         }
@@ -7853,6 +7847,179 @@ export function enableDragHandles(map) {
     map.getCanvas().addEventListener('touchmove', onMove, { passive: false });
     map.getCanvas().addEventListener('touchend', onUp, { passive: false });
 }
+
+// export function enableDragHandles(map) {
+//     let isDragging = false;
+//     let dragOrigin = null;
+//     let dragTargetId = null;
+//     let panWasInitiallyEnabled = true;
+//
+//     let originalFeatures = null;      // click-circle-source のコピー
+//     let originalHandles = null;       // drag-handles-source のコピー
+//     let originalEndPoints = null;     // end-point-source のコピー
+//
+//     function getTouchOrMouseLngLat(e) {
+//         if (e.lngLat) return e.lngLat;
+//         if (e.touches && e.touches.length > 0) {
+//             const touch = e.touches[0];
+//             const rect = map.getCanvas().getBoundingClientRect();
+//             const x = touch.clientX - rect.left;
+//             const y = touch.clientY - rect.top;
+//             return map.unproject([x, y]);
+//         }
+//         return null;
+//     }
+//
+//     function onDown(e) {
+//         const point = e.point || map.project(getTouchOrMouseLngLat(e));
+//         const features = map.queryRenderedFeatures(point, {
+//             layers: ['drag-handles-layer']
+//         });
+//
+//         if (!features.length) return;
+//
+//         const handle = features[0];
+//         dragTargetId = handle.properties.targetId;
+//         dragOrigin = getTouchOrMouseLngLat(e);
+//         isDragging = true;
+//
+//         // パンの元状態を保存し、パンが有効なら無効化
+//         panWasInitiallyEnabled = map.dragPan.isEnabled();
+//         if (panWasInitiallyEnabled) {
+//             map.dragPan.disable();
+//         }
+//
+//         // 各 source の元データを複製
+//         const circleSrc = map.getSource('click-circle-source');
+//         const handleSrc = map.getSource('drag-handles-source');
+//         const endPointSrc = map.getSource('end-point-source');
+//         if (!circleSrc || !handleSrc) return;
+//
+//         originalFeatures = JSON.parse(JSON.stringify(circleSrc._data || circleSrc._options.data));
+//         originalHandles = JSON.parse(JSON.stringify(handleSrc._data || handleSrc._options.data));
+//         if (endPointSrc) {
+//             originalEndPoints = JSON.parse(JSON.stringify(endPointSrc._data || endPointSrc._options.data));
+//         }
+//
+//         e.preventDefault?.();
+//     }
+//
+//     function onMove(e) {
+//         if (!isDragging) return;
+//         const current = getTouchOrMouseLngLat(e);
+//         if (!current || !dragOrigin) return;
+//
+//         const dx = current.lng - dragOrigin.lng;
+//         const dy = current.lat - dragOrigin.lat;
+//
+//         // ① click-circle-source の該当 feature を移動
+//         const movedFeatures = originalFeatures.features.map(f => {
+//             const idMatch = f.properties.id === dragTargetId || f.properties.pairId === dragTargetId;
+//             if (!idMatch) return f;
+//
+//             const moved = JSON.parse(JSON.stringify(f));
+//             const geom = moved.geometry;
+//
+//             if (geom.type === 'Point') {
+//                 geom.coordinates[0] += dx;
+//                 geom.coordinates[1] += dy;
+//             } else if (geom.type === 'LineString' || geom.type === 'Polygon') {
+//                 const moveCoord = coords => coords.map(([lng, lat]) => [lng + dx, lat + dy]);
+//                 if (geom.type === 'LineString') {
+//                     geom.coordinates = moveCoord(geom.coordinates);
+//                 } else if (geom.type === 'Polygon') {
+//                     geom.coordinates = geom.coordinates.map(ring => moveCoord(ring));
+//                 }
+//             }
+//             return moved;
+//         });
+//
+//         // ② drag-handles-source の該当ポイントを移動
+//         const movedHandles = originalHandles.features.map(f => {
+//             if (f.properties.targetId !== dragTargetId) return f;
+//
+//             const moved = JSON.parse(JSON.stringify(f));
+//             moved.geometry.coordinates[0] += dx;
+//             moved.geometry.coordinates[1] += dy;
+//             return moved;
+//         });
+//
+//         // ③ end-point-source の該当ポイントを移動（pairIdで判定）
+//         let movedEndPoints = originalEndPoints?.features || [];
+//         if (originalEndPoints) {
+//             movedEndPoints = originalEndPoints.features.map(f => {
+//                 if (f.properties.pairId !== dragTargetId) return f;
+//
+//                 const moved = JSON.parse(JSON.stringify(f));
+//                 const geom = moved.geometry;
+//
+//                 if (geom.type === 'Point') {
+//                     geom.coordinates[0] += dx;
+//                     geom.coordinates[1] += dy;
+//                 } else if (geom.type === 'LineString' || geom.type === 'Polygon') {
+//                     const moveCoord = coords => coords.map(([lng, lat]) => [lng + dx, lat + dy]);
+//                     if (geom.type === 'LineString') {
+//                         geom.coordinates = moveCoord(geom.coordinates);
+//                     } else if (geom.type === 'Polygon') {
+//                         geom.coordinates = geom.geometry.coordinates.map(ring => moveCoord(ring));
+//                     }
+//                 }
+//
+//                 return moved;
+//             });
+//
+//             map.getSource('end-point-source').setData({
+//                 type: 'FeatureCollection',
+//                 features: movedEndPoints
+//             });
+//         }
+//
+//         // 更新反映
+//         map.getSource('click-circle-source').setData({
+//             type: 'FeatureCollection',
+//             features: movedFeatures
+//         });
+//
+//         map.getSource('drag-handles-source').setData({
+//             type: 'FeatureCollection',
+//             features: movedHandles
+//         });
+//
+//         // 頂点・中点を再生成
+//         getAllVertexPoints(map, {
+//             type: 'FeatureCollection',
+//             features: movedFeatures
+//         });
+//
+//         setAllMidpoints(map, {
+//             type: 'FeatureCollection',
+//             features: movedFeatures
+//         });
+//
+//         e.preventDefault?.();
+//     }
+//
+//     function onUp() {
+//         isDragging = false;
+//         dragOrigin = null;
+//         dragTargetId = null;
+//
+//         // パンがもともと有効だった場合だけ復元
+//         if (panWasInitiallyEnabled) {
+//             map.dragPan.enable();
+//         }
+//     }
+//
+//     // マウス対応
+//     map.on('mousedown', onDown);
+//     map.on('mousemove', onMove);
+//     map.on('mouseup', onUp);
+//
+//     // タッチ対応
+//     map.getCanvas().addEventListener('touchstart', onDown, { passive: false });
+//     map.getCanvas().addEventListener('touchmove', onMove, { passive: false });
+//     map.getCanvas().addEventListener('touchend', onUp, { passive: false });
+// }
 
 // export function enableDragHandles(map) {
 //     let isDragging = false;
