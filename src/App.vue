@@ -1648,7 +1648,7 @@ export default {
         { key: 'polygon', text: '多角形', label: '多角', color: this.s_isDrawPolygon ? 'green' : 'blue', click: this.toggleLDrawPolygon },
         { key: 'free', text: '自由に描く', label: '自由', color: this.s_isDrawFree ? 'green' : 'blue', click: this.toggleLDrawFree},
         { key: 'finish', text: 'スマホ、タブの時に使用', label: '確定', click: this.finishDrawing, style: 'background-color: orange!important;' },
-        { key: 'edit', text: '編集', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
+        { key: 'edit', text: '編集と移動', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
         { key: 'undo', text: '元に戻す', icon: 'mdi-undo', label: '元戻', click: this.undo },
         { key: 'redo', text: 'やり直す', icon: 'mdi-redo', label: 'やり直', click: this.redo },
         { key: 'fix', text: '画面固定', label: '固定', color: this.s_isDrawFix ? 'green' : 'blue', click: this.toggleDrawFix },
@@ -1657,11 +1657,11 @@ export default {
         { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
       ]
       if (window.innerWidth < 500) {
-        btns = btns.filter(btn => btn.key !== 'edit99' && btn.key !== 'dxf')
+        btns = btns.filter(btn => btn.key !== 'dxf')
       } else if (window.innerWidth < 1000) {
         btns = btns.filter(btn => btn.key !== 'dxf' )
       } else {
-        btns = btns.filter(btn => btn.key !== 'close')
+        btns = btns.filter(btn => btn.key !== 'close99')
       }
       return btns
     },
@@ -3342,6 +3342,11 @@ export default {
       this.finishLine()
     },
     finishDrawing() {
+
+      if (this.s_editEnabled) {
+        this.toggleEditEnabled()
+      }
+
       this.saveHistory()
       const map01 = this.$store.state.map01
       const id = String(Math.floor(10000 + Math.random() * 90000));
@@ -5543,23 +5548,6 @@ export default {
       let vertexIndex = null;
       let dragOrigin = null;
 
-      // function getLngLatFromEvent(e) {
-      //   // if (e.lngLat) return e.lngLat;
-      //
-      //   const touch = e.originalEvent?.touches?.[0];
-      //   if (!touch) return null;
-      //
-      //   const canvas = map.getCanvas();
-      //   const rect = canvas.getBoundingClientRect();
-      //
-      //   // ✅ MapLibreのunprojectは「CSSピクセル」でOK。devicePixelRatioかけてはいけない！
-      //   return map.unproject({
-      //     x: touch.clientX - rect.left,
-      //     y: touch.clientY - rect.top
-      //   });
-      // }
-
-
       function getLngLatFromEvent(e) {
         // 🖱️ マウス操作（PCブラウザ）
         if (!e.originalEvent?.touches) {
@@ -5576,7 +5564,7 @@ export default {
         });
       }
 
-// ✅ 地図座標取得（map.unproject）用のピクセル座標（物理ピクセル単位）
+      // ✅ 地図座標取得（map.unproject）用のピクセル座標（物理ピクセル単位）
       function getUnprojectPointFromTouch(e) {
         const touch = e.originalEvent?.touches?.[0];
         if (!touch) return null;
@@ -5590,7 +5578,7 @@ export default {
         };
       }
 
-// ✅ queryRenderedFeatures 用の CSSピクセル座標（補正なし）
+      // ✅ queryRenderedFeatures 用の CSSピクセル座標（補正なし）
       function getCanvasPointFromTouch(e) {
         const touch = e.originalEvent?.touches?.[0];
         if (!touch) return null;
@@ -5602,17 +5590,7 @@ export default {
         };
       }
 
-// ✅ マウスまたはタッチイベント → 地図座標（LngLat）
-//       function getLngLatFromEvent(e) {
-//         if (e.lngLat) return e.lngLat;
-//
-//         const point = getUnprojectPointFromTouch(e);
-//         if (!point) return null;
-//
-//         return map.unproject(point);
-//       }
-
-// ✅ 頂点ドラッグ開始処理
+      // ✅ 頂点ドラッグ開始処理
       function tryStartDragging(e, cssPoint = null) {
         const lngLat = getLngLatFromEvent(e);
         if (!lngLat) {
@@ -5654,10 +5632,10 @@ export default {
         }
       }
 
-// 🖱️ PC: mousedown
+      // 🖱️ PC: mousedown
       map.on('mousedown', 'vertex-layer', tryStartDragging);
 
-// ☝️ タッチ: touchstart（1本指のみ、CSSピクセルで渡す）
+      // ☝️ タッチ: touchstart（1本指のみ、CSSピクセルで渡す）
       map.on('touchstart', (e) => {
         if (e.originalEvent?.touches?.length !== 1) {
           isDragging = false;
@@ -5673,7 +5651,7 @@ export default {
         tryStartDragging(e, point);
       });
 
-// 🚚 頂点移動処理（mousemove + touchmove）
+      // 🚚 頂点移動処理（mousemove + touchmove）
       ['mousemove', 'touchmove'].forEach(eventName => {
         map.on(eventName, debounce(function (e) {
           if (e.originalEvent?.touches?.length > 1) return;
@@ -5742,7 +5720,7 @@ export default {
         }, 15));
       });
 
-// 🛑 終了処理：mouseup / touchend / touchcancel
+      // 🛑 終了処理：mouseup / touchend / touchcancel
       ['mouseup', 'touchend', 'touchcancel'].forEach(eventName => {
         map.on(eventName, () => {
           if (!isDragging) return;
@@ -7705,57 +7683,6 @@ export default {
     console.log(/android/i.test(userAgent))
     this.$store.state.isAndroid = /android/i.test(userAgent);
     if (window.innerWidth < 500) this.$store.state.isUnder500 = true
-
-    // this.buttons0 = [
-    //   {
-    //     key: 'currentPosition',
-    //     text: '現在地取得',
-    //     icon: 'mdi-crosshairs-gps',
-    //     click: this.goToCurrentLocation
-    //   },
-    //   {
-    //     key: 'watchPosition',
-    //     text: '現在地連続取得',
-    //     icon: 'mdi-map-marker-radius',
-    //     color: this.isTracking ? 'green' : 'primary',
-    //     click: this.toggleWatchPosition
-    //   },
-    //   {
-    //     key: 'share',
-    //     text: '共有',
-    //     icon: 'mdi-share-variant',
-    //     color: 'primary',
-    //     click: this.share
-    //   },
-    //   {
-    //     key: 'print',
-    //     text: '印刷',
-    //     icon: 'mdi-printer',
-    //     color: 'primary',
-    //     click: this.handlePrint
-    //   }
-    // ]
-    // let btns =
-    //     [
-    //       { key: 'point', text: '文字貼りつけ', label: '文字', color: this.s_isDrawPoint ? 'green' : 'blue', click: this.toggleDrawPoint },
-    //       { key: 'circle', text: '円', label: '円', color: this.s_isDrawCircle ? 'green' : 'blue', click: this.toggleDrawCircle },
-    //       { key: 'line', text: '線', label: '線', color: this.s_isDrawLine ? 'green' : 'blue', click: this.toggleLDrawLine },
-    //       { key: 'polygon', text: '多角形', label: '多角', color: this.s_isDrawPolygon ? 'green' : 'blue', click: this.toggleLDrawPolygon },
-    //       { key: 'free', text: '自由に描く', label: '自由', color: this.s_isDrawFree ? 'green' : 'blue', click: this.toggleLDrawFree},
-    //       { key: 'finish', text: 'スマホ、タブの時に使用', label: '確定', click: this.finishDrawing, style: 'background-color: orange!important;' },
-    //       { key: 'edit', text: '編集', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
-    //       { key: 'undo', text: '元に戻す', label: '元戻', click: this.undo },
-    //       { key: 'redo', text: 'やり直す', label: 'やり直', click: this.redo, style: 'font-size: 12px' },
-    //       { key: 'dxf', text: 'DXFで出力', label: 'dxf', color: 'white', click: this.dialogForSaveDXFOpen },
-    //       { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
-    //       { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
-    //     ]
-    // if (window.innerWidth < 500) {
-    //   btns = btns.filter(btn => btn.key !== 'edit' && btn.key !== 'dxf' )
-    // } else {
-    //   btns = btns.filter(btn => btn.key !== 'finish' && btn.key !== 'close')
-    // }
-    // this.buttons = btns
     if (window.innerWidth < 500 ) this.fanMenuOffsetX = 0
   },
   beforeUnmount() {

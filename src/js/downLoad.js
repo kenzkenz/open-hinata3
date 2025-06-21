@@ -25,7 +25,12 @@ import * as GeoTIFF from 'geotiff';
 import html2canvas from 'html2canvas'
 import muni from "@/js/muni";
 import * as exifr from 'exifr'
-import {generateSegmentLabelGeoJSON} from "@/js/pyramid";
+import {
+    generateSegmentLabelGeoJSON,
+    generateStartEndPointsFromGeoJSON,
+    getAllVertexPoints,
+    setAllMidpoints
+} from "@/js/pyramid";
 // import publicChk from '@/components/Dialog-myroom'
 // 複数のクリックされた地番を強調表示するためのセット
 // export let highlightedChibans = new Set();
@@ -7724,9 +7729,6 @@ export function enableFeatureDragAndAdd(map, layerId, sourceId, options = {}) {
         return null;
     }
 
-
-
-
     function getLngLatFromEvent(e) {
         if (e.originalEvent?.touches?.[0]) {
             const touch = e.originalEvent.touches[0];
@@ -7741,8 +7743,27 @@ export function enableFeatureDragAndAdd(map, layerId, sourceId, options = {}) {
         return null;
     }
 
+    let dragStartCooldown = false;
     function handleDragStart(e) {
-        if (store.state.editEnabled) return;
+        if (!store.state.editEnabled) return;
+        // もしクールダウン中なら何もせず return
+        if (dragStartCooldown) return;
+        const vertexFeatures = map.queryRenderedFeatures(
+            [
+                [e.point.x - 15, e.point.y - 15],
+                [e.point.x + 15, e.point.y + 15]
+            ],
+            { layers: ['vertex-layer'] }
+        );
+        if (vertexFeatures.length > 0) {
+            // 一時的に発火禁止（例：1000ms）
+            dragStartCooldown = true;
+            setTimeout(() => {
+                dragStartCooldown = false;
+            }, 1000);
+            return;
+        }
+
 
         const point = getPointFromEvent(e);
         if (!point) return;
@@ -7768,6 +7789,7 @@ export function enableFeatureDragAndAdd(map, layerId, sourceId, options = {}) {
         ];
         map.getCanvas().style.cursor = 'grabbing';
         if (e.preventDefault) e.preventDefault();
+
     }
 
     map.on('mousedown', handleDragStart);
@@ -7849,6 +7871,12 @@ export function enableFeatureDragAndAdd(map, layerId, sourceId, options = {}) {
         generateSegmentLabelGeoJSON(currentData);
         map.getCanvas().style.cursor = 'grabbing';
         if (vm && storeField) vm.$store.state[storeField] = JSON.stringify(currentData);
+
+        // generateSegmentLabelGeoJSON(currentAllowData);
+        // generateStartEndPointsFromGeoJSON(currentAllowData);
+        getAllVertexPoints(map, currentData);
+        setAllMidpoints(map, currentData);
+
     }
 
     map.on('mousemove', handleDragMove);

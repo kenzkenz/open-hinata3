@@ -682,7 +682,7 @@ export const clickCircPolygonSymbolLayer = {
     filter: ['all', ['==', '$type', 'Polygon'], ['!has', 'bearing'], ['!has', 'radius']],
     layout: {
         'text-field': ['get', 'label'],
-        'text-size': 30,   // サイズ調整
+        'text-size': 20,   // サイズ調整
         'text-anchor': 'center',
         'text-allow-overlap': true
     },
@@ -699,9 +699,10 @@ export const clickCircPolygonSymbolAreaLayer = {
     filter: ['all', ['has', 'isArea'], ['!=', ['get', 'isArea'], false]],
     layout: {
         'text-field': ['get', 'area'],
-        'text-size': 30,   // サイズ調整
+        'text-size': 20,   // サイズ調整
         'text-anchor': 'center',
-        'text-allow-overlap': true
+        'text-allow-overlap': true,
+        'text-offset': [0, 1.2],
     },
     paint: {
         'text-color': 'black',
@@ -895,6 +896,28 @@ export const midpointLayer = {
     },
     layout: {},
     filter: ['==', '$type', 'Point']
+}
+// 移動レイヤー---------------------------------------------------------------------
+export const dragHandlesSource = {
+    id:'drag-handles-source',obj:
+        {
+            type: 'geojson',
+            data: {
+                type: 'FeatureCollection',
+                features: []
+            }
+        }
+}
+export const dragHandleslayer = {
+    id: 'drag-handles-layer',
+    type: 'circle',
+    source: 'drag-handles-source',
+    paint: {
+        'circle-radius': 6,
+        'circle-color': '#FF0000',
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#FFFFFF'
+    }
 }
 // 距離ラベルレイヤー-----------------------------------------------------------------
 export const segmentLabelSource = {
