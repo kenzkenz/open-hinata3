@@ -8,6 +8,13 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
+      <!-- 地図と同じ位置に重ねる -->
+
+
+
+
+
+
       <div
           ref="indicator"
           v-show="isDrawing && !s_isCursorOnPanel"
@@ -714,6 +721,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <div id="pointer1" class="pointer" v-if="mapName === 'map01'"></div>
           <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
 
+          <!-- コンパス -->
+          <div class="compusDiv"  v-if="isPrint">
+            <svg class="compass-icon" viewBox="0 0 100 100" width="40" height="40">
+              <circle cx="50" cy="50" r="45" stroke="black" stroke-width="4" fill="white"/>
+              <polygon points="50,10 60,50 50,40 40,50" fill="red"/>
+              <text x="50" y="95" font-size="16" text-anchor="middle" fill="black">N</text>
+            </svg>
+          </div>
+          <div class="scale-ratio" v-if="isPrint"></div>
 
           <div
               v-if="showFloatingImage && mapName === 'map01'"
@@ -1000,7 +1016,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             </span>
           </div>
 
-          <span v-if="!isPrint">
+          <span class="terrain-btn-span">
           <div :id="'terrain-btn-div-' + mapName"
                class="terrain-btn-div"
                @mouseenter="onPanelEnter"
@@ -1018,7 +1034,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             <v-btn icon type="button" @pointerdown="terrainBtnExpand"><v-icon>mdi-arrow-expand</v-icon></v-btn>
           </div>
 
-          <div class="zoom-div">
+          <div class="zoom-div" v-if="!isPrint">
             zoom={{zoom.toFixed(2)}} {{elevation}}<br>
             {{s_address}}
             <br>
@@ -3295,11 +3311,6 @@ export default {
       setAllDisplayNone(this.$store.state.dialogsInfo)
       setAllDisplayNone(this.$store.state.dialog2)
 
-      // if (this.direction === 'vertical') {
-      //   this.direction = 'horizontal'
-      // } else {
-      //   this.direction = 'vertical'
-      // }
       this.directionChange()
 
     },
@@ -6060,6 +6071,37 @@ export default {
           document.querySelector('#map00').style.backgroundColor = 'rgb(194,210,251)'
         }
       });
+      map.on('rotate', () => {
+        const bearing = map.getBearing(); // 地図の北の角度（度）
+        try {
+          document.querySelector('.compass-icon').style.transform = `rotate(${-bearing}deg)`;
+        }catch (e) {
+          console.log(e)
+        }
+      });
+      function getScaleRatio(map) {
+        const zoom = map.getZoom();
+        const dpi = 96; // 通常の画面DPI（印刷用途では 300dpi などに変えても良い）
+        const inchesPerMeter = 39.37;
+
+        // 1ピクセルあたりの地上距離（m）
+        const resolution = 156543.03392804097 * Math.cos(map.getCenter().lat * Math.PI / 180) / Math.pow(2, zoom);
+        const scaleDenominator = resolution * dpi * inchesPerMeter;
+
+        return `1:${Math.round(scaleDenominator).toLocaleString()}`;
+      }
+      function updateScale() {
+        const scaleStr = getScaleRatio(map);
+        try {
+          document.querySelector('.scale-ratio').innerHTML = '縮尺： ' + scaleStr;
+        }catch (e) {
+          console.log(e)
+        }
+
+      }
+      map.on('zoom', updateScale);
+      map.on('move', updateScale);
+      map.once('load', updateScale);
       // -----------------------------------------------------------------------------------------------------------------
       // on load オンロード
       this.mapNames.forEach(mapName => {
@@ -8680,6 +8722,9 @@ select {
   .maplibregl-ctrl-attrib-button{
     display: none !important;
   }
+  .terrain-btn-span {
+    display: none;
+  }
 }
 .draw-indicator {
   position: fixed;
@@ -8803,5 +8848,34 @@ select {
   z-index: 2; /* マーカーより上に出したいとき調整 */
   pointer-events: none; /* マーカークリックなどを通す */
 }
+
+.compusDiv {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.scale-ratio {
+  position: absolute;
+  bottom: 35px;
+  left: 6px;
+  /*background: white;*/
+  padding: 4px 8px;
+  font-size: 14px;
+  /*border: 1px solid #ccc;*/
+  /*border-radius: 4px;*/
+  pointer-events: none;
+  z-index: 1;
+  text-shadow:
+      -1px -1px 0 #ffffff,
+      1px -1px 0 #ffffff,
+      -1px  1px 0 #ffffff,
+      1px  1px 0 #ffffff;
+}
+
 
 </style>
