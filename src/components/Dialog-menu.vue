@@ -81,7 +81,11 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
           <v-card-title>
             ログイン管理
             <span v-if="user1 && user1.displayName" style="margin-left:20px;font-size: 16px;">
-              ようこそ、{{ user1.displayName }}さん！
+              ようこそ、{{
+                this.newName
+                ? this.newName
+                : (this.user1 && this.user1.displayName)
+              }}さん！
             </span>
           </v-card-title>
 
@@ -90,6 +94,29 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-btn v-if="!user1" @click="loginDiv=!loginDiv,signUpDiv=false">ログイン</v-btn><v-btn v-if="user1" @click="logOut">ログアウト</v-btn>
               <v-btn style="margin-left: 10px;" v-if="!user1" @click="signUpDiv=!signUpDiv,loginDiv=false">新規登録</v-btn>
               <span v-if="!user1" style="margin-left: 20px;">新規登録は無料です。</span>
+
+              <div v-if="user1" >
+                <hr style="margin-top: 20px;margin-bottom: 20px;">
+                <p style="margin-bottom: 10px;">ニックネームを変更します。</p>
+                <v-text-field
+                    v-model="newName"
+                    label="新しいニックネームを記入してください。"
+                    outlined
+                    dense
+                ></v-text-field>
+                <v-btn color="primary" @click="updateDisplayName">ニックネーム変更</v-btn>
+                <v-alert
+                    v-if="message"
+                    :type="alertType"
+                    dense
+                    outlined
+                    class="mt-2"
+                    v-html="message"
+                >
+                </v-alert>
+              </div>
+
+
 
               <div v-if="loginDiv" style="margin-top: 10px;">
                 <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
@@ -673,6 +700,25 @@ export default {
     },
   },
   methods: {
+    updateDisplayName() {
+      const user = auth.currentUser
+      if (!user) {
+        this.message = 'ログインユーザーが見つかりません'
+        this.alertType = 'error'
+        return
+      }
+      user.updateProfile({ displayName: this.newName })
+          .then(() => {
+            this.message = 'ニックネームを変更しました。<br>変更を反映させるためにOH3を一度閉じて<br>再読み込みしてください。'
+            this.alertType = 'success'
+            store.state.myNickname = this.newName
+          })
+          .catch(err => {
+            console.error(err)
+            this.message = '更新に失敗しました'
+            this.alertType = 'error'
+          })
+    },
     onSelectLayer({ name, id }) {
       console.log('onSelectLayer:', { name, id });
       // 追加のカスタム処理（例: 他の状態更新）があればここに
@@ -1575,6 +1621,7 @@ export default {
         console.log("✅ ログイン中のユーザー:", user.email);
         this.emailInput = user.email;
         store.state.myNickname = user.displayName || '名無し'
+        this.newName = user.displayName
         // alert(store.state.myNickname)
         // Vue のリアクティブシステムが更新されるのを待機
         this.$nextTick(() => {
@@ -1586,6 +1633,22 @@ export default {
         this.emailInput = ""; // ログインしていない場合は空に
       }
     });
+
+    // ページ読み込み時に currentUser がいれば displayName をセット
+    // const user = auth.currentUser
+    // if (user && user.displayName) {
+    //   this.newName = user.displayName
+    // }
+    // onAuthStateChanged でログイン状態が変わったときも対応したい場合はコメント解除
+    /*
+    auth.onAuthStateChanged(u => {
+      if (u) {
+        this.newName = u.displayName || ''
+      }
+    })
+    */
+
+
     // URLパラメータからグループIDとグループ名を取得
     const params = new URLSearchParams(window.location.search);
     const groupId = params.get("group");
