@@ -3433,7 +3433,6 @@ export default {
       store.state.isCursorOnPanel = false
     },
     toggleEditEnabled () {
-      const vm = this
       this.saveHistory()
       this.s_editEnabled = !this.s_editEnabled
       if (this.s_editEnabled) {

@@ -589,7 +589,8 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
                     }
                     const currentCounter = coordinateMap.get(coordinateKey);
                     if (index === len - 1 && ringIndex === coordinates.length - 1) {
-                        B01Text += 'B01,' + currentCounter + ',' + currentCounter + ',\nD99,\n';
+                        // B01Text += 'B01,' + currentCounter + ',' + currentCounter + ',\nD99,\n';
+                        B01Text += 'D99,\n';
                     } else {
                         B01Text += 'B01,' + currentCounter + ',' + currentCounter + ',\n';
                     }
@@ -603,12 +604,14 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
 
     saveSimaGaiku2 (map,j)
 
-    simaData = simaData + A01Text + saveSimaGaiku2 (map,j) + 'A99\nZ00,区画データ,\n' + B01Text
-    simaData += 'A99,END,,\n';
+    simaData = simaData + A01Text + saveSimaGaiku2 (map,j) + 'A99,\nZ00,区画データ,\n' + B01Text
+    simaData += 'A99,END\n';
 
     if (kukaku || jww) {
         simaData = convertSIMtoTXT(simaData)
     }
+
+    console.log(simaData)
 
     store.state.loading = false
 

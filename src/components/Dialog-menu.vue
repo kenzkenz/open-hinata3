@@ -80,7 +80,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <v-card>
           <v-card-title>
             ログイン管理
-            <span v-if="(user1 && user1.displayName) || s_myNickname" style="margin-left:20px;font-size: 16px;">
+            <span v-if="(user1 && user1.displayName) || s_myNickname && isLoggedIn" style="margin-left:20px;font-size: 16px;">
               ようこそ、{{displayNameToShow}}さん！
             </span>
           </v-card-title>
@@ -91,7 +91,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
               <v-btn style="margin-left: 10px;" v-if="!user1" @click="signUpDiv=!signUpDiv,loginDiv=false">新規登録</v-btn>
               <span v-if="!user1" style="margin-left: 20px;">新規登録は無料です。</span>
 
-              <div v-if="user1 && newName" >
+              <div v-if="user1 && isLoggedIn" >
                 <hr style="margin-top: 20px;margin-bottom: 20px;">
                 <p style="margin-bottom: 10px;">ニックネームを変更します。</p>
                 <v-text-field
@@ -111,8 +111,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
                 >
                 </v-alert>
               </div>
-
-
 
               <div v-if="loginDiv" style="margin-top: 10px;">
                 <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
@@ -313,7 +311,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v1.145
+        v1.146
       </p>
 
       <div v-if="user1">
@@ -447,6 +445,7 @@ export default {
     LayerManager
   },
   data: () => ({
+    isLoggedIn: false,
     newName: '',
     message: '',
     alertType: 'info',
@@ -1278,6 +1277,7 @@ export default {
           this.$store.state.userId = 'dummy'
           this.s_fetchImagesFire = !this.s_fetchImagesFire
           document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー</span>'
+          this.isLoggedIn = false
           alert("ログアウトしました")
         } catch (error) {
           console.error("ログアウトエラー:", error.message)
@@ -1306,9 +1306,6 @@ export default {
           store.state.myNickname = this.nickname
           this.errorMsg = ''
           this.signUpDiv = false
-
-
-
 
         } catch (error) {
           console.error("サインアップ失敗:", error.message)
@@ -1656,6 +1653,7 @@ export default {
         this.emailInput = user.email;
         store.state.myNickname = user.displayName || ''
         this.newName = user.displayName
+        this.isLoggedIn = true
         // alert(store.state.myNickname)
         // Vue のリアクティブシステムが更新されるのを待機
         this.$nextTick(() => {
