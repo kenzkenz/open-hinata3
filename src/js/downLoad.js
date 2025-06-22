@@ -2445,7 +2445,7 @@ export function highlightSpecificFeaturesSima(map,layerId) {
                             ['literal', Array.from(store.state.highlightedSimas)]
                         ],
                         'green',  // 含まれている時
-                        'white'   // 含まれていない時
+                        'blue'   // 含まれていない時
                     ]
                 )
                 map.setPaintProperty(layerId, 'circle-stroke-width', 3)
@@ -2463,7 +2463,7 @@ export function highlightSpecificFeaturesSima(map,layerId) {
                             ['literal', Array.from(store.state.highlightedSimas)]
                         ],
                         'green',  // 含まれている時
-                        'white'   // 含まれていない時
+                        'blue'   // 含まれていない時
                     ]
                 )
             }
@@ -5104,76 +5104,6 @@ async function insertSimaData(uid, name, url, url2, simaText, zahyokei) {
 }
 
 export async function simaLoadForUser (map,isUpload,simaText,zahyokei) {
-    // async function insertSimaData(uid, name, url, url2, simaText, zahyokei) {
-    //     try {
-    //         const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userSimaInsert.php', new URLSearchParams({
-    //             uid: uid,
-    //             name: name,
-    //             url: url,
-    //             url2: url2,
-    //             simatext: simaText,
-    //             zahyokei: zahyokei
-    //         }));
-    //         if (response.data.error) {
-    //             console.error('エラー:', response.data.error);
-    //             alert(`エラー: ${response.data.error}`);
-    //         } else {
-    //             console.log('登録成功:', response.data);
-    //             // alert('登録成功')
-    //             store.state.fetchImagesFire = !store.state.fetchImagesFire
-    //             async function aaa() {
-    //                 const id = response.data.lastId
-    //                 const sourceAndLayers = await userSimaSet(name, url, id, null, simaText, isUpload)
-    //                 console.log(sourceAndLayers)
-    //                 store.state.geojsonSources.push({
-    //                     sourceId: sourceAndLayers.source.id,
-    //                     source: sourceAndLayers.source
-    //                 })
-    //                 console.log(store.state.geojsonSources)
-    //                 store.state.selectedLayers.map01.unshift(
-    //                     {
-    //                         id: 'oh-sima-' + id + '-' + name + '-layer',
-    //                         label: name,
-    //                         source: sourceAndLayers.source.id,
-    //                         layers: sourceAndLayers.layers,
-    //                         opacity: 1,
-    //                         visibility: true,
-    //                     }
-    //                 );
-    //                 console.log(store.state.selectedLayers.map01)
-    //                 const bounds = new maplibregl.LngLatBounds();
-    //                 sourceAndLayers.geojson.features.forEach(feature => {
-    //                     const geometry = feature.geometry;
-    //                     if (!geometry) return;
-    //                     switch (geometry.type) {
-    //                         case 'Point':
-    //                             bounds.extend(geometry.coordinates);
-    //                             break;
-    //                         case 'LineString':
-    //                             geometry.coordinates.forEach(coord => bounds.extend(coord));
-    //                             break;
-    //                         case 'Polygon':
-    //                             geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
-    //                             break;
-    //                         case 'MultiPolygon':
-    //                             geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
-    //                             break;
-    //                     }
-    //                 });
-    //                 map.fitBounds(bounds, {
-    //                     padding: 50,
-    //                     animate: true
-    //                 });
-    //                 store.state.snackbar = true
-    //                 store.state.loading2 = false
-    //             }
-    //             aaa()
-    //         }
-    //     } catch (error) {
-    //         console.error('通信エラー:', error);
-    //     }
-    // }
-
     store.state.loading2 = true
     store.state.loadingMessage = 'アップロード中です。'
     const files = store.state.tiffAndWorldFile
@@ -6476,15 +6406,8 @@ export async function userSimaSet(name, url, id, zahyokei, simaText, isFirst) {
             })
             store.state.simaOpacity = opacity
         }
-        // alert(zahyokei)
-        // zahyokei = store.state.zahyokei
-        // alert(zahyokei)
         const geojson = simaToGeoJSON(simaText, map, zahyokei, false, true);
         return createSourceAndLayers(geojson);
-    // } catch (error) {
-    //     console.error(error);
-    //     return null;
-    // }
 
     function createSourceAndLayers(geojson) {
         if (map.getLayer('oh-sima-' + id + '-' + name + '-layer')) {
@@ -6538,14 +6461,13 @@ export async function userSimaSet(name, url, id, zahyokei, simaText, isFirst) {
             id: 'oh-sima-' + id + '-' + name + '-vertex-layer',
             type: 'circle',
             source: sourceId,
-            layout: {},
             paint: {
                 'circle-radius': [
                     'interpolate', ['linear'], ['zoom'],
                     15, 0,
                     18, 4
                 ],
-                'circle-color': '#f00',
+                'circle-color': 'red',
             },
             filter: ['==', ['get', 'type'], 'vertex']
         };
@@ -6553,9 +6475,13 @@ export async function userSimaSet(name, url, id, zahyokei, simaText, isFirst) {
             id: 'oh-sima-' + id + '-' + name + '-point-layer',
             type: 'circle',
             source: sourceId,
-            layout: {},
             paint: {
-                'circle-radius': 6,
+                // 'circle-radius': 6,
+                'circle-radius': [
+                    'interpolate', ['linear'], ['zoom'],
+                    15, 0,
+                    18, 3
+                ],
                 'circle-color': 'navy',
             },
             filter: ['==', ['get', 'type'], 'point']
