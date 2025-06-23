@@ -3293,6 +3293,7 @@ export default {
       map00Div.style.display = 'block';
     },
     handlePrint(isClose) {
+      // this.s_isDraw = false
       this.attributionControl = new maplibregl.AttributionControl()
       this.$store.state.map01.addControl(this.attributionControl, 'bottom-right')
       const el = document.getElementById('terrain-btn-div-map01');

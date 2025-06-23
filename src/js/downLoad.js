@@ -8881,3 +8881,89 @@ export function splitLineStringIntoPoints(lineStringGeoJSON, numPoints) {
     console.log(turf.featureCollection(points));
     return turf.featureCollection(points);
 }
+
+/**
+ * GeoJSONをGPXに変換する関数
+ * @param {Object} geojson - GeoJSON FeatureCollection
+ * @param {Object} [options] - オプション
+ * @param {string} [options.creator] - GPX creator 属性の値
+ * @param {string} [options.version] - GPX バージョン
+ * @param {Object} [options.metadata] - メタデータ (name, desc など)
+ * @returns {string} GPX形式の文字列
+ */
+export function geojsonToGpx(geojson, options = {}) {
+    const {
+        creator = 'geojson-to-gpx',
+        version = '1.1',
+        metadata = {}
+    } = options;
+
+    const lines = [];
+    // XML宣言
+    lines.push('<?xml version="1.0" encoding="UTF-8"?>');
+    // GPX開始タグ
+    lines.push(`<gpx version="${version}" creator="${creator}" xmlns="http://www.topografix.com/GPX/1/1"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">`);
+
+    // メタデータ
+    if (metadata.name || metadata.desc) {
+        lines.push('  <metadata>');
+        if (metadata.name) lines.push(`    <name>${metadata.name}</name>`);
+        if (metadata.desc) lines.push(`    <desc>${metadata.desc}</desc>`);
+        lines.push('  </metadata>');
+    }
+
+    // 各Featureを処理
+    geojson.features.forEach(feature => {
+        const { geometry, properties = {} } = feature;
+        switch (geometry.type) {
+            case 'Point': {
+                const [lon, lat] = geometry.coordinates;
+                lines.push(`  <wpt lat="${lat}" lon="${lon}">`);
+                if (properties.name) lines.push(`    <name>${properties.name}</name>`);
+                if (properties.desc) lines.push(`    <desc>${properties.desc}</desc>`);
+                lines.push('  </wpt>');
+                break;
+            }
+            case 'LineString':
+            case 'MultiLineString': {
+                lines.push('  <trk>');
+                if (properties.name) lines.push(`    <name>${properties.name}</name>`);
+                lines.push('    <trkseg>');
+                const coords = geometry.type === 'LineString'
+                    ? geometry.coordinates
+                    : geometry.coordinates.flat();
+                coords.forEach(([lon, lat]) => {
+                    lines.push(`      <trkpt lat="${lat}" lon="${lon}" />`);
+                });
+                lines.push('    </trkseg>');
+                lines.push('  </trk>');
+                break;
+            }
+            case 'Polygon':
+            case 'MultiPolygon': {
+                lines.push('  <trk>');
+                if (properties.name) lines.push(`    <name>${properties.name}</name>`);
+                const rings = geometry.type === 'Polygon'
+                    ? [geometry.coordinates[0]]
+                    : geometry.coordinates.map(poly => poly[0]);
+                rings.forEach(ring => {
+                    lines.push('    <trkseg>');
+                    ring.forEach(([lon, lat]) => {
+                        lines.push(`      <trkpt lat="${lat}" lon="${lon}" />`);
+                    });
+                    lines.push('    </trkseg>');
+                });
+                lines.push('  </trk>');
+                break;
+            }
+            default:
+                console.warn(`Unsupported geometry type: ${geometry.type}`);
+        }
+    });
+
+    // GPX終了タグ
+    lines.push('</gpx>');
+    return lines.join('\n');
+}

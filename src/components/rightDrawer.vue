@@ -6,6 +6,7 @@
       v-model="visible"
       location="right"
       class="point-info-drawer"
+      touchless
   >
     <v-card flat class="bg-white drawer" style="border-radius: 0;">
       <v-card-title class="text-h6 text-white" style="background-color: var(--main-color); height: 40px; display: flex; align-items: center;">
