@@ -329,7 +329,7 @@ import axios from "axios"
 import maplibregl from 'maplibre-gl'
 import {history} from "@/App";
 import {
-  cityGeojsonSource,
+  cityGeojsonSource, clickCircleSource,
   extLayer,
   extSource,
   groupPointsLayer, groupPointsSource,
@@ -1267,7 +1267,7 @@ export default {
         // const dxfText = params.get('dxftext')
         const gpxText = params.get('gpxtext')
         const vector0 = params.get('vector')
-        const clickCirclegeojsontext = params.get('clickCirclegeojsontext')
+        // const clickCirclegeojsontext = params.get('clickCirclegeojsontext')
         map.jumpTo({
           center: [lng, lat],
           zoom: zoom
@@ -1388,6 +1388,16 @@ export default {
         const kmlText = match ? match[1] : null;
         if (kmlText) vm.$store.state.kmlText = kmlText
 
+        // 謎の現象を回避するため正規表現で取得する。その後、解明 「#」があるとき失敗している
+        // 全般的にデータベースに入れないと直後復帰ができない。
+        match = response.data.match(/clickCirclegeojsontext=(.*?)&vector/s);
+        const clickCirclegeojsontext = match ? match[1] : null;
+        if (clickCirclegeojsontext) {
+          console.log(clickCirclegeojsontext)
+          vm.$store.state.clickCirclegeojsontext = clickCirclegeojsontext
+          clickCircleSource.obj.data = JSON.parse(clickCirclegeojsontext)
+        }
+
         match = response.data.match(/dxftext=(.*?)&/s);
         let dxfText = match ? match[1] : null;
         dxfText = JSON.parse(dxfText)
@@ -1397,7 +1407,10 @@ export default {
 
         if (geojsonText) vm.$store.state.geojsonText = geojsonText
         if (gpxText) vm.$store.state.gpxText = gpxText
-        if (clickCirclegeojsontext) vm.$store.state.clickCircleGeojsonText = clickCirclegeojsontext
+        // if (clickCirclegeojsontext) {
+        //   console.log(clickCirclegeojsontext)
+        //   clickCircleSource.obj.data = JSON.parse(clickCirclegeojsontext)
+        // }
 
         const slj0 = JSON.parse(params.get('slj'))
         const mapNames = ['map01', 'map02']
@@ -2237,6 +2250,7 @@ export default {
       insertUserData(this.$store.state.userId,this.tileName,this.tileUrl)
     },
     urlSave () {
+
       if (!this.urlName) {
         alert('ネームを記入してください。')
         return

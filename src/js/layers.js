@@ -10004,6 +10004,30 @@ export const seaLevellLayer = {
     },
 }
 // ---------------------------------------------------------------------------------------------------------------------
+// ソース
+const t23kuSource = {
+    id: "t23ku-source", obj:{
+        type: "vector",
+        url: "pmtiles://https://kenzkenz2.xsrv.jp/pmtiles/23kuNew.pmtiles",
+    }
+}
+const t23kuLayer = {
+    id: "t23ku-source-line",
+    type: "line",
+    source: "t23ku-source",
+    "source-layer": "oh3",
+    paint: {
+        "line-color": "blue",
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10, 0.1,
+            20, 4
+        ]
+    },
+}
+// ---------------------------------------------------------------------------------------------------------------------
 let layers01 = [
     {
         id: 'oh-homusyo-2025-layer',
@@ -12102,6 +12126,12 @@ let layers01 = [
             //     attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
             //     ext: {name:'extTokijyo'}
             // },
+            {
+                id: 'oh-t23kuLayer',
+                label: "23区テスト",
+                sources:[t23kuSource],
+                layers: [t23kuLayer],
+            },
             {
                 id: 'oh-vector-layer-mono',
                 label: "地理院ベクター・モノクロ",

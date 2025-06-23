@@ -1290,6 +1290,9 @@ export default {
           //
           // })
         // })
+        console.log(this.$store.state.clickCircleGeojsonText)
+        // console.log(JSON.parse(this.$store.state.clickCircleGeojsonText))
+
         this.addLayers()
       },
       deep: true

@@ -5881,6 +5881,7 @@ export function pngDl() {
     }
     // 地図のレンダリング完了を待機
     document.querySelector('.print-buttons').style.display = 'none'
+    document.querySelector('.terrain-btn-span').style.display = 'none'
     map01.once('idle', async () => {
         html2canvas(mapContainer, { useCORS: true }).then(canvas => {
             canvas.toBlob((blob) => {
@@ -5889,6 +5890,7 @@ export function pngDl() {
                 link.download = fileName + '.png';
                 link.click();
                 document.querySelector('.print-buttons').style.display = 'block'
+                document.querySelector('.terrain-btn-span').style.display = 'block'
             });
         });
     });

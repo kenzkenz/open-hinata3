@@ -8,13 +8,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
-      <!-- 地図と同じ位置に重ねる -->
-
-
-
-
-
-
       <div
           ref="indicator"
           v-show="isDrawing && !s_isCursorOnPanel"
@@ -173,7 +166,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <v-dialog v-model="printDialog" max-width="500px">
         <v-card>
           <v-card-title>
-            タイトル等の設定
+            印刷設定
           </v-card-title>
           <v-card-text>
             <v-textarea
@@ -200,6 +193,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 item-value="color"
                 label="色を選択してください"
                 @update:modelValue="configChange('fill-color',titleColor)"
+            />
+            <v-select
+                v-model="titleScale"
+                :items="titleScales"
+                item-title="label"
+                item-value="zoom"
+                label="縮尺率固定"
+                @update:modelValue="setZoom()"
             />
             <v-select
                 v-model="titleDirection"
@@ -729,7 +730,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <text x="50" y="95" font-size="16" text-anchor="middle" fill="black">N</text>
             </svg>
           </div>
-          <div class="scale-ratio" v-if="isPrint"></div>
+          <div class="scale-ratio" v-if="isPrint">{{scaleText}}</div>
 
           <div
               v-if="showFloatingImage && mapName === 'map01'"
@@ -940,9 +941,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
             </span>
             <span v-if="isPrint" class="print-buttons">
               <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="print">印刷</v-btn>
-              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 10px;" @click="printDialog = true">タイトル</v-btn>
-              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 10px;" @click="pngDl">PNG</v-btn>
-              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 10px;" @click="handlePrint(true)">閉じる</v-btn>
+              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 16px;" @click="printDialog = true">設定</v-btn>
+              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 16px;" @click="pngDl">PNG</v-btn>
+              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 16px;" @click="handlePrint(true)">戻る</v-btn>
             </span>
 
           </div>
@@ -1528,6 +1529,16 @@ export default {
     titleColors: [{color:'black',label:'黒'},{color:'red',label:'赤'},{color:'blue',label:'青'},{color:'green',label:'緑'},{color:'orange',label:'オレンジ'}],
     titleDirection: 'vertical',
     titleDirections: [{direction:'vertical',label:'A4縦'},{direction:'horizontal',label:'A4横'}],
+    titleScale: 0,
+    titleScales: [
+      {zoom: 0, label: '固定なし'},
+      {zoom: 22.6, label: '1/250で固定'},
+      {zoom: 21.6, label: '1/500で固定'},
+      {zoom: 20.6, label: '1/1000で固定'},
+      {zoom: 19.6, label: '1/2000で固定'},
+      {zoom: 19.3, label: '1/2500で固定'},
+      {zoom: 18.3, label: '1/5000で固定'},
+    ],
     textPx: 30,
     printTitleText: '',
     printDialog: false,
@@ -1610,7 +1621,8 @@ export default {
     imageLoaded: false,
     showOriginal: true,
     showTileDialog: false,
-    originalEnable: null
+    originalEnable: null,
+    scaleText: ''
   }),
   computed: {
     ...mapState([
@@ -3176,6 +3188,20 @@ export default {
     onA() { alert('未実装です。') },
     pngDl () {
       pngDl()
+    },
+    setZoom () {
+      const map01 = this.$store.state.map01
+      if (this.titleScale !== 0) {
+        map01.setZoom(this.titleScale)
+        this.scaleText = '縮尺：' + this.titleScales.find(t => t.zoom === this.titleScale).label.replace('で固定', '')
+        map01.on('zoom', () => {
+          if (map01.getZoom() !== this.titleScale && this.titleScale !== 0 && this.isPrint) {
+            map01.setZoom(this.titleScale);
+          }
+        })
+      } else {
+        this.scaleText = ''
+      }
     },
     configChange (tgtProp,value) {
       const map01 = this.$store.state.map01
@@ -6068,18 +6094,18 @@ export default {
 
         return `1:${Math.round(scaleDenominator).toLocaleString()}`;
       }
-      function updateScale() {
-        const scaleStr = getScaleRatio(map);
-        try {
-          document.querySelector('.scale-ratio').innerHTML = '縮尺： ' + scaleStr;
-        }catch (e) {
-          console.log(e)
-        }
-
-      }
-      map.on('zoom', updateScale);
-      map.on('move', updateScale);
-      map.once('load', updateScale);
+      // function updateScale() {
+      //   const scaleStr = getScaleRatio(map);
+      //   try {
+      //     document.querySelector('.scale-ratio').innerHTML = '縮尺： ' + scaleStr;
+      //   }catch (e) {
+      //     console.log(e)
+      //   }
+      //
+      // }
+      // map.on('zoom', updateScale);
+      // map.on('move', updateScale);
+      // map.once('load', updateScale);
 
 
       enableDragHandles(map)
