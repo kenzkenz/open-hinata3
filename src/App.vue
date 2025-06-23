@@ -8,12 +8,58 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
-      <span v-if="isPrint" class="print-buttons">
-              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="print">印刷</v-btn>
-              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 16px;" @click="printDialog = true">設定</v-btn>
-              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 16px;" @click="pngDl">PNG</v-btn>
-              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 16px;" @click="handlePrint(true)">戻る</v-btn>
-      </span>
+<!--      <span v-if="isPrint" class="print-buttons">-->
+<!--              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="print">印刷</v-btn>-->
+<!--              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 16px;" @click="printDialog = true">設定</v-btn>-->
+<!--              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 16px;" @click="pngDl">PNG</v-btn>-->
+<!--&lt;!&ndash;              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 16px;" @click="handlePrint(true)">戻る</v-btn>&ndash;&gt;-->
+<!--      </span>-->
+
+      <div id="print-div" class="fan-menu-rap">
+<!--        <div style="position: relative">-->
+          <v-btn class="fan-menu-print" :size="isSmall ? 'small' : 'default'" icon @click="handlePrint(true)" >戻る</v-btn>
+          <v-btn class="print-print" :size="isSmall ? 'small' : 'default'" icon style="font-size: 16px;" @click="print">印刷</v-btn>
+          <v-btn class="print-config" :size="isSmall ? 'small' : 'default'" icon style="font-size: 16px;" @click="printDialog = true">設定</v-btn>
+          <v-btn class="print-png" :size="isSmall ? 'small' : 'default'" icon style="font-size: 16px;" @click="pngDl">PNG</v-btn>
+
+          <FanMenu class="fan-menu" layout="vertical" :offset-x="fanMenuOffsetX">
+            <template v-slot:center>
+              <MiniTooltip text="ドロー" :offset-x="0" :offset-y="2">
+                <v-btn
+                    id="centerDrawBtn"
+                    :size="isSmall ? 'small' : 'default'"
+                    :color="s_isDraw ? 'green' : undefined"
+                    icon
+                    @click="toggleLDraw"
+                >
+                  <v-icon>mdi-pencil</v-icon>
+                </v-btn>
+              </MiniTooltip>
+            </template>
+            <template v-slot:default>
+              <div>
+                <div v-for="btn in buttons1" :key="btn.key">
+                  <MiniTooltip :text="btn.text" :offset-x="0" :offset-y="2">
+                    <v-btn
+                        :icon="true"
+                        :color="btn.color"
+                        @click="btn.click"
+                        :style="btn.style"
+                    >
+                      <template v-if="btn.icon">
+                        <v-icon>{{ btn.icon }}</v-icon>
+                      </template>
+                      <template v-else>
+                        <b>{{ btn.label }}</b>
+                      </template>
+                    </v-btn>
+                  </MiniTooltip>
+                </div>
+              </div>
+            </template>
+          </FanMenu>
+<!--        </div>-->
+      </div>
 
       <div
           ref="indicator"
@@ -504,13 +550,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         label="座標系を選択してください"
                         outlined
               ></v-select>
-<!--              <v-select class="scrollable-content"-->
-<!--                        v-model="s_resolution"-->
-<!--                        :items="resolutions"-->
-<!--                        label="画像取込最大解像度を選択してください"-->
-<!--                        outlined-->
-<!--                        v-if="user1"-->
-<!--              ></v-select>-->
               <v-select class="scrollable-content"
                         v-model="s_transparent"
                         :items="transparentType"
@@ -648,13 +687,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         label="選択してください"
                         outlined
               ></v-select>
-<!--              <v-select class="scrollable-content"-->
-<!--                        v-model="s_resolution"-->
-<!--                        :items="resolutions"-->
-<!--                        label="画像取込最大解像度"-->
-<!--                        outlined-->
-<!--                        v-if="user1"-->
-<!--              ></v-select>-->
               <v-select class="scrollable-content"
                         v-model="s_transparent"
                         :items="transparentType"
@@ -839,7 +871,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 </tbody>
               </table>
             </div>
-            <!-- 将来用のボタン -->
             <div style="margin-top: 4px; text-align: left; padding: 10px;">
               <v-btn class="tiny-btn" small color="red" @click="removeFloatingImage">画像を消す</v-btn>
               <v-btn class="tiny-btn" style="margin-left: 5px;" small color="primary" @click="resetGcp">GCPリセット</v-btn>
@@ -945,72 +976,71 @@ import SakuraEffect from './components/SakuraEffect.vue';
             </span>
           </div>
           <!--右メニュー-->
-          <div id="right-top-div"
+          <div id="right-top-div" v-if="mapName === 'map01'"
                @mouseenter="onPanelEnter"
                @mouseleave="onPanelLeave">
-            <span v-if="!isPrint" style="position: relative">
+            <span v-if="!isPrint">
               <div v-if="isRightDiv">
-
-              <div v-for="btn in buttons0" :key="btn.key" style="margin-bottom:10px;">
-                <MiniTooltip :text="btn.text" :offset-x="0" :offset-y="2">
-                  <v-btn
-                      :icon="true"
-                      :color="btn.color"
-                      @click="btn.click"
-                      :style="btn.style"
-                      :size="isSmall ? 'small' : 'default'"
-                  >
-                    <template v-if="btn.icon">
-                      <v-icon>{{ btn.icon }}</v-icon>
-                    </template>
-                    <template v-else>
-                      <b>{{ btn.label }}</b>
-                    </template>
-                  </v-btn>
-                </MiniTooltip>
-              </div>
-              </div>
-
-              <FanMenu layout="vertical" :offset-x="fanMenuOffsetX">
-
-                <template v-slot:center>
-                  <MiniTooltip text="ドロー" :offset-x="0" :offset-y="2">
-                    <v-btn
-                        id="centerDrawBtn"
-                        :size="isSmall ? 'small' : 'default'"
-                        :color="s_isDraw ? 'green' : undefined"
-                        icon
-                        @click="toggleLDraw"
-                        v-if="mapName === 'map01'"
-                    >
-                      <v-icon>mdi-pencil</v-icon>
-                    </v-btn>
-                  </MiniTooltip>
-                </template>
-
-               <template v-slot:default>
-                  <div v-if="mapName === 'map01'">
-                    <div v-for="btn in buttons1" :key="btn.key">
-                      <MiniTooltip :text="btn.text" :offset-x="0" :offset-y="2">
-                        <v-btn
+<!--                <div v-if="isRightDiv2">-->
+                  <div v-for="btn in buttons0" :key="btn.key" style="margin-bottom:10px;">
+                    <MiniTooltip :text="btn.text" :offset-x="0" :offset-y="2">
+                      <v-btn
                           :icon="true"
                           :color="btn.color"
                           @click="btn.click"
                           :style="btn.style"
-                        >
-                          <template v-if="btn.icon">
-                            <v-icon>{{ btn.icon }}</v-icon>
-                          </template>
-                          <template v-else>
-                            <b>{{ btn.label }}</b>
-                          </template>
-                        </v-btn>
-                      </MiniTooltip>
+                          :size="isSmall ? 'small' : 'default'"
+                      >
+                        <template v-if="btn.icon">
+                          <v-icon>{{ btn.icon }}</v-icon>
+                        </template>
+                        <template v-else>
+                          <b>{{ btn.label }}</b>
+                        </template>
+                      </v-btn>
+                    </MiniTooltip>
+<!--                  </div>-->
+                </div>
+                <FanMenu class="fan-menu-0" layout="vertical" :offset-x="fanMenuOffsetX">
+                  <template v-slot:center>
+                    <MiniTooltip text="ドロー!" :offset-x="0" :offset-y="2">
+                      <v-btn
+                          id="centerDrawBtn2"
+                          :size="isSmall ? 'small' : 'default'"
+                          :color="s_isDraw ? 'green' : undefined"
+                          icon
+                          @click="toggleLDraw"
+                      >
+                        <v-icon>mdi-pencil</v-icon>
+                      </v-btn>
+                    </MiniTooltip>
+                  </template>
+                  <template v-slot:default>
+                    <div>
+                      <div v-for="btn in buttons1" :key="btn.key">
+                        <MiniTooltip :text="btn.text" :offset-x="0" :offset-y="2">
+                          <v-btn
+                              :icon="true"
+                              :color="btn.color"
+                              @click="btn.click"
+                              :style="btn.style"
+                          >
+                            <template v-if="btn.icon">
+                              <v-icon>{{ btn.icon }}</v-icon>
+                            </template>
+                            <template v-else>
+                              <b>{{ btn.label }}</b>
+                            </template>
+                          </v-btn>
+                        </MiniTooltip>
+                      </div>
                     </div>
-                  </div>
-                </template>
-              </FanMenu>
+                  </template>
+                </FanMenu>
 
+
+
+              </div>
             </span>
           </div>
 
@@ -1527,14 +1557,29 @@ export default {
     titleDirection: 'vertical',
     titleDirections: [{direction:'vertical',label:'A4縦'},{direction:'horizontal',label:'A4横'}],
     titleScale: 0,
-    titleScales: [
-      {zoom: 0, label: '固定なし'},
-      {zoom: 22.6, label: '1/250で固定'},
-      {zoom: 21.6, label: '1/500で固定'},
-      {zoom: 20.6, label: '1/1000で固定'},
-      {zoom: 19.6, label: '1/2000で固定'},
-      {zoom: 19.3, label: '1/2500で固定'},
-      {zoom: 18.3, label: '1/5000で固定'},
+    // titleScales: [//grokの回答
+    //   {zoom: 0, label: '固定なし'},
+    //   {zoom: 22.6, label: '1/250で固定'},
+    //   {zoom: 21.6, label: '1/500で固定'},
+    //   {zoom: 20.6, label: '1/1000で固定'},
+    //   {zoom: 19.6, label: '1/2000で固定'},
+    //   {zoom: 19.3, label: '1/2500で固定'},
+    //   {zoom: 18.3, label: '1/5000で固定'},
+    //   {zoom: 16.0, label: '1/25000で固定'},
+    //   {zoom: 15.0, label: '1/50000で固定'},
+    //   {zoom: 13.0, label: '1/200000で固定'},
+    // ],
+    titleScales: [//gptの回答
+      { zoom: 0.0,  label: '固定なし'            },
+      { zoom: 20.9, label: '1/250で固定'        },
+      { zoom: 19.9, label: '1/500で固定'        },
+      { zoom: 18.9, label: '1/1000で固定'       },
+      { zoom: 17.9, label: '1/2000で固定'       },
+      { zoom: 17.6, label: '1/2500で固定'       },
+      { zoom: 16.6, label: '1/5000で固定'       },
+      { zoom: 14.2, label: '1/25000で固定'      },
+      { zoom: 13.2, label: '1/50000で固定'      },
+      { zoom: 11.2, label: '1/200000で固定'     },
     ],
     textPx: 30,
     printTitleText: '',
@@ -1619,7 +1664,8 @@ export default {
     showOriginal: true,
     showTileDialog: false,
     originalEnable: null,
-    scaleText: ''
+    scaleText: '',
+    isRightDiv2: true,
   }),
   computed: {
     ...mapState([
@@ -1640,11 +1686,10 @@ export default {
     buttons0() {
       const btns =
           [
+            { key: 'print', text: '印刷', icon: 'mdi-printer', color: 'primary', click: this.handlePrint },
             { key: 'currentPosition', text: '現在地取得', icon: 'mdi-crosshairs-gps', click: this.goToCurrentLocation },
             { key: 'watchPosition', text: '現在地連続取得', icon: 'mdi-map-marker-radius', color: this.isTracking ? 'green' : 'primary', click: this.toggleWatchPosition },
             { key: 'share', text: '共有', icon: 'mdi-share-variant', color: 'primary', click: this.share },
-            { key: 'print', text: '印刷', icon: 'mdi-printer', color: 'primary', click: this.handlePrint },
-
           ]
       return btns
     },
@@ -3243,17 +3288,33 @@ export default {
       // リサイズ＆中央に
       map00Div.style.width  = widthPx + 'px';
       map00Div.style.height = heightPx + 'px';
-      map00Div.style.margin = '0 auto';
+      // map00Div.style.margin = '0 auto';
+      map00Div.style.margin = '20px auto 0 auto';
       map00Div.style.display = 'block';
     },
     handlePrint(isClose) {
       this.attributionControl = new maplibregl.AttributionControl()
       this.$store.state.map01.addControl(this.attributionControl, 'bottom-right')
-
+      const el = document.getElementById('terrain-btn-div-map01');
+      const parent = el.parentNode;
+      const next   = el.nextSibling;               // 元の“次”を覚えておく
+      const grandParent = parent.parentNode.parentNode || document.body;
       if (isClose === true) {
         document.querySelector('.maplibregl-ctrl-scale').style.display = 'none'
+        document.querySelector('.fan-menu-rap').style.display = 'none'
+        // this.isRightDiv2 = false
+        if (next) {
+          parent.insertBefore(el, next);             // 元の “次Sibling” の前に挿入
+        } else {
+          parent.appendChild(el);                    // 末尾だったら親の最後に戻す
+        }
       } else {
         document.querySelector('.maplibregl-ctrl-scale').style.display = 'block'
+        document.querySelector('.fan-menu-rap').style.display = 'block'
+
+        // this.isRightDiv2 = true
+        parent.removeChild(el);
+        grandParent.appendChild(el);
       }
 
       // 2. attributionコントロールのDOM取得
@@ -3338,7 +3399,11 @@ export default {
 
     },
     drawClose () {
-      document.querySelector('#centerDrawBtn').click()
+      if (document.querySelector('#centerDrawBtn2')) {
+        document.querySelector('#centerDrawBtn2').click()
+      } else {
+        document.querySelector('#centerDrawBtn').click()
+      }
       document.querySelector('.center-wrapper').style.opacity = '1'
       this.isRightDiv = true
     },
@@ -3349,19 +3414,19 @@ export default {
         this.s_isDrawCircle = false
         this.s_isDrawLine = false
         this.s_isDrawPolygon = false
-        if (window.innerWidth < 500) {
-          this.isRightDiv = true
-          document.querySelector('.center-wrapper').style.opacity = '1'
-        }
+        // if (window.innerWidth < 500) {
+        //   this.isRightDiv = true
+        //   document.querySelector('.center-wrapper').style.opacity = '1'
+        // }
       } else {
         this.snackbarText = 'ドロー時は各種クリックが制限されます。'
         this.snackbar = true
-        if (window.innerWidth < 500) {
-          this.isRightDiv = false
-          document.querySelector('.center-wrapper').style.opacity = '0'
-        }
+        // if (window.innerWidth < 500) {
+        //   this.isRightDiv = false
+        //   document.querySelector('.center-wrapper').style.opacity = '0'
+        // }
       }
-      document.querySelector('#draw-indicato-text').innerHTML = ''
+      // document.querySelector('#draw-indicato-text').innerHTML = ''
       this.finishLine()
     },
     finishDrawing() {
@@ -4238,7 +4303,7 @@ export default {
       if (this.$store.state.dialogs.menuDialog[mapName].style.display === 'none') {
         this.$store.commit('incrDialogMaxZindex')
         this.$store.state.dialogs.menuDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
-        this.$store.state.dialogs.menuDialog[mapName].style.display = 'block'
+       this.$store.state.dialogs.menuDialog[mapName].style.display = 'block'
       } else {
         this.$store.state.dialogs.menuDialog[mapName].style.display = 'none'
       }
@@ -7221,6 +7286,7 @@ export default {
                             vm.s_chibanzuPropaties = await extractFirstFeaturePropertiesAndCheckCRS(file)
                             vm.s_showChibanzuDialog = true
                           }catch (e) {
+                            alert('プロパティを読み込めませんでした。文字化けしていませんか？\n' + e)
                             console.log(e)
                           }
                         // } else {
@@ -7720,6 +7786,8 @@ export default {
   mounted() {
     const vm = this
 
+    document.querySelector('.fan-menu-rap').style.display = 'none'
+
     ensureOpenCvReady(() => {
       this.cvReady = true;
       console.log('OpenCV.js ready');
@@ -7848,6 +7916,12 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
+    isPrint (value) {
+      if (!value) {
+        const map00Div = document.getElementById('map00');
+        map00Div.style.marginTop = '0px'
+      }
+    },
     clickCircleGeojsonText () {
       this.updatePermalink()
     },
@@ -8699,6 +8773,7 @@ select {
   position: absolute;
   left:5px;
   top: 10px;
+  z-index: 1;
 }
 @media print {
   .print-buttons {
@@ -8718,6 +8793,15 @@ select {
   }
   .terrain-btn-span {
     display: none;
+  }
+  #terrain-btn-div-map01 {
+    display: none;
+  }
+  .sub-btns {
+    display: none;
+  }
+  #print-div {
+    display: none!important;
   }
 }
 .draw-indicator {
@@ -8777,33 +8861,7 @@ select {
 /*  border-radius: 12px;*/
 /*}*/
 
-@media (max-width: 450px) {
-  .maplibregl-popup {
-    position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    z-index: 9999;
-  }
-  .maplibregl-popup-tip {
-    display: none !important; /* 吹き出し非表示でモーダル感UP */
-  }
-  .maplibregl-popup-content {
-    width: 400px !important;         /* ★固定幅 */
-    max-width: 90vw !important;      /* 必要なら調整 */
-    min-width: 300px !important;     /* 最小幅も確保 */
-    overflow-y: auto;
 
-    /* ★ 位置調整 */
-    position: relative;
-    left: 50%;
-    transform: translateX(-50%);
-  }
-  textarea,
-  input {
-    font-size: 16px !important;
-  }
-}
 
 /*.image-marker {*/
 /*  position: absolute;*/
@@ -8870,8 +8928,84 @@ select {
       -1px  1px 0 #ffffff,
       1px  1px 0 #ffffff;
 }
-.v-application__wrap {
+#app {
   overflow: auto;
 }
+.fan-menu-0 {
+  position: absolute;
+  top:256px;
+  right:0px;
+  z-index: 3
+}
+.fan-menu-rap {
+  position: absolute;
+  top:10px!important;
+  right:12px;
+  z-index: 3
+}
+.fan-menu-print {
+  /*position: absolute;*/
+  /*top:0px;*/
+  /*right:0px;*/
+  /*z-index: 3*/
+}
+.print-print {
+  position: absolute!important;
+  top: 60px!important;
+  left: 0!important;
+}
+.print-config {
+  position: absolute!important;
+  top: 120px!important;
+  left: 0!important;
+}
+.print-png {
+  position: absolute!important;
+  top: 180px!important;
+  left: 0px!important;
+}
+.fan-menu {
+  position: absolute!important;
+  top:240px;
+  right:0px;
+  z-index: 3
+}
+.v-main {
+  background-color: black;
+}
+@media (max-width: 450px) {
+  .maplibregl-popup {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 9999;
+  }
+  .maplibregl-popup-tip {
+    display: none !important; /* 吹き出し非表示でモーダル感UP */
+  }
+  .maplibregl-popup-content {
+    width: 400px !important;         /* ★固定幅 */
+    max-width: 90vw !important;      /* 必要なら調整 */
+    min-width: 300px !important;     /* 最小幅も確保 */
+    overflow-y: auto;
 
+    /* ★ 位置調整 */
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  textarea,
+  input {
+    font-size: 16px !important;
+  }
+}
+@media (max-width: 720px) {
+  /*.fan-menu-rap {*/
+  /*  top:174px;*/
+  /*}*/
+  .fan-menu-0 {
+    top:224px;
+  }
+}
 </style>

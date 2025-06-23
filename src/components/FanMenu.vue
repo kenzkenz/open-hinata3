@@ -8,6 +8,7 @@
       </slot>
     </div>
     <!-- サブボタン -->
+    <div ref="subBtnRef" class="sub-btns">
     <transition-group name="fade" tag="div">
       <div
           v-for="(vnode, i) in subButtons"
@@ -18,6 +19,7 @@
         <component :is="vnode" />
       </div>
     </transition-group>
+    </div>
   </div>
 </template>
 
@@ -66,10 +68,12 @@ export default {
       }
     },
     getBtnStyle(idx, total) {
+      console.log(999)
+
       if (!this.open) return { opacity: 0, pointerEvents: 'none' }
       let spacing = 50
       spacing = 70
-      if (window.innerWidth < 500) spacing = 300
+      // if (window.innerWidth < 500) spacing = 300
 
       const arc = 150
       const radius = 120
@@ -107,15 +111,34 @@ export default {
         }
       }
 
+      let top
+      // ── 縦モード時は親DIVの上から10pxに固定 ──
+      if (this.layout === 'vertical') {
+        top = '0px'
+      } else {
+        top = `${this.centerPos.y + y - size / 2}px`
+      }
+
+      // alert('fire!')
+
       return {
         position: 'absolute',
         left: `${this.centerPos.x + x - size / 2}px`,
-        top: `${this.centerPos.y + y - size / 2}px`,
+        top: top,
         zIndex: 1,
         opacity: 1,
         transition: 'all 0.3s cubic-bezier(.4,2,.6,1)'
       }
     }
+  },
+  mounted() {
+    const centerBtn = this.$refs.centerBtnRef
+    // const centerBtn = document.querySelector('.fan-menu-0')
+    const rect = centerBtn.getBoundingClientRect();
+    const centerBtnTop = rect.top;  // ビューポートの上端からのピクセル数
+    const subBtn = this.$refs.subBtnRef
+    subBtn.style.position = 'absolute'
+    subBtn.style.top = - +  centerBtnTop + 10 + 'px'
   }
 }
 </script>
@@ -157,9 +180,9 @@ export default {
   position: absolute;
   opacity: 0;
   transition: all 0.3s cubic-bezier(.4,2,.6,1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  /*display: flex;*/
+  /*align-items: center;*/
+  /*justify-content: center;*/
 }
 .fade-enter-active,
 .fade-leave-active {
@@ -176,4 +199,5 @@ export default {
 .v-btn {
   margin-bottom: 6px;
 }
+
 </style>
