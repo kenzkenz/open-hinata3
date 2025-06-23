@@ -8,6 +8,13 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
+      <span v-if="isPrint" class="print-buttons">
+              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="print">印刷</v-btn>
+              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 16px;" @click="printDialog = true">設定</v-btn>
+              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 16px;" @click="pngDl">PNG</v-btn>
+              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 16px;" @click="handlePrint(true)">戻る</v-btn>
+      </span>
+
       <div
           ref="indicator"
           v-show="isDrawing && !s_isCursorOnPanel"
@@ -917,35 +924,25 @@ import SakuraEffect from './components/SakuraEffect.vue';
                @mouseenter="onPanelEnter"
                @mouseleave="onPanelLeave">
             <span v-if="!isPrint">
-            <MiniTooltip text="メニュー">
-            <v-btn :size="isSmall ? 'small' : 'default'" icon @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-menu</v-icon></v-btn>
-            </MiniTooltip>
-            <MiniTooltip text="ログイン">
-            <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="s_dialogForLogin = !s_dialogForLogin" v-if="mapName === 'map01'"><v-icon>mdi-login</v-icon></v-btn>
-            </MiniTooltip>
-            <MiniTooltip text="2画面表示">
-            <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickSplit" v-if="mapName === 'map01'"><v-icon>mdi-monitor-multiple</v-icon></v-btn>
-            </MiniTooltip>
-            <MiniTooltip text="マイ ホーム">
-            <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="btnClickMyroom (mapName)"><v-icon v-if="user1">mdi-home</v-icon></v-btn>
-            </MiniTooltip>
-            <MiniTooltip text="グループ機能">
-            <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForGroup = !s_dialogForGroup"><v-icon v-if="user1">mdi-account-supervisor</v-icon></v-btn>
-            </MiniTooltip>
-<!--            <MiniTooltip text="印刷">-->
-<!--              <v-btn v-if="!isSmall" :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="handlePrint"><v-icon>mdi-printer</v-icon></v-btn>-->
-<!--            </MiniTooltip>-->
-            <MiniTooltip text="レイヤー選択">
-            <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickLayer(mapName)"><v-icon>mdi-layers</v-icon></v-btn>
-            </MiniTooltip>
+              <MiniTooltip text="メニュー">
+                <v-btn :size="isSmall ? 'small' : 'default'" icon @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-menu</v-icon></v-btn>
+              </MiniTooltip>
+              <MiniTooltip text="ログイン">
+                <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="s_dialogForLogin = !s_dialogForLogin" v-if="mapName === 'map01'"><v-icon>mdi-login</v-icon></v-btn>
+              </MiniTooltip>
+                <MiniTooltip text="2画面表示">
+              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickSplit" v-if="mapName === 'map01'"><v-icon>mdi-monitor-multiple</v-icon></v-btn>
+              </MiniTooltip>
+                <MiniTooltip text="マイ ホーム">
+              <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="btnClickMyroom (mapName)"><v-icon v-if="user1">mdi-home</v-icon></v-btn>
+              </MiniTooltip>
+              <MiniTooltip text="グループ機能">
+                <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForGroup = !s_dialogForGroup"><v-icon v-if="user1">mdi-account-supervisor</v-icon></v-btn>
+              </MiniTooltip>
+              <MiniTooltip text="レイヤー選択">
+                <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickLayer(mapName)"><v-icon>mdi-layers</v-icon></v-btn>
+              </MiniTooltip>
             </span>
-            <span v-if="isPrint" class="print-buttons">
-              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="print">印刷</v-btn>
-              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 16px;" @click="printDialog = true">設定</v-btn>
-              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 16px;" @click="pngDl">PNG</v-btn>
-              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 16px;" @click="handlePrint(true)">戻る</v-btn>
-            </span>
-
           </div>
           <!--右メニュー-->
           <div id="right-top-div"
@@ -7972,7 +7969,6 @@ export default {
 <style scoped>
 #map00 {
   background-color: rgb(194,210,251);
-  /*background-color: black;*/
   height: 100%;
 }
 #map01 {
@@ -8699,6 +8695,11 @@ select {
   line-height: 1.3;        /* 文字が複数行なら */
   cursor: pointer;
 }
+.print-buttons {
+  position: absolute;
+  left:5px;
+  top: 10px;
+}
 @media print {
   .print-buttons {
     display: none
@@ -8869,6 +8870,8 @@ select {
       -1px  1px 0 #ffffff,
       1px  1px 0 #ffffff;
 }
-
+.v-application__wrap {
+  overflow: auto;
+}
 
 </style>
