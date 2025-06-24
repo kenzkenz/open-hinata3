@@ -3640,7 +3640,13 @@ export function popup(e,map,mapName,mapFlg) {
                 html = ''
                 isBreak = true
                 coordinates = store.state.coordinates
-                features = JSON.parse(store.state.clickCircleGeojsonText).features
+                console.log(store.state.clickCircleGeojsonText)
+                if (store.state.clickCircleGeojsonText) {
+                    features = JSON.parse(store.state.clickCircleGeojsonText).features
+                } else {
+                    features = JSON.parse(store.state.clickCircleGeojsonTextMyroom).features
+                    store.state.clickCircleGeojsonText = store.state.clickCircleGeojsonTextMyroom
+                }
                 const feature = features.find(feature => feature.properties.id === store.state.id)
                 if (!feature) return;
                 props = feature.properties
@@ -3733,27 +3739,36 @@ export function popup(e,map,mapName,mapFlg) {
                             html += '<div class="layer-label-div">ポイント</div>';
                             html += '<div style="display: flex; width: 100%;">';
                             // 左側：220px固定
-                            html += '<div style="width: 220px;">';
+                            html += '<div style="width: 250px;">';
                             html +=
                                 '<div class="click-circle-layer" style="font-weight: normal; color: #333; line-height: 25px;">' +
-                                '<textarea id="' + props.id + '" rows="6" style="width: 100%; margin-bottom: 10px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
+                                '<textarea id="' + props.id + '" rows="6" style="width: 100%; margin-bottom: 0px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
                                 '<button id="' + props.id + '" style="margin-bottom: 10px; height: 30px; font-size: medium; width: 100%;" class="point-delete pyramid-btn">削　除</button>' +
                                 '<div style="display: flex; gap: 8px;">' +
                                 '<div class="circle-list">' +
-                                '<div id="' + props.id + '" data-color="red" class="point-color circle red" tabindex="0"></div>' +
-                                '<div id="' + props.id + '" data-color="black" class="point-color circle black" tabindex="0"></div>' +
-                                '<div id="' + props.id + '" data-color="blue" class="point-color circle blue" tabindex="0"></div>' +
-                                '<div id="' + props.id + '" data-color="green" class="point-color circle green" tabindex="0"></div>' +
-                                '<div id="' + props.id + '" data-color="orange" class="point-color circle orange" tabindex="0"></div>' +
+                                '<div id="' + props.id + '" data-color="red" class="text-color circle red" tabindex="0">T</div>' +
+                                '<div id="' + props.id + '" data-color="black" class="text-color circle black" tabindex="0">T</div>' +
+                                '<div id="' + props.id + '" data-color="blue" class="text-color circle blue" tabindex="0">T</div>' +
+                                '<div id="' + props.id + '" data-color="green" class="text-color circle green" tabindex="0">T</div>' +
+                                '<div id="' + props.id + '" data-color="orange" class="text-color circle orange" tabindex="0">T</div>' +
+                                '<div id="' + props.id + '" data-color="hotpink" class="text-color circle hotpink" tabindex="0">T</div>' +
                                 '</div>' +
                                 '<input id="' + props.id + '" type="number" class="oh-cool-input-number font-size-input" min="10" max="100" step="1" value="' + textSize + '">' +
+                                '</div>' +
+                                // '<hr>' +
+                                '<div class="circle-list">' +
+                                '<div id="' + props.id + '" data-color="red" class="point-color circle red" tabindex="0">P</div>' +
+                                '<div id="' + props.id + '" data-color="black" class="point-color circle black" tabindex="0">P</div>' +
+                                '<div id="' + props.id + '" data-color="blue" class="point-color circle blue" tabindex="0">P</div>' +
+                                '<div id="' + props.id + '" data-color="green" class="point-color circle green" tabindex="0">P</div>' +
+                                '<div id="' + props.id + '" data-color="orange" class="point-color circle orange" tabindex="0">P</div>' +
+                                '<div id="' + props.id + '" data-color="hotpink" class="point-color circle hotpink" tabindex="0">P</div>' +
                                 '</div>' +
                                 '</div>';
                             html += '</div>';
 
                             // 右側：単語リスト
                             html += '<div style="flex: 1; margin-left: 10px; height: 290px; overflow: scroll">';
-                            // html += '<div style="font-weight: bold; margin-bottom: 5px;">よく使う単語</div>';
 
                             keywordList.forEach(word => {
                                 html += '<div id="' + props.id + '"  class="keyword-item" ' +
@@ -4152,7 +4167,7 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
     if (htmlContent !== 'dumy') {
         const popup = new maplibregl.Popup({
             closeButton: true,
-            maxWidth: "350px",
+            maxWidth: "380px",
         })
             .setLngLat(position)
             .setHTML(popupHtml)

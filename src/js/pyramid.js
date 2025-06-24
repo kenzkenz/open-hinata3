@@ -1153,7 +1153,17 @@ export default function pyramid () {
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
-            if (e.target && (e.target.classList.contains("point-color")) || (e.target.classList.contains("circle-color"))) {
+            if (e.target && (e.target.classList.contains("point-color"))) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
+                const value = e.target.getAttribute("data-color")
+                const tgtProp = 'point-color'
+                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', (e) => {
+            if (e.target && (e.target.classList.contains("text-color")) || (e.target.classList.contains("circle-color"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
                 let value = e.target.getAttribute("data-color")
@@ -1538,10 +1548,13 @@ export function getAllVertexPoints(map, geojson) {
         }
     });
     console.log('フィーチャーズ',features)
-    source.setData({
+    const vertexPointsGeojson = {
         type: 'FeatureCollection',
         features
-    });
+    }
+    source.setData(vertexPointsGeojson);
+
+    return vertexPointsGeojson
 }
 /**
  * 本体GeoJSONから全中点を生成してmidpoint-sourceにsetData
@@ -1664,75 +1677,6 @@ export function autoCloseAllPolygons(geojson) {
         }
     });
 }
-
-
-// export function setAllMidpoints(map, geojson) {
-//     if (!geojson || !geojson.features) {
-//         map.getSource('midpoint-source').setData({ type: 'FeatureCollection', features: [] });
-//         return;
-//     }
-//     const features = [];
-//     geojson.features.forEach((feature, featIdx) => {
-//         const { geometry, properties } = feature;
-//         if (!geometry) return;
-//         if (properties && typeof properties.radius !== "undefined") return; // サークル除外
-//         const { type, coordinates } = geometry;
-//         if (type === 'LineString') {
-//             features.push(...makeMidpointsFeatureCollection(coordinates, false, featIdx, 0));
-//         } else if (type === 'Polygon') {
-//             features.push(...makeMidpointsFeatureCollection(coordinates[0], true, featIdx, 0));
-//         } else if (type === 'MultiPolygon') {
-//             coordinates.forEach((poly, polyIdx) => {
-//                 features.push(...makeMidpointsFeatureCollection(poly[0], true, featIdx, polyIdx));
-//             });
-//         }
-//     });
-//     map.getSource('midpoint-source').setData({
-//         type: 'FeatureCollection',
-//         features
-//     });
-// }
-
-// function makeMidpointsFeatureCollection(coords, isPolygon = false, featureIndex = 0, polygonIndex = 0) {
-//     const midpoints = [];
-//     const len = coords.length;
-//     for (let i = 0; i < len - 1; i++) {
-//         const [lng1, lat1] = coords[i];
-//         const [lng2, lat2] = coords[i + 1];
-//         midpoints.push({
-//             type: 'Feature',
-//             id: `mp_${featureIndex}_${polygonIndex}_${i}`,
-//             geometry: {
-//                 type: 'Point',
-//                 coordinates: [ (lng1+lng2)/2, (lat1+lat2)/2 ]
-//             },
-//             properties: {
-//                 insertIndex: i+1,
-//                 featureIndex,
-//                 polygonIndex
-//             }
-//         });
-//     }
-//     if (isPolygon && len > 2) {
-//         const [lng1, lat1] = coords[len - 1];
-//         const [lng2, lat2] = coords[0];
-//         midpoints.push({
-//             type: 'Feature',
-//             id: `mp_${featureIndex}_${polygonIndex}_end`,
-//             geometry: {
-//                 type: 'Point',
-//                 coordinates: [ (lng1+lng2)/2, (lat1+lat2)/2 ]
-//             },
-//             properties: {
-//                 insertIndex: len,
-//                 featureIndex,
-//                 polygonIndex
-//             }
-//         });
-//     }
-//     return midpoints;
-// }
-
 
 export function getVertexPoints(map, geoType, coords, isPolygon = false) {
     // Polygonの場合、coords[0]（外環）を使用
@@ -1865,6 +1809,7 @@ export function generateSegmentLabelGeoJSON(geojson) {
     const features = [];
 
     geojson.features.forEach((feature) => {
+        if (feature.properties.id === 'config') return;
         if (!feature || feature.geometry.type !== 'LineString' || feature.properties['free-hand']) return;
 
         const coords = feature.geometry.coordinates;
@@ -1906,6 +1851,7 @@ export function generateStartEndPointsFromGeoJSON(geojson) {
     const pointFeatures = [];
 
     geojson.features.forEach((feature) => {
+        if (feature.properties.id === 'config') return;
         if (!feature || feature.geometry.type !== 'LineString' || feature.properties['free-hand']) return;
 
         const coordinates = feature.geometry.coordinates;
@@ -1955,14 +1901,18 @@ export function generateStartEndPointsFromGeoJSON(geojson) {
         type: 'FeatureCollection',
         features: pointFeatures
     };
-
+    console.log(pointFeatures)
     // MapLibre のソースに反映
     map01.getSource('end-point-source').setData(pointGeoJSON);
+
+    return pointGeoJSON
 }
 
-export function deleteAll () {
-    if (!confirm("全て削除しますか？")) {
-        return
+export function deleteAll (noConfrim) {
+    if (!noConfrim) {
+        if (!confirm("全て削除しますか？")) {
+            return
+        }
     }
     const map01 = store.state.map01
     let source = map01.getSource(clickCircleSource.iD);

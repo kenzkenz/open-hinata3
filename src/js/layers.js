@@ -768,7 +768,7 @@ export const clickCircSymbolLayer = {
     filter: ['all', ['==', '$type', 'Point'], ['!has', 'bearing']],
     paint: {
         'circle-radius': 8,
-        'circle-color': ['get', 'color'],
+        'circle-color': ['get', 'point-color'],
         'circle-stroke-width': 2,
         'circle-stroke-color': '#ffffff'
     }

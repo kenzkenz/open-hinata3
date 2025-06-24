@@ -311,7 +311,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v1.155
+        v1.157
       </p>
 
       <div v-if="user1">
@@ -333,7 +333,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       <v-btn class="tiny-btn" @click="upLoad">各種アップロード</v-btn>
       <v-btn style="margin-left: 5px;" class="tiny-btn" @click="pngDownload">PNGダウンロード</v-btn>
 
-      <v-switch style="height: 40px;" v-model="s_isClickPointsLayer" @change="changeVisible" label="座標取得レイヤー表示" color="primary" />
+<!--      <v-switch style="height: 40px;" v-model="s_isClickPointsLayer" @change="changeVisible" label="座標取得レイヤー表示" color="primary" />-->
 
       <v-switch style="height: 40px;" v-model="s_isPitch" @change="changePitch" label="２画面時に傾きを同期" color="primary" />
 

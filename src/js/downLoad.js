@@ -19,7 +19,6 @@ import JSZip from 'jszip'
 import {history, transformCoordinates} from "@/App";
 import tokml from 'tokml'
 import iconv from "iconv-lite";
-import pako from "pako";
 import {kml} from "@tmcw/togeojson";
 import * as GeoTIFF from 'geotiff';
 import html2canvas from 'html2canvas'
@@ -27,7 +26,6 @@ import muni from "@/js/muni";
 import * as exifr from 'exifr'
 import {
     generateSegmentLabelGeoJSON,
-    generateStartEndPointsFromGeoJSON,
     getAllVertexPoints,
     setAllMidpoints
 } from "@/js/pyramid";

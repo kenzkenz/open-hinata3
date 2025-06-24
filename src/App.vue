@@ -1503,7 +1503,7 @@ import {
   monoLayers,
   monoSources,
   osmBrightLayers,
-  osmBrightSources, paleLayer, paleSource, publicSources, zenkokuChibanzuAddLayer
+  osmBrightSources, paleLayer, paleSource, publicSources, vertexSource, zenkokuChibanzuAddLayer
 } from "@/js/layers"
 import muni from '@/js/muni'
 import { kml } from '@tmcw/togeojson';
@@ -3029,7 +3029,7 @@ export default {
         }
         generateSegmentLabelGeoJSON(this.mainGeojson)
         generateStartEndPointsFromGeoJSON(this.mainGeojson)
-        generateSegmentLabelGeoJSON(this.mainGeojson)
+        // generateSegmentLabelGeoJSON(this.mainGeojson)
         // } else if (this.history.length === 0) {
       //   map.getSource('click-circle-source').setData({
       //     type: 'FeatureCollection',
@@ -3429,24 +3429,19 @@ export default {
     },
     toggleLDraw ()  {
       this.s_isDraw = !this.s_isDraw
+      const map01 = this.$store.state.map01
       if (!this.s_isDraw) {
         this.s_isDrawPoint = false
         this.s_isDrawCircle = false
         this.s_isDrawLine = false
         this.s_isDrawPolygon = false
-        // if (window.innerWidth < 500) {
-        //   this.isRightDiv = true
-        //   document.querySelector('.center-wrapper').style.opacity = '1'
-        // }
+        map01.dragPan.enable = this.originalEnable
+        map01.dragPan.enable()
+        this.s_isDrawFix = false
       } else {
         this.snackbarText = 'ドロー時は各種クリックが制限されます。'
         this.snackbar = true
-        // if (window.innerWidth < 500) {
-        //   this.isRightDiv = false
-        //   document.querySelector('.center-wrapper').style.opacity = '0'
-        // }
       }
-      // document.querySelector('#draw-indicato-text').innerHTML = ''
       this.finishLine()
     },
     finishDrawing() {
@@ -3532,11 +3527,6 @@ export default {
         console.log(this.originalEnable)
         map.dragPan.enable = this.originalEnable
         map.dragPan.enable()
-
-        // const canvas = map.getCanvasContainer();
-        // map.dragPan = new maplibregl.DragPanHandler(map, canvas);
-        // map.dragPan.enable();
-
       }
       store.state.isCursorOnPanel = false
     },
@@ -4376,6 +4366,7 @@ export default {
         }
       }
     },
+    // パーマリンク作成
     updatePermalink() {
       const map = this.$store.state.map01
       const center = map.getCenter()
@@ -4437,7 +4428,13 @@ export default {
       const gpxText = this.$store.state.gpxText
       const drawGeojsonText = this.$store.state.drawGeojsonText
       const clickGeojsonText = this.$store.state.clickGeojsonText
-      const clickCircleGeojsonText = this.$store.state.clickCircleGeojsonText
+      // ⭐️緊急回避 マイルーム復帰のときclickCircleGeojsonTextがどこかでクリアされる現象を回避
+      let clickCircleGeojsonText = this.$store.state.clickCircleGeojsonText
+      if (!clickCircleGeojsonText) {
+        clickCircleGeojsonText = this.$store.state.clickCircleGeojsonTextMyroom
+        this.$store.state.clickCircleGeojsonText = this.$store.state.clickCircleGeojsonTextMyroom
+        this.$store.state.clickCircleGeojsonTextMyroom = ''
+      }
       const vector = this.$store.state.uploadedVector
       const isWindow = this.$store.state.isWindow
       const simaTextForUser = this.$store.state.simaTextForUser
@@ -5306,6 +5303,8 @@ export default {
           const properties = {
             id: id,
             label:'',
+            color: 'black',
+            'point-color': 'black',
             offsetValue: [0.6, 0],
             textAnchor: 'left',
             textJustify: 'left'
@@ -7939,13 +7938,20 @@ export default {
     s_editEnabled (value) {
       const map01 = this.$store.state.map01
       if (value) {
-        const geojsonText = this.$store.state.clickCircleGeojsonText
+        let geojsonText = this.$store.state.clickCircleGeojsonText
+        if (!geojsonText) {
+          geojsonText = this.$store.state.clickCircleGeojsonTextMyroom
+          this.$store.state.clickCircleGeojsonText = this.$store.state.clickCircleGeojsonTextMyroom
+        }
         if (geojsonText) {
           const geojson = JSON.parse(geojsonText)
-          getAllVertexPoints(map01, geojson)
+          const vertexPointsGeojson = getAllVertexPoints(map01, geojson)
+          vertexSource.obj.data = vertexPointsGeojson
           setAllMidpoints(map01, geojson)
         } else {
-          this.s_editEnabled = false
+          // ここで watcher を抜ける
+          // this.s_editEnabled = false
+          return
         }
       } else {
         getAllVertexPoints(map01)
@@ -8652,21 +8658,39 @@ select {
   gap: 8px; /* 丸同士の間隔 */
   margin: 0px;
 }
+/*.circle {*/
+/*  width: 25px;*/
+/*  height: 25px;*/
+/*  border-radius: 50%;*/
+/*  display: inline-block;*/
+/*  cursor: pointer;*/
+/*  transition: box-shadow 0.12s, transform 0.07s;*/
+/*  box-shadow: 0 2px 5px rgba(0,0,0,0.08);*/
+/*  outline: none;*/
+/*}*/
 .circle {
+  /* ← ここを変更 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 25px;
   height: 25px;
   border-radius: 50%;
-  display: inline-block;
   cursor: pointer;
   transition: box-shadow 0.12s, transform 0.07s;
   box-shadow: 0 2px 5px rgba(0,0,0,0.08);
   outline: none;
+  /* 文字色やサイズを調整 */
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
 }
 .circle.red   { background: red; }
 .circle.blue  { background: blue; }
 .circle.green { background: green; }
 .circle.orange { background: orange; }
 .circle.black { background: black; }
+.circle.hotpink { background: hotpink; }
 
 /* ハイライト: クリック時・Tab選択時・ホバー時 */
 .circle:active,

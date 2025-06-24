@@ -329,12 +329,8 @@ import axios from "axios"
 import maplibregl from 'maplibre-gl'
 import {history} from "@/App";
 import {
-  cityGeojsonSource, clickCircleSource,
-  extLayer,
+  clickCircleSource, endPointSouce,
   extSource,
-  groupPointsLayer, groupPointsSource,
-  konUrls, loadColorData, ohLabelLayer, ohPointLayer, pngLayer,
-  pngSource,
   sicyosonChibanzuUrls
 } from "@/js/layers";
 import * as Layers from "@/js/layers";
@@ -343,7 +339,7 @@ import JSZip from "jszip";
 import store from "@/store";
 import firebase from 'firebase/app'
 import 'firebase/firestore'
-import { mapState } from 'vuex'
+import {deleteAll, generateSegmentLabelGeoJSON, generateStartEndPointsFromGeoJSON} from "@/js/pyramid";
 
 export default {
   name: 'Dialog-myroom',
@@ -1393,9 +1389,26 @@ export default {
         match = response.data.match(/clickCirclegeojsontext=(.*?)&vector/s);
         const clickCirclegeojsontext = match ? match[1] : null;
         if (clickCirclegeojsontext) {
-          console.log(clickCirclegeojsontext)
           vm.$store.state.clickCirclegeojsontext = clickCirclegeojsontext
+          vm.$store.state.clickCircleGeojsonTextMyroom = clickCirclegeojsontext
+          deleteAll(true)
           clickCircleSource.obj.data = JSON.parse(clickCirclegeojsontext)
+          const pointGeoJSON = generateStartEndPointsFromGeoJSON(JSON.parse(clickCirclegeojsontext))
+          endPointSouce.obj.data = pointGeoJSON
+          // map.getSource(clickCircleSource.iD).setData(JSON.parse(clickCirclegeojsontext))
+          try {
+            const config = JSON.parse(vm.$store.state.clickCircleGeojsonTextMyroom).features.find(f => f.properties.id === 'config').properties
+            if (config) {
+              alert(1)
+              this.printTitleText = config['title-text']
+              this.textPx = config['font-size'] || 30
+              this.titleColor = config['fill-color']
+              this.titleDirection = config['direction'] || 'vertical'
+              alert(2)
+            }
+          }catch (e) {
+            console.log(e)
+          }
         }
 
         match = response.data.match(/dxftext=(.*?)&/s);
@@ -1407,10 +1420,6 @@ export default {
 
         if (geojsonText) vm.$store.state.geojsonText = geojsonText
         if (gpxText) vm.$store.state.gpxText = gpxText
-        // if (clickCirclegeojsontext) {
-        //   console.log(clickCirclegeojsontext)
-        //   clickCircleSource.obj.data = JSON.parse(clickCirclegeojsontext)
-        // }
 
         const slj0 = JSON.parse(params.get('slj'))
         const mapNames = ['map01', 'map02']
@@ -2250,7 +2259,6 @@ export default {
       insertUserData(this.$store.state.userId,this.tileName,this.tileUrl)
     },
     urlSave () {
-
       if (!this.urlName) {
         alert('ネームを記入してください。')
         return
