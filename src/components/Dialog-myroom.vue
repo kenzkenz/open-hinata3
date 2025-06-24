@@ -1392,7 +1392,7 @@ export default {
         if (kmlText) vm.$store.state.kmlText = kmlText
 
         // 最初にクリア
-        vm.$store.state.printTitleText = ''
+        vm.$store.state.printTitleText = '１１１１１１１１'
         vm.$store.state.textPx = 30
         vm.$store.state.titleColor = 'black'
         vm.$store.state.titleDirection = 'vertical'
@@ -1400,15 +1400,16 @@ export default {
         match = response.data.match(/clickCirclegeojsontext=(.*?)&vector/s);
         const clickCirclegeojsontext = match ? match[1] : null;
         if (clickCirclegeojsontext) {
+          deleteAll(true)
           vm.$store.state.clickCirclegeojsontext = clickCirclegeojsontext
           vm.$store.state.clickCircleGeojsonTextMyroom = clickCirclegeojsontext
-          deleteAll(true)
           clickCircleSource.obj.data = JSON.parse(clickCirclegeojsontext)
           const pointGeoJSON = generateStartEndPointsFromGeoJSON(JSON.parse(clickCirclegeojsontext))
           endPointSouce.obj.data = pointGeoJSON
           // map.getSource(clickCircleSource.iD).setData(JSON.parse(clickCirclegeojsontext))
+          console.log(clickCirclegeojsontext)
           try {
-            const config = JSON.parse(vm.$store.state.clickCircleGeojsonTextMyroom).features.find(f => f.properties.id === 'config').properties
+            const config = JSON.parse(clickCirclegeojsontext).features.find(f => f.properties.id === 'config').properties
             if (config) {
               vm.$store.state.printTitleText = config['title-text'] || ''
               vm.$store.state.textPx = config['font-size'] || 30

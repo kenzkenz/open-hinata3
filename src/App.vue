@@ -14,7 +14,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-btn class="print-config" :size="isSmall ? 'small' : 'default'" icon style="font-size: 16px;" @click="printDialog = true">設定</v-btn>
           <v-btn class="print-png" :size="isSmall ? 'small' : 'default'" icon style="font-size: 16px;" @click="pngDl">PNG</v-btn>
 
-          <FanMenu class="fan-menu" layout="vertical" :offset-x="fanMenuOffsetX">
+          <FanMenu class="fan-menu" layout="vertical" :offset-x="fanMenuOffsetX" :column-break-index="10">
             <template v-slot:center>
               <MiniTooltip text="ドロー" :offset-x="0" :offset-y="2">
                 <v-btn
@@ -123,7 +123,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </v-card-actions>
         </v-card>
       </v-dialog>
-
 
       <v-dialog
           v-model="showTileDialog"
@@ -1003,7 +1002,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                     </MiniTooltip>
 <!--                  </div>-->
                 </div>
-                <FanMenu class="fan-menu-0" layout="vertical" :offset-x="fanMenuOffsetX">
+                <FanMenu class="fan-menu-0" layout="vertical" :offset-x="fanMenuOffsetX" :column-break-index="10">
                   <template v-slot:center>
                     <MiniTooltip text="ドロー!" :offset-x="0" :offset-y="2">
                       <v-btn
@@ -1750,7 +1749,8 @@ export default {
         { key: 'edit', text: '編集と移動', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
         { key: 'undo', text: '元に戻す', icon: 'mdi-undo', label: '元戻', click: this.undo },
         { key: 'redo', text: 'やり直す', icon: 'mdi-redo', label: 'やり直', click: this.redo },
-        { key: 'fix', text: '画面固定', label: '固定', color: this.s_isDrawFix ? 'green' : 'blue', click: this.toggleDrawFix },
+        // { key: 'fix', text: '画面固定', label: '固定', color: this.s_isDrawFix ? 'green' : 'blue', click: this.toggleDrawFix },
+        { key: 'config', text: '各種設定', label: '設定', color: 'blue', click: this.printDialogOpen },
         { key: 'dl', text: '各種ダウンロード', label: 'DL', style: 'background-color: navy!important;', click: this.dialogForDlOpen },
         { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
         { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
@@ -2268,6 +2268,9 @@ export default {
     },
   },
   methods: {
+    printDialogOpen () {
+      this.printDialog = true
+    },
     startTiling () {
       this.transparentType = '1'
       tileGenerateForUser('png','pgw',true)

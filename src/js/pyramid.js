@@ -1921,12 +1921,16 @@ export function deleteAll (noConfrim) {
         type: "FeatureCollection",
         features: []
     });
+    clickCircleSource.obj.data = null
+
     source = map01.getSource(endPointSouce.id);
     // 空のGeoJSON FeatureCollectionを設定する
     source.setData({
         type: "FeatureCollection",
         features: []
     });
+    endPointSouce.obj.data = null
+
     store.state.clickCircleGeojsonText = ''
     store.state.clickCircleGeojsonTextMyroom = ''
     getAllVertexPoints(map01)
