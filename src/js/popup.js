@@ -313,7 +313,7 @@ function urlByLayerId (layerId) {
     }
     return [RasterTileUrl,legend,zoom]
 }
-let isFirstClickCircleLabelLayer = true
+let isGooglemap = true
 export function popup(e,map,mapName,mapFlg) {
     if (store.state.editEnabled) return;
     // alert(mapName)
@@ -3730,10 +3730,8 @@ export function popup(e,map,mapName,mapFlg) {
                     case 'Point':
                         if (html.indexOf('click-circle-layer') === -1) {
                             const keywordList = ['道路', '水路', '畑', '宅地', '田', '雑種地', 'コン杭', 'プレート','プラ杭','鋲'];
-
                             html += '<div class="layer-label-div">ポイント</div>';
                             html += '<div style="display: flex; width: 100%;">';
-
                             // 左側：220px固定
                             html += '<div style="width: 220px;">';
                             html +=
@@ -3804,6 +3802,7 @@ export function popup(e,map,mapName,mapFlg) {
                         break
                     }
                 }
+                isGooglemap = false
                 if (window.innerWidth < 500) {
                     store.state.popupHtml = html
                     store.state.popupDialog = true
@@ -4071,12 +4070,14 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
     // ストリートビューとGoogleマップへのリンクを追加
     const [lng, lat] = coordinates;
     console.log(lng)
-    const streetView =
+    let streetView =
         '<hr>' +
         '<div style="text-align: center;">' +
         '<a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' + lat + ',' + lng + '&hl=ja" target="_blank">Street View</a>　' +
         '<a href="https://www.google.co.jp/maps?q=' + lat + ',' + lng + '&hl=ja" target="_blank">GoogleMap</a>' +
         '</div>'
+
+    if (!isGooglemap) streetView = ''
 
     // ポップアップHTMLを生成
     let popupHtml = `<div class="popup-html-div">${htmlContent}${streetView}</div>`;

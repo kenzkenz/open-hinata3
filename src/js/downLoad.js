@@ -8881,6 +8881,137 @@ export function splitLineStringIntoPoints(lineStringGeoJSON, numPoints) {
     console.log(turf.featureCollection(points));
     return turf.featureCollection(points);
 }
+/**
+ * GeoJSONをKMLに変換する関数
+ * @param {Object} geojson - GeoJSON FeatureCollection
+ * @param {Object} [options] - オプション
+ * @param {string} [options.documentName] - KML Document の <name> 要素の値
+ * @param {string} [options.documentDescription] - KML Document の <description> 要素の値
+ * @returns {string} KML形式の文字列
+ */
+export function geojsonToKml(geojson, options = {}) {
+    const {
+        documentName = '',
+        documentDescription = ''
+    } = options;
+
+    const lines = [];
+    // XML宣言＋kml開始
+    lines.push('<?xml version="1.0" encoding="UTF-8"?>');
+    lines.push('<kml xmlns="http://www.opengis.net/kml/2.2">');
+    lines.push('  <Document>');
+    if (documentName) {
+        lines.push(`    <name>${escapeXml(documentName)}</name>`);
+    }
+    if (documentDescription) {
+        lines.push(`    <description>${escapeXml(documentDescription)}</description>`);
+    }
+
+    // 各 Feature を Placemark として出力
+    geojson.features.forEach(feature => {
+        const { geometry, properties = {} } = feature;
+        lines.push('    <Placemark>');
+        if (properties.name) {
+            lines.push(`      <name>${escapeXml(properties.name)}</name>`);
+        }
+        const desc = properties.description || properties.desc;
+        if (desc) {
+            lines.push(`      <description>${escapeXml(desc)}</description>`);
+        }
+
+        // ジオメトリ別処理
+        switch (geometry.type) {
+            case 'Point': {
+                const [lon, lat, alt] = geometry.coordinates;
+                const coord = [lon, lat, alt || 0].join(',');
+                lines.push('      <Point>');
+                lines.push(`        <coordinates>${coord}</coordinates>`);
+                lines.push('      </Point>');
+                break;
+            }
+            case 'LineString': {
+                lines.push('      <LineString>');
+                lines.push('        <coordinates>');
+                geometry.coordinates.forEach(([lon, lat, alt]) => {
+                    lines.push(`          ${[lon, lat, alt || 0].join(',')}`);
+                });
+                lines.push('        </coordinates>');
+                lines.push('      </LineString>');
+                break;
+            }
+            case 'Polygon': {
+                lines.push('      <Polygon>');
+                // 外殻のみサポート（innerBoundary は省略可）
+                lines.push('        <outerBoundaryIs>');
+                lines.push('          <LinearRing>');
+                lines.push('            <coordinates>');
+                geometry.coordinates[0].forEach(([lon, lat, alt]) => {
+                    lines.push(`              ${[lon, lat, alt || 0].join(',')}`);
+                });
+                lines.push('            </coordinates>');
+                lines.push('          </LinearRing>');
+                lines.push('        </outerBoundaryIs>');
+                lines.push('      </Polygon>');
+                break;
+            }
+            case 'MultiLineString':
+            case 'MultiPolygon': {
+                lines.push('      <MultiGeometry>');
+                if (geometry.type === 'MultiLineString') {
+                    geometry.coordinates.forEach(line => {
+                        lines.push('        <LineString>');
+                        lines.push('          <coordinates>');
+                        line.forEach(([lon, lat, alt]) => {
+                            lines.push(`            ${[lon, lat, alt || 0].join(',')}`);
+                        });
+                        lines.push('          </coordinates>');
+                        lines.push('        </LineString>');
+                    });
+                } else { // MultiPolygon
+                    geometry.coordinates.forEach(polygon => {
+                        lines.push('        <Polygon>');
+                        lines.push('          <outerBoundaryIs>');
+                        lines.push('            <LinearRing>');
+                        lines.push('              <coordinates>');
+                        polygon[0].forEach(([lon, lat, alt]) => {
+                            lines.push(`                ${[lon, lat, alt || 0].join(',')}`);
+                        });
+                        lines.push('              </coordinates>');
+                        lines.push('            </LinearRing>');
+                        lines.push('          </outerBoundaryIs>');
+                        lines.push('        </Polygon>');
+                    });
+                }
+                lines.push('      </MultiGeometry>');
+                break;
+            }
+            default:
+                console.warn(`Unsupported geometry type: ${geometry.type}`);
+        }
+
+        lines.push('    </Placemark>');
+    });
+
+    // 閉じタグ
+    lines.push('  </Document>');
+    lines.push('</kml>');
+
+    return lines.join('\n');
+}
+
+/**
+ * XML 内に埋め込む文字列をエスケープ
+ * @param {string} str
+ * @returns {string}
+ */
+function escapeXml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+}
 
 /**
  * GeoJSONをGPXに変換する関数
@@ -8969,7 +9100,16 @@ export function geojsonToGpx(geojson, options = {}) {
 
 export function gpxDownload (geojson) {
     const gpxString = geojsonToGpx(geojson)
-    // alert(gpxString)
     const fileName =  getNowFileNameTimestamp() + '.gpx'
     downloadTextFile(fileName, gpxString)
+}
+export function kmlDownload (geojson) {
+    const kmlString = geojsonToKml(geojson)
+    const fileName =  getNowFileNameTimestamp() + '.kml'
+    downloadTextFile(fileName, kmlString)
+}
+export function geojsonDownload (geojson) {
+    const geojsonString = JSON.stringify(geojson)
+    const fileName =  getNowFileNameTimestamp() + '.geojson'
+    downloadTextFile(fileName, geojsonString)
 }

@@ -112,9 +112,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
             各種ダウンロード
           </v-card-title>
           <v-card-text>
-
-
             <v-btn @click="saveGpx">GPX</v-btn>
+            <v-btn style="margin-left: 10px;" @click="saveKml">kML</v-btn>
+            <v-btn style="margin-left: 10px;" @click="saveGeojson">GEOJSON</v-btn>
             <v-btn style="margin-left: 10px;" @click="dialogForSaveDXFOpen">DXF</v-btn>
           </v-card-text>
           <v-card-actions>
@@ -1118,7 +1118,7 @@ import {
   enablePointDragAndAdd,
   extractFirstFeaturePropertiesAndCheckCRS,
   extractSimaById,
-  geojsonAddLayer, geoJSONToSIMA,
+  geojsonAddLayer, geojsonDownload, geoJSONToSIMA,
   geoTiffLoad,
   geoTiffLoad2,
   getCRS, getNowFileNameTimestamp, gpxDownload,
@@ -1126,7 +1126,7 @@ import {
   highlightSpecificFeatures,
   highlightSpecificFeatures2025,
   highlightSpecificFeaturesCity, japanCoord,
-  jpgLoad,
+  jpgLoad, kmlDownload,
   kmzLoadForUser,
   LngLatToAddress,
   pmtilesGenerateForUser2,
@@ -2987,6 +2987,15 @@ export default {
     },
     saveGpx() {
       gpxDownload(JSON.parse(this.$store.state.clickCircleGeojsonText))
+      this.dialogForDl = false
+    },
+    saveGeojson() {
+      const geojson = JSON.parse(this.$store.state.clickCircleGeojsonText)
+      geojsonDownload(geojson)
+      this.dialogForDl = false
+    },
+    saveKml() {
+      kmlDownload(JSON.parse(this.$store.state.clickCircleGeojsonText))
       this.dialogForDl = false
     },
     saveDxf() {
@@ -7172,10 +7181,27 @@ export default {
                   reader.onload = (event) => {
                     const parser = new DOMParser();
                     const kmlText = event.target.result
-                    this.$store.state.kmlText = kmlText
+                    // this.$store.state.kmlText = kmlText
                     const kmlData = parser.parseFromString(kmlText, 'application/xml');
-                    const geojson = kml(kmlData);
-                    geojsonAddLayer(map, geojson,true, fileExtension)
+                    const kmlGeojson = kml(kmlData);
+                    // geojsonAddLayer(map, geojson,true, fileExtension)
+                    kmlGeojson.features.forEach(feature => {
+                      const id = String(Math.floor(10000 + Math.random() * 90000));
+                      feature.properties['id'] = id
+                      feature.properties['color'] = 'blue'
+                      feature.properties['line-width'] = 5
+                      feature.properties['arrow-type'] = 'none'
+                    })
+                    const drawGeojson = map.getSource(clickCircleSource.iD)._data
+                    drawGeojson.features.push(...kmlGeojson.features);
+                    map.getSource(clickCircleSource.iD).setData(drawGeojson);
+                    this.$store.state.clickCircleGeojsonText = JSON.stringify(drawGeojson)
+                    const bbox = turf.bbox(kmlGeojson);
+                    map.fitBounds(bbox, {
+                      padding: 40,
+                      duration: 1000,
+                      linear: false
+                    });
                   }
                   reader.readAsText(file);
                   break
@@ -7355,7 +7381,6 @@ export default {
                 {
                   const file = e.dataTransfer.files[0];
                   const gpxText = await file.text();
-                  // this.$store.state.gpxText = gpxText
                   const parser = new DOMParser();
                   const gpxDoc = parser.parseFromString(gpxText, 'application/xml');
                   const gpxGeojson = gpx(gpxDoc);
@@ -7396,42 +7421,6 @@ export default {
               }
             });
           }
-
-          // ------------------------------------------------------------------------------------------------
-          // enableFeatureDragAndAdd(map, 'click-points-layer', 'click-points-source', {
-          //   fetchElevation: fetchElevation, // async関数
-          //   vm: this,
-          //   storeField: 'clickGeojsonText',
-          //   click: true
-          // });
-          // // ------------------------------------------------------------------------------------------------
-          // enableFeatureDragAndAdd(map, 'click-circle-symbol-layer', 'click-circle-source', {
-          //   // fetchElevation: fetchElevation, // async関数
-          //   vm: this,
-          //   storeField: 'clickCircleGeojsonText',
-          //   click: false
-          // });
-          // // ------------------------------------------------------------------------------------------------
-          // enableFeatureDragAndAdd(map, 'click-circle-layer', 'click-circle-source', {
-          //   // fetchElevation: fetchElevation, // async関数
-          //   vm: this,
-          //   storeField: 'clickCircleGeojsonText',
-          //   click: false
-          // });
-          // // ------------------------------------------------------------------------------------------------
-          // enableFeatureDragAndAdd(map, 'click-circle-line-layer', 'click-circle-source', {
-          //   // fetchElevation: fetchElevation, // async関数
-          //   vm: this,
-          //   storeField: 'clickCircleGeojsonText',
-          //   click: false
-          // });
-          // // ------------------------------------------------------------------------------------------------
-          // enableFeatureDragAndAdd(map, 'click-circle-keiko-line-layer', 'click-circle-source', {
-          //   // fetchElevation: fetchElevation, // async関数
-          //   vm: this,
-          //   storeField: 'clickCircleGeojsonText',
-          //   click: false
-          // });
 
           // -----------------------------------------------------------------------------------------------------------
           map.addSource('zones-source', {
