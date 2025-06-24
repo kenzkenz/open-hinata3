@@ -8621,7 +8621,7 @@ export function convertFromEPSG4326(geojson, toEPSG) {
         })),
     };
 }
-
+// タイムスタンプ生成。ファイル名などに使う
 export function getNowFileNameTimestamp() {
     const now = new Date();
     const yyyy = now.getFullYear();
@@ -8962,8 +8962,14 @@ export function geojsonToGpx(geojson, options = {}) {
                 console.warn(`Unsupported geometry type: ${geometry.type}`);
         }
     });
-
     // GPX終了タグ
     lines.push('</gpx>');
     return lines.join('\n');
+}
+
+export function gpxDownload (geojson) {
+    const gpxString = geojsonToGpx(geojson)
+    // alert(gpxString)
+    const fileName =  getNowFileNameTimestamp() + '.gpx'
+    downloadTextFile(fileName, gpxString)
 }

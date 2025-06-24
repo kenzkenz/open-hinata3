@@ -8,15 +8,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
-<!--      <span v-if="isPrint" class="print-buttons">-->
-<!--              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="print">印刷</v-btn>-->
-<!--              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 16px;" @click="printDialog = true">設定</v-btn>-->
-<!--              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 16px;" @click="pngDl">PNG</v-btn>-->
-<!--&lt;!&ndash;              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;font-size: 16px;" @click="handlePrint(true)">戻る</v-btn>&ndash;&gt;-->
-<!--      </span>-->
-
       <div id="print-div" class="fan-menu-rap">
-<!--        <div style="position: relative">-->
           <v-btn class="fan-menu-print" :size="isSmall ? 'small' : 'default'" icon @click="handlePrint(true)" >戻る</v-btn>
           <v-btn class="print-print" :size="isSmall ? 'small' : 'default'" icon style="font-size: 16px;" @click="print">印刷</v-btn>
           <v-btn class="print-config" :size="isSmall ? 'small' : 'default'" icon style="font-size: 16px;" @click="printDialog = true">設定</v-btn>
@@ -58,7 +50,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </div>
             </template>
           </FanMenu>
-<!--        </div>-->
+
       </div>
 
       <div
@@ -114,6 +106,25 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </template>
       </v-snackbar>
 
+      <v-dialog v-model="dialogForDl" max-width="500px">
+        <v-card>
+          <v-card-title>
+            各種ダウンロード
+          </v-card-title>
+          <v-card-text>
+
+
+            <v-btn @click="saveGpx">GPX</v-btn>
+            <v-btn style="margin-left: 10px;" @click="dialogForSaveDXFOpen">DXF</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="dialogForDl = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+
       <v-dialog
           v-model="showTileDialog"
           max-width="400"
@@ -130,15 +141,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                       outlined
                       v-if="user1"
             ></v-select>
-<!--            <v-select class="scrollable-content"-->
-<!--                      v-model="s_transparent"-->
-<!--                      :items="transparentType"-->
-<!--                      item-title="label"-->
-<!--                      item-value="value"-->
-<!--                      label="透過方法を選択してください"-->
-<!--                      outlined-->
-<!--                      v-if="user1"-->
-<!--            />-->
             <v-btn @click="startTiling">アップロード</v-btn>
           </v-card-text>
           <v-card-actions>
@@ -1119,7 +1121,7 @@ import {
   geojsonAddLayer, geoJSONToSIMA,
   geoTiffLoad,
   geoTiffLoad2,
-  getCRS, getNowFileNameTimestamp,
+  getCRS, getNowFileNameTimestamp, gpxDownload,
   handleFileUpload,
   highlightSpecificFeatures,
   highlightSpecificFeatures2025,
@@ -1666,6 +1668,7 @@ export default {
     originalEnable: null,
     scaleText: '',
     isRightDiv2: true,
+    dialogForDl: false,
   }),
   computed: {
     ...mapState([
@@ -1706,7 +1709,7 @@ export default {
         { key: 'undo', text: '元に戻す', icon: 'mdi-undo', label: '元戻', click: this.undo },
         { key: 'redo', text: 'やり直す', icon: 'mdi-redo', label: 'やり直', click: this.redo },
         { key: 'fix', text: '画面固定', label: '固定', color: this.s_isDrawFix ? 'green' : 'blue', click: this.toggleDrawFix },
-        { key: 'dxf', text: 'DXFで出力', label: 'dxf', style: 'background-color: navy!important;', click: this.dialogForSaveDXFOpen },
+        { key: 'dl', text: '各種ダウンロード', label: 'DL', style: 'background-color: navy!important;', click: this.dialogForDlOpen },
         { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
         { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
       ]
@@ -2976,8 +2979,15 @@ export default {
       }
       updateAllElevations();
     },
+    dialogForDlOpen () {
+      this.dialogForDl = true
+    },
     dialogForSaveDXFOpen () {
       this.dialogForSaveDXF2 = true
+    },
+    saveGpx() {
+      gpxDownload(JSON.parse(this.$store.state.clickCircleGeojsonText))
+      this.dialogForDl = false
     },
     saveDxf() {
       DXFDownload()
@@ -7345,12 +7355,12 @@ export default {
                 {
                   const file = e.dataTransfer.files[0];
                   const gpxText = await file.text();
-                  this.$store.state.gpxText = gpxText
+                  // this.$store.state.gpxText = gpxText
                   const parser = new DOMParser();
                   const gpxDoc = parser.parseFromString(gpxText, 'application/xml');
                   const gpxGeojson = gpx(gpxDoc);
-                  const id = String(Math.floor(10000 + Math.random() * 90000));
                   gpxGeojson.features.forEach(feature => {
+                    const id = String(Math.floor(10000 + Math.random() * 90000));
                     feature.properties['id'] = id
                     feature.properties['color'] = 'blue'
                     feature.properties['line-width'] = 5
@@ -7366,8 +7376,6 @@ export default {
                     duration: 1000,
                     linear: false
                   });
-
-                  // geojsonAddLayer (map, geojson, true, fileExtension)
                   break
                 }
                 case 'xml':
