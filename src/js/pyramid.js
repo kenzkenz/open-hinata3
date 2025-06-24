@@ -1928,6 +1928,7 @@ export function deleteAll (noConfrim) {
         features: []
     });
     store.state.clickCircleGeojsonText = ''
+    store.state.clickCircleGeojsonTextMyroom = ''
     getAllVertexPoints(map01)
     setAllMidpoints(map01)
     generateSegmentLabelGeoJSON({
@@ -1935,6 +1936,10 @@ export function deleteAll (noConfrim) {
         features: []
     })
     closeAllPopups()
+    store.state.printTitleText = ''
+    store.state.textPx = 30
+    store.state.titleColor = 'black'
+    store.state.titleDirection = 'vertical'
 }
 
 export function escapeHTML(str) {

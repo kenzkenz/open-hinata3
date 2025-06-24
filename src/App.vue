@@ -225,29 +225,29 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </v-card-title>
           <v-card-text>
             <v-textarea
-                v-model="printTitleText"
+                v-model="s_printTitleText"
                 label="タイトル"
                 auto-grow
                 rows="3"
                 outlined
-                @input="configChange('title-text',printTitleText)"
+                @input="configChange('title-text',s_printTitleText)"
             />
             <v-text-field
-                v-model="textPx"
+                v-model="s_textPx"
                 label="フォントサイズ"
                 type="number"
                 variant="outlined"
                 min="0"
                 max="100"
-                @input="configChange('font-size',textPx)"
+                @input="configChange('font-size',s_textPx)"
             />
             <v-select
-                v-model="titleColor"
+                v-model="s_titleColor"
                 :items="titleColors"
                 item-title="label"
                 item-value="color"
                 label="色を選択してください"
-                @update:modelValue="configChange('fill-color',titleColor)"
+                @update:modelValue="configChange('fill-color',s_titleColor)"
             />
             <v-select
                 v-model="titleScale"
@@ -258,12 +258,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 @update:modelValue="setZoom()"
             />
             <v-select
-                v-model="titleDirection"
+                v-model="s_titleDirection"
                 :items="titleDirections"
                 item-title="label"
                 item-value="direction"
                 label="印刷方向を選択してください"
-                @update:modelValue="configChange('direction',titleDirection)"
+                @update:modelValue="configChange('direction',s_titleDirection)"
             />
           </v-card-text>
           <v-card-actions>
@@ -1480,12 +1480,10 @@ import DialogShare from "@/components/Dialog-share"
 import DialogChibanzuList from "@/components/Dialog-chibanzu-list"
 import pyramid, {
   autoCloseAllPolygons,
-  circleCreate,
   colorNameToRgba,
   deleteAll, generateSegmentLabelGeoJSON, generateStartEndPointsFromGeoJSON,
   geojsonCreate,
-  geojsonUpdate, getAllVertexPoints, lastGeojson, setAllMidpoints,
-  unescapeHTML, watchGeojsonChange
+  geojsonUpdate, getAllVertexPoints, setAllMidpoints,
 } from '@/js/pyramid'
 import glouplayer from '@/js/glouplayer'
 import * as Layers from '@/js/layers'
@@ -1554,9 +1552,9 @@ export default {
     mapDivId: "map01", // ← MapLibreのDIVのID
     tweetText: "入力可能になりました。画像が表示されない場合もう一回やりなおしてください。\n\n#openhinata3 #OH3",
     attributionControl: null,
-    titleColor: 'black',
+    // titleColor: 'black',
     titleColors: [{color:'black',label:'黒'},{color:'red',label:'赤'},{color:'blue',label:'青'},{color:'green',label:'緑'},{color:'orange',label:'オレンジ'}],
-    titleDirection: 'vertical',
+    // titleDirection: 'vertical',
     titleDirections: [{direction:'vertical',label:'A4縦'},{direction:'horizontal',label:'A4横'}],
     titleScale: 0,
     // titleScales: [//grokの回答
@@ -1583,8 +1581,8 @@ export default {
       { zoom: 13.2, label: '1/50000で固定'      },
       { zoom: 11.2, label: '1/200000で固定'     },
     ],
-    textPx: 30,
-    printTitleText: '',
+    // textPx: 30,
+    // printTitleText: '',
     printDialog: false,
     isPrint: false,
     originalStyle: null,
@@ -1677,9 +1675,53 @@ export default {
       'selectedPointFeature',
       'showChibanzuDrawer',
       'clickCircleGeojsonText',
+      'printTitleText',
+      'textPx',
+      'titleColor',
+      'titleDirection',
     ]),
     s_finishLineFire () {
       return this.$store.state.finishLineFire
+    },
+    s_printTitleText: {
+      get() {
+        return this.$store.state.printTitleText
+      },
+      set(value) {
+        return this.$store.state.printTitleText = value
+      }
+    },
+    s_textPx: {
+      get() {
+        return this.$store.state.textPx
+      },
+      set(value) {
+        return this.$store.state.textPx = value
+      }
+    },
+    s_titleColor: {
+      get() {
+        return this.$store.state.titleColor
+      },
+      set(value) {
+        return this.$store.state.titleColor = value
+      }
+    },
+    // s_titleScale: {
+    //   get() {
+    //     return this.$store.state.titleScale
+    //   },
+    //   set(value) {
+    //     return this.$store.state.titleScale = value
+    //   }
+    // },
+    s_titleDirection: {
+      get() {
+        return this.$store.state.titleDirection
+      },
+      set(value) {
+        return this.$store.state.titleDirection = value
+      }
     },
     gcpWithImageCoord() {
       return this.gcpList
@@ -3265,6 +3307,7 @@ export default {
       }
     },
     configChange (tgtProp,value) {
+      console.log(tgtProp,value)
       const map01 = this.$store.state.map01
       store.state.clickCircleGeojsonText = geojsonUpdate(map01, null, clickCircleSource.iD, 'config', tgtProp, value)
       if (tgtProp === 'direction') {
@@ -6254,10 +6297,10 @@ export default {
             try {
               const config = JSON.parse(this.$store.state.clickCircleGeojsonText).features.find(f => f.properties.id === 'config').properties
               if (config) {
-                this.printTitleText = config['title-text']
-                this.textPx = config['font-size'] || 30
-                this.titleColor = config['fill-color']
-                this.titleDirection = config['direction'] || 'vertical'
+                this.$store.state.printTitleText = config['title-text']
+                this.$store.state.textPx = config['font-size'] || 30
+                this.$store.state.titleColor = config['fill-color']
+                this.$store.state.titleDirection = config['direction'] || 'vertical'
               }
             }catch (e) {
               console.log(e)

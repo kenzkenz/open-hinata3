@@ -340,6 +340,7 @@ import store from "@/store";
 import firebase from 'firebase/app'
 import 'firebase/firestore'
 import {deleteAll, generateSegmentLabelGeoJSON, generateStartEndPointsFromGeoJSON} from "@/js/pyramid";
+import {mapState} from "vuex";
 
 export default {
   name: 'Dialog-myroom',
@@ -399,6 +400,12 @@ export default {
     mayroomStyle: {"overflow-y": "auto", "max-height": "530px", "max-width": "560px", "padding-top": "10px"}
   }),
   computed: {
+    ...mapState([
+      'printTitleText',
+      'textPx',
+      'titleColor',
+      'titleDirection',
+    ]),
     mapInstance() {
       return this.$store.state.map01;
     },
@@ -1384,8 +1391,12 @@ export default {
         const kmlText = match ? match[1] : null;
         if (kmlText) vm.$store.state.kmlText = kmlText
 
+        // 最初にクリア
+        vm.$store.state.printTitleText = ''
+        vm.$store.state.textPx = 30
+        vm.$store.state.titleColor = 'black'
+        vm.$store.state.titleDirection = 'vertical'
         // 謎の現象を回避するため正規表現で取得する。その後、解明 「#」があるとき失敗している
-        // 全般的にデータベースに入れないと直後復帰ができない。
         match = response.data.match(/clickCirclegeojsontext=(.*?)&vector/s);
         const clickCirclegeojsontext = match ? match[1] : null;
         if (clickCirclegeojsontext) {
@@ -1399,12 +1410,17 @@ export default {
           try {
             const config = JSON.parse(vm.$store.state.clickCircleGeojsonTextMyroom).features.find(f => f.properties.id === 'config').properties
             if (config) {
-              alert(1)
-              this.printTitleText = config['title-text']
-              this.textPx = config['font-size'] || 30
-              this.titleColor = config['fill-color']
-              this.titleDirection = config['direction'] || 'vertical'
-              alert(2)
+              vm.$store.state.printTitleText = config['title-text'] || ''
+              vm.$store.state.textPx = config['font-size'] || 30
+              vm.$store.state.titleColor = config['fill-color'] || 'black'
+              vm.$store.state.titleDirection = config['direction'] || 'vertical'
+              // alert(vm.$store.state.printTitleText)
+              // console.log(config['title-text'])
+            } else {
+              vm.$store.state.printTitleText = ''
+              vm.$store.state.textPx = 30
+              vm.$store.state.titleColor = 'black'
+              vm.$store.state.titleDirection = 'vertical'
             }
           }catch (e) {
             console.log(e)

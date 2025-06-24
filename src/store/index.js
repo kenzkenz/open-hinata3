@@ -4,6 +4,10 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    printTitleText: '',
+    textPx: 30,
+    titleColor: 'black',
+    titleDirection: 'vertical',
     finishLineFire: false,
     popupDialog: false,
     popupHtml: '',
