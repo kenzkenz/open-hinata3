@@ -1275,7 +1275,7 @@ export default function pyramid () {
                     const geojson = source._data
                     if (geojson && geojson.features) {
                         const newFeatures = geojson.features.filter(feature => {
-                            return !(feature.properties && String(feature.properties.pairId) === id);
+                            return String(feature.properties.id) !== id && String(feature.properties.pairId) !== id;
                         });
                         if (newFeatures.length !== geojson.features.length) {
                             geojson.features = newFeatures;

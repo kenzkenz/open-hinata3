@@ -106,6 +106,23 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </template>
       </v-snackbar>
 
+      <v-dialog v-model="dialogForChibanzyOrDraw" max-width="500px">
+        <v-card>
+          <v-card-title>
+            地番図アップロードorドロー追加
+          </v-card-title>
+          <v-card-text>
+            <p style="margin-bottom: 20px;">どちらか選択してください。</p>
+            <v-btn @click="uploadChibanzu">地番図アップロード</v-btn>
+            <v-btn style="margin-left: 10px;" @click="uploadDraw">ドロー追加</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="dialogForChibanzyOrDraw = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
       <v-dialog v-model="dialogForDl" max-width="500px">
         <v-card>
           <v-card-title>
@@ -1666,6 +1683,7 @@ export default {
     scaleText: '',
     isRightDiv2: true,
     dialogForDl: false,
+    dialogForChibanzyOrDraw: false
   }),
   computed: {
     ...mapState([
@@ -2268,6 +2286,52 @@ export default {
     },
   },
   methods: {
+    uploadChibanzu () {
+      this.dialogForChibanzyOrDraw = false
+      const vm = this
+      async function aaa () {
+        vm.s_chibanzuPropaties = await extractFirstFeaturePropertiesAndCheckCRS(vm.s_geojsonFile)
+        vm.s_showChibanzuDialog = true
+      }
+      aaa()
+    },
+    uploadDraw () {
+      this.dialogForChibanzyOrDraw = false
+      const reader = new FileReader();
+      const map = this.$store.state.map01
+      reader.onload = (event) => {
+        const geojson = JSON.parse(event.target.result)
+        geojson.features.forEach(feature => {
+          const id = String(Math.floor(10000 + Math.random() * 90000));
+          feature.properties['id'] = id
+          feature.properties['label'] = ''
+          feature.properties['color'] = 'rgba(0,0,255,0.6)'
+          feature.properties['line-width'] = 5
+          feature.properties['arrow-type'] = 'none'
+        })
+        const drawGeojson = map.getSource(clickCircleSource.iD)._data
+        drawGeojson.features.push(...geojson.features);
+        map.getSource(clickCircleSource.iD).setData(drawGeojson);
+        drawGeojson.features.forEach(feature => {
+          if (feature.geometry.type !== 'Point') {
+            const calc = calculatePolygonMetrics(feature);
+            if (feature.geometry.type === 'Polygon' || feature.geometry.type === "MultiPolygon") {
+              feature.properties['area'] = calc.area;
+            } else if (feature.geometry.type === 'LineString' || feature.geometry.type === "MultiLineString")  {
+              feature.properties['area'] = calc.perimeter;
+            }
+          }
+        })
+        this.$store.state.clickCircleGeojsonText = JSON.stringify(drawGeojson)
+        const bbox = turf.bbox(geojson);
+        map.fitBounds(bbox, {
+          padding: 40,
+          duration: 1000,
+          linear: false
+        });
+      }
+      reader.readAsText(this.s_geojsonFile);
+    },
     printDialogOpen () {
       this.printDialog = true
     },
@@ -7226,20 +7290,30 @@ export default {
                   reader.onload = (event) => {
                     const parser = new DOMParser();
                     const kmlText = event.target.result
-                    // this.$store.state.kmlText = kmlText
                     const kmlData = parser.parseFromString(kmlText, 'application/xml');
                     const kmlGeojson = kml(kmlData);
                     // geojsonAddLayer(map, geojson,true, fileExtension)
                     kmlGeojson.features.forEach(feature => {
                       const id = String(Math.floor(10000 + Math.random() * 90000));
                       feature.properties['id'] = id
-                      feature.properties['color'] = 'blue'
+                      feature.properties['label'] = ''
+                      feature.properties['color'] = 'rgba(0,0,255,0.6)'
                       feature.properties['line-width'] = 5
                       feature.properties['arrow-type'] = 'none'
                     })
                     const drawGeojson = map.getSource(clickCircleSource.iD)._data
                     drawGeojson.features.push(...kmlGeojson.features);
                     map.getSource(clickCircleSource.iD).setData(drawGeojson);
+                    drawGeojson.features.forEach(feature => {
+                      if (feature.geometry.type !== 'Point') {
+                        const calc = calculatePolygonMetrics(feature);
+                        if (feature.geometry.type === 'Polygon' || feature.geometry.type === "MultiPolygon") {
+                          feature.properties['area'] = calc.area;
+                        } else if (feature.geometry.type === 'LineString' || feature.geometry.type === "MultiLineString")  {
+                          feature.properties['area'] = calc.perimeter;
+                        }
+                      }
+                    })
                     this.$store.state.clickCircleGeojsonText = JSON.stringify(drawGeojson)
                     const bbox = turf.bbox(kmlGeojson);
                     map.fitBounds(bbox, {
@@ -7365,12 +7439,15 @@ export default {
                       async function aaa () {
                         if (vm.$store.state.userId) {
                           try {
-                            vm.s_chibanzuPropaties = await extractFirstFeaturePropertiesAndCheckCRS(file)
-                            vm.s_showChibanzuDialog = true
-                          }catch (e) {
+                            vm.dialogForChibanzyOrDraw = true
+                            // vm.s_chibanzuPropaties = await extractFirstFeaturePropertiesAndCheckCRS(file)
+                            // vm.s_showChibanzuDialog = true
+                          } catch (e) {
                             alert('プロパティを読み込めませんでした。文字化けしていませんか？\n' + e)
                             console.log(e)
                           }
+                        } else {
+                          alert('この機能を利用するにはログインしてください')
                         // } else {
                         //   vm.$store.state.geojsonText = geojsonText
                         //   geojsonAddLayer (map, geojson, true, fileExtension)
@@ -8020,7 +8097,7 @@ export default {
         }
         // 編集モードON → isCircleCenter が true の地物を除外して中心点を生成
         const centerFeatures = originalGeojson.features
-            .filter(f => !f.properties?.isCircleCenter) // ← この行で除外
+            .filter(f => !f.properties?.isCircleCenter && f.properties.id !== 'config') // ← この行で除外
             .map(f => {
               const center = turf.center(f); // 中心点（Point）
               return {
