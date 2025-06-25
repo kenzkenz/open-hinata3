@@ -2299,8 +2299,23 @@ export default {
     removeLastVertex() {
       if (this.s_isDrawLine) {
         if (!this.tempLineCoords.length) return;
-        this.tempLineCoords.pop();
-        this.updateLinePreview();
+        const coords = this.tempLineCoords;
+        if (!coords.length) return;
+        // 最後の頂点がカーソル位置と重なっている場合は2回削除
+        if (this.lastMouseLngLat && coords.length >= 1) {
+          const [lastLng, lastLat] = coords[coords.length - 1];
+          if (lastLng === this.lastMouseLngLat.lng && lastLat === this.lastMouseLngLat.lat) {
+            // カーソル重なり頂点を2回削除
+            coords.pop();
+            if (coords.length) coords.pop();
+            this.updateDynamicLinePreview();
+            return;
+          }
+        }
+        // それ以外は1回だけ削除
+        coords.pop();
+        this.updateDynamicLinePreview();
+
       } else if (this.s_isDrawPolygon) {
         const coords = this.tempPolygonCoords;
         if (!coords.length) return;
@@ -2321,18 +2336,36 @@ export default {
       }
     },
 
-    // ライン描画中プレビュー更新
-    updateLinePreview() {
+    // // ライン描画中プレビュー更新
+    // updateLinePreview() {
+    //   const map = this.$store.state.map01;
+    //   map.getSource('guide-line-source').setData({
+    //     type: 'FeatureCollection',
+    //     features: [{
+    //       type: 'Feature',
+    //       geometry: { type: 'LineString', coordinates: this.tempLineCoords },
+    //       properties: {}
+    //     }]
+    //   });
+    // },
+
+    // 動的ポリゴンプレビュー
+    updateDynamicLinePreview() {
       const map = this.$store.state.map01;
+      const coords = this.tempLineCoords.slice();
+      if (coords.length && this.lastMouseLngLat) {
+        coords.push([this.lastMouseLngLat.lng, this.lastMouseLngLat.lat]);
+      }
       map.getSource('guide-line-source').setData({
         type: 'FeatureCollection',
         features: [{
           type: 'Feature',
-          geometry: { type: 'LineString', coordinates: this.tempLineCoords },
+          geometry: { type: 'LineString', coordinates: coords },
           properties: {}
         }]
       });
     },
+
 
     // 動的ポリゴンプレビュー
     updateDynamicPolygonPreview() {
@@ -2341,6 +2374,23 @@ export default {
       if (coords.length && this.lastMouseLngLat) {
         coords.push([this.lastMouseLngLat.lng, this.lastMouseLngLat.lat]);
       }
+      map.getSource('guide-line-source').setData({
+        type: 'FeatureCollection',
+        features: [{
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: coords },
+          properties: {}
+        }]
+      });
+    },
+
+    // マウス移動で動的プレビュー更新
+    onLineMouseMove(e) {
+      if (!this.s_isDrawLine) return;
+      const map = this.$store.state.map01;
+      this.lastMouseLngLat = e.lngLat;
+      const coords = this.tempLineCoords.slice();
+      if (coords.length) coords.push([e.lngLat.lng, e.lngLat.lat]);
       map.getSource('guide-line-source').setData({
         type: 'FeatureCollection',
         features: [{
@@ -8014,6 +8064,8 @@ export default {
           // document.addEventListener('keydown', this.onKeydown);
           // map が読込後にマウスムーブ監視
           map01.on('mousemove', this.onPolygonMouseMove);
+          map01.on('mousemove', this.onLineMouseMove);
+
           capture(uid.value)
         } else {
           console.warn("地図がまだ初期化されていません")
