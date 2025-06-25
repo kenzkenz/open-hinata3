@@ -2286,16 +2286,16 @@ export default {
     },
   },
   methods: {
-    // Backspace / Delete 押下時に呼ばれる
+    // Backspace/Delete 押下で頂点削除
     onKeydown(e) {
       if (!this.s_isDrawLine && !this.s_isDrawPolygon) return;
       if (e.key === 'Backspace' || e.key === 'Delete') {
-        e.preventDefault();  // ブラウザの「戻る」抑止
+        e.preventDefault();
         this.removeLastVertex();
       }
     },
 
-    // 最後の頂点を削除してプレビューを更新
+    // 最後の頂点を削除し動的プレビュー
     removeLastVertex() {
       if (this.s_isDrawLine) {
         if (!this.tempLineCoords.length) return;
@@ -2304,59 +2304,61 @@ export default {
       } else if (this.s_isDrawPolygon) {
         if (!this.tempPolygonCoords.length) return;
         this.tempPolygonCoords.pop();
-        // 削除後は静的ラインプレビュー
-        this.updatePolygonPreview();
+        this.updateDynamicPolygonPreview();
+        // 即時再描画
+        if (this.lastMouseLngLat) {
+          this.onPolygonMouseMove({ lngLat: this.lastMouseLngLat });
+        }
       }
     },
 
     // ライン描画中プレビュー更新
     updateLinePreview() {
       const map = this.$store.state.map01;
-      const geojson = {
+      map.getSource('guide-line-source').setData({
         type: 'FeatureCollection',
         features: [{
           type: 'Feature',
           geometry: { type: 'LineString', coordinates: this.tempLineCoords },
           properties: {}
         }]
-      };
-      map.getSource('guide-line-source').setData(geojson);
+      });
     },
 
-    // ポリゴン描画中も LineString として静的プレビュー更新
-    updatePolygonPreview() {
+    // 動的ポリゴンプレビュー
+    updateDynamicPolygonPreview() {
       const map = this.$store.state.map01;
       const coords = this.tempPolygonCoords.slice();
-      const geojson = {
+      if (coords.length && this.lastMouseLngLat) {
+        coords.push([this.lastMouseLngLat.lng, this.lastMouseLngLat.lat]);
+      }
+      map.getSource('guide-line-source').setData({
         type: 'FeatureCollection',
         features: [{
           type: 'Feature',
           geometry: { type: 'LineString', coordinates: coords },
           properties: {}
         }]
-      };
-      map.getSource('guide-line-source').setData(geojson);
+      });
     },
 
-    // マウス移動時に最後の頂点からカーソル位置までを描画
+    // マウス移動で動的プレビュー更新
     onPolygonMouseMove(e) {
       if (!this.s_isDrawPolygon) return;
       const map = this.$store.state.map01;
+      this.lastMouseLngLat = e.lngLat;
       const coords = this.tempPolygonCoords.slice();
-      // 頂点がある場合にのみ動的ラインを描画
-      if (coords.length > 0) {
-        coords.push([e.lngLat.lng, e.lngLat.lat]);
-      }
-      const geojson = {
+      if (coords.length) coords.push([e.lngLat.lng, e.lngLat.lat]);
+      map.getSource('guide-line-source').setData({
         type: 'FeatureCollection',
         features: [{
           type: 'Feature',
           geometry: { type: 'LineString', coordinates: coords },
           properties: {}
         }]
-      };
-      map.getSource('guide-line-source').setData(geojson);
+      });
     },
+
     uploadChibanzu () {
       this.dialogForChibanzyOrDraw = false
       const vm = this
@@ -7999,7 +8001,8 @@ export default {
         const map01 = store.state.map01
         if (map01) {
           // キーボード監視
-          document.addEventListener('keydown', this.onKeydown);
+          window.addEventListener('keydown', this.onKeydown);
+          // document.addEventListener('keydown', this.onKeydown);
           // map が読込後にマウスムーブ監視
           map01.on('mousemove', this.onPolygonMouseMove);
           capture(uid.value)
