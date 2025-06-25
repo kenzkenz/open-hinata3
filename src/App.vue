@@ -8979,6 +8979,7 @@ select {
 .circle.orange { background: orange; }
 .circle.black { background: black; }
 .circle.hotpink { background: hotpink; }
+.circle.yellow { background: yellow; }
 
 /* ハイライト: クリック時・Tab選択時・ホバー時 */
 .circle:active,

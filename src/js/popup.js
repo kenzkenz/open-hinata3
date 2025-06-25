@@ -3716,7 +3716,10 @@ export function popup(e,map,mapName,mapFlg) {
                                 html += '<div class="layer-label-div">ポリゴン</div>'
                                 html +=
                                     '<div style="width: 240px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
+                                    '<div style="position: relative">' +
                                     '<div style="margin-left: 10px;margin-bottom: 10px; font-size: 16px;"><input ' + checked + ' type="checkbox" id="' + props.id + '" class="polygon-area-check" value=""><label for="' + props.id + '"> 面積表示</div>' +
+                                    '<input id="' + props.id + '" type="number" class="oh-cool-input-number line-width-input" min="1" max="100" step="1" value="' + lineWidth +'" style="position: absolute;left:120px;top:-5px;">' +
+                                    '</div>' +
                                     '<input id="' + props.id + '" style="width: 100%;margin-bottom: 5px;" type="text" class="oh-cool-input polygon-text" placeholder="ここに入力" value="' + props.label + '">' +
                                     '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;" class="circle-delete pyramid-btn">削　除</button><br>' +
                                     '<div style="display: flex;gap: 8px;">' +
@@ -3726,8 +3729,9 @@ export function popup(e,map,mapName,mapFlg) {
                                     '<div id="' + props.id + '" data-color="blue" class="circle-color circle blue" tabindex="0"></div>' +
                                     '<div id="' + props.id + '" data-color="green" class="circle-color circle green" tabindex="0"></div>' +
                                     '<div id="' + props.id + '" data-color="orange" class="circle-color circle orange" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="hotpink" class="circle-color circle hotpink" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="yellow" class="circle-color circle yellow" tabindex="0"></div>' +
                                     '</div>' +
-                                    '<input id="' + props.id + '" type="number" class="oh-cool-input-number line-width-input" min="1" max="100" step="1" value="' + lineWidth +'">' +
                                     '</div>' +
                                     '</div>'
                             }

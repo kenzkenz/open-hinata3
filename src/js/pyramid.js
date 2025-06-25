@@ -1963,7 +1963,9 @@ export function colorNameToRgba(colorName, alpha = 1) {
         green: [0, 128, 0],
         blue: [0, 0, 255],
         black: [0, 0, 0],
-        red: [255, 0, 0]
+        red: [255, 0, 0],
+        yellow:[255,255,0],
+        hotpink:[255, 105, 180],
     };
     const rgb = colorTable[colorName.toLowerCase()];
     if (!rgb) return null; // 未定義色名の場合
