@@ -1384,7 +1384,8 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
             if (store.state.circle200Chk) {
                 radius = 200
             } else {
-                radius = getScreenMeterDivX(map, 40, 'height')
+                // alert(getScreenMeterDivX(map, 10, 'height'))
+                radius = getScreenMeterDivX(map, 10, 'height')
             }
             console.log('半径',radius)
             features = circleCreate (coordinates[0], coordinates[1], radius)
