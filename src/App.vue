@@ -2295,20 +2295,29 @@ export default {
       }
     },
 
-    // 最後の頂点を削除し動的プレビュー
+    // 最後の頂点を一つ削除してプレビューを更新
     removeLastVertex() {
       if (this.s_isDrawLine) {
         if (!this.tempLineCoords.length) return;
         this.tempLineCoords.pop();
         this.updateLinePreview();
       } else if (this.s_isDrawPolygon) {
-        if (!this.tempPolygonCoords.length) return;
-        this.tempPolygonCoords.pop();
-        this.updateDynamicPolygonPreview();
-        // 即時再描画
-        if (this.lastMouseLngLat) {
-          this.onPolygonMouseMove({ lngLat: this.lastMouseLngLat });
+        const coords = this.tempPolygonCoords;
+        if (!coords.length) return;
+        // 最後の頂点がカーソル位置と重なっている場合は2回削除
+        if (this.lastMouseLngLat && coords.length >= 1) {
+          const [lastLng, lastLat] = coords[coords.length - 1];
+          if (lastLng === this.lastMouseLngLat.lng && lastLat === this.lastMouseLngLat.lat) {
+            // カーソル重なり頂点を2回削除
+            coords.pop();
+            if (coords.length) coords.pop();
+            this.updateDynamicPolygonPreview();
+            return;
+          }
         }
+        // それ以外は1回だけ削除
+        coords.pop();
+        this.updateDynamicPolygonPreview();
       }
     },
 
