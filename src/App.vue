@@ -6457,6 +6457,32 @@ export default {
             document.querySelector('.maplibregl-ctrl-scale').style.display = 'none'
           }
 
+          // ドローを同期
+          if (mapName === 'map01') {
+            const map01 = this.$store.state.map01
+            const map02 = this.$store.state.map02
+            map01.on('sourcedata', (e) => {
+              // e.sourceDataType === 'content' でデータ本体の更新を検知
+              if (e.sourceId === clickCircleSource.iD && e.sourceDataType === 'content') {
+                const updatedData = map01.getSource(clickCircleSource.iD)._data;
+                const src2 = map02.getSource(clickCircleSource.iD);
+                if (src2) {
+                  src2.setData(updatedData);
+                }
+                const e_updatedData = map01.getSource('end-point-source')._data;
+                const e_src2 = map02.getSource('end-point-source');
+                if (e_src2) {
+                  e_src2.setData(e_updatedData);
+                }
+                const s_updatedData = map01.getSource('segment-label-source')._data;
+                const s_src2 = map02.getSource('segment-label-source');
+                if (s_src2) {
+                  s_src2.setData(s_updatedData);
+                }
+              }
+            });
+          }
+
           map.setProjection({"type": "globe"})
           map.resize()
           map.doubleClickZoom.disable()
