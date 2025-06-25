@@ -1683,7 +1683,7 @@ export default {
     scaleText: '',
     isRightDiv2: true,
     dialogForDl: false,
-    dialogForChibanzyOrDraw: false
+    dialogForChibanzyOrDraw: false,
   }),
   computed: {
     ...mapState([
@@ -2286,6 +2286,77 @@ export default {
     },
   },
   methods: {
+    // Backspace / Delete 押下時に呼ばれる
+    onKeydown(e) {
+      if (!this.s_isDrawLine && !this.s_isDrawPolygon) return;
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();  // ブラウザの「戻る」抑止
+        this.removeLastVertex();
+      }
+    },
+
+    // 最後の頂点を削除してプレビューを更新
+    removeLastVertex() {
+      if (this.s_isDrawLine) {
+        if (!this.tempLineCoords.length) return;
+        this.tempLineCoords.pop();
+        this.updateLinePreview();
+      } else if (this.s_isDrawPolygon) {
+        if (!this.tempPolygonCoords.length) return;
+        this.tempPolygonCoords.pop();
+        // 削除後は静的ラインプレビュー
+        this.updatePolygonPreview();
+      }
+    },
+
+    // ライン描画中プレビュー更新
+    updateLinePreview() {
+      const map = this.$store.state.map01;
+      const geojson = {
+        type: 'FeatureCollection',
+        features: [{
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: this.tempLineCoords },
+          properties: {}
+        }]
+      };
+      map.getSource('guide-line-source').setData(geojson);
+    },
+
+    // ポリゴン描画中も LineString として静的プレビュー更新
+    updatePolygonPreview() {
+      const map = this.$store.state.map01;
+      const coords = this.tempPolygonCoords.slice();
+      const geojson = {
+        type: 'FeatureCollection',
+        features: [{
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: coords },
+          properties: {}
+        }]
+      };
+      map.getSource('guide-line-source').setData(geojson);
+    },
+
+    // マウス移動時に最後の頂点からカーソル位置までを描画
+    onPolygonMouseMove(e) {
+      if (!this.s_isDrawPolygon) return;
+      const map = this.$store.state.map01;
+      const coords = this.tempPolygonCoords.slice();
+      // 頂点がある場合にのみ動的ラインを描画
+      if (coords.length > 0) {
+        coords.push([e.lngLat.lng, e.lngLat.lat]);
+      }
+      const geojson = {
+        type: 'FeatureCollection',
+        features: [{
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: coords },
+          properties: {}
+        }]
+      };
+      map.getSource('guide-line-source').setData(geojson);
+    },
     uploadChibanzu () {
       this.dialogForChibanzyOrDraw = false
       const vm = this
@@ -7927,6 +7998,10 @@ export default {
         // capture(uid, true)
         const map01 = store.state.map01
         if (map01) {
+          // キーボード監視
+          document.addEventListener('keydown', this.onKeydown);
+          // map が読込後にマウスムーブ監視
+          map01.on('mousemove', this.onPolygonMouseMove);
           capture(uid.value)
         } else {
           console.warn("地図がまだ初期化されていません")
