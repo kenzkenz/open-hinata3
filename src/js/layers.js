@@ -598,13 +598,37 @@ const caseTextHaloColor = [
 ];
 
 // 蛍光色・NEW表示のcase式を生成
+// const caseTextField = [
+//     'case',
+//     ...newCodes.flatMap(code => [
+//         ['==', ['get', 'N03_007'], code], ['concat', 'NEW\n', ['get', 'N03_004']]
+//     ]),
+//     ['get', 'N03_004'] // デフォルト: 市区町村名
+// ];
 const caseTextField = [
     'case',
-    ...newCodes.flatMap(code => [
-        ['==', ['get', 'N03_007'], code], ['concat', 'NEW\n', ['get', 'N03_004']]
-    ]),
-    ['get', 'N03_004'] // デフォルト: 市区町村名
+
+    // ① newCodes に含まれるキーだけを抽出
+    ...Object.entries(chibanzuColors)
+        .filter(([key]) => newCodes.map(Number).includes(Number(key)))
+        // ② その上で flatMap して条件＋テキストを作成
+        .flatMap(([key, color]) => {
+            const codeNum = Number(key);
+            // MapLibre の「このコードか？」を判定する条件
+            const condition = ['==', ['to-number', ['get', 'N03_007']], codeNum];
+            // 色によって prefix を切り替え（特定色なら★付き）
+            const prefix = color === 'rgba(0,0,255,0.8)' ? '★NEW★\n' : 'NEW\n';
+            return [
+                condition,
+                ['concat', prefix, ['get', 'N03_004']]
+            ];
+        }),
+
+    // ③ どの条件にも当てはまらなかったときのデフォルト
+    ['get', 'N03_004']
 ];
+
+
 
 export const cityGeojsonLabelLayer = {
     id: 'oh-city-geojson-label-layer',
