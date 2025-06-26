@@ -865,7 +865,7 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
 //     URL.revokeObjectURL(link.href);
 // }
 
-export function saveCima(map, layerId, sourceId, fields, kaniFlg, kei, chiban) {
+export function saveCima(map, layerId, sourceId, fields, kaniFlg, kei, chiban, isDraw) {
     if (map.getZoom() <= 15) {
         alert('ズーム15以上にしてください。')
         return
@@ -902,7 +902,11 @@ export function saveCima(map, layerId, sourceId, fields, kaniFlg, kei, chiban) {
         geojson = exportLayerToGeoJSON(map, layerId, sourceId, fields);
     }
     console.log(geojson)
-    convertAndDownloadGeoJSONToSIMA(map,layerId,geojson,'簡易_',kaniFlg,kei,null,null,null,chiban);
+    if (isDraw) {
+        return geojson
+    } else {
+        convertAndDownloadGeoJSONToSIMA(map,layerId,geojson,'簡易_',kaniFlg,kei,null,null,null,chiban);
+    }
 }
 
 // // ⭐️これは地番がない最もベーシックなもの をm単位にしたもの 1月4日時点の決定版

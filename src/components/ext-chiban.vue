@@ -109,6 +109,7 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+
   <v-dialog v-model="dialog5" max-width="500px">
     <v-card>
       <v-card-title>
@@ -131,7 +132,8 @@
                     outlined
           ></v-select>
         </div>
-        <v-btn @click="saveSima">sima出力開始</v-btn>
+        <v-btn :disabled="isDraw" @click="saveSima(false)">sima出力開始</v-btn>
+        <v-btn :disabled="!isDraw" @click="saveSima(true)" style="margin-left: 10px;">ドローへ</v-btn>
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
@@ -139,6 +141,7 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+
   <div :style="menuContentSize">
 <!--    <div style="font-size: large;margin-bottom: 10px;">{{item.label}}</div>-->
 <!--    <div style="font-size: large;margin-bottom: 10px;" v-html="item.label"/>-->
@@ -162,7 +165,7 @@
 
     <v-row dense no-gutters>
       <v-col cols="6">
-        <v-btn block @click="dialog5 = true">sima保存</v-btn>
+        <v-btn block @click="dialog5 = true;isDraw = false;">sima保存</v-btn>
       </v-col>
       <v-col cols="6" style="padding-left: 10px;">
         <v-btn block @click="dialog = true">sima読込</v-btn>
@@ -191,7 +194,12 @@
       <v-btn style="height: 40px; line-height: 40px; margin-left: 0px;margin-top: 10px;" class="tiny-btn" @click="resetFeatureColors">
         選択解除
       </v-btn>
-<!--      <v-switch-->
+      <!--      <v-btn style="height: 40px; line-height: 40px; margin-right: 10px;margin-top: 10px;" class="tiny-btn" @click="dialog5 = true;isDraw = true;">-->
+
+      <v-btn style="height: 40px; line-height: 40px; margin-right: 10px;margin-top: 10px;" class="tiny-btn" @click="saveSima(true)">
+        ドローへ
+      </v-btn>
+      <!--      <v-switch-->
 <!--          v-model="s_isRenzoku"-->
 <!--          label="連続選択"-->
 <!--          color="primary"-->
@@ -267,7 +275,14 @@ import {
   saveDxf,
   saveCsv,
   simaToGeoJSON,
-  resetFeatureColors, saveSima2, saveKml, getLayersById, getParentIdByLayerId
+  resetFeatureColors,
+  saveSima2,
+  saveKml,
+  getLayersById,
+  getParentIdByLayerId,
+  saveGeojsonToDraw,
+  exportLayerToGeoJSON,
+  addDraw
 } from "@/js/downLoad";
 import {homusyo2025LayerLine} from "@/js/layers";
 
@@ -275,6 +290,7 @@ export default {
   name: 'ext-chibanzu',
   props: ['mapName','item'],
   data: () => ({
+    isDraw: false,
     adjustTimer: null,
     lineWidth: null,
     fields: '',
@@ -385,6 +401,30 @@ export default {
     },
   },
   methods: {
+    toDraw (geojson) {
+      alert('登記所地図を「不可視」にします。\n右のペンアイコンをクリックしてドローを開始してください。')
+      // this.saveGeojsonToDraw0()
+      addDraw (geojson,false)
+      let result = this.$store.state.selectedLayers['map01'].find(v => {
+        return v.id === 'oh-chibanzu-all2';
+      });
+      if (!result) {
+        result = this.$store.state.selectedLayers['map01'].find(v => {
+          return v.id.includes('oh-chibanzu-');
+        });
+      }
+      console.log(this.$store.state.selectedLayers['map01'])
+      const map = this.$store.state.map01
+      result.visibility = false
+      // なぜか透過度をいじると安定する。
+      result.opacity = 0
+      const zoom = map.getZoom()
+      map.setZoom(12)
+      setTimeout(() => {
+        result.opacity = 1
+        map.setZoom(zoom)
+      },500)
+    },
     async downloadCsvFromPhp() {
       try {
         const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/userChibanzumapSelectForCSV.php');
@@ -901,7 +941,7 @@ export default {
       const map = this.$store.state[this.mapName]
       saveCima3(map)
     },
-    saveSima () {
+    saveSima (isDraw) {
       const map = this.$store.state[this.mapName]
       const vm = this
       async function aaa () {
@@ -930,7 +970,13 @@ export default {
             chiban = null
           }
         }
-        saveCima(map, vm.layerId, vm.sourceId, vm.fields, true, vm.s_zahyokei,chiban)
+        if (isDraw) {
+          console.log(chiban)
+          const geojson = saveCima(map, vm.layerId, vm.sourceId, vm.fields, true, vm.s_zahyokei,chiban, true)
+          vm.toDraw(geojson)
+        } else {
+          saveCima(map, vm.layerId, vm.sourceId, vm.fields, true, vm.s_zahyokei,chiban, false)
+        }
         vm.dialog5 = false
       }
       aaa()
