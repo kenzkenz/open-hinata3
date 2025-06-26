@@ -4,6 +4,7 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    toggleCheckFire: false,
     printTitleText: '',
     textPx: 30,
     titleColor: 'black',

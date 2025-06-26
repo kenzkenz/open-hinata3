@@ -12,7 +12,14 @@ import {
     pngSource,
     pngLayer,
     vpsTileSource,
-    vpsTileLayer, chibanzuLayers0, chibanzuLayers, chibanzuSources, sicyosonChibanzuUrls, loadColorData, caseTextField
+    vpsTileLayer,
+    chibanzuLayers0,
+    chibanzuLayers,
+    chibanzuSources,
+    sicyosonChibanzuUrls,
+    loadColorData,
+    caseTextField,
+    clickCircleSource
 } from "@/js/layers";
 import shpwrite from "@mapbox/shp-write"
 import JSZip from 'jszip'
@@ -223,11 +230,20 @@ export function exportLayerToGeoJSON(map,layerId,sourceId,fields) {
         return null;
     }
 }
+export function saveGeojsonToDraw (map,layerId,sourceId,fields) {
+    if (map.getZoom() <= 15) {
+        alert('ズーム15以上にしてください。')
+        return
+    }
+    const geojson = exportLayerToGeoJSON(map,layerId,sourceId,fields)
+    addDraw (geojson,false)
+}
+
 export function saveGeojson (map,layerId,sourceId,fields) {
-    // if (map.getZoom() <= 15) {
-    //     alert('ズーム15以上にしてください。')
-    //     return
-    // }
+    if (map.getZoom() <= 15) {
+        alert('ズーム15以上にしてください。')
+        return
+    }
     const geojsonText = JSON.stringify(exportLayerToGeoJSON(map,layerId,sourceId,fields))
     console.log(geojsonText)
     const blob = new Blob([geojsonText], { type: 'application/json' });
@@ -9094,6 +9110,41 @@ export function geojsonToGpx(geojson, options = {}) {
     // GPX終了タグ
     lines.push('</gpx>');
     return lines.join('\n');
+}
+// ドローレイヤーにgeojsonを追加
+export function addDraw (geojson,isFit) {
+    console.log(geojson)
+    const map = store.state.map01
+    geojson.features.forEach(feature => {
+        const id = String(Math.floor(10000 + Math.random() * 90000));
+        feature.properties['id'] = id
+        feature.properties['label'] = ''
+        feature.properties['color'] = 'rgba(0,0,255,0.6)'
+        feature.properties['line-width'] = 5
+        feature.properties['arrow-type'] = 'none'
+    })
+    const drawGeojson = map.getSource(clickCircleSource.iD)._data
+    drawGeojson.features.push(...geojson.features);
+    map.getSource(clickCircleSource.iD).setData(drawGeojson);
+    drawGeojson.features.forEach(feature => {
+        if (feature.geometry.type !== 'Point') {
+            const calc = calculatePolygonMetrics(feature);
+            if (feature.geometry.type === 'Polygon' || feature.geometry.type === "MultiPolygon") {
+                feature.properties['area'] = calc.area;
+            } else if (feature.geometry.type === 'LineString' || feature.geometry.type === "MultiLineString")  {
+                feature.properties['area'] = calc.perimeter;
+            }
+        }
+    })
+    store.state.clickCircleGeojsonText = JSON.stringify(drawGeojson)
+    if (isFit) {
+        const bbox = turf.bbox(geojson);
+        map.fitBounds(bbox, {
+            padding: 40,
+            duration: 1000,
+            linear: false
+        });
+    }
 }
 
 export function gpxDownload (geojson) {

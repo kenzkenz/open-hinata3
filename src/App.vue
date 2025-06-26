@@ -1124,6 +1124,7 @@ import RightDrawer from '@/components/rightDrawer.vue'
 import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
 import {
+  addDraw,
   capture, convertFromEPSG4326,
   csvGenerateForUserPng,
   ddSimaUpload, downloadGeoJSONAsCSV,
@@ -2433,34 +2434,35 @@ export default {
       const map = this.$store.state.map01
       reader.onload = (event) => {
         const geojson = JSON.parse(event.target.result)
-        geojson.features.forEach(feature => {
-          const id = String(Math.floor(10000 + Math.random() * 90000));
-          feature.properties['id'] = id
-          feature.properties['label'] = ''
-          feature.properties['color'] = 'rgba(0,0,255,0.6)'
-          feature.properties['line-width'] = 5
-          feature.properties['arrow-type'] = 'none'
-        })
-        const drawGeojson = map.getSource(clickCircleSource.iD)._data
-        drawGeojson.features.push(...geojson.features);
-        map.getSource(clickCircleSource.iD).setData(drawGeojson);
-        drawGeojson.features.forEach(feature => {
-          if (feature.geometry.type !== 'Point') {
-            const calc = calculatePolygonMetrics(feature);
-            if (feature.geometry.type === 'Polygon' || feature.geometry.type === "MultiPolygon") {
-              feature.properties['area'] = calc.area;
-            } else if (feature.geometry.type === 'LineString' || feature.geometry.type === "MultiLineString")  {
-              feature.properties['area'] = calc.perimeter;
-            }
-          }
-        })
-        this.$store.state.clickCircleGeojsonText = JSON.stringify(drawGeojson)
-        const bbox = turf.bbox(geojson);
-        map.fitBounds(bbox, {
-          padding: 40,
-          duration: 1000,
-          linear: false
-        });
+        addDraw(geojson,true)
+        // geojson.features.forEach(feature => {
+        //   const id = String(Math.floor(10000 + Math.random() * 90000));
+        //   feature.properties['id'] = id
+        //   feature.properties['label'] = ''
+        //   feature.properties['color'] = 'rgba(0,0,255,0.6)'
+        //   feature.properties['line-width'] = 5
+        //   feature.properties['arrow-type'] = 'none'
+        // })
+        // const drawGeojson = map.getSource(clickCircleSource.iD)._data
+        // drawGeojson.features.push(...geojson.features);
+        // map.getSource(clickCircleSource.iD).setData(drawGeojson);
+        // drawGeojson.features.forEach(feature => {
+        //   if (feature.geometry.type !== 'Point') {
+        //     const calc = calculatePolygonMetrics(feature);
+        //     if (feature.geometry.type === 'Polygon' || feature.geometry.type === "MultiPolygon") {
+        //       feature.properties['area'] = calc.area;
+        //     } else if (feature.geometry.type === 'LineString' || feature.geometry.type === "MultiLineString")  {
+        //       feature.properties['area'] = calc.perimeter;
+        //     }
+        //   }
+        // })
+        // this.$store.state.clickCircleGeojsonText = JSON.stringify(drawGeojson)
+        // const bbox = turf.bbox(geojson);
+        // map.fitBounds(bbox, {
+        //   padding: 40,
+        //   duration: 1000,
+        //   linear: false
+        // });
       }
       reader.readAsText(this.s_geojsonFile);
     },
@@ -7337,71 +7339,54 @@ export default {
             mouseMoveForPopup(e,map)
           })
           //------------------------------------------------------------------------------------------------------------
-          // PLATEAU建物東京都23区
-          map.on('click', 'oh-plateau-tokyo23ku-layer', function (e) {
-            // map.getCanvas().style.cursor = 'pointer'
-            map.setPaintProperty(
-                'oh-plateau-tokyo23ku-layer',
-                'fill-extrusion-color',
-                [
-                  'case',
-                  ['==', ['get', '建物ID'], e.features[0].properties['建物ID']],
-                  'rgba(255, 0, 0, 1)', // カーソルが当たったフィーチャーの色
-                  [
-                    "interpolate",
-                    ["linear"],
-                    ["get", "measuredHeight"],
-                    0, "#d9d9d9",       // 0m: グレー
-                    10, "#a6bddb",      // 10m: 明るいブルー
-                    30, "#74a9cf",      // 30m: 中間ブルー
-                    60, "#2b8cbe",      // 60m: 濃いブルー
-                    100, "#045a8d"      // 100m以上: 非常に濃いブルー
-                  ]
-                ]
-            )
-          })
-          map.on('click', function(e) {
-            // クリック位置のoh-plateau-tokyo23ku-layerのフィーチャーを取得
-            const features = map.queryRenderedFeatures(e.point, { layers: ['oh-plateau-tokyo23ku-layer'] });
-            if (features.length === 0) {
-              // フィーチャーが1つもない時だけ発動
-              try {
-                map.setPaintProperty(
-                    'oh-plateau-tokyo23ku-layer',
-                    'fill-extrusion-color',
-                    [
-                      "interpolate",
-                      ["linear"],
-                      ["get", "measuredHeight"],
-                      0, "#d9d9d9",       // 0m: グレー
-                      10, "#a6bddb",      // 10m: 明るいブルー
-                      30, "#74a9cf",      // 30m: 中間ブルー
-                      60, "#2b8cbe",      // 60m: 濃いブルー
-                      100, "#045a8d"      // 100m以上: 非常に濃いブルー
-                    ]
-                )
-              } catch (e) {
-                console.log(e)
-              }
-            }
-          });
-          // map.on('mouseleave', 'oh-plateau-tokyo23ku-layer', function () {
-          //   map.getCanvas().style.cursor = ''
+          // // PLATEAU建物東京都23区
+          // map.on('click', 'oh-plateau-tokyo23ku-layer', function (e) {
+          //   // map.getCanvas().style.cursor = 'pointer'
           //   map.setPaintProperty(
           //       'oh-plateau-tokyo23ku-layer',
           //       'fill-extrusion-color',
           //       [
-          //         "interpolate",
-          //         ["linear"],
-          //         ["get", "measuredHeight"],
-          //         0, "#d9d9d9",       // 0m: グレー
-          //         10, "#a6bddb",      // 10m: 明るいブルー
-          //         30, "#74a9cf",      // 30m: 中間ブルー
-          //         60, "#2b8cbe",      // 60m: 濃いブルー
-          //         100, "#045a8d"      // 100m以上: 非常に濃いブルー
+          //         'case',
+          //         ['==', ['get', '建物ID'], e.features[0].properties['建物ID']],
+          //         'rgba(255, 0, 0, 1)', // カーソルが当たったフィーチャーの色
+          //         [
+          //           "interpolate",
+          //           ["linear"],
+          //           ["get", "measuredHeight"],
+          //           0, "#d9d9d9",       // 0m: グレー
+          //           10, "#a6bddb",      // 10m: 明るいブルー
+          //           30, "#74a9cf",      // 30m: 中間ブルー
+          //           60, "#2b8cbe",      // 60m: 濃いブルー
+          //           100, "#045a8d"      // 100m以上: 非常に濃いブルー
+          //         ]
           //       ]
           //   )
           // })
+          // map.on('click', function(e) {
+          //   // クリック位置のoh-plateau-tokyo23ku-layerのフィーチャーを取得
+          //   const features = map.queryRenderedFeatures(e.point, { layers: ['oh-plateau-tokyo23ku-layer'] });
+          //   if (features.length === 0) {
+          //     // フィーチャーが1つもない時だけ発動
+          //     try {
+          //       map.setPaintProperty(
+          //           'oh-plateau-tokyo23ku-layer',
+          //           'fill-extrusion-color',
+          //           [
+          //             "interpolate",
+          //             ["linear"],
+          //             ["get", "measuredHeight"],
+          //             0, "#d9d9d9",       // 0m: グレー
+          //             10, "#a6bddb",      // 10m: 明るいブルー
+          //             30, "#74a9cf",      // 30m: 中間ブルー
+          //             60, "#2b8cbe",      // 60m: 濃いブルー
+          //             100, "#045a8d"      // 100m以上: 非常に濃いブルー
+          //           ]
+          //       )
+          //     } catch (e) {
+          //       console.log(e)
+          //     }
+          //   }
+          // });
           // -----------------------------------------------------------------------------------------------------------
           const pitch = !isNaN(this.pitch[mapName]) ? this.pitch[mapName]: 0
           if (pitch !== 0) {
@@ -7450,35 +7435,35 @@ export default {
                     const kmlText = event.target.result
                     const kmlData = parser.parseFromString(kmlText, 'application/xml');
                     const kmlGeojson = kml(kmlData);
-                    // geojsonAddLayer(map, geojson,true, fileExtension)
-                    kmlGeojson.features.forEach(feature => {
-                      const id = String(Math.floor(10000 + Math.random() * 90000));
-                      feature.properties['id'] = id
-                      feature.properties['label'] = ''
-                      feature.properties['color'] = 'rgba(0,0,255,0.6)'
-                      feature.properties['line-width'] = 5
-                      feature.properties['arrow-type'] = 'none'
-                    })
-                    const drawGeojson = map.getSource(clickCircleSource.iD)._data
-                    drawGeojson.features.push(...kmlGeojson.features);
-                    map.getSource(clickCircleSource.iD).setData(drawGeojson);
-                    drawGeojson.features.forEach(feature => {
-                      if (feature.geometry.type !== 'Point') {
-                        const calc = calculatePolygonMetrics(feature);
-                        if (feature.geometry.type === 'Polygon' || feature.geometry.type === "MultiPolygon") {
-                          feature.properties['area'] = calc.area;
-                        } else if (feature.geometry.type === 'LineString' || feature.geometry.type === "MultiLineString")  {
-                          feature.properties['area'] = calc.perimeter;
-                        }
-                      }
-                    })
-                    this.$store.state.clickCircleGeojsonText = JSON.stringify(drawGeojson)
-                    const bbox = turf.bbox(kmlGeojson);
-                    map.fitBounds(bbox, {
-                      padding: 40,
-                      duration: 1000,
-                      linear: false
-                    });
+                    addDraw(kmlGeojson,true)
+                    // kmlGeojson.features.forEach(feature => {
+                    //   const id = String(Math.floor(10000 + Math.random() * 90000));
+                    //   feature.properties['id'] = id
+                    //   feature.properties['label'] = ''
+                    //   feature.properties['color'] = 'rgba(0,0,255,0.6)'
+                    //   feature.properties['line-width'] = 5
+                    //   feature.properties['arrow-type'] = 'none'
+                    // })
+                    // const drawGeojson = map.getSource(clickCircleSource.iD)._data
+                    // drawGeojson.features.push(...kmlGeojson.features);
+                    // map.getSource(clickCircleSource.iD).setData(drawGeojson);
+                    // drawGeojson.features.forEach(feature => {
+                    //   if (feature.geometry.type !== 'Point') {
+                    //     const calc = calculatePolygonMetrics(feature);
+                    //     if (feature.geometry.type === 'Polygon' || feature.geometry.type === "MultiPolygon") {
+                    //       feature.properties['area'] = calc.area;
+                    //     } else if (feature.geometry.type === 'LineString' || feature.geometry.type === "MultiLineString")  {
+                    //       feature.properties['area'] = calc.perimeter;
+                    //     }
+                    //   }
+                    // })
+                    // this.$store.state.clickCircleGeojsonText = JSON.stringify(drawGeojson)
+                    // const bbox = turf.bbox(kmlGeojson);
+                    // map.fitBounds(bbox, {
+                    //   padding: 40,
+                    //   duration: 1000,
+                    //   linear: false
+                    // });
                   }
                   reader.readAsText(file);
                   break

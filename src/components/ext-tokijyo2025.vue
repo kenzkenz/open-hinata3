@@ -142,26 +142,9 @@
       <v-btn style="height: 40px; line-height: 40px; margin-left: 0px;margin-top: 10px;" class="tiny-btn" @click="selectAll">
         全選択
       </v-btn>
-<!--      <div class="swich">-->
-<!--        <v-switch-->
-<!--            v-model="s_isRenzoku"-->
-<!--            label="連続選択"-->
-<!--            color="primary"-->
-<!--            style="height: 20px; margin-top: -30px;padding-bottom: 30px"-->
-<!--        />-->
-<!--&lt;!&ndash;      <v-tooltip top>&ndash;&gt;-->
-<!--&lt;!&ndash;        <template v-slot:activator="{ props }">&ndash;&gt;-->
-<!--&lt;!&ndash;          <v-switch&ndash;&gt;-->
-<!--&lt;!&ndash;              v-model="s_isRenzoku"&ndash;&gt;-->
-<!--&lt;!&ndash;              label="連続選択"&ndash;&gt;-->
-<!--&lt;!&ndash;              color="primary"&ndash;&gt;-->
-<!--&lt;!&ndash;              style="height: 20px; margin-top: -30px;padding-bottom: 30px"&ndash;&gt;-->
-<!--&lt;!&ndash;              v-bind="props"&ndash;&gt;-->
-<!--&lt;!&ndash;          />&ndash;&gt;-->
-<!--&lt;!&ndash;        </template>&ndash;&gt;-->
-<!--&lt;!&ndash;        <span>オフにするとポップアップします。</span>&ndash;&gt;-->
-<!--&lt;!&ndash;      </v-tooltip>&ndash;&gt;-->
-<!--      </div>-->
+      <v-btn style="height: 40px; line-height: 40px; margin-left: 0px;margin-top: 10px;" class="tiny-btn" @click="toDraw">
+        ドローへ
+      </v-btn>
     </div>
     <div class="color-container">
       <div class="box box1" @click="changeColor('red',true)"></div>
@@ -229,10 +212,11 @@ import {
   initializePlaneRectangularCRS,
   saveCsv,
   simaToGeoJSON,
-  resetFeatureColors, downloadKML, getLayersById, selectAll
+  resetFeatureColors, downloadKML, getLayersById, selectAll, saveGeojsonToDraw
 } from "@/js/downLoad";
 import {history} from "@/App";
 import {homusyo2025LayerDaihyou, homusyo2025LayerLine} from "@/js/layers";
+import store from "@/store";
 // 色名から RGB へのマッピング（指定された色のみ）
 const colorMap = {
   red: [255, 0, 0],
@@ -375,6 +359,23 @@ export default {
     },
   },
   methods: {
+    toDraw () {
+      alert('登記所地図を「不可視」にします。\n右のペンアイコンをクリックしてドローを開始してください。')
+      this.saveGeojsonToDraw0()
+      const result = this.$store.state.selectedLayers['map01'].find(v => {
+        return v.id === 'oh-homusyo-2025-layer';
+      });
+      const map = this.$store.state.map01
+      result.visibility = false
+      // なぜか透過度をいじると安定する。
+      result.opacity = 0
+      const zoom = map.getZoom()
+      map.setZoom(12)
+      setTimeout(() => {
+        result.opacity = 1
+        map.setZoom(zoom)
+      },500)
+    },
     selectAll() {
       const map = this.$store.state[this.mapName]
       selectAll(map)
@@ -569,6 +570,10 @@ export default {
     saveSima () {
       const map = this.$store.state[this.mapName]
       saveCima(map,'oh-homusyo-2025-polygon','homusyo-2025-source',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'],true)
+    },
+    saveGeojsonToDraw0 () {
+      const map = this.$store.state[this.mapName]
+      saveGeojsonToDraw(map,'oh-homusyo-2025-polygon','homusyo-2025-source',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'])
     },
     saveGeojson () {
       const map = this.$store.state[this.mapName]

@@ -109,6 +109,7 @@ import {
 } from "@/js/layers";
 import JSZip from "jszip";
 import store from "@/store";
+import {mapState} from "vuex";
 
 let infoCount = 0
 
@@ -135,6 +136,9 @@ export default {
     // menuContentSize: {'height': 'auto','margin': '10px', 'user-select': 'text','overflow-y': 'auto'},
   }),
   computed: {
+    ...mapState([
+
+    ]),
     filteredSelectedLayers() {
       return this.s_selectedLayers.map01.map(layer => ({
         id: layer.id, // 監視対象のプロパティ
