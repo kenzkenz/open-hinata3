@@ -7640,6 +7640,8 @@ export function enableDragHandles(map) {
     let originalHandles = null;       // drag-handles-source のコピー
     let originalEndPoints = null;     // end-point-source のコピー
 
+    let geojson = null
+
     function getTouchOrMouseLngLat(e) {
         if (e.lngLat) return e.lngLat;
         if (e.touches && e.touches.length > 0) {
@@ -7767,12 +7769,9 @@ export function enableDragHandles(map) {
         }
 
         // 更新反映
-        map.getSource('click-circle-source').setData({ type: 'FeatureCollection', features: movedFeatures });
+        geojson = { type: 'FeatureCollection', features: movedFeatures }
+        map.getSource('click-circle-source').setData(geojson);
         map.getSource('drag-handles-source').setData({ type: 'FeatureCollection', features: movedHandles });
-
-        // 頂点・中点を再生成
-        getAllVertexPoints(map, { type: 'FeatureCollection', features: movedFeatures });
-        setAllMidpoints(map, { type: 'FeatureCollection', features: movedFeatures });
 
         e.preventDefault?.();
     }
@@ -7781,7 +7780,9 @@ export function enableDragHandles(map) {
         isDragging = false;
         dragOrigin = null;
         dragTargetId = null;
-
+        // 頂点・中点を再生成
+        getAllVertexPoints(map, geojson);
+        setAllMidpoints(map, geojson);
         if (panWasInitiallyEnabled) {
             map.dragPan.enable();
         }
