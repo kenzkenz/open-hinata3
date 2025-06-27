@@ -702,7 +702,13 @@ export const clickCirclePolygonLineLayer = {
             'red',
             'black'
         ],
-        'line-width': ['get', 'line-width'],
+        // 'line-width': ['get', 'line-width'],
+        'line-width': [
+            'case',
+            ['==', ['get', 'lassoSelected'], true],
+            10,
+            ['get', 'line-width']
+        ],
     }
 }
 export const clickCircPolygonSymbolLayer = {
