@@ -695,7 +695,13 @@ export const clickCirclePolygonLineLayer = {
     source: 'click-circle-source',
     filter: ['==', '$type', 'Polygon'],
     paint: {
-        'line-color': 'black',
+        // 'line-color': 'black',
+        'line-color': [
+            'case',
+            ['==', ['get', 'lassoSelected'], true],
+            'red',
+            'black'
+        ],
         'line-width': ['get', 'line-width'],
     }
 }

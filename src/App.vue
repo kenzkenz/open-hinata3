@@ -1769,6 +1769,8 @@ export default {
         { key: 'undo', text: '元に戻す', icon: 'mdi-undo', label: '元戻', click: this.undo },
         { key: 'redo', text: 'やり直す', icon: 'mdi-redo', label: 'やり直', click: this.redo },
         // { key: 'fix', text: '画面固定', label: '固定', color: this.s_isDrawFix ? 'green' : 'blue', click: this.toggleDrawFix },
+        { key: 'lasso', text: '投げ縄', label: '投げ縄', color: this.s_isDrawLasso ? 'green' : 'blue', click: this.toggleDrawLasso },
+
         { key: 'config', text: '各種設定', label: '設定', color: 'blue', click: this.printDialogOpen },
         { key: 'dl', text: '各種ダウンロード', label: 'DL', style: 'background-color: navy!important;', click: this.dialogForDlOpen },
         { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
@@ -1860,6 +1862,14 @@ export default {
       },
       set(value) {
         return this.$store.state.editEnabled = value
+      }
+    },
+    s_isDrawLasso: {
+      get() {
+        return this.$store.state.isDrawLasso
+      },
+      set(value) {
+        return this.$store.state.isDrawLasso = value
       }
     },
     s_isDrawFix: {
@@ -3783,27 +3793,28 @@ export default {
         this.s_isDrawLine = false
         this.s_isDrawPolygon = false
         this.s_isDrawFree = false
+        this.s_isDrawLasso = false
         this.snackbarText = '編集時は移動、ポップアップができません。'
         this.snackbar = true
       }
       store.state.isCursorOnPanel = false
       this.finishLine()
     },
-    // toggleLDrawFix () {
-    //   this.s_isDrawFree = !this.s_isDrawFree
-    //   if (this.s_isDrawFree) {
-    //     this.s_isDrawPoint = false
-    //     this.s_isDrawCircle = false
-    //     this.s_isDrawLine = false
-    //     this.s_isDrawPolygon = false
-    //     this.s_editEnabled = false
-    //     this.snackbarText = 'ドラッグで線を書きます！クリックじゃありません！'
-    //     this.snackbar = true
-    //   }
-    //   document.querySelector('#draw-indicato-text').innerHTML = 'FREE'
-    //   store.state.isCursorOnPanel = false
-    //   this.finishLine()
-    // },
+    toggleDrawLasso () {
+      this.s_isDrawLasso = !this.s_isDrawLasso
+      if (this.s_isDrawLasso) {
+        this.s_isDrawPoint = false
+        this.s_isDrawCircle = false
+        this.s_isDrawLine = false
+        this.s_isDrawPolygon = false
+        this.s_editEnabled = false
+        this.snackbarText = 'ドラッグで投げ縄を書きます！クリックじゃありません！'
+        this.snackbar = true
+      }
+      document.querySelector('#draw-indicato-text').innerHTML = 'LASSO'
+      store.state.isCursorOnPanel = false
+      this.finishLine()
+    },
     toggleLDrawFree () {
       this.s_isDrawFree = !this.s_isDrawFree
       if (this.s_isDrawFree) {
@@ -3812,6 +3823,7 @@ export default {
         this.s_isDrawLine = false
         this.s_isDrawPolygon = false
         this.s_editEnabled = false
+        this.s_isDrawLasso = false
         this.snackbarText = 'ドラッグで線を書きます！クリックじゃありません！'
         this.snackbar = true
       }
@@ -3827,6 +3839,7 @@ export default {
         this.s_isDrawLine = false
         this.s_isDrawFree = false
         this.s_editEnabled = false
+        this.s_isDrawLasso = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'POLYGON'
       store.state.isCursorOnPanel = false
@@ -3840,6 +3853,7 @@ export default {
         this.s_isDrawPolygon = false
         this.s_isDrawFree = false
         this.s_editEnabled = false
+        this.s_isDrawLasso = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'LINE'
       store.state.isCursorOnPanel = false
@@ -3853,6 +3867,7 @@ export default {
         this.s_isDrawPolygon = false
         this.s_isDrawFree = false
         this.s_editEnabled = false
+        this.s_isDrawLasso = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'CIRCLE'
       store.state.isCursorOnPanel = false
@@ -3866,6 +3881,7 @@ export default {
         this.s_isDrawPolygon = false
         this.s_isDrawFree = false
         this.s_editEnabled = false
+        this.s_isDrawLasso = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'TXT'
       store.state.isCursorOnPanel = false
@@ -3887,16 +3903,6 @@ export default {
 
       this.close()
     },
-    // save () {
-    //   this.saveSelectedPointFeature()
-    //
-    //   // Firestore に保存するための処理を追加
-    //   const groupId = this.$store.state.currentGroupName
-    //   const geojson = this.$store.state.groupGeojson
-    //   this.$store.dispatch('saveGroupGeojsonToFirestore', { groupId, geojson })
-    //
-    //   this.close()
-    // },
     ...mapMutations(['setChibanzuDrawer', 'setRightDrawer', 'setPointInfoDrawer', 'saveSelectedPointFeature']),
     ...mapActions(['saveSelectedPointFeatureToFirestore']),
     close () {
@@ -5865,6 +5871,98 @@ export default {
           this.tempFreehandCoords = [];
         }
       });
+
+      // 投げ縄-----------------------------------------------------------------------------------------------------
+      // 1. グローバル変数
+      let isLassoDrawing = false;
+      let lassoCoords = [];
+      const lassoSourceId = 'lasso-source';
+      const lassoLayerId = 'lasso-layer';
+
+      // 1. pointerdown => 投げ縄開始
+      map.getCanvas().addEventListener('pointerdown', (e) => {
+        // 0. ソース & レイヤーの追加（初期化）
+        if (!map.getSource(lassoSourceId)) {
+          map.addSource(lassoSourceId, {
+            type: 'geojson',
+            data: {
+              type: 'FeatureCollection',
+              features: []
+            }
+          });
+          map.addLayer({
+            id: lassoLayerId,
+            type: 'line',
+            source: lassoSourceId,
+            paint: {
+              'line-color': 'blue',
+              'line-width': 2
+            }
+          });
+        }
+        if (!vm.s_isDrawLasso) return;
+        map.dragPan.disable(); // パン無効化
+        isLassoDrawing = true;
+        lassoCoords = [];
+        map.getCanvas().style.cursor = 'crosshair';
+      });
+
+      // 2. pointermove => ラインを更新
+      map.getCanvas().addEventListener('pointermove', (e) => {
+        if (!isLassoDrawing) return;
+        const point = map.unproject([e.clientX, e.clientY]);
+        lassoCoords.push([point.lng, point.lat]);
+        const lineGeojson = {
+          type: 'FeatureCollection',
+          features: [{
+            type: 'Feature',
+            geometry: { type: 'LineString', coordinates: lassoCoords }
+          }]
+        };
+        map.getSource(lassoSourceId).setData(lineGeojson);
+      });
+
+      // 3. pointerup => 投げ縄完了 & 選択処理
+      map.getCanvas().addEventListener('pointerup', (e) => {
+        if (!isLassoDrawing) return;
+        isLassoDrawing = false;
+        map.getCanvas().style.cursor = '';
+
+        if (lassoCoords.length >= 3) {
+          // ポリゴンを閉じる
+          lassoCoords.push(lassoCoords[0]);
+          const polygon = turf.polygon([lassoCoords]);
+
+          // 対象ソースの全フィーチャ取得
+          const source = map.getSource(clickCircleSource.iD);
+          const geojson = source._data; // or source.getData()
+          console.log(geojson)
+          console.log(polygon)
+          geojson.features.forEach(feat => {
+            if (turf.booleanIntersects(feat, polygon)) {
+              feat.properties.lassoSelected = true;
+            }
+          });
+          console.log(geojson)
+          // 更新
+          source.setData(geojson);
+        }
+
+        // 投げ縄ラインをクリア
+        map.getSource(lassoSourceId).setData({ type: 'FeatureCollection', features: [] });
+        map.dragPan.enable();
+      });
+
+
+
+
+
+
+
+
+
+
+
       // ガイドライン-----------------------------------------------------------------------------------------------------
       map.on('click', (e) => {
         if (!this.s_isDrawLine && !this.s_isDrawPolygon) return;
@@ -6084,98 +6182,6 @@ export default {
           map.getCanvas().style.cursor = '';
         });
       });
-
-
-
-
-      // // 頂点レイヤーを動かすと同時にメインレイヤーを更新する。----------------------------------------------
-      // let isDragging = false;
-      // let draggedFeatureId = null;
-      // let vertexIndex = null;
-      // let dragOrigin = null;
-      // map.on('mousedown', 'vertex-layer', function(e) {
-      //   if (!store.state.editEnabled) return;
-      //   if (!e.features?.length) return;
-      //   try {
-      //     console.log(e.features[0].properties)
-      //     const parentProps = JSON.parse(e.features[0].properties.parentProps);
-      //     if (!parentProps?.id) {
-      //       console.warn('Missing feature ID in parentProps');
-      //       return;
-      //     }
-      //     map.dragPan.disable();
-      //     isDragging = true;
-      //     draggedFeatureId = parentProps.id;
-      //     vertexIndex = e.features[0].properties.vertexIndex
-      //     console.log(draggedFeatureId,vertexIndex)
-      //     dragOrigin = e.lngLat;
-      //     map.getCanvas().style.cursor = 'grabbing';
-      //   } catch (error) {
-      //     console.error('Invalid parentProps JSON:', error);
-      //     return;
-      //   }
-      // });
-      //
-      // map.on('mousemove', debounce(function(e) {
-      //   if (!isDragging || draggedFeatureId === null) return;
-      //   const vertexSourceGeojson = map.getSource('vertex-source')._data;
-      //   const mainSourceGeojson = map.getSource('click-circle-source')._data;
-      //   // ドラッグ中のフィーチャーを検索
-      //   let feature = vertexSourceGeojson.features.find(f => {
-      //     return f.properties.parentProps.id === draggedFeatureId && f.properties.vertexIndex === vertexIndex;
-      //   });
-      //   // 新しい座標を適用
-      //   feature.geometry.coordinates = [e.lngLat.lng, e.lngLat.lat];
-      //   // ソースデータを更新
-      //   try {
-      //     map.getSource('vertex-source').setData(vertexSourceGeojson);
-      //     const vertexSource = map.getSource('vertex-source');
-      //     const features = vertexSource._data.features;
-      //     features.forEach(f => {
-      //       const { featureIndex, vertexIndex, polygonIndex } = f.properties;
-      //       if (mainSourceGeojson.features[featureIndex]?.geometry.type === 'LineString') {
-      //         mainSourceGeojson.features[featureIndex].geometry.coordinates[vertexIndex] = f.geometry.coordinates;
-      //       // } else if (mainSourceGeojson.features[featureIndex]?.geometry.type === 'Polygon') {
-      //       //   mainSourceGeojson.features[featureIndex].geometry.coordinates[0][vertexIndex] = f.geometry.coordinates;
-      //       } else if (mainSourceGeojson.features[featureIndex]?.geometry.type === 'Polygon') {
-      //         let coords = mainSourceGeojson.features[featureIndex].geometry.coordinates[0];
-      //         coords[vertexIndex] = f.geometry.coordinates;
-      //         if (vertexIndex === 0) {
-      //           coords[coords.length - 1] = f.geometry.coordinates;
-      //         }
-      //       } else if (mainSourceGeojson.features[featureIndex]?.geometry.type === 'MultiPolygon') {
-      //         mainSourceGeojson.features[featureIndex].geometry.coordinates[polygonIndex][0][vertexIndex] = f.geometry.coordinates;
-      //       }
-      //     });
-      //     autoCloseAllPolygons(mainSourceGeojson)
-      //
-      //     const tgtFeature = mainSourceGeojson.features.find(f => f.properties.id === draggedFeatureId)
-      //
-      //     console.log(mainSourceGeojson)
-      //     console.log(draggedFeatureId)
-      //
-      //     const calc = calculatePolygonMetrics(tgtFeature)
-      //     tgtFeature.properties['area'] = calc.area
-      //
-      //     map.getSource('click-circle-source').setData(mainSourceGeojson);
-      //     setAllMidpoints(map, mainSourceGeojson);
-      //     store.state.clickCircleGeojsonText = JSON.stringify(mainSourceGeojson);
-      //     generateSegmentLabelGeoJSON(mainSourceGeojson)
-      //     generateStartEndPointsFromGeoJSON(mainSourceGeojson)
-      //   } catch (error) {
-      //     console.error('Failed to update source data:', error);
-      //   }
-      // }, 8)); // デバウンスの数値をあげるとかくかくになる。
-      //
-      // map.on('mouseup', function() {
-      //   if (!isDragging) return;
-      //   isDragging = false;
-      //   draggedFeatureId = null;
-      //   dragOrigin = null;
-      //   // alert('pan')
-      //   map.dragPan.enable();
-      //   map.getCanvas().style.cursor = '';
-      // });
 
       // 頂点をダブルクリックで削除----------------------------------------------------------------------------------------------
       map.on('dblclick', 'vertex-layer', function(e) {
