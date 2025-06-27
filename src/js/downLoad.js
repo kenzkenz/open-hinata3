@@ -7711,10 +7711,12 @@ export function rotateLassoSelected(angleDeg) {
     });
 
     // 変更をソースに反映
-    src.setData({
+    const geojson = {
         type: 'FeatureCollection',
         features: features
-    });
+    }
+    src.setData(geojson);
+    store.state.clickCircleGeojsonText = JSON.stringify(geojson)
 }
 
 // ドラッグハンドルのアップロード---------------------------------------------------------------------------

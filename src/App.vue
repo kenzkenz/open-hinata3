@@ -8,6 +8,38 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
+      <div v-if="isLassoSelected" class="features-rotate-div">
+<!--        <v-btn class="tiny-icon-btn" icon @click="anglePlus">+</v-btn>-->
+        <v-btn
+            class="tiny-icon-btn"
+            icon
+            @mousedown="startAnglePlus"
+            @mouseup="stopAnglePlus"
+            @mouseleave="stopAnglePlus"
+            @touchstart.prevent="startAnglePlus"
+            @touchend="stopAnglePlus"
+        >+</v-btn>
+        回転
+<!--        <v-btn class="tiny-icon-btn" icon @click="angleMinus">-</v-btn>-->
+        <v-btn
+            class="tiny-icon-btn"
+            icon
+            @mousedown="startAngleMinus"
+            @mouseup="stopAngleMinus"
+            @mouseleave="stopAngleMinus"
+            @touchstart.prevent="startAngleMinus"
+            @touchend="stopAngleMinus"
+        >
+          -
+        </v-btn>
+<!--        <input-->
+<!--            @input="rotate($event.target.value)"-->
+<!--            type="number"-->
+<!--            class="oh-cool-input-number"-->
+<!--            min="-180" max="180" step="1"-->
+<!--        />-->
+      </div>
+
       <div id="print-div" class="fan-menu-rap">
           <v-btn class="fan-menu-print" :size="isSmall ? 'small' : 'default'" icon @click="handlePrint(true)" >戻る</v-btn>
           <v-btn class="print-print" :size="isSmall ? 'small' : 'default'" icon style="font-size: 16px;" @click="print">印刷</v-btn>
@@ -1688,6 +1720,12 @@ export default {
     isRightDiv2: true,
     dialogForDl: false,
     dialogForChibanzyOrDraw: false,
+    isLassoSelected: false,
+    prevAngle:0,
+    plusInterval: null,
+    minusInterval: null,
+    plusStep: 1,
+    minusStep: 1,
   }),
   computed: {
     ...mapState([
@@ -1767,11 +1805,10 @@ export default {
         { key: 'line', text: '線', label: '線', color: this.s_isDrawLine ? 'green' : 'blue', click: this.toggleLDrawLine },
         { key: 'polygon', text: '多角形', label: '多角', color: this.s_isDrawPolygon ? 'green' : 'blue', click: this.toggleLDrawPolygon },
         { key: 'free', text: '自由に描く', label: '自由', color: this.s_isDrawFree ? 'green' : 'blue', click: this.toggleLDrawFree},
-        { key: 'finish', text: 'スマホ、タブの時に使用', label: '確定', click: this.finishDrawing, style: 'background-color: orange!important;' },
+        { key: 'finish', text: '', label: '確定', click: this.finishDrawing, style: 'background-color: orange!important;' },
         { key: 'edit', text: '編集と移動', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
         { key: 'lasso', text: '投げ縄', label: '投げ縄', color: this.s_isDrawLasso ? 'green' : 'blue', click: this.toggleDrawLasso,style: 'font-size:12px;' },
-        { key: 'rotate', text: '回転', label: '回転',  click: this.drawRotate },
-
+        // { key: 'rotate', text: '回転', label: '回転',  click: this.drawRotate },
         { key: 'undo', text: '元に戻す', icon: 'mdi-undo', label: '元戻', click: this.undo },
         { key: 'redo', text: 'やり直す', icon: 'mdi-redo', label: 'やり直', click: this.redo },
         // { key: 'fix', text: '画面固定', label: '固定', color: this.s_isDrawFix ? 'green' : 'blue', click: this.toggleDrawFix },
@@ -2301,6 +2338,42 @@ export default {
     },
   },
   methods: {
+    anglePlus () {
+      rotateLassoSelected(1)
+    },
+    angleMinus () {
+      rotateLassoSelected(-1)
+    },
+    startAnglePlus() {
+      // 即時に1回呼び出し
+      this.anglePlus()
+      this.anglePlusInterval = setInterval(this.anglePlus, 100)
+    },
+    // 押し終わり／カーソル外れ／タッチ終了
+    stopAnglePlus() {
+      if (this.anglePlusInterval) {
+        clearInterval(this.anglePlusInterval)
+        this.anglePlusInterval = null
+      }
+    },
+    startAngleMinus() {
+      this.angleMinus()
+      this.angleMinusInterval = setInterval(this.angleMinus, 100)
+    },
+    stopAngleMinus() {
+      if (this.angleMinusInterval) {
+        clearInterval(this.angleMinusInterval)
+        this.angleMinusInterval = null
+      }
+    },
+    rotate(angle) {
+      if (Number(angle) > this.prevAngle) {
+        rotateLassoSelected(1)
+      } else {
+        rotateLassoSelected(-1)
+      }
+      this.prevAngle = Number(angle)
+    },
     // Backspace/Delete 押下で頂点削除
     onKeydown(e) {
       if (!this.s_isDrawLine && !this.s_isDrawPolygon) return;
@@ -3723,9 +3796,10 @@ export default {
       if (this.s_editEnabled) {
         this.toggleEditEnabled()
       }
-
-      this.saveHistory()
       const map01 = this.$store.state.map01
+      this.$store.state.clickCircleGeojsonText = JSON.stringify(map01.getSource('click-circle-source')._data)
+      this.saveHistory()
+
       const id = String(Math.floor(10000 + Math.random() * 90000));
       this.$store.state.id = id;
       let coords,properties
@@ -3908,7 +3982,13 @@ export default {
       this.finishLine()
     },
     drawRotate () {
-      rotateLassoSelected(90)
+      // rotateLassoSelected(90)
+      const featuresRotateDiv = document.querySelector('.features-rotate-div')
+      if (featuresRotateDiv.style.display === 'none' || featuresRotateDiv.style.display === '') {
+        featuresRotateDiv.style.display = 'block'
+      } else {
+        featuresRotateDiv.style.display = 'none'
+      }
     },
     save () {
       this.saveSelectedPointFeature()
@@ -5959,12 +6039,19 @@ export default {
           // 対象ソースの全フィーチャ取得
           const source = map.getSource(clickCircleSource.iD);
           const geojson = source._data; // or source.getData()
+          let isLassoSelected = false
           geojson.features.forEach(feature => {
             feature.properties.lassoSelected = false;
             if (turf.booleanIntersects(feature, polygon)) {
               feature.properties.lassoSelected = true;
+              isLassoSelected = true
             }
           });
+          if (isLassoSelected) {
+            this.isLassoSelected = true
+          } else {
+            this.isLassoSelected = false
+          }
           console.log(geojson)
           // 更新
           source.setData(geojson);
@@ -9257,6 +9344,10 @@ select {
 .v-main {
   background-color: black;
 }
+.sub-btn {
+  width: 44px !important;
+  height: 44px !important;
+}
 @media (max-width: 450px) {
   .maplibregl-popup {
     position: fixed !important;
@@ -9283,10 +9374,33 @@ select {
   input {
     font-size: 16px !important;
   }
+  .sub-btn {
+    width: 38px !important;
+    height: 38px !important;
+  }
 }
-.sub-btn {
-  width: 44px !important;
-  height: 44px !important;
+
+
+.features-rotate-div {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  text-align: center;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 50px;
+  padding: 10px;
+  background-color: #ffffff;
+  /* 浮いた感じのシャドウ */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  z-index: 10;
+}
+.tiny-icon-btn {
+  width: 30px!important;
+  height:30px!important;
+  padding: 0px!important;
+  margin:  0px!important;
 }
 @media (max-width: 720px) {
   /*.fan-menu-rap {*/

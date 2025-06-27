@@ -706,7 +706,7 @@ export const clickCirclePolygonLineLayer = {
         'line-width': [
             'case',
             ['==', ['get', 'lassoSelected'], true],
-            10,
+            4,
             ['get', 'line-width']
         ],
     }
