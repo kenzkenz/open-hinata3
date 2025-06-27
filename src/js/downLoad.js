@@ -7629,6 +7629,37 @@ export function extractSimaById(simaText, targetIds) {
 
     return output.join('\n');
 }
+export function updateDragHandles(editEnabled) {
+    const map = store.state.map01;
+    const originalGeojson = map.getSource('click-circle-source')._data;
+    const source = map.getSource('drag-handles-source');
+    if (!source) {
+        console.warn('drag-handles-source が存在しません');
+        return;
+    }
+    if (!editEnabled) {
+        // 編集モードOFF → 空にして消す
+        source.setData({ type: 'FeatureCollection', features: [] });
+        return;
+    }
+    // 編集モードON → isCircleCenter が true の地物を除外して中心点を生成
+    const centerFeatures = originalGeojson.features
+        .filter(f => !f.properties?.isCircleCenter && f.properties.id !== 'config') // ← この行で除外
+        .map(f => {
+            const center = turf.center(f); // 中心点（Point）
+            return {
+                type: 'Feature',
+                geometry: center.geometry,
+                properties: {
+                    targetId: f.properties.id
+                }
+            };
+        });
+    source.setData({
+        type: 'FeatureCollection',
+        features: centerFeatures
+    });
+}
 // 移動
 export function enableDragHandles(map) {
     let isDragging = false;
@@ -7789,6 +7820,7 @@ export function enableDragHandles(map) {
         dragTargetId = null;
         // 頂点・中点を再生成
         console.log(geojson)
+        store.state.clickCircleGeojsonText = JSON.stringify(geojson)
         getAllVertexPoints(map, geojson);
         setAllMidpoints(map, geojson);
         if (panWasInitiallyEnabled) {

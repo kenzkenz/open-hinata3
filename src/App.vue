@@ -1153,7 +1153,7 @@ import {
   simaLoadForUser, splitLineStringIntoPoints,
   tileGenerateForUser,
   tileGenerateForUserPdf,
-  transformGeoJSONToEPSG4326,
+  transformGeoJSONToEPSG4326, updateDragHandles,
   userKmzSet,
   userSimaSet,
   zahyokei,
@@ -8239,38 +8239,7 @@ export default {
       }
       // ----------------------------------------------------------
       const vm = this
-      function updateDragHandles() {
-        const map = vm.$store.state.map01;
-        const originalGeojson = map.getSource('click-circle-source')._data;
-        const source = map.getSource('drag-handles-source');
-        if (!source) {
-          console.warn('drag-handles-source が存在しません');
-          return;
-        }
-        if (!vm.s_editEnabled) {
-          // 編集モードOFF → 空にして消す
-          source.setData({ type: 'FeatureCollection', features: [] });
-          return;
-        }
-        // 編集モードON → isCircleCenter が true の地物を除外して中心点を生成
-        const centerFeatures = originalGeojson.features
-            .filter(f => !f.properties?.isCircleCenter && f.properties.id !== 'config') // ← この行で除外
-            .map(f => {
-              const center = turf.center(f); // 中心点（Point）
-              return {
-                type: 'Feature',
-                geometry: center.geometry,
-                properties: {
-                  targetId: f.properties.id
-                }
-              };
-            });
-        source.setData({
-          type: 'FeatureCollection',
-          features: centerFeatures
-        });
-      }
-      updateDragHandles()
+      updateDragHandles(vm.s_editEnabled)
     },
     // 配列で監視（いずれかが変化したら発動）
     s_isDrawAll() {
