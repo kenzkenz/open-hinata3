@@ -7868,6 +7868,11 @@ export function enableDragHandles(map) {
 
                 // 中心座標プロパティがある場合は重心を再計算して更新
                 if (typeof moved.properties.canterLng === 'number' && typeof moved.properties.canterLat === 'number') {
+                    try {
+
+                    }catch (e) {
+                        console.log(e)
+                    }
                     // 全座標を 1 次元配列にフラット化
                     let allCoords = [];
                     if (geom.type === 'LineString' || geom.type === 'MultiLineString') {

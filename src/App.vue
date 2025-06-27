@@ -1805,9 +1805,9 @@ export default {
         { key: 'line', text: '線', label: '線', color: this.s_isDrawLine ? 'green' : 'blue', click: this.toggleLDrawLine },
         { key: 'polygon', text: '多角形', label: '多角', color: this.s_isDrawPolygon ? 'green' : 'blue', click: this.toggleLDrawPolygon },
         { key: 'free', text: '自由に描く', label: '自由', color: this.s_isDrawFree ? 'green' : 'blue', click: this.toggleLDrawFree},
-        { key: 'finish', text: '', label: '確定', click: this.finishDrawing, style: 'background-color: orange!important;' },
-        { key: 'edit', text: '編集と移動', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
         { key: 'lasso', text: '投げ縄', label: '投げ縄', color: this.s_isDrawLasso ? 'green' : 'blue', click: this.toggleDrawLasso,style: 'font-size:12px;' },
+        { key: 'finish', text: '編集が終わったクリック！', label: '確定', click: this.finishDrawing, style: 'background-color: orange!important;' },
+        { key: 'edit', text: '編集と移動', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
         // { key: 'rotate', text: '回転', label: '回転',  click: this.drawRotate },
         { key: 'undo', text: '元に戻す', icon: 'mdi-undo', label: '元戻', click: this.undo },
         { key: 'redo', text: 'やり直す', icon: 'mdi-redo', label: 'やり直', click: this.redo },
@@ -2338,33 +2338,41 @@ export default {
     },
   },
   methods: {
-    anglePlus () {
-      rotateLassoSelected(1)
+    anglePlus(delta = 1) {
+      rotateLassoSelected(delta)
     },
-    angleMinus () {
-      rotateLassoSelected(-1)
+    angleMinus(delta = 1) {
+      rotateLassoSelected(-delta)
     },
     startAnglePlus() {
-      // 即時に1回呼び出し
-      this.anglePlus()
-      this.anglePlusInterval = setInterval(this.anglePlus, 100)
+      this.plusStep = 1
+      this.anglePlus(this.plusStep)
+      this.plusInterval = setInterval(() => {
+        this.plusStep++
+        this.anglePlus(this.plusStep)
+      }, 100)
     },
-    // 押し終わり／カーソル外れ／タッチ終了
     stopAnglePlus() {
-      if (this.anglePlusInterval) {
-        clearInterval(this.anglePlusInterval)
-        this.anglePlusInterval = null
+      if (this.plusInterval) {
+        clearInterval(this.plusInterval)
+        this.plusInterval = null
       }
+      this.plusStep = 1
     },
     startAngleMinus() {
-      this.angleMinus()
-      this.angleMinusInterval = setInterval(this.angleMinus, 100)
+      this.minusStep = 1
+      this.angleMinus(this.minusStep)
+      this.minusInterval = setInterval(() => {
+        this.minusStep++
+        this.angleMinus(this.minusStep)
+      }, 100)
     },
     stopAngleMinus() {
-      if (this.angleMinusInterval) {
-        clearInterval(this.angleMinusInterval)
-        this.angleMinusInterval = null
+      if (this.minusInterval) {
+        clearInterval(this.minusInterval)
+        this.minusInterval = null
       }
+      this.minusStep = 1
     },
     rotate(angle) {
       if (Number(angle) > this.prevAngle) {
@@ -3888,7 +3896,7 @@ export default {
         this.s_isDrawPolygon = false
         this.s_isDrawFree = false
         this.s_isDrawLasso = false
-        this.snackbarText = '編集時は移動、ポップアップができません。'
+        this.snackbarText = '編集時はポップアップができません。'
         this.snackbar = true
       }
       store.state.isCursorOnPanel = false
@@ -9387,7 +9395,7 @@ select {
   left: 50%;
   text-align: center;
   transform: translateX(-50%);
-  width: 200px;
+  width: 160px;
   height: 50px;
   padding: 10px;
   background-color: #ffffff;
