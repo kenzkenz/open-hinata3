@@ -7665,7 +7665,7 @@ export function enableDragHandles(map) {
         // 頂点、中点を一度クリア
         getAllVertexPoints(map);
         setAllMidpoints(map);
-        
+
         const handle = features[0];
         dragTargetId = handle.properties.targetId;
         dragOrigin = getTouchOrMouseLngLat(e);
@@ -7699,9 +7699,12 @@ export function enableDragHandles(map) {
         const dy = current.lat - dragOrigin.lat;
 
         // ① click-circle-source の該当 feature を移動
+        const lassoSelected = originalFeatures.features.find(f => f.properties.id === dragTargetId && f.properties.lassoSelected === true)
         const movedFeatures = originalFeatures.features.map(f => {
-            const idMatch = f.properties.id === dragTargetId || f.properties.pairId === dragTargetId;
-            
+            let idMatch = f.properties.id === dragTargetId || f.properties.pairId === dragTargetId;
+            if (lassoSelected) {
+                idMatch = f.properties.lassoSelected === true
+            }
             if (!idMatch) return f;
 
             const moved = JSON.parse(JSON.stringify(f));
@@ -7785,6 +7788,7 @@ export function enableDragHandles(map) {
         dragOrigin = null;
         dragTargetId = null;
         // 頂点・中点を再生成
+        console.log(geojson)
         getAllVertexPoints(map, geojson);
         setAllMidpoints(map, geojson);
         if (panWasInitiallyEnabled) {
