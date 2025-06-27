@@ -7804,7 +7804,15 @@ export function enableDragHandles(map) {
 
         // ② drag-handles-source の該当ポイントを移動
         const movedHandles = originalHandles.features.map(f => {
-            if (f.properties.targetId !== dragTargetId) return f;
+            // if (f.properties.targetId !== dragTargetId) return f;
+            if (!lassoSelected) {
+                if (f.properties.targetId !== dragTargetId) return f;
+            } else {
+                const idMatch =  originalFeatures.features.find(originalF =>  {
+                    return originalF.properties.lassoSelected === true && originalF.properties.id === f.properties.targetId
+                })
+                if (!idMatch) return f;
+            }
 
             const moved = JSON.parse(JSON.stringify(f));
             moved.geometry.coordinates[0] += dx;

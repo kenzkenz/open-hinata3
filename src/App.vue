@@ -1004,6 +1004,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   <div v-for="btn in buttons0" :key="btn.key" style="margin-bottom:10px;">
                     <MiniTooltip :text="btn.text" :offset-x="0" :offset-y="2">
                       <v-btn
+                          class="right-btn"
                           :icon="true"
                           :color="btn.color"
                           @click="btn.click"
@@ -3697,6 +3698,22 @@ export default {
         this.snackbarText = 'ドロー時は各種クリックが制限されます。'
         this.snackbar = true
       }
+      const centerBtn = document.querySelectorAll('.center-wrapper')[1]
+      const rightBtns = document.querySelectorAll('.right-btn')
+      if (window.innerWidth < 500) {
+        if (this.s_isDraw) {
+          centerBtn.style.opacity = '0'
+          rightBtns.forEach(btn => {
+            btn.style.display = 'none'
+          })
+        } else {
+          centerBtn.style.opacity = '1'
+          rightBtns.forEach(btn => {
+            btn.style.display = 'block'
+          })
+        }
+      }
+
       this.finishLine()
     },
     finishDrawing() {
@@ -9263,8 +9280,8 @@ select {
   }
 }
 .sub-btn {
-  width: 40px !important;
-  height: 40px !important;
+  width: 44px !important;
+  height: 44px !important;
 }
 @media (max-width: 720px) {
   /*.fan-menu-rap {*/
