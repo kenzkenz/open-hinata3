@@ -7695,6 +7695,7 @@ export function enableDragHandles(map) {
         // ① click-circle-source の該当 feature を移動
         const movedFeatures = originalFeatures.features.map(f => {
             const idMatch = f.properties.id === dragTargetId || f.properties.pairId === dragTargetId;
+            
             if (!idMatch) return f;
 
             const moved = JSON.parse(JSON.stringify(f));
