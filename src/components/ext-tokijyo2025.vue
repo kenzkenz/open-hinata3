@@ -361,6 +361,9 @@ export default {
   methods: {
     toDraw () {
       alert('登記所地図を「不可視」にします。\n右のペンアイコンをクリックしてドローを開始してください。')
+      this.$store.state.showPointInfoDrawer = false
+      this.$store.state.showRightDrawer = false
+      this.$store.state.showChibanzuDrawer = false
       this.saveGeojsonToDraw0()
       const result = this.$store.state.selectedLayers['map01'].find(v => {
         return v.id === 'oh-homusyo-2025-layer';

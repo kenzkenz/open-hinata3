@@ -3659,6 +3659,7 @@ export function popup(e,map,mapName,mapFlg) {
                 const textSize = props['text-size'] || 16
                 const lineWidth = props['line-width'] || 5
                 const arrowType = props['arrow-type'] || 'end'
+                const isRadius = props.isRadius
                 const isArea = props.isArea || false
                 const isKeiko = props.keiko || false
                 const isCalc = props.calc || false
@@ -3689,14 +3690,17 @@ export function popup(e,map,mapName,mapFlg) {
                     case 'Polygon':
                         if (radius) {
                             if (html.indexOf('click-circle-layer') === -1) {
+                                let checked = ''
+                                if (isRadius) checked = 'checked'
                                 html += '<div class="layer-label-div">サークル</div>'
                                 html +=
                                     '<div style="width: 240px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
                                     '<span style="font-size:20px;" class="circle-label">半径' + radius + 'm</span>' +
                                     '<span style="margin-left: 10px;font-size: 16px;"><input type="checkbox" id="' + props.id + '" class="circle200-check" value=""><label for="' + props.id + '"> 200m</span>' +
+                                    '<span style="margin-left: 10px;font-size: 16px;"><input ' + checked + ' type="checkbox" id="' + props.id + '-radius" class="circle-radius-check" value=""><label for="' + props.id + '-radius"> 半径表示</span>' +
                                     '<input id="' + props.id + '" style="width: 100%;" type="range" min="10" max="' + radius * 5 + '" step="10" value="' + radius + '" class="circle-range" lng="' + canterLng + '" lat="' + canterLat + '"/>' +
                                     '<input id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input circle-text" placeholder="ここに入力" value="' + props.label2 + '">' +
-                                    '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;" class="circle-delete pyramid-btn">削　除</button><br>' +
+                                    '<button id="' + props.id + '" style="margin-bottom: 10px;height: 3wq230px;font-size: medium;" class="circle-delete pyramid-btn">削　除</button><br>' +
                                     '<div style="display: flex;gap: 8px;">' +
                                     '<div class="circle-list">' +
                                     '<div id="' + props.id + '" data-color="red" class="circle-color circle red" tabindex="0"></div>' +

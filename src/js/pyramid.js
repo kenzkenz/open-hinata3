@@ -1096,6 +1096,23 @@ export default function pyramid () {
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('input', (e) => {
+            if (e.target.classList.contains("circle-radius-check")) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id").replace('-radius',''))
+                const pairId = String(e.target.getAttribute("id").replace('-radius','')) + '-point'
+                const chkElm = document.querySelector('.circle-radius-check')
+                const checked = chkElm.checked
+                const circleTextElm = document.querySelector('.circle-text')
+                const textValue = circleTextElm.value
+                console.log(id,checked,textValue)
+                // centerFeature.properties.label
+                store.state.clickCircleGeojsonText = geojsonUpdate(map01, null, clickCircleSource.iD, id, 'isRadius', checked)
+                store.state.clickCircleGeojsonText = geojsonUpdate(map01, null, clickCircleSource.iD, pairId, 'isRadius', checked)
+                console.log(store.state.clickCircleGeojsonText)
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('input', (e) => {
             if (e.target && (e.target.classList.contains("circle-range") || e.target.classList.contains("circle-text") || e.target.classList.contains("circle200-check"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
@@ -1111,9 +1128,10 @@ export default function pyramid () {
                 const lat = Number(circleRangeElm.getAttribute("lat"))
                 const coordinates = [lng,lat]
                 store.state.coordinates = coordinates
-                store.state.clickCircleGeojsonText = geojsonUpdate(map01, 'Circle', clickCircleSource.iD, id, 'label2', textValue, radius)
+                store.state.clickCircleGeojsonText = geojsonUpdate(map01, 'Circle', clickCircleSource.iD, id, 'label', textValue, radius)
                 document.querySelector('.circle-label').innerHTML = '半径' + radius + 'm'
                 document.querySelector('.circle-text').value = textValue
+                console.log(store.state.clickCircleGeojsonText)
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1406,6 +1424,7 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
             centerFeature.properties['pairId'] = circleFeature.properties.pairId
             centerFeature.properties['label'] = '半径' + radius + 'm'
             centerFeature.properties['label2'] = ''
+            centerFeature.properties['isRadius'] = true
             centerFeature.properties['offsetValue'] = [0, 1.5]
             centerFeature.properties['textAnchor'] = 'center'
             centerFeature.properties['textJustify'] = 'center'
@@ -1772,9 +1791,11 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
                     feature.geometry = circleFeatureGeometry
                     feature.properties.label = radius
                     feature.properties.radius = radius
+                    feature.properties.label2 = value
                     centerFeature = geojson.features.find(f => f.properties.id === id + '-point' )
                     console.log(centerFeature)
                     centerFeature.properties.label = value + '\n半径' + radius + 'm'
+                    centerFeature.properties.label2 = value
                 }
                 // ---------------------------------------------------------
                 changed = true;

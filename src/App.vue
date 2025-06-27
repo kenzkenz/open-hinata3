@@ -5592,6 +5592,7 @@ export default {
           pairId: id,
           label:'',
           label2:'',
+          isRadius: true,
           offsetValue: [0, 2],
           'line-width': 1,
           radius: 0,

@@ -403,7 +403,9 @@ export default {
   methods: {
     toDraw (geojson) {
       alert('登記所地図を「不可視」にします。\n右のペンアイコンをクリックしてドローを開始してください。')
-      // this.saveGeojsonToDraw0()
+      this.$store.state.showPointInfoDrawer = false
+      this.$store.state.showRightDrawer = false
+      this.$store.state.showChibanzuDrawer = false
       addDraw (geojson,false)
       let result = this.$store.state.selectedLayers['map01'].find(v => {
         return v.id === 'oh-chibanzu-all2';

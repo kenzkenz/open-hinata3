@@ -772,7 +772,19 @@ export const clickCircleLabelLayer = {
     source: 'click-circle-source',
     filter: ['==', '$type', 'Point'],
     layout: {
-        'text-field': ['get', 'label'],
+        // isRadius が真（boolean true）なら label、偽なら label2 を表示
+        'text-field': [
+            'case',
+            [
+                'any',
+                // isRadius がない場合に true
+                ['!', ['has', 'isRadius']],
+                // isRadius が true の場合に true
+                ['==', ['get', 'isRadius'], true]
+            ],
+            ['get', 'label'],   // 上記 any が true のとき
+            ['get', 'label2']   // それ以外（isRadius が存在かつ false）のとき
+        ],
         'text-size': ['get', 'text-size'],
         'text-offset': ['get', 'offsetValue'],
         'text-anchor': ['get', 'textAnchor'],
@@ -789,12 +801,29 @@ export const clickCircSymbolLayer = {
     id: 'click-circle-symbol-layer',
     type: 'circle',
     source: 'click-circle-source',
-    filter: ['all', ['==', '$type', 'Point'], ['!has', 'bearing']],
+    // filter: ['all', ['==', '$type', 'Point'], ['!has', 'bearing']],
+    filter: [
+        'all',
+        ['==', '$type', 'Point'],
+        ['!has', 'bearing'],
+    ],
     paint: {
         'circle-radius': 8,
         'circle-color': ['get', 'point-color'],
         'circle-stroke-width': 2,
-        'circle-stroke-color': '#ffffff'
+        'circle-stroke-color': '#ffffff',
+        'circle-opacity': [
+            'case',
+            ['==', ['get', 'isRadius'], false],
+            0,
+            1     // それ以外
+        ],
+        'circle-stroke-opacity':  [
+            'case',
+            ['==', ['get', 'isRadius'], false],
+            0,
+            1     // それ以外
+        ],
     }
 }
 // export const clickCircSymbolLayer = {
