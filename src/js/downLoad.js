@@ -7869,29 +7869,28 @@ export function enableDragHandles(map) {
                 // 中心座標プロパティがある場合は重心を再計算して更新
                 if (typeof moved.properties.canterLng === 'number' && typeof moved.properties.canterLat === 'number') {
                     try {
-
+                        // 全座標を 1 次元配列にフラット化
+                        let allCoords = [];
+                        if (geom.type === 'LineString' || geom.type === 'MultiLineString') {
+                            // Multi の場合は配列をフラットに
+                            allCoords = Array.isArray(geom.coordinates[0][0])
+                                ? geom.coordinates.flat()
+                                : geom.coordinates;
+                        } else if (geom.type === 'Polygon' || geom.type === 'MultiPolygon') {
+                            // Polygon や MultiPolygon はさらにネストあり
+                            allCoords = geom.coordinates.flat(2);
+                        }
+                        // 重心計算
+                        const sum = allCoords.reduce(
+                            (acc, [lng, lat]) => [acc[0] + lng, acc[1] + lat],
+                            [0, 0]
+                        );
+                        const len = allCoords.length;
+                        moved.properties.canterLng = sum[0] / len;
+                        moved.properties.canterLat = sum[1] / len;
                     }catch (e) {
                         console.log(e)
                     }
-                    // 全座標を 1 次元配列にフラット化
-                    let allCoords = [];
-                    if (geom.type === 'LineString' || geom.type === 'MultiLineString') {
-                        // Multi の場合は配列をフラットに
-                        allCoords = Array.isArray(geom.coordinates[0][0])
-                            ? geom.coordinates.flat()
-                            : geom.coordinates;
-                    } else if (geom.type === 'Polygon' || geom.type === 'MultiPolygon') {
-                        // Polygon や MultiPolygon はさらにネストあり
-                        allCoords = geom.coordinates.flat(2);
-                    }
-                    // 重心計算
-                    const sum = allCoords.reduce(
-                        (acc, [lng, lat]) => [acc[0] + lng, acc[1] + lat],
-                        [0, 0]
-                    );
-                    const len = allCoords.length;
-                    moved.properties.canterLng = sum[0] / len;
-                    moved.properties.canterLat = sum[1] / len;
                 }
             }
 
