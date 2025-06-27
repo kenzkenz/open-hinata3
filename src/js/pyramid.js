@@ -1829,7 +1829,7 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
 export function generateSegmentLabelGeoJSON(geojson) {
     const map01 = store.state.map01;
     const features = [];
-
+    if (!geojson) return
     geojson.features.forEach((feature) => {
         if (feature.properties.id === 'config') return;
         if (!feature || feature.geometry.type !== 'LineString' || feature.properties['free-hand']) return;
@@ -1871,7 +1871,7 @@ export function generateSegmentLabelGeoJSON(geojson) {
 export function generateStartEndPointsFromGeoJSON(geojson) {
     const map01 = store.state.map01;
     const pointFeatures = [];
-
+    if (!geojson) return
     geojson.features.forEach((feature) => {
         if (feature.properties.id === 'config') return;
         if (!feature || feature.geometry.type !== 'LineString' || feature.properties['free-hand']) return;

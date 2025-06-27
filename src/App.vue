@@ -33,6 +33,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 <div v-for="btn in buttons1" :key="btn.key">
                   <MiniTooltip :text="btn.text" :offset-x="0" :offset-y="2">
                     <v-btn
+                        class="sub-btn"
                         :icon="true"
                         :color="btn.color"
                         @click="btn.click"
@@ -1038,6 +1039,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                       <div v-for="btn in buttons1" :key="btn.key">
                         <MiniTooltip :text="btn.text" :offset-x="0" :offset-y="2">
                           <v-btn
+                              class="sub-btn"
                               :icon="true"
                               :color="btn.color"
                               @click="btn.click"
@@ -1766,11 +1768,10 @@ export default {
         { key: 'free', text: '自由に描く', label: '自由', color: this.s_isDrawFree ? 'green' : 'blue', click: this.toggleLDrawFree},
         { key: 'finish', text: 'スマホ、タブの時に使用', label: '確定', click: this.finishDrawing, style: 'background-color: orange!important;' },
         { key: 'edit', text: '編集と移動', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
+        { key: 'lasso', text: '投げ縄', label: '投げ縄', color: this.s_isDrawLasso ? 'green' : 'blue', click: this.toggleDrawLasso,style: 'font-size:12px;' },
         { key: 'undo', text: '元に戻す', icon: 'mdi-undo', label: '元戻', click: this.undo },
         { key: 'redo', text: 'やり直す', icon: 'mdi-redo', label: 'やり直', click: this.redo },
         // { key: 'fix', text: '画面固定', label: '固定', color: this.s_isDrawFix ? 'green' : 'blue', click: this.toggleDrawFix },
-        { key: 'lasso', text: '投げ縄', label: '投げ縄', color: this.s_isDrawLasso ? 'green' : 'blue', click: this.toggleDrawLasso },
-
         { key: 'config', text: '各種設定', label: '設定', color: 'blue', click: this.printDialogOpen },
         { key: 'dl', text: '各種ダウンロード', label: 'DL', style: 'background-color: navy!important;', click: this.dialogForDlOpen },
         { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
@@ -5895,8 +5896,8 @@ export default {
             type: 'line',
             source: lassoSourceId,
             paint: {
-              'line-color': 'blue',
-              'line-width': 2
+              'line-color': 'rgba(0,0,255,0.6)',
+              'line-width': 10
             }
           });
         }
@@ -5936,11 +5937,10 @@ export default {
           // 対象ソースの全フィーチャ取得
           const source = map.getSource(clickCircleSource.iD);
           const geojson = source._data; // or source.getData()
-          console.log(geojson)
-          console.log(polygon)
-          geojson.features.forEach(feat => {
-            if (turf.booleanIntersects(feat, polygon)) {
-              feat.properties.lassoSelected = true;
+          geojson.features.forEach(feature => {
+            feature.properties.lassoSelected = false;
+            if (turf.booleanIntersects(feature, polygon)) {
+              feature.properties.lassoSelected = true;
             }
           });
           console.log(geojson)
@@ -5952,16 +5952,6 @@ export default {
         map.getSource(lassoSourceId).setData({ type: 'FeatureCollection', features: [] });
         map.dragPan.enable();
       });
-
-
-
-
-
-
-
-
-
-
 
       // ガイドライン-----------------------------------------------------------------------------------------------------
       map.on('click', (e) => {
@@ -9271,6 +9261,10 @@ select {
   input {
     font-size: 16px !important;
   }
+}
+.sub-btn {
+  width: 40px !important;
+  height: 40px !important;
 }
 @media (max-width: 720px) {
   /*.fan-menu-rap {*/

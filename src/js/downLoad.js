@@ -7660,7 +7660,8 @@ export function updateDragHandles(editEnabled) {
         features: centerFeatures
     });
 }
-// 移動
+
+// 移動------------------------------------------------------------------------------------------------------------------
 export function enableDragHandles(map) {
     let isDragging = false;
     let dragOrigin = null;
@@ -7674,6 +7675,7 @@ export function enableDragHandles(map) {
     let geojson = null
 
     function getTouchOrMouseLngLat(e) {
+        if (store.state.isDrawLasso) return
         if (e.lngLat) return e.lngLat;
         if (e.touches && e.touches.length > 0) {
             const touch = e.touches[0];
@@ -7696,6 +7698,7 @@ export function enableDragHandles(map) {
         // 頂点、中点を一度クリア
         getAllVertexPoints(map);
         setAllMidpoints(map);
+        // map.getSource('drag-handles-source').setData({ type: 'FeatureCollection', features: [] })
 
         const handle = features[0];
         dragTargetId = handle.properties.targetId;
@@ -7749,23 +7752,53 @@ export function enableDragHandles(map) {
                     moved.properties.canterLng = geom.coordinates[0];
                     moved.properties.canterLat = geom.coordinates[1];
                 }
-            } else if (geom.type === 'LineString' || geom.type === 'Polygon') {
+
+            } else {
+                // 座標移動用の関数
                 const moveCoord = coords => coords.map(([lng, lat]) => [lng + dx, lat + dy]);
+
                 if (geom.type === 'LineString') {
                     geom.coordinates = moveCoord(geom.coordinates);
+
                 } else if (geom.type === 'Polygon') {
                     geom.coordinates = geom.coordinates.map(ring => moveCoord(ring));
+
+                } else if (geom.type === 'MultiLineString') {
+                    // 各 LineString を移動
+                    geom.coordinates = geom.coordinates.map(line => moveCoord(line));
+
+                } else if (geom.type === 'MultiPolygon') {
+                    // 各 Polygon の各リングを移動
+                    geom.coordinates = geom.coordinates.map(polygon =>
+                        polygon.map(ring => moveCoord(ring))
+                    );
+
                 }
-                // 中心座標プロパティがある場合は中心点を再計算して更新
+
+                // 中心座標プロパティがある場合は重心を再計算して更新
                 if (typeof moved.properties.canterLng === 'number' && typeof moved.properties.canterLat === 'number') {
-                    // 単純に重心を計算
-                    const allCoords = (geom.type === 'LineString' ? geom.coordinates : geom.coordinates.flat());
-                    const sum = allCoords.reduce((acc, [lng, lat]) => [acc[0] + lng, acc[1] + lat], [0, 0]);
+                    // 全座標を 1 次元配列にフラット化
+                    let allCoords = [];
+                    if (geom.type === 'LineString' || geom.type === 'MultiLineString') {
+                        // Multi の場合は配列をフラットに
+                        allCoords = Array.isArray(geom.coordinates[0][0])
+                            ? geom.coordinates.flat()
+                            : geom.coordinates;
+                    } else if (geom.type === 'Polygon' || geom.type === 'MultiPolygon') {
+                        // Polygon や MultiPolygon はさらにネストあり
+                        allCoords = geom.coordinates.flat(2);
+                    }
+                    // 重心計算
+                    const sum = allCoords.reduce(
+                        (acc, [lng, lat]) => [acc[0] + lng, acc[1] + lat],
+                        [0, 0]
+                    );
                     const len = allCoords.length;
                     moved.properties.canterLng = sum[0] / len;
                     moved.properties.canterLat = sum[1] / len;
                 }
             }
+
             return moved;
         });
 
@@ -7820,9 +7853,12 @@ export function enableDragHandles(map) {
         dragTargetId = null;
         // 頂点・中点を再生成
         console.log(geojson)
-        store.state.clickCircleGeojsonText = JSON.stringify(geojson)
-        getAllVertexPoints(map, geojson);
-        setAllMidpoints(map, geojson);
+        if (store.state.editEnabled) {
+            updateDragHandles(true)
+            getAllVertexPoints(map, geojson);
+            setAllMidpoints(map, geojson);
+            store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+        }
         if (panWasInitiallyEnabled) {
             map.dragPan.enable();
         }
@@ -9165,8 +9201,8 @@ export function addDraw (geojson,isFit) {
         const id = String(Math.floor(10000 + Math.random() * 90000));
         feature.properties['id'] = id
         feature.properties['label'] = ''
-        feature.properties['color'] = 'rgba(0,0,255,0.6)'
-        feature.properties['line-width'] = 5
+        feature.properties['color'] = 'rgba(0,0,255,0.1)'
+        feature.properties['line-width'] = 1
         feature.properties['arrow-type'] = 'none'
     })
     const drawGeojson = map.getSource(clickCircleSource.iD)._data
