@@ -7662,6 +7662,10 @@ export function enableDragHandles(map) {
 
         if (!features.length) return;
 
+        // 頂点、中点を一度クリア
+        getAllVertexPoints(map);
+        setAllMidpoints(map);
+        
         const handle = features[0];
         dragTargetId = handle.properties.targetId;
         dragOrigin = getTouchOrMouseLngLat(e);
