@@ -1152,7 +1152,7 @@ import {
   pmtilesGenerateForUser2,
   pngDl,
   pngDownload,
-  pngLoad,
+  pngLoad, rotateLassoSelected,
   simaLoadForUser, splitLineStringIntoPoints,
   tileGenerateForUser,
   tileGenerateForUserPdf,
@@ -1770,6 +1770,8 @@ export default {
         { key: 'finish', text: 'スマホ、タブの時に使用', label: '確定', click: this.finishDrawing, style: 'background-color: orange!important;' },
         { key: 'edit', text: '編集と移動', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
         { key: 'lasso', text: '投げ縄', label: '投げ縄', color: this.s_isDrawLasso ? 'green' : 'blue', click: this.toggleDrawLasso,style: 'font-size:12px;' },
+        { key: 'rotate', text: '回転', label: '回転',  click: this.drawRotate },
+
         { key: 'undo', text: '元に戻す', icon: 'mdi-undo', label: '元戻', click: this.undo },
         { key: 'redo', text: 'やり直す', icon: 'mdi-redo', label: 'やり直', click: this.redo },
         // { key: 'fix', text: '画面固定', label: '固定', color: this.s_isDrawFix ? 'green' : 'blue', click: this.toggleDrawFix },
@@ -3904,6 +3906,9 @@ export default {
       document.querySelector('#draw-indicato-text').innerHTML = 'TXT'
       store.state.isCursorOnPanel = false
       this.finishLine()
+    },
+    drawRotate () {
+      rotateLassoSelected(90)
     },
     save () {
       this.saveSelectedPointFeature()

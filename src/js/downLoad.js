@@ -7629,6 +7629,95 @@ export function extractSimaById(simaText, targetIds) {
 
     return output.join('\n');
 }
+
+/**
+ * Vuex store.state.map01 上の click-circle-source に対し、
+ * lassoSelected=true な地物群を重心まわりに回転して更新します。
+ *
+ * @param {number} angleDeg - 回転角度（度単位、正で反時計回り）
+ */
+export function rotateLassoSelected(angleDeg) {
+    // Vuex から MapLibre インスタンスを取得
+    const map = store.state.map01;
+
+    // click-circle-source の GeoJSON データを取得
+    const src = map.getSource('click-circle-source');
+    const features = (src._data && src._data.features) || [];
+
+    // lassoSelected=true のフィーチャを抽出
+    const selected = features.filter(f => f.properties.lassoSelected === true);
+    if (selected.length === 0) {
+        console.info('選択されたフィーチャがありません');
+        return;
+    }
+
+    // 全選択フィーチャの座標を再帰的に収集して重心を計算
+    const allCoords = [];
+    (function collect(coords) {
+        if (typeof coords[0] === 'number') {
+            allCoords.push(coords);
+        } else {
+            coords.forEach(collect);
+        }
+    })(selected.map(f => f.geometry.coordinates));
+
+    const [sumX, sumY] = allCoords.reduce(
+        (acc, [x, y]) => [acc[0] + x, acc[1] + y],
+        [0, 0]
+    );
+    const center = [sumX / allCoords.length, sumY / allCoords.length];
+
+    // 回転処理
+    const rad = angleDeg * Math.PI / 180;
+    function rotatePoint([x, y]) {
+        const dx = x - center[0], dy = y - center[1];
+        return [
+            center[0] + dx * Math.cos(rad) - dy * Math.sin(rad),
+            center[1] + dx * Math.sin(rad) + dy * Math.cos(rad)
+        ];
+    }
+
+    function rotateGeom(obj) {
+        const { type, coordinates } = obj;
+        switch (type) {
+            case 'Point':
+                obj.coordinates = rotatePoint(coordinates);
+                break;
+            case 'LineString':
+            case 'MultiPoint':
+                obj.coordinates = coordinates.map(rotatePoint);
+                break;
+            case 'Polygon':
+            case 'MultiLineString':
+                obj.coordinates = coordinates.map(ring => ring.map(rotatePoint));
+                break;
+            case 'MultiPolygon':
+                obj.coordinates = coordinates.map(poly =>
+                    poly.map(ring => ring.map(rotatePoint))
+                );
+                break;
+            default:
+                console.warn(`Unsupported type: ${type}`);
+        }
+    }
+
+    // 選択フィーチャを回転＆プロパティ更新
+    selected.forEach(f => {
+        rotateGeom(f.geometry);
+        if (f.properties.canterLng != null && f.properties.canterLat != null) {
+            f.properties.canterLng = center[0];
+            f.properties.canterLat = center[1];
+        }
+    });
+
+    // 変更をソースに反映
+    src.setData({
+        type: 'FeatureCollection',
+        features: features
+    });
+}
+
+// ドラッグハンドルのアップロード---------------------------------------------------------------------------
 export function updateDragHandles(editEnabled) {
     const map = store.state.map01;
     const originalGeojson = map.getSource('click-circle-source')._data;
