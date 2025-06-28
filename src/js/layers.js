@@ -9095,7 +9095,7 @@ const kizyuntenSource = {
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/kizyunten/kizyunten.pmtiles",
     }
 }
-const kizyuntenPoint = {
+export const kizyuntenPoint = {
     id: "oh-kizyunten-point",
     type: "circle",
     source: "kizyunten-source",
@@ -10233,8 +10233,8 @@ let layers01 = [
                 label: "基本基準点",
                 source: kizyuntenSource,
                 layers:[kizyuntenPoint,kizyuntenPointLabel],
-                attribution: '<a href="" target="_blank"></a>'
-                // ext: {name:'extTokijyo'}
+                attribution: '<a href="" target="_blank"></a>',
+                ext: {name:'extKhonkijyunten'}
             },
             {
                 id: 'oh-toshikan',
