@@ -1113,7 +1113,10 @@ export default function pyramid () {
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('input', (e) => {
-            if (e.target && (e.target.classList.contains("circle-range") || e.target.classList.contains("circle-text") || e.target.classList.contains("circle200-check"))) {
+            if (e.target && (e.target.classList.contains("circle-range") ||
+                e.target.classList.contains("circle-text") ||
+                e.target.classList.contains("circle200-check")
+            )) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
                 const circleRangeElm = document.querySelector('.circle-range')
@@ -1131,6 +1134,7 @@ export default function pyramid () {
                 store.state.clickCircleGeojsonText = geojsonUpdate(map01, 'Circle', clickCircleSource.iD, id, 'label', textValue, radius)
                 document.querySelector('.circle-label').innerHTML = '半径' + radius + 'm'
                 document.querySelector('.circle-text').value = textValue
+                document.querySelector('.circle-radius-input').value = radius
                 console.log(store.state.clickCircleGeojsonText)
             }
         });
