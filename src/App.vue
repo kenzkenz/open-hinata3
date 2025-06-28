@@ -840,7 +840,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
       </div>
 
       <div id="map00">
-
 <!--        <img class='loadingImg' src="https://kenzkenz.xsrv.jp/open-hinata3/img/icons/loading2.gif">-->
         <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="(mapName === 'map01'|| mapName === 'map02' && s_map2Flg)" @click="btnPosition">
           <v-progress-linear  v-if="s_loading" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
@@ -3752,7 +3751,7 @@ export default {
       map00Div.style.width  = widthPx + 'px';
       map00Div.style.height = heightPx + 'px';
       // map00Div.style.margin = '0 auto';
-      map00Div.style.margin = '40px auto 0 auto';
+      map00Div.style.margin = '20px auto 0 auto';
       map00Div.style.display = 'block';
     },
     handlePrint(isClose) {
@@ -9274,6 +9273,14 @@ select {
   border-radius: 8px;
   z-index: 10;
 }
+.map-radio {
+  position: absolute;
+  z-index: 2;
+  left: calc(50% - 75px);
+}
+.map-radio div {
+  margin: 0px!important;
+}
 @media print {
   .print-buttons {
     display: none
@@ -9304,6 +9311,9 @@ select {
   }
   .features-rotate-div {
     display: none;
+  }
+  .map-radio div {
+    display: none!important;
   }
 }
 .draw-indicator {
@@ -9515,14 +9525,6 @@ select {
   height:30px!important;
   padding: 0px!important;
   margin:  0px!important;
-}
-.map-radio {
-  position: absolute;
-  z-index: 2;
-  left: calc(50% - 75px);
-}
-.map-radio div {
-  margin: 0px!important;
 }
 @media (max-width: 720px) {
   /*.fan-menu-rap {*/
