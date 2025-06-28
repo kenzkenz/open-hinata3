@@ -9,7 +9,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
     <v-main>
 
       <div v-if="isLassoSelected" class="features-rotate-div">
-<!--        <v-btn class="tiny-icon-btn" icon @click="anglePlus">+</v-btn>-->
         <v-btn
             class="tiny-icon-btn"
             icon
@@ -20,7 +19,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
             @touchend="stopAnglePlus"
         >+</v-btn>
         回転
-<!--        <v-btn class="tiny-icon-btn" icon @click="angleMinus">-</v-btn>-->
         <v-btn
             class="tiny-icon-btn"
             icon
@@ -32,11 +30,36 @@ import SakuraEffect from './components/SakuraEffect.vue';
         >
           -
         </v-btn>
+        <!-- 拡大／縮小 -->
+        <div class="my-2"></div>
+        <v-btn
+            class="tiny-icon-btn"
+            icon
+            @mousedown="startScaleUp"
+            @mouseup="stopScaleUp"
+            @mouseleave="stopScaleUp"
+            @touchstart.prevent="startScaleUp"
+            @touchend="stopScaleUp"
+        >+</v-btn>
+        拡大
+        <v-btn
+            class="tiny-icon-btn"
+            icon
+            @mousedown="startScaleDown"
+            @mouseup="stopScaleDown"
+            @mouseleave="stopScaleDown"
+            @touchstart.prevent="startScaleDown"
+            @touchend="stopScaleDown"
+        >-</v-btn>
+        <!-- スライダー（0.1倍〜3倍、ステップ0.01） -->
+<!--        <v-spacer class="mx-2"/>-->
 <!--        <input-->
-<!--            @input="rotate($event.target.value)"-->
-<!--            type="number"-->
-<!--            class="oh-cool-input-number"-->
-<!--            min="-180" max="180" step="1"-->
+<!--            type="range"-->
+<!--            min="0.1"-->
+<!--            max="3"-->
+<!--            step="0.01"-->
+<!--            v-model.number="prevScaleValue"-->
+<!--            @input="onScaleInput(prevScaleValue)"-->
 <!--        />-->
       </div>
 
@@ -1184,7 +1207,7 @@ import {
   pmtilesGenerateForUser2,
   pngDl,
   pngDownload,
-  pngLoad, rotateLassoSelected,
+  pngLoad, rotateLassoSelected, scaleLassoSelected,
   simaLoadForUser, splitLineStringIntoPoints,
   tileGenerateForUser,
   tileGenerateForUserPdf,
@@ -1726,6 +1749,13 @@ export default {
     minusInterval: null,
     plusStep: 1,
     minusStep: 1,
+    // 拡大／縮小操作用ステップやインターバルID
+    scaleUpStep: 0.01,
+    scaleDownStep: 0.01,
+    scaleUpInterval: null,
+    scaleDownInterval: null,
+    // スライダーなどからの直接入力用
+    prevScaleValue: 1,
   }),
   computed: {
     ...mapState([
@@ -2338,6 +2368,66 @@ export default {
     },
   },
   methods: {
+    // ─── 単発拡大縮小 ───
+    scaleUp(delta = 0.01) {
+      // 1 + delta 倍に拡大
+      scaleLassoSelected(1 + delta);
+    },
+    scaleDown(delta = 0.01) {
+      // 1 - delta 倍に縮小
+      scaleLassoSelected(1 - delta);
+    },
+
+    // ─── 連続拡大 ───
+    startScaleUp() {
+      this.scaleUpStep = 0.01;
+      this.scaleUp(this.scaleUpStep);
+      this.scaleUpInterval = setInterval(() => {
+        this.scaleUpStep += 0.01;
+        this.scaleUp(this.scaleUpStep);
+      }, 100);
+    },
+    stopScaleUp() {
+      if (this.scaleUpInterval) {
+        clearInterval(this.scaleUpInterval);
+        this.scaleUpInterval = null;
+      }
+      this.scaleUpStep = 0.01;
+    },
+
+    // ─── 連続縮小 ───
+    startScaleDown() {
+      this.scaleDownStep = 0.01;
+      this.scaleDown(this.scaleDownStep);
+      this.scaleDownInterval = setInterval(() => {
+        this.scaleDownStep += 0.01;
+        this.scaleDown(this.scaleDownStep);
+      }, 100);
+    },
+    stopScaleDown() {
+      if (this.scaleDownInterval) {
+        clearInterval(this.scaleDownInterval);
+        this.scaleDownInterval = null;
+      }
+      this.scaleDownStep = 0.01;
+    },
+
+    // ─── スライダーや入力ボックス連動用 ───
+    onScaleInput(value) {
+      // 直接入力された scale 値を受けて、差分だけ拡大縮小
+      const newScale = Number(value);
+      const diff = newScale - this.prevScaleValue;
+      if (diff === 0) return;
+
+      if (diff > 0) {
+        // 拡大
+        scaleLassoSelected(1 + diff);
+      } else {
+        // 縮小
+        scaleLassoSelected(1 + diff); // diff は負なので (1 - |diff|)
+      }
+      this.prevScaleValue = newScale;
+    },
     anglePlus(delta = 1) {
       rotateLassoSelected(delta)
     },
@@ -9387,8 +9477,6 @@ select {
     height: 38px !important;
   }
 }
-
-
 .features-rotate-div {
   position: absolute;
   top: 80px;
@@ -9396,7 +9484,7 @@ select {
   text-align: center;
   transform: translateX(-50%);
   width: 160px;
-  height: 50px;
+  /*height: 70px;*/
   padding: 10px;
   background-color: #ffffff;
   /* 浮いた感じのシャドウ */
