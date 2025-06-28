@@ -9244,6 +9244,21 @@ select {
   top: 10px;
   z-index: 1;
 }
+.features-rotate-div {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  text-align: center;
+  transform: translateX(-50%);
+  width: 160px;
+  /*height: 70px;*/
+  padding: 10px;
+  background-color: #ffffff;
+  /* 浮いた感じのシャドウ */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  z-index: 10;
+}
 @media print {
   .print-buttons {
     display: none
@@ -9271,6 +9286,9 @@ select {
   }
   #print-div {
     display: none!important;
+  }
+  .features-rotate-div {
+    display: none;
   }
 }
 .draw-indicator {
@@ -9476,21 +9494,6 @@ select {
     width: 38px !important;
     height: 38px !important;
   }
-}
-.features-rotate-div {
-  position: absolute;
-  top: 80px;
-  left: 50%;
-  text-align: center;
-  transform: translateX(-50%);
-  width: 160px;
-  /*height: 70px;*/
-  padding: 10px;
-  background-color: #ffffff;
-  /* 浮いた感じのシャドウ */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  z-index: 10;
 }
 .tiny-icon-btn {
   width: 30px!important;
