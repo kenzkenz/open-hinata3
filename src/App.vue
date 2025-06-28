@@ -826,6 +826,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </v-card>
       </v-dialog>
 
+      <!-- @update:modelValue="onMapChange" -->
       <div v-if="isPrint" class="map-radio d-flex justify-center">
         <v-chip-group
             v-model="printMap"
@@ -834,8 +835,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
             column
             class="mt-4"
         >
-          <v-chip value="map01" variant="flat">map01</v-chip>
-          <v-chip value="map02" variant="flat">map02</v-chip>
+          <v-chip @click="printMap01" value="map01" variant="flat">map01</v-chip>
+          <v-chip @click="printMap02" value="map02" variant="flat">map02</v-chip>
         </v-chip-group>
       </div>
 
@@ -3688,7 +3689,6 @@ export default {
       this.saveHistory()
       deleteAll()
     },
-    onA() { alert('未実装です。') },
     pngDl () {
       pngDl()
     },
@@ -3720,42 +3720,66 @@ export default {
         window.print()
       }, 200)
     },
-    directionChange() {
+    printMap01 () {
+      const map01Div = document.getElementById('map01');
+      const map02Div = document.getElementById('map02');
+      setTimeout(() => {
+        map01Div.style.display = 'block'
+        map02Div.style.position = 'absolute'
+      },10)
+    },
+    printMap02 () {
+      const map01Div = document.getElementById('map01');
+      const map02Div = document.getElementById('map02');
+      setTimeout(() => {
+        map01Div.style.display = 'none'
+        map02Div.style.display = 'block'
+        map02Div.style.width = '100%'
+        map02Div.style.position = 'relative'
+      }, 10)
+    },
+    // onMapChange () {
+    //   const map01Div = document.getElementById('map01');
+    //   const map02Div = document.getElementById('map02');
+    //   alert(this.printMap)
+    //   switch (this.printMap) {
+    //     case 'map01':
+    //       setTimeout(() => {
+    //         map01Div.style.display = 'block'
+    //         map02Div.style.position = 'absolute'
+    //       },100)
+    //       break
+    //     case 'map02':
+    //       setTimeout(() => {
+    //         alert(999)
+    //         map01Div.style.display = 'none'
+    //         map02Div.style.display = 'block'
+    //         map02Div.style.width = '100%'
+    //         map02Div.style.position = 'relative'
+    //       },100)
+    //       break
+    //   }
+    // },
+    handlePrint(isClose) {
       const map00Div = document.getElementById('map00');
       const map01Div = document.getElementById('map01');
       const map02Div = document.getElementById('map02');
-      // A4サイズ（mm→px）: 210mm x 297mm
-      // 1mm ≒ 3.7795275591px
-      let widthPx
-      let heightPx
-      console.log(this.titleDirection)
+      map01Div.style.display = 'block'
+      map02Div.style.position = 'absolute'
+      const isMap02Block = map02Div.style.display === 'block'
+      setTimeout(() => {
+        if (isClose === true) {
+          if (isMap02Block) {
+            this.btnClickSplit()
+          }
+        }
+      },100)
 
-      switch (this.titleDirection) {
-        case 'horizontal':
-          // widthPx = 190 * 3.7795275591;
-          // heightPx = 260 * 3.7795275591;
-          widthPx = 260 * 3.7795275591;
-          heightPx = 190 * 3.7795275591;
-          break
-        case 'vertical':
-          // widthPx = 260 * 3.7795275591;
-          // heightPx = 190 * 3.7795275591;
-          widthPx = 190 * 3.7795275591;
-          heightPx = 260 * 3.7795275591;
-          break
-        default:
-          widthPx = 190 * 3.7795275591;
-          heightPx = 260 * 3.7795275591;
-      }
-      // リサイズ＆中央に
-      map00Div.style.width  = widthPx + 'px';
-      map00Div.style.height = heightPx + 'px';
-      // map00Div.style.margin = '0 auto';
-      map00Div.style.margin = '20px auto 0 auto';
-      map00Div.style.display = 'block';
-    },
-    handlePrint(isClose) {
-      // this.s_isDraw = false
+      // if (isClose) {
+      //   this.s_map2Flg = !this.s_map2Flg
+      //   this.btnClickSplit()
+      // }
+        // this.s_isDraw = false
       this.attributionControl = new maplibregl.AttributionControl()
       this.$store.state.map01.addControl(this.attributionControl, 'bottom-right')
       const el = document.getElementById('terrain-btn-div-map01');
@@ -3805,9 +3829,6 @@ export default {
       this.s_map2Flg = true
       this.btnClickSplit ()
 
-      const map00Div = document.getElementById('map00');
-      const map01Div = document.getElementById('map01');
-      const map02Div = document.getElementById('map02');
       if (this.originalStyle) {
         map00Div.style.width  = this.originalStyle.width
         map00Div.style.height = this.originalStyle.height
@@ -3860,6 +3881,35 @@ export default {
 
       this.directionChange()
 
+    },
+    directionChange() {
+      const map00Div = document.getElementById('map00');
+      const map01Div = document.getElementById('map01');
+      const map02Div = document.getElementById('map02');
+      // A4サイズ（mm→px）: 210mm x 297mm
+      // 1mm ≒ 3.7795275591px
+      let widthPx
+      let heightPx
+      console.log(this.titleDirection)
+      switch (this.titleDirection) {
+        case 'horizontal':
+          widthPx = 260 * 3.7795275591;
+          heightPx = 190 * 3.7795275591;
+          break
+        case 'vertical':
+          widthPx = 190 * 3.7795275591;
+          heightPx = 260 * 3.7795275591;
+          break
+        default:
+          widthPx = 190 * 3.7795275591;
+          heightPx = 260 * 3.7795275591;
+      }
+      // リサイズ＆中央に
+      map00Div.style.width  = widthPx + 'px';
+      map00Div.style.height = heightPx + 'px';
+      // map00Div.style.margin = '0 auto';
+      map00Div.style.margin = '20px auto 0 auto';
+      map00Div.style.display = 'block';
     },
     drawClose () {
       if (document.querySelector('#centerDrawBtn2')) {
