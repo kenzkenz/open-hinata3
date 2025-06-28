@@ -21,8 +21,21 @@
   </v-dialog>
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;"></div>
+    <v-select
+        v-if="item.id === 'oh-gaiku'"
+        v-model="selectedGsikuItems"
+        :items="gsikuItems"
+        item-title="name"
+        item-value="id"
+        label="複数選択してください"
+        multiple
+        chips
+        clearable
+        @update:modelValue="selectItem"
+    ></v-select>
+<!--    <div>選択中: {{ selectedGsikuItems }}</div>-->
     <v-btn style="margin-top: 0px;margin-left: 0px;margin-bottom: 10px;" @click="saveSimaGaiku">sima保存</v-btn>
-    <hr>
+<!--    <hr style="margin-bottom: 10px;">-->
     <div v-html="item.attribution"></div>
   </div>
 </template>
@@ -45,6 +58,14 @@ export default {
   name: 'ext-gaiku',
   props: ['mapName','item'],
   data: () => ({
+    selectedGsikuItems: null,
+    gsikuItems: [
+      { id: 'S', name: '三' },
+      { id: 'T', name: '多' },
+      { id: 'TS', name: '多節' },
+      { id: 'SS', name: '三節' },
+      { id: 'H', name: '補' },
+    ],
     fields: '',
     sourceId: '',
     layerId: '',
@@ -94,6 +115,26 @@ export default {
     //       this.s_tokijyoText
     //     ]})
     // },
+    selectItem () {
+      console.log(this.selectedGsikuItems)
+      const map = this.$store.state[this.mapName]
+      const filter = [
+        'all',
+        // 廃点情報が「廃点」でない
+        ['!=', ['get', '廃点情報'], '廃点'],
+        // type が this.selectedGsikuItems のいずれかに一致する
+        ['match', ['get', 'type'], this.selectedGsikuItems, /* true の時表示 */ true, /* false の時非表示 */ false]
+      ];
+      map.setFilter('oh-gaiku-layer', filter);
+      map.setFilter('oh-gaiku-label-layer',filter);
+      map.setFilter('oh-gaiku-label',filter);
+
+      if (this.selectedGsikuItems.length === 0) {
+        map.setFilter('oh-gaiku-layer',['!=', ['get', '廃点情報'], '廃点'])
+        map.setFilter('oh-gaiku-label-layer',['!=', ['get', '廃点情報'], '廃点'])
+        map.setFilter('oh-gaiku-label',['!=', ['get', '廃点情報'], '廃点']);
+      }
+    },
     tutorial () {
       window.open("https://hackmd.io/@kenz/S1gKou9wyg", "_blank");
       history('街区チュートリアル',window.location.href)
@@ -127,6 +168,7 @@ export default {
   },
   mounted() {
     document.querySelector('#handle-' + this.item.id).innerHTML = '<span style="font-size: large;">' + this.item.label + '</span>'
+    // alert(this.item.id)
   },
   watch: {
     s_extFire () {
