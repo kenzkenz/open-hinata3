@@ -29,11 +29,12 @@
         item-value="id"
         label="複数選択してください"
         multiple
-        chips
         clearable
         @update:modelValue="selectItem"
-    ></v-select>
-<!--    <div>選択中: {{ selectedGsikuItems }}</div>-->
+    >
+      <!-- 選択結果の描画を完全にスキップ -->
+      <template #selection=""></template>
+    </v-select>
     <v-btn style="margin-top: 0px;margin-left: 0px;margin-bottom: 10px;" @click="saveSimaGaiku">sima保存</v-btn>
 <!--    <hr style="margin-bottom: 10px;">-->
     <div v-html="item.attribution"></div>
@@ -60,11 +61,11 @@ export default {
   data: () => ({
     selectedGsikuItems: null,
     gsikuItems: [
-      { id: 'S', name: '三' },
-      { id: 'T', name: '多' },
-      { id: 'TS', name: '多節' },
-      { id: 'SS', name: '三節' },
-      { id: 'H', name: '補' },
+      { id: 'S', name: '三（街区三角点）' },
+      { id: 'T', name: '多（街区多角点）' },
+      { id: 'TS', name: '多節（街区多角点節点）' },
+      { id: 'SS', name: '三節（街区三角点節点）' },
+      { id: 'H', name: '補（補助点）' },
     ],
     fields: '',
     sourceId: '',
@@ -86,7 +87,7 @@ export default {
       '公共座標19系'
     ],
     kei: '',
-    menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'hidden', 'user-select': 'text', 'font-size':'large'}
+    menuContentSize: {'width':'240px','height': 'auto','margin': '10px', 'overflow': 'hidden', 'user-select': 'text', 'font-size':'large'}
   }),
   computed: {
     s_extFire () {

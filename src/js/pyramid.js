@@ -1115,18 +1115,25 @@ export default function pyramid () {
         mapElm.addEventListener('input', (e) => {
             if (e.target && (e.target.classList.contains("circle-range") ||
                 e.target.classList.contains("circle-text") ||
-                e.target.classList.contains("circle200-check")
-            )) {
+                e.target.classList.contains("circle200-check") ||
+                e.target.classList.contains("circle-radius-input")
+
+        )) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
                 const circleRangeElm = document.querySelector('.circle-range')
                 const circleTextElm = document.querySelector('.circle-text')
                 const circleChkElm = document.querySelector('.circle200-check')
+                const circleInput = document.querySelector('.circle-radius-input')
                 const rangeValue = Number(circleRangeElm.value)
                 const textValue = circleTextElm.value
                 const checked = circleChkElm.checked
+                const inputValue = Number(circleInput.value)
                 store.state.circle200Chk = checked
-                const radius = checked ? 200 : Number(rangeValue)
+                let radius = checked ? 200 : Number(rangeValue)
+                if (e.target.classList.contains("circle-radius-input")) {
+                    radius = inputValue
+                }
                 const lng = Number(circleRangeElm.getAttribute("lng"))
                 const lat = Number(circleRangeElm.getAttribute("lat"))
                 const coordinates = [lng,lat]
@@ -1135,6 +1142,7 @@ export default function pyramid () {
                 document.querySelector('.circle-label').innerHTML = '半径' + radius + 'm'
                 document.querySelector('.circle-text').value = textValue
                 document.querySelector('.circle-radius-input').value = radius
+                document.querySelector('.circle-range').value = radius
                 console.log(store.state.clickCircleGeojsonText)
             }
         });
