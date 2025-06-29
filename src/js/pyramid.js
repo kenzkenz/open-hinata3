@@ -1141,8 +1141,39 @@ export default function pyramid () {
                 store.state.clickCircleGeojsonText = geojsonUpdate(map01, 'Circle', clickCircleSource.iD, id, 'label', textValue, radius)
                 document.querySelector('.circle-label').innerHTML = '半径' + radius + 'm'
                 document.querySelector('.circle-text').value = textValue
-                document.querySelector('.circle-radius-input').value = radius
-                document.querySelector('.circle-range').value = radius
+                document.querySelector('.circle-radius-input').value = String(radius)
+                const inputElement = document.querySelector('.circle-radius-input');
+                // let radius = 0;
+                let isComposing = false;
+                inputElement.addEventListener('compositionstart', () => {
+                    isComposing = true;
+                });
+                inputElement.addEventListener('compositionend', () => {
+                    isComposing = false;
+                });
+                inputElement.addEventListener('input', debounce((e) => {
+                    if (isComposing) return;
+                    const value = e.target.value;
+                    if (!isNaN(value) && value !== '') {
+                        radius = parseFloat(value);
+                        setTimeout(() => {
+                            inputElement.value = String(radius);
+                            inputElement.focus(); // フォーカスを維持
+                        }, 0);
+                    }
+                }, 300));
+                function debounce(func, wait) {
+                    let timeout;
+                    return function executedFunction(...args) {
+                        const later = () => {
+                            clearTimeout(timeout);
+                            func(...args);
+                        };
+                        clearTimeout(timeout);
+                        timeout = setTimeout(later, wait);
+                    };
+                }
+                document.querySelector('.circle-range').value = String(radius)
                 console.log(store.state.clickCircleGeojsonText)
             }
         });
