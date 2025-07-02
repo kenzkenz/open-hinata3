@@ -8336,6 +8336,8 @@ export default {
     this.$store.state.isAndroid = /android/i.test(userAgent);
     if (window.innerWidth < 500) this.$store.state.isUnder500 = true
     if (window.innerWidth < 500 ) this.fanMenuOffsetX = 0
+    // this.updatePermalink をデフォルト 500ms のデバウンス版に差し替え
+    this.updatePermalink = debounce(this.updatePermalink, 500)
   },
   beforeUnmount() {
     window.removeEventListener("resize", this.onResize);
