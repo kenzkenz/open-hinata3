@@ -261,8 +261,8 @@ import {
   addImageLayer,
   addImageLayerJpg,
   addImageLayerPng,
-  addTileLayerForImage, capture,
-  geojsonAddLayer, highlightSpecificFeaturesCity, iko, pngDownload, publicChk,
+  addTileLayerForImage,
+  geojsonAddLayer, iko, publicChk,
   simaToGeoJSON, userKmzSet, userPmtileSet, userSimaSet, userTileSet, userXyztileSet
 } from "@/js/downLoad";
 import muni from '@/js/muni'
@@ -339,7 +339,7 @@ import JSZip from "jszip";
 import store from "@/store";
 import firebase from 'firebase/app'
 import 'firebase/firestore'
-import {deleteAll, generateSegmentLabelGeoJSON, generateStartEndPointsFromGeoJSON} from "@/js/pyramid";
+import {deleteAll, generateStartEndPointsFromGeoJSON} from "@/js/pyramid";
 import {mapState} from "vuex";
 
 export default {
