@@ -12,9 +12,10 @@
               <v-tab value="31">公開地番図</v-tab>
               <v-tab @click="kenzChibanzu" v-if="isOh3Team" value="32">kenz地番図</v-tab>
               <v-tab value="4">画像</v-tab>
+              <v-tab value="6">任意座標</v-tab>
               <v-tab value="5">kmz</v-tab>
-              <v-tab value="6">復帰</v-tab>
-              <v-tab v-if="isAdministrator" value="7">管理者用</v-tab>
+              <v-tab value="7">復帰</v-tab>
+              <v-tab v-if="isAdministrator" value="8">管理者用</v-tab>
             </v-tabs>
 
             <v-window v-model="tab">
@@ -213,6 +214,13 @@
               </v-window-item>
               <v-window-item value="6">
                 <v-card>
+                  <MyroomNinizahyo
+                      :mapInstance="mapInstance"
+                  />
+                </v-card>
+              </v-window-item>
+              <v-window-item value="7">
+                <v-card>
                   <p style="margin-bottom: 10px;">各デバイスの最後に開いた画面に復帰します。</p>
                   <v-btn style="margin-bottom: 10px; width: 180px;" @click="device('Windows')">Windowsでの最後</v-btn>
                   <v-btn style="margin-left: 10px;margin-bottom: 10px; width: 180px" @click="device('Macintosh')">Macでの最後</v-btn><br>
@@ -239,7 +247,7 @@
 
                 </v-card>
               </v-window-item>
-              <v-window-item value="7">
+              <v-window-item value="8">
                 <v-card>
                   <!-- <v-btn style="margin-bottom: 10px;" @click="isAllBtn">全表示</v-btn>-->
                   <v-switch style="height: 40px;" v-model="isAll" @change="isAllSwitch" label="全表示" color="primary" />
@@ -267,6 +275,7 @@ import {
 } from "@/js/downLoad";
 import muni from '@/js/muni'
 import LayerManager from '@/components/LayerManager.vue';
+import MyroomNinizahyo from '@/components/Myroom-ninizahyo';
 
 const getFirebaseUid = async () => {
   if (!user.value) return;
@@ -346,7 +355,8 @@ export default {
   name: 'Dialog-myroom',
   props: ['mapName'],
   components: {
-    LayerManager
+    LayerManager,
+    MyroomNinizahyo
   },
   data: () => ({
     publicItems: [{public:-1,label:'オープンデータ（マップ上は緑色、詳細は表示）'},{public:0,label:'完全非公開（マップ上は透明、詳細は非表示）'},{public:3,label:'非公開（マップ上は灰色、詳細は非表示）'},{public:1,label:'公開（マップ上は青色、詳細は表示）'}],

@@ -2,8 +2,29 @@
   <v-card>
     <div style="margin-bottom: 10px;">
 
+      <v-select class="scrollable-content"
+                v-model="pref"
+                :items="prefs"
+                item-title="prefName"
+                item-value="prefId"
+                label="都道府県を選択してください"
+                outlined
+                @update:modelValue="prefChange"
+      ></v-select>
 
-      aaaaaaaa
+<!--      <v-tabs mobile-breakpoint="0" v-model="tab" class="custom-tabs">-->
+<!--        <v-tab value="0"></v-tab>-->
+<!--        <v-tab value="28">兵庫県</v-tab>-->
+<!--        <v-tab value="45">宮崎県</v-tab>-->
+<!--      </v-tabs>-->
+<!--      <v-window v-model="tab">-->
+<!--        <v-window-item value="45">-->
+<!--          <v-card>-->
+
+
+<!--          </v-card>-->
+<!--        </v-window-item>-->
+<!--      </v-window>-->
 
 <!--      <div-->
 <!--          style="height: 50px;"-->
@@ -48,13 +69,20 @@ export default {
     }
   },
   data: () => ({
-
+    // tab:45,
+    pref: '45',
+    prefs: [
+      {prefId: '28',prefName:'兵庫県'},
+      {prefId: '45',prefName:'宮崎県'},
+    ]
   }),
   computed: {
 
   },
   methods: {
+    prefChange() {
 
+    }
   },
   watch:{
   },
