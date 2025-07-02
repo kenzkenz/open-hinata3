@@ -5741,16 +5741,42 @@ export default {
       }
       // 該当featureのid（またはnull）を返す: Polygon版
       function getPolygonFeatureIdAtClick(map, e) {
+        // クリックイベントと座標がなければ null
         if (!e || !e.lngLat) return null;
         const clickLngLat = [e.lngLat.lng, e.lngLat.lat];
-        // ポリゴン配列取得
-        const features = map.getSource(clickCircleSource.iD)._data.features || [];
-        const found = features.find(f => {
-          if (!f.geometry|| f.geometry.type !== 'Polygon') return false;
-          return turf.booleanPointInPolygon(turf.point(clickLngLat), f);
-        });
-        return found ? found.properties.id : null;
+        // ソースから GeoJSON データを取得
+        const source = map.getSource(clickCircleSource.iD);
+        if (!source || !source._data) return null;
+        const features = source._data.features || [];
+        // 各フィーチャをチェック
+        for (const feature of features) {
+          const geom = feature.geometry;
+          if (!geom) continue;
+          const type = geom.type;
+          // Polygon または MultiPolygon のみ対象
+          if (type === 'Polygon' || type === 'MultiPolygon') {
+            // turf.booleanPointInPolygon は両方のタイプに対応
+            if (turf.booleanPointInPolygon(turf.point(clickLngLat), feature)) {
+              // alert(feature.properties.id)
+              return feature.properties.id || null;
+            }
+          }
+        }
+        return null;
       }
+
+      // function getPolygonFeatureIdAtClick(map, e) {
+      //   // alert(999)
+      //   if (!e || !e.lngLat) return null;
+      //   const clickLngLat = [e.lngLat.lng, e.lngLat.lat];
+      //   // ポリゴン配列取得
+      //   const features = map.getSource(clickCircleSource.iD)._data.features || [];
+      //   const found = features.find(f => {
+      //     if (!f.geometry || f.geometry.type !== 'Polygon' || f.geometry.type !== 'MultiPolygon') return false;
+      //     return turf.booleanPointInPolygon(turf.point(clickLngLat), f);
+      //   });
+      //   return found ? found.properties.id : null;
+      // }
       // 該当featureのid（またはnull）を返す: LineString版
       function getLineFeatureIdAtClickByPixel(map, e, pixelTolerance = 20) {
         if (!e || !e.lngLat) return null;

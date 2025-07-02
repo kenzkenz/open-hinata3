@@ -3636,7 +3636,6 @@ export function popup(e,map,mapName,mapFlg) {
             case 'click-circle-keiko-line-layer':
             case 'click-circle-label-layer':
             {
-                // alert('到達')
                 html = ''
                 isBreak = true
                 coordinates = store.state.coordinates
@@ -3649,6 +3648,7 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 const feature = features.find(feature => feature.properties.id === store.state.id)
                 if (!feature) return;
+                // alert('到達')
                 props = feature.properties
                 console.log(props)
                 const lng = props.lng
@@ -3687,6 +3687,7 @@ export function popup(e,map,mapName,mapFlg) {
                 const geoType = feature.geometry.type
                 console.log(geoType)
                 switch (geoType) {
+                    case 'MultiPolygon':
                     case 'Polygon':
                         if (radius) {
                             if (html.indexOf('click-circle-layer') === -1) {
@@ -3700,7 +3701,6 @@ export function popup(e,map,mapName,mapFlg) {
                                     '<span style="margin-left: 10px;font-size: 16px;"><input ' + checked + ' type="checkbox" id="' + props.id + '-radius" class="circle-radius-check" value=""><label for="' + props.id + '-radius"> 半径表示</span>' +
                                     '<input id="' + props.id + '" style="width: 100%;" type="range" min="10" max="' + radius * 5 + '" step="10" value="' + radius + '" class="circle-range" lng="' + canterLng + '" lat="' + canterLat + '"/><br>' +
                                     '<input id="' + props.id + '" type="number" style="margin-bottom: 10px;width: 90px;" class="oh-cool-input-number circle-radius-input" min="1" max="100000" step="1" value="' + radius +'">' +
-
                                     '<input id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input circle-text" placeholder="ここに入力" value="' + props.label2 + '">' +
                                     '<button id="' + props.id + '" style="margin-bottom: 10px;height: 3wq230px;font-size: medium;" class="circle-delete pyramid-btn">削　除</button><br>' +
                                     '<div style="display: flex;gap: 8px;">' +
@@ -3937,6 +3937,7 @@ export function popup(e,map,mapName,mapFlg) {
                     '<div class="street-view" style="margin-top:10px;height: 200px;width: 300px"></div>' +
                     '</div>'
             }
+            store.state.snackbar = true
         }
     }
 
