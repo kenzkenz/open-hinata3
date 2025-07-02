@@ -1,7 +1,6 @@
 <template>
   <v-card>
     <div style="margin-bottom: 10px;">
-
       <v-select class="scrollable-content"
                 v-model="pref"
                 :items="prefs"
@@ -15,11 +14,12 @@
         <!-- タイトル行をスキップして2行目以降を描画 -->
         <div
             class="data-container"
-            v-for="(row, index) in rows.slice(1)"
-            :key="index"
-            @click="handleRowClick(row, index + 1)"
+            v-for="(row, idx) in rows.slice(1)"
+            :key="idx"
+            :class="{ selected: selectedRowIndex === idx }"
+            @click="handleRowClick(row, idx)"
         >
-          {{ row.join(', ') }}
+          {{ row[0] + ' ' + row[1] + ' ' + row[2] + 'mb' }}
         </div>
       </div>
     </div>
@@ -27,62 +27,54 @@
 </template>
 
 <script>
-
+import { addDraw } from "@/js/downLoad";
 
 export default {
   name: 'myroom-ninizahyo',
   props: {
-    layerName: {
-      type: String,
-      default: ''
-    },
-    mapInstance: {
-      type: Object,
-      default: null // マップが不要な場合に対応
-    }
+    layerName: String,
+    mapInstance: Object,
   },
   data: () => ({
     pref: null,
     prefs: [
-      {prefId: '28',prefName:'兵庫県'},
-      {prefId: '45',prefName:'宮崎県'},
+      { prefId: '28', prefName: '兵庫県' },
+      { prefId: '45', prefName: '宮崎県' },
     ],
     rows: [],
+    selectedRowIndex: null,  // ← 追加
   }),
-  computed: {
-
-  },
   methods: {
     async prefChange(newPref) {
       this.pref = newPref;
       await this.loadCsv(newPref);
+      this.selectedRowIndex = null;  // 別の県を選んだら選択解除
     },
     async loadCsv(pref) {
       try {
-        const response = await fetch(`https://kenzkenz2.xsrv.jp/ninizahyo/csv/${pref}.csv`);
-        const text = await response.text();
-        // Split into lines, then split each line by comma
+        const res = await fetch(`https://kenzkenz2.xsrv.jp/ninizahyo/csv/${pref}.csv`);
+        const text = await res.text();
         this.rows = text
             .trim()
             .split('\n')
             .map(line => line.split(','));
-      } catch (error) {
-        console.error('CSV load error:', error);
+      } catch (e) {
+        console.error('CSV load error:', e);
         this.rows = [];
       }
     },
-    handleRowClick(row, index) {
-      // this.$emit('row-click', row[0]);
-      console.log('Clicked row', index, row[0]);
-      const geojsonFilename = row[0].replace('.zip','.geojson')
-      alert(geojsonFilename)
+    async handleRowClick(row, idx) {
+      // 選択状態を更新
+      this.selectedRowIndex = idx;
+
+      console.log('Clicked row', idx + 1, row[0]);
+      const geojsonFilename = row[0].replace('.zip', '.geojson');
+      const response = await fetch(`https://kenzkenz2.xsrv.jp/ninizahyo/geojson/${geojsonFilename}`);
+      const geojsonText = await response.text();
+      addDraw(JSON.parse(geojsonText), true);
     },
   },
-  watch:{
-  },
-  mounted() {
-  }
-}
+};
 </script>
 
 <style scoped>
@@ -92,34 +84,14 @@ export default {
   margin-bottom: 5px;
   position: relative;
   cursor: pointer;
-  background-color: rgba(132,163,213,0.3);
+  background-color: rgba(132, 163, 213, 0.3);
 }
 .data-container:hover {
   background-color: #f0f8ff;
 }
-.close-btn {
-  position: absolute;
-  top: -10px;
-  right: 10px;
-  color: black;
-  border: none;
-  cursor: pointer;
-  padding: 5px;
-  font-size: 30px;
-}
-.close-btn:hover {
-  color: red;
-}
+/* 選択時は少し濃いめの青に */
 .data-container.selected {
-  background-color: #b2ebf2;
-}
-.file-count-badge {
-  margin-left: 4px;
-  font-size: 10px;
-  font-weight: bold;
-  min-width: 16px;
-  height: 16px;
-  line-height: 16px;
-  padding: 0 4px;
+  background-color: #4682B4;  /* SteelBlue */
+  color: white;
 }
 </style>
