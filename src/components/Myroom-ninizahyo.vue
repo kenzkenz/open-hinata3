@@ -72,8 +72,10 @@ export default {
       }
     },
     handleRowClick(row, index) {
-      this.$emit('row-click', { row, index });// Example debug log:
-      console.log('Clicked row', index, row);
+      // this.$emit('row-click', row[0]);
+      console.log('Clicked row', index, row[0]);
+      const geojsonFilename = row[0].replace('.zip','.geojson')
+      alert(geojsonFilename)
     },
   },
   watch:{
