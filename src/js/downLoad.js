@@ -9380,8 +9380,22 @@ export function geojsonToGpx(geojson, options = {}) {
     lines.push('</gpx>');
     return lines.join('\n');
 }
+export function removeNini() {
+    const map = store.state.map01;
+    const source = map.getSource(clickCircleSource.iD);
+    const drawGeojson = source._data;
+    // features を上書き：isNini が true かつ lassoSelected が false のものを除外
+    drawGeojson.features = drawGeojson.features.filter(feature => {
+        const hasNini  = !!feature.properties.isNini;
+        const hasLasso = !!feature.properties.lassoSelected;
+        // isNini && !lassoSelected の場合は false を返して除外
+        return !(hasNini && !hasLasso);
+    });
+    source.setData(drawGeojson);
+    store.state.clickCircleGeojsonText = JSON.stringify(drawGeojson);
+}
 // ドローレイヤーにgeojsonを追加
-export function addDraw (geojson,isFit) {
+export function addDraw (geojson,isFit,isNini) {
     console.log(geojson)
     const map = store.state.map01
     geojson.features.forEach(feature => {
@@ -9391,6 +9405,9 @@ export function addDraw (geojson,isFit) {
         feature.properties['color'] = 'rgba(0,0,255,0.1)'
         feature.properties['line-width'] = 1
         feature.properties['arrow-type'] = 'none'
+        if (isNini) {
+            feature.properties['isNini'] = true;
+        }
     })
     const drawGeojson = map.getSource(clickCircleSource.iD)._data
     drawGeojson.features.push(...geojson.features);
