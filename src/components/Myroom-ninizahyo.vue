@@ -11,44 +11,17 @@
                 outlined
                 @update:modelValue="prefChange"
       ></v-select>
-
-<!--      <v-tabs mobile-breakpoint="0" v-model="tab" class="custom-tabs">-->
-<!--        <v-tab value="0"></v-tab>-->
-<!--        <v-tab value="28">兵庫県</v-tab>-->
-<!--        <v-tab value="45">宮崎県</v-tab>-->
-<!--      </v-tabs>-->
-<!--      <v-window v-model="tab">-->
-<!--        <v-window-item value="45">-->
-<!--          <v-card>-->
-
-
-<!--          </v-card>-->
-<!--        </v-window-item>-->
-<!--      </v-window>-->
-
-<!--      <div-->
-<!--          style="height: 50px;"-->
-<!--          v-for="item in sortedGroupLayers"-->
-<!--          :key="item.id"-->
-<!--          class="data-container"-->
-<!--          :class="{ 'selected': selectedLayerId === item.id }"-->
-<!--          @click="selectLayer(item.name, item.id)"-->
-<!--      >-->
-<!--        <div v-if="item.name">-->
-<!--          <v-chip-->
-<!--              v-if="item.features?.length ?? 0"-->
-<!--              class="file-count-badge"-->
-<!--              size="small"-->
-<!--              color="navy"-->
-<!--              text-color="white"-->
-<!--          >-->
-<!--            {{ item.features?.length ?? 0 }}-->
-<!--          </v-chip>-->
-<!--          <span v-else style="color: red;">new </span>-->
-<!--          <button class="close-btn" @click.stop="deleteLayer(item.id)">×</button>-->
-<!--          <span v-html="'<strong>' + item.name + '</strong>_' + item.nickName + 'が作成_' + readableTime(item.createdAt)"></span>-->
-<!--        </div>-->
-<!--      </div>-->
+      <div>
+        <!-- タイトル行をスキップして2行目以降を描画 -->
+        <div
+            class="data-container"
+            v-for="(row, index) in rows.slice(1)"
+            :key="index"
+            @click="handleRowClick(row, index + 1)"
+        >
+          {{ row.join(', ') }}
+        </div>
+      </div>
     </div>
   </v-card>
 </template>
@@ -69,20 +42,39 @@ export default {
     }
   },
   data: () => ({
-    // tab:45,
-    pref: '45',
+    pref: null,
     prefs: [
       {prefId: '28',prefName:'兵庫県'},
       {prefId: '45',prefName:'宮崎県'},
-    ]
+    ],
+    rows: [],
   }),
   computed: {
 
   },
   methods: {
-    prefChange() {
-
-    }
+    async prefChange(newPref) {
+      this.pref = newPref;
+      await this.loadCsv(newPref);
+    },
+    async loadCsv(pref) {
+      try {
+        const response = await fetch(`https://kenzkenz2.xsrv.jp/ninizahyo/csv/${pref}.csv`);
+        const text = await response.text();
+        // Split into lines, then split each line by comma
+        this.rows = text
+            .trim()
+            .split('\n')
+            .map(line => line.split(','));
+      } catch (error) {
+        console.error('CSV load error:', error);
+        this.rows = [];
+      }
+    },
+    handleRowClick(row, index) {
+      this.$emit('row-click', { row, index });// Example debug log:
+      console.log('Clicked row', index, row);
+    },
   },
   watch:{
   },
