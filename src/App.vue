@@ -9,7 +9,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
     <v-main>
 
       <div v-if="isLassoSelected" class="features-rotate-div">
-        回転
+<!--        回転-->
         <v-btn
             class="tiny-icon-btn"
             icon
@@ -19,14 +19,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
             @touchstart.prevent="startAnglePlus"
             @touchend="stopAnglePlus"
         >+</v-btn>
-        <input
-            step="1"
-            style="width: 60px;margin: 0 4px;"
-            type="number"
-            class="oh-cool-input-number"
-            :value="prevAngle"
-            @input="onRotateInput($event.target.value)"
-        />
+        回転
+<!--        <input-->
+<!--            step="1"-->
+<!--            style="width: 60px;margin: 0 4px;"-->
+<!--            type="number"-->
+<!--            class="oh-cool-input-number"-->
+<!--            :value="prevAngle"-->
+<!--            @input="onRotateInput($event.target.value)"-->
+<!--        />-->
         <v-btn
             class="tiny-icon-btn"
             icon
@@ -40,7 +41,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </v-btn>
         <!-- 拡大／縮小 -->
         <div class="my-2"></div>
-        拡大
+<!--        拡大-->
         <v-btn
             class="tiny-icon-btn"
             icon
@@ -50,15 +51,16 @@ import SakuraEffect from './components/SakuraEffect.vue';
             @touchstart.prevent="startScaleUp"
             @touchend="stopScaleUp"
         >+</v-btn>
-        <input
-            step="0.01"
-            min="0.01"
-            style="width: 60px;margin: 0 4px;"
-            type="number"
-            class="oh-cool-input-number"
-            :value="prevScaleValue"
-            @input="onScaleInput($event.target.value)"
-        />
+        拡大
+<!--        <input-->
+<!--            step="0.01"-->
+<!--            min="0.01"-->
+<!--            style="width: 60px;margin: 0 4px;"-->
+<!--            type="number"-->
+<!--            class="oh-cool-input-number"-->
+<!--            :value="prevScaleValue"-->
+<!--            @input="onScaleInput($event.target.value)"-->
+<!--        />-->
         <v-btn
             class="tiny-icon-btn"
             icon
