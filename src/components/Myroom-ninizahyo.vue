@@ -48,8 +48,10 @@ export default {
     pref: null,
     prefs: [
       { prefId: "13", prefName: "東京都" },
+      { prefId: "22", prefName: "静岡県" },
       { prefId: "26", prefName: "京都府" },
       { prefId: "28", prefName: "兵庫県" },
+      { prefId: "40", prefName: "福岡県" },
       { prefId: "45", prefName: "宮崎県" },
     ],
     rows: [],
