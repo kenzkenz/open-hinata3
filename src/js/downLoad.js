@@ -8963,10 +8963,8 @@ export function flipLatitude(geojson) {
     // 1. GeoJSON 全体のバウンディングボックス [minX, minY, maxX, maxY] を取得
     const [minX, minY, maxX, maxY] = turf.bbox(geojson);
     const midLat = (minY + maxY) / 2;
-
     // 2. 深いコピー（元のオブジェクトは変更しない）
     const copy = JSON.parse(JSON.stringify(geojson));
-
     // 3. 座標配列を再帰的に反転
     function reflect(coords) {
         // 単一座標 [lng, lat] の場合
@@ -8979,7 +8977,6 @@ export function flipLatitude(geojson) {
         // 配列（LineString や Polygon のネスト配列）の場合は再帰
         return coords.map(reflect);
     }
-
     // 4. GeoJSON の種類に応じて座標反転を適用
     function process(obj) {
         switch (obj.type) {
@@ -9000,7 +8997,6 @@ export function flipLatitude(geojson) {
             // GeometryCollection などがあれば追加対応
         }
     }
-
     process(copy);
     return copy;
 }

@@ -9,6 +9,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
     <v-main>
 
       <div v-if="isLassoSelected" class="features-rotate-div">
+        回転
         <v-btn
             class="tiny-icon-btn"
             icon
@@ -18,7 +19,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
             @touchstart.prevent="startAnglePlus"
             @touchend="stopAnglePlus"
         >+</v-btn>
-        回転
+        <input
+            step="1"
+            style="width: 60px;margin: 0 4px;"
+            type="number"
+            class="oh-cool-input-number"
+            :value="prevAngle"
+            @input="onRotateInput($event.target.value)"
+        />
         <v-btn
             class="tiny-icon-btn"
             icon
@@ -32,6 +40,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </v-btn>
         <!-- 拡大／縮小 -->
         <div class="my-2"></div>
+        拡大
         <v-btn
             class="tiny-icon-btn"
             icon
@@ -41,7 +50,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
             @touchstart.prevent="startScaleUp"
             @touchend="stopScaleUp"
         >+</v-btn>
-        拡大
+        <input
+            step="0.01"
+            style="width: 60px;margin: 0 4px;"
+            type="number"
+            class="oh-cool-input-number"
+            :value="prevScaleValue"
+            @input="onScaleInput($event.target.value)"
+        />
         <v-btn
             class="tiny-icon-btn"
             icon
@@ -2387,12 +2403,13 @@ export default {
     scaleUp(delta = 0.01) {
       // 1 + delta 倍に拡大
       scaleLassoSelected(1 + delta);
+      this.prevScaleValue = this.prevScaleValue + delta;
     },
     scaleDown(delta = 0.01) {
       // 1 - delta 倍に縮小
       scaleLassoSelected(1 - delta);
+      this.prevScaleValue = this.prevScaleValue - delta;
     },
-
     // ─── 連続拡大 ───
     startScaleUp() {
       this.scaleUpStep = 0.01;
@@ -2409,7 +2426,6 @@ export default {
       }
       this.scaleUpStep = 0.01;
     },
-
     // ─── 連続縮小 ───
     startScaleDown() {
       this.scaleDownStep = 0.01;
@@ -2426,14 +2442,12 @@ export default {
       }
       this.scaleDownStep = 0.01;
     },
-
     // ─── スライダーや入力ボックス連動用 ───
     onScaleInput(value) {
       // 直接入力された scale 値を受けて、差分だけ拡大縮小
       const newScale = Number(value);
       const diff = newScale - this.prevScaleValue;
       if (diff === 0) return;
-
       if (diff > 0) {
         // 拡大
         scaleLassoSelected(1 + diff);
@@ -2443,11 +2457,14 @@ export default {
       }
       this.prevScaleValue = newScale;
     },
+    // ---------------------------------------------------------------------
     anglePlus(delta = 1) {
       rotateLassoSelected(delta)
+      this.prevAngle = this.prevAngle + delta
     },
     angleMinus(delta = 1) {
       rotateLassoSelected(-delta)
+      this.prevAngle = this.prevAngle - delta
     },
     startAnglePlus() {
       this.plusStep = 1
@@ -2479,7 +2496,8 @@ export default {
       }
       this.minusStep = 1
     },
-    rotate(angle) {
+    // ─── スライダーや入力ボックス連動用 ───
+    onRotateInput(angle) {
       if (Number(angle) > this.prevAngle) {
         rotateLassoSelected(1)
       } else {
@@ -2495,7 +2513,6 @@ export default {
         this.removeLastVertex();
       }
     },
-
     // 最後の頂点を一つ削除してプレビューを更新
     removeLastVertex() {
       if (this.s_isDrawLine) {
@@ -4154,7 +4171,6 @@ export default {
     },
     save () {
       this.saveSelectedPointFeature()
-
       // Firestore に保存
       const groupId = this.$store.state.currentGroupName
       const geojson = this.$store.state.groupGeojson
@@ -9243,7 +9259,8 @@ select {
   /* 一瞬明るく */
 }
 .oh-cool-input-number {
-  padding: 0.4em 0.8em;
+  /*padding: 0.4em 0.8em;*/
+  padding: 0em 0.2em 0 0.6em;
   border: 1px solid #2979ff;
   border-radius: 8px;
   outline: none;
@@ -9338,13 +9355,12 @@ select {
 }
 .features-rotate-div {
   position: absolute;
-  top: 80px;
+  top: 70px;
   left: 50%;
   text-align: center;
   transform: translateX(-50%);
-  width: 160px;
-  /*height: 70px;*/
-  padding: 10px;
+  width: 200px;
+  padding: 10px 0;
   background-color: #ffffff;
   /* 浮いた感じのシャドウ */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
