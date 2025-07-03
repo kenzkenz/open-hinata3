@@ -36,7 +36,8 @@
 </template>
 
 <script>
-import {addDraw, removeNini} from "@/js/downLoad";
+import {addDraw, recenterGeoJSON, removeNini} from "@/js/downLoad";
+import axios from "axios";
 
 export default {
   name: "myroom-ninizahyo",
@@ -103,8 +104,15 @@ export default {
           `https://kenzkenz2.xsrv.jp/ninizahyo/geojson/${geojsonFilename}`
       );
       const geojsonText = await response.text();
+      const address = row[1]
       removeNini()
-      addDraw(JSON.parse(geojsonText), true,true);
+      axios
+          .get('https://msearch.gsi.go.jp/address-search/AddressSearch?q=' + address)
+          .then(function (response) {
+            const coordinates = response.data[0].geometry.coordinates
+            const shiftedGeoJSON = recenterGeoJSON(JSON.parse(geojsonText), coordinates);
+            addDraw(shiftedGeoJSON, true,true);
+          })
     },
   },
 };

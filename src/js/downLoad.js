@@ -7441,7 +7441,7 @@ export async function extractFirstFeaturePropertiesAndCheckCRS(file) {
     }
     return Object.keys(properties);
 }
-
+// アドレス、住所
 export async function LngLatToAddress(lng, lat) {
     try {
         const response = await axios.get('https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress', {
@@ -7450,7 +7450,6 @@ export async function LngLatToAddress(lng, lat) {
                 lat: lat
             }
         });
-
         if (response.data.results) {
             const splitMuni = muni[Number(response.data.results.muniCd)].split(',');
             return splitMuni[1] + splitMuni[3] + response.data.results.lv01Nm;
@@ -8062,303 +8061,6 @@ export function enableDragHandles(map) {
     map.getCanvas().addEventListener('touchend', onUp, { passive: false });
 }
 
-// export function enableDragHandles(map) {
-//     let isDragging = false;
-//     let dragOrigin = null;
-//     let dragTargetId = null;
-//     let panWasInitiallyEnabled = true;
-//
-//     let originalFeatures = null;      // click-circle-source のコピー
-//     let originalHandles = null;       // drag-handles-source のコピー
-//     let originalEndPoints = null;     // end-point-source のコピー
-//
-//     function getTouchOrMouseLngLat(e) {
-//         if (e.lngLat) return e.lngLat;
-//         if (e.touches && e.touches.length > 0) {
-//             const touch = e.touches[0];
-//             const rect = map.getCanvas().getBoundingClientRect();
-//             const x = touch.clientX - rect.left;
-//             const y = touch.clientY - rect.top;
-//             return map.unproject([x, y]);
-//         }
-//         return null;
-//     }
-//
-//     function onDown(e) {
-//         const point = e.point || map.project(getTouchOrMouseLngLat(e));
-//         const features = map.queryRenderedFeatures(point, {
-//             layers: ['drag-handles-layer']
-//         });
-//
-//         if (!features.length) return;
-//
-//         const handle = features[0];
-//         dragTargetId = handle.properties.targetId;
-//         dragOrigin = getTouchOrMouseLngLat(e);
-//         isDragging = true;
-//
-//         // パンの元状態を保存し、パンが有効なら無効化
-//         panWasInitiallyEnabled = map.dragPan.isEnabled();
-//         if (panWasInitiallyEnabled) {
-//             map.dragPan.disable();
-//         }
-//
-//         // 各 source の元データを複製
-//         const circleSrc = map.getSource('click-circle-source');
-//         const handleSrc = map.getSource('drag-handles-source');
-//         const endPointSrc = map.getSource('end-point-source');
-//         if (!circleSrc || !handleSrc) return;
-//
-//         originalFeatures = JSON.parse(JSON.stringify(circleSrc._data || circleSrc._options.data));
-//         originalHandles = JSON.parse(JSON.stringify(handleSrc._data || handleSrc._options.data));
-//         if (endPointSrc) {
-//             originalEndPoints = JSON.parse(JSON.stringify(endPointSrc._data || endPointSrc._options.data));
-//         }
-//
-//         e.preventDefault?.();
-//     }
-//
-//     function onMove(e) {
-//         if (!isDragging) return;
-//         const current = getTouchOrMouseLngLat(e);
-//         if (!current || !dragOrigin) return;
-//
-//         const dx = current.lng - dragOrigin.lng;
-//         const dy = current.lat - dragOrigin.lat;
-//
-//         // ① click-circle-source の該当 feature を移動
-//         const movedFeatures = originalFeatures.features.map(f => {
-//             const idMatch = f.properties.id === dragTargetId || f.properties.pairId === dragTargetId;
-//             if (!idMatch) return f;
-//
-//             const moved = JSON.parse(JSON.stringify(f));
-//             const geom = moved.geometry;
-//
-//             if (geom.type === 'Point') {
-//                 geom.coordinates[0] += dx;
-//                 geom.coordinates[1] += dy;
-//             } else if (geom.type === 'LineString' || geom.type === 'Polygon') {
-//                 const moveCoord = coords => coords.map(([lng, lat]) => [lng + dx, lat + dy]);
-//                 if (geom.type === 'LineString') {
-//                     geom.coordinates = moveCoord(geom.coordinates);
-//                 } else if (geom.type === 'Polygon') {
-//                     geom.coordinates = geom.coordinates.map(ring => moveCoord(ring));
-//                 }
-//             }
-//             return moved;
-//         });
-//
-//         // ② drag-handles-source の該当ポイントを移動
-//         const movedHandles = originalHandles.features.map(f => {
-//             if (f.properties.targetId !== dragTargetId) return f;
-//
-//             const moved = JSON.parse(JSON.stringify(f));
-//             moved.geometry.coordinates[0] += dx;
-//             moved.geometry.coordinates[1] += dy;
-//             return moved;
-//         });
-//
-//         // ③ end-point-source の該当ポイントを移動（pairIdで判定）
-//         let movedEndPoints = originalEndPoints?.features || [];
-//         if (originalEndPoints) {
-//             movedEndPoints = originalEndPoints.features.map(f => {
-//                 if (f.properties.pairId !== dragTargetId) return f;
-//
-//                 const moved = JSON.parse(JSON.stringify(f));
-//                 const geom = moved.geometry;
-//
-//                 if (geom.type === 'Point') {
-//                     geom.coordinates[0] += dx;
-//                     geom.coordinates[1] += dy;
-//                 } else if (geom.type === 'LineString' || geom.type === 'Polygon') {
-//                     const moveCoord = coords => coords.map(([lng, lat]) => [lng + dx, lat + dy]);
-//                     if (geom.type === 'LineString') {
-//                         geom.coordinates = moveCoord(geom.coordinates);
-//                     } else if (geom.type === 'Polygon') {
-//                         geom.coordinates = geom.geometry.coordinates.map(ring => moveCoord(ring));
-//                     }
-//                 }
-//
-//                 return moved;
-//             });
-//
-//             map.getSource('end-point-source').setData({
-//                 type: 'FeatureCollection',
-//                 features: movedEndPoints
-//             });
-//         }
-//
-//         // 更新反映
-//         map.getSource('click-circle-source').setData({
-//             type: 'FeatureCollection',
-//             features: movedFeatures
-//         });
-//
-//         map.getSource('drag-handles-source').setData({
-//             type: 'FeatureCollection',
-//             features: movedHandles
-//         });
-//
-//         // 頂点・中点を再生成
-//         getAllVertexPoints(map, {
-//             type: 'FeatureCollection',
-//             features: movedFeatures
-//         });
-//
-//         setAllMidpoints(map, {
-//             type: 'FeatureCollection',
-//             features: movedFeatures
-//         });
-//
-//         e.preventDefault?.();
-//     }
-//
-//     function onUp() {
-//         isDragging = false;
-//         dragOrigin = null;
-//         dragTargetId = null;
-//
-//         // パンがもともと有効だった場合だけ復元
-//         if (panWasInitiallyEnabled) {
-//             map.dragPan.enable();
-//         }
-//     }
-//
-//     // マウス対応
-//     map.on('mousedown', onDown);
-//     map.on('mousemove', onMove);
-//     map.on('mouseup', onUp);
-//
-//     // タッチ対応
-//     map.getCanvas().addEventListener('touchstart', onDown, { passive: false });
-//     map.getCanvas().addEventListener('touchmove', onMove, { passive: false });
-//     map.getCanvas().addEventListener('touchend', onUp, { passive: false });
-// }
-
-// export function enableDragHandles(map) {
-//     let isDragging = false;
-//     let dragOrigin = null;
-//     let dragTargetId = null;
-//
-//     let originalFeatures = null;      // click-circle-source のコピー
-//     let originalHandles = null;       // drag-handles-source のコピー
-//
-//     function getTouchOrMouseLngLat(e) {
-//         if (e.lngLat) return e.lngLat;
-//         if (e.touches && e.touches.length > 0) {
-//             const touch = e.touches[0];
-//             const rect = map.getCanvas().getBoundingClientRect();
-//             const x = touch.clientX - rect.left;
-//             const y = touch.clientY - rect.top;
-//             return map.unproject([x, y]);
-//         }
-//         return null;
-//     }
-//
-//     function onDown(e) {
-//         const point = e.point || map.project(getTouchOrMouseLngLat(e));
-//         const features = map.queryRenderedFeatures(point, {
-//             layers: ['drag-handles-layer']
-//         });
-//
-//         if (!features.length) return;
-//
-//         const handle = features[0];
-//         dragTargetId = handle.properties.targetId;
-//         dragOrigin = getTouchOrMouseLngLat(e);
-//         isDragging = true;
-//
-//         // 元データを複製
-//         const circleSrc = map.getSource('click-circle-source');
-//         const handleSrc = map.getSource('drag-handles-source');
-//         if (!circleSrc || !handleSrc) return;
-//
-//         originalFeatures = JSON.parse(JSON.stringify(circleSrc._data || circleSrc._options.data));
-//         originalHandles = JSON.parse(JSON.stringify(handleSrc._data || handleSrc._options.data));
-//
-//         e.preventDefault?.();
-//     }
-//
-//     function onMove(e) {
-//         if (!isDragging) return;
-//         const current = getTouchOrMouseLngLat(e);
-//         if (!current || !dragOrigin) return;
-//
-//         const dx = current.lng - dragOrigin.lng;
-//         const dy = current.lat - dragOrigin.lat;
-//
-//         // ① click-circle-source の移動対象を更新
-//         const movedFeatures = originalFeatures.features.map(f => {
-//             const idMatch = f.properties.id === dragTargetId || f.properties.pairId === dragTargetId;
-//             if (!idMatch) return f;
-//
-//             const moved = JSON.parse(JSON.stringify(f));
-//             const geom = moved.geometry;
-//
-//             if (geom.type === 'Point') {
-//                 geom.coordinates[0] += dx;
-//                 geom.coordinates[1] += dy;
-//             } else if (geom.type === 'LineString' || geom.type === 'Polygon') {
-//                 const moveCoord = coords => coords.map(([lng, lat]) => [lng + dx, lat + dy]);
-//                 if (geom.type === 'LineString') {
-//                     geom.coordinates = moveCoord(geom.coordinates);
-//                 } else if (geom.type === 'Polygon') {
-//                     geom.coordinates = geom.coordinates.map(ring => moveCoord(ring));
-//                 }
-//             }
-//             return moved;
-//         });
-//
-//         // ② drag-handles-source の該当 handle を移動
-//         const movedHandles = originalHandles.features.map(f => {
-//             if (f.properties.targetId !== dragTargetId) return f;
-//             const moved = JSON.parse(JSON.stringify(f));
-//             moved.geometry.coordinates[0] += dx;
-//             moved.geometry.coordinates[1] += dy;
-//             return moved;
-//         });
-//
-//         // 更新反映
-//         map.getSource('click-circle-source').setData({
-//             type: 'FeatureCollection',
-//             features: movedFeatures
-//         });
-//
-//         map.getSource('drag-handles-source').setData({
-//             type: 'FeatureCollection',
-//             features: movedHandles
-//         });
-//
-//         // 頂点・中点も再生成
-//         getAllVertexPoints(map, {
-//             type: 'FeatureCollection',
-//             features: movedFeatures
-//         });
-//         setAllMidpoints(map, {
-//             type: 'FeatureCollection',
-//             features: movedFeatures
-//         });
-//
-//         e.preventDefault?.();
-//     }
-//
-//     function onUp() {
-//         isDragging = false;
-//         dragOrigin = null;
-//         dragTargetId = null;
-//     }
-//
-//     // マウス対応
-//     map.on('mousedown', onDown);
-//     map.on('mousemove', onMove);
-//     map.on('mouseup', onUp);
-//
-//     // タッチ対応
-//     map.getCanvas().addEventListener('touchstart', onDown, { passive: false });
-//     map.getCanvas().addEventListener('touchmove', onMove, { passive: false });
-//     map.getCanvas().addEventListener('touchend', onUp, { passive: false });
-// }
-
 /**
  * ポイント/ライン/ポリゴンのクリック・ドラッグ移動・追加を有効化
  * ペアID連動対応・どこを掴んでも“その位置から”気持ちよく動く
@@ -8602,220 +8304,6 @@ export function enableFeatureDragAndAdd(map, layerId, sourceId, options = {}) {
         });
     }
 }
-
-
-
-
-
-// export function enableFeatureDragAndAdd(map, layerId, sourceId, options = {}) {
-//     let isCursorOnFeature = false;
-//     let isDragging = false;
-//     let draggedFeature = null;
-//     let dragStartCoord = null;
-//     let dragOffset = null;
-//     const fetchElevation = options.fetchElevation || (async () => 0);
-//     const vm = options.vm;
-//     const storeField = options.storeField || null;
-//     const enableAdd = options.enableAdd ?? true; // 追加有無
-//     const click = options.click; // 旧互換
-//
-//     // 指定featureの「ドラッグ基準点（中心）」座標を返す
-//     function getCenterCoord(feature) {
-//         if (!feature.geometry) return null;
-//         const g = feature.geometry;
-//         if (g.type === 'Point') {
-//             return g.coordinates.slice();
-//         }
-//         if (g.type === 'LineString') {
-//             return g.coordinates[0].slice();
-//         }
-//         if (g.type === 'Polygon') {
-//             return g.coordinates[0][0].slice();
-//         }
-//         if (g.type === 'MultiPolygon') {
-//             return g.coordinates[0][0][0].slice();
-//         }
-//         return null;
-//     }
-//
-//     // hover判定
-//     map.on('mousemove', function (e) {
-//         const features = map.queryRenderedFeatures(e.point, { layers: [layerId] });
-//         if (features.length > 0) {
-//             isCursorOnFeature = true;
-//             map.getCanvas().style.cursor = 'pointer';
-//         } else {
-//             isCursorOnFeature = false;
-//             map.getCanvas().style.cursor = '';
-//         }
-//     });
-//
-//     // ドラッグ開始
-//     map.on('mousedown', function (e) {
-//         try {
-//             if (store.state.editEnabled) return
-//             const features = map.queryRenderedFeatures(e.point, { layers: [layerId] });
-//             if (features.length > 0) {
-//                 isDragging = true;
-//                 draggedFeature = features[0];
-//                 dragStartCoord = getCenterCoord(draggedFeature);
-//
-//                 // ★クリック点と基準点（中心）のオフセットを記録
-//                 dragOffset = [
-//                     e.lngLat.lng - dragStartCoord[0],
-//                     e.lngLat.lat - dragStartCoord[1]
-//                 ];
-//                 map.getCanvas().style.cursor = 'grabbing';
-//                 e.preventDefault();
-//             }
-//         }catch (e) {
-//             console.log(e)
-//         }
-//     });
-//
-//     // ドラッグ中
-//     map.on('mousemove', async function (e) {
-//         if (!isDragging || !draggedFeature) return;
-//         store.state.finishLineFire = !store.state.finishLineFire
-//         const source = map.getSource(sourceId);
-//         let allowSource
-//         if (sourceId === 'click-circle-source') {
-//             allowSource = map.getSource('end-point-source')
-//         }
-//         if (!source) return;
-//         const currentData = source._data;
-//         const currentAllowData = allowSource._data;
-//         if (!currentData) return;
-//
-//         // オフセットを考慮した移動先
-//         const targetLng = e.lngLat.lng - dragOffset[0];
-//         const targetLat = e.lngLat.lat - dragOffset[1];
-//
-//         let elevation = await fetchElevation(targetLng, targetLat);
-//         if (!elevation) elevation = 0;
-//
-//         // dx/dy＝ドラッグ開始基準点→新しい基準点
-//         const [lng0, lat0] = dragStartCoord;
-//         const dx = targetLng - lng0;
-//         const dy = targetLat - lat0;
-//
-//         // 対象feature群（ペアID含む）
-//         const dragId = draggedFeature.id || (draggedFeature.properties && draggedFeature.properties.id);
-//         const dragPairId = draggedFeature.properties && draggedFeature.properties.pairId;
-//
-//         const moveTargets = [];
-//         for (const f of currentData.features) {
-//             const fid = f.id || (f.properties && f.properties.id);
-//             const fpair = f.properties && f.properties.pairId;
-//             if (fid === dragId || (dragPairId && dragPairId === fpair)) {
-//                 moveTargets.push(f);
-//             }
-//         }
-//         for (const f of currentAllowData.features) {
-//             const startId = dragId + '-start'
-//             const endId = dragId + '-end'
-//             if (startId === f.properties.id || endId === f.properties.id) {
-//                 moveTargets.push(f);
-//             }
-//         }
-//
-//         // 実際の座標移動
-//         for (const f of moveTargets) {
-//             const g = f.geometry;
-//             if (g.type === 'Point') {
-//                 g.coordinates = [g.coordinates[0] + dx, g.coordinates[1] + dy, elevation];
-//                 f.properties['canterLng'] = g.coordinates[0];
-//                 f.properties['canterLat'] = g.coordinates[1];
-//             }
-//             else if (g.type === 'LineString') {
-//                 g.coordinates = g.coordinates.map(([lng, lat, ...rest]) =>
-//                     [lng + dx, lat + dy, ...rest]
-//                 );
-//                 f.properties['canterLng'] = g.coordinates[0][0];
-//                 f.properties['canterLat'] = g.coordinates[0][1];
-//             }
-//             else if (g.type === 'Polygon') {
-//                 g.coordinates = g.coordinates.map(ring =>
-//                     ring.map(([lng, lat, ...rest]) => [lng + dx, lat + dy, ...rest])
-//                 );
-//                 f.properties['canterLng'] = g.coordinates[0][0][0];
-//                 f.properties['canterLat'] = g.coordinates[0][0][1];
-//             }
-//             else if (g.type === 'MultiPolygon') {
-//                 g.coordinates = g.coordinates.map(poly =>
-//                     poly.map(ring =>
-//                         ring.map(([lng, lat, ...rest]) => [lng + dx, lat + dy, ...rest])
-//                     )
-//                 );
-//                 f.properties['canterLng'] = g.coordinates[0][0][0][0];
-//                 f.properties['canterLat'] = g.coordinates[0][0][0][1];
-//             }
-//         }
-//
-//         // drag開始座標を新しい基準点に更新
-//         dragStartCoord = [targetLng, targetLat];
-//
-//         source.setData(currentData);
-//         allowSource.setData(currentAllowData);
-//         generateSegmentLabelGeoJSON(currentData)
-//         map.getCanvas().style.cursor = 'grabbing';
-//         if (vm && storeField) vm.$store.state[storeField] = JSON.stringify(currentData);
-//     });
-//
-//     // ドラッグ終了
-//     map.on('mouseup', function () {
-//         if (isDragging) {
-//             isDragging = false;
-//             draggedFeature = null;
-//             dragStartCoord = null;
-//             dragOffset = null;
-//             map.getCanvas().style.cursor = 'pointer';
-//         }
-//     });
-//
-//     // クリック追加（Pointのみ。Line/Polygonは別途draw系で）
-//     if (click) {
-//         map.on('click', async function (e) {
-//             if (isDragging) return;
-//             const visibility = map.getLayoutProperty(layerId, 'visibility');
-//             if (visibility === 'none') return;
-//             const source = map.getSource(sourceId);
-//             if (!source) return;
-//             if (isCursorOnFeature) return;
-//             const currentData = source._data || {
-//                 type: 'FeatureCollection',
-//                 features: []
-//             };
-//             const clickedLng = e.lngLat.lng;
-//             const clickedLat = e.lngLat.lat;
-//
-//             let elevation = await fetchElevation(clickedLng, clickedLat);
-//             if (!elevation) elevation = 0;
-//
-//             const newFeature = {
-//                 type: 'Feature',
-//                 id: currentData.features.length,
-//                 geometry: {
-//                     type: 'Point',
-//                     coordinates: [clickedLng, clickedLat, elevation]
-//                 },
-//                 properties: {
-//                     id: Math.random().toString().slice(2, 6),
-//                     // pairId: ''
-//                 }
-//             };
-//             currentData.features.push(newFeature);
-//             source.setData(currentData);
-//             if (vm && storeField) vm.$store.state[storeField] = JSON.stringify(currentData);
-//         });
-//     }
-// }
-
-
-
-
-
-
 
 export function japanCoord (coordinates) {
     if (zahyokei.length > 0) {
@@ -9431,6 +8919,40 @@ export function addDraw (geojson,isFit,isNini) {
             linear: false
         });
     }
+}
+/**
+ * GeoJSON 全体を指定座標に再センタリングする
+ * @param {GeoJSON} geojson - 入力 GeoJSON（FeatureCollection）
+ * @param {[number, number]} targetCoord - 目的の中心座標 [lng, lat]
+ * @returns {GeoJSON} - 座標をシフトした GeoJSON
+ */
+export function recenterGeoJSON(geojson, targetCoord) {
+    // 1. 入力の重心を計算
+    const center = turf.centroid(geojson).geometry.coordinates; // [lng, lat]
+
+    // 2. 移動量 Δlng, Δlat を求める
+    const dx = targetCoord[0] - center[0];
+    const dy = targetCoord[1] - center[1];
+
+    // 3. ディープコピーして新しいオブジェクトを作成
+    const moved = JSON.parse(JSON.stringify(geojson));
+
+    // 4. 再帰的に座標配列をシフトする関数
+    function shiftCoords(coords) {
+        // 座標ペア [lng, lat] の場合
+        if (typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+            return [coords[0] + dx, coords[1] + dy];
+        }
+        // それ以外（ネストされた配列）の場合は再帰
+        return coords.map(shiftCoords);
+    }
+
+    // 5. 各 Feature のジオメトリをシフト
+    moved.features.forEach(feature => {
+        feature.geometry.coordinates = shiftCoords(feature.geometry.coordinates);
+    });
+
+    return moved;
 }
 
 export function gpxDownload (geojson) {

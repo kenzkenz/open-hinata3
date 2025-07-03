@@ -311,7 +311,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v1.192
+        v1.193
       </p>
 
       <div v-if="user1">
@@ -1503,7 +1503,6 @@ export default {
     },
     sercheAdress () {
       const map = this.$store.state.map01
-      // const vm = this
       axios
           .get('https://msearch.gsi.go.jp/address-search/AddressSearch?q=' + this.address)
           .then(function (response) {
