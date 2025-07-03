@@ -717,7 +717,17 @@ export const clickCircPolygonSymbolLayer = {
     source: 'click-circle-source',
     filter: ['all', ['==', '$type', 'Polygon'], ['!has', 'bearing'], ['!has', 'radius']],
     layout: {
-        'text-field': ['get', 'label'],
+        // 'text-field': ['get', 'label'],
+        'text-field': [
+            'case',
+            // label プロパティがあり、かつ文字数が 0 より大きいときは label
+            ['all',
+                ['has', 'label'],
+                ['>', ['length', ['get', 'label']], 0]
+            ], ['get', 'label'],
+            // それ以外は地番
+            ['get', '地番']
+        ],
         'text-size': 20,   // サイズ調整
         'text-anchor': 'center',
         'text-allow-overlap': true
@@ -962,7 +972,7 @@ export const midpointLayer = {
     layout: {},
     filter: ['==', '$type', 'Point']
 }
-// 移動レイヤー---------------------------------------------------------------------
+// 移動レイヤー ドラッグアイコン---------------------------------------------------------------------
 export const dragHandlesSource = {
     id:'drag-handles-source',obj:
         {
@@ -983,15 +993,6 @@ export const dragHandleslayer = {
         'icon-allow-overlap': true,
         'icon-ignore-placement': true
     }
-    // id: 'drag-handles-layer',
-    // type: 'circle',
-    // source: 'drag-handles-source',
-    // paint: {
-    //     'circle-radius': 6,
-    //     'circle-color': '#FF0000',
-    //     'circle-stroke-width': 2,
-    //     'circle-stroke-color': '#FFFFFF'
-    // }
 }
 // 距離ラベルレイヤー-----------------------------------------------------------------
 export const segmentLabelSource = {

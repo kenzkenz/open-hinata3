@@ -1334,9 +1334,17 @@ export default function pyramid () {
                     const id = String(e.target.getAttribute("id"))
                     let source = map01.getSource(clickCircleSource.iD)
                     const geojson = source._data
+                    let lasso = false
+                    if (geojson.features.find(feature => feature.properties.id === id && feature.properties.lassoSelected === true)) {
+                        lasso = true
+                    }
                     if (geojson && geojson.features) {
                         const newFeatures = geojson.features.filter(feature => {
-                            return String(feature.properties.id) !== id && String(feature.properties.pairId) !== id;
+                            if (lasso) {
+                                return !feature.properties.lassoSelected
+                            } else {
+                                return String(feature.properties.id) !== id && String(feature.properties.pairId) !== id;
+                            }
                         });
                         if (newFeatures.length !== geojson.features.length) {
                             geojson.features = newFeatures;
@@ -1363,9 +1371,17 @@ export default function pyramid () {
                     const allowSource = map01.getSource(endPointSouce.id)
                     const geojson = source._data
                     const allowGeojson = allowSource._data
+                    let lasso = false
+                    if (geojson.features.find(feature => feature.properties.id === id && feature.properties.lassoSelected === true)) {
+                        lasso = true
+                    }
                     if (geojson && geojson.features) {
                         const newFeatures = geojson.features.filter(feature => {
-                            return !(feature.properties && String(feature.properties.id) === id);
+                            if (lasso) {
+                                return !feature.properties.lassoSelected
+                            } else {
+                                return !(feature.properties && String(feature.properties.id) === id);
+                            }
                         });
                         if (newFeatures.length !== geojson.features.length) {
                             geojson.features = newFeatures;
@@ -1375,7 +1391,12 @@ export default function pyramid () {
                     }
                     if (allowGeojson && allowGeojson.features) {
                         const newFeatures = allowGeojson.features.filter(feature => {
-                            return !(feature.properties && String(feature.properties.id) === startId) && !(feature.properties && String(feature.properties.id) === endId);
+                            if (lasso) {
+                                // ここを絶対に修正する必要あり。今は真偽ともに同じ動作をしている。
+                                return !(feature.properties && String(feature.properties.id) === startId) && !(feature.properties && String(feature.properties.id) === endId);
+                            } else {
+                                return !(feature.properties && String(feature.properties.id) === startId) && !(feature.properties && String(feature.properties.id) === endId);
+                            }
                         });
                         if (newFeatures.length !== allowGeojson.features.length) {
                             allowGeojson.features = newFeatures;

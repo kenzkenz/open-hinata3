@@ -8954,6 +8954,56 @@ export function recenterGeoJSON(geojson, targetCoord) {
 
     return moved;
 }
+/**
+ * GeoJSON の南北（緯度）だけを反転（上下反転）する
+ * @param {GeoJSON} geojson - FeatureCollection／Feature／Geometry
+ * @returns {GeoJSON} - 縦方向に反転済み GeoJSON の新オブジェクト
+ */
+export function flipLatitude(geojson) {
+    // 1. GeoJSON 全体のバウンディングボックス [minX, minY, maxX, maxY] を取得
+    const [minX, minY, maxX, maxY] = turf.bbox(geojson);
+    const midLat = (minY + maxY) / 2;
+
+    // 2. 深いコピー（元のオブジェクトは変更しない）
+    const copy = JSON.parse(JSON.stringify(geojson));
+
+    // 3. 座標配列を再帰的に反転
+    function reflect(coords) {
+        // 単一座標 [lng, lat] の場合
+        if (typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+            const lng = coords[0];
+            const lat = coords[1];
+            // 緯度だけ midLat を基準に反転
+            return [ lng, 2 * midLat - lat ];
+        }
+        // 配列（LineString や Polygon のネスト配列）の場合は再帰
+        return coords.map(reflect);
+    }
+
+    // 4. GeoJSON の種類に応じて座標反転を適用
+    function process(obj) {
+        switch (obj.type) {
+            case 'FeatureCollection':
+                obj.features.forEach(process);
+                break;
+            case 'Feature':
+                process(obj.geometry);
+                break;
+            case 'Point':
+            case 'MultiPoint':
+            case 'LineString':
+            case 'MultiLineString':
+            case 'Polygon':
+            case 'MultiPolygon':
+                obj.coordinates = reflect(obj.coordinates);
+                break;
+            // GeometryCollection などがあれば追加対応
+        }
+    }
+
+    process(copy);
+    return copy;
+}
 
 export function gpxDownload (geojson) {
     const gpxString = geojsonToGpx(geojson)
