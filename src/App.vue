@@ -52,6 +52,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
         >+</v-btn>
         <input
             step="0.01"
+            min="0.01"
             style="width: 60px;margin: 0 4px;"
             type="number"
             class="oh-cool-input-number"
@@ -2402,13 +2403,17 @@ export default {
     // ─── 単発拡大縮小 ───
     scaleUp(delta = 0.01) {
       // 1 + delta 倍に拡大
-      scaleLassoSelected(1 + delta);
-      this.prevScaleValue = this.prevScaleValue + delta;
+      if (this.prevScaleValue && this.prevScaleValue > 0) {
+        scaleLassoSelected(1 + delta);
+        this.prevScaleValue = this.prevScaleValue + delta;
+      }
     },
     scaleDown(delta = 0.01) {
       // 1 - delta 倍に縮小
-      scaleLassoSelected(1 - delta);
-      this.prevScaleValue = this.prevScaleValue - delta;
+      if (this.prevScaleValue && this.prevScaleValue > 0) {
+        scaleLassoSelected(1 - delta);
+        this.prevScaleValue = this.prevScaleValue - delta;
+      }
     },
     // ─── 連続拡大 ───
     startScaleUp() {
@@ -2446,6 +2451,7 @@ export default {
     onScaleInput(value) {
       // 直接入力された scale 値を受けて、差分だけ拡大縮小
       const newScale = Number(value);
+      if (newScale === 0) return;
       const diff = newScale - this.prevScaleValue;
       if (diff === 0) return;
       if (diff > 0) {
