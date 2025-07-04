@@ -9,7 +9,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
     <v-main>
 
       <div v-if="isLassoSelected" class="features-rotate-div">
-<!--        回転-->
+        回転
         <v-btn
             class="tiny-icon-btn"
             icon
@@ -19,15 +19,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
             @touchstart.prevent="startAnglePlus"
             @touchend="stopAnglePlus"
         >+</v-btn>
-        回転
-<!--        <input-->
-<!--            step="1"-->
-<!--            style="width: 60px;margin: 0 4px;"-->
-<!--            type="number"-->
-<!--            class="oh-cool-input-number"-->
-<!--            :value="prevAngle"-->
-<!--            @input="onRotateInput($event.target.value)"-->
-<!--        />-->
+<!--        回転-->
+        <input
+            step="1"
+            style="width: 70px;margin: 0 4px;"
+            type="number"
+            class="oh-cool-input-number"
+            v-model="angleValue"
+            @input="onRotateInput($event.target.value)"
+        />
         <v-btn
             class="tiny-icon-btn"
             icon
@@ -1777,18 +1777,16 @@ export default {
     dialogForDl: false,
     dialogForChibanzyOrDraw: false,
     isLassoSelected: false,
-    prevAngle:0,
+    angleValue:0,
     plusInterval: null,
     minusInterval: null,
     plusStep: 1,
     minusStep: 1,
     // 拡大／縮小操作用ステップやインターバルID
-    scaleUpStep: 0.01,
-    scaleDownStep: 0.01,
+    scaleUpStep: 1,
+    scaleDownStep: -1,
     scaleUpInterval: null,
     scaleDownInterval: null,
-    // スライダーなどからの直接入力用
-    prevScaleValue: 1,
     scaleValue: 100,
     printMap: 'map01',
   }),
@@ -2403,21 +2401,6 @@ export default {
     },
   },
   methods: {
-    // ─── 単発拡大縮小 ───
-    // scaleUp(delta) {
-    //   1 + delta 倍に拡大
-    //   if (this.prevScaleValue && this.prevScaleValue > 0) {
-    //     scaleLassoSelected(1 + delta);
-    //     this.prevScaleValue = this.prevScaleValue + delta;
-    //   }
-    // },
-    // scaleDown(delta = 0.01) {
-    //   // 1 - delta 倍に縮小
-    //   if (this.prevScaleValue && this.prevScaleValue > 0) {
-    //     scaleLassoSelected(1 - delta);
-    //     this.prevScaleValue = this.prevScaleValue - delta;
-    //   }
-    // },
     // ─── 連続拡大 ───
     startScaleUp() {
       this.scaleUpStep = 1;
@@ -2455,20 +2438,12 @@ export default {
         scaleLassoSelected(Number(value));
     },
     // ---------------------------------------------------------------------
-    anglePlus(delta = 1) {
-      rotateLassoSelected(delta)
-      this.prevAngle = this.prevAngle + delta
-    },
-    angleMinus(delta = 1) {
-      rotateLassoSelected(-delta)
-      this.prevAngle = this.prevAngle - delta
-    },
     startAnglePlus() {
       this.plusStep = 1
-      this.anglePlus(this.plusStep)
       this.plusInterval = setInterval(() => {
         this.plusStep++
-        this.anglePlus(this.plusStep)
+        this.angleValue = this.angleValue + this.plusStep
+        this.onRotateInput(this.angleValue);
       }, 100)
     },
     stopAnglePlus() {
@@ -2479,11 +2454,11 @@ export default {
       this.plusStep = 1
     },
     startAngleMinus() {
-      this.minusStep = 1
-      this.angleMinus(this.minusStep)
+      this.minusStep = -1
       this.minusInterval = setInterval(() => {
-        this.minusStep++
-        this.angleMinus(this.minusStep)
+        this.minusStep--
+        this.angleValue = this.angleValue + this.minusStep
+        this.onRotateInput(this.angleValue);
       }, 100)
     },
     stopAngleMinus() {
@@ -2491,16 +2466,11 @@ export default {
         clearInterval(this.minusInterval)
         this.minusInterval = null
       }
-      this.minusStep = 1
+      this.minusStep = -1
     },
     // ─── スライダーや入力ボックス連動用 ───
     onRotateInput(angle) {
-      if (Number(angle) > this.prevAngle) {
-        rotateLassoSelected(1)
-      } else {
-        rotateLassoSelected(-1)
-      }
-      this.prevAngle = Number(angle)
+      rotateLassoSelected(Number(angle))
     },
     // Backspace/Delete 押下で頂点削除
     onKeydown(e) {

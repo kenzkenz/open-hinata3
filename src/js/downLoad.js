@@ -7735,6 +7735,7 @@ export function scaleLassoSelected(scaleFactor) {
  * @param {number} angleDeg - 回転角度（度単位、正で反時計回り）
  */
 export function rotateLassoSelected(angleDeg) {
+    angleDeg = angleDeg * -1
     const map = store.state.map01;
     // click-circle-source の GeoJSON データを取得
     const src = map.getSource('click-circle-source');
@@ -7742,6 +7743,17 @@ export function rotateLassoSelected(angleDeg) {
 
     // lassoSelected=true のフィーチャを抽出
     const selected = features.filter(f => f.properties.lassoSelected === true);
+    const lassoFeatures = JSON.parse(store.state.lassoGeojson).features;
+
+    selected.forEach(sel => {
+        const selId = sel.properties.id;
+        const source = lassoFeatures.find(f => f.properties.id === selId);
+        if (source) {
+            // selected の座標を store 側の座標に合わせる
+            sel.geometry.coordinates = source.geometry.coordinates;
+        }
+    });
+
     if (selected.length === 0) {
         console.info('選択されたフィーチャがありません');
         return;
