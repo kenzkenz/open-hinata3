@@ -41,7 +41,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </v-btn>
         <!-- 拡大／縮小 -->
         <div class="my-2"></div>
-<!--        拡大-->
+        拡大
         <v-btn
             class="tiny-icon-btn"
             icon
@@ -51,16 +51,16 @@ import SakuraEffect from './components/SakuraEffect.vue';
             @touchstart.prevent="startScaleUp"
             @touchend="stopScaleUp"
         >+</v-btn>
-        拡大
-<!--        <input-->
-<!--            step="0.01"-->
-<!--            min="0.01"-->
-<!--            style="width: 60px;margin: 0 4px;"-->
-<!--            type="number"-->
-<!--            class="oh-cool-input-number"-->
-<!--            :value="prevScaleValue"-->
-<!--            @input="onScaleInput($event.target.value)"-->
-<!--        />-->
+<!--        拡大-->
+        <input
+            step="1"
+            min="1"
+            style="width: 70px;margin: 0 4px;"
+            type="number"
+            class="oh-cool-input-number"
+            v-model="scaleValue"
+            @input="onScaleInput($event.target.value)"
+        />
         <v-btn
             class="tiny-icon-btn"
             icon
@@ -1789,6 +1789,7 @@ export default {
     scaleDownInterval: null,
     // スライダーなどからの直接入力用
     prevScaleValue: 1,
+    scaleValue: 100,
     printMap: 'map01',
   }),
   computed: {
@@ -2403,27 +2404,27 @@ export default {
   },
   methods: {
     // ─── 単発拡大縮小 ───
-    scaleUp(delta = 0.01) {
-      // 1 + delta 倍に拡大
-      if (this.prevScaleValue && this.prevScaleValue > 0) {
-        scaleLassoSelected(1 + delta);
-        this.prevScaleValue = this.prevScaleValue + delta;
-      }
-    },
-    scaleDown(delta = 0.01) {
-      // 1 - delta 倍に縮小
-      if (this.prevScaleValue && this.prevScaleValue > 0) {
-        scaleLassoSelected(1 - delta);
-        this.prevScaleValue = this.prevScaleValue - delta;
-      }
-    },
+    // scaleUp(delta) {
+    //   1 + delta 倍に拡大
+    //   if (this.prevScaleValue && this.prevScaleValue > 0) {
+    //     scaleLassoSelected(1 + delta);
+    //     this.prevScaleValue = this.prevScaleValue + delta;
+    //   }
+    // },
+    // scaleDown(delta = 0.01) {
+    //   // 1 - delta 倍に縮小
+    //   if (this.prevScaleValue && this.prevScaleValue > 0) {
+    //     scaleLassoSelected(1 - delta);
+    //     this.prevScaleValue = this.prevScaleValue - delta;
+    //   }
+    // },
     // ─── 連続拡大 ───
     startScaleUp() {
-      this.scaleUpStep = 0.01;
-      this.scaleUp(this.scaleUpStep);
+      this.scaleUpStep = 1;
       this.scaleUpInterval = setInterval(() => {
-        this.scaleUpStep += 0.01;
-        this.scaleUp(this.scaleUpStep);
+        this.scaleUpStep += 1;
+        this.scaleValue = this.scaleValue + this.scaleUpStep
+        scaleLassoSelected(this.scaleValue);
       }, 100);
     },
     stopScaleUp() {
@@ -2431,15 +2432,15 @@ export default {
         clearInterval(this.scaleUpInterval);
         this.scaleUpInterval = null;
       }
-      this.scaleUpStep = 0.01;
+      this.scaleUpStep = 1;
     },
     // ─── 連続縮小 ───
     startScaleDown() {
-      this.scaleDownStep = 0.01;
-      this.scaleDown(this.scaleDownStep);
+      this.scaleDownStep = -1;
       this.scaleDownInterval = setInterval(() => {
-        this.scaleDownStep += 0.01;
-        this.scaleDown(this.scaleDownStep);
+        this.scaleDownStep += -1;
+        this.scaleValue = this.scaleValue + this.scaleDownStep
+        scaleLassoSelected(this.scaleValue);
       }, 100);
     },
     stopScaleDown() {
@@ -2447,24 +2448,27 @@ export default {
         clearInterval(this.scaleDownInterval);
         this.scaleDownInterval = null;
       }
-      this.scaleDownStep = 0.01;
+      this.scaleDownStep = -1;
     },
     // ─── スライダーや入力ボックス連動用 ───
     onScaleInput(value) {
-      // 直接入力された scale 値を受けて、差分だけ拡大縮小
-      const newScale = Number(value);
-      if (newScale === 0) return;
-      const diff = newScale - this.prevScaleValue;
-      if (diff === 0) return;
-      if (diff > 0) {
-        // 拡大
-        scaleLassoSelected(1 + diff);
-      } else {
-        // 縮小
-        scaleLassoSelected(1 + diff); // diff は負なので (1 - |diff|)
-      }
-      this.prevScaleValue = newScale;
+        scaleLassoSelected(Number(value));
     },
+    // onScaleInput(value) {
+    //   // 直接入力された scale 値を受けて、差分だけ拡大縮小
+    //   const newScale = Number(value);
+    //   if (newScale === 0) return;
+    //   const diff = newScale - this.prevScaleValue;
+    //   if (diff === 0) return;
+    //   if (diff > 0) {
+    //     // 拡大
+    //     scaleLassoSelected(1 + diff);
+    //   } else {
+    //     // 縮小
+    //     scaleLassoSelected(1 + diff); // diff は負なので (1 - |diff|)
+    //   }
+    //   this.prevScaleValue = newScale;
+    // },
     // ---------------------------------------------------------------------
     anglePlus(delta = 1) {
       rotateLassoSelected(delta)
@@ -6242,12 +6246,10 @@ export default {
         if (!isLassoDrawing) return;
         isLassoDrawing = false;
         map.getCanvas().style.cursor = '';
-
         if (lassoCoords.length >= 3) {
           // ポリゴンを閉じる
           lassoCoords.push(lassoCoords[0]);
           const polygon = turf.polygon([lassoCoords]);
-
           // 対象ソースの全フィーチャ取得
           const source = map.getSource(clickCircleSource.iD);
           const geojson = source._data; // or source.getData()
@@ -6259,6 +6261,10 @@ export default {
               isLassoSelected = true
             }
           });
+          // this.$store.state.lassoGeojson = JSON.parse(JSON.stringify(geojson.features.filter(feature => feature.properties.lassoSelected === true)))
+          this.$store.state.lassoGeojson = JSON.stringify(turf.featureCollection(geojson.features.filter(feature => feature.properties.lassoSelected === true)))
+          console.log(this.$store.state.lassoGeojson)
+
           if (isLassoSelected) {
             this.isLassoSelected = true
           } else {
@@ -6268,7 +6274,6 @@ export default {
           // 更新
           source.setData(geojson);
         }
-
         // 投げ縄ラインをクリア
         map.getSource(lassoSourceId).setData({ type: 'FeatureCollection', features: [] });
         map.dragPan.enable();

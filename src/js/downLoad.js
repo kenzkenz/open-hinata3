@@ -7635,12 +7635,25 @@ export function extractSimaById(simaText, targetIds) {
  * @param {number} scaleFactor - 拡大縮小率（1で元サイズ、>1で拡大、<1で縮小）
  */
 export function scaleLassoSelected(scaleFactor) {
+    scaleFactor = scaleFactor / 100
     const map = store.state.map01;
     const src = map.getSource('click-circle-source');
     const features = (src._data && src._data.features) || [];
 
     // lassoSelected=true のフィーチャを抽出
     const selected = features.filter(f => f.properties.lassoSelected === true);
+    const lassoFeatures = JSON.parse(store.state.lassoGeojson).features;
+
+    selected.forEach(sel => {
+        const selId = sel.properties.id;
+        const source = lassoFeatures.find(f => f.properties.id === selId);
+        if (source) {
+            // selected の座標を store 側の座標に合わせる
+            sel.geometry.coordinates = source.geometry.coordinates;
+        }
+    });
+    // const selected = store.state.lassoGeojson.features
+
     if (selected.length === 0) {
         console.info('選択されたフィーチャがありません');
         return;
