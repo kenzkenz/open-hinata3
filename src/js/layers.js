@@ -736,7 +736,9 @@ export const clickCircPolygonSymbolLayer = {
         'text-color': 'black',
         'text-halo-color': '#fff',
         'text-halo-width': 1
-    }
+    },
+    'maxzoom': 24,
+    'minzoom': 15
 }
 export const clickCircPolygonSymbolAreaLayer = {
     id: 'click-circle-polygon-symbol-area-layer',
@@ -1092,7 +1094,6 @@ export const guideLineVertexLayer = {
         'circle-stroke-color': '#fff'
     }
 }
-
 // 標高レイヤーー-----------------------------------------------------------------
 export const elevationSource = {
     id:'elevation-source',obj: {

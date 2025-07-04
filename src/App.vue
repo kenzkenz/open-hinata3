@@ -2407,7 +2407,8 @@ export default {
       this.scaleUpInterval = setInterval(() => {
         this.scaleUpStep += 1;
         this.scaleValue = this.scaleValue + this.scaleUpStep
-        scaleLassoSelected(this.scaleValue);
+        // scaleLassoSelected(this.scaleValue);
+        this.onScaleInput(this.scaleValue)
       }, 100);
     },
     stopScaleUp() {
@@ -2423,7 +2424,8 @@ export default {
       this.scaleDownInterval = setInterval(() => {
         this.scaleDownStep += -1;
         this.scaleValue = this.scaleValue + this.scaleDownStep
-        scaleLassoSelected(this.scaleValue);
+        // scaleLassoSelected(this.scaleValue);
+        this.onScaleInput(this.scaleValue)
       }, 100);
     },
     stopScaleDown() {
@@ -2435,7 +2437,11 @@ export default {
     },
     // ─── スライダーや入力ボックス連動用 ───
     onScaleInput(value) {
-        scaleLassoSelected(Number(value));
+      scaleLassoSelected(Number(value));
+      // setTimeout(() => {
+      //   rotateLassoSelected(this.angleValue);
+      // },10)
+      // rotateLassoSelected(this.angleValue);
     },
     // ---------------------------------------------------------------------
     startAnglePlus() {
