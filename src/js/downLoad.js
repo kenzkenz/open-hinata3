@@ -7630,36 +7630,37 @@ export function extractSimaById(simaText, targetIds) {
 }
 /**
  * Vuex store.state.map01 上の click-circle-source に対し、
- * lassoSelected=true な地物群を重心まわりに拡大縮小して更新します。
+ * lassoSelected=true な地物群を重心まわりに拡大縮小および回転して更新します。
  *
- * @param {number} scaleFactor - 拡大縮小率（1で元サイズ、>1で拡大、<1で縮小）
+ * @param {number} scalePercent - 拡大縮小率（100で元サイズ、>100で拡大、<100で縮小）
+ * @param {number} rotationDeg - 回転角度（度単位、正で時計回り）
  */
-export function scaleLassoSelected(scaleFactor) {
-    scaleFactor = scaleFactor / 100
+export function scaleAndRotateLassoSelected(scalePercent, rotationDeg) {
+    // スケール係数と回転ラジアンを計算
+    const scaleFactor = scalePercent / 100;
+    const rad = -rotationDeg * Math.PI / 180;
+
+    // GeoJSON ソースの取得
     const map = store.state.map01;
     const src = map.getSource('click-circle-source');
     const features = (src._data && src._data.features) || [];
 
-    // lassoSelected=true のフィーチャを抽出
+    // lassoSelected=true のフィーチャを抽出し、原点座標をストア側にリセット
     const selected = features.filter(f => f.properties.lassoSelected === true);
     const lassoFeatures = JSON.parse(store.state.lassoGeojson).features;
-
     selected.forEach(sel => {
-        const selId = sel.properties.id;
-        const source = lassoFeatures.find(f => f.properties.id === selId);
+        const source = lassoFeatures.find(f => f.properties.id === sel.properties.id);
         if (source) {
-            // selected の座標を store 側の座標に合わせる
             sel.geometry.coordinates = source.geometry.coordinates;
         }
     });
-    // const selected = store.state.lassoGeojson.features
 
     if (selected.length === 0) {
         console.info('選択されたフィーチャがありません');
         return;
     }
 
-    // 全選択フィーチャの座標を再帰的に収集して重心を計算
+    // 重心計算のため全座標を収集
     const allCoords = [];
     (function collect(coords) {
         if (typeof coords[0] === 'number') {
@@ -7668,40 +7669,39 @@ export function scaleLassoSelected(scaleFactor) {
             coords.forEach(collect);
         }
     })(selected.map(f => f.geometry.coordinates));
+    const [sumX, sumY] = allCoords.reduce((acc, [x, y]) => [acc[0] + x, acc[1] + y], [0, 0]);
+    const centerX = sumX / allCoords.length;
+    const centerY = sumY / allCoords.length;
 
-    const [sumX, sumY] = allCoords.reduce(
-        (acc, [x, y]) => [acc[0] + x, acc[1] + y],
-        [0, 0]
-    );
-    const center = [sumX / allCoords.length, sumY / allCoords.length];
-
-    // 拡大縮小処理
-    function scalePoint([x, y]) {
-        const dx = x - center[0];
-        const dy = y - center[1];
-        return [
-            center[0] + dx * scaleFactor,
-            center[1] + dy * scaleFactor
-        ];
+    // 「拡大縮小→回転」を一度に適用するポイント変換関数
+    function transformPoint([x, y]) {
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const sdx = dx * scaleFactor;
+        const sdy = dy * scaleFactor;
+        const rdx = sdx * Math.cos(rad) - sdy * Math.sin(rad);
+        const rdy = sdx * Math.sin(rad) + sdy * Math.cos(rad);
+        return [centerX + rdx, centerY + rdy];
     }
 
-    function scaleGeom(obj) {
-        const { type, coordinates } = obj;
+    // ジオメトリ全体に変換を適用
+    function transformGeom(geometry) {
+        const { type, coordinates } = geometry;
         switch (type) {
             case 'Point':
-                obj.coordinates = scalePoint(coordinates);
+                geometry.coordinates = transformPoint(coordinates);
                 break;
             case 'LineString':
             case 'MultiPoint':
-                obj.coordinates = coordinates.map(scalePoint);
+                geometry.coordinates = coordinates.map(transformPoint);
                 break;
             case 'Polygon':
             case 'MultiLineString':
-                obj.coordinates = coordinates.map(ring => ring.map(scalePoint));
+                geometry.coordinates = coordinates.map(ring => ring.map(transformPoint));
                 break;
             case 'MultiPolygon':
-                obj.coordinates = coordinates.map(poly =>
-                    poly.map(ring => ring.map(scalePoint))
+                geometry.coordinates = coordinates.map(
+                    poly => poly.map(ring => ring.map(transformPoint))
                 );
                 break;
             default:
@@ -7709,122 +7709,19 @@ export function scaleLassoSelected(scaleFactor) {
         }
     }
 
-    // 選択フィーチャを拡大縮小＆プロパティ更新
+    // 選択フィーチャにスケール＆回転を適用し、中心座標プロパティを更新
     selected.forEach(f => {
-        scaleGeom(f.geometry);
+        transformGeom(f.geometry);
         if (f.properties.canterLng != null && f.properties.canterLat != null) {
-            // 中心座標プロパティがあれば更新
-            f.properties.canterLng = center[0];
-            f.properties.canterLat = center[1];
+            f.properties.canterLng = centerX;
+            f.properties.canterLat = centerY;
         }
     });
 
-    // 変更をソースに反映
-    const geojson = {
-        type: 'FeatureCollection',
-        features: features
-    };
-    src.setData(geojson);
-    store.state.clickCircleGeojsonText = JSON.stringify(geojson);
-}
-
-/**
- * Vuex store.state.map01 上の click-circle-source に対し、
- * lassoSelected=true な地物群を重心まわりに回転して更新します。
- *
- * @param {number} angleDeg - 回転角度（度単位、正で反時計回り）
- */
-export function rotateLassoSelected(angleDeg) {
-    angleDeg = angleDeg * -1
-    const map = store.state.map01;
-    // click-circle-source の GeoJSON データを取得
-    const src = map.getSource('click-circle-source');
-    const features = (src._data && src._data.features) || [];
-
-    // lassoSelected=true のフィーチャを抽出
-    const selected = features.filter(f => f.properties.lassoSelected === true);
-    const lassoFeatures = JSON.parse(store.state.lassoGeojson).features;
-
-    selected.forEach(sel => {
-        const selId = sel.properties.id;
-        const source = lassoFeatures.find(f => f.properties.id === selId);
-        if (source) {
-            // selected の座標を store 側の座標に合わせる
-            sel.geometry.coordinates = source.geometry.coordinates;
-        }
-    });
-
-    if (selected.length === 0) {
-        console.info('選択されたフィーチャがありません');
-        return;
-    }
-
-    // 全選択フィーチャの座標を再帰的に収集して重心を計算
-    const allCoords = [];
-    (function collect(coords) {
-        if (typeof coords[0] === 'number') {
-            allCoords.push(coords);
-        } else {
-            coords.forEach(collect);
-        }
-    })(selected.map(f => f.geometry.coordinates));
-
-    const [sumX, sumY] = allCoords.reduce(
-        (acc, [x, y]) => [acc[0] + x, acc[1] + y],
-        [0, 0]
-    );
-    const center = [sumX / allCoords.length, sumY / allCoords.length];
-
-    // 回転処理
-    const rad = angleDeg * Math.PI / 180;
-    function rotatePoint([x, y]) {
-        const dx = x - center[0], dy = y - center[1];
-        return [
-            center[0] + dx * Math.cos(rad) - dy * Math.sin(rad),
-            center[1] + dx * Math.sin(rad) + dy * Math.cos(rad)
-        ];
-    }
-
-    function rotateGeom(obj) {
-        const { type, coordinates } = obj;
-        switch (type) {
-            case 'Point':
-                obj.coordinates = rotatePoint(coordinates);
-                break;
-            case 'LineString':
-            case 'MultiPoint':
-                obj.coordinates = coordinates.map(rotatePoint);
-                break;
-            case 'Polygon':
-            case 'MultiLineString':
-                obj.coordinates = coordinates.map(ring => ring.map(rotatePoint));
-                break;
-            case 'MultiPolygon':
-                obj.coordinates = coordinates.map(poly =>
-                    poly.map(ring => ring.map(rotatePoint))
-                );
-                break;
-            default:
-                console.warn(`Unsupported type: ${type}`);
-        }
-    }
-
-    // 選択フィーチャを回転＆プロパティ更新
-    selected.forEach(f => {
-        rotateGeom(f.geometry);
-        if (f.properties.canterLng != null && f.properties.canterLat != null) {
-            f.properties.canterLng = center[0];
-            f.properties.canterLat = center[1];
-        }
-    });
-
-    // 変更をソースに反映
-    const geojson = {
-        type: 'FeatureCollection',
-        features: features
-    }
-    src.setData(geojson);
-    store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+    // 更新をソースおよびストアに反映
+    const updatedGeojson = { type: 'FeatureCollection', features };
+    src.setData(updatedGeojson);
+    store.state.clickCircleGeojsonText = JSON.stringify(updatedGeojson);
 }
 
 // ドラッグハンドルのアップロード---------------------------------------------------------------------------
@@ -8069,6 +7966,7 @@ export function enableDragHandles(map) {
             getAllVertexPoints(map, geojson);
             setAllMidpoints(map, geojson);
             store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+            store.state.lassoGeojson = JSON.stringify(turf.featureCollection(geojson.features.filter(feature => feature.properties.lassoSelected === true)))
         }
         if (panWasInitiallyEnabled) {
             map.dragPan.enable();
@@ -8086,249 +7984,249 @@ export function enableDragHandles(map) {
     map.getCanvas().addEventListener('touchend', onUp, { passive: false });
 }
 
-/**
- * ポイント/ライン/ポリゴンのクリック・ドラッグ移動・追加を有効化
- * ペアID連動対応・どこを掴んでも“その位置から”気持ちよく動く
- * @param {object} map - MapLibre/Mapboxのmapインスタンス
- * @param {string} layerId - 対象レイヤーID
- * @param {string} sourceId - 対象GeoJSONソースID
- * @param {object} [options]
- *   @param {function} options.fetchElevation - (lng, lat) => Promise<標高>
- *   @param {object} options.vm - Vueインスタンス等（状態書き込み用/任意）
- *   @param {string} options.storeField - 保存するストアフィールド名
- *   @param {boolean} options.enableAdd - クリック追加（Pointのみ）有効化
- */
-
-export function enableFeatureDragAndAdd(map, layerId, sourceId, options = {}) {
-    let isCursorOnFeature = false;
-    let isDragging = false;
-    let draggedFeature = null;
-    let dragStartCoord = null;
-    let dragOffset = null;
-    const fetchElevation = options.fetchElevation || (async () => 0);
-    const vm = options.vm;
-    const storeField = options.storeField || null;
-    const enableAdd = options.enableAdd ?? true;
-    const click = options.click;
-
-    function getCenterCoord(feature) {
-        if (!feature.geometry) return null;
-        const g = feature.geometry;
-        if (g.type === 'Point') return g.coordinates.slice();
-        if (g.type === 'LineString') return g.coordinates[0].slice();
-        if (g.type === 'Polygon') return g.coordinates[0][0].slice();
-        if (g.type === 'MultiPolygon') return g.coordinates[0][0][0].slice();
-        return null;
-    }
-
-    function getPointFromEvent(e) {
-        if (e.originalEvent?.touches?.[0]) {
-            const touch = e.originalEvent.touches[0];
-            const rect = map.getCanvas().getBoundingClientRect();
-            return {
-                x: touch.clientX - rect.left,
-                y: touch.clientY - rect.top
-            };
-        }
-        if (e.point) return e.point;
-        return null;
-    }
-
-    function getLngLatFromEvent(e) {
-        if (e.originalEvent?.touches?.[0]) {
-            const touch = e.originalEvent.touches[0];
-            const rect = map.getCanvas().getBoundingClientRect();
-            return map.unproject({
-                x: touch.clientX - rect.left,
-                y: touch.clientY - rect.top
-            });
-        } else if (e.lngLat) {
-            return e.lngLat;
-        }
-        return null;
-    }
-
-    let dragStartCooldown = false;
-    function handleDragStart(e) {
-        if (!store.state.editEnabled) return;
-        // もしクールダウン中なら何もせず return
-        if (dragStartCooldown) return;
-        const vertexFeatures = map.queryRenderedFeatures(
-            [
-                [e.point.x - 15, e.point.y - 15],
-                [e.point.x + 15, e.point.y + 15]
-            ],
-            { layers: ['vertex-layer'] }
-        );
-        if (vertexFeatures.length > 0) {
-            // 一時的に発火禁止（例：1000ms）
-            dragStartCooldown = true;
-            setTimeout(() => {
-                dragStartCooldown = false;
-            }, 1000);
-            return;
-        }
-
-
-        const point = getPointFromEvent(e);
-        if (!point) return;
-
-        // 狭い範囲（5x5ピクセル）で地物をクエリ
-        const features = map.queryRenderedFeatures(
-            [
-                [point.x - 5, point.y - 5],
-                [point.x + 5, point.y + 5]
-            ],
-            { layers: [layerId] }
-        );
-
-        if (features.length === 0) return;
-
-        isDragging = true;
-        draggedFeature = features[0];
-        dragStartCoord = getCenterCoord(draggedFeature);
-        const lngLat = getLngLatFromEvent(e);
-        dragOffset = [
-            lngLat.lng - dragStartCoord[0],
-            lngLat.lat - dragStartCoord[1]
-        ];
-        map.getCanvas().style.cursor = 'grabbing';
-        if (e.preventDefault) e.preventDefault();
-
-    }
-
-    map.on('mousedown', handleDragStart);
-    map.on('touchstart', handleDragStart);
-
-    async function handleDragMove(e) {
-        if (!isDragging || !draggedFeature) return;
-        if (e.originalEvent?.touches?.length > 1) return;
-
-        const lngLat = getLngLatFromEvent(e);
-        const targetLng = lngLat.lng - dragOffset[0];
-        const targetLat = lngLat.lat - dragOffset[1];
-
-        store.state.finishLineFire = !store.state.finishLineFire;
-
-        const source = map.getSource(sourceId);
-        let allowSource;
-        if (sourceId === 'click-circle-source') {
-            allowSource = map.getSource('end-point-source');
-        }
-        if (!source) return;
-        const currentData = source._data;
-        const currentAllowData = allowSource?._data;
-        if (!currentData) return;
-
-        let elevation = await fetchElevation(targetLng, targetLat);
-        if (!elevation) elevation = 0;
-
-        const [lng0, lat0] = dragStartCoord;
-        const dx = targetLng - lng0;
-        const dy = targetLat - lat0;
-
-        const dragId = draggedFeature.id || draggedFeature.properties?.id;
-        const dragPairId = draggedFeature.properties?.pairId;
-        const moveTargets = [];
-
-        for (const f of currentData.features) {
-            const fid = f.id || f.properties?.id;
-            const fpair = f.properties?.pairId;
-            if (fid === dragId || (dragPairId && dragPairId === fpair)) {
-                moveTargets.push(f);
-            }
-        }
-
-        if (currentAllowData) {
-            for (const f of currentAllowData.features) {
-                const startId = dragId + '-start';
-                const endId = dragId + '-end';
-                if (startId === f.properties?.id || endId === f.properties?.id) {
-                    moveTargets.push(f);
-                }
-            }
-        }
-
-        for (const f of moveTargets) {
-            const g = f.geometry;
-            if (g.type === 'Point') {
-                g.coordinates = [g.coordinates[0] + dx, g.coordinates[1] + dy, elevation];
-                f.properties.canterLng = g.coordinates[0];
-                f.properties.canterLat = g.coordinates[1];
-            } else if (g.type === 'LineString') {
-                g.coordinates = g.coordinates.map(([lng, lat, ...rest]) => [lng + dx, lat + dy, ...rest]);
-                f.properties.canterLng = g.coordinates[0][0];
-                f.properties.canterLat = g.coordinates[0][1];
-            } else if (g.type === 'Polygon') {
-                g.coordinates = g.coordinates.map(ring => ring.map(([lng, lat, ...rest]) => [lng + dx, lat + dy, ...rest]));
-                f.properties.canterLng = g.coordinates[0][0][0];
-                f.properties.canterLat = g.coordinates[0][0][1];
-            } else if (g.type === 'MultiPolygon') {
-                g.coordinates = g.coordinates.map(poly => poly.map(ring => ring.map(([lng, lat, ...rest]) => [lng + dx, lat + dy, ...rest])));
-                f.properties.canterLng = g.coordinates[0][0][0][0];
-                f.properties.canterLat = g.coordinates[0][0][0][1];
-            }
-        }
-
-        dragStartCoord = [targetLng, targetLat];
-        source.setData(currentData);
-        allowSource?.setData(currentAllowData);
-        generateSegmentLabelGeoJSON(currentData);
-        map.getCanvas().style.cursor = 'grabbing';
-        if (vm && storeField) vm.$store.state[storeField] = JSON.stringify(currentData);
-
-        // generateSegmentLabelGeoJSON(currentAllowData);
-        // generateStartEndPointsFromGeoJSON(currentAllowData);
-        getAllVertexPoints(map, currentData);
-        setAllMidpoints(map, currentData);
-
-    }
-
-    map.on('mousemove', handleDragMove);
-    map.on('touchmove', handleDragMove);
-
-    function handleDragEnd() {
-        if (isDragging) {
-            isDragging = false;
-            draggedFeature = null;
-            dragStartCoord = null;
-            dragOffset = null;
-            map.getCanvas().style.cursor = 'pointer';
-        }
-    }
-
-    map.on('mouseup', handleDragEnd);
-    map.on('touchend', handleDragEnd);
-    map.on('touchcancel', handleDragEnd);
-
-    if (click) {
-        map.on('click', async function (e) {
-            if (isDragging) return;
-            if (map.getLayoutProperty(layerId, 'visibility') === 'none') return;
-            const source = map.getSource(sourceId);
-            if (!source || isCursorOnFeature) return;
-            const currentData = source._data || { type: 'FeatureCollection', features: [] };
-            const clickedLng = e.lngLat.lng;
-            const clickedLat = e.lngLat.lat;
-            let elevation = await fetchElevation(clickedLng, clickedLat);
-            if (!elevation) elevation = 0;
-            const newFeature = {
-                type: 'Feature',
-                id: currentData.features.length,
-                geometry: {
-                    type: 'Point',
-                    coordinates: [clickedLng, clickedLat, elevation]
-                },
-                properties: {
-                    id: Math.random().toString().slice(2, 6)
-                }
-            };
-            currentData.features.push(newFeature);
-            source.setData(currentData);
-            if (vm && storeField) vm.$store.state[storeField] = JSON.stringify(currentData);
-        });
-    }
-}
+// /**
+//  * ポイント/ライン/ポリゴンのクリック・ドラッグ移動・追加を有効化
+//  * ペアID連動対応・どこを掴んでも“その位置から”気持ちよく動く
+//  * @param {object} map - MapLibre/Mapboxのmapインスタンス
+//  * @param {string} layerId - 対象レイヤーID
+//  * @param {string} sourceId - 対象GeoJSONソースID
+//  * @param {object} [options]
+//  *   @param {function} options.fetchElevation - (lng, lat) => Promise<標高>
+//  *   @param {object} options.vm - Vueインスタンス等（状態書き込み用/任意）
+//  *   @param {string} options.storeField - 保存するストアフィールド名
+//  *   @param {boolean} options.enableAdd - クリック追加（Pointのみ）有効化
+//  */
+//
+// export function enableFeatureDragAndAdd8888888888(map, layerId, sourceId, options = {}) {
+//     let isCursorOnFeature = false;
+//     let isDragging = false;
+//     let draggedFeature = null;
+//     let dragStartCoord = null;
+//     let dragOffset = null;
+//     const fetchElevation = options.fetchElevation || (async () => 0);
+//     const vm = options.vm;
+//     const storeField = options.storeField || null;
+//     const enableAdd = options.enableAdd ?? true;
+//     const click = options.click;
+//
+//     function getCenterCoord(feature) {
+//         if (!feature.geometry) return null;
+//         const g = feature.geometry;
+//         if (g.type === 'Point') return g.coordinates.slice();
+//         if (g.type === 'LineString') return g.coordinates[0].slice();
+//         if (g.type === 'Polygon') return g.coordinates[0][0].slice();
+//         if (g.type === 'MultiPolygon') return g.coordinates[0][0][0].slice();
+//         return null;
+//     }
+//
+//     function getPointFromEvent(e) {
+//         if (e.originalEvent?.touches?.[0]) {
+//             const touch = e.originalEvent.touches[0];
+//             const rect = map.getCanvas().getBoundingClientRect();
+//             return {
+//                 x: touch.clientX - rect.left,
+//                 y: touch.clientY - rect.top
+//             };
+//         }
+//         if (e.point) return e.point;
+//         return null;
+//     }
+//
+//     function getLngLatFromEvent(e) {
+//         if (e.originalEvent?.touches?.[0]) {
+//             const touch = e.originalEvent.touches[0];
+//             const rect = map.getCanvas().getBoundingClientRect();
+//             return map.unproject({
+//                 x: touch.clientX - rect.left,
+//                 y: touch.clientY - rect.top
+//             });
+//         } else if (e.lngLat) {
+//             return e.lngLat;
+//         }
+//         return null;
+//     }
+//
+//     let dragStartCooldown = false;
+//     function handleDragStart(e) {
+//         if (!store.state.editEnabled) return;
+//         // もしクールダウン中なら何もせず return
+//         if (dragStartCooldown) return;
+//         const vertexFeatures = map.queryRenderedFeatures(
+//             [
+//                 [e.point.x - 15, e.point.y - 15],
+//                 [e.point.x + 15, e.point.y + 15]
+//             ],
+//             { layers: ['vertex-layer'] }
+//         );
+//         if (vertexFeatures.length > 0) {
+//             // 一時的に発火禁止（例：1000ms）
+//             dragStartCooldown = true;
+//             setTimeout(() => {
+//                 dragStartCooldown = false;
+//             }, 1000);
+//             return;
+//         }
+//
+//
+//         const point = getPointFromEvent(e);
+//         if (!point) return;
+//
+//         // 狭い範囲（5x5ピクセル）で地物をクエリ
+//         const features = map.queryRenderedFeatures(
+//             [
+//                 [point.x - 5, point.y - 5],
+//                 [point.x + 5, point.y + 5]
+//             ],
+//             { layers: [layerId] }
+//         );
+//
+//         if (features.length === 0) return;
+//
+//         isDragging = true;
+//         draggedFeature = features[0];
+//         dragStartCoord = getCenterCoord(draggedFeature);
+//         const lngLat = getLngLatFromEvent(e);
+//         dragOffset = [
+//             lngLat.lng - dragStartCoord[0],
+//             lngLat.lat - dragStartCoord[1]
+//         ];
+//         map.getCanvas().style.cursor = 'grabbing';
+//         if (e.preventDefault) e.preventDefault();
+//
+//     }
+//
+//     map.on('mousedown', handleDragStart);
+//     map.on('touchstart', handleDragStart);
+//
+//     async function handleDragMove(e) {
+//         if (!isDragging || !draggedFeature) return;
+//         if (e.originalEvent?.touches?.length > 1) return;
+//
+//         const lngLat = getLngLatFromEvent(e);
+//         const targetLng = lngLat.lng - dragOffset[0];
+//         const targetLat = lngLat.lat - dragOffset[1];
+//
+//         store.state.finishLineFire = !store.state.finishLineFire;
+//
+//         const source = map.getSource(sourceId);
+//         let allowSource;
+//         if (sourceId === 'click-circle-source') {
+//             allowSource = map.getSource('end-point-source');
+//         }
+//         if (!source) return;
+//         const currentData = source._data;
+//         const currentAllowData = allowSource?._data;
+//         if (!currentData) return;
+//
+//         let elevation = await fetchElevation(targetLng, targetLat);
+//         if (!elevation) elevation = 0;
+//
+//         const [lng0, lat0] = dragStartCoord;
+//         const dx = targetLng - lng0;
+//         const dy = targetLat - lat0;
+//
+//         const dragId = draggedFeature.id || draggedFeature.properties?.id;
+//         const dragPairId = draggedFeature.properties?.pairId;
+//         const moveTargets = [];
+//
+//         for (const f of currentData.features) {
+//             const fid = f.id || f.properties?.id;
+//             const fpair = f.properties?.pairId;
+//             if (fid === dragId || (dragPairId && dragPairId === fpair)) {
+//                 moveTargets.push(f);
+//             }
+//         }
+//
+//         if (currentAllowData) {
+//             for (const f of currentAllowData.features) {
+//                 const startId = dragId + '-start';
+//                 const endId = dragId + '-end';
+//                 if (startId === f.properties?.id || endId === f.properties?.id) {
+//                     moveTargets.push(f);
+//                 }
+//             }
+//         }
+//
+//         for (const f of moveTargets) {
+//             const g = f.geometry;
+//             if (g.type === 'Point') {
+//                 g.coordinates = [g.coordinates[0] + dx, g.coordinates[1] + dy, elevation];
+//                 f.properties.canterLng = g.coordinates[0];
+//                 f.properties.canterLat = g.coordinates[1];
+//             } else if (g.type === 'LineString') {
+//                 g.coordinates = g.coordinates.map(([lng, lat, ...rest]) => [lng + dx, lat + dy, ...rest]);
+//                 f.properties.canterLng = g.coordinates[0][0];
+//                 f.properties.canterLat = g.coordinates[0][1];
+//             } else if (g.type === 'Polygon') {
+//                 g.coordinates = g.coordinates.map(ring => ring.map(([lng, lat, ...rest]) => [lng + dx, lat + dy, ...rest]));
+//                 f.properties.canterLng = g.coordinates[0][0][0];
+//                 f.properties.canterLat = g.coordinates[0][0][1];
+//             } else if (g.type === 'MultiPolygon') {
+//                 g.coordinates = g.coordinates.map(poly => poly.map(ring => ring.map(([lng, lat, ...rest]) => [lng + dx, lat + dy, ...rest])));
+//                 f.properties.canterLng = g.coordinates[0][0][0][0];
+//                 f.properties.canterLat = g.coordinates[0][0][0][1];
+//             }
+//         }
+//
+//         dragStartCoord = [targetLng, targetLat];
+//         source.setData(currentData);
+//         allowSource?.setData(currentAllowData);
+//         generateSegmentLabelGeoJSON(currentData);
+//         map.getCanvas().style.cursor = 'grabbing';
+//         if (vm && storeField) vm.$store.state[storeField] = JSON.stringify(currentData);
+//
+//         // generateSegmentLabelGeoJSON(currentAllowData);
+//         // generateStartEndPointsFromGeoJSON(currentAllowData);
+//         getAllVertexPoints(map, currentData);
+//         setAllMidpoints(map, currentData);
+//
+//     }
+//
+//     map.on('mousemove', handleDragMove);
+//     map.on('touchmove', handleDragMove);
+//
+//     function handleDragEnd() {
+//         if (isDragging) {
+//             isDragging = false;
+//             draggedFeature = null;
+//             dragStartCoord = null;
+//             dragOffset = null;
+//             map.getCanvas().style.cursor = 'pointer';
+//         }
+//     }
+//
+//     map.on('mouseup', handleDragEnd);
+//     map.on('touchend', handleDragEnd);
+//     map.on('touchcancel', handleDragEnd);
+//
+//     if (click) {
+//         map.on('click', async function (e) {
+//             if (isDragging) return;
+//             if (map.getLayoutProperty(layerId, 'visibility') === 'none') return;
+//             const source = map.getSource(sourceId);
+//             if (!source || isCursorOnFeature) return;
+//             const currentData = source._data || { type: 'FeatureCollection', features: [] };
+//             const clickedLng = e.lngLat.lng;
+//             const clickedLat = e.lngLat.lat;
+//             let elevation = await fetchElevation(clickedLng, clickedLat);
+//             if (!elevation) elevation = 0;
+//             const newFeature = {
+//                 type: 'Feature',
+//                 id: currentData.features.length,
+//                 geometry: {
+//                     type: 'Point',
+//                     coordinates: [clickedLng, clickedLat, elevation]
+//                 },
+//                 properties: {
+//                     id: Math.random().toString().slice(2, 6)
+//                 }
+//             };
+//             currentData.features.push(newFeature);
+//             source.setData(currentData);
+//             if (vm && storeField) vm.$store.state[storeField] = JSON.stringify(currentData);
+//         });
+//     }
+// }
 
 export function japanCoord (coordinates) {
     if (zahyokei.length > 0) {

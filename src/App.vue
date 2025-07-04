@@ -1240,7 +1240,7 @@ import {
   pmtilesGenerateForUser2,
   pngDl,
   pngDownload,
-  pngLoad, rotateLassoSelected, scaleLassoSelected,
+  pngLoad, rotateLassoSelected, scaleAndRotateLassoSelected, scaleLassoSelected,
   simaLoadForUser, splitLineStringIntoPoints,
   tileGenerateForUser,
   tileGenerateForUserPdf,
@@ -2407,7 +2407,6 @@ export default {
       this.scaleUpInterval = setInterval(() => {
         this.scaleUpStep += 1;
         this.scaleValue = this.scaleValue + this.scaleUpStep
-        // scaleLassoSelected(this.scaleValue);
         this.onScaleInput(this.scaleValue)
       }, 100);
     },
@@ -2424,7 +2423,6 @@ export default {
       this.scaleDownInterval = setInterval(() => {
         this.scaleDownStep += -1;
         this.scaleValue = this.scaleValue + this.scaleDownStep
-        // scaleLassoSelected(this.scaleValue);
         this.onScaleInput(this.scaleValue)
       }, 100);
     },
@@ -2437,11 +2435,7 @@ export default {
     },
     // ─── スライダーや入力ボックス連動用 ───
     onScaleInput(value) {
-      scaleLassoSelected(Number(value));
-      // setTimeout(() => {
-      //   rotateLassoSelected(this.angleValue);
-      // },10)
-      // rotateLassoSelected(this.angleValue);
+      scaleAndRotateLassoSelected(Number(value),Number(this.angleValue));
     },
     // ---------------------------------------------------------------------
     startAnglePlus() {
@@ -2476,7 +2470,7 @@ export default {
     },
     // ─── スライダーや入力ボックス連動用 ───
     onRotateInput(angle) {
-      rotateLassoSelected(Number(angle))
+      scaleAndRotateLassoSelected(Number(this.scaleValue),Number(angle));
     },
     // Backspace/Delete 押下で頂点削除
     onKeydown(e) {
@@ -6222,8 +6216,10 @@ export default {
               isLassoSelected = true
             }
           });
-          // this.$store.state.lassoGeojson = JSON.parse(JSON.stringify(geojson.features.filter(feature => feature.properties.lassoSelected === true)))
+          //
           this.$store.state.lassoGeojson = JSON.stringify(turf.featureCollection(geojson.features.filter(feature => feature.properties.lassoSelected === true)))
+          this.scaleValue = 100
+          this.angleValue = 0
           console.log(this.$store.state.lassoGeojson)
 
           if (isLassoSelected) {
