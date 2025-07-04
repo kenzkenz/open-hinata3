@@ -2454,21 +2454,6 @@ export default {
     onScaleInput(value) {
         scaleLassoSelected(Number(value));
     },
-    // onScaleInput(value) {
-    //   // 直接入力された scale 値を受けて、差分だけ拡大縮小
-    //   const newScale = Number(value);
-    //   if (newScale === 0) return;
-    //   const diff = newScale - this.prevScaleValue;
-    //   if (diff === 0) return;
-    //   if (diff > 0) {
-    //     // 拡大
-    //     scaleLassoSelected(1 + diff);
-    //   } else {
-    //     // 縮小
-    //     scaleLassoSelected(1 + diff); // diff は負なので (1 - |diff|)
-    //   }
-    //   this.prevScaleValue = newScale;
-    // },
     // ---------------------------------------------------------------------
     anglePlus(delta = 1) {
       rotateLassoSelected(delta)
