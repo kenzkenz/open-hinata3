@@ -6209,18 +6209,28 @@ export default {
           const source = map.getSource(clickCircleSource.iD);
           const geojson = source._data; // or source.getData()
           let isLassoSelected = false
+          // GeoJSON‐Rbush（空間インデックス）を使う方法もあるらしい。見調査
+          // ポリゴンの bbox を先に計算
+          const [pMinX, pMinY, pMaxX, pMaxY] = turf.bbox(polygon);
+
           geojson.features.forEach(feature => {
             feature.properties.lassoSelected = false;
+            // feature の bbox を計算（事前にキャッシュしておくとさらに速い）
+            const [fMinX, fMinY, fMaxX, fMaxY] = turf.bbox(feature);
+            // bbox が重ならなければ交差チェック不要
+            if (fMaxX < pMinX || fMinX > pMaxX || fMaxY < pMinY || fMinY > pMaxY) {
+              return;
+            }
+            // 本命チェック
             if (turf.booleanIntersects(feature, polygon)) {
               feature.properties.lassoSelected = true;
-              isLassoSelected = true
+              isLassoSelected = true;
             }
           });
-          //
           this.$store.state.lassoGeojson = JSON.stringify(turf.featureCollection(geojson.features.filter(feature => feature.properties.lassoSelected === true)))
           this.scaleValue = 100
           this.angleValue = 0
-          console.log(this.$store.state.lassoGeojson)
+          // console.log(this.$store.state.lassoGeojson)
 
           if (isLassoSelected) {
             this.isLassoSelected = true
