@@ -728,7 +728,7 @@ export const clickCircPolygonSymbolLayer = {
             // それ以外は地番
             ['get', '地番']
         ],
-        'text-size': 20,   // サイズ調整
+        'text-size': 18,   // サイズ調整
         'text-anchor': 'center',
         'text-allow-overlap': true
     },
@@ -738,7 +738,7 @@ export const clickCircPolygonSymbolLayer = {
         'text-halo-width': 1
     },
     'maxzoom': 24,
-    'minzoom': 15
+    'minzoom': 18
 }
 export const clickCircPolygonSymbolAreaLayer = {
     id: 'click-circle-polygon-symbol-area-layer',
@@ -10710,6 +10710,13 @@ let layers01 = [
                         attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
                     },
                     {
+                        id: 'oh-osm',
+                        label: "OSMラスター",
+                        source: osmSource,
+                        layers: [osmLayer],
+                        attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+                    },
+                    {
                         id: 'oh-overpass',
                         label: "OSM overpass",
                         source: overpassSource,
@@ -10747,14 +10754,6 @@ let layers01 = [
                 layers: fxDarkLayers,
                 // ext: {name:'extChiriinDark'}
             },
-            // {
-            //     id: 'oh-osm',
-            //     label: "OpenStreetMap",
-            //     source: osmSource,
-            //     layers: [osmLayer],
-            //     attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
-            //     ext: {name:'extOSM'}
-            // },
             {
                 id: 'oh-stdLayer',
                 label: "地理院標準地図",

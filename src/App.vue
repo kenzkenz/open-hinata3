@@ -6976,35 +6976,44 @@ export default {
               console.log('ローカル接続');
               this.s_selectedLayers[mapName].unshift(
                   {
-                    id: 'oh-pale-layer',
-                    label: "地理院淡色地図",
-                    source: paleSource,
-                    layers: [paleLayer],
+                    id: 'oh-vector-layer-osm-bright',
+                    label: 'OSMベクター',
+                    sources: osmBrightSources,
+                    layers: osmBrightLayers,
                     opacity: 1,
                     visibility: true,
+                    attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
                   }
+                  // {
+                  //   id: 'oh-pale-layer',
+                  //   label: "地理院淡色地図",
+                  //   source: paleSource,
+                  //   layers: [paleLayer],
+                  //   opacity: 1,
+                  //   visibility: true,
+                  // }
               )
             } else {
               // 本番環境の処理
               console.log('本番環境');
               this.s_selectedLayers[mapName].unshift(
-                  {
-                    id: 'oh-vector-layer-mono',
-                    label: '地理院ベクター・モノクロ',
-                    sources: monoSources,
-                    layers: monoLayers,
-                    opacity: 1,
-                    visibility: true,
-                  }
                   // {
-                  //   id: 'oh-vector-layer-osm-bright',
-                  //   label: 'OSMベクター',
-                  //   sources: osmBrightSources,
-                  //   layers: osmBrightLayers,
+                  //   id: 'oh-vector-layer-mono',
+                  //   label: '地理院ベクター・モノクロ',
+                  //   sources: monoSources,
+                  //   layers: monoLayers,
                   //   opacity: 1,
                   //   visibility: true,
-                  //   attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
-                  // },
+                  // }
+                  {
+                    id: 'oh-vector-layer-osm-bright',
+                    label: 'OSMベクター',
+                    sources: osmBrightSources,
+                    layers: osmBrightLayers,
+                    opacity: 1,
+                    visibility: true,
+                    attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
+                  }
               )
             }
           }
