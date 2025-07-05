@@ -15,6 +15,19 @@ export default createStore({
     popupHtml: '',
     elevationGeojson: '',
     isMoveMode: false,
+
+    currentTextColor: 'black',
+    currentPointColor: 'black',
+    currentTextSize: 16,
+
+    currentCircleRadius: 200,
+    currentCircleColor: 'orange',
+
+    currentPolygonColor: 'yellow',
+
+    currentLineColor: 'black',
+    currentLineWidth: 5,
+
     currentFreeHandWidth: '',
     currentFreeHandColor: 'black',
     currentFreeHandKeikoColor: '#1C1C1C',

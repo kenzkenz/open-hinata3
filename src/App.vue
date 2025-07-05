@@ -5827,8 +5827,9 @@ export default {
           const properties = {
             id: id,
             label:'',
-            color: 'black',
-            'point-color': 'black',
+            color: this.$store.state.currentTextColor || 'black',
+            'point-color': this.$store.state.currentPointColor || 'black',
+            'text-size': this.$store.state.currentTextSize || 16,
             offsetValue: [0.6, 0],
             textAnchor: 'left',
             textJustify: 'left'

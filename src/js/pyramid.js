@@ -1220,6 +1220,7 @@ export default function pyramid () {
                 const value = e.target.getAttribute("data-color")
                 const tgtProp = 'point-color'
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+                store.state.currentPointColor = value
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1233,6 +1234,7 @@ export default function pyramid () {
                 }
                 const tgtProp = 'color'
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+                store.state.currentTextColor = value
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1244,6 +1246,7 @@ export default function pyramid () {
                 const tgtProp = 'text-size'
                 const geojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
                 store.state.clickCircleGeojsonText = geojsonText
+                store.state.currentTextSize = value
             }
         });
         // -------------------------------------------------------------------------------------------------------------
