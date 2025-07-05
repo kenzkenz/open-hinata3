@@ -3764,7 +3764,7 @@ export function popup(e,map,mapName,mapFlg) {
                                 '<div id="' + props.id + '" data-color="orange" class="text-color circle orange" tabindex="0">T</div>' +
                                 '<div id="' + props.id + '" data-color="hotpink" class="text-color circle hotpink" tabindex="0">T</div>' +
                                 '</div>' +
-                                '<input id="' + props.id + '" type="number" class="oh-cool-input-number font-size-input" min="10" max="100" step="1" value="' + textSize + '">' +
+                                '<input id="' + props.id + '" style="margin-bottom: 5px;" type="number" class="oh-cool-input-number font-size-input" min="10" max="100" step="1" value="' + textSize + '">' +
                                 '</div>' +
                                 // '<hr>' +
                                 '<div class="circle-list">' +
@@ -3774,6 +3774,7 @@ export function popup(e,map,mapName,mapFlg) {
                                 '<div id="' + props.id + '" data-color="green" class="point-color circle green" tabindex="0">P</div>' +
                                 '<div id="' + props.id + '" data-color="orange" class="point-color circle orange" tabindex="0">P</div>' +
                                 '<div id="' + props.id + '" data-color="hotpink" class="point-color circle hotpink" tabindex="0">P</div>' +
+                                '<div id="' + props.id + '" data-color="rgba(0,0,0,0)" class="point-color circle transparent" style="border: 1px silver solid" tabindex="0">P</div>' +
                                 '</div>' +
                                 '</div>';
                             html += '</div>';

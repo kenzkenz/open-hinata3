@@ -9235,6 +9235,7 @@ select {
 .circle.black { background: black; }
 .circle.hotpink { background: hotpink; }
 .circle.yellow { background: yellow; }
+.circle.transparent { background: rgba(0,0,0,0.1); }
 
 /* ハイライト: クリック時・Tab選択時・ホバー時 */
 .circle:active,
