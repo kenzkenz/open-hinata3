@@ -5876,8 +5876,8 @@ export default {
           isRadius: true,
           offsetValue: [0, 2],
           'line-width': 1,
-          radius: 0,
-          color: colorNameToRgba('orange', 0.6),
+          radius: this.$store.state.currentCircleRadius || 0,
+          color: colorNameToRgba(this.$store.state.currentCircleColor || 'blue', 0.6),
           canterLng: 0,
           canterLat: 0
         }
@@ -6034,7 +6034,7 @@ export default {
             id: id,
             pairId: id,
             label: '',
-            color: colorNameToRgba('orange', 0.6),
+            color: colorNameToRgba(this.$store.state.currentPolygonColor || 'yellow', 0.6),
             'line-width': 1,
           };
           geojsonCreate(map, 'Polygon', coords, properties);

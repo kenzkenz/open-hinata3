@@ -1174,7 +1174,7 @@ export default function pyramid () {
                     };
                 }
                 document.querySelector('.circle-range').value = String(radius)
-                console.log(store.state.clickCircleGeojsonText)
+                store.state.currentCircleRadius = radius
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1225,16 +1225,22 @@ export default function pyramid () {
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
-            if (e.target && (e.target.classList.contains("text-color")) || (e.target.classList.contains("circle-color"))) {
+            if (e.target && (e.target.classList.contains("text-color")) || (e.target.classList.contains("circle-color")) || (e.target.classList.contains("polygon-color"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
                 let value = e.target.getAttribute("data-color")
                 if (e.target.classList.contains("circle-color")) {
+                    store.state.currentCircleColor = value
+                    value = colorNameToRgba(value, 0.6)
+                } else if (e.target.classList.contains("text-color")) {
+                    store.state.currentTextColor = value
+                    // value = e.target.getAttribute("data-color")
+                } else if (e.target.classList.contains("polygon-color")) {
+                    store.state.currentPolygonColor = value
                     value = colorNameToRgba(value, 0.6)
                 }
                 const tgtProp = 'color'
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
-                store.state.currentTextColor = value
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1504,8 +1510,11 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
             if (store.state.circle200Chk) {
                 radius = 200
             } else {
-                // alert(getScreenMeterDivX(map, 10, 'height'))
-                radius = getScreenMeterDivX(map, 10, 'height')
+                if (store.state.currentCircleRadius > 0) {
+                    radius = store.state.currentCircleRadius
+                } else {
+                    radius = getScreenMeterDivX(map, 10, 'height')
+                }
             }
             console.log('半径',radius)
             features = circleCreate (coordinates[0], coordinates[1], radius)

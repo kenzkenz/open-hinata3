@@ -20,8 +20,8 @@ export default createStore({
     currentPointColor: 'black',
     currentTextSize: 16,
 
-    currentCircleRadius: 200,
-    currentCircleColor: 'orange',
+    currentCircleRadius: 0,
+    currentCircleColor: 'blue',
 
     currentPolygonColor: 'yellow',
 

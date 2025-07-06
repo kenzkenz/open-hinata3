@@ -3731,13 +3731,13 @@ export function popup(e,map,mapName,mapFlg) {
                                     '<button id="' + props.id + '" style="width: 50%;margin-bottom: 10px;height: 30px;font-size: medium;margin-left: 10px;" class="remove-others pyramid-btn">自分意外削除</button><br>' +
                                     '<div style="display: flex;gap: 8px;">' +
                                     '<div class="circle-list">' +
-                                    '<div id="' + props.id + '" data-color="red" class="circle-color circle red" tabindex="0"></div>' +
-                                    '<div id="' + props.id + '" data-color="black" class="circle-color circle black" tabindex="0"></div>' +
-                                    '<div id="' + props.id + '" data-color="blue" class="circle-color circle blue" tabindex="0"></div>' +
-                                    '<div id="' + props.id + '" data-color="green" class="circle-color circle green" tabindex="0"></div>' +
-                                    '<div id="' + props.id + '" data-color="orange" class="circle-color circle orange" tabindex="0"></div>' +
-                                    '<div id="' + props.id + '" data-color="hotpink" class="circle-color circle hotpink" tabindex="0"></div>' +
-                                    '<div id="' + props.id + '" data-color="yellow" class="circle-color circle yellow" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="red" class="polygon-color circle red" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="black" class="polygon-color circle black" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="blue" class="polygon-color circle blue" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="green" class="polygon-color circle green" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="orange" class="polygon-color circle orange" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="hotpink" class="polygon-color circle hotpink" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="yellow" class="polygon-color circle yellow" tabindex="0"></div>' +
                                     '</div>' +
                                     '</div>' +
                                     '</div>'
