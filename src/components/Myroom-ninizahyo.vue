@@ -36,7 +36,8 @@
 </template>
 
 <script>
-import {addDraw, flipLatitude, recenterGeoJSON, removeNini} from "@/js/downLoad";
+import {addDraw, recenterGeoJSON, removeNini} from "@/js/downLoad";
+import JSZip from 'jszip';
 import axios from "axios";
 
 export default {
@@ -72,7 +73,7 @@ export default {
     async loadCsv(pref) {
       try {
         const res = await fetch(
-            `https://kenzkenz2.xsrv.jp/ninizahyo/csv/${pref}.csv`
+            `https://kenzkenz.xsrv.jp/ninizahyo/csv/${pref}.csv`
         );
         const text = await res.text();
         this.rows = text
@@ -103,14 +104,33 @@ export default {
       console.log("Clicked row", idx + 2, row[0]); // ヘッダー行を飛ばしているため
 
 
+      const zipFilename = row[0];
+      const zipUrl = `https://kenzkenz.xsrv.jp/ninizahyo/geojson/${zipFilename}`;
+      // ZIP を ArrayBuffer 形式で取得
+      const resp = await fetch(zipUrl);
+      const buf = await resp.arrayBuffer();
+      // JSZip で読み込み
+      const zip = await JSZip.loadAsync(buf);
+      // 中の .geojson ファイルを探す
+      const geojsonName = zipFilename.replace(/\.zip$/i, '.geojson');
+      let file = zip.file(geojsonName);
+      if (!file) {
+        // 見つからなければ、アーカイブ内の最初の .geojson を使う
+        const candidates = zip.file(/\.geojson$/i);
+        if (candidates.length === 0) {
+          throw new Error(`${zipFilename} に .geojson が見つかりませんでした`);
+        }
+        file = candidates[0];
+      }
+      const geojsonText = await file.async('string');
 
 
-      
-      const geojsonFilename = row[0].replace(".zip", ".geojson");
-      const response = await fetch(
-          `https://kenzkenz2.xsrv.jp/ninizahyo/geojson/${geojsonFilename}`
-      );
-      const geojsonText = await response.text();
+
+      // const geojsonFilename = row[0].replace(".zip", ".geojson");
+      // const response = await fetch(
+      //     `https://kenzkenz2.xsrv.jp/ninizahyo/geojson/${geojsonFilename}`
+      // );
+      // const geojsonText = await response.text();
       const address = row[1]
       removeNini()
       axios
@@ -147,103 +167,3 @@ export default {
   color: white;
 }
 </style>
-
-
-
-<!--<template>-->
-<!--  <v-card>-->
-<!--    <div style="margin-bottom: 10px;">-->
-<!--      <v-select class="scrollable-content"-->
-<!--                v-model="pref"-->
-<!--                :items="prefs"-->
-<!--                item-title="prefName"-->
-<!--                item-value="prefId"-->
-<!--                label="都道府県を選択してください"-->
-<!--                outlined-->
-<!--                @update:modelValue="prefChange"-->
-<!--      ></v-select>-->
-<!--      <div>-->
-<!--        &lt;!&ndash; タイトル行をスキップして2行目以降を描画 &ndash;&gt;-->
-<!--        <div-->
-<!--            class="data-container"-->
-<!--            v-for="(row, idx) in rows.slice(1)"-->
-<!--            :key="idx"-->
-<!--            :class="{ selected: selectedRowIndex === idx }"-->
-<!--            @click="handleRowClick(row, idx)"-->
-<!--        >-->
-<!--          {{ row[0] + ' ' + row[1] + ' ' + row[2] + 'mb' }}-->
-<!--        </div>-->
-<!--      </div>-->
-<!--    </div>-->
-<!--  </v-card>-->
-<!--</template>-->
-
-<!--<script>-->
-<!--import { addDraw } from "@/js/downLoad";-->
-
-<!--export default {-->
-<!--  name: 'myroom-ninizahyo',-->
-<!--  props: {-->
-<!--    layerName: String,-->
-<!--    mapInstance: Object,-->
-<!--  },-->
-<!--  data: () => ({-->
-<!--    pref: null,-->
-<!--    prefs: [-->
-<!--      { prefId: '28', prefName: '兵庫県' },-->
-<!--      { prefId: '45', prefName: '宮崎県' },-->
-<!--    ],-->
-<!--    rows: [],-->
-<!--    selectedRowIndex: null,  // ← 追加-->
-<!--  }),-->
-<!--  methods: {-->
-<!--    async prefChange(newPref) {-->
-<!--      this.pref = newPref;-->
-<!--      await this.loadCsv(newPref);-->
-<!--      this.selectedRowIndex = null;  // 別の県を選んだら選択解除-->
-<!--    },-->
-<!--    async loadCsv(pref) {-->
-<!--      try {-->
-<!--        const res = await fetch(`https://kenzkenz2.xsrv.jp/ninizahyo/csv/${pref}.csv`);-->
-<!--        const text = await res.text();-->
-<!--        this.rows = text-->
-<!--            .trim()-->
-<!--            .split('\n')-->
-<!--            .map(line => line.split(','));-->
-<!--      } catch (e) {-->
-<!--        console.error('CSV load error:', e);-->
-<!--        this.rows = [];-->
-<!--      }-->
-<!--    },-->
-<!--    async handleRowClick(row, idx) {-->
-<!--      // 選択状態を更新-->
-<!--      this.selectedRowIndex = idx;-->
-
-<!--      console.log('Clicked row', idx + 1, row[0]);-->
-<!--      const geojsonFilename = row[0].replace('.zip', '.geojson');-->
-<!--      const response = await fetch(`https://kenzkenz2.xsrv.jp/ninizahyo/geojson/${geojsonFilename}`);-->
-<!--      const geojsonText = await response.text();-->
-<!--      addDraw(JSON.parse(geojsonText), true);-->
-<!--    },-->
-<!--  },-->
-<!--};-->
-<!--</script>-->
-
-<!--<style scoped>-->
-<!--.data-container {-->
-<!--  padding: 5px;-->
-<!--  border: 1px solid #ddd;-->
-<!--  margin-bottom: 5px;-->
-<!--  position: relative;-->
-<!--  cursor: pointer;-->
-<!--  background-color: rgba(132, 163, 213, 0.3);-->
-<!--}-->
-<!--.data-container:hover {-->
-<!--  background-color: #f0f8ff;-->
-<!--}-->
-<!--/* 選択時は少し濃いめの青に */-->
-<!--.data-container.selected {-->
-<!--  background-color: #4682B4;  /* SteelBlue */-->
-<!--  color: white;-->
-<!--}-->
-<!--</style>-->
