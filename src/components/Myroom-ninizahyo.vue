@@ -36,7 +36,7 @@
 </template>
 
 <script>
-import {addDraw, recenterGeoJSON, removeNini} from "@/js/downLoad";
+import {addDraw, flipLatitude, recenterGeoJSON, removeNini} from "@/js/downLoad";
 import JSZip from 'jszip';
 import axios from "axios";
 
@@ -139,9 +139,9 @@ export default {
             const coordinates = response.data[0].geometry.coordinates
             const shiftedGeoJSON = recenterGeoJSON(JSON.parse(geojsonText), coordinates);
             // 東西の位置関係はあっているが、南北の位置関係が逆でgeojsonができてしまっているので下記で変換。
-            // const reversGeojson = flipLatitude(shiftedGeoJSON)
-            // addDraw(reversGeojson, true,true);
-            addDraw(shiftedGeoJSON, true,true);
+            const reversGeojson = flipLatitude(shiftedGeoJSON)
+            addDraw(reversGeojson, true,true);
+            // addDraw(shiftedGeoJSON, true,true);
 
           })
     },
