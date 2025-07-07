@@ -101,6 +101,11 @@ export default {
     async handleRowClick(row, idx) {
       this.selectedRowIndex = idx;
       console.log("Clicked row", idx + 2, row[0]); // ヘッダー行を飛ばしているため
+
+
+
+
+      
       const geojsonFilename = row[0].replace(".zip", ".geojson");
       const response = await fetch(
           `https://kenzkenz2.xsrv.jp/ninizahyo/geojson/${geojsonFilename}`

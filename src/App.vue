@@ -1222,8 +1222,6 @@ import {
   downloadKML,
   downloadSimaText, downloadTextFile, DXFDownload,
   dxfToGeoJSON, enableDragHandles,
-  enableFeatureDragAndAdd,
-  enablePointDragAndAdd,
   extractFirstFeaturePropertiesAndCheckCRS,
   extractSimaById,
   geojsonAddLayer, geojsonDownload, geoJSONToSIMA,

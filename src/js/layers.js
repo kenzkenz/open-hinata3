@@ -738,7 +738,7 @@ export const clickCircPolygonSymbolLayer = {
         'text-halo-width': 1
     },
     'maxzoom': 24,
-    'minzoom': 18
+    'minzoom': 17
 }
 export const clickCircPolygonSymbolAreaLayer = {
     id: 'click-circle-polygon-symbol-area-layer',
