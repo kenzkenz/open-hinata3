@@ -1352,21 +1352,26 @@ export function downloadGeoJSONAsCSV(geojson, filename = 'data.csv') {
         if (feature.geometry?.type === 'Point') {
             [longitude, latitude, z] = coords;
         }
-        // PolygonまたはLineStringの場合（代表点を使用）
+        // PolygonまたはLineStringの場合（代表点を使用） 使用しない。
         else if (feature.geometry?.type === 'Polygon' || feature.geometry?.type === 'LineString') {
             [longitude, latitude] = coords[0][0] || coords[0];
         }
 
         // 各プロパティの値を取得
         const propValues = propertyKeys.map(key => feature.properties[key] || '');
-
-        return [latitude, longitude, z];
-        // return propValues;
+        if (feature.geometry?.type === 'Point') {
+            return [...propValues, latitude, longitude, z]
+        } else {
+            return propValues
+        }
     });
 
     // 3. CSV形式に変換
+    // const csvContent = [
+    //     headers.join(','), // ヘッダー
+    //     ...rows.map(row => row.join(',')) // 各行
+    // ].join('\n');
     const csvContent = [
-        headers.join(','), // ヘッダー
         ...rows.map(row => row.join(',')) // 各行
     ].join('\n');
 
@@ -8973,7 +8978,22 @@ export function flipLatitude(geojson) {
     process(copy);
     return copy;
 }
-
+/**
+ * 文字列からURLを抽出し、新しいタブで開く
+ * @param {string} text - URLを含む文字列
+ */
+export function extractAndOpenUrls(text) {
+    // URLをマッチさせる正規表現（http/https対応）
+    const urlRegex = /(https?:\/\/[^\s"'<>]+)/g;
+    // マッチしたすべてのURLを配列で取得
+    const urls = text.match(urlRegex) || [];
+    urls.forEach(url => {
+        window.open(url, '_blank');
+    });
+    if (urls.length === 0) {
+        console.warn('文字列にURLが見つかりませんでした。');
+    }
+}
 export function gpxDownload (geojson) {
     const gpxString = geojsonToGpx(geojson)
     const fileName =  getNowFileNameTimestamp() + '.gpx'

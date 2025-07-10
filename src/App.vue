@@ -5796,6 +5796,15 @@ export default {
       }
       let clickTimer = null;
       const CLICK_DELAY = 150; // ms
+
+      // ラベルレイヤーをクリックしたとき
+      map.on('click', 'click-circle-label-layer', (e) => {
+        const labelFeat = e.features && e.features[0];
+        if (!labelFeat) return;
+        // ラベルフィーチャーの id プロパティを取得
+        this.$store.state.id = labelFeat.properties.id;
+      });
+
       // ポイント作成-----------------------------------------------------------------------------------
       function onPointClick(e) {
         popup(e,map,'map01',vm.s_map2Flg)
@@ -5814,6 +5823,13 @@ export default {
         if (targetId2) {
           this.$store.state.id = targetId2
           return;
+        }
+        // クリック位置に 'click-circle-label-layer' のフィーチャーがあれば抜ける
+        const labelHits = map.queryRenderedFeatures(e.point, {
+          layers: ['click-circle-label-layer']
+        });
+        if (labelHits.length > 0) {
+          return;  // ラベル層をクリックしたので何もしない
         }
         if (!this.s_isDrawPoint) return;
         const dummyEvent = {

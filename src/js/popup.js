@@ -6,7 +6,7 @@ import axios from "axios";
 import muni from "@/js/muni";
 import pyramid from "@/js/pyramid";
 import * as turf from '@turf/turf'
-import {queryFGBWithPolygon, wsg84ToJgd} from "@/js/downLoad";
+import {extractAndOpenUrls, queryFGBWithPolygon, wsg84ToJgd} from "@/js/downLoad";
 import {feature} from "@turf/turf";
 import {transformCoordinates} from "@/App";
 // import { Viewer } from 'mapillary-js';
@@ -3196,12 +3196,6 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
-
-
-
-
-
-
             case 'oh-fukuokakenshinrin':
             {
                 let features = map.queryRenderedFeatures(
@@ -3672,6 +3666,7 @@ export function popup(e,map,mapName,mapFlg) {
                 isBreak = true
                 coordinates = store.state.coordinates
                 console.log(store.state.clickCircleGeojsonText)
+                console.log(store.state.id)
                 if (store.state.clickCircleGeojsonText) {
                     features = JSON.parse(store.state.clickCircleGeojsonText).features
                 } else {
@@ -3679,6 +3674,7 @@ export function popup(e,map,mapName,mapFlg) {
                     store.state.clickCircleGeojsonText = store.state.clickCircleGeojsonTextMyroom
                 }
                 const feature = features.find(feature => feature.properties.id === store.state.id)
+                // alert('到達')
                 if (!feature) return;
                 // alert('到達')
                 props = feature.properties
@@ -3866,6 +3862,9 @@ export function popup(e,map,mapName,mapFlg) {
                     store.state.popupHtml = html
                     store.state.popupDialog = true
                     html = ''
+                }
+                if (layerId === 'click-circle-label-layer') {
+                    extractAndOpenUrls(props.label)
                 }
                 break
             }
