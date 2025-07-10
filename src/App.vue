@@ -13,12 +13,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
         <v-btn
             class="tiny-icon-btn"
             icon
-            @mousedown="startAnglePlus"
-            @mouseup="stopAnglePlus"
-            @mouseleave="stopAnglePlus"
-            @touchstart.prevent="startAnglePlus"
-            @touchend="stopAnglePlus"
-        >+</v-btn>
+            @mousedown="startAngleMinus"
+            @mouseup="stopAngleMinus"
+            @mouseleave="stopAngleMinus"
+            @touchstart.prevent="startAngleMinus"
+            @touchend="stopAngleMinus"
+        >←</v-btn>
 <!--        回転-->
         <input
             step="1"
@@ -31,14 +31,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
         <v-btn
             class="tiny-icon-btn"
             icon
-            @mousedown="startAngleMinus"
-            @mouseup="stopAngleMinus"
-            @mouseleave="stopAngleMinus"
-            @touchstart.prevent="startAngleMinus"
-            @touchend="stopAngleMinus"
-        >
-          -
-        </v-btn>
+            @mousedown="startAnglePlus"
+            @mouseup="stopAnglePlus"
+            @mouseleave="stopAnglePlus"
+            @touchstart.prevent="startAnglePlus"
+            @touchend="stopAnglePlus"
+        >→</v-btn>
         <!-- 拡大／縮小 -->
         <div class="my-2"></div>
         拡大
