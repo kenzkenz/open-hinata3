@@ -1071,7 +1071,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 <MiniTooltip text="2画面表示">
               <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickSplit" v-if="mapName === 'map01'"><v-icon>mdi-monitor-multiple</v-icon></v-btn>
               </MiniTooltip>
-                <MiniTooltip text="マイ ホーム">
+                <MiniTooltip text="マイ ルーム">
               <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="btnClickMyroom (mapName)"><v-icon v-if="user1">mdi-home</v-icon></v-btn>
               </MiniTooltip>
               <MiniTooltip text="グループ機能">

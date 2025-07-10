@@ -4141,12 +4141,6 @@ const homusyo2025DDissolvedSource = {
         url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025dissolved.pmtiles'
     },
 }
-// const homusyo2025DDissolvedAllSource = {
-//     id: "homusyo-2025-dissolved-source-all", obj: {
-//         type: "vector",
-//         url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025dissolved_all_simplified.pmtiles'
-//     },
-// }
 const homusyo2025KijyuntenSource = {
     id: "homusyo-2025-kijyunten-source", obj: {
         type: "vector",
@@ -4158,6 +4152,12 @@ const homusyo2025ZukakuSource = {
     id: "homusyo-2025-zukaku-source", obj: {
         type: "vector",
         url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025zukaku.pmtiles",
+    }
+}
+const homusyo2025NinizahyoSource = {
+    id: "homusyo-2025-ninizahyo-source", obj: {
+        type: "vector",
+        url: "pmtiles://https://kenzkenz2.xsrv.jp/pmtiles/ninizahyo.pmtiles",
     }
 }
 // 登記所備付地図データ 間引きなし
@@ -4366,6 +4366,44 @@ export const homusyo2025LayerSearchedPoint = {
     },
     'maxzoom': 14
 }
+const homusyo2025NinizahyoCircle = {
+    id: 'oh-homusyo-2025-ninizahyo-circle',
+    type: 'circle',
+    source: 'homusyo-2025-ninizahyo-source',
+    "source-layer": "point",
+    paint: {
+        'circle-radius': [
+            'interpolate', ['linear'], ['zoom'],
+            11, 0,
+            13,12,
+        ],
+        'circle-color': 'rgba(0,0,0,0.4)',
+    }
+}
+const homusyo2025NinizahyoSymbol = {
+    id: "oh-homusyo-2025-ninizahyo-simbol",
+    type: "symbol",
+    source: "homusyo-2025-ninizahyo-source",
+    "source-layer": "point",
+    'layout': {
+        'text-field': '任',
+        'text-size': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            11,0,
+            13, 12
+        ],
+        'text-anchor': 'center', // テキストを中央配置
+        'text-allow-overlap': true // サークルとテキストの重なりを許可
+    },
+    'paint': {
+        'text-color': 'black',
+        'text-halo-color': 'white',
+        'text-halo-width': 1.5
+    }
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 const amx2024Source = {
     id: "amx-a-2024-pmtiles", obj: {
@@ -10105,8 +10143,8 @@ let layers01 = [
     {
         id: 'oh-homusyo-2025-layer',
         label: "2025登記所地図",
-        sources: [homusyo2025Source,homusyo2025DDissolvedSource],
-        layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025DissolvedAllLayer,homusyo2025DissolvedLayer],
+        sources: [homusyo2025Source,homusyo2025DDissolvedSource,homusyo2025NinizahyoSource],
+        layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025DissolvedAllLayer,homusyo2025DissolvedLayer,homusyo2025NinizahyoCircle,homusyo2025NinizahyoSymbol],
         attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
         ext: {name:'extTokijyo2025'}
     },

@@ -3630,6 +3630,38 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'oh-homusyo-2025-ninizahyo-simbol':
+            case 'oh-homusyo-2025-ninizahyo-circle':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                if (features.length === 0) return
+                props = features[0].properties
+                const zips = JSON.parse(props.ZIPファイル名)
+                const lonLat = JSON.stringify([props.経度,props.緯度])
+                isBreak = true
+                let zipBtnsHtml = ''
+                zips.forEach(zipName => {
+                    zipBtnsHtml += '<button lon-lat = "' + lonLat + '" style="margin-bottom: 5px; height: 30px; font-size: medium; width: 100%;" class="ninnzahyo-zip pyramid-btn">' + zipName + '</button>'
+                })
+                let html0 = ''
+                if (html.indexOf('ninizahyo') === -1) {
+                    html += '<div class="layer-label-div">任意座標追加</div>'
+                    html0 += '<div style="width: 200px; class="ninizahyo" font-weight: normal; color: #333;line-height: 25px;">'
+                    html0 += '編集は右のペンのアイコンから'
+                    html0 += zipBtnsHtml
+                    html0 += '<button style="margin-bottom: 5px; height: 30px; font-size: medium; width: 100%;" class="ninnzahyo-zip-remove pyramid-btn">削　除</button>'
+                    html0 += '<div>'
+                    html += html0
+                }
+                break
+            }
             case 'click-circle-layer':
             case 'click-circle-symbol-layer':
             case 'click-circle-line-layer':
@@ -3835,7 +3867,6 @@ export function popup(e,map,mapName,mapFlg) {
                     store.state.popupDialog = true
                     html = ''
                 }
-
                 break
             }
         }

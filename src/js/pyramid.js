@@ -2,15 +2,17 @@ import store from '@/store'
 import axios from "axios"
 import * as turf from '@turf/turf'
 import {
+    addDraw,
     convertAndDownloadGeoJSONToSIMA,
     convertFromEPSG4326, downloadTextFile,
-    geoJSONToSIMA, getNowFileNameTimestamp,
+    geoJSONToSIMA, getNowFileNameTimestamp, recenterGeoJSON, removeNini,
     savePointSima, splitLineStringIntoPoints,
     zahyokei
 } from "@/js/downLoad";
 import {clickCircleSource, clickPointSource, endPointSouce, vertexSource} from "@/js/layers";
 import {calculatePolygonMetrics, closeAllPopups} from "@/js/popup";
 import { fetchElevation } from '@/js/downLoad';
+import JSZip from "jszip";
 export let currentIndex = 0
 let kasen
 
@@ -1466,6 +1468,41 @@ export default function pyramid () {
                 })
                 store.state.tgtFeature = tgtFeature
                 store.state.pointSima = true
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', async (e) => {
+            if (e.target && (e.target.classList.contains("ninnzahyo-zip"))) {
+                const coordinates = JSON.parse(e.target.getAttribute("lon-lat"))
+                const zipFilename = e.target.innerHTML
+                const dir = 'ninizahyoGeojsonZip' + zipFilename.slice(0, 2)
+                const zipUrl = `https://kenzkenz.xsrv.jp/ninizahyo/zip/${dir}/${zipFilename}`;
+                // ZIP を ArrayBuffer 形式で取得
+                const resp = await fetch(zipUrl);
+                const buf = await resp.arrayBuffer();
+                // JSZip で読み込み
+                const zip = await JSZip.loadAsync(buf);
+                // 中の .geojson ファイルを探す
+                const geojsonName = zipFilename.replace(/\.zip$/i, '.geojson');
+                let file = zip.file(geojsonName);
+                if (!file) {
+                    // 見つからなければ、アーカイブ内の最初の .geojson を使う
+                    const candidates = zip.file(/\.geojson$/i);
+                    if (candidates.length === 0) {
+                        throw new Error(`${zipFilename} に .geojson が見つかりませんでした`);
+                    }
+                    file = candidates[0];
+                }
+                const geojsonText = await file.async('string');
+                removeNini()
+                const shiftedGeoJSON = recenterGeoJSON(JSON.parse(geojsonText), coordinates);
+                addDraw(shiftedGeoJSON, true,true);
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', async (e) => {
+            if (e.target && (e.target.classList.contains("ninnzahyo-zip-remove"))) {
+                removeNini()
             }
         });
     })
