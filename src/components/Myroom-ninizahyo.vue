@@ -10,6 +10,11 @@
           label="都道府県を選択してください"
           outlined
           @update:modelValue="prefChange"
+          :menu-props="{
+            maxHeight: '300px',
+            overflow: 'scroll',
+            contentClass: 'scrollable-menu'
+          }"
       ></v-select>
       <v-text-field
           v-model="filterText"
@@ -191,6 +196,8 @@ export default {
       }
     },
   },
+  mounted() {
+  }
 };
 </script>
 

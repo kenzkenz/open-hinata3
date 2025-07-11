@@ -7928,21 +7928,14 @@ export function enableDragHandles(map) {
         const current = getTouchOrMouseLngLat(e);
         if (!current || !dragOrigin) return;
 
-        console.log(originalFeatures.features)
-
         const dx = current.lng - dragOrigin.lng;
         const dy = current.lat - dragOrigin.lat;
 
         // ① click-circle-source の該当 feature を移動
         const lassoSelected = originalFeatures.features.find(f => f.properties.id === dragTargetId && f.properties.lassoSelected === true)
-
-        console.log(originalFeatures.features.find(f => f.properties.id === dragTargetId))
-        console.log(dragTargetId)
-
         const movedFeatures = originalFeatures.features.map(f => {
             let idMatch = f.properties.id === dragTargetId || f.properties.pairId === dragTargetId;
             if (lassoSelected) {
-                // alert(7)
                 idMatch = f.properties.lassoSelected === true
             }
             if (!idMatch) return f;

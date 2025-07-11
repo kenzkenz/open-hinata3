@@ -1648,6 +1648,7 @@ export function getAllVertexPoints(map, geojson) {
         const { geometry, properties, id } = feature;
         if (!geometry) return;
         if (properties && typeof properties.radius !== "undefined") return;
+        if (properties.lassoSelected === true) return;
 
         const { type, coordinates } = geometry;
         if (type === 'LineString') {
@@ -1738,6 +1739,7 @@ export function setAllMidpoints(map, geojson) {
     geojson.features.forEach((feature, featIdx) => {
         const { geometry, properties } = feature;
         if (!geometry) return;
+        if (properties.lassoSelected === true) return;
         // 1. サークル判定
         if (properties && typeof properties.radius !== "undefined") return;
         // 2. Pointタイプ地物は絶対に対象外
