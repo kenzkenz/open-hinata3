@@ -6852,6 +6852,7 @@ export default {
             try {
               const lasso = JSON.parse(this.$store.state.clickCircleGeojsonText).features.find(f => f.properties.lassoSelected === true)
               if (lasso) this.s_isLassoSelected = true
+              this.$store.state.lassoGeojson = JSON.stringify(turf.featureCollection(JSON.parse(this.$store.state.clickCircleGeojsonText).features.filter(feature => feature.properties.lassoSelected === true)))
               const config = JSON.parse(this.$store.state.clickCircleGeojsonText).features.find(f => f.properties.id === 'config').properties
               if (config) {
                 this.$store.state.printTitleText = config['title-text']
