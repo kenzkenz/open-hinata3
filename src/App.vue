@@ -6253,6 +6253,8 @@ export default {
           console.log(geojson)
           // 更新
           source.setData(geojson);
+          this.$store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+          clickCircleSource.obj.data = geojson
         }
         // 投げ縄ラインをクリア
         map.getSource(lassoSourceId).setData({ type: 'FeatureCollection', features: [] });

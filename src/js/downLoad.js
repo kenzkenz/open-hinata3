@@ -7780,6 +7780,37 @@ export function scaleAndRotateLassoSelected(scalePercent, rotationDeg) {
 // }
 
 // ドラッグハンドルのアップロード---------------------------------------------------------------------------
+// export function updateDragHandles(editEnabled) {
+//     const map = store.state.map01;
+//     const originalGeojson = map.getSource('click-circle-source')._data;
+//     const source = map.getSource('drag-handles-source');
+//     if (!source) {
+//         console.warn('drag-handles-source が存在しません');
+//         return;
+//     }
+//     if (!editEnabled) {
+//         // 編集モードOFF → 空にして消す
+//         source.setData({ type: 'FeatureCollection', features: [] });
+//         return;
+//     }
+//     // 編集モードON → isCircleCenter が true の地物を除外して中心点を生成
+//     const centerFeatures = originalGeojson.features
+//         .filter(f => !f.properties?.isCircleCenter && f.properties.id !== 'config') // ← この行で除外
+//         .map(f => {
+//             const center = turf.center(f); // 中心点（Point）
+//             return {
+//                 type: 'Feature',
+//                 geometry: center.geometry,
+//                 properties: {
+//                     targetId: f.properties.id
+//                 }
+//             };
+//         });
+//     source.setData({
+//         type: 'FeatureCollection',
+//         features: centerFeatures
+//     });
+// }
 export function updateDragHandles(editEnabled) {
     const map = store.state.map01;
     const originalGeojson = map.getSource('click-circle-source')._data;
@@ -7793,9 +7824,11 @@ export function updateDragHandles(editEnabled) {
         source.setData({ type: 'FeatureCollection', features: [] });
         return;
     }
+    // lassoSelected=true のフィーチャを抽出
+    const selected = originalGeojson.features.filter(f => f.properties.lassoSelected);
     // 編集モードON → isCircleCenter が true の地物を除外して中心点を生成
     const centerFeatures = originalGeojson.features
-        .filter(f => !f.properties?.isCircleCenter && f.properties.id !== 'config') // ← この行で除外
+        .filter(f => !f.properties?.isCircleCenter && f.properties.id !== 'config' && f.properties.lassoSelected !== true) // ← この行で除外
         .map(f => {
             const center = turf.center(f); // 中心点（Point）
             return {
@@ -7806,10 +7839,25 @@ export function updateDragHandles(editEnabled) {
                 }
             };
         });
-    source.setData({
-        type: 'FeatureCollection',
-        features: centerFeatures
-    });
+
+    if (selected.length > 0) {
+        // ① 各フィーチャーを centroid(中心点) に変換
+        const pointFeatures = selected.map(f => turf.centroid(f));
+        // ② その PointFeature の集合からグループ重心を計算
+        const groupCenter = turf.centroid(turf.featureCollection(pointFeatures));
+        groupCenter.properties['targetId'] = selected[0].properties.id
+        source.setData({
+            type: 'FeatureCollection',
+            features: [...centerFeatures,groupCenter]
+        });
+    } else {
+        // alert(888)
+        source.setData({
+            type: 'FeatureCollection',
+            features: centerFeatures
+        });
+    }
+
 }
 
 // 移動------------------------------------------------------------------------------------------------------------------
@@ -7880,14 +7928,21 @@ export function enableDragHandles(map) {
         const current = getTouchOrMouseLngLat(e);
         if (!current || !dragOrigin) return;
 
+        console.log(originalFeatures.features)
+
         const dx = current.lng - dragOrigin.lng;
         const dy = current.lat - dragOrigin.lat;
 
         // ① click-circle-source の該当 feature を移動
         const lassoSelected = originalFeatures.features.find(f => f.properties.id === dragTargetId && f.properties.lassoSelected === true)
+
+        console.log(originalFeatures.features.find(f => f.properties.id === dragTargetId))
+        console.log(dragTargetId)
+
         const movedFeatures = originalFeatures.features.map(f => {
             let idMatch = f.properties.id === dragTargetId || f.properties.pairId === dragTargetId;
             if (lassoSelected) {
+                // alert(7)
                 idMatch = f.properties.lassoSelected === true
             }
             if (!idMatch) return f;
