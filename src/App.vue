@@ -8,7 +8,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
-      <div v-if="isLassoSelected" class="features-rotate-div">
+      <div v-if="s_isLassoSelected" class="features-rotate-div my-div" @click="setMaxZIndex($event.currentTarget)">
+        <div class="features-rotate-div-close" @click="s_isLassoSelected = false">
+          ×
+        </div>
         回転
         <v-btn
             class="tiny-icon-btn"
@@ -19,7 +22,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             @touchstart.prevent="startAngleMinus"
             @touchend="stopAngleMinus"
         >←</v-btn>
-<!--        回転-->
+        <!--        回転-->
         <input
             step="1"
             style="width: 70px;margin: 0 4px;"
@@ -49,7 +52,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             @touchstart.prevent="startScaleUp"
             @touchend="stopScaleUp"
         >+</v-btn>
-<!--        拡大-->
+        <!--        拡大-->
         <input
             step="1"
             min="1"
@@ -1226,7 +1229,7 @@ import {
   geojsonAddLayer, geojsonDownload, geoJSONToSIMA,
   geoTiffLoad,
   geoTiffLoad2,
-  getCRS, getNowFileNameTimestamp, gpxDownload,
+  getCRS, getMaxZIndex, getNowFileNameTimestamp, gpxDownload,
   handleFileUpload,
   highlightSpecificFeatures,
   highlightSpecificFeatures2025,
@@ -1237,7 +1240,7 @@ import {
   pmtilesGenerateForUser2,
   pngDl,
   pngDownload,
-  pngLoad, rotateLassoSelected, scaleAndRotateLassoSelected, scaleLassoSelected,
+  pngLoad, scaleAndRotateLassoSelected,
   simaLoadForUser, splitLineStringIntoPoints,
   tileGenerateForUser,
   tileGenerateForUserPdf,
@@ -1773,7 +1776,7 @@ export default {
     isRightDiv2: true,
     dialogForDl: false,
     dialogForChibanzyOrDraw: false,
-    isLassoSelected: false,
+    // isLassoSelected: false,
     angleValue:0,
     plusInterval: null,
     minusInterval: null,
@@ -1799,6 +1802,14 @@ export default {
       'titleColor',
       'titleDirection',
     ]),
+    s_isLassoSelected: {
+      get() {
+        return this.$store.state.isLassoSelected
+      },
+      set(value) {
+        return this.$store.state.isLassoSelected = value
+      }
+    },
     s_finishLineFire () {
       return this.$store.state.finishLineFire
     },
@@ -2398,6 +2409,9 @@ export default {
     },
   },
   methods: {
+    setMaxZIndex (targetEl) {
+      targetEl.style.zIndex = getMaxZIndex()
+    },
     // ─── 連続拡大 ───
     startScaleUp() {
       this.scaleUpStep = 1;
@@ -6255,9 +6269,9 @@ export default {
           // console.log(this.$store.state.lassoGeojson)
 
           if (isLassoSelected) {
-            this.isLassoSelected = true
+            this.s_isLassoSelected = true
           } else {
-            this.isLassoSelected = false
+            this.s_isLassoSelected = false
           }
           console.log(geojson)
           // 更新
@@ -9374,12 +9388,21 @@ select {
   text-align: center;
   transform: translateX(-50%);
   width: 200px;
-  padding: 10px 0;
+  padding: 20px 0 10px 0;
   background-color: #ffffff;
   /* 浮いた感じのシャドウ */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
-  z-index: 10;
+  z-index: 1;
+}
+.features-rotate-div-close {
+  position: absolute;
+  top: 0px;
+  right: 6px;
+  cursor: pointer;
+}
+.features-rotate-div-close:hover {
+  color: red;
 }
 .map-radio {
   position: absolute;

@@ -6,7 +6,7 @@ import axios from "axios";
 import muni from "@/js/muni";
 import pyramid from "@/js/pyramid";
 import * as turf from '@turf/turf'
-import {extractAndOpenUrls, queryFGBWithPolygon, wsg84ToJgd} from "@/js/downLoad";
+import {extractAndOpenUrls, getMaxZIndex, queryFGBWithPolygon, wsg84ToJgd} from "@/js/downLoad";
 import {feature} from "@turf/turf";
 import {transformCoordinates} from "@/App";
 // import { Viewer } from 'mapillary-js';
@@ -3866,6 +3866,9 @@ export function popup(e,map,mapName,mapFlg) {
                 if (layerId === 'click-circle-label-layer') {
                     extractAndOpenUrls(props.label)
                 }
+                if (props.lassoSelected) {
+                    store.state.isLassoSelected = true
+                }
                 break
             }
         }
@@ -4218,6 +4221,12 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
         // ポップアップイベント設定
         popups.push(popup);
         popup.on('close', closeAllPopups);
+        const popupEl = popup.getElement();
+        popupEl.style.zIndex = getMaxZIndex()
+        popupEl.addEventListener('click', (e) => {
+            console.log('popup clicked!', e.currentTarget);
+            e.currentTarget.style.zIndex = getMaxZIndex()
+        });
 
         // 次の描画タイミングで高さを取得して再配置
         if (isSmartPhone) {

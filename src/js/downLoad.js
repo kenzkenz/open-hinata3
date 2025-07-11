@@ -9042,6 +9042,16 @@ export function extractAndOpenUrls(text) {
         console.warn('文字列にURLが見つかりませんでした。');
     }
 }
+export function getMaxZIndex () {
+    const elements = document.querySelectorAll('.my-div, .maplibregl-popup');
+    let maxZ = 0;
+    elements.forEach(el => {
+        const z = window.getComputedStyle(el).zIndex;
+        const zi = parseInt(z, 10);
+        if (!isNaN(zi) && zi > maxZ) maxZ = zi;
+    });
+    return maxZ + 1
+}
 export function gpxDownload (geojson) {
     const gpxString = geojsonToGpx(geojson)
     const fileName =  getNowFileNameTimestamp() + '.gpx'
