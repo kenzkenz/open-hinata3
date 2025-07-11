@@ -6848,8 +6848,10 @@ export default {
 
           if (params.clickCircleGeojsonText && params.clickCircleGeojsonText !== 'undefined') {
             this.$store.state.clickCircleGeojsonText = params.clickCircleGeojsonText
-            console.log(this.$store.state.clickCircleGeojsonText)
+            // console.log(this.$store.state.clickCircleGeojsonText)
             try {
+              const lasso = JSON.parse(this.$store.state.clickCircleGeojsonText).features.find(f => f.properties.lassoSelected === true)
+              if (lasso) this.s_isLassoSelected = true
               const config = JSON.parse(this.$store.state.clickCircleGeojsonText).features.find(f => f.properties.id === 'config').properties
               if (config) {
                 this.$store.state.printTitleText = config['title-text']
