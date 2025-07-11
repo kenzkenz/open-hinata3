@@ -202,7 +202,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
             各種ダウンロード
           </v-card-title>
           <v-card-text>
-            <v-btn @click="saveGpx">GPX</v-btn>
+            <v-btn @click="saveSima">SIMA</v-btn>
+            <v-btn style="margin-left: 10px;" @click="saveGpx">GPX</v-btn>
             <v-btn style="margin-left: 10px;" @click="saveKml">kML</v-btn>
             <v-btn style="margin-left: 10px;" @click="saveGeojson">GEOJSON</v-btn>
             <v-btn style="margin-left: 10px;" @click="dialogForSaveDXFOpen">DXF</v-btn>
@@ -3410,6 +3411,14 @@ export default {
     },
     saveGpx() {
       gpxDownload(JSON.parse(this.$store.state.clickCircleGeojsonText))
+      this.dialogForDl = false
+    },
+    saveSima() {
+      const geojson = JSON.parse(this.$store.state.clickCircleGeojsonText)
+      const epsg = zahyokei.find(item => item.kei === store.state.zahyokei).code
+      const convertedGeojson = convertFromEPSG4326(geojson, epsg)
+      const simaText = geoJSONToSIMA(convertedGeojson)
+      downloadTextFile(`${getNowFileNameTimestamp()}.sim`, simaText, 'shift-jis')
       this.dialogForDl = false
     },
     saveGeojson() {
