@@ -3751,7 +3751,7 @@ export function popup(e,map,mapName,mapFlg) {
                                 html +=
                                     '<div style="width: 240px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
                                     '<div style="position: relative">' +
-                                    '<div style="margin-left: 10px;margin-bottom: 10px; font-size: 16px;"><input ' + checked + ' type="checkbox" id="' + props.id + '" class="polygon-area-check" value=""><label for="' + props.id + '"> 面積表示</div>' +
+                                    '<div style="margin-left: 10px;margin-bottom: 10px; font-size: 16px;"><input ' + checked + ' type="checkbox" id="' + props.id + '" class="polygon-area-check" value=""><label for="' + props.id + '"> 面積表示</label>' +
                                     '<input id="' + props.id + '" type="number" class="oh-cool-input-number line-width-input" min="1" max="100" step="1" value="' + lineWidth +'" style="position: absolute;left:120px;top:0px;">' +
                                     '</div>' +
                                     '<input id="' + props.id + '" style="width: 100%;margin-bottom: 5px;" type="text" class="oh-cool-input polygon-text" placeholder="ここに入力" value="' + props.label + '">' +

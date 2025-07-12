@@ -45,8 +45,8 @@
               label="印刷方向を選択してください"
               @update:modelValue="configChange('direction',s_titleDirection)"
           />
-
-          <input style="width: 200px" type="range" min="0" max="1" step="0.01" class="range" v-model.number="drawOpacity" @input="drawOpacityInput"/>
+          <span><input checked type="checkbox" id="draw-visible-check" value=""><label for="draw-visible-check" style="font-size: 16px;"> 表示</label></span>
+          <input style="width: 200px;margin-left: 10px;" type="range" min="0" max="1" step="0.01" class="range" v-model.number="drawOpacity" @input="drawOpacityInput"/>
 
         </v-card-text>
       </v-card>
