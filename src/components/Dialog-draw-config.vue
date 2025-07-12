@@ -45,6 +45,9 @@
               label="印刷方向を選択してください"
               @update:modelValue="configChange('direction',s_titleDirection)"
           />
+
+          <input style="width: 200px" type="range" min="0" max="1" step="0.01" class="range" v-model.number="drawOpacity" @input="drawOpacityInput"/>
+
         </v-card-text>
       </v-card>
     </div>
@@ -52,15 +55,14 @@
 </template>
 
 <script>
-import {history} from "@/App";
 import {clickCircleSource, konUrls} from "@/js/layers";
-import store from "@/store";
 import {geojsonUpdate} from "@/js/pyramid";
 import {printDirectionChange} from "@/js/downLoad";
 export default {
   name: 'Dialog-draw-config',
   props: ['mapName'],
   data: () => ({
+    drawOpacity: 1,
     titleColors: [{color:'black',label:'黒'},{color:'red',label:'赤'},{color:'blue',label:'青'},{color:'green',label:'緑'},{color:'orange',label:'オレンジ'}],
     titleDirections: [{direction:'vertical',label:'A4縦'},{direction:'horizontal',label:'A4横'}],
     titleScale: 0,
@@ -135,6 +137,20 @@ export default {
     },
   },
   methods: {
+    drawOpacityInput () {
+      const map01 = this.$store.state.map01
+      map01.setPaintProperty('click-circle-layer', 'fill-opacity', this.drawOpacity)
+      map01.setPaintProperty('click-circle-polygon-line-layer', 'line-opacity', this.drawOpacity)
+      map01.setPaintProperty('click-circle-polygon-symbol-layer', 'text-opacity', this.drawOpacity)
+      map01.setPaintProperty('click-circle-polygon-symbol-area-layer', 'text-opacity', this.drawOpacity)
+      map01.setPaintProperty('click-circle-line-layer', 'line-opacity', this.drawOpacity)
+      map01.setPaintProperty('click-circle-keiko-line-layer', 'line-opacity', this.drawOpacity)
+      map01.setPaintProperty('click-circle-label-layer', 'text-opacity', this.drawOpacity)
+      // click-circle-symbol-layerは考える必要あり。opacityは使えない。
+      map01.setPaintProperty('click-circle-symbol-layer', 'circle-opacity', this.drawOpacity)
+      map01.setPaintProperty('arrows-endpoint-layer', 'icon-opacity', this.drawOpacity)
+      map01.setPaintProperty('segment-label-layer', 'text-opacity', this.drawOpacity)
+    },
     configChange (tgtProp,value) {
       console.log(tgtProp,value)
       const map01 = this.$store.state.map01
