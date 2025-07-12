@@ -45,9 +45,18 @@
               label="印刷方向を選択してください"
               @update:modelValue="configChange('direction',s_titleDirection)"
           />
-          <span><input checked type="checkbox" id="draw-visible-check" value=""><label for="draw-visible-check" style="font-size: 16px;"> 表示</label></span>
-          <input style="width: 200px;margin-left: 10px;" type="range" min="0" max="1" step="0.01" class="range" v-model.number="drawOpacity" @input="drawOpacityInput"/>
-
+          <span style="display: inline-block; position: relative; top: -6px;">
+            <input
+                type="checkbox"
+                id="draw-visible-check"
+                v-model="s_drawVisible"
+                @change="onDrawVisibleChange"
+            >
+            <label for="draw-visible-check" style="font-size: 16px;"> 表示</label>
+          </span>
+          <input style="width: 280px;margin-left: 10px;" type="range" min="0" max="1" step="0.01" class="range"
+                 v-model.number="s_drawOpacity" @input="drawOpacityInput" @change="configChange('opacity',s_drawOpacity)"
+          />
         </v-card-text>
       </v-card>
     </div>
@@ -62,7 +71,6 @@ export default {
   name: 'Dialog-draw-config',
   props: ['mapName'],
   data: () => ({
-    drawOpacity: 1,
     titleColors: [{color:'black',label:'黒'},{color:'red',label:'赤'},{color:'blue',label:'青'},{color:'green',label:'緑'},{color:'orange',label:'オレンジ'}],
     titleDirections: [{direction:'vertical',label:'A4縦'},{direction:'horizontal',label:'A4横'}],
     titleScale: 0,
@@ -94,6 +102,25 @@ export default {
   computed: {
     s_dialogs () {
       return this.$store.state.dialogs.drawConfigDialog
+    },
+    s_drawFire () {
+      return this.$store.state.drawFire
+    },
+    s_drawOpacity: {
+      get() {
+        return this.$store.state.drawOpacity
+      },
+      set(value) {
+        return this.$store.state.drawOpacity = value
+      }
+    },
+    s_drawVisible: {
+      get() {
+        return this.$store.state.drawVisible
+      },
+      set(value) {
+        return this.$store.state.drawVisible = value
+      }
     },
     s_isPrint: {
       get() {
@@ -137,19 +164,31 @@ export default {
     },
   },
   methods: {
+    onDrawVisibleChange () {
+      const map01 = this.$store.state.map01
+      const v = this.s_drawVisible ? 'visible' : 'none'
+      const layerIds = ['click-circle-layer','click-circle-polygon-line-layer','click-circle-polygon-symbol-layer',
+        'click-circle-polygon-symbol-area-layer','click-circle-line-layer','click-circle-keiko-line-layer',
+        'click-circle-label-layer','click-circle-symbol-layer','arrows-endpoint-layer','segment-label-layer'
+      ]
+      layerIds.forEach(layerId => {
+        map01.setLayoutProperty(layerId, 'visibility', v)
+      })
+      this.configChange('visible',this.s_drawVisible)
+    },
     drawOpacityInput () {
       const map01 = this.$store.state.map01
-      map01.setPaintProperty('click-circle-layer', 'fill-opacity', this.drawOpacity)
-      map01.setPaintProperty('click-circle-polygon-line-layer', 'line-opacity', this.drawOpacity)
-      map01.setPaintProperty('click-circle-polygon-symbol-layer', 'text-opacity', this.drawOpacity)
-      map01.setPaintProperty('click-circle-polygon-symbol-area-layer', 'text-opacity', this.drawOpacity)
-      map01.setPaintProperty('click-circle-line-layer', 'line-opacity', this.drawOpacity)
-      map01.setPaintProperty('click-circle-keiko-line-layer', 'line-opacity', this.drawOpacity)
-      map01.setPaintProperty('click-circle-label-layer', 'text-opacity', this.drawOpacity)
+      map01.setPaintProperty('click-circle-layer', 'fill-opacity', this.s_drawOpacity)
+      map01.setPaintProperty('click-circle-polygon-line-layer', 'line-opacity', this.s_drawOpacity)
+      map01.setPaintProperty('click-circle-polygon-symbol-layer', 'text-opacity', this.s_drawOpacity)
+      map01.setPaintProperty('click-circle-polygon-symbol-area-layer', 'text-opacity', this.s_drawOpacity)
+      map01.setPaintProperty('click-circle-line-layer', 'line-opacity', this.s_drawOpacity)
+      map01.setPaintProperty('click-circle-keiko-line-layer', 'line-opacity', this.s_drawOpacity)
+      map01.setPaintProperty('click-circle-label-layer', 'text-opacity', this.s_drawOpacity)
       // click-circle-symbol-layerは考える必要あり。opacityは使えない。
-      map01.setPaintProperty('click-circle-symbol-layer', 'circle-opacity', this.drawOpacity)
-      map01.setPaintProperty('arrows-endpoint-layer', 'icon-opacity', this.drawOpacity)
-      map01.setPaintProperty('segment-label-layer', 'text-opacity', this.drawOpacity)
+      map01.setPaintProperty('click-circle-symbol-layer', 'circle-opacity', this.s_drawOpacity)
+      map01.setPaintProperty('arrows-endpoint-layer', 'icon-opacity', this.s_drawOpacity)
+      map01.setPaintProperty('segment-label-layer', 'text-opacity', this.s_drawOpacity)
     },
     configChange (tgtProp,value) {
       console.log(tgtProp,value)
@@ -179,6 +218,12 @@ export default {
   },
   mounted() {
     document.querySelector('#drag-handle-drawConfigDialog-map01').innerHTML = '<span style="font-size: large;">各種設定</span>'
+  },
+  watch: {
+    s_drawFire () {
+      this.onDrawVisibleChange()
+      this.drawOpacityInput()
+    }
   }
 }
 </script>

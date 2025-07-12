@@ -312,60 +312,60 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </v-card>
       </v-dialog>
 
-      <v-dialog v-model="printDialog" max-width="500px">
-        <v-card>
-          <v-card-title>
-            印刷設定
-          </v-card-title>
-          <v-card-text>
-            <v-textarea
-                v-model="s_printTitleText"
-                label="タイトル"
-                auto-grow
-                rows="3"
-                outlined
-                @input="configChange('title-text',s_printTitleText)"
-            />
-            <v-text-field
-                v-model="s_textPx"
-                label="フォントサイズ"
-                type="number"
-                variant="outlined"
-                min="0"
-                max="100"
-                @input="configChange('font-size',s_textPx)"
-            />
-            <v-select
-                v-model="s_titleColor"
-                :items="titleColors"
-                item-title="label"
-                item-value="color"
-                label="色を選択してください"
-                @update:modelValue="configChange('fill-color',s_titleColor)"
-            />
-            <v-select
-                v-model="titleScale"
-                :items="titleScales"
-                item-title="label"
-                item-value="zoom"
-                label="縮尺率固定"
-                @update:modelValue="setZoom()"
-            />
-            <v-select
-                v-model="s_titleDirection"
-                :items="titleDirections"
-                item-title="label"
-                item-value="direction"
-                label="印刷方向を選択してください"
-                @update:modelValue="configChange('direction',s_titleDirection)"
-            />
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="blue-darken-1" text @click="printDialog = false">Close</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
+<!--      <v-dialog v-model="printDialog" max-width="500px">-->
+<!--        <v-card>-->
+<!--          <v-card-title>-->
+<!--            印刷設定-->
+<!--          </v-card-title>-->
+<!--          <v-card-text>-->
+<!--            <v-textarea-->
+<!--                v-model="s_printTitleText"-->
+<!--                label="タイトル"-->
+<!--                auto-grow-->
+<!--                rows="3"-->
+<!--                outlined-->
+<!--                @input="configChange('title-text',s_printTitleText)"-->
+<!--            />-->
+<!--            <v-text-field-->
+<!--                v-model="s_textPx"-->
+<!--                label="フォントサイズ"-->
+<!--                type="number"-->
+<!--                variant="outlined"-->
+<!--                min="0"-->
+<!--                max="100"-->
+<!--                @input="configChange('font-size',s_textPx)"-->
+<!--            />-->
+<!--            <v-select-->
+<!--                v-model="s_titleColor"-->
+<!--                :items="titleColors"-->
+<!--                item-title="label"-->
+<!--                item-value="color"-->
+<!--                label="色を選択してください"-->
+<!--                @update:modelValue="configChange('fill-color',s_titleColor)"-->
+<!--            />-->
+<!--            <v-select-->
+<!--                v-model="titleScale"-->
+<!--                :items="titleScales"-->
+<!--                item-title="label"-->
+<!--                item-value="zoom"-->
+<!--                label="縮尺率固定"-->
+<!--                @update:modelValue="setZoom()"-->
+<!--            />-->
+<!--            <v-select-->
+<!--                v-model="s_titleDirection"-->
+<!--                :items="titleDirections"-->
+<!--                item-title="label"-->
+<!--                item-value="direction"-->
+<!--                label="印刷方向を選択してください"-->
+<!--                @update:modelValue="configChange('direction',s_titleDirection)"-->
+<!--            />-->
+<!--          </v-card-text>-->
+<!--          <v-card-actions>-->
+<!--            <v-spacer></v-spacer>-->
+<!--            <v-btn color="blue-darken-1" text @click="printDialog = false">Close</v-btn>-->
+<!--          </v-card-actions>-->
+<!--        </v-card>-->
+<!--      </v-dialog>-->
 
       <v-dialog v-model="s_mapillaryDialog" fullscreen>
         <v-card>
@@ -1050,12 +1050,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <div :style="{fontSize: textPx + 'px', color: titleColor}" class="print-title">
             <MiniTooltip text="click me" :offset-x="0" :offset-y="4">
               <span
-                  @click="printDialog = true"
+                  @click="drawConfig"
                   v-if="printTitleText && printTitleText.trim().length > 0"
                   class="print-title-bg"
                   v-html="printTitleText.replace(/\n/g, '<br>')"
               ></span>
-              <span v-else class="dot" @click="printDialog = true"></span>
+              <span v-else class="dot" @click="drawConfig"></span>
             </MiniTooltip>
           </div>
 
@@ -6753,6 +6753,8 @@ export default {
                 this.$store.state.textPx = config['font-size'] || 30
                 this.$store.state.titleColor = config['fill-color']
                 this.$store.state.titleDirection = config['direction'] || 'vertical'
+                this.$store.state.drawVisible = config['visible']
+                this.$store.state.drawOpacity = config['opacity'] || 1
               }
             }catch (e) {
               console.log(e)

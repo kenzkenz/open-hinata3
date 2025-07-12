@@ -4,6 +4,9 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    drawFire: false,
+    drawOpacity: 1,
+    drawVisible: true,
     isPrint: false,
     isLassoSelected: false,
     lassoGeojson: null,

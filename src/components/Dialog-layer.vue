@@ -982,6 +982,8 @@ export default {
       map.addSource('drag-handles-source', dragHandlesSource.obj)
       map.addLayer(dragHandleslayer)
 
+      this.$store.state.drawFire = !this.$store.state.drawFire
+
       if (this.$store.state.clickCircleGeojsonText) {
         const geojson = JSON.parse(this.$store.state.clickCircleGeojsonText)
         generateSegmentLabelGeoJSON(geojson)
