@@ -1189,6 +1189,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <dialog2 :mapName=mapName />
           <dialogShare v-if="mapName === 'map01'" :mapName=mapName />
           <DialogChibanzuList :mapName=mapName />
+          <DialogDrawConfig v-if="mapName === 'map01'" :mapName=mapName />
 
         </div>
       </div>
@@ -1211,7 +1212,7 @@ import { gpx } from '@tmcw/togeojson'
 import { user } from "@/authState"; // グローバルの認証情報を取得
 import { MaplibreMeasureControl } from '@watergis/maplibre-gl-terradraw';
 import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
-import { TerraDraw,TerraDrawPointMode,TerraDrawLineStringMode,TerraDrawPolygonMode,TerraDrawFreehandMode } from 'terra-draw'
+import { TerraDrawPointMode,TerraDrawLineStringMode,TerraDrawPolygonMode } from 'terra-draw'
 import PointInfoDrawer from '@/components/PointInfoDrawer.vue'
 import RightDrawer from '@/components/rightDrawer.vue'
 import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
@@ -1585,6 +1586,7 @@ import DialogLayer from '@/components/Dialog-layer'
 import DialogInfo from '@/components/Dialog-info'
 import Dialog2 from '@/components/Dialog2'
 import DialogShare from "@/components/Dialog-share"
+import DialogDrawConfig from "@/components/Dialog-draw-config"
 import DialogChibanzuList from "@/components/Dialog-chibanzu-list"
 import pyramid, {
   autoCloseAllPolygons,
@@ -1632,6 +1634,7 @@ export default {
     Dialog2,
     DialogShare,
     DialogChibanzuList,
+    DialogDrawConfig,
     PointInfoDrawer,
     RightDrawer,
     ChibanzuDrawer,
@@ -1883,7 +1886,7 @@ export default {
         { key: 'undo', text: '元に戻す', icon: 'mdi-undo', label: '元戻', click: this.undo },
         { key: 'redo', text: 'やり直す', icon: 'mdi-redo', label: 'やり直', click: this.redo },
         // { key: 'fix', text: '画面固定', label: '固定', color: this.s_isDrawFix ? 'green' : 'blue', click: this.toggleDrawFix },
-        { key: 'config', text: '各種設定', label: '設定', color: 'blue', click: this.printDialogOpen },
+        { key: 'config', text: '各種設定', label: '設定', color: 'blue', click: this.drawConfig },
         { key: 'dl', text: '各種ダウンロード', label: 'DL', style: 'background-color: navy!important;', click: this.dialogForDlOpen },
         { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
         { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
@@ -2661,9 +2664,9 @@ export default {
       }
       reader.readAsText(this.s_geojsonFile);
     },
-    printDialogOpen () {
-      this.printDialog = true
-    },
+    // printDialogOpen () {
+    //   this.printDialog = true
+    // },
     startTiling () {
       this.transparentType = '1'
       tileGenerateForUser('png','pgw',true)
@@ -4493,6 +4496,25 @@ export default {
         map.setLayoutProperty('terradraw-measure-line-label', 'visibility', 'none');
         map.setLayoutProperty('terradraw-measure-line-node', 'visibility', 'none');
         this.showDrawUI = false
+      }
+    },
+    drawConfig () {
+      const mapName = 'map01'
+      if (this.$store.state.dialogs.drawConfigDialog[mapName].style.display === 'none') {
+        this.$store.commit('incrDialogMaxZindex')
+        this.$store.state.dialogs.drawConfigDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
+        this.$store.state.dialogs.drawConfigDialog[mapName].style.display = 'block'
+        if (window.innerWidth < 450) {
+          this.$store.state.dialogs.drawConfigDialog[mapName].style.left = '0px'
+        } else {
+          if (this.s_map2Flg) {
+            this.$store.state.dialogs.drawConfigDialog[mapName].style.left = (window.innerWidth / 2 - 360) + 'px'
+          } else {
+            this.$store.state.dialogs.drawConfigDialog[mapName].style.left = (window.innerWidth - 360) + 'px'
+          }
+        }
+      } else {
+        this.$store.state.dialogs.drawConfigDialog[mapName].style.display = 'none'
       }
     },
     share() {
