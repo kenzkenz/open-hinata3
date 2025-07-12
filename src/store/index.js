@@ -113,8 +113,8 @@ export default createStore({
         map02:{name:'chibanzuListDialog',style: {top: '65px', left: '10px', 'z-index': 1, height: 'auto', 'width': '250px', display: 'none'}},
       },
       drawConfigDialog:{
-        map01:{name:'drawConfigDialog',style: {top: '65px', left: '10px', 'z-index': 1, height: 'auto', 'width': '350px', display: 'none'}},
-        map02:{name:'drawConfigDialog',style: {top: '65px', left: '10px', 'z-index': 1, height: 'auto', 'width': '250px', display: 'none'}},
+        map01:{name:'drawConfigDialog',style: {top: '10px', left: '30px', 'z-index': 1, height: 'auto', 'width': '350px', display: 'none'}},
+        map02:{name:'drawConfigDialog',style: {top: '10px', left: '30px', 'z-index': 1, height: 'auto', 'width': '350px', display: 'none'}},
       },
       shareDialog:{
         map01:{name:'shareDialog',style: {top: '65px', left: '10px', 'z-index': 1, height: 'auto', 'width': '350px', display: 'none'}},

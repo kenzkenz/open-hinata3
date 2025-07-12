@@ -1663,37 +1663,6 @@ export default {
     mapDivId: "map01", // ← MapLibreのDIVのID
     tweetText: "入力可能になりました。画像が表示されない場合もう一回やりなおしてください。\n\n#openhinata3 #OH3",
     attributionControl: null,
-    // titleColor: 'black',
-    titleColors: [{color:'black',label:'黒'},{color:'red',label:'赤'},{color:'blue',label:'青'},{color:'green',label:'緑'},{color:'orange',label:'オレンジ'}],
-    // titleDirection: 'vertical',
-    titleDirections: [{direction:'vertical',label:'A4縦'},{direction:'horizontal',label:'A4横'}],
-    titleScale: 0,
-    // titleScales: [//grokの回答
-    //   {zoom: 0, label: '固定なし'},
-    //   {zoom: 22.6, label: '1/250で固定'},
-    //   {zoom: 21.6, label: '1/500で固定'},
-    //   {zoom: 20.6, label: '1/1000で固定'},
-    //   {zoom: 19.6, label: '1/2000で固定'},
-    //   {zoom: 19.3, label: '1/2500で固定'},
-    //   {zoom: 18.3, label: '1/5000で固定'},
-    //   {zoom: 16.0, label: '1/25000で固定'},
-    //   {zoom: 15.0, label: '1/50000で固定'},
-    //   {zoom: 13.0, label: '1/200000で固定'},
-    // ],
-    titleScales: [//gptの回答
-      { zoom: 0.0,  label: '固定なし'            },
-      { zoom: 20.9, label: '1/250で固定'        },
-      { zoom: 19.9, label: '1/500で固定'        },
-      { zoom: 18.9, label: '1/1000で固定'       },
-      { zoom: 17.9, label: '1/2000で固定'       },
-      { zoom: 17.6, label: '1/2500で固定'       },
-      { zoom: 16.6, label: '1/5000で固定'       },
-      { zoom: 14.2, label: '1/25000で固定'      },
-      { zoom: 13.2, label: '1/50000で固定'      },
-      { zoom: 11.2, label: '1/200000で固定'     },
-    ],
-    // textPx: 30,
-    // printTitleText: '',
     printDialog: false,
     isPrint: false,
     originalStyle: null,
@@ -4508,9 +4477,9 @@ export default {
           this.$store.state.dialogs.drawConfigDialog[mapName].style.left = '0px'
         } else {
           if (this.s_map2Flg) {
-            this.$store.state.dialogs.drawConfigDialog[mapName].style.left = (window.innerWidth / 2 - 360) + 'px'
+            this.$store.state.dialogs.drawConfigDialog[mapName].style.left = (window.innerWidth / 2 - 500) + 'px'
           } else {
-            this.$store.state.dialogs.drawConfigDialog[mapName].style.left = (window.innerWidth - 360) + 'px'
+            this.$store.state.dialogs.drawConfigDialog[mapName].style.left = (window.innerWidth - 500) + 'px'
           }
         }
       } else {
