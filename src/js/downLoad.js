@@ -9042,6 +9042,35 @@ export function extractAndOpenUrls(text) {
         console.warn('文字列にURLが見つかりませんでした。');
     }
 }
+export function printDirectionChange (titleDirection) {
+    const map00Div = document.getElementById('map00');
+    const map01Div = document.getElementById('map01');
+    const map02Div = document.getElementById('map02');
+    // A4サイズ（mm→px）: 210mm x 297mm
+    // 1mm ≒ 3.7795275591px
+    let widthPx
+    let heightPx
+    console.log(titleDirection)
+    switch (titleDirection) {
+        case 'horizontal':
+            widthPx = 260 * 3.7795275591;
+            heightPx = 190 * 3.7795275591;
+            break
+        case 'vertical':
+            widthPx = 190 * 3.7795275591;
+            heightPx = 260 * 3.7795275591;
+            break
+        default:
+            widthPx = 190 * 3.7795275591;
+            heightPx = 260 * 3.7795275591;
+    }
+    // リサイズ＆中央に
+    map00Div.style.width  = widthPx + 'px';
+    map00Div.style.height = heightPx + 'px';
+    // map00Div.style.margin = '0 auto';
+    map00Div.style.margin = '20px auto 0 auto';
+    map00Div.style.display = 'block';
+}
 export function getMaxZIndex () {
     const elements = document.querySelectorAll('.my-div, .maplibregl-popup');
     let maxZ = 0;

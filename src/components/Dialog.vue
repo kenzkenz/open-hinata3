@@ -182,7 +182,8 @@ export default {
   cursor: pointer;
   color: #fff;
   z-index: 2;
-  font-size:2.5em;
+  font-size: 30px;
+  line-height: 30px;
 }
 .hover:hover{
   color: blue;

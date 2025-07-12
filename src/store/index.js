@@ -4,6 +4,7 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    isPrint: false,
     isLassoSelected: false,
     lassoGeojson: null,
     toggleCheckFire: false,

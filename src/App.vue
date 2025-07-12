@@ -7,6 +7,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <template>
   <v-app>
     <v-main>
+      <DialogDrawConfig :mapName="'map01'" />
 
       <div v-if="s_isLassoSelected" class="features-rotate-div my-div" @click="setMaxZIndex($event.currentTarget)">
         <div class="features-rotate-div-close" @click="s_isLassoSelected = false">
@@ -86,7 +87,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <div id="print-div" class="fan-menu-rap">
           <v-btn class="fan-menu-print" :size="isSmall ? 'small' : 'default'" icon @click="handlePrint(true)" >戻る</v-btn>
           <v-btn class="print-print" :size="isSmall ? 'small' : 'default'" icon style="font-size: 16px;" @click="print">印刷</v-btn>
-          <v-btn class="print-config" :size="isSmall ? 'small' : 'default'" icon style="font-size: 16px;" @click="printDialog = true">設定</v-btn>
+          <v-btn class="print-config" :size="isSmall ? 'small' : 'default'" icon style="font-size: 16px;" @click="drawConfig()">設定</v-btn>
           <v-btn class="print-png" :size="isSmall ? 'small' : 'default'" icon style="font-size: 16px;" @click="pngDl">PNG</v-btn>
 
           <FanMenu class="fan-menu" layout="vertical" :offset-x="fanMenuOffsetX" :column-break-index="10">
@@ -848,7 +849,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       </v-dialog>
 
       <!-- @update:modelValue="onMapChange" -->
-      <div v-if="isPrint" class="map-radio d-flex justify-center">
+      <div v-if="s_isPrint" class="map-radio d-flex justify-center">
         <v-chip-group
             v-model="printMap"
             mandatory
@@ -871,14 +872,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
 
           <!-- コンパス -->
-          <div class="compusDiv"  v-if="isPrint">
+          <div class="compusDiv"  v-if="s_isPrint">
             <svg class="compass-icon" viewBox="0 0 100 100" width="40" height="40">
               <circle cx="50" cy="50" r="45" stroke="black" stroke-width="4" fill="white"/>
               <polygon points="50,10 60,50 50,40 40,50" fill="red"/>
               <text x="50" y="95" font-size="16" text-anchor="middle" fill="black">N</text>
             </svg>
           </div>
-          <div class="scale-ratio" v-if="isPrint">{{scaleText}}</div>
+          <div class="scale-ratio" v-if="s_isPrint">{{scaleText}}</div>
 
           <div
               v-if="showFloatingImage && mapName === 'map01'"
@@ -1058,12 +1059,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
             </MiniTooltip>
           </div>
 
-          <div v-if="!isPrint" class="center-target"></div>
+          <div v-if="!s_isPrint" class="center-target"></div>
           <!--左上部メニュー-->
           <div id="left-top-div"
                @mouseenter="onPanelEnter"
                @mouseleave="onPanelLeave">
-            <span v-if="!isPrint">
+            <span v-if="!s_isPrint">
               <MiniTooltip text="メニュー">
                 <v-btn :size="isSmall ? 'small' : 'default'" icon @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-menu</v-icon></v-btn>
               </MiniTooltip>
@@ -1088,7 +1089,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <div id="right-top-div" v-if="mapName === 'map01'"
                @mouseenter="onPanelEnter"
                @mouseleave="onPanelLeave">
-            <span v-if="!isPrint">
+            <span v-if="!s_isPrint">
               <div v-if="isRightDiv">
 <!--                <div v-if="isRightDiv2">-->
                   <div v-for="btn in buttons0" :key="btn.key" style="margin-bottom:10px;">
@@ -1173,7 +1174,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             <v-btn icon type="button" @pointerdown="terrainBtnExpand"><v-icon>mdi-arrow-expand</v-icon></v-btn>
           </div>
 
-          <div class="zoom-div" v-if="!isPrint">
+          <div class="zoom-div" v-if="!s_isPrint">
             zoom={{zoom.toFixed(2)}} {{elevation}}<br>
             {{s_address}}
             <br>
@@ -1189,7 +1190,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <dialog2 :mapName=mapName />
           <dialogShare v-if="mapName === 'map01'" :mapName=mapName />
           <DialogChibanzuList :mapName=mapName />
-          <DialogDrawConfig v-if="mapName === 'map01'" :mapName=mapName />
+<!--          <DialogDrawConfig v-if="mapName === 'map01'" :mapName=mapName />-->
 
         </div>
       </div>
@@ -1241,7 +1242,7 @@ import {
   pmtilesGenerateForUser2,
   pngDl,
   pngDownload,
-  pngLoad, scaleAndRotateLassoSelected,
+  pngLoad, printDirectionChange, scaleAndRotateLassoSelected,
   simaLoadForUser, splitLineStringIntoPoints,
   tileGenerateForUser,
   tileGenerateForUserPdf,
@@ -1664,7 +1665,6 @@ export default {
     tweetText: "入力可能になりました。画像が表示されない場合もう一回やりなおしてください。\n\n#openhinata3 #OH3",
     attributionControl: null,
     printDialog: false,
-    isPrint: false,
     originalStyle: null,
     file: null,
     mapillaryWidth: '0px',
@@ -1774,6 +1774,14 @@ export default {
       'titleColor',
       'titleDirection',
     ]),
+    s_isPrint: {
+      get() {
+        return this.$store.state.isPrint
+      },
+      set(value) {
+        return this.$store.state.isPrint = value
+      }
+    },
     s_isLassoSelected: {
       get() {
         return this.$store.state.isLassoSelected
@@ -1784,46 +1792,6 @@ export default {
     },
     s_finishLineFire () {
       return this.$store.state.finishLineFire
-    },
-    s_printTitleText: {
-      get() {
-        return this.$store.state.printTitleText
-      },
-      set(value) {
-        return this.$store.state.printTitleText = value
-      }
-    },
-    s_textPx: {
-      get() {
-        return this.$store.state.textPx
-      },
-      set(value) {
-        return this.$store.state.textPx = value
-      }
-    },
-    s_titleColor: {
-      get() {
-        return this.$store.state.titleColor
-      },
-      set(value) {
-        return this.$store.state.titleColor = value
-      }
-    },
-    // s_titleScale: {
-    //   get() {
-    //     return this.$store.state.titleScale
-    //   },
-    //   set(value) {
-    //     return this.$store.state.titleScale = value
-    //   }
-    // },
-    s_titleDirection: {
-      get() {
-        return this.$store.state.titleDirection
-      },
-      set(value) {
-        return this.$store.state.titleDirection = value
-      }
     },
     gcpWithImageCoord() {
       return this.gcpList
@@ -2503,20 +2471,6 @@ export default {
         this.updateDynamicPolygonPreview();
       }
     },
-
-    // // ライン描画中プレビュー更新
-    // updateLinePreview() {
-    //   const map = this.$store.state.map01;
-    //   map.getSource('guide-line-source').setData({
-    //     type: 'FeatureCollection',
-    //     features: [{
-    //       type: 'Feature',
-    //       geometry: { type: 'LineString', coordinates: this.tempLineCoords },
-    //       properties: {}
-    //     }]
-    //   });
-    // },
-
     // 動的ポリゴンプレビュー
     updateDynamicLinePreview() {
       const map = this.$store.state.map01;
@@ -2533,8 +2487,6 @@ export default {
         }]
       });
     },
-
-
     // 動的ポリゴンプレビュー
     updateDynamicPolygonPreview() {
       const map = this.$store.state.map01;
@@ -2602,40 +2554,9 @@ export default {
       reader.onload = (event) => {
         const geojson = JSON.parse(event.target.result)
         addDraw(geojson,true)
-        // geojson.features.forEach(feature => {
-        //   const id = String(Math.floor(10000 + Math.random() * 90000));
-        //   feature.properties['id'] = id
-        //   feature.properties['label'] = ''
-        //   feature.properties['color'] = 'rgba(0,0,255,0.6)'
-        //   feature.properties['line-width'] = 5
-        //   feature.properties['arrow-type'] = 'none'
-        // })
-        // const drawGeojson = map.getSource(clickCircleSource.iD)._data
-        // drawGeojson.features.push(...geojson.features);
-        // map.getSource(clickCircleSource.iD).setData(drawGeojson);
-        // drawGeojson.features.forEach(feature => {
-        //   if (feature.geometry.type !== 'Point') {
-        //     const calc = calculatePolygonMetrics(feature);
-        //     if (feature.geometry.type === 'Polygon' || feature.geometry.type === "MultiPolygon") {
-        //       feature.properties['area'] = calc.area;
-        //     } else if (feature.geometry.type === 'LineString' || feature.geometry.type === "MultiLineString")  {
-        //       feature.properties['area'] = calc.perimeter;
-        //     }
-        //   }
-        // })
-        // this.$store.state.clickCircleGeojsonText = JSON.stringify(drawGeojson)
-        // const bbox = turf.bbox(geojson);
-        // map.fitBounds(bbox, {
-        //   padding: 40,
-        //   duration: 1000,
-        //   linear: false
-        // });
       }
       reader.readAsText(this.s_geojsonFile);
     },
-    // printDialogOpen () {
-    //   this.printDialog = true
-    // },
     startTiling () {
       this.transparentType = '1'
       tileGenerateForUser('png','pgw',true)
@@ -3667,28 +3588,6 @@ export default {
     pngDl () {
       pngDl()
     },
-    setZoom () {
-      const map01 = this.$store.state.map01
-      if (this.titleScale !== 0) {
-        map01.setZoom(this.titleScale)
-        this.scaleText = '縮尺：' + this.titleScales.find(t => t.zoom === this.titleScale).label.replace('で固定', '')
-        map01.on('zoom', () => {
-          if (map01.getZoom() !== this.titleScale && this.titleScale !== 0 && this.isPrint) {
-            map01.setZoom(this.titleScale);
-          }
-        })
-      } else {
-        this.scaleText = ''
-      }
-    },
-    configChange (tgtProp,value) {
-      console.log(tgtProp,value)
-      const map01 = this.$store.state.map01
-      store.state.clickCircleGeojsonText = geojsonUpdate(map01, null, clickCircleSource.iD, 'config', tgtProp, value)
-      if (tgtProp === 'direction') {
-        this.directionChange()
-      }
-    },
     print () {
       // 印刷ダイアログ表示
       setTimeout(() => {
@@ -3807,7 +3706,7 @@ export default {
       if (this.originalStyle) {
         map00Div.style.width  = this.originalStyle.width
         map00Div.style.height = this.originalStyle.height
-        this.isPrint = false
+        this.s_isPrint = false
         this.originalStyle = null
         this.$store.state.map01.removeControl(this.attributionControl)
         const customContainer = document.getElementById('my-attrib-container')
@@ -3821,10 +3720,13 @@ export default {
         width: map00Div.style.width,
         height: map00Div.style.height
       }
-      this.isPrint = true
+      this.s_isPrint = true
 
       function hideAllDialogs(dialogs) {
         for (const dialogKey in dialogs) {
+          console.log(dialogKey)
+          // 'drawConfigDialog' の場合はスキップ
+          if (dialogKey === 'drawConfigDialog') continue;
           const dialog = dialogs[dialogKey]
           for (const mapKey in dialog) {
             if (
@@ -3858,33 +3760,34 @@ export default {
 
     },
     directionChange() {
-      const map00Div = document.getElementById('map00');
-      const map01Div = document.getElementById('map01');
-      const map02Div = document.getElementById('map02');
-      // A4サイズ（mm→px）: 210mm x 297mm
-      // 1mm ≒ 3.7795275591px
-      let widthPx
-      let heightPx
-      console.log(this.titleDirection)
-      switch (this.titleDirection) {
-        case 'horizontal':
-          widthPx = 260 * 3.7795275591;
-          heightPx = 190 * 3.7795275591;
-          break
-        case 'vertical':
-          widthPx = 190 * 3.7795275591;
-          heightPx = 260 * 3.7795275591;
-          break
-        default:
-          widthPx = 190 * 3.7795275591;
-          heightPx = 260 * 3.7795275591;
-      }
-      // リサイズ＆中央に
-      map00Div.style.width  = widthPx + 'px';
-      map00Div.style.height = heightPx + 'px';
-      // map00Div.style.margin = '0 auto';
-      map00Div.style.margin = '20px auto 0 auto';
-      map00Div.style.display = 'block';
+      printDirectionChange (this.titleDirection)
+      // const map00Div = document.getElementById('map00');
+      // const map01Div = document.getElementById('map01');
+      // const map02Div = document.getElementById('map02');
+      // // A4サイズ（mm→px）: 210mm x 297mm
+      // // 1mm ≒ 3.7795275591px
+      // let widthPx
+      // let heightPx
+      // console.log(this.titleDirection)
+      // switch (this.titleDirection) {
+      //   case 'horizontal':
+      //     widthPx = 260 * 3.7795275591;
+      //     heightPx = 190 * 3.7795275591;
+      //     break
+      //   case 'vertical':
+      //     widthPx = 190 * 3.7795275591;
+      //     heightPx = 260 * 3.7795275591;
+      //     break
+      //   default:
+      //     widthPx = 190 * 3.7795275591;
+      //     heightPx = 260 * 3.7795275591;
+      // }
+      // // リサイズ＆中央に
+      // map00Div.style.width  = widthPx + 'px';
+      // map00Div.style.height = heightPx + 'px';
+      // // map00Div.style.margin = '0 auto';
+      // map00Div.style.margin = '20px auto 0 auto';
+      // map00Div.style.display = 'block';
     },
     drawClose () {
       if (document.querySelector('#centerDrawBtn2')) {
@@ -8519,7 +8422,7 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
-    isPrint (value) {
+    s_isPrint (value) {
       if (!value) {
         const map00Div = document.getElementById('map00');
         map00Div.style.marginTop = '0px'

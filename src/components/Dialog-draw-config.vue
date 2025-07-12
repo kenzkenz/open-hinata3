@@ -37,6 +37,7 @@
               @update:modelValue="setZoom()"
           />
           <v-select
+              v-if="s_isPrint"
               v-model="s_titleDirection"
               :items="titleDirections"
               item-title="label"
@@ -52,7 +53,10 @@
 
 <script>
 import {history} from "@/App";
-import {konUrls} from "@/js/layers";
+import {clickCircleSource, konUrls} from "@/js/layers";
+import store from "@/store";
+import {geojsonUpdate} from "@/js/pyramid";
+import {printDirectionChange} from "@/js/downLoad";
 export default {
   name: 'Dialog-draw-config',
   props: ['mapName'],
@@ -89,8 +93,73 @@ export default {
     s_dialogs () {
       return this.$store.state.dialogs.drawConfigDialog
     },
+    s_isPrint: {
+      get() {
+        return this.$store.state.isPrint
+      },
+      set(value) {
+        return this.$store.state.isPrint = value
+      }
+    },
+    s_printTitleText: {
+      get() {
+        return this.$store.state.printTitleText
+      },
+      set(value) {
+        return this.$store.state.printTitleText = value
+      }
+    },
+    s_textPx: {
+      get() {
+        return this.$store.state.textPx
+      },
+      set(value) {
+        return this.$store.state.textPx = value
+      }
+    },
+    s_titleColor: {
+      get() {
+        return this.$store.state.titleColor
+      },
+      set(value) {
+        return this.$store.state.titleColor = value
+      }
+    },
+    s_titleDirection: {
+      get() {
+        return this.$store.state.titleDirection
+      },
+      set(value) {
+        return this.$store.state.titleDirection = value
+      }
+    },
   },
   methods: {
+    configChange (tgtProp,value) {
+      console.log(tgtProp,value)
+      const map01 = this.$store.state.map01
+      this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01, null, clickCircleSource.iD, 'config', tgtProp, value)
+      if (tgtProp === 'direction') {
+        this.directionChange()
+      }
+    },
+    setZoom () {
+      const map01 = this.$store.state.map01
+      if (this.titleScale !== 0) {
+        map01.setZoom(this.titleScale)
+        this.scaleText = '縮尺：' + this.titleScales.find(t => t.zoom === this.titleScale).label.replace('で固定', '')
+        map01.on('zoom', () => {
+          if (map01.getZoom() !== this.titleScale && this.titleScale !== 0 && this.isPrint) {
+            map01.setZoom(this.titleScale);
+          }
+        })
+      } else {
+        this.scaleText = ''
+      }
+    },
+    directionChange() {
+      printDirectionChange(this.s_titleDirection)
+    }
   },
   mounted() {
     document.querySelector('#drag-handle-drawConfigDialog-map01').innerHTML = '<span style="font-size: large;">各種設定</span>'
