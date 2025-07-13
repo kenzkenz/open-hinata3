@@ -193,6 +193,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
                       label="ラベルに表示する列を選択"
                       outlined
             ></v-select>
+            <v-select class="scrollable-content"
+                      v-model="csvColorColumn"
+                      :items="csvColumns"
+                      label="アイコンの色の列を選択"
+                      outlined
+            ></v-select>
 
             <v-btn style="margin-left: 0px;" @click="uploadDrawCsv">ジオコーディング＆ドロー追加</v-btn>
           </v-card-text>
@@ -263,7 +269,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </v-card-actions>
         </v-card>
       </v-dialog>
-
 
       <v-dialog attach="#map01" v-model="s_popupDialog" max-width="500" persistent>
         <v-card>
@@ -1785,6 +1790,7 @@ export default {
     csvColumns: [],
     csvAddressColumn: '',
     csvLabelColumn: '',
+    csvColorColumn: '',
     csvRecords: [],
   }),
   computed: {
@@ -2587,12 +2593,13 @@ export default {
           const props = Object.fromEntries(
               this.csvColumns.map(col => [col, row[col]])
           );
+          const pointColor = row[this.csvColorColumn] || 'black'
           props.label = row[this.csvLabelColumn]
           props.color = 'black'
           props.offsetValue = [0.6, 0]
           props.textAnchor = 'left'
           props.textJustify = 'left'
-          props['point-color'] = 'red'
+          props['point-color'] = pointColor
           console.log(props)
           features.push({
             type: 'Feature',
