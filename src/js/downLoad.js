@@ -3605,7 +3605,7 @@ function calculatePolygonMetrics(polygon) {
         const perimeter = '約' + turf.length(polygon, { units: 'meters' }).toFixed(1) + 'm'; // Turf.jsで周長を計算
         // 頂点数の計算 (GeoJSON座標から取得)
         const coordinates = polygon.geometry.coordinates[0]; // 外周の座標を取得
-        console.log(coordinates[0].length)
+        // console.log(coordinates[0].length)
         let vertexCount = coordinates.length;
         if (vertexCount === 1) {
             vertexCount = coordinates[0].length
@@ -8927,7 +8927,7 @@ export function addDraw (geojson,isFit,isNini) {
     drawGeojson.features.push(...geojson.features);
     map.getSource(clickCircleSource.iD).setData(drawGeojson);
     drawGeojson.features.forEach(feature => {
-        if (feature.geometry.type !== 'Point') {
+        if (feature.geometry && feature.geometry.type !== 'Point') {
             const calc = calculatePolygonMetrics(feature);
             if (feature.geometry.type === 'Polygon' || feature.geometry.type === "MultiPolygon") {
                 feature.properties['area'] = calc.area;

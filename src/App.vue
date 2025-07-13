@@ -6146,15 +6146,17 @@ export default {
           geojson.features.forEach(feature => {
             feature.properties.lassoSelected = false;
             // feature の bbox を計算（事前にキャッシュしておくとさらに速い）
-            const [fMinX, fMinY, fMaxX, fMaxY] = turf.bbox(feature);
-            // bbox が重ならなければ交差チェック不要
-            if (fMaxX < pMinX || fMinX > pMaxX || fMaxY < pMinY || fMinY > pMaxY) {
-              return;
-            }
-            // 本命チェック
-            if (turf.booleanIntersects(feature, polygon)) {
-              feature.properties.lassoSelected = true;
-              isLassoSelected = true;
+            if (feature.geometry) {
+              const [fMinX, fMinY, fMaxX, fMaxY] = turf.bbox(feature);
+              // bbox が重ならなければ交差チェック不要
+              if (fMaxX < pMinX || fMinX > pMaxX || fMaxY < pMinY || fMinY > pMaxY) {
+                return;
+              }
+              // 本命チェック
+              if (turf.booleanIntersects(feature, polygon)) {
+                feature.properties.lassoSelected = true;
+                isLassoSelected = true;
+              }
             }
           });
           this.$store.state.lassoGeojson = JSON.stringify(turf.featureCollection(geojson.features.filter(feature => feature.properties.lassoSelected === true)))

@@ -13,6 +13,7 @@ import {clickCircleSource, clickPointSource, endPointSouce, vertexSource} from "
 import {calculatePolygonMetrics, closeAllPopups} from "@/js/popup";
 import { fetchElevation } from '@/js/downLoad';
 import JSZip from "jszip";
+import {feature} from "@turf/turf";
 export let currentIndex = 0
 let kasen
 
@@ -1920,7 +1921,7 @@ export function circleCreate (lng, lat, m) {
     const centerFeature = turf.centerOfMass(circleGeoJson);
     return {center:centerFeature,circle:circleGeoJson}
 }
-
+//
 export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius) {
     store.state.saveHistoryFire = !store.state.saveHistoryFire
     const source = map.getSource(sourceId)
@@ -1931,8 +1932,13 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
         // idが一致するfeatureを検索
         let found = false;
         let circleFeatureGeometry,centerFeature
+        const lasso = geojson.features.find(feature => feature.properties.id === id && feature.properties.lassoSelected === true)
         geojson.features.forEach(feature => {
-            if (feature.properties && String(feature.properties.id) === id) {
+            // lasso が見つかっていれば lassoSelected、なければ id マッチをチェック
+            const shouldUpdate = lasso
+                ? feature.properties.lassoSelected === true
+                : String(feature.properties.id) === id;
+            if (shouldUpdate) {
                 feature.properties[tgtProp] = value
                 // ----------------------------------------------------------
                 if (geoType === 'Circle') {
