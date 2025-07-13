@@ -30,7 +30,7 @@ import {kml} from "@tmcw/togeojson";
 import * as GeoTIFF from 'geotiff';
 import html2canvas from 'html2canvas'
 import muni from "@/js/muni";
-import * as exifr from 'exifr'
+import Papa from 'papaparse'
 import {
     generateSegmentLabelGeoJSON,
     getAllVertexPoints,
@@ -8915,8 +8915,8 @@ export function addDraw (geojson,isFit,isNini) {
     geojson.features.forEach(feature => {
         const id = String(Math.floor(10000 + Math.random() * 90000));
         feature.properties['id'] = id
-        feature.properties['label'] = ''
-        feature.properties['color'] = 'rgba(0,0,255,0.1)'
+        if (!feature.properties.label) feature.properties['label'] = ''
+        if (!feature.properties.color) feature.properties['color'] = 'rgba(0,0,255,0.1)'
         feature.properties['line-width'] = 1
         feature.properties['arrow-type'] = 'none'
         if (isNini) {
@@ -9095,4 +9095,43 @@ export function geojsonDownload (geojson) {
     const geojsonString = JSON.stringify(geojson)
     const fileName =  getNowFileNameTimestamp() + '.geojson'
     downloadTextFile(fileName, geojsonString)
+}
+// CSV→オブジェクト配列に変換
+export function parseCSV(file) {
+    return new Promise((resolve, reject) => {
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: res => resolve(res.data),
+            error: err => reject(err)
+        });
+    });
+}
+
+// Nominatim でジオコーディング（1件 limit=1）
+export async function geocode(query) {
+    try {
+        const url = 'https://msearch.gsi.go.jp/address-search/AddressSearch?q='
+            + encodeURIComponent(query);
+        const res = await fetch(url);
+        const data = await res.json();
+        return data[0] || null;
+        // const url = 'https://nominatim.openstreetmap.org/search'
+        //     + '?format=json'
+        //     + '&limit=1'
+        //     + '&accept-language=ja'
+        //     + '&q=' + encodeURIComponent(query);
+        // const res = await fetch(url, {
+        //     headers: { 'User-Agent': 'meibo-csv-geojson-js/1.0' }
+        // });
+        // const arr = await res.json();
+        // return arr[0] || null;
+    } catch {
+        return null;
+    }
+}
+
+// 指定ミリ秒だけ待つ
+export function delay0(ms) {
+    return new Promise(r => setTimeout(r, ms));
 }

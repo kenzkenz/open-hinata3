@@ -72,16 +72,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
             @touchstart.prevent="startScaleDown"
             @touchend="stopScaleDown"
         >-</v-btn>
-        <!-- スライダー（0.1倍〜3倍、ステップ0.01） -->
-<!--        <v-spacer class="mx-2"/>-->
-<!--        <input-->
-<!--            type="range"-->
-<!--            min="0.1"-->
-<!--            max="3"-->
-<!--            step="0.01"-->
-<!--            v-model.number="prevScaleValue"-->
-<!--            @input="onScaleInput(prevScaleValue)"-->
-<!--        />-->
       </div>
 
       <div id="print-div" class="fan-menu-rap">
@@ -182,6 +172,36 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-btn color="white" text @click="simaClose">閉じる</v-btn>
         </template>
       </v-snackbar>
+
+      <v-dialog v-model="dialogForDrawCsv" max-width="500px">
+        <v-card>
+          <v-card-title>
+            CSV 列選択
+          </v-card-title>
+          <v-card-text>
+            <p style="margin-bottom: 20px;">ジオコーディングします。精度はあまり高くありません。</p>
+
+            <v-select class="scrollable-content"
+                      v-model="csvAddressColumn"
+                      :items="csvColumns"
+                      label="アドレスの列を選択"
+                      outlined
+            ></v-select>
+            <v-select class="scrollable-content"
+                      v-model="csvLabelColumn"
+                      :items="csvColumns"
+                      label="ラベルに表示する列を選択"
+                      outlined
+            ></v-select>
+
+            <v-btn style="margin-left: 0px;" @click="uploadDrawCsv">ジオコーディング＆ドロー追加</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="dialogForDrawCsv = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
 
       <v-dialog v-model="dialogForChibanzyOrDraw" max-width="500px">
         <v-card>
@@ -1222,12 +1242,12 @@ import {
   addDraw,
   capture, convertFromEPSG4326,
   csvGenerateForUserPng,
-  ddSimaUpload, downloadGeoJSONAsCSV,
+  ddSimaUpload, delay0, downloadGeoJSONAsCSV,
   downloadKML,
   downloadSimaText, downloadTextFile, DXFDownload,
   dxfToGeoJSON, enableDragHandles,
   extractFirstFeaturePropertiesAndCheckCRS,
-  extractSimaById,
+  extractSimaById, geocode,
   geojsonAddLayer, geojsonDownload, geoJSONToSIMA,
   geoTiffLoad,
   geoTiffLoad2,
@@ -1238,7 +1258,7 @@ import {
   highlightSpecificFeaturesCity, japanCoord,
   jpgLoad, kmlDownload,
   kmzLoadForUser,
-  LngLatToAddress,
+  LngLatToAddress, parseCSV,
   pmtilesGenerateForUser2,
   pngDl,
   pngDownload,
@@ -1623,7 +1643,7 @@ import html2canvas from 'html2canvas'
 import debounce from 'lodash/debounce'
 import * as math from 'mathjs'
 import {feature} from "@turf/turf";
-import {forEach} from "lodash";
+import {delay, forEach} from "lodash";
 
 export default {
   name: 'App',
@@ -1761,6 +1781,11 @@ export default {
     scaleDownInterval: null,
     scaleValue: 100,
     printMap: 'map01',
+    dialogForDrawCsv: false,
+    csvColumns: [],
+    csvAddressColumn: '',
+    csvLabelColumn: '',
+    csvRecords: [],
   }),
   computed: {
     ...mapState([
@@ -2546,6 +2571,48 @@ export default {
         vm.s_showChibanzuDialog = true
       }
       aaa()
+    },
+    async uploadDrawCsv () {
+      store.state.loading2 = true
+      store.state.loadingMessage = 'ジオコーディング中'
+      this.dialogForDrawCsv = false
+      const features = [];
+      const len = this.csvRecords.length
+      for (let i = 0; i < len; i++) {
+        const row = this.csvRecords[i];
+        const address = (row[this.csvAddressColumn] || '').replace(/^〒\d{3}-\d{4}\s*/, '').trim();
+        if (!address) continue;
+        const geo = await geocode(address);
+        if (geo) {
+          const props = Object.fromEntries(
+              this.csvColumns.map(col => [col, row[col]])
+          );
+          props.label = row[this.csvLabelColumn]
+          props.color = 'black'
+          props.offsetValue = [0.6, 0]
+          props.textAnchor = 'left'
+          props.textJustify = 'left'
+          props['point-color'] = 'red'
+          console.log(props)
+          features.push({
+            type: 'Feature',
+            properties: props,
+            geometry: {
+              type: 'Point',
+              coordinates: geo.geometry.coordinates
+            }
+          });
+        }
+        store.state.loadingMessage = i + '/' + len + ' ' + row[this.csvLabelColumn] + ' ' + (geo? '成功' : '失敗')
+        await delay0(10);
+        // console.log(address)
+        // console.log(geo)
+        // console.log(features)
+      }
+      const geojson = { type: 'FeatureCollection', features };
+      // console.log(geojson)
+      addDraw(geojson,true)
+      store.state.loading2 = false
     },
     uploadDraw () {
       this.dialogForChibanzyOrDraw = false
@@ -7880,6 +7947,15 @@ export default {
                     this.dialogForDxfApp = true
                   };
                   reader.readAsText(file);
+                  break
+                }
+                case 'csv': {
+                  const file = e.dataTransfer.files[0];
+                  this.csvRecords = await parseCSV(file)
+                  console.log(this.csvRecords)
+                  this.csvColumns = Object.keys(this.csvRecords[0])
+                  console.log(this.csvColumns)
+                  this.dialogForDrawCsv = true
                   break
                 }
                 case 'gpx':
