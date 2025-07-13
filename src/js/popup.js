@@ -3766,6 +3766,8 @@ export function popup(e,map,mapName,mapFlg) {
                                     '<div id="' + props.id + '" data-color="orange" class="polygon-color circle orange" tabindex="0"></div>' +
                                     '<div id="' + props.id + '" data-color="hotpink" class="polygon-color circle hotpink" tabindex="0"></div>' +
                                     '<div id="' + props.id + '" data-color="yellow" class="polygon-color circle yellow" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="rgba(0,0,0,0)" class="polygon-color circle transparent" style="border: 1px silver solid" tabindex="0"></div>' +
+
                                     '</div>' +
                                     '</div>' +
                                     '</div>'
@@ -3777,7 +3779,7 @@ export function popup(e,map,mapName,mapFlg) {
                             const keywordList = ['道路', '水路', '畑', '宅地', '田', '雑種地', 'コン杭', 'プレート','プラ杭','鋲'];
                             html += '<div class="layer-label-div">ポイント</div>';
                             html += '<div style="display: flex; width: 100%;">';
-                            // 左側：220px固定
+                            // 左側：250px固定
                             html += '<div style="width: 250px;">';
                             html +=
                                 '<div class="click-circle-layer" style="font-weight: normal; color: #333; line-height: 25px;">' +

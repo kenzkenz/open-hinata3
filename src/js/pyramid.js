@@ -2145,7 +2145,7 @@ export function colorNameToRgba(colorName, alpha = 1) {
         hotpink:[255, 105, 180],
     };
     const rgb = colorTable[colorName.toLowerCase()];
-    if (!rgb) return null; // 未定義色名の場合
+    if (!rgb) return 'rgba(0,0,0,0)'; // 未定義色名の場合
     return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;
 }
 

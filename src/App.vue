@@ -6177,6 +6177,8 @@ export default {
         }
         // 投げ縄ラインをクリア
         map.getSource(lassoSourceId).setData({ type: 'FeatureCollection', features: [] });
+        map.removeLayer(lassoLayerId)
+        map.removeSource(lassoSourceId)
         map.dragPan.enable();
       });
 
@@ -9155,8 +9157,8 @@ select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 25px;
-  height: 25px;
+  width: 22px;/*元は25px*/
+  height: 22px;
   border-radius: 50%;
   cursor: pointer;
   transition: box-shadow 0.12s, transform 0.07s;
