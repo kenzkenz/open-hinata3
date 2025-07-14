@@ -695,14 +695,12 @@ export const clickCirclePolygonLineLayer = {
     source: 'click-circle-source',
     filter: ['==', '$type', 'Polygon'],
     paint: {
-        // 'line-color': 'black',
         'line-color': [
             'case',
             ['==', ['get', 'lassoSelected'], true],
             'red',
             'black'
         ],
-        // 'line-width': ['get', 'line-width'],
         'line-width': [
             'case',
             ['==', ['get', 'lassoSelected'], true],
@@ -833,12 +831,26 @@ export const clickCircSymbolLayer = {
     paint: {
         'circle-radius': 8,
         'circle-color': ['get', 'point-color'],
-        'circle-stroke-width': 2,
+        'circle-stroke-width': [
+            'case',
+            ['==', ['get', 'lassoSelected'], true],
+            4,
+            2
+        ],
+        // 'circle-stroke-color': [
+        //     'case',
+        //     ['==', ['get', 'point-color'], 'rgba(0,0,0,0)'],  // point-color が透明なら…
+        //     'rgba(0,0,0,0)',                                   // ストロークも透明に
+        //     'white'                                          // それ以外は白
+        // ],
         'circle-stroke-color': [
             'case',
-            ['==', ['get', 'point-color'], 'rgba(0,0,0,0)'],  // point-color が透明なら…
-            'rgba(0,0,0,0)',                                   // ストロークも透明に
-            'white'                                          // それ以外は白
+            // 1. 選択中は赤
+            ['==', ['get', 'lassoSelected'], true], 'red',
+            // 2. point-color が透明ならストロークも透明
+            ['==', ['get', 'point-color'], 'rgba(0,0,0,0)'], 'rgba(0,0,0,0)',
+            // 3. それ以外は白
+            'white'
         ],
         'circle-opacity': [
             'case',
