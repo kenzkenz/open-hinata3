@@ -3745,6 +3745,10 @@ export function popup(e,map,mapName,mapFlg) {
                             }
                         } else {
                             if (html.indexOf('click-circle-layer') === -1) {
+                                let ninizahyoPropHtml = ''
+                                if (props.isNini) {
+                                    ninizahyoPropHtml += '<div style="font-size: 16px;margin-top: 5px;">' + props.大字名 + props.地番 + '</div>'
+                                }
                                 let checked = ''
                                 if (isArea) checked = 'checked'
                                 html += '<div class="layer-label-div">ポリゴン</div>'
@@ -3767,9 +3771,9 @@ export function popup(e,map,mapName,mapFlg) {
                                     '<div id="' + props.id + '" data-color="hotpink" class="polygon-color circle hotpink" tabindex="0"></div>' +
                                     '<div id="' + props.id + '" data-color="yellow" class="polygon-color circle yellow" tabindex="0"></div>' +
                                     '<div id="' + props.id + '" data-color="rgba(0,0,0,0)" class="polygon-color circle transparent" style="border: 1px silver solid" tabindex="0"></div>' +
-
                                     '</div>' +
                                     '</div>' +
+                                    ninizahyoPropHtml +
                                     '</div>'
                             }
                         }
