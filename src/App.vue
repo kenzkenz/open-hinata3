@@ -5935,7 +5935,9 @@ export default {
             pairId: id,
             label: '',
             offsetValue: [0.6, 0],
-            'line-width': 5,
+            color: this.$store.state.currentLineColor,
+            arrow: this.$store.state.currentArrowColor,
+            'line-width': this.$store.state.currentLineWidth,
             textAnchor: 'left',
             textJustify: 'left'
           };

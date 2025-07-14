@@ -32,10 +32,12 @@ export default createStore({
 
     currentLineColor: 'black',
     currentLineWidth: 5,
+    currentArrowColor: 'arrow_black',
 
     currentFreeHandWidth: '',
     currentFreeHandColor: 'black',
     currentFreeHandKeikoColor: '#1C1C1C',
+
     tgtFeature: null,
     pointSima: false,
     seaLevel: {

@@ -1268,6 +1268,7 @@ export default function pyramid () {
                 const geojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
                 store.state.clickCircleGeojsonText = geojsonText
                 store.state.currentFreeHandWidth = value
+                store.state.currentLineWidth = value
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1310,6 +1311,8 @@ export default function pyramid () {
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,arrowTgtProp,arrowValue)
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,'keiko-color',keikoValue)
                 store.state.currentFreeHandKeikoColor = keikoValue
+                store.state.currentLineColor = value
+                store.state.currentArrowColor = arrowValue
             }
         });
         // -------------------------------------------------------------------------------------------------------------
