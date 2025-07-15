@@ -209,6 +209,27 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </v-card>
       </v-dialog>
 
+      <v-dialog v-model="dialogForDraw" max-width="500px">
+        <v-card>
+          <v-card-title>
+            ラベル選択
+          </v-card-title>
+          <v-card-text>
+            <v-select class="scrollable-content"
+                      v-model="geojsonForDrawLabelColumn"
+                      :items="geojsonForDrawColumns"
+                      label="ラベルに表示する列を選択"
+                      outlined
+            ></v-select>
+            <v-btn @click="uploadDrawKml">ドロー追加</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="dialogForDraw = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
       <v-dialog v-model="dialogForChibanzyOrDraw" max-width="500px">
         <v-card>
           <v-card-title>
@@ -1792,6 +1813,10 @@ export default {
     csvLabelColumn: '',
     csvColorColumn: '',
     csvRecords: [],
+    geojsonForDraw: null,
+    geojsonForDrawColumns: [],
+    geojsonForDrawLabelColumn: '',
+    dialogForDraw: false,
   }),
   computed: {
     ...mapState([
@@ -2578,6 +2603,18 @@ export default {
       }
       aaa()
     },
+    uploadDrawKml () {
+      this.dialogForDraw = false
+      this.geojsonForDraw.features.forEach(feature => {
+        const props = feature.properties
+        props.label = props[this.geojsonForDrawLabelColumn]
+        props.color = 'black'
+        props.offsetValue = [0.6, 0]
+        props.textAnchor = 'left'
+        props.textJustify = 'left'
+      })
+      addDraw(this.geojsonForDraw,true)
+    },
     async uploadDrawCsv () {
       store.state.loading2 = true
       store.state.loadingMessage = 'ジオコーディング中'
@@ -2612,12 +2649,8 @@ export default {
         }
         store.state.loadingMessage = i + '/' + len + ' ' + row[this.csvLabelColumn] + ' ' + (geo? '成功' : '失敗')
         await delay0(10);
-        // console.log(address)
-        // console.log(geo)
-        // console.log(features)
       }
       const geojson = { type: 'FeatureCollection', features };
-      // console.log(geojson)
       addDraw(geojson,true)
       store.state.loading2 = false
     },
@@ -7750,36 +7783,9 @@ export default {
                     const parser = new DOMParser();
                     const kmlText = event.target.result
                     const kmlData = parser.parseFromString(kmlText, 'application/xml');
-                    const kmlGeojson = kml(kmlData);
-                    addDraw(kmlGeojson,true)
-                    // kmlGeojson.features.forEach(feature => {
-                    //   const id = String(Math.floor(10000 + Math.random() * 90000));
-                    //   feature.properties['id'] = id
-                    //   feature.properties['label'] = ''
-                    //   feature.properties['color'] = 'rgba(0,0,255,0.6)'
-                    //   feature.properties['line-width'] = 5
-                    //   feature.properties['arrow-type'] = 'none'
-                    // })
-                    // const drawGeojson = map.getSource(clickCircleSource.iD)._data
-                    // drawGeojson.features.push(...kmlGeojson.features);
-                    // map.getSource(clickCircleSource.iD).setData(drawGeojson);
-                    // drawGeojson.features.forEach(feature => {
-                    //   if (feature.geometry.type !== 'Point') {
-                    //     const calc = calculatePolygonMetrics(feature);
-                    //     if (feature.geometry.type === 'Polygon' || feature.geometry.type === "MultiPolygon") {
-                    //       feature.properties['area'] = calc.area;
-                    //     } else if (feature.geometry.type === 'LineString' || feature.geometry.type === "MultiLineString")  {
-                    //       feature.properties['area'] = calc.perimeter;
-                    //     }
-                    //   }
-                    // })
-                    // this.$store.state.clickCircleGeojsonText = JSON.stringify(drawGeojson)
-                    // const bbox = turf.bbox(kmlGeojson);
-                    // map.fitBounds(bbox, {
-                    //   padding: 40,
-                    //   duration: 1000,
-                    //   linear: false
-                    // });
+                    this.geojsonForDraw = kml(kmlData)
+                    this.geojsonForDrawColumns = Object.keys(this.geojsonForDraw.features[0].properties)
+                    this.dialogForDraw = true
                   }
                   reader.readAsText(file);
                   break
