@@ -9135,3 +9135,59 @@ export async function geocode(query) {
 export function delay0(ms) {
     return new Promise(r => setTimeout(r, ms));
 }
+
+// 緯度経度カラムを予想する関数
+export function detectLatLonColumns(records) {
+    if (!records || records.length === 0) return null;
+    const columns = Object.keys(records[0]);
+    // 緯度・経度と判断するためのカラム名パターン
+    const latPatterns = [/lat(i?tude)?$/i, /緯度/, /^y$/i];
+    const lonPatterns = [/lon(gitude)?$/i, /lng/i, /経度/, /^x$/i];
+    const sampleSize = Math.min(records.length, 10);
+    // パターンにマッチするカラムを収集
+    const candidates = { lat: [], lon: [] };
+    columns.forEach((col) => {
+        if (latPatterns.some((pat) => pat.test(col))) candidates.lat.push(col);
+        if (lonPatterns.some((pat) => pat.test(col))) candidates.lon.push(col);
+    });
+    // 数値と範囲チェック用のヘルパー
+    function isValidRange(values, min, max) {
+        return values.every((v) => {
+            const num = parseFloat(v);
+            return !isNaN(num) && num >= min && num <= max;
+        });
+    }
+    // サンプルデータで範囲内か検証
+    const sampleRecords = records.slice(0, sampleSize);
+    const latCol = candidates.lat.find((col) =>
+        isValidRange(sampleRecords.map((r) => r[col]), -90, 90)
+    );
+    const lonCol = candidates.lon.find((col) =>
+        isValidRange(sampleRecords.map((r) => r[col]), -180, 180)
+    );
+    // 両方見つかったら結果を返す
+    if (latCol && lonCol) {
+        return { lat: latCol, lon: lonCol };
+    }
+    return null;
+}
+
+// 既存のCSV読み込み後に呼び出す例
+async function handleCSVDrop(e) {
+    const file = e.dataTransfer.files[0];
+    const records = await parseCSV(file);
+    // カラム名取得
+    const columns = Object.keys(records[0]);
+    console.log('CSV Columns:', columns);
+    // 緯度経度カラムの予想
+    const guess = detectLatLonColumns(records);
+    if (guess) {
+        console.log(`予想：緯度カラムは${guess.lat}, 経度カラムは${guess.lon}`);
+    } else {
+        console.log('緯度経度カラムは見つかりませんでした');
+    }
+    return records;
+}
+
+// 使用例: dropイベントに
+// document.addEventListener('drop', handleCSVDrop);

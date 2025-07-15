@@ -2290,6 +2290,7 @@ export default {
         alert('ネームを記入してください。')
         return
       }
+      this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
       const vm = this
       async function insertUserData(uid, name, url) {
         try {

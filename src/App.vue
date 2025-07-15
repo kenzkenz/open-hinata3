@@ -179,9 +179,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
             CSV 列選択
           </v-card-title>
           <v-card-text>
-            <p style="margin-bottom: 20px;">ジオコーディングします。精度はあまり高くありません。</p>
+            <p v-if="!csvLonLat" style="margin-bottom: 20px;">ジオコーディングします。精度はあまり高くありません。</p>
 
             <v-select class="scrollable-content"
+                      v-if="!csvLonLat"
                       v-model="csvAddressColumn"
                       :items="csvColumns"
                       label="アドレスの列を選択"
@@ -200,7 +201,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                       outlined
             ></v-select>
 
-            <v-btn style="margin-left: 0px;" @click="uploadDrawCsv">ジオコーディング＆ドロー追加</v-btn>
+            <v-btn style="margin-left: 0px;" @click="uploadDrawCsv"><span v-if="!csvLonLat">ジオコーディング＆</span>ドロー追加</v-btn>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -1268,7 +1269,7 @@ import {
   addDraw,
   capture, convertFromEPSG4326,
   csvGenerateForUserPng,
-  ddSimaUpload, delay0, downloadGeoJSONAsCSV,
+  ddSimaUpload, delay0, detectLatLonColumns, downloadGeoJSONAsCSV,
   downloadKML,
   downloadSimaText, downloadTextFile, DXFDownload,
   dxfToGeoJSON, enableDragHandles,
@@ -1817,6 +1818,7 @@ export default {
     // geojsonForDrawColumns: [],
     // geojsonForDrawLabelColumn: '',
     // dialogForDraw: false,
+    csvLonLat: null,
   }),
   computed: {
     ...mapState([
@@ -2616,17 +2618,12 @@ export default {
       addDraw(this.geojsonForDraw,true)
     },
     async uploadDrawCsv () {
-      store.state.loading2 = true
-      store.state.loadingMessage = 'ジオコーディング中'
-      this.dialogForDrawCsv = false
-      const features = [];
-      const len = this.csvRecords.length
-      for (let i = 0; i < len; i++) {
-        const row = this.csvRecords[i];
-        const address = (row[this.csvAddressColumn] || '').replace(/^〒\d{3}-\d{4}\s*/, '').trim();
-        if (!address) continue;
-        const geo = await geocode(address);
-        if (geo) {
+      if (this.csvLonLat) {
+        this.dialogForDrawCsv = false
+        const features = [];
+        const len = this.csvRecords.length
+        for (let i = 0; i < len; i++) {
+          const row = this.csvRecords[i];
           const props = Object.fromEntries(
               this.csvColumns.map(col => [col, row[col]])
           );
@@ -2637,22 +2634,55 @@ export default {
           props.textAnchor = 'left'
           props.textJustify = 'left'
           props['point-color'] = pointColor
-          console.log(props)
           features.push({
             type: 'Feature',
             properties: props,
             geometry: {
               type: 'Point',
-              coordinates: geo.geometry.coordinates
+              coordinates: [row[this.csvLonLat.lon], row[this.csvLonLat.lat]]
             }
           });
         }
-        store.state.loadingMessage = i + '/' + len + ' ' + row[this.csvLabelColumn] + ' ' + (geo? '成功' : '失敗')
-        await delay0(10);
+        const geojson = { type: 'FeatureCollection', features };
+        addDraw(geojson,true)
+      } else {
+        store.state.loading2 = true
+        store.state.loadingMessage = 'ジオコーディング中'
+        this.dialogForDrawCsv = false
+        const features = [];
+        const len = this.csvRecords.length
+        for (let i = 0; i < len; i++) {
+          const row = this.csvRecords[i];
+          const address = (row[this.csvAddressColumn] || '').replace(/^〒\d{3}-\d{4}\s*/, '').trim();
+          if (!address) continue;
+          const geo = await geocode(address);
+          if (geo) {
+            const props = Object.fromEntries(
+                this.csvColumns.map(col => [col, row[col]])
+            );
+            const pointColor = row[this.csvColorColumn] || 'black'
+            props.label = row[this.csvLabelColumn]
+            props.color = 'black'
+            props.offsetValue = [0.6, 0]
+            props.textAnchor = 'left'
+            props.textJustify = 'left'
+            props['point-color'] = pointColor
+            features.push({
+              type: 'Feature',
+              properties: props,
+              geometry: {
+                type: 'Point',
+                coordinates: geo.geometry.coordinates
+              }
+            });
+          }
+          store.state.loadingMessage = i + '/' + len + ' ' + row[this.csvLabelColumn] + ' ' + (geo? '成功' : '失敗')
+          await delay0(10);
+        }
+        const geojson = { type: 'FeatureCollection', features };
+        addDraw(geojson,true)
+        store.state.loading2 = false
       }
-      const geojson = { type: 'FeatureCollection', features };
-      addDraw(geojson,true)
-      store.state.loading2 = false
     },
     uploadDraw () {
       this.dialogForChibanzyOrDraw = false
@@ -7977,6 +8007,14 @@ export default {
                   const file = e.dataTransfer.files[0];
                   this.csvRecords = await parseCSV(file)
                   console.log(this.csvRecords)
+                  // 緯度経度カラムの予想
+                  this.csvLonLat = detectLatLonColumns(this.csvRecords);
+                  if (this.csvLonLat) {
+                    console.log(`予想：緯度カラムは${this.csvLonLat.lat}, 経度カラムは${this.csvLonLat.lon}`);
+                  } else {
+                    this.csvLonLat = null
+                    console.log('緯度経度カラムは見つかりませんでした');
+                  }
                   this.csvColumns = Object.keys(this.csvRecords[0])
                   console.log(this.csvColumns)
                   this.dialogForDrawCsv = true
