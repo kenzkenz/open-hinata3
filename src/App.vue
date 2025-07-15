@@ -209,26 +209,26 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </v-card>
       </v-dialog>
 
-      <v-dialog v-model="dialogForDraw" max-width="500px">
-        <v-card>
-          <v-card-title>
-            ラベル選択
-          </v-card-title>
-          <v-card-text>
-            <v-select class="scrollable-content"
-                      v-model="geojsonForDrawLabelColumn"
-                      :items="geojsonForDrawColumns"
-                      label="ラベルに表示する列を選択"
-                      outlined
-            ></v-select>
-            <v-btn @click="uploadDrawKml">ドロー追加</v-btn>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="blue-darken-1" text @click="dialogForDraw = false">Close</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
+<!--      <v-dialog v-model="dialogForDraw" max-width="500px">-->
+<!--        <v-card>-->
+<!--          <v-card-title>-->
+<!--            ラベル選択-->
+<!--          </v-card-title>-->
+<!--          <v-card-text>-->
+<!--            <v-select class="scrollable-content"-->
+<!--                      v-model="geojsonForDrawLabelColumn"-->
+<!--                      :items="geojsonForDrawColumns"-->
+<!--                      label="ラベルに表示する列を選択"-->
+<!--                      outlined-->
+<!--            ></v-select>-->
+<!--            <v-btn @click="uploadDrawKml">ドロー追加</v-btn>-->
+<!--          </v-card-text>-->
+<!--          <v-card-actions>-->
+<!--            <v-spacer></v-spacer>-->
+<!--            <v-btn color="blue-darken-1" text @click="dialogForDraw = false">Close</v-btn>-->
+<!--          </v-card-actions>-->
+<!--        </v-card>-->
+<!--      </v-dialog>-->
 
       <v-dialog v-model="dialogForChibanzyOrDraw" max-width="500px">
         <v-card>
@@ -1814,9 +1814,9 @@ export default {
     csvColorColumn: '',
     csvRecords: [],
     geojsonForDraw: null,
-    geojsonForDrawColumns: [],
-    geojsonForDrawLabelColumn: '',
-    dialogForDraw: false,
+    // geojsonForDrawColumns: [],
+    // geojsonForDrawLabelColumn: '',
+    // dialogForDraw: false,
   }),
   computed: {
     ...mapState([
@@ -7784,8 +7784,17 @@ export default {
                     const kmlText = event.target.result
                     const kmlData = parser.parseFromString(kmlText, 'application/xml');
                     this.geojsonForDraw = kml(kmlData)
-                    this.geojsonForDrawColumns = Object.keys(this.geojsonForDraw.features[0].properties)
-                    this.dialogForDraw = true
+                    // this.geojsonForDrawColumns = Object.keys(this.geojsonForDraw.features[0].properties)
+                    this.geojsonForDraw.features.forEach(feature => {
+                      const geoType = feature.geometry.type
+                      const props = feature.properties
+                      props.label = props.name
+                      geoType === 'Polygon' ? props.color = 'rgba(0,0,0,0.1)' :  props.color = 'black'
+                      props.offsetValue = [0.6, 0]
+                      props.textAnchor = 'left'
+                      props.textJustify = 'left'
+                    })
+                    addDraw(this.geojsonForDraw,true)
                   }
                   reader.readAsText(file);
                   break

@@ -3712,157 +3712,171 @@ export function popup(e,map,mapName,mapFlg) {
                         selectedBoth = 'selected'
                         break
                 }
-                const geoType = feature.geometry.type
-                console.log(geoType)
-                switch (geoType) {
-                    case 'MultiPolygon':
-                    case 'Polygon':
-                        if (radius) {
-                            if (html.indexOf('click-circle-layer') === -1) {
-                                let checked = ''
-                                if (isRadius) checked = 'checked'
-                                html += '<div class="layer-label-div">サークル</div>'
-                                html +=
-                                    '<div style="width: 260px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
-                                    '<span style="font-size:20px;" class="circle-label">半径' + radius + 'm</span>' +
-                                    '<span style="margin-left: 10px;font-size: 16px;"><input type="checkbox" id="' + props.id + '" class="circle200-check" value=""><label for="' + props.id + '"> 200m</span>' +
-                                    '<span style="margin-left: 10px;font-size: 16px;"><input ' + checked + ' type="checkbox" id="' + props.id + '-radius" class="circle-radius-check" value=""><label for="' + props.id + '-radius"> 半径表示</span>' +
-                                    '<input id="' + props.id + '" style="width: 100%;" type="range" min="10" max="' + radius * 5 + '" step="10" value="' + radius + '" class="circle-range" lng="' + canterLng + '" lat="' + canterLat + '"/><br>' +
-                                    '<input id="' + props.id + '" type="number" style="margin-bottom: 10px;width: 90px;" class="oh-cool-input-number circle-radius-input" min="1" max="100000" step="1" value="' + radius +'">' +
-                                    '<input id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input circle-text" placeholder="ここに入力" value="' + props.label2 + '">' +
-                                    '<button id="' + props.id + '" style="margin-bottom: 10px;height: 3wq230px;font-size: medium;" class="circle-delete pyramid-btn">削　除</button><br>' +
-                                    '<div style="display: flex;gap: 8px;">' +
-                                    '<div class="circle-list">' +
-                                    '<div id="' + props.id + '" data-color="red" class="circle-color circle red" tabindex="0"></div>' +
-                                    '<div id="' + props.id + '" data-color="black" class="circle-color circle black" tabindex="0"></div>' +
-                                    '<div id="' + props.id + '" data-color="blue" class="circle-color circle blue" tabindex="0"></div>' +
-                                    '<div id="' + props.id + '" data-color="green" class="circle-color circle green" tabindex="0"></div>' +
-                                    '<div id="' + props.id + '" data-color="orange" class="circle-color circle orange" tabindex="0"></div>' +
-                                    '</div>' +
-                                    '<input id="' + props.id + '" type="number" class="oh-cool-input-number line-width-input" min="1" max="100" step="1" value="' + lineWidth +'">' +
-                                    '</div>' +
-                                    '</div>'
-                            }
-                        } else {
-                            if (html.indexOf('click-circle-layer') === -1) {
-                                let ninizahyoPropHtml = ''
-                                if (props.isNini) {
-                                    ninizahyoPropHtml += '<div style="font-size: 16px;margin-top: 5px;">' + props.大字名 + props.地番 + '</div>'
+
+                if (store.state.isDraw || !props.description) {
+                    const geoType = feature.geometry.type
+                    console.log(geoType)
+                    switch (geoType) {
+                        case 'MultiPolygon':
+                        case 'Polygon':
+                            if (radius) {
+                                if (html.indexOf('click-circle-layer') === -1) {
+                                    let checked = ''
+                                    if (isRadius) checked = 'checked'
+                                    html += '<div class="layer-label-div">サークル</div>'
+                                    html +=
+                                        '<div style="width: 260px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
+                                        '<span style="font-size:20px;" class="circle-label">半径' + radius + 'm</span>' +
+                                        '<span style="margin-left: 10px;font-size: 16px;"><input type="checkbox" id="' + props.id + '" class="circle200-check" value=""><label for="' + props.id + '"> 200m</span>' +
+                                        '<span style="margin-left: 10px;font-size: 16px;"><input ' + checked + ' type="checkbox" id="' + props.id + '-radius" class="circle-radius-check" value=""><label for="' + props.id + '-radius"> 半径表示</span>' +
+                                        '<input id="' + props.id + '" style="width: 100%;" type="range" min="10" max="' + radius * 5 + '" step="10" value="' + radius + '" class="circle-range" lng="' + canterLng + '" lat="' + canterLat + '"/><br>' +
+                                        '<input id="' + props.id + '" type="number" style="margin-bottom: 10px;width: 90px;" class="oh-cool-input-number circle-radius-input" min="1" max="100000" step="1" value="' + radius +'">' +
+                                        '<input id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input circle-text" placeholder="ここに入力" value="' + props.label2 + '">' +
+                                        '<button id="' + props.id + '" style="margin-bottom: 10px;height: 3wq230px;font-size: medium;" class="circle-delete pyramid-btn">削　除</button><br>' +
+                                        '<div style="display: flex;gap: 8px;">' +
+                                        '<div class="circle-list">' +
+                                        '<div id="' + props.id + '" data-color="red" class="circle-color circle red" tabindex="0"></div>' +
+                                        '<div id="' + props.id + '" data-color="black" class="circle-color circle black" tabindex="0"></div>' +
+                                        '<div id="' + props.id + '" data-color="blue" class="circle-color circle blue" tabindex="0"></div>' +
+                                        '<div id="' + props.id + '" data-color="green" class="circle-color circle green" tabindex="0"></div>' +
+                                        '<div id="' + props.id + '" data-color="orange" class="circle-color circle orange" tabindex="0"></div>' +
+                                        '</div>' +
+                                        '<input id="' + props.id + '" type="number" class="oh-cool-input-number line-width-input" min="1" max="100" step="1" value="' + lineWidth +'">' +
+                                        '</div>' +
+                                        '</div>'
                                 }
-                                let checked = ''
-                                if (isArea) checked = 'checked'
-                                html += '<div class="layer-label-div">ポリゴン</div>'
+                            } else {
+                                if (html.indexOf('click-circle-layer') === -1) {
+                                    let ninizahyoPropHtml = ''
+                                    if (props.isNini) {
+                                        ninizahyoPropHtml += '<div style="font-size: 16px;margin-top: 5px;">' + props.大字名 + props.地番 + '</div>'
+                                    }
+                                    let checked = ''
+                                    if (isArea) checked = 'checked'
+                                    html += '<div class="layer-label-div">ポリゴン</div>'
+                                    html +=
+                                        '<div style="width: 240px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
+                                        '<div style="position: relative">' +
+                                        '<div style="margin-left: 10px;margin-bottom: 10px; font-size: 16px;"><input ' + checked + ' type="checkbox" id="' + props.id + '" class="polygon-area-check" value=""><label for="' + props.id + '"> 面積表示</label>' +
+                                        '<input id="' + props.id + '" type="number" class="oh-cool-input-number line-width-input" min="1" max="100" step="1" value="' + lineWidth +'" style="position: absolute;left:120px;top:0px;">' +
+                                        '</div>' +
+                                        '<input id="' + props.id + '" style="width: 100%;margin-bottom: 5px;" type="text" class="oh-cool-input polygon-text" placeholder="ここに入力" value="' + props.label + '">' +
+                                        '<button id="' + props.id + '" style="width: 45%;margin-bottom: 10px;height: 30px;font-size: medium;" class="circle-delete pyramid-btn">削　除</button>' +
+                                        '<button id="' + props.id + '" style="width: 50%;margin-bottom: 10px;height: 30px;font-size: medium;margin-left: 10px;" class="remove-others pyramid-btn">自分意外削除</button><br>' +
+                                        '<div style="display: flex;gap: 8px;">' +
+                                        '<div class="circle-list">' +
+                                        '<div id="' + props.id + '" data-color="red" class="polygon-color circle red" tabindex="0"></div>' +
+                                        '<div id="' + props.id + '" data-color="black" class="polygon-color circle black" tabindex="0"></div>' +
+                                        '<div id="' + props.id + '" data-color="blue" class="polygon-color circle blue" tabindex="0"></div>' +
+                                        '<div id="' + props.id + '" data-color="green" class="polygon-color circle green" tabindex="0"></div>' +
+                                        '<div id="' + props.id + '" data-color="orange" class="polygon-color circle orange" tabindex="0"></div>' +
+                                        '<div id="' + props.id + '" data-color="hotpink" class="polygon-color circle hotpink" tabindex="0"></div>' +
+                                        '<div id="' + props.id + '" data-color="yellow" class="polygon-color circle yellow" tabindex="0"></div>' +
+                                        '<div id="' + props.id + '" data-color="rgba(0,0,0,0)" class="polygon-color circle transparent" style="border: 1px silver solid" tabindex="0"></div>' +
+                                        '</div>' +
+                                        '</div>' +
+                                        ninizahyoPropHtml +
+                                        '</div>'
+                                }
+                            }
+                            break
+                        case 'Point':
+                            if (html.indexOf('click-circle-layer') === -1) {
+                                const keywordList = ['道路', '水路', '畑', '宅地', '田', '雑種地', 'コン杭', 'プレート','プラ杭','鋲'];
+                                html += '<div class="layer-label-div">ポイント</div>';
+                                html += '<div style="display: flex; width: 100%;">';
+                                // 左側：250px固定
+                                html += '<div style="width: 250px;">';
                                 html +=
-                                    '<div style="width: 240px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
-                                    '<div style="position: relative">' +
-                                    '<div style="margin-left: 10px;margin-bottom: 10px; font-size: 16px;"><input ' + checked + ' type="checkbox" id="' + props.id + '" class="polygon-area-check" value=""><label for="' + props.id + '"> 面積表示</label>' +
-                                    '<input id="' + props.id + '" type="number" class="oh-cool-input-number line-width-input" min="1" max="100" step="1" value="' + lineWidth +'" style="position: absolute;left:120px;top:0px;">' +
+                                    '<div class="click-circle-layer" style="font-weight: normal; color: #333; line-height: 25px;">' +
+                                    '<textarea id="' + props.id + '" rows="6" style="width: 100%; margin-bottom: 0px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
+                                    '<button id="' + props.id + '" style="margin-bottom: 10px; height: 30px; font-size: medium; width: 100%;" class="point-delete pyramid-btn">削　除</button>' +
+                                    '<div style="display: flex; gap: 8px;">' +
+                                    '<div class="circle-list">' +
+                                    '<div id="' + props.id + '" data-color="red" class="text-color circle red" tabindex="0">T</div>' +
+                                    '<div id="' + props.id + '" data-color="black" class="text-color circle black" tabindex="0">T</div>' +
+                                    '<div id="' + props.id + '" data-color="blue" class="text-color circle blue" tabindex="0">T</div>' +
+                                    '<div id="' + props.id + '" data-color="green" class="text-color circle green" tabindex="0">T</div>' +
+                                    '<div id="' + props.id + '" data-color="orange" class="text-color circle orange" tabindex="0">T</div>' +
+                                    '<div id="' + props.id + '" data-color="hotpink" class="text-color circle hotpink" tabindex="0">T</div>' +
                                     '</div>' +
-                                    '<input id="' + props.id + '" style="width: 100%;margin-bottom: 5px;" type="text" class="oh-cool-input polygon-text" placeholder="ここに入力" value="' + props.label + '">' +
-                                    '<button id="' + props.id + '" style="width: 45%;margin-bottom: 10px;height: 30px;font-size: medium;" class="circle-delete pyramid-btn">削　除</button>' +
-                                    '<button id="' + props.id + '" style="width: 50%;margin-bottom: 10px;height: 30px;font-size: medium;margin-left: 10px;" class="remove-others pyramid-btn">自分意外削除</button><br>' +
+                                    '<input id="' + props.id + '" style="margin-bottom: 5px;" type="number" class="oh-cool-input-number font-size-input" min="10" max="100" step="1" value="' + textSize + '">' +
+                                    '</div>' +
+                                    // '<hr>' +
+                                    '<div class="circle-list">' +
+                                    '<div id="' + props.id + '" data-color="red" class="point-color circle red" tabindex="0">P</div>' +
+                                    '<div id="' + props.id + '" data-color="black" class="point-color circle black" tabindex="0">P</div>' +
+                                    '<div id="' + props.id + '" data-color="blue" class="point-color circle blue" tabindex="0">P</div>' +
+                                    '<div id="' + props.id + '" data-color="green" class="point-color circle green" tabindex="0">P</div>' +
+                                    '<div id="' + props.id + '" data-color="orange" class="point-color circle orange" tabindex="0">P</div>' +
+                                    '<div id="' + props.id + '" data-color="hotpink" class="point-color circle hotpink" tabindex="0">P</div>' +
+                                    '<div id="' + props.id + '" data-color="rgba(0,0,0,0)" class="point-color circle transparent" style="border: 1px silver solid" tabindex="0">P</div>' +
+                                    '</div>' +
+                                    '</div>';
+                                html += '</div>';
+
+                                // 右側：単語リスト
+                                html += '<div style="flex: 1; margin-left: 10px; height: 290px; overflow: scroll">';
+
+                                keywordList.forEach(word => {
+                                    html += '<div id="' + props.id + '"  class="keyword-item" ' +
+                                        'onclick="document.getElementById(\'' + props.id + '\').value = \'' + word + '\'">' + word + '</div>';
+                                });
+                                html += '</div>'; // 右パネル終わり
+                                html += '</div>'; // flex container end
+                            }
+                            break
+                        case 'LineString': {
+                            // ラインストリングとフリーハンド
+                            let checked,calcChecked
+                            if (isKeiko) checked = 'checked'
+                            if (isCalc) calcChecked = 'checked'
+                            if (html.indexOf('click-circle-layer') === -1) {
+                                html += '<div class="layer-label-div">' + lineType + '</div>'
+                                html +=
+                                    '<div style="width: 225px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
+                                    '<div style="display: ' + display + '">' +
+                                    '<select id="' + props.id + '" class="oh-cool-select">' +
+                                    '<option value="end" ' + selectedEnd + '>矢印有り</option>' +
+                                    '<option value="none" ' + selectedNone + '>矢印無し</option>' +
+                                    '<option value="both" ' + selectedBoth + '>両矢印</option>' +
+                                    '</select>' +
+                                    '<span style="margin-left: 10px;font-size: 16px;"><input ' + calcChecked + ' type="checkbox" id="calc-' + props.id + '" class="calc-check"><label for="calc-' + props.id + '"> 距離計測</span>' +
+                                    '</div>' +
+                                    '<div style="display: ' + display2 + '">' +
+                                    '<span style="margin-left: 10px;font-size: 16px;"><input ' + checked + ' type="checkbox" id="keiko-' + props.id + '" class="keiko-check"><label for="keiko-' + props.id + '"> 蛍光ペン</span>' +
+                                    '</div>' +
+                                    '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:47%;" class="line-delete pyramid-btn">削　除</button>' +
+                                    '<div class="tooltip-wrapper" data-tooltip="標高値も取得できます。" style="position:relative; display:inline-block;width:47%;">' +
+                                    '<button id="' + props.id + '" style="margin-bottom: 10px;margin-left:10px;height: 30px;font-size: medium;width:100%;" class="line-sima pyramid-btn">各種出力</button>' +
+                                    '</div>' +
                                     '<div style="display: flex;gap: 8px;">' +
                                     '<div class="circle-list">' +
-                                    '<div id="' + props.id + '" data-color="red" class="polygon-color circle red" tabindex="0"></div>' +
-                                    '<div id="' + props.id + '" data-color="black" class="polygon-color circle black" tabindex="0"></div>' +
-                                    '<div id="' + props.id + '" data-color="blue" class="polygon-color circle blue" tabindex="0"></div>' +
-                                    '<div id="' + props.id + '" data-color="green" class="polygon-color circle green" tabindex="0"></div>' +
-                                    '<div id="' + props.id + '" data-color="orange" class="polygon-color circle orange" tabindex="0"></div>' +
-                                    '<div id="' + props.id + '" data-color="hotpink" class="polygon-color circle hotpink" tabindex="0"></div>' +
-                                    '<div id="' + props.id + '" data-color="yellow" class="polygon-color circle yellow" tabindex="0"></div>' +
-                                    '<div id="' + props.id + '" data-color="rgba(0,0,0,0)" class="polygon-color circle transparent" style="border: 1px silver solid" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="red" class="line-color circle red" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="black" class="line-color circle black" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="blue" class="line-color circle blue" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="green" class="line-color circle green" tabindex="0"></div>' +
+                                    '<div id="' + props.id + '" data-color="orange" class="line-color circle orange" tabindex="0"></div>' +
                                     '</div>' +
+                                    '<input id="' + props.id + '" type="number" class="oh-cool-input-number line-width-input" min="1" max="100" step="1" value="' + lineWidth + '">' +
                                     '</div>' +
-                                    ninizahyoPropHtml +
                                     '</div>'
                             }
+                            break
                         }
-                        break
-                    case 'Point':
-                        if (html.indexOf('click-circle-layer') === -1) {
-                            const keywordList = ['道路', '水路', '畑', '宅地', '田', '雑種地', 'コン杭', 'プレート','プラ杭','鋲'];
-                            html += '<div class="layer-label-div">ポイント</div>';
-                            html += '<div style="display: flex; width: 100%;">';
-                            // 左側：250px固定
-                            html += '<div style="width: 250px;">';
-                            html +=
-                                '<div class="click-circle-layer" style="font-weight: normal; color: #333; line-height: 25px;">' +
-                                '<textarea id="' + props.id + '" rows="6" style="width: 100%; margin-bottom: 0px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
-                                '<button id="' + props.id + '" style="margin-bottom: 10px; height: 30px; font-size: medium; width: 100%;" class="point-delete pyramid-btn">削　除</button>' +
-                                '<div style="display: flex; gap: 8px;">' +
-                                '<div class="circle-list">' +
-                                '<div id="' + props.id + '" data-color="red" class="text-color circle red" tabindex="0">T</div>' +
-                                '<div id="' + props.id + '" data-color="black" class="text-color circle black" tabindex="0">T</div>' +
-                                '<div id="' + props.id + '" data-color="blue" class="text-color circle blue" tabindex="0">T</div>' +
-                                '<div id="' + props.id + '" data-color="green" class="text-color circle green" tabindex="0">T</div>' +
-                                '<div id="' + props.id + '" data-color="orange" class="text-color circle orange" tabindex="0">T</div>' +
-                                '<div id="' + props.id + '" data-color="hotpink" class="text-color circle hotpink" tabindex="0">T</div>' +
-                                '</div>' +
-                                '<input id="' + props.id + '" style="margin-bottom: 5px;" type="number" class="oh-cool-input-number font-size-input" min="10" max="100" step="1" value="' + textSize + '">' +
-                                '</div>' +
-                                // '<hr>' +
-                                '<div class="circle-list">' +
-                                '<div id="' + props.id + '" data-color="red" class="point-color circle red" tabindex="0">P</div>' +
-                                '<div id="' + props.id + '" data-color="black" class="point-color circle black" tabindex="0">P</div>' +
-                                '<div id="' + props.id + '" data-color="blue" class="point-color circle blue" tabindex="0">P</div>' +
-                                '<div id="' + props.id + '" data-color="green" class="point-color circle green" tabindex="0">P</div>' +
-                                '<div id="' + props.id + '" data-color="orange" class="point-color circle orange" tabindex="0">P</div>' +
-                                '<div id="' + props.id + '" data-color="hotpink" class="point-color circle hotpink" tabindex="0">P</div>' +
-                                '<div id="' + props.id + '" data-color="rgba(0,0,0,0)" class="point-color circle transparent" style="border: 1px silver solid" tabindex="0">P</div>' +
-                                '</div>' +
-                                '</div>';
-                            html += '</div>';
-
-                            // 右側：単語リスト
-                            html += '<div style="flex: 1; margin-left: 10px; height: 290px; overflow: scroll">';
-
-                            keywordList.forEach(word => {
-                                html += '<div id="' + props.id + '"  class="keyword-item" ' +
-                                    'onclick="document.getElementById(\'' + props.id + '\').value = \'' + word + '\'">' + word + '</div>';
-                            });
-                            html += '</div>'; // 右パネル終わり
-                            html += '</div>'; // flex container end
-                        }
-                        break
-                    case 'LineString': {
-                        // ラインストリングとフリーハンド
-                        let checked,calcChecked
-                        if (isKeiko) checked = 'checked'
-                        if (isCalc) calcChecked = 'checked'
-                        if (html.indexOf('click-circle-layer') === -1) {
-                            html += '<div class="layer-label-div">' + lineType + '</div>'
-                            html +=
-                                '<div style="width: 225px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
-                                '<div style="display: ' + display + '">' +
-                                '<select id="' + props.id + '" class="oh-cool-select">' +
-                                '<option value="end" ' + selectedEnd + '>矢印有り</option>' +
-                                '<option value="none" ' + selectedNone + '>矢印無し</option>' +
-                                '<option value="both" ' + selectedBoth + '>両矢印</option>' +
-                                '</select>' +
-                                '<span style="margin-left: 10px;font-size: 16px;"><input ' + calcChecked + ' type="checkbox" id="calc-' + props.id + '" class="calc-check"><label for="calc-' + props.id + '"> 距離計測</span>' +
-                                '</div>' +
-                                '<div style="display: ' + display2 + '">' +
-                                '<span style="margin-left: 10px;font-size: 16px;"><input ' + checked + ' type="checkbox" id="keiko-' + props.id + '" class="keiko-check"><label for="keiko-' + props.id + '"> 蛍光ペン</span>' +
-                                '</div>' +
-                                '<button id="' + props.id + '" style="margin-bottom: 10px;height: 30px;font-size: medium;width:47%;" class="line-delete pyramid-btn">削　除</button>' +
-                                '<div class="tooltip-wrapper" data-tooltip="標高値も取得できます。" style="position:relative; display:inline-block;width:47%;">' +
-                                '<button id="' + props.id + '" style="margin-bottom: 10px;margin-left:10px;height: 30px;font-size: medium;width:100%;" class="line-sima pyramid-btn">各種出力</button>' +
-                                '</div>' +
-                                '<div style="display: flex;gap: 8px;">' +
-                                '<div class="circle-list">' +
-                                '<div id="' + props.id + '" data-color="red" class="line-color circle red" tabindex="0"></div>' +
-                                '<div id="' + props.id + '" data-color="black" class="line-color circle black" tabindex="0"></div>' +
-                                '<div id="' + props.id + '" data-color="blue" class="line-color circle blue" tabindex="0"></div>' +
-                                '<div id="' + props.id + '" data-color="green" class="line-color circle green" tabindex="0"></div>' +
-                                '<div id="' + props.id + '" data-color="orange" class="line-color circle orange" tabindex="0"></div>' +
-                                '</div>' +
-                                '<input id="' + props.id + '" type="number" class="oh-cool-input-number line-width-input" min="1" max="100" step="1" value="' + lineWidth + '">' +
-                                '</div>' +
-                                '</div>'
-                        }
-                        break
                     }
+                } else {
+                    let description = ''
+                    description = props.description.value ? props.description.value : props.description
+                    html += '<div class="layer-label-div">description</div>';
+                    html += '<div style="display: flex; width: 100%;">';
+                    html += '<div style="width: 250px;">';
+                    html +=
+                        '<div class="click-circle-layer" style="font-weight: normal; color: #333; line-height: 25px;">' +
+                        description
                 }
+
+
                 isGooglemap = false
                 if (window.innerWidth < 500) {
                     store.state.popupHtml = html
