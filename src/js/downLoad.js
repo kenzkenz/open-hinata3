@@ -6688,6 +6688,118 @@ export function userXyztileSet(name,url,id,bbox,transparent) {
     }
 }
 
+export function userPmtile0Set(name, url, id, bbox, length, label) {
+    const map = store.state.map01
+    const sopurce = {
+        id: 'oh-pmtiles-' + id + '-' + name + '-source',obj: {
+            type: 'vector',
+            url: "pmtiles://" + url
+        }
+    };
+    const polygonLayer = {
+        id: 'oh-pmtiles-' + id + '-' + name + '-layer',
+        type: 'fill',
+        source: 'oh-pmtiles-' + id + '-' + name  + '-source',
+        "source-layer": 'oh3',
+        'paint': {
+            'fill-color': 'rgba(0,0,0,0)',
+        },
+    }
+    const lineLayer = {
+        id: 'oh-pmtiles-' + name + '-line-layer',
+        source: 'oh-pmtiles-' + id + '-' + name + '-source',
+        type: 'line',
+        "source-layer": "oh3",
+        paint: {
+            'line-color': 'blue',
+            'line-width': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                1, 0.1,
+                16, 2
+            ]
+        },
+    }
+    let minZoom
+    if (!length) {
+        minZoom = 17
+    } else if (length < 10000) {
+        minZoom = 0
+    } else {
+        minZoom = 17
+    }
+    const labelLayer = {
+        id: 'oh-pmtiles-' + name + '-label-layer',
+        type: "symbol",
+        source: 'oh-pmtiles-' + id + '-' + name + '-source',
+        "source-layer": "oh3",
+        layout: {
+            'text-field': ['get', label],
+            'text-offset': [
+                'case',
+                ['==', ['geometry-type'], 'Point'], ['literal', [0, 1.2]],  // ポイントは下にずらす
+                ['literal', [0, 0]]  // ポリゴンなどはそのまま
+            ]
+        },
+        paint: {
+            'text-color': 'black',
+            'text-halo-color': 'rgba(255,255,255,1)',
+            'text-halo-width': 1.0,
+        },
+        minzoom: minZoom
+    };
+    const pointLayer = {
+        id: 'oh-pmtiles-' + name + '-point-layer',
+        type: "circle",
+        source: 'oh-pmtiles-' + id + '-' + name + '-source',
+        filter: ["==", "$type", "Point"],
+        "source-layer": "oh3",
+        paint: {
+            'circle-color': 'rgba(0,0,0,1)', // 赤色で中心点を強調
+            'circle-radius': 8, // 固定サイズの点
+            'circle-opacity': 1,
+            'circle-stroke-width': 1,
+            'circle-stroke-color': '#fff'
+        }
+    };
+    const vertexLayer = {
+        id: 'oh-pmtiles-' + name + '-vertex-layer',
+        type: "circle",
+        source: 'oh-pmtiles-' + id + '-' + name + '-source',
+        filter: ["==", "$type", "Polygon"],
+        "source-layer": "oh3",
+        paint: {
+            'circle-radius': [
+                'interpolate', ['linear'], ['zoom'],
+                15, 0,
+                18,4
+            ],
+            'circle-color': 'red',
+        }
+    };
+    const maps = [store.state.selectedLayers.map01, store.state.selectedLayers.map02]
+    maps.forEach(map => {
+        map.unshift(
+            {
+                id: 'oh-pmtiles-' + id + '-' + name + '-layer',
+                label: name,
+                source: sopurce,
+                layers: [polygonLayer,lineLayer,labelLayer,vertexLayer,pointLayer],
+                opacity: 1,
+                visibility: true,
+            }
+        );
+    })
+
+    if (bbox) {
+        map.fitBounds([
+            [bbox[0], bbox[1]], // minX, minY
+            [bbox[2], bbox[3]]  // maxX, maxY
+        ], { padding: 20, animate: false  });
+    }
+}
+
 export function userPmtileSet(name,url,id, chiban, bbox, length) {
     const map = store.state.map01
     const sopurce = {
@@ -6882,6 +6994,168 @@ export function userTileSet(name,url,id) {
             visibility: true,
         }
     );
+}
+
+export async function pmtilesGenerate (geojson, layerName, label) {
+    async function insertPmtilesData(uid, layerName, url, url2, label, bbox, length, nickname) {
+        try {
+            const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtiles0Insert.php', new URLSearchParams({
+                uid: uid,
+                name: layerName,
+                url: url,
+                url2: url2,
+                label: label,
+                bbox: JSON.stringify(bbox),
+                length: length,
+                nickname: nickname
+            }));
+            if (response.data.error) {
+                console.error('エラー:', response.data.error);
+                alert(`エラー: ${response.data.error}`);
+            } else {
+                console.log('登録成功:', response.data);
+                userPmtile0Set(layerName,url,response.data.id, bbox, length, label)
+                store.state.fetchImagesFire = !store.state.fetchImagesFire
+            }
+        } catch (error) {
+            console.error('通信エラー:', error);
+        }
+    }
+    // -------------------------------------------------------------------------------------------------
+    store.state.loading2 = true
+    store.state.loadingMessage = 'アップロード中です。'
+    console.log("geojson送信前の中身:", geojson);
+    console.log(store.state.userId)
+
+    const formData = new FormData();
+    formData.append('dir', store.state.userId);
+    // GeoJSON オブジェクトは Blob として追加
+    const geojsonBlob = new Blob(
+        [JSON.stringify(geojson)],
+        { type: 'application/json' }
+    );
+    // formData.append('geojson', geojsonBlob);
+    formData.append('geojson', geojsonBlob, 'data.geojson');
+
+    const response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles.php", {
+        method: "POST",
+        body: formData,
+    });
+
+    if (!response.ok) {
+        store.state.loading2 = false;
+        alert("サーバーエラーが発生しました: " + response.statusText);
+        return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let result = null;
+    let buffer = '';
+
+    async function processStream() {
+        for await (const chunk of streamAsyncIterator(reader)) {
+            buffer += decoder.decode(chunk, { stream: true });
+            // SSEイベントを即座に処理
+            while (buffer.includes('\n\n')) {
+                const index = buffer.indexOf('\n\n');
+                const event = buffer.substring(0, index);
+                buffer = buffer.substring(index + 2);
+
+                if (event.startsWith('data: ')) {
+                    try {
+                        const jsonStr = event.substring(6); // 'data: 'を削除
+                        const data = JSON.parse(jsonStr);
+                        if (data.log) {
+                            // ログを一行ずつリアルタイムで表示
+                            // console.log(data.is_error ? `[ERROR] ${data.log}` : data.log);
+                            // 行単位に分割して後ろから走査
+                            const lines = data.log.trim().split(/\r?\n/).reverse();
+                            let targetLine = lines.find(line => line.includes('%'));
+                            targetLine = targetLine.slice(0, 20);
+                            store.state.loadingMessage = targetLine
+                        } else if (data.error) {
+                            console.log("エラー:", data);
+                            store.state.loading2 = false;
+                            alert("タイル生成に失敗しました！" + data.error);
+                            return;
+                        } else if (data.success) {
+                            result = data;
+                        }
+                    } catch (e) {
+                        console.error("JSONパースエラー:", event);
+                        // store.state.loadingMessage = event.substring(6).slice(0, 45)
+                        store.state.loadingMessage = JSON.parse(event.substring(6)).log.slice(0, 45)
+                    }
+                }
+            }
+        }
+
+        // バッファに残ったデータがあれば処理
+        if (buffer.startsWith('data: ')) {
+            try {
+                const jsonStr = buffer.substring(6);
+                const data = JSON.parse(jsonStr);
+                if (data.success) result = data;
+                else if (data.error) {
+                    console.log("エラー:", data);
+                    store.state.loading2 = false;
+                    alert("タイル生成に失敗しました！" + data.error);
+                    return;
+                }
+            } catch (e) {
+                console.error("最終バッファパースエラー:", buffer);
+            }
+        }
+
+        // 最終レスポンスを処理
+        if (result && result.success) {
+            store.state.loading2 = false;
+            console.log(result);
+            const webUrl = 'https://kenzkenz.duckdns.org/' + result.pmtiles_file.replace('/var/www/html/public_html/', '');
+            console.log(result.pmtiles_file);
+            console.log(store.state.myNickname)
+            insertPmtilesData(
+                store.state.userId,
+                // store.state.pmtilesName,
+                layerName,
+                webUrl,
+                result.pmtiles_file,
+                label,
+                result.bbox,
+                result.length,
+                store.state.myNickname
+            );
+            console.log('pmtiles作成完了');
+            if (!result.bbox) {
+                alert('座標系が間違えているかもしれません。geojson化するときはEPSG:4326に設定してください。');
+            }
+        } else {
+            console.log("成功レスポンスがありません");
+            store.state.loading2 = false;
+            alert("タイル生成に失敗しました！");
+        }
+    }
+    // ReadableStreamを非同期イテレータとして処理
+    async function* streamAsyncIterator(reader) {
+        try {
+            let done, value;
+            do {
+                ({ done, value } = await reader.read());
+                if (done) return;
+                yield value;
+            } while (!done);
+        } finally {
+            reader.releaseLock();
+        }
+    }
+    // ストリーム処理を開始
+    processStream().catch(error => {
+        console.error("ストリーム処理エラー:", error);
+        // store.state.loading2 = false;
+        // alert("ストリーム処理に失敗しました！");
+        store.state.loadingMessage = 'ログ取得に失敗しましたが、このまま実行します。ブラウザを閉じないでください。'
+    });
 }
 
 export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,citycode,selectedPublic,selectedKaiji2,file) {

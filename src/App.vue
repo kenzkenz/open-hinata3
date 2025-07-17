@@ -210,6 +210,23 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </v-card>
       </v-dialog>
 
+      <v-dialog v-model="dialogForDraw" max-width="500px">
+        <v-card>
+          <v-card-title>
+            選択
+          </v-card-title>
+          <v-card-text>
+            <v-btn @click="uploadMyroomKml">my room追加</v-btn>
+            <v-btn style="margin-left: 10px;" @click="uploadDrawKml">ドロー追加</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="dialogForDraw = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+
 <!--      <v-dialog v-model="dialogForDraw" max-width="500px">-->
 <!--        <v-card>-->
 <!--          <v-card-title>-->
@@ -1285,7 +1302,7 @@ import {
   highlightSpecificFeaturesCity, japanCoord,
   jpgLoad, kmlDownload,
   kmzLoadForUser,
-  LngLatToAddress, parseCSV,
+  LngLatToAddress, parseCSV, pmtilesGenerate,
   pmtilesGenerateForUser2,
   pngDl,
   pngDownload,
@@ -1817,7 +1834,7 @@ export default {
     geojsonForDraw: null,
     // geojsonForDrawColumns: [],
     // geojsonForDrawLabelColumn: '',
-    // dialogForDraw: false,
+    dialogForDraw: false,
     csvLonLat: null,
   }),
   computed: {
@@ -2605,12 +2622,23 @@ export default {
       }
       aaa()
     },
+    uploadMyroomKml () {
+      this.dialogForDraw = false
+      const layerName = this.s_geojsonFile.name.split('.')[0]
+      const label = 'name'
+      pmtilesGenerate (
+          this.geojsonForDraw,
+          layerName,
+          label
+      )
+    },
     uploadDrawKml () {
       this.dialogForDraw = false
       this.geojsonForDraw.features.forEach(feature => {
+        const geoType = feature.geometry.type
         const props = feature.properties
-        props.label = props[this.geojsonForDrawLabelColumn]
-        props.color = 'black'
+        props.label = props.name
+        geoType === 'Polygon' ? props.color = 'rgba(0,0,0,0.1)' :  props.color = 'black'
         props.offsetValue = [0.6, 0]
         props.textAnchor = 'left'
         props.textJustify = 'left'
@@ -3681,7 +3709,6 @@ export default {
         const formData = new FormData();
         formData.append('file', blob);
         formData.append('spaUrl', window.location.href);
-
 
         const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/x-upload.php', { method: 'POST', body: formData });
         const data = await res.json();
@@ -7430,6 +7457,125 @@ export default {
                   console.error('フェッチエラー:', error);
                 }
               }
+
+              if (v.id.includes('oh-pmtiles-')) {
+                fetchFlg = true
+                const layerId = v.id.split('-')[2];
+                try {
+                  const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtiles0SelectById.php', {
+                    params: { id: layerId }
+                  });
+                  if (response.data.error) {
+                    console.error('エラー:', response.data.error);
+                    alert(`エラー: ${response.data.error}`);
+                  } else {
+                    console.log('取得データ:', response.data);
+                    console.log(JSON.stringify(response.data, null, 2));
+
+                    const name = response.data[0].name
+                    const id = response.data[0].id
+                    const url = response.data[0].url
+                    const label = response.data[0].label
+                    const length = response.data[0].length
+
+                    const source = {
+                      id: 'oh-pmtiles-' + id + '-' + name + '-source', obj: {
+                        type: 'vector',
+                        url: "pmtiles://" + url
+                      }
+                    };
+                    const polygonLayer = {
+                      id: 'oh-pmtiles-' + id + '-' + name + '-layer',
+                      type: 'fill',
+                      source: 'oh-pmtiles-' + id + '-' + name + '-source',
+                      "source-layer": 'oh3',
+                      'paint': {
+                        'fill-color': 'rgba(0,0,0,0)',
+                      },
+                    }
+                    const lineLayer = {
+                      id: 'oh-pmtiles-' + name + '-line-layer',
+                      source: 'oh-pmtiles-' + id + '-' + name + '-source',
+                      type: 'line',
+                      "source-layer": "oh3",
+                      paint: {
+                        'line-color': 'blue',
+                        'line-width': [
+                          'interpolate',
+                          ['linear'],
+                          ['zoom'],
+                          1, 0.1,
+                          16, 2
+                        ]
+                      },
+                    }
+                    let minZoom
+                    if (!length) {
+                      minZoom = 17
+                    } else if (length < 10000) {
+                      minZoom = 0
+                    } else {
+                      minZoom = 17
+                    }
+                    const labelLayer = {
+                      id: 'oh-pmtiles-' + name + '-label-layer',
+                      type: "symbol",
+                      source: 'oh-pmtiles-' + id + '-' + name + '-source',
+                      "source-layer": "oh3",
+                      layout: {
+                        'text-field': ['get', label],
+                        'text-offset': [
+                          'case',
+                          ['==', ['geometry-type'], 'Point'], ['literal', [0, 1.2]],  // ポイントは下にずらす
+                          ['literal', [0, 0]]  // ポリゴンなどはそのまま
+                        ]
+                      },
+                      paint: {
+                        'text-color': 'black',
+                        'text-halo-color': 'rgba(255,255,255,1)',
+                        'text-halo-width': 1.0,
+                      },
+                      minzoom: minZoom
+                    };
+
+                    const pointLayer = {
+                      id: 'oh-pmtiles-' + name + '-point-layer',
+                      type: "circle",
+                      source: 'oh-pmtiles-' + id + '-' + name + '-source',
+                      "source-layer": "oh3",
+                      filter: ["==", "$type", "Point"],
+                      paint: {
+                        'circle-color': 'rgba(0,0,0,1)',
+                        'circle-radius': 8,
+                        'circle-opacity': 1,
+                        'circle-stroke-width': 1,
+                        'circle-stroke-color': '#fff'
+                      },
+                    };
+                    const vertexLayer = {
+                      id: 'oh-pmtiles-' + name + '-vertex-layer',
+                      type: "circle",
+                      source: 'oh-pmtiles-' + id + '-' + name + '-source',
+                      filter: ["==", "$type", "Polygon"],
+                      "source-layer": "oh3",
+                      paint: {
+                        'circle-radius': [
+                          'interpolate', ['linear'], ['zoom'],
+                          15, 0,
+                          18,4
+                        ],
+                        'circle-color': 'red',
+                      }
+                    };
+                    v.sources = [source];
+                    v.layers = [polygonLayer,lineLayer,labelLayer,pointLayer,vertexLayer]
+                    v.label = name;
+                  }
+                } catch (error) {
+                  console.error('フェッチエラー:', error);
+                }
+              }
+
             });
             return Promise.all(promises);
           }
@@ -7815,17 +7961,7 @@ export default {
                     const kmlText = event.target.result
                     const kmlData = parser.parseFromString(kmlText, 'application/xml');
                     this.geojsonForDraw = kml(kmlData)
-                    // this.geojsonForDrawColumns = Object.keys(this.geojsonForDraw.features[0].properties)
-                    this.geojsonForDraw.features.forEach(feature => {
-                      const geoType = feature.geometry.type
-                      const props = feature.properties
-                      props.label = props.name
-                      geoType === 'Polygon' ? props.color = 'rgba(0,0,0,0.1)' :  props.color = 'black'
-                      props.offsetValue = [0.6, 0]
-                      props.textAnchor = 'left'
-                      props.textJustify = 'left'
-                    })
-                    addDraw(this.geojsonForDraw,true)
+                    this.dialogForDraw = true
                   }
                   reader.readAsText(file);
                   break

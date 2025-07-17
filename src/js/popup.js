@@ -3949,8 +3949,7 @@ export function popup(e,map,mapName,mapFlg) {
             }
         }
 
-        if(/^oh-chiban-/.test(layerId) || /^oh-chibanL-/.test(layerId)) {
-
+        if(/^oh-chiban-/.test(layerId) || /^oh-chibanL-/.test(layerId) || /^oh-pmtiles-/.test(layerId)) {
             let features = map.queryRenderedFeatures(
                 map.project(coordinates), {layers: [layerId]}
             )
@@ -3968,7 +3967,11 @@ export function popup(e,map,mapName,mapFlg) {
                 html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                 html0 += '<div class=' + layerId + ' font-weight: normal; color: #333;line-height: 25px;">'
                 Object.keys(props).forEach(function (key) {
-                    html0 += key + '=' + props[key] + '<br>'
+                    if (key !== 'description') {
+                        html0 += key + '=' + props[key] + '<br>'
+                    } else {
+                        html0 += JSON.parse(props.description)?.value ?? props.description;
+                    }
                 })
                 html0 += '<div class="street-view" style="margin-top:0px;height: 200px;width: 300px"></div>'
                 html0 += '<div>'
