@@ -341,9 +341,9 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
       <v-switch style="height: 40px;margin-bottom: 20px;" v-model="s_mapillary" label="mapillary" color="primary" />
 
-      <div class="range-div" style="text-align: center">
-        標高を強調します。{{s_terrainLevel}}倍
-        <input style="width: 200px" type="range" min="1" max="10" step="0.1" class="range" v-model.number="s_terrainLevel" @input="terrainLevelInput"/>
+      <div class="range-div">
+        標高を強調します。{{s_terrainLevel}}倍<br>
+        <input style="width: 200px;margin-top: 10px;" type="range" min="1" max="10" step="0.1" class="range" v-model.number="s_terrainLevel" @input="terrainLevelInput"/>
       </div>
 <!--      <v-btn @click="addLayerDiv=!addLayerDiv">レイヤー追加（XYZタイル）</v-btn>-->
 <!--      <div v-if="addLayerDiv">-->
@@ -359,7 +359,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 <!--      </div>-->
 
 <!--      <hr style="margin-top: 10px;">-->
-
+      <p style="margin-top: 10px;">お問合せなど、サイト管理者への御連絡は、<a href="https://x.com/kenzkenz" target="_blank">https://x.com/kenzkenz</a>にDMを送ってください。</p>
     </div>
   </Dialog>
   </v-app>
@@ -1727,6 +1727,7 @@ export default {
 @media screen and (max-width: 500px) {
   .menu-div {
     padding: 20px;
+    width: 100%;
   }
 }
 </style>

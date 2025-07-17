@@ -7077,23 +7077,23 @@ export default {
               // 本番環境の処理
               console.log('本番環境');
               this.s_selectedLayers[mapName].unshift(
-                  // {
-                  //   id: 'oh-vector-layer-mono',
-                  //   label: '地理院ベクター・モノクロ',
-                  //   sources: monoSources,
-                  //   layers: monoLayers,
-                  //   opacity: 1,
-                  //   visibility: true,
-                  // }
                   {
-                    id: 'oh-vector-layer-osm-bright',
-                    label: 'OSMベクター',
-                    sources: osmBrightSources,
-                    layers: osmBrightLayers,
+                    id: 'oh-vector-layer-mono',
+                    label: '地理院ベクター・モノクロ',
+                    sources: monoSources,
+                    layers: monoLayers,
                     opacity: 1,
                     visibility: true,
-                    attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
                   }
+                  // {
+                  //   id: 'oh-vector-layer-osm-bright',
+                  //   label: 'OSMベクター',
+                  //   sources: osmBrightSources,
+                  //   layers: osmBrightLayers,
+                  //   opacity: 1,
+                  //   visibility: true,
+                  //   attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
+                  // }
               )
             }
           }
