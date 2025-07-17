@@ -27,6 +27,8 @@ export default createStore({
 
     currentCircleRadius: 0,
     currentCircleColor: 'blue',
+    currentCircleLineColor: 'black',
+    currentCircleLineWidth: 1,
 
     currentPolygonColor: 'yellow',
 

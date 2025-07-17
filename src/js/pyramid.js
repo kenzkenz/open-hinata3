@@ -1120,10 +1120,9 @@ export default function pyramid () {
                 e.target.classList.contains("circle-text") ||
                 e.target.classList.contains("circle200-check") ||
                 e.target.classList.contains("circle-radius-input")
-
         )) {
                 const map01 = store.state.map01
-                const id = String(e.target.getAttribute("id"))
+                const id = String(e.target.getAttribute("id")).replace('-200','')
                 const circleRangeElm = document.querySelector('.circle-range')
                 const circleTextElm = document.querySelector('.circle-text')
                 const circleChkElm = document.querySelector('.circle200-check')
@@ -1137,6 +1136,7 @@ export default function pyramid () {
                 if (e.target.classList.contains("circle-radius-input")) {
                     radius = inputValue
                 }
+                console.log(radius)
                 const lng = Number(circleRangeElm.getAttribute("lng"))
                 const lat = Number(circleRangeElm.getAttribute("lat"))
                 const coordinates = [lng,lat]
@@ -1228,21 +1228,27 @@ export default function pyramid () {
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
-            if (e.target && (e.target.classList.contains("text-color")) || (e.target.classList.contains("circle-color")) || (e.target.classList.contains("polygon-color"))) {
+            if (e.target && (e.target.classList.contains("text-color")) ||
+                (e.target.classList.contains("circle-color")) ||
+                (e.target.classList.contains("circle-line-color")) ||
+                (e.target.classList.contains("polygon-color"))
+            ) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
                 let value = e.target.getAttribute("data-color")
+                let tgtProp = 'color'
                 if (e.target.classList.contains("circle-color")) {
                     store.state.currentCircleColor = value
                     value = colorNameToRgba(value, 0.6)
+                } else if (e.target.classList.contains("circle-line-color")) {
+                    store.state.currentCircleLineColor = value
+                    tgtProp = 'lineColor'
                 } else if (e.target.classList.contains("text-color")) {
                     store.state.currentTextColor = value
-                    // value = e.target.getAttribute("data-color")
                 } else if (e.target.classList.contains("polygon-color")) {
                     store.state.currentPolygonColor = value
                     value = colorNameToRgba(value, 0.6)
                 }
-                const tgtProp = 'color'
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
             }
         });
@@ -1256,6 +1262,18 @@ export default function pyramid () {
                 const geojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
                 store.state.clickCircleGeojsonText = geojsonText
                 store.state.currentTextSize = value
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('input', (e) => {
+            if (e.target && (e.target.classList.contains("circle-line-width-input"))) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
+                const value = Number(e.target.value)
+                const tgtProp = 'line-width'
+                const geojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+                store.state.clickCircleGeojsonText = geojsonText
+                store.state.currentCircleLineWidth = value
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1952,7 +1970,6 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
                     feature.properties.radius = radius
                     feature.properties.label2 = value
                     centerFeature = geojson.features.find(f => f.properties.id === id + '-point' )
-                    console.log(centerFeature)
                     centerFeature.properties.label = value + '\n半径' + radius + 'm'
                     centerFeature.properties.label2 = value
                 }
@@ -1977,7 +1994,6 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
         }
         if (changed) {
             map.getSource(sourceId).setData(geojson);
-            console.log(geojson)
             store.state.updatePermalinkFire = !store.state.updatePermalinkFire
             return escapeHTML(JSON.stringify(geojson))
         }

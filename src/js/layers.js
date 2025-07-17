@@ -687,6 +687,7 @@ export const clickCircleLayer = {
     filter: ['==', '$type', 'Polygon'],
     paint: {
         'fill-color': ['get', 'color'],
+        // 'fill-antialias': false          // 境界線との干渉を抑制
     }
 }
 export const clickCirclePolygonLineLayer = {
@@ -695,10 +696,19 @@ export const clickCirclePolygonLineLayer = {
     source: 'click-circle-source',
     filter: ['==', '$type', 'Polygon'],
     paint: {
+        // 'line-color': [
+        //     'case',
+        //     ['==', ['get', 'lassoSelected'], true],
+        //     'red',
+        //     'black'
+        // ],
         'line-color': [
             'case',
-            ['==', ['get', 'lassoSelected'], true],
-            'red',
+            // 1) lassoSelected が true の場合は常に赤
+            ['==', ['get', 'lassoSelected'], true], 'red',
+            // 2) lineColor プロパティがあればその値を使用
+            ['has', 'lineColor'], ['get', 'lineColor'],
+            // 3) デフォルトは黒
             'black'
         ],
         'line-width': [

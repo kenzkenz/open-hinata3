@@ -956,6 +956,7 @@ export default {
         map.removeSource('drag-handles-source')
       }
       map.addSource('click-circle-source', clickCircleSource.obj)
+      map.removeLayer('click-circle-layer')// 逃げ
       map.addLayer(clickCircleLayer)
       map.addLayer(clickCirclePolygonLineLayer)
       map.addLayer(clickCircPolygonSymbolLayer)
@@ -981,7 +982,8 @@ export default {
       map.addLayer(elevationLayer)
       map.addSource('drag-handles-source', dragHandlesSource.obj)
       map.addLayer(dragHandleslayer)
-
+      //↓なぜかこうしないとレイヤー順が正しくならない。
+      map.moveLayer('click-circle-polygon-line-layer');
       this.$store.state.drawFire = !this.$store.state.drawFire
 
       if (this.$store.state.clickCircleGeojsonText) {

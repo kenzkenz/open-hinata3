@@ -3727,21 +3727,32 @@ export function popup(e,map,mapName,mapFlg) {
                                     html +=
                                         '<div style="width: 260px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
                                         '<span style="font-size:20px;" class="circle-label">半径' + radius + 'm</span>' +
-                                        '<span style="margin-left: 10px;font-size: 16px;"><input type="checkbox" id="' + props.id + '" class="circle200-check" value=""><label for="' + props.id + '"> 200m</span>' +
                                         '<span style="margin-left: 10px;font-size: 16px;"><input ' + checked + ' type="checkbox" id="' + props.id + '-radius" class="circle-radius-check" value=""><label for="' + props.id + '-radius"> 半径表示</span>' +
                                         '<input id="' + props.id + '" style="width: 100%;" type="range" min="10" max="' + radius * 5 + '" step="10" value="' + radius + '" class="circle-range" lng="' + canterLng + '" lat="' + canterLat + '"/><br>' +
                                         '<input id="' + props.id + '" type="number" style="margin-bottom: 10px;width: 90px;" class="oh-cool-input-number circle-radius-input" min="1" max="100000" step="1" value="' + radius +'">' +
+                                        '<span style="margin-left: 10px;font-size: 16px;"><input type="checkbox" id="' + props.id + '-200" class="circle200-check" value=""><label for="' + props.id + '-200"> 200m</span>' +
                                         '<input id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input circle-text" placeholder="ここに入力" value="' + props.label2 + '">' +
                                         '<button id="' + props.id + '" style="margin-bottom: 10px;height: 3wq230px;font-size: medium;" class="circle-delete pyramid-btn">削　除</button><br>' +
-                                        '<div style="display: flex;gap: 8px;">' +
+                                        '<div style="display: flex; flex-wrap: wrap; gap: 2px 8px;">' +
                                         '<div class="circle-list">' +
                                         '<div id="' + props.id + '" data-color="red" class="circle-color circle red" tabindex="0"></div>' +
                                         '<div id="' + props.id + '" data-color="black" class="circle-color circle black" tabindex="0"></div>' +
                                         '<div id="' + props.id + '" data-color="blue" class="circle-color circle blue" tabindex="0"></div>' +
                                         '<div id="' + props.id + '" data-color="green" class="circle-color circle green" tabindex="0"></div>' +
                                         '<div id="' + props.id + '" data-color="orange" class="circle-color circle orange" tabindex="0"></div>' +
+                                        '<div id="' + props.id + '" data-color="rgba(0,0,0,0)" class="circle-color circle transparent" style="border: 1px silver solid" tabindex="0"></div>' +
                                         '</div>' +
-                                        '<input id="' + props.id + '" type="number" class="oh-cool-input-number line-width-input" min="1" max="100" step="1" value="' + lineWidth +'">' +
+                                        '<input id="' + props.id + '" type="number" class="oh-cool-input-number circle-line-width-input" min="1" max="100" step="1" value="' + lineWidth +'">' +
+                                        // 幅100%の空要素で改行を挿入
+                                        '<div style="flex-basis: 100%; height: 0;"></div>' +
+                                        '<div class="circle-list">' +
+                                        '<div id="' + props.id + '" data-color="red" class="circle-line-color circle red" tabindex="0">L</div>' +
+                                        '<div id="' + props.id + '" data-color="black" class="circle-line-color circle black" tabindex="0">L</div>' +
+                                        '<div id="' + props.id + '" data-color="blue" class="circle-line-color circle blue" tabindex="0">L</div>' +
+                                        '<div id="' + props.id + '" data-color="green" class="circle-line-color circle green" tabindex="0">L</div>' +
+                                        '<div id="' + props.id + '" data-color="orange" class="circle-line-color circle orange" tabindex="0">L</div>' +
+                                        '<div id="' + props.id + '" data-color="rgba(0,0,0,0)" class="circle-line-color circle transparent" style="border: 1px silver solid" tabindex="0">L</div>' +
+                                        '</div>' +
                                         '</div>' +
                                         '</div>'
                                 }
@@ -3884,7 +3895,11 @@ export function popup(e,map,mapName,mapFlg) {
                     html = ''
                 }
                 if (layerId === 'click-circle-label-layer') {
-                    extractAndOpenUrls(props.label)
+                    try {
+                        extractAndOpenUrls(props.label)
+                    }catch (e) {
+                        console.log(e)
+                    }
                 }
                 if (props.lassoSelected) {
                     store.state.isLassoSelected = true
