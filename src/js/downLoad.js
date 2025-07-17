@@ -2189,9 +2189,6 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
         }
     }
 
-
-
-
     console.log('初期 prefId:', prefId);
 
     let fgb_URL;
@@ -2201,7 +2198,6 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
         const specialIds = ['07', '15', '22', '26', '28', '29', '30', '40', '43', '44','45','47'];
         switch (layerId) {
             case 'oh-homusyo-2025-polygon':
-                // return 'https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025.fgb'
                 return `https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/fgb/${prefId}.fgb`
             case 'oh-chibanzu2024':
                 return 'https://kenzkenz3.xsrv.jp/fgb/Chibanzu_2024_with_id.fgb'
@@ -2383,7 +2379,6 @@ export function highlightSpecificFeatures2025(map,layerId) {
 }
 
 export function highlightSpecificFeatures(map,layerId) {
-    // alert(999999)
     console.log(store.state.highlightedChibans);
     let sec = 0
     if (isFirstRun) {
@@ -3597,6 +3592,49 @@ export async function queryFGBWithPolygon(map,polygon,chiban) {
         console.error("FGBからの地物取得に失敗しました:", error);
     }
 }
+
+/**
+ * 複数のポリゴンをまとめて処理し、面積・周長・頂点数を合算して返す
+ * @param {GeoJSON.Feature<GeoJSON.Polygon>[]|GeoJSON.Feature<GeoJSON.MultiPolygon>[]} polygons - 処理対象のポリゴン配列
+ * @returns {{ area: string, perimeter: string, vertexCount: number }}
+ */
+function calculatePolygonsMetrics(polygons) {
+    // 引数が単一のポリゴンなら配列に変換
+    const list = Array.isArray(polygons) ? polygons : [polygons];
+
+    let totalArea = 0;
+    let totalPerimeter = 0;
+    let totalVertexCount = 0;
+
+    list.forEach(polygon => {
+        // 面積を積算
+        const area = turf.area(polygon);
+        totalArea += area;
+
+        // 周長を積算
+        const perimeter = turf.length(polygon, { units: 'meters' });
+        totalPerimeter += perimeter;
+
+        // 頂点数を計算して積算
+        // GeoJSONでは外周を0番目の配列として扱う
+        let coords = polygon.geometry.coordinates[0];
+        let vertexCount = coords.length;
+        // ネストされた形式の場合の補正
+        if (vertexCount === 1 && Array.isArray(coords[0])) {
+            vertexCount = coords[0].length;
+        }
+        // 閉ループによる重複点を除外
+        vertexCount = Math.max(0, vertexCount - 1);
+        totalVertexCount += vertexCount;
+    });
+
+    return {
+        area: `約${totalArea.toFixed(1)}m2`,    // 合計面積
+        perimeter: `約${totalPerimeter.toFixed(1)}m`, // 合計周長
+        vertexCount: totalVertexCount           // 合計頂点数
+    };
+}
+
 function calculatePolygonMetrics(polygon) {
     try {
         // 面積の計算
@@ -3616,7 +3654,12 @@ function calculatePolygonMetrics(polygon) {
         //     coordinates[0][1] === coordinates[vertexCount - 1][1]) {
         //     vertexCount -= 1;
         // }
-        return '面積：' + area + ' 周長:' + perimeter + '<br>境界点数：' + vertexCount
+        return {
+            area: area,
+            perimeter: perimeter,
+            vertexCount: vertexCount
+        };
+        // return '面積：' + area + ' 周長:' + perimeter + '<br>境界点数：' + vertexCount
     } catch (error) {
         console.error('面積・周長・頂点数の計算中にエラーが発生しました:', error);
     }
@@ -9172,22 +9215,77 @@ export function detectLatLonColumns(records) {
     return null;
 }
 
-// 既存のCSV読み込み後に呼び出す例
-async function handleCSVDrop(e) {
-    const file = e.dataTransfer.files[0];
-    const records = await parseCSV(file);
-    // カラム名取得
-    const columns = Object.keys(records[0]);
-    console.log('CSV Columns:', columns);
-    // 緯度経度カラムの予想
-    const guess = detectLatLonColumns(records);
-    if (guess) {
-        console.log(`予想：緯度カラムは${guess.lat}, 経度カラムは${guess.lon}`);
-    } else {
-        console.log('緯度経度カラムは見つかりませんでした');
+// 法務省地図面積計算
+export async function homusyoCalculatePolygonMetrics(fudeIds) {
+    const map01 = store.state.map01;
+    let prefId = String(store.state.prefId).padStart(2, '0');
+    // prefId が '00' の場合、最初のフィーチャから都道府県コードを取得
+    if (prefId === '00') {
+        const features = map01.queryRenderedFeatures({ layers: ['oh-homusyo-2025-polygon'] });
+        if (features.length > 0) {
+            const firstFeature = features[0];
+            const citycode = firstFeature.properties['市区町村コード'];
+            if (typeof citycode === 'string' && citycode.length >= 2) {
+                prefId = citycode.substring(0, 2);
+            }
+        }
     }
-    return records;
+    console.log('初期 prefId:', prefId);
+    // 地図の現在表示範囲からバウンディングボックスを作成
+    function fgBoundingBox() {
+        const bounds = map01.getBounds();
+        return {
+            minX: bounds.getWest(),
+            minY: bounds.getSouth(),
+            maxX: bounds.getEast(),
+            maxY: bounds.getNorth(),
+        };
+    }
+    let bbox;
+    // highlightedChibans が存在する場合は該当レイヤーからバウンディングボックスを取得
+    if (store.state.highlightedChibans.size > 0) {
+        bbox = getBoundingBoxByLayer(map01, 'oh-homusyo-2025-polygon');
+        if (bbox.minX === Infinity) {
+            bbox = fgBoundingBox();
+        }
+    } else {
+        bbox = fgBoundingBox();
+    }
+    // flatgeobuf から GeoJSON をフェッチ＆デシリアライズ
+    async function deserializeAndPrepareGeojson() {
+        const geojson = { type: 'FeatureCollection', features: [] };
+        console.log('データをデシリアライズ中...', bbox);
+        const iter = window.flatgeobuf.deserialize(
+            `https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/fgb/${prefId}.fgb`,
+            bbox
+        );
+        for await (const feature of iter) {
+            geojson.features.push(feature);
+        }
+        console.log('取得した地物:', geojson);
+        return geojson;
+    }
+    // デシリアライズ処理を await し、GeoJSON を返却
+    const geojson = await deserializeAndPrepareGeojson();
+    // 敢えてフィルター。
+    let features = []
+    fudeIds.forEach(fudeId => {
+        features = [...features, ...geojson.features.filter(feature => feature.properties.筆ID === fudeId)]
+    })
+    if (fudeIds.length === 1 && features.length > 1) {
+        alert('地物を二つ以上発見。総計で計算します。')
+    }
+    let polygons = []
+    features.forEach(feature => {
+        console.log(feature.geometry)
+        feature.geometry.coordinates.forEach(coordinate => {
+            polygons.push(turf.polygon(coordinate))
+        })
+    })
+    const calc = calculatePolygonsMetrics(polygons)
+    return calc
 }
 
-// 使用例: dropイベントに
-// document.addEventListener('drop', handleCSVDrop);
+
+
+

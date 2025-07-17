@@ -21,7 +21,20 @@
             {{ key }}: {{ value }}
           </p>
         </div>
-        <div class="street-view-drawer" style="margin-top:10px;height: calc(100vh - 450px);width:100%;"></div>
+<!--        <div class="street-view-drawer" style="margin-top:10px;height: calc(100vh - 450px);width:100%;"></div>-->
+        <hr style="margin-top: 10px;margin-bottom: 10px;">
+        <div v-if="s_rightDrawerTitle === '2025登記所地図'">
+          <p style="margin-bottom: 8px;">{{ `${popupFeatureProperties.市区町村名 || ''}${popupFeatureProperties.大字名 || ''}${popupFeatureProperties.大字 || ''}${popupFeatureProperties['丁目名'] || ''}${popupFeatureProperties.地番 || ''}` }}の面積等</p>
+          面積：{{ area }}<br>
+          周長：{{ perimeter }}<br>
+          境界点数：{{ vertexCount }}
+          <hr style="margin-top: 10px;margin-bottom: 10px;">
+          <div v-if="featuresCount > 1">
+            <p style="margin-bottom: 8px;">選択した地物({{ featuresCount }})の総計（注！画面内地物に限る）</p>
+            総面積：{{ totalArea }}<br>
+            総境界点数：{{ totalVertexCount }}
+          </div>
+        </div>
       </v-card-text>
 
 <!--      <v-card-actions style="margin-top: 0px">-->
@@ -38,7 +51,8 @@
 
 <script>
 import { mapState, mapMutations } from 'vuex';
-import {enableMotionPermission} from "@/js/popup";
+import {homusyoCalculatePolygonMetrics} from "@/js/downLoad";
+import store from "@/store";
 
 export default {
   name: 'RightDrawer',
@@ -46,6 +60,12 @@ export default {
   data() {
     return {
       tab: '0',
+      area: '',
+      perimeter: '',
+      vertexCount: 0,
+      featuresCount: 0,
+      totalArea: '',
+      totalVertexCount: 0,
     };
   },
   computed: {
@@ -90,7 +110,19 @@ export default {
   mounted() {
   },
   watch: {
-    popupFeatureProperties (newVal) {
+    async popupFeatureProperties (newVal) {
+      const calc = await homusyoCalculatePolygonMetrics([newVal.筆ID])
+      this.area = calc.area
+      this.perimeter = calc.perimeter
+      this.vertexCount = calc.vertexCount
+
+      const fudeIds = Array.from(this.$store.state.highlightedChibans).map(h => h.split('_')[0])
+      this.featuresCount = fudeIds.length
+      const totalCalc = await homusyoCalculatePolygonMetrics(fudeIds)
+      this.totalArea = totalCalc.area
+      this.totalVertexCount = totalCalc.vertexCount
+
+
       // document.querySelector('.street-view-drawer').innerHTML = '<span style="color: red">現在、street-viewはアクセス増加に伴い停止中です。</span>'
 
       // const container = document.querySelector('.street-view-drawer')

@@ -7,10 +7,6 @@ import muni from "@/js/muni";
 import pyramid from "@/js/pyramid";
 import * as turf from '@turf/turf'
 import {extractAndOpenUrls, getMaxZIndex, queryFGBWithPolygon, wsg84ToJgd} from "@/js/downLoad";
-import {feature} from "@turf/turf";
-import {transformCoordinates} from "@/App";
-// import { Viewer } from 'mapillary-js';
-// import {Viewer, ViewerOptions} from 'mapillary-js';
 import { Viewer, CameraControls, RenderMode, TransitionMode } from 'mapillary-js';
 export const popups = []
 
@@ -3886,7 +3882,6 @@ export function popup(e,map,mapName,mapFlg) {
                         '<div class="click-circle-layer" style="font-weight: normal; color: #333; line-height: 25px;">' +
                         description
                 }
-
 
                 isGooglemap = false
                 if (window.innerWidth < 500) {
