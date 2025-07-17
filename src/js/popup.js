@@ -3970,7 +3970,11 @@ export function popup(e,map,mapName,mapFlg) {
                     if (key !== 'description') {
                         html0 += key + '=' + props[key] + '<br>'
                     } else {
-                        html0 += JSON.parse(props.description)?.value ?? props.description;
+                        try {
+                            html0 += JSON.parse(props.description).value
+                        }catch (e) {
+                            html0 += props.description?.value ?? props.description
+                        }
                     }
                 })
                 html0 += '<div class="street-view" style="margin-top:0px;height: 200px;width: 300px"></div>'

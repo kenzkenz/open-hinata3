@@ -14,6 +14,7 @@
               <v-tab value="4">画像</v-tab>
               <v-tab value="6">任意座標</v-tab>
               <v-tab value="5">kmz</v-tab>
+              <v-tab value="myLayer">マイレイヤー</v-tab>
               <v-tab value="7">復帰</v-tab>
               <v-tab v-if="isAdministrator" value="8">管理者用</v-tab>
             </v-tabs>
@@ -219,6 +220,13 @@
                   />
                 </v-card>
               </v-window-item>
+              <v-window-item value="myLayer">
+                <v-card>
+                  <MyroomPmtiles
+                      :mapInstance="mapInstance"
+                  />
+                </v-card>
+              </v-window-item>
               <v-window-item value="7">
                 <v-card>
                   <p style="margin-bottom: 10px;">各デバイスの最後に開いた画面に復帰します。</p>
@@ -272,10 +280,12 @@ import {
   addTileLayerForImage,
   geojsonAddLayer, iko, publicChk,
   simaToGeoJSON, userKmzSet, userPmtileSet, userSimaSet, userTileSet, userXyztileSet
-} from "@/js/downLoad";
+} from "@/js/downLoad"
 import muni from '@/js/muni'
-import LayerManager from '@/components/LayerManager.vue';
-import MyroomNinizahyo from '@/components/Myroom-ninizahyo';
+import LayerManager from '@/components/LayerManager.vue'
+import MyroomNinizahyo from '@/components/Myroom-ninizahyo'
+import MyroomPmtiles from '@/components/Myroom-pmtiles'
+
 
 const getFirebaseUid = async () => {
   if (!user.value) return;
@@ -356,7 +366,8 @@ export default {
   props: ['mapName'],
   components: {
     LayerManager,
-    MyroomNinizahyo
+    MyroomNinizahyo,
+    MyroomPmtiles,
   },
   data: () => ({
     publicItems: [{public:-1,label:'オープンデータ（マップ上は緑色、詳細は表示）'},{public:0,label:'完全非公開（マップ上は透明、詳細は非表示）'},{public:3,label:'非公開（マップ上は灰色、詳細は非表示）'},{public:1,label:'公開（マップ上は青色、詳細は表示）'}],

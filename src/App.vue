@@ -216,7 +216,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
             選択
           </v-card-title>
           <v-card-text>
-            <v-btn @click="uploadMyroomKml">my room追加</v-btn>
+            <p style="margin-bottom: 20px;">2MB以上は「マイルームのマイレイヤーに追加」を選んでください。</p>
+            <v-btn @click="uploadMyroomKml">マイルームのマイレイヤーに追加</v-btn>
             <v-btn style="margin-left: 10px;" @click="uploadDrawKml">ドロー追加</v-btn>
           </v-card-text>
           <v-card-actions>

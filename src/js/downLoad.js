@@ -6791,7 +6791,6 @@ export function userPmtile0Set(name, url, id, bbox, length, label) {
             }
         );
     })
-
     if (bbox) {
         map.fitBounds([
             [bbox[0], bbox[1]], // minX, minY
