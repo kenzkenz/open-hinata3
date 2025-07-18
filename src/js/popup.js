@@ -3849,6 +3849,7 @@ export function popup(e,map,mapName,mapFlg) {
                                     '<option value="both" ' + selectedBoth + '>両矢印</option>' +
                                     '</select>' +
                                     '<span style="margin-left: 10px;font-size: 16px;"><input ' + calcChecked + ' type="checkbox" id="calc-' + props.id + '" class="calc-check"><label for="calc-' + props.id + '"> 距離計測</span>' +
+                                    '<textarea id="' + props.id + '" rows="2" style="width: 100%; margin: 10px 0 3px 0" type="text" class="oh-cool-input line-text" placeholder="ここに入力">' + props.label + '</textarea>' +
                                     '</div>' +
                                     '<div style="display: ' + display2 + '">' +
                                     '<span style="margin-left: 10px;font-size: 16px;"><input ' + checked + ' type="checkbox" id="keiko-' + props.id + '" class="keiko-check"><label for="keiko-' + props.id + '"> 蛍光ペン</span>' +

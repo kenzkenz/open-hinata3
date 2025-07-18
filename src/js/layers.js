@@ -687,7 +687,6 @@ export const clickCircleLayer = {
     filter: ['==', '$type', 'Polygon'],
     paint: {
         'fill-color': ['get', 'color'],
-        // 'fill-antialias': false          // 境界線との干渉を抑制
     }
 }
 export const clickCirclePolygonLineLayer = {
@@ -904,14 +903,13 @@ export const endPointSouce = {
         }
     }
 }
-// 矢印レイヤー（終点にのみ表示）
+// 矢印レイヤー（始点、終点にのみ表示）
 export const arrowsEndpointLayer ={
     id: 'arrows-endpoint-layer',
     type: 'symbol',
     source: 'end-point-source',
     filter: [
         'all',
-        // ['has', 'bearing'],
         ['any',
             ['all',
                 ['==', ['get', 'arrow-type'], 'end'],
@@ -929,10 +927,30 @@ export const arrowsEndpointLayer ={
         'icon-rotation-alignment': 'map',
         'icon-allow-overlap': true,
         'icon-ignore-placement': true,
-        'icon-offset': [-4, 0] // 矢印を終点から10ピクセル内側にずらす
+        'icon-offset': [-4, 0], // 矢印を終点から10ピクセル内側にずらす
     },
     paint: {
-        'icon-opacity': 1
+        'icon-opacity': 1,
+    }
+}
+// 矢印レイヤー（ラベル）
+export const arrowsEndpointLabelLayer ={
+    id: 'arrows-endpoint-label-layer',
+    type: 'symbol',
+    source: 'end-point-source',
+    layout: {
+        'text-field': ['get', 'label'],
+        'text-size': 18,
+        'text-offset': [0, -1],
+        'text-anchor': 'center',              // テキストのアンカー位置
+        'text-allow-overlap': true,
+        'text-ignore-placement': true
+    },
+    paint: {
+        'icon-opacity': 1,
+        'text-color': ['get', 'color'],
+        'text-halo-color': '#ffffff',
+        'text-halo-width': 1
     }
 }
 // 頂点レイヤー------------------------------------------------------------------

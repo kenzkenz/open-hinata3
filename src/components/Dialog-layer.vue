@@ -87,6 +87,7 @@ import * as turf from '@turf/turf'
 import {gpx, kml} from "@tmcw/togeojson";
 import DxfParser from 'dxf-parser'
 import {
+  arrowsEndpointLabelLayer,
   arrowsEndpointLayer,
   arrowsLayer, clickCircleKeikoLineLayer,
   clickCircleLabelLayer,
@@ -937,6 +938,7 @@ export default {
         map.removeLayer('click-circle-keiko-line-layer')
         map.removeLayer('click-circle-label-layer')
         map.removeSource('click-circle-source')
+        map.removeLayer('arrows-endpoint-label-layer')
         map.removeLayer('arrows-endpoint-layer')
         map.removeSource('end-point-source')
         map.removeLayer('guide-line-layer')
@@ -967,6 +969,7 @@ export default {
       map.addLayer(clickCircleLabelLayer)
       map.addSource('end-point-source', endPointSouce.obj)
       map.addLayer(arrowsEndpointLayer)
+      map.addLayer(arrowsEndpointLabelLayer)
       map.addSource('guide-line-source', guideLineSource.obj)
       map.addLayer(guideLineLayer)
       map.addLayer(guideLineVertexLayer)

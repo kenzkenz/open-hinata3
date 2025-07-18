@@ -2503,7 +2503,7 @@ export default {
     onKeydown(e) {
       if (!this.s_isDrawLine && !this.s_isDrawPolygon) return;
       if (e.key === 'Backspace' || e.key === 'Delete') {
-        e.preventDefault();
+        // e.preventDefault();
         this.removeLastVertex();
       }
     },
@@ -6031,7 +6031,7 @@ export default {
             arrow: this.$store.state.currentArrowColor,
             'line-width': this.$store.state.currentLineWidth,
             textAnchor: 'left',
-            textJustify: 'left'
+            textJustify: 'left',
           };
           geojsonCreate(map, 'LineString', this.tempLineCoords.slice(), properties);
           // 擬似クリックイベント発火（最初の点）

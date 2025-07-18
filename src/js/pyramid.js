@@ -1206,6 +1206,18 @@ export default function pyramid () {
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('input', (e) => {
+            if (e.target && (e.target.classList.contains("line-text"))) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
+                const lineTextElm = document.querySelector('.line-text')
+                const value = lineTextElm.value
+                const tgtProp = 'label'
+                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+                generateStartEndPointsFromGeoJSON(JSON.parse(store.state.clickCircleGeojsonText))
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('input', (e) => {
             if (e.target && (e.target.classList.contains("point-text"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
@@ -1331,6 +1343,7 @@ export default function pyramid () {
                 store.state.currentFreeHandKeikoColor = keikoValue
                 store.state.currentLineColor = value
                 store.state.currentArrowColor = arrowValue
+                generateStartEndPointsFromGeoJSON(JSON.parse(store.state.clickCircleGeojsonText))
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -2071,7 +2084,9 @@ export function generateStartEndPointsFromGeoJSON(geojson) {
                 endpoint: 'start',
                 'arrow-type': properties['arrow-type'] || 'end',
                 arrow: properties.arrow || 'arrow_black',
-                bearing: calculateBearing(firstCoord, secondCoord, 'start')
+                bearing: calculateBearing(firstCoord, secondCoord, 'start'),
+                label: properties.label || '',
+                color: properties.color || 'black'
             }
         });
         // 終点-----------------------------------------------------------
