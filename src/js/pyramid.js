@@ -2117,9 +2117,17 @@ export function generateStartEndPointsFromGeoJSON(geojson) {
         const coords = feature.geometry.coordinates;
         const props  = feature.properties || {};
         if (coords.length < 2) return;
+
+        const [first, second] = coords;
+        const last  = coords[coords.length - 1];
+        const prev  = coords[coords.length - 2];
+        let prev2 = null
+        if (coords.length > 2) {
+            prev2  = coords[coords.length - 3];
+        }
+
         // 始点
         {
-            const [first, second] = coords;
             pointFeatures.push({
                 type: 'Feature',
                 geometry: { type: 'Point', coordinates: first },
@@ -2143,6 +2151,24 @@ export function generateStartEndPointsFromGeoJSON(geojson) {
             // 半分の距離でポイントを取得
             const midCoord = turf.along(line, totalM / 2, { units: 'meters' }).geometry.coordinates;
 
+            // 全長 totalM の半分の距離
+            const midDistance = totalM / 2;
+            // 前後にずらす距離（メートル単位で小さな値を指定）
+            const epsilon = 0.5; // 例: 0.5 m
+            // midCoord の少し手前のポイント
+            const prevPt = turf.along(line, midDistance - epsilon, { units: 'meters' });
+            // midCoord の少し先のポイント
+            const nextPt = turf.along(line, midDistance + epsilon, { units: 'meters' });
+
+            const bearingAtMid = calculateBearing(null, prevPt.geometry.coordinates, nextPt.geometry.coordinates, 'end')
+
+            let textBearing
+            if (bearingAtMid < 450) {
+                textBearing = bearingAtMid
+            } else {
+                textBearing = bearingAtMid + 900
+            }
+
             pointFeatures.push({
                 type: 'Feature',
                 geometry: { type: 'Point', coordinates: midCoord },
@@ -2153,18 +2179,13 @@ export function generateStartEndPointsFromGeoJSON(geojson) {
                     'arrow-type': props['arrow-type'] || 'end',
                     arrow: props.arrow || 'arrow_black',
                     label: props.labelType === 'mid' ? props.label : '',
-                    color: props.color || 'black'
+                    color: props.color || 'black',
+                    textBearing: textBearing
                 }
             });
         }
         // 終点
         {
-            const last  = coords[coords.length - 1];
-            const prev  = coords[coords.length - 2];
-            let prev2 = null
-            if (coords.length > 2) {
-                prev2  = coords[coords.length - 3];
-            }
             pointFeatures.push({
                 type: 'Feature',
                 geometry: { type: 'Point', coordinates: last },

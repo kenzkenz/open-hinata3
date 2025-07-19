@@ -3657,20 +3657,26 @@ export function popup(e,map,mapName,mapFlg) {
             case 'click-circle-line-layer':
             case 'click-circle-keiko-line-layer':
             case 'click-circle-label-layer':
-            // case 'arrows-endpoint-label-layer':
+            case 'arrows-endpoint-label-layer':
             {
                 html = ''
                 isBreak = true
                 coordinates = store.state.coordinates
                 console.log(store.state.clickCircleGeojsonText)
                 console.log(store.state.id)
+                let id
+                if (!store.state.id && layerId === 'arrows-endpoint-label-layer') {
+                    id = props.id.split('-')[0]
+                } else {
+                    id = store.state.id
+                }
                 if (store.state.clickCircleGeojsonText) {
                     features = JSON.parse(store.state.clickCircleGeojsonText).features
                 } else {
                     features = JSON.parse(store.state.clickCircleGeojsonTextMyroom).features
                     store.state.clickCircleGeojsonText = store.state.clickCircleGeojsonTextMyroom
                 }
-                const feature = features.find(feature => feature.properties.id === store.state.id)
+                const feature = features.find(feature => feature.properties.id === id)
                 // alert('到達')
                 if (!feature) return;
                 // alert('到達')
@@ -3916,6 +3922,8 @@ export function popup(e,map,mapName,mapFlg) {
                         console.log(e)
                     }
                 }
+                // クリア
+                store.state.id = ''
                 if (props.lassoSelected) {
                     store.state.isLassoSelected = true
                 }

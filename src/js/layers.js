@@ -944,7 +944,8 @@ export const arrowsEndpointLabelLayer ={
         'text-offset': [0, -1],
         'text-anchor': 'center',              // テキストのアンカー位置
         'text-allow-overlap': true,
-        'text-ignore-placement': true
+        'text-ignore-placement': true,
+        'text-rotate': ['get', 'textBearing'],
     },
     paint: {
         'icon-opacity': 1,
