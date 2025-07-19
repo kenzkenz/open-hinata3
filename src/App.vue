@@ -924,6 +924,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
         >
           <v-chip @click="printMap01" value="map01" variant="flat">map01</v-chip>
           <v-chip @click="printMap02" value="map02" variant="flat">map02</v-chip>
+          <v-chip @click="printMap03" value="map02" variant="flat">map03</v-chip>
+
         </v-chip-group>
       </div>
 
@@ -937,7 +939,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
 
           <!-- コンパス -->
-          <div class="compusDiv"  v-if="s_isPrint">
+          <div class="compassDiv"  v-if="s_isPrint">
             <svg class="compass-icon" viewBox="0 0 100 100" width="40" height="40">
               <circle cx="50" cy="50" r="45" stroke="black" stroke-width="4" fill="white"/>
               <polygon points="50,10 60,50 50,40 40,50" fill="red"/>
@@ -3777,28 +3779,18 @@ export default {
         map02Div.style.position = 'relative'
       }, 10)
     },
-    // onMapChange () {
-    //   const map01Div = document.getElementById('map01');
-    //   const map02Div = document.getElementById('map02');
-    //   alert(this.printMap)
-    //   switch (this.printMap) {
-    //     case 'map01':
-    //       setTimeout(() => {
-    //         map01Div.style.display = 'block'
-    //         map02Div.style.position = 'absolute'
-    //       },100)
-    //       break
-    //     case 'map02':
-    //       setTimeout(() => {
-    //         alert(999)
-    //         map01Div.style.display = 'none'
-    //         map02Div.style.display = 'block'
-    //         map02Div.style.width = '100%'
-    //         map02Div.style.position = 'relative'
-    //       },100)
-    //       break
-    //   }
-    // },
+    printMap03 () {
+      const map01Div = document.getElementById('map01');
+      const map02Div = document.getElementById('map02');
+      setTimeout(() => {
+        map01Div.style.display = 'block'
+        map01Div.style.height = '50%'
+        map02Div.style.position = 'relative'
+        map02Div.style.display = 'block'
+        map02Div.style.height = '50%'
+        map02Div.style.width = '100%'
+      },10)
+    },
     handlePrint(isClose) {
       const map00Div = document.getElementById('map00');
       const map01Div = document.getElementById('map01');
@@ -3926,33 +3918,6 @@ export default {
     },
     directionChange() {
       printDirectionChange (this.titleDirection)
-      // const map00Div = document.getElementById('map00');
-      // const map01Div = document.getElementById('map01');
-      // const map02Div = document.getElementById('map02');
-      // // A4サイズ（mm→px）: 210mm x 297mm
-      // // 1mm ≒ 3.7795275591px
-      // let widthPx
-      // let heightPx
-      // console.log(this.titleDirection)
-      // switch (this.titleDirection) {
-      //   case 'horizontal':
-      //     widthPx = 260 * 3.7795275591;
-      //     heightPx = 190 * 3.7795275591;
-      //     break
-      //   case 'vertical':
-      //     widthPx = 190 * 3.7795275591;
-      //     heightPx = 260 * 3.7795275591;
-      //     break
-      //   default:
-      //     widthPx = 190 * 3.7795275591;
-      //     heightPx = 260 * 3.7795275591;
-      // }
-      // // リサイズ＆中央に
-      // map00Div.style.width  = widthPx + 'px';
-      // map00Div.style.height = heightPx + 'px';
-      // // map00Div.style.margin = '0 auto';
-      // map00Div.style.margin = '20px auto 0 auto';
-      // map00Div.style.display = 'block';
     },
     drawClose () {
       if (document.querySelector('#centerDrawBtn2')) {
@@ -6798,7 +6763,9 @@ export default {
       map.on('rotate', () => {
         const bearing = map.getBearing(); // 地図の北の角度（度）
         try {
-          document.querySelector('.compass-icon').style.transform = `rotate(${-bearing}deg)`;
+          document.querySelectorAll('.compass-icon').forEach(compass => {
+            compass.style.transform = `rotate(${-bearing}deg)`
+          })
         }catch (e) {
           console.log(e)
         }
@@ -9724,7 +9691,7 @@ select {
   pointer-events: none; /* マーカークリックなどを通す */
 }
 
-.compusDiv {
+.compassDiv {
   position: absolute;
   top: 10px;
   right: 10px;
