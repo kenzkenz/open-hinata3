@@ -1303,7 +1303,7 @@ export default function pyramid () {
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('change', (e) => {
-            if (e.target && (e.target.classList.contains("oh-cool-select"))) {
+            if (e.target && (e.target.classList.contains("arrow-select"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
                 const startId = id + '-start'
@@ -1314,6 +1314,19 @@ export default function pyramid () {
                 geojsonUpdate (map01,null,endPointSouce.id,startId,tgtProp,value)
                 geojsonUpdate (map01,null,endPointSouce.id,endId,tgtProp,value)
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('change', (e) => {
+            if (e.target && (e.target.classList.contains("label-select"))) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
+                const value = e.target.value
+                const tgtProp = 'labelType'
+                console.log(id,value)
+                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+                generateStartEndPointsFromGeoJSON(JSON.parse(store.state.clickCircleGeojsonText))
+                store.state.currentLineLabelType = value
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1543,11 +1556,11 @@ export default function pyramid () {
     })
 }
 // ラインの最後のセグメントの方向（ベアリング）を計算する関数
-function calculateBearing(coord1, coord2, endpoint) {
-    const lon1 = coord1[0] * Math.PI / 180;
-    const lat1 = coord1[1] * Math.PI / 180;
-    const lon2 = coord2[0] * Math.PI / 180;
-    const lat2 = coord2[1] * Math.PI / 180;
+function calculateBearing(coordPrev, coordLast, endpoint) {
+    const lon1 = coordPrev[0] * Math.PI / 180;
+    const lat1 = coordPrev[1] * Math.PI / 180;
+    const lon2 = coordLast[0] * Math.PI / 180;
+    const lat2 = coordLast[1] * Math.PI / 180;
     const dLon = lon2 - lon1;
     const y = Math.sin(dLon) * Math.cos(lat2);
     const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
@@ -2059,66 +2072,140 @@ export function generateSegmentLabelGeoJSON(geojson) {
 export function generateStartEndPointsFromGeoJSON(geojson) {
     const map01 = store.state.map01;
     const pointFeatures = [];
-    if (!geojson) return
+    if (!geojson) return;
+
     geojson.features.forEach((feature) => {
         if (feature.properties.id === 'config') return;
         if (!feature || feature.geometry.type !== 'LineString' || feature.properties['free-hand']) return;
 
-        const coordinates = feature.geometry.coordinates;
-        const properties = feature.properties || {};
+        const coords = feature.geometry.coordinates;
+        const props  = feature.properties || {};
+        if (coords.length < 2) return;
+        // 始点
+        {
+            const [first, second] = coords;
+            pointFeatures.push({
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: first },
+                properties: {
+                    id: props.id + '-start',
+                    pairId: props.pairId || null,
+                    endpoint: 'start',
+                    'arrow-type': props['arrow-type'] || 'end',
+                    arrow: props.arrow || 'arrow_black',
+                    bearing: calculateBearing(first, second, 'start'),
+                    label: props.labelType === 'start' ? props.label : '',
+                    color: props.color || 'black'
+                }
+            });
+        }
+        // 中間点
+        {
+            const line = turf.lineString(coords);
+            // 全長をメートルで取得
+            const totalM = turf.length(line, { units: 'meters' });
+            // 半分の距離でポイントを取得
+            const midCoord = turf.along(line, totalM / 2, { units: 'meters' }).geometry.coordinates;
 
-        if (coordinates.length < 2) return;
-
-        // 始点--------------------------------------------------------
-        const firstCoord = coordinates[0];
-        const secondCoord = coordinates[1]; // for bearing
-        pointFeatures.push({
-            type: 'Feature',
-            geometry: {
-                type: 'Point',
-                coordinates: firstCoord
-            },
-            properties: {
-                id: properties.id  + '-start',
-                pairId: properties.pairId || null,
-                endpoint: 'start',
-                'arrow-type': properties['arrow-type'] || 'end',
-                arrow: properties.arrow || 'arrow_black',
-                bearing: calculateBearing(firstCoord, secondCoord, 'start'),
-                label: properties.label || '',
-                color: properties.color || 'black'
-            }
-        });
-        // 終点-----------------------------------------------------------
-        const lastCoord = coordinates[coordinates.length - 1];
-        const secondLastCoord = coordinates[coordinates.length - 2];
-        pointFeatures.push({
-            type: 'Feature',
-            geometry: {
-                type: 'Point',
-                coordinates: lastCoord
-            },
-            properties: {
-                id: properties.id + '-end',
-                pairId: properties.pairId || null,
-                endpoint: 'end',
-                'arrow-type': properties['arrow-type'] || 'end',
-                arrow: properties.arrow || 'arrow_black',
-                bearing: calculateBearing(secondLastCoord, lastCoord, 'end')
-            }
-        });
+            pointFeatures.push({
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: midCoord },
+                properties: {
+                    id: props.id + '-mid',
+                    pairId: props.pairId || null,
+                    endpoint: 'mid',
+                    'arrow-type': props['arrow-type'] || 'end',
+                    arrow: props.arrow || 'arrow_black',
+                    label: props.labelType === 'mid' ? props.label : '',
+                    color: props.color || 'black'
+                }
+            });
+        }
+        // 終点
+        {
+            const last  = coords[coords.length - 1];
+            const prev  = coords[coords.length - 2];
+            pointFeatures.push({
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: last },
+                properties: {
+                    id: props.id + '-end',
+                    pairId: props.pairId || null,
+                    endpoint: 'end',
+                    'arrow-type': props['arrow-type'] || 'end',
+                    arrow: props.arrow || 'arrow_black',
+                    bearing: calculateBearing(prev, last, 'end')
+                }
+            });
+        }
     });
-
     const pointGeoJSON = {
         type: 'FeatureCollection',
         features: pointFeatures
     };
-    console.log(pointFeatures)
-    // MapLibre のソースに反映
     map01.getSource('end-point-source').setData(pointGeoJSON);
-
-    return pointGeoJSON
+    return pointGeoJSON;
 }
+// export function generateStartEndPointsFromGeoJSON(geojson) {
+//     const map01 = store.state.map01;
+//     const pointFeatures = [];
+//     if (!geojson) return
+//     geojson.features.forEach((feature) => {
+//         if (feature.properties.id === 'config') return;
+//         if (!feature || feature.geometry.type !== 'LineString' || feature.properties['free-hand']) return;
+//
+//         const coordinates = feature.geometry.coordinates;
+//         const properties = feature.properties || {};
+//
+//         if (coordinates.length < 2) return;
+//
+//         // 始点--------------------------------------------------------
+//         const firstCoord = coordinates[0];
+//         const secondCoord = coordinates[1]; // for bearing
+//         pointFeatures.push({
+//             type: 'Feature',
+//             geometry: {
+//                 type: 'Point',
+//                 coordinates: firstCoord
+//             },
+//             properties: {
+//                 id: properties.id  + '-start',
+//                 pairId: properties.pairId || null,
+//                 endpoint: 'start',
+//                 'arrow-type': properties['arrow-type'] || 'end',
+//                 arrow: properties.arrow || 'arrow_black',
+//                 bearing: calculateBearing(firstCoord, secondCoord, 'start'),
+//                 label: properties.label || '',
+//                 color: properties.color || 'black'
+//             }
+//         });
+//         // 終点-----------------------------------------------------------
+//         const lastCoord = coordinates[coordinates.length - 1];
+//         const secondLastCoord = coordinates[coordinates.length - 2];
+//         pointFeatures.push({
+//             type: 'Feature',
+//             geometry: {
+//                 type: 'Point',
+//                 coordinates: lastCoord
+//             },
+//             properties: {
+//                 id: properties.id + '-end',
+//                 pairId: properties.pairId || null,
+//                 endpoint: 'end',
+//                 'arrow-type': properties['arrow-type'] || 'end',
+//                 arrow: properties.arrow || 'arrow_black',
+//                 bearing: calculateBearing(secondLastCoord, lastCoord, 'end')
+//             }
+//         });
+//     });
+//     const pointGeoJSON = {
+//         type: 'FeatureCollection',
+//         features: pointFeatures
+//     };
+//     console.log(pointFeatures)
+//     map01.getSource('end-point-source').setData(pointGeoJSON);
+//     return pointGeoJSON
+// }
 
 export function deleteAll (noConfrim) {
     if (!noConfrim) {

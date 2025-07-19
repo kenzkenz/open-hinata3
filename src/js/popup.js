@@ -3683,6 +3683,7 @@ export function popup(e,map,mapName,mapFlg) {
                 const textSize = props['text-size'] || 16
                 const lineWidth = props['line-width'] || 5
                 const arrowType = props['arrow-type'] || 'end'
+                const labelType = props['labelType'] || 'start'
                 const isRadius = props.isRadius
                 const isArea = props.isArea || false
                 const isKeiko = props.keiko || false
@@ -3706,6 +3707,18 @@ export function popup(e,map,mapName,mapFlg) {
                         break
                     case 'both':
                         selectedBoth = 'selected'
+                        break
+                }
+                let labelSelectedStart,labelSelectedMid,labelSelectedNone
+                switch (labelType) {
+                    case 'start':
+                        labelSelectedStart = 'selected'
+                        break
+                    case 'mid':
+                        labelSelectedMid = 'selected'
+                        break
+                    case 'none':
+                        labelSelectedNone = 'selected'
                         break
                 }
 
@@ -3843,13 +3856,18 @@ export function popup(e,map,mapName,mapFlg) {
                                 html +=
                                     '<div style="width: 225px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
                                     '<div style="display: ' + display + '">' +
-                                    '<select id="' + props.id + '" class="oh-cool-select">' +
+                                    '<select id="' + props.id + '" class="oh-cool-select arrow-select">' +
                                     '<option value="end" ' + selectedEnd + '>矢印有り</option>' +
                                     '<option value="none" ' + selectedNone + '>矢印無し</option>' +
                                     '<option value="both" ' + selectedBoth + '>両矢印</option>' +
                                     '</select>' +
-                                    '<span style="margin-left: 10px;font-size: 16px;"><input ' + calcChecked + ' type="checkbox" id="calc-' + props.id + '" class="calc-check"><label for="calc-' + props.id + '"> 距離計測</span>' +
-                                    '<textarea id="' + props.id + '" rows="2" style="width: 100%; margin: 10px 0 3px 0" type="text" class="oh-cool-input line-text" placeholder="ここに入力">' + props.label + '</textarea>' +
+                                    '<select id="' + props.id + '" style="margin-left: 10px;" class="oh-cool-select label-select">' +
+                                    '<option value="start" ' + labelSelectedStart + '>ラベル始め</option>' +
+                                    '<option value="mid" ' + labelSelectedMid + '>ラベル中</option>' +
+                                    '<option value="none" ' + labelSelectedNone + '>ラベルなし</option>' +
+                                    '</select>' +
+                                    '<div style="margin: 10px 0 0 0;font-size: 16px;"><input ' + calcChecked + ' type="checkbox" id="calc-' + props.id + '" class="calc-check"><label for="calc-' + props.id + '"> 距離計測</div>' +
+                                    '<textarea id="' + props.id + '" rows="2" style="width: 100%; margin: 10px 0 3px 0" type="text" class="oh-cool-input line-text" placeholder="ラベル">' + props.label + '</textarea>' +
                                     '</div>' +
                                     '<div style="display: ' + display2 + '">' +
                                     '<span style="margin-left: 10px;font-size: 16px;"><input ' + checked + ' type="checkbox" id="keiko-' + props.id + '" class="keiko-check"><label for="keiko-' + props.id + '"> 蛍光ペン</span>' +

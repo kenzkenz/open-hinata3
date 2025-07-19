@@ -34,6 +34,7 @@ export default createStore({
 
     currentLineColor: 'black',
     currentLineWidth: 5,
+    currentLineLabelType: 'start',
     currentArrowColor: 'arrow_black',
 
     currentFreeHandWidth: '',

@@ -6026,6 +6026,7 @@ export default {
             id: id,
             pairId: id,
             label: '',
+            labelType: this.$store.state.currentLineLabelType,
             offsetValue: [0.6, 0],
             color: this.$store.state.currentLineColor,
             arrow: this.$store.state.currentArrowColor,

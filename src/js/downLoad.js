@@ -8380,7 +8380,7 @@ export function enableDragHandles(map) {
         dragTargetId = null;
         // 頂点・中点を再生成
         console.log(geojson)
-        if (store.state.editEnabled) {
+        if (geojson && store.state.editEnabled) {
             updateDragHandles(true)
             getAllVertexPoints(map, geojson);
             setAllMidpoints(map, geojson);
