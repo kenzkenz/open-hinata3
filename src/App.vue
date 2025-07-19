@@ -1223,7 +1223,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             </span>
           </div>
 
-          <span class="terrain-btn-span">
+          <span class="terrain-btn-span" v-show="mapName === 'map01' || (mapName === 'map02' && !s_isPrint)">
           <div :id="'terrain-btn-div-' + mapName"
                class="terrain-btn-div"
                @mouseenter="onPanelEnter"
