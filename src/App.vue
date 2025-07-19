@@ -3818,7 +3818,7 @@ export default {
       const next   = el.nextSibling;               // 元の“次”を覚えておく
       const grandParent = parent.parentNode.parentNode || document.body;
       if (isClose === true) {
-        document.querySelector('.maplibregl-ctrl-scale').style.display = 'none'
+        document.querySelectorAll('.maplibregl-ctrl-scale').forEach(scale => scale.style.display = 'none')
         document.querySelector('.fan-menu-rap').style.display = 'none'
         // this.isRightDiv2 = false
         if (next) {
@@ -3827,7 +3827,7 @@ export default {
           parent.appendChild(el);                    // 末尾だったら親の最後に戻す
         }
       } else {
-        document.querySelector('.maplibregl-ctrl-scale').style.display = 'block'
+        document.querySelectorAll('.maplibregl-ctrl-scale').forEach(scale => scale.style.display = 'block')
         document.querySelector('.fan-menu-rap').style.display = 'block'
 
         // this.isRightDiv2 = true
@@ -6808,18 +6808,16 @@ export default {
           // iPadでもMapLibreのパンやズームを活かしつつイベントも拾う
           // map.getCanvas().style.touchAction = 'manipulation';
 
-          if (mapName === 'map01') {
-            map.on('click', (e) => {
-              this.onMapClick(e);
-            });
-            this.originalEnable = map.dragPan.enable;
-            const scale = new maplibregl.ScaleControl({
-              maxWidth: 100,      // スケールバーの最大幅（ピクセル）
-              unit: 'metric'      // 単位： 'metric'（メートル）または 'imperial'（マイル）
-            });
-            map.addControl(scale, 'bottom-left');
-            document.querySelector('.maplibregl-ctrl-scale').style.display = 'none'
-          }
+          map.on('click', (e) => {
+            this.onMapClick(e);
+          });
+          this.originalEnable = map.dragPan.enable;
+          const scale = new maplibregl.ScaleControl({
+            maxWidth: 100,      // スケールバーの最大幅（ピクセル）
+            unit: 'metric'      // 単位： 'metric'（メートル）または 'imperial'（マイル）
+          });
+          map.addControl(scale, 'bottom-left');
+          document.querySelectorAll('.maplibregl-ctrl-scale').forEach(scale => scale.style.display = 'none')
 
           // ドローを同期
           if (mapName === 'map01') {
