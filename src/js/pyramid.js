@@ -1556,22 +1556,58 @@ export default function pyramid () {
     })
 }
 // ラインの最後のセグメントの方向（ベアリング）を計算する関数
-function calculateBearing(coordPrev, coordLast, endpoint) {
-    const lon1 = coordPrev[0] * Math.PI / 180;
-    const lat1 = coordPrev[1] * Math.PI / 180;
+function calculateBearing(coordPrev2, coordPrev, coordLast, endpoint) {
+    const map = store.state.map01;
+
+    // まずデフォルトは coordPrev を使う
+    let [useLon, useLat] = coordPrev;
+
+    // coordPrev2 が渡されていて、pixel 距離が小さい場合は coordPrev2 を優先
+    if (coordPrev2) {
+        const p0 = map.project({ lng: coordPrev[0], lat: coordPrev[1] });
+        const p1 = map.project({ lng: coordLast[0], lat: coordLast[1] });
+        const distPx = Math.hypot(p1.x - p0.x, p1.y - p0.y);
+        const PIXEL_THRESHOLD = 5; // px。必要に応じて調整
+
+        if (distPx < PIXEL_THRESHOLD) {
+            [useLon, useLat] = coordPrev2;
+        }
+    }
+
+    // ラジアン変換
+    const lon1 = useLon * Math.PI / 180;
+    const lat1 = useLat * Math.PI / 180;
     const lon2 = coordLast[0] * Math.PI / 180;
     const lat2 = coordLast[1] * Math.PI / 180;
     const dLon = lon2 - lon1;
+
     const y = Math.sin(dLon) * Math.cos(lat2);
-    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
-    let bearing = Math.atan2(y, x) * 180 / Math.PI;
-    bearing = (bearing + 360) % 360; // 正規化
-    if (endpoint === 'end') {
-        return bearing + 270; // 矢印の向きを調整
-    } else {
-        return bearing + 90;
-    }
+    const x = Math.cos(lat1) * Math.sin(lat2)
+        - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+
+    let bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+
+    // 矢印向き調整
+    return endpoint === 'end'
+        ? bearing + 270
+        : bearing + 90;
 }
+// function calculateBearing(coordPrev, coordLast, endpoint) {
+//     const lon1 = coordPrev[0] * Math.PI / 180;
+//     const lat1 = coordPrev[1] * Math.PI / 180;
+//     const lon2 = coordLast[0] * Math.PI / 180;
+//     const lat2 = coordLast[1] * Math.PI / 180;
+//     const dLon = lon2 - lon1;
+//     const y = Math.sin(dLon) * Math.cos(lat2);
+//     const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+//     let bearing = Math.atan2(y, x) * 180 / Math.PI;
+//     bearing = (bearing + 360) % 360; // 正規化
+//     if (endpoint === 'end') {
+//         return bearing + 270; // 矢印の向きを調整
+//     } else {
+//         return bearing + 90;
+//     }
+// }
 // ---------------------------------------------------------------------------------------------------------------------
 export function geojsonCreate(map, geoType, coordinates, properties = {}) {
     // 1. 新しいfeatureを生成
@@ -2093,7 +2129,7 @@ export function generateStartEndPointsFromGeoJSON(geojson) {
                     endpoint: 'start',
                     'arrow-type': props['arrow-type'] || 'end',
                     arrow: props.arrow || 'arrow_black',
-                    bearing: calculateBearing(first, second, 'start'),
+                    bearing: calculateBearing(null, first, second, 'start'),
                     label: props.labelType === 'start' ? props.label : '',
                     color: props.color || 'black'
                 }
@@ -2125,6 +2161,10 @@ export function generateStartEndPointsFromGeoJSON(geojson) {
         {
             const last  = coords[coords.length - 1];
             const prev  = coords[coords.length - 2];
+            let prev2 = null
+            if (coords.length > 2) {
+                prev2  = coords[coords.length - 3];
+            }
             pointFeatures.push({
                 type: 'Feature',
                 geometry: { type: 'Point', coordinates: last },
@@ -2134,7 +2174,7 @@ export function generateStartEndPointsFromGeoJSON(geojson) {
                     endpoint: 'end',
                     'arrow-type': props['arrow-type'] || 'end',
                     arrow: props.arrow || 'arrow_black',
-                    bearing: calculateBearing(prev, last, 'end')
+                    bearing: calculateBearing(prev2, prev, last, 'end')
                 }
             });
         }

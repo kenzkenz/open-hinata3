@@ -3657,6 +3657,7 @@ export function popup(e,map,mapName,mapFlg) {
             case 'click-circle-line-layer':
             case 'click-circle-keiko-line-layer':
             case 'click-circle-label-layer':
+            // case 'arrows-endpoint-label-layer':
             {
                 html = ''
                 isBreak = true
