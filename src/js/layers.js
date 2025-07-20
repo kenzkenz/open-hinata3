@@ -695,12 +695,6 @@ export const clickCirclePolygonLineLayer = {
     source: 'click-circle-source',
     filter: ['==', '$type', 'Polygon'],
     paint: {
-        // 'line-color': [
-        //     'case',
-        //     ['==', ['get', 'lassoSelected'], true],
-        //     'red',
-        //     'black'
-        // ],
         'line-color': [
             'case',
             // 1) lassoSelected が true の場合は常に赤
