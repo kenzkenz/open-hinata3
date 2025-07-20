@@ -4,6 +4,7 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    vpsServerName: 'kenzkenz.net',
     drawFire: false,
     drawOpacity: 1,
     drawVisible: true,
