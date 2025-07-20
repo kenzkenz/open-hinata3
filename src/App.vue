@@ -915,6 +915,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
       <!-- @update:modelValue="onMapChange" -->
       <div v-if="s_isPrint" class="map-radio d-flex justify-center">
+        <div style="margin-left: -30px!important;">
         <v-chip-group
             v-model="printMap"
             mandatory
@@ -924,9 +925,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
         >
           <v-chip @click="printMap01" value="map01" variant="flat">map01</v-chip>
           <v-chip @click="printMap02" value="map02" variant="flat">map02</v-chip>
-          <v-chip @click="printMap03" value="map02" variant="flat">map03</v-chip>
+          <v-chip @click="printMap03" value="map03" variant="flat">map03</v-chip>
 
         </v-chip-group>
+        </div>
       </div>
 
       <div id="map00">
@@ -3782,14 +3784,31 @@ export default {
     printMap03 () {
       const map01Div = document.getElementById('map01');
       const map02Div = document.getElementById('map02');
-      setTimeout(() => {
-        map01Div.style.display = 'block'
-        map01Div.style.height = '50%'
-        map02Div.style.position = 'relative'
-        map02Div.style.display = 'block'
-        map02Div.style.height = '50%'
-        map02Div.style.width = '100%'
-      },10)
+      switch (this.titleDirection) {
+        case 'vertical':
+          setTimeout(() => {
+            map01Div.style.display = 'block'
+            map01Div.style.height = '50%'
+            map02Div.style.position = 'relative'
+            map02Div.style.display = 'block'
+            map02Div.style.height = '50%'
+            map02Div.style.width = '100%'
+          },10)
+          break
+        case 'horizontal':
+          setTimeout(() => {
+            map01Div.style.display = 'block'
+            map01Div.style.height = '100%'
+            map01Div.style.width = '50%'
+            map02Div.style.position = 'absolute'
+            map02Div.style.top = '0px'
+            map02Div.style.right = '0px'
+            map02Div.style.display = 'block'
+            map02Div.style.height = '100%'
+            map02Div.style.width = '50%'
+          },10)
+          break
+      }
     },
     handlePrint(isClose) {
       const map00Div = document.getElementById('map00');
@@ -8774,6 +8793,7 @@ export default {
 #map00 {
   background-color: rgb(194,210,251);
   height: 100%;
+  position: relative;
 }
 #map01 {
   border: #000 1px solid;
