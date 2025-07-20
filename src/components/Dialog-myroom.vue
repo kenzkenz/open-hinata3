@@ -2070,7 +2070,7 @@ export default {
       const vm = this
       async function fetchUserData() {
         try {
-          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesSerch.php', {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesSerchNew.php', {
             params: {
               name: vm.pmtilesSerch
             }
@@ -2079,6 +2079,7 @@ export default {
             console.error('エラー:', response.data.error);
             alert(`エラー: ${response.data.error}`);
           } else {
+            console.log(response.data.result)
             vm.jsonDataPmtilePubilc = response.data.result
           }
         } catch (error) {
@@ -2208,7 +2209,7 @@ export default {
       const vm = this
       async function fetchUserData() {
         try {
-          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtileSelectPublic.php', {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtileSelectPublicNew.php', {
             params: {}
           });
 
@@ -2228,7 +2229,7 @@ export default {
       const vm = this
       async function fetchUserData(uid) {
         try {
-          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtileSelect.php', {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtileSelectNew.php', {
             params: { uid: uid, isAll: vm.isAll }
           });
 

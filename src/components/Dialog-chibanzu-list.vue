@@ -1786,7 +1786,7 @@ export default {
       const vm = this
       async function fetchUserData(uid) {
         try {
-          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtileSelect.php', {
+          const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtileSelectNew.php', {
             params: { uid: uid, isAll: vm.isAll }
           });
 

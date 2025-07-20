@@ -254,7 +254,7 @@ function boundsSort (bounds) {
 
 async function publicData() {
     try {
-        const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtileSelectPublic.php', {
+        const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtileSelectPublicNew.php', {
             params: {}
         });
 
@@ -420,8 +420,8 @@ const publicLayers0 = [...publicPolygonLayers,...publicLineLayers,...publicLabel
 export const cityPmtilesSource = {
     id: 'city-pmtiles-source', obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz.duckdns.org//original-data/city.pmtiles?nocache=" + Date.now(),
-        // url: "pmtiles://https://kenzkenz.duckdns.org//original-data/city.pmtiles",
+        url: "pmtiles://https://kenzkenz.net/original-data/city.pmtiles?nocache=" + Date.now(),
+        // url: "pmtiles://https://kenzkenz.net/original-data/city.pmtiles",
     }
 }
 
@@ -488,8 +488,8 @@ const cityPmtilesLabelLayer = {
 export const cityGeojsonSource = {
     id: 'city-geojson-source', obj: {
         'type': 'geojson',
-        // 'data': 'https://kenzkenz.duckdns.org//original-data/chibanzumap.geojson?nocache=' + Date.now()
-        'data': 'https://kenzkenz.duckdns.org//original-data/chibanzumap.geojson?v=2'
+        // 'data': 'https://kenzkenz.net/original-data/chibanzumap.geojson?nocache=' + Date.now()
+        'data': 'https://kenzkenz.net/original-data/chibanzumap.geojson?v=2'
     }
 }
 
@@ -1238,7 +1238,7 @@ const fjEkijyokaSourse = {
     id:'fj-ekijyoka-source',obj:{
         type: "vector",
         tiles: [
-            "https://kenzkenz.duckdns.org/myphp/proxy.php?api=XKT025&z={z}&x={x}&y={y}"
+            "https://kenzkenz.net/myphp/proxy.php?api=XKT025&z={z}&x={x}&y={y}"
         ],
         minzoom: 10,
         maxzoom: 15
@@ -1287,7 +1287,7 @@ const fjRicchitekiseiksSourse = {
     id:'fj-ricchitekiseika-source',obj:{
         type: "vector",
         tiles: [
-            "https://kenzkenz.duckdns.org/myphp/proxy.php?api=XKT003&z={z}&x={x}&y={y}"
+            "https://kenzkenz.net/myphp/proxy.php?api=XKT003&z={z}&x={x}&y={y}"
         ],
         minzoom: 10,
         maxzoom: 15
