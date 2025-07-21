@@ -148,39 +148,6 @@ export function zenkokuChibanzuAddLayer (map,zoom) {
     }
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// 色データの取得
-// export async function loadColorData() {
-//     try {
-//         const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/userChibanzumapSelect.php');
-//         if (!response.ok) {
-//             throw new Error(`HTTPエラー: ${response.status}`);
-//         }
-//         const data = await response.json();
-//         console.log(data)
-//         // エラーチェック
-//         if (data.error) {
-//             throw new Error(data.error);
-//         }
-//         // citycodeをキー、色を値とするオブジェクトを作成
-//         const colorMap = {};
-//         data.forEach(item => {
-//             const code = parseInt(item.public, 10);
-//             // public値を色に変換
-//             const color = code === -1 ? 'rgba(0,128,0,0.8)' :
-//                 code === 0 ? 'rgba(0,0,0,0)' :
-//                     code === 1 ? 'rgba(0,0,255,0.8)' :
-//                         code === 3 ? 'rgba(128,128,128,0.8)' :
-//                             code === 4 ? 'rgba(255,0,0,0.8)' :
-//                                 code === 5 ? 'rgba(255,165,0,0.8)' : '#CCCCCC';
-//             colorMap[item.citycode] = color;
-//         });
-//         return colorMap;
-//     } catch (error) {
-//         console.error('色データの取得に失敗:', error);
-//         return {};
-//     }
-// }
 export async function loadColorData() {
     try {
         const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/userChibanzumapSelect2.php');

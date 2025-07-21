@@ -4,6 +4,8 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    dialogForOffline2: false,
+    dialogForOffline: false,
     vpsServerName: 'kenzkenz.net',
     drawFire: false,
     drawOpacity: 1,

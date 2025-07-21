@@ -318,7 +318,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <p style="margin-bottom: 20px;">
           <template v-if="initialGroupName && initialGroupName !== ''">
             現在のグループ＝「{{ initialGroupName }}」
-<!--            {{ s_currentGroupId }}-->
+            <!--            {{ s_currentGroupId }}-->
           </template>
           <template v-else>
             グループに所属していません。
@@ -329,11 +329,12 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       <v-btn style="width:100%;margin-bottom: 20px;" @click="reset">リセット（初期時に戻す）</v-btn>
       <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 
-<!--      <v-btn class="tiny-btn" @click="simaLoad">SIMA読み込</v-btn>-->
+      <!--      <v-btn class="tiny-btn" @click="simaLoad">SIMA読み込</v-btn>-->
       <v-btn class="tiny-btn" @click="upLoad">各種アップロード</v-btn>
       <v-btn style="margin-left: 5px;" class="tiny-btn" @click="pngDownload">PNGダウンロード</v-btn>
+      <v-btn style="margin-left: 5px;" class="tiny-btn" @click="s_dialogForOffline = true">オフライン設定</v-btn>
 
-<!--      <v-switch style="height: 40px;" v-model="s_isClickPointsLayer" @change="changeVisible" label="座標取得レイヤー表示" color="primary" />-->
+      <!--      <v-switch style="height: 40px;" v-model="s_isClickPointsLayer" @change="changeVisible" label="座標取得レイヤー表示" color="primary" />-->
 
       <v-switch style="height: 40px;" v-model="s_isPitch" @change="changePitch" label="２画面時に傾きを同期" color="primary" />
 
@@ -345,12 +346,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         標高を強調します。{{s_terrainLevel}}倍<br>
         <input style="width: 200px;margin-top: 10px;" type="range" min="1" max="10" step="0.1" class="range" v-model.number="s_terrainLevel" @input="terrainLevelInput"/>
       </div>
-<!--      <v-btn @click="addLayerDiv=!addLayerDiv">レイヤー追加（XYZタイル）</v-btn>-->
-<!--      <div v-if="addLayerDiv">-->
-<!--        <v-text-field label="レイヤー名を記入" v-model="s_extLayerName" style="margin-top: 10px"></v-text-field>-->
-<!--        <v-text-field label="URLを記入" v-model="s_extLayer" style="margin-top: -15px"></v-text-field>-->
-<!--        <v-btn style="margin-top: -15px;margin-left: 100px;" @click="addLayer">レイヤー追加&変更</v-btn>-->
-<!--      </div>-->
 
 <!--      <hr style="margin-top: 20px">-->
 <!--      今昔マップ<br>{{konjyakuYear}}年の直近（過去）の地図を表示します。-->
@@ -509,6 +504,14 @@ export default {
     ...mapState([
       'myNickname',
     ]),
+    s_dialogForOffline: {
+      get() {
+        return this.$store.state.dialogForOffline
+      },
+      set(value) {
+        this.$store.state.dialogForOffline = value
+      }
+    },
     s_myNickname() {
       return this.$store.state.myNickname;
     },
@@ -1712,7 +1715,7 @@ export default {
 <style scoped>
 .menu-div {
   height: auto;
-  width: 300px;
+  width: 310px;
   margin: 10px;
   overflow: auto;
   user-select: text;

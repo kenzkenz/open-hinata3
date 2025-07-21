@@ -1592,22 +1592,26 @@ function calculateBearing(coordPrev2, coordPrev, coordLast, endpoint) {
         ? bearing + 270
         : bearing + 90;
 }
-// function calculateBearing(coordPrev, coordLast, endpoint) {
-//     const lon1 = coordPrev[0] * Math.PI / 180;
-//     const lat1 = coordPrev[1] * Math.PI / 180;
-//     const lon2 = coordLast[0] * Math.PI / 180;
-//     const lat2 = coordLast[1] * Math.PI / 180;
-//     const dLon = lon2 - lon1;
-//     const y = Math.sin(dLon) * Math.cos(lat2);
-//     const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
-//     let bearing = Math.atan2(y, x) * 180 / Math.PI;
-//     bearing = (bearing + 360) % 360; // 正規化
-//     if (endpoint === 'end') {
-//         return bearing + 270; // 矢印の向きを調整
-//     } else {
-//         return bearing + 90;
-//     }
-// }
+// オフライン地区を選択する正方形のポリゴンをつくる。
+export function createSquarePolygonAtCenter(sideKm = 10, properties = {}) {
+    const map01 = store.state.map01
+    // 1. 画面中心の座標を取得
+    const center = map01.getCenter();
+    const centerPoint = turf.point([center.lng, center.lat]);
+    // 2. 半辺距離を計算 (km)
+    const halfSide = sideKm / 2;
+    // 3. 各角の方位角 (度) NW, NE, SE, SW
+    const bearings = [315, 45, 135, 225];
+    // 4. bearingごとに目的座標を取得
+    const ring = bearings.map(b =>
+        turf.destination(centerPoint, halfSide, b, { units: 'kilometers' }).geometry.coordinates
+    );
+    // 5. リングを閉じる
+    ring.push(ring[0]);
+    // 6. geojsonCreate でポリゴンを作成・マップに追加
+    const feature = geojsonCreate(map01, 'Polygon', [ring], properties);
+    return feature;
+}
 // ---------------------------------------------------------------------------------------------------------------------
 export function geojsonCreate(map, geoType, coordinates, properties = {}) {
     // 1. 新しいfeatureを生成

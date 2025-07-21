@@ -7949,120 +7949,7 @@ export function scaleAndRotateLassoSelected(scalePercent, rotationDeg) {
     src.setData(updatedGeojson);
     store.state.clickCircleGeojsonText = JSON.stringify(updatedGeojson);
 }
-
-// export function scaleAndRotateLassoSelected(scalePercent, rotationDeg) {
-//     // スケール係数と回転ラジアンを計算
-//     const scaleFactor = scalePercent / 100;
-//     const rad = -rotationDeg * Math.PI / 180;
-//     // GeoJSON ソースの取得
-//     const map = store.state.map01;
-//     const src = map.getSource('click-circle-source');
-//     const features = (src._data && src._data.features) || [];
-//     // lassoSelected=true のフィーチャを抽出し、原点座標をストア側にリセット
-//     const selected = features.filter(f => f.properties.lassoSelected === true);
-//     const lassoFeatures = JSON.parse(store.state.lassoGeojson).features;
-//     selected.forEach(sel => {
-//         const source = lassoFeatures.find(f => f.properties.id === sel.properties.id);
-//         if (source) {
-//             sel.geometry.coordinates = source.geometry.coordinates;
-//         }
-//     });
-//     if (selected.length === 0) {
-//         console.info('選択されたフィーチャがありません');
-//         return;
-//     }
-//     // 重心計算のため全座標を収集
-//     const allCoords = [];
-//     (function collect(coords) {
-//         if (typeof coords[0] === 'number') {
-//             allCoords.push(coords);
-//         } else {
-//             coords.forEach(collect);
-//         }
-//     })(selected.map(f => f.geometry.coordinates));
-//     const [sumX, sumY] = allCoords.reduce((acc, [x, y]) => [acc[0] + x, acc[1] + y], [0, 0]);
-//     const centerX = sumX / allCoords.length;
-//     const centerY = sumY / allCoords.length;
-//     // 「拡大縮小→回転」を一度に適用するポイント変換関数
-//     function transformPoint([x, y]) {
-//         const dx = x - centerX;
-//         const dy = y - centerY;
-//         const sdx = dx * scaleFactor;
-//         const sdy = dy * scaleFactor;
-//         const rdx = sdx * Math.cos(rad) - sdy * Math.sin(rad);
-//         const rdy = sdx * Math.sin(rad) + sdy * Math.cos(rad);
-//         return [centerX + rdx, centerY + rdy];
-//     }
-//     // ジオメトリ全体に変換を適用
-//     function transformGeom(geometry) {
-//         const { type, coordinates } = geometry;
-//         switch (type) {
-//             case 'Point':
-//                 geometry.coordinates = transformPoint(coordinates);
-//                 break;
-//             case 'LineString':
-//             case 'MultiPoint':
-//                 geometry.coordinates = coordinates.map(transformPoint);
-//                 break;
-//             case 'Polygon':
-//             case 'MultiLineString':
-//                 geometry.coordinates = coordinates.map(ring => ring.map(transformPoint));
-//                 break;
-//             case 'MultiPolygon':
-//                 geometry.coordinates = coordinates.map(
-//                     poly => poly.map(ring => ring.map(transformPoint))
-//                 );
-//                 break;
-//             default:
-//                 console.warn(`Unsupported geometry type: ${type}`);
-//         }
-//     }
-//     // 選択フィーチャにスケール＆回転を適用し、中心座標プロパティを更新
-//     selected.forEach(f => {
-//         transformGeom(f.geometry);
-//         if (f.properties.canterLng != null && f.properties.canterLat != null) {
-//             f.properties.canterLng = centerX;
-//             f.properties.canterLat = centerY;
-//         }
-//     });
-//     // 更新をソースおよびストアに反映
-//     const updatedGeojson = { type: 'FeatureCollection', features };
-//     src.setData(updatedGeojson);
-//     store.state.clickCircleGeojsonText = JSON.stringify(updatedGeojson);
-// }
-
-// ドラッグハンドルのアップロード---------------------------------------------------------------------------
-// export function updateDragHandles(editEnabled) {
-//     const map = store.state.map01;
-//     const originalGeojson = map.getSource('click-circle-source')._data;
-//     const source = map.getSource('drag-handles-source');
-//     if (!source) {
-//         console.warn('drag-handles-source が存在しません');
-//         return;
-//     }
-//     if (!editEnabled) {
-//         // 編集モードOFF → 空にして消す
-//         source.setData({ type: 'FeatureCollection', features: [] });
-//         return;
-//     }
-//     // 編集モードON → isCircleCenter が true の地物を除外して中心点を生成
-//     const centerFeatures = originalGeojson.features
-//         .filter(f => !f.properties?.isCircleCenter && f.properties.id !== 'config') // ← この行で除外
-//         .map(f => {
-//             const center = turf.center(f); // 中心点（Point）
-//             return {
-//                 type: 'Feature',
-//                 geometry: center.geometry,
-//                 properties: {
-//                     targetId: f.properties.id
-//                 }
-//             };
-//         });
-//     source.setData({
-//         type: 'FeatureCollection',
-//         features: centerFeatures
-//     });
-// }
+// 移動のドラッグハンドルを作る
 export function updateDragHandles(editEnabled) {
     const map = store.state.map01;
     const originalGeojson = map.getSource('click-circle-source')._data;
@@ -8103,7 +7990,6 @@ export function updateDragHandles(editEnabled) {
             features: [...centerFeatures,groupCenter]
         });
     } else {
-        // alert(888)
         source.setData({
             type: 'FeatureCollection',
             features: centerFeatures

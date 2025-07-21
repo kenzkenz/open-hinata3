@@ -173,6 +173,38 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </template>
       </v-snackbar>
 
+      <v-dialog v-model="s_dialogForOffline2" max-width="500px">
+        <v-card>
+          <v-card-title>
+            オフライン設定その２
+          </v-card-title>
+          <v-card-text>
+            <p style="margin-bottom: 10px;"></p>
+            <v-btn @click="tileDownload">データダウンロード</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="s_dialogForOffline2 = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <v-dialog v-model="s_dialogForOffline" max-width="500px">
+        <v-card>
+          <v-card-title>
+            オフライン設定
+          </v-card-title>
+          <v-card-text>
+            <p style="margin-bottom: 10px;">ドロー機能と併用できません。ドロー機能を使用中の場合、閉じてください。一辺10kmの四角を移動してクリックしてください。</p>
+            <v-btn @click="bboxPolygon">範囲指定</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="s_dialogForOffline = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
       <v-dialog v-model="dialogForDrawCsv" max-width="500px">
         <v-card>
           <v-card-title>
@@ -1660,7 +1692,7 @@ import DialogDrawConfig from "@/components/Dialog-draw-config"
 import DialogChibanzuList from "@/components/Dialog-chibanzu-list"
 import pyramid, {
   autoCloseAllPolygons,
-  colorNameToRgba,
+  colorNameToRgba, createSquarePolygonAtCenter,
   deleteAll, generateSegmentLabelGeoJSON, generateStartEndPointsFromGeoJSON,
   geojsonCreate,
   geojsonUpdate, getAllVertexPoints, setAllMidpoints,
@@ -1854,6 +1886,22 @@ export default {
       'titleColor',
       'titleDirection',
     ]),
+    s_dialogForOffline2: {
+      get() {
+        return this.$store.state.dialogForOffline2
+      },
+      set(value) {
+        this.$store.state.dialogForOffline2 = value
+      }
+    },
+    s_dialogForOffline: {
+      get() {
+        return this.$store.state.dialogForOffline
+      },
+      set(value) {
+        this.$store.state.dialogForOffline = value
+      }
+    },
     s_isPrint: {
       get() {
         return this.$store.state.isPrint
@@ -2429,6 +2477,27 @@ export default {
     },
   },
   methods: {
+    tileDownload() {
+      alert(999)
+
+
+
+    },
+    bboxPolygon() {
+      this.s_dialogForOffline = false
+      const properties = {
+        id: 'offlineBbox',
+        color: 'rgba(0,0,0,0.1)'
+      }
+      createSquarePolygonAtCenter(10, properties)
+      updateDragHandles(true)
+      const map01 = this.$store.state.map01
+      map01.easeTo({
+        zoom: 10,
+        duration: 1000,       // ミリ秒（例：1秒）
+        easing: t => t        // イージング関数（ここでは線形）
+      });
+    },
     setMaxZIndex (targetEl) {
       targetEl.style.zIndex = getMaxZIndex()
     },

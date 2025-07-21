@@ -3670,6 +3670,10 @@ export function popup(e,map,mapName,mapFlg) {
                 } else {
                     id = store.state.id
                 }
+                if (id === 'offlineBbox') {
+                    store.state.dialogForOffline2 = true
+                    return;
+                }
                 if (store.state.clickCircleGeojsonText) {
                     features = JSON.parse(store.state.clickCircleGeojsonText).features
                 } else {
