@@ -36,6 +36,8 @@ import {
     getAllVertexPoints,
     setAllMidpoints
 } from "@/js/pyramid";
+import { deserialize } from 'flatgeobuf/lib/mjs/geojson.js';
+
 // import publicChk from '@/components/Dialog-myroom'
 // 複数のクリックされた地番を強調表示するためのセット
 // export let highlightedChibans = new Set();
@@ -2241,7 +2243,7 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
         console.log('データをデシリアライズ中...');
         // alert(fgb_URL)
         console.error('bbox',bbox)
-        const iter = window.flatgeobuf.deserialize(fgb_URL, bbox);
+        const iter = deserialize(fgb_URL, bbox);
         console.log(iter)
         for await (const feature of iter) {
             geojson.features.push(feature);
@@ -2328,7 +2330,7 @@ export async function saveCima3(map,kei,jww) {
     async function deserializeAndPrepareGeojson(layerId) {
         const geojson = { type: 'FeatureCollection', features: [] };
         console.log('データをデシリアライズ中...');
-        const iter = window.flatgeobuf.deserialize(fgb_URL, fgBoundingBox());
+        const iter = deserialize(fgb_URL, fgBoundingBox());
 
         for await (const feature of iter) {
             geojson.features.push(feature);
@@ -3570,7 +3572,7 @@ export async function queryFGBWithPolygon(map,polygon,chiban) {
         console.log(bbox)
         // FlatGeobuf ファイルを取得し、GeoJSON 形式で BBOX クエリ
         let features = [];
-        for await (const feature of window.flatgeobuf.deserialize(fgbUrl, bbox)) {
+        for await (const feature of deserialize(fgbUrl, bbox)) {
             features.push(feature);
         }
         features = features.filter(feature => feature.properties.地番 === chiban);
@@ -9462,7 +9464,7 @@ export async function homusyoCalculatePolygonMetrics(fudeIds) {
     async function deserializeAndPrepareGeojson() {
         const geojson = { type: 'FeatureCollection', features: [] };
         console.log('データをデシリアライズ中...', bbox);
-        const iter = window.flatgeobuf.deserialize(
+        const iter = deserialize(
             `https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/fgb/${prefId}.fgb`,
             bbox
         );
