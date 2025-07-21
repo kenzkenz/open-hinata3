@@ -4563,7 +4563,7 @@ export async function csvGenerateForUserPng () {
         store.state.loading2 = true
         store.state.loadingMessage = 'データ作成中です。'
 
-        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_csv4.php", {
+        let response = await fetch("https://kenzkenz.net/myphp/generate_csv4.php", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({
@@ -4600,7 +4600,7 @@ export async function csvGenerateForUserPng () {
     const formData = new FormData();
     formData.append("file", pngFile);
     formData.append("dir", store.state.userId); // 指定したフォルダにアップロード
-    fetch("https://kenzkenz.duckdns.org/myphp/uploadPng.php", {
+    fetch("https://kenzkenz.net/myphp/uploadPng.php", {
         method: "POST",
         body: formData
     })
@@ -4630,7 +4630,7 @@ export async function tileGenerateForUserPdf () {
         store.state.loading2 = true
         store.state.loadingMessage = 'OCR処理中です。'
 
-        let response = await fetch("https://kenzkenz.duckdns.org/myphp/extract_numbers5.php", {
+        let response = await fetch("https://kenzkenz.net/myphp/extract_numbers5.php", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({
@@ -4652,7 +4652,7 @@ export async function tileGenerateForUserPdf () {
     async function generateTiles(filePath, srsCode = "2450", dir) {
         store.state.loading2 = true
         store.state.loadingMessage = '地図タイル作成中です。'
-        let response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles4.php", {
+        let response = await fetch("https://kenzkenz.net/myphp/generate_tiles4.php", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({
@@ -4739,7 +4739,7 @@ export async function tileGenerateForUserPdf () {
     const formData = new FormData();
     formData.append("file", pdfFile);
     formData.append("dir", store.state.userId); // 指定したフォルダにアップロード
-    fetch("https://kenzkenz.duckdns.org/myphp/upload.php", {
+    fetch("https://kenzkenz.net/myphp/upload.php", {
         method: "POST",
         body: formData
     })
@@ -4777,7 +4777,7 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension, is
 
         try {
             // generate_tiles11.phpにリクエスト送信 generate_tiles15.phpが安定版
-            const response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_tiles17.php", {
+            const response = await fetch("https://kenzkenz.net/myphp/generate_tiles17.php", {
                 method: "POST",
                 body: formData,
             });
@@ -4955,8 +4955,8 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension, is
     formData.append("dir", store.state.userId);
 
     try {
-        let phpUrl = "https://kenzkenz.duckdns.org/myphp/upload.php"
-        if (!worldFile) phpUrl = "https://kenzkenz.duckdns.org/myphp/upload1file.php"
+        let phpUrl = "https://kenzkenz.net/myphp/upload.php"
+        if (!worldFile) phpUrl = "https://kenzkenz.net/myphp/upload1file.php"
         const response = await fetch(phpUrl, {
             method: "POST",
             body: formData,
@@ -5182,7 +5182,7 @@ export async function simaLoadForUser (map,isUpload,simaText,zahyokei) {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('dir', store.state.userId);
-        axios.post('https://kenzkenz.duckdns.org/myphp/upload_sima.php', formData, {
+        axios.post('https://kenzkenz.net/myphp/upload_sima.php', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data', // 必須
             },
@@ -5198,7 +5198,7 @@ export async function simaLoadForUser (map,isUpload,simaText,zahyokei) {
                 console.log('sima保存成功:', response.data.simaPath);
                 console.log(response)
                 // alert(store.state.zahyokei)
-                const webUrl = 'https://kenzkenz.duckdns.org/' + response.data.simaPath.replace('/var/www/html/public_html/','')
+                const webUrl = 'https://kenzkenz.net/' + response.data.simaPath.replace('/var/www/html/public_html/','')
                 const name = response.data.simaName.replace('.sim','')
                 let id
                 async function bbb () {
@@ -5344,7 +5344,7 @@ export async function kmzLoadForUser (map,isUpload) {
         const formData = new FormData();
         formData.append('file', zipFile);
         formData.append('dir', store.state.userId);
-        axios.post('https://kenzkenz.duckdns.org/myphp/upload_kmz.php', formData, {
+        axios.post('https://kenzkenz.net/myphp/upload_kmz.php', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data', // 必須
             },
@@ -5358,7 +5358,7 @@ export async function kmzLoadForUser (map,isUpload) {
                 }
                 console.log('KMZ保存成功:', response.data.kmzPath);
                 console.log(response)
-                const webUrl = 'https://kenzkenz.duckdns.org/' + response.data.kmzPath.replace('/var/www/html/public_html/','')
+                const webUrl = 'https://kenzkenz.net/' + response.data.kmzPath.replace('/var/www/html/public_html/','')
                 const name = response.data.kmzName.replace('.kmz','')
                 insertKmzData(store.state.userId, name, webUrl, response.data.kmzPath)
                 store.state.fetchImagesFire = !store.state.fetchImagesFire
@@ -5827,72 +5827,6 @@ export async function geoTiffLoad (map,mapName,isUpload) {
     }
 }
 
-// export function capture(uid) {
-//     const map = store.state.map01
-//     console.log(map)
-//     if (!map || !map.isStyleLoaded()) {
-//         console.error("mapがまだ初期化されていません");
-//         return;
-//     }
-//     map.once('idle', async () => {
-//         const canvas = map.getCanvas();
-//         console.log("キャンバスサイズ:", canvas.width, canvas.height);
-//         if (canvas.width === 0 || canvas.height === 0) {
-//             console.error("キャンバスのサイズがゼロです");
-//             return;
-//         }
-//         const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
-//         console.log("生成された画像URL:", dataUrl); // ここで確認
-//
-//         fetch("https://kenzkenz.duckdns.org/myphp/thumbnail.php", {
-//             method: "POST",
-//             body: JSON.stringify({
-//                 image: dataUrl,
-//                 dir: uid
-//             }),
-//             headers: {
-//                 "Content-Type": "application/json"
-//             }
-//         })
-//             .then(res => res.json())
-//             .then(msg => console.log("保存結果:", msg))
-//             .catch(err => console.error("Fetch failed:", err));
-//     })
-// }
-
-// export function capture(uid) {
-//     if(!uid) return
-//     const map01 = store.state.map01
-//     // 地図のレンダリング完了を待機
-//     map01.once('idle', async () => {
-//         const canvas = map01.getCanvas();
-//         console.log("キャンバスサイズ:", canvas.width, canvas.height);
-//         if (canvas.width === 0 || canvas.height === 0) {
-//             console.error("キャンバスのサイズがゼロです");
-//             return;
-//         }
-//         const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
-//         console.log("生成された画像URL:", dataUrl); // ここで確認
-//
-//         fetch("https://kenzkenz.duckdns.org/myphp/thumbnail.php", {
-//             method: "POST",
-//             body: JSON.stringify({
-//                 image: dataUrl,
-//                 dir: uid
-//             }),
-//             headers: {
-//                 "Content-Type": "application/json"
-//             }
-//         })
-//             .then(res => res.json())
-//             .then(msg => console.log("保存結果:", msg))
-//             .catch(err => console.error("Fetch failed:", err));
-//     });
-//     // これ重要↓
-//     const currentZoom = map01.getZoom();
-//     map01.zoomTo(currentZoom + 0.00000000000000000000000000001);
-// }
-
 export function capture(uid,isFirst) {
     if (!uid) return;
     const map01 = store.state.map01;
@@ -5901,7 +5835,7 @@ export function capture(uid,isFirst) {
         const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
         // console.log("生成された画像URL:", dataUrl);
         try {
-            const res = await fetch("https://kenzkenz.duckdns.org/myphp/thumbnail.php", {
+            const res = await fetch("https://kenzkenz.net/myphp/thumbnail.php", {
                 method: "POST",
                 body: JSON.stringify({
                     image: dataUrl,
@@ -7036,7 +6970,7 @@ export async function pmtilesGenerate (geojson, layerName, label) {
     // formData.append('geojson', geojsonBlob);
     formData.append('geojson', geojsonBlob, 'data.geojson');
 
-    const response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles.php", {
+    const response = await fetch("https://kenzkenz.net/myphp/generate_pmtiles.php", {
         method: "POST",
         body: formData,
     });
@@ -7111,7 +7045,7 @@ export async function pmtilesGenerate (geojson, layerName, label) {
         if (result && result.success) {
             store.state.loading2 = false;
             console.log(result);
-            const webUrl = 'https://kenzkenz.duckdns.org/' + result.pmtiles_file.replace('/var/www/html/public_html/', '');
+            const webUrl = 'https://kenzkenz.net/' + result.pmtiles_file.replace('/var/www/html/public_html/', '');
             console.log(result.pmtiles_file);
             console.log(store.state.myNickname)
             insertPmtilesData(
@@ -7220,7 +7154,7 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
     formData.append("dir", store.state.userId);
     formData.append("chiban", chiban);
 
-    const response = await fetch("https://kenzkenz.duckdns.org/myphp/generate_pmtiles7.php", {
+    const response = await fetch("https://kenzkenz.net/myphp/generate_pmtiles7.php", {
         method: "POST",
         body: formData,
     });
@@ -7295,7 +7229,7 @@ export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,city
         if (result && result.success) {
             store.state.loading2 = false;
             console.log(result);
-            const webUrl = 'https://kenzkenz.duckdns.org/' + result.pmtiles_file.replace('/var/www/html/public_html/', '');
+            const webUrl = 'https://kenzkenz.net/' + result.pmtiles_file.replace('/var/www/html/public_html/', '');
             console.log(result.pmtiles_file);
             console.log(store.state.myNickname)
             insertPmtilesData(
@@ -7398,7 +7332,7 @@ export async function iko() {
 
     store.state.loading2 = true
     store.state.loadingMessage = ''
-    let response = await fetch("https://kenzkenz.duckdns.org/myphp/iko.php", {
+    let response = await fetch("https://kenzkenz.net/myphp/iko.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
     });
@@ -7408,7 +7342,7 @@ export async function iko() {
         store.state.loading2 = false
         console.log(result)
         result.directories.forEach(directorie => {
-            const webUrl = 'https://kenzkenz.duckdns.org/' + directorie.path.replace('/var/www/html/public_html/','') + '/{z}/{x}/{y}.png'
+            const webUrl = 'https://kenzkenz.net/' + directorie.path.replace('/var/www/html/public_html/','') + '/{z}/{x}/{y}.png'
             const thumbnail = 'thumbnail'
             insert (directorie.uid,directorie.fileName,webUrl,directorie.path,thumbnail,'[' + directorie.bounds + ']')
         })
@@ -7647,7 +7581,7 @@ export async function convertGeoJSON(geojson,code) {
             scale: scale
         };
 
-        const response = await fetch('https://kenzkenz.duckdns.org/myphp/geojsonToDxf.php', {
+        const response = await fetch('https://kenzkenz.net/myphp/geojsonToDxf.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

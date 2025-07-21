@@ -1369,8 +1369,8 @@ export default {
           const match = tile.match(/tiles\/(.*?)\/\{z\}\//);
           const dir0 = match[1].split('/')[0]
           const dir1 = match[1].split('/')[1]
-          const tileUrl = 'https://kenzkenz.duckdns.org/tiles/' + dir0 + '/' + dir1 + '/{z}/{x}/{y}.png'
-          const jsonUrl = 'https://kenzkenz.duckdns.org/tiles/' + dir0 + '/' + dir1 + '/layer.json'
+          const tileUrl = 'https://kenzkenz.net/tiles/' + dir0 + '/' + dir1 + '/{z}/{x}/{y}.png'
+          const jsonUrl = 'https://kenzkenz.net/tiles/' + dir0 + '/' + dir1 + '/layer.json'
           fetchJson(jsonUrl).then(jsonData => {
             if (jsonData) {
               addTileLayerForImage(tileUrl,jsonData,false)
@@ -1861,7 +1861,7 @@ export default {
       console.log(url2)
       async function deleteUserSima(url2) {
         try {
-          const response = await axios.post('https://kenzkenz.duckdns.org/myphp/sima_unlink.php', {
+          const response = await axios.post('https://kenzkenz.net/myphp/sima_unlink.php', {
             url2: url2
           });
           if (response.data.error) {
@@ -1903,7 +1903,7 @@ export default {
       console.log(url2)
       async function deleteUserKmz(url2) {
         try {
-          const response = await axios.post('https://kenzkenz.duckdns.org/myphp/kmz_unlink.php', {
+          const response = await axios.post('https://kenzkenz.net/myphp/kmz_unlink.php', {
             url2: url2
           });
           if (response.data.error) {
@@ -1945,7 +1945,7 @@ export default {
       console.log(url2)
       async function deleteUserXyztile(url2) {
         try {
-          const response = await axios.post('https://kenzkenz.duckdns.org/myphp/xyztile_unlink.php', {
+          const response = await axios.post('https://kenzkenz.net/myphp/xyztile_unlink.php', {
             url2: url2
           });
           if (response.data.error) {
@@ -1987,7 +1987,7 @@ export default {
       console.log(url2)
       async function deleteUserPmtiles(url2) {
         try {
-          const response = await axios.post('https://kenzkenz.duckdns.org/myphp/pmtiles_unlink.php', {
+          const response = await axios.post('https://kenzkenz.net/myphp/pmtiles_unlink.php', {
             url2: url2
           });
 
@@ -2327,7 +2327,7 @@ export default {
     },
     async fetchImages() {
       const uid = this.uid;
-      const url = `https://kenzkenz.duckdns.org/myphp/list.php?dir=/var/www/html/public_html/uploads/${uid}`;
+      const url = `https://kenzkenz.net/myphp/list.php?dir=/var/www/html/public_html/uploads/${uid}`;
       console.log(url);
 
       try {
@@ -2337,7 +2337,7 @@ export default {
         }
 
         const imageList = await response.json();
-        this.images = imageList.map(file => `https://kenzkenz.duckdns.org/uploads/${uid}/${file}`);
+        this.images = imageList.map(file => `https://kenzkenz.net/uploads/${uid}/${file}`);
       } catch (error) {
         console.error("Error fetching images:", error);
       }
