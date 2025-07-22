@@ -197,7 +197,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-card-text>
             <p style="margin-bottom: 10px;">ドロー機能と併用できません。ドロー機能を使用中の場合、閉じてください。一辺10kmの四角を移動してクリックしてください。</p>
             <v-btn @click="bboxPolygon">範囲指定</v-btn>
-<!--            <v-btn @click="addPmtilesLayer">test</v-btn>-->
+            <v-btn style="margin-left: 10px;" @click="cachesCrear">これまでのタイルをクリアする</v-btn>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -2490,16 +2490,21 @@ export default {
     },
   },
   methods: {
+    async cachesCrear() {
+        await caches.delete('raster-tile-cache');
+        await caches.delete('vector-tile-cache');
+        alert('クリアしました。')
+    },
     async downloadTiles() {
       this.s_dialogForOffline2 = false
       const vm = this
       store.state.loading2 = true
       store.state.loadingMessage = 'タイルダウンロード中'
       // キャッシュを毎回クリア
-      if ('caches' in window) {
-        await caches.delete('raster-tile-cache');
-        await caches.delete('vector-tile-cache');
-      }
+      // if ('caches' in window) {
+      //   await caches.delete('raster-tile-cache');
+      //   await caches.delete('vector-tile-cache');
+      // }
       // 1) ポリゴンから BBOX を取得
       let bbox = getBBoxFromPolygon(this.$store.state.featureForOfflineBbox)
 
@@ -2621,13 +2626,16 @@ export default {
                 headers: { "Content-Type": "application/x-protobuf" }
               });
               await cache.put(tileRequest, tileResponse);
-
               console.log(`Cached tile ${z}/${x}/${y}`);
+              vm.tileCount++
+              store.state.loadingMessage = `${vm.tileCount}/${vm.totalTileCount}`
             }
           }
         }
         console.log(`PMTiles の BBOX z:${minZoom}–${maxZoom} 部分キャッシュ完了。`);
       }
+      vm.tileCount = 0
+      this.totalTileCount = countRasterTiles(bbox, 14, 16)
       await cachePmtilesBuffers(pmtilesUrl, bbox, 14, 16)
 
       store.state.loading2 = false
@@ -8865,9 +8873,13 @@ export default {
   },
   watch: {
     s_isPrint (value) {
+      const app = document.getElementById('app');
       if (!value) {
         const map00Div = document.getElementById('map00');
         map00Div.style.marginTop = '0px'
+        app.style.overflow = 'hidden'
+      } else {
+        app.style.overflow = 'auto'
       }
     },
     clickCircleGeojsonText () {
@@ -9252,6 +9264,7 @@ html, body {
 }
 #app {
   height: 100%; /* 親要素が100%の高さを持つ */
+  overflow: auto;
 }
 .maplibregl-popup-content {
   padding: 10px 20px 10px 20px;
@@ -9910,9 +9923,6 @@ select {
       1px -1px 0 #ffffff,
       -1px  1px 0 #ffffff,
       1px  1px 0 #ffffff;
-}
-#app {
-  overflow: auto;
 }
 .fan-menu-0 {
   position: absolute;
