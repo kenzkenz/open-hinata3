@@ -9264,11 +9264,10 @@ html, body {
 }
 #app {
   height: 100%; /* 親要素が100%の高さを持つ */
-  overflow: auto;
+  overflow: hidden;
 }
 .maplibregl-popup-content {
   padding: 10px 20px 10px 20px;
-
 }
 .maplibregl-popup-close-button{
   font-size: 40px;
