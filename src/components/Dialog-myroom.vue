@@ -1261,7 +1261,6 @@ export default {
           urlid: urlid
         }
       }).then(function (response) {
-
         // 現在のURLを取得
         let url = new URL(window.location.href);
 

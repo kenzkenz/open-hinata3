@@ -358,7 +358,7 @@ export default {
       }
     },
     zoomOperation (timeOut) {
-      // なぜか一度ズームしないと最適化ベクタータイルが反映しない。
+      // // なぜか一度ズームしないと最適化ベクタータイルが反映しない。
       const map = this.$store.state.map01
       const zoom = map.getZoom()
       setTimeout(() => {

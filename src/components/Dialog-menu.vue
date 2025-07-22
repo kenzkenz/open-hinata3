@@ -311,7 +311,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v1.240
+        v1.241
       </p>
 
       <div v-if="user1">
@@ -1601,6 +1601,7 @@ export default {
     currentUserId: {
       immediate: true,
       async handler(uid) {
+
         if (!uid || uid === 'dummy') return;
 
         try {
@@ -1649,24 +1650,27 @@ export default {
   mounted() {
     document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー</span>'
     // Firebase の認証状態が確定するまで監視
-    firebase.auth().onAuthStateChanged(user => {
-      if (user && user.email) {
-        console.log("✅ ログイン中のユーザー:", user.email);
-        this.emailInput = user.email;
-        store.state.myNickname = user.displayName || ''
-        this.newName = user.displayName
-        this.isLoggedIn = true
-        // alert(store.state.myNickname)
-        // Vue のリアクティブシステムが更新されるのを待機
-        this.$nextTick(() => {
-          console.log("✅ emailInput に設定:", this.emailInput);
-          document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー　ようこそ' + user.displayName + 'さん</span>'
-        });
-      } else {
-        console.warn("⚠️ ログイン中のユーザーが見つかりません");
-        this.emailInput = ""; // ログインしていない場合は空に
-      }
-    });
+    if (!store.state.isOffline) {
+      firebase.auth().onAuthStateChanged(user => {
+        if (user && user.email) {
+          console.log("✅ ログイン中のユーザー:", user.email);
+          this.emailInput = user.email;
+          store.state.myNickname = user.displayName || ''
+          this.newName = user.displayName
+          this.isLoggedIn = true
+          // alert(store.state.myNickname)
+          // Vue のリアクティブシステムが更新されるのを待機
+          this.$nextTick(() => {
+            console.log("✅ emailInput に設定:", this.emailInput);
+            document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー　ようこそ' + user.displayName + 'さん</span>'
+          });
+        } else {
+          console.warn("⚠️ ログイン中のユーザーが見つかりません");
+          this.emailInput = ""; // ログインしていない場合は空に
+        }
+      });
+    }
+
 
     // ページ読み込み時に currentUser がいれば displayName をセット
     // const user = auth.currentUser
@@ -1719,7 +1723,7 @@ export default {
   margin: 10px;
   overflow: auto;
   user-select: text;
-  font-size: larger;
+  font-size: 14px;
   color: black;
   background-color: white;
 }

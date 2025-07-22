@@ -37,6 +37,8 @@ import {
     setAllMidpoints
 } from "@/js/pyramid";
 import { deserialize } from 'flatgeobuf/lib/mjs/geojson.js';
+import { PMTiles } from "pmtiles";
+
 
 // import publicChk from '@/components/Dialog-myroom'
 // 複数のクリックされた地番を強調表示するためのセット
@@ -8225,250 +8227,6 @@ export function enableDragHandles(map) {
     map.getCanvas().addEventListener('touchend', onUp, { passive: false });
 }
 
-// /**
-//  * ポイント/ライン/ポリゴンのクリック・ドラッグ移動・追加を有効化
-//  * ペアID連動対応・どこを掴んでも“その位置から”気持ちよく動く
-//  * @param {object} map - MapLibre/Mapboxのmapインスタンス
-//  * @param {string} layerId - 対象レイヤーID
-//  * @param {string} sourceId - 対象GeoJSONソースID
-//  * @param {object} [options]
-//  *   @param {function} options.fetchElevation - (lng, lat) => Promise<標高>
-//  *   @param {object} options.vm - Vueインスタンス等（状態書き込み用/任意）
-//  *   @param {string} options.storeField - 保存するストアフィールド名
-//  *   @param {boolean} options.enableAdd - クリック追加（Pointのみ）有効化
-//  */
-//
-// export function enableFeatureDragAndAdd8888888888(map, layerId, sourceId, options = {}) {
-//     let isCursorOnFeature = false;
-//     let isDragging = false;
-//     let draggedFeature = null;
-//     let dragStartCoord = null;
-//     let dragOffset = null;
-//     const fetchElevation = options.fetchElevation || (async () => 0);
-//     const vm = options.vm;
-//     const storeField = options.storeField || null;
-//     const enableAdd = options.enableAdd ?? true;
-//     const click = options.click;
-//
-//     function getCenterCoord(feature) {
-//         if (!feature.geometry) return null;
-//         const g = feature.geometry;
-//         if (g.type === 'Point') return g.coordinates.slice();
-//         if (g.type === 'LineString') return g.coordinates[0].slice();
-//         if (g.type === 'Polygon') return g.coordinates[0][0].slice();
-//         if (g.type === 'MultiPolygon') return g.coordinates[0][0][0].slice();
-//         return null;
-//     }
-//
-//     function getPointFromEvent(e) {
-//         if (e.originalEvent?.touches?.[0]) {
-//             const touch = e.originalEvent.touches[0];
-//             const rect = map.getCanvas().getBoundingClientRect();
-//             return {
-//                 x: touch.clientX - rect.left,
-//                 y: touch.clientY - rect.top
-//             };
-//         }
-//         if (e.point) return e.point;
-//         return null;
-//     }
-//
-//     function getLngLatFromEvent(e) {
-//         if (e.originalEvent?.touches?.[0]) {
-//             const touch = e.originalEvent.touches[0];
-//             const rect = map.getCanvas().getBoundingClientRect();
-//             return map.unproject({
-//                 x: touch.clientX - rect.left,
-//                 y: touch.clientY - rect.top
-//             });
-//         } else if (e.lngLat) {
-//             return e.lngLat;
-//         }
-//         return null;
-//     }
-//
-//     let dragStartCooldown = false;
-//     function handleDragStart(e) {
-//         if (!store.state.editEnabled) return;
-//         // もしクールダウン中なら何もせず return
-//         if (dragStartCooldown) return;
-//         const vertexFeatures = map.queryRenderedFeatures(
-//             [
-//                 [e.point.x - 15, e.point.y - 15],
-//                 [e.point.x + 15, e.point.y + 15]
-//             ],
-//             { layers: ['vertex-layer'] }
-//         );
-//         if (vertexFeatures.length > 0) {
-//             // 一時的に発火禁止（例：1000ms）
-//             dragStartCooldown = true;
-//             setTimeout(() => {
-//                 dragStartCooldown = false;
-//             }, 1000);
-//             return;
-//         }
-//
-//
-//         const point = getPointFromEvent(e);
-//         if (!point) return;
-//
-//         // 狭い範囲（5x5ピクセル）で地物をクエリ
-//         const features = map.queryRenderedFeatures(
-//             [
-//                 [point.x - 5, point.y - 5],
-//                 [point.x + 5, point.y + 5]
-//             ],
-//             { layers: [layerId] }
-//         );
-//
-//         if (features.length === 0) return;
-//
-//         isDragging = true;
-//         draggedFeature = features[0];
-//         dragStartCoord = getCenterCoord(draggedFeature);
-//         const lngLat = getLngLatFromEvent(e);
-//         dragOffset = [
-//             lngLat.lng - dragStartCoord[0],
-//             lngLat.lat - dragStartCoord[1]
-//         ];
-//         map.getCanvas().style.cursor = 'grabbing';
-//         if (e.preventDefault) e.preventDefault();
-//
-//     }
-//
-//     map.on('mousedown', handleDragStart);
-//     map.on('touchstart', handleDragStart);
-//
-//     async function handleDragMove(e) {
-//         if (!isDragging || !draggedFeature) return;
-//         if (e.originalEvent?.touches?.length > 1) return;
-//
-//         const lngLat = getLngLatFromEvent(e);
-//         const targetLng = lngLat.lng - dragOffset[0];
-//         const targetLat = lngLat.lat - dragOffset[1];
-//
-//         store.state.finishLineFire = !store.state.finishLineFire;
-//
-//         const source = map.getSource(sourceId);
-//         let allowSource;
-//         if (sourceId === 'click-circle-source') {
-//             allowSource = map.getSource('end-point-source');
-//         }
-//         if (!source) return;
-//         const currentData = source._data;
-//         const currentAllowData = allowSource?._data;
-//         if (!currentData) return;
-//
-//         let elevation = await fetchElevation(targetLng, targetLat);
-//         if (!elevation) elevation = 0;
-//
-//         const [lng0, lat0] = dragStartCoord;
-//         const dx = targetLng - lng0;
-//         const dy = targetLat - lat0;
-//
-//         const dragId = draggedFeature.id || draggedFeature.properties?.id;
-//         const dragPairId = draggedFeature.properties?.pairId;
-//         const moveTargets = [];
-//
-//         for (const f of currentData.features) {
-//             const fid = f.id || f.properties?.id;
-//             const fpair = f.properties?.pairId;
-//             if (fid === dragId || (dragPairId && dragPairId === fpair)) {
-//                 moveTargets.push(f);
-//             }
-//         }
-//
-//         if (currentAllowData) {
-//             for (const f of currentAllowData.features) {
-//                 const startId = dragId + '-start';
-//                 const endId = dragId + '-end';
-//                 if (startId === f.properties?.id || endId === f.properties?.id) {
-//                     moveTargets.push(f);
-//                 }
-//             }
-//         }
-//
-//         for (const f of moveTargets) {
-//             const g = f.geometry;
-//             if (g.type === 'Point') {
-//                 g.coordinates = [g.coordinates[0] + dx, g.coordinates[1] + dy, elevation];
-//                 f.properties.canterLng = g.coordinates[0];
-//                 f.properties.canterLat = g.coordinates[1];
-//             } else if (g.type === 'LineString') {
-//                 g.coordinates = g.coordinates.map(([lng, lat, ...rest]) => [lng + dx, lat + dy, ...rest]);
-//                 f.properties.canterLng = g.coordinates[0][0];
-//                 f.properties.canterLat = g.coordinates[0][1];
-//             } else if (g.type === 'Polygon') {
-//                 g.coordinates = g.coordinates.map(ring => ring.map(([lng, lat, ...rest]) => [lng + dx, lat + dy, ...rest]));
-//                 f.properties.canterLng = g.coordinates[0][0][0];
-//                 f.properties.canterLat = g.coordinates[0][0][1];
-//             } else if (g.type === 'MultiPolygon') {
-//                 g.coordinates = g.coordinates.map(poly => poly.map(ring => ring.map(([lng, lat, ...rest]) => [lng + dx, lat + dy, ...rest])));
-//                 f.properties.canterLng = g.coordinates[0][0][0][0];
-//                 f.properties.canterLat = g.coordinates[0][0][0][1];
-//             }
-//         }
-//
-//         dragStartCoord = [targetLng, targetLat];
-//         source.setData(currentData);
-//         allowSource?.setData(currentAllowData);
-//         generateSegmentLabelGeoJSON(currentData);
-//         map.getCanvas().style.cursor = 'grabbing';
-//         if (vm && storeField) vm.$store.state[storeField] = JSON.stringify(currentData);
-//
-//         // generateSegmentLabelGeoJSON(currentAllowData);
-//         // generateStartEndPointsFromGeoJSON(currentAllowData);
-//         getAllVertexPoints(map, currentData);
-//         setAllMidpoints(map, currentData);
-//
-//     }
-//
-//     map.on('mousemove', handleDragMove);
-//     map.on('touchmove', handleDragMove);
-//
-//     function handleDragEnd() {
-//         if (isDragging) {
-//             isDragging = false;
-//             draggedFeature = null;
-//             dragStartCoord = null;
-//             dragOffset = null;
-//             map.getCanvas().style.cursor = 'pointer';
-//         }
-//     }
-//
-//     map.on('mouseup', handleDragEnd);
-//     map.on('touchend', handleDragEnd);
-//     map.on('touchcancel', handleDragEnd);
-//
-//     if (click) {
-//         map.on('click', async function (e) {
-//             if (isDragging) return;
-//             if (map.getLayoutProperty(layerId, 'visibility') === 'none') return;
-//             const source = map.getSource(sourceId);
-//             if (!source || isCursorOnFeature) return;
-//             const currentData = source._data || { type: 'FeatureCollection', features: [] };
-//             const clickedLng = e.lngLat.lng;
-//             const clickedLat = e.lngLat.lat;
-//             let elevation = await fetchElevation(clickedLng, clickedLat);
-//             if (!elevation) elevation = 0;
-//             const newFeature = {
-//                 type: 'Feature',
-//                 id: currentData.features.length,
-//                 geometry: {
-//                     type: 'Point',
-//                     coordinates: [clickedLng, clickedLat, elevation]
-//                 },
-//                 properties: {
-//                     id: Math.random().toString().slice(2, 6)
-//                 }
-//             };
-//             currentData.features.push(newFeature);
-//             source.setData(currentData);
-//             if (vm && storeField) vm.$store.state[storeField] = JSON.stringify(currentData);
-//         });
-//     }
-// }
-
 export function japanCoord (coordinates) {
     if (zahyokei.length > 0) {
         const found = zahyokei.find(item => item.kei === store.state.zahyokei)
@@ -9381,6 +9139,148 @@ export async function homusyoCalculatePolygonMetrics(fudeIds) {
     return calc
 }
 
+//
 
+/**
+ * 緯度経度 → WebMercator タイル X
+ */
+export function lon2tile(lon, z) {
+    return Math.floor((lon + 180) / 360 * Math.pow(2, z));
+}
 
+/**
+ * 緯度経度 → WebMercator タイル Y
+ */
+export function lat2tile(lat, z) {
+    const rad = (lat * Math.PI) / 180;
+    return Math.floor(
+        (1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2 *
+        Math.pow(2, z)
+    );
+}
 
+/**
+ * ポリゴン（GeoJSON Feature, Geometry または座標配列）から BBOX を計算
+ * @param {Object|Array} polygon GeoJSON Polygon Feature/Geometry または [ [lng,lat], ... ]
+ * @returns {[number,number,number,number]} [minLng, minLat, maxLng, maxLat]
+ */
+export function getBBoxFromPolygon(polygon) {
+    let coords;
+    if (polygon.type === 'Feature' && polygon.geometry?.type === 'Polygon') {
+        coords = polygon.geometry.coordinates[0];
+    } else if (polygon.type === 'Polygon' && Array.isArray(polygon.coordinates)) {
+        coords = polygon.coordinates[0];
+    } else if (Array.isArray(polygon) && Array.isArray(polygon[0])) {
+        coords = polygon;
+    } else {
+        throw new Error('Invalid polygon input');
+    }
+    let minLng = Infinity, minLat = Infinity;
+    let maxLng = -Infinity, maxLat = -Infinity;
+    coords.forEach(([lng, lat]) => {
+        if (lng < minLng) minLng = lng;
+        if (lat < minLat) minLat = lat;
+        if (lng > maxLng) maxLng = lng;
+        if (lat > maxLat) maxLat = lat;
+    });
+    return [minLng, minLat, maxLng, maxLat];
+}
+
+/**
+ * 任意のタイル URL テンプレートから URL 一覧を生成
+ * @param {[number,number,number,number]} bbox
+ * @param {number} minZ
+ * @param {number} maxZ
+ * @param {string|function} tileUrlTemplate '{z}','{x}','{y}' を含む文字列 or (z,x,y)=>string
+ * @returns {string[]} URL の配列
+ */
+export function genTileUrls(bbox, minZ, maxZ, tileUrlTemplate) {
+    const [minLng, minLat, maxLng, maxLat] = bbox;
+    const urls = [];
+    let urlFn;
+    if (typeof tileUrlTemplate === 'string') {
+        urlFn = (z, x, y) =>
+            tileUrlTemplate.replace(/{z}/g, z)
+                .replace(/{x}/g, x)
+                .replace(/{y}/g, y);
+    } else if (typeof tileUrlTemplate === 'function') {
+        urlFn = tileUrlTemplate;
+    } else {
+        throw new Error('tileUrlTemplate must be a string or function');
+    }
+    for (let z = minZ; z <= maxZ; z++) {
+        const x0 = lon2tile(minLng, z), x1 = lon2tile(maxLng, z);
+        const y0 = lat2tile(maxLat, z), y1 = lat2tile(minLat, z);
+        for (let x = x0; x <= x1; x++) {
+            for (let y = y0; y <= y1; y++) {
+                urls.push(urlFn(z, x, y));
+            }
+        }
+    }
+    return urls;
+}
+
+/**
+ * Service Worker に URL 一覧を送ってキャッシュさせる
+ * controller がいない場合は ready を待ってメッセージ送信
+ * @param {string[]} urls
+ */
+export function cacheTilesViaSW(urls) {
+    const post = controller => controller.postMessage({ type: 'CACHE_RASTER_TILES', urls });
+    if (navigator.serviceWorker.controller) {
+        post(navigator.serviceWorker.controller);
+    } else if (navigator.serviceWorker.ready) {
+        navigator.serviceWorker.ready.then(reg => {
+            if (reg.active) post(reg.active);
+            else console.warn('Service Worker active worker not found');
+        });
+    } else {
+        console.warn('Service Worker not supported or not ready');
+    }
+}
+
+export function cachePmtiles(pmtilesUrl,bbox,zoomLevels) {
+    const post = controller => controller.postMessage({
+        type: 'CACHE_TILES',
+        pmtilesUrl,
+        bbox,
+        zoomLevels
+    });
+    if (navigator.serviceWorker.controller) {
+        post(navigator.serviceWorker.controller);
+    } else if (navigator.serviceWorker.ready) {
+        navigator.serviceWorker.ready.then(reg => {
+            if (reg.active) post(reg.active);
+            else console.warn('Service Worker active worker not found');
+        });
+    } else {
+        console.warn('Service Worker not supported or not ready');
+    }
+}
+
+/**
+ * 並列制限付きで fetch しつつ進捗コールバック
+ * @param {string[]} urls
+ * @param {{ concurrent?: number, onProgress?: (done: number, total: number) => void }} options
+ */
+export async function fetchWithProgress(
+    urls,
+    { concurrent = 10, onProgress } = {}
+) {
+    let done = 0;
+    const total = urls.length;
+    const queue = urls.slice();
+    const workers = Array(concurrent).fill(null).map(async () => {
+        while (queue.length) {
+            const url = queue.shift();
+            try {
+                await fetch(url, { cache: 'reload' });
+            } catch {
+                // ignore errors
+            }
+            done++;
+            if (onProgress) onProgress(done, total);
+        }
+    });
+    await Promise.all(workers);
+}

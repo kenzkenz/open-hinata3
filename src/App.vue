@@ -180,7 +180,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </v-card-title>
           <v-card-text>
             <p style="margin-bottom: 10px;"></p>
-            <v-btn @click="tileDownload">データダウンロード</v-btn>
+            <v-btn @click="downloadTiles">データダウンロード</v-btn>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -197,6 +197,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-card-text>
             <p style="margin-bottom: 10px;">ドロー機能と併用できません。ドロー機能を使用中の場合、閉じてください。一辺10kmの四角を移動してクリックしてください。</p>
             <v-btn @click="bboxPolygon">範囲指定</v-btn>
+<!--            <v-btn @click="addPmtilesLayer">test</v-btn>-->
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -1320,7 +1321,7 @@ import RightDrawer from '@/components/rightDrawer.vue'
 import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
 import {
-  addDraw,
+  addDraw, cachePmtiles, cachePmtilesBuffers, cacheTilesViaSW,
   capture, convertFromEPSG4326,
   csvGenerateForUserPng,
   ddSimaUpload, delay0, detectLatLonColumns, downloadGeoJSONAsCSV,
@@ -1328,10 +1329,10 @@ import {
   downloadSimaText, downloadTextFile, DXFDownload,
   dxfToGeoJSON, enableDragHandles,
   extractFirstFeaturePropertiesAndCheckCRS,
-  extractSimaById, geocode,
+  extractSimaById, fetchWithProgress, genTileUrls, geocode,
   geojsonAddLayer, geojsonDownload, geoJSONToSIMA,
   geoTiffLoad,
-  geoTiffLoad2,
+  geoTiffLoad2, getBBoxFromPolygon,
   getCRS, getMaxZIndex, getNowFileNameTimestamp, gpxDownload,
   handleFileUpload,
   highlightSpecificFeatures,
@@ -1689,7 +1690,7 @@ import DialogInfo from '@/components/Dialog-info'
 import Dialog2 from '@/components/Dialog2'
 import DialogShare from "@/components/Dialog-share"
 import DialogDrawConfig from "@/components/Dialog-draw-config"
-import DialogChibanzuList from "@/components/Dialog-chibanzu-list"
+// import DialogChibanzuList from "@/components/Dialog-chibanzu-list"
 import pyramid, {
   autoCloseAllPolygons,
   colorNameToRgba, createSquarePolygonAtCenter,
@@ -1701,7 +1702,7 @@ import glouplayer from '@/js/glouplayer'
 import * as Layers from '@/js/layers'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import maplibregl from 'maplibre-gl'
-import { Protocol } from "pmtiles"
+import { Protocol, PMTiles } from "pmtiles"
 import { useGsiTerrainSource } from 'maplibre-gl-gsi-terrain'
 import {
   chibanzuSources, cityGeojsonLabelLayer, cityGeojsonLineLayer, cityGeojsonPolygonLayer,
@@ -1735,7 +1736,6 @@ export default {
     DialogInfo,
     Dialog2,
     DialogShare,
-    DialogChibanzuList,
     DialogDrawConfig,
     PointInfoDrawer,
     RightDrawer,
@@ -1873,6 +1873,19 @@ export default {
     // geojsonForDrawLabelColumn: '',
     dialogForDraw: false,
     csvLonLat: null,
+    tileUrl: '',
+    tileCount: 0,
+    totalTileCount: 0,
+    minZoom: 1,
+    maxZoom: 17,
+    tileTemplates: [
+      'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png',
+      // 'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'
+    ],
+    pmtilesTemplates: [
+        'https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025final3.pmtiles'
+    ],
+    done: 0,
   }),
   computed: {
     ...mapState([
@@ -2477,11 +2490,148 @@ export default {
     },
   },
   methods: {
-    tileDownload() {
-      alert(999)
+    async downloadTiles() {
+      this.s_dialogForOffline2 = false
+      const vm = this
+      store.state.loading2 = true
+      store.state.loadingMessage = 'タイルダウンロード中'
+      // キャッシュを毎回クリア
+      if ('caches' in window) {
+        await caches.delete('raster-tile-cache');
+        await caches.delete('vector-tile-cache');
+      }
+      // 1) ポリゴンから BBOX を取得
+      let bbox = getBBoxFromPolygon(this.$store.state.featureForOfflineBbox)
 
+      if (!navigator.serviceWorker.controller) {
+        alert('サービスワーカーがアクティブではありません。ページをリロードしてください。');
+        return;
+      }
 
+      const pmtilesUrl = 'https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025final3.pmtiles'; // ベースURL（末尾に /z/x/y.pbf が付く想定）
+      const rasterUrl = 'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'
 
+      /** BBOX＋ズーム範囲内のタイル枚数を計算 */
+      function countRasterTiles(bbox, minZoom, maxZoom) {
+        let count = 0;
+        for (let z = minZoom; z <= maxZoom; z++) {
+          const [minX, minY] = lngLatToTile([bbox[0], bbox[3]], z);
+          const [maxX, maxY] = lngLatToTile([bbox[2], bbox[1]], z);
+          const tilesInZ = (maxX - minX + 1) * (maxY - minY + 1);
+          console.log(`z=${z}: ${tilesInZ} tiles`);
+          count += tilesInZ;
+        }
+        return count;
+      }
+      /**
+       * 緯度経度 → Google XYZ タイル座標に変換
+       */
+      function lngLatToTile([lng, lat], z) {
+        const n = 2 ** z;
+        const x = Math.floor((lng + 180) / 360 * n);
+        const y = Math.floor(
+            (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) /
+            2 *
+            n
+        );
+        return [x, y];
+      }
+
+      /**
+       * BBOX＋ズーム範囲だけ GSI のラスタータイルをキャッシュ
+       * @param bbox [minLng, minLat, maxLng, maxLat]
+       * @param minZoom 最小ズーム（例: 14）
+       * @param maxZoom 最大ズーム（例: 16）
+       * @param template URL テンプレート（デフォルトは GSI の標準地図）
+       */
+      async function cacheRasterTiles(
+          bbox,
+          minZoom,
+          maxZoom,
+          template = 'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'
+      ) {
+        // Service Worker 側と合わせたキャッシュ名
+        const CACHE_NAME = 'raster-tile-cache';
+        const cache = await caches.open(CACHE_NAME);
+        for (let z = minZoom; z <= maxZoom; z++) {
+          // BBOX の NW→SE でタイル範囲を算出
+          const [minX, minY] = lngLatToTile([bbox[0], bbox[3]], z);
+          const [maxX, maxY] = lngLatToTile([bbox[2], bbox[1]], z);
+
+          for (let x = minX; x <= maxX; x++) {
+            for (let y = minY; y <= maxY; y++) {
+              // URL を生成
+              const url = template
+                  .replace('{z}', z)
+                  .replace('{x}', x)
+                  .replace('{y}', y);
+              try {
+                // fetch すると SW の CacheFirst 戦略で自動キャッシュ
+                const res = await fetch(url);
+                if (!res.ok) {
+                  console.warn(`タイル取得失敗 ${z}/${x}/${y}`, res.status);
+                  continue;
+                }
+                // 必要なら明示的に put しても OK
+                await cache.put(url, res.clone());
+                console.log(`Cached raster ${z}/${x}/${y}`);
+                vm.tileCount++
+                store.state.loadingMessage = `${vm.tileCount}/${vm.totalTileCount}`
+              } catch (e) {
+                console.error(`Error fetching raster ${z}/${x}/${y}`, e);
+              }
+            }
+          }
+        }
+        console.log(`ラスター BBOX z:${minZoom}–${maxZoom} のキャッシュ完了。`);
+      }
+      this.totalTileCount = countRasterTiles(bbox, 2, 17)
+      await cacheRasterTiles(bbox, 2, 17,rasterUrl)
+
+      /**
+       * BBOX＋ズーム範囲だけ pmtiles を部分キャッシュ
+       * @param pmtilesUrl: PMTiles ファイルの URL
+       * @param bbox: [minLng, minLat, maxLng, maxLat]
+       * @param minZoom: 最小ズーム
+       * @param maxZoom: 最大ズーム
+       */
+      async function cachePmtilesBuffers(pmtilesUrl, bbox, minZoom, maxZoom) {
+        const pmtiles = new PMTiles(pmtilesUrl);
+
+        // 必要ならヘッダを先読み（内部でインデックスを準備）
+        await pmtiles.getHeader(); // ※open() は不要 :contentReference[oaicite:2]{index=2}
+
+        // Service Worker 側と同じキャッシュ名
+        const cache = await caches.open("vector-tile-cache");
+
+        for (let z = minZoom; z <= maxZoom; z++) {
+          // BBOX からタイルの x,y 範囲を算出
+          const [minX, minY] = lngLatToTile([bbox[0], bbox[3]], z);
+          const [maxX, maxY] = lngLatToTile([bbox[2], bbox[1]], z);
+
+          for (let x = minX; x <= maxX; x++) {
+            for (let y = minY; y <= maxY; y++) {
+              // タイルデータを取得
+              const tileResp = await pmtiles.getZxy(z, x, y);
+              if (!tileResp) continue; // タイル未存在ならスキップ
+
+              // ArrayBuffer → Response に変換してキャッシュへ登録
+              const tileRequest = new Request(`${pmtilesUrl}/${z}/${x}/${y}.pbf`);
+              const tileResponse = new Response(tileResp.data, {
+                headers: { "Content-Type": "application/x-protobuf" }
+              });
+              await cache.put(tileRequest, tileResponse);
+
+              console.log(`Cached tile ${z}/${x}/${y}`);
+            }
+          }
+        }
+        console.log(`PMTiles の BBOX z:${minZoom}–${maxZoom} 部分キャッシュ完了。`);
+      }
+      await cachePmtilesBuffers(pmtilesUrl, bbox, 14, 16)
+
+      store.state.loading2 = false
+      alert('タイルのダウンロードが完了しました！');
     },
     bboxPolygon() {
       this.s_dialogForOffline = false
@@ -4997,6 +5147,9 @@ export default {
     },
     // パーマリンク作成
     updatePermalink() {
+      if (this.$store.state.isOffline) {
+        return
+      }
       const map = this.$store.state.map01
       const center = map.getCenter()
       const zoom = map.getZoom()
@@ -5101,6 +5254,9 @@ export default {
       japanCoord([lng,lat])
     },
     createShortUrl() {
+      if (this.$store.state.isOffline) {
+        return
+      }
       let params = new URLSearchParams()
       params.append('parameters', this.param)
       axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrl.php', params)
@@ -5162,7 +5318,7 @@ export default {
     },
     init() {
 
-// HTML要素を追加
+      // HTML要素を追加
       const uploadInput = document.createElement('input');
       uploadInput.type = 'file';
       uploadInput.id = 'simaFileInput';
@@ -5172,9 +5328,9 @@ export default {
       document.body.appendChild(uploadInput);
 
 
-// 複数の.scrollable-content要素やVuetifyのv-selectに対応したタッチスクロール処理
+      // 複数の.scrollable-content要素やVuetifyのv-selectに対応したタッチスクロール処理
 
-// グローバルイベントリスナーを使用して動的要素にも対応
+      // グローバルイベントリスナーを使用して動的要素にも対応
       let startY;
       let isTouching = false;
       let currentTarget = null;
@@ -5241,83 +5397,10 @@ export default {
       // ======================================================================
 
 
-      // 元のPMTilesプロトコルを登録
-    //   const pmtilesProtocol = new Protocol();
-    //   maplibregl.addProtocol('pmtiles', pmtilesProtocol.tile);
-    //
-    // // 新しいカスタムプロトコルを別の名前で登録
-    //   maplibregl.addProtocol('custom-pmtiles', (request, callback) => {
-    //     // 元のPMTilesプロトコルを再利用しつつカスタム処理を追加
-    //     pmtilesProtocol.tile(request, (err, data) => {
-    //       if (err) {
-    //         callback(err);
-    //       } else {
-    //         // カスタム処理の例: ログ出力
-    //         console.log(`Custom PMTiles requested: ${request.url}`);
-    //         // 必要に応じてdataを改変可能（MVT形式に注意）
-    //         callback(null, data);
-    //       }
-    //     });
-    //   });
-
-
-      // maplibregl.addProtocol('cleanpmtiles', async (params, callback) => {
-      //   params.url = params.url.replace('cleanpmtiles://', 'pmtiles://');
-      //   try {
-      //     const result = await protocol.tile(params, params.tile);
-      //     callback(null, result.data, result.cacheControl, result.expires);
-      //   } catch (error) {
-      //     callback(error);
-      //   }
-      // });
-
-
-
-
-      // class CleanProtocol extends Protocol {
-      //   constructor() {
-      //     super();
-      //   }
-      //
-      //   async tile(params, callback) {
-      //     super.tile(params, (error, data, cacheControl, expires) => {
-      //       if (error) {
-      //         callback(error);
-      //         return;
-      //       }
-      //
-      //       const modifiedData = data;
-      //
-      //       if (modifiedData && modifiedData.data && modifiedData.data.features) {
-      //         modifiedData.data.features = modifiedData.data.features.map((feature) => {
-      //           const newProperties = {};
-      //           for (const key in feature.properties) {
-      //             const value = feature.properties[key];
-      //             newProperties[key] = typeof value === 'string' ? value.replace(/_/g, '') : value;
-      //           }
-      //           return {
-      //             ...feature,
-      //             properties: newProperties,
-      //           };
-      //         });
-      //       }
-      //
-      //       callback(null, modifiedData, cacheControl, expires);
-      //     });
-      //   }
-      // }
-      //
-      // const cleanProtocol = new CleanProtocol();
-      // maplibregl.addProtocol("cleanpmtiles", cleanProtocol.tile.bind(cleanProtocol));
-
-      // ======================================================================
-
-
       // PMTiles プロトコルを登録
       // maplibregl.addProtocol('pmtiles', PMTilesProtocol);
 
-
-// transparentPmtiles プロトコルを登録
+      // transparentPmtiles プロトコルを登録
       maplibregl.addProtocol('transparentPmtiles', (params) => {
         console.log('Received params:', JSON.stringify(params));
 
@@ -5559,7 +5642,6 @@ export default {
         });
       });
 
-
       const params = this.parseUrlParams()
       this.mapNames.forEach(mapName => {
         // 2画面-----------------------------------------------------------
@@ -5614,7 +5696,6 @@ export default {
           maxzoom: 17,
           attribution: '<a href="https://gbank.gsj.jp/seamless/elev/">産総研シームレス標高タイル</a>'
         });
-
 
         const map = new maplibregl.Map({
           container: mapName,
@@ -8303,6 +8384,7 @@ export default {
               // console.log('画面中心地点は座標系ゾーンに該当しません。');
               this.$store.state.zahyokei = '';
             }
+            this.zoom = map.getZoom()
           });
 
           // -----------------------------------------------------------------------------------------------------------
@@ -8628,7 +8710,6 @@ export default {
       console.log('OpenCV.js ready');
     });
 
-
     window.addEventListener('mousemove', this.onMouseMove)
 
     this.mapillarWidth = (window.innerWidth * 1) + 'px'
@@ -8737,21 +8818,46 @@ export default {
     let urlid = params.get('s')
     if (urlid === 'jIdukg') urlid = '2O65Hr' //以前のリンクを活かす
     if (urlid === 'da0J4l') urlid = 'W8lFo4' //以前のリンクを活かす
-    // https://kenzkenz.xsrv.jp/open-hinata3/?s=da0J4l
-    axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrlSelect.php',{
-      params: {
-        urlid: urlid
-      }
-    }).then(function (response) {
-      vm.dbparams = response.data
+    if (!this.$store.state.isOffline) {
+      axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrlSelect.php', {
+        params: {
+          urlid: urlid
+        }
+      }).then(function (response) {
+        vm.dbparams = response.data
+        vm.init()
+        const url = new URL(window.location.href) // URLを取得
+        window.history.replaceState(null, '', url.pathname + window.location.hash) //パラメータを削除 FB対策
+      })
+    } else {
       vm.init()
-      const url = new URL(window.location.href) // URLを取得
-      window.history.replaceState(null, '', url.pathname + window.location.hash) //パラメータを削除 FB対策
-    })
+    }
     if (localStorage.getItem('resolution')) {
       this.s_resolution = localStorage.getItem('resolution')
       if (this.s_resolution > 24) this.s_resolution = 24
     }
+
+    // if ('serviceWorker' in navigator) {
+    //   navigator.serviceWorker.addEventListener('message', event => {
+    //     console.log(999)
+    //     const data = event.data || {};
+    //     if (data.type === 'PMTILES_PROGRESS') {
+    //       // Vue のリアクティブ変数に当てはめる例
+    //       this.tileCount  = data.count;
+    //       this.tileUrl    = data.url;
+    //       this.progress   = Math.floor(data.count / data.total * 100);
+    //       // たとえばプログレスバーを更新…
+    //       vm.$store.state.loadingMessage = `${data.count}/${data.url}`
+    //     }
+    //   });
+    // }
+
+    // navigator.serviceWorker.addEventListener('message', event => {
+    //   if (event.data.type === 'cache-complete') {
+    //     alert('BBOXデータのキャッシュが完了しました。');
+    //   }
+    // });
+
     // if (localStorage.getItem('transparent')) {
     //   this.s_transparent = localStorage.getItem('transparent')
     // }

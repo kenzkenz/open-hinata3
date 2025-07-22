@@ -2,6 +2,8 @@ import store from '@/store'
 import * as turf from '@turf/turf'
 import { nextTick, toRef, reactive, ref, computed, watch } from 'vue';
 
+store.state.isOffline = !window.navigator.onLine;
+
 // ---------------------------------------------------------------------------------------------------------------------
 // cs https://rinya-ehime.geospatial.jp/tile/rinya/2024/csmap_Ehime/14/14251/9830.png
 export const csUrls = [
@@ -88,34 +90,36 @@ export function zenkokuChibanzuAddLayer (map,zoom) {
                 bounds.getNorth()  // 最大緯度（top）
             ];
             console.log('現在のBBOX:', maplibreBbox);
-            pablicDatas.forEach(v => {
-                if (v.bbox) {
-                    const dataBbox = JSON.parse(v.bbox); // [west, south, east, north]
-                    const isIntersecting =
-                        maplibreBbox[2] > dataBbox[0] && // east > west
-                        maplibreBbox[0] < dataBbox[2] && // west < east
-                        maplibreBbox[3] > dataBbox[1] && // north > south
-                        maplibreBbox[1] < dataBbox[3];   // south < north
-                    if (isIntersecting) {
-                        // console.log('重なってる:', v);
-                        if (!v.url) {
-                            return
-                        }
-                        const layers = publiLayersCreate(v)
-                        const allLayers = map.getStyle().layers;
-                        const result = allLayers.find(l => {
-                            return l.id === layers.publicPolygonLayer.id
-                        })
-                        if (!result) {
-                            targetLayer.layers.push(layers.publicPolygonLayer)
-                            targetLayer.layers.push(layers.publicLineLayer)
-                            targetLayer.layers.push(layers.publicLabelLayer)
-                            targetLayer.layers.push(layers.publicPointLayer)
-                            targetLayer.layers.push(layers.publicVertexLayer)
+            if (pablicDatas.length > 0) {
+                pablicDatas.forEach(v => {
+                    if (v.bbox) {
+                        const dataBbox = JSON.parse(v.bbox); // [west, south, east, north]
+                        const isIntersecting =
+                            maplibreBbox[2] > dataBbox[0] && // east > west
+                            maplibreBbox[0] < dataBbox[2] && // west < east
+                            maplibreBbox[3] > dataBbox[1] && // north > south
+                            maplibreBbox[1] < dataBbox[3];   // south < north
+                        if (isIntersecting) {
+                            // console.log('重なってる:', v);
+                            if (!v.url) {
+                                return
+                            }
+                            const layers = publiLayersCreate(v)
+                            const allLayers = map.getStyle().layers;
+                            const result = allLayers.find(l => {
+                                return l.id === layers.publicPolygonLayer.id
+                            })
+                            if (!result) {
+                                targetLayer.layers.push(layers.publicPolygonLayer)
+                                targetLayer.layers.push(layers.publicLineLayer)
+                                targetLayer.layers.push(layers.publicLabelLayer)
+                                targetLayer.layers.push(layers.publicPointLayer)
+                                targetLayer.layers.push(layers.publicVertexLayer)
+                            }
                         }
                     }
-                }
-            })
+                })
+            }
             sicyosonChibanzuUrls.forEach(v => {
                 if (v.bbox) {
                     const dataBbox = v.bbox; // [west, south, east, north]
@@ -149,6 +153,9 @@ export function zenkokuChibanzuAddLayer (map,zoom) {
 }
 
 export async function loadColorData() {
+    if (store.state.isOffline) {
+        return { colorMap: {}, isNew: {} }
+    }
     try {
         const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/userChibanzumapSelect2.php');
         if (!response.ok) {
@@ -220,6 +227,9 @@ function boundsSort (bounds) {
 }
 
 async function publicData() {
+    if (store.state.isOffline) {
+        return null
+    }
     try {
         const response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtileSelectPublicNew.php', {
             params: {}
@@ -234,7 +244,7 @@ async function publicData() {
             return response.data
         }
     } catch (error) {
-        console.error('通信エラー:', error);
+        // console.error('通信エラー:', error);
     }
 }
 const pablicDatas = await publicData()
@@ -359,18 +369,20 @@ const publicLineLayers = []
 const publicLabelLayers = []
 const publicPointLayers = []
 const publicVertexLayers = []
-pablicDatas.forEach(v => {
-    if (!v.url) {
-        return
-    }
-    const layers = publiLayersCreate(v)
-    publicSources.push(layers.publicSource)
-    publicPolygonLayers.push(layers.publicPolygonLayer)
-    publicLineLayers.push(layers.publicLineLayer)
-    publicLabelLayers.push(layers.publicLabelLayer)
-    publicPointLayers.push(layers.publicPointLayer)
-    publicVertexLayers.push(layers.publicVertexLayer)
-})
+if (pablicDatas && pablicDatas.length > 0) {
+    pablicDatas.forEach(v => {
+        if (!v.url) {
+            return
+        }
+        const layers = publiLayersCreate(v)
+        publicSources.push(layers.publicSource)
+        publicPolygonLayers.push(layers.publicPolygonLayer)
+        publicLineLayers.push(layers.publicLineLayer)
+        publicLabelLayers.push(layers.publicLabelLayer)
+        publicPointLayers.push(layers.publicPointLayer)
+        publicVertexLayers.push(layers.publicVertexLayer)
+    })
+}
 const publicLayers = publicPolygonLayers.map((layer,i) => {
     return {
         id: layer.id,
@@ -1430,13 +1442,11 @@ async function convertAndMergeGeoJSON() {
             }
         }))
     };
-
     // 2つのGeoJSONデータをマージ
     const mergedGeoJSON = {
         type: "FeatureCollection",
         features: [...geojson1.features, ...data2.features]
     };
-
     const radiusInKm = 20;
     // 各ポイントごとに円を生成し、プロパティを引き継ぐ
     const circleGeoJSON = {
@@ -1457,7 +1467,9 @@ async function convertAndMergeGeoJSON() {
     ntripSource.obj.data = mergedGeoJSON;
     store.state.ntripGeojson = mergedGeoJSON;
 }
-convertAndMergeGeoJSON()
+if (!store.state.isOffline) {
+    convertAndMergeGeoJSON()
+}
 
 // 円形レイヤー
 const ntripCircleLayer = {
@@ -4126,16 +4138,58 @@ const ryuikiLayer = {
     'source': 'ryuiki-source',
 }
 // 登記所備付地図データ ----------------------------------------------------------------------------------------------------
-const homusyo2025Source = {
-    id: "homusyo-2025-source", obj: {
-        type: "vector",
-        // url: 'pmtiles://https://kenzkenz.xsrv.jp/pmtiles/homusyo/2025/2025.pmtiles'
-        // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025light.pmtiles'
-        // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025.pmtiles'
-        // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025final.pmtiles'
-        url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025final3.pmtiles'
-    },
+// オフライン
+const homusyo2025SourceOffline = {
+    id: "homusyo-2025-source-offline",
+    obj: {
+        type: 'vector',
+        tiles: [
+            'https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025final3.pmtiles/{z}/{x}/{y}.pbf'
+        ],
+        minzoom: 14,
+        maxzoom: 16
+    }
 }
+const homusyo2025LayerOffline = {
+    id: "oh-homusyo-2025-polygon-offline",
+    type: 'fill',
+    source: 'homusyo-2025-source-offline',
+    'source-layer': 'fude',
+    paint: {
+        'fill-color': 'red',
+        'fill-opacity': 0.6
+    }
+}
+
+
+// 登記所備付地図データ ----------------------------------------------------------------------------------------------------
+let homusyo2025Source
+if (!store.state.isOffline) {
+    homusyo2025Source = {
+        id: "homusyo-2025-source", obj: {
+            type: "vector",
+            // url: 'pmtiles://https://kenzkenz.xsrv.jp/pmtiles/homusyo/2025/2025.pmtiles'
+            // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025light.pmtiles'
+            // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025.pmtiles'
+            // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025final.pmtiles'
+            url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025final3.pmtiles'
+        },
+    }
+} else {
+    homusyo2025Source = {
+        id: "homusyo-2025-source",
+        obj: {
+            type: 'vector',
+            tiles: [
+                'https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025final3.pmtiles/{z}/{x}/{y}.pbf'
+            ],
+            minzoom: 14,
+            maxzoom: 16
+        }
+    }
+}
+
+
 const homusyo2025DDissolvedSource = {
     id: "homusyo-2025-dissolved-source", obj: {
         type: "vector",
@@ -12226,6 +12280,32 @@ let layers01 = [
         ]
     },
     {
+        id: 'offline',
+        label: "オフラインレイヤー",
+        nodes: [
+            // {
+            //     id: 'oh-offline-stdLayer',
+            //     label: "地理院標準地図オフライン",
+            //     source: stdSource,
+            //     layers: [stdLayer]
+            // },
+            {
+                id: 'oh-offline-pale-layer',
+                label: "地理院淡色地図オフライン",
+                source: paleSource,
+                layers: [paleLayer]
+            },
+            {
+                id: 'oh-homusyo-2025-layer-offline',
+                label: "2025登記所地図オフライン",
+                sources: [homusyo2025Source,homusyo2025DDissolvedSource,homusyo2025NinizahyoSource],
+                layers: [homusyo2025Layer,homusyo2025LayerLine,homusyo2025LayerLabel,homusyo2025LayerVertex,homusyo2025DissolvedAllLayer,homusyo2025DissolvedLayer,homusyo2025NinizahyoCircle,homusyo2025NinizahyoSymbol],
+                attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
+                ext: {name:'extTokijyo2025'}
+            }
+        ]
+    },
+    {
         id: 'test',
         label: "テスト",
         nodes: [
@@ -12276,8 +12356,10 @@ let layers01 = [
         ]
     },
 ]
+if (store.state.isOffline) {
+    layers01 = layers01.filter(layer => layer.id === 'offline')
+}
 let layers02 = JSON.parse(JSON.stringify(layers01))
-
 let layers01Clone = [...layers01]
 let layers02Clone = [...layers02]
 export const layers = reactive({
@@ -12331,7 +12413,4 @@ waitForStateValue(() => store.state.currentGroupName).then((val) => {
         })
     }, { deep: true });
 })
-
-
-
 console.log(layers)

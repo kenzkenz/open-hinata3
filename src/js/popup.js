@@ -8,6 +8,7 @@ import pyramid from "@/js/pyramid";
 import * as turf from '@turf/turf'
 import {extractAndOpenUrls, getMaxZIndex, queryFGBWithPolygon, wsg84ToJgd} from "@/js/downLoad";
 import { Viewer, CameraControls, RenderMode, TransitionMode } from 'mapillary-js';
+import {geometry} from "@turf/turf";
 export const popups = []
 
 console.log(store.state.selectedLayers)
@@ -3670,10 +3671,6 @@ export function popup(e,map,mapName,mapFlg) {
                 } else {
                     id = store.state.id
                 }
-                if (id === 'offlineBbox') {
-                    store.state.dialogForOffline2 = true
-                    return;
-                }
                 if (store.state.clickCircleGeojsonText) {
                     features = JSON.parse(store.state.clickCircleGeojsonText).features
                 } else {
@@ -3681,6 +3678,12 @@ export function popup(e,map,mapName,mapFlg) {
                     store.state.clickCircleGeojsonText = store.state.clickCircleGeojsonTextMyroom
                 }
                 const feature = features.find(feature => feature.properties.id === id)
+                if (id === 'offlineBbox') {
+                    store.state.dialogForOffline2 = true
+                    console.log(feature.geometry)
+                    store.state.featureForOfflineBbox = feature
+                    return;
+                }
                 // alert('到達')
                 if (!feature) return;
                 // alert('到達')
