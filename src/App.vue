@@ -7,7 +7,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <template>
   <v-app>
     <v-main>
-      <DialogDrawConfig :mapName="'map01'" />
+      <DialogDrawConfig :mapName="'map01'" @open-floating="openWindow" />
 
       <div v-if="s_isLassoSelected" class="features-rotate-div my-div" @click="setMaxZIndex($event.currentTarget)">
         <div class="features-rotate-div-close" @click="s_isLassoSelected = false">
@@ -965,7 +965,22 @@ import SakuraEffect from './components/SakuraEffect.vue';
       </div>
 
       <div id="map00">
-<!--        <img class='loadingImg' src="https://kenzkenz.xsrv.jp/open-hinata3/img/icons/loading2.gif">-->
+
+        <!-- DraggableResizableDiv の配置 -->
+        <FloatingWindow
+            ref="floating"
+            :title="windowlTitle"
+            :restrict-to-header="false"
+            :has-header="false"
+            :default-width=200
+            :default-height=200
+            :keepAspectRatio="true"
+            @width-changed="onWidthChanged"
+        >
+          <vue-qrcode :value="s_url" :options="{ width: qrCodeWidth }"></vue-qrcode>
+        </FloatingWindow>
+
+        <!--        <img class='loadingImg' src="https://kenzkenz.xsrv.jp/open-hinata3/img/icons/loading2.gif">-->
         <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="(mapName === 'map01'|| mapName === 'map02' && s_map2Flg)" @click="btnPosition">
           <v-progress-linear  v-if="s_loading" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
           <v-progress-linear  v-if="s_loading2" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
@@ -1290,7 +1305,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <DialogLayer :mapName=mapName />
           <dialog-info :mapName=mapName />
           <dialog2 :mapName=mapName />
-          <dialogShare v-if="mapName === 'map01'" :mapName=mapName />
+          <dialogShare v-if="mapName === 'map01'" :mapName=mapName @open-floating="openWindow" />
           <DialogChibanzuList :mapName=mapName />
 <!--          <DialogDrawConfig v-if="mapName === 'map01'" :mapName=mapName />-->
 
@@ -1724,7 +1739,7 @@ import FanMenu from '@/components/FanMenu'
 import html2canvas from 'html2canvas'
 import debounce from 'lodash/debounce'
 import * as math from 'mathjs'
-import {feature} from "@turf/turf";
+import FloatingWindow from '@/components/FloatingWindow';
 import {delay, forEach} from "lodash";
 
 export default {
@@ -1740,7 +1755,8 @@ export default {
     PointInfoDrawer,
     RightDrawer,
     ChibanzuDrawer,
-    MiniTooltip
+    MiniTooltip,
+    FloatingWindow,
   },
   data: () => ({
     isRightDiv: true,
@@ -1885,7 +1901,8 @@ export default {
     pmtilesTemplates: [
         'https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025final3.pmtiles'
     ],
-    done: 0,
+    windowlTitle: '',
+    qrCodeWidth: 200,
   }),
   computed: {
     ...mapState([
@@ -1899,6 +1916,9 @@ export default {
       'titleColor',
       'titleDirection',
     ]),
+    s_url () {
+      return this.$store.state.url
+    },
     s_dialogForOffline2: {
       get() {
         return this.$store.state.dialogForOffline2
@@ -2490,6 +2510,16 @@ export default {
     },
   },
   methods: {
+    onWidthChanged(newWidth) {
+      console.log(newWidth)
+      this.qrCodeWidth = newWidth
+    },
+    openWindow() {
+      this.$refs.floating.show();
+    },
+    closeWindow() {
+      this.$refs.floating.close();
+    },
     async cachesCrear() {
         await caches.delete('raster-tile-cache');
         await caches.delete('vector-tile-cache');

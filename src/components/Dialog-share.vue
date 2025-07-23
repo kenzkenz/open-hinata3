@@ -6,16 +6,13 @@
       <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="copy">URLをコピー</v-btn>
       <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="qrcopy">QRコードをダウンロード</v-btn>
       <hr>
-      <vue-qrcode id="qr-code" :value="s_url" :options="{ width: 320 }"></vue-qrcode>
+      <vue-qrcode style="cursor: pointer" @click="qrCodeClick" id="qr-code" :value="s_url" :options="{ width: 320 }"></vue-qrcode>
     </div>
   </Dialog>
 </template>
 
 <script>
-import axios from "axios"
-import maplibregl from 'maplibre-gl'
-import {history} from "@/App";
-import {konUrls} from "@/js/layers";
+
 export default {
   name: 'Dialog-share',
   props: ['mapName'],
@@ -31,6 +28,9 @@ export default {
     },
   },
   methods: {
+    qrCodeClick () {
+      this.$emit('open-floating')
+    },
     xPost () {
       const intentUrl =
           "https://twitter.com/intent/tweet?text=" +

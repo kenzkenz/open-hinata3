@@ -57,6 +57,7 @@
           <input style="width: 280px;margin-left: 10px;" type="range" min="0" max="1" step="0.01" class="range"
                  v-model.number="s_drawOpacity" @input="drawOpacityInput" @change="configChange('opacity',s_drawOpacity)"
           />
+          <v-btn @click="qrCodeClick">QRコード</v-btn>
         </v-card-text>
       </v-card>
     </div>
@@ -164,6 +165,9 @@ export default {
     },
   },
   methods: {
+    qrCodeClick () {
+      this.$emit('open-floating')
+    },
     onDrawVisibleChange () {
       const map01 = this.$store.state.map01
       const v = this.s_drawVisible ? 'visible' : 'none'
