@@ -2511,7 +2511,6 @@ export default {
   },
   methods: {
     onWidthChanged(newWidth) {
-      console.log(newWidth)
       this.qrCodeWidth = newWidth
     },
     openWindow() {

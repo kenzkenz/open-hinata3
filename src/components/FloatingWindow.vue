@@ -231,4 +231,9 @@ export default {
 .top-right    { top: -5px;    right: -5px;   cursor: nesw-resize; }
 .bottom-left  { bottom: -5px; left: -5px;    cursor: nesw-resize; }
 .bottom-right { bottom: -5px; right: -5px;   cursor: nwse-resize; }
+@media screen and (max-width: 1000px) {
+  .close-btn {
+    opacity: 1;
+  }
+}
 </style>
