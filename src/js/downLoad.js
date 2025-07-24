@@ -6933,7 +6933,7 @@ export function userTileSet(name,url,id) {
     );
 }
 
-export async function pmtilesGenerate (geojson, layerName, label) {
+export async function pmtilesGenerate (geojsonObj, layerName, label, file) {
     async function insertPmtilesData(uid, layerName, url, url2, label, bbox, length, nickname) {
         try {
             const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtiles0Insert.php', new URLSearchParams({
@@ -6961,18 +6961,23 @@ export async function pmtilesGenerate (geojson, layerName, label) {
     // -------------------------------------------------------------------------------------------------
     store.state.loading2 = true
     store.state.loadingMessage = 'アップロード中です。'
-    console.log("geojson送信前の中身:", geojson);
+    console.log("geojson送信前の中身:", geojsonObj);
     console.log(store.state.userId)
 
     const formData = new FormData();
     formData.append('dir', store.state.userId);
-    // GeoJSON オブジェクトは Blob として追加
-    const geojsonBlob = new Blob(
-        [JSON.stringify(geojson)],
-        { type: 'application/json' }
-    );
-    // formData.append('geojson', geojsonBlob);
-    formData.append('geojson', geojsonBlob, 'data.geojson');
+
+    if (file) {
+        formData.append("geojson", file, file.name);
+    } else {
+        // GeoJSON オブジェクトは Blob として追加
+        const geojsonBlob = new Blob(
+            [JSON.stringify(geojsonObj)],
+            { type: 'application/json' }
+        );
+        // formData.append('geojson', geojsonBlob);
+        formData.append('geojson', geojsonBlob, 'data.geojson');
+    }
 
     const response = await fetch("https://kenzkenz.net/myphp/generate_pmtiles.php", {
         method: "POST",
