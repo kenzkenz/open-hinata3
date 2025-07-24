@@ -282,14 +282,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <!--        </v-card>-->
 <!--      </v-dialog>-->
 
-      <v-dialog v-model="dialogForChibanzyOrDraw" max-width="500px">
+      <v-dialog v-model="dialogForChibanzyOrDraw" max-width="510px">
         <v-card>
           <v-card-title>
-            地番図アップロードorドロー追加
+            アップロード先を選択
           </v-card-title>
           <v-card-text>
-            <p style="margin-bottom: 20px;">どちらか選択してください。</p>
-            <v-btn @click="uploadChibanzu">地番図アップロード</v-btn>
+            <p style="margin-bottom: 20px;">選択してください。</p>
+            <v-btn :disabled="!user1" @click="uploadChibanzu">地番図アップロード</v-btn>
+            <v-btn :disabled="!user1" style="margin-left: 10px;" @click="uploadMyLayer">マイレイヤー追加</v-btn>
             <v-btn style="margin-left: 10px;" @click="uploadDraw">ドロー追加</v-btn>
           </v-card-text>
           <v-card-actions>
@@ -3022,6 +3023,25 @@ export default {
         addDraw(geojson,true)
         store.state.loading2 = false
       }
+    },
+    async uploadMyLayer () {
+      this.dialogForChibanzyOrDraw = false
+
+      // this.dialogForChibanzyOrDraw = false
+      this.s_chibanzuPropaties = await extractFirstFeaturePropertiesAndCheckCRS(this.s_geojsonFile)
+
+      const layerName = this.s_geojsonFile.name.split('.')[0]
+      const label = 'name'
+      await pmtilesGenerate (
+          this.geojsonForDraw,
+          layerName,
+          label
+      )
+
+
+
+
+
     },
     uploadDraw () {
       this.dialogForChibanzyOrDraw = false
@@ -8304,17 +8324,12 @@ export default {
                         if (vm.$store.state.userId) {
                           try {
                             vm.dialogForChibanzyOrDraw = true
-                            // vm.s_chibanzuPropaties = await extractFirstFeaturePropertiesAndCheckCRS(file)
-                            // vm.s_showChibanzuDialog = true
                           } catch (e) {
                             alert('プロパティを読み込めませんでした。文字化けしていませんか？\n' + e)
                             console.log(e)
                           }
                         } else {
                           alert('この機能を利用するにはログインしてください')
-                        // } else {
-                        //   vm.$store.state.geojsonText = geojsonText
-                        //   geojsonAddLayer (map, geojson, true, fileExtension)
                         }
                       }
                       aaa()
