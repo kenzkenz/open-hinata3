@@ -6951,31 +6951,28 @@ export async function pmtilesGenerate (geojsonObj, layerName, label, file) {
                 alert(`エラー: ${response.data.error}`);
             } else {
                 console.log('登録成功:', response.data);
-                userPmtile0Set(layerName,url,response.data.id, bbox, length, label)
-                store.state.fetchImagesFire = !store.state.fetchImagesFire
+                userPmtile0Set(layerName, url, response.data.id, bbox, length, label);
+                store.state.fetchImagesFire = !store.state.fetchImagesFire;
             }
         } catch (error) {
             console.error('通信エラー:', error);
         }
     }
-    // -------------------------------------------------------------------------------------------------
-    store.state.loading2 = true
-    store.state.loadingMessage = 'アップロード中です。'
+
+    store.state.loading2 = true;
+    store.state.loadingMessage = 'アップロード中です。';
     console.log("geojson送信前の中身:", geojsonObj);
-    console.log(store.state.userId)
+    console.log(store.state.userId);
 
     const formData = new FormData();
     formData.append('dir', store.state.userId);
-
     if (file) {
-        formData.append("geojson", file, file.name);
+        formData.append('geojson', file, file.name);
     } else {
-        // GeoJSON オブジェクトは Blob として追加
         const geojsonBlob = new Blob(
             [JSON.stringify(geojsonObj)],
             { type: 'application/json' }
         );
-        // formData.append('geojson', geojsonBlob);
         formData.append('geojson', geojsonBlob, 'data.geojson');
     }
 
@@ -6998,7 +6995,6 @@ export async function pmtilesGenerate (geojsonObj, layerName, label, file) {
     async function processStream() {
         for await (const chunk of streamAsyncIterator(reader)) {
             buffer += decoder.decode(chunk, { stream: true });
-            // SSEイベントを即座に処理
             while (buffer.includes('\n\n')) {
                 const index = buffer.indexOf('\n\n');
                 const event = buffer.substring(0, index);
@@ -7006,16 +7002,13 @@ export async function pmtilesGenerate (geojsonObj, layerName, label, file) {
 
                 if (event.startsWith('data: ')) {
                     try {
-                        const jsonStr = event.substring(6); // 'data: 'を削除
+                        const jsonStr = event.substring(6);
                         const data = JSON.parse(jsonStr);
                         if (data.log) {
-                            // ログを一行ずつリアルタイムで表示
-                            // console.log(data.is_error ? `[ERROR] ${data.log}` : data.log);
-                            // 行単位に分割して後ろから走査
                             const lines = data.log.trim().split(/\r?\n/).reverse();
                             let targetLine = lines.find(line => line.includes('%'));
                             targetLine = targetLine.slice(0, 20);
-                            store.state.loadingMessage = targetLine
+                            store.state.loadingMessage = targetLine;
                         } else if (data.error) {
                             console.log("エラー:", data);
                             store.state.loading2 = false;
@@ -7026,14 +7019,12 @@ export async function pmtilesGenerate (geojsonObj, layerName, label, file) {
                         }
                     } catch (e) {
                         console.error("JSONパースエラー:", event);
-                        // store.state.loadingMessage = event.substring(6).slice(0, 45)
-                        store.state.loadingMessage = JSON.parse(event.substring(6)).log.slice(0, 45)
+                        store.state.loadingMessage = JSON.parse(event.substring(6)).log.slice(0, 45);
                     }
                 }
             }
         }
 
-        // バッファに残ったデータがあれば処理
         if (buffer.startsWith('data: ')) {
             try {
                 const jsonStr = buffer.substring(6);
@@ -7050,16 +7041,12 @@ export async function pmtilesGenerate (geojsonObj, layerName, label, file) {
             }
         }
 
-        // 最終レスポンスを処理
         if (result && result.success) {
             store.state.loading2 = false;
             console.log(result);
             const webUrl = 'https://kenzkenz.net/' + result.pmtiles_file.replace('/var/www/html/public_html/', '');
-            console.log(result.pmtiles_file);
-            console.log(store.state.myNickname)
             insertPmtilesData(
                 store.state.userId,
-                // store.state.pmtilesName,
                 layerName,
                 webUrl,
                 result.pmtiles_file,
@@ -7078,7 +7065,7 @@ export async function pmtilesGenerate (geojsonObj, layerName, label, file) {
             alert("タイル生成に失敗しました！");
         }
     }
-    // ReadableStreamを非同期イテレータとして処理
+
     async function* streamAsyncIterator(reader) {
         try {
             let done, value;
@@ -7091,14 +7078,17 @@ export async function pmtilesGenerate (geojsonObj, layerName, label, file) {
             reader.releaseLock();
         }
     }
-    // ストリーム処理を開始
-    processStream().catch(error => {
+
+    // ストリーム処理を開始し、完了を待機
+    try {
+        await processStream();
+    } catch (error) {
         console.error("ストリーム処理エラー:", error);
-        // store.state.loading2 = false;
-        // alert("ストリーム処理に失敗しました！");
-        store.state.loadingMessage = 'ログ取得に失敗しましたが、このまま実行します。ブラウザを閉じないでください。'
-    });
+        store.state.loadingMessage = 'ログ取得に失敗しましたが、このまま実行します。ブラウザを閉じないでください。';
+        throw error;
+    }
 }
+
 
 export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,citycode,selectedPublic,selectedKaiji2,file) {
     async function insertPmtilesData(uid, name, url, url2,  chiban, bbox, length, prefcode, citycode,selectedKaiji2,nickname) {

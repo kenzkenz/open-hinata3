@@ -3027,21 +3027,16 @@ export default {
     async uploadMyLayer () {
       this.dialogForChibanzyOrDraw = false
       this.s_chibanzuPropaties = await extractFirstFeaturePropertiesAndCheckCRS(this.s_geojsonFile)
-
-      console.log(this.s_chibanzuGeojson)
-
-      // const layerName = this.s_geojsonFile.name.split('.')[0]
-      // const label = 'name'
-      // await pmtilesGenerate (
-      //     this.geojsonForDraw,
-      //     layerName,
-      //     label
-      // )
-
-
-
-
-
+      console.log(this.s_geojsonFile)
+      const layerName = this.s_geojsonFile.name.split('.')[0]
+      const label = 'name'
+      await pmtilesGenerate (
+          null,
+          layerName,
+          label,
+          this.s_geojsonFile
+      )
+      alert('終了')
     },
     uploadDraw () {
       this.dialogForChibanzyOrDraw = false
