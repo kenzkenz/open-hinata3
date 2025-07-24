@@ -3033,7 +3033,7 @@ export default {
       await pmtilesGenerate (
           null,
           layerName,
-          label,
+          null,
           this.s_geojsonFile
       )
       alert('終了')
