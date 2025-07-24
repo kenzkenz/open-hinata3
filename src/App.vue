@@ -3030,13 +3030,13 @@ export default {
       console.log(this.s_geojsonFile)
       const layerName = this.s_geojsonFile.name.split('.')[0]
       const label = 'name'
-      await pmtilesGenerate (
+      const id = await pmtilesGenerate (
           null,
           layerName,
           null,
           this.s_geojsonFile
       )
-      alert('終了')
+      alert('終了' + id)
     },
     uploadDraw () {
       this.dialogForChibanzyOrDraw = false

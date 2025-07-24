@@ -6933,58 +6933,65 @@ export function userTileSet(name,url,id) {
     );
 }
 
-export async function pmtilesGenerate (geojsonObj, layerName, label, file) {
+export async function pmtilesGenerate(geojsonObj, layerName, label, file) {
+    // PMTilesデータ登録用のヘルパー関数。成功時に response.data.id を返す。
     async function insertPmtilesData(uid, layerName, url, url2, label, bbox, length, nickname) {
         try {
-            const response = await axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtiles0Insert.php', new URLSearchParams({
-                uid: uid,
-                name: layerName,
-                url: url,
-                url2: url2,
-                label: label,
-                bbox: JSON.stringify(bbox),
-                length: length,
-                nickname: nickname
-            }));
+            const response = await axios.post(
+                'https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtiles0Insert.php',
+                new URLSearchParams({
+                    uid,
+                    name: layerName,
+                    url,
+                    url2,
+                    label,
+                    bbox: JSON.stringify(bbox),
+                    length,
+                    nickname
+                })
+            );
+
             if (response.data.error) {
                 console.error('エラー:', response.data.error);
                 alert(`エラー: ${response.data.error}`);
+                return null;  // エラー時は null を返す
             } else {
                 console.log('登録成功:', response.data);
                 userPmtile0Set(layerName, url, response.data.id, bbox, length, label);
                 store.state.fetchImagesFire = !store.state.fetchImagesFire;
+                return response.data.id;  // ← 登録された ID を返す
             }
         } catch (error) {
             console.error('通信エラー:', error);
+            return null;  // 通信エラー時も null を返す
         }
     }
 
+    // ローディング表示開始
     store.state.loading2 = true;
     store.state.loadingMessage = 'アップロード中です。';
-    console.log("geojson送信前の中身:", geojsonObj);
-    console.log(store.state.userId);
+    console.log('geojson送信前の中身:', geojsonObj);
 
+    // フォームデータ作成
     const formData = new FormData();
     formData.append('dir', store.state.userId);
     if (file) {
         formData.append('geojson', file, file.name);
     } else {
-        const geojsonBlob = new Blob(
-            [JSON.stringify(geojsonObj)],
-            { type: 'application/json' }
-        );
+        const geojsonBlob = new Blob([JSON.stringify(geojsonObj)], { type: 'application/json' });
         formData.append('geojson', geojsonBlob, 'data.geojson');
     }
 
-    const response = await fetch("https://kenzkenz.net/myphp/generate_pmtiles.php", {
-        method: "POST",
+    // PMTiles生成リクエスト
+    const response = await fetch('https://kenzkenz.net/myphp/generate_pmtiles.php', {
+        method: 'POST',
         body: formData,
     });
 
     if (!response.ok) {
         store.state.loading2 = false;
-        alert("サーバーエラーが発生しました: " + response.statusText);
-        return;
+        alert('サーバーエラーが発生しました: ' + response.statusText);
+        return null;
     }
 
     const reader = response.body.getReader();
@@ -6992,6 +6999,7 @@ export async function pmtilesGenerate (geojsonObj, layerName, label, file) {
     let result = null;
     let buffer = '';
 
+    // SSE ストリーム処理
     async function processStream() {
         for await (const chunk of streamAsyncIterator(reader)) {
             buffer += decoder.decode(chunk, { stream: true });
@@ -7002,50 +7010,48 @@ export async function pmtilesGenerate (geojsonObj, layerName, label, file) {
 
                 if (event.startsWith('data: ')) {
                     try {
-                        const jsonStr = event.substring(6);
-                        const data = JSON.parse(jsonStr);
+                        const data = JSON.parse(event.substring(6));
                         if (data.log) {
+                            // ログ表示更新（プログレスパーセント等）
                             const lines = data.log.trim().split(/\r?\n/).reverse();
-                            let targetLine = lines.find(line => line.includes('%'));
-                            targetLine = targetLine.slice(0, 20);
+                            const targetLine = (lines.find(line => line.includes('%')) || '').slice(0, 20);
                             store.state.loadingMessage = targetLine;
                         } else if (data.error) {
-                            console.log("エラー:", data);
                             store.state.loading2 = false;
-                            alert("タイル生成に失敗しました！" + data.error);
-                            return;
+                            alert('タイル生成に失敗しました！' + data.error);
+                            return null;
                         } else if (data.success) {
                             result = data;
                         }
                     } catch (e) {
-                        console.error("JSONパースエラー:", event);
-                        store.state.loadingMessage = JSON.parse(event.substring(6)).log.slice(0, 45);
+                        console.error('JSONパースエラー:', event);
                     }
                 }
             }
         }
 
+        // 最終バッファ処理
         if (buffer.startsWith('data: ')) {
             try {
-                const jsonStr = buffer.substring(6);
-                const data = JSON.parse(jsonStr);
+                const data = JSON.parse(buffer.substring(6));
                 if (data.success) result = data;
                 else if (data.error) {
-                    console.log("エラー:", data);
-                    store.state.loading2 = false;
-                    alert("タイル生成に失敗しました！" + data.error);
-                    return;
+                    alert('タイル生成に失敗しました！' + data.error);
+                    return null;
                 }
             } catch (e) {
-                console.error("最終バッファパースエラー:", buffer);
+                console.error('最終バッファパースエラー:', buffer);
             }
         }
 
+        // 成功レスポンス後の登録処理
         if (result && result.success) {
             store.state.loading2 = false;
-            console.log(result);
+            console.log('PMTiles生成結果:', result);
             const webUrl = 'https://kenzkenz.net/' + result.pmtiles_file.replace('/var/www/html/public_html/', '');
-            insertPmtilesData(
+
+            // PMTilesデータを DB に挿入し、ID を取得
+            const insertedId = await insertPmtilesData(
                 store.state.userId,
                 layerName,
                 webUrl,
@@ -7055,39 +7061,44 @@ export async function pmtilesGenerate (geojsonObj, layerName, label, file) {
                 result.length,
                 store.state.myNickname
             );
-            console.log('pmtiles作成完了');
+            console.log('pmtiles作成完了, 登録ID:', insertedId);
+
             if (!result.bbox) {
-                alert('座標系が間違えているかもしれません。geojson化するときはEPSG:4326に設定してください。');
+                alert('座標系が間違えているかもしれません。EPSG:4326 にしてください。');
             }
+
+            return insertedId;  // ← processStream が ID を返す
         } else {
-            console.log("成功レスポンスがありません");
             store.state.loading2 = false;
-            alert("タイル生成に失敗しました！");
+            alert('タイル生成に失敗しました！');
+            return null;
         }
     }
 
+    // ReadableStream を非同期イテレータ化
     async function* streamAsyncIterator(reader) {
         try {
-            let done, value;
-            do {
-                ({ done, value } = await reader.read());
+            while (true) {
+                const { done, value } = await reader.read();
                 if (done) return;
                 yield value;
-            } while (!done);
+            }
         } finally {
             reader.releaseLock();
         }
     }
 
-    // ストリーム処理を開始し、完了を待機
+    // ストリーム処理開始と ID の返却
     try {
-        await processStream();
+        const id = await processStream();  // ← ここで ID を受け取る
+        return id;  // ← pmtilesGenerate 自体が ID を返す
     } catch (error) {
-        console.error("ストリーム処理エラー:", error);
-        store.state.loadingMessage = 'ログ取得に失敗しましたが、このまま実行します。ブラウザを閉じないでください。';
+        console.error('ストリーム処理エラー:', error);
+        store.state.loadingMessage = 'ログ取得に失敗しましたが、このまま実行します。';
         throw error;
     }
 }
+
 
 
 export async function pmtilesGenerateForUser2 (geojson,bbox,chiban,prefcode,citycode,selectedPublic,selectedKaiji2,file) {
