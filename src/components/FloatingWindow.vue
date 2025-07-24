@@ -2,29 +2,34 @@
   <div
       v-show="visible"
       class="draggable-div"
+      :class="type"
       :style="{
       top: top + 'px',
       left: left + 'px',
       width: width + 'px',
       height: height + 'px',
-      cursor: fullDraggable ? 'move' : 'default'
+      cursor: fullDraggable ? 'move' : 'default',
+      zIndex: zIndex
     }"
-      @mousedown="handleMouseDown"
+      @mousedown="onDivMouseDown"
   >
-    <!-- Close ボタン：常に表示可能 -->
-    <button class="close-btn" @click="close">×</button>
-
-    <!-- ヘッダー -->
-    <div v-if="hasHeader" class="header" ref="header">
+    <!-- ヘッダー（normal のみ表示） -->
+    <div v-if="headerShown" class="header" ref="header">
       <span class="title">{{ title }}</span>
+      <!-- Close ボタン -->
+      <button class="close-btn" @click="close">×</button>
     </div>
+    <!-- simple の場合、ヘッダー外にボタン -->
+    <button v-else class="close-btn" @click="close">×</button>
 
     <!-- コンテンツ領域 -->
     <div
         class="content"
-        :style="hasHeader
-        ? { height: `calc(100% - ${headerHeight}px)` }
-        : { height: '100%' }"
+        :style="
+        headerShown
+          ? { height: `calc(100% - ${headerHeight}px)` }
+          : { height: '100%' }
+      "
     >
       <slot></slot>
     </div>
@@ -40,23 +45,30 @@
 </template>
 
 <script>
+import { getNextZIndex } from "@/js/downLoad";
 export default {
   name: 'FloatingWindow',
   props: {
-    title:            { type: String,  default: '' },
-    defaultWidth:     { type: Number,  default: 200 },
-    defaultHeight:    { type: Number,  default: 200 },
-    restrictToHeader: { type: Boolean, default: false },
-    hasHeader:        { type: Boolean, default: true },
-    keepAspectRatio:  { type: Boolean, default: false },
+    title: { type: String, default: '' },
+    defaultWidth: { type: Number, default: 200 },
+    defaultHeight: { type: Number, default: 200 },
+    defaultTop: { type: Number, default: 120 },
+    defaultLeft: { type: Number, default: 100 },
+    keepAspectRatio: { type: Boolean, default: false },
+    type: {
+      type: String,
+      default: 'normal',
+      validator: v => ['simple', 'normal'].includes(v)
+    }
   },
   data() {
     return {
       visible: false,
-      top: 100,
-      left: 100,
+      top: this.defaultTop,
+      left: this.defaultLeft,
       width: this.defaultWidth,
       height: this.defaultHeight,
+      zIndex: 0,
       dragging: false,
       resizing: false,
       resizeDir: '',
@@ -66,32 +78,41 @@ export default {
       startTop: 0,
       startWidth: 0,
       startHeight: 0,
-      originalAspect: 1,
+      originalAspect: 1
     };
   },
   computed: {
-    resizerDirs() {
-      return ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+    headerShown() {
+      return this.type === 'normal';
     },
     headerHeight() {
-      return this.hasHeader ? 32 : 0;
+      return this.headerShown ? 32 : 0;
     },
     fullDraggable() {
-      return !this.restrictToHeader || !this.hasHeader;
+      return this.type === 'simple';
+    },
+    resizerDirs() {
+      return ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
     }
   },
   methods: {
     show() {
+      // 表示時に最新の z-index を取得
+      this.zIndex = getNextZIndex();
       this.visible = true;
     },
     close() {
       this.visible = false;
     },
+    onDivMouseDown(e) {
+      // クリックで z-index を最前面に
+      this.zIndex = getNextZIndex();
+      // その後ドラッグ処理へ
+      this.handleMouseDown(e);
+    },
     handleMouseDown(e) {
       if (this.resizing) return;
-      if (this.restrictToHeader && this.hasHeader && !this.$refs.header.contains(e.target)) {
-        return;
-      }
+      if (!this.fullDraggable && this.headerShown && !this.$refs.header.contains(e.target)) return;
       this.startDrag(e);
     },
     startDrag(e) {
@@ -105,8 +126,10 @@ export default {
     },
     onDrag(e) {
       if (!this.dragging) return;
-      this.left = this.startLeft + (e.clientX - this.startX);
-      this.top  = this.startTop  + (e.clientY - this.startY);
+      const newLeft = this.startLeft + (e.clientX - this.startX);
+      const newTop = this.startTop + (e.clientY - this.startY);
+      this.left = Math.max(0, newLeft);
+      this.top = Math.max(0, newTop);
     },
     stopDrag() {
       this.dragging = false;
@@ -118,9 +141,9 @@ export default {
       this.resizeDir = dir;
       this.startX = e.clientX;
       this.startY = e.clientY;
-      this.startLeft   = this.left;
-      this.startTop    = this.top;
-      this.startWidth  = this.width;
+      this.startLeft = this.left;
+      this.startTop = this.top;
+      this.startWidth = this.width;
       this.startHeight = this.height;
       this.originalAspect = this.startWidth / this.startHeight;
       document.addEventListener('mousemove', this.onResize);
@@ -132,46 +155,28 @@ export default {
       const dy = e.clientY - this.startY;
       let newW = this.startWidth;
       let newH = this.startHeight;
-
       if (this.keepAspectRatio) {
-        // どちらかの方向の変化量で新しいサイズを計算
-        if (this.resizeDir.includes('right')) {
-          newW = this.startWidth + dx;
-        } else if (this.resizeDir.includes('left')) {
-          newW = this.startWidth - dx;
-        } else if (this.resizeDir.includes('bottom')) {
-          newH = this.startHeight + dy;
-        } else if (this.resizeDir.includes('top')) {
-          newH = this.startHeight - dy;
-        }
-        // アスペクト比を維持
+        if (this.resizeDir.includes('right')) newW = this.startWidth + dx;
+        else if (this.resizeDir.includes('left')) newW = this.startWidth - dx;
+        else if (this.resizeDir.includes('bottom')) newH = this.startHeight + dy;
+        else if (this.resizeDir.includes('top')) newH = this.startHeight - dy;
         newH = newW / this.originalAspect;
         newW = newH * this.originalAspect;
       } else {
-        // 非固定比率でのリサイズ
-        if (this.resizeDir.includes('right'))  newW = this.startWidth + dx;
-        if (this.resizeDir.includes('left')) {
-          newW = this.startWidth - dx;
-          this.left = this.startLeft + dx;
-        }
+        if (this.resizeDir.includes('right')) newW = this.startWidth + dx;
+        if (this.resizeDir.includes('left')) { newW = this.startWidth - dx; this.left = this.startLeft + dx; }
         if (this.resizeDir.includes('bottom')) newH = this.startHeight + dy;
-        if (this.resizeDir.includes('top')) {
-          newH = this.startHeight - dy;
-          this.top = this.startTop + dy;
-        }
+        if (this.resizeDir.includes('top')) { newH = this.startHeight - dy; this.top = Math.max(0, this.startTop + dy); }
       }
-
-      // 左／上ハンドルで固定比率の場合、位置補正
       if (this.keepAspectRatio && this.resizeDir.includes('left')) {
         this.left = this.startLeft + (this.startWidth - newW);
       }
       if (this.keepAspectRatio && this.resizeDir.includes('top')) {
         this.top = this.startTop + (this.startHeight - newH);
       }
-
-      this.width  = Math.max(20, newW);
+      this.width = Math.max(20, newW);
       this.height = Math.max(20, newH);
-      this.$emit('width-changed',  this.width);
+      this.$emit('width-changed', this.width);
       this.$emit('height-changed', this.height);
     },
     stopResize() {
@@ -189,9 +194,12 @@ export default {
   background-color: white;
   box-sizing: border-box;
   user-select: none;
-  z-index: 9;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
+
 .header {
+  position: relative;
   display: flex;
   align-items: center;
   padding: 4px 8px;
@@ -200,27 +208,49 @@ export default {
   color: white;
   height: 32px;
   line-height: 24px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  overflow: hidden;
 }
-.close-btn {
-  color: red;
+
+/* simple: headerなし、全体ドラッグ、×はホバー時のみ */
+.draggable-div.simple .close-btn {
   position: absolute;
-  top: 4px;
+  top: -4px;
   right: 8px;
-  background: transparent;
-  border: none;
-  font-size: 30px;
-  line-height: 30px;
-  cursor: pointer;
+  color: red;
   opacity: 0;
-  transition: opacity 0.2s;
+  font-size: 36px;
+  transition: opacity 0.2s, color 0.2s;
 }
-.draggable-div:hover .close-btn {
+.draggable-div.simple:hover .close-btn {
   opacity: 1;
 }
+
+/* normal: ヘッダー内に配置、×は白、大きく、中央寄せ、ホバーで青 */
+.draggable-div.normal .header .close-btn {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  opacity: 1;
+  color: white;
+  font-size: 42px;
+  background: transparent;
+  border: none;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s, font-size 0.2s;
+}
+.draggable-div.normal .header .close-btn:hover {
+  color: blue;
+}
+
 .content {
   width: 100%;
   overflow: auto;
 }
+
 .resizer {
   position: absolute;
   width: 10px;
@@ -231,9 +261,269 @@ export default {
 .top-right    { top: -5px;    right: -5px;   cursor: nesw-resize; }
 .bottom-left  { bottom: -5px; left: -5px;    cursor: nesw-resize; }
 .bottom-right { bottom: -5px; right: -5px;   cursor: nwse-resize; }
-@media screen and (max-width: 1000px) {
-  .close-btn {
-    opacity: 1;
-  }
-}
 </style>
+
+
+<!--<template>-->
+<!--  <div-->
+<!--      v-show="visible"-->
+<!--      class="draggable-div"-->
+<!--      :class="type"-->
+<!--      :style="{-->
+<!--      top: top + 'px',-->
+<!--      left: left + 'px',-->
+<!--      width: width + 'px',-->
+<!--      height: height + 'px',-->
+<!--      cursor: fullDraggable ? 'move' : 'default',-->
+<!--      zIndex: zIndex-->
+<!--    }"-->
+<!--      @mousedown="handleMouseDown"-->
+<!--  >-->
+<!--    &lt;!&ndash; ヘッダー（normal のみ表示） &ndash;&gt;-->
+<!--    <div v-if="headerShown" class="header" ref="header">-->
+<!--      <span class="title">{{ title }}</span>-->
+<!--      &lt;!&ndash; Close ボタン &ndash;&gt;-->
+<!--      <button class="close-btn" @click="close">×</button>-->
+<!--    </div>-->
+<!--    &lt;!&ndash; simple の場合、ヘッダー外にボタン &ndash;&gt;-->
+<!--    <button v-else class="close-btn" @click="close">×</button>-->
+
+<!--    &lt;!&ndash; コンテンツ領域 &ndash;&gt;-->
+<!--    <div-->
+<!--        class="content"-->
+<!--        :style="-->
+<!--        headerShown-->
+<!--          ? { height: `calc(100% - ${headerHeight}px)` }-->
+<!--          : { height: '100%' }-->
+<!--      "-->
+<!--    >-->
+<!--      <slot></slot>-->
+<!--    </div>-->
+
+<!--    &lt;!&ndash; リサイズハンドル &ndash;&gt;-->
+<!--    <div-->
+<!--        v-for="dir in resizerDirs"-->
+<!--        :key="dir"-->
+<!--        :class="['resizer', dir]"-->
+<!--        @mousedown.stop="startResize($event, dir)"-->
+<!--    ></div>-->
+<!--  </div>-->
+<!--</template>-->
+
+<!--<script>-->
+<!--import {getNextZIndex} from "@/js/downLoad";-->
+
+<!--export default {-->
+<!--  name: 'FloatingWindow',-->
+<!--  props: {-->
+<!--    title: { type: String, default: '' },-->
+<!--    defaultWidth: { type: Number, default: 200 },-->
+<!--    defaultHeight: { type: Number, default: 200 },-->
+<!--    defaultTop: { type: Number, default: 120 },-->
+<!--    defaultLeft: { type: Number, default: 100 },-->
+<!--    keepAspectRatio: { type: Boolean, default: false },-->
+<!--    type: {-->
+<!--      type: String,-->
+<!--      default: 'normal',-->
+<!--      validator: v => ['simple', 'normal'].includes(v)-->
+<!--    }-->
+<!--  },-->
+<!--  data() {-->
+<!--    return {-->
+<!--      visible: false,-->
+<!--      top: this.defaultTop,-->
+<!--      left: this.defaultLeft,-->
+<!--      width: this.defaultWidth,-->
+<!--      height: this.defaultHeight,-->
+<!--      zIndex: 0,-->
+<!--      dragging: false,-->
+<!--      resizing: false,-->
+<!--      resizeDir: '',-->
+<!--      startX: 0,-->
+<!--      startY: 0,-->
+<!--      startLeft: 0,-->
+<!--      startTop: 0,-->
+<!--      startWidth: 0,-->
+<!--      startHeight: 0,-->
+<!--      originalAspect: 1-->
+<!--    };-->
+<!--  },-->
+<!--  computed: {-->
+<!--    headerShown() {-->
+<!--      return this.type === 'normal';-->
+<!--    },-->
+<!--    headerHeight() {-->
+<!--      return this.headerShown ? 32 : 0;-->
+<!--    },-->
+<!--    fullDraggable() {-->
+<!--      return this.type === 'simple';-->
+<!--    },-->
+<!--    resizerDirs() {-->
+<!--      return ['top-left', 'top-right', 'bottom-left', 'bottom-right'];-->
+<!--    }-->
+<!--  },-->
+<!--  methods: {-->
+<!--    show() {-->
+<!--      // 表示時に最新の z-index を取得-->
+<!--      if (typeof getNextZIndex === 'function') {-->
+<!--        this.zIndex = getNextZIndex();-->
+<!--      }-->
+<!--      this.visible = true;-->
+<!--    },-->
+<!--    close() {-->
+<!--      this.visible = false;-->
+<!--    },-->
+<!--    handleMouseDown(e) {-->
+<!--      if (this.resizing) return;-->
+<!--      if (!this.fullDraggable && this.headerShown && !this.$refs.header.contains(e.target)) return;-->
+<!--      this.startDrag(e);-->
+<!--    },-->
+<!--    startDrag(e) {-->
+<!--      this.dragging = true;-->
+<!--      this.startX = e.clientX;-->
+<!--      this.startY = e.clientY;-->
+<!--      this.startLeft = this.left;-->
+<!--      this.startTop = this.top;-->
+<!--      document.addEventListener('mousemove', this.onDrag);-->
+<!--      document.addEventListener('mouseup', this.stopDrag);-->
+<!--    },-->
+<!--    onDrag(e) {-->
+<!--      if (!this.dragging) return;-->
+<!--      const newLeft = this.startLeft + (e.clientX - this.startX);-->
+<!--      const newTop = this.startTop + (e.clientY - this.startY);-->
+<!--      this.left = Math.max(0, newLeft);-->
+<!--      this.top = Math.max(0, newTop);-->
+<!--    },-->
+<!--    stopDrag() {-->
+<!--      this.dragging = false;-->
+<!--      document.removeEventListener('mousemove', this.onDrag);-->
+<!--      document.removeEventListener('mouseup', this.stopDrag);-->
+<!--    },-->
+<!--    startResize(e, dir) {-->
+<!--      this.resizing = true;-->
+<!--      this.resizeDir = dir;-->
+<!--      this.startX = e.clientX;-->
+<!--      this.startY = e.clientY;-->
+<!--      this.startLeft = this.left;-->
+<!--      this.startTop = this.top;-->
+<!--      this.startWidth = this.width;-->
+<!--      this.startHeight = this.height;-->
+<!--      this.originalAspect = this.startWidth / this.startHeight;-->
+<!--      document.addEventListener('mousemove', this.onResize);-->
+<!--      document.addEventListener('mouseup', this.stopResize);-->
+<!--    },-->
+<!--    onResize(e) {-->
+<!--      if (!this.resizing) return;-->
+<!--      const dx = e.clientX - this.startX;-->
+<!--      const dy = e.clientY - this.startY;-->
+<!--      let newW = this.startWidth;-->
+<!--      let newH = this.startHeight;-->
+<!--      if (this.keepAspectRatio) {-->
+<!--        if (this.resizeDir.includes('right')) newW = this.startWidth + dx;-->
+<!--        else if (this.resizeDir.includes('left')) newW = this.startWidth - dx;-->
+<!--        else if (this.resizeDir.includes('bottom')) newH = this.startHeight + dy;-->
+<!--        else if (this.resizeDir.includes('top')) newH = this.startHeight - dy;-->
+<!--        newH = newW / this.originalAspect;-->
+<!--        newW = newH * this.originalAspect;-->
+<!--      } else {-->
+<!--        if (this.resizeDir.includes('right')) newW = this.startWidth + dx;-->
+<!--        if (this.resizeDir.includes('left')) { newW = this.startWidth - dx; this.left = this.startLeft + dx; }-->
+<!--        if (this.resizeDir.includes('bottom')) newH = this.startHeight + dy;-->
+<!--        if (this.resizeDir.includes('top')) { newH = this.startHeight - dy; this.top = Math.max(0, this.startTop + dy); }-->
+<!--      }-->
+<!--      if (this.keepAspectRatio && this.resizeDir.includes('left')) {-->
+<!--        this.left = this.startLeft + (this.startWidth - newW);-->
+<!--      }-->
+<!--      if (this.keepAspectRatio && this.resizeDir.includes('top')) {-->
+<!--        this.top = this.startTop + (this.startHeight - newH);-->
+<!--      }-->
+<!--      this.width = Math.max(20, newW);-->
+<!--      this.height = Math.max(20, newH);-->
+<!--      this.$emit('width-changed', this.width);-->
+<!--      this.$emit('height-changed', this.height);-->
+<!--    },-->
+<!--    stopResize() {-->
+<!--      this.resizing = false;-->
+<!--      document.removeEventListener('mousemove', this.onResize);-->
+<!--      document.removeEventListener('mouseup', this.stopResize);-->
+<!--    }-->
+<!--  }-->
+<!--};-->
+<!--</script>-->
+
+<!--<style scoped>-->
+<!--.draggable-div {-->
+<!--  position: absolute;-->
+<!--  background-color: white;-->
+<!--  box-sizing: border-box;-->
+<!--  user-select: none;-->
+<!--  z-index: 9;-->
+<!--  border-radius: 8px;-->
+<!--  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);-->
+<!--}-->
+
+<!--.header {-->
+<!--  position: relative;-->
+<!--  display: flex;-->
+<!--  align-items: center;-->
+<!--  padding: 4px 8px;-->
+<!--  cursor: move;-->
+<!--  background-color: var(&#45;&#45;main-color);-->
+<!--  color: white;-->
+<!--  height: 32px;-->
+<!--  line-height: 24px;-->
+<!--  border-top-left-radius: 8px;-->
+<!--  border-top-right-radius: 8px;-->
+<!--  overflow: hidden;-->
+<!--}-->
+
+<!--/* simple: headerなし、全体ドラッグ、×はホバー時のみ */-->
+<!--.draggable-div.simple .close-btn {-->
+<!--  position: absolute;-->
+<!--  top: -4px;-->
+<!--  right: 8px;-->
+<!--  color: red;-->
+<!--  opacity: 0;-->
+<!--  font-size: 36px;-->
+<!--  transition: opacity 0.2s, color 0.2s;-->
+<!--}-->
+<!--.draggable-div.simple:hover .close-btn {-->
+<!--  opacity: 1;-->
+<!--}-->
+
+<!--/* normal: ヘッダー内に配置、×は白、大きく、中央寄せ、ホバーで青 */-->
+<!--.draggable-div.normal .header .close-btn {-->
+<!--  position: absolute;-->
+<!--  top: 50%;-->
+<!--  right: 8px;-->
+<!--  transform: translateY(-50%);-->
+<!--  opacity: 1;-->
+<!--  color: white;-->
+<!--  font-size: 42px;-->
+<!--  background: transparent;-->
+<!--  border: none;-->
+<!--  line-height: 1;-->
+<!--  cursor: pointer;-->
+<!--  transition: color 0.2s, font-size 0.2s;-->
+<!--}-->
+<!--.draggable-div.normal .header .close-btn:hover {-->
+<!--  color: blue;-->
+<!--}-->
+
+<!--.content {-->
+<!--  width: 100%;-->
+<!--  overflow: auto;-->
+<!--}-->
+
+<!--.resizer {-->
+<!--  position: absolute;-->
+<!--  width: 10px;-->
+<!--  height: 10px;-->
+<!--  background: transparent;-->
+<!--}-->
+<!--.top-left     { top: -5px;    left: -5px;    cursor: nwse-resize; }-->
+<!--.top-right    { top: -5px;    right: -5px;   cursor: nesw-resize; }-->
+<!--.bottom-left  { bottom: -5px; left: -5px;    cursor: nesw-resize; }-->
+<!--.bottom-right { bottom: -5px; right: -5px;   cursor: nwse-resize; }-->
+<!--</style>-->
+

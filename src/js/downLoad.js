@@ -9284,3 +9284,21 @@ export async function fetchWithProgress(
     });
     await Promise.all(workers);
 }
+
+/**
+ * ページ内の全ての<div>のz-indexを調べ、
+ * 最大値 + 1 を返す
+ */
+export function getNextZIndex() {
+    const divs = document.getElementsByTagName('div');
+    let maxZ = 0;
+    // HTMLCollectionを配列に変換してループ
+    Array.from(divs).forEach(div => {
+        const z = window.getComputedStyle(div).zIndex;
+        const zi = parseInt(z, 10);
+        if (!isNaN(zi) && zi > maxZ) {
+            maxZ = zi;
+        }
+    });
+    return maxZ + 1;
+}

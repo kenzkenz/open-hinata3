@@ -967,12 +967,18 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <div id="map00">
         <v-btn @click="openPaintEditorWindow">test</v-btn>
 
+
+
+
+
+
+
+
+
         <!-- FloatingWindow の配置 -->
         <FloatingWindow
             ref="floating"
-            :title="windowlTitle"
-            :restrict-to-header="false"
-            :has-header="false"
+            type="simple"
             :default-width=200
             :default-height=200
             :keepAspectRatio="true"
@@ -984,8 +990,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
         <FloatingWindow
             ref="painteditor"
             title="painteditor"
-            :restrict-to-header="true"
-            :has-header="true"
+            type="normal"
             :default-width=400
             :default-height=400
             :keepAspectRatio="false"
