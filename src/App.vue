@@ -965,8 +965,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
       </div>
 
       <div id="map00">
+        <v-btn @click="openPaintEditorWindow">test</v-btn>
 
-        <!-- DraggableResizableDiv の配置 -->
+        <!-- FloatingWindow の配置 -->
         <FloatingWindow
             ref="floating"
             :title="windowlTitle"
@@ -978,6 +979,21 @@ import SakuraEffect from './components/SakuraEffect.vue';
             @width-changed="onWidthChanged"
         >
           <vue-qrcode :value="s_url" :options="{ width: qrCodeWidth }"></vue-qrcode>
+        </FloatingWindow>
+
+        <FloatingWindow
+            ref="painteditor"
+            title="painteditor"
+            :restrict-to-header="true"
+            :has-header="true"
+            :default-width=400
+            :default-height=400
+            :keepAspectRatio="false"
+        >
+          <PaintEditor
+              :initialPaint="paintSettings"
+              @update:paint="onPaintUpdate"
+          />
         </FloatingWindow>
 
         <!--        <img class='loadingImg' src="https://kenzkenz.xsrv.jp/open-hinata3/img/icons/loading2.gif">-->
@@ -1740,6 +1756,8 @@ import html2canvas from 'html2canvas'
 import debounce from 'lodash/debounce'
 import * as math from 'mathjs'
 import FloatingWindow from '@/components/FloatingWindow';
+import PaintEditor from '@/components/PaintEditor.vue'
+
 import {delay, forEach} from "lodash";
 
 export default {
@@ -1757,6 +1775,7 @@ export default {
     ChibanzuDrawer,
     MiniTooltip,
     FloatingWindow,
+    PaintEditor
   },
   data: () => ({
     isRightDiv: true,
@@ -1903,6 +1922,7 @@ export default {
     ],
     windowlTitle: '',
     qrCodeWidth: 200,
+    paintSettings: {},
   }),
   computed: {
     ...mapState([
@@ -2510,6 +2530,31 @@ export default {
     },
   },
   methods: {
+    openPaintEditorWindow() {
+      this.$refs.painteditor.show();
+    },
+    onPaintUpdate({ circle, symbol }) {
+      // Circle 設定反映
+      Object.entries(circle).forEach(([prop, val]) => {
+        this.map.setPaintProperty('oh-point-circle-layer', prop, val)
+      })
+      // Symbol 設定反映
+      this.map.setLayoutProperty(
+          'oh-point-symbol-layer',
+          'text-field',
+          symbol['text-field']
+      )
+      this.map.setPaintProperty(
+          'oh-point-symbol-layer',
+          'text-size',
+          symbol['text-size']
+      )
+      this.map.setPaintProperty(
+          'oh-point-symbol-layer',
+          'text-color',
+          symbol['text-color']
+      )
+    },
     onWidthChanged(newWidth) {
       this.qrCodeWidth = newWidth
     },
