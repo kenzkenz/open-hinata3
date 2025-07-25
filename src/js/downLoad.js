@@ -5867,9 +5867,21 @@ export function capture(uid,isFirst) {
     map01.zoomTo(currentZoom + 0.00000000000000000000000000001);
 }
 
-export function pngDl() {
+export function fncPngDl(printMap) {
+    let mapContainer
+    switch (printMap) {
+        case 'map01':
+            mapContainer = document.getElementById('map01')
+            break
+        case 'map02':
+            mapContainer = document.getElementById('map02')
+            break
+        case 'map03':
+            mapContainer = document.getElementById('map00')
+            break
+    }
     const map01 = store.state.map01
-    const mapContainer = document.getElementById('map01')
+    const map02 = store.state.map02
     let fileName = ''
     try {
         const config = JSON.parse(store.state.clickCircleGeojsonText).features.find(f => f.properties.id === 'config').properties
@@ -5880,21 +5892,24 @@ export function pngDl() {
     if (!fileName) {
         fileName = store.state.address
         if (!fileName) {
-            fileName = 'oh3'
+            fileName = printMap + getNowFileNameTimestamp()
         }
     }
     // 地図のレンダリング完了を待機
     // document.querySelector('.print-buttons').style.display = 'none'
-    document.querySelector('.terrain-btn-span').style.display = 'none'
-    map01.once('idle', async () => {
+    document.querySelectorAll('.terrain-btn-div').forEach(s => {
+        s.style.display = 'none'
+    })
+    map02.once('idle', async () => {
         html2canvas(mapContainer, { useCORS: true }).then(canvas => {
             canvas.toBlob((blob) => {
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
                 link.download = fileName + '.png';
                 link.click();
-                // document.querySelector('.print-buttons').style.display = 'block'
-                document.querySelector('.terrain-btn-span').style.display = 'block'
+                document.querySelectorAll('.terrain-btn-div').forEach(s => {
+                    s.style.display = 'block'
+                })
             });
         });
     });

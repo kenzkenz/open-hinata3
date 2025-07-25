@@ -78,7 +78,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-btn class="fan-menu-print" :size="isSmall ? 'small' : 'default'" icon @click="handlePrint(true)" >戻る</v-btn>
           <v-btn class="print-print" :size="isSmall ? 'small' : 'default'" icon style="font-size: 16px;" @click="print">印刷</v-btn>
           <v-btn class="print-config" :size="isSmall ? 'small' : 'default'" icon style="font-size: 16px;" @click="drawConfig()">設定</v-btn>
-          <v-btn class="print-png" :size="isSmall ? 'small' : 'default'" icon style="font-size: 16px;" @click="pngDl">PNG</v-btn>
+          <v-btn class="print-png" :size="isSmall ? 'small' : 'default'" icon style="font-size: 16px;" @click="pngDl0">PNG</v-btn>
 
           <FanMenu class="fan-menu" layout="vertical" :offset-x="fanMenuOffsetX" :column-break-index="10">
             <template v-slot:center>
@@ -966,7 +966,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
       </div>
 
       <div id="map00">
-        <v-btn @click="openPaintEditorWindow">test</v-btn>
+
+<!--        <v-btn @click="openPaintEditorWindow">test</v-btn>-->
 
 
 
@@ -1366,7 +1367,7 @@ import {
   downloadSimaText, downloadTextFile, DXFDownload,
   dxfToGeoJSON, enableDragHandles,
   extractFirstFeaturePropertiesAndCheckCRS,
-  extractSimaById, fetchWithProgress, genTileUrls, geocode,
+  extractSimaById, fetchWithProgress, fncPngDl, genTileUrls, geocode,
   geojsonAddLayer, geojsonDownload, geoJSONToSIMA,
   geoTiffLoad,
   geoTiffLoad2, getBBoxFromPolygon,
@@ -1379,7 +1380,6 @@ import {
   kmzLoadForUser,
   LngLatToAddress, parseCSV, pmtilesGenerate,
   pmtilesGenerateForUser2,
-  pngDl,
   pngDownload,
   pngLoad, printDirectionChange, scaleAndRotateLassoSelected,
   simaLoadForUser, splitLineStringIntoPoints,
@@ -4075,8 +4075,8 @@ export default {
       this.saveHistory()
       deleteAll()
     },
-    pngDl () {
-      pngDl()
+    pngDl0 () {
+      fncPngDl(this.printMap)
     },
     print () {
       // 印刷ダイアログ表示
@@ -4085,6 +4085,7 @@ export default {
       }, 200)
     },
     printMap01 () {
+      this.printMap = 'map01'
       const map01Div = document.getElementById('map01');
       const map02Div = document.getElementById('map02');
       setTimeout(() => {
@@ -4093,6 +4094,7 @@ export default {
       },10)
     },
     printMap02 () {
+      this.printMap = 'map02'
       const map01Div = document.getElementById('map01');
       const map02Div = document.getElementById('map02');
       setTimeout(() => {
@@ -4103,6 +4105,7 @@ export default {
       }, 10)
     },
     printMap03 () {
+      this.printMap = 'map03'
       const map01Div = document.getElementById('map01');
       const map02Div = document.getElementById('map02');
       switch (this.titleDirection) {
