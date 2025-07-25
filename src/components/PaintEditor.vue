@@ -1,5 +1,6 @@
 <template>
   <div class="paint-editor">
+    {{ id }}
     <h3>Circle 設定</h3>
     <label>
       半径 (circle-radius):
@@ -66,6 +67,9 @@ export default {
     initialPaint: {
       type: Object,
       default: () => ({})
+    },
+    id: {
+      type: Number
     }
   },
   data() {

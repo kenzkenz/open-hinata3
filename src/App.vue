@@ -998,6 +998,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             :keepAspectRatio="false"
         >
           <PaintEditor
+              :id="pmtiles0Id"
               :initialPaint="paintSettings"
               @update:paint="onPaintUpdate"
           />
@@ -1929,6 +1930,7 @@ export default {
     windowlTitle: '',
     qrCodeWidth: 200,
     paintSettings: {},
+    pmtiles0Id: 0,
   }),
   computed: {
     ...mapState([
@@ -3036,7 +3038,9 @@ export default {
           '',
           this.s_geojsonFile
       )
-      alert('終了' + id)
+      this.pmtiles0Id = id
+      this.openPaintEditorWindow()
+      // alert('終了' + id)
     },
     uploadDraw () {
       this.dialogForChibanzyOrDraw = false
