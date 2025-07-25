@@ -3033,7 +3033,7 @@ export default {
       const id = await pmtilesGenerate (
           null,
           layerName,
-          null,
+          '',
           this.s_geojsonFile
       )
       alert('終了' + id)
