@@ -112,6 +112,13 @@ export default {
     onDivMouseDown(e) {
       // クリックで z-index を最前面に
       this.zIndex = getNextZIndex();
+      this.$nextTick(() => {
+        setTimeout(() => {
+          document.querySelectorAll('.v-overlay').forEach(elm => {
+            elm.style.zIndex = getNextZIndex()
+          });
+        },30)
+      });
       // その後ドラッグ処理へ
       this.handleMouseDown(e);
     },
@@ -193,6 +200,13 @@ export default {
   watch: {
     visible() {
       this.zIndex = getNextZIndex()
+      this.$nextTick(() => {
+        setTimeout(() => {
+          document.querySelectorAll('.v-overlay').forEach(elm => {
+            elm.style.zIndex = getNextZIndex()
+          });
+        },30)
+      });
     }
   }
 };

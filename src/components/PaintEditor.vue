@@ -1,5 +1,7 @@
 <template>
+  <v-app>
   <div class="paint-editor">
+
     <h4>ポイント設定</h4>
     <div class="mb-4">
       <span class="label-span">半径</span>
@@ -31,15 +33,14 @@
 <!--      <input type="color" v-model="local.circle['circle-stroke-color']" />-->
 <!--    </div>-->
     <hr>
-    <h4>ラベル設定</h4>
+    <h4 style="margin-bottom: 10px;">ラベル設定</h4>
     <div class="mb-4">
-      <span class="label-span">列選択</span>
-      <input
-          type="text"
-          v-model="local.symbol['text-field']"
-          placeholder="例: ['get','name']"
-      />
-      <br>
+      <v-select v-model="local.symbol['text-field']"
+                :items="s_propnames"
+                label="列を選択してください"
+                outlined
+                @update:modelValue="apply"
+      ></v-select>
       <span class="label-span">サイズ</span>
       <input
           class="range-input"
@@ -47,15 +48,16 @@
           min="8"
           max="32"
           v-model.number="local.symbol['text-size']"
+          @input="apply"
       />
       <span class="val-span">{{ local.symbol['text-size'] }}</span>
-      <input type="color" v-model="local.symbol['text-color']" />
+      <input type="color" v-model="local.symbol['text-color']" @input="apply"/>
     </div>
-
+    <hr>
     <v-btn @click="apply">サーバーに保存</v-btn>
 
   </div>
-
+  </v-app>
 </template>
 
 <script>
@@ -94,15 +96,23 @@ export default {
       symbol: { ...defaultPaint.symbol, ...(this.initialPaint.symbol || {}) }
     };
     return {
-      local: paint
+      local: paint,
+      label: '',
     };
+  },
+  computed: {
+    s_propnames () {
+      console.log(this.$store.state.propnames)
+      return this.$store.state.propnames
+    },
   },
   methods: {
     apply() {
 
       // oh-pmtiles-93-point-layer
 
-      const laiyrId = `oh-pmtiles-${this.id}-point-layer`
+      const pointLaiyrId = `oh-pmtiles-${this.id}-point-layer`
+      const labelLaiyrId = `oh-pmtiles-${this.id}-label-layer`
       const maps = [this.$store.state.map01, this.$store.state.map02]
 
       const paint = {
@@ -113,9 +123,31 @@ export default {
       Object.entries(this.local.circle).forEach(([prop, val]) => {
         console.log(prop,val)
         maps.forEach(map => {
-          map.setPaintProperty(laiyrId, prop, val)
+          map.setPaintProperty(pointLaiyrId, prop, val)
         })
       })
+
+      // Symbol 設定反映
+      // alert( this.local.symbol['text-size'])
+      maps.forEach(map => {
+        map.setLayoutProperty(
+            labelLaiyrId,
+            'text-field',
+            ['get', this.local.symbol['text-field']]
+        )
+        map.setLayoutProperty(
+            labelLaiyrId,
+            'text-size',
+            this.local.symbol['text-size']
+        )
+        map.setPaintProperty(
+            labelLaiyrId,
+            'text-color',
+            this.local.symbol['text-color']
+        )
+
+      })
+
 
       // // 外部から渡されたメソッドがあれば実行
       // if (this.applyMethod) {

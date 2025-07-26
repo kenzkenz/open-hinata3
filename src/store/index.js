@@ -4,6 +4,7 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    propnames: [],
     pmtiles0Id: 0,
     floatingWindows: {},
     featureForOfflineBbox: null,

@@ -12,6 +12,7 @@ try {
     $bbox = $_POST['bbox'] ?? null;
     $length = $_POST['length'] ?? null;
     $nickname = $_POST['nickname'] ?? null;
+    $propnames = $_POST['propnames'] ?? null;
 
 //    // バリデーション: 空チェック
 //    if (empty($name) || empty($url) || empty($uid) || empty($chiban) || empty($url2) || empty($bbox) || empty($length) || empty($kaiji2)) {
@@ -20,7 +21,7 @@ try {
 //    }
 
     // SQL: userdbに新規挿入
-    $sql = "INSERT INTO userpmtiles0 (name, url, url2, label, uid, bbox, length, nickname) VALUES (:name, :url, :url2, :label, :uid, :bbox, :length, :nickname)";
+    $sql = "INSERT INTO userpmtiles0 (name, url, url2, label, uid, bbox, length, nickname, propnames) VALUES (:name, :url, :url2, :label, :uid, :bbox, :length, :nickname, :propnames)";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ':name' => $name,
@@ -31,13 +32,14 @@ try {
         ':bbox' => $bbox,
         ':length' => $length,
         ':nickname' => $nickname,
+        ':propnames' => $propnames,
     ]);
 
     // 挿入された行のIDを取得
     $lastId = $pdo->lastInsertId();
 
     // 成功した場合のレスポンス
-    echo json_encode(["id" => $lastId, "name" => $name, "url" => $url, "uid" => $uid, "bbox" => $bbox, "length" => $length]);
+    echo json_encode(["id" => $lastId, "propnames" => $propnames, "name" => $name, "url" => $url, "uid" => $uid, "bbox" => $bbox, "length" => $length]);
 
 } catch (PDOException $e) {
     echo json_encode(["error" => "データベースエラー: " . $e->getMessage()]);

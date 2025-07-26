@@ -970,7 +970,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
       <div id="map00">
 
-        <v-btn @click="openPaintEditorWindow">test</v-btn>
+<!--        <v-btn @click="openPaintEditorWindow">test</v-btn>-->
 
 
 
@@ -1948,6 +1948,14 @@ export default {
     ]),
     s_url () {
       return this.$store.state.url
+    },
+    s_propnames: {
+      get() {
+        return this.$store.state.propnames
+      },
+      set(value) {
+        this.$store.state.propnames = value
+      }
     },
     s_pmtiles0Id: {
       get() {
@@ -3040,7 +3048,7 @@ export default {
     },
     async uploadMyLayer () {
       this.dialogForChibanzyOrDraw = false
-      this.s_chibanzuPropaties = await extractFirstFeaturePropertiesAndCheckCRS(this.s_geojsonFile)
+      this.s_propnames = await extractFirstFeaturePropertiesAndCheckCRS(this.s_geojsonFile)
       console.log(this.s_geojsonFile)
       const layerName = this.s_geojsonFile.name.split('.')[0]
       const label = 'name'
@@ -3048,7 +3056,7 @@ export default {
           null,
           layerName,
           '',
-          this.s_geojsonFile
+          this.s_geojsonFile,
       )
       this.s_pmtiles0Id = id
       this.openPaintEditorWindow()

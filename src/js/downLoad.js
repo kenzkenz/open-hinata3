@@ -6950,7 +6950,7 @@ export function userTileSet(name,url,id) {
 
 export async function pmtilesGenerate(geojsonObj, layerName, label, file) {
     // PMTilesデータ登録用のヘルパー関数。成功時に response.data.id を返す。
-    async function insertPmtilesData(uid, layerName, url, url2, label, bbox, length, nickname) {
+    async function insertPmtilesData(uid, layerName, url, url2, label, bbox, length, nickname, propnames) {
         try {
             const response = await axios.post(
                 'https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtiles0Insert.php',
@@ -6962,7 +6962,8 @@ export async function pmtilesGenerate(geojsonObj, layerName, label, file) {
                     label,
                     bbox: JSON.stringify(bbox),
                     length,
-                    nickname
+                    nickname,
+                    propnames
                 })
             );
 
@@ -7074,7 +7075,8 @@ export async function pmtilesGenerate(geojsonObj, layerName, label, file) {
                 label,
                 result.bbox,
                 result.length,
-                store.state.myNickname
+                store.state.myNickname,
+                JSON.stringify(store.state.propnames)
             );
             console.log('pmtiles作成完了, 登録ID:', insertedId);
 
