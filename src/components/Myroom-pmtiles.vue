@@ -71,12 +71,12 @@ export default {
       })
     },
     pmtilesClick(name, url, id, bbox, length, label) {
+      this.$store.state.pmtiles0Id = id
+      this.$store.dispatch('showFloatingWindow', 'painteditor')
       this.pmtilesRename = name
       this.id = id
       this.name = name
       userPmtile0Set(name,url,id, JSON.parse(bbox), length, label)
-      this.$store.dispatch('showFloatingWindow', 'painteditor');
-
     },
     removePmtiles(id, url2, event) {
       event.stopPropagation();  // バブリングを止める

@@ -994,14 +994,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
         <FloatingWindow
             windowId="painteditor"
-            title="painteditor"
+            :title="s_pmtiles0Id"
             type="normal"
             :default-width=400
             :default-height=600
             :keepAspectRatio="false"
         >
           <PaintEditor
-              :id="pmtiles0Id"
+              :id="s_pmtiles0Id"
               :initialPaint="paintSettings"
               @update:paint="onPaintUpdate"
           />
@@ -1933,7 +1933,6 @@ export default {
     windowlTitle: '',
     qrCodeWidth: 200,
     paintSettings: {},
-    pmtiles0Id: 0,
   }),
   computed: {
     ...mapState([
@@ -1949,6 +1948,14 @@ export default {
     ]),
     s_url () {
       return this.$store.state.url
+    },
+    s_pmtiles0Id: {
+      get() {
+        return this.$store.state.pmtiles0Id
+      },
+      set(value) {
+        this.$store.state.pmtiles0Id = value
+      }
     },
     s_dialogForOffline2: {
       get() {
@@ -3042,9 +3049,8 @@ export default {
           '',
           this.s_geojsonFile
       )
-      this.pmtiles0Id = id
+      this.s_pmtiles0Id = id
       this.openPaintEditorWindow()
-      // alert('終了' + id)
     },
     uploadDraw () {
       this.dialogForChibanzyOrDraw = false
