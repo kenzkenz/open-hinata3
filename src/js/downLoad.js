@@ -6644,23 +6644,23 @@ export function userXyztileSet(name,url,id,bbox,transparent) {
 export function userPmtile0Set(name, url, id, bbox, length, label) {
     const map = store.state.map01
     const sopurce = {
-        id: 'oh-pmtiles-' + id + '-' + name + '-source',obj: {
+        id: 'oh-pmtiles-' + id + '-source',obj: {
             type: 'vector',
             url: "pmtiles://" + url
         }
     };
     const polygonLayer = {
-        id: 'oh-pmtiles-' + id + '-' + name + '-layer',
+        id: 'oh-pmtiles-' + id + '-layer',
         type: 'fill',
-        source: 'oh-pmtiles-' + id + '-' + name  + '-source',
+        source: 'oh-pmtiles-' + id + '-source',
         "source-layer": 'oh3',
         'paint': {
             'fill-color': 'rgba(0,0,0,0)',
         },
     }
     const lineLayer = {
-        id: 'oh-pmtiles-' + name + '-line-layer',
-        source: 'oh-pmtiles-' + id + '-' + name + '-source',
+        id: 'oh-pmtiles-' + id + '-line-layer',
+        source: 'oh-pmtiles-' + id + '-source',
         type: 'line',
         "source-layer": "oh3",
         paint: {
@@ -6683,9 +6683,9 @@ export function userPmtile0Set(name, url, id, bbox, length, label) {
         minZoom = 17
     }
     const labelLayer = {
-        id: 'oh-pmtiles-' + name + '-label-layer',
+        id: 'oh-pmtiles-' + id + '-label-layer',
         type: "symbol",
-        source: 'oh-pmtiles-' + id + '-' + name + '-source',
+        source: 'oh-pmtiles-' + id + '-source',
         "source-layer": "oh3",
         layout: {
             'text-field': ['get', label],
@@ -6703,9 +6703,9 @@ export function userPmtile0Set(name, url, id, bbox, length, label) {
         minzoom: minZoom
     };
     const pointLayer = {
-        id: 'oh-pmtiles-' + name + '-point-layer',
+        id: 'oh-pmtiles-' + id + '-point-layer',
         type: "circle",
-        source: 'oh-pmtiles-' + id + '-' + name + '-source',
+        source: 'oh-pmtiles-' + id + '-source',
         filter: ["==", "$type", "Point"],
         "source-layer": "oh3",
         paint: {
@@ -6717,9 +6717,9 @@ export function userPmtile0Set(name, url, id, bbox, length, label) {
         }
     };
     const vertexLayer = {
-        id: 'oh-pmtiles-' + name + '-vertex-layer',
+        id: 'oh-pmtiles-' + id + '-vertex-layer',
         type: "circle",
-        source: 'oh-pmtiles-' + id + '-' + name + '-source',
+        source: 'oh-pmtiles-' + id + '-source',
         filter: ["==", "$type", "Polygon"],
         "source-layer": "oh3",
         paint: {

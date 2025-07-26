@@ -7735,23 +7735,23 @@ export default {
                     const length = response.data[0].length
 
                     const source = {
-                      id: 'oh-pmtiles-' + id + '-' + name + '-source', obj: {
+                      id: 'oh-pmtiles-' + id + '-source', obj: {
                         type: 'vector',
                         url: "pmtiles://" + url
                       }
                     };
                     const polygonLayer = {
-                      id: 'oh-pmtiles-' + id + '-' + name + '-layer',
+                      id: 'oh-pmtiles-' + id + '-layer',
                       type: 'fill',
-                      source: 'oh-pmtiles-' + id + '-' + name + '-source',
+                      source: 'oh-pmtiles-' + id + '-source',
                       "source-layer": 'oh3',
                       'paint': {
                         'fill-color': 'rgba(0,0,0,0)',
                       },
                     }
                     const lineLayer = {
-                      id: 'oh-pmtiles-' + id + '-' + name + '-line-layer',
-                      source: 'oh-pmtiles-' + id + '-' + name + '-source',
+                      id: 'oh-pmtiles-' + id + '-line-layer',
+                      source: 'oh-pmtiles-' + id + '-source',
                       type: 'line',
                       "source-layer": "oh3",
                       paint: {
@@ -7774,9 +7774,9 @@ export default {
                       minZoom = 17
                     }
                     const labelLayer = {
-                      id: 'oh-pmtiles-' + id + '-' + name + '-label-layer',
+                      id: 'oh-pmtiles-' + id + '-label-layer',
                       type: "symbol",
-                      source: 'oh-pmtiles-' + id + '-' + name + '-source',
+                      source: 'oh-pmtiles-' + id + '-source',
                       "source-layer": "oh3",
                       layout: {
                         'text-field': ['get', label],
@@ -7795,9 +7795,9 @@ export default {
                     };
 
                     const pointLayer = {
-                      id: 'oh-pmtiles-' + id + '-' + name + '-point-layer',
+                      id: 'oh-pmtiles-' + id + '-point-layer',
                       type: "circle",
-                      source: 'oh-pmtiles-' + id + '-' + name + '-source',
+                      source: 'oh-pmtiles-' + id + '-source',
                       "source-layer": "oh3",
                       filter: ["==", "$type", "Point"],
                       paint: {
@@ -7809,9 +7809,9 @@ export default {
                       },
                     };
                     const vertexLayer = {
-                      id: 'oh-pmtiles-' + id + '-' + name + '-vertex-layer',
+                      id: 'oh-pmtiles-' + id + '-vertex-layer',
                       type: "circle",
-                      source: 'oh-pmtiles-' + id + '-' + name + '-source',
+                      source: 'oh-pmtiles-' + id + '-source',
                       filter: ["==", "$type", "Polygon"],
                       "source-layer": "oh3",
                       paint: {
