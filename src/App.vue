@@ -7,7 +7,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <template>
   <v-app>
     <v-main>
-      <DialogDrawConfig :mapName="'map01'" @open-floating="openWindow" />
+      <DialogDrawConfig
+          :mapName="'map01'"
+          @open-floating="openWindow"
+      />
 
       <div v-if="s_isLassoSelected" class="features-rotate-div my-div" @click="setMaxZIndex($event.currentTarget)">
         <div class="features-rotate-div-close" @click="s_isLassoSelected = false">
@@ -967,7 +970,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
       <div id="map00">
 
-<!--        <v-btn @click="openPaintEditorWindow">test</v-btn>-->
+        <v-btn @click="openPaintEditorWindow">test</v-btn>
 
 
 
@@ -979,6 +982,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
         <!-- FloatingWindow の配置 -->
         <FloatingWindow
+            windowId="floating"
             ref="floating"
             type="simple"
             :default-width=200
@@ -990,11 +994,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </FloatingWindow>
 
         <FloatingWindow
+            windowId="painteditor"
             ref="painteditor"
             title="painteditor"
             type="normal"
             :default-width=400
-            :default-height=400
+            :default-height=600
             :keepAspectRatio="false"
         >
           <PaintEditor

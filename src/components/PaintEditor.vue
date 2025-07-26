@@ -121,7 +121,7 @@ export default {
 <style scoped>
 .paint-editor {
   padding: 1em;
-  border: 1px solid #ccc;
+  /*border: 1px solid #ccc;*/
 }
 .paint-editor h3 {
   margin-top: 1em;

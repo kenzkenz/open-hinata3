@@ -15,14 +15,15 @@
 
 import axios from "axios";
 import {user} from "@/authState";
-import {publicChk, userPmtile0Set} from "@/js/downLoad";
-import muni from "@/js/muni";
+import {userPmtile0Set} from "@/js/downLoad";
 
 export default {
   name: "myroom-pmtiles",
   props: {
     layerName: String,
     mapInstance: Object,
+  },
+  components: {
   },
   data: () => ({
     pmtilesRename: '',
