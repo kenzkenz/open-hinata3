@@ -86,7 +86,7 @@ export default {
         'circle-stroke-color': 'white'
       },
       symbol: {
-        'text-field': ['get', 'name'],
+        'text-field': [],
         'text-size': 12,
         'text-color': '#000000'
       }

@@ -3,7 +3,7 @@
     <v-card>
       <v-text-field v-model="pmtilesRename" type="text" placeholder="リネーム"></v-text-field>
       <v-btn style="margin-top: -10px;margin-bottom: 10px" @click="pmtilesRenameBtn">リネーム</v-btn>
-      <div v-for="item in jsonDataPmtiles" :key="item.id" class="data-container" @click="pmtilesClick(item.name, item.url, item.id, item.bbox, item.length, item.label)">
+      <div v-for="item in jsonDataPmtiles" :key="item.id" class="data-container" @click="pmtilesClick(item.name, item.url, item.id, item.bbox, item.length, item.label, item.propnames)">
         <button class="close-btn" @click="removePmtiles(item.id,item.url2,$event)">×</button>
         <strong>{{ item.name }}</strong><br>
       </div>
@@ -70,8 +70,9 @@ export default {
         vm.pmtilesSelect(vm.$store.state.userId)
       })
     },
-    pmtilesClick(name, url, id, bbox, length, label) {
+    pmtilesClick(name, url, id, bbox, length, label, propnames) {
       this.$store.state.pmtiles0Id = id
+      this.$store.state.propnames = JSON.parse(propnames)
       this.$store.dispatch('showFloatingWindow', 'painteditor')
       this.pmtilesRename = name
       this.id = id
