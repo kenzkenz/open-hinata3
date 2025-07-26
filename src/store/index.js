@@ -4,6 +4,7 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    floatingWindows: {},
     featureForOfflineBbox: null,
     isOffline: false,
     dialogForOffline2: false,
@@ -468,6 +469,12 @@ export default createStore({
   getters: {
   },
   mutations: {
+    setFloatingVisible(state, { id, visible }) {
+      state.floatingWindows = {
+        ...state.floatingWindows,
+        [id]: visible
+      };
+    },
     setTiffAndWorldFile(state, files) {
       state.tiffAndWorldFile = files;
     },
@@ -814,6 +821,12 @@ export default createStore({
     },
   },
   actions: {
+    showFloatingWindow({ commit }, id) {
+      commit('setFloatingVisible', { id, visible: true });
+    },
+    hideFloatingWindow({ commit }, id) {
+      commit('setFloatingVisible', { id, visible: false });
+    },
     triggerSnackbarForGroup({ commit }, { message }) {
       commit('showSnackbarForGroup', message);
       setTimeout(() => commit('hideSnackbarForGroup'), 3000); // timeout と一致

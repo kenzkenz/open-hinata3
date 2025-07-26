@@ -49,6 +49,7 @@ import { getNextZIndex } from "@/js/downLoad";
 export default {
   name: 'FloatingWindow',
   props: {
+    windowId: { type: String, required: true },
     title: { type: String, default: '' },
     defaultWidth: { type: Number, default: 200 },
     defaultHeight: { type: Number, default: 200 },
@@ -63,7 +64,6 @@ export default {
   },
   data() {
     return {
-      visible: false,
       top: this.defaultTop,
       left: this.defaultLeft,
       width: this.defaultWidth,
@@ -82,6 +82,16 @@ export default {
     };
   },
   computed: {
+    // ==== Vuex マップから「自分の ID」の表示状態を取得／更新する visible ====
+    visible: {
+      get() {
+        // alert(this.windowId + '//' + this.$store.state.floatingWindows[this.windowId])
+        return !!this.$store.state.floatingWindows[this.windowId];
+      },
+      set(val) {
+        this.$store.commit('setFloatingVisible', { id: this.windowId, visible: val });
+      }
+    },
     headerShown() {
       return this.type === 'normal';
     },
@@ -96,13 +106,8 @@ export default {
     }
   },
   methods: {
-    show() {
-      // 表示時に最新の z-index を取得
-      this.zIndex = getNextZIndex();
-      this.visible = true;
-    },
     close() {
-      this.visible = false;
+      this.$store.commit('setFloatingVisible', { id: this.windowId, visible: false });
     },
     onDivMouseDown(e) {
       // クリックで z-index を最前面に
@@ -183,6 +188,11 @@ export default {
       this.resizing = false;
       document.removeEventListener('mousemove', this.onResize);
       document.removeEventListener('mouseup', this.stopResize);
+    }
+  },
+  watch: {
+    visible() {
+      this.zIndex = getNextZIndex()
     }
   }
 };

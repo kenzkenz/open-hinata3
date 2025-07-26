@@ -29,7 +29,8 @@ export default {
   },
   methods: {
     qrCodeClick () {
-      this.$emit('open-floating')
+      // this.$emit('open-floating')
+      this.$store.dispatch('showFloatingWindow', 'qrcode');
     },
     xPost () {
       const intentUrl =

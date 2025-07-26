@@ -982,8 +982,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
         <!-- FloatingWindow の配置 -->
         <FloatingWindow
-            windowId="floating"
-            ref="floating"
+            windowId="qrcode"
             type="simple"
             :default-width=200
             :default-height=200
@@ -995,7 +994,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
         <FloatingWindow
             windowId="painteditor"
-            ref="painteditor"
             title="painteditor"
             type="normal"
             :default-width=400
@@ -2544,7 +2542,8 @@ export default {
   },
   methods: {
     openPaintEditorWindow() {
-      this.$refs.painteditor.show();
+      // this.$refs.painteditor.show();
+      this.$store.dispatch('showFloatingWindow', 'painteditor');
     },
     onPaintUpdate({ circle, symbol }) {
       // Circle 設定反映
