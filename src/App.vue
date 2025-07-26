@@ -994,7 +994,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
         <FloatingWindow
             windowId="painteditor"
-            :title="s_pmtiles0Id"
+            :title="`スタイルエディター（id=${s_pmtiles0Id}）`"
             type="normal"
             :default-width=400
             :default-height=600
@@ -2553,26 +2553,27 @@ export default {
       this.$store.dispatch('showFloatingWindow', 'painteditor');
     },
     onPaintUpdate({ circle, symbol }) {
+      console.log(circle)
       // Circle 設定反映
-      Object.entries(circle).forEach(([prop, val]) => {
-        this.map.setPaintProperty('oh-point-circle-layer', prop, val)
-      })
-      // Symbol 設定反映
-      this.map.setLayoutProperty(
-          'oh-point-symbol-layer',
-          'text-field',
-          symbol['text-field']
-      )
-      this.map.setPaintProperty(
-          'oh-point-symbol-layer',
-          'text-size',
-          symbol['text-size']
-      )
-      this.map.setPaintProperty(
-          'oh-point-symbol-layer',
-          'text-color',
-          symbol['text-color']
-      )
+      // Object.entries(circle).forEach(([prop, val]) => {
+      //   this.map.setPaintProperty('oh-point-circle-layer', prop, val)
+      // })
+      // // Symbol 設定反映
+      // this.map.setLayoutProperty(
+      //     'oh-point-symbol-layer',
+      //     'text-field',
+      //     symbol['text-field']
+      // )
+      // this.map.setPaintProperty(
+      //     'oh-point-symbol-layer',
+      //     'text-size',
+      //     symbol['text-size']
+      // )
+      // this.map.setPaintProperty(
+      //     'oh-point-symbol-layer',
+      //     'text-color',
+      //     symbol['text-color']
+      // )
     },
     onWidthChanged(newWidth) {
       this.qrCodeWidth = newWidth
@@ -7749,7 +7750,7 @@ export default {
                       },
                     }
                     const lineLayer = {
-                      id: 'oh-pmtiles-' + name + '-line-layer',
+                      id: 'oh-pmtiles-' + id + '-' + name + '-line-layer',
                       source: 'oh-pmtiles-' + id + '-' + name + '-source',
                       type: 'line',
                       "source-layer": "oh3",
@@ -7773,7 +7774,7 @@ export default {
                       minZoom = 17
                     }
                     const labelLayer = {
-                      id: 'oh-pmtiles-' + name + '-label-layer',
+                      id: 'oh-pmtiles-' + id + '-' + name + '-label-layer',
                       type: "symbol",
                       source: 'oh-pmtiles-' + id + '-' + name + '-source',
                       "source-layer": "oh3",
@@ -7794,7 +7795,7 @@ export default {
                     };
 
                     const pointLayer = {
-                      id: 'oh-pmtiles-' + name + '-point-layer',
+                      id: 'oh-pmtiles-' + id + '-' + name + '-point-layer',
                       type: "circle",
                       source: 'oh-pmtiles-' + id + '-' + name + '-source',
                       "source-layer": "oh3",
@@ -7808,7 +7809,7 @@ export default {
                       },
                     };
                     const vertexLayer = {
-                      id: 'oh-pmtiles-' + name + '-vertex-layer',
+                      id: 'oh-pmtiles-' + id + '-' + name + '-vertex-layer',
                       type: "circle",
                       source: 'oh-pmtiles-' + id + '-' + name + '-source',
                       filter: ["==", "$type", "Polygon"],
