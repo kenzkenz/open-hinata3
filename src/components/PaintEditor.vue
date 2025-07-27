@@ -122,7 +122,7 @@ export default {
       return this.$store.state.pmtilesLabel
     },
     s_propnames () {
-      return this.$store.state.propnames
+      return this.$store.state.propnames || []
     },
   },
   methods: {
