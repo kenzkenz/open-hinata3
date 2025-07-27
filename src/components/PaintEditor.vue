@@ -14,9 +14,12 @@
           @input="apply"
       />
       <span class="val-span">
-      {{ local.circle['circle-radius'] }}</span>
-      <!--      <input type="color" v-model="circle['circle-color']" @input="apply"/>-->
-      <ColorPickerButton v-model="circle['circle-color']" @update:modelValue="apply"/>
+      {{ circle['circle-radius'] }}</span>
+      <!--            <input type="color" v-model="circle['circle-color']" @input="apply"/>-->
+      <ColorPickerButton
+          :value="circle['circle-color']"
+          @change="val => { circle['circle-color'] = val; apply(); }"
+      />
 
     </div>
     <hr>
@@ -38,20 +41,22 @@
           @input="apply"
       />
       <span class="val-span">{{ symbol['text-size'] }}</span>
-      <ColorPickerButton v-model="symbol['text-color']" @update:modelValue="apply"/>
-
+      <!--      <ColorPickerButton v-model="symbol['text-color']" @update:modelValue="apply"/>-->
+      <ColorPickerButton
+          :value="symbol['text-color']"
+          @change="val => { symbol['text-color'] = val; apply(); }"
+      />
     </div>
     <hr>
-    <v-btn @click="apply">サーバーに保存</v-btn>
+    <v-btn @click="save">サーバーに保存</v-btn>
 
   </div>
   </v-app>
 </template>
 
 <script>
-import {getNextZIndex} from "@/js/downLoad";
 import ColorPickerButton from '@/components/ColorPickerButton'
-
+import axios from "axios";
 
 export default {
   name: 'PaintEditor',
@@ -112,14 +117,29 @@ export default {
     },
   },
   methods: {
-    aaa() {
-      this.$nextTick(() => {
-        setTimeout(() => {
-          document.querySelectorAll('.v-overlay').forEach(elm => {
-            elm.style.zIndex = getNextZIndex()
-          });
-        },30)
-      });
+    save() {
+      const vm = this
+      const style = {
+        circle: { ...this.circle },
+        symbol: { ...this.symbol }
+      };
+      console.log(style)
+      console.log(vm.symbol['text-field'])
+      axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtiles0StyleUpdate.php',{
+        params: {
+          id: this.id,
+          label: vm.symbol['text-field'] || '',
+          style: JSON.stringify(style),
+        }
+      }).then(function (response) {
+        console.log(response)
+        if (response.data.success) {
+          vm.$store.state.snackbarForGroup = true
+          vm.$store.state.snackbarForGroupText = '保存に成功しました'
+        } else {
+          alert('保存失敗！')
+        }
+      })
     },
     apply() {
 
@@ -135,9 +155,11 @@ export default {
       // };
 
       Object.entries(this.circle).forEach(([prop, val]) => {
-        console.log(prop,val)
         maps.forEach(map => {
-          map.setPaintProperty(pointLaiyrId, prop, val)
+          if (val) {
+            console.log(prop,val)
+            map.setPaintProperty(pointLaiyrId, prop, val)
+          }
         })
       })
 
