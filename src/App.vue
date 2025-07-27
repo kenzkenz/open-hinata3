@@ -293,7 +293,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-card-text>
             <p style="margin-bottom: 20px;">選択してください。</p>
             <v-btn :disabled="!user1" @click="uploadChibanzu">地番図アップロード</v-btn>
-            <v-btn :disabled="!user1" style="margin-left: 10px;" @click="uploadMyLayer">マイレイヤー追加</v-btn>
+            <v-btn :disabled="!user1" style="margin-left: 10px;" @click="dialogForLayerName = true,dialogForChibanzyOrDraw = false">マイレイヤー追加</v-btn>
+
             <v-btn style="margin-left: 10px;" @click="uploadDraw">ドロー追加</v-btn>
           </v-card-text>
           <v-card-actions>
@@ -302,6 +303,23 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </v-card-actions>
         </v-card>
       </v-dialog>
+
+      <v-dialog v-model="dialogForLayerName" max-width="510px">
+        <v-card>
+          <v-card-title>
+            レイヤー名を記入
+          </v-card-title>
+          <v-card-text>
+            <v-text-field v-model="s_gazoName" placeholder="レイヤー名" ></v-text-field>
+            <v-btn style="margin-left: 0px;" @click="uploadMyLayer">追加</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="dialogForLayerName = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
 
       <v-dialog v-model="dialogForDl" max-width="500px">
         <v-card>
@@ -1933,6 +1951,7 @@ export default {
     windowlTitle: '',
     qrCodeWidth: 200,
     paintSettings: {},
+    dialogForLayerName: false,
   }),
   computed: {
     ...mapState([
@@ -3047,10 +3066,16 @@ export default {
       }
     },
     async uploadMyLayer () {
+      if (!this.s_gazoName) {
+        alert('レイヤー名を記入してください')
+        return
+      }
       this.dialogForChibanzyOrDraw = false
+      this.dialogForLayerName = false
       this.s_propnames = await extractFirstFeaturePropertiesAndCheckCRS(this.s_geojsonFile)
       console.log(this.s_geojsonFile)
-      const layerName = this.s_geojsonFile.name.split('.')[0]
+      // const layerName = this.s_geojsonFile.name.split('.')[0]
+      const layerName = this.s_gazoName
       const label = 'name'
       const id = await pmtilesGenerate (
           null,
