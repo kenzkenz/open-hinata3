@@ -1398,7 +1398,7 @@ import {
   geojsonAddLayer, geojsonDownload, geoJSONToSIMA,
   geoTiffLoad,
   geoTiffLoad2, getBBoxFromPolygon,
-  getCRS, getMaxZIndex, getNowFileNameTimestamp, gpxDownload,
+  getCRS, getMaxZIndex, getNextZIndex, getNowFileNameTimestamp, gpxDownload,
   handleFileUpload,
   highlightSpecificFeatures,
   highlightSpecificFeatures2025,
@@ -4908,8 +4908,9 @@ export default {
     drawConfig () {
       const mapName = 'map01'
       if (this.$store.state.dialogs.drawConfigDialog[mapName].style.display === 'none') {
-        this.$store.commit('incrDialogMaxZindex')
-        this.$store.state.dialogs.drawConfigDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
+        // this.$store.commit('incrDialogMaxZindex')
+        // this.$store.state.dialogs.drawConfigDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
+        this.$store.state.dialogs.drawConfigDialog[mapName].style['z-index'] = getNextZIndex()
         this.$store.state.dialogs.drawConfigDialog[mapName].style.display = 'block'
         if (window.innerWidth < 450) {
           this.$store.state.dialogs.drawConfigDialog[mapName].style.left = '0px'
@@ -4927,8 +4928,9 @@ export default {
     share() {
       const mapName = 'map01'
       if (this.$store.state.dialogs.shareDialog[mapName].style.display === 'none') {
-        this.$store.commit('incrDialogMaxZindex')
-        this.$store.state.dialogs.shareDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
+        // this.$store.commit('incrDialogMaxZindex')
+        // this.$store.state.dialogs.shareDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
+        this.$store.state.dialogs.shareDialog[mapName].style['z-index'] = getNextZIndex()
         this.$store.state.dialogs.shareDialog[mapName].style.display = 'block'
         if (window.innerWidth < 450) {
           this.$store.state.dialogs.shareDialog[mapName].style.left = '0px'
@@ -5205,8 +5207,10 @@ export default {
       // alert('app.vueから' + groupId)
       // this.$store.state.currentGroupId = groupId
       if (this.$store.state.dialogs.myroomDialog[mapName].style.display === 'none') {
-        this.$store.commit('incrDialogMaxZindex')
-        this.$store.state.dialogs.myroomDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
+        // this.$store.commit('incrDialogMaxZindex')
+        // this.$store.state.dialogs.myroomDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
+        this.$store.state.dialogs.myroomDialog[mapName].style['z-index'] = getNextZIndex()
+
         this.$store.state.dialogs.myroomDialog[mapName].style.display = 'block'
       } else {
         this.$store.state.dialogs.myroomDialog[mapName].style.display = 'none'
@@ -5257,9 +5261,10 @@ export default {
     },
     btnClickMenu (mapName) {
       if (this.$store.state.dialogs.menuDialog[mapName].style.display === 'none') {
-        this.$store.commit('incrDialogMaxZindex')
-        this.$store.state.dialogs.menuDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
-       this.$store.state.dialogs.menuDialog[mapName].style.display = 'block'
+        // this.$store.commit('incrDialogMaxZindex')
+        // this.$store.state.dialogs.menuDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
+        this.$store.state.dialogs.menuDialog[mapName].style['z-index'] = getNextZIndex()
+        this.$store.state.dialogs.menuDialog[mapName].style.display = 'block'
       } else {
         this.$store.state.dialogs.menuDialog[mapName].style.display = 'none'
       }
@@ -5281,8 +5286,9 @@ export default {
         }
       },300)
       if (this.$store.state.dialogs.layerDialog[mapName].style.display === 'none') {
-        this.$store.commit('incrDialogMaxZindex')
-        this.$store.state.dialogs.layerDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
+        // this.$store.commit('incrDialogMaxZindex')
+        // this.$store.state.dialogs.layerDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
+        this.$store.state.dialogs.layerDialog[mapName].style['z-index'] = getNextZIndex()
         this.$store.state.dialogs.layerDialog[mapName].style.display = 'block'
       } else {
         this.$store.state.dialogs.layerDialog[mapName].style.display = 'none'

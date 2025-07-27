@@ -4,6 +4,7 @@
     <v-tabs mobile-breakpoint="0" v-model="tab" class="custom-tabs">
       <v-tab value="point">ポイント</v-tab>
       <v-tab value="polygon">ポリゴン</v-tab>
+      <v-tab value="line">ライン</v-tab>
     </v-tabs>
 <!--    <hr>-->
     <v-window v-model="tab" style="margin-top: 20px;">
@@ -103,10 +104,12 @@
               @change="val => { symbol['text-color'] = val; apply(); }"
           />
         </div>
+      </v-window-item>
+      <v-window-item  value="line">
+        <p style="color: deeppink; margin-top: 20px; margin-bottom: 100px;">ラインは未作成です。</p>
 
       </v-window-item>
     </v-window>
-
     <hr>
     <v-btn @click="save">サーバーに保存</v-btn>
 

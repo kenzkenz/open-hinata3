@@ -74,7 +74,7 @@ import {
   geojsonAddLayer,
   highlightSpecificFeatures, highlightSpecificFeatures2025,
   highlightSpecificFeaturesCity, LngLatToAddress,
-  simaToGeoJSON, updateMeasureUnit, dxfToGeoJSON, userPmtileSet, highlightSpecificFeaturesSima
+  simaToGeoJSON, updateMeasureUnit, dxfToGeoJSON, userPmtileSet, highlightSpecificFeaturesSima, getNextZIndex
 } from "@/js/downLoad";
 import * as Layers from '@/js/layers'
 // import Tree from "vue3-tree"
@@ -231,7 +231,7 @@ export default {
       }
     },
     infoOpen (element,isNew,isBlock) {
-      this.$store.commit('incrDialogMaxZindex')
+      // this.$store.commit('incrDialogMaxZindex')
       const result = this.s_dialogsINfo[this.mapName].find(el => el.id === element.id)
       const dialogEl = document.querySelector('#dialog-div-layerDialog-' + this.mapName)
       let top = dialogEl.offsetTop + 'px'
@@ -280,7 +280,7 @@ export default {
                 display: display,
                 top: top,
                 left: left,
-                'z-index': this.$store.state.dialogMaxZindex
+                'z-index': getNextZIndex()
               }
             }
         this.$store.commit('pushDialogsInfo', {mapName: this.mapName, dialog: infoDialog})
@@ -290,7 +290,7 @@ export default {
       } else {
         if (isNew) {
           result.style.display = 'block'
-          result.style["z-index"] = this.$store.state.dialogMaxZindex
+          result.style["z-index"] = getNextZIndex()
         }
       }
 

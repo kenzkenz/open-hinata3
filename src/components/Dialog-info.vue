@@ -91,6 +91,7 @@ import extChiriin from "@/components/ext-chiriin"
 import extSaga from "@/components/ext-saga"
 import extSaaLevel from "@/components/ext-sea-level"
 import extKihonkijyunten from "@/components/ext-kihonkijyunten";
+import {getNextZIndex} from "@/js/downLoad";
 
 export default {
   name: "dialog-info",
@@ -141,13 +142,15 @@ export default {
     },
     dialogMouseDown (item) {
       console.log(this.$store.state.dialogsInfo)
-      this.$store.commit('incrDialogMaxZindex')
+      // this.$store.commit('incrDialogMaxZindex')
       try {
         const result = this.$store.state.dialogsInfo[this.mapName].find(el => el.id === item.id)
         const elm = document.querySelector('#dialog-info-' + item.id)
         result.style.top = elm.style.top
         result.style.left = elm.style.left
-        result.style['z-index'] = this.$store.state.dialogMaxZindex
+        // result.style['z-index'] = this.$store.state.dialogMaxZindex
+        result.style['z-index'] = getNextZIndex()
+
       } catch (e) {
         console.log(e)
       }

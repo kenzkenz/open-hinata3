@@ -3994,7 +3994,8 @@ export function popup(e,map,mapName,mapFlg) {
                 )
             }
             console.log(features[0].geometry.type)
-            if (store.state.isRenzoku && features[0].geometry.type === 'Polygon') return
+            // if (store.state.isRenzoku && features[0].geometry.type === 'Polygon') return
+            if (features[0].geometry.type === 'Polygon' && !layerId.includes('oh-pmtiles-')) return
             if (features.length === 0) return
             props = features[0].properties
             let html0 = ''
