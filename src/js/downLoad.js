@@ -6700,7 +6700,7 @@ export function userPmtile0Set(name, url, id, bbox, length, label) {
             'text-halo-color': 'rgba(255,255,255,1)',
             'text-halo-width': 1.0,
         },
-        minzoom: minZoom
+        // minzoom: minZoom
     };
     const pointLayer = {
         id: 'oh-pmtiles-' + id + '-point-layer',

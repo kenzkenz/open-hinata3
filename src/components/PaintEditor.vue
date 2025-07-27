@@ -85,7 +85,7 @@ export default {
       },
       symbol: {
         'text-field': [],
-        'text-size': 12,
+        'text-size': 15,
         'text-color': '#000000'
       }
     };
@@ -95,23 +95,11 @@ export default {
     // };
     return {
       menu: false,
-      // local: paint,
       label: '',
       circle: { ...JSON.parse(JSON.stringify(defaultPaint)).circle},
       symbol: { ...JSON.parse(JSON.stringify(defaultPaint)).symbol},
       defaultCircle: { ...JSON.parse(JSON.stringify(defaultPaint)).circle},
       defaultSymbol: { ...JSON.parse(JSON.stringify(defaultPaint)).symbol}
-      // circle: {
-      //   'circle-radius': 5,
-      //   'circle-color': 'black',
-      //   'circle-stroke-width': 1,
-      //   'circle-stroke-color': 'white'
-      // },
-      // symbol: {
-      //   'text-field': [],
-      //   'text-size': 12,
-      //   'text-color': '#000000'
-      // }
     };
   },
   computed: {

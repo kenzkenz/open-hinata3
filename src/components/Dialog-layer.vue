@@ -477,7 +477,6 @@ export default {
               if (!map.getLayer(layer0.id)) {
                 map.addLayer(layer0)
 
-
                 if (layer0.id.includes('oh-pmtiles-') && layer0.id.endsWith('-point-layer')) {
                   console.log(layer0.id)
                   const id = layer0.id.split('-')[2]

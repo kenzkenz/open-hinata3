@@ -16,6 +16,7 @@
 import axios from "axios";
 import {user} from "@/authState";
 import {userPmtile0Set} from "@/js/downLoad";
+import store from "@/store";
 
 export default {
   name: "myroom-pmtiles",
@@ -72,7 +73,12 @@ export default {
     },
     pmtilesClick(item) {
       console.log(this.$store.state.pmtiles0Id,item.id)
+      console.log(item)
       const isMatch = this.$store.state.pmtiles0Id === item.id ? true : false
+      const result = this.$store.state.selectedLayers['map01'].find(v => {
+        return v.id.includes(`oh-pmtiles-${item.id}`);
+      });
+      // alert(result)
       this.$store.state.pmtiles0Id = item.id
       this.$store.state.propnames = JSON.parse(item.propnames)
       this.$store.state.pmtilesLabel = item.label
@@ -81,9 +87,9 @@ export default {
       this.pmtilesRename = item.name
       this.id = item.id
       this.name = item.name
-      // if (!isMatch) {
+      if (!result) {
         userPmtile0Set(item.name,item.url,item.id, JSON.parse(item.bbox), item.length, item.label)
-      // }
+      }
     },
     removePmtiles(id, url2, event) {
       event.stopPropagation();  // バブリングを止める
