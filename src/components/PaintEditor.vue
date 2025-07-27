@@ -10,32 +10,19 @@
           type="range"
           min="1"
           max="20"
-          v-model.number="local.circle['circle-radius']"
+          v-model.number="circle['circle-radius']"
           @input="apply"
       />
       <span class="val-span">
       {{ local.circle['circle-radius'] }}</span>
-      <input type="color" v-model="local.circle['circle-color']" @input="apply"/>
+      <!--      <input type="color" v-model="circle['circle-color']" @input="apply"/>-->
+      <ColorPickerButton v-model="circle['circle-color']" @update:modelValue="apply"/>
+
     </div>
-<!--    <div class="mb-4">-->
-<!--      枠線幅 (circle-stroke-width):-->
-<!--      <input-->
-<!--          type="range"-->
-<!--          min="0"-->
-<!--          max="5"-->
-<!--          step="0.5"-->
-<!--          v-model.number="local.circle['circle-stroke-width']"-->
-<!--      />-->
-<!--      {{ local.circle['circle-stroke-width'] }}-->
-<!--    </div>-->
-<!--    <div class="mb-4">-->
-<!--      枠線色 (circle-stroke-color):-->
-<!--      <input type="color" v-model="local.circle['circle-stroke-color']" />-->
-<!--    </div>-->
     <hr>
     <h4 style="margin-bottom: 10px;">ラベル設定</h4>
     <div class="mb-4">
-      <v-select v-model="local.symbol['text-field']"
+      <v-select v-model="symbol['text-field']"
                 :items="s_propnames"
                 label="列を選択してください"
                 outlined
@@ -47,11 +34,12 @@
           type="range"
           min="8"
           max="32"
-          v-model.number="local.symbol['text-size']"
+          v-model.number="symbol['text-size']"
           @input="apply"
       />
-      <span class="val-span">{{ local.symbol['text-size'] }}</span>
-      <input type="color" v-model="local.symbol['text-color']" @input="apply"/>
+      <span class="val-span">{{ symbol['text-size'] }}</span>
+      <ColorPickerButton v-model="symbol['text-color']" @update:modelValue="apply"/>
+
     </div>
     <hr>
     <v-btn @click="apply">サーバーに保存</v-btn>
@@ -61,6 +49,10 @@
 </template>
 
 <script>
+import {getNextZIndex} from "@/js/downLoad";
+import ColorPickerButton from '@/components/ColorPickerButton'
+
+
 export default {
   name: 'PaintEditor',
   props: {
@@ -77,6 +69,7 @@ export default {
       default: null
     }
   },
+  components: { ColorPickerButton },
   data() {
     const defaultPaint = {
       circle: {
@@ -96,8 +89,20 @@ export default {
       symbol: { ...defaultPaint.symbol, ...(this.initialPaint.symbol || {}) }
     };
     return {
+      menu: false,
       local: paint,
       label: '',
+      circle: {
+        'circle-radius': 5,
+        'circle-color': 'black',
+        'circle-stroke-width': 1,
+        'circle-stroke-color': 'white'
+      },
+      symbol: {
+        'text-field': [],
+        'text-size': 12,
+        'text-color': '#000000'
+      }
     };
   },
   computed: {
@@ -107,6 +112,15 @@ export default {
     },
   },
   methods: {
+    aaa() {
+      this.$nextTick(() => {
+        setTimeout(() => {
+          document.querySelectorAll('.v-overlay').forEach(elm => {
+            elm.style.zIndex = getNextZIndex()
+          });
+        },30)
+      });
+    },
     apply() {
 
       // oh-pmtiles-93-point-layer
@@ -115,12 +129,12 @@ export default {
       const labelLaiyrId = `oh-pmtiles-${this.id}-label-layer`
       const maps = [this.$store.state.map01, this.$store.state.map02]
 
-      const paint = {
-        circle: { ...this.local.circle },
-        symbol: { ...this.local.symbol }
-      };
+      // const paint = {
+      //   circle: { ...this.local.circle },
+      //   symbol: { ...this.local.symbol }
+      // };
 
-      Object.entries(this.local.circle).forEach(([prop, val]) => {
+      Object.entries(this.circle).forEach(([prop, val]) => {
         console.log(prop,val)
         maps.forEach(map => {
           map.setPaintProperty(pointLaiyrId, prop, val)
@@ -133,17 +147,17 @@ export default {
         map.setLayoutProperty(
             labelLaiyrId,
             'text-field',
-            ['get', this.local.symbol['text-field']]
+            ['get', this.symbol['text-field']]
         )
         map.setLayoutProperty(
             labelLaiyrId,
             'text-size',
-            this.local.symbol['text-size']
+            this.symbol['text-size']
         )
         map.setPaintProperty(
             labelLaiyrId,
             'text-color',
-            this.local.symbol['text-color']
+            this.symbol['text-color']
         )
 
       })
@@ -178,7 +192,7 @@ export default {
   padding: 0.5em 1em;
 }
 .range-input {
-  width: 60%;
+  width: 50%;
   position: relative;
   top: 8px;
 }

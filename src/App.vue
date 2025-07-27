@@ -994,7 +994,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
         <FloatingWindow
             windowId="painteditor"
-            :title="`スタイルエディター（id=${s_pmtiles0Id}）`"
+            :title="`スタイル変更（id=${s_pmtiles0Id}）`"
             type="normal"
             :default-width=400
             :default-height=600
@@ -10120,6 +10120,9 @@ select {
   height:30px!important;
   padding: 0px!important;
   margin:  0px!important;
+}
+.v-overlay {
+  z-index: 999999999 !important;
 }
 @media (max-width: 720px) {
   /*.fan-menu-rap {*/

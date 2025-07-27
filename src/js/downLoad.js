@@ -9317,6 +9317,9 @@ export function getNextZIndex() {
     let maxZ = 0;
     // HTMLCollectionを配列に変換してループ
     Array.from(divs).forEach(div => {
+        // .v-overlay を除外
+        if (div.classList.contains('v-overlay')) return;
+
         const z = window.getComputedStyle(div).zIndex;
         const zi = parseInt(z, 10);
         if (!isNaN(zi) && zi > maxZ) {

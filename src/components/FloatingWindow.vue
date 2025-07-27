@@ -122,6 +122,28 @@ export default {
       // その後ドラッグ処理へ
       this.handleMouseDown(e);
     },
+    // onDivMouseDown(e) {
+    //   // const myZ = this.zIndex
+    //   //
+    //   // // 現在の .v-overlay の最大 z-index を取得
+    //   // const overlays = Array.from(document.querySelectorAll('.v-overlay'))
+    //   // const overlayZ = Math.max(
+    //   //     ...overlays.map(elm => {
+    //   //       const z = window.getComputedStyle(elm).zIndex
+    //   //       return isNaN(z) ? 0 : Number(z)
+    //   //     }),
+    //   //     0
+    //   // )
+    //   //
+    //   // // v-overlay が自分より上なら何もしない
+    //   // if (overlayZ > myZ) {
+    //   //   return
+    //   // }
+    //   //
+    //   // // ↓通常処理：z-index 上げ + ドラッグ開始
+    //   // this.zIndex = getNextZIndex()
+    //   // this.handleMouseDown(e)
+    // },
     handleMouseDown(e) {
       if (this.resizing) return;
       if (!this.fullDraggable && this.headerShown && !this.$refs.header.contains(e.target)) return;
