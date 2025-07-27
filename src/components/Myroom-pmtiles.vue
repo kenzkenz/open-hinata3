@@ -74,12 +74,11 @@ export default {
     pmtilesClick(item) {
       console.log(this.$store.state.pmtiles0Id,item.id)
       console.log(item)
-      const isMatch = this.$store.state.pmtiles0Id === item.id ? true : false
       const result = this.$store.state.selectedLayers['map01'].find(v => {
         return v.id.includes(`oh-pmtiles-${item.id}`);
       });
-      // alert(result)
       this.$store.state.pmtiles0Id = item.id
+      this.$store.state.pmtiles0Name = item.name
       this.$store.state.propnames = JSON.parse(item.propnames)
       this.$store.state.pmtilesLabel = item.label
       this.$store.state.pmtilesStyle = JSON.parse(item.style)

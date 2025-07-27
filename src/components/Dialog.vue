@@ -10,6 +10,8 @@
 </template>
 
 <script>
+import {getNextZIndex} from "@/js/downLoad";
+
 export default {
   name: 'dialog-0',
   props: ['dialog','mapName'],
@@ -28,10 +30,11 @@ export default {
       this.$store.state.dialogs[this.dialog.name][this.mapName].style.display = 'none'
     },
     dialogMouseDown () {
-      this.$store.commit('incrDialogMaxZindex')
+      // this.$store.commit('incrDialogMaxZindex')
       this.$store.state.dialogs[this.dialog.name][this.mapName].style.top = this.$refs.dragDiv.style.top
       this.$store.state.dialogs[this.dialog.name][this.mapName].style.left = this.$refs.dragDiv.style.left
-      this.$store.state.dialogs[this.dialog.name][this.mapName].style['z-index'] = this.$store.state.dialogMaxZindex
+      // this.$store.state.dialogs[this.dialog.name][this.mapName].style['z-index'] = this.$store.state.dialogMaxZindex
+      this.$store.state.dialogs[this.dialog.name][this.mapName].style['z-index'] = getNextZIndex()
     }
   },
   computed: {

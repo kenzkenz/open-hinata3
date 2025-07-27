@@ -486,31 +486,55 @@ export default {
                   params: { id: id }
                 }).then(function (response) {
                   const labelLaiyrId = `oh-pmtiles-${id}-label-layer`
+                  const polygonLaiyrId = `oh-pmtiles-${id}-layer`
+                  const polygonLineLaiyrId = `oh-pmtiles-${id}-line-layer`
+
                   console.log(JSON.parse(response.data[0].style))
                   if (JSON.parse(response.data[0].style)) {
                     const circle = JSON.parse(response.data[0].style).circle
                     const symbol = JSON.parse(response.data[0].style).symbol
+                    const polygon = JSON.parse(response.data[0].style).polygon
+
                     Object.entries(circle).forEach(([prop, val]) => {
                       if (val) {
                         console.log(prop,val)
                         map.setPaintProperty(layer0.id, prop, val)
                       }
                     })
-                    map.setLayoutProperty(
-                        labelLaiyrId,
-                        'text-field',
-                        ['get', symbol['text-field']]
-                    )
-                    map.setLayoutProperty(
-                        labelLaiyrId,
-                        'text-size',
-                        symbol['text-size']
-                    )
-                    map.setPaintProperty(
-                        labelLaiyrId,
-                        'text-color',
-                        symbol['text-color']
-                    )
+                    if (symbol) {
+                      map.setLayoutProperty(
+                          labelLaiyrId,
+                          'text-field',
+                          ['get', symbol['text-field']]
+                      )
+                      map.setLayoutProperty(
+                          labelLaiyrId,
+                          'text-size',
+                          symbol['text-size']
+                      )
+                      map.setPaintProperty(
+                          labelLaiyrId,
+                          'text-color',
+                          symbol['text-color']
+                      )
+                    }
+                    if (polygon) {
+                      map.setPaintProperty(
+                          polygonLaiyrId,
+                          'fill-color',
+                          polygon['fill-color']
+                      )
+                      map.setPaintProperty(
+                          polygonLineLaiyrId,
+                          'line-color',
+                          polygon['line-color']
+                      )
+                      map.setPaintProperty(
+                          polygonLineLaiyrId,
+                          'line-width',
+                          polygon['line-width']
+                      )
+                    }
                   }
 
                 })

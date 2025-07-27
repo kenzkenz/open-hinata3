@@ -4,6 +4,7 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    pmtiles0Name: '',
     pmtilesLabel: '',
     pmtilesStyle: {},
     propnames: [],

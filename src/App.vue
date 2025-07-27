@@ -998,6 +998,11 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
 
 
+
+
+
+
+
         <!-- FloatingWindow の配置 -->
         <FloatingWindow
             windowId="qrcode"
@@ -1012,7 +1017,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
         <FloatingWindow
             windowId="painteditor"
-            :title="`スタイル変更（id=${s_pmtiles0Id}）`"
+            :title="`スタイル変更（id=${s_pmtiles0Id}-${s_pmtiles0Name}）`"
             type="normal"
             :default-width=400
             :default-height=600
@@ -1974,6 +1979,14 @@ export default {
       },
       set(value) {
         this.$store.state.propnames = value
+      }
+    },
+    s_pmtiles0Name: {
+      get() {
+        return this.$store.state.pmtiles0Name
+      },
+      set(value) {
+        this.$store.state.pmtiles0Name = value
       }
     },
     s_pmtiles0Id: {
@@ -3084,6 +3097,7 @@ export default {
           this.s_geojsonFile,
       )
       this.s_pmtiles0Id = id
+      this.s_pmtiles0Name = this.s_gazoName
       this.openPaintEditorWindow()
     },
     uploadDraw () {
