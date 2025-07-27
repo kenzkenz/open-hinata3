@@ -486,13 +486,34 @@ export default {
                 axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtiles0SelectById.php', {
                   params: { id: id }
                 }).then(function (response) {
+                  const labelLaiyrId = `oh-pmtiles-${id}-label-layer`
                   console.log(JSON.parse(response.data[0].style))
-                  Object.entries(JSON.parse(response.data[0].style).circle).forEach(([prop, val]) => {
+                  if (JSON.parse(response.data[0].style)) {
+                    const circle = JSON.parse(response.data[0].style).circle
+                    const symbol = JSON.parse(response.data[0].style).symbol
+                    Object.entries(circle).forEach(([prop, val]) => {
                       if (val) {
                         console.log(prop,val)
                         map.setPaintProperty(layer0.id, prop, val)
                       }
-                  })
+                    })
+                    map.setLayoutProperty(
+                        labelLaiyrId,
+                        'text-field',
+                        ['get', symbol['text-field']]
+                    )
+                    map.setLayoutProperty(
+                        labelLaiyrId,
+                        'text-size',
+                        symbol['text-size']
+                    )
+                    map.setPaintProperty(
+                        labelLaiyrId,
+                        'text-color',
+                        symbol['text-color']
+                    )
+                  }
+
                 })
 
                 }
