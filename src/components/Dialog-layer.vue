@@ -111,6 +111,8 @@ import {
 import JSZip from "jszip";
 import store from "@/store";
 import {mapState} from "vuex";
+import axios from "axios"
+
 
 let infoCount = 0
 
@@ -418,7 +420,7 @@ export default {
         this.zoomOperation(1000)
       }
     },
-    addLayers() {
+    async addLayers() {
       if(!this.$store.state.watchFlg && !this.isDragging) return
       // ------------------------------------------------------------------
       const map = this.$store.state[this.mapName]
@@ -474,6 +476,27 @@ export default {
             } else {
               if (!map.getLayer(layer0.id)) {
                 map.addLayer(layer0)
+
+
+                if (layer0.id.includes('oh-pmtiles-') && layer0.id.endsWith('-point-layer')) {
+                  console.log(layer0.id)
+                  const id = layer0.id.split('-')[2]
+                  console.log('99999', id)
+
+                axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtiles0SelectById.php', {
+                  params: { id: id }
+                }).then(function (response) {
+                  console.log(JSON.parse(response.data[0].style))
+                  Object.entries(JSON.parse(response.data[0].style).circle).forEach(([prop, val]) => {
+                      if (val) {
+                        console.log(prop,val)
+                        map.setPaintProperty(layer0.id, prop, val)
+                      }
+                  })
+                })
+
+                }
+
                 if (layer0.position) {
                   if (flyFlg && this.nodeClicked) {
                     setTimeout(() => {
