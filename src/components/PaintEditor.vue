@@ -89,30 +89,39 @@ export default {
         'text-color': '#000000'
       }
     };
-    const paint = {
-      circle: { ...defaultPaint.circle, ...(this.initialPaint.circle || {}) },
-      symbol: { ...defaultPaint.symbol, ...(this.initialPaint.symbol || {}) }
-    };
+    // const paint = {
+    //   circle: { ...defaultPaint.circle, ...(this.initialPaint.circle || {}) },
+    //   symbol: { ...defaultPaint.symbol, ...(this.initialPaint.symbol || {}) }
+    // };
     return {
       menu: false,
-      local: paint,
+      // local: paint,
       label: '',
-      circle: {
-        'circle-radius': 5,
-        'circle-color': 'black',
-        'circle-stroke-width': 1,
-        'circle-stroke-color': 'white'
-      },
-      symbol: {
-        'text-field': [],
-        'text-size': 12,
-        'text-color': '#000000'
-      }
+      circle: { ...JSON.parse(JSON.stringify(defaultPaint)).circle},
+      symbol: { ...JSON.parse(JSON.stringify(defaultPaint)).symbol},
+      defaultCircle: { ...JSON.parse(JSON.stringify(defaultPaint)).circle},
+      defaultSymbol: { ...JSON.parse(JSON.stringify(defaultPaint)).symbol}
+      // circle: {
+      //   'circle-radius': 5,
+      //   'circle-color': 'black',
+      //   'circle-stroke-width': 1,
+      //   'circle-stroke-color': 'white'
+      // },
+      // symbol: {
+      //   'text-field': [],
+      //   'text-size': 12,
+      //   'text-color': '#000000'
+      // }
     };
   },
   computed: {
+    s_pmtilesStyle () {
+      return this.$store.state.pmtilesStyle
+    },
+    s_pmtilesLabel () {
+      return this.$store.state.pmtilesLabel
+    },
     s_propnames () {
-      console.log(this.$store.state.propnames)
       return this.$store.state.propnames
     },
   },
@@ -136,23 +145,17 @@ export default {
         if (response.data.success) {
           vm.$store.state.snackbarForGroup = true
           vm.$store.state.snackbarForGroupText = '保存に成功しました'
+          vm.$store.state.fetchImagesFire = !vm.$store.state.fetchImagesFire
         } else {
           alert('保存失敗！')
         }
       })
     },
     apply() {
-
       // oh-pmtiles-93-point-layer
-
       const pointLaiyrId = `oh-pmtiles-${this.id}-point-layer`
       const labelLaiyrId = `oh-pmtiles-${this.id}-label-layer`
       const maps = [this.$store.state.map01, this.$store.state.map02]
-
-      // const paint = {
-      //   circle: { ...this.local.circle },
-      //   symbol: { ...this.local.symbol }
-      // };
 
       Object.entries(this.circle).forEach(([prop, val]) => {
         maps.forEach(map => {
@@ -162,9 +165,7 @@ export default {
           }
         })
       })
-
       // Symbol 設定反映
-      // alert( this.local.symbol['text-size'])
       maps.forEach(map => {
         map.setLayoutProperty(
             labelLaiyrId,
@@ -181,17 +182,30 @@ export default {
             'text-color',
             this.symbol['text-color']
         )
-
       })
+    },
+    updateStyle() {
+      this.symbol['text-field'] = this.s_pmtilesLabel
+      if (this.s_pmtilesStyle) {
+        this.circle = this.s_pmtilesStyle.circle
+        this.symbol = this.s_pmtilesStyle.symbol
+        console.log(this.s_pmtilesStyle)
+        setTimeout(() => {
+          this.apply()
+        }, 100)
+      } else {
+        this.circle = this.defaultCircle
+        this.symbol = this.defaultSymbol
+        setTimeout(() => {
+          this.apply()
+        }, 100)
+      }
 
-
-      // // 外部から渡されたメソッドがあれば実行
-      // if (this.applyMethod) {
-      //   this.applyMethod(this.id, paint);
-      // }
-      // // イベントもエミット
-      // this.$emit('update:paint', paint);
-    }
+    },
+  },
+  watch: {
+    s_pmtilesStyle: 'updateStyle',
+    s_pmtilesLabel: 'updateStyle'
   }
 };
 </script>
