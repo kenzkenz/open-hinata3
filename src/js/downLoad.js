@@ -9329,3 +9329,26 @@ export function getNextZIndex() {
     });
     return maxZ + 1;
 }
+// urlの変更を監視
+// export function watchSParamOnce(callback) {
+//     let prevS = new URLSearchParams(location.search).get('s');
+//     const timer = setInterval(() => {
+//         const currentS = new URLSearchParams(location.search).get('s');
+//         if (currentS !== prevS) {
+//             clearInterval(timer);
+//             callback(currentS); // 新しい s の値を渡す
+//         }
+//     }, 100);
+// }
+export function watchSParamOnce() {
+    return new Promise((resolve) => {
+        let prevS = new URLSearchParams(location.search).get('s');
+        const timer = setInterval(() => {
+            const currentS = new URLSearchParams(location.search).get('s');
+            if (currentS !== prevS) {
+                clearInterval(timer);
+                resolve(currentS); // Promise を解決して値を返す
+            }
+        }, 100);
+    });
+}

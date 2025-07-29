@@ -1,6 +1,19 @@
+import {user} from "@/authState";
 import store from '@/store'
 import * as turf from '@turf/turf'
 import { nextTick, toRef, reactive, ref, computed, watch } from 'vue';
+
+const checkUser = setInterval(() => {
+    if (user.value && user.value.uid) {
+        const uid = user.value.uid
+        store.state.userId = uid
+        localStorage.setItem('lastUserId', uid)
+        const nickname = user.value.displayName
+        store.state.myNickname = nickname
+        localStorage.setItem('lastNickname', nickname)
+        clearInterval(checkUser)
+    }
+}, 100) // 5ms → 100ms に変更（CPU負荷軽減のため）
 
 store.state.isOffline = !window.navigator.onLine;
 

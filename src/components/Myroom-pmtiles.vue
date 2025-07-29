@@ -173,6 +173,7 @@ export default {
         this.uid = uid
         this.$store.state.userId = uid
         this.pmtilesSelect(uid)
+
         clearInterval(checkUser)
       }
     }, 100) // 5ms → 100ms に変更（CPU負荷軽減のため）

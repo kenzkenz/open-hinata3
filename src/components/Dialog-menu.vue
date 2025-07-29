@@ -311,7 +311,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v1.250
+        v1.252
       </p>
 
       <div v-if="user1">
@@ -1281,6 +1281,8 @@ export default {
           this.s_fetchImagesFire = !this.s_fetchImagesFire
           document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー</span>'
           this.isLoggedIn = false
+          localStorage.setItem('lastUserId','')
+          localStorage.setItem('lastNickname','')
           alert("ログアウトしました")
         } catch (error) {
           console.error("ログアウトエラー:", error.message)

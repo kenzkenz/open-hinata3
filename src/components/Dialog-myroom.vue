@@ -229,15 +229,18 @@
               </v-window-item>
               <v-window-item value="7">
                 <v-card>
-                  <p style="margin-bottom: 10px;">各デバイスの最後に開いた画面に復帰します。</p>
+                  <h4 style="margin-bottom: 10px;">初期レイヤーを現在のレイヤーに設定します。</h4>
+                  <v-btn style="margin-top: 10px;margin-bottom: 10px; width: 180px;" @click="setStartUrl">設定</v-btn>
+                  <hr>
+                  <h4 style="margin-bottom: 10px;">各デバイスの最後に開いた画面に復帰します。</h4>
                   <v-btn style="margin-bottom: 10px; width: 180px;" @click="device('Windows')">Windowsでの最後</v-btn>
                   <v-btn style="margin-left: 10px;margin-bottom: 10px; width: 180px" @click="device('Macintosh')">Macでの最後</v-btn><br>
 
                   <v-btn style="margin-bottom: 10px; width: 180px" @click="device('Android')">Androidでの最後</v-btn>
                   <v-btn style="margin-left: 10px;margin-bottom: 10px; width: 180px" @click="device('iPhone')">iPhoneでの最後</v-btn>
                   <v-btn style="margin-left: 0px;margin-bottom: 10px; width: 180px" @click="device('iPad')">iPadでの最後</v-btn>
-
-                  <p style="margin-top:10px;margin-bottom: 10px;">全デバイスの履歴です。クリックすると復帰します。1000行までです。</p>
+                  <hr>
+                  <h4 style="margin-top:10px;margin-bottom: 10px;">全デバイスの履歴です。クリックすると復帰します。1000行までです。</h4>
                   <v-btn style="margin-left: 0px;margin-bottom: 10px;" class="tiny-btn" @click="reload">再読み込み</v-btn>
 <!--                  <div v-for="item in jsonDataHistory" :key="item.id" class="data-container" @click="historyClick(item.name,item.url,item.id)">-->
                   <div
@@ -278,8 +281,8 @@ import {
   addImageLayerJpg,
   addImageLayerPng,
   addTileLayerForImage,
-  geojsonAddLayer, iko, publicChk,
-  simaToGeoJSON, userKmzSet, userPmtileSet, userSimaSet, userTileSet, userXyztileSet
+  geojsonAddLayer, iko, onceUrlChange, publicChk,
+  simaToGeoJSON, userKmzSet, userPmtile0Set, userPmtileSet, userSimaSet, userTileSet, userXyztileSet, watchSParamOnce
 } from "@/js/downLoad"
 import muni from '@/js/muni'
 import LayerManager from '@/components/LayerManager.vue'
@@ -620,6 +623,39 @@ export default {
     },
   },
   methods: {
+    async setStartUrl() {
+      const vm = this;
+      store.state.loading2 = true;
+      store.state.loadingMessage = '設定中です。';
+      this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire;
+      try {
+        const s = await watchSParamOnce(); // ← Promise を待てるようになった
+        console.log('s パラメータが変わった！新しい値:', s);
+        const params = new URLSearchParams();
+        params.append('uid', vm.$store.state.userId);
+        params.append('nickname', vm.$store.state.myNickname);
+        params.append('starturl', s);
+        const response = await axios.post(
+            'https://kenzkenz.xsrv.jp/open-hinata3/php/userConfigInsertUpdateStarturl.php',
+            params
+        );
+        if (response.data.error) {
+          console.error('エラー:', response.data.error);
+          store.state.loading2 = false;
+          alert(`エラー: ${response.data.error}`);
+          return null;
+        } else {
+          console.log('登録成功:', response.data);
+          store.state.loading2 = false;
+          alert('設定完了');
+          return response.data.id;
+        }
+      } catch (err) {
+        console.error('watchSParamOnce中のエラー:', err);
+        store.state.loading2 = false;
+        return null;
+      }
+    },
     onSelectLayer({ name, id }) {
       console.log('onSelectLayer:', { name, id });
       // 追加のカスタム処理（例: 他の状態更新）があればここに
@@ -2534,6 +2570,10 @@ export default {
 /* 選択時のスタイル */
 .data-container.selected {
   background-color: #b2ebf2;
+}
+hr{
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 </style>
 

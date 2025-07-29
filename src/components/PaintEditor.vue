@@ -353,13 +353,13 @@ export default {
 }
 .label-span{
   display: inline-block;
-  width: 50px;
+  width: 60px;
   text-align: center;
   margin: 0 5px;
 }
 .val-span{
   display: inline-block;
-  width: 20px;
+  width: 30px;
   text-align: center;
   margin: 0 5px;
 }

@@ -5464,15 +5464,36 @@ export default {
             console.log(error)
           })
     },
-    parseUrlParams() {
+    async parseUrlParams() {
       let params
       if (this.dbparams) {
         params = new URLSearchParams(this.dbparams)
-        // console.log(this.dbparams)
+        console.log(this.dbparams)
       } else {
         params = new URLSearchParams(window.location.search)
+        const uid = localStorage.getItem('lastUserId')
+        if (uid) {
+          let response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/userConfigSelect.php', {
+            params: { uid: uid }
+          });
+          let starturl = ''
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+          } else {
+            starturl = response.data[0].starturl
+          }
+          response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrlSelect.php', {
+            params: { urlid: starturl }
+          });
+          if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            // alert(`エラー: ${response.data.error}`);
+          } else {
+            params = new URL('https://dummy/&' + response.data).searchParams
+          }
+        }
       }
-      console.log(params)
+      console.log(params.get('slj'))
       const lng = parseFloat(params.get('lng'))
       const lat = parseFloat(params.get('lat'))
       const zoom = parseFloat(params.get('zoom'))
@@ -5504,7 +5525,8 @@ export default {
       this.s_terrainLevel = terrainLevel
       return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simas,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText,drawGeojsonText,clickGeojsonText,clickCircleGeojsonText,vector,isWindow,simaTextForUser}// 以前のリンクをいかすためpitchを入れている。
     },
-    init() {
+    async init() {
+      const vm = this
 
       // HTML要素を追加
       const uploadInput = document.createElement('input');
@@ -5829,8 +5851,9 @@ export default {
           }
         });
       });
+      const params = await this.parseUrlParams()
+      // const params = this.parseUrlParams()
 
-      const params = this.parseUrlParams()
       this.mapNames.forEach(mapName => {
         // 2画面-----------------------------------------------------------
         if (mapName === 'map02') {
@@ -5941,7 +5964,7 @@ export default {
       })
       // --------------------------------
       const map = this.$store.state.map01
-      const vm = this
+      // const vm = this
       //----------------------------------
       this.drawControl = new MaplibreMeasureControl({
         modes: [
@@ -7159,9 +7182,11 @@ export default {
       // on load オンロード
       this.mapNames.forEach(mapName => {
         const map = this.$store.state[mapName]
-        const params = this.parseUrlParams()
+        // const params = this.parseUrlParams()
+        // console.log(params)
         map.on('load',async () => {
-
+          // const params = await this.parseUrlParams()
+          console.log(params)
           // iPadでもMapLibreのパンやズームを活かしつつイベントも拾う
           // map.getCanvas().style.touchAction = 'manipulation';
 
