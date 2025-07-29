@@ -193,6 +193,14 @@ export default {
     };
   },
   computed: {
+    s_pmtilesFirstSave: {
+      get() {
+        return this.$store.state.pmtilesFirstSave
+      },
+      set(value) {
+        this.$store.state.pmtilesFirstSave = value
+      }
+    },
     s_pmtilesStyle () {
       return this.$store.state.pmtilesStyle
     },
@@ -322,7 +330,14 @@ export default {
   },
   watch: {
     s_pmtilesStyle: 'updateStyle',
-    s_pmtilesLabel: 'updateStyle'
+    s_pmtilesLabel: 'updateStyle',
+    s_pmtilesFirstSave (value){
+      if (value) {
+        this.apply()
+        this.save()
+        this.s_pmtilesFirstSave = false
+      }
+    }
   }
 };
 </script>

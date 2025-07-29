@@ -314,7 +314,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
             <v-select v-model="s_pmtilesMaximum"
                       :items="[16,17,18,19,20,21,22,23,24]"
-                      label="解像度を選択。注！原則16です。"
+                      label="最大ズームを選択。注！原則16です。"
                       outlined
             ></v-select>
 
@@ -3112,6 +3112,7 @@ export default {
       )
       this.s_pmtiles0Id = id
       this.s_pmtiles0Name = this.s_gazoName
+      this.$store.state.pmtilesFirstSave = true
       this.openPaintEditorWindow()
     },
     uploadDraw () {
