@@ -469,6 +469,14 @@ export default createStore({
       map01: '',
       map02: ''
     },
+    selectedkijyuntenItems: {
+      map01: '',
+      map02: ''
+    },
+    selectedGsikuItems: {
+      map01: '',
+      map02: ''
+    },
     isDialogVisible: false,
     geojsonSources: []
     //------------------------
@@ -786,6 +794,16 @@ export default createStore({
           case 'extSeaLevel':
             if (payload.order === 0) {
               variable = 'seaLevel'
+            }
+            break
+          case 'extKhonkijyunten':
+            if (payload.order === 0) {
+              variable = 'selectedkijyuntenItems'
+            }
+            break
+          case 'extGaiku':
+            if (payload.order === 0) {
+              variable = 'selectedGsikuItems'
             }
             break
         }

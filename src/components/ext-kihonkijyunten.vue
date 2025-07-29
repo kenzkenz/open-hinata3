@@ -22,7 +22,7 @@
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;"></div>
     <v-select
-        v-model="selectedkijyuntenItems"
+        v-model="s_selectedkijyuntenItems"
         :items="kijyuntenItems"
         item-title="name"
         item-value="id"
@@ -42,15 +42,7 @@
 
 <script>
 import {
-  saveGeojson,
-  gistUpload,
-  saveCima,
-  saveCima3,
-  saveDxf,
-  saveCsv,
-  simaToGeoJSON,
   resetFeatureColors,
-  saveSima2,
   saveSimaGaiku
 } from "@/js/downLoad";
 import {kizyuntenPoint} from "@/js/layers";
@@ -59,7 +51,6 @@ export default {
   name: 'ext-kihonkijyunten',
   props: ['mapName','item'],
   data: () => ({
-    selectedkijyuntenItems: null,
     kijyuntenItems: [
       { id: '電子基準点', name: '電子基準点' },
       { id: '一等三角点', name: '一等三角点' },
@@ -100,6 +91,14 @@ export default {
     s_extFire () {
       return this.$store.state.extFire
     },
+    s_selectedkijyuntenItems: {
+      get() {
+        return this.$store.state.selectedkijyuntenItems[this.mapName]
+      },
+      set(value) {
+        this.$store.state.selectedkijyuntenItems[this.mapName] = value
+      }
+    },
     s_zahyokei: {
       get() {
         return this.$store.state.zahyokei
@@ -118,27 +117,24 @@ export default {
     },
   },
   methods: {
-    // update () {
-    //   this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [
-    //       this.s_tokijyoText
-    //     ]})
-    // },
+    update () {
+      this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [
+          JSON.stringify(this.s_selectedkijyuntenItems)
+        ]})
+    },
     selectItem () {
-      console.log(this.selectedkijyuntenItems)
+      console.log(this.s_selectedkijyuntenItems)
       const map = this.$store.state[this.mapName]
-      const filter = ['match', ['get', '基準点種別'], this.selectedkijyuntenItems,true,false];
+      const filter = ['match', ['get', '基準点種別'], this.s_selectedkijyuntenItems,true,false];
       const filter0 = kizyuntenPoint.filter
       map.setFilter('oh-kizyunten-point', filter);
       map.setFilter('oh-kizyunten-point-label',filter);
 
-      if (this.selectedkijyuntenItems.length === 0) {
+      if (this.s_selectedkijyuntenItems.length === 0) {
         map.setFilter('oh-kizyunten-point', filter0)
         map.setFilter('oh-kizyunten-point-label', filter0)
       }
-    },
-    tutorial () {
-      window.open("https://hackmd.io/@kenz/S1gKou9wyg", "_blank");
-      history('街区チュートリアル',window.location.href)
+      this.update()
     },
     checkDevice() {
       const userAgent = navigator.userAgent || navigator.vendor || window.opera;
@@ -169,11 +165,14 @@ export default {
   },
   mounted() {
     document.querySelector('#handle-' + this.item.id).innerHTML = '<span style="font-size: large;">' + this.item.label + '</span>'
-    // alert(this.item.id)
+    if (this.s_selectedkijyuntenItems && this.s_selectedkijyuntenItems.length > 0) {
+      this.s_selectedkijyuntenItems = JSON.parse(this.s_selectedkijyuntenItems)
+      this.selectItem()
+    }
   },
   watch: {
     s_extFire () {
-      // this.change()
+      this.selectItem()
     },
   }
 }

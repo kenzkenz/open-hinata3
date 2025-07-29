@@ -23,7 +23,7 @@
     <div style="font-size: large;margin-bottom: 10px;"></div>
     <v-select
         v-if="item.id === 'oh-gaiku'"
-        v-model="selectedGsikuItems"
+        v-model="s_selectedGsikuItems"
         :items="gsikuItems"
         item-title="name"
         item-value="id"
@@ -59,7 +59,6 @@ export default {
   name: 'ext-gaiku',
   props: ['mapName','item'],
   data: () => ({
-    selectedGsikuItems: null,
     gsikuItems: [
       { id: 'S', name: '三（街区三角点）' },
       { id: 'T', name: '多（街区多角点）' },
@@ -93,6 +92,14 @@ export default {
     s_extFire () {
       return this.$store.state.extFire
     },
+    s_selectedGsikuItems: {
+      get() {
+        return this.$store.state.selectedGsikuItems[this.mapName]
+      },
+      set(value) {
+        this.$store.state.selectedGsikuItems[this.mapName] = value
+      }
+    },
     s_zahyokei: {
       get() {
         return this.$store.state.zahyokei
@@ -111,30 +118,32 @@ export default {
     },
   },
   methods: {
-    // update () {
-    //   this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [
-    //       this.s_tokijyoText
-    //     ]})
-    // },
+    update () {
+      // alert(JSON.stringify(this.s_selectedGsikuItems))
+      this.$store.commit('updateSelectedLayers',{mapName: this.mapName, id:this.item.id, values: [
+          JSON.stringify(this.s_selectedGsikuItems)
+        ]})
+    },
     selectItem () {
-      console.log(this.selectedGsikuItems)
+      console.log(this.s_selectedGsikuItems)
       const map = this.$store.state[this.mapName]
       const filter = [
         'all',
         // 廃点情報が「廃点」でない
         ['!=', ['get', '廃点情報'], '廃点'],
         // type が this.selectedGsikuItems のいずれかに一致する
-        ['match', ['get', 'type'], this.selectedGsikuItems, /* true の時表示 */ true, /* false の時非表示 */ false]
+        ['match', ['get', 'type'], this.s_selectedGsikuItems, /* true の時表示 */ true, /* false の時非表示 */ false]
       ];
       map.setFilter('oh-gaiku-layer', filter);
       map.setFilter('oh-gaiku-label-layer',filter);
       map.setFilter('oh-gaiku-label',filter);
 
-      if (this.selectedGsikuItems.length === 0) {
+      if (this.s_selectedGsikuItems.length === 0) {
         map.setFilter('oh-gaiku-layer',['!=', ['get', '廃点情報'], '廃点'])
         map.setFilter('oh-gaiku-label-layer',['!=', ['get', '廃点情報'], '廃点'])
         map.setFilter('oh-gaiku-label',['!=', ['get', '廃点情報'], '廃点']);
       }
+      this.update()
     },
     tutorial () {
       window.open("https://hackmd.io/@kenz/S1gKou9wyg", "_blank");
@@ -169,11 +178,15 @@ export default {
   },
   mounted() {
     document.querySelector('#handle-' + this.item.id).innerHTML = '<span style="font-size: large;">' + this.item.label + '</span>'
-    // alert(this.item.id)
+    if (this.s_selectedGsikuItems && this.s_selectedGsikuItems.length > 0) {
+      this.s_selectedGsikuItems = JSON.parse(this.s_selectedGsikuItems)
+      this.selectItem()
+    }
+
   },
   watch: {
     s_extFire () {
-      // this.change()
+      // this.selectItem()
     },
   }
 }
