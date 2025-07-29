@@ -487,6 +487,7 @@ export default {
                 }).then(function (response) {
                   const labelLaiyrId = `oh-pmtiles-${id}-label-layer`
                   const polygonLaiyrId = `oh-pmtiles-${id}-layer`
+                  const vertexLaiyrId = `oh-pmtiles-${id}-vertex-layer`
                   const polygonLineLaiyrId = `oh-pmtiles-${id}-line-layer`
 
                   console.log(JSON.parse(response.data[0].style))
@@ -534,9 +535,23 @@ export default {
                           'line-width',
                           polygon['line-width']
                       )
+                      // alert(polygon['circle-radius'])
+                      map.setPaintProperty(
+                          vertexLaiyrId,
+                          'circle-radius', [
+                            'interpolate',
+                            ['linear'],
+                            ['zoom'],
+                            15, 0,
+                            18, polygon['circle-radius']
+                          ]);
+                      map.setPaintProperty(
+                          vertexLaiyrId,
+                          'circle-color',
+                          polygon['circle-color']
+                      )
                     }
                   }
-
                 })
 
                 }

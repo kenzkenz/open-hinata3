@@ -27,7 +27,6 @@
                 :value="circle['circle-color']"
                 @change="val => { circle['circle-color'] = val; apply(); }"
             />
-
           </div>
 <!--          <hr>-->
           <h4 style="margin-bottom: 10px;">ラベル設定</h4>
@@ -104,6 +103,23 @@
               @change="val => { symbol['text-color'] = val; apply(); }"
           />
         </div>
+        <h4>頂点設定</h4>
+        <div class="mb-4" style="margin-top: 10px; padding-left: 10px;">
+          <span class="label-span">半径</span>
+          <input
+              class="range-input"
+              type="range"
+              min="0"
+              max="20"
+              v-model.number="polygon['circle-radius']"
+              @input="apply"
+          />
+          <span class="val-span">{{ polygon['circle-radius'] }}</span>
+          <ColorPickerButton
+              :value="polygon['circle-color']"
+              @change="val => { polygon['circle-color'] = val; apply(); }"
+          />
+        </div>
       </v-window-item>
       <v-window-item  value="line">
         <p style="color: deeppink; margin-top: 20px; margin-bottom: 100px;">ラインは未作成です。</p>
@@ -153,7 +169,9 @@ export default {
       polygon: {
         'fill-color': 'rgba(0,0,0,0.2)',
         'line-color': 'blue',
-        'line-width': 1
+        'line-width': 1,
+        'circle-radius': 0,
+        'circle-color': 'red'
       },
       line: {
         'line-color': 'blue',
@@ -218,6 +236,7 @@ export default {
       const pointLaiyrId = `oh-pmtiles-${this.id}-point-layer`
       const labelLaiyrId = `oh-pmtiles-${this.id}-label-layer`
       const polygonLaiyrId = `oh-pmtiles-${this.id}-layer`
+      const vertexLaiyrId = `oh-pmtiles-${this.id}-vertex-layer`
       const polygonLineLaiyrId = `oh-pmtiles-${this.id}-line-layer`
 
       const maps = [this.$store.state.map01, this.$store.state.map02]
@@ -249,6 +268,20 @@ export default {
             polygonLaiyrId,
             'fill-color',
             this.polygon['fill-color']
+        )
+        map.setPaintProperty(
+            vertexLaiyrId,
+            'circle-radius', [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              15, 0,
+              18, this.polygon['circle-radius']
+            ]);
+        map.setPaintProperty(
+            vertexLaiyrId,
+            'circle-color',
+            this.polygon['circle-color']
         )
         map.setPaintProperty(
             polygonLineLaiyrId,

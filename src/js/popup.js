@@ -3999,9 +3999,9 @@ export function popup(e,map,mapName,mapFlg) {
             if (features.length === 0) return
             props = features[0].properties
             let html0 = ''
-            if (html.indexOf(layerId) === -1) {
+            if (html.indexOf(layerId.split('-')[1]) === -1) {
                 html += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
-                html0 += '<div class=' + layerId + ' font-weight: normal; color: #333;line-height: 25px;">'
+                html0 += '<div class=' + layerId.split('-')[1] + ' font-weight: normal; color: #333;line-height: 25px;">'
                 Object.keys(props).forEach(function (key) {
                     if (key !== 'description') {
                         html0 += key + '=' + props[key] + '<br>'

@@ -6726,7 +6726,7 @@ export function userPmtile0Set(name, url, id, bbox, length, label) {
             'circle-radius': [
                 'interpolate', ['linear'], ['zoom'],
                 15, 0,
-                18,4
+                18,0
             ],
             'circle-color': 'red',
         }

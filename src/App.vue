@@ -2604,7 +2604,6 @@ export default {
   },
   methods: {
     openPaintEditorWindow() {
-      // this.$refs.painteditor.show();
       this.$store.dispatch('showFloatingWindow', 'painteditor');
     },
     onPaintUpdate({ circle, symbol }) {
@@ -7859,7 +7858,6 @@ export default {
                         'text-halo-color': 'rgba(255,255,255,1)',
                         'text-halo-width': 1.0,
                       },
-                      minzoom: minZoom
                     };
 
                     const pointLayer = {
@@ -7886,7 +7884,7 @@ export default {
                         'circle-radius': [
                           'interpolate', ['linear'], ['zoom'],
                           15, 0,
-                          18,4
+                          18,0
                         ],
                         'circle-color': 'red',
                       }
