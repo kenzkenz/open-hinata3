@@ -311,6 +311,13 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </v-card-title>
           <v-card-text>
             <v-text-field v-model="s_gazoName" placeholder="レイヤー名" ></v-text-field>
+
+            <v-select v-model="s_pmtilesMaximum"
+                      :items="[16,17,18,19,20,21,22,23,24]"
+                      label="解像度を選択。注！原則16です。"
+                      outlined
+            ></v-select>
+
             <v-btn style="margin-left: 0px;" @click="uploadMyLayer">追加</v-btn>
           </v-card-text>
           <v-card-actions>
@@ -1970,6 +1977,14 @@ export default {
       'titleColor',
       'titleDirection',
     ]),
+    s_pmtilesMaximum: {
+      get() {
+        return this.$store.state.pmtilesMaximum
+      },
+      set(value) {
+        this.$store.state.pmtilesMaximum = value
+      }
+    },
     s_url () {
       return this.$store.state.url
     },

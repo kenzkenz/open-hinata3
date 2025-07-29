@@ -41,6 +41,12 @@ if (empty($dir) || preg_match('/[^a-zA-Z0-9_-]/', $dir)) {
     exit;
 }
 
+// maximum zoom をPOSTから取得（デフォルト16）
+$maximum = 16;
+if (isset($_POST['maximum']) && is_numeric($_POST['maximum'])) {
+    $maximum = max(0, min(24, (int)$_POST['maximum'])); // 安全な範囲内に制限
+}
+
 // geojsonファイルをPOSTから取得
 if (!isset($_FILES['geojson']) || $_FILES['geojson']['error'] !== UPLOAD_ERR_OK) {
     sendSSE(["error" => "geojsonファイルがアップロードされていません"]);
@@ -106,8 +112,9 @@ try {
     sendSSE(["log" => "Tippecanoe 実行開始"]);
     $pmtilesPath = $pmtilesDir . $fileBaseName . ".pmtiles";
     $cmd = sprintf(
-        "tippecanoe -rg -o %s --generate-ids --no-feature-limit --no-tile-size-limit --force --drop-densest-as-needed --coalesce-densest-as-needed --simplification=2 --simplify-only-low-zooms --maximum-zoom=16 --minimum-zoom=0 --layer=oh3 --progress-interval=0 %s 2>&1",
+        "tippecanoe -rg -o %s --generate-ids --no-feature-limit --no-tile-size-limit --force --drop-densest-as-needed --coalesce-densest-as-needed --simplification=2 --simplify-only-low-zooms --maximum-zoom=%d --minimum-zoom=0 --layer=oh3 --progress-interval=0 %s 2>&1",
         escapeshellarg($pmtilesPath),
+        $maximum,
         escapeshellarg($tempFilePath)
     );
     $descs = [0=>["pipe","r"],1=>["pipe","w"],2=>["pipe","w"]];

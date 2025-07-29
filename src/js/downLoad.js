@@ -6997,6 +6997,7 @@ export async function pmtilesGenerate(geojsonObj, layerName, label, file) {
         const geojsonBlob = new Blob([JSON.stringify(geojsonObj)], { type: 'application/json' });
         formData.append('geojson', geojsonBlob, 'data.geojson');
     }
+    formData.append('maximum', store.state.pmtilesMaximum);
 
     // PMTiles生成リクエスト
     const response = await fetch('https://kenzkenz.net/myphp/generate_pmtiles.php', {
