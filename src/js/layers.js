@@ -9173,7 +9173,7 @@ const nogyochiikiLine = {
 const kizyuntenSource = {
     id: "kizyunten-source", obj: {
         type: "vector",
-        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/kizyunten/kizyunten.pmtiles",
+        url: "pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/kizyunten/kizyunten2.pmtiles",
     }
 }
 export const kizyuntenPoint = {
@@ -9290,6 +9290,8 @@ const kizyuntenPointLabel = {
         // "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"], // フォント
         "text-anchor": "center", // テキストをポイントの中心に配置
         "text-offset": [0, 0], // テキストのオフセット
+        "text-allow-overlap": true, //重なっても表示されるように
+        "text-ignore-placement": true,//重なっても表示されるように
     },
     paint: {
         "text-color": "rgba(255, 255, 255, 1)", // テキストの色

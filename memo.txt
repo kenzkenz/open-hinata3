@@ -1517,6 +1517,6 @@ tippecanoe \
 
 tile-join --force --no-tile-size-limit -o combined_fgb_tiles.mbtiles tiles_0_13_fgb.mbtiles tiles_14_16_fgb.mbtiles
 
-pmtiles convert combined_fgb_tiles.mbtiles output_fgb.pmtiles
+ポイントの間引きを一切なくす。grok
+tippecanoe -o kizyunten2.pmtiles -f -l point --drop-rate=0 --no-line-simplification --no-tiny-polygon-reduction --no-tile-size-limit kizyunten2.geojson
 
-tippecanoe -l point -Z0 -z16 -rg -pk -f -o ninizahyo.pmtiles merged.geojson

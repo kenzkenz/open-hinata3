@@ -71,7 +71,7 @@
               @change="val => { polygon['line-color'] = val; apply(); }"
           />
           <input
-              style="width: 40%"
+              style="width: 30%"
               class="range-input"
               type="range"
               min="1"
@@ -299,7 +299,7 @@ export default {
   padding: 0 15px 15px 15px;
 }
 .range-input {
-  width: 45%;
+  width: 35%;
   position: relative;
   top: 8px;
 }
