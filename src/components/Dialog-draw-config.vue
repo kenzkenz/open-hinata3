@@ -67,7 +67,7 @@
 <script>
 import {clickCircleSource, konUrls} from "@/js/layers";
 import {geojsonUpdate} from "@/js/pyramid";
-import {printDirectionChange} from "@/js/downLoad";
+import {changePrintMap03, printDirectionChange} from "@/js/downLoad";
 export default {
   name: 'Dialog-draw-config',
   props: ['mapName'],
@@ -217,6 +217,7 @@ export default {
       }
     },
     directionChange() {
+      changePrintMap03(this.s_titleDirection)
       printDirectionChange(this.s_titleDirection)
     }
   },

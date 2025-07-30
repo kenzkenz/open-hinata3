@@ -1394,7 +1394,7 @@ import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
 import {
   addDraw, cachePmtiles, cachePmtilesBuffers, cacheTilesViaSW,
-  capture, convertFromEPSG4326,
+  capture, changePrintMap03, convertFromEPSG4326,
   csvGenerateForUserPng,
   ddSimaUpload, delay0, detectLatLonColumns, downloadGeoJSONAsCSV,
   downloadKML,
@@ -4184,33 +4184,7 @@ export default {
     },
     printMap03 () {
       this.printMap = 'map03'
-      const map01Div = document.getElementById('map01');
-      const map02Div = document.getElementById('map02');
-      switch (this.titleDirection) {
-        case 'vertical':
-          setTimeout(() => {
-            map01Div.style.display = 'block'
-            map01Div.style.height = '50%'
-            map02Div.style.position = 'relative'
-            map02Div.style.display = 'block'
-            map02Div.style.height = '50%'
-            map02Div.style.width = '100%'
-          },10)
-          break
-        case 'horizontal':
-          setTimeout(() => {
-            map01Div.style.display = 'block'
-            map01Div.style.height = '100%'
-            map01Div.style.width = '50%'
-            map02Div.style.position = 'absolute'
-            map02Div.style.top = '0px'
-            map02Div.style.right = '0px'
-            map02Div.style.display = 'block'
-            map02Div.style.height = '100%'
-            map02Div.style.width = '50%'
-          },10)
-          break
-      }
+      changePrintMap03(this.titleDirection)
     },
     handlePrint(isClose) {
       const map00Div = document.getElementById('map00');
@@ -4924,8 +4898,6 @@ export default {
     drawConfig () {
       const mapName = 'map01'
       if (this.$store.state.dialogs.drawConfigDialog[mapName].style.display === 'none') {
-        // this.$store.commit('incrDialogMaxZindex')
-        // this.$store.state.dialogs.drawConfigDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
         this.$store.state.dialogs.drawConfigDialog[mapName].style['z-index'] = getNextZIndex()
         this.$store.state.dialogs.drawConfigDialog[mapName].style.display = 'block'
         if (window.innerWidth < 450) {

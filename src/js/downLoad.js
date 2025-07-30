@@ -9352,3 +9352,34 @@ export function watchSParamOnce() {
         }, 100);
     });
 }
+
+export function changePrintMap03 (titleDirection) {
+    const map01Div = document.getElementById('map01');
+    const map02Div = document.getElementById('map02');
+    switch (titleDirection) {
+        case 'vertical':
+            setTimeout(() => {
+                map01Div.style.display = 'block'
+                map01Div.style.height = '50%'
+                map01Div.style.width = '100%'
+                map02Div.style.position = 'relative'
+                map02Div.style.display = 'block'
+                map02Div.style.height = '50%'
+                map02Div.style.width = '100%'
+            },10)
+            break
+        case 'horizontal':
+            setTimeout(() => {
+                map01Div.style.display = 'block'
+                map01Div.style.height = '100%'
+                map01Div.style.width = '50%'
+                map02Div.style.position = 'absolute'
+                map02Div.style.top = '0px'
+                map02Div.style.right = '0px'
+                map02Div.style.display = 'block'
+                map02Div.style.height = '100%'
+                map02Div.style.width = '50%'
+            },10)
+            break
+    }
+}
