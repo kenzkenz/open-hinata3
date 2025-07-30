@@ -1042,8 +1042,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-progress-linear  v-if="s_loading" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
           <v-progress-linear  v-if="s_loading2" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
           <!-- <SakuraEffect />-->
-          <div id="pointer1" class="pointer" v-if="mapName === 'map01'"></div>
-          <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
+          <div>
+            <div id="pointer1" class="pointer" v-if="mapName === 'map01'"></div>
+            <div id="pointer2" class="pointer" v-if="mapName === 'map02'"></div>
+          </div>
 
           <!-- コンパス -->
           <div class="compassDiv"  v-if="s_isPrint">
@@ -2634,7 +2636,7 @@ export default {
       this.qrCodeWidth = newWidth
     },
     openWindow() {
-      this.$refs.floating.show();
+      this.$store.dispatch('showFloatingWindow', 'qrcode');
     },
     closeWindow() {
       this.$refs.floating.close();
@@ -7058,18 +7060,20 @@ export default {
         const bounds = map1.getContainer().getBoundingClientRect()
         const x = e.originalEvent.clientX - bounds.left
         const y = e.originalEvent.clientY - bounds.top
-
         // map1のポインター位置を更新
         pointer1.style.left = `${x}px`
         pointer1.style.top = `${y}px`
         pointer1.style.display = 'none'
-
         // 同じ位置をmap2に変換
         const lngLat = map1.unproject([x, y])
         const projectedPoint = map2.project(lngLat)
         pointer2.style.left = `${projectedPoint.x}px`
         pointer2.style.top = `${projectedPoint.y}px`
         pointer2.style.display = 'block'
+        if (this.s_isPrint) {
+          pointer1.style.display = 'none'
+          pointer2.style.display = 'none'
+        }
       })
 
       // マップ2のマウス移動イベントでポインターを同期
@@ -7077,18 +7081,20 @@ export default {
         const bounds = map2.getContainer().getBoundingClientRect()
         const x = e.originalEvent.clientX - bounds.left
         const y = e.originalEvent.clientY - bounds.top
-
         // map2のポインター位置を更新
         pointer2.style.left = `${x}px`
         pointer2.style.top = `${y}px`
         pointer2.style.display = 'none'
-
         // 同じ位置をmap1に変換
         const lngLat = map2.unproject([x, y])
         const projectedPoint = map1.project(lngLat)
         pointer1.style.left = `${projectedPoint.x}px`
         pointer1.style.top = `${projectedPoint.y}px`
         pointer1.style.display = 'block'
+        if (this.s_isPrint) {
+          pointer1.style.display = 'none'
+          pointer2.style.display = 'none'
+        }
       })
 
       // map1のクリックイベント
@@ -9201,8 +9207,8 @@ export default {
   position:absolute;
 }
 .pointer {
-  width: 10px;
-  height: 10px;
+  width: 15px;
+  height: 15px;
   background-color: red;
   border-radius: 50%;
   border: #fff 1px solid;
@@ -9445,7 +9451,14 @@ export default {
   left:calc(50% - 40px);
   z-index:1;
 }
+@media print {
+
+}
 </style>
+
+
+
+
 
 <style>
 label {

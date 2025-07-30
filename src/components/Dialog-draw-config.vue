@@ -52,12 +52,12 @@
                 v-model="s_drawVisible"
                 @change="onDrawVisibleChange"
             >
-            <label for="draw-visible-check" style="font-size: 16px;"> 表示</label>
+            <label for="draw-visible-check" style="font-size: 16px;"> ドロー表示</label>
           </span>
-          <input style="width: 280px;margin-left: 10px;" type="range" min="0" max="1" step="0.01" class="range"
+          <input style="width: 200px;margin-left: 10px;" type="range" min="0" max="1" step="0.01" class="range"
                  v-model.number="s_drawOpacity" @input="drawOpacityInput" @change="configChange('opacity',s_drawOpacity)"
           />
-          <v-btn @click="qrCodeClick">QRコード</v-btn>
+          <v-btn @click="qrCodeClick">QRコード貼り付け</v-btn>
         </v-card-text>
       </v-card>
     </div>
