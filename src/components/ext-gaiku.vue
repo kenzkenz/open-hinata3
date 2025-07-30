@@ -94,7 +94,11 @@ export default {
     },
     s_selectedGsikuItems: {
       get() {
-        return this.$store.state.selectedGsikuItems[this.mapName]
+        try {
+          return JSON.parse(this.$store.state.selectedGsikuItems[this.mapName])
+        }catch (e) {
+          return this.$store.state.selectedGsikuItems[this.mapName]
+        }
       },
       set(value) {
         this.$store.state.selectedGsikuItems[this.mapName] = value
@@ -179,7 +183,6 @@ export default {
   mounted() {
     document.querySelector('#handle-' + this.item.id).innerHTML = '<span style="font-size: large;">' + this.item.label + '</span>'
     if (this.s_selectedGsikuItems && this.s_selectedGsikuItems.length > 0) {
-      this.s_selectedGsikuItems = JSON.parse(this.s_selectedGsikuItems)
       this.selectItem()
     }
 

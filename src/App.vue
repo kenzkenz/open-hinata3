@@ -5482,14 +5482,16 @@ export default {
           } else {
             starturl = response.data[0].starturl
           }
-          response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrlSelect.php', {
-            params: { urlid: starturl }
-          });
-          if (response.data.error) {
-            console.error('エラー:', response.data.error);
-            // alert(`エラー: ${response.data.error}`);
-          } else {
-            params = new URL('https://dummy/&' + response.data).searchParams
+          if (starturl) {
+            response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrlSelect.php', {
+              params: { urlid: starturl }
+            });
+            if (response.data.error) {
+              console.error('エラー:', response.data.error);
+              // alert(`エラー: ${response.data.error}`);
+            } else {
+              params = new URL('https://dummy/&' + response.data).searchParams
+            }
           }
         }
       }
@@ -7177,6 +7179,39 @@ export default {
 
       enableDragHandles(map)
 
+      // // rgb式を正規化するヘルパー関数（例）
+      // function normalizeRgbExpression(value) {
+      //   // インターポレーション式の例: ['interpolate', ['linear'], ['get', 'value'], 0, 'rgb(255,0,0)', 100, 'rgb(0,0,255)']
+      //   // if (Array.isArray(value) && value[0] === 'interpolate') {
+      //     // rgb文字列を配列に変換（例：'rgb(255,0,0)' -> [255, 0, 0]）
+      //     for (let i = 4; i < value.length; i += 2) {
+      //       if (typeof value[i] === 'string' && value[i].startsWith('rgb(')) {
+      //         const rgb = value[i].match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+      //         if (rgb) {
+      //           value[i] = [parseInt(rgb[1]), parseInt(rgb[2]), parseInt(rgb[3])];
+      //         }
+      //       }
+      //     }
+      //   // }
+      //   return value;
+      // }
+      // // 元のsetPaintPropertyを保存
+      // const originalSetPaintProperty = maplibregl.Map.prototype.setPaintProperty;
+      //
+      // // setPaintPropertyをオーバーライド
+      // maplibregl.Map.prototype.setPaintProperty = function (layerId, name, value, options) {
+      //   try {
+      //     if (layerId.includes('oh-vector-') && !layerId.includes('osm') ) return
+      //     return originalSetPaintProperty.call(this, layerId, name, value, options);
+      //   } catch (e) {
+      //     // エラーがrgb関連の場合に無視
+      //     if (e.message.includes("'get' on proxy: property 'rgb'")) {
+      //       console.warn('rgbプロパティエラーを無視:', e.message);
+      //       return; // エラーを無視して処理を続行
+      //     }
+      //     throw e; // 他のエラーは再スロー
+      //   }
+      // };
 
       // -----------------------------------------------------------------------------------------------------------------
       // on load オンロード
@@ -7454,23 +7489,23 @@ export default {
               // 本番環境の処理
               console.log('本番環境');
               this.s_selectedLayers[mapName].unshift(
-                  {
-                    id: 'oh-vector-layer-mono',
-                    label: '地理院ベクター・モノクロ',
-                    sources: monoSources,
-                    layers: monoLayers,
-                    opacity: 1,
-                    visibility: true,
-                  }
                   // {
-                  //   id: 'oh-vector-layer-osm-bright',
-                  //   label: 'OSMベクター',
-                  //   sources: osmBrightSources,
-                  //   layers: osmBrightLayers,
+                  //   id: 'oh-vector-layer-mono',
+                  //   label: '地理院ベクター・モノクロ',
+                  //   sources: monoSources,
+                  //   layers: monoLayers,
                   //   opacity: 1,
                   //   visibility: true,
-                  //   attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
                   // }
+                  {
+                    id: 'oh-vector-layer-osm-bright',
+                    label: 'OSMベクター',
+                    sources: osmBrightSources,
+                    layers: osmBrightLayers,
+                    opacity: 1,
+                    visibility: true,
+                    attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
+                  }
               )
             }
           }

@@ -93,7 +93,11 @@ export default {
     },
     s_selectedkijyuntenItems: {
       get() {
-        return this.$store.state.selectedkijyuntenItems[this.mapName]
+        try {
+          return JSON.parse(this.$store.state.selectedkijyuntenItems[this.mapName])
+        }catch (e) {
+          return this.$store.state.selectedkijyuntenItems[this.mapName]
+        }
       },
       set(value) {
         this.$store.state.selectedkijyuntenItems[this.mapName] = value
@@ -166,7 +170,6 @@ export default {
   mounted() {
     document.querySelector('#handle-' + this.item.id).innerHTML = '<span style="font-size: large;">' + this.item.label + '</span>'
     if (this.s_selectedkijyuntenItems && this.s_selectedkijyuntenItems.length > 0) {
-      this.s_selectedkijyuntenItems = JSON.parse(this.s_selectedkijyuntenItems)
       this.selectItem()
     }
   },
