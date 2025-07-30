@@ -2059,6 +2059,7 @@ export default {
             { key: 'currentPosition', text: '現在地取得', icon: 'mdi-crosshairs-gps', click: this.goToCurrentLocation },
             { key: 'watchPosition', text: '現在地連続取得', icon: 'mdi-map-marker-radius', color: this.isTracking ? 'green' : 'primary', click: this.toggleWatchPosition },
             { key: 'share', text: '共有', icon: 'mdi-share-variant', color: 'primary', click: this.share },
+            { key: 'help', text: 'ヘルプ', icon: 'mdi-help', color: 'primary', click: this.help },
           ]
       return btns
     },
@@ -4939,6 +4940,9 @@ export default {
       } else {
         this.$store.state.dialogs.drawConfigDialog[mapName].style.display = 'none'
       }
+    },
+    help() {
+      window.open('https://sakura.3ku.jp/gis/oh3-reversedictionary/', '_blank');
     },
     share() {
       const mapName = 'map01'
@@ -10159,7 +10163,7 @@ select {
 }
 .fan-menu-0 {
   position: absolute;
-  top:256px;
+  top:322px;
   right:0px;
   z-index: 3
 }
@@ -10248,7 +10252,7 @@ select {
   /*  top:174px;*/
   /*}*/
   .fan-menu-0 {
-    top:224px;
+    top:280px;
   }
 }
 </style>
