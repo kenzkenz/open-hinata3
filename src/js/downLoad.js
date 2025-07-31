@@ -9426,26 +9426,6 @@ export async function fetchGsiTile() {
             if (el?.tagName === 'BR') el = el.nextElementSibling;
         }
 
-        // // source → layer オブジェクトへ変換
-        // rawSources.forEach(srcLine => {
-        //     // const matches = srcLine.match(/URL：([^\(]+)(?:（(.+?)）)?/);
-        //     const matches = srcLine.match(/URL：([^(]+)(?:（(.+?)）)?/);
-        //     if (!matches) return;
-        //
-        //     const url = matches[1].trim();
-        //     const suffix = matches[2]?.trim();
-        //     const ext = url.split('.').pop().toLowerCase();
-        //
-        //     // .png or .jpg 以外 → スキップ
-        //     if (!['png', 'jpg'].includes(ext)) return;
-        //
-        //     // URLに漢字が含まれていたらスキップ
-        //     if (/[一-龯々]/.test(url)) return;
-        //
-        //     const title = suffix ? `${baseTitle}（${suffix}）` : baseTitle;
-        //     layers.push({ title, source: url });
-        // });
-
         // source → layer オブジェクトへ変換
         rawSources.forEach(srcLine => {
             const matches = srcLine.match(/URL：(.+?)(（.+）)?$/);
@@ -9534,6 +9514,7 @@ export async function fetchGsiTile() {
         }
 
         const obj = { layers };
+        obj.id = id;
         if (sourceInfo) obj.sourceInfo = sourceInfo;
         if (isFinite(minzoom)) obj.minzoom = minzoom;
         if (isFinite(maxzoom)) obj.maxzoom = maxzoom;
@@ -9547,6 +9528,42 @@ export async function fetchGsiTile() {
     return result;
 }
 
+export function convertGsiTileJson(inputArray) {
+    const result = [];
+
+    inputArray.forEach(entry => {
+        const baseId = entry.id;
+        const attribution = entry.note;
+
+        entry.layers.forEach((layerObj, index) => {
+            // sourceとlayerのIDは一意にしておく（例: "ccm-0", "ccm-1"）
+            const sourceId = `${baseId}-source-${index}`;
+            const layerId = `oh-${baseId}-layer-${index}`;
+
+            result.push({
+                id: baseId,
+                label: layerObj.title,
+                source: {
+                    id: sourceId,
+                    obj: {
+                        type: 'raster',
+                        tiles: [layerObj.source],
+                    },
+                },
+                layers: [
+                    {
+                        id: layerId,
+                        type: 'raster',
+                        source: sourceId,
+                    },
+                ],
+                attribution: attribution,
+            });
+        });
+    });
+
+    return result;
+}
 
 
 
