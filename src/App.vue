@@ -997,7 +997,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
 <!--        <v-btn @click="openPaintEditorWindow">test</v-btn>-->
 
-        <v-btn @click="test">test</v-btn>
+<!--        <v-btn @click="test">test</v-btn>-->
 
 
 

@@ -9441,6 +9441,9 @@ export async function fetchGsiTile() {
             // URLに漢字が含まれていたらスキップ
             if (/[一-龯々]/.test(url)) return;
 
+            // URLに{year}含まれていたらスキップ
+            if (/{year}/.test(url)) return;
+
             const fullTitle = note ? `${baseTitle}（${note}）` : baseTitle;
             layers.push({
                 title: fullTitle,
@@ -9528,21 +9531,25 @@ export async function fetchGsiTile() {
     return result;
 }
 
+function insertBrEveryNChars(str, n) {
+    const regex = new RegExp(`.{1,${n}}`, 'g');
+    return str.match(regex).join('<br>');
+}
+
 export function convertGsiTileJson(inputArray) {
     const result = [];
-
     inputArray.forEach(entry => {
         const baseId = entry.id;
         const attribution = entry.note;
-
         entry.layers.forEach((layerObj, index) => {
             // sourceとlayerのIDは一意にしておく（例: "ccm-0", "ccm-1"）
             const sourceId = `${baseId}-source-${index}`;
             const layerId = `oh-${baseId}-layer-${index}`;
-
+            const formattedTitle = insertBrEveryNChars(layerObj.title, 20);
+            console.log(formattedTitle)
             result.push({
                 id: baseId,
-                label: layerObj.title,
+                label: formattedTitle,
                 source: {
                     id: sourceId,
                     obj: {
@@ -9561,7 +9568,6 @@ export function convertGsiTileJson(inputArray) {
             });
         });
     });
-
     return result;
 }
 
