@@ -9452,8 +9452,13 @@ export async function fetchGsiTile() {
             const note = matches[2]?.replace(/[（）]/g, '').trim();
             const ext = url.split('.').pop();
 
+            // .png or .jpg 以外 → スキップ
             if (!['png', 'jpg'].includes(ext)) return;
+
+            // URLに漢字が含まれていたらスキップ
             if (/[一-龯々]/.test(url)) return;
+
+            // URLに{year}含まれていたらスキップ
             if (/{year}/.test(url)) return;
 
             const fullTitle = note ? `${baseTitle}（${note}）` : baseTitle;
@@ -9472,6 +9477,7 @@ export async function fetchGsiTile() {
         let latestDate = null;
         let coverage = null;
         let note = null;
+        let zxy = null;
 
         while (el && !(el.tagName === 'H4' && el.classList.contains('title'))) {
             if (el.tagName === 'TABLE') {
@@ -9487,6 +9493,22 @@ export async function fetchGsiTile() {
                             if (html) sourceInfo = html;
                         }
 
+                        // z/x/y 取得
+                        // 無条件に tiletd の href を取得
+                        const tiletd = tr.querySelector('.tiletd a[href*="tilejump.html#"]');
+                        if (tiletd) {
+                            const href = tiletd.getAttribute('href');
+                            const match = href.match(/tilejump\.html#[^/]+\/(\d+)\/(\d+)\/(\d+)/);
+                            if (match) {
+                                const z = parseInt(match[1], 10);
+                                const x = parseInt(match[2], 10);
+                                const y = parseInt(match[3], 10);
+                                if (!isNaN(z) && !isNaN(x) && !isNaN(y)) {
+                                    zxy = { z, x, y };
+                                }
+                            }
+                        }
+                        // zxy = { z:1, x:2, y:3 }
                         if (label.includes('ズームレベル')) {
                             const match = value.match(/(\d+)\s*(?:～|-)\s*(\d+)/);
                             if (match) {
@@ -9504,28 +9526,19 @@ export async function fetchGsiTile() {
                         }
 
                         if (label.includes('提供開始')) {
-                            let match;
-
-                            // 平成 → 西暦
-                            match = value.match(/平成\s*(\d+)\s*年\s*(\d+)\s*月\s*(\d+)\s*日/);
+                            let match = value.match(/平成\s*(\d+)\s*年\s*(\d+)\s*月\s*(\d+)\s*日/);
                             if (match) {
                                 const y = 1988 + parseInt(match[1], 10);
                                 const m = String(parseInt(match[2], 10)).padStart(2, '0');
                                 const d = String(parseInt(match[3], 10)).padStart(2, '0');
-                                const iso = `${y}-${m}-${d}`;
-                                if (!latestDate || iso > latestDate) latestDate = iso;
-                                return;
+                                latestDate = `${y}-${m}-${d}`;
                             }
-
-                            // 令和 → 西暦
                             match = value.match(/令和\s*(\d+)\s*年\s*(\d+)\s*月\s*(\d+)\s*日/);
                             if (match) {
-                                const y = 2018 + parseInt(match[1], 10); // 令和元年 = 2019
+                                const y = 2018 + parseInt(match[1], 10);
                                 const m = String(parseInt(match[2], 10)).padStart(2, '0');
                                 const d = String(parseInt(match[3], 10)).padStart(2, '0');
-                                const iso = `${y}-${m}-${d}`;
-                                if (!latestDate || iso > latestDate) latestDate = iso;
-                                return;
+                                latestDate = `${y}-${m}-${d}`;
                             }
                         }
 
@@ -9550,11 +9563,12 @@ export async function fetchGsiTile() {
         if (latestDate) obj.latestDate = latestDate;
         if (coverage) obj.coverage = coverage;
         if (note) obj.note = note;
+        if (zxy) obj.zxy = zxy;
 
         result[currentCategory].push(obj);
     });
 
-    // 空のカテゴリを削除
+    // 空の配列カテゴリを削除
     for (const key in result) {
         if (result[key].length === 0) {
             delete result[key];
@@ -9563,6 +9577,7 @@ export async function fetchGsiTile() {
 
     return result;
 }
+
 
 
 export function convertGsiTileJson(categorizedData, lineLength = 30) {
@@ -9601,7 +9616,7 @@ export function convertGsiTileJson(categorizedData, lineLength = 30) {
                             source: sourceId,
                         },
                     ],
-                    attribution: attribution,
+                    attribution: `<div style="width: 300px;">${attribution}</div>`,
                 });
             });
         });
