@@ -3,6 +3,138 @@ import store from '@/store'
 import * as turf from '@turf/turf'
 import { nextTick, toRef, reactive, ref, computed, watch } from 'vue';
 
+export async function fetchGsiTile() {
+    const res = await fetch('https://maps.gsi.go.jp/development/ichiran.html');
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+
+    const result = {};
+    const titles = doc.querySelectorAll('h4.title');
+
+    titles.forEach(titleEl => {
+        const id = titleEl.getAttribute('id');
+        if (!id) return;
+
+        const baseTitle = titleEl.textContent.trim();
+        const layers = [];
+
+        let el = titleEl.nextElementSibling;
+
+        // source 抽出
+        if (!(el && el.classList.contains('source'))) return;
+        const rawSources = [];
+        const sourceTitle = baseTitle;
+
+        while (el && el.classList.contains('source')) {
+            rawSources.push(el.textContent.trim());
+            el = el.nextElementSibling;
+            if (el?.tagName === 'BR') el = el.nextElementSibling;
+        }
+
+        // source → layer オブジェクトへ変換
+        rawSources.forEach(srcLine => {
+            const matches = srcLine.match(/URL：(.+?)(（.+）)?$/);
+            if (!matches) return;
+
+            const url = matches[1].replace(/（.+）/, '').trim().replace(/^URL：/, '');
+            const note = matches[2]?.replace(/[（）]/g, '').trim();
+            const ext = url.split('.').pop();
+
+            // .png or .jpg 以外 → スキップ
+            if (!['png', 'jpg'].includes(ext)) return;
+
+            // URLに漢字が含まれていたらスキップ
+            if (/[一-龯々]/.test(url)) return;
+
+            const fullTitle = note ? `${sourceTitle}（${note}）` : sourceTitle;
+            layers.push({
+                title: fullTitle,
+                source: url
+            });
+        });
+
+        if (layers.length === 0) return;
+
+        // table群処理（minzoom/maxzoom/latestDate）
+        let sourceInfo = null;
+        let minzoom = Infinity;
+        let maxzoom = -Infinity;
+        let latestDate = null;
+        let coverage = null;
+        let note = null;
+
+        while (el && !el.classList.contains('title')) {
+            if (el.tagName === 'TABLE') {
+                const rows = el.querySelectorAll('tr');
+                rows.forEach(tr => {
+                    const tds = tr.querySelectorAll('td');
+                    if (tds.length >= 2) {
+                        const label = tds[0].textContent.trim();
+                        const value = tds[1].textContent.trim();
+
+                        if (label.includes('データソース') && !sourceInfo && tds[1]) {
+                            const html = tds[1].innerHTML.trim();
+                            if (html) sourceInfo = html;
+                        }
+
+                        if (label.includes('ズームレベル')) {
+                            const match = value.match(/(\d+)\s*(?:～|-)\s*(\d+)/);
+                            if (match) {
+                                const zmin = parseInt(match[1], 10);
+                                const zmax = parseInt(match[2], 10);
+                                if (!isNaN(zmin)) minzoom = Math.min(minzoom, zmin);
+                                if (!isNaN(zmax)) maxzoom = Math.max(maxzoom, zmax);
+                            } else {
+                                const z = parseInt(value, 10);
+                                if (!isNaN(z)) {
+                                    minzoom = Math.min(minzoom, z);
+                                    maxzoom = Math.max(maxzoom, z);
+                                }
+                            }
+                        }
+
+                        if (label.includes('提供開始')) {
+                            const match = value.match(/平成\s*(\d+)\s*年\s*(\d+)\s*月\s*(\d+)\s*日/);
+                            if (match) {
+                                const y = 1988 + parseInt(match[1], 10);
+                                const m = String(parseInt(match[2], 10)).padStart(2, '0');
+                                const d = String(parseInt(match[3], 10)).padStart(2, '0');
+                                const iso = `${y}-${m}-${d}`;
+                                if (!latestDate || iso > latestDate) latestDate = iso;
+                            }
+                        }
+
+                        if (label.includes('提供範囲') && !coverage && value) {
+                            coverage = value;
+                        }
+
+                        if (label.includes('備考') && value) {
+                            const html = tds[1].innerHTML.trim();
+                            if (html) note = html;
+                            // const text = tds[1].innerHTML.trim();
+                            // if (text) notes.push(text);
+                        }
+                    }
+                });
+            }
+            el = el.nextElementSibling;
+        }
+
+        // 格納
+        result[id] = {
+            layers,
+        };
+        if (sourceInfo) result[id].sourceInfo = sourceInfo;
+        if (isFinite(minzoom)) result[id].minzoom = minzoom;
+        if (isFinite(maxzoom)) result[id].maxzoom = maxzoom;
+        if (latestDate) result[id].latestDate = latestDate;
+        if (coverage) result[id].coverage = coverage;
+        if (note) result[id].note = note;
+    });
+
+    return result;
+}
+
 const checkUser = setInterval(() => {
     if (user.value && user.value.uid) {
         const uid = user.value.uid
@@ -16,6 +148,11 @@ const checkUser = setInterval(() => {
 }, 100) // 5ms → 100ms に変更（CPU負荷軽減のため）
 
 store.state.isOffline = !window.navigator.onLine;
+let tileJson
+if (!store.state.isOffline) {
+    tileJson = await fetchGsiTile()
+    console.log('tileJson', tileJson)
+}
 
 // ---------------------------------------------------------------------------------------------------------------------
 // cs https://rinya-ehime.geospatial.jp/tile/rinya/2024/csmap_Ehime/14/14251/9830.png

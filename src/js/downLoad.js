@@ -9404,7 +9404,7 @@ export async function fetchGsiTile() {
     const html = await res.text();
     const doc = new DOMParser().parseFromString(html, 'text/html');
 
-    const result = {};
+    const result = [];
     const titles = doc.querySelectorAll('h4.title');
 
     titles.forEach(titleEl => {
@@ -9419,13 +9419,32 @@ export async function fetchGsiTile() {
         // source 抽出
         if (!(el && el.classList.contains('source'))) return;
         const rawSources = [];
-        const sourceTitle = baseTitle;
 
         while (el && el.classList.contains('source')) {
             rawSources.push(el.textContent.trim());
             el = el.nextElementSibling;
             if (el?.tagName === 'BR') el = el.nextElementSibling;
         }
+
+        // // source → layer オブジェクトへ変換
+        // rawSources.forEach(srcLine => {
+        //     // const matches = srcLine.match(/URL：([^\(]+)(?:（(.+?)）)?/);
+        //     const matches = srcLine.match(/URL：([^(]+)(?:（(.+?)）)?/);
+        //     if (!matches) return;
+        //
+        //     const url = matches[1].trim();
+        //     const suffix = matches[2]?.trim();
+        //     const ext = url.split('.').pop().toLowerCase();
+        //
+        //     // .png or .jpg 以外 → スキップ
+        //     if (!['png', 'jpg'].includes(ext)) return;
+        //
+        //     // URLに漢字が含まれていたらスキップ
+        //     if (/[一-龯々]/.test(url)) return;
+        //
+        //     const title = suffix ? `${baseTitle}（${suffix}）` : baseTitle;
+        //     layers.push({ title, source: url });
+        // });
 
         // source → layer オブジェクトへ変換
         rawSources.forEach(srcLine => {
@@ -9442,7 +9461,7 @@ export async function fetchGsiTile() {
             // URLに漢字が含まれていたらスキップ
             if (/[一-龯々]/.test(url)) return;
 
-            const fullTitle = note ? `${sourceTitle}（${note}）` : sourceTitle;
+            const fullTitle = note ? `${baseTitle}（${note}）` : baseTitle;
             layers.push({
                 title: fullTitle,
                 source: url
@@ -9451,12 +9470,15 @@ export async function fetchGsiTile() {
 
         if (layers.length === 0) return;
 
-        // table群処理（minzoom/maxzoom/latestDate）
+        // テーブルから情報抽出
+        let sourceInfo = null;
         let minzoom = Infinity;
         let maxzoom = -Infinity;
         let latestDate = null;
+        let coverage = null;
+        let note = null;
 
-        while (el && !el.classList.contains('title')) {
+        while (el && !(el.tagName === 'H4' && el.classList.contains('title'))) {
             if (el.tagName === 'TABLE') {
                 const rows = el.querySelectorAll('tr');
                 rows.forEach(tr => {
@@ -9464,6 +9486,11 @@ export async function fetchGsiTile() {
                     if (tds.length >= 2) {
                         const label = tds[0].textContent.trim();
                         const value = tds[1].textContent.trim();
+
+                        if (label.includes('データソース') && !sourceInfo) {
+                            const html = tds[1].innerHTML.trim();
+                            if (html) sourceInfo = html;
+                        }
 
                         if (label.includes('ズームレベル')) {
                             const match = value.match(/(\d+)\s*(?:～|-)\s*(\d+)/);
@@ -9491,23 +9518,39 @@ export async function fetchGsiTile() {
                                 if (!latestDate || iso > latestDate) latestDate = iso;
                             }
                         }
+
+                        if (label.includes('提供範囲') && !coverage) {
+                            coverage = value;
+                        }
+
+                        if (label.includes('備考')) {
+                            const html = tds[1].innerHTML.trim();
+                            if (html) note = html;
+                        }
                     }
                 });
             }
             el = el.nextElementSibling;
         }
 
-        // 格納
-        result[id] = {
-            layers,
-        };
-        if (isFinite(minzoom)) result[id].minzoom = minzoom;
-        if (isFinite(maxzoom)) result[id].maxzoom = maxzoom;
-        if (latestDate) result[id].latestDate = latestDate;
+        const obj = { layers };
+        if (sourceInfo) obj.sourceInfo = sourceInfo;
+        if (isFinite(minzoom)) obj.minzoom = minzoom;
+        if (isFinite(maxzoom)) obj.maxzoom = maxzoom;
+        if (latestDate) obj.latestDate = latestDate;
+        if (coverage) obj.coverage = coverage;
+        if (note) obj.note = note;
+
+        result.push(obj);
     });
 
     return result;
 }
+
+
+
+
+
 
 
 
