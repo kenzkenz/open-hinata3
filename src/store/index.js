@@ -88,6 +88,7 @@ export default createStore({
     chibanzuPropaties: {},
     chibanzuGeojson: [],
     showChibanzuDialog: false,
+    popupFeature: {},
     popupFeatureProperties: {},
     popupFeatureCoordinates: [],
     soloFlg: false,

@@ -9092,7 +9092,22 @@ export function detectLatLonColumns(records) {
     return null;
 }
 
-// 法務省地図面積計算
+/**
+ 全国地番図面積計算
+ */
+export async function chibanzuCalculatePolygonMetrics(tgtFeatures) {
+    let polygons = []
+    tgtFeatures.forEach(feature => {
+        console.log(feature.geometry)
+        polygons.push(turf.polygon(feature.geometry.coordinates))
+    })
+    const calc = calculatePolygonsMetrics(polygons)
+    return calc
+}
+
+/**
+ 法務省地図面積計算
+ */
 export async function homusyoCalculatePolygonMetrics(fudeIds) {
     const map01 = store.state.map01;
     let prefId = String(store.state.prefId).padStart(2, '0');
@@ -9383,3 +9398,117 @@ export function changePrintMap03 (titleDirection) {
             break
     }
 }
+
+export async function fetchGsiTile() {
+    const res = await fetch('https://maps.gsi.go.jp/development/ichiran.html');
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+
+    const result = {};
+    const titles = doc.querySelectorAll('h4.title');
+
+    titles.forEach(titleEl => {
+        const id = titleEl.getAttribute('id');
+        if (!id) return;
+
+        const baseTitle = titleEl.textContent.trim();
+        const layers = [];
+
+        let el = titleEl.nextElementSibling;
+
+        // source 抽出
+        if (!(el && el.classList.contains('source'))) return;
+        const rawSources = [];
+        const sourceTitle = baseTitle;
+
+        while (el && el.classList.contains('source')) {
+            rawSources.push(el.textContent.trim());
+            el = el.nextElementSibling;
+            if (el?.tagName === 'BR') el = el.nextElementSibling;
+        }
+
+        // source → layer オブジェクトへ変換
+        rawSources.forEach(srcLine => {
+            const matches = srcLine.match(/URL：(.+?)(（.+）)?$/);
+            if (!matches) return;
+
+            const url = matches[1].replace(/（.+）/, '').trim().replace(/^URL：/, '');
+            const note = matches[2]?.replace(/[（）]/g, '').trim();
+            const ext = url.split('.').pop();
+
+            // .png or .jpg 以外 → スキップ
+            if (!['png', 'jpg'].includes(ext)) return;
+
+            // URLに漢字が含まれていたらスキップ
+            if (/[一-龯々]/.test(url)) return;
+
+            const fullTitle = note ? `${sourceTitle}（${note}）` : sourceTitle;
+            layers.push({
+                title: fullTitle,
+                source: url
+            });
+        });
+
+        if (layers.length === 0) return;
+
+        // table群処理（minzoom/maxzoom/latestDate）
+        let minzoom = Infinity;
+        let maxzoom = -Infinity;
+        let latestDate = null;
+
+        while (el && !el.classList.contains('title')) {
+            if (el.tagName === 'TABLE') {
+                const rows = el.querySelectorAll('tr');
+                rows.forEach(tr => {
+                    const tds = tr.querySelectorAll('td');
+                    if (tds.length >= 2) {
+                        const label = tds[0].textContent.trim();
+                        const value = tds[1].textContent.trim();
+
+                        if (label.includes('ズームレベル')) {
+                            const match = value.match(/(\d+)\s*(?:～|-)\s*(\d+)/);
+                            if (match) {
+                                const zmin = parseInt(match[1], 10);
+                                const zmax = parseInt(match[2], 10);
+                                if (!isNaN(zmin)) minzoom = Math.min(minzoom, zmin);
+                                if (!isNaN(zmax)) maxzoom = Math.max(maxzoom, zmax);
+                            } else {
+                                const z = parseInt(value, 10);
+                                if (!isNaN(z)) {
+                                    minzoom = Math.min(minzoom, z);
+                                    maxzoom = Math.max(maxzoom, z);
+                                }
+                            }
+                        }
+
+                        if (label.includes('提供開始')) {
+                            const match = value.match(/平成\s*(\d+)\s*年\s*(\d+)\s*月\s*(\d+)\s*日/);
+                            if (match) {
+                                const y = 1988 + parseInt(match[1], 10);
+                                const m = String(parseInt(match[2], 10)).padStart(2, '0');
+                                const d = String(parseInt(match[3], 10)).padStart(2, '0');
+                                const iso = `${y}-${m}-${d}`;
+                                if (!latestDate || iso > latestDate) latestDate = iso;
+                            }
+                        }
+                    }
+                });
+            }
+            el = el.nextElementSibling;
+        }
+
+        // 格納
+        result[id] = {
+            layers,
+        };
+        if (isFinite(minzoom)) result[id].minzoom = minzoom;
+        if (isFinite(maxzoom)) result[id].maxzoom = maxzoom;
+        if (latestDate) result[id].latestDate = latestDate;
+    });
+
+    return result;
+}
+
+
+
+

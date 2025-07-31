@@ -23,8 +23,12 @@
         </div>
 <!--        <div class="street-view-drawer" style="margin-top:10px;height: calc(100vh - 450px);width:100%;"></div>-->
         <hr style="margin-top: 10px;margin-bottom: 10px;">
-        <div v-if="s_rightDrawerTitle === '2025登記所地図'">
-          <p style="margin-bottom: 8px;">{{ `${popupFeatureProperties.市区町村名 || ''}${popupFeatureProperties.大字名 || ''}${popupFeatureProperties.大字 || ''}${popupFeatureProperties['丁目名'] || ''}${popupFeatureProperties.地番 || ''}` }}の面積等</p>
+<!--        <div v-if="s_rightDrawerTitle === '2025登記所地図'">-->
+        <div v-if="isLowZoom && s_rightDrawerTitle !== '2025登記所地図'">
+          zoom15以上で面積計算します。
+        </div>
+        <div v-else>
+          <p v-if="s_rightDrawerTitle === '2025登記所地図'" style="margin-bottom: 8px;">{{ `${popupFeatureProperties.市区町村名 || ''}${popupFeatureProperties.大字名 || ''}${popupFeatureProperties.大字 || ''}${popupFeatureProperties['丁目名'] || ''}${popupFeatureProperties.地番 || ''}` }}の面積等</p>
           面積：{{ area }}<br>
           周長：{{ perimeter }}<br>
           境界点数：{{ vertexCount }}
@@ -51,7 +55,7 @@
 
 <script>
 import { mapState, mapMutations } from 'vuex';
-import {homusyoCalculatePolygonMetrics} from "@/js/downLoad";
+import {chibanzuCalculatePolygonMetrics, homusyoCalculatePolygonMetrics} from "@/js/downLoad";
 import store from "@/store";
 
 export default {
@@ -66,6 +70,7 @@ export default {
       featuresCount: 0,
       totalArea: '',
       totalVertexCount: 0,
+      isLowZoom: false,
     };
   },
   computed: {
@@ -111,37 +116,59 @@ export default {
   },
   watch: {
     async popupFeatureProperties (newVal) {
-      const calc = await homusyoCalculatePolygonMetrics([newVal.筆ID])
-      this.area = calc.area
-      this.perimeter = calc.perimeter
-      this.vertexCount = calc.vertexCount
-
-      const fudeIds = Array.from(this.$store.state.highlightedChibans).map(h => h.split('_')[0])
-      this.featuresCount = fudeIds.length
-      const totalCalc = await homusyoCalculatePolygonMetrics(fudeIds)
-      this.totalArea = totalCalc.area
-      this.totalVertexCount = totalCalc.vertexCount
-
-
-      // document.querySelector('.street-view-drawer').innerHTML = '<span style="color: red">現在、street-viewはアクセス増加に伴い停止中です。</span>'
-
-      // const container = document.querySelector('.street-view-drawer')
-      // const [lng, lat] = this.$store.state.popupFeatureCoordinates;
-      // async function setupStreetViewWithMotion() {
-      //   await enableMotionPermission(); // ← 先に許可をもらう
-      //   if (container) {
-      //     const topDiv = document.querySelector('.top-div')
-      //     document.querySelector('.street-view-drawer').style.height = window.innerHeight - topDiv.offsetHeight - topDiv.getBoundingClientRect().top - 30 + 'px'
-      //     new window.google.maps.StreetViewPanorama(container, {
-      //       position: {lat: lat, lng: lng},
-      //       pov: { heading: 34, pitch: 10 },
-      //       zoom: 1,
-      //       disableDefaultUI: true,
-      //     });
-      //   }
-      // }
-      // setupStreetViewWithMotion()
-    }
+      if (this.s_rightDrawerTitle === '2025登記所地図') {
+        const calc = await homusyoCalculatePolygonMetrics([newVal.筆ID])
+        this.area = calc.area
+        this.perimeter = calc.perimeter
+        this.vertexCount = calc.vertexCount
+        // ---------------------------------------------------------------------------------------
+        const fudeIds = Array.from(this.$store.state.highlightedChibans).map(h => h.split('_')[0])
+        this.featuresCount = fudeIds.length
+        const totalCalc = await homusyoCalculatePolygonMetrics(fudeIds)
+        this.totalArea = totalCalc.area
+        this.totalVertexCount = totalCalc.vertexCount
+      } else {
+        const map01 = this.$store.state.map01
+        const zoom = map01.getZoom()
+        if (zoom < 15) {
+          this.area = ''
+          this.perimeter = ''
+          this.vertexCount = 0
+          this.featuresCount = 0
+          this.totalArea = ''
+          this.totalVertexCount = 0
+          this.isLowZoom = true
+          return
+        } else {
+          this.isLowZoom = false
+        }
+        const calc = await chibanzuCalculatePolygonMetrics([this.$store.state.popupFeature])
+        this.area = calc.area
+        this.perimeter = calc.perimeter
+        this.vertexCount = calc.vertexCount
+        /**
+         注！下のコードは完全に動作する。選択地物の総面積を計算する。重いのではずした。
+        // ---------------------------------------------------------------------------------------
+        const oh3ids = Array.from(this.$store.state.highlightedChibans).map(h => Number(h.split('_')[0]))
+        console.log(oh3ids)
+        const allFeatures = map01.queryRenderedFeatures();
+        const chibanLayerId = allFeatures
+                  .map(f => f.layer.id)
+                  .find(id => id.includes('oh-chiban'))
+        const features = map01.queryRenderedFeatures(
+            map01.getCanvas().getBoundingClientRect(),
+            { layers: [chibanLayerId] }
+        );
+        console.log(chibanLayerId)
+        const idString = chibanLayerId.includes('oh-chibanzu') ? 'id' : 'oh3id'
+        const filteredFeatures = features.filter(f => oh3ids.includes(f.properties[idString]));
+        this.featuresCount = filteredFeatures.length
+        const totalCalc = await chibanzuCalculatePolygonMetrics(filteredFeatures)
+        this.totalArea = totalCalc.area
+        this.totalVertexCount = totalCalc.vertexCount
+         */
+      }
+    },
   },
 };
 </script>

@@ -997,7 +997,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
 <!--        <v-btn @click="openPaintEditorWindow">test</v-btn>-->
 
-
+        <v-btn @click="test">test</v-btn>
 
 
 
@@ -1403,7 +1403,7 @@ import {
   downloadSimaText, downloadTextFile, DXFDownload,
   dxfToGeoJSON, enableDragHandles,
   extractFirstFeaturePropertiesAndCheckCRS,
-  extractSimaById, fetchWithProgress, fncPngDl, genTileUrls, geocode,
+  extractSimaById, fetchGsiTile, fetchWithProgress, fncPngDl, genTileUrls, geocode,
   geojsonAddLayer, geojsonDownload, geoJSONToSIMA,
   geoTiffLoad,
   geoTiffLoad2, getBBoxFromPolygon,
@@ -2606,6 +2606,10 @@ export default {
     },
   },
   methods: {
+    async test () {
+      const tileJson = await fetchGsiTile()
+      console.log(tileJson)
+    },
     openPaintEditorWindow() {
       this.$store.dispatch('showFloatingWindow', 'painteditor');
     },
@@ -3796,7 +3800,7 @@ export default {
       //   this.gcpStep = 'map'; // 次は地図をクリックしてください
       // }
     },
-    test () {
+    test0 () {
       const vm = this
       const map = this.$store.state.map01
       this.$store.state.isMoveMode = !this.$store.state.isMoveMode;
@@ -8885,6 +8889,7 @@ export default {
                 // 新しいIDを追加
                 this.$store.state.highlightedChibans.add(targetId);
                 const lngLat = e.lngLat
+                store.state.popupFeature = e.features[0]
                 store.state.popupFeatureProperties = e.features[0].properties
                 store.state.popupFeatureCoordinates = [lngLat.lng, lngLat.lat]
                 async function address() {

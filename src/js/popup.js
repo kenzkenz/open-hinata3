@@ -3985,6 +3985,7 @@ export function popup(e,map,mapName,mapFlg) {
         }
 
         if(/^oh-chiban-/.test(layerId) || /^oh-chibanL-/.test(layerId) || /^oh-pmtiles-/.test(layerId)) {
+
             let features = map.queryRenderedFeatures(
                 map.project(coordinates), {layers: [layerId]}
             )
@@ -3993,10 +3994,13 @@ export function popup(e,map,mapName,mapFlg) {
                     map.project(e.lngLat), {layers: [layerId]}
                 )
             }
+            store.state.popupFeature = features[0]
+            store.state.popupFeatureProperties = features[0].properties
             console.log(features[0].geometry.type)
             // if (store.state.isRenzoku && features[0].geometry.type === 'Polygon') return
             if (features[0].geometry.type === 'Polygon' && !layerId.includes('oh-pmtiles-')) return
             if (features.length === 0) return
+
             props = features[0].properties
             let html0 = ''
             if (html.indexOf(layerId.split('-')[1]) === -1) {

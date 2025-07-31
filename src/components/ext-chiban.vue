@@ -1177,29 +1177,38 @@ export default {
           console.log(searchString)
           const words = searchString.split(" ")
           // 複数フィールドを結合する
-          console.log(vm.item.id)
+          console.log(vm.item.id.split('-')[2])
           let combinedFields
           if (vm.item.id.includes('oh-chibanzu-')) {
-            combinedFields = ["concat", ["get", "大字"]," ",["get", "町名"]," ",
-              ["get", "AzaName"]," ",
-              ["get", "TEXT"], " ",
-              ["get", "地番"], " ",  ["get", "Txtcd"], " ",
-              ["get", "Chiban"], " ", ["get", "TIBAN"], " ", ["get", "TXTCD"],
-              " ", ["get", "本番"], " ", ["get", "CHIBAN"], " ", ["get", "表示文字列"], " ", ["get", "番地"], " ", ["get", "TXTCODE1"],
-              " ", ["get", "地番本番"], " ", ["get", "SAFIELD002"], " ", ["get", "所在地番"], " ", ["get", "TEXTCODE1"], " ", ["get", "DNO"]];
+            combinedFields = ["concat",
+              ["get", "大字"], ["get", "大字名"], ["get", "大字名称"],
+              ["get", "町名"],
+              ["get", "AzaName"],
+              ["get", "TEXT"],
+              ["get", "地番"],  ["get", "Txtcd"],
+              ["get", "Chiban"], ["get", "TIBAN"], ["get", "TXTCD"],
+              ["get", "本番"], ["get", "CHIBAN"], ["get", "表示文字列"], ["get", "番地"], ["get", "TXTCODE1"],
+              ["get", "地番本番"], ["get", "SAFIELD002"], ["get", "所在地番"], ["get", "TEXTCODE1"], ["get", "DNO"],
+              ];
           } else {
             let chibanPropatie = await fetchData(vm.item.id.split('-')[2])
             chibanPropatie = chibanPropatie[0].chiban
-            combinedFields = ["concat", ["get", "都道府県"], " ",
-              ["get", "振興局"], " ",
-              ["get", "市町村"], " ",
-              ["get", "区"], " ",["get", "区名"], " ",
-              ["get", "大字"], " ", ["get", "町丁目名"], " ", ["get", "AzaName"], " ",
-              ["get", chibanPropatie]]
-            // combinedFields = ["get", ["get", "chiban"]]
+            combinedFields = ["concat",
+              ["get", "都道府県"],
+              ["get", "振興局"],
+              ["get", "市町村"],
+              ["get", "区"], ["get", "区名"],
+              ["get", "大字"], ["get", "大字名"], ["get", "大字名称"],
+              ["get", "町丁目名"], ["get", "AzaName"],
+              ["get", chibanPropatie]
+            ]
           }
           console.log(combinedFields)
-          const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);
+          // const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0]);
+          // 各wordごとにOR条件を生成
+          const filterConditions = words.map(word => [">=", ["index-of", word, combinedFields], 0])
+          const filterConditions2 = words.map(word => [">=", ["index-of", word, ["join", combinedFields, ""]], 0])
+          console.log(filterConditions)
           // いずれかの単語が含まれる場合の条件を作成 (OR条件)
           const matchCondition = ["any", ...filterConditions]
 
