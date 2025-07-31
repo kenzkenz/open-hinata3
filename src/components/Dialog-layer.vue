@@ -555,13 +555,13 @@ export default {
                 })
 
                 }
-
+// console.log(layer0)
                 if (layer0.position) {
                   if (flyFlg && this.nodeClicked) {
                     setTimeout(() => {
                       map.flyTo({
                         center: Array.from(layer0.position), // フライ先の座標（経度, 緯度）
-                        zoom: this.flyZoom,                   // ズームレベル（任意）
+                        zoom: layer0.z ? layer0.z : this.flyZoom,                   // ズームレベル（任意）
                         speed: 1.2,                 // アニメーション速度（オプション）
                         curve: 1.42,                // アニメーションの曲線効果（オプション）
                         essential: true            // ユーザーがアニメーションを無効化していても実行

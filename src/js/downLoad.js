@@ -9398,6 +9398,21 @@ export function changePrintMap03 (titleDirection) {
             break
     }
 }
+/**
+地理院タイル取得の一連
+ */
+function insertBrEveryNChars(str, n) {
+    const regex = new RegExp(`.{1,${n}}`, 'g');
+    return str.match(regex).join('<br>');
+}
+
+function zxyToLonLat(z, x, y) {
+    const n = Math.pow(2, z);
+    const lon = (x + 0.5) / n * 360 - 180;
+    const latRad = Math.atan(Math.sinh(Math.PI * (1 - 2 * (y + 0.5) / n)));
+    const lat = latRad * (180 / Math.PI);
+    return { lon, lat };
+}
 
 export async function fetchGsiTile() {
     const res = await fetch('https://maps.gsi.go.jp/development/ichiran.html');
@@ -9423,6 +9438,9 @@ export async function fetchGsiTile() {
             prev = prev.previousElementSibling;
         }
         if (foundCategory) {
+            if (foundCategory === '基準点・地磁気・地殻変動') {
+                foundCategory = '地磁気'
+            }
             currentCategory = foundCategory;
         }
 
@@ -9563,7 +9581,12 @@ export async function fetchGsiTile() {
         if (latestDate) obj.latestDate = latestDate;
         if (coverage) obj.coverage = coverage;
         if (note) obj.note = note;
-        if (zxy) obj.zxy = zxy;
+        if (zxy) {
+            obj.zxy = zxy
+            const { lon, lat } = zxyToLonLat(zxy.z, zxy.x, zxy.y);
+            // obj.coordinate = [lon, lat];  // MapLibre の setCenter 等と互換
+            obj.position = [lon, lat];  // MapLibre の setCenter 等と互換
+        }
 
         result[currentCategory].push(obj);
     });
@@ -9578,8 +9601,6 @@ export async function fetchGsiTile() {
     return result;
 }
 
-
-
 export function convertGsiTileJson(categorizedData, lineLength = 30) {
     const result = [];
 
@@ -9593,6 +9614,9 @@ export function convertGsiTileJson(categorizedData, lineLength = 30) {
         entries.forEach(entry => {
             const baseId = entry.id;
             const attribution = entry.note;
+            const z = entry.zxy?.z
+            const position = entry.position;
+            const isPosition = entry.position && categoryKey.includes('■') ? true : false
 
             entry.layers.forEach((layerObj, index) => {
                 const sourceId = `${baseId}-source-${index}`;
@@ -9614,9 +9638,12 @@ export function convertGsiTileJson(categorizedData, lineLength = 30) {
                             id: layerId,
                             type: 'raster',
                             source: sourceId,
+                            position: position,
+                            z: z,
                         },
                     ],
                     attribution: `<div style="width: 300px;">${attribution}</div>`,
+                    position: isPosition,
                 });
             });
         });
@@ -9624,181 +9651,6 @@ export function convertGsiTileJson(categorizedData, lineLength = 30) {
         result.push(category);
     });
 
-    return result;
-}
-
-
-
-// 地理院タイル取得
-export async function fetchGsiTileBk() {
-    const res = await fetch('https://maps.gsi.go.jp/development/ichiran.html');
-    const html = await res.text();
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-
-    const result = [];
-    const titles = doc.querySelectorAll('h4.title');
-
-    titles.forEach(titleEl => {
-        const id = titleEl.getAttribute('id');
-        if (!id) return;
-
-        const baseTitle = titleEl.textContent.trim();
-        const layers = [];
-
-        let el = titleEl.nextElementSibling;
-
-        // source 抽出
-        if (!(el && el.classList.contains('source'))) return;
-        const rawSources = [];
-
-        while (el && el.classList.contains('source')) {
-            rawSources.push(el.textContent.trim());
-            el = el.nextElementSibling;
-            if (el?.tagName === 'BR') el = el.nextElementSibling;
-        }
-
-        // source → layer オブジェクトへ変換
-        rawSources.forEach(srcLine => {
-            const matches = srcLine.match(/URL：(.+?)(（.+）)?$/);
-            if (!matches) return;
-
-            const url = matches[1].replace(/（.+）/, '').trim().replace(/^URL：/, '');
-            const note = matches[2]?.replace(/[（）]/g, '').trim();
-            const ext = url.split('.').pop();
-
-            // .png or .jpg 以外 → スキップ
-            if (!['png', 'jpg'].includes(ext)) return;
-
-            // URLに漢字が含まれていたらスキップ
-            if (/[一-龯々]/.test(url)) return;
-
-            // URLに{year}含まれていたらスキップ
-            if (/{year}/.test(url)) return;
-
-            const fullTitle = note ? `${baseTitle}（${note}）` : baseTitle;
-            layers.push({
-                title: fullTitle,
-                source: url
-            });
-        });
-
-        if (layers.length === 0) return;
-
-        // テーブルから情報抽出
-        let sourceInfo = null;
-        let minzoom = Infinity;
-        let maxzoom = -Infinity;
-        let latestDate = null;
-        let coverage = null;
-        let note = null;
-
-        while (el && !(el.tagName === 'H4' && el.classList.contains('title'))) {
-            if (el.tagName === 'TABLE') {
-                const rows = el.querySelectorAll('tr');
-                rows.forEach(tr => {
-                    const tds = tr.querySelectorAll('td');
-                    if (tds.length >= 2) {
-                        const label = tds[0].textContent.trim();
-                        const value = tds[1].textContent.trim();
-
-                        if (label.includes('データソース') && !sourceInfo) {
-                            const html = tds[1].innerHTML.trim();
-                            if (html) sourceInfo = html;
-                        }
-
-                        if (label.includes('ズームレベル')) {
-                            const match = value.match(/(\d+)\s*(?:～|-)\s*(\d+)/);
-                            if (match) {
-                                const zmin = parseInt(match[1], 10);
-                                const zmax = parseInt(match[2], 10);
-                                if (!isNaN(zmin)) minzoom = Math.min(minzoom, zmin);
-                                if (!isNaN(zmax)) maxzoom = Math.max(maxzoom, zmax);
-                            } else {
-                                const z = parseInt(value, 10);
-                                if (!isNaN(z)) {
-                                    minzoom = Math.min(minzoom, z);
-                                    maxzoom = Math.max(maxzoom, z);
-                                }
-                            }
-                        }
-
-                        if (label.includes('提供開始')) {
-                            const match = value.match(/平成\s*(\d+)\s*年\s*(\d+)\s*月\s*(\d+)\s*日/);
-                            if (match) {
-                                const y = 1988 + parseInt(match[1], 10);
-                                const m = String(parseInt(match[2], 10)).padStart(2, '0');
-                                const d = String(parseInt(match[3], 10)).padStart(2, '0');
-                                const iso = `${y}-${m}-${d}`;
-                                if (!latestDate || iso > latestDate) latestDate = iso;
-                            }
-                        }
-
-                        if (label.includes('提供範囲') && !coverage) {
-                            coverage = value;
-                        }
-
-                        if (label.includes('備考')) {
-                            const html = tds[1].innerHTML.trim();
-                            if (html) note = html;
-                        }
-                    }
-                });
-            }
-            el = el.nextElementSibling;
-        }
-
-        const obj = { layers };
-        obj.id = id;
-        if (sourceInfo) obj.sourceInfo = sourceInfo;
-        if (isFinite(minzoom)) obj.minzoom = minzoom;
-        if (isFinite(maxzoom)) obj.maxzoom = maxzoom;
-        if (latestDate) obj.latestDate = latestDate;
-        if (coverage) obj.coverage = coverage;
-        if (note) obj.note = note;
-
-        result.push(obj);
-    });
-
-    return result;
-}
-
-function insertBrEveryNChars(str, n) {
-    const regex = new RegExp(`.{1,${n}}`, 'g');
-    return str.match(regex).join('<br>');
-}
-
-export function convertGsiTileJsonBK(inputArray) {
-    const result = [];
-    inputArray.forEach(entry => {
-        const baseId = entry.id;
-        const attribution = entry.note;
-        entry.layers.forEach((layerObj, index) => {
-            // sourceとlayerのIDは一意にしておく（例: "ccm-0", "ccm-1"）
-            const sourceId = `${baseId}-source-${index}`;
-            const layerId = `oh-${baseId}-layer-${index}`;
-            const formattedTitle = insertBrEveryNChars(layerObj.title, 20);
-            console.log(formattedTitle)
-            result.push({
-                id: baseId,
-                label: formattedTitle,
-                source: {
-                    id: sourceId,
-                    obj: {
-                        type: 'raster',
-                        tiles: [layerObj.source],
-                    },
-                },
-                layers: [
-                    {
-                        id: layerId,
-                        type: 'raster',
-                        source: sourceId,
-                    },
-                ],
-                attribution: attribution,
-            });
-        });
-    });
     return result;
 }
 

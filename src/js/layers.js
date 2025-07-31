@@ -10901,6 +10901,11 @@ let layers01 = [
         ]
     },
     {
+        id: 'gsi',
+        label: "⭐️地理院タイル全て（テスト中）",
+        nodes: convertTileJson
+    },
+    {
         id: 1,
         label: "基本地図",
         nodes: [
@@ -12412,11 +12417,6 @@ let layers01 = [
                 layers:[nihonrekishiLayer,nihonrekishiLayerLabel]
             },
         ]
-    },
-    {
-        id: 'gsi',
-        label: "地理院タイル",
-        nodes: convertTileJson
     },
     {
         id: 'offline',
