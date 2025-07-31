@@ -9398,7 +9398,7 @@ export function changePrintMap03 (titleDirection) {
             break
     }
 }
-
+// 地理院タイル取得
 export async function fetchGsiTile() {
     const res = await fetch('https://maps.gsi.go.jp/development/ichiran.html');
     const html = await res.text();
