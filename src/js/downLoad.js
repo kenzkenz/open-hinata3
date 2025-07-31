@@ -9452,13 +9452,8 @@ export async function fetchGsiTile() {
             const note = matches[2]?.replace(/[（）]/g, '').trim();
             const ext = url.split('.').pop();
 
-            // .png or .jpg 以外 → スキップ
             if (!['png', 'jpg'].includes(ext)) return;
-
-            // URLに漢字が含まれていたらスキップ
             if (/[一-龯々]/.test(url)) return;
-
-            // URLに{year}含まれていたらスキップ
             if (/{year}/.test(url)) return;
 
             const fullTitle = note ? `${baseTitle}（${note}）` : baseTitle;
@@ -9509,13 +9504,28 @@ export async function fetchGsiTile() {
                         }
 
                         if (label.includes('提供開始')) {
-                            const match = value.match(/平成\s*(\d+)\s*年\s*(\d+)\s*月\s*(\d+)\s*日/);
+                            let match;
+
+                            // 平成 → 西暦
+                            match = value.match(/平成\s*(\d+)\s*年\s*(\d+)\s*月\s*(\d+)\s*日/);
                             if (match) {
                                 const y = 1988 + parseInt(match[1], 10);
                                 const m = String(parseInt(match[2], 10)).padStart(2, '0');
                                 const d = String(parseInt(match[3], 10)).padStart(2, '0');
                                 const iso = `${y}-${m}-${d}`;
                                 if (!latestDate || iso > latestDate) latestDate = iso;
+                                return;
+                            }
+
+                            // 令和 → 西暦
+                            match = value.match(/令和\s*(\d+)\s*年\s*(\d+)\s*月\s*(\d+)\s*日/);
+                            if (match) {
+                                const y = 2018 + parseInt(match[1], 10); // 令和元年 = 2019
+                                const m = String(parseInt(match[2], 10)).padStart(2, '0');
+                                const d = String(parseInt(match[3], 10)).padStart(2, '0');
+                                const iso = `${y}-${m}-${d}`;
+                                if (!latestDate || iso > latestDate) latestDate = iso;
+                                return;
                             }
                         }
 
@@ -9544,8 +9554,16 @@ export async function fetchGsiTile() {
         result[currentCategory].push(obj);
     });
 
+    // 空のカテゴリを削除
+    for (const key in result) {
+        if (result[key].length === 0) {
+            delete result[key];
+        }
+    }
+
     return result;
 }
+
 
 export function convertGsiTileJson(categorizedData, lineLength = 30) {
     const result = [];
