@@ -9605,25 +9605,31 @@ export function convertGsiTileJson(categorizedData, lineLength = 30) {
     const result = [];
 
     Object.entries(categorizedData).forEach(([categoryKey, entries]) => {
-        const category = {
-            id: categoryKey,
-            label: categoryKey,
-            nodes: [],
-        };
-
+        const categoryNodes = []
+        let newHtml = ''
         entries.forEach(entry => {
             const baseId = entry.id;
             const attribution = entry.note;
             const z = entry.zxy?.z
             const position = entry.position;
+            const latestDate = entry.latestDate;
             const isPosition = entry.position && categoryKey.includes('■') ? true : false
+
+            // 1年以内
+            const isWithinOneYear = new Date(entry.latestDate ?? 0) > new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+            // 1ヶ月以内（30日とする）
+            const isWithinOneMonth = new Date(entry.latestDate ?? 0) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+            // 1週間以内（7日）
+            const isWithinOneWeek = new Date(entry.latestDate ?? 0) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+            newHtml = isWithinOneYear ? '<span style="color: red;">new </span>' : ''
 
             entry.layers.forEach((layerObj, index) => {
                 const sourceId = `${baseId}-source-${index}`;
                 const layerId = `oh-${baseId}-layer-${index}`;
-                const formattedTitle = insertBrEveryNChars(layerObj.title, lineLength);
+                const formattedTitle = newHtml + insertBrEveryNChars(layerObj.title, lineLength);
 
-                category.nodes.push({
+                categoryNodes.push({
                     id: baseId,
                     label: formattedTitle,
                     source: {
@@ -9640,6 +9646,7 @@ export function convertGsiTileJson(categorizedData, lineLength = 30) {
                             source: sourceId,
                             position: position,
                             z: z,
+                            latestDate: latestDate,
                         },
                     ],
                     attribution: `<div style="width: 300px;">${attribution}</div>`,
@@ -9647,7 +9654,11 @@ export function convertGsiTileJson(categorizedData, lineLength = 30) {
                 });
             });
         });
-
+        const category = {
+            id: categoryKey,
+            label: newHtml + categoryKey,
+            nodes: categoryNodes,
+        };
         result.push(category);
     });
 
