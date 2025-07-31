@@ -997,7 +997,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
 <!--        <v-btn @click="openPaintEditorWindow">test</v-btn>-->
 
-<!--        <v-btn @click="test">test</v-btn>-->
+        <v-btn @click="test">test</v-btn>
 
 
 
@@ -1395,33 +1395,68 @@ import RightDrawer from '@/components/rightDrawer.vue'
 import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
 import {
-  addDraw, cachePmtiles, cachePmtilesBuffers, cacheTilesViaSW,
-  capture, changePrintMap03, convertFromEPSG4326,
+  addDraw,
+  cachePmtiles,
+  cachePmtilesBuffers,
+  cacheTilesViaSW,
+  capture,
+  changePrintMap03,
+  convertFromEPSG4326,
+  convertGsiTileJson,
+  convertGsiTileJson2,
+  convertGsiTileJsonFromCategorized,
   csvGenerateForUserPng,
-  ddSimaUpload, delay0, detectLatLonColumns, downloadGeoJSONAsCSV,
+  ddSimaUpload,
+  delay0,
+  detectLatLonColumns,
+  downloadGeoJSONAsCSV,
   downloadKML,
-  downloadSimaText, downloadTextFile, DXFDownload,
-  dxfToGeoJSON, enableDragHandles,
+  downloadSimaText,
+  downloadTextFile,
+  DXFDownload,
+  dxfToGeoJSON,
+  enableDragHandles,
   extractFirstFeaturePropertiesAndCheckCRS,
-  extractSimaById, fetchGsiTile, fetchWithProgress, fncPngDl, genTileUrls, geocode,
-  geojsonAddLayer, geojsonDownload, geoJSONToSIMA,
+  extractSimaById,
+  fetchGsiTile,
+  fetchGsiTileTest,
+  fetchWithProgress,
+  fncPngDl,
+  genTileUrls,
+  geocode,
+  geojsonAddLayer,
+  geojsonDownload,
+  geoJSONToSIMA,
   geoTiffLoad,
-  geoTiffLoad2, getBBoxFromPolygon,
-  getCRS, getMaxZIndex, getNextZIndex, getNowFileNameTimestamp, gpxDownload,
+  geoTiffLoad2,
+  getBBoxFromPolygon,
+  getCRS,
+  getMaxZIndex,
+  getNextZIndex,
+  getNowFileNameTimestamp,
+  gpxDownload,
   handleFileUpload,
   highlightSpecificFeatures,
   highlightSpecificFeatures2025,
-  highlightSpecificFeaturesCity, japanCoord,
-  jpgLoad, kmlDownload,
+  highlightSpecificFeaturesCity,
+  japanCoord,
+  jpgLoad,
+  kmlDownload,
   kmzLoadForUser,
-  LngLatToAddress, parseCSV, pmtilesGenerate,
+  LngLatToAddress,
+  parseCSV,
+  pmtilesGenerate,
   pmtilesGenerateForUser2,
   pngDownload,
-  pngLoad, printDirectionChange, scaleAndRotateLassoSelected,
-  simaLoadForUser, splitLineStringIntoPoints,
+  pngLoad,
+  printDirectionChange,
+  scaleAndRotateLassoSelected,
+  simaLoadForUser,
+  splitLineStringIntoPoints,
   tileGenerateForUser,
   tileGenerateForUserPdf,
-  transformGeoJSONToEPSG4326, updateDragHandles,
+  transformGeoJSONToEPSG4326,
+  updateDragHandles,
   userKmzSet,
   userSimaSet,
   zahyokei,
@@ -2607,8 +2642,10 @@ export default {
   },
   methods: {
     async test () {
-      const tileJson = await fetchGsiTile()
+      const tileJson = await fetchGsiTileTest()
       console.log(tileJson)
+      const converTileJson = convertGsiTileJson2(tileJson)
+      console.log(converTileJson)
     },
     openPaintEditorWindow() {
       this.$store.dispatch('showFloatingWindow', 'painteditor');
