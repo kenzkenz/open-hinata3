@@ -9603,6 +9603,7 @@ export async function fetchGsiTile() {
 
 export function convertGsiTileJson(categorizedData, lineLength = 30) {
     const result = [];
+    let isNew = false
 
     Object.entries(categorizedData).forEach(([categoryKey, entries]) => {
         const categoryNodes = []
@@ -9622,7 +9623,12 @@ export function convertGsiTileJson(categorizedData, lineLength = 30) {
             // 1週間以内（7日）
             const isWithinOneWeek = new Date(entry.latestDate ?? 0) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-            newHtml = isWithinOneYear ? '<span style="color: red;">new </span>' : ''
+            if (isWithinOneWeek) {
+                isNew = true
+                newHtml = '<span style="color: red;">new </span>'
+            } else {
+                newHtml = ''
+            }
 
             entry.layers.forEach((layerObj, index) => {
                 const sourceId = `${baseId}-source-${index}`;
@@ -9662,7 +9668,10 @@ export function convertGsiTileJson(categorizedData, lineLength = 30) {
         result.push(category);
     });
 
-    return result;
+    return {
+        result:result,
+        isNew:isNew
+    }
 }
 
 

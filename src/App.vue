@@ -5487,7 +5487,7 @@ export default {
       let params
       if (this.dbparams) {
         params = new URLSearchParams(this.dbparams)
-        console.log(this.dbparams)
+        // console.log(this.dbparams)
       } else {
         params = new URLSearchParams(window.location.search)
         const uid = localStorage.getItem('lastUserId')
@@ -5514,7 +5514,7 @@ export default {
           }
         }
       }
-      console.log(params.get('slj'))
+      // console.log(params.get('slj'))
       const lng = parseFloat(params.get('lng'))
       const lat = parseFloat(params.get('lat'))
       const zoom = parseFloat(params.get('zoom'))

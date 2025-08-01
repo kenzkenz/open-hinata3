@@ -149,11 +149,14 @@ const checkUser = setInterval(() => {
 
 store.state.isOffline = !window.navigator.onLine;
 let convertTileJson = []
+let isGsiNew = false
 if (!store.state.isOffline) {
     const tileJson = await fetchGsiTile()
-    console.log('tileJson', tileJson)
-    convertTileJson = convertGsiTileJson(tileJson)
-    console.log('convertTileJson', convertTileJson)
+    // console.log('tileJson', tileJson)
+    const convertTileJsonObject = convertGsiTileJson(tileJson)
+    convertTileJson = convertTileJsonObject.result
+    isGsiNew = convertTileJsonObject.isNew
+    // console.log('convertTileJson', convertTileJson)
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -355,8 +358,8 @@ export async function loadColorData() {
 const abc = await loadColorData();
 const chibanzuColors = abc.colorMap
 const isNew = abc.isNew
-console.log(chibanzuColors)
-console.log(isNew)
+// console.log(chibanzuColors)
+// console.log(isNew)
 
 function waitForStateValue(getter, checkFn = val => val !== undefined && val !== null, interval = 50) {
     return new Promise((resolve) => {
@@ -392,7 +395,7 @@ async function publicData() {
             alert(`エラー: ${response.data.error}`);
         } else {
             // vm.jsonDataPmtilePubilc = response.data
-            console.log(response.data)
+            // console.log(response.data)
             return response.data
         }
     } catch (error) {
@@ -400,7 +403,7 @@ async function publicData() {
     }
 }
 const pablicDatas = await publicData()
-console.log(pablicDatas)
+// console.log(pablicDatas)
 function publiLayersCreate (v) {
     const publicSource = {
         id: 'oh-chiban-' + v.id + '-' + v.name + '-source',
@@ -10902,7 +10905,7 @@ let layers01 = [
     },
     {
         id: 'gsi',
-        label: "⭐️地理院タイル全て（テスト中）",
+        label: (isGsiNew ? '<span style="color: red;">new </span>' : '') + "⭐️地理院タイル全て（テスト中）",
         nodes: convertTileJson
     },
     {
