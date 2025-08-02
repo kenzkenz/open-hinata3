@@ -9674,6 +9674,17 @@ export function convertGsiTileJson(categorizedData, lineLength = 30) {
     }
 }
 
+export function isImageFile(fileName) {
+    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+    const ext = fileName.split('.').pop().toLowerCase();
+    return imageExts.includes(ext);
+}
+
+export function isVideoFile(fileName) {
+    const videoExts = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv'];
+    const ext = fileName.split('.').pop().toLowerCase();
+    return videoExts.includes(ext);
+}
 
 
 

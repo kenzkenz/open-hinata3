@@ -186,12 +186,17 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <v-file-input
                   v-model="s_selectedFile"
                   label="画像を選択"
-                  accept="image/*"
+                  accept="image/*,video/*"
                   show-size
                   @change="onFileSelected"
               ></v-file-input>
-              <div v-if="s_previewUrl" class="mt-4 text-center">
-                <img :src="s_previewUrl" alt="プレビュー" style="max-width: 100%;" />
+              <div v-if="s_previewUrl" class="mt-4 text-center" style="margin-bottom: 10px;">
+<!--                <img :src="s_previewUrl" alt="プレビュー" style="max-width: 100%;" />-->
+                <img v-if="isImage" :src="s_previewUrl" alt="プレビュー" style="max-width: 100%;" />
+                <video v-else controls style="max-width: 100%;">
+                  <source :src="s_previewUrl" type="video/mp4" />
+                  お使いのブラウザは video タグに対応していません。
+                </video>
               </div>
               <v-btn :disabled="!s_selectedFile" @click="savePicture">サーバー保存</v-btn>
               <v-btn :disabled="!s_pictureUrl" @click="deletePicture" style="margin-left: 10px;">サーバーから削除</v-btn>
@@ -1470,7 +1475,7 @@ import {
   handleFileUpload,
   highlightSpecificFeatures,
   highlightSpecificFeatures2025,
-  highlightSpecificFeaturesCity,
+  highlightSpecificFeaturesCity, isImageFile,
   japanCoord,
   jpgLoad,
   kmlDownload,
@@ -2047,6 +2052,13 @@ export default {
       'titleDirection',
       'drawGeojsonId',
     ]),
+    isImage() {
+      if (this.s_selectedFile) {
+        return this.s_selectedFile && this.s_selectedFile.type.startsWith("image/");
+      } else {
+        return isImageFile(this.s_previewUrl)
+      }
+    },
     s_selectedFile: {
       get() {
         return this.$store.state.selectedFile
@@ -2796,15 +2808,29 @@ export default {
     },
     onFileSelected() {
       if (this.s_selectedFile) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          this.s_previewUrl = e.target.result;
-        };
-        reader.readAsDataURL(this.s_selectedFile);
+        // 古いURLを解放（メモリリーク防止）
+        if (this.s_previewUrl) {
+          URL.revokeObjectURL(this.s_previewUrl);
+          this.s_previewUrl = null
+        }
+        setTimeout(() => {
+          this.s_previewUrl = URL.createObjectURL(this.s_selectedFile);
+        },0)
       } else {
         this.s_previewUrl = null;
       }
     },
+    // onFileSelected() {
+    //   if (this.s_selectedFile) {
+    //     const reader = new FileReader();
+    //     reader.onload = (e) => {
+    //       this.s_previewUrl = e.target.result;
+    //     };
+    //     reader.readAsDataURL(this.s_selectedFile);
+    //   } else {
+    //     this.s_previewUrl = null;
+    //   }
+    // },
     async test () {
       const tileJson = await fetchGsiTileTest()
       console.log(tileJson)

@@ -6,7 +6,7 @@ import axios from "axios";
 import muni from "@/js/muni";
 import pyramid from "@/js/pyramid";
 import * as turf from '@turf/turf'
-import {extractAndOpenUrls, getMaxZIndex, queryFGBWithPolygon, wsg84ToJgd} from "@/js/downLoad";
+import {extractAndOpenUrls, getMaxZIndex, isImageFile, queryFGBWithPolygon, wsg84ToJgd} from "@/js/downLoad";
 import { Viewer, CameraControls, RenderMode, TransitionMode } from 'mapillary-js';
 import {geometry} from "@turf/turf";
 export const popups = []
@@ -3863,14 +3863,27 @@ export function popup(e,map,mapName,mapFlg) {
                                     html += '</div>'; // 右パネル終わり
                                     html += '</div>'; // flex container end
                                 } else {
+                                    let imageOrVideoHtml = ''
+                                    if (!pictureUrl) {
+                                        imageOrVideoHtml = ''
+                                    } else {
+                                        if (isImageFile(pictureUrl)) {
+                                            imageOrVideoHtml = '<a href="' + pictureUrl + '" target="_blank"><img width="100%" src="' + pictureUrl + '"></a>'
+                                        } else {
+                                            imageOrVideoHtml =
+                                                '<video v-else controls style="max-width: 100%;">' +
+                                                '<source src="' + pictureUrl + '" type="video/mp4" />' +
+                                                'お使いのブラウザは video タグに対応していません。' +
+                                                '</video>'
+                                        }
+                                    }
 
                                     html += '<div class="layer-label-div">ポイント</div>'
                                     html +=
                                         '<div style="width: 260px;" class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
-                                        (pictureUrl ? '<a href="' + pictureUrl + '" target="_blank"><img width="100%" src="' + pictureUrl + '"></a>' : '写真なし') +
+                                        imageOrVideoHtml +
                                         '<p>編集するときはドロー状態にしてください</p>' +
                                         '</div>'
-
                                 }
                             }
                             break
