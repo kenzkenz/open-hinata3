@@ -179,26 +179,25 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <v-dialog v-model="s_dialogForPicture" max-width="500px">
         <v-card>
           <v-card-title>
-            写真アップロード
+            画像、動画アップロード
           </v-card-title>
           <v-card-text>
             <div v-if="user1">
               <v-file-input
                   v-model="s_selectedFile"
-                  label="画像を選択"
+                  label="画像、動画を選択"
                   accept="image/*,video/*"
                   show-size
                   @change="onFileSelected"
               ></v-file-input>
               <div v-if="s_previewUrl" class="mt-4 text-center" style="margin-bottom: 10px;">
-<!--                <img :src="s_previewUrl" alt="プレビュー" style="max-width: 100%;" />-->
                 <img v-if="isImage" :src="s_previewUrl" alt="プレビュー" style="max-width: 100%;" />
                 <video v-if="isVideo" controls style="max-width: 100%;">
                   <source :src="s_previewUrl" type="video/mp4" />
                   お使いのブラウザは video タグに対応していません。
                 </video>
               </div>
-              <v-btn :disabled="!s_selectedFile" @click="savePicture">サーバー保存</v-btn>
+              <v-btn :disabled="!s_selectedFile || isDisabled" @click="savePicture">サーバー保存</v-btn>
               <v-btn :disabled="!s_pictureUrl" @click="deletePicture" style="margin-left: 10px;">サーバーから削除</v-btn>
             </div>
             <div v-else>
@@ -2038,6 +2037,7 @@ export default {
     qrCodeWidth: 200,
     paintSettings: {},
     dialogForLayerName: false,
+    isDisabled: false,
   }),
   computed: {
     ...mapState([
@@ -2753,10 +2753,10 @@ export default {
         return;
       }
       const maxSize = 10 * 1024 * 1024; // 10MB
-      // if (file.size > maxSize) {
-      //   alert("10MB以下にしてください");
-      //   return;
-      // }
+      if (file.size > maxSize) {
+        this.isDisabled = true
+        store.state.loadingMessage = '<span style="color: red;">10mbを超えています。</span><br>圧縮しますので時間がかかります。'
+      }
 
       if (isImageFile(file.name)) {
         // 画像サイズチェック
@@ -2803,6 +2803,7 @@ export default {
         alert("通信エラー");
       }
       store.state.loading2 = false
+      this.isDisabled = false
     },
     async deletePicture() {
       if (!this.s_pictureUrl) return
