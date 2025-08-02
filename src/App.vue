@@ -190,20 +190,16 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   show-size
                   @change="onFileSelected"
               ></v-file-input>
-
               <div v-if="s_previewUrl" class="mt-4 text-center">
                 <img :src="s_previewUrl" alt="プレビュー" style="max-width: 100%;" />
               </div>
-
               <v-btn :disabled="!s_selectedFile" @click="savePicture">サーバー保存</v-btn>
-<!--              <v-btn :disabled="!s_selectedFile" style="margin-left: 10px;" @click="drawGeojsonAddPicture">aaa</v-btn>-->
               <v-btn :disabled="!s_pictureUrl" @click="deletePicture" style="margin-left: 10px;">サーバーから削除</v-btn>
             </div>
-
             <div v-else>
-              ログインが必要です。
+              <p style="margin-bottom: 10px;">ログインが必要です。</p>
+              <v-btn @click="s_dialogForLogin = true">ログイン</v-btn>
             </div>
-
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
