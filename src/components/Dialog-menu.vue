@@ -311,7 +311,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v1.266
+        v1.267
       </p>
 
       <div v-if="user1">
@@ -327,7 +327,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </div>
 
       <v-btn style="width:100%;margin-bottom: 20px;" @click="reset">リセット（初期時に戻す）</v-btn>
-      <v-text-field label="住所で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
+      <v-text-field label="住所、座標で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 
       <!--      <v-btn class="tiny-btn" @click="simaLoad">SIMA読み込</v-btn>-->
       <v-btn class="tiny-btn" @click="upLoad">各種アップロード</v-btn>
@@ -1508,6 +1508,46 @@ export default {
     },
     sercheAdress () {
       const map = this.$store.state.map01
+
+      const input = this.address.trim();
+      // 角括弧あり・なし両対応の正規表現
+      const coordRegex = /^\s*\[?\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\]?\s*$/;
+      const match = coordRegex.exec(input);
+
+      if (match) {
+        let val1 = parseFloat(match[1]);
+        let val2 = parseFloat(match[2]);
+        // 緯度・経度を自動判別
+        let lat, lon;
+        if (Math.abs(val1) <= 90 && Math.abs(val2) <= 180) {
+          lat = val1;
+          lon = val2;
+        } else if (Math.abs(val2) <= 90 && Math.abs(val1) <= 180) {
+          lat = val2;
+          lon = val1;
+        }
+        if (lat !== undefined && lon !== undefined) {
+          map.flyTo({ center: [lon, lat], zoom: 14 });
+          // flyToアニメーション完了後にユーザー操作を再度有効化
+          map.once('moveend', () => {
+            map.scrollZoom.enable();
+            // alert('pan')
+            map.dragPan.enable();
+            map.keyboard.enable();
+            map.doubleClickZoom.enable();
+          });
+          // 検索結果の位置にマーカーを追加
+          const marker = new maplibregl.Marker()
+              .setLngLat([lon, lat])
+              .addTo(map);
+          // マーカーをクリックしたときにマーカーを削除
+          marker.getElement().addEventListener('click', () => {
+            marker.remove(); // マーカーをマップから削除
+          });
+          return;
+        }
+      }
+
       axios
           .get('https://msearch.gsi.go.jp/address-search/AddressSearch?q=' + this.address)
           .then(function (response) {
