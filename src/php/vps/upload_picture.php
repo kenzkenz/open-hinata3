@@ -61,10 +61,17 @@ if (!move_uploaded_file($fileTmpPath, $picturePath)) {
     exit;
 }
 
+// 相対パスを作成（public_html/uploads/ 以降）
+$relativeWebPath = "uploads/" . $subDir . "/picture/" . $fileBaseName . "." . $fileExt;
+// Webからアクセス可能なURLに変換
+$webUrl = "https://kenzkenz.net/" . $relativeWebPath;
+
+
 // 成功レスポンス
 echo json_encode([
     "success" => true,
     "picturePath" => $picturePath,
+    "webUrl" => $webUrl,
     "pictureName" => $originalFileName,
     "dir" => $subDir
 ]);

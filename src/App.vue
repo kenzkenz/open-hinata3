@@ -196,6 +196,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </div>
 
               <v-btn :disabled="!selectedFile" @click="savePicture">サーバー保存</v-btn>
+<!--              <v-btn :disabled="!selectedFile" style="margin-left: 10px;" @click="drawGeojsonAddPicture">aaa</v-btn>-->
               <v-btn @click="deletePicture" style="margin-left: 10px;">サーバーから削除</v-btn>
             </div>
 
@@ -2038,6 +2039,7 @@ export default {
     dialogForLayerName: false,
     previewUrl: null,
     selectedFile: null,
+    pictureUrl: null,
   }),
   computed: {
     ...mapState([
@@ -2050,7 +2052,16 @@ export default {
       'textPx',
       'titleColor',
       'titleDirection',
+      'drawGeojsonId',
     ]),
+    s_drawGeojsonId: {
+      get() {
+        return this.$store.state.drawGeojsonId
+      },
+      set(value) {
+        this.$store.state.drawGeojsonId = value
+      }
+    },
     s_dialogForPicture: {
       get() {
         return this.$store.state.dialogForPicture
@@ -2686,9 +2697,26 @@ export default {
     },
   },
   methods: {
+    drawGeojsonAddPicture() {
+      const map01 = this.$store.state.map01
+      if (!this.pictureUrl || !this.$store.state.drawGeojsonId) {
+        alert('必要な引数がたりません')
+        return
+      }
+      const id = this.$store.state.drawGeojsonId
+      const tgtProp = 'pictureUrl'
+      const value = this.pictureUrl
+      this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01,null,clickCircleSource.iD,id,tgtProp,value)
+      console.log(this.$store.state.clickCircleGeojsonText)
+    },
     async savePicture() {
       if (!this.selectedFile) {
         alert("写真を選択してください");
+        return;
+      }
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (this.selectedFile.size > maxSize) {
+        alert("10MB以下にしてください");
         return;
       }
       const formData = new FormData();
@@ -2702,12 +2730,16 @@ export default {
         const result = await response.json();
         if (result.success) {
           console.log(result)
+          this.pictureUrl = result.webUrl
+          this.drawGeojsonAddPicture()
           alert("アップロード成功");
         } else {
+          this.pictureUrl = null
           alert("アップロード失敗: " + result.message);
         }
       } catch (error) {
         console.error("アップロードエラー:", error);
+        this.pictureUrl = null
         alert("通信エラー");
       }
     },
@@ -9214,6 +9246,14 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
+    // drawGeojsonId (newValue) {
+    //   alert(newValue)
+    //   const map01 = this.$store.state.map01
+    //   const source = map01.getSource(clickCircleSource.iD)
+    //   const geojson = source._data
+    //   const feature = geojson.features.find(feature => feature.properties.id === newValue)
+    //   this.previewUrl = feature.properties.pictureUrl
+    // },
     s_isPrint (value) {
       const app = document.getElementById('app');
       if (!value) {

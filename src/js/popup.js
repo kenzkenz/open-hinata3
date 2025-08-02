@@ -3816,50 +3816,62 @@ export function popup(e,map,mapName,mapFlg) {
                             break
                         case 'Point':
                             if (html.indexOf('click-circle-layer') === -1) {
-                                const keywordList = ['道路', '水路', '畑', '宅地', '田', '雑種地', 'コン杭', 'プレート','プラ杭','鋲'];
-                                html += '<div class="layer-label-div">ポイント</div>';
-                                html += '<div style="display: flex; width: 100%;">';
-                                // 左側：250px固定
-                                html += '<div style="width: 250px;">';
-                                html +=
-                                    '<div class="click-circle-layer" style="font-weight: normal; color: #333; line-height: 25px;">' +
-                                    '<textarea id="' + props.id + '" rows="6" style="width: 100%; margin-bottom: 0px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
-                                    '<button id="' + props.id + '" style="margin-bottom: 10px; height: 30px; font-size: medium; width: 60%;" class="point-delete pyramid-btn">削　除</button>' +
-                                    '<button id="' + props.id + '" style="margin-bottom: 10px; margin-left: 10px; height: 30px; font-size: medium; width: 35%;" class="picture-upload pyramid-btn">写真</button>' +
+                                if (store.state.isDraw) {
+                                    const keywordList = ['道路', '水路', '畑', '宅地', '田', '雑種地', 'コン杭', 'プレート','プラ杭','鋲'];
+                                    html += '<div class="layer-label-div">ポイント</div>';
+                                    html += '<div style="display: flex; width: 100%;">';
+                                    // 左側：250px固定
+                                    html += '<div style="width: 250px;">';
+                                    html +=
+                                        '<div class="click-circle-layer" style="font-weight: normal; color: #333; line-height: 25px;">' +
+                                        '<textarea id="' + props.id + '" rows="6" style="width: 100%; margin-bottom: 0px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
+                                        '<button id="' + props.id + '" style="margin-bottom: 10px; height: 30px; font-size: medium; width: 60%;" class="point-delete pyramid-btn">削　除</button>' +
+                                        '<button id="' + props.id + '" style="margin-bottom: 10px; margin-left: 10px; height: 30px; font-size: medium; width: 35%;" class="picture-upload pyramid-btn">写真</button>' +
 
-                                    '<div style="display: flex; gap: 8px;">' +
-                                    '<div class="circle-list">' +
-                                    '<div id="' + props.id + '" data-color="red" class="text-color circle red" tabindex="0">T</div>' +
-                                    '<div id="' + props.id + '" data-color="black" class="text-color circle black" tabindex="0">T</div>' +
-                                    '<div id="' + props.id + '" data-color="blue" class="text-color circle blue" tabindex="0">T</div>' +
-                                    '<div id="' + props.id + '" data-color="green" class="text-color circle green" tabindex="0">T</div>' +
-                                    '<div id="' + props.id + '" data-color="orange" class="text-color circle orange" tabindex="0">T</div>' +
-                                    '<div id="' + props.id + '" data-color="hotpink" class="text-color circle hotpink" tabindex="0">T</div>' +
-                                    '</div>' +
-                                    '<input id="' + props.id + '" style="margin-bottom: 5px;" type="number" class="oh-cool-input-number font-size-input" min="10" max="100" step="1" value="' + textSize + '">' +
-                                    '</div>' +
-                                    // '<hr>' +
-                                    '<div class="circle-list">' +
-                                    '<div id="' + props.id + '" data-color="red" class="point-color circle red" tabindex="0">P</div>' +
-                                    '<div id="' + props.id + '" data-color="black" class="point-color circle black" tabindex="0">P</div>' +
-                                    '<div id="' + props.id + '" data-color="blue" class="point-color circle blue" tabindex="0">P</div>' +
-                                    '<div id="' + props.id + '" data-color="green" class="point-color circle green" tabindex="0">P</div>' +
-                                    '<div id="' + props.id + '" data-color="orange" class="point-color circle orange" tabindex="0">P</div>' +
-                                    '<div id="' + props.id + '" data-color="hotpink" class="point-color circle hotpink" tabindex="0">P</div>' +
-                                    '<div id="' + props.id + '" data-color="rgba(0,0,0,0)" class="point-color circle transparent" style="border: 1px silver solid" tabindex="0">P</div>' +
-                                    '</div>' +
-                                    '</div>';
-                                html += '</div>';
+                                        '<div style="display: flex; gap: 8px;">' +
+                                        '<div class="circle-list">' +
+                                        '<div id="' + props.id + '" data-color="red" class="text-color circle red" tabindex="0">T</div>' +
+                                        '<div id="' + props.id + '" data-color="black" class="text-color circle black" tabindex="0">T</div>' +
+                                        '<div id="' + props.id + '" data-color="blue" class="text-color circle blue" tabindex="0">T</div>' +
+                                        '<div id="' + props.id + '" data-color="green" class="text-color circle green" tabindex="0">T</div>' +
+                                        '<div id="' + props.id + '" data-color="orange" class="text-color circle orange" tabindex="0">T</div>' +
+                                        '<div id="' + props.id + '" data-color="hotpink" class="text-color circle hotpink" tabindex="0">T</div>' +
+                                        '</div>' +
+                                        '<input id="' + props.id + '" style="margin-bottom: 5px;" type="number" class="oh-cool-input-number font-size-input" min="10" max="100" step="1" value="' + textSize + '">' +
+                                        '</div>' +
+                                        // '<hr>' +
+                                        '<div class="circle-list">' +
+                                        '<div id="' + props.id + '" data-color="red" class="point-color circle red" tabindex="0">P</div>' +
+                                        '<div id="' + props.id + '" data-color="black" class="point-color circle black" tabindex="0">P</div>' +
+                                        '<div id="' + props.id + '" data-color="blue" class="point-color circle blue" tabindex="0">P</div>' +
+                                        '<div id="' + props.id + '" data-color="green" class="point-color circle green" tabindex="0">P</div>' +
+                                        '<div id="' + props.id + '" data-color="orange" class="point-color circle orange" tabindex="0">P</div>' +
+                                        '<div id="' + props.id + '" data-color="hotpink" class="point-color circle hotpink" tabindex="0">P</div>' +
+                                        '<div id="' + props.id + '" data-color="rgba(0,0,0,0)" class="point-color circle transparent" style="border: 1px silver solid" tabindex="0">P</div>' +
+                                        '</div>' +
+                                        '</div>';
+                                    html += '</div>';
 
-                                // 右側：単語リスト
-                                html += '<div style="flex: 1; margin-left: 10px; height: 290px; overflow: scroll">';
+                                    // 右側：単語リスト
+                                    html += '<div style="flex: 1; margin-left: 10px; height: 290px; overflow: scroll">';
 
-                                keywordList.forEach(word => {
-                                    html += '<div id="' + props.id + '"  class="keyword-item" ' +
-                                        'onclick="document.getElementById(\'' + props.id + '\').value = \'' + word + '\'">' + word + '</div>';
-                                });
-                                html += '</div>'; // 右パネル終わり
-                                html += '</div>'; // flex container end
+                                    keywordList.forEach(word => {
+                                        html += '<div id="' + props.id + '"  class="keyword-item" ' +
+                                            'onclick="document.getElementById(\'' + props.id + '\').value = \'' + word + '\'">' + word + '</div>';
+                                    });
+                                    html += '</div>'; // 右パネル終わり
+                                    html += '</div>'; // flex container end
+                                } else {
+
+                                    html += '<div class="layer-label-div">ポイント</div>'
+                                    html +=
+                                        '<div style="width: 260px;" class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
+                                        '<img width="100%" src="' + props.pictureUrl + '">' +
+                                        '<p>編集するときはドロー状態にしてください</p>' +
+                                        '</div>'
+
+
+                                }
                             }
                             break
                         case 'LineString': {
