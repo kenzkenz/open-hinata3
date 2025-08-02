@@ -184,7 +184,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-card-text>
             <div v-if="user1">
               <v-file-input
-                  v-model="selectedFile"
+                  v-model="s_selectedFile"
                   label="画像を選択"
                   accept="image/*"
                   show-size
@@ -195,9 +195,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 <img :src="s_previewUrl" alt="プレビュー" style="max-width: 100%;" />
               </div>
 
-              <v-btn :disabled="!selectedFile" @click="savePicture">サーバー保存</v-btn>
-<!--              <v-btn :disabled="!selectedFile" style="margin-left: 10px;" @click="drawGeojsonAddPicture">aaa</v-btn>-->
-              <v-btn @click="deletePicture" style="margin-left: 10px;">サーバーから削除</v-btn>
+              <v-btn :disabled="!s_selectedFile" @click="savePicture">サーバー保存</v-btn>
+<!--              <v-btn :disabled="!s_selectedFile" style="margin-left: 10px;" @click="drawGeojsonAddPicture">aaa</v-btn>-->
+              <v-btn :disabled="!s_pictureUrl" @click="deletePicture" style="margin-left: 10px;">サーバーから削除</v-btn>
             </div>
 
             <div v-else>
@@ -1414,7 +1414,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 import { db } from '@/firebase'
 import store from '@/store'
 import { toRaw } from 'vue'
-import {calculatePolygonMetrics, mouseMoveForPopup, popup} from "@/js/popup"
+import {calculatePolygonMetrics, closeAllPopups, mouseMoveForPopup, popup} from "@/js/popup"
 import { CompassControl } from 'maplibre-gl-compass'
 import shp from "shpjs"
 import JSZip from 'jszip'
@@ -1638,11 +1638,11 @@ export const transformCoordinates = (coordinates) => {
 };
 
 const popups = []
-function closeAllPopups() {
-  popups.forEach(popup => popup.remove())
-  // 配列をクリア
-  popups.length = 0
-}
+// function closeAllPopups() {
+//   popups.forEach(popup => popup.remove())
+//   // 配列をクリア
+//   popups.length = 0
+// }
 export function history (event,url,thumbnail) {
   const ua = navigator.userAgent
   const width = window.screen.width
@@ -2037,7 +2037,6 @@ export default {
     qrCodeWidth: 200,
     paintSettings: {},
     dialogForLayerName: false,
-    selectedFile: null,
   }),
   computed: {
     ...mapState([
@@ -2052,6 +2051,14 @@ export default {
       'titleDirection',
       'drawGeojsonId',
     ]),
+    s_selectedFile: {
+      get() {
+        return this.$store.state.selectedFile
+      },
+      set(value) {
+        this.$store.state.selectedFile = value
+      }
+    },
     s_previewUrl: {
       get() {
         return this.$store.state.previewUrl
@@ -2718,23 +2725,23 @@ export default {
         return
       }
       const id = this.$store.state.drawGeojsonId
-      const tgtProp = 's_pictureUrl'
+      const tgtProp = 'pictureUrl'
       const value = this.s_pictureUrl
       this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01,null,clickCircleSource.iD,id,tgtProp,value)
       console.log(this.$store.state.clickCircleGeojsonText)
     },
     async savePicture() {
-      if (!this.selectedFile) {
+      if (!this.s_selectedFile) {
         alert("写真を選択してください");
         return;
       }
       const maxSize = 10 * 1024 * 1024; // 10MB
-      if (this.selectedFile.size > maxSize) {
+      if (this.s_selectedFile.size > maxSize) {
         alert("10MB以下にしてください");
         return;
       }
       const formData = new FormData();
-      formData.append("file", this.selectedFile);
+      formData.append("file", this.s_selectedFile);
       formData.append("dir", this.$store.state.userId);
       try {
         const response = await fetch("https://kenzkenz.net/myphp/upload_picture.php", {
@@ -2746,7 +2753,8 @@ export default {
           console.log(result)
           this.s_pictureUrl = result.webUrl
           this.drawGeojsonAddPicture()
-          alert("アップロード成功");
+          closeAllPopups()
+          alert("アップロード成功。ドローを解除して確認してください。");
         } else {
           this.s_pictureUrl = null
           alert("アップロード失敗: " + result.message);
@@ -2757,16 +2765,46 @@ export default {
         alert("通信エラー");
       }
     },
-    deletePicture() {
-
+    async deletePicture() {
+      if (!this.s_pictureUrl) return
+      if (!this.s_pictureUrl.includes(this.$store.state.userId)) {
+        alert('他の人がアップした写真なので削除できません')
+        return
+      }
+      if (!confirm("削除しますか？")) {
+        return
+      }
+      const serverUrl = this.s_pictureUrl.replace('https://kenzkenz.net/','/var/www/html/public_html/')
+      const formData = new FormData();
+      formData.append("serverUrl", serverUrl);
+      const response = await fetch("https://kenzkenz.net/myphp/unlink_picture.php", {
+        method: "POST",
+        body: formData
+      });
+      const result = await response.json();
+      if (result.success) {
+        console.log(result)
+        this.s_previewUrl = ''
+        this.s_pictureUrl = ''
+        const map01 = this.$store.state.map01
+        const id = this.$store.state.drawGeojsonId
+        const tgtProp = 'pictureUrl'
+        const value = ''
+        this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01,null,clickCircleSource.iD,id,tgtProp,value)
+        console.log(this.$store.state.clickCircleGeojsonText)
+        closeAllPopups()
+        alert("削除成功。ドローを解除して確認してください。");
+      } else {
+        alert("削除失敗！: " + result.message);
+      }
     },
     onFileSelected() {
-      if (this.selectedFile) {
+      if (this.s_selectedFile) {
         const reader = new FileReader();
         reader.onload = (e) => {
           this.s_previewUrl = e.target.result;
         };
-        reader.readAsDataURL(this.selectedFile);
+        reader.readAsDataURL(this.s_selectedFile);
       } else {
         this.s_previewUrl = null;
       }

@@ -1560,10 +1560,13 @@ export default function pyramid () {
                 const pictureUrl = e.target.getAttribute("pictureUrl")
                 console.log(id,pictureUrl)
                 if (pictureUrl) {
+                    store.state.pictureUrl = pictureUrl
                     store.state.previewUrl = pictureUrl
                 } else {
-                    store.state.previewUrl = '';
+                    store.state.pictureUrl = ''
+                    store.state.previewUrl = ''
                 }
+                store.state.selectedFile = null
                 store.state.drawGeojsonId = id
                 store.state.dialogForPicture = true
             }

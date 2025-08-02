@@ -3816,6 +3816,7 @@ export function popup(e,map,mapName,mapFlg) {
                             break
                         case 'Point':
                             if (html.indexOf('click-circle-layer') === -1) {
+                                const pictureUrl = props.pictureUrl || ''
                                 if (store.state.isDraw) {
                                     const keywordList = ['道路', '水路', '畑', '宅地', '田', '雑種地', 'コン杭', 'プレート','プラ杭','鋲'];
                                     html += '<div class="layer-label-div">ポイント</div>';
@@ -3826,7 +3827,7 @@ export function popup(e,map,mapName,mapFlg) {
                                         '<div class="click-circle-layer" style="font-weight: normal; color: #333; line-height: 25px;">' +
                                         '<textarea id="' + props.id + '" rows="6" style="width: 100%; margin-bottom: 0px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
                                         '<button id="' + props.id + '" style="margin-bottom: 10px; height: 30px; font-size: medium; width: 60%;" class="point-delete pyramid-btn">削　除</button>' +
-                                        '<button id="' + props.id + '" pictureUrl="' + props.pictureUrl + '" style="margin-bottom: 10px; margin-left: 10px; height: 30px; font-size: medium; width: 35%;" class="picture-upload pyramid-btn">写真</button>' +
+                                        '<button id="' + props.id + '" pictureUrl="' + pictureUrl + '" style="margin-bottom: 10px; margin-left: 10px; height: 30px; font-size: medium; width: 35%;" class="picture-upload pyramid-btn">写真</button>' +
 
                                         '<div style="display: flex; gap: 8px;">' +
                                         '<div class="circle-list">' +
@@ -3866,7 +3867,7 @@ export function popup(e,map,mapName,mapFlg) {
                                     html += '<div class="layer-label-div">ポイント</div>'
                                     html +=
                                         '<div style="width: 260px;" class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
-                                        '<img width="100%" src="' + props.pictureUrl + '">' +
+                                        (pictureUrl ? '<a href="' + pictureUrl + '" target="_blank"><img width="100%" src="' + pictureUrl + '"></a>' : '写真なし') +
                                         '<p>編集するときはドロー状態にしてください</p>' +
                                         '</div>'
 
