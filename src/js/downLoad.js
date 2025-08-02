@@ -9686,6 +9686,44 @@ export function isVideoFile(fileName) {
     return videoExts.includes(ext);
 }
 
+export async function compressImageToUnder10MB(file, type = 'image/jpeg') {
+    const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+    const MAX_DIMENSION = 1920; // 幅・高さの最大値
+    let quality = 0.9;
+
+    const imageBitmap = await createImageBitmap(file);
+
+    // リサイズ処理
+    let width = imageBitmap.width;
+    let height = imageBitmap.height;
+    if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        const ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height);
+        width = Math.floor(width * ratio);
+        height = Math.floor(height * ratio);
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(imageBitmap, 0, 0, width, height);
+
+    // 再帰的に圧縮して10MB以下を目指す
+    async function tryCompress(q) {
+        return new Promise((resolve) => {
+            canvas.toBlob(async (blob) => {
+                if (blob.size <= MAX_SIZE || q <= 0.1) {
+                    resolve(blob);
+                } else {
+                    resolve(await tryCompress(q - 0.1));
+                }
+            }, type, q);
+        });
+    }
+    return await tryCompress(quality);
+}
+
+
 
 
 

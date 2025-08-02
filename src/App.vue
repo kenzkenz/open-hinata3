@@ -193,7 +193,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <div v-if="s_previewUrl" class="mt-4 text-center" style="margin-bottom: 10px;">
 <!--                <img :src="s_previewUrl" alt="プレビュー" style="max-width: 100%;" />-->
                 <img v-if="isImage" :src="s_previewUrl" alt="プレビュー" style="max-width: 100%;" />
-                <video v-else controls style="max-width: 100%;">
+                <video v-if="isVideo" controls style="max-width: 100%;">
                   <source :src="s_previewUrl" type="video/mp4" />
                   お使いのブラウザは video タグに対応していません。
                 </video>
@@ -1437,7 +1437,7 @@ import {
   cachePmtilesBuffers,
   cacheTilesViaSW,
   capture,
-  changePrintMap03,
+  changePrintMap03, compressImageToUnder10MB,
   convertFromEPSG4326,
   convertGsiTileJson,
   convertGsiTileJson2,
@@ -1475,7 +1475,7 @@ import {
   handleFileUpload,
   highlightSpecificFeatures,
   highlightSpecificFeatures2025,
-  highlightSpecificFeaturesCity, isImageFile,
+  highlightSpecificFeaturesCity, isImageFile, isVideoFile,
   japanCoord,
   jpgLoad,
   kmlDownload,
@@ -2058,6 +2058,12 @@ export default {
       } else {
         return isImageFile(this.s_previewUrl)
       }
+    },
+    isVideo() {
+      if (this.s_selectedFile) {
+        return this.s_selectedFile && this.s_selectedFile.type.startsWith("video/");
+      } else {
+        return isVideoFile(this.s_previewUrl)      }
     },
     s_selectedFile: {
       get() {
@@ -2739,17 +2745,41 @@ export default {
       console.log(this.$store.state.clickCircleGeojsonText)
     },
     async savePicture() {
-      if (!this.s_selectedFile) {
+      store.state.loading2 = true
+      store.state.loadingMessage = '保存中です。'
+      let file = this.s_selectedFile
+      if (!file) {
         alert("写真を選択してください");
         return;
       }
       const maxSize = 10 * 1024 * 1024; // 10MB
-      if (this.s_selectedFile.size > maxSize) {
-        alert("10MB以下にしてください");
-        return;
+      // if (file.size > maxSize) {
+      //   alert("10MB以下にしてください");
+      //   return;
+      // }
+
+      if (isImageFile(file.name)) {
+        // 画像サイズチェック
+        if (file.size > maxSize) {
+          // 10MB超え → 圧縮処理
+          try {
+            const blob = await compressImageToUnder10MB(file, file.type === 'image/png' ? 'image/png' : 'image/jpeg');
+            if (blob.size > 10 * 1024 * 1024) {
+              alert("10MB以下に圧縮できませんでした");
+              return;
+            }
+            file = new File([blob], file.name, { type: blob.type });
+            console.log('圧縮成功')
+          } catch (err) {
+            console.error("圧縮失敗:", err);
+            alert("画像圧縮中にエラーが発生しました");
+            return
+          }
+        }
       }
+
       const formData = new FormData();
-      formData.append("file", this.s_selectedFile);
+      formData.append("file", file);
       formData.append("dir", this.$store.state.userId);
       try {
         const response = await fetch("https://kenzkenz.net/myphp/upload_picture.php", {
@@ -2772,6 +2802,7 @@ export default {
         this.s_pictureUrl = null
         alert("通信エラー");
       }
+      store.state.loading2 = false
     },
     async deletePicture() {
       if (!this.s_pictureUrl) return
@@ -2801,6 +2832,7 @@ export default {
         this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01,null,clickCircleSource.iD,id,tgtProp,value)
         console.log(this.$store.state.clickCircleGeojsonText)
         closeAllPopups()
+        this.s_selectedFile = null
         alert("削除成功。ドローを解除して確認してください。");
       } else {
         alert("削除失敗！: " + result.message);
