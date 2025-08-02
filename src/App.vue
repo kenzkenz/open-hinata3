@@ -191,8 +191,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   @change="onFileSelected"
               ></v-file-input>
 
-              <div v-if="previewUrl" class="mt-4 text-center">
-                <img :src="previewUrl" alt="プレビュー" style="max-width: 100%;" />
+              <div v-if="s_previewUrl" class="mt-4 text-center">
+                <img :src="s_previewUrl" alt="プレビュー" style="max-width: 100%;" />
               </div>
 
               <v-btn :disabled="!selectedFile" @click="savePicture">サーバー保存</v-btn>
@@ -2037,9 +2037,7 @@ export default {
     qrCodeWidth: 200,
     paintSettings: {},
     dialogForLayerName: false,
-    previewUrl: null,
     selectedFile: null,
-    pictureUrl: null,
   }),
   computed: {
     ...mapState([
@@ -2054,6 +2052,22 @@ export default {
       'titleDirection',
       'drawGeojsonId',
     ]),
+    s_previewUrl: {
+      get() {
+        return this.$store.state.previewUrl
+      },
+      set(value) {
+        this.$store.state.previewUrl = value
+      }
+    },
+    s_pictureUrl: {
+      get() {
+        return this.$store.state.pictureUrl
+      },
+      set(value) {
+        this.$store.state.pictureUrl = value
+      }
+    },
     s_drawGeojsonId: {
       get() {
         return this.$store.state.drawGeojsonId
@@ -2699,13 +2713,13 @@ export default {
   methods: {
     drawGeojsonAddPicture() {
       const map01 = this.$store.state.map01
-      if (!this.pictureUrl || !this.$store.state.drawGeojsonId) {
+      if (!this.s_pictureUrl || !this.$store.state.drawGeojsonId) {
         alert('必要な引数がたりません')
         return
       }
       const id = this.$store.state.drawGeojsonId
-      const tgtProp = 'pictureUrl'
-      const value = this.pictureUrl
+      const tgtProp = 's_pictureUrl'
+      const value = this.s_pictureUrl
       this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01,null,clickCircleSource.iD,id,tgtProp,value)
       console.log(this.$store.state.clickCircleGeojsonText)
     },
@@ -2730,16 +2744,16 @@ export default {
         const result = await response.json();
         if (result.success) {
           console.log(result)
-          this.pictureUrl = result.webUrl
+          this.s_pictureUrl = result.webUrl
           this.drawGeojsonAddPicture()
           alert("アップロード成功");
         } else {
-          this.pictureUrl = null
+          this.s_pictureUrl = null
           alert("アップロード失敗: " + result.message);
         }
       } catch (error) {
         console.error("アップロードエラー:", error);
-        this.pictureUrl = null
+        this.s_pictureUrl = null
         alert("通信エラー");
       }
     },
@@ -2750,11 +2764,11 @@ export default {
       if (this.selectedFile) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          this.previewUrl = e.target.result;
+          this.s_previewUrl = e.target.result;
         };
         reader.readAsDataURL(this.selectedFile);
       } else {
-        this.previewUrl = null;
+        this.s_previewUrl = null;
       }
     },
     async test () {
@@ -9252,7 +9266,7 @@ export default {
     //   const source = map01.getSource(clickCircleSource.iD)
     //   const geojson = source._data
     //   const feature = geojson.features.find(feature => feature.properties.id === newValue)
-    //   this.previewUrl = feature.properties.pictureUrl
+    //   this.s_previewUrl = feature.properties.s_pictureUrl
     // },
     s_isPrint (value) {
       const app = document.getElementById('app');

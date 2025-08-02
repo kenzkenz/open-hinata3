@@ -4,6 +4,8 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    previewUrl: '',
+    pictureUrl: '',
     drawGeojsonId: '',
     pmtilesFirstSave: false,
     pmtilesMaximum: 16,

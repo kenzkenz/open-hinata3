@@ -1557,7 +1557,13 @@ export default function pyramid () {
         mapElm.addEventListener('click', async (e) => {
             if (e.target && (e.target.classList.contains("picture-upload"))) {
                 const id = String(e.target.getAttribute("id"))
-                console.log(id)
+                const pictureUrl = e.target.getAttribute("pictureUrl")
+                console.log(id,pictureUrl)
+                if (pictureUrl) {
+                    store.state.previewUrl = pictureUrl
+                } else {
+                    store.state.previewUrl = '';
+                }
                 store.state.drawGeojsonId = id
                 store.state.dialogForPicture = true
             }
