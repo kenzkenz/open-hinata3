@@ -16,6 +16,7 @@ export default createStore({
     isOffline: false,
     dialogForOffline2: false,
     dialogForOffline: false,
+    dialogForPicture: false,
     vpsServerName: 'kenzkenz.net',
     drawFire: false,
     drawOpacity: 1,

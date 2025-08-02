@@ -1553,6 +1553,13 @@ export default function pyramid () {
                 removeNini()
             }
         });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', async (e) => {
+            if (e.target && (e.target.classList.contains("picture-upload"))) {
+                // alert(999)
+                store.state.dialogForPicture = true
+            }
+        });
     })
 }
 // ラインの最後のセグメントの方向（ベアリング）を計算する関数
@@ -2211,66 +2218,6 @@ export function generateStartEndPointsFromGeoJSON(geojson) {
     map01.getSource('end-point-source').setData(pointGeoJSON);
     return pointGeoJSON;
 }
-// export function generateStartEndPointsFromGeoJSON(geojson) {
-//     const map01 = store.state.map01;
-//     const pointFeatures = [];
-//     if (!geojson) return
-//     geojson.features.forEach((feature) => {
-//         if (feature.properties.id === 'config') return;
-//         if (!feature || feature.geometry.type !== 'LineString' || feature.properties['free-hand']) return;
-//
-//         const coordinates = feature.geometry.coordinates;
-//         const properties = feature.properties || {};
-//
-//         if (coordinates.length < 2) return;
-//
-//         // 始点--------------------------------------------------------
-//         const firstCoord = coordinates[0];
-//         const secondCoord = coordinates[1]; // for bearing
-//         pointFeatures.push({
-//             type: 'Feature',
-//             geometry: {
-//                 type: 'Point',
-//                 coordinates: firstCoord
-//             },
-//             properties: {
-//                 id: properties.id  + '-start',
-//                 pairId: properties.pairId || null,
-//                 endpoint: 'start',
-//                 'arrow-type': properties['arrow-type'] || 'end',
-//                 arrow: properties.arrow || 'arrow_black',
-//                 bearing: calculateBearing(firstCoord, secondCoord, 'start'),
-//                 label: properties.label || '',
-//                 color: properties.color || 'black'
-//             }
-//         });
-//         // 終点-----------------------------------------------------------
-//         const lastCoord = coordinates[coordinates.length - 1];
-//         const secondLastCoord = coordinates[coordinates.length - 2];
-//         pointFeatures.push({
-//             type: 'Feature',
-//             geometry: {
-//                 type: 'Point',
-//                 coordinates: lastCoord
-//             },
-//             properties: {
-//                 id: properties.id + '-end',
-//                 pairId: properties.pairId || null,
-//                 endpoint: 'end',
-//                 'arrow-type': properties['arrow-type'] || 'end',
-//                 arrow: properties.arrow || 'arrow_black',
-//                 bearing: calculateBearing(secondLastCoord, lastCoord, 'end')
-//             }
-//         });
-//     });
-//     const pointGeoJSON = {
-//         type: 'FeatureCollection',
-//         features: pointFeatures
-//     };
-//     console.log(pointFeatures)
-//     map01.getSource('end-point-source').setData(pointGeoJSON);
-//     return pointGeoJSON
-// }
 
 export function deleteAll (noConfrim) {
     if (!noConfrim) {

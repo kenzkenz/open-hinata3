@@ -176,6 +176,41 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </template>
       </v-snackbar>
 
+      <v-dialog v-model="s_dialogForPicture" max-width="500px">
+        <v-card>
+          <v-card-title>
+            写真アップロード
+          </v-card-title>
+          <v-card-text>
+            <div v-if="user1">
+              <v-file-input
+                  v-model="selectedFile"
+                  label="画像を選択"
+                  accept="image/*"
+                  show-size
+                  @change="onFileSelected"
+              ></v-file-input>
+
+              <div v-if="previewUrl" class="mt-4 text-center">
+                <img :src="previewUrl" alt="プレビュー" style="max-width: 100%;" />
+              </div>
+
+              <v-btn :disabled="!selectedFile" @click="savePicture">サーバー保存</v-btn>
+              <v-btn @click="deletePicture" style="margin-left: 10px;">サーバーから削除</v-btn>
+            </div>
+
+            <div v-else>
+              ログインが必要です。
+            </div>
+
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="s_dialogForPicture = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
       <v-dialog v-model="s_dialogForOffline2" max-width="500px">
         <v-card>
           <v-card-title>
@@ -2001,6 +2036,8 @@ export default {
     qrCodeWidth: 200,
     paintSettings: {},
     dialogForLayerName: false,
+    previewUrl: null,
+    selectedFile: null,
   }),
   computed: {
     ...mapState([
@@ -2014,6 +2051,14 @@ export default {
       'titleColor',
       'titleDirection',
     ]),
+    s_dialogForPicture: {
+      get() {
+        return this.$store.state.dialogForPicture
+      },
+      set(value) {
+        this.$store.state.dialogForPicture = value
+      }
+    },
     s_pmtilesMaximum: {
       get() {
         return this.$store.state.pmtilesMaximum
@@ -2641,6 +2686,45 @@ export default {
     },
   },
   methods: {
+    async savePicture() {
+      if (!this.selectedFile) {
+        alert("写真を選択してください");
+        return;
+      }
+      const formData = new FormData();
+      formData.append("file", this.selectedFile);
+      formData.append("dir", this.$store.state.userId);
+      try {
+        const response = await fetch("https://kenzkenz.net/myphp/upload_picture.php", {
+          method: "POST",
+          body: formData,
+        });
+        const result = await response.json();
+        if (result.success) {
+          console.log(result)
+          alert("アップロード成功");
+        } else {
+          alert("アップロード失敗: " + result.message);
+        }
+      } catch (error) {
+        console.error("アップロードエラー:", error);
+        alert("通信エラー");
+      }
+    },
+    deletePicture() {
+
+    },
+    onFileSelected() {
+      if (this.selectedFile) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.previewUrl = e.target.result;
+        };
+        reader.readAsDataURL(this.selectedFile);
+      } else {
+        this.previewUrl = null;
+      }
+    },
     async test () {
       const tileJson = await fetchGsiTileTest()
       console.log(tileJson)

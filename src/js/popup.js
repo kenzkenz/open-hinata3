@@ -3824,7 +3824,9 @@ export function popup(e,map,mapName,mapFlg) {
                                 html +=
                                     '<div class="click-circle-layer" style="font-weight: normal; color: #333; line-height: 25px;">' +
                                     '<textarea id="' + props.id + '" rows="6" style="width: 100%; margin-bottom: 0px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
-                                    '<button id="' + props.id + '" style="margin-bottom: 10px; height: 30px; font-size: medium; width: 100%;" class="point-delete pyramid-btn">削　除</button>' +
+                                    '<button id="' + props.id + '" style="margin-bottom: 10px; height: 30px; font-size: medium; width: 60%;" class="point-delete pyramid-btn">削　除</button>' +
+                                    '<button id="' + props.id + '" style="margin-bottom: 10px; margin-left: 10px; height: 30px; font-size: medium; width: 35%;" class="picture-upload pyramid-btn">写真</button>' +
+
                                     '<div style="display: flex; gap: 8px;">' +
                                     '<div class="circle-list">' +
                                     '<div id="' + props.id + '" data-color="red" class="text-color circle red" tabindex="0">T</div>' +
