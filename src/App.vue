@@ -5722,7 +5722,8 @@ export default {
           if (response.data.error) {
             console.error('エラー:', response.data.error);
           } else {
-            starturl = response.data[0].starturl
+            starturl = response.data?.[0]?.starturl ?? '';
+            // starturl = response.data[0].starturl
           }
           if (starturl) {
             response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrlSelect.php', {
