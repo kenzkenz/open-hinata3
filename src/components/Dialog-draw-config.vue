@@ -1,51 +1,58 @@
 <template>
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div class="config-div">
-      <v-card>
-        <v-card-text>
-          <v-textarea
-              v-model="s_printTitleText"
-              label="タイトル"
-              auto-grow
-              rows="3"
-              outlined
-              @input="configChange('title-text',s_printTitleText)"
-          />
-          <v-text-field
-              v-model="s_textPx"
-              label="フォントサイズ"
-              type="number"
-              variant="outlined"
-              min="0"
-              max="100"
-              @input="configChange('font-size',s_textPx)"
-          />
-          <v-select
-              v-model="s_titleColor"
-              :items="titleColors"
-              item-title="label"
-              item-value="color"
-              label="色を選択してください"
-              @update:modelValue="configChange('fill-color',s_titleColor)"
-          />
-          <v-select
-              v-model="titleScale"
-              :items="titleScales"
-              item-title="label"
-              item-value="zoom"
-              label="縮尺率固定"
-              @update:modelValue="setZoom()"
-          />
-          <v-select
-              v-if="s_isPrint"
-              v-model="s_titleDirection"
-              :items="titleDirections"
-              item-title="label"
-              item-value="direction"
-              label="印刷方向を選択してください"
-              @update:modelValue="configChange('direction',s_titleDirection)"
-          />
-          <span style="display: inline-block; position: relative; top: -6px;">
+
+      <v-tabs mobile-breakpoint="0" v-model="tab" class="custom-tabs">
+        <v-tab value="config">設定</v-tab>
+        <v-tab value="share">共有</v-tab>
+      </v-tabs>
+      <v-window v-model="tab" style="margin-top: 10px;">
+        <v-window-item value="config">
+          <v-card>
+            <v-card-text>
+              <v-textarea
+                  v-model="s_printTitleText"
+                  label="タイトル"
+                  auto-grow
+                  rows="3"
+                  outlined
+                  @input="configChange('title-text',s_printTitleText)"
+              />
+              <v-text-field
+                  v-model="s_textPx"
+                  label="フォントサイズ"
+                  type="number"
+                  variant="outlined"
+                  min="0"
+                  max="100"
+                  @input="configChange('font-size',s_textPx)"
+              />
+              <v-select
+                  v-model="s_titleColor"
+                  :items="titleColors"
+                  item-title="label"
+                  item-value="color"
+                  label="色を選択してください"
+                  @update:modelValue="configChange('fill-color',s_titleColor)"
+              />
+              <v-select
+                  v-model="titleScale"
+                  :items="titleScales"
+                  item-title="label"
+                  item-value="zoom"
+                  label="縮尺率固定"
+                  @update:modelValue="setZoom()"
+              />
+              <v-select
+                  v-if="s_isPrint"
+                  v-model="s_titleDirection"
+                  :items="titleDirections"
+                  item-title="label"
+                  item-value="direction"
+                  label="印刷方向を選択してください"
+                  @update:modelValue="configChange('direction',s_titleDirection)"
+              />
+              <span style="display: inline-block; position: relative; top: -6px;">
             <input
                 type="checkbox"
                 id="draw-visible-check"
@@ -54,12 +61,20 @@
             >
             <label for="draw-visible-check" style="font-size: 16px;"> ドロー表示</label>
           </span>
-          <input style="width: 200px;margin-left: 10px;" type="range" min="0" max="1" step="0.01" class="range"
-                 v-model.number="s_drawOpacity" @input="drawOpacityInput" @change="configChange('opacity',s_drawOpacity)"
-          />
-          <v-btn @click="qrCodeClick">QRコード貼り付け</v-btn>
-        </v-card-text>
-      </v-card>
+              <input style="width: 200px;margin-left: 10px;" type="range" min="0" max="1" step="0.01" class="range"
+                     v-model.number="s_drawOpacity" @input="drawOpacityInput" @change="configChange('opacity',s_drawOpacity)"
+              />
+              <v-btn @click="qrCodeClick">QRコード貼り付け</v-btn>
+            </v-card-text>
+          </v-card>
+        </v-window-item>
+        <v-window-item value="share">
+          <v-card style="text-align: left;font-size: 14px;">
+            現在のドローを共有化します。
+            <v-btn class="tiny-btn" @click="createGeojsonMaster">新規追加</v-btn>
+          </v-card>
+        </v-window-item>
+      </v-window>
     </div>
   </Dialog>
 </template>
@@ -72,6 +87,9 @@ export default {
   name: 'Dialog-draw-config',
   props: ['mapName'],
   data: () => ({
+    geojsonId: '',
+    geojsonName: 'test7いいy７',
+    tab: 'config',
     titleColors: [{color:'black',label:'黒'},{color:'red',label:'赤'},{color:'blue',label:'青'},{color:'green',label:'緑'},{color:'orange',label:'オレンジ'}],
     titleDirections: [{direction:'vertical',label:'A4縦'},{direction:'horizontal',label:'A4横'}],
     titleScale: 0,
@@ -101,6 +119,12 @@ export default {
     ],
   }),
   computed: {
+    s_myNickname () {
+      return this.$store.state.myNickname
+    },
+    s_userId () {
+      return this.$store.state.userId
+    },
     s_dialogs () {
       return this.$store.state.dialogs.drawConfigDialog
     },
@@ -165,6 +189,31 @@ export default {
     },
   },
   methods: {
+    async createGeojsonMaster() {
+      const formData = new FormData();
+      formData.append('geojson_name', this.geojsonName);
+      formData.append('creator_nickname', this.s_myNickname);
+      formData.append('creator_user_id', this.s_userId);
+      const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/create-geojson.php', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      if (!data.success) {
+        this.error = data.error || '作成に失敗しました';
+        alert('作成に失敗しました')
+        return;
+      }
+      // 重複だった場合の通知
+      if (data.already_exists) {
+        alert('その名前はすでに使われています。')
+        console.log('その名前はすでに使われています。既存のGeoJSONを使用します。')
+        return
+      }
+      this.geojsonId = data.geojson_id;
+      alert('追加成功')
+      return this.geojsonId;
+    },
     qrCodeClick () {
       this.$emit('open-floating')
     },
