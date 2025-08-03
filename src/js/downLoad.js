@@ -9723,6 +9723,49 @@ export async function compressImageToUnder10MB(file, type = 'image/jpeg') {
     return await tryCompress(quality);
 }
 
+/**
+ * 平面直角座標系と座標を指定してwgs84の座標を返す
+ * @param zone
+ * @param x
+ * @param y
+ * @returns {{lon: *, lat: *}}
+ */
+export function jgd2000ZoneToWgs84(zone, x, y) {
+    if (zone < 1 || zone > 19) {
+        throw new Error("zoneは1〜19の整数で指定してください");
+    }
+
+    const epsgOrigins = {
+        1: [129.5, 33.0],
+        2: [131.0, 33.0],
+        3: [132.1666666667, 36.0],
+        4: [133.5, 33.0],
+        5: [134.3333333333, 33.0],
+        6: [136.0, 36.0],
+        7: [137.1666666667, 36.0],
+        8: [138.5, 36.0],
+        9: [139.8333333333, 36.0],
+        10: [140.8333333333, 40.0],
+        11: [140.25, 44.0],
+        12: [142.25, 44.0],
+        13: [144.25, 44.0],
+        14: [142.0, 26.0],
+        15: [127.5, 26.0],
+        16: [124.0, 24.0],
+        17: [131.0, 27.0],
+        18: [136.0, 20.0],
+        19: [154.0, 24.0]
+    };
+
+    const origin = epsgOrigins[zone];
+    if (!origin) throw new Error(`zone ${zone} に対応する原点が定義されていません`);
+
+    const [lon0, lat0] = origin;
+    const projString = `+proj=tmerc +lat_0=${lat0} +lon_0=${lon0} +k=1 +x_0=0 +y_0=0 +datum=GRS80 +units=m +no_defs`;
+    const [lon, lat] = proj4(projString, proj4.WGS84, [x, y]);
+    return { lat, lon };
+}
+
 
 
 

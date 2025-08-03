@@ -10174,11 +10174,12 @@ select {
   appearance: none;
   /* 下矢印を消したい場合は独自アイコンを使ってもOK */
 }
-.oh-cool-select:focus {
-  border: 2px solid #1565c0;
-  background: #e3f2fd;
-  box-shadow: 0 2px 8px rgba(41,121,255,0.13);
-}
+/*.oh-cool-select:focus {*/
+/*  border: 2px solid #1565c0;*/
+/*  background: #e3f2fd;*/
+/*  box-shadow: 0 2px 8px rgba(41,121,255,0.13);*/
+/*}*/
+
 /*!* input[type=number] のデフォルト矢印（上下ボタン）非表示（Chrome, Edge, Safari） *!*/
 /*.oh-cool-input-number::-webkit-inner-spin-button,*/
 /*.oh-cool-input-number::-webkit-outer-spin-button {*/

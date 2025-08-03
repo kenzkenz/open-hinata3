@@ -311,7 +311,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v1.267
+        v1.268
       </p>
 
       <div v-if="user1">
@@ -327,6 +327,12 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </div>
 
       <v-btn style="width:100%;margin-bottom: 20px;" @click="reset">リセット（初期時に戻す）</v-btn>
+      座標検索で使用する系を選択
+      <select style="margin-left: 8px;" class="oh-cool-select" v-model="zahyokeiForSercheAdress">
+        <option v-for="item in items" :key="item" :value="item">
+          {{ item }}
+        </option>
+      </select>
       <v-text-field label="住所、座標で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 
       <!--      <v-btn class="tiny-btn" @click="simaLoad">SIMA読み込</v-btn>-->
@@ -363,7 +369,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 <script>
 
 import LayerManager from '@/components/LayerManager.vue';
-import {iko, simaFileUpload} from "@/js/downLoad";
+import {iko, jgd2000ZoneToWgs84, simaFileUpload} from "@/js/downLoad";
 import { db, auth } from '@/firebase'
 import {user} from "@/authState";
 import axios from "axios"
@@ -489,6 +495,7 @@ export default {
     signUpDiv: false,
     showAuthArea: false, // 👈 追加（初期は非表示）
     dialogForUpload: false,
+    zahyokeiForSercheAdress: 'WGS84',
     items: [
       'WGS84',
       '公共座標1系', '公共座標2系', '公共座標3系',
@@ -1515,17 +1522,26 @@ export default {
       const match = coordRegex.exec(input);
 
       if (match) {
+        let lat, lon;
         let val1 = parseFloat(match[1]);
         let val2 = parseFloat(match[2]);
-        // 緯度・経度を自動判別
-        let lat, lon;
-        if (Math.abs(val1) <= 90 && Math.abs(val2) <= 180) {
-          lat = val1;
-          lon = val2;
-        } else if (Math.abs(val2) <= 90 && Math.abs(val1) <= 180) {
-          lat = val2;
-          lon = val1;
+        if (this.zahyokeiForSercheAdress === 'WGS84') {
+          // 緯度・経度を自動判別
+          if (Math.abs(val1) <= 90 && Math.abs(val2) <= 180) {
+            lat = val1;
+            lon = val2;
+          } else if (Math.abs(val2) <= 90 && Math.abs(val1) <= 180) {
+            lat = val2;
+            lon = val1;
+          }
+        } else {
+          const zahyokeiMatch = this.zahyokeiForSercheAdress.match(/\d+/);
+          const zone = zahyokeiMatch ? parseInt(zahyokeiMatch[0], 10) : null;
+          const latLon  = jgd2000ZoneToWgs84(zone, val2, val1)
+          lat = latLon.lat
+          lon = latLon.lon
         }
+
         if (lat !== undefined && lon !== undefined) {
           map.flyTo({ center: [lon, lat], zoom: 14 });
           // flyToアニメーション完了後にユーザー操作を再度有効化
