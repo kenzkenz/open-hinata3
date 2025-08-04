@@ -1404,7 +1404,7 @@ export default {
 }
 .center-div {
   height: 8px;
-  background-color:rgba(0,60,136,0.5);
+  /*background-color:rgba(0,60,136,0.5);*/
   background-color:var(--main-color);
   cursor: grab;
 }
@@ -1417,7 +1417,9 @@ export default {
   height:40px;
   font-size:larger;
   color:white;
-  background-color: rgba(132,163,213,1);
+  /*background-color: rgba(132,163,213,1);*/
+  /*background-color:var(--main-color);*/
+  background-color: color-mix(in srgb, var(--main-color) 60%, white);
   border-bottom: #fff 1px solid;
 
   /*color:gray;*/

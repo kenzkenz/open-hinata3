@@ -95,14 +95,14 @@
               <button class="close-btn" @click.stop="rowRemove(item.geojson_id)">×</button>
               <strong>{{ item.geojson_name }}</strong><br>
             </div>
-            <v-btn @click="createGeojsonMaster">新規追加</v-btn>
+            <v-btn @click="clear">共有解除</v-btn>
             <v-alert
-                v-if="showAlert"
-                :type="alertType"
+                v-if="showAlert2"
+                :type="alertType2"
                 class="mt-4"
                 dismissible
             >
-              {{ alertText }}
+              {{ alertText2 }}
             </v-alert>
           </v-card>
         </v-window-item>
@@ -115,11 +115,18 @@
 import {clickCircleSource, konUrls} from "@/js/layers";
 import {geojsonUpdate} from "@/js/pyramid";
 import {changePrintMap03, printDirectionChange} from "@/js/downLoad";
+import {createVuetify} from "vuetify/lib/framework";
+import * as components from "vuetify/lib/components";
+import * as directives from "vuetify/lib/directives";
+import vuetify from "@/plugins/vuetify";
 export default {
   name: 'Dialog-draw-config',
   props: ['mapName'],
   data: () => ({
     jsonData: [],
+    alertText2: '',
+    alertType2: '',
+    showAlert2: false,
     alertText: '',
     alertType: '',
     showAlert: false,
@@ -226,6 +233,14 @@ export default {
     },
   },
   methods: {
+    clear() {
+      const color = 'rgb(50,101,186)'
+      document.documentElement.style.setProperty('--main-color', color);
+      vuetify.theme.themes.value.myTheme.colors.primary = color
+      this.alertText2 = '共有解除は自分が共有状態から抜けるだけです。全ユーザーの共有を解除するにはリストの✖️ボタンで削除してください。'
+      this.alertType2 = 'info'
+      this.showAlert2 = true
+    },
     async rowRemove(geojson_id) {
       if (!confirm("削除しますか？")) {
         return
@@ -247,9 +262,9 @@ export default {
       }
     },
     rowCick() {
-      // alert(999)
-      const color = 'rgba(255,0,0,0.5)'
+      const color = '#2e8b57'
       document.documentElement.style.setProperty('--main-color', color);
+      vuetify.theme.themes.value.myTheme.colors.primary = color
     },
     async selectGeojson() {
       if (!this.s_userId) return
