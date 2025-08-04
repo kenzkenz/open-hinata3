@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 
-require_once "pwd.php"; // ここで $pdo が定義されている前提
+require_once "pwd.php";
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 // 入力
@@ -22,8 +22,11 @@ if (mb_strlen($geojson_name) > 64) {
 }
 
 // 事前チェック：名前の重複があればそれを返して終了（成功扱い）
-$chk = $pdo->prepare("SELECT geojson_id FROM geojsons WHERE geojson_name = :name LIMIT 1");
-$chk->execute([':name' => $geojson_name]);
+$chk = $pdo->prepare("SELECT geojson_id FROM geojsons WHERE geojson_name = :name AND creator_user_id = :creator_user_id LIMIT 1");
+$chk->execute([
+    ':name' => $geojson_name,
+    ':creator_user_id' => $creator_user_id,
+]);
 if ($row = $chk->fetch(PDO::FETCH_ASSOC)) {
     echo json_encode([
         'success'               => true,

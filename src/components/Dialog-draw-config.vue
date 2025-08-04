@@ -88,6 +88,24 @@
             </v-alert>
           </v-card>
         </v-window-item>
+        <v-window-item value="list">
+          <v-card style="text-align: left;font-size: 14px;">
+            <p>行をクリックするとドローを変更します。</p>
+            <div v-for="item in jsonData" :key="item.id" class="data-container" @click="rowCick(item)">
+              <button class="close-btn" @click.stop="rowRemove(item.geojson_id)">×</button>
+              <strong>{{ item.geojson_name }}</strong><br>
+            </div>
+            <v-btn @click="createGeojsonMaster">新規追加</v-btn>
+            <v-alert
+                v-if="showAlert"
+                :type="alertType"
+                class="mt-4"
+                dismissible
+            >
+              {{ alertText }}
+            </v-alert>
+          </v-card>
+        </v-window-item>
       </v-window>
     </div>
   </Dialog>
@@ -101,6 +119,7 @@ export default {
   name: 'Dialog-draw-config',
   props: ['mapName'],
   data: () => ({
+    jsonData: [],
     alertText: '',
     alertType: '',
     showAlert: false,
@@ -143,6 +162,7 @@ export default {
       return this.$store.state.userId
     },
     s_dialogs () {
+      this.selectGeojson()
       return this.$store.state.dialogs.drawConfigDialog
     },
     s_drawFire () {
@@ -206,6 +226,46 @@ export default {
     },
   },
   methods: {
+    async rowRemove(geojson_id) {
+      if (!confirm("削除しますか？")) {
+        return
+      }
+      const formData = new FormData();
+      formData.append('geojson_id', geojson_id);
+      const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/geojson_delete.php', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      if (data.success) {
+        console.log(data)
+        this.selectGeojson()
+        return
+      } else {
+        console.log(data)
+        alert('失敗')
+      }
+    },
+    rowCick() {
+      alert(999)
+    },
+    async selectGeojson() {
+      if (!this.s_userId) return
+      const formData = new FormData();
+      formData.append('creator_user_id', this.s_userId);
+      const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/geojson_select.php', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      if (data.success) {
+        console.log(data)
+        this.jsonData = data.rows
+        return
+      } else {
+        console.log('失敗')
+      }
+    },
     async createGeojsonMaster() {
       if (!this.geojsonName) {
         this.alertType = 'info'
@@ -320,6 +380,7 @@ export default {
   color: black;
   background-color: white;
   text-align: center;
+  max-height: 600px;
 }
 /* スマホ用のスタイル */
 @media screen and (max-width: 768px) {
@@ -327,6 +388,35 @@ export default {
     width: 100%;
     margin: 0;
   }
+}
+.data-container {
+  padding: 5px;
+  border: 1px solid #ddd;
+  margin-bottom: 5px;
+  position: relative;
+  cursor: pointer;
+  background-color: rgba(132, 163, 213, 0.3);
+}
+.data-container:hover {
+  background-color: #f0f8ff;
+}
+/* 選択時は少し濃いめの青に */
+.data-container.selected {
+  background-color: #4682b4;
+  color: white;
+}
+.close-btn {
+  position: absolute;
+  top: -10px;
+  right: 10px;
+  color: black;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 30px;
+}
+.close-btn:hover {
+  color: red;
 }
 </style>
 
