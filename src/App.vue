@@ -8391,39 +8391,6 @@ export default {
           map.on('zoomend', debouncedHandleBoundsChange);
 
 
-
-
-          // let previousBounds = null;
-          // map.on('dragend', () => {
-          //   const currentBounds = map.getBounds();
-          //   if (!previousBounds ||
-          //       currentBounds.getNorth() > previousBounds.getNorth() ||
-          //       currentBounds.getSouth() < previousBounds.getSouth() ||
-          //       currentBounds.getEast() > previousBounds.getEast() ||
-          //       currentBounds.getWest() < previousBounds.getWest()) {
-          //     // マップの範囲が拡大または移動した場合のみ発火
-          //     console.log('Bounds expanded or moved:', currentBounds);
-          //     this.$store.state.osmFire = !this.$store.state.osmFire
-          //   }
-          //   // 現在の範囲を保存
-          //   previousBounds = currentBounds;
-          // });
-          //
-          // map.on('zoomend', () => {
-          //   const currentBounds = map.getBounds();
-          //   if (!previousBounds ||
-          //       currentBounds.getNorth() > previousBounds.getNorth() ||
-          //       currentBounds.getSouth() < previousBounds.getSouth() ||
-          //       currentBounds.getEast() > previousBounds.getEast() ||
-          //       currentBounds.getWest() < previousBounds.getWest()) {
-          //     // マップの範囲が拡大または移動した場合のみ発火
-          //     // console.log('Bounds expanded or moved:', currentBounds);
-          //     this.$store.state.osmFire = !this.$store.state.osmFire
-          //   }
-          //   // 現在の範囲を保存
-          //   previousBounds = currentBounds;
-          // });
-
           // スマートフォンのとき
           if (this.s_isSmartPhone) {
             map.dragRotate.disable()
@@ -9749,7 +9716,7 @@ label {
   /*--main-color: #f17ecd;*/
 }
 v-btn, .button {
-  background-color: var(--main-color);
+  background-color: var(--main-color)!important;
 }
 
 html, body {

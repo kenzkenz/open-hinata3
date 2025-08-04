@@ -247,7 +247,9 @@ export default {
       }
     },
     rowCick() {
-      alert(999)
+      // alert(999)
+      const color = 'rgba(255,0,0,0.5)'
+      document.documentElement.style.setProperty('--main-color', color);
     },
     async selectGeojson() {
       if (!this.s_userId) return
