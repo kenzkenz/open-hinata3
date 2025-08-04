@@ -4,7 +4,8 @@
 
       <v-tabs mobile-breakpoint="0" v-model="tab" class="custom-tabs">
         <v-tab value="config">設定</v-tab>
-        <v-tab value="share">共有</v-tab>
+        <v-tab value="share">共有追加</v-tab>
+        <v-tab value="list">共有リスト</v-tab>
       </v-tabs>
       <v-window v-model="tab" style="margin-top: 10px;">
         <v-window-item value="config">
@@ -70,8 +71,21 @@
         </v-window-item>
         <v-window-item value="share">
           <v-card style="text-align: left;font-size: 14px;">
-            現在のドローを共有化します。
-            <v-btn class="tiny-btn" @click="createGeojsonMaster">新規追加</v-btn>
+            <p>現在のドローをデータベースに追加、保存します。同時にレイヤーの状態も保存されます。</p>
+            <v-text-field
+                style="margin-top: 10px;"
+                v-model="geojsonName"
+                label="共有名を記入してください"
+            />
+            <v-btn @click="createGeojsonMaster">新規追加</v-btn>
+            <v-alert
+                v-if="showAlert"
+                :type="alertType"
+                class="mt-4"
+                dismissible
+            >
+              {{ alertText }}
+            </v-alert>
           </v-card>
         </v-window-item>
       </v-window>
@@ -87,8 +101,11 @@ export default {
   name: 'Dialog-draw-config',
   props: ['mapName'],
   data: () => ({
+    alertText: '',
+    alertType: '',
+    showAlert: false,
     geojsonId: '',
-    geojsonName: 'test7いいy７',
+    geojsonName: '',
     tab: 'config',
     titleColors: [{color:'black',label:'黒'},{color:'red',label:'赤'},{color:'blue',label:'青'},{color:'green',label:'緑'},{color:'orange',label:'オレンジ'}],
     titleDirections: [{direction:'vertical',label:'A4縦'},{direction:'horizontal',label:'A4横'}],
@@ -190,6 +207,12 @@ export default {
   },
   methods: {
     async createGeojsonMaster() {
+      if (!this.geojsonName) {
+        this.alertType = 'info'
+        this.alertText = '共有名を記入してください'
+        this.showAlert = true
+        return
+      }
       const formData = new FormData();
       formData.append('geojson_name', this.geojsonName);
       formData.append('creator_nickname', this.s_myNickname);
@@ -200,18 +223,23 @@ export default {
       });
       const data = await response.json();
       if (!data.success) {
-        this.error = data.error || '作成に失敗しました';
-        alert('作成に失敗しました')
+        this.alertType = 'error'
+        this.alertText = '失敗しました'
+        this.showAlert = true
         return;
       }
       // 重複だった場合の通知
       if (data.already_exists) {
-        alert('その名前はすでに使われています。')
+        this.alertType = 'warning'
+        this.alertText = 'その名前はすでに使われています。'
+        this.showAlert = true
         console.log('その名前はすでに使われています。既存のGeoJSONを使用します。')
         return
       }
       this.geojsonId = data.geojson_id;
-      alert('追加成功')
+      this.alertType = 'success'
+      this.alertText = '追加成功！「共有リスト」タブで共有するドローを選択してください。'
+      this.showAlert = true
       return this.geojsonId;
     },
     qrCodeClick () {
