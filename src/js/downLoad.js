@@ -9766,6 +9766,11 @@ export function jgd2000ZoneToWgs84(zone, x, y) {
     return { lat, lon };
 }
 
+/**
+ *
+ * @param features
+ * @returns {Promise<*>}
+ */
 export async function saveDrowFeatures(features) {
     const formData = new FormData();
     formData.append('geojson_id', store.state.geojsonId);
@@ -9787,6 +9792,10 @@ export async function saveDrowFeatures(features) {
     return result.results; // 各 feature_id ごとの updated_at 配列
 }
 
+/**
+ * 
+ * @returns {Promise<void>}
+ */
 export async function selectDrowFeatures() {
     const formData = new FormData();
     formData.append('geojson_id', store.state.geojsonId);
