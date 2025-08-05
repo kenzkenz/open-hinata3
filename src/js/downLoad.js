@@ -32,13 +32,14 @@ import html2canvas from 'html2canvas'
 import muni from "@/js/muni";
 import Papa from 'papaparse'
 import {
-    generateSegmentLabelGeoJSON,
+    generateSegmentLabelGeoJSON, generateStartEndPointsFromGeoJSON,
     getAllVertexPoints,
     setAllMidpoints
 } from "@/js/pyramid";
 import { deserialize } from 'flatgeobuf/lib/mjs/geojson.js';
 import { PMTiles } from "pmtiles";
 import {feature} from "@turf/turf";
+import {closeAllPopups} from "@/js/popup";
 
 
 // import publicChk from '@/components/Dialog-myroom'
@@ -9798,7 +9799,7 @@ export async function saveDrowFeatures(features) {
                 return feature.properties.id === result.feature_id
             })
             console.log(target)
-            target.properties.updated_at = result.current_updated_at
+            target.properties.updated_at = result.updated_at
             if (result.status === 'conflict') {
                 store.state.loadingMessage = '競合が発生しました'
             } else if (result.status === 'inserted') {
@@ -9842,6 +9843,8 @@ export async function selectDrowFeatures() {
         console.log(geojson)
         map01.getSource(clickCircleSource.iD).setData(geojson)
         store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+        closeAllPopups()
+        generateStartEndPointsFromGeoJSON(geojson)
     } else {
         console.log('失敗')
     }

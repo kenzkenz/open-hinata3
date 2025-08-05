@@ -1035,28 +1035,7 @@ export default function pyramid () {
                 store.state.clickGeojsonText = JSON.stringify(pointsGeojson)
                 store.state.popupDialog = false
 
-                if (store.state.isUsingServerGeojson) {
-                    store.state.loading2 = true
-                    const formData = new FormData();
-                    formData.append('geojson_id', store.state.geojsonId);
-                    // 配列で複数回 append
-                    [id].forEach(id => formData.append('feature_id[]', id));
-                    const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_delete.php', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    const result = await response.json();
-                    console.log(result)
-                    if (result.success) {
-                        store.state.loadingMessage = '削除成功'
-                        setTimeout(() => {
-                            store.state.loading2 = false
-                        },2000)
-                    } else {
-                        store.state.loading2 = false
-                        alert('削除失敗')
-                    }
-                }
+                await featuresDelete([id])
 
             }
         });
@@ -1441,10 +1420,10 @@ export default function pyramid () {
             }
         });
         // -------------------------------------------------------------------------------------------------------------
-        mapElm.addEventListener('click', (e) => {
+        mapElm.addEventListener('click',  (e) => {
             if (e.target && (e.target.classList.contains("circle-delete")|| e.target.classList.contains("line-delete"))) {
                 store.state.saveHistoryFire = !store.state.saveHistoryFire
-                setTimeout(() => {
+                setTimeout(async () => {
                     const map01 = store.state.map01
                     const id = String(e.target.getAttribute("id"))
                     let source = map01.getSource(clickCircleSource.iD)
@@ -1470,6 +1449,9 @@ export default function pyramid () {
                     store.state.isCursorOnPanel = false
                     closeAllPopups()
                     store.state.popupDialog = false
+
+                    await featuresDelete([id])
+
                 },100)
             }
         });
@@ -2228,7 +2210,8 @@ export function generateStartEndPointsFromGeoJSON(geojson) {
                     id: props.id + '-mid',
                     pairId: props.pairId || null,
                     endpoint: 'mid',
-                    'arrow-type': props['arrow-type'] || 'end',
+                    // 'arrow-type': props['arrow-type'] || 'end',
+                    'arrow-type': 'mid',
                     arrow: props.arrow || 'arrow_black',
                     label: props.labelType === 'mid' ? props.label : '',
                     color: props.color || 'black',
@@ -2260,7 +2243,7 @@ export function generateStartEndPointsFromGeoJSON(geojson) {
     return pointGeoJSON;
 }
 
-export function deleteAll (noConfrim) {
+export async function deleteAll (noConfrim) {
     if (!noConfrim) {
         if (!confirm("全て削除しますか？")) {
             return
@@ -2268,6 +2251,8 @@ export function deleteAll (noConfrim) {
     }
     const map01 = store.state.map01
     let source = map01.getSource(clickCircleSource.iD);
+    const features = map01.querySourceFeatures(clickCircleSource.iD);
+    await featuresDelete(features.map(f => f.properties.id));
     // 空のGeoJSON FeatureCollectionを設定する
     source.setData({
         type: "FeatureCollection",
@@ -2349,4 +2334,34 @@ export function watchGeojsonChange() {
 
         watchGeojsonChange(); // 🔁 次のフレームへ
     });
+}
+
+/**
+ * 地物を複数削除する。idを配列で渡す
+ * @param ids
+ * @returns {Promise<void>}
+ */
+async function featuresDelete(ids) {
+    if (store.state.isUsingServerGeojson) {
+        store.state.loading2 = true
+        const formData = new FormData();
+        formData.append('geojson_id', store.state.geojsonId);
+        // 配列で複数回 append
+        ids.forEach(id => formData.append('feature_id[]', id));
+        const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_delete.php', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+        console.log(result)
+        if (result.success) {
+            store.state.loadingMessage = '削除成功'
+            setTimeout(() => {
+                store.state.loading2 = false
+            },2000)
+        } else {
+            store.state.loading2 = false
+            alert('削除失敗')
+        }
+    }
 }
