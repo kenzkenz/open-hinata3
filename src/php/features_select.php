@@ -15,7 +15,7 @@ if ($geojson_id === '') {
 }
 
 try {
-    $stmt = $pdo->prepare("SELECT * FROM geojson_features WHERE geojson_id = :geojson_id");
+    $stmt = $pdo->prepare("SELECT * FROM geojson_features WHERE geojson_id = :geojson_id AND is_deleted NOT LIKE 1");
     $stmt->execute([':geojson_id' => $geojson_id]);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
     if ($rows) {

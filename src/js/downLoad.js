@@ -9812,7 +9812,6 @@ export async function saveDrowFeatures(features) {
     } else {
         console.error('保存失敗', result);
         store.state.loadingMessage = '失敗'
-        // throw new Error(result.error || 'unknown');
     }
     setTimeout(() => {
         store.state.loading2 = false

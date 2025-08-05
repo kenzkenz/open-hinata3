@@ -1018,13 +1018,11 @@ export default function pyramid () {
             }
         })
         // -------------------------------------------------------------------------------------------------------------
-        mapElm.addEventListener('click', (e) => {
+        mapElm.addEventListener('click', async (e) => {
             if (e.target && (e.target.classList.contains("point-delete"))) {
                 const id = e.target.getAttribute("id")
                 const map01 = store.state.map01
                 let source01 = map01.getSource('click-points-source');
-                // const map02 = store.state.map02
-                // let source02 = map02.getSource('click-points-source');
                 let pointsGeojson = source01._data
                 // 修正: GeoJSON の全体構造を保持する
                 pointsGeojson = {
@@ -1033,10 +1031,33 @@ export default function pyramid () {
                         return String(feature.properties.id) !== String(id)
                     })
                 }
-                source01.setData(pointsGeojson) // 正しい GeoJSON を設定
-                // source02.setData(pointsGeojson)
+                source01.setData(pointsGeojson)
                 store.state.clickGeojsonText = JSON.stringify(pointsGeojson)
                 store.state.popupDialog = false
+
+                if (store.state.isUsingServerGeojson) {
+                    store.state.loading2 = true
+                    const formData = new FormData();
+                    formData.append('geojson_id', store.state.geojsonId);
+                    // 配列で複数回 append
+                    [id].forEach(id => formData.append('feature_id[]', id));
+                    const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_delete.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+                    console.log(result)
+                    if (result.success) {
+                        store.state.loadingMessage = '削除成功'
+                        setTimeout(() => {
+                            store.state.loading2 = false
+                        },2000)
+                    } else {
+                        store.state.loading2 = false
+                        alert('削除失敗')
+                    }
+                }
+
             }
         });
         // -------------------------------------------------------------------------------------------------------------
