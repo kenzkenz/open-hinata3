@@ -113,7 +113,7 @@
 
 <script>
 import {clickCircleSource, konUrls} from "@/js/layers";
-import {geojsonUpdate} from "@/js/pyramid";
+import {deleteAll, geojsonUpdate} from "@/js/pyramid";
 import {changePrintMap03, printDirectionChange, saveDrowFeatures, selectDrowFeatures} from "@/js/downLoad";
 import {createVuetify} from "vuetify/lib/framework";
 import * as components from "vuetify/lib/components";
@@ -249,6 +249,8 @@ export default {
       this.alertType2 = 'info'
       this.showAlert2 = true
       this.$store.state.isUsingServerGeojson = false
+      this.$store.state.clickCircleGeojsonText = ''
+      deleteAll(true)
     },
     async rowRemove(geojson_id) {
       if (!confirm("削除しますか？")) {
@@ -294,6 +296,7 @@ export default {
         return
       } else {
         console.log('失敗')
+        this.jsonData = []
       }
     },
     async createGeojsonMaster() {

@@ -1007,7 +1007,11 @@ export default {
       }
       // ---------------------------------------------------------------------------------
       if (this.$store.state.clickCircleGeojsonText) {
-        clickCircleSource.obj.data = JSON.parse(this.$store.state.clickCircleGeojsonText)
+        try {
+          clickCircleSource.obj.data = JSON.parse(this.$store.state.clickCircleGeojsonText)
+        }catch (e) {
+          console.log(e)
+        }
       }
 
       if (map.getSource('click-circle-source')) {
@@ -1072,9 +1076,13 @@ export default {
       this.$store.state.drawFire = !this.$store.state.drawFire
 
       if (this.$store.state.clickCircleGeojsonText) {
-        const geojson = JSON.parse(this.$store.state.clickCircleGeojsonText)
-        generateSegmentLabelGeoJSON(geojson)
-        generateStartEndPointsFromGeoJSON(geojson)
+        try {
+          const geojson = JSON.parse(this.$store.state.clickCircleGeojsonText)
+          generateSegmentLabelGeoJSON(geojson)
+          generateStartEndPointsFromGeoJSON(geojson)
+        }catch (e) {
+          console.log(e)
+        }
       }
 
       if (map === this.$store.state.map01) {

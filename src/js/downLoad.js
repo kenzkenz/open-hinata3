@@ -38,6 +38,7 @@ import {
 } from "@/js/pyramid";
 import { deserialize } from 'flatgeobuf/lib/mjs/geojson.js';
 import { PMTiles } from "pmtiles";
+import {feature} from "@turf/turf";
 
 
 // import publicChk from '@/components/Dialog-myroom'
@@ -9789,11 +9790,25 @@ export async function saveDrowFeatures(features) {
     });
     const result = await response.json();
     console.log(result)
-    if (!result.success) {
+    if (result.success) {
+        const map01 = store.state.map01
+        result.results.forEach(result => {
+            const target = map01.getSource(clickCircleSource.iD)._data.features.find(feature => {
+                return feature.properties.id === result.feature_id
+            })
+            console.log(target)
+            target.properties.updated_at = result.current_updated_at
+        })
+        store.state.loading2 = true
+        store.state.loadingMessage = '更新成功'
+        setTimeout(() => {
+            store.state.loading2 = false
+        },2000)
+        return result.results; // 各 feature_id ごとの updated_at 配列
+    } else {
         console.error('保存失敗', result);
         throw new Error(result.error || 'unknown');
     }
-    return result.results; // 各 feature_id ごとの updated_at 配列
 }
 
 /**
