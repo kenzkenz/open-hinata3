@@ -9773,6 +9773,7 @@ export function jgd2000ZoneToWgs84(zone, x, y) {
  * @returns {Promise<*>}
  */
 export async function saveDrowFeatures(features) {
+    store.state.loading2 = true
     const formData = new FormData();
     formData.append('geojson_id', store.state.geojsonId);
     features.forEach(f => {
@@ -9798,17 +9799,24 @@ export async function saveDrowFeatures(features) {
             })
             console.log(target)
             target.properties.updated_at = result.current_updated_at
+            if (result.status === 'conflict') {
+                store.state.loadingMessage = '競合が発生しました'
+            } else if (result.status === 'inserted') {
+                store.state.loadingMessage = '新規追加しました'
+            } else {
+                store.state.loadingMessage = '更新しました'
+            }
         })
-        store.state.loading2 = true
-        store.state.loadingMessage = '更新成功'
-        setTimeout(() => {
-            store.state.loading2 = false
-        },2000)
-        return result.results; // 各 feature_id ごとの updated_at 配列
+        console.log(result.results)
+        // return result.results; // 各 feature_id ごとの updated_at 配列
     } else {
         console.error('保存失敗', result);
-        throw new Error(result.error || 'unknown');
+        store.state.loadingMessage = '失敗'
+        // throw new Error(result.error || 'unknown');
     }
+    setTimeout(() => {
+        store.state.loading2 = false
+    },2000)
 }
 
 /**
