@@ -1430,25 +1430,25 @@ export default function pyramid () {
                     if (geojson.features.find(feature => feature.properties.id === id && feature.properties.lassoSelected === true)) {
                         lasso = true
                     }
-                    if (geojson && geojson.features) {
-                        const newFeatures = geojson.features.filter(feature => {
-                            if (lasso) {
-                                return !feature.properties.lassoSelected
-                            } else {
-                                return String(feature.properties.id) !== id && String(feature.properties.pairId) !== id;
-                            }
-                        });
-                        if (newFeatures.length !== geojson.features.length) {
-                            geojson.features = newFeatures;
-                            map01.getSource(clickCircleSource.iD).setData(geojson);
-                            store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+                    const pairIds = geojson.features.filter(feature => String(feature.properties.pairId) === id).map(f => f.properties.id)
+                    const newFeatures = geojson.features.filter(feature => {
+                        if (lasso) {
+                            return !feature.properties.lassoSelected
+                        } else {
+                            return String(feature.properties.id) !== id && String(feature.properties.pairId) !== id;
                         }
+                    });
+                    if (newFeatures.length !== geojson.features.length) {
+                        geojson.features = newFeatures;
+                        map01.getSource(clickCircleSource.iD).setData(geojson);
+                        store.state.clickCircleGeojsonText = JSON.stringify(geojson)
                     }
+
                     store.state.isCursorOnPanel = false
                     closeAllPopups()
                     store.state.popupDialog = false
 
-                    await featuresDelete([id])
+                    await featuresDelete([id,...pairIds])
 
                 },100)
             }
@@ -2350,7 +2350,9 @@ async function featuresDelete(ids) {
         const formData = new FormData();
         formData.append('geojson_id', store.state.geojsonId);
         // 配列で複数回 append
-        ids.forEach(id => formData.append('feature_id[]', id));
+        ids.forEach(id => {
+            formData.append('feature_id[]', id)
+        });
         const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_delete.php', {
             method: 'POST',
             body: formData
