@@ -3677,6 +3677,8 @@ export function popup(e,map,mapName,mapFlg) {
                     features = JSON.parse(store.state.clickCircleGeojsonTextMyroom).features
                     store.state.clickCircleGeojsonText = store.state.clickCircleGeojsonTextMyroom
                 }
+                console.log(features)
+                console.log(id)
                 const feature = features.find(feature => feature.properties.id === id)
                 if (id === 'offlineBbox') {
                     store.state.dialogForOffline2 = true
@@ -3684,7 +3686,7 @@ export function popup(e,map,mapName,mapFlg) {
                     store.state.featureForOfflineBbox = feature
                     return;
                 }
-                // alert('到達')
+                 // alert('到達')
                 if (!feature) return;
                 // alert('到達')
                 props = feature.properties

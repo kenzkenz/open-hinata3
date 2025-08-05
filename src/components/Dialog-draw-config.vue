@@ -114,7 +114,7 @@
 <script>
 import {clickCircleSource, konUrls} from "@/js/layers";
 import {geojsonUpdate} from "@/js/pyramid";
-import {changePrintMap03, printDirectionChange, saveDrowFeatures} from "@/js/downLoad";
+import {changePrintMap03, printDirectionChange, saveDrowFeatures, selectDrowFeatures} from "@/js/downLoad";
 import {createVuetify} from "vuetify/lib/framework";
 import * as components from "vuetify/lib/components";
 import * as directives from "vuetify/lib/directives";
@@ -269,10 +269,13 @@ export default {
         alert('失敗')
       }
     },
-    rowCick() {
+    async rowCick(item) {
       const color = '#2e8b57'
       document.documentElement.style.setProperty('--main-color', color);
       vuetify.theme.themes.value.myTheme.colors.primary = color
+      this.showAlert2 = false
+      this.s_geojsonId = item.geojson_id
+      await selectDrowFeatures()
     },
     async selectGeojson() {
       if (!this.s_userId) return

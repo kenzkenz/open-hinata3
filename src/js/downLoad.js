@@ -9767,19 +9767,19 @@ export function jgd2000ZoneToWgs84(zone, x, y) {
 }
 
 export async function saveDrowFeatures(features) {
-    const form = new FormData();
-    form.append('geojson_id', store.state.geojsonId);
+    const formData = new FormData();
+    formData.append('geojson_id', store.state.geojsonId);
     features.forEach(f => {
-        form.append('feature_id[]', f.properties.id);
-        form.append('last_editor_user_id[]', store.state.userId);
-        form.append('last_editor_nickname[]', store.state.myNickname);
-        form.append('feature[]', JSON.stringify(f));
+        formData.append('feature_id[]', f.properties.id);
+        formData.append('last_editor_user_id[]', store.state.userId);
+        formData.append('last_editor_nickname[]', store.state.myNickname);
+        formData.append('feature[]', JSON.stringify(f));
     });
-    const resp = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_save.php', {
+    const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_save.php', {
         method: 'POST',
-        body: form
+        body: formData
     });
-    const result = await resp.json();
+    const result = await response.json();
     if (!result.success) {
         console.error('保存失敗', result);
         throw new Error(result.error || 'unknown');
@@ -9787,6 +9787,30 @@ export async function saveDrowFeatures(features) {
     return result.results; // 各 feature_id ごとの updated_at 配列
 }
 
+export async function selectDrowFeatures() {
+    const formData = new FormData();
+    formData.append('geojson_id', store.state.geojsonId);
+    const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_select.php', {
+        method: 'POST',
+        body: formData,
+    });
+    const data = await response.json();
+    if (data.success) {
+        const map01 = store.state.map01
+        const features = data.rows.map(row => {
+            const feature = JSON.parse(row.feature)
+            feature.properties.updated_at = row.updated_at
+            return feature
+        })
+        console.log(data.rows)
+        const geojson = turf.featureCollection(features)
+        console.log(geojson)
+        map01.getSource(clickCircleSource.iD).setData(geojson)
+        store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+    } else {
+        console.log('失敗')
+    }
+}
 
 
 
