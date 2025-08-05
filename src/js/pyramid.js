@@ -3,10 +3,8 @@ import axios from "axios"
 import * as turf from '@turf/turf'
 import {
     addDraw,
-    convertAndDownloadGeoJSONToSIMA,
-    convertFromEPSG4326, downloadTextFile,
-    geoJSONToSIMA, getNowFileNameTimestamp, recenterGeoJSON, removeNini, saveDrowFeatures,
-    savePointSima, splitLineStringIntoPoints,
+    recenterGeoJSON, removeNini, saveDrowFeatures,
+    savePointSima,
     zahyokei
 } from "@/js/downLoad";
 import {clickCircleSource, clickPointSource, endPointSouce, vertexSource} from "@/js/layers";
@@ -1740,7 +1738,11 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
     console.log(store.state.clickCircleGeojsonText)
     store.state.saveHistoryFire = !store.state.saveHistoryFire
     if (store.state.isUsingServerGeojson) {
-        saveDrowFeatures([feature])
+        if (geoType === 'Circle') {
+            saveDrowFeatures([circleFeature,centerFeature])
+        } else {
+            saveDrowFeatures([feature])
+        }
     }
     return feature;
 }
@@ -2089,6 +2091,7 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
             map.getSource(sourceId).setData(geojson);
             store.state.updatePermalinkFire = !store.state.updatePermalinkFire
             if (store.state.isUsingServerGeojson) {
+                console.log(updateFeatures)
                 saveDrowFeatures(updateFeatures)
             }
             return escapeHTML(JSON.stringify(geojson))
