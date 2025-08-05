@@ -9767,7 +9767,7 @@ export function jgd2000ZoneToWgs84(zone, x, y) {
 }
 
 /**
- *
+ * ドローの地物を追加、更新する。
  * @param features
  * @returns {Promise<*>}
  */
@@ -9779,12 +9779,16 @@ export async function saveDrowFeatures(features) {
         formData.append('last_editor_user_id[]', store.state.userId);
         formData.append('last_editor_nickname[]', store.state.myNickname);
         formData.append('feature[]', JSON.stringify(f));
+        if (f.properties.updated_at) {
+            formData.append('prev_updated_at[]', f.properties.updated_at);
+        }
     });
     const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_save.php', {
         method: 'POST',
         body: formData
     });
     const result = await response.json();
+    console.log(result)
     if (!result.success) {
         console.error('保存失敗', result);
         throw new Error(result.error || 'unknown');
@@ -9793,7 +9797,7 @@ export async function saveDrowFeatures(features) {
 }
 
 /**
- * 
+ * ドローを切り替える。
  * @returns {Promise<void>}
  */
 export async function selectDrowFeatures() {

@@ -5,7 +5,7 @@ import {
     addDraw,
     convertAndDownloadGeoJSONToSIMA,
     convertFromEPSG4326, downloadTextFile,
-    geoJSONToSIMA, getNowFileNameTimestamp, recenterGeoJSON, removeNini,
+    geoJSONToSIMA, getNowFileNameTimestamp, recenterGeoJSON, removeNini, saveDrowFeatures,
     savePointSima, splitLineStringIntoPoints,
     zahyokei
 } from "@/js/downLoad";
@@ -1736,6 +1736,9 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
     store.state.clickCircleGeojsonText = JSON.stringify(geojsonData)
     console.log(store.state.clickCircleGeojsonText)
     store.state.saveHistoryFire = !store.state.saveHistoryFire
+    if (store.state.isUsingServerGeojson) {
+        saveDrowFeatures([feature])
+    }
     return feature;
 }
 
@@ -2038,6 +2041,7 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
         let found = false;
         let circleFeatureGeometry,centerFeature
         const lasso = geojson.features.find(feature => feature.properties.id === id && feature.properties.lassoSelected === true)
+        const updateFeatures = []
         geojson.features.forEach(feature => {
             // lasso が見つかっていれば lassoSelected、なければ id マッチをチェック
             const shouldUpdate = lasso
@@ -2056,8 +2060,10 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
                     centerFeature = geojson.features.find(f => f.properties.id === id + '-point' )
                     centerFeature.properties.label = value + '\n半径' + radius + 'm'
                     centerFeature.properties.label2 = value
+                    updateFeatures.push(centerFeature)
                 }
                 // ---------------------------------------------------------
+                updateFeatures.push(feature)
                 changed = true;
                 found = true;
             }
@@ -2079,6 +2085,9 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
         if (changed) {
             map.getSource(sourceId).setData(geojson);
             store.state.updatePermalinkFire = !store.state.updatePermalinkFire
+            if (store.state.isUsingServerGeojson) {
+                saveDrowFeatures(updateFeatures)
+            }
             return escapeHTML(JSON.stringify(geojson))
         }
     }

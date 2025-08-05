@@ -248,6 +248,7 @@ export default {
       this.alertText2 = '共有解除は自分が共有状態から抜けるだけです。全ユーザーの共有を解除するにはリストの✖️ボタンで削除してください。'
       this.alertType2 = 'info'
       this.showAlert2 = true
+      this.$store.state.isUsingServerGeojson = false
     },
     async rowRemove(geojson_id) {
       if (!confirm("削除しますか？")) {
@@ -276,6 +277,7 @@ export default {
       this.showAlert2 = false
       this.s_geojsonId = item.geojson_id
       await selectDrowFeatures()
+      this.$store.state.isUsingServerGeojson = true
     },
     async selectGeojson() {
       if (!this.s_userId) return

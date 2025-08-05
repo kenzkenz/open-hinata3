@@ -4,6 +4,7 @@ import firebase from "firebase";
 
 export default createStore({
   state: {
+    isUsingServerGeojson: false,
     drawShareId: '',
     selectedFile: null,
     previewUrl: '',
