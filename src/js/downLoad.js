@@ -9766,7 +9766,26 @@ export function jgd2000ZoneToWgs84(zone, x, y) {
     return { lat, lon };
 }
 
-
+export async function saveDrowFeatures(features) {
+    const form = new FormData();
+    form.append('geojson_id', store.state.geojsonId);
+    features.forEach(f => {
+        form.append('feature_id[]', f.properties.id);
+        form.append('last_editor_user_id[]', store.state.userId);
+        form.append('last_editor_nickname[]', store.state.myNickname);
+        form.append('feature[]', JSON.stringify(f));
+    });
+    const resp = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_save.php', {
+        method: 'POST',
+        body: form
+    });
+    const result = await resp.json();
+    if (!result.success) {
+        console.error('保存失敗', result);
+        throw new Error(result.error || 'unknown');
+    }
+    return result.results; // 各 feature_id ごとの updated_at 配列
+}
 
 
 

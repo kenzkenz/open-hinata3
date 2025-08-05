@@ -114,11 +114,12 @@
 <script>
 import {clickCircleSource, konUrls} from "@/js/layers";
 import {geojsonUpdate} from "@/js/pyramid";
-import {changePrintMap03, printDirectionChange} from "@/js/downLoad";
+import {changePrintMap03, printDirectionChange, saveDrowFeatures} from "@/js/downLoad";
 import {createVuetify} from "vuetify/lib/framework";
 import * as components from "vuetify/lib/components";
 import * as directives from "vuetify/lib/directives";
 import vuetify from "@/plugins/vuetify";
+import store from "@/store";
 export default {
   name: 'Dialog-draw-config',
   props: ['mapName'],
@@ -130,7 +131,6 @@ export default {
     alertText: '',
     alertType: '',
     showAlert: false,
-    geojsonId: '',
     geojsonName: '',
     tab: 'config',
     titleColors: [{color:'black',label:'黒'},{color:'red',label:'赤'},{color:'blue',label:'青'},{color:'green',label:'緑'},{color:'orange',label:'オレンジ'}],
@@ -162,6 +162,14 @@ export default {
     ],
   }),
   computed: {
+    s_geojsonId: {
+      get() {
+        return this.$store.state.geojsonId
+      },
+      set(value) {
+        return this.$store.state.geojsonId = value
+      }
+    },
     s_myNickname () {
       return this.$store.state.myNickname
     },
@@ -313,12 +321,17 @@ export default {
         console.log('その名前はすでに使われています。既存のGeoJSONを使用します。')
         return
       }
-      this.geojsonId = data.geojson_id;
+      this.s_geojsonId = data.geojson_id;
       this.alertType = 'success'
       this.alertText = '追加成功！「共有リスト」タブで共有するドローを選択してください。'
       this.showAlert = true
       this.selectGeojson()
-      return this.geojsonId;
+      const featues = JSON.parse(this.$store.state.clickCircleGeojsonText).features
+      if (featues.length > 0) {
+        const aaa = await saveDrowFeatures(featues)
+        console.log(aaa)
+      }
+      return this.s_geojsonId;
     },
     qrCodeClick () {
       this.$emit('open-floating')

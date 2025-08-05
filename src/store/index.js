@@ -125,6 +125,7 @@ export default createStore({
     snackbarText: '',
     snackbarForGroup: false,
     snackbarForGroupText: false,
+    geojsonId: '',
     userId: '',
     myNickname: '',
     currentGroupName: null,
