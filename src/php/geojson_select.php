@@ -15,7 +15,7 @@ if ($creator_user_id === '') {
 }
 
 try {
-    $stmt = $pdo->prepare("SELECT * FROM geojsons WHERE creator_user_id = :creator_user_id");
+    $stmt = $pdo->prepare("SELECT * FROM geojsons WHERE creator_user_id = :creator_user_id ORDER BY created_at DESC");
     $stmt->execute([':creator_user_id' => $creator_user_id]);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
     if ($rows) {

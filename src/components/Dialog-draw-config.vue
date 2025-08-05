@@ -317,6 +317,7 @@ export default {
       this.alertType = 'success'
       this.alertText = '追加成功！「共有リスト」タブで共有するドローを選択してください。'
       this.showAlert = true
+      this.selectGeojson()
       return this.geojsonId;
     },
     qrCodeClick () {
