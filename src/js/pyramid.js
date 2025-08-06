@@ -2112,10 +2112,8 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
         if (changed) {
             map.getSource(sourceId).setData(geojson);
             store.state.updatePermalinkFire = !store.state.updatePermalinkFire
-            if (store.state.isUsingServerGeojson) {
-                console.log(updateFeatures)
-                saveDrowFeatures(updateFeatures)
-            }
+            console.log(updateFeatures)
+            saveDrowFeatures(updateFeatures)
             return escapeHTML(JSON.stringify(geojson))
         }
     }

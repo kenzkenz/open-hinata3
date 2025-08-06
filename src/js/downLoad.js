@@ -8028,7 +8028,7 @@ export function updateDragHandles(editEnabled) {
 
 // 移動------------------------------------------------------------------------------------------------------------------
 /**
- *
+ * 地物移動
  * @param map
  */
 export function enableDragHandles(map) {
@@ -8231,9 +8231,6 @@ export function enableDragHandles(map) {
     }
 
     function onUp() {
-        isDragging = false;
-        dragOrigin = null;
-        dragTargetId = null;
         // 頂点・中点を再生成
         console.log(geojson)
         if (geojson && store.state.editEnabled) {
@@ -8246,11 +8243,15 @@ export function enableDragHandles(map) {
             const featuresToSave = lassoSelected
                 ? movedFeatures.filter(f => f.properties.lassoSelected === true)
                 : movedFeatures.filter(f => f.properties.id === dragTargetId);
+            console.log(featuresToSave,dragTargetId)
             saveDrowFeatures(featuresToSave);
         }
         if (panWasInitiallyEnabled) {
             map.dragPan.enable();
         }
+        isDragging = false;
+        dragOrigin = null;
+        dragTargetId = null;
     }
 
     // マウス対応
@@ -9830,7 +9831,6 @@ export async function saveDrowFeatures(features) {
             }
         })
         console.log(result.results)
-        // return result.results; // 各 feature_id ごとの updated_at 配列
     } else {
         console.error('保存失敗', result);
         store.state.loadingMessage = '失敗'
@@ -9838,37 +9838,6 @@ export async function saveDrowFeatures(features) {
     setTimeout(() => {
         store.state.loading2 = false
     },2000)
-}
-
-/**
- * ドローを切り替える。
- * @returns {Promise<void>}
- */
-export async function selectDrowFeatures() {
-    const formData = new FormData();
-    formData.append('geojson_id', store.state.geojsonId);
-    const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_select.php', {
-        method: 'POST',
-        body: formData,
-    });
-    const data = await response.json();
-    if (data.success) {
-        const map01 = store.state.map01
-        const features = data.rows.map(row => {
-            const feature = JSON.parse(row.feature)
-            feature.properties.updated_at = row.updated_at
-            return feature
-        })
-        console.log(data.rows)
-        const geojson = turf.featureCollection(features)
-        console.log(geojson)
-        map01.getSource(clickCircleSource.iD).setData(geojson)
-        store.state.clickCircleGeojsonText = JSON.stringify(geojson)
-        closeAllPopups()
-        generateStartEndPointsFromGeoJSON(geojson)
-    } else {
-        console.log('失敗')
-    }
 }
 
 /**
@@ -10055,13 +10024,44 @@ export async function pollUpdates() {
         const data = await response.json();
         if (!data.success) throw new Error(data.error||'差分取得失敗');
 
+        const existingIds = new Set(featureCollection.features.map(f => f.properties.id));
+        const newFeatures = data.features.filter(f => !existingIds.has(f.properties.id));
+        console.log('newFeatures',newFeatures.length)
+        newFeatures.forEach(f => {
+            if (f.properties.last_editor_user_id !== store.state.userId) {
+                store.state.loading2 = true
+                store.state.loadingMessage = `${f.properties.last_editor_nickname} さんが新しい地物を追加しました`
+                setTimeout(() => {
+                    store.state.loading2 = false
+                },3000)
+            }
+            // // 例：Vue の $toast を使う場合
+            // this.$toast.info(
+            //     `${f.properties.last_editor_nickname} さんが新しい地物を追加しました`,
+            //     { timeout: 3000 }
+            // );
+            // // あるいは、store.commit('addNotification', { ... })
+        });
+
         data.features.forEach(upsertFeature);
         data.deletions.forEach(d => removeFeature(d.feature_id));
 
         // 全体を再セット
         map01.getSource(clickCircleSource.iD).setData(featureCollection);
         store.state.clickCircleGeojsonText = JSON.stringify(featureCollection)
-        
+
+        const configFeature = data.features.find(feature => feature.properties.id === 'config')
+        console.log(configFeature)
+        if (configFeature) {
+            const props = configFeature.properties
+            store.state.printTitleText = props['title-text']
+            store.state.textPx = props['font-size'] || 30
+            store.state.titleColor = props['fill-color']
+            store.state.titleDirection = props['direction'] || 'vertical'
+            store.state.drawVisible = props['visible']
+            store.state.drawOpacity = props['opacity'] || 1
+        }
+
         // lastFetchを更新
         const times = [
             ...data.features.map(f => f.properties.updated_at),
@@ -10075,6 +10075,3 @@ export async function pollUpdates() {
         setTimeout(pollUpdates, 3000 + Math.random()*500);
     }
 }
-
-
-

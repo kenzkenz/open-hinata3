@@ -6982,6 +6982,7 @@ export default {
           source.setData(geojson);
           this.$store.state.clickCircleGeojsonText = JSON.stringify(geojson)
           clickCircleSource.obj.data = geojson
+          saveDrowFeatures(geojson.features);
         }
         // 投げ縄ラインをクリア
         map.getSource(lassoSourceId).setData({ type: 'FeatureCollection', features: [] });
