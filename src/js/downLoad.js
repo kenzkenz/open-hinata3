@@ -8027,6 +8027,10 @@ export function updateDragHandles(editEnabled) {
 }
 
 // 移動------------------------------------------------------------------------------------------------------------------
+/**
+ *
+ * @param map
+ */
 export function enableDragHandles(map) {
     let isDragging = false;
     let dragOrigin = null;
@@ -8220,6 +8224,8 @@ export function enableDragHandles(map) {
         geojson = { type: 'FeatureCollection', features: movedFeatures }
         map.getSource('click-circle-source').setData(geojson);
         map.getSource('drag-handles-source').setData({ type: 'FeatureCollection', features: movedHandles });
+
+        saveDrowFeatures(movedFeatures)
 
         e.preventDefault?.();
     }
@@ -9774,6 +9780,7 @@ export function jgd2000ZoneToWgs84(zone, x, y) {
  * @returns {Promise<*>}
  */
 export async function saveDrowFeatures(features) {
+    if (!store.state.isUsingServerGeojson) return
     store.state.loading2 = true
     const formData = new FormData();
     formData.append('geojson_id', store.state.geojsonId);

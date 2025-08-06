@@ -280,6 +280,7 @@ export default {
       this.s_geojsonId = item.geojson_id
       await selectDrowFeatures()
       this.$store.state.isUsingServerGeojson = true
+      this.$store.state.editEnabled = false
     },
     async selectGeojson() {
       if (!this.s_userId) return

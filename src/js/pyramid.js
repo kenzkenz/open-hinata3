@@ -2034,7 +2034,18 @@ export function circleCreate (lng, lat, m) {
     const centerFeature = turf.centerOfMass(circleGeoJson);
     return {center:centerFeature,circle:circleGeoJson}
 }
-//
+
+/**
+ *
+ * @param map
+ * @param geoType
+ * @param sourceId
+ * @param id
+ * @param tgtProp
+ * @param value
+ * @param radius
+ * @returns {*}
+ */
 export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius) {
     store.state.saveHistoryFire = !store.state.saveHistoryFire
     const source = map.getSource(sourceId)

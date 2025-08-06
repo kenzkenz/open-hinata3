@@ -1485,7 +1485,7 @@ import {
   pmtilesGenerateForUser2,
   pngDownload,
   pngLoad,
-  printDirectionChange,
+  printDirectionChange, saveDrowFeatures,
   scaleAndRotateLassoSelected,
   simaLoadForUser,
   splitLineStringIntoPoints,
@@ -7142,6 +7142,9 @@ export default {
             store.state.clickCircleGeojsonText = JSON.stringify(mainSourceGeojson);
             generateSegmentLabelGeoJSON(mainSourceGeojson);
             generateStartEndPointsFromGeoJSON(mainSourceGeojson);
+
+            saveDrowFeatures([tgtFeature])
+
           } catch (err) {
             console.error('更新エラー:', err);
           }
@@ -9321,14 +9324,6 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
-    // drawGeojsonId (newValue) {
-    //   alert(newValue)
-    //   const map01 = this.$store.state.map01
-    //   const source = map01.getSource(clickCircleSource.iD)
-    //   const geojson = source._data
-    //   const feature = geojson.features.find(feature => feature.properties.id === newValue)
-    //   this.s_previewUrl = feature.properties.s_pictureUrl
-    // },
     s_isPrint (value) {
       const app = document.getElementById('app');
       if (!value) {
