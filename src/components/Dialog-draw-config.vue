@@ -119,7 +119,7 @@ import {
   pollUpdates,
   printDirectionChange,
   saveDrowFeatures,
-  selectDrowFeatures
+  selectDrowFeatures, startPolling, stopPolling
 } from "@/js/downLoad";
 import {createVuetify} from "vuetify/lib/framework";
 import * as components from "vuetify/lib/components";
@@ -257,6 +257,7 @@ export default {
       this.$store.state.isUsingServerGeojson = false
       this.$store.state.clickCircleGeojsonText = ''
       deleteAll(true)
+      stopPolling()
     },
     async rowRemove(geojson_id) {
       if (!confirm("削除しますか？")) {
@@ -284,10 +285,11 @@ export default {
       vuetify.theme.themes.value.myTheme.colors.primary = color
       this.showAlert2 = false
       this.s_geojsonId = item.geojson_id
-      await loadAllFeatures()
+      // await loadAllFeatures()
       this.$store.state.isUsingServerGeojson = true
       this.$store.state.editEnabled = false
-      pollUpdates()
+      // pollUpdates()
+      startPolling()
     },
     async selectGeojson() {
       if (!this.s_userId) return

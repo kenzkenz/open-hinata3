@@ -10009,6 +10009,7 @@ function removeFeature(id) {
  * ポーリング本体
  * @type {string}
  */
+let pollingTimer = null;
 let lastFetch = new Date(0).toISOString();
 export async function pollUpdates() {
     try {
@@ -10072,6 +10073,30 @@ export async function pollUpdates() {
     } catch (e) {
         console.warn('pollUpdates error:', e);
     } finally {
-        setTimeout(pollUpdates, 3000 + Math.random()*500);
+        pollingTimer = setTimeout(pollUpdates, 3000 + Math.random()*500);
     }
+}
+
+/**
+ * ポーリング停止
+ */
+export function stopPolling() {
+    if (pollingTimer) {
+        clearTimeout(pollingTimer);
+        pollingTimer = null;
+    }
+}
+
+/**
+ * ポーリング開始（geojson_id を切替えてリセットから始める）
+ * @param newGeojsonId
+ */
+export function startPolling() {
+    stopPolling();
+    lastFetch = new Date(0).toISOString();    // or 初回ロード時刻に置き換え
+    featureCollection.features = [];           // 前のデータをクリア
+    // 初回全件ロードしてから差分へ移行する場合はここで呼ぶ
+    loadAllFeatures().then(() => {
+        pollingTimer = setTimeout(pollUpdates, 0);
+    });
 }
