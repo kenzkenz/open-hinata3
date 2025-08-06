@@ -80,9 +80,20 @@ foreach ($feature_ids as $i => $fid) {
     if (!$fid || !$featureJson) {
         $pdo->rollBack();
         http_response_code(400);
-        echo json_encode(['error' => 'feature_id and feature JSON are required', 'index' => $i]);
+        echo json_encode([
+            'error' => 'feature_id and feature JSON are required',
+            'index' => $i,
+            'id' => $fid,
+            'featureJson' => $featureJson,
+        ]);
         exit;
     }
+
+//    // $featureJson が空ならスキップ
+//    if (trim($featureJson) === '') {
+//        continue;
+//    }
+
 
     // マスター存在チェック
     $checkMaster->execute([':gid' => $geojson_id]);

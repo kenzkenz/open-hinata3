@@ -8093,6 +8093,8 @@ export function enableDragHandles(map) {
         e.preventDefault?.();
     }
 
+    let lassoSelected = null
+    let movedFeatures = null
     function onMove(e) {
         if (!isDragging) return;
         const current = getTouchOrMouseLngLat(e);
@@ -8102,8 +8104,8 @@ export function enableDragHandles(map) {
         const dy = current.lat - dragOrigin.lat;
 
         // ① click-circle-source の該当 feature を移動
-        const lassoSelected = originalFeatures.features.find(f => f.properties.id === dragTargetId && f.properties.lassoSelected === true)
-        const movedFeatures = originalFeatures.features.map(f => {
+        lassoSelected = originalFeatures.features.find(f => f.properties.id === dragTargetId && f.properties.lassoSelected === true)
+        movedFeatures = originalFeatures.features.map(f => {
             let idMatch = f.properties.id === dragTargetId || f.properties.pairId === dragTargetId;
             if (lassoSelected) {
                 idMatch = f.properties.lassoSelected === true
@@ -8225,8 +8227,6 @@ export function enableDragHandles(map) {
         map.getSource('click-circle-source').setData(geojson);
         map.getSource('drag-handles-source').setData({ type: 'FeatureCollection', features: movedHandles });
 
-        saveDrowFeatures(movedFeatures)
-
         e.preventDefault?.();
     }
 
@@ -8242,6 +8242,11 @@ export function enableDragHandles(map) {
             setAllMidpoints(map, geojson);
             store.state.clickCircleGeojsonText = JSON.stringify(geojson)
             store.state.lassoGeojson = JSON.stringify(turf.featureCollection(geojson.features.filter(feature => feature.properties.lassoSelected === true)))
+            // 移動したフィーチャのみを保存
+            const featuresToSave = lassoSelected
+                ? movedFeatures.filter(f => f.properties.lassoSelected === true)
+                : movedFeatures.filter(f => f.properties.id === dragTargetId);
+            saveDrowFeatures(featuresToSave);
         }
         if (panWasInitiallyEnabled) {
             map.dragPan.enable();
@@ -8836,7 +8841,13 @@ export function removeNini() {
     source.setData(drawGeojson);
     store.state.clickCircleGeojsonText = JSON.stringify(drawGeojson);
 }
-// ドローレイヤーにgeojsonを追加
+
+/**
+ * ドローレイヤーにgeojsonを追加
+ * @param geojson
+ * @param isFit
+ * @param isNini
+ */
 export function addDraw (geojson,isFit,isNini) {
     console.log(geojson)
     const map = store.state.map01
@@ -8865,6 +8876,8 @@ export function addDraw (geojson,isFit,isNini) {
         }
     })
     store.state.clickCircleGeojsonText = JSON.stringify(drawGeojson)
+    console.log(geojson.features)
+    saveDrowFeatures(geojson.features)
     if (isFit) {
         const bbox = turf.bbox(geojson);
         map.fitBounds(bbox, {
@@ -9793,6 +9806,7 @@ export async function saveDrowFeatures(features) {
             formData.append('prev_updated_at[]', f.properties.updated_at);
         }
     });
+    console.log(features)
     const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_save.php', {
         method: 'POST',
         body: formData
@@ -9854,6 +9868,30 @@ export async function selectDrowFeatures() {
         generateStartEndPointsFromGeoJSON(geojson)
     } else {
         console.log('失敗')
+    }
+}
+
+/**
+ * 文字列が JSON 形式か判定する
+ * @param {string} str 判定したい文字列
+ * @returns {boolean} JSON として parse できれば true, それ以外は false
+ */
+export function isJsonString(str) {
+    if (typeof str !== 'string') return false;
+    const s = str.trim();
+    if (
+        !(
+            (s.startsWith('{') && s.endsWith('}')) ||
+            (s.startsWith('[') && s.endsWith(']'))
+        )
+    ) {
+        return false;
+    }
+    try {
+        JSON.parse(s);
+        return true;
+    } catch {
+        return false;
     }
 }
 
