@@ -9895,6 +9895,57 @@ export function isJsonString(str) {
     }
 }
 
+/**
+ * 2つの GeoJSON FeatureCollection を比較して差分を取得します。
+ * @param {object} oldGeoJSON - 元の GeoJSON (FeatureCollection)
+ * @param {object} newGeoJSON - 新しい GeoJSON (FeatureCollection)
+ * @param {string} [idProp='id'] - 各 Feature の一意キー (feature.id または feature.properties[idProp])
+ * @returns {{ added: object[], removed: object[], modified: object[] }}
+ *   added: newGeoJSON にのみ存在する地物
+ *   removed: oldGeoJSON にのみ存在する地物
+ *   modified: 両方に存在するが geometry または properties が異なる地物 (newGeoJSON 側の Feature)
+ */
+export function diffGeoJSON(oldGeoJSON, newGeoJSON, idProp = 'id') {
+    const getId = feature =>
+        feature.id != null
+            ? feature.id
+            : feature.properties?.[idProp];
+
+    const oldMap = new Map(
+        (oldGeoJSON.features || []).map(f => [getId(f), f])
+    );
+    const newMap = new Map(
+        (newGeoJSON.features || []).map(f => [getId(f), f])
+    );
+
+    const added = [];
+    const removed = [];
+    const modified = [];
+
+    // newGeoJSON 側を走査して added / modified を判定
+    for (const [id, newF] of newMap) {
+        if (!oldMap.has(id)) {
+            added.push(newF);
+        } else {
+            const oldF = oldMap.get(id);
+            // geometry か properties が異なる場合を modified とみなす
+            const geomChanged = JSON.stringify(oldF.geometry) !== JSON.stringify(newF.geometry);
+            const propsChanged = JSON.stringify(oldF.properties) !== JSON.stringify(newF.properties);
+            if (geomChanged || propsChanged) {
+                modified.push(newF);
+            }
+        }
+    }
+
+    // oldGeoJSON 側を走査して removed を判定
+    for (const [id, oldF] of oldMap) {
+        if (!newMap.has(id)) {
+            removed.push(oldF);
+        }
+    }
+
+    return { added, removed, modified };
+}
 
 
 

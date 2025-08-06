@@ -1444,7 +1444,7 @@ import {
   csvGenerateForUserPng,
   ddSimaUpload,
   delay0,
-  detectLatLonColumns,
+  detectLatLonColumns, diffGeoJSON,
   downloadGeoJSONAsCSV,
   downloadKML,
   downloadSimaText,
@@ -4193,6 +4193,15 @@ export default {
       if (this.history.length > 0) {
         this.redoStack.push(JSON.parse(JSON.stringify(mainSourceGeojson)));
         this.mainGeojson = this.history.pop();
+
+        const { added, removed, modified } = diffGeoJSON(this.mainGeojson, mainSourceGeojson)
+        console.log('新規:', added);
+        console.log('削除:', removed);
+        console.log('変更:', modified);
+        if (modified.length > 0) {
+          saveDrowFeatures(modified)
+        }
+
         // 反映
         map.getSource('click-circle-source').setData(this.mainGeojson);
         store.state.clickCircleGeojsonText = JSON.stringify(this.mainGeojson)
@@ -4203,12 +4212,9 @@ export default {
         }
         generateSegmentLabelGeoJSON(this.mainGeojson)
         generateStartEndPointsFromGeoJSON(this.mainGeojson)
-        // generateSegmentLabelGeoJSON(this.mainGeojson)
-        // } else if (this.history.length === 0) {
-      //   map.getSource('click-circle-source').setData({
-      //     type: 'FeatureCollection',
-      //     features: []
-      //   });
+
+
+
       }
       this.updatePermalink()
       // ↓これは正しいか。不具合が出たらすぐに削除すること。
@@ -4222,6 +4228,15 @@ export default {
         const mainSourceGeojson = map.getSource('click-circle-source')._data;
         this.history.push(JSON.parse(JSON.stringify(mainSourceGeojson)));
         this.mainGeojson = this.redoStack.pop();
+
+        const { added, removed, modified } = diffGeoJSON(mainSourceGeojson, this.mainGeojson);
+        console.log('新規:', added);
+        console.log('削除:', removed);
+        console.log('変更:', modified);
+        if (modified.length > 0) {
+          saveDrowFeatures(modified)
+        }
+
         // 反映
         map.getSource('click-circle-source').setData(this.mainGeojson);
         this.$store.state.clickCircleGeojsonText = JSON.stringify(this.mainGeojson)
@@ -8229,7 +8244,7 @@ export default {
             if (!fetchFlg) this.s_selectedLayers = params.slj
           }
 
-          this.s_selectedLayers.map01 = this.s_selectedLayers.map01.filter(layer => layer.id !== 'oh-konzyaku-layer')
+          // this.s_selectedLayers.map01 = this.s_selectedLayers.map01.filter(layer => layer.id !== 'oh-konzyaku-layer')
 
           // ----------------------------------------------------------------
 
@@ -9347,6 +9362,10 @@ export default {
         this.updateMapMarkers();
       }
     },
+    // s_saveHistoryFire: debounce(function () {
+    //   alert(999)
+    //   this.saveHistory()
+    // }, 300),
     s_saveHistoryFire () {
       this.saveHistory()
     },

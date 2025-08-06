@@ -40,3 +40,14 @@ auth.onAuthStateChanged(async user => {
         }
     }
 })
+
+// // どこか起動時に一度だけ
+// store.watch(
+//     state => state.saveHistoryFire,
+//     (newVal, oldVal) => {
+//         console.group('★ saveHistoryFire changed ★');
+//         console.log('old → new:', oldVal, '→', newVal);
+//         console.trace();  // コールスタックを出力
+//         console.groupEnd();
+//     }
+// );
