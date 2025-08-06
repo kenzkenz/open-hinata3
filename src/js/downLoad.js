@@ -10004,7 +10004,6 @@ function removeFeature(id) {
     // map.getSource(clickCircleSource.iD).setData(featureCollection);
 }
 
-
 /**
  * ポーリング本体
  * @type {string}
@@ -10027,7 +10026,6 @@ export async function pollUpdates() {
 
         const existingIds = new Set(featureCollection.features.map(f => f.properties.id));
         const newFeatures = data.features.filter(f => !existingIds.has(f.properties.id));
-        console.log('newFeatures',newFeatures.length)
         newFeatures.forEach(f => {
             if (f.properties.last_editor_user_id !== store.state.userId) {
                 store.state.loading2 = true
@@ -10052,7 +10050,6 @@ export async function pollUpdates() {
         store.state.clickCircleGeojsonText = JSON.stringify(featureCollection)
 
         const configFeature = data.features.find(feature => feature.properties.id === 'config')
-        console.log(configFeature)
         if (configFeature) {
             const props = configFeature.properties
             store.state.printTitleText = props['title-text']
