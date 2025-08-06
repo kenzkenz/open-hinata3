@@ -1361,13 +1361,14 @@ export default function pyramid () {
         mapElm.addEventListener('click', (e) => {
             if (e.target && (e.target.classList.contains("remove-others"))) {
                 store.state.saveHistoryFire = !store.state.saveHistoryFire
-                setTimeout(() => {
+                setTimeout(async () => {
                     const map01 = store.state.map01
                     const id = String(e.target.getAttribute("id"))
                     let source = map01.getSource(clickCircleSource.iD)
                     const geojson = source._data
                     if (geojson && geojson.features) {
-                        let newFeatures
+                        let newFeatures = []
+                        let deleteIds = []
                         const isLasso = geojson.features.find(feature => {
                             return String(feature.properties.id) === id && feature.properties.lassoSelected === true
                         })
@@ -1375,15 +1376,25 @@ export default function pyramid () {
                             newFeatures = geojson.features.filter(feature => {
                                 return feature.properties.lassoSelected === true;
                             });
+                            deleteIds = geojson.features.filter(feature =>
+                                    feature.properties.lassoSelected !== true
+                                ).map(f => f.properties.id)
+                                ?? [];
                         } else {
                             newFeatures = geojson.features.filter(feature => {
                                 return String(feature.properties.id) === id || String(feature.properties.pairId) === id;
                             });
+                            deleteIds = geojson.features.filter(feature =>
+                                    String(feature.properties.id)   !== id &&
+                                    String(feature.properties.pairId) !== id
+                                ).map(f => f.properties.id)
+                                ?? [];
                         }
                         if (newFeatures.length !== geojson.features.length) {
                             geojson.features = newFeatures;
                             map01.getSource(clickCircleSource.iD).setData(geojson);
                             store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+                            await featuresDelete(deleteIds)
                         }
                     }
                     store.state.isCursorOnPanel = false
