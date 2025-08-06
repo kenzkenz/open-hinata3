@@ -337,8 +337,7 @@ export default {
       this.selectGeojson()
       const featues = JSON.parse(this.$store.state.clickCircleGeojsonText).features
       if (featues.length > 0) {
-        const aaa = await saveDrowFeatures(featues)
-        console.log(aaa)
+        await saveDrowFeatures(featues)
       }
       return this.s_geojsonId;
     },

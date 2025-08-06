@@ -9788,7 +9788,7 @@ export function jgd2000ZoneToWgs84(zone, x, y) {
 }
 
 /**
- * ドローの地物を追加、更新する。
+ * ドローの地物を新規追加、更新する。
  * @param features
  * @returns {Promise<*>}
  */
@@ -9947,6 +9947,36 @@ export function diffGeoJSON(oldGeoJSON, newGeoJSON, idProp = 'id') {
     return { added, removed, modified };
 }
 
-
+/**
+ * 複数削除復活する。idを配列で渡す
+ * @param ids
+ * @returns {Promise<void>}
+ */
+export async function featuresRestore(ids) {
+    if (store.state.isUsingServerGeojson) {
+        store.state.loading2 = true
+        const formData = new FormData();
+        formData.append('geojson_id', store.state.geojsonId);
+        // 配列で複数回 append
+        ids.forEach(id => {
+            formData.append('feature_id[]', id)
+        });
+        const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_restore.php', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+        console.log(result)
+        if (result.success) {
+            store.state.loadingMessage = '復活成功'
+            setTimeout(() => {
+                store.state.loading2 = false
+            },2000)
+        } else {
+            store.state.loading2 = false
+            alert('復活失敗')
+        }
+    }
+}
 
 

@@ -1453,7 +1453,7 @@ import {
   dxfToGeoJSON,
   enableDragHandles,
   extractFirstFeaturePropertiesAndCheckCRS,
-  extractSimaById,
+  extractSimaById, featuresRestore,
   fetchGsiTile,
   fetchGsiTileTest,
   fetchWithProgress,
@@ -1838,7 +1838,7 @@ import DialogDrawConfig from "@/components/Dialog-draw-config"
 import pyramid, {
   autoCloseAllPolygons,
   colorNameToRgba, createSquarePolygonAtCenter,
-  deleteAll, generateSegmentLabelGeoJSON, generateStartEndPointsFromGeoJSON,
+  deleteAll, featuresDelete, generateSegmentLabelGeoJSON, generateStartEndPointsFromGeoJSON,
   geojsonCreate,
   geojsonUpdate, getAllVertexPoints, setAllMidpoints,
 } from '@/js/pyramid'
@@ -1872,6 +1872,7 @@ import FloatingWindow from '@/components/FloatingWindow';
 import PaintEditor from '@/components/PaintEditor.vue'
 
 import {delay, forEach} from "lodash";
+import {feature} from "@turf/turf";
 
 export default {
   name: 'App',
@@ -4187,20 +4188,37 @@ export default {
       // Undo後の新編集はredo履歴クリア
       this.redoStack = [];
     },
-    undo() {
+    async undo() {
       const map = this.$store.state.map01
       const mainSourceGeojson = map.getSource('click-circle-source')._data;
       if (this.history.length > 0) {
         this.redoStack.push(JSON.parse(JSON.stringify(mainSourceGeojson)));
         this.mainGeojson = this.history.pop();
 
+        /**
+         *注意 不安定
+         */
         const { added, removed, modified } = diffGeoJSON(this.mainGeojson, mainSourceGeojson)
         console.log('新規:', added);
         console.log('削除:', removed);
         console.log('変更:', modified);
         if (modified.length > 0) {
-          saveDrowFeatures(modified)
+          await saveDrowFeatures(modified)
         }
+        // 新規の時は逆に削除
+        if (added.length > 0) {
+          const ids = added.map(feature => feature.properties.id)
+          await featuresDelete(ids)
+        }
+        // removedのときは復活
+        if (removed.length > 0) {
+          const ids = removed.map(f => f.properties.id)
+          console.log(ids)
+          await featuresRestore(ids)
+        }
+        /**
+         * ここまで
+         */
 
         // 反映
         map.getSource('click-circle-source').setData(this.mainGeojson);
@@ -4213,8 +4231,6 @@ export default {
         generateSegmentLabelGeoJSON(this.mainGeojson)
         generateStartEndPointsFromGeoJSON(this.mainGeojson)
 
-
-
       }
       this.updatePermalink()
       // ↓これは正しいか。不具合が出たらすぐに削除すること。
@@ -4222,23 +4238,41 @@ export default {
       //   this.undo()
       // }
     },
-    redo() {
+    async redo() {
       if (this.redoStack.length > 0) {
         const map = this.$store.state.map01
         const mainSourceGeojson = map.getSource('click-circle-source')._data;
         this.history.push(JSON.parse(JSON.stringify(mainSourceGeojson)));
         this.mainGeojson = this.redoStack.pop();
 
+        /**
+         *注意 不安定
+         */
         const { added, removed, modified } = diffGeoJSON(mainSourceGeojson, this.mainGeojson);
         console.log('新規:', added);
         console.log('削除:', removed);
         console.log('変更:', modified);
         if (modified.length > 0) {
-          saveDrowFeatures(modified)
+          await saveDrowFeatures(modified)
         }
+        // addedのときは復活
+        if (added.length > 0) {
+          const ids = added.map(f => f.properties.id)
+          console.log(ids)
+          await featuresRestore(ids)
+        }
+        // removedのときは削除
+        if (removed.length > 0) {
+          const ids = removed.map(feature => feature.properties.id)
+          await featuresDelete(ids)
+        }
+        /**
+         * ここまで
+         */
 
         // 反映
         map.getSource('click-circle-source').setData(this.mainGeojson);
+
         this.$store.state.clickCircleGeojsonText = JSON.stringify(this.mainGeojson)
         if (this.s_editEnabled) {
           getAllVertexPoints(map, this.mainGeojson);

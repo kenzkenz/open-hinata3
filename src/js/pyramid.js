@@ -2366,7 +2366,7 @@ export function watchGeojsonChange() {
  * @param ids
  * @returns {Promise<void>}
  */
-async function featuresDelete(ids) {
+export async function featuresDelete(ids) {
     if (store.state.isUsingServerGeojson) {
         store.state.loading2 = true
         const formData = new FormData();
