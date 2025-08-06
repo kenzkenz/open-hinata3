@@ -114,7 +114,14 @@
 <script>
 import {clickCircleSource, konUrls} from "@/js/layers";
 import {deleteAll, geojsonUpdate} from "@/js/pyramid";
-import {changePrintMap03, printDirectionChange, saveDrowFeatures, selectDrowFeatures} from "@/js/downLoad";
+import {
+  changePrintMap03,
+  loadAllFeatures,
+  pollUpdates,
+  printDirectionChange,
+  saveDrowFeatures,
+  selectDrowFeatures
+} from "@/js/downLoad";
 import {createVuetify} from "vuetify/lib/framework";
 import * as components from "vuetify/lib/components";
 import * as directives from "vuetify/lib/directives";
@@ -278,9 +285,11 @@ export default {
       vuetify.theme.themes.value.myTheme.colors.primary = color
       this.showAlert2 = false
       this.s_geojsonId = item.geojson_id
-      await selectDrowFeatures()
+      // await selectDrowFeatures()
+      await loadAllFeatures()
       this.$store.state.isUsingServerGeojson = true
       this.$store.state.editEnabled = false
+       pollUpdates()
     },
     async selectGeojson() {
       if (!this.s_userId) return

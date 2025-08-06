@@ -9979,4 +9979,102 @@ export async function featuresRestore(ids) {
     }
 }
 
+/**
+ * 初回ロードで全フィーチャーを取得して featureCollection を作る
+ * @type {{features: *[], type: string}}
+ */
+let featureCollection = {
+    type: 'FeatureCollection',
+    features: []
+};
+export async function loadAllFeatures() {
+    const map01 = store.state.map01;
+    const formData = new FormData();
+    formData.append('geojson_id', store.state.geojsonId);
+    const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_select.php', {
+        method: 'POST',
+        body: formData
+    });
+    const data = await response.json();
+    if (!data.success) throw new Error('初回ロード失敗');
+
+    featureCollection.features = data.rows.map(row => {
+        const f = JSON.parse(row.feature);
+        f.properties = f.properties || {};
+        f.properties.updated_at = row.updated_at;
+        return f;
+    });
+
+    // MapLibre にソースを反映
+    map01.getSource(clickCircleSource.iD).setData(featureCollection)
+    store.state.clickCircleGeojsonText = JSON.stringify(featureCollection)
+    closeAllPopups()
+    generateStartEndPointsFromGeoJSON(featureCollection)
+}
+
+/**
+ * 差分ポーリングの upsert / delete 関数
+ * @param f
+ */
+function upsertFeature(f) {
+    const id = f.properties.id;
+    const idx = featureCollection.features.findIndex(x => x.properties.id === id);
+    if (idx !== -1) {
+        // 既存要素を更新
+        featureCollection.features[idx] = f;
+    } else {
+        // 新規要素を追加
+        featureCollection.features.push(f);
+    }
+}
+function removeFeature(id) {
+    featureCollection.features = featureCollection.features.filter(
+        x => x.properties.id !== id
+    );
+    // MapLibre に反映するならここで再セット
+    // map.getSource(clickCircleSource.iD).setData(featureCollection);
+}
+
+
+/**
+ * ポーリング本体
+ * @type {string}
+ */
+let lastFetch = new Date(0).toISOString();
+export async function pollUpdates() {
+    try {
+        const map01 = store.state.map01;
+        const formData = new FormData();
+        formData.append('geojson_id', store.state.geojsonId);
+        formData.append('since', lastFetch);
+
+        const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_get_update.php', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        if (!data.success) throw new Error(data.error||'差分取得失敗');
+
+        data.features.forEach(upsertFeature);
+        data.deletions.forEach(d => removeFeature(d.feature_id));
+
+        // 全体を再セット
+        map01.getSource(clickCircleSource.iD).setData(featureCollection);
+        store.state.clickCircleGeojsonText = JSON.stringify(featureCollection)
+        
+        // lastFetchを更新
+        const times = [
+            ...data.features.map(f => f.properties.updated_at),
+            ...data.deletions.map(d => d.deleted_at),
+            lastFetch
+        ];
+        lastFetch = times.sort().pop();
+    } catch (e) {
+        console.warn('pollUpdates error:', e);
+    } finally {
+        setTimeout(pollUpdates, 3000 + Math.random()*500);
+    }
+}
+
+
 
