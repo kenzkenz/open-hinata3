@@ -69,14 +69,15 @@
         </v-window-item>
         <v-window-item value="share">
           <v-card style="text-align: left;font-size: 14px;">
-<!--            <p>現在のドローをデータベースに追加、保存します。同時にレイヤーの状態も保存されます。</p>-->
             <v-text-field
                 style="margin-top: 10px;"
                 v-model="s_geojsonName"
                 :label="label"
+                :disabled="!isUser"
             />
-            <v-btn @click="createGeojsonMaster" style="margin-top: -14px;">新規追加</v-btn>
-            <v-btn @click="clear" style="margin-top: -14px; margin-left: 5px;">共有解除</v-btn>
+            <v-btn :disabled="!isUser" @click="createGeojsonMaster" style="margin-top: -14px;">新規追加</v-btn>
+            <v-btn :disabled="!isUser"  @click="clear" style="margin-top: -14px; margin-left: 5px;">共有解除</v-btn>
+            <v-btn :disabled="!isUser"  @click="rename" style="margin-top: -14px; margin-left: 5px;">リネーム</v-btn>
             <div v-for="item in jsonData" :key="item.id" class="data-container" @click="rowCick(item)">
               <button class="close-btn" @click.stop="rowRemove(item.geojson_id)">×</button>
               <strong>{{ item.geojson_name }}</strong><br>
@@ -165,6 +166,9 @@ export default {
     s_myNickname () {
       return this.$store.state.myNickname
     },
+    isUser () {
+      return !!this.s_userId
+    },
     s_userId () {
       return this.$store.state.userId
     },
@@ -233,6 +237,32 @@ export default {
     },
   },
   methods: {
+    async rename() {
+      console.log(this.s_geojsonName)
+      console.log(this.s_geojsonId)
+      const formData = new FormData();
+      formData.append('geojson_id', this.s_geojsonId);
+      formData.append('geojson_name', this.s_geojsonName);
+      const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/geojson_rename.php', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      console.log(data)
+      if (data.success) {
+        this.alertType = 'info'
+        this.alertText = 'リネーム成功！'
+        this.showAlert = true
+        await this.selectGeojson()
+        return
+      } else {
+        this.alertType = 'error'
+        this.alertText = 'リネーム失敗！'
+        this.showAlert = true
+        console.log('失敗')
+        return
+      }
+    },
     clear() {
       const color = 'rgb(50,101,186)'
       document.documentElement.style.setProperty('--main-color', color);
@@ -258,6 +288,13 @@ export default {
       const data = await response.json();
       if (data.success) {
         console.log(data)
+        this.showAlert = false
+        if (this.s_geojsonId === geojson_id) {
+          this.clear()
+          this.alertType = 'info'
+          this.alertText = '通常モードに戻りました。共有ドロー状態に戻るには再度、行をクリックしてください。'
+          this.showAlert = true
+        }
         await this.selectGeojson()
         return
       } else {
