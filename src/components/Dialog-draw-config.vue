@@ -104,7 +104,7 @@
 import {clickCircleSource, konUrls} from "@/js/layers";
 import {deleteAll, geojsonUpdate} from "@/js/pyramid";
 import {
-  changePrintMap03, isJsonString,
+  changePrintMap03, isJsonString, markaersRemove,
   printDirectionChange,
   saveDrowFeatures,
   startPolling, stopPolling
@@ -283,6 +283,8 @@ export default {
         deleteAll(true)
         this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
       },100)
+      stopPolling()
+      markaersRemove()
     },
     async rowRemove(geojson_id) {
       if (!confirm("削除しますか？")) {
@@ -305,6 +307,7 @@ export default {
           this.showAlert = true
         }
         await this.selectGeojson()
+        markaersRemove()
         return
       } else {
         console.log(data)
@@ -323,6 +326,7 @@ export default {
       this.$store.state.isUsingServerGeojson = true
       this.$store.state.editEnabled = false
       this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
+      markaersRemove()
       startPolling()
     },
     async selectGeojson() {
