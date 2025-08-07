@@ -2270,7 +2270,7 @@ export function generateStartEndPointsFromGeoJSON(geojson) {
         features: pointFeatures
     };
     map01.getSource('end-point-source').setData(pointGeoJSON);
-    console.log(pointGeoJSON)
+    // console.log(pointGeoJSON)
     return pointGeoJSON;
 }
 

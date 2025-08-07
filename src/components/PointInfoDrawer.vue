@@ -173,7 +173,7 @@
       </v-card-text>
 
       <v-card-actions style="margin-top: 0px">
-        <v-btn disabled=true style="background-color: var(--main-color); color: white!important;" @click="removeAllFeatures">全削除</v-btn>
+        <v-btn :disabled="true" style="background-color: var(--main-color); color: white!important;" @click="removeAllFeatures">全削除</v-btn>
         <v-spacer />
         <v-btn style="background-color: var(--main-color); color: white!important;" @click="remove">削除</v-btn>
         <v-btn style="background-color: var(--main-color); color: white!important;" @click="save">保存</v-btn>

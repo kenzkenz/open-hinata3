@@ -1044,7 +1044,7 @@ export default {
         map.removeSource('drag-handles-source')
       }
       map.addSource('click-circle-source', clickCircleSource.obj)
-      map.removeLayer('click-circle-layer')// 逃げ
+      // map.removeLayer('click-circle-layer')// 逃げ
       map.addLayer(clickCircleLayer)
       map.addLayer(clickCirclePolygonLineLayer)
       map.addLayer(clickCircPolygonSymbolLayer)

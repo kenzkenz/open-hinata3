@@ -8432,7 +8432,7 @@ export default {
           map.on('click', this.updatePermalink)
           map.on('dragend', this.updatePermalink)
           // map.on('zoomend', this.updatePermalink)
-          map.on('idle', this.updatePermalink)
+          // map.on('idle', this.updatePermalink)
 
           // map.on('dragend', () => {
           //   this.$store.state.osmFire = !this.$store.state.osmFire
