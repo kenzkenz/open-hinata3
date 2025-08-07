@@ -1348,9 +1348,10 @@ export default function pyramid () {
                 const keikoValue = neonColors[value]
                 geojsonUpdate (map01,null,endPointSouce.id,startId,arrowTgtProp,arrowValue)
                 geojsonUpdate (map01,null,endPointSouce.id,endId,arrowTgtProp,arrowValue)
-                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
-                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,arrowTgtProp,arrowValue)
+                store.state.clickCircleGeojsonText = geojsonUpdate (map01,'LineString',clickCircleSource.iD,id,tgtProp,value)
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,'keiko-color',keikoValue)
+                // store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,arrowTgtProp,arrowValue)
+
                 store.state.currentFreeHandKeikoColor = keikoValue
                 store.state.currentLineColor = value
                 store.state.currentArrowColor = arrowValue
@@ -2067,27 +2068,33 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
         // idが一致するfeatureを検索
         let found = false;
         let circleFeatureGeometry,centerFeature
-        const lasso = geojson.features.find(feature => feature.properties.id === id && feature.properties.lassoSelected === true)
+        // lasso が存在するかを boolean で判定（オブジェクトではなく真偽値にしておくと扱いやすい）
+        const isLasso = geojson.features.some(f =>
+            f.properties?.id === id &&
+            f.properties?.lassoSelected === true
+        );
         const updateFeatures = []
         geojson.features.forEach(feature => {
             // lasso が見つかっていれば lassoSelected、なければ id マッチをチェック
-            const shouldUpdate = lasso
+            const shouldUpdate = isLasso
                 ? feature.properties.lassoSelected === true
                 : String(feature.properties.id) === id;
             if (shouldUpdate) {
                 feature.properties[tgtProp] = value
                 // ----------------------------------------------------------
                 if (geoType === 'Circle') {
-                    const features = circleCreate (feature.properties.canterLng, feature.properties.canterLat, radius)
+                    const features = circleCreate(feature.properties.canterLng, feature.properties.canterLat, radius)
                     circleFeatureGeometry = features.circle.geometry
                     feature.geometry = circleFeatureGeometry
                     feature.properties.label = radius
                     feature.properties.radius = radius
                     feature.properties.label2 = value
-                    centerFeature = geojson.features.find(f => f.properties.id === id + '-point' )
+                    centerFeature = geojson.features.find(f => f.properties.id === id + '-point')
                     centerFeature.properties.label = value + '\n半径' + radius + 'm'
                     centerFeature.properties.label2 = value
                     updateFeatures.push(centerFeature)
+                } else if (geoType === 'LineString') {
+                    feature.properties.arrow = 'arrow_' + value
                 }
                 // ---------------------------------------------------------
                 updateFeatures.push(feature)
@@ -2263,6 +2270,7 @@ export function generateStartEndPointsFromGeoJSON(geojson) {
         features: pointFeatures
     };
     map01.getSource('end-point-source').setData(pointGeoJSON);
+    console.log(pointGeoJSON)
     return pointGeoJSON;
 }
 
@@ -2275,22 +2283,18 @@ export async function deleteAll (noConfrim) {
     const map01 = store.state.map01
     let source = map01.getSource(clickCircleSource.iD);
     const geojson = source._data
-    console.log(geojson.features.map(f => f.properties.id))
     await featuresDelete(geojson.features.filter(f => f.properties !== 'config').map(f => f.properties.id));
-    // 空のGeoJSON FeatureCollectionを設定する
-    source.setData({
-        type: "FeatureCollection",
-        features: [
-            {"id": "config"}
-        ]
-    });
-    const jsonText = JSON.stringify({
-        type: "FeatureCollection",
-        features: [
-            {"id": "config"}
-        ]
-    })
-    // clickCircleSource.obj.data = null
+
+    const configFeature = {
+        "type": "Feature",
+        "properties": {
+            "id": "config",
+        }
+    }
+
+    store.state.configFeature = configFeature
+    source.setData(configFeature);
+    await saveDrowFeatures([configFeature])
 
     source = map01.getSource(endPointSouce.id);
     // 空のGeoJSON FeatureCollectionを設定する
@@ -2298,10 +2302,9 @@ export async function deleteAll (noConfrim) {
         type: "FeatureCollection",
         features: []
     });
-    // endPointSouce.obj.data = null
 
-    store.state.clickCircleGeojsonText = jsonText
-    store.state.clickCircleGeojsonTextMyroom = jsonText
+    store.state.clickCircleGeojsonText = JSON.stringify(configFeature)
+    store.state.clickCircleGeojsonTextMyroom = JSON.stringify(configFeature)
     getAllVertexPoints(map01)
     setAllMidpoints(map01)
     generateSegmentLabelGeoJSON({

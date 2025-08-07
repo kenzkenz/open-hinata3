@@ -317,8 +317,11 @@ function urlByLayerId (layerId) {
     return [RasterTileUrl,legend,zoom]
 }
 let isGooglemap = true
+
 export function popup(e,map,mapName,mapFlg) {
+
     if (store.state.editEnabled) return;
+    // alert(222)
     // alert(mapName)
     let html = ''
     enableMotionPermission()
@@ -382,6 +385,7 @@ export function popup(e,map,mapName,mapFlg) {
     const f0 = [features[0]]
     let isBreak = false
     for (const feature of features) {
+        console.log(333)
         // features.forEach(feature => {
         const layerId = feature.layer.id
         console.log(feature)
@@ -953,7 +957,6 @@ export function popup(e,map,mapName,mapFlg) {
                         '<p>郡名=' + props.郡名 + '</p>' +
                         '<p>相給=' + props.相給 + '</p>' +
                         '</div>'
-                    console.log(html)
                 }
                 break
             }
@@ -3659,18 +3662,20 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 break
             }
+            case 'arrows-endpoint-label-layer':
             case 'click-circle-layer':
             case 'click-circle-symbol-layer':
             case 'click-circle-line-layer':
             case 'click-circle-keiko-line-layer':
             case 'click-circle-label-layer':
-            case 'arrows-endpoint-label-layer':
             {
-                html = ''
-                isBreak = true
+                // alert('到達')
+                // html = ''
+                // isBreak = true // これを使うとバグる
                 coordinates = store.state.coordinates
-                console.log(store.state.clickCircleGeojsonText)
-                console.log(store.state.id)
+                // console.log(store.state.clickCircleGeojsonText)
+                // console.log(store.state.id)
+                // alert(layerId)
                 let id
                 if (!store.state.id && layerId === 'arrows-endpoint-label-layer') {
                     id = props.id.split('-')[0]
@@ -3692,7 +3697,6 @@ export function popup(e,map,mapName,mapFlg) {
                     store.state.featureForOfflineBbox = feature
                     return;
                 }
-                 // alert('到達')
                 if (!feature) return;
                 // alert('到達')
                 props = feature.properties
@@ -3745,6 +3749,7 @@ export function popup(e,map,mapName,mapFlg) {
                 }
 
                 if (store.state.isDraw || !props.description) {
+                    // alert('到達')
                     const geoType = feature.geometry.type
                     console.log(geoType)
                     switch (geoType) {
@@ -3823,9 +3828,12 @@ export function popup(e,map,mapName,mapFlg) {
                             }
                             break
                         case 'Point':
+                            // alert('到達')
                             if (html.indexOf('click-circle-layer') === -1) {
+                                // alert('到達')
                                 const pictureUrl = props.pictureUrl || ''
                                 if (store.state.isDraw) {
+                                    // alert('到達')
                                     const keywordList = ['道路', '水路', '畑', '宅地', '田', '雑種地', 'コン杭', 'プレート','プラ杭','鋲'];
                                     html += '<div class="layer-label-div">ポイント</div>';
                                     html += '<div style="display: flex; width: 100%;">';
@@ -3940,6 +3948,7 @@ export function popup(e,map,mapName,mapFlg) {
                             break
                         }
                     }
+                    // alert(html)
                 } else {
                     let description = ''
                     description = props.description.value ? props.description.value : props.description
@@ -3950,12 +3959,12 @@ export function popup(e,map,mapName,mapFlg) {
                         '<div class="click-circle-layer" style="font-weight: normal; color: #333; line-height: 25px;">' +
                         description
                 }
-
+                // alert(html)
                 isGooglemap = false
                 if (window.innerWidth < 500) {
                     store.state.popupHtml = html
                     store.state.popupDialog = true
-                    html = ''
+                    // html = ''
                 }
                 if (layerId === 'click-circle-label-layer') {
                     try {
@@ -3969,6 +3978,7 @@ export function popup(e,map,mapName,mapFlg) {
                 if (props.lassoSelected) {
                     store.state.isLassoSelected = true
                 }
+                // alert(html)
                 break
             }
         }
@@ -4086,6 +4096,11 @@ export function popup(e,map,mapName,mapFlg) {
             }
             store.state.snackbar = true
         }
+        // console.log(html)
+        /**
+         * 理由がわからない。下のcreatePopupは逃げの処理
+         */
+        createPopup(map, [e.lngLat.lng,e.lngLat.lat], html, mapName)
     }
 
     if (mapFlg.map02) {
@@ -4187,6 +4202,7 @@ export function popup(e,map,mapName,mapFlg) {
                             '<span style="font-size:16px;">形成時代 = ' + response.data["formationAge_ja"] + '</span><hr>' +
                             '<span style="font-size:16px;">グループ = ' + response.data["group_ja"] + '</span><hr>' +
                             '<span style="font-size:16px;">岩相 = ' + response.data["lithology_ja"] + '</span>'
+                        // alert('888' + html)
                         createPopup(map, [lng,lat], html, mapName)
                     }
                 }
@@ -4211,11 +4227,6 @@ export function popup(e,map,mapName,mapFlg) {
             createPopup(map, [lng,lat], html, mapName)
         }
     }
-    // if (!html && store.state.mapillaryFlg) {
-    //     let lng = e.lngLat.lng
-    //     let lat = e.lngLat.lat
-    //     createPopup(map, [lng,lat], html, mapName)
-    // }
 }
 
 export function enableMotionPermission() {
@@ -4240,6 +4251,7 @@ export function enableMotionPermission() {
 }
 
 async function createPopup(map, coordinates, htmlContent, mapName) {
+    // alert(789)
     // ストリートビューとGoogleマップへのリンクを追加
     const [lng, lat] = coordinates;
     console.log(lng)
@@ -4321,7 +4333,6 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
     if (isSmartPhone) {
         position = center
     }
-
     if (htmlContent !== 'dumy') {
         const popup = new maplibregl.Popup({
             closeButton: true,
@@ -4339,7 +4350,6 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
             console.log('popup clicked!', e.currentTarget);
             e.currentTarget.style.zIndex = getNextZIndex()
         });
-
         // 次の描画タイミングで高さを取得して再配置
         if (isSmartPhone) {
             requestAnimationFrame(() => {

@@ -77,7 +77,7 @@
                 :disabled="!isUser"
             />
             <v-btn :disabled="!isUser" @click="createGeojsonMaster" style="margin-top: -14px;">新規追加</v-btn>
-            <v-btn :disabled="!isUser"  @click="clear" style="margin-top: -14px; margin-left: 5px;">共有解除</v-btn>
+            <v-btn @click="clear" style="margin-top: -14px; margin-left: 5px;">共有解除</v-btn>
             <v-btn :disabled="!isUser"  @click="rename" style="margin-top: -14px; margin-left: 5px;">リネーム</v-btn>
             <div class="data-container-wrapper">
               <div v-for="item in jsonData" :key="item.id" class="data-container" @click="rowCick(item)">
@@ -278,9 +278,11 @@ export default {
       // this.label = '新規の場合、共有ドロー名を記入してください'
       this.s_geojsonId = ''
       this.s_geojsonName = ''
-      deleteAll(true)
       stopPolling()
-      this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
+      setTimeout(() => {
+        deleteAll(true)
+        this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
+      },100)
     },
     async rowRemove(geojson_id) {
       if (!confirm("削除しますか？")) {
@@ -379,12 +381,20 @@ export default {
       if (isJsonString(this.$store.state.clickCircleGeojsonText)) {
         const features = JSON.parse(this.$store.state.clickCircleGeojsonText).features
         console.log(features)
+        const configFeature = {
+          "type": "Feature",
+          "properties": {
+            "id": "config",
+          }
+        }
         if (features.filter(f => f.properties.id !== 'config').length > 0) {
           if (confirm("現在のドローを引き継ぎますか？引き継ぎもとのドローとは完全に独立します。")) {
             await saveDrowFeatures(features)
           } else {
-            await saveDrowFeatures([])
+            await saveDrowFeatures([configFeature])
           }
+        } else {
+          await saveDrowFeatures([configFeature])
         }
       }
       await this.rowCick()
@@ -475,6 +485,7 @@ export default {
       handler(newVal, oldVal) {
         console.log('configFeature が変わりました', { oldVal, newVal });
         // properties がなければ空オブジェクト
+        console.log(newVal)
         const props = newVal?.properties ?? {};
         // nullish coalescing を使うことで false や 0 の値も正しく扱える
         this.$store.state.printTitleText  = props['title-text']    ?? '';

@@ -68,7 +68,7 @@ export default {
       }
     },
     getBtnStyle(idx, total) {
-      console.log(999)
+      // console.log(999)
 
       if (!this.open) return { opacity: 0, pointerEvents: 'none' }
       let spacing = 50

@@ -9818,7 +9818,7 @@ export async function saveDrowFeatures(features) {
     if (result.success) {
         const map01 = store.state.map01
         result.results.forEach(result => {
-            const target = map01.getSource(clickCircleSource.iD)._data.features.find(feature => {
+            const target = map01.getSource(clickCircleSource.iD)._data.features?.find(feature => {
                 return feature.properties.id === result.feature_id
             })
             console.log(target)
@@ -9982,7 +9982,7 @@ export async function loadAllFeatures() {
     generateStartEndPointsFromGeoJSON(featureCollection)
 
     const configFeature = featureCollection.features.find(f => f.properties.id === 'config')
-    if (featureCollection) {
+    if (configFeature) {
         store.state.configFeature = configFeature
     }
 }
@@ -10057,6 +10057,7 @@ export async function pollUpdates() {
 
         // 全体を再セット
         map01.getSource(clickCircleSource.iD).setData(featureCollection);
+        generateStartEndPointsFromGeoJSON(featureCollection)
         store.state.clickCircleGeojsonText = JSON.stringify(featureCollection)
 
         const configFeature = featureCollection.features.find(feature => feature.properties.id === 'config')

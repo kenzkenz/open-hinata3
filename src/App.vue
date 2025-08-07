@@ -4180,13 +4180,19 @@ export default {
     saveHistory() {
       // ディープコピーで保存！
       const map = this.$store.state.map01
-      let mainSourceGeojson = map.getSource('click-circle-source')._data;
-      // if (mainSourceGeojson.features.length === 0) {
-      //   mainSourceGeojson = JSON.parse(store.state.clickCircleGeojsonText)
-      // }
-      this.history.push(JSON.parse(JSON.stringify(mainSourceGeojson)));
-      // Undo後の新編集はredo履歴クリア
-      this.redoStack = [];
+      let mainSourceGeojson
+      try {
+        if (map.getSource('click-circle-source')) {
+          mainSourceGeojson = map.getSource('click-circle-source')._data;
+        } else {
+          mainSourceGeojson = JSON.parse(store.state.clickCircleGeojsonText)
+        }
+        this.history.push(JSON.parse(JSON.stringify(mainSourceGeojson)));
+        // Undo後の新編集はredo履歴クリア
+        this.redoStack = [];
+      }catch (e) {
+        console.log(e)
+      }
     },
     async undo() {
       const map = this.$store.state.map01
@@ -4287,16 +4293,21 @@ export default {
     finishLine () {
       this.isDrawingLine = false;
       this.isDrawingFree = false;
+      const map01 = this.$store.state.map01
       // ガイドライン消去
-      this.$store.state.map01.getSource('guide-line-source').setData({
-        type: 'FeatureCollection',
-        features: []
-      });
+      if (map01.getSource('guide-line-source')) {
+        map01.getSource('guide-line-source').setData({
+          type: 'FeatureCollection',
+          features: []
+        });
+      }
       // フリーハンドプレビューレイヤー消去
-      this.$store.state.map01.getSource('freehand-preview-source').setData({
-        type: 'FeatureCollection',
-        features: []
-      });
+      if (map01.getSource('freehand-preview-source')) {
+        map01.getSource('freehand-preview-source').setData({
+          type: 'FeatureCollection',
+          features: []
+        });
+      }
       this.tempLineCoords = []
       this.tempLineCoordsGuide = []
       this.tempFreehandCoords = []
@@ -6537,6 +6548,7 @@ export default {
 
       // ポイント作成-----------------------------------------------------------------------------------
       function onPointClick(e) {
+        // alert(111)
         popup(e,map,'map01',vm.s_map2Flg)
       }
       map.on('click', (e) => {
@@ -6580,12 +6592,15 @@ export default {
           }
           geojsonCreate(map, 'Point', coordinates, properties)
           // 地図がアイドル状態（描画が完了）になるのを待つ
-          map.once('idle', () => {
-            onPointClick(dummyEvent);
-          });
+          // map.once('idle', () => {
+          //   onPointClick(dummyEvent);
+          // });
           setTimeout(() => {
             onPointClick(dummyEvent);
           },500)
+          setTimeout(() => {
+            onPointClick(dummyEvent);
+          },1000)
         }
       })
       // サークル作成-----------------------------------------------------------------------------------
@@ -7596,25 +7611,7 @@ export default {
           // map.addImage('arrow_orange', orange.data);
 
           // console.log(params)
-          if (params.geojsonId) {
-            this.$store.state.geojsonId = params.geojsonId
-            console.log(this.$store.state.geojsonId)
-            this.$store.state.isUsingServerGeojson = true
-            const formData = new FormData();
-            formData.append('geojson_id', this.$store.state.geojsonId);
-            const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/geojson_select.php', {
-              method: 'POST',
-              body: formData,
-            });
-            const data = await response.json();
-            if (data.success) {
-              console.log(data.rows[0].geojson_name)
-              this.$store.state.geojsonName = data.rows[0].geojson_name
-              startPolling()
-            } else {
-              console.log('失敗')
-            }
-          }
+
 
           if (params.simaTextForUser) {
             this.$store.state.simaTextForUser = params.simaTextForUser
@@ -7645,6 +7642,26 @@ export default {
               }
             }catch (e) {
               console.log(e)
+            }
+          }
+
+          if (params.geojsonId) {
+            this.$store.state.geojsonId = params.geojsonId
+            console.log(this.$store.state.geojsonId)
+            this.$store.state.isUsingServerGeojson = true
+            const formData = new FormData();
+            formData.append('geojson_id', this.$store.state.geojsonId);
+            const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/geojson_select.php', {
+              method: 'POST',
+              body: formData,
+            });
+            const data = await response.json();
+            if (data.success) {
+              console.log(data.rows[0].geojson_name)
+              this.$store.state.geojsonName = data.rows[0].geojson_name
+              startPolling()
+            } else {
+              console.log('失敗')
             }
           }
 
