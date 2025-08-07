@@ -4,7 +4,7 @@
 
       <v-tabs mobile-breakpoint="0" v-model="tab" class="custom-tabs">
         <v-tab value="config">設定</v-tab>
-        <v-tab value="share">共有追加</v-tab>
+        <v-tab value="share">共有ドロー設定</v-tab>
       </v-tabs>
       <v-window v-model="tab" style="margin-top: 10px;">
         <v-window-item value="config">
@@ -68,6 +68,7 @@
           </v-card>
         </v-window-item>
         <v-window-item value="share">
+          <p v-if="!isUser" style="font-size: 16px;">ログインすると解放されます。</p>
           <v-card style="text-align: left;font-size: 14px;">
             <v-text-field
                 style="margin-top: 10px;"
@@ -152,6 +153,7 @@ export default {
   computed: {
     ...mapState([
       'isUsingServerGeojson',
+      'configFeature',
     ]),
     s_geojsonId: {
       get() {
@@ -278,6 +280,7 @@ export default {
       this.s_geojsonName = ''
       deleteAll(true)
       stopPolling()
+      this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
     },
     async rowRemove(geojson_id) {
       if (!confirm("削除しますか？")) {
@@ -467,6 +470,22 @@ export default {
       } else {
         this.label = '新規の場合、共有ドロー名を記入してください'
       }
+    },
+    configFeature: {
+      handler(newVal, oldVal) {
+        console.log('configFeature が変わりました', { oldVal, newVal });
+        // properties がなければ空オブジェクト
+        const props = newVal?.properties ?? {};
+        // nullish coalescing を使うことで false や 0 の値も正しく扱える
+        this.$store.state.printTitleText  = props['title-text']    ?? '';
+        this.$store.state.textPx          = props['font-size']     ?? 30;
+        this.$store.state.titleColor      = props['fill-color']    ?? 'black';
+        this.$store.state.titleDirection  = props['direction']     ?? 'vertical';
+        this.$store.state.drawVisible     = props['visible']       ?? true;
+        this.$store.state.drawOpacity     = props['opacity']       ?? 1;
+      },
+      deep: true,
+      // immediate: true  // マウント時にも一度だけ呼びたいなら true
     }
   }
 }

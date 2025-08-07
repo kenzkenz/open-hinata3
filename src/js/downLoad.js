@@ -9980,7 +9980,11 @@ export async function loadAllFeatures() {
     store.state.clickCircleGeojsonText = JSON.stringify(featureCollection)
     closeAllPopups()
     generateStartEndPointsFromGeoJSON(featureCollection)
-    // alert(store.state.geojsonId)
+
+    const configFeature = featureCollection.features.find(f => f.properties.id === 'config')
+    if (featureCollection) {
+        store.state.configFeature = configFeature
+    }
 }
 
 /**
@@ -10055,15 +10059,9 @@ export async function pollUpdates() {
         map01.getSource(clickCircleSource.iD).setData(featureCollection);
         store.state.clickCircleGeojsonText = JSON.stringify(featureCollection)
 
-        const configFeature = data.features.find(feature => feature.properties.id === 'config')
+        const configFeature = featureCollection.features.find(feature => feature.properties.id === 'config')
         if (configFeature) {
-            const props = configFeature.properties
-            store.state.printTitleText = props['title-text']
-            store.state.textPx = props['font-size'] || 30
-            store.state.titleColor = props['fill-color']
-            store.state.titleDirection = props['direction'] || 'vertical'
-            store.state.drawVisible = props['visible']
-            store.state.drawOpacity = props['opacity'] || 1
+            store.state.configFeature = configFeature
         }
 
         // lastFetchを更新

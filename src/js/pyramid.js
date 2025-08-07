@@ -2274,14 +2274,23 @@ export async function deleteAll (noConfrim) {
     }
     const map01 = store.state.map01
     let source = map01.getSource(clickCircleSource.iD);
-    const features = map01.querySourceFeatures(clickCircleSource.iD);
-    await featuresDelete(features.map(f => f.properties.id));
+    const geojson = source._data
+    console.log(geojson.features.map(f => f.properties.id))
+    await featuresDelete(geojson.features.filter(f => f.properties !== 'config').map(f => f.properties.id));
     // 空のGeoJSON FeatureCollectionを設定する
     source.setData({
         type: "FeatureCollection",
-        features: []
+        features: [
+            {"id": "config"}
+        ]
     });
-    clickCircleSource.obj.data = null
+    const jsonText = JSON.stringify({
+        type: "FeatureCollection",
+        features: [
+            {"id": "config"}
+        ]
+    })
+    // clickCircleSource.obj.data = null
 
     source = map01.getSource(endPointSouce.id);
     // 空のGeoJSON FeatureCollectionを設定する
@@ -2289,10 +2298,10 @@ export async function deleteAll (noConfrim) {
         type: "FeatureCollection",
         features: []
     });
-    endPointSouce.obj.data = null
+    // endPointSouce.obj.data = null
 
-    store.state.clickCircleGeojsonText = ''
-    store.state.clickCircleGeojsonTextMyroom = ''
+    store.state.clickCircleGeojsonText = jsonText
+    store.state.clickCircleGeojsonTextMyroom = jsonText
     getAllVertexPoints(map01)
     setAllMidpoints(map01)
     generateSegmentLabelGeoJSON({
@@ -2300,10 +2309,13 @@ export async function deleteAll (noConfrim) {
         features: []
     })
     closeAllPopups()
+
     store.state.printTitleText = ''
     store.state.textPx = 30
-    store.state.titleColor = 'black'
+    store.state.titleColor = ''
     store.state.titleDirection = 'vertical'
+    store.state.drawVisible = true
+    store.state.drawOpacity = 1
 }
 
 export function escapeHTML(str) {
