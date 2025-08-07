@@ -1479,13 +1479,13 @@ import {
   jpgLoad,
   kmlDownload,
   kmzLoadForUser,
-  LngLatToAddress,
+  LngLatToAddress, markaers, markaersRemove,
   parseCSV,
   pmtilesGenerate,
   pmtilesGenerateForUser2,
   pngDownload,
   pngLoad,
-  printDirectionChange, saveDrowFeatures,
+  printDirectionChange, removeAllThumbnailMarkers, saveDrowFeatures,
   scaleAndRotateLassoSelected,
   simaLoadForUser,
   splitLineStringIntoPoints, startPolling, stopPolling,
@@ -4784,6 +4784,7 @@ export default {
       }
       store.state.isCursorOnPanel = false
       this.finishLine()
+      markaersRemove()
     },
     toggleDrawLasso () {
       this.s_isDrawLasso = !this.s_isDrawLasso

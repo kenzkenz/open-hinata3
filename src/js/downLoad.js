@@ -10123,9 +10123,12 @@ export function startPolling() {
  * @param coords
  * @param photoURL
  */
+const markaers = []
 export function createThumbnailMarker(map, coords, photoURL) {
+    if (store.state.editEnabled) return
     const key = coords.join(',');
-    if (!map.__thumbnailMarkerKeys) {
+    // if (!map.__thumbnailMarkerKeys) {
+    if (markaers.length === 0) {
         map.__thumbnailMarkerKeys = new Set();
     }
     if (map.__thumbnailMarkerKeys.has(key)) {
@@ -10176,10 +10179,22 @@ export function createThumbnailMarker(map, coords, photoURL) {
 
     const offsetX = 0
     const offsetY = -35;
-    new maplibregl.Marker({
+    markaers.push(
+        new maplibregl.Marker({
         element: container,
         offset: [ offsetX, offsetY ]
     })
         .setLngLat(coords)
-        .addTo(map);
+        .addTo(map)
+    )
+}
+
+/**
+ * 全マーカー削除
+ */
+export function markaersRemove() {
+    markaers.forEach(m => {
+        m.remove()
+    })
+    markaers.length = 0
 }
