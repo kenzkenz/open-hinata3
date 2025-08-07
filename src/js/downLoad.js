@@ -9796,6 +9796,7 @@ export function jgd2000ZoneToWgs84(zone, x, y) {
 export async function saveDrowFeatures(features) {
     if (!store.state.isUsingServerGeojson) return
     store.state.loading2 = true
+    store.state.loadingMessage = '更新中'
     const formData = new FormData();
     formData.append('geojson_id', store.state.geojsonId);
     features.forEach(f => {
@@ -9823,7 +9824,7 @@ export async function saveDrowFeatures(features) {
             console.log(target)
             if (target) target.properties.updated_at = result.updated_at
             if (result.status === 'conflict') {
-                store.state.loadingMessage = '競合が発生しました'
+                // store.state.loadingMessage = '競合が発生しました'
             } else if (result.status === 'inserted') {
                 store.state.loadingMessage = '新規追加しました'
             } else {
@@ -10030,7 +10031,11 @@ export async function pollUpdates() {
         newFeatures.forEach(f => {
             if (f.properties.last_editor_user_id !== store.state.userId) {
                 store.state.loading2 = true
-                store.state.loadingMessage = `${f.properties.last_editor_nickname} さんが新しい地物を追加しました`
+                if (f.properties.last_editor_nickname) {
+                    store.state.loadingMessage = `${f.properties.last_editor_nickname} さんが新しい地物を追加しました`
+                } else {
+                    store.state.loadingMessage = `guestさんが新しい地物を追加しました`
+                }
                 setTimeout(() => {
                     store.state.loading2 = false
                 },3000)

@@ -1488,7 +1488,7 @@ import {
   printDirectionChange, saveDrowFeatures,
   scaleAndRotateLassoSelected,
   simaLoadForUser,
-  splitLineStringIntoPoints,
+  splitLineStringIntoPoints, startPolling, stopPolling,
   tileGenerateForUser,
   tileGenerateForUserPdf,
   transformGeoJSONToEPSG4326,
@@ -5699,14 +5699,16 @@ export default {
       const vector = this.$store.state.uploadedVector
       const isWindow = this.$store.state.isWindow
       const simaTextForUser = this.$store.state.simaTextForUser
+      const geojsinId = this.$store.state.geojsonId
+      console.log(geojsinId)
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
       ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}
-      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simas=${JSON.stringify(simas)}&simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}&geojsontext=${geojsonText}&dxftext=${dxfText}&gpxtext=${gpxText}&drawgeojsontext=${drawGeojsonText}&clickgeojsontext=${clickGeojsonText}&clickCirclegeojsontext=${clickCircleGeojsonText}&vector=${JSON.stringify(vector)}&iswindow=${JSON.stringify(isWindow)}&simatextforuser=${simaTextForUser}`
-      // console.log(this.param)
-      // this.permalink = `${window.location.origin}${window.location.pathname}${this.param}`
-      // URLを更新
-      // window.history.pushState({ lng, lat, zoom }, '', this.permalink)
+      &slj=${selectedLayersJson}&chibans=${JSON.stringify(chibans)}&simas=${JSON.stringify(simas)}
+      &simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}
+      &geojsontext=${geojsonText}&dxftext=${dxfText}&gpxtext=${gpxText}&drawgeojsontext=${drawGeojsonText}
+      &clickgeojsontext=${clickGeojsonText}&clickCirclegeojsontext=${clickCircleGeojsonText}
+      &vector=${JSON.stringify(vector)}&iswindow=${JSON.stringify(isWindow)}&simatextforuser=${simaTextForUser}&geojsinid=${geojsinId}`
       this.createShortUrl()
       this.zoom = zoom
       const vm = this
@@ -5738,6 +5740,7 @@ export default {
       }
       let params = new URLSearchParams()
       params.append('parameters', this.param)
+      // console.log(this.param)
       axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrl.php', params)
           .then(response => {
             const basePath = window.location.pathname.replace(/\/\/+$/, '/'); // 末尾のスラッシュを削除 通常はこの処理はいらない。間違えたURLを使い続けている人の対応
@@ -5813,11 +5816,19 @@ export default {
       const vector = params.get('vector')
       const isWindow = params.get('iswindow')
       const simaTextForUser = params.get('simatextforuser')
+      const geojsonId = params.get('geojsinid')
+      console.log(params)
+      console.log('222',geojsonId)
       this.pitch.map01 = pitch01
       this.pitch.map02 = pitch02
       this.bearing = bearing
       this.s_terrainLevel = terrainLevel
-      return {lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,chibans,simas,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText,drawGeojsonText,clickGeojsonText,clickCircleGeojsonText,vector,isWindow,simaTextForUser}// 以前のリンクをいかすためpitchを入れている。
+      return {
+        lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,
+        chibans,simas,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText,
+        drawGeojsonText,clickGeojsonText,clickCircleGeojsonText,vector,isWindow,
+        simaTextForUser,geojsonId
+      }// 以前のリンクをいかすためpitchを入れている。
     },
     async init() {
       const vm = this
@@ -7584,6 +7595,27 @@ export default {
           // map.addImage('arrow_green', green.data);
           // map.addImage('arrow_orange', orange.data);
 
+          // console.log(params)
+          if (params.geojsonId) {
+            this.$store.state.geojsonId = params.geojsonId
+            console.log(this.$store.state.geojsonId)
+            this.$store.state.isUsingServerGeojson = true
+            const formData = new FormData();
+            formData.append('geojson_id', this.$store.state.geojsonId);
+            const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/geojson_select.php', {
+              method: 'POST',
+              body: formData,
+            });
+            const data = await response.json();
+            if (data.success) {
+              console.log(data.rows[0].geojson_name)
+              this.$store.state.geojsonName = data.rows[0].geojson_name
+              startPolling()
+            } else {
+              console.log('失敗')
+            }
+          }
+
           if (params.simaTextForUser) {
             this.$store.state.simaTextForUser = params.simaTextForUser
           }
@@ -7620,12 +7652,12 @@ export default {
             this.$store.state.clickGeojsonText = params.clickGeojsonText
           }
 
-          if (params.drawGeojsonText) {
-            this.$store.state.drawGeojsonText = params.drawGeojsonText
-            const features = JSON.parse(this.$store.state.drawGeojsonText);
-            drawInstance.addFeatures(features);
-            this.drawControl.recalc()
-          }
+          // if (params.drawGeojsonText) {
+          //   this.$store.state.drawGeojsonText = params.drawGeojsonText
+          //   const features = JSON.parse(this.$store.state.drawGeojsonText);
+          //   drawInstance.addFeatures(features);
+          //   this.drawControl.recalc()
+          // }
 
           if (params.gpxText) {
             this.$store.state.gpxText = params.gpxText

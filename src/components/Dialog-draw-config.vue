@@ -110,6 +110,7 @@ import {
 } from "@/js/downLoad";
 import vuetify from "@/plugins/vuetify";
 import store from "@/store";
+import {mapState} from "vuex";
 export default {
   name: 'Dialog-draw-config',
   props: ['mapName'],
@@ -149,6 +150,9 @@ export default {
     ],
   }),
   computed: {
+    ...mapState([
+      'isUsingServerGeojson',
+    ]),
     s_geojsonId: {
       get() {
         return this.$store.state.geojsonId
@@ -266,13 +270,10 @@ export default {
       }
     },
     clear() {
-      const color = 'rgb(50,101,186)'
-      document.documentElement.style.setProperty('--main-color', color);
-      vuetify.theme.themes.value.myTheme.colors.primary = color
       this.showAlert = false
       this.$store.state.isUsingServerGeojson = false
       this.$store.state.clickCircleGeojsonText = ''
-      this.label = '新規の場合、共有ドロー名を記入してください'
+      // this.label = '新規の場合、共有ドロー名を記入してください'
       this.s_geojsonId = ''
       this.s_geojsonName = ''
       deleteAll(true)
@@ -306,9 +307,6 @@ export default {
       }
     },
     async rowCick(item) {
-      const color = '#2e8b57'
-      document.documentElement.style.setProperty('--main-color', color);
-      vuetify.theme.themes.value.myTheme.colors.primary = color
       if (item) {
         this.s_geojsonId = item.geojson_id
         this.s_geojsonName = item.geojson_name
@@ -316,9 +314,10 @@ export default {
         this.alertText = `「${item.geojson_name}」に変更しました。`
         this.showAlert = true
       }
-      this.label = '現在、アクティブのドロー'
+      // this.label = '現在、アクティブのドロー'
       this.$store.state.isUsingServerGeojson = true
       this.$store.state.editEnabled = false
+      this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
       startPolling()
     },
     async selectGeojson() {
@@ -456,6 +455,18 @@ export default {
     },
     s_drawVisible() {
       this.onDrawVisibleChange()
+    },
+    isUsingServerGeojson(value) {
+      const color = value ? '#2e8b57' : 'rgb(50,101,186)'
+      document.documentElement.style.setProperty('--main-color', color);
+      vuetify.theme.themes.value.myTheme.colors.primary = color
+    },
+    s_geojsonName (value) {
+      if (value) {
+        this.label = '現在、アクティブのドロー'
+      } else {
+        this.label = '新規の場合、共有ドロー名を記入してください'
+      }
     }
   }
 }
