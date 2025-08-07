@@ -9013,16 +9013,16 @@ export function printDirectionChange (titleDirection) {
     map00Div.style.margin = '20px auto 0 auto';
     map00Div.style.display = 'block';
 }
-export function getMaxZIndex () {
-    const elements = document.querySelectorAll('.my-div, .maplibregl-popup');
-    let maxZ = 0;
-    elements.forEach(el => {
-        const z = window.getComputedStyle(el).zIndex;
-        const zi = parseInt(z, 10);
-        if (!isNaN(zi) && zi > maxZ) maxZ = zi;
-    });
-    return maxZ + 1
-}
+// export function getMaxZIndex () {
+//     const elements = document.querySelectorAll('.my-div, .maplibregl-popup');
+//     let maxZ = 0;
+//     elements.forEach(el => {
+//         const z = window.getComputedStyle(el).zIndex;
+//         const zi = parseInt(z, 10);
+//         if (!isNaN(zi) && zi > maxZ) maxZ = zi;
+//     });
+//     return maxZ + 1
+// }
 export function gpxDownload (geojson) {
     const gpxString = geojsonToGpx(geojson)
     const fileName =  getNowFileNameTimestamp() + '.gpx'
@@ -9821,7 +9821,7 @@ export async function saveDrowFeatures(features) {
                 return feature.properties.id === result.feature_id
             })
             console.log(target)
-            target.properties.updated_at = result.updated_at
+            if (target) target.properties.updated_at = result.updated_at
             if (result.status === 'conflict') {
                 store.state.loadingMessage = '競合が発生しました'
             } else if (result.status === 'inserted') {
@@ -9979,6 +9979,7 @@ export async function loadAllFeatures() {
     store.state.clickCircleGeojsonText = JSON.stringify(featureCollection)
     closeAllPopups()
     generateStartEndPointsFromGeoJSON(featureCollection)
+    // alert(store.state.geojsonId)
 }
 
 /**
@@ -10070,6 +10071,7 @@ export async function pollUpdates() {
     } catch (e) {
         console.warn('pollUpdates error:', e);
     } finally {
+        console.log(store.state.geojsonId)
         pollingTimer = setTimeout(pollUpdates, 3000 + Math.random()*500);
     }
 }
@@ -10094,6 +10096,7 @@ export function startPolling() {
     featureCollection.features = [];           // 前のデータをクリア
     // 初回全件ロードしてから差分へ移行する場合はここで呼ぶ
     loadAllFeatures().then(() => {
-        pollingTimer = setTimeout(pollUpdates, 0);
+        // pollingTimer = setTimeout(pollUpdates, 0);
+        pollUpdates()
     });
 }

@@ -10,6 +10,7 @@ export default createStore({
     previewUrl: '',
     pictureUrl: '',
     drawGeojsonId: '',
+    geojsonName: '',
     pmtilesFirstSave: false,
     pmtilesMaximum: 16,
     pmtiles0Name: '',

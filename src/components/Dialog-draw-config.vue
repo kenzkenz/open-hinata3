@@ -5,7 +5,6 @@
       <v-tabs mobile-breakpoint="0" v-model="tab" class="custom-tabs">
         <v-tab value="config">設定</v-tab>
         <v-tab value="share">共有追加</v-tab>
-        <v-tab value="list">共有リスト</v-tab>
       </v-tabs>
       <v-window v-model="tab" style="margin-top: 10px;">
         <v-window-item value="config">
@@ -70,13 +69,18 @@
         </v-window-item>
         <v-window-item value="share">
           <v-card style="text-align: left;font-size: 14px;">
-            <p>現在のドローをデータベースに追加、保存します。同時にレイヤーの状態も保存されます。</p>
+<!--            <p>現在のドローをデータベースに追加、保存します。同時にレイヤーの状態も保存されます。</p>-->
             <v-text-field
                 style="margin-top: 10px;"
-                v-model="geojsonName"
-                label="共有名を記入してください"
+                v-model="s_geojsonName"
+                :label="label"
             />
-            <v-btn @click="createGeojsonMaster">新規追加</v-btn>
+            <v-btn @click="createGeojsonMaster" style="margin-top: -14px;">新規追加</v-btn>
+            <v-btn @click="clear" style="margin-top: -14px; margin-left: 5px;">共有解除</v-btn>
+            <div v-for="item in jsonData" :key="item.id" class="data-container" @click="rowCick(item)">
+              <button class="close-btn" @click.stop="rowRemove(item.geojson_id)">×</button>
+              <strong>{{ item.geojson_name }}</strong><br>
+            </div>
             <v-alert
                 v-if="showAlert"
                 :type="alertType"
@@ -84,24 +88,6 @@
                 dismissible
             >
               {{ alertText }}
-            </v-alert>
-          </v-card>
-        </v-window-item>
-        <v-window-item value="list">
-          <v-card style="text-align: left;font-size: 14px;">
-            <p>行をクリックするとドローを変更します。</p>
-            <div v-for="item in jsonData" :key="item.id" class="data-container" @click="rowCick(item)">
-              <button class="close-btn" @click.stop="rowRemove(item.geojson_id)">×</button>
-              <strong>{{ item.geojson_name }}</strong><br>
-            </div>
-            <v-btn @click="clear">共有解除</v-btn>
-            <v-alert
-                v-if="showAlert2"
-                :type="alertType2"
-                class="mt-4"
-                dismissible
-            >
-              {{ alertText2 }}
             </v-alert>
           </v-card>
         </v-window-item>
@@ -114,30 +100,22 @@
 import {clickCircleSource, konUrls} from "@/js/layers";
 import {deleteAll, geojsonUpdate} from "@/js/pyramid";
 import {
-  changePrintMap03,
-  loadAllFeatures,
-  pollUpdates,
+  changePrintMap03, isJsonString,
   printDirectionChange,
   saveDrowFeatures,
-  selectDrowFeatures, startPolling, stopPolling
+  startPolling, stopPolling
 } from "@/js/downLoad";
-import {createVuetify} from "vuetify/lib/framework";
-import * as components from "vuetify/lib/components";
-import * as directives from "vuetify/lib/directives";
 import vuetify from "@/plugins/vuetify";
 import store from "@/store";
 export default {
   name: 'Dialog-draw-config',
   props: ['mapName'],
   data: () => ({
+    label: '新規の場合、共有ドロー名を記入してください',
     jsonData: [],
-    alertText2: '',
-    alertType2: '',
-    showAlert2: false,
     alertText: '',
     alertType: '',
     showAlert: false,
-    geojsonName: '',
     tab: 'config',
     titleColors: [{color:'black',label:'黒'},{color:'red',label:'赤'},{color:'blue',label:'青'},{color:'green',label:'緑'},{color:'orange',label:'オレンジ'}],
     titleDirections: [{direction:'vertical',label:'A4縦'},{direction:'horizontal',label:'A4横'}],
@@ -174,6 +152,14 @@ export default {
       },
       set(value) {
         return this.$store.state.geojsonId = value
+      }
+    },
+    s_geojsonName: {
+      get() {
+        return this.$store.state.geojsonName
+      },
+      set(value) {
+        return this.$store.state.geojsonName = value
       }
     },
     s_myNickname () {
@@ -251,11 +237,11 @@ export default {
       const color = 'rgb(50,101,186)'
       document.documentElement.style.setProperty('--main-color', color);
       vuetify.theme.themes.value.myTheme.colors.primary = color
-      this.alertText2 = '共有解除は自分が共有状態から抜けるだけです。全ユーザーの共有を解除するにはリストの✖️ボタンで削除してください。'
-      this.alertType2 = 'info'
-      this.showAlert2 = true
+      this.showAlert = false
       this.$store.state.isUsingServerGeojson = false
       this.$store.state.clickCircleGeojsonText = ''
+      this.label = '新規の場合、共有ドロー名を記入してください'
+      this.s_geojsonName = ''
       deleteAll(true)
       stopPolling()
     },
@@ -272,7 +258,7 @@ export default {
       const data = await response.json();
       if (data.success) {
         console.log(data)
-        this.selectGeojson()
+        await this.selectGeojson()
         return
       } else {
         console.log(data)
@@ -283,12 +269,16 @@ export default {
       const color = '#2e8b57'
       document.documentElement.style.setProperty('--main-color', color);
       vuetify.theme.themes.value.myTheme.colors.primary = color
-      this.showAlert2 = false
-      this.s_geojsonId = item.geojson_id
-      // await loadAllFeatures()
+      if (item) {
+        this.s_geojsonId = item.geojson_id
+        this.s_geojsonName = item.geojson_name
+        this.alertType = 'info'
+        this.alertText = `「${item.geojson_name}」に変更しました。`
+        this.showAlert = true
+      }
+      this.label = '現在、アクティブのドロー'
       this.$store.state.isUsingServerGeojson = true
       this.$store.state.editEnabled = false
-      // pollUpdates()
       startPolling()
     },
     async selectGeojson() {
@@ -310,14 +300,14 @@ export default {
       }
     },
     async createGeojsonMaster() {
-      if (!this.geojsonName) {
+      if (!this.s_geojsonName) {
         this.alertType = 'info'
         this.alertText = '共有名を記入してください'
         this.showAlert = true
         return
       }
       const formData = new FormData();
-      formData.append('geojson_name', this.geojsonName);
+      formData.append('geojson_name', this.s_geojsonName);
       formData.append('creator_nickname', this.s_myNickname);
       formData.append('creator_user_id', this.s_userId);
       const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/create-geojson.php', {
@@ -341,14 +331,21 @@ export default {
       }
       this.s_geojsonId = data.geojson_id;
       this.alertType = 'success'
-      this.alertText = '追加成功！「共有リスト」タブで共有するドローを選択してください。'
+      this.alertText = '追加成功！そのままドローを始めてください。'
       this.showAlert = true
-      this.selectGeojson()
-      const featues = JSON.parse(this.$store.state.clickCircleGeojsonText).features
-      if (featues.length > 0) {
-        await saveDrowFeatures(featues)
+      await this.selectGeojson()
+      if (isJsonString(this.$store.state.clickCircleGeojsonText)) {
+        const features = JSON.parse(this.$store.state.clickCircleGeojsonText).features
+        console.log(features)
+        if (features.filter(f => f.properties.id !== 'config').length > 0) {
+          if (confirm("現在のドローを引き継ぎますか？引き継ぎもとのドローとは完全に独立します。")) {
+            await saveDrowFeatures(features)
+          } else {
+            await saveDrowFeatures([])
+          }
+        }
       }
-      return this.s_geojsonId;
+      await this.rowCick()
     },
     qrCodeClick () {
       this.$emit('open-floating')

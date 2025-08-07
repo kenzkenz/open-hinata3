@@ -6,7 +6,13 @@ import axios from "axios";
 import muni from "@/js/muni";
 import pyramid from "@/js/pyramid";
 import * as turf from '@turf/turf'
-import {extractAndOpenUrls, getMaxZIndex, isImageFile, queryFGBWithPolygon, wsg84ToJgd} from "@/js/downLoad";
+import {
+    extractAndOpenUrls,
+    getNextZIndex,
+    isImageFile,
+    queryFGBWithPolygon,
+    wsg84ToJgd
+} from "@/js/downLoad";
 import { Viewer, CameraControls, RenderMode, TransitionMode } from 'mapillary-js';
 import {geometry} from "@turf/turf";
 export const popups = []
@@ -4328,10 +4334,10 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
         popups.push(popup);
         popup.on('close', closeAllPopups);
         const popupEl = popup.getElement();
-        popupEl.style.zIndex = getMaxZIndex()
+        popupEl.style.zIndex = getNextZIndex()
         popupEl.addEventListener('click', (e) => {
             console.log('popup clicked!', e.currentTarget);
-            e.currentTarget.style.zIndex = getMaxZIndex()
+            e.currentTarget.style.zIndex = getNextZIndex()
         });
 
         // 次の描画タイミングで高さを取得して再配置
