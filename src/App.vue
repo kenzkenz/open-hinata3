@@ -1440,7 +1440,7 @@ import {
   convertFromEPSG4326,
   convertGsiTileJson,
   convertGsiTileJson2,
-  convertGsiTileJsonFromCategorized,
+  convertGsiTileJsonFromCategorized, createThumbnailMarker,
   csvGenerateForUserPng,
   ddSimaUpload,
   delay0,
@@ -7546,6 +7546,12 @@ export default {
         // const params = this.parseUrlParams()
         // console.log(params)
         map.on('load',async () => {
+
+          // const coords = [139.767, 35.681];
+          // const photoURL = 'https://kenzkenz.net/uploads/gg0oc5Mh7EhDIDbaui5zteawUy82/picture/6894b5fe1ba3e.png';
+          // createThumbnailMarker(map, coords, photoURL)
+
+
           // const params = await this.parseUrlParams()
           console.log(params)
           // iPadでもMapLibreのパンやズームを活かしつつイベントも拾う
