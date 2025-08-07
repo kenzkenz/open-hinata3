@@ -10134,19 +10134,42 @@ export function createThumbnailMarker(map, coords, photoURL) {
     map.__thumbnailMarkerKeys.add(key);
 
     const size = 50;
-    const el = document.createElement('div');
-    el.style.width             = `${size}px`;
-    el.style.height            = `${size}px`;
-    el.style.backgroundImage   = `url(${photoURL})`;
-    el.style.backgroundSize    = 'cover';
-    el.style.backgroundPosition= 'center';
-    el.style.borderRadius      = '10px';
-    el.style.border            = '2px solid #ffffff';
-    el.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
-    el.style.cursor            = 'pointer';
+    const arrowSize = 10; // 三角の高さ
+
+    // コンテナ要素を作成
+    const container = document.createElement('div');
+    // container.style.position = 'relative';
+    container.style.width    = `${size}px`;
+    container.style.height   = `${size + 6}px`; // 縦幅に三角分を追加
+    container.style.cursor   = 'pointer';
+
+    const thumb = document.createElement('div');
+    thumb.style.width             = `${size}px`;
+    thumb.style.height            = `${size}px`;
+    thumb.style.backgroundImage   = `url(${photoURL})`;
+    thumb.style.backgroundSize    = 'cover';
+    thumb.style.backgroundPosition= 'center';
+    thumb.style.borderRadius      = '10px';
+    thumb.style.border            = '2px solid #ffffff';
+    thumb.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
+    thumb.style.cursor            = 'pointer';
+    container.appendChild(thumb);
+
+    // 下向き三角ポインタ
+    const arrow = document.createElement('div');
+    arrow.style.position     = 'absolute';
+    arrow.style.left         = '50%';
+    arrow.style.bottom       = '0';
+    arrow.style.transform    = 'translateX(-50%) translateY(50%)';
+    arrow.style.width        = '0';
+    arrow.style.height       = '0';
+    arrow.style.borderLeft   = `${arrowSize}px solid transparent`;
+    arrow.style.borderRight  = `${arrowSize}px solid transparent`;
+    arrow.style.borderTop    = `${arrowSize}px solid #ffffff`;
+    container.appendChild(arrow);
 
     // クリックで元画像を別タブで開く
-    el.addEventListener('click', e => {
+    thumb.addEventListener('click', e => {
         e.stopPropagation(); // マップのクリックイベントを阻止
         window.open(photoURL, '_blank', 'noopener,noreferrer');
     });
@@ -10154,7 +10177,7 @@ export function createThumbnailMarker(map, coords, photoURL) {
     const offsetX = 0
     const offsetY = -35;
     new maplibregl.Marker({
-        element: el,
+        element: container,
         offset: [ offsetX, offsetY ]
     })
         .setLngLat(coords)
