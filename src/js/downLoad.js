@@ -10071,7 +10071,6 @@ export async function pollUpdates() {
     } catch (e) {
         console.warn('pollUpdates error:', e);
     } finally {
-        console.log(store.state.geojsonId)
         pollingTimer = setTimeout(pollUpdates, 3000 + Math.random()*500);
     }
 }

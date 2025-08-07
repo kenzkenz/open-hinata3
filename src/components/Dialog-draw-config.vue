@@ -78,9 +78,11 @@
             <v-btn :disabled="!isUser" @click="createGeojsonMaster" style="margin-top: -14px;">新規追加</v-btn>
             <v-btn :disabled="!isUser"  @click="clear" style="margin-top: -14px; margin-left: 5px;">共有解除</v-btn>
             <v-btn :disabled="!isUser"  @click="rename" style="margin-top: -14px; margin-left: 5px;">リネーム</v-btn>
-            <div v-for="item in jsonData" :key="item.id" class="data-container" @click="rowCick(item)">
-              <button class="close-btn" @click.stop="rowRemove(item.geojson_id)">×</button>
-              <strong>{{ item.geojson_name }}</strong><br>
+            <div class="data-container-wrapper">
+              <div v-for="item in jsonData" :key="item.id" class="data-container" @click="rowCick(item)">
+                <button class="close-btn" @click.stop="rowRemove(item.geojson_id)">×</button>
+                <strong>{{ item.geojson_name }}</strong><br>
+              </div>
             </div>
             <v-alert
                 v-if="showAlert"
@@ -271,6 +273,7 @@ export default {
       this.$store.state.isUsingServerGeojson = false
       this.$store.state.clickCircleGeojsonText = ''
       this.label = '新規の場合、共有ドロー名を記入してください'
+      this.s_geojsonId = ''
       this.s_geojsonName = ''
       deleteAll(true)
       stopPolling()
@@ -476,6 +479,10 @@ export default {
     width: 100%;
     margin: 0;
   }
+}
+.data-container-wrapper {
+  max-height: 300px;
+  overflow: auto;
 }
 .data-container {
   padding: 5px;
