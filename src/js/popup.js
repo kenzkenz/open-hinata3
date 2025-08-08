@@ -4100,7 +4100,7 @@ export function popup(e,map,mapName,mapFlg) {
         /**
          * 理由がわからない。下のcreatePopupは逃げの処理
          */
-        createPopup(map, [e.lngLat.lng,e.lngLat.lat], html, mapName)
+        if (html) createPopup(map, [e.lngLat.lng,e.lngLat.lat], html, mapName)
     }
 
     if (mapFlg.map02) {

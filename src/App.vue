@@ -2803,6 +2803,7 @@ export default {
         this.s_pictureUrl = null
         alert("通信エラー");
       }
+      this.s_dialogForPicture = false
       store.state.loading2 = false
       this.isDisabled = false
     },
