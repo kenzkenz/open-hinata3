@@ -14,14 +14,10 @@ import {
     wsg84ToJgd
 } from "@/js/downLoad";
 import { Viewer, CameraControls, RenderMode, TransitionMode } from 'mapillary-js';
-import {geometry} from "@turf/turf";
+
 export const popups = []
-
-console.log(store.state.selectedLayers)
-
-function isIphone() {
-    return /iPhone/i.test(navigator.userAgent);
-}
+const isIphone = /iPhone/i.test(navigator.userAgent)
+const isSmall = window.innerWidth < 500
 
 // Turf.jsを使用して面積、周長、頂点数を計算する関数
 export function calculatePolygonMetrics(polygon) {
@@ -3961,10 +3957,10 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 // alert(html)
                 isGooglemap = false
-                if (window.innerWidth < 500) {
+                if (isSmall) {
                     store.state.popupHtml = html
                     store.state.popupDialog = true
-                    // html = ''
+                    html = ''
                 }
                 if (layerId === 'click-circle-label-layer') {
                     try {
@@ -4251,6 +4247,7 @@ export function enableMotionPermission() {
 }
 
 async function createPopup(map, coordinates, htmlContent, mapName) {
+    if (isSmall) return
     // alert(789)
     // ストリートビューとGoogleマップへのリンクを追加
     const [lng, lat] = coordinates;
