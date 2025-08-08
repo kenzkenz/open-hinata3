@@ -10146,16 +10146,33 @@ export function createThumbnailMarker(map, coords, photoURL) {
     container.style.height   = `${size + 6}px`; // 縦幅に三角分を追加
     container.style.cursor   = 'pointer';
 
-    const thumb = document.createElement('div');
-    thumb.style.width             = `${size}px`;
-    thumb.style.height            = `${size}px`;
-    thumb.style.backgroundImage   = `url(${photoURL})`;
-    thumb.style.backgroundSize    = 'cover';
-    thumb.style.backgroundPosition= 'center';
-    thumb.style.borderRadius      = '10px';
-    thumb.style.border            = '2px solid #ffffff';
-    thumb.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
-    thumb.style.cursor            = 'pointer';
+    let thumb
+    const isVideo = isVideoFile(photoURL)
+    if (isVideo) {
+        thumb = document.createElement('video');
+        thumb.style.width             = `${size}px`;
+        thumb.style.height            = `${size}px`;
+        thumb.style.borderRadius      = '10px';
+        thumb.style.border            = '2px solid #ffffff';
+        thumb.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
+        thumb.src = photoURL;
+        thumb.muted = true;
+        thumb.autoplay = true;
+        thumb.loop = true;
+        thumb.playsInline = true;
+        thumb.style.objectFit   = 'cover';
+    } else {
+        thumb = document.createElement('div');
+        thumb.style.width             = `${size}px`;
+        thumb.style.height            = `${size}px`;
+        thumb.style.backgroundImage   = `url(${photoURL})`;
+        thumb.style.backgroundSize    = 'cover';
+        thumb.style.backgroundPosition= 'center';
+        thumb.style.borderRadius      = '10px';
+        thumb.style.border            = '2px solid #ffffff';
+        thumb.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
+        thumb.style.cursor            = 'pointer';
+    }
     container.appendChild(thumb);
 
     // 下向き三角ポインタ
