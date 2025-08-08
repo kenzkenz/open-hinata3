@@ -10016,8 +10016,10 @@ function removeFeature(id) {
  */
 let pollingTimer = null;
 let lastFetch = new Date(0).toISOString();
+const coordsList = []
 export async function pollUpdates() {
     try {
+        coordsList.length = 0
         const map01 = store.state.map01;
         const formData = new FormData();
         formData.append('geojson_id', store.state.geojsonId);
@@ -10056,11 +10058,10 @@ export async function pollUpdates() {
         data.deletions.forEach(d => removeFeature(d.feature_id));
 
         // 全体を再セット
+        // console.log(featureCollection)
         map01.getSource(clickCircleSource.iD).setData(featureCollection);
         generateStartEndPointsFromGeoJSON(featureCollection)
         store.state.clickCircleGeojsonText = JSON.stringify(featureCollection)
-
-        // console.log(store.state.clickCircleGeojsonText)
 
         featureCollection.features.forEach(feature => {
             if (feature.properties.pictureUrl) {
@@ -10069,9 +10070,11 @@ export async function pollUpdates() {
                 const coords = feature.geometry.coordinates
                 const photoURL = feature.properties.pictureUrl
                 createThumbnailMarker(map01, coords, photoURL)
+                coordsList.push(coords)
             }
         })
-
+        // console.log(coordsList.length,markers.length)
+        cleanupThumbnailMarkers(map01, coordsList)
 
         const configFeature = featureCollection.features.find(feature => feature.properties.id === 'config')
         if (configFeature) {
@@ -10196,14 +10199,34 @@ export function createThumbnailMarker(map, coords, photoURL) {
 
     const offsetX = 0
     const offsetY = -35;
-    markers.push(
+    const marker =
         new maplibregl.Marker({
         element: container,
         offset: [ offsetX, offsetY ]
     })
         .setLngLat(coords)
         .addTo(map)
-    )
+
+    markers.push({ key, marker });
+
+}
+
+/**
+ * 現在のデータにないマーカーを map から削除し、配列／キーセットからも除去する
+ */
+export function cleanupThumbnailMarkers(map, currentCoordsArray) {
+    const currentKeys = new Set(currentCoordsArray.map(c => c.join(',')));
+    for (let i = markers.length - 1; i >= 0; i--) {
+        const { key, marker } = markers[i];
+        if (!currentKeys.has(key)) {
+            console.log(key)
+            if (key) {
+                marker.remove();
+                markers.splice(i, 1);
+                map.__thumbnailMarkerKeys.delete(key);
+            }
+        }
+    }
 }
 
 /**
@@ -10211,7 +10234,7 @@ export function createThumbnailMarker(map, coords, photoURL) {
  */
 export function markaersRemove() {
     markers.forEach(m => {
-        m.remove()
+        m.marker.remove()
     })
     markers.length = 0
 }
