@@ -7641,7 +7641,7 @@ export default {
             this.$store.state.uploadedVector = JSON.parse(params.vector)
           }
 
-          if (params.clickCircleGeojsonText && params.clickCircleGeojsonText !== 'undefined') {
+          if (params.clickCircleGeojsonText && params.clickCircleGeojsonText !== 'undefined' && !params.geojsonId) {
             this.$store.state.clickCircleGeojsonText = params.clickCircleGeojsonText
             // console.log(this.$store.state.clickCircleGeojsonText)
             try {
@@ -7668,17 +7668,36 @@ export default {
             this.$store.state.isUsingServerGeojson = true
             const formData = new FormData();
             formData.append('geojson_id', this.$store.state.geojsonId);
-            const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/geojson_select.php', {
+            const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/geojson_features_with_master.php', {
               method: 'POST',
               body: formData,
             });
             const data = await response.json();
             if (data.success) {
               console.log(data.rows[0].geojson_name)
-              this.$store.state.geojsonName = data.rows[0].geojson_name
-              startPolling()
+              const configRow = data.rows.find(row => row.feature_id === 'config')
+              this.$store.state.geojsonName = configRow.geojson_name
+              const config = JSON.parse(configRow.feature).properties
+              if (config.updated_at) {
+                // console.log('configプロパティ',config)
+                // alert(config['title-text'])
+                this.$store.state.printTitleText = config['title-text'] || ''
+                this.$store.state.textPx = config['font-size'] || 30
+                this.$store.state.titleColor = config['fill-color'] || 'black'
+                this.$store.state.titleDirection = config['direction'] || 'vertical'
+                this.$store.state.drawVisible = config['visible'] || true
+                this.$store.state.drawOpacity = config['opacity'] || 1
+                // console.log('configRow', JSON.parse(configRow.feature))
+                // saveDrowFeatures([JSON.parse(configRow.feature)])
+                this.$store.state.loadingMessage = `${this.$store.state.geojsonName}に接続しました。`
+                this.$store.state.loading2 = true
+                setTimeout(() => {
+                  this.$store.state.loading2 = false
+                },3000)
+                startPolling()
+              }
             } else {
-              console.log('失敗')
+              console.log('セレクト失敗')
             }
           }
 

@@ -9802,18 +9802,29 @@ export function jgd2000ZoneToWgs84(zone, x, y) {
 export async function saveDrowFeatures(features) {
     if (!store.state.isUsingServerGeojson) return
     store.state.loading2 = true
-    store.state.loadingMessage = '更新中'
+    let flg = false
     const formData = new FormData();
     formData.append('geojson_id', store.state.geojsonId);
     features.forEach(f => {
-        formData.append('feature_id[]', f.properties.id);
-        formData.append('last_editor_user_id[]', store.state.userId);
-        formData.append('last_editor_nickname[]', store.state.myNickname);
-        formData.append('feature[]', JSON.stringify(f));
-        if (f.properties.updated_at) {
-            formData.append('prev_updated_at[]', f.properties.updated_at);
+        console.log(f.properties.id)
+        console.log(f.properties)
+        // 逃げのコーディング。どこかでプロパティtitle-textがないconfigをセーブしようとしているのでそれを回避
+        const hasKey = Object.prototype.hasOwnProperty.call(f?.properties ?? {}, 'title-text');
+        if ((f.properties.id === 'config' && hasKey) || f.properties.id !== 'config' ) {
+            formData.append('feature_id[]', f.properties.id);
+            formData.append('last_editor_user_id[]', store.state.userId);
+            formData.append('last_editor_nickname[]', store.state.myNickname);
+            formData.append('feature[]', JSON.stringify(f));
+            if (f.properties.updated_at) {
+                formData.append('prev_updated_at[]', f.properties.updated_at);
+            }
+            flg = true
         }
     });
+    if (!flg) {
+        store.state.loading2 = false
+        return
+    }
     console.log(features)
     const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_save.php', {
         method: 'POST',
@@ -9824,13 +9835,13 @@ export async function saveDrowFeatures(features) {
     if (result.success) {
         const map01 = store.state.map01
         result.results.forEach(result => {
-            const target = map01.getSource(clickCircleSource.iD)._data.features?.find(feature => {
+            const target = map01.getSource(clickCircleSource.iD)?._data.features?.find(feature => {
                 return feature.properties.id === result.feature_id
             })
             console.log(target)
             if (target) target.properties.updated_at = result.updated_at
             if (result.status === 'conflict') {
-                // store.state.loadingMessage = '競合が発生しました'
+                store.state.loadingMessage = '競合が発生しました'
             } else if (result.status === 'inserted') {
                 store.state.loadingMessage = '新規追加しました'
             } else {

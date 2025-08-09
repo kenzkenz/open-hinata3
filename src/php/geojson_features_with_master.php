@@ -18,13 +18,8 @@ if (empty($geojson_id)) {
 try {
     // --- 有効なフィーチャーをすべて取得 ---
     $sql = "
-      SELECT
-        feature_id,
-        feature,
-        last_editor_user_id,
-        last_editor_nickname,
-        updated_at
-      FROM geojson_features
+      SELECT *
+      FROM geojson_features_with_master
      WHERE geojson_id  = :gid
        AND is_deleted  = 0
      ORDER BY created_at ASC

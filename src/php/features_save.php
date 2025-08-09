@@ -20,7 +20,10 @@ if (empty($geojson_id)) {
 }
 if (empty($feature_ids)) {
     http_response_code(400);
-    echo json_encode(['error' => 'feature_id is required']);
+    echo json_encode([
+        'error' => 'feature_id is required',
+        'feature_ids' => $feature_ids
+    ]);
     exit;
 }
 // 単一要素を配列化
@@ -171,4 +174,5 @@ $pdo->commit();
 echo json_encode([
     'success' => true,
     'results' => $results,
+    'feature' => $featureJson
 ]);

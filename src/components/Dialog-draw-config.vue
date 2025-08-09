@@ -461,6 +461,7 @@ export default {
   },
   mounted() {
     document.querySelector('#drag-handle-drawConfigDialog-map01').innerHTML = '<span style="font-size: large;">各種設定</span>'
+    console.log(this.configFeature)
   },
   watch: {
     s_drawFire () {
