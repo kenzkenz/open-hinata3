@@ -1031,6 +1031,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
       <div id="map00">
 
+        <v-icon
+            v-if="isUsingServerGeojson && !s_isPrint"
+            color="info"
+            size="32"
+            class="pulse"
+        >
+          mdi-server-network
+        </v-icon>
+
 <!--        <v-btn @click="openPaintEditorWindow">test</v-btn>-->
 
 <!--        <v-btn @click="test">test</v-btn>-->
@@ -1432,15 +1441,10 @@ import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
 import {
   addDraw,
-  cachePmtiles,
-  cachePmtilesBuffers,
-  cacheTilesViaSW,
   capture,
   changePrintMap03, compressImageToUnder10MB,
   convertFromEPSG4326,
-  convertGsiTileJson,
   convertGsiTileJson2,
-  convertGsiTileJsonFromCategorized, createThumbnailMarker,
   csvGenerateForUserPng,
   ddSimaUpload,
   delay0,
@@ -1454,11 +1458,8 @@ import {
   enableDragHandles,
   extractFirstFeaturePropertiesAndCheckCRS,
   extractSimaById, featuresRestore,
-  fetchGsiTile,
   fetchGsiTileTest,
-  fetchWithProgress,
   fncPngDl,
-  genTileUrls,
   geocode,
   geojsonAddLayer,
   geojsonDownload,
@@ -1479,16 +1480,16 @@ import {
   jpgLoad,
   kmlDownload,
   kmzLoadForUser,
-  LngLatToAddress, markaers, markaersRemove,
+  LngLatToAddress, markaersRemove,
   parseCSV,
   pmtilesGenerate,
   pmtilesGenerateForUser2,
   pngDownload,
   pngLoad,
-  printDirectionChange, removeAllThumbnailMarkers, saveDrowFeatures,
+  printDirectionChange, saveDrowFeatures,
   scaleAndRotateLassoSelected,
   simaLoadForUser,
-  splitLineStringIntoPoints, startPolling, stopPolling,
+  splitLineStringIntoPoints, startPolling,
   tileGenerateForUser,
   tileGenerateForUserPdf,
   transformGeoJSONToEPSG4326,
@@ -2052,6 +2053,7 @@ export default {
       'titleColor',
       'titleDirection',
       'drawGeojsonId',
+      'isUsingServerGeojson',
     ]),
     isImage() {
       if (this.s_selectedFile) {
@@ -4244,6 +4246,7 @@ export default {
         generateStartEndPointsFromGeoJSON(this.mainGeojson)
 
       }
+      markaersRemove()
       this.updatePermalink()
       // ↓これは正しいか。不具合が出たらすぐに削除すること。
       // if (this.redoStack.length === 1) {
@@ -4297,6 +4300,7 @@ export default {
         generateSegmentLabelGeoJSON(this.mainGeojson)
         generateStartEndPointsFromGeoJSON(this.mainGeojson)
         generateSegmentLabelGeoJSON(this.mainGeojson)
+        markaersRemove()
         this.updatePermalink()
       }
     },
@@ -9826,8 +9830,15 @@ export default {
   left:calc(50% - 40px);
   z-index:1;
 }
-@media print {
-
+@keyframes pulse {
+  0%, 100% { opacity: 1;   }
+  50%      { opacity: 0.1; }
+}
+.pulse {
+  position: absolute;
+  bottom: 70px;
+  z-index: 3;
+  animation: pulse 3s ease-in-out infinite;
 }
 </style>
 

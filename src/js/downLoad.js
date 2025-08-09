@@ -9967,177 +9967,6 @@ export async function featuresRestore(ids) {
 }
 
 /**
- * 初回ロードで全フィーチャーを取得して featureCollection を作る
- * @type {{features: *[], type: string}}
- */
-let featureCollection = {
-    type: 'FeatureCollection',
-    features: []
-};
-export async function loadAllFeatures() {
-    const map01 = store.state.map01;
-    const formData = new FormData();
-    formData.append('geojson_id', store.state.geojsonId);
-    const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_select.php', {
-        method: 'POST',
-        body: formData
-    });
-    const data = await response.json();
-    if (!data.success) throw new Error('初回ロード失敗');
-
-    featureCollection.features = data.rows.map(row => {
-        const f = JSON.parse(row.feature);
-        f.properties = f.properties || {};
-        f.properties.updated_at = row.updated_at;
-        return f;
-    });
-
-    // MapLibre にソースを反映
-    map01.getSource(clickCircleSource.iD).setData(featureCollection)
-    store.state.clickCircleGeojsonText = JSON.stringify(featureCollection)
-    closeAllPopups()
-    generateStartEndPointsFromGeoJSON(featureCollection)
-
-    const configFeature = featureCollection.features.find(f => f.properties.id === 'config')
-    if (configFeature) {
-        store.state.configFeature = configFeature
-    }
-}
-
-/**
- * 差分ポーリングの upsert / delete 関数
- * @param f
- */
-function upsertFeature(f) {
-    const id = f.properties.id;
-    const idx = featureCollection.features.findIndex(x => x.properties.id === id);
-    if (idx !== -1) {
-        // 既存要素を更新
-        featureCollection.features[idx] = f;
-    } else {
-        // 新規要素を追加
-        featureCollection.features.push(f);
-    }
-}
-function removeFeature(id) {
-    featureCollection.features = featureCollection.features.filter(
-        x => x.properties.id !== id
-    );
-    // MapLibre に反映するならここで再セット
-    // map.getSource(clickCircleSource.iD).setData(featureCollection);
-}
-
-/**
- * ポーリング本体
- * @type {string}
- */
-let pollingTimer = null;
-let lastFetch = new Date(0).toISOString();
-const coordsList = []
-export async function pollUpdates() {
-    try {
-        coordsList.length = 0
-        const map01 = store.state.map01;
-        const formData = new FormData();
-        formData.append('geojson_id', store.state.geojsonId);
-        formData.append('since', lastFetch);
-
-        const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_get_update.php', {
-            method: 'POST',
-            body: formData
-        });
-        const data = await response.json();
-        if (!data.success) throw new Error(data.error||'差分取得失敗');
-
-        const existingIds = new Set(featureCollection.features.map(f => f.properties.id));
-        const newFeatures = data.features.filter(f => !existingIds.has(f.properties.id));
-        newFeatures.forEach(f => {
-            if (f.properties.last_editor_user_id !== store.state.userId) {
-                store.state.loading2 = true
-                if (f.properties.last_editor_nickname) {
-                    store.state.loadingMessage = `${f.properties.last_editor_nickname} さんが新しい地物を追加しました`
-                } else {
-                    store.state.loadingMessage = `guestさんが新しい地物を追加しました`
-                }
-                setTimeout(() => {
-                    store.state.loading2 = false
-                },3000)
-            }
-            // // 例：Vue の $toast を使う場合
-            // this.$toast.info(
-            //     `${f.properties.last_editor_nickname} さんが新しい地物を追加しました`,
-            //     { timeout: 3000 }
-            // );
-            // // あるいは、store.commit('addNotification', { ... })
-        });
-
-        data.features.forEach(upsertFeature);
-        data.deletions.forEach(d => removeFeature(d.feature_id));
-
-        // 全体を再セット
-        // console.log(featureCollection)
-        map01.getSource(clickCircleSource.iD).setData(featureCollection);
-        generateStartEndPointsFromGeoJSON(featureCollection)
-        store.state.clickCircleGeojsonText = JSON.stringify(featureCollection)
-
-        featureCollection.features.forEach(feature => {
-            if (feature.properties.pictureUrl) {
-                // console.log(feature.properties.pictureUrl)
-                // console.log(feature.geometry.coordinates)
-                const coords = feature.geometry.coordinates
-                const photoURL = feature.properties.pictureUrl
-                createThumbnailMarker(map01, coords, photoURL)
-                coordsList.push(coords)
-            }
-        })
-        // console.log(coordsList.length,markers.length)
-        cleanupThumbnailMarkers(map01, coordsList)
-
-        const configFeature = featureCollection.features.find(feature => feature.properties.id === 'config')
-        if (configFeature) {
-            store.state.configFeature = configFeature
-        }
-
-        // lastFetchを更新
-        const times = [
-            ...data.features.map(f => f.properties.updated_at),
-            ...data.deletions.map(d => d.deleted_at),
-            lastFetch
-        ];
-        lastFetch = times.sort().pop();
-    } catch (e) {
-        console.warn('pollUpdates error:', e);
-    } finally {
-        pollingTimer = setTimeout(pollUpdates, 3000 + Math.random()*500);
-    }
-}
-
-/**
- * ポーリング停止
- */
-export function stopPolling() {
-    if (pollingTimer) {
-        clearTimeout(pollingTimer);
-        pollingTimer = null;
-    }
-}
-
-/**
- * ポーリング開始（geojson_id を切替えてリセットから始める）
- * @param newGeojsonId
- */
-export function startPolling() {
-    stopPolling();
-    lastFetch = new Date(0).toISOString();    // or 初回ロード時刻に置き換え
-    featureCollection.features = [];           // 前のデータをクリア
-    // 初回全件ロードしてから差分へ移行する場合はここで呼ぶ
-    loadAllFeatures().then(() => {
-        // pollingTimer = setTimeout(pollUpdates, 0);
-        pollUpdates()
-    });
-}
-
-/**
  * 小さいサムネイル風のマーカーをつくる
  * @param map
  * @param coords
@@ -10147,8 +9976,8 @@ const markers = []
 export function createThumbnailMarker(map, coords, photoURL) {
     if (store.state.editEnabled) return
     const key = coords.join(',');
-    // if (!map.__thumbnailMarkerKeys) {
-    if (markers.length === 0) {
+    if (!map.__thumbnailMarkerKeys) {
+    // if (markers.length === 0) {
         map.__thumbnailMarkerKeys = new Set();
     }
     if (map.__thumbnailMarkerKeys.has(key)) {
@@ -10254,4 +10083,232 @@ export function markaersRemove() {
         m.marker.remove()
     })
     markers.length = 0
+    store.state.map01.__thumbnailMarkerKeys.clear();
+    store.state.map02.__thumbnailMarkerKeys.clear();
+}
+
+/**
+ * ---- 設定 ----
+ */
+let featureCollection = {
+    type: 'FeatureCollection',
+    features: []
+};
+let lastFetch = new Date(0).toISOString();
+const coordsList = []
+const SLEEP_GAP_MS = 60_000; // 60秒以上止まってたら「スリープ後」とみなす
+let pollingTimer = null;
+let lastTick = Date.now();
+let isRefreshing = false;
+
+/**
+ * 差分ポーリングの upsert / delete 関数
+ * @param f
+ */
+function upsertFeature(f) {
+    const id = f.properties.id;
+    const idx = featureCollection.features.findIndex(x => x.properties.id === id);
+    if (idx !== -1) featureCollection.features[idx] = f;
+    else featureCollection.features.push(f);
+}
+function removeFeature(id) {
+    featureCollection.features = featureCollection.features.filter(x => x.properties.id !== id);
+}
+
+/**
+ * 初回全件ロード or ハードリフレッシュ
+ * @returns {Promise<void>}
+ */
+async function refreshFromServer() {
+    if (isRefreshing) return; // 多重実行防止
+    isRefreshing = true;
+    const map01 = store.state.map01;
+    try {
+        const form = new FormData();
+        form.append('geojson_id', store.state.geojsonId);
+        const resp = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_select.php', {
+            method: 'POST',
+            body: form
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        if (!data.success) throw new Error(data.error || 'features_select failed');
+
+        featureCollection.features = data.rows.map(row => {
+            const f = JSON.parse(row.feature);
+            f.properties = f.properties || {};
+            f.properties.updated_at = row.updated_at;
+            return f;
+        });
+
+        // MapLibre にソースを反映
+        map01.getSource(clickCircleSource.iD).setData(featureCollection)
+        store.state.clickCircleGeojsonText = JSON.stringify(featureCollection)
+        closeAllPopups()
+        generateStartEndPointsFromGeoJSON(featureCollection)
+
+        // lastFetch を最新の updated_at に更新（差分ポーリングの since 用）
+        const times = data.rows.map(r => r.updated_at).sort();
+        lastFetch = Date.now(); // tick更新
+        window._since = times.length ? times[times.length - 1] : new Date(0).toISOString();
+    } finally {
+        isRefreshing = false;
+    }
+}
+
+/**
+ * 差分ポーリング本体
+ * @returns {Promise<void>}
+ */
+export async function pollUpdates() {
+    try {
+        // --- 復帰時チェック ---
+        const gap = Date.now() - lastTick;
+        if (gap >= SLEEP_GAP_MS) {
+            console.log('長時間停止を検知 → フルリフレッシュ');
+            await refreshFromServer();
+            store.state.loadingMessage = '長時間停止を検知したためフルリフレッシュしました。'
+            store.state.loading2 = true
+            setTimeout(() => {
+                store.state.loading2 = false
+            },5000)
+        }
+
+        coordsList.length = 0;
+        const map01 = store.state.map01;
+        const map02 = store.state.map02;
+        const formData = new FormData();
+        formData.append('geojson_id', store.state.geojsonId);
+        formData.append('since', lastFetch);
+
+        const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_get_update.php', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        if (!data.success) throw new Error(data.error || '差分取得失敗');
+
+        const existingIds = new Set(featureCollection.features.map(f => f.properties.id));
+        const newFeatures = data.features.filter(f => !existingIds.has(f.properties.id));
+        newFeatures.forEach(f => {
+            if (f.properties.last_editor_user_id !== store.state.userId) {
+                store.state.loading2 = true;
+                store.state.loadingMessage =
+                    f.properties.last_editor_nickname
+                        ? `${f.properties.last_editor_nickname} さんが新しい地物を追加しました`
+                        : `guestさんが新しい地物を追加しました`;
+                setTimeout(() => {
+                    store.state.loading2 = false;
+                }, 3000);
+            }
+        });
+
+        data.features.forEach(upsertFeature);
+        data.deletions.forEach(d => removeFeature(d.feature_id));
+
+        // 全体を再セット
+        map01.getSource(clickCircleSource.iD).setData(featureCollection);
+        generateStartEndPointsFromGeoJSON(featureCollection);
+        store.state.clickCircleGeojsonText = JSON.stringify(featureCollection);
+
+        featureCollection.features.forEach(feature => {
+            if (feature.properties.pictureUrl) {
+                const coords = feature.geometry.coordinates;
+                const photoURL = feature.properties.pictureUrl;
+                createThumbnailMarker(map01, coords, photoURL);
+                createThumbnailMarker(map02, coords, photoURL);
+                coordsList.push(coords);
+            }
+        });
+        cleanupThumbnailMarkers(map01, coordsList);
+        cleanupThumbnailMarkers(map02, coordsList);
+
+        const configFeature = featureCollection.features.find(feature => feature.properties.id === 'config');
+        if (configFeature) {
+            store.state.configFeature = configFeature;
+        }
+
+        // lastFetchを更新
+        const times = [
+            ...data.features.map(f => f.properties.updated_at),
+            ...data.deletions.map(d => d.deleted_at),
+            lastFetch
+        ];
+        lastFetch = times.sort().pop();
+
+    } catch (e) {
+        console.warn('pollUpdates error:', e);
+    } finally {
+        lastTick = Date.now(); // tick更新
+        pollingTimer = setTimeout(pollUpdates, 3000 + Math.random() * 500);
+    }
+}
+
+/**
+ * ---- スリープ→復帰検知 ----
+ */
+function maybeRefreshOnWake() {
+    const gap = Date.now() - lastTick;
+    if (gap >= SLEEP_GAP_MS) {
+        // 長く止まっていた＝復帰直後とみなしてフルリフレッシュ
+        stopPolling();
+        refreshFromServer().then(startPolling);
+        store.state.loadingMessage = '復帰したためフルリフレッシュしました。'
+        store.state.loading2 = true
+        setTimeout(() => {
+            store.state.loading2 = false
+        },5000)
+    }
+}
+function onVisibilityChange() {
+    if (document.visibilityState === 'visible') {
+        maybeRefreshOnWake();
+    }
+}
+function onFocus() {
+    maybeRefreshOnWake();
+}
+function onPageShow(e) {
+    // bfcache 復帰対策（Safariなど）
+    if (e.persisted) {
+        maybeRefreshOnWake();
+    }
+}
+
+/**
+ * ---- 公開API ----
+ */
+export function startPolling() {
+    // 1) 既存ポーリング停止＆イベント解除（先に外す）
+    stopPolling();
+    document.removeEventListener('visibilitychange', onVisibilityChange, false);
+    window.removeEventListener('focus', onFocus, false);
+    window.removeEventListener('pageshow', onPageShow, false);
+    window.removeEventListener('online', onFocus, false);
+    // 2) リセット
+    lastFetch = new Date(0).toISOString();
+    featureCollection.features = [];
+    // 3) 初回全件ロード → 差分開始
+    refreshFromServer()
+        .then(() => {
+            lastTick = Date.now();
+            pollUpdates();
+        })
+        .finally(() => {
+            // 4) 復帰イベントを再登録
+            document.addEventListener('visibilitychange', onVisibilityChange, { passive: true });
+            window.addEventListener('focus', onFocus, { passive: true });
+            window.addEventListener('pageshow', onPageShow, { passive: true });
+            window.addEventListener('online', onFocus, { passive: true });
+        });
+}
+
+/**
+ * ポーリング停止
+ */
+export function stopPolling() {
+    if (pollingTimer) {
+        clearTimeout(pollingTimer);
+        pollingTimer = null;
+    }
 }
