@@ -4188,6 +4188,7 @@ export default {
         } else {
           mainSourceGeojson = JSON.parse(store.state.clickCircleGeojsonText)
         }
+        console.log(mainSourceGeojson)
         this.history.push(JSON.parse(JSON.stringify(mainSourceGeojson)));
         // Undo後の新編集はredo履歴クリア
         this.redoStack = [];
@@ -4214,7 +4215,7 @@ export default {
         }
         // 新規の時は逆に削除
         if (added.length > 0) {
-          const ids = added.map(feature => feature.properties.id)
+          const ids = added.map(f => f.properties.id)
           await featuresDelete(ids)
         }
         // removedのときは復活
@@ -4222,6 +4223,10 @@ export default {
           const ids = removed.map(f => f.properties.id)
           console.log(ids)
           await featuresRestore(ids)
+          // const configFeature = removed.find(f => f.properties.id === 'config')
+          // if (configFeature) {
+          //   this.mainGeojson.features = [...this.mainGeojson.features,configFeature]
+          // }
         }
         /**
          * ここまで
@@ -4267,6 +4272,10 @@ export default {
           const ids = added.map(f => f.properties.id)
           console.log(ids)
           await featuresRestore(ids)
+          // const configFeature = removed.find(f => f.properties.id === 'config')
+          // if (configFeature) {
+          //   this.mainGeojson.features = [...this.mainGeojson.features,configFeature]
+          // }
         }
         // removedのときは削除
         if (removed.length > 0) {

@@ -1691,6 +1691,7 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
             centerFeature.properties['pairId'] = circleFeature.properties.pairId
             centerFeature.properties['label'] = '半径' + radius + 'm'
             centerFeature.properties['label2'] = ''
+            centerFeature.properties['point-color'] = 'rgba(0,0,0,0.1)'
             centerFeature.properties['isRadius'] = true
             centerFeature.properties['offsetValue'] = [0, 1.5]
             centerFeature.properties['textAnchor'] = 'center'

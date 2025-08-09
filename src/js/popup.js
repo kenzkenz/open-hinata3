@@ -321,7 +321,7 @@ export function popup(e,map,mapName,mapFlg) {
     if (store.state.editEnabled) return;
     let html = ref('')  // ← ここを ref 化
     watch(html, (newVal, oldVal) => {
-        console.log(`htmlが ${oldVal} → ${newVal} に変わりました`)
+        // console.log(`htmlが ${oldVal} → ${newVal} に変わりました`)
         createPopup(map, [e.lngLat.lng,e.lngLat.lat], html.value, mapName)
     })
 
@@ -386,17 +386,10 @@ export function popup(e,map,mapName,mapFlg) {
     const f0 = [features[0]]
     let isBreak = false
     for (const feature of features) {
-        console.log(333)
         // features.forEach(feature => {
         const layerId = feature.layer.id
-        console.log(feature)
-        console.log(layerId)
         let props = feature.properties
-        // const coordinates = e.lngLat
-        // let coordinates = feature.geometry.coordinates.slice()
-        // if (coordinates.length !== 2) coordinates = e.lngLat
-        console.log(props)
-        console.log(layerId)
+        console.log(layerId, feature, props)
         // alert(layerId)
         switch (layerId) {
             case 'oh-zosei-line':
@@ -3611,8 +3604,8 @@ export function popup(e,map,mapName,mapFlg) {
             case 'click-circle-label-layer':
             {
                 // alert('到達')
-                // html = ''
-                // isBreak = true // これを使うとバグる
+                html.value = ''
+                isBreak = true // これを使うとバグる
                 coordinates = store.state.coordinates
                 // console.log(store.state.clickCircleGeojsonText)
                 // console.log(store.state.id)

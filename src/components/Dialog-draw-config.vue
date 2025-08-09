@@ -492,12 +492,22 @@ export default {
         console.log(newVal)
         const props = newVal?.properties ?? {};
         // nullish coalescing を使うことで false や 0 の値も正しく扱える
-        this.$store.state.printTitleText  = props['title-text']    ?? '';
-        this.$store.state.textPx          = props['font-size']     ?? 30;
-        this.$store.state.titleColor      = props['fill-color']    ?? 'black';
-        this.$store.state.titleDirection  = props['direction']     ?? 'vertical';
-        this.$store.state.drawVisible     = props['visible']       ?? true;
-        this.$store.state.drawOpacity     = props['opacity']       ?? 1;
+        if (Object.keys(props).length === 0) {
+          console.log('検証中')
+          // this.$store.state.printTitleText = '';
+          // this.$store.state.textPx = 30;
+          // this.$store.state.titleColor = 'black';
+          // this.$store.state.titleDirection = 'vertical';
+          // this.$store.state.drawVisible = true;
+          // this.$store.state.drawOpacity = 1;
+        } else {
+          this.$store.state.printTitleText = props['title-text'] ?? '';
+          this.$store.state.textPx = props['font-size'] ?? 30;
+          this.$store.state.titleColor = props['fill-color'] ?? 'black';
+          this.$store.state.titleDirection = props['direction'] ?? 'vertical';
+          this.$store.state.drawVisible = props['visible'] ?? true;
+          this.$store.state.drawOpacity = props['opacity'] ?? 1;
+        }
       },
       deep: true,
       // immediate: true  // マウント時にも一度だけ呼びたいなら true

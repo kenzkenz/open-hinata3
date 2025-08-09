@@ -873,7 +873,7 @@ export const clickCircPolygonSymbolLayer = {
         'text-halo-width': 1
     },
     'maxzoom': 24,
-    'minzoom': 17
+    'minzoom': 14
 }
 export const clickCircPolygonSymbolAreaLayer = {
     id: 'click-circle-polygon-symbol-area-layer',
@@ -955,6 +955,8 @@ export const clickCircleLabelLayer = {
         'text-halo-color': 'rgba(255,255,255,1)',
         'text-halo-width': 1.0,
     },
+    'maxzoom': 24,
+    'minzoom': 14
 }
 export const clickCircSymbolLayer = {
     id: 'click-circle-symbol-layer',
@@ -966,7 +968,12 @@ export const clickCircSymbolLayer = {
         ['!has', 'bearing'],
     ],
     paint: {
-        'circle-radius': 8,
+        'circle-radius': [
+            'case',
+            ['==', ['get', 'isRadius'], true],
+            4,
+            8     // それ以外
+        ],
         'circle-color': ['get', 'point-color'],
         'circle-stroke-width': [
             'case',

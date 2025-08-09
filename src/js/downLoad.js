@@ -9645,7 +9645,7 @@ export function convertGsiTileJson(categorizedData, lineLength = 30) {
             // 1週間以内（7日）
             const isWithinOneWeek = new Date(entry.latestDate ?? 0) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-            if (isWithinOneWeek) {
+            if (isWithinOneMonth) {
                 isNew = true
                 newHtml = '<span style="color: red;">new </span>'
             } else {
@@ -9708,6 +9708,12 @@ export function isVideoFile(fileName) {
     return videoExts.includes(ext);
 }
 
+/**
+ * 10mb内に縮小する
+ * @param file
+ * @param type
+ * @returns {Promise<unknown>}
+ */
 export async function compressImageToUnder10MB(file, type = 'image/jpeg') {
     const MAX_SIZE = 10 * 1024 * 1024; // 10MB
     const MAX_DIMENSION = 1920; // 幅・高さの最大値
