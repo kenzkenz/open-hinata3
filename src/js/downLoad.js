@@ -2180,132 +2180,147 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
         alert('ズーム15以上にしてください。');
         return;
     }
-    alert(dlMsg)
-    store.state.loading = true
-    let prefId = String(store.state.prefId).padStart(2, '0');
-    if (prefId === '00') {
-        const features = map.queryRenderedFeatures({ layers: ['oh-homusyo-2025-polygon'] });
-        // 最初のフィーチャの 市区町村コード プロパティから先頭2文字を取得
-        if (features.length > 0) {
-            const firstFeature = features[0];
-            const citycode = firstFeature.properties['市区町村コード'];
-            if (typeof citycode === 'string' && citycode.length >= 2) {
-                prefId = citycode.substring(0, 2);
-            }
-        }
-    }
-
-    console.log('初期 prefId:', prefId);
-
-    let fgb_URL;
-    let retryAttempted = false;
-    // ここを改修する必要あり。amxと24自治体以外の動きがあやしい。
-    function getFgbUrl(prefId) {
-        const specialIds = ['07', '15', '22', '26', '28', '29', '30', '40', '43', '44','45','47'];
-        switch (layerId) {
-            case 'oh-homusyo-2025-polygon':
-                return `https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/fgb/${prefId}.fgb`
-            case 'oh-chibanzu2024':
-                return 'https://kenzkenz3.xsrv.jp/fgb/Chibanzu_2024_with_id.fgb'
-            case 'oh-amx-a-fude':
-                return specialIds.includes(prefId)
-                    ? `https://kenzkenz3.xsrv.jp/fgb/2024/${prefId}.fgb`
-                    : `https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_${prefId}.fgb`
-        }
-    }
-    // alert(getFgbUrl(prefId))
-    console.log(getFgbUrl(prefId))
-
-    function fgBoundingBox() {
-        const LngLatBounds = map.getBounds();
-        var Lng01 = LngLatBounds.getWest();
-        var Lng02 = LngLatBounds.getEast();
-        var Lat01 = LngLatBounds.getNorth();
-        var Lat02 = LngLatBounds.getSouth();
-        return {
-            minX: Lng01,
-            minY: Lat02,
-            maxX: Lng02,
-            maxY: Lat01,
-        };
-    }
-
-    let bbox;
-    console.log(store.state.highlightedChibans)
-    if (store.state.highlightedChibans.size > 0) {
-        bbox = getBoundingBoxByLayer(map, layerId)
-        // alert(bbox.minX)
-        console.log(bbox)
-        if (bbox.minX === Infinity) bbox = fgBoundingBox()
-    } else {
-        bbox = fgBoundingBox();
-    }
-    console.log(bbox)
-    fgb_URL = getFgbUrl(prefId);
-    async function deserializeAndPrepareGeojson(layerId) {
-        let geojson = { type: 'FeatureCollection', features: [] };
-        console.log('データをデシリアライズ中...');
-        // alert(fgb_URL)
-        console.error('bbox',bbox)
-        const iter = deserialize(fgb_URL, bbox);
-        console.log(iter)
-        for await (const feature of iter) {
-            geojson.features.push(feature);
-        }
-        console.log('取得した地物:', geojson);
-        if (geojson.features.length === 0) {
-            if (prefId !== '43' && !retryAttempted) {
-                console.warn('地物が存在しません。prefIdを43に変更して再試行します。');
-                alert('データが見つかりませんでした。。再試行します。')
-                prefId = '43';
-                retryAttempted = true;
-                await deserializeAndPrepareGeojson(layerId);
-            } else {
-                alert('地物が一つもありません。「簡易」で出力します。');
-                saveCima(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'],true)
-            }
-            return;
-        }
-        if (isShape) {
-            console.log(geojson)
-            geojson = extractMatchingFeatures(map,geojson,layerId)
-            console.log(geojson)
-            geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
-            console.log(geojson)
-            geojsonToShapefile(geojson)
-            store.state.loading = false
-        } else {
-            if (!isDfx) {
-                console.log(geojson)
-                if (layerId === 'oh-amx-a-fude' || layerId === 'oh-homusyo-2025-polygon') {
-                    geojson = extractMatchingFeatures(map,geojson,layerId)
+    // alert(dlMsg)
+    try {
+        store.state.loading = true
+        let prefId = String(store.state.prefId).padStart(2, '0');
+        if (prefId === '00') {
+            const features = map.queryRenderedFeatures({ layers: ['oh-homusyo-2025-polygon'] });
+            // 最初のフィーチャの 市区町村コード プロパティから先頭2文字を取得
+            if (features.length > 0) {
+                const firstFeature = features[0];
+                const citycode = firstFeature.properties['市区町村コード'];
+                if (typeof citycode === 'string' && citycode.length >= 2) {
+                    prefId = citycode.substring(0, 2);
                 }
-                console.log(geojson)
-                convertAndDownloadGeoJSONToSIMA(map, layerId, geojson, '詳細_', false, '', kukaku);
-            } else {
-                console.log(geojson)
-                saveDxf (map, layerId, sourceId, fields, geojson, kei)
             }
         }
 
-    }
-    if (fgb_URL) {
-        deserializeAndPrepareGeojson(layerId);
-    } else {
-        const features = map.queryRenderedFeatures({
-            layers: [layerId] // 対象レイヤーを指定
-        });
-        // GeoJSONに変換
-        const geojson = {
-            type: "FeatureCollection",
-            features: features.map(feature => ({
-                type: "Feature",
-                geometry: feature.geometry,
-                properties: feature.properties
-            }))
-        };
-        console.log(geojson);
-        saveDxf (map, layerId, sourceId, fields, geojson, kei)
+        console.log('初期 prefId:', prefId);
+
+        let fgb_URL;
+        let retryAttempted = false;
+        // ここを改修する必要あり。amxと24自治体以外の動きがあやしい。
+        function getFgbUrl(prefId) {
+            const specialIds = ['07', '15', '22', '26', '28', '29', '30', '40', '43', '44','45','47'];
+            switch (layerId) {
+                case 'oh-homusyo-2025-polygon':
+                    return `https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/fgb/${prefId}.fgb`
+                case 'oh-chibanzu2024':
+                    return 'https://kenzkenz3.xsrv.jp/fgb/Chibanzu_2024_with_id.fgb'
+                case 'oh-amx-a-fude':
+                    return specialIds.includes(prefId)
+                        ? `https://kenzkenz3.xsrv.jp/fgb/2024/${prefId}.fgb`
+                        : `https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_${prefId}.fgb`
+            }
+        }
+        // alert(getFgbUrl(prefId))
+        console.log(getFgbUrl(prefId))
+
+        function fgBoundingBox() {
+            const LngLatBounds = map.getBounds();
+            var Lng01 = LngLatBounds.getWest();
+            var Lng02 = LngLatBounds.getEast();
+            var Lat01 = LngLatBounds.getNorth();
+            var Lat02 = LngLatBounds.getSouth();
+            return {
+                minX: Lng01,
+                minY: Lat02,
+                maxX: Lng02,
+                maxY: Lat01,
+            };
+        }
+
+        let bbox;
+        console.log(store.state.highlightedChibans)
+        if (store.state.highlightedChibans.size > 0) {
+            bbox = getBoundingBoxByLayer(map, layerId)
+            // alert(bbox.minX)
+            console.log(bbox)
+            if (bbox.minX === Infinity) bbox = fgBoundingBox()
+        } else {
+            bbox = fgBoundingBox();
+        }
+        console.log(bbox)
+        fgb_URL = getFgbUrl(prefId);
+        async function deserializeAndPrepareGeojson(layerId) {
+            let geojson = { type: 'FeatureCollection', features: [] };
+            console.log('データをデシリアライズ中...');
+            // alert(fgb_URL)
+            console.error('bbox',bbox)
+            const iter = deserialize(fgb_URL, bbox);
+            console.log(iter)
+            for await (const feature of iter) {
+                geojson.features.push(feature);
+            }
+            console.log('取得した地物:', geojson);
+            if (geojson.features.length === 0) {
+                if (prefId !== '43' && !retryAttempted) {
+                    console.warn('地物が存在しません。prefIdを43に変更して再試行します。');
+                    alert('データが見つかりませんでした。。再試行します。')
+                    prefId = '43';
+                    retryAttempted = true;
+                    await deserializeAndPrepareGeojson(layerId);
+                } else {
+                    alert('地物が一つもありません。「簡易」で出力します。');
+                    saveCima(map,'oh-amx-a-fude','amx-a-pmtiles',['市区町村コード','大字コード','丁目コード','小字コード','予備コード','地番'],true)
+                }
+                return;
+            }
+            if (isShape) {
+                console.log(geojson)
+                geojson = extractMatchingFeatures(map,geojson,layerId)
+                console.log(geojson)
+                geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
+                console.log(geojson)
+                geojsonToShapefile(geojson)
+                store.state.loading = false
+            } else {
+                if (!isDfx) {
+                    console.log(geojson)
+                    if (layerId === 'oh-amx-a-fude' || layerId === 'oh-homusyo-2025-polygon') {
+                        geojson = extractMatchingFeatures(map,geojson,layerId)
+                    }
+                    console.log(geojson)
+                    convertAndDownloadGeoJSONToSIMA(map, layerId, geojson, '詳細_', false, '', kukaku);
+                } else {
+                    console.log(geojson)
+                    saveDxf (map, layerId, sourceId, fields, geojson, kei)
+                }
+            }
+
+        }
+        if (fgb_URL) {
+            deserializeAndPrepareGeojson(layerId);
+        } else {
+            const features = map.queryRenderedFeatures({
+                layers: [layerId] // 対象レイヤーを指定
+            });
+            // GeoJSONに変換
+            const geojson = {
+                type: "FeatureCollection",
+                features: features.map(feature => ({
+                    type: "Feature",
+                    geometry: feature.geometry,
+                    properties: feature.properties
+                }))
+            };
+            console.log(geojson);
+            saveDxf (map, layerId, sourceId, fields, geojson, kei)
+        }
+    } catch (error) {
+        const message = error.message;
+        // スタックトレースから行番号を取得
+        // stack 例: "Error: テストエラー\n    at riskyFunction (script.js:3:11)\n    at ..."
+        let lineInfo = "";
+        if (error.stack) {
+            const match = error.stack.match(/:(\d+):\d+\)?$/m);
+            if (match) {
+                lineInfo = `（行番号: ${match[1]}）`;
+            }
+        }
+        // ユーザーへ通知（alertやUI表示）
+        alert(`エラー: ${message} ${lineInfo}`);
     }
 }
 
@@ -9841,7 +9856,9 @@ export async function saveDrowFeatures(features) {
             console.log(target)
             if (target) target.properties.updated_at = result.updated_at
             if (result.status === 'conflict') {
-                store.state.loadingMessage = '競合が発生しました'
+                store.state.loading2 = false
+                console.log('競合が発生しました')
+                // store.state.loadingMessage = '競合が発生しました'
             } else if (result.status === 'inserted') {
                 store.state.loadingMessage = '新規追加しました'
             } else {
@@ -10083,8 +10100,10 @@ export function markaersRemove() {
         m.marker.remove()
     })
     markers.length = 0
-    store.state.map01.__thumbnailMarkerKeys.clear();
-    store.state.map02.__thumbnailMarkerKeys.clear();
+    if (store.state.map01.__thumbnailMarkerKeys) {
+        store.state.map01.__thumbnailMarkerKeys.clear();
+        store.state.map02.__thumbnailMarkerKeys.clear();
+    }
 }
 
 /**

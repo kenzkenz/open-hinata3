@@ -89,7 +89,7 @@ import DxfParser from 'dxf-parser'
 import {
   arrowsEndpointLabelLayer,
   arrowsEndpointLayer,
-  arrowsLayer, clickCircleKeikoLineLayer,
+  clickCircleKeikoLineLayer,
   clickCircleLabelLayer,
   clickCircleLayer,
   clickCircleLineLayer,
@@ -1043,6 +1043,9 @@ export default {
         map.removeLayer('drag-handles-layer')
         map.removeSource('drag-handles-source')
       }
+      map.addSource('end-point-source', endPointSouce.obj)
+      map.addLayer(arrowsEndpointLayer)
+      map.addLayer(arrowsEndpointLabelLayer)
       map.addSource('click-circle-source', clickCircleSource.obj)
       // map.removeLayer('click-circle-layer')// 逃げ
       map.addLayer(clickCircleLayer)
@@ -1053,9 +1056,7 @@ export default {
       map.addLayer(clickCircleLineLayer)
       map.addLayer(clickCircleKeikoLineLayer)
       map.addLayer(clickCircleLabelLayer)
-      map.addSource('end-point-source', endPointSouce.obj)
-      map.addLayer(arrowsEndpointLayer)
-      map.addLayer(arrowsEndpointLabelLayer)
+
       map.addSource('guide-line-source', guideLineSource.obj)
       map.addLayer(guideLineLayer)
       map.addLayer(guideLineVertexLayer)

@@ -15,6 +15,7 @@ import {
 } from "@/js/downLoad";
 import { Viewer, CameraControls, RenderMode, TransitionMode } from 'mapillary-js';
 import { ref, watch } from 'vue'
+import debounce from 'lodash/debounce'
 
 export const popups = []
 const isIphone = /iPhone/i.test(navigator.userAgent)
@@ -321,11 +322,11 @@ export function popup(e,map,mapName,mapFlg) {
     if (store.state.editEnabled) return;
     let html = ref('')  // ← ここを ref 化
     watch(html, (newVal, oldVal) => {
-        // console.log(`htmlが ${oldVal} → ${newVal} に変わりました`)
+        console.log(`htmlが ${oldVal} → ${newVal} に変わりました`)
         createPopup(map, [e.lngLat.lng,e.lngLat.lat], html.value, mapName)
     })
 
-    enableMotionPermission()
+    // enableMotionPermission()
     let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
     console.log(features[0])
     console.log(map.getStyle().layers)
@@ -4174,9 +4175,14 @@ export function enableMotionPermission() {
     }
 }
 
+export const createPopupDebounced = debounce(
+    createPopup,
+    300, // ms
+    { leading: false, trailing: false }
+);
+
 async function createPopup(map, coordinates, htmlContent, mapName) {
     if (isSmall) return
-    // alert(789)
     // ストリートビューとGoogleマップへのリンクを追加
     const [lng, lat] = coordinates;
     console.log(lng)
