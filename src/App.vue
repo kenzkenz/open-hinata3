@@ -7493,6 +7493,7 @@ export default {
           console.log(e)
         }
       });
+
       function getScaleRatio(map) {
         const zoom = map.getZoom();
         const dpi = 96; // 通常の画面DPI（印刷用途では 300dpi などに変えても良い）
@@ -7504,6 +7505,83 @@ export default {
 
         return `1:${Math.round(scaleDenominator).toLocaleString()}`;
       }
+
+      // ---- 簡易セマフォ ----
+      class Semaphore {
+        constructor(max) { this.max = max; this.active = 0; this.q = []; }
+        async acquire() {
+          if (this.active >= this.max) await new Promise(r => this.q.push(r));
+          this.active++;
+        }
+        release() {
+          this.active--;
+          const next = this.q.shift();
+          if (next) next();
+        }
+        async run(fn) {
+          await this.acquire();
+          try { return await fn(); } finally { this.release(); }
+        }
+      }
+
+      const CONCURRENCY = 8;                 // 同時リクエスト上限（調整してOK）
+      const RETRIES = 2;                     // リトライ回数
+      const BASE_DELAY_MS = 250;             // バックオフ初期値
+      const sem = new Semaphore(CONCURRENCY);
+
+      async function fetchWithRetry(url, opts = {}, retries = RETRIES) {
+        for (let i = 0; i <= retries; i++) {
+          try {
+            const res = await fetch(url, opts);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res;
+          } catch (e) {
+            if (i === retries) throw e;
+            // HTTP/2 の一時的な拒否を想定して指数バックオフ
+            const wait = BASE_DELAY_MS * Math.pow(2, i) + Math.floor(Math.random() * 100);
+            await new Promise(r => setTimeout(r, wait));
+          }
+        }
+      }
+
+// ---- 制限付きプロトコル（"lim+" スキーム）----
+      maplibregl.addProtocol('lim', (req, callback) => {
+        // req.url は "lim+https://..." 形式になるので、"lim+" を取り除いた最終URLを使う
+        const realUrl = req.url.replace(/^lim\+/, '');
+
+        sem.run(async () => {
+          try {
+            const res = await fetchWithRetry(realUrl, { credentials: 'same-origin' });
+            const cc = res.headers.get('cache-control') || null;
+            const ex = res.headers.get('expires') || null;
+            const ct = (res.headers.get('content-type') || '').toLowerCase();
+
+            // 種別ごとの戻し方（Vector MVT / Glyph / JSON / 画像）
+            if (ct.includes('application/json')) {
+              const text = await res.text();
+              callback(null, text, cc, ex);
+            } else if (ct.includes('protobuf') || realUrl.endsWith('.pbf')) {
+              const buf = await res.arrayBuffer();
+              callback(null, buf, cc, ex);
+            } else if (ct.startsWith('image/')) {
+              const blob = await res.blob();
+              // 画像は ImageBitmap で返すのが安全
+              const bitmap = await createImageBitmap(blob);
+              callback(null, bitmap, cc, ex);
+            } else {
+              // その他は ArrayBuffer で返す
+              const buf = await res.arrayBuffer();
+              callback(null, buf, cc, ex);
+            }
+          } catch (err) {
+            callback(err);
+          }
+        });
+        // true を返すと MapLibre に「非同期で後で callback 呼ぶよ」と伝えられる
+        return { cancel: () => {}, priority: 0 };
+      });
+
+
       // function updateScale() {
       //   const scaleStr = getScaleRatio(map);
       //   try {

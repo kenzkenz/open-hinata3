@@ -13,10 +13,8 @@ import {
     pngLayer,
     vpsTileSource,
     vpsTileLayer,
-    chibanzuLayers0,
     chibanzuLayers,
     chibanzuSources,
-    sicyosonChibanzuUrls,
     loadColorData,
     caseTextField,
     clickCircleSource
@@ -32,13 +30,11 @@ import html2canvas from 'html2canvas'
 import muni from "@/js/muni";
 import Papa from 'papaparse'
 import {
-    generateSegmentLabelGeoJSON, generateStartEndPointsFromGeoJSON,
+    generateStartEndPointsFromGeoJSON,
     getAllVertexPoints,
     setAllMidpoints
 } from "@/js/pyramid";
 import { deserialize } from 'flatgeobuf/lib/mjs/geojson.js';
-import { PMTiles } from "pmtiles";
-import {feature} from "@turf/turf";
 import {closeAllPopups} from "@/js/popup";
 
 
@@ -631,7 +627,7 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
         simaData = convertSIMtoTXT(simaData)
     }
 
-    console.log(simaData)
+    // console.log(simaData)
 
     store.state.loading = false
 
@@ -2175,6 +2171,18 @@ function determinePlaneRectangularZone(x, y) {
     return closestZone;
 }
 
+/**
+ * 基本のsimaファイル保存
+ * @param map
+ * @param layerId
+ * @param kukaku
+ * @param isDfx
+ * @param sourceId
+ * @param fields
+ * @param kei
+ * @param isShape
+ * @returns {Promise<void>}
+ */
 export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, kei, isShape) {
     if (map.getZoom() <= 15) {
         alert('ズーム15以上にしてください。');
@@ -2309,18 +2317,7 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
             saveDxf (map, layerId, sourceId, fields, geojson, kei)
         }
     } catch (error) {
-        const message = error.message;
-        // スタックトレースから行番号を取得
-        // stack 例: "Error: テストエラー\n    at riskyFunction (script.js:3:11)\n    at ..."
-        let lineInfo = "";
-        if (error.stack) {
-            const match = error.stack.match(/:(\d+):\d+\)?$/m);
-            if (match) {
-                lineInfo = `（行番号: ${match[1]}）`;
-            }
-        }
-        // ユーザーへ通知（alertやUI表示）
-        alert(`エラー: ${message} ${lineInfo}`);
+        alert(`エラー: ${error.message}`);
     }
 }
 
@@ -9816,7 +9813,6 @@ export function jgd2000ZoneToWgs84(zone, x, y) {
  */
 export async function saveDrowFeatures(features) {
     if (!store.state.isUsingServerGeojson) return
-    store.state.loading2 = true
     let flg = false
     const formData = new FormData();
     formData.append('geojson_id', store.state.geojsonId);
@@ -9837,7 +9833,6 @@ export async function saveDrowFeatures(features) {
         }
     });
     if (!flg) {
-        store.state.loading2 = false
         return
     }
     console.log(features)
@@ -9848,6 +9843,7 @@ export async function saveDrowFeatures(features) {
     const result = await response.json();
     console.log(result)
     if (result.success) {
+        store.state.loading2 = true
         const map01 = store.state.map01
         result.results.forEach(result => {
             const target = map01.getSource(clickCircleSource.iD)?._data.features?.find(feature => {
