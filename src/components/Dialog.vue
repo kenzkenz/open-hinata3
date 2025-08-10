@@ -101,8 +101,12 @@ export default {
       };
 
       // ハンドルにイベントリスナーを追加
-      handle.addEventListener('mousedown', startDrag);
-      handle.addEventListener('touchstart', startDrag);
+      try {
+        handle.addEventListener('mousedown', startDrag);
+        handle.addEventListener('touchstart', startDrag);
+      }catch (e) {
+        console.log(e)
+      }
       // --------------------------------------------------------------------------------------------------------------
       function adjustDialogSize() {
         const dialogDiv = vm.$store.state.dialogs[vm.dialog.name][vm.mapName]

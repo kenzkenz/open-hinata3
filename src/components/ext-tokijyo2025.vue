@@ -442,7 +442,7 @@ export default {
       const map = this.$store.state[this.mapName]
       map.setPaintProperty('oh-homusyo-2025-line', 'line-color', color)
       map.setPaintProperty('oh-homusyo-2025-label', 'text-color', color)
-      map.setPaintProperty('oh-homusyo-2025-searched-point', 'circle-color', color)
+      // map.setPaintProperty('oh-homusyo-2025-searched-point', 'circle-color', color)
       const DEFAULT_FILL_COLOR = toRGBA(color, 0.4);
       map.setPaintProperty('oh-homusyo-2025-polygon-dissolved-all', 'fill-color', DEFAULT_FILL_COLOR);
       this.s_tokijyoColor2025 = color
@@ -678,7 +678,7 @@ export default {
 
           // 元の色（this.s_tokijyoCircleColor2025、透過度0.6）に戻す
           // map.setPaintProperty('oh-homusyo-2025-polygon-dissolved', 'fill-color', DEFAULT_FILL_COLOR);
-          map.setPaintProperty('oh-homusyo-2025-polygon-dissolved', 'fill-color', 'rgba(255, 0, 0, 0, 0)');
+          map.setPaintProperty('oh-homusyo-2025-polygon-dissolved', 'fill-color', 'rgba(255, 0, 0, 0)');
           map.setPaintProperty('oh-homusyo-2025-polygon-dissolved-all', 'fill-color', DEFAULT_FILL_COLOR);
           map.setFilter('oh-homusyo-2025-polygon-dissolved-all', null)
 

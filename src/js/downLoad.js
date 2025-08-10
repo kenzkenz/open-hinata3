@@ -390,7 +390,6 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
             if (feature.properties && feature.properties.座標系) {
                 console.log("Found Coordinate Property:", feature.properties.座標系);
                 zahyo = feature.properties.座標系; // 最初に見つけた値を返す
-                // alert(zahyo)
             }
         }
     } else {
@@ -408,8 +407,6 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
 
     const visibleLayers = getVisibleRenderedLayers(map)
     const osakashi = visibleLayers.find(l => l.includes('大阪市'))
-    // alert(JSON.stringify(visibleLayers))
-    // alert(osakashi)
 
     if (kukaku) {
         alert(kei + 'で区画ファイルを作ります。作図範囲は1区画です。ドーナツ形状には対応していません。')
@@ -2188,7 +2185,6 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
         alert('ズーム15以上にしてください。');
         return;
     }
-    // alert(dlMsg)
     try {
         store.state.loading = true
         let prefId = String(store.state.prefId).padStart(2, '0');
@@ -2255,9 +2251,9 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
             let geojson = { type: 'FeatureCollection', features: [] };
             console.log('データをデシリアライズ中...');
             // alert(fgb_URL)
-            console.error('bbox',bbox)
+            // console.error('bbox',bbox)
             const iter = deserialize(fgb_URL, bbox);
-            console.log(iter)
+            // console.log(iter)
             for await (const feature of iter) {
                 geojson.features.push(feature);
             }
@@ -5864,8 +5860,7 @@ export function capture(uid,isFirst) {
                 }
             });
             const msg = await res.json();
-            console.log("保存結果:", msg);
-            // alert(msg.url)
+            // console.log("保存結果:", msg);
             if (isFirst) {
                 history('autosave-first', window.location.href,msg.url)
             } else {
@@ -10204,7 +10199,6 @@ export async function pollUpdates() {
         const dataG = await responseG.json();
 
         store.state.isEditable = dataG.rows[0].is_editable === '1'
-        console.log(store.state.isEditable)
 
         coordsList.length = 0;
         const map01 = store.state.map01;

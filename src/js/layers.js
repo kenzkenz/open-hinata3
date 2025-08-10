@@ -2256,7 +2256,7 @@ export let konUrls = [
     {name: '伊賀', datasetFolder: 'iga', time: '1980-1986年', timeFolder: '03'},
     {name: '伊賀', datasetFolder: 'iga', time: '1996-2001年', timeFolder: '04'},
 ]
-console.log(konUrls.length)
+// console.log(konUrls.length)
 
 konUrls = konUrls.map(url => {
     const times = url.time.replace('年','').split('-')
