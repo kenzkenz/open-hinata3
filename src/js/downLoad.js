@@ -2250,10 +2250,7 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
         async function deserializeAndPrepareGeojson(layerId) {
             let geojson = { type: 'FeatureCollection', features: [] };
             console.log('データをデシリアライズ中...');
-            // alert(fgb_URL)
-            // console.error('bbox',bbox)
             const iter = deserialize(fgb_URL, bbox);
-            // console.log(iter)
             for await (const feature of iter) {
                 geojson.features.push(feature);
             }
