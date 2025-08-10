@@ -3605,6 +3605,10 @@ export function popup(e,map,mapName,mapFlg) {
             case 'click-circle-label-layer':
             {
                 // alert('到達')
+                if (!store.state.isEditable) {
+                    alert('編集不可です。')
+                    return
+                }
                 html.value = ''
                 isBreak = true // これを使うとバグる
                 coordinates = store.state.coordinates

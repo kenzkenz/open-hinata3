@@ -5,6 +5,7 @@ import firebase from 'firebase/app';
 
 export default createStore({
   state: {
+    isEditable: true,
     configFeature: null,
     isUsingServerGeojson: false,
     drawShareId: '',

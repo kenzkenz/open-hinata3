@@ -4490,6 +4490,10 @@ export default {
     },
     deleteAllforDraw () {
       this.s_editEnabled = false
+      if (!this.$store.state.isEditable) {
+        alert('編集不可です。')
+        return
+      }
       this.saveHistory()
       deleteAll()
     },
@@ -4784,6 +4788,10 @@ export default {
       store.state.isCursorOnPanel = false
     },
     toggleEditEnabled () {
+      if (!this.$store.state.isEditable) {
+        alert('編集不可です。')
+        return
+      }
       this.saveHistory()
       this.s_editEnabled = !this.s_editEnabled
       if (this.s_editEnabled) {
@@ -7758,20 +7766,23 @@ export default {
             if (data.success) {
               console.log(data.rows[0].geojson_name)
               const configRow = data.rows.find(row => row.feature_id === 'config')
+              // alert(data.rows[0].is_editable)
+              this.$store.state.isEditable = data.rows[0].is_editable ===  '1'
               this.$store.state.geojsonName = configRow.geojson_name
               const config = JSON.parse(configRow.feature).properties
               if (config.updated_at) {
-                // console.log('configプロパティ',config)
-                // alert(config['title-text'])
                 this.$store.state.printTitleText = config['title-text'] || ''
                 this.$store.state.textPx = config['font-size'] || 30
                 this.$store.state.titleColor = config['fill-color'] || 'black'
                 this.$store.state.titleDirection = config['direction'] || 'vertical'
                 this.$store.state.drawVisible = config['visible'] || true
                 this.$store.state.drawOpacity = config['opacity'] || 1
-                // console.log('configRow', JSON.parse(configRow.feature))
-                // saveDrowFeatures([JSON.parse(configRow.feature)])
-                this.$store.state.loadingMessage = `${this.$store.state.geojsonName}に接続しました。`
+                // alert(this.$store.state.isEditable)
+                if (this.$store.state.isEditable) {
+                  this.$store.state.loadingMessage = `<div style="text-align: center">${this.$store.state.geojsonName}に接続しました。</div>`
+                } else {
+                  this.$store.state.loadingMessage = `<div style="text-align: center">${this.$store.state.geojsonName}に接続しました。<br>編集不可です。</div>`
+                }
                 this.$store.state.loading2 = true
                 setTimeout(() => {
                   this.$store.state.loading2 = false

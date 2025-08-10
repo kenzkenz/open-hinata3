@@ -76,6 +76,16 @@
                 :label="label"
                 :disabled="!isUser"
             />
+            <v-select
+                style="margin-top: -10px;"
+                v-model="s_transparent"
+                :items="editType"
+                item-title="label"
+                item-value="value"
+                label="他者が編集可能かどうか"
+                outlined
+                :disabled="!isUser"
+            ></v-select>
             <v-btn :disabled="!isUser" @click="createGeojsonMaster" style="margin-top: -14px;">新規追加</v-btn>
             <v-btn @click="clear" style="margin-top: -14px; margin-left: 5px;">共有解除</v-btn>
             <v-btn :disabled="!isUser"  @click="rename" style="margin-top: -14px; margin-left: 5px;">リネーム</v-btn>
@@ -116,6 +126,10 @@ export default {
   name: 'Dialog-draw-config',
   props: ['mapName'],
   data: () => ({
+    editType: [
+      { label: '自分と他者が変更可能', value: '1' },
+      { label: '自分だけが変更可能', value: '0' }
+    ],
     label: '新規の場合、共有ドロー名を記入してください',
     jsonData: [],
     alertText: '',
@@ -153,6 +167,7 @@ export default {
   computed: {
     ...mapState([
       'isUsingServerGeojson',
+      'isEditable',
       'configFeature',
     ]),
     s_geojsonId: {
@@ -326,6 +341,14 @@ export default {
       this.$store.state.isUsingServerGeojson = true
       this.$store.state.editEnabled = false
       this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
+      this.$store.state.isEditable = item.is_editable ===  '1'
+      if (!this.$store.state.isEditable) {
+        this.$store.state.loadingMessage = '<div style="text-align: center">編集不可です。</div>'
+        this.$store.state.loading2 = true
+        setTimeout(() => {
+          this.$store.state.loading2 = false
+        },2000)
+      }
       markaersRemove()
       startPolling()
     },
@@ -389,6 +412,12 @@ export default {
           "type": "Feature",
           "properties": {
             "id": "config",
+            'title-text': '',
+            'font-size': 30,
+            'fill-color': 'black',
+            'direction': 'vertical',
+            'visible': true,
+            'opacity': 1,
           }
         }
         if (features.filter(f => f.properties.id !== 'config').length > 0) {
@@ -475,9 +504,26 @@ export default {
       this.onDrawVisibleChange()
     },
     isUsingServerGeojson(value) {
-      const color = value ? '#2e8b57' : 'rgb(50,101,186)'
-      document.documentElement.style.setProperty('--main-color', color);
-      vuetify.theme.themes.value.myTheme.colors.primary = color
+      if (!this.isEditable) {
+        const color = '#9400d3'
+        document.documentElement.style.setProperty('--main-color', color);
+        vuetify.theme.themes.value.myTheme.colors.primary = color
+      } else {
+        const color = this.isUsingServerGeojson ? '#2e8b57' : 'rgb(50,101,186)'
+        document.documentElement.style.setProperty('--main-color', color);
+        vuetify.theme.themes.value.myTheme.colors.primary = color
+      }
+    },
+    isEditable(value) {
+      if (!this.isEditable) {
+        const color = '#9400d3'
+        document.documentElement.style.setProperty('--main-color', color);
+        vuetify.theme.themes.value.myTheme.colors.primary = color
+      } else {
+        const color = this.isUsingServerGeojson ? '#2e8b57' : 'rgb(50,101,186)'
+        document.documentElement.style.setProperty('--main-color', color);
+        vuetify.theme.themes.value.myTheme.colors.primary = color
+      }
     },
     s_geojsonName (value) {
       if (value) {

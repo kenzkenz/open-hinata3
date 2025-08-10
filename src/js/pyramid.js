@@ -1645,6 +1645,10 @@ export function createSquarePolygonAtCenter(sideKm = 10, properties = {}) {
 }
 // ---------------------------------------------------------------------------------------------------------------------
 export function geojsonCreate(map, geoType, coordinates, properties = {}) {
+    if (!store.state.isEditable) {
+        alert('編集不可です。')
+        return
+    }
     // 1. 新しいfeatureを生成
     let features,feature,circleFeature,centerFeature,radius,canterLng,canterLat
     let lastCoord,firstCoord,lastPointFeature,firstPointFeature

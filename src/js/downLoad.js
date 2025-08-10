@@ -9835,6 +9835,10 @@ export async function saveDrowFeatures(features) {
     if (!flg) {
         return
     }
+    if (!store.state.isEditable) {
+        alert('編集不可です。')
+        return
+    }
     console.log(features)
     const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_save.php', {
         method: 'POST',
@@ -10189,13 +10193,24 @@ export async function pollUpdates() {
             },5000)
         }
 
+        const formDataG = new FormData();
+        formDataG.append('geojson_id', store.state.geojsonId);
+        formDataG.append('since', lastFetch);
+        const responseG = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/geojson_select.php', {
+            method: 'POST',
+            body: formDataG
+        });
+        const dataG = await responseG.json();
+
+        store.state.isEditable = dataG.rows[0].is_editable === '1'
+        console.log(store.state.isEditable)
+
         coordsList.length = 0;
         const map01 = store.state.map01;
         const map02 = store.state.map02;
         const formData = new FormData();
         formData.append('geojson_id', store.state.geojsonId);
         formData.append('since', lastFetch);
-
         const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_get_update.php', {
             method: 'POST',
             body: formData
