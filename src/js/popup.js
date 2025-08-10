@@ -3605,12 +3605,8 @@ export function popup(e,map,mapName,mapFlg) {
             case 'click-circle-label-layer':
             {
                 // alert('到達')
-                if (!store.state.isEditable) {
-                    alert('編集不可です。')
-                    return
-                }
                 html.value = ''
-                isBreak = true // これを使うとバグる
+                isBreak = true
                 coordinates = store.state.coordinates
                 // console.log(store.state.clickCircleGeojsonText)
                 // console.log(store.state.id)
@@ -3914,6 +3910,10 @@ export function popup(e,map,mapName,mapFlg) {
                 store.state.id = ''
                 if (props.lassoSelected) {
                     store.state.isLassoSelected = true
+                }
+                if (!store.state.isEditable && !store.state.isMine) {
+                    html.value = ''
+                    alert('編集不可です！！！')
                 }
                 break
             }

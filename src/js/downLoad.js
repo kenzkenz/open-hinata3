@@ -9833,12 +9833,13 @@ export async function saveDrowFeatures(features) {
         }
     });
     if (!flg) {
+        console.log(999)
         return
     }
-    if (!store.state.isEditable) {
-        alert('編集不可です。')
-        return
-    }
+    // if (!store.state.isEditable && !store.state.isMine) {
+    //     // alert('編集不可です!')
+    //     return
+    // }
     console.log(features)
     const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_save.php', {
         method: 'POST',

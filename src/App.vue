@@ -4199,6 +4199,10 @@ export default {
       }
     },
     async undo() {
+      if (!this.$store.state.isEditable && !this.$store.state.isMine) {
+        alert('編集不可です！！')
+        return
+      }
       const map = this.$store.state.map01
       const mainSourceGeojson = map.getSource('click-circle-source')._data;
       if (this.history.length > 0) {
@@ -4254,6 +4258,10 @@ export default {
       // }
     },
     async redo() {
+      if (!this.$store.state.isEditable && !this.$store.state.isMine) {
+        alert('編集不可です！！')
+        return
+      }
       if (this.redoStack.length > 0) {
         const map = this.$store.state.map01
         const mainSourceGeojson = map.getSource('click-circle-source')._data;
@@ -4490,8 +4498,8 @@ export default {
     },
     deleteAllforDraw () {
       this.s_editEnabled = false
-      if (!this.$store.state.isEditable) {
-        alert('編集不可です。')
+      if (!this.$store.state.isEditable && !this.$store.state.isMine) {
+        alert('編集不可です!')
         return
       }
       this.saveHistory()
@@ -4788,8 +4796,8 @@ export default {
       store.state.isCursorOnPanel = false
     },
     toggleEditEnabled () {
-      if (!this.$store.state.isEditable) {
-        alert('編集不可です。')
+      if (!this.$store.state.isEditable && !this.$store.state.isMine) {
+        alert('編集不可です!')
         return
       }
       this.saveHistory()
@@ -7757,6 +7765,7 @@ export default {
             console.log(this.$store.state.geojsonId)
             this.$store.state.isUsingServerGeojson = true
             const formData = new FormData();
+            // alert(this.$store.state.geojsonId)
             formData.append('geojson_id', this.$store.state.geojsonId);
             const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/geojson_features_with_master.php', {
               method: 'POST',
@@ -7764,31 +7773,28 @@ export default {
             });
             const data = await response.json();
             if (data.success) {
-              console.log(data.rows[0].geojson_name)
               const configRow = data.rows.find(row => row.feature_id === 'config')
-              // alert(data.rows[0].is_editable)
+              this.$store.state.isMine = data.rows[0].creator_user_id === this.$store.state.userId
               this.$store.state.isEditable = data.rows[0].is_editable ===  '1'
+              this.$store.state.isEditableForVSelect = this.$store.state.isEditable
               this.$store.state.geojsonName = configRow.geojson_name
               const config = JSON.parse(configRow.feature).properties
-              if (config.updated_at) {
-                this.$store.state.printTitleText = config['title-text'] || ''
-                this.$store.state.textPx = config['font-size'] || 30
-                this.$store.state.titleColor = config['fill-color'] || 'black'
-                this.$store.state.titleDirection = config['direction'] || 'vertical'
-                this.$store.state.drawVisible = config['visible'] || true
-                this.$store.state.drawOpacity = config['opacity'] || 1
-                // alert(this.$store.state.isEditable)
-                if (this.$store.state.isEditable) {
-                  this.$store.state.loadingMessage = `<div style="text-align: center">${this.$store.state.geojsonName}に接続しました。</div>`
-                } else {
-                  this.$store.state.loadingMessage = `<div style="text-align: center">${this.$store.state.geojsonName}に接続しました。<br>編集不可です。</div>`
-                }
-                this.$store.state.loading2 = true
-                setTimeout(() => {
-                  this.$store.state.loading2 = false
-                },3000)
-                startPolling()
+              this.$store.state.printTitleText = config['title-text'] || ''
+              this.$store.state.textPx = config['font-size'] || 30
+              this.$store.state.titleColor = config['fill-color'] || 'black'
+              this.$store.state.titleDirection = config['direction'] || 'vertical'
+              this.$store.state.drawVisible = config['visible'] || true
+              this.$store.state.drawOpacity = config['opacity'] || 1
+              if (!this.$store.state.isEditable && !this.$store.state.isMine) {
+                this.$store.state.loadingMessage = `<div style="text-align: center">${this.$store.state.geojsonName}に接続しました。<br>編集不可です。</div>`
+              } else {
+                this.$store.state.loadingMessage = `<div style="text-align: center">${this.$store.state.geojsonName}に接続しました。</div>`
               }
+              this.$store.state.loading2 = true
+              setTimeout(() => {
+                this.$store.state.loading2 = false
+              },3000)
+              startPolling()
             } else {
               console.log('セレクト失敗')
             }

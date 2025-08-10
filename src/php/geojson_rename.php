@@ -8,6 +8,7 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 // --- form-data から受け取るパラメータ ---
 $geojson_id   = isset($_POST['geojson_id'])   ? trim($_POST['geojson_id'])   : '';
 $geojson_name = isset($_POST['geojson_name']) ? trim($_POST['geojson_name']) : '';
+$is_editable = isset($_POST['is_editable']) ? trim($_POST['is_editable']) : '';
 
 // --- バリデーション ---
 if ($geojson_id === '' || $geojson_name === '') {
@@ -35,11 +36,12 @@ try {
     // updated_at は ON UPDATE CURRENT_TIMESTAMP で自動更新される設定を想定
     $upd = $pdo->prepare("
         UPDATE geojsons
-           SET geojson_name = :name
+           SET geojson_name = :name, is_editable = :isEditable
          WHERE geojson_id   = :gid
     ");
     $upd->execute([
         ':name' => $geojson_name,
+        ':isEditable' => $is_editable,
         ':gid'  => $geojson_id,
     ]);
 
@@ -47,6 +49,7 @@ try {
         'success'        => true,
         'geojson_id'     => $geojson_id,
         'geojson_name'   => $geojson_name,
+        'is_editable'   => $is_editable,
     ]);
 } catch (PDOException $e) {
     // 一意制約違反（名前重複）

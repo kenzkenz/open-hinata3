@@ -8,6 +8,7 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $geojson_name     = isset($_POST['geojson_name']) ? trim($_POST['geojson_name']) : '';
 $creator_user_id  = isset($_POST['creator_user_id']) ? trim($_POST['creator_user_id']) : null;
 $creator_nickname = isset($_POST['creator_nickname']) ? trim($_POST['creator_nickname']) : '';
+$is_editable = isset($_POST['is_editable']) ? trim($_POST['is_editable']) : '1';
 
 // バリデーション
 if ($geojson_name === '' || $creator_nickname === '') {
@@ -67,14 +68,15 @@ do {
 // 挿入
 try {
     $stmt = $pdo->prepare("
-        INSERT INTO geojsons (geojson_id, geojson_name, creator_user_id, creator_nickname)
-        VALUES (:geojson_id, :geojson_name, :creator_user_id, :creator_nickname)
+        INSERT INTO geojsons (geojson_id, geojson_name, creator_user_id, creator_nickname, is_editable)
+        VALUES (:geojson_id, :geojson_name, :creator_user_id, :creator_nickname, :is_editable)
     ");
     $stmt->execute([
         ':geojson_id'      => $geojson_id,
         ':geojson_name'    => $geojson_name,
         ':creator_user_id' => $creator_user_id,
         ':creator_nickname'=> $creator_nickname,
+        ':is_editable'     => $is_editable,
     ]);
 
     echo json_encode([
@@ -82,6 +84,7 @@ try {
         'already_exists'=> false,
         'geojson_id'    => $geojson_id,
         'geojson_name'  => $geojson_name,
+        'is_editable'   => $is_editable,
     ]);
 } catch (PDOException $e) {
     $msg = $e->getMessage();
@@ -95,6 +98,7 @@ try {
                 'already_exists' => true,
                 'geojson_id' => $ex['geojson_id'],
                 'geojson_name' => $geojson_name,
+                'is_editable'   => $is_editable,
                 'message' => 'geojson_name already existed (race), returning existing id',
             ]);
             exit;

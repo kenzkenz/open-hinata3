@@ -5,8 +5,22 @@ import firebase from 'firebase/app';
 
 export default createStore({
   state: {
-    isEditable: true,
     configFeature: null,
+    baseConfigFeature: {
+      "type": "Feature",
+      "properties": {
+        "id": "config",
+        'title-text': '',
+        'font-size': 30,
+        'fill-color': 'black',
+        'direction': 'vertical',
+        'visible': true,
+        'opacity': 1,
+      }
+    },
+    isMine: false,
+    isEditableForVSelect: true,
+    isEditable: true,
     isUsingServerGeojson: false,
     drawShareId: '',
     selectedFile: null,

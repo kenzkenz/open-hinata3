@@ -1645,8 +1645,8 @@ export function createSquarePolygonAtCenter(sideKm = 10, properties = {}) {
 }
 // ---------------------------------------------------------------------------------------------------------------------
 export function geojsonCreate(map, geoType, coordinates, properties = {}) {
-    if (!store.state.isEditable) {
-        alert('編集不可です。')
+    if (!store.state.isEditable && !store.state.isMine) {
+        alert('編集不可です！！')
         return
     }
     // 1. 新しいfeatureを生成
@@ -2289,14 +2289,7 @@ export async function deleteAll (noConfrim) {
     let source = map01.getSource(clickCircleSource.iD);
     const geojson = source._data
     await featuresDelete(geojson.features.filter(f => f.properties !== 'config').map(f => f.properties.id));
-
-    const configFeature = {
-        "type": "Feature",
-        "properties": {
-            "id": "config",
-        }
-    }
-
+    const configFeature = store.state.baseConfigFeature
     store.state.configFeature = configFeature
     source.setData(configFeature);
     await saveDrowFeatures([configFeature])

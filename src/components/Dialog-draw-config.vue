@@ -1,7 +1,6 @@
 <template>
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div class="config-div">
-
       <v-tabs mobile-breakpoint="0" v-model="tab" class="custom-tabs">
         <v-tab value="config">設定</v-tab>
         <v-tab value="share">共有ドロー設定</v-tab>
@@ -78,7 +77,7 @@
             />
             <v-select
                 style="margin-top: -10px;"
-                v-model="s_transparent"
+                v-model="s_isEditableForVSelect"
                 :items="editType"
                 item-title="label"
                 item-value="value"
@@ -87,8 +86,8 @@
                 :disabled="!isUser"
             ></v-select>
             <v-btn :disabled="!isUser" @click="createGeojsonMaster" style="margin-top: -14px;">新規追加</v-btn>
-            <v-btn @click="clear" style="margin-top: -14px; margin-left: 5px;">共有解除</v-btn>
-            <v-btn :disabled="!isUser"  @click="rename" style="margin-top: -14px; margin-left: 5px;">リネーム</v-btn>
+            <v-btn @click="clear" style="margin-top: -14px; margin-left: 5px;">サーバー切断</v-btn>
+            <v-btn :disabled="!isUser"  @click="rename" style="margin-top: -14px; margin-left: 5px;">設定変更</v-btn>
             <div class="data-container-wrapper">
               <div v-for="item in jsonData" :key="item.id" class="data-container" @click="rowCick(item)">
                 <button class="close-btn" @click.stop="rowRemove(item.geojson_id)">×</button>
@@ -127,8 +126,8 @@ export default {
   props: ['mapName'],
   data: () => ({
     editType: [
-      { label: '自分と他者が変更可能', value: '1' },
-      { label: '自分だけが変更可能', value: '0' }
+      { label: '自分と他者が変更可能', value: true },
+      { label: '自分だけが変更可能', value: false }
     ],
     label: '新規の場合、共有ドロー名を記入してください',
     jsonData: [],
@@ -168,8 +167,34 @@ export default {
     ...mapState([
       'isUsingServerGeojson',
       'isEditable',
+      'isEditableForVSelect',
+      'loadingMessage',
       'configFeature',
     ]),
+    s_loadingMessage: {
+      get() {
+        return this.$store.state.loadingMessage
+      },
+      set(value) {
+        return this.$store.state.loadingMessage = value
+      }
+    },
+    s_isEditableForVSelect: {
+      get() {
+        return this.$store.state.isEditableForVSelect
+      },
+      set(value) {
+        return this.$store.state.isEditableForVSelect = value
+      }
+    },
+    s_isEditable: {
+      get() {
+        return this.$store.state.isEditable
+      },
+      set(value) {
+        return this.$store.state.isEditable = value
+      }
+    },
     s_geojsonId: {
       get() {
         return this.$store.state.geojsonId
@@ -266,6 +291,8 @@ export default {
       const formData = new FormData();
       formData.append('geojson_id', this.s_geojsonId);
       formData.append('geojson_name', this.s_geojsonName);
+      formData.append('is_editable', this.s_isEditableForVSelect ? '1' : '0');
+      this.s_isEditable = this.s_isEditableForVSelect
       const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/geojson_rename.php', {
         method: 'POST',
         body: formData,
@@ -274,13 +301,13 @@ export default {
       console.log(data)
       if (data.success) {
         this.alertType = 'info'
-        this.alertText = 'リネーム成功！'
+        this.alertText = '変更成功！'
         this.showAlert = true
         await this.selectGeojson()
         return
       } else {
         this.alertType = 'error'
-        this.alertText = 'リネーム失敗！'
+        this.alertText = '変更失敗！'
         this.showAlert = true
         console.log('失敗')
         return
@@ -298,6 +325,8 @@ export default {
         deleteAll(true)
         this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
       },100)
+      this.$store.state.isUsingServerGeojson = false
+      this.$store.state.isEditable = true
       stopPolling()
       markaersRemove()
     },
@@ -336,19 +365,27 @@ export default {
         this.alertType = 'info'
         this.alertText = `「${item.geojson_name}」に変更しました。`
         this.showAlert = true
+        this.$store.state.isEditable = item.is_editable ===  '1'
+        this.s_isEditableForVSelect = this.$store.state.isEditable
+        this.$store.state.loadingMessage = `<div style="text-align: center">「${item.geojson_name}」に変更しました。</div>`
+        this.$store.state.loading2 = true
+        setTimeout(() => {
+          this.$store.state.loading2 = false
+        },2000)
       }
       // this.label = '現在、アクティブのドロー'
       this.$store.state.isUsingServerGeojson = true
       this.$store.state.editEnabled = false
       this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
-      this.$store.state.isEditable = item.is_editable ===  '1'
-      if (!this.$store.state.isEditable) {
+      this.$store.state.isEditable = this.s_isEditableForVSelect
+      if (!this.$store.state.isEditable && !this.$store.state.isMine) {
         this.$store.state.loadingMessage = '<div style="text-align: center">編集不可です。</div>'
         this.$store.state.loading2 = true
         setTimeout(() => {
           this.$store.state.loading2 = false
         },2000)
       }
+      this.s_isEditableForVSelect = this.$store.state.isEditable
       markaersRemove()
       startPolling()
     },
@@ -364,11 +401,11 @@ export default {
       if (data.success) {
         console.log(data)
         this.jsonData = data.rows
-        return
       } else {
         console.log('失敗')
         this.jsonData = []
       }
+
     },
     async createGeojsonMaster() {
       if (!this.s_geojsonName) {
@@ -381,6 +418,7 @@ export default {
       formData.append('geojson_name', this.s_geojsonName);
       formData.append('creator_nickname', this.s_myNickname);
       formData.append('creator_user_id', this.s_userId);
+      formData.append('is_editable', this.s_isEditableForVSelect ? '1' : 0);
       const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/create-geojson.php', {
         method: 'POST',
         body: formData,
@@ -404,23 +442,13 @@ export default {
       this.alertType = 'success'
       this.alertText = '追加成功！そのままドローを始めてください。'
       this.showAlert = true
+      this.$store.state.isUsingServerGeojson = true
       await this.selectGeojson()
+      const configFeature = this.$store.state.baseConfigFeature
       if (isJsonString(this.$store.state.clickCircleGeojsonText)) {
         const features = JSON.parse(this.$store.state.clickCircleGeojsonText).features
         console.log(features)
-        const configFeature = {
-          "type": "Feature",
-          "properties": {
-            "id": "config",
-            'title-text': '',
-            'font-size': 30,
-            'fill-color': 'black',
-            'direction': 'vertical',
-            'visible': true,
-            'opacity': 1,
-          }
-        }
-        if (features.filter(f => f.properties.id !== 'config').length > 0) {
+        if (features && features.filter(f => f.properties.id !== 'config').length > 0) {
           if (confirm("現在のドローを引き継ぎますか？引き継ぎもとのドローとは完全に独立します。")) {
             await saveDrowFeatures(features)
           } else {
@@ -429,6 +457,8 @@ export default {
         } else {
           await saveDrowFeatures([configFeature])
         }
+      } else {
+        await saveDrowFeatures([configFeature])
       }
       await this.rowCick()
     },
@@ -490,9 +520,11 @@ export default {
   },
   mounted() {
     document.querySelector('#drag-handle-drawConfigDialog-map01').innerHTML = '<span style="font-size: large;">各種設定</span>'
-    console.log(this.configFeature)
   },
   watch: {
+    // loadingMessage(value) {
+    //   // this.s_loadingMessage = `<div style="text-align: center">${value}</div>`
+    // },
     s_drawFire () {
       this.onDrawVisibleChange()
       this.drawOpacityInput()
