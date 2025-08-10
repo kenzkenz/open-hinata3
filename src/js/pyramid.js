@@ -2379,7 +2379,7 @@ export function watchGeojsonChange() {
  */
 export async function featuresDelete(ids) {
     if (store.state.isUsingServerGeojson) {
-        store.state.loading2 = true
+        store.state.loading3 = true
         const formData = new FormData();
         formData.append('geojson_id', store.state.geojsonId);
         // 配列で複数回 append
@@ -2393,12 +2393,12 @@ export async function featuresDelete(ids) {
         const result = await response.json();
         console.log(result)
         if (result.success) {
-            store.state.loadingMessage = '削除成功'
+            store.state.loadingMessage3 = '削除成功'
             setTimeout(() => {
-                store.state.loading2 = false
+                store.state.loading3 = false
             },2000)
         } else {
-            store.state.loading2 = false
+            store.state.loading3 = false
             alert('削除失敗')
         }
     }

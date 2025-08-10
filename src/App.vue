@@ -154,6 +154,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   color="primary">
         <p v-if="s_loading">処理中です。</p>
         <p v-if="s_loading2"><span v-html="s_loadingMessage"></span></p>
+        <p v-if="s_loading3"><span v-html="s_loadingMessage3"></span></p>
+      </v-snackbar>
+
+
+      <v-snackbar :v-model="true"
+                  :timeout="-1"
+                  color="primary">
+        <p v-if="s_loading3"><span v-html="s_loadingMessage3"></span></p>
       </v-snackbar>
 
       <v-snackbar v-model="s_snackbarForGroup" :timeout="3000" color="primary">
@@ -1086,6 +1094,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
         <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="(mapName === 'map01'|| mapName === 'map02' && s_map2Flg)" @click="btnPosition">
           <v-progress-linear  v-if="s_loading" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
           <v-progress-linear  v-if="s_loading2" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
+          <v-progress-linear  v-if="s_loading3" style="z-index: 1" indeterminate color="primary"></v-progress-linear>
           <!-- <SakuraEffect />-->
           <div>
             <div id="pointer1" class="pointer" v-if="mapName === 'map01'"></div>
@@ -2499,6 +2508,15 @@ export default {
         this.$store.state.isTransparent = value
       }
     },
+    s_loadingMessage3: {
+      get() {
+        return `<div style="text-align: center;">${this.$store.state.loadingMessage3}</div>`
+        // return this.$store.state.loadingMessage3
+      },
+      set(value) {
+        this.$store.state.loadingMessage3 = value
+      }
+    },
     s_loadingMessage: {
       get() {
         return this.$store.state.loadingMessage
@@ -2521,6 +2539,14 @@ export default {
       },
       set(value) {
         this.$store.state.isWindow = value
+      }
+    },
+    s_loading3: {
+      get() {
+        return this.$store.state.loading3
+      },
+      set(value) {
+        this.$store.state.loading3 = value
       }
     },
     s_loading2: {
@@ -4817,6 +4843,10 @@ export default {
       markaersRemove()
     },
     toggleDrawLasso () {
+      if (!this.$store.state.isEditable && !this.$store.state.isMine) {
+        alert('編集不可です!')
+        return
+      }
       this.s_isDrawLasso = !this.s_isDrawLasso
       if (this.s_isDrawLasso) {
         this.s_isDrawPoint = false
@@ -5005,7 +5035,7 @@ export default {
       }
     },
     updateSnackbar() {
-      this.loadingSnackbar = this.s_loading || this.s_loading2;
+      this.loadingSnackbar = this.s_loading || this.s_loading2 || this.s_loading3;
     },
     onResize() {
       this.windowWidth = window.innerWidth;
@@ -9642,6 +9672,9 @@ export default {
       this.updateSnackbar();
     },
     s_loading2(val) {
+      this.updateSnackbar();
+    },
+    s_loading3(val) {
       this.updateSnackbar();
     },
     s_simaFire () {

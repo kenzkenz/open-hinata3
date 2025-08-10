@@ -126,8 +126,8 @@ export default {
   props: ['mapName'],
   data: () => ({
     editType: [
-      { label: '自分と他者が変更可能', value: true },
-      { label: '自分だけが変更可能', value: false }
+      { label: 'URLを知っている人全員が編集可能', value: true },
+      { label: '自分だけが編集可能', value: false }
     ],
     label: '新規の場合、共有ドロー名を記入してください',
     jsonData: [],
@@ -168,17 +168,8 @@ export default {
       'isUsingServerGeojson',
       'isEditable',
       'isEditableForVSelect',
-      'loadingMessage',
       'configFeature',
     ]),
-    s_loadingMessage: {
-      get() {
-        return this.$store.state.loadingMessage
-      },
-      set(value) {
-        return this.$store.state.loadingMessage = value
-      }
-    },
     s_isEditableForVSelect: {
       get() {
         return this.$store.state.isEditableForVSelect
@@ -367,10 +358,10 @@ export default {
         this.showAlert = true
         this.$store.state.isEditable = item.is_editable ===  '1'
         this.s_isEditableForVSelect = this.$store.state.isEditable
-        this.$store.state.loadingMessage = `<div style="text-align: center">「${item.geojson_name}」に変更しました。</div>`
-        this.$store.state.loading2 = true
+        this.$store.state.loadingMessage3 = `<div style="text-align: center">「${item.geojson_name}」に変更しました。</div>`
+        this.$store.state.loading3 = true
         setTimeout(() => {
-          this.$store.state.loading2 = false
+          this.$store.state.loading3 = false
         },2000)
       }
       // this.label = '現在、アクティブのドロー'
@@ -379,10 +370,10 @@ export default {
       this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
       this.$store.state.isEditable = this.s_isEditableForVSelect
       if (!this.$store.state.isEditable && !this.$store.state.isMine) {
-        this.$store.state.loadingMessage = '<div style="text-align: center">編集不可です。</div>'
-        this.$store.state.loading2 = true
+        this.$store.state.loadingMessage3 = '<div style="text-align: center">編集不可です。</div>'
+        this.$store.state.loading3 = true
         setTimeout(() => {
-          this.$store.state.loading2 = false
+          this.$store.state.loading3 = false
         },2000)
       }
       this.s_isEditableForVSelect = this.$store.state.isEditable
@@ -522,9 +513,6 @@ export default {
     document.querySelector('#drag-handle-drawConfigDialog-map01').innerHTML = '<span style="font-size: large;">各種設定</span>'
   },
   watch: {
-    // loadingMessage(value) {
-    //   // this.s_loadingMessage = `<div style="text-align: center">${value}</div>`
-    // },
     s_drawFire () {
       this.onDrawVisibleChange()
       this.drawOpacityInput()
@@ -567,8 +555,8 @@ export default {
     configFeature: {
       handler(newVal, oldVal) {
         console.log('configFeature が変わりました', { oldVal, newVal });
-        // properties がなければ空オブジェクト
         console.log(newVal)
+        if (!this.$store.state.isEditable && !this.$store.state.isMine) return
         const props = newVal?.properties ?? {};
         // nullish coalescing を使うことで false や 0 の値も正しく扱える
         if (Object.keys(props).length === 0) {

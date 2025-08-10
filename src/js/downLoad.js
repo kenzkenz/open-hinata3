@@ -9848,7 +9848,7 @@ export async function saveDrowFeatures(features) {
     const result = await response.json();
     console.log(result)
     if (result.success) {
-        store.state.loading2 = true
+        store.state.loading3 = true
         const map01 = store.state.map01
         result.results.forEach(result => {
             const target = map01.getSource(clickCircleSource.iD)?._data.features?.find(feature => {
@@ -9861,18 +9861,18 @@ export async function saveDrowFeatures(features) {
                 console.log('競合が発生しました')
                 // store.state.loadingMessage = '競合が発生しました'
             } else if (result.status === 'inserted') {
-                store.state.loadingMessage = '新規追加しました'
+                store.state.loadingMessage3 = '新規追加しました'
             } else {
-                store.state.loadingMessage = '更新しました'
+                store.state.loadingMessage3 = '更新しました'
             }
         })
         console.log(result.results)
     } else {
         console.error('保存失敗', result);
-        store.state.loadingMessage = '失敗'
+        store.state.loadingMessage3 = '失敗'
     }
     setTimeout(() => {
-        store.state.loading2 = false
+        store.state.loading3 = false
     },2000)
 }
 
@@ -9973,12 +9973,12 @@ export async function featuresRestore(ids) {
         const result = await response.json();
         console.log(result)
         if (result.success) {
-            store.state.loadingMessage = '復活成功'
+            store.state.loadingMessage3 = '復活成功'
             setTimeout(() => {
-                store.state.loading2 = false
+                store.state.loading3 = false
             },2000)
         } else {
-            store.state.loading2 = false
+            store.state.loading3 = false
             alert('復活失敗')
         }
     }
@@ -10187,10 +10187,10 @@ export async function pollUpdates() {
         if (gap >= SLEEP_GAP_MS) {
             console.log('長時間停止を検知 → フルリフレッシュ');
             await refreshFromServer();
-            store.state.loadingMessage = '長時間停止を検知したためフルリフレッシュしました。'
-            store.state.loading2 = true
+            store.state.loadingMessage3 = '長時間停止を検知したためフルリフレッシュしました。'
+            store.state.loading3 = true
             setTimeout(() => {
-                store.state.loading2 = false
+                store.state.loading3 = false
             },5000)
         }
 
@@ -10224,7 +10224,7 @@ export async function pollUpdates() {
         newFeatures.forEach(f => {
             if (f.properties.last_editor_user_id !== store.state.userId) {
                 store.state.loading2 = true;
-                store.state.loadingMessage =
+                store.state.loadingMessage3 =
                     f.properties.last_editor_nickname
                         ? `${f.properties.last_editor_nickname} さんが新しい地物を追加しました`
                         : `guestさんが新しい地物を追加しました`;
@@ -10284,10 +10284,10 @@ function maybeRefreshOnWake() {
         // 長く止まっていた＝復帰直後とみなしてフルリフレッシュ
         stopPolling();
         refreshFromServer().then(startPolling);
-        store.state.loadingMessage = '復帰したためフルリフレッシュしました。'
-        store.state.loading2 = true
+        store.state.loadingMessage3 = '復帰したためフルリフレッシュしました。'
+        store.state.loading3 = true
         setTimeout(() => {
-            store.state.loading2 = false
+            store.state.loading3 = false
         },5000)
     }
 }
