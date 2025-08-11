@@ -5716,7 +5716,7 @@ export default {
         bearing = 0
       } else {
         if (this.bearing > -5 && this.bearing < 5 ) {
-          console.log('0に修正')
+          // console.log('0に修正')
           bearing = 0
           this.bearing = 0
         } else {
@@ -5772,7 +5772,7 @@ export default {
       const isWindow = this.$store.state.isWindow
       const simaTextForUser = this.$store.state.simaTextForUser
       const geojsinId = this.$store.state.geojsonId
-      console.log(geojsinId)
+      // console.log(geojsinId)
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
       ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}
@@ -5794,10 +5794,13 @@ export default {
           .then(function (response) {
             if (response.data.results) {
               try {
-                const splitMuni = muni[Number(response.data.results.muniCd)].split(',')
-                vm.s_address = splitMuni[1] + splitMuni[3] + response.data.results.lv01Nm
-                // console.log(splitMuni[0])
-                vm.$store.state.prefId = splitMuni[0]
+                const muni0 = muni[Number(response.data.results.muniCd)]
+                if (muni0) {
+                  const splitMuni = muni0.split(',')
+                  vm.s_address = splitMuni[1] + splitMuni[3] + response.data.results.lv01Nm
+                  console.log(vm.s_address)
+                  vm.$store.state.prefId = splitMuni[0]
+                }
               }catch (e){
                 console.log(e)
               }
@@ -5815,10 +5818,11 @@ export default {
       // console.log(this.param)
       axios.post('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrl.php', params)
           .then(response => {
-            const basePath = window.location.pathname.replace(/\/\/+$/, '/'); // 末尾のスラッシュを削除 通常はこの処理はいらない。間違えたURLを使い続けている人の対応
-            const newUrl = basePath + "?s=" + response.data.urlid;
+            // const basePath = window.location.pathname.replace(/\/\/+$/, '/'); // 末尾のスラッシュを削除 通常はこの処理はいらない。間違えたURLを使い続けている人の対応
+            // const newUrl = basePath + "?s=" + response.data.urlid;
+            const newUrl = window.location.pathname + "?s=" + response.data.urlid;
             window.history.pushState(null, 'map', newUrl)
-            console.log(window.location.pathname)
+            // console.log(window.location.pathname)
             let pathName = '/'
             if (window.location.pathname !== '/') {
               pathName = window.location.pathname
@@ -5889,8 +5893,6 @@ export default {
       const isWindow = params.get('iswindow')
       const simaTextForUser = params.get('simatextforuser')
       const geojsonId = params.get('geojsinid')
-      console.log(params)
-      console.log('222',geojsonId)
       this.pitch.map01 = pitch01
       this.pitch.map02 = pitch02
       this.bearing = bearing
@@ -9414,7 +9416,7 @@ export default {
   },
   created() {
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-    console.log(/android/i.test(userAgent))
+    // console.log(/android/i.test(userAgent))
     this.$store.state.isAndroid = /android/i.test(userAgent);
     if (window.innerWidth < 500) this.$store.state.isUnder500 = true
     if (window.innerWidth < 500 ) this.fanMenuOffsetX = 0

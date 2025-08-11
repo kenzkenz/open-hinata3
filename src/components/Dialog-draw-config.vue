@@ -394,7 +394,7 @@ export default {
       });
       const data = await response.json();
       if (data.success) {
-        console.log(data)
+        // console.log(data)
         this.jsonData = data.rows
       } else {
         console.log('失敗')
@@ -487,7 +487,7 @@ export default {
       map01.setPaintProperty('segment-label-layer', 'text-opacity', this.s_drawOpacity)
     },
     configChange (tgtProp,value) {
-      console.log(tgtProp,value)
+      // console.log(tgtProp,value)
       const map01 = this.$store.state.map01
       this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01, null, clickCircleSource.iD, 'config', tgtProp, value)
       if (tgtProp === 'direction') {

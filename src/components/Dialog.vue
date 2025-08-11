@@ -114,7 +114,7 @@ export default {
         const secondDiv = vm.$store.state.secondDivStyle
         // const dialogDiv0 = document.querySelector('#dialog-div-' + vm.dialog.name + '-' + vm.mapName)
         // const secondDiv = document.querySelector('.second-div')
-        console.log(firstDiv.style.background_color)
+        // console.log(firstDiv.style.background_color)
         if (window.innerWidth < 450) {
           // スマホ画面の場合の設定
           dialogDiv.style.position = 'fixed';

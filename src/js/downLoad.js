@@ -8272,7 +8272,7 @@ export function enableDragHandles(map) {
 
     function onUp() {
         // 頂点・中点を再生成
-        console.log(geojson)
+        // console.log(geojson)
         if (geojson && store.state.editEnabled) {
             updateDragHandles(true)
             getAllVertexPoints(map, geojson);
@@ -9869,8 +9869,8 @@ export async function saveDrowFeatures(features) {
     const formData = new FormData();
     formData.append('geojson_id', store.state.geojsonId);
     features.forEach(f => {
-        console.log(f.properties.id)
-        console.log(f.properties)
+        // console.log(f.properties.id)
+        // console.log(f.properties)
         // 逃げのコーディング。どこかでプロパティtitle-textがないconfigをセーブしようとしているのでそれを回避
         const hasKey = Object.prototype.hasOwnProperty.call(f?.properties ?? {}, 'title-text');
         if ((f.properties.id === 'config' && hasKey) || f.properties.id !== 'config' ) {
@@ -9885,7 +9885,7 @@ export async function saveDrowFeatures(features) {
         }
     });
     if (!flg) {
-        console.log(999)
+        console.log('saveDrowFeaturesをキャンセル')
         return
     }
     // if (!store.state.isEditable && !store.state.isMine) {
