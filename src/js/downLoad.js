@@ -35,7 +35,8 @@ import {
     setAllMidpoints
 } from "@/js/pyramid";
 import { deserialize } from 'flatgeobuf/lib/mjs/geojson.js';
-import {closeAllPopups} from "@/js/popup";
+import {closeAllPopups, popup} from "@/js/popup";
+import {isNumber} from "lodash";
 
 
 // import publicChk from '@/components/Dialog-myroom'
@@ -10036,6 +10037,83 @@ export async function featuresRestore(ids) {
 }
 
 /**
+ * 小さいサムネイル風のマーカーをつくる（テキスト）
+ * @param map
+ * @param coords
+ * @param photoURL
+ */
+const txtMarkers = []
+export function createTextThumbnailMarker(map, coords, txt, id) {
+    if (store.state.editEnabled) return
+    const key = coords.join(',');
+    if (!map.__txtThumbnailMarkerKeys) {
+        map.__txtThumbnailMarkerKeys = new Set();
+    }
+    if (map.__txtThumbnailMarkerKeys.has(key)) {
+        return;
+    }
+    map.__txtThumbnailMarkerKeys.add(key);
+
+    // コンテナ要素を作成
+    const container = document.createElement('div');
+    // container.style.position = 'relative';
+    container.style.width             = `100px`;
+    container.style.height            = `30px`;
+    container.style.backgroundColor    = 'white';
+    container.style.backgroundSize    = 'cover';
+    container.style.backgroundPosition= 'center';
+    container.style.borderRadius      = '10px';
+    container.style.border            = '2px solid white';
+    container.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
+    container.style.cursor            = 'pointer';
+
+    const label = document.createElement('div');
+    label.textContent = txt ?? '';
+    label.style.width = '100%';
+    label.style.height = '100%';
+    label.style.display = 'flex';
+    label.style.alignItems = 'center';
+    label.style.justifyContent = 'center';
+    label.style.textAlign = 'center';
+    label.style.padding = '4px';
+    label.style.boxSizing = 'border-box';
+    label.style.fontSize = '12px';
+    label.style.lineHeight = '1.2';
+    label.style.wordBreak = 'break-word';
+    label.style.overflow = 'hidden';
+    label.style.textOverflow = 'ellipsis';
+    // 複数行のとき省略（対応ブラウザで）
+    label.style.display = '-webkit-box';
+    label.style.webkitBoxOrient = 'vertical';
+    label.style.webkitLineClamp = '3';
+    container.appendChild(label);
+
+    // クリックで元画像を別タブで開く
+    container.addEventListener('click', (e) => {
+        e.stopPropagation(); // マップのクリックイベントを阻止
+        store.state.id = id
+        const dummyEvent = {
+            lngLat: { lng: coords[0], lat: coords[1] },
+        };
+        function onPointClick(e) {
+            popup(e,map,'map01', store.state.map2Flg)
+        }
+        onPointClick(dummyEvent)
+    });
+    const offsetX = 0
+    const offsetY = 0
+    const marker =
+        new maplibregl.Marker({
+            element: container,
+            offset: [ offsetX, offsetY ]
+        })
+            .setLngLat(coords)
+            .addTo(map)
+
+    txtMarkers.push({ key, marker });
+}
+
+/**
  * 小さいサムネイル風のマーカーをつくる
  * @param map
  * @param coords
@@ -10143,19 +10221,40 @@ export function cleanupThumbnailMarkers(map, currentCoordsArray) {
         }
     }
 }
+export function cleanupTxtThumbnailMarkers(map, currentCoordsArray) {
+    const currentKeys = new Set(currentCoordsArray.map(c => c.join(',')));
+    for (let i = txtMarkers.length - 1; i >= 0; i--) {
+        const { key, marker } = txtMarkers[i];
+        if (!currentKeys.has(key)) {
+            console.log(key)
+            if (key) {
+                marker.remove();
+                markers.splice(i, 1);
+                map.__txtThumbnailMarkerKeys.delete(key);
+            }
+        }
+    }
+}
 
 /**
  * 全マーカー削除
  */
 export function markaersRemove() {
-    markers.forEach(m => {
-        m.marker.remove()
+    const allMarkers = [markers, txtMarkers]
+    allMarkers.forEach(markers => {
+        markers.forEach(m => {
+            m.marker.remove()
+        })
+        markers.length = 0
+        if (store.state.map01.__thumbnailMarkerKeys) {
+            store.state.map01.__thumbnailMarkerKeys.clear();
+            store.state.map02.__thumbnailMarkerKeys.clear();
+        }
+        if (store.state.map01.__txtThumbnailMarkerKeys) {
+            store.state.map01.__txtThumbnailMarkerKeys.clear();
+            store.state.map02.__txtThumbnailMarkerKeys.clear();
+        }
     })
-    markers.length = 0
-    if (store.state.map01.__thumbnailMarkerKeys) {
-        store.state.map01.__thumbnailMarkerKeys.clear();
-        store.state.map02.__thumbnailMarkerKeys.clear();
-    }
 }
 
 /**
@@ -10167,6 +10266,7 @@ let featureCollection = {
 };
 let lastFetch = new Date(0).toISOString();
 const coordsList = []
+const txtCoordsList = []
 const SLEEP_GAP_MS = 60_000; // 60秒以上止まってたら「スリープ後」とみなす
 let pollingTimer = null;
 let lastTick = Date.now();
@@ -10257,6 +10357,8 @@ export async function pollUpdates() {
         store.state.isEditable = dataG.rows[0].is_editable === '1'
 
         coordsList.length = 0;
+        txtCoordsList.length = 0;
+
         const map01 = store.state.map01;
         const map02 = store.state.map02;
         const formData = new FormData();
@@ -10293,16 +10395,28 @@ export async function pollUpdates() {
         store.state.clickCircleGeojsonText = JSON.stringify(featureCollection);
 
         featureCollection.features.forEach(feature => {
+            const coords = feature.geometry?.coordinates;
             if (feature.properties.pictureUrl) {
-                const coords = feature.geometry.coordinates;
                 const photoURL = feature.properties.pictureUrl;
                 createThumbnailMarker(map01, coords, photoURL);
                 createThumbnailMarker(map02, coords, photoURL);
                 coordsList.push(coords);
+            } else if (feature.properties.label && !feature.properties?.radius && isPointCoords(coords)) {
+                const id = feature.properties.id;
+                const txt = feature.properties.label;
+                createTextThumbnailMarker(map01, coords, txt, id);
+                createTextThumbnailMarker(map02, coords, txt, id);
+                txtCoordsList.push(coords);
             }
         });
-        cleanupThumbnailMarkers(map01, coordsList);
-        cleanupThumbnailMarkers(map02, coordsList);
+        if (coordsList.length > 0) {
+            cleanupThumbnailMarkers(map01, coordsList);
+            cleanupThumbnailMarkers(map02, coordsList);
+        }
+        if (txtCoordsList.length > 0) {
+            cleanupTxtThumbnailMarkers(map01, txtCoordsList);
+            cleanupTxtThumbnailMarkers(map02, txtCoordsList);
+        }
 
         const configFeature = featureCollection.features.find(feature => feature.properties.id === 'config');
         if (configFeature) {
@@ -10393,3 +10507,9 @@ export function stopPolling() {
         pollingTimer = null;
     }
 }
+
+// [lng, lat] の「ポイント配列」かどうか
+export const isPointCoords = (coords) =>
+    Array.isArray(coords) &&
+    coords.length === 2 &&
+    coords.every(n => typeof n === 'number' && Number.isFinite(n));

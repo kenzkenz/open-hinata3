@@ -6609,7 +6609,6 @@ export default {
 
       // ポイント作成-----------------------------------------------------------------------------------
       function onPointClick(e) {
-        // alert(111)
         popup(e,map,'map01',vm.s_map2Flg)
       }
       map.on('click', (e) => {

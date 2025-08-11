@@ -21,8 +21,6 @@ export const popups = []
 const isIphone = /iPhone/i.test(navigator.userAgent)
 const isSmall = window.innerWidth < 500
 
-
-
 // Turf.jsを使用して面積、周長、頂点数を計算する関数
 export function calculatePolygonMetrics(polygon) {
     try {
@@ -391,7 +389,6 @@ export function popup(e,map,mapName,mapFlg) {
         const layerId = feature.layer.id
         let props = feature.properties
         console.log(layerId, feature, props)
-        // alert(layerId)
         switch (layerId) {
             case 'oh-zosei-line':
             case 'oh-zosei-label':
