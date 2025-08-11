@@ -9297,7 +9297,7 @@ export default {
           });
 
 
-          console.log(this.$store.state.uploadedImage)
+          // console.log(this.$store.state.uploadedImage)
 
           if (this.$store.state.uploadedImage) {
 
