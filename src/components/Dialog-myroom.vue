@@ -281,7 +281,7 @@ import {
   addImageLayerJpg,
   addImageLayerPng,
   addTileLayerForImage,
-  geojsonAddLayer, iko, onceUrlChange, publicChk,
+  geojsonAddLayer, iko, publicChk,
   simaToGeoJSON, userKmzSet, userPmtile0Set, userPmtileSet, userSimaSet, userTileSet, userXyztileSet, watchSParamOnce
 } from "@/js/downLoad"
 import muni from '@/js/muni'
@@ -1245,6 +1245,7 @@ export default {
       aaa()
     },
     xyztileClick (name,url,id,bbox,transparent) {
+      url = url.replace('https://kenzkenz.duckdns.org/','https://kenzkenz.net/')
       this.xyztileRename = name
       this.id = id
       this.name = name
@@ -1675,17 +1676,19 @@ export default {
 
                     const name = response.data[0].name
                     const id = response.data[0].id
-                    const url = response.data[0].url
+                    let url = response.data[0].url
                     const bbox = JSON.parse(response.data[0].bbox)
                     const bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
                     console.log(bbox)
+                    url = url.replace('https://kenzkenz.duckdns.org/','https://kenzkenz.net/')
                     const source = {
-                      id: 'oh-vpstile-' + id + '-' + name + '-source',obj: {
+                      id: 'oh-vpstile-' + id + '-' + name + '-source',
+                      obj: {
                         type: 'raster',
-                        tiles: ['transparentBlack://' +url],
+                        url: 'pmtiles://' + url,
+                        // tiles: ['transparentPmtiles://' + url + '/{z}/{x}/{y}'],
                         bounds: bounds,
-                        maxzoom: 26,
-                      }
+                        maxzoom: 26 }
                     };
                     const layer = {
                       id: 'oh-vpstile-' + id + '-' + name + '-layer',
@@ -2363,7 +2366,7 @@ export default {
     async fetchImages() {
       const uid = this.uid;
       const url = `https://kenzkenz.net/myphp/list.php?dir=/var/www/html/public_html/uploads/${uid}`;
-      console.log(url);
+      // console.log(url);
 
       try {
         const response = await fetch(url);

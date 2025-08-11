@@ -2250,9 +2250,44 @@ export async function saveSima2(map, layerId, kukaku, isDfx, sourceId, fields, k
         async function deserializeAndPrepareGeojson(layerId) {
             let geojson = { type: 'FeatureCollection', features: [] };
             console.log('データをデシリアライズ中...');
-            const iter = deserialize(fgb_URL, bbox);
-            for await (const feature of iter) {
-                geojson.features.push(feature);
+            try {
+                const iter = deserialize(fgb_URL, bbox);
+                for await (const feature of iter) {
+                    geojson.features.push(feature);
+                }
+                // throw new Error("これはわざと発生させたエラーです");
+            }catch (e) {
+                console.log(e)
+                console.log(`エラーキャッチ！バックアップを使用します。prefId=${prefId}`)
+                // alert(`エラーキャッチ！バックアップを使用します。prefId=${prefId}`)
+                if (prefId === '47') {
+                    try {
+                        const fgb_URL = `https://kenzkenz.net/tiles/fgbbk/${prefId}.fgb?nocache=${Date.now()}`
+                        // alert(`エラーキャッチ！バックアップを使用します。\n${fgb_URL}`)
+                        console.log(fgb_URL)
+                        const iter = deserialize(fgb_URL, bbox);
+                        for await (const feature of iter) {
+                            geojson.features.push(feature);
+                        }
+                        // throw new Error("これはわざと発生させたエラーです");
+                    }catch (e) {
+                        console.log('バックアップを使用しても改善不可能でした。\n管理者に報告してください。')
+                        // alert('バックアップを使用しても改善不可能でした。\n管理者に報告してください。')
+                    }
+                } else {
+                    try {
+                        const fgb_URL = `https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/fgb/${prefId}.fgb?nocache=${Date.now()}`
+                        console.log(fgb_URL)
+                        const iter = deserialize(fgb_URL, bbox);
+                        for await (const feature of iter) {
+                            geojson.features.push(feature);
+                        }
+                        // throw new Error("これはわざと発生させたエラーです");
+                    }catch (e) {
+                        console.log(e)
+                        console.log('バックアップを使用しても改善不可能でした。\n管理者に報告してください。')
+                    }
+                }
             }
             console.log('取得した地物:', geojson);
             if (geojson.features.length === 0) {
@@ -2340,7 +2375,6 @@ export async function saveCima3(map,kei,jww) {
         const geojson = { type: 'FeatureCollection', features: [] };
         console.log('データをデシリアライズ中...');
         const iter = deserialize(fgb_URL, fgBoundingBox());
-
         for await (const feature of iter) {
             geojson.features.push(feature);
         }
@@ -6534,6 +6568,7 @@ export async function userSimaSet(name, url, id, zahyokei, simaText, isFirst) {
 }
 
 export async function userKmzSet(name, url, id) {
+    url = url.replace('https://kenzkenz.duckdns.org/','https://kenzkenz.net/')
     const map = store.state.map01;
 
     try {
@@ -9173,12 +9208,36 @@ export async function homusyoCalculatePolygonMetrics(fudeIds) {
     async function deserializeAndPrepareGeojson() {
         const geojson = { type: 'FeatureCollection', features: [] };
         console.log('データをデシリアライズ中...', bbox);
-        const iter = deserialize(
-            `https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/fgb/${prefId}.fgb`,
-            bbox
-        );
-        for await (const feature of iter) {
-            geojson.features.push(feature);
+        try {
+            const iter = deserialize(
+                `https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/fgb/${prefId}.fgb`,
+                bbox
+            );
+            for await (const feature of iter) {
+                geojson.features.push(feature);
+            }
+        }catch (e) {
+            console.log(e)
+            console.log(`エラーキャッチ！バックアップを使用します。prefId=${prefId}`)
+            // alert(`エラーキャッチ！バックアップを使用します。prefId=${prefId}`)
+            // if (prefId === '47') {
+                try {
+                    const fgb_URL = `https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/fgb/${prefId}.fgb?nocache=${Date.now()}`
+                    console.log(fgb_URL)
+                    const iter = deserialize(fgb_URL, bbox);
+                    for await (const feature of iter) {
+                        geojson.features.push(feature);
+                    }
+                    // throw new Error("これはわざと発生させたエラーです");
+                }catch (e) {
+                    console.log(e)
+                    alert('バックアップを使用しても改善不可能でした。\n管理者に報告してください。')
+                }
+            // } else {
+            //     alert(`エラーキャッチ！prefId=${prefId}.fgb\n管理者に報告してください。`)
+            //     store.state.loading = false
+            //     return
+            // }
         }
         console.log('取得した地物:', geojson);
         return geojson;

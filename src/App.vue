@@ -8168,7 +8168,7 @@ export default {
                   } else {
                     const name = response.data[0].name;
                     const id = response.data[0].id;
-                    const url = response.data[0].url;
+                    let url = response.data[0].url;
                     const bbox = JSON.parse(response.data[0].bbox);
                     const bounds = [bbox[0], bbox[1], bbox[2], bbox[3]];
                     const transparent = JSON.parse(response.data[0].transparent);
@@ -8177,6 +8177,7 @@ export default {
                     if (url.endsWith('.pmtiles')) {
                       // transparentPmtiles://https://example.com/tiles.pmtiles/10/123/456
                       // alert('transparentPmtiles://' + url + '/{z}/{x}/{y}')
+                      url = url.replace('https://kenzkenz.duckdns.org/','https://kenzkenz.net/')
                       source = {
                         id: 'oh-vpstile-' + id + '-' + name + '-source',
                         obj: {

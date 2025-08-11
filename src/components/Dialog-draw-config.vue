@@ -356,26 +356,30 @@ export default {
         this.alertType = 'info'
         this.alertText = `「${item.geojson_name}」に変更しました。`
         this.showAlert = true
-        this.$store.state.isEditable = item.is_editable ===  '1'
+        this.$store.state.isEditable = item.is_editable === '1'
+        this.$store.state.isMine = item.creator_user_id === this.$store.state.userId
         this.s_isEditableForVSelect = this.$store.state.isEditable
         this.$store.state.loadingMessage3 = `<div style="text-align: center">「${item.geojson_name}」に変更しました。</div>`
         this.$store.state.loading3 = true
         setTimeout(() => {
           this.$store.state.loading3 = false
-        },2000)
+        }, 2000)
+      } else {
+        // this.label = '現在、アクティブのドロー'
+        this.$store.state.isUsingServerGeojson = true
+        this.$store.state.editEnabled = false
+        this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
+        this.$store.state.isEditable = this.s_isEditableForVSelect
+        this.$store.state.isMine = true
+        if (!this.$store.state.isEditable && !this.$store.state.isMine) {
+          this.$store.state.loadingMessage3 = '<div style="text-align: center">編集不可です。</div>'
+          this.$store.state.loading3 = true
+          setTimeout(() => {
+            this.$store.state.loading3 = false
+          },2000)
+        }
       }
-      // this.label = '現在、アクティブのドロー'
-      this.$store.state.isUsingServerGeojson = true
-      this.$store.state.editEnabled = false
-      this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
-      this.$store.state.isEditable = this.s_isEditableForVSelect
-      if (!this.$store.state.isEditable && !this.$store.state.isMine) {
-        this.$store.state.loadingMessage3 = '<div style="text-align: center">編集不可です。</div>'
-        this.$store.state.loading3 = true
-        setTimeout(() => {
-          this.$store.state.loading3 = false
-        },2000)
-      }
+
       this.s_isEditableForVSelect = this.$store.state.isEditable
       markaersRemove()
       startPolling()
