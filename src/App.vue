@@ -1419,7 +1419,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <dialog-info :mapName=mapName />
           <dialog2 :mapName=mapName />
           <dialogShare v-if="mapName === 'map01'" :mapName=mapName @open-floating="openWindow" />
-          <DialogChibanzuList :mapName=mapName />
+<!--          <DialogChibanzuList :mapName=mapName />-->
 <!--          <DialogDrawConfig v-if="mapName === 'map01'" :mapName=mapName />-->
 
         </div>
