@@ -87,7 +87,7 @@
             ></v-select>
             <v-btn :disabled="!isUser" @click="createGeojsonMaster" style="margin-top: -14px;">新規追加</v-btn>
             <v-btn @click="clear" style="margin-top: -14px; margin-left: 5px;">サーバー切断</v-btn>
-            <v-btn :disabled="!isUser"  @click="rename" style="margin-top: -14px; margin-left: 5px;">設定変更</v-btn>
+            <v-btn :disabled="!isUser" v-if="isEditable || isMine" @click="rename" style="margin-top: -14px; margin-left: 5px;">設定変更</v-btn>
             <div class="data-container-wrapper">
               <div v-for="item in jsonData" :key="item.id" class="data-container" @click="rowCick(item)">
                 <button class="close-btn" @click.stop="rowRemove(item.geojson_id)">×</button>
