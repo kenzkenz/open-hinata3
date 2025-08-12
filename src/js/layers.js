@@ -681,7 +681,7 @@ export const clickCircleSource ={
         }
     }
 }
-// 円を描画するレイヤーを追加--------------------------------------------------
+// ドローレイヤーを追加--------------------------------------------------
 export const clickCircleLayer = {
     id: 'click-circle-layer',
     type: 'fill',
@@ -797,7 +797,13 @@ export const clickCircleLabelLayer = {
     id: 'click-circle-label-layer',
     type: 'symbol',
     source: 'click-circle-source',
-    filter: ['==', '$type', 'Point'],
+    // filter: ['==', '$type', 'Point'],
+    filter: [
+        'any',
+        // ['==', '$type', 'Point'],
+        ['!', ['has', 'style']],
+        ['==', ['get', 'style'], 0]
+    ],
     layout: {
         // isRadius が真（boolean true）なら label、偽なら label2 を表示
         'text-field': [

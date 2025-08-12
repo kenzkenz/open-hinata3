@@ -6651,7 +6651,8 @@ export default {
             'text-size': this.$store.state.currentTextSize || 16,
             offsetValue: [0.6, 0],
             textAnchor: 'left',
-            textJustify: 'left'
+            textJustify: 'left',
+            style: 0,
           }
           geojsonCreate(map, 'Point', coordinates, properties)
           // 地図がアイドル状態（描画が完了）になるのを待つ
