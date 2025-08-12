@@ -2,11 +2,11 @@
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div class="config-div">
       <v-tabs mobile-breakpoint="0" v-model="tab" class="custom-tabs">
-        <v-tab value="config">設定</v-tab>
+        <v-tab v-if="isEditable || isMine" value="config">設定</v-tab>
         <v-tab value="share">共有ドロー設定</v-tab>
       </v-tabs>
       <v-window v-model="tab" style="margin-top: 10px;">
-        <v-window-item value="config">
+        <v-window-item v-if="isEditable || isMine" value="config">
           <v-card>
             <v-card-text>
               <v-textarea
@@ -167,6 +167,7 @@ export default {
     ...mapState([
       'isUsingServerGeojson',
       'isEditable',
+      'isMine',
       'isEditableForVSelect',
       'configFeature',
     ]),
