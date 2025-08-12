@@ -6653,10 +6653,10 @@ export default {
             color: this.$store.state.currentTextColor || 'black',
             'point-color': this.$store.state.currentPointColor || 'black',
             'text-size': this.$store.state.currentTextSize || 16,
-            offsetValue: [0.6, 0],
+            offsetValue: [0.6, -0.7],
             textAnchor: 'left',
             textJustify: 'left',
-            labelType: this.$store.state.currentTextLabelType || 0,
+            labelType: this.$store.state.currentTextLabelType || '1',
           }
           geojsonCreate(map, 'Point', coordinates, properties)
           // 地図がアイドル状態（描画が完了）になるのを待つ
@@ -6708,6 +6708,7 @@ export default {
           color: colorNameToRgba(this.$store.state.currentCircleColor || 'blue', 0.6),
           canterLng: 0,
           canterLat: 0,
+          labelType: '0',
         }
         geojsonCreate(map, 'Circle', coordinates, properties)
         const dummyEvent = {

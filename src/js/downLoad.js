@@ -10040,6 +10040,9 @@ export async function featuresRestore(ids) {
  *
  */
 export function markerAddAndRemove() {
+
+    kari()
+
     const map01 = store.state.map01
     const map02 = store.state.map01
     coordsList.length = 0;
@@ -10047,23 +10050,39 @@ export function markerAddAndRemove() {
     if (!featureCollection) return
     featureCollection.features.forEach(feature => {
         const coords = feature.geometry?.coordinates;
-        if (feature.properties.pictureUrl) {
-            const photoURL = feature.properties.pictureUrl;
-            createThumbnailMarker(map01, coords, photoURL);
-            createThumbnailMarker(map02, coords, photoURL);
-            coordsList.push(coords);
-        } else if (feature.properties.label &&
-            !feature.properties?.radius &&
+        const isPicture = !!feature?.properties?.pictureUrl;
+        const isLabel = !!(
+            feature?.properties?.label &&
+            !feature?.properties?.radius &&
             isPointCoords(coords) &&
-            feature.properties.labelType ===  '1'
-        ) {
+            feature?.properties?.labelType === '1'
+        )
+        if (isPicture && isLabel) {
             const id = feature.properties.id;
             const txt = feature.properties.label;
             const color = feature.properties.color;
             const fontSize = feature.properties['text-size'];
-            createTextThumbnailMarker(map01, coords, txt, id, color, fontSize);
-            createTextThumbnailMarker(map02, coords, txt, id, color, fontSize);
+            const photoURL = feature.properties.pictureUrl;
+            createTextThumbnailMarker(map01, coords, txt, id, color, fontSize, photoURL);
+            createTextThumbnailMarker(map02, coords, txt, id, color, fontSize, photoURL);
             txtCoordsList.push(coords);
+        } else {
+            if (isPicture) {
+                const id = feature.properties.id;
+                const photoURL = feature.properties.pictureUrl;
+                createThumbnailMarker(map01, coords, photoURL, id);
+                createThumbnailMarker(map02, coords, photoURL, id);
+                coordsList.push(coords);
+            }
+            if (isLabel) {
+                const id = feature.properties.id;
+                const txt = feature.properties.label;
+                const color = feature.properties.color;
+                const fontSize = feature.properties['text-size'];
+                createTextThumbnailMarker(map01, coords, txt, id, color, fontSize);
+                createTextThumbnailMarker(map02, coords, txt, id, color, fontSize);
+                txtCoordsList.push(coords);
+            }
         }
     });
     cleanupThumbnailMarkers(map01, coordsList);
@@ -10079,8 +10098,7 @@ export function markerAddAndRemove() {
  * @param photoURL
  */
 const txtMarkers = []
-export function createTextThumbnailMarker(map, coords, txt, id, color, fontSize) {
-    // console.log(color, fontSize)
+export function createTextThumbnailMarker(map, coords, txt, id, color, fontSize, photoURL) {
     if (store.state.editEnabled) return
     const key = coords.join(',');
     if (!map.__txtThumbnailMarkerKeys) {
@@ -10094,8 +10112,9 @@ export function createTextThumbnailMarker(map, coords, txt, id, color, fontSize)
     // コンテナ要素を作成
     const container = document.createElement('div');
     container.id                      = `txt-marker-${id}`;
-    container.style.minWidth          = `100px`;
+    container.style.minWidth          = `30px`;
     container.style.minHeight         = `30px`;
+    container.style.padding           = `5px`;
     container.style.backgroundColor   = 'white';
     container.style.backgroundSize    = 'cover';
     container.style.backgroundPosition= 'center';
@@ -10103,6 +10122,37 @@ export function createTextThumbnailMarker(map, coords, txt, id, color, fontSize)
     container.style.border            = '2px solid white';
     container.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
     container.style.cursor            = 'pointer';
+
+    if (photoURL) {
+        let thumb
+        const isVideo = isVideoFile(photoURL)
+        if (isVideo) {
+            thumb = document.createElement('video');
+            thumb.style.width             = `50px`;
+            thumb.style.height            = `50px`;
+            thumb.style.borderRadius      = '10px';
+            thumb.style.border            = '2px solid #ffffff';
+            thumb.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
+            thumb.src = photoURL;
+            thumb.muted = true;
+            thumb.autoplay = true;
+            thumb.loop = true;
+            thumb.playsInline = true;
+            thumb.style.objectFit   = 'cover';
+        } else {
+            thumb = document.createElement('div');
+            thumb.style.width             = `50px`;
+            thumb.style.height            = `50px`;
+            thumb.style.backgroundImage   = `url(${photoURL})`;
+            thumb.style.backgroundSize    = 'cover';
+            thumb.style.backgroundPosition= 'center';
+            thumb.style.borderRadius      = '10px';
+            thumb.style.border            = '2px solid #ffffff';
+            thumb.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
+            thumb.style.cursor            = 'pointer';
+        }
+        container.appendChild(thumb);
+    }
 
     const label = document.createElement('div');
     label.className = 'txt-marker-label'
@@ -10153,7 +10203,7 @@ export function createTextThumbnailMarker(map, coords, txt, id, color, fontSize)
         onPointClick(dummyEvent)
     });
     const offsetX = 0
-    const offsetY = 0
+    const offsetY = -35
     const marker =
         new maplibregl.Marker({
             element: container,
@@ -10172,11 +10222,10 @@ export function createTextThumbnailMarker(map, coords, txt, id, color, fontSize)
  * @param photoURL
  */
 const markers = []
-export function createThumbnailMarker(map, coords, photoURL) {
+export function createThumbnailMarker(map, coords, photoURL, id) {
     if (store.state.editEnabled) return
     const key = coords.join(',');
     if (!map.__thumbnailMarkerKeys) {
-    // if (markers.length === 0) {
         map.__thumbnailMarkerKeys = new Set();
     }
     if (map.__thumbnailMarkerKeys.has(key)) {
@@ -10189,7 +10238,7 @@ export function createThumbnailMarker(map, coords, photoURL) {
 
     // コンテナ要素を作成
     const container = document.createElement('div');
-    // container.style.position = 'relative';
+    container.id             = `pic-marker-${id}`;
     container.style.width    = `${size}px`;
     container.style.height   = `${size + 6}px`; // 縦幅に三角分を追加
     container.style.cursor   = 'pointer';
@@ -10198,6 +10247,7 @@ export function createThumbnailMarker(map, coords, photoURL) {
     const isVideo = isVideoFile(photoURL)
     if (isVideo) {
         thumb = document.createElement('video');
+        thumb.className               = 'pic-marker-video';
         thumb.style.width             = `${size}px`;
         thumb.style.height            = `${size}px`;
         thumb.style.borderRadius      = '10px';
@@ -10211,6 +10261,7 @@ export function createThumbnailMarker(map, coords, photoURL) {
         thumb.style.objectFit   = 'cover';
     } else {
         thumb = document.createElement('div');
+        thumb.className               = 'pic-marker-img';
         thumb.style.width             = `${size}px`;
         thumb.style.height            = `${size}px`;
         thumb.style.backgroundImage   = `url(${photoURL})`;
@@ -10542,6 +10593,11 @@ export function featureCollectionClear() {
 }
 export function featureCollectionAdd() {
     featureCollection = JSON.parse(store.state.clickCircleGeojsonText)
+}
+
+function kari() {
+    markaersRemove()
+    document.querySelectorAll('[id^="pic-marker-"], [id^="txt-marker-"]').forEach(el => el.remove());
 }
 
 

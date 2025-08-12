@@ -1478,9 +1478,7 @@ export default function pyramid () {
                     store.state.isCursorOnPanel = false
                     closeAllPopups()
                     store.state.popupDialog = false
-
                     await featuresDelete([id,...pairIds])
-
                 },100)
             }
         });
