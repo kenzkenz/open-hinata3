@@ -2,7 +2,7 @@ import store from '@/store'
 import axios from "axios"
 import * as turf from '@turf/turf'
 import {
-    addDraw,
+    addDraw, featureCollectionAdd, markerAddAndRemove,
     recenterGeoJSON, removeNini, saveDrowFeatures,
     savePointSima,
     zahyokei
@@ -1322,7 +1322,7 @@ export default function pyramid () {
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('change', (e) => {
-            if (e.target && (e.target.classList.contains("label-select"))) {
+            if (e.target && (e.target.classList.contains("label-select") || e.target.classList.contains("text-select"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
                 const value = e.target.value
@@ -1330,7 +1330,16 @@ export default function pyramid () {
                 console.log(id,value)
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
                 generateStartEndPointsFromGeoJSON(JSON.parse(store.state.clickCircleGeojsonText))
-                store.state.currentLineLabelType = value
+
+                if (e.target.classList.contains("label-select")) {
+                    store.state.currentLineLabelType = value
+                } else {
+                    store.state.currentTextLabelType = value
+                    if (!store.state.isUsingServerGeojson) {
+                        featureCollectionAdd()
+                    }
+                    markerAddAndRemove()
+                }
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1432,6 +1441,10 @@ export default function pyramid () {
                     store.state.isCursorOnPanel = false
                     closeAllPopups()
                     store.state.popupDialog = false
+                    if (!store.state.isUsingServerGeojson) {
+                        featureCollectionAdd()
+                        markerAddAndRemove()
+                    }
                 },100)
             }
         });
@@ -2323,6 +2336,11 @@ export async function deleteAll (noConfrim) {
     store.state.titleDirection = 'vertical'
     store.state.drawVisible = true
     store.state.drawOpacity = 1
+
+    if (!store.state.isUsingServerGeojson) {
+        featureCollectionAdd()
+        markerAddAndRemove()
+    }
 }
 
 export function escapeHTML(str) {

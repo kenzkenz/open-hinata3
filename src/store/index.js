@@ -62,6 +62,7 @@ export default createStore({
     currentTextColor: 'black',
     currentPointColor: 'black',
     currentTextSize: 16,
+    currentTextLabelType: '0',
 
     currentCircleRadius: 0,
     currentCircleColor: 'blue',

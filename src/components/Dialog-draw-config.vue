@@ -113,7 +113,7 @@
 import {clickCircleSource, konUrls} from "@/js/layers";
 import {deleteAll, geojsonUpdate} from "@/js/pyramid";
 import {
-  changePrintMap03, isJsonString, markaersRemove,
+  changePrintMap03, featureCollectionClear, isJsonString, markaersRemove,
   printDirectionChange,
   saveDrowFeatures,
   startPolling, stopPolling
@@ -308,10 +308,8 @@ export default {
       this.showAlert = false
       this.$store.state.isUsingServerGeojson = false
       this.$store.state.clickCircleGeojsonText = ''
-      // this.label = '新規の場合、共有ドロー名を記入してください'
       this.s_geojsonId = ''
       this.s_geojsonName = ''
-      stopPolling()
       setTimeout(() => {
         deleteAll(true)
         this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
@@ -320,6 +318,7 @@ export default {
       this.$store.state.isEditable = true
       stopPolling()
       markaersRemove()
+      featureCollectionClear()
     },
     async rowRemove(geojson_id) {
       if (!confirm("削除しますか？")) {
@@ -350,6 +349,7 @@ export default {
       }
     },
     async rowCick(item) {
+      this.$store.state.isUsingServerGeojson = true
       if (item) {
         this.s_geojsonId = item.geojson_id
         this.s_geojsonName = item.geojson_name
@@ -365,8 +365,6 @@ export default {
           this.$store.state.loading3 = false
         }, 2000)
       } else {
-        // this.label = '現在、アクティブのドロー'
-        this.$store.state.isUsingServerGeojson = true
         this.$store.state.editEnabled = false
         this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
         this.$store.state.isEditable = this.s_isEditableForVSelect
@@ -379,10 +377,18 @@ export default {
           },2000)
         }
       }
-
       this.s_isEditableForVSelect = this.$store.state.isEditable
       markaersRemove()
       startPolling()
+      if (!this.$store.state.isEditable) {
+        const color = '#9400d3'
+        document.documentElement.style.setProperty('--main-color', color);
+        vuetify.theme.themes.value.myTheme.colors.primary = color
+      } else {
+        const color = this.$store.state.isUsingServerGeojson ? '#2e8b57' : 'rgb(50,101,186)'
+        document.documentElement.style.setProperty('--main-color', color);
+        vuetify.theme.themes.value.myTheme.colors.primary = color
+      }
     },
     async selectGeojson() {
       if (!this.s_userId) return

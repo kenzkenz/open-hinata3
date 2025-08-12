@@ -801,8 +801,8 @@ export const clickCircleLabelLayer = {
     filter: [
         'any',
         // ['==', '$type', 'Point'],
-        ['!', ['has', 'style']],
-        ['==', ['get', 'style'], 0]
+        ['!', ['has', 'labelType']],
+        ['==', ['get', 'labelType'], '0']
     ],
     layout: {
         // isRadius が真（boolean true）なら label、偽なら label2 を表示

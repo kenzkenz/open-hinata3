@@ -1466,7 +1466,7 @@ import {
   dxfToGeoJSON,
   enableDragHandles,
   extractFirstFeaturePropertiesAndCheckCRS,
-  extractSimaById, featuresRestore,
+  extractSimaById, featureCollectionAdd, featuresRestore,
   fetchGsiTileTest,
   fncPngDl,
   geocode,
@@ -1489,7 +1489,7 @@ import {
   jpgLoad,
   kmlDownload,
   kmzLoadForUser,
-  LngLatToAddress, markaersRemove,
+  LngLatToAddress, markaersRemove, markerAddAndRemove,
   parseCSV,
   pmtilesGenerate,
   pmtilesGenerateForUser2,
@@ -2821,6 +2821,10 @@ export default {
           this.s_pictureUrl = result.webUrl
           this.drawGeojsonAddPicture()
           closeAllPopups()
+          if (!this.$store.state.isUsingServerGeojson) {
+            featureCollectionAdd()
+            markerAddAndRemove()
+          }
           alert("アップロード成功。ドローを解除して確認してください。");
         } else {
           this.s_pictureUrl = null
@@ -6652,7 +6656,7 @@ export default {
             offsetValue: [0.6, 0],
             textAnchor: 'left',
             textJustify: 'left',
-            style: 0,
+            labelType: this.$store.state.currentTextLabelType || 0,
           }
           geojsonCreate(map, 'Point', coordinates, properties)
           // 地図がアイドル状態（描画が完了）になるのを待つ
@@ -6703,7 +6707,7 @@ export default {
           radius: this.$store.state.currentCircleRadius || 0,
           color: colorNameToRgba(this.$store.state.currentCircleColor || 'blue', 0.6),
           canterLng: 0,
-          canterLat: 0
+          canterLat: 0,
         }
         geojsonCreate(map, 'Circle', coordinates, properties)
         const dummyEvent = {
@@ -7774,7 +7778,10 @@ export default {
 
           if (params.clickCircleGeojsonText && params.clickCircleGeojsonText !== 'undefined' && !params.geojsonId) {
             this.$store.state.clickCircleGeojsonText = params.clickCircleGeojsonText
-            // console.log(this.$store.state.clickCircleGeojsonText)
+            if (!this.$store.state.isUsingServerGeojson) {
+              featureCollectionAdd()
+              markerAddAndRemove()
+            }
             try {
               const lasso = JSON.parse(this.$store.state.clickCircleGeojsonText).features.find(f => f.properties.lassoSelected === true)
               if (lasso) this.s_isLassoSelected = true
@@ -10302,9 +10309,9 @@ select {
   box-shadow: 0 2px 8px 0 rgba(41, 121, 255, 0.08);
 }
 .oh-cool-input:focus {
-  border: 2px solid #1565c0;
+  /*border: 2px solid #1565c0;*/
   background: #e3f2fd;
-  box-shadow: 0 4px 16px 0 rgba(41, 121, 255, 0.15);
+  /*box-shadow: 0 4px 16px 0 rgba(41, 121, 255, 0.15);*/
 }
 .oh-cool-input::placeholder {
   color: #90caf9;
@@ -10396,17 +10403,17 @@ select {
   -webkit-appearance: none;
   appearance: textfield;
 }
-.oh-cool-input-number:focus {
-  border: 2px solid #1565c0;
-  background: #e3f2fd;
-  box-shadow: 0 2px 8px rgba(41,121,255,0.13);
-}
+/*.oh-cool-input-number:focus {*/
+/*  border: 2px solid #1565c0;*/
+/*  background: #e3f2fd;*/
+/*  box-shadow: 0 2px 8px rgba(41,121,255,0.13);*/
+/*}*/
 .oh-cool-input-number::placeholder {
   color: #90caf9;
   letter-spacing: 0.04em;
 }
 .oh-cool-select {
-  padding: 0.4em 0.8em;
+  padding: 0 8px;
   border: 1px solid #2979ff;
   border-radius: 8px;
   outline: none;
@@ -10419,11 +10426,11 @@ select {
   appearance: none;
   /* 下矢印を消したい場合は独自アイコンを使ってもOK */
 }
-/*.oh-cool-select:focus {*/
-/*  border: 2px solid #1565c0;*/
-/*  background: #e3f2fd;*/
-/*  box-shadow: 0 2px 8px rgba(41,121,255,0.13);*/
-/*}*/
+.oh-cool-select:focus {
+  /*border: 2px solid #1565c0;*/
+  background: #e3f2fd;
+  /*box-shadow: 0 2px 8px rgba(41,121,255,0.13);*/
+}
 
 /*!* input[type=number] のデフォルト矢印（上下ボタン）非表示（Chrome, Edge, Safari） *!*/
 /*.oh-cool-input-number::-webkit-inner-spin-button,*/

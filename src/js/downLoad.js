@@ -10037,6 +10037,42 @@ export async function featuresRestore(ids) {
 }
 
 /**
+ *
+ */
+export function markerAddAndRemove() {
+    const map01 = store.state.map01
+    const map02 = store.state.map01
+    coordsList.length = 0;
+    txtCoordsList.length = 0;
+    if (!featureCollection) return
+    featureCollection.features.forEach(feature => {
+        const coords = feature.geometry?.coordinates;
+        if (feature.properties.pictureUrl) {
+            const photoURL = feature.properties.pictureUrl;
+            createThumbnailMarker(map01, coords, photoURL);
+            createThumbnailMarker(map02, coords, photoURL);
+            coordsList.push(coords);
+        } else if (feature.properties.label &&
+            !feature.properties?.radius &&
+            isPointCoords(coords) &&
+            feature.properties.labelType ===  '1'
+        ) {
+            const id = feature.properties.id;
+            const txt = feature.properties.label;
+            const color = feature.properties.color;
+            const fontSize = feature.properties['text-size'];
+            createTextThumbnailMarker(map01, coords, txt, id, color, fontSize);
+            createTextThumbnailMarker(map02, coords, txt, id, color, fontSize);
+            txtCoordsList.push(coords);
+        }
+    });
+    cleanupThumbnailMarkers(map01, coordsList);
+    cleanupThumbnailMarkers(map02, coordsList);
+    cleanupTxtThumbnailMarkers(map01, txtCoordsList);
+    cleanupTxtThumbnailMarkers(map02, txtCoordsList);
+}
+
+/**
  * 小さいサムネイル風のマーカーをつくる（テキスト）
  * @param map
  * @param coords
@@ -10242,7 +10278,6 @@ export function cleanupTxtThumbnailMarkers(map, currentCoordsArray) {
     for (let i = txtMarkers.length - 1; i >= 0; i--) {
         const { key, marker } = txtMarkers[i];
         if (!currentKeys.has(key)) {
-            console.log(key)
             if (key) {
                 marker.remove();
                 markers.splice(i, 1);
@@ -10264,11 +10299,11 @@ export function markaersRemove() {
         markers.length = 0
         if (store.state.map01.__thumbnailMarkerKeys) {
             store.state.map01.__thumbnailMarkerKeys.clear();
-            store.state.map02.__thumbnailMarkerKeys.clear();
+            store.state.map02.__thumbnailMarkerKeys?.clear();
         }
         if (store.state.map01.__txtThumbnailMarkerKeys) {
             store.state.map01.__txtThumbnailMarkerKeys.clear();
-            store.state.map02.__txtThumbnailMarkerKeys.clear();
+            store.state.map02.__txtThumbnailMarkerKeys?.clear();
         }
     })
 }
@@ -10372,9 +10407,6 @@ export async function pollUpdates() {
 
         store.state.isEditable = dataG.rows[0].is_editable === '1'
 
-        coordsList.length = 0;
-        txtCoordsList.length = 0;
-
         const map01 = store.state.map01;
         const map02 = store.state.map02;
         const formData = new FormData();
@@ -10410,31 +10442,7 @@ export async function pollUpdates() {
         generateStartEndPointsFromGeoJSON(featureCollection);
         store.state.clickCircleGeojsonText = JSON.stringify(featureCollection);
 
-        featureCollection.features.forEach(feature => {
-            const coords = feature.geometry?.coordinates;
-            if (feature.properties.pictureUrl) {
-                const photoURL = feature.properties.pictureUrl;
-                createThumbnailMarker(map01, coords, photoURL);
-                createThumbnailMarker(map02, coords, photoURL);
-                coordsList.push(coords);
-            } else if (feature.properties.label && !feature.properties?.radius && isPointCoords(coords)) {
-                const id = feature.properties.id;
-                const txt = feature.properties.label;
-                const color = feature.properties.color;
-                const fontSize = feature.properties['text-size'];
-                createTextThumbnailMarker(map01, coords, txt, id, color, fontSize);
-                createTextThumbnailMarker(map02, coords, txt, id, color, fontSize);
-                txtCoordsList.push(coords);
-            }
-        });
-        if (coordsList.length > 0) {
-            cleanupThumbnailMarkers(map01, coordsList);
-            cleanupThumbnailMarkers(map02, coordsList);
-        }
-        if (txtCoordsList.length > 0) {
-            cleanupTxtThumbnailMarkers(map01, txtCoordsList);
-            cleanupTxtThumbnailMarkers(map02, txtCoordsList);
-        }
+        markerAddAndRemove()
 
         const configFeature = featureCollection.features.find(feature => feature.properties.id === 'config');
         if (configFeature) {
@@ -10525,6 +10533,17 @@ export function stopPolling() {
         pollingTimer = null;
     }
 }
+export function featureCollectionClear() {
+    featureCollection =
+        {
+            type: 'FeatureCollection',
+            features: []
+        }
+}
+export function featureCollectionAdd() {
+    featureCollection = JSON.parse(store.state.clickCircleGeojsonText)
+}
+
 
 // [lng, lat] の「ポイント配列」かどうか
 export const isPointCoords = (coords) =>

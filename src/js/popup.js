@@ -3667,7 +3667,8 @@ export function popup(e,map,mapName,mapFlg) {
                         selectedBoth = 'selected'
                         break
                 }
-                let labelSelectedStart,labelSelectedMid,labelSelectedNone
+                let labelSelectedStart,labelSelectedMid,labelSelectedNone,
+                    labelSelected0, labelSelected1
                 switch (labelType) {
                     case 'start':
                         labelSelectedStart = 'selected'
@@ -3677,6 +3678,12 @@ export function popup(e,map,mapName,mapFlg) {
                         break
                     case 'none':
                         labelSelectedNone = 'selected'
+                        break
+                    case '0':
+                        labelSelected0 = 'selected'
+                        break
+                    case '1':
+                        labelSelected1 = 'selected'
                         break
                 }
 
@@ -3764,7 +3771,7 @@ export function popup(e,map,mapName,mapFlg) {
                             if (html.value.indexOf('click-circle-layer') === -1) {
                                 // alert('到達')
                                 const pictureUrl = props.pictureUrl || ''
-                                if (store.state.isDraw) {
+                                if (store.state.isDraw || !pictureUrl) {
                                     // alert('到達')
                                     const keywordList = ['道路', '水路', '畑', '宅地', '田', '雑種地', 'コン杭', 'プレート','プラ杭','鋲'];
                                     html.value += '<div class="layer-label-div">ポイント</div>';
@@ -3773,10 +3780,15 @@ export function popup(e,map,mapName,mapFlg) {
                                     html.value += '<div style="width: 250px;">';
                                     html.value +=
                                         '<div class="click-circle-layer" style="font-weight: normal; color: #333; line-height: 25px;">' +
-                                        '<textarea id="' + props.id + '" rows="6" style="width: 100%; margin-bottom: 0px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
+                                        '<textarea id="' + props.id + '" rows="5" style="width: 100%; margin-bottom: 0px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
+                                        '</select>' +
+                                        '<select id="' + props.id + '" style="margin-left: 0px;" class="oh-cool-select text-select">' +
+                                        '<option value="0" ' + labelSelected0 + '>通常</option>' +
+                                        '<option value="1" ' + labelSelected1 + '>吹き出し</option>' +
+                                        '</select>' +
+                                        '<br>' +
                                         '<button id="' + props.id + '" style="margin-bottom: 10px; height: 30px; font-size: medium; width: 50%;" class="point-delete pyramid-btn">削　除</button>' +
                                         '<button id="' + props.id + '" pictureUrl="' + pictureUrl + '" style="margin-bottom: 10px; margin-left: 10px; height: 30px; font-size: medium; width: 45%;" class="picture-upload pyramid-btn">画像、動画</button>' +
-
                                         '<div style="display: flex; gap: 8px;">' +
                                         '<div class="circle-list">' +
                                         '<div id="' + props.id + '" data-color="red" class="text-color circle red" tabindex="0">T</div>' +
