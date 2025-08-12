@@ -6331,7 +6331,8 @@ export default {
             // glyphs: "https://glyphs.geolonia.com/{fontstack}/{range}.pbf",
             "glyphs": "https://tile.openstreetmap.jp/fonts/{fontstack}/{range}.pbf",
             // "glyphs": "https://gsi-cyberjapan.github.io/optimal_bvmap/glyphs/{fontstack}/{range}.pbf",
-            "sprite": "https://gsi-cyberjapan.github.io/optimal_bvmap/sprite/std",
+            // "sprite": "https://gsi-cyberjapan.github.io/optimal_bvmap/sprite/std",
+            "sprite": "https://tile.openstreetmap.jp/styles/osm-bright-ja/sprite",
             'sources': {
               terrain: gsiTerrainSource,
             },
@@ -8629,7 +8630,7 @@ export default {
 
             // ズームイン時は発火しない
             if (currentZoom > previousZoom) {
-              console.log('Zoomed in - No action taken');
+              // console.log('Zoomed in - No action taken');
               previousZoom = currentZoom;
               previousBounds = currentBounds;
               return;

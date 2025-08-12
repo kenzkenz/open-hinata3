@@ -10043,7 +10043,8 @@ export async function featuresRestore(ids) {
  * @param photoURL
  */
 const txtMarkers = []
-export function createTextThumbnailMarker(map, coords, txt, id) {
+export function createTextThumbnailMarker(map, coords, txt, id, color, fontSize) {
+    // console.log(color, fontSize)
     if (store.state.editEnabled) return
     const key = coords.join(',');
     if (!map.__txtThumbnailMarkerKeys) {
@@ -10056,10 +10057,10 @@ export function createTextThumbnailMarker(map, coords, txt, id) {
 
     // コンテナ要素を作成
     const container = document.createElement('div');
-    // container.style.position = 'relative';
-    container.style.width             = `100px`;
-    container.style.height            = `30px`;
-    container.style.backgroundColor    = 'white';
+    container.id                      = `txt-marker-${id}`;
+    container.style.minWidth          = `100px`;
+    container.style.minHeight         = `30px`;
+    container.style.backgroundColor   = 'white';
     container.style.backgroundSize    = 'cover';
     container.style.backgroundPosition= 'center';
     container.style.borderRadius      = '10px';
@@ -10068,16 +10069,18 @@ export function createTextThumbnailMarker(map, coords, txt, id) {
     container.style.cursor            = 'pointer';
 
     const label = document.createElement('div');
+    label.className = 'txt-marker-label'
     label.textContent = txt ?? '';
+    label.style.color = color;
+    label.style.fontSize = `${fontSize}px`;
     label.style.width = '100%';
-    label.style.height = '100%';
+    label.style.height = '90%';
     label.style.display = 'flex';
     label.style.alignItems = 'center';
     label.style.justifyContent = 'center';
     label.style.textAlign = 'center';
     label.style.padding = '4px';
     label.style.boxSizing = 'border-box';
-    label.style.fontSize = '12px';
     label.style.lineHeight = '1.2';
     label.style.wordBreak = 'break-word';
     label.style.overflow = 'hidden';
@@ -10087,6 +10090,19 @@ export function createTextThumbnailMarker(map, coords, txt, id) {
     label.style.webkitBoxOrient = 'vertical';
     label.style.webkitLineClamp = '3';
     container.appendChild(label);
+
+    // 下向き三角ポインタ
+    const arrow = document.createElement('div');
+    arrow.style.position     = 'absolute';
+    arrow.style.left         = '50%';
+    arrow.style.bottom       = '-7px';
+    arrow.style.transform    = 'translateX(-50%) translateY(50%)';
+    arrow.style.width        = '0';
+    arrow.style.height       = '0';
+    arrow.style.borderLeft   = `10px solid transparent`;
+    arrow.style.borderRight  = `10px solid transparent`;
+    arrow.style.borderTop    = `10px solid #ffffff`;
+    container.appendChild(arrow);
 
     // クリックで元画像を別タブで開く
     container.addEventListener('click', (e) => {
@@ -10175,7 +10191,7 @@ export function createThumbnailMarker(map, coords, photoURL) {
     const arrow = document.createElement('div');
     arrow.style.position     = 'absolute';
     arrow.style.left         = '50%';
-    arrow.style.bottom       = '0';
+    arrow.style.bottom       = '3px';
     arrow.style.transform    = 'translateX(-50%) translateY(50%)';
     arrow.style.width        = '0';
     arrow.style.height       = '0';
@@ -10404,8 +10420,10 @@ export async function pollUpdates() {
             } else if (feature.properties.label && !feature.properties?.radius && isPointCoords(coords)) {
                 const id = feature.properties.id;
                 const txt = feature.properties.label;
-                createTextThumbnailMarker(map01, coords, txt, id);
-                createTextThumbnailMarker(map02, coords, txt, id);
+                const color = feature.properties.color;
+                const fontSize = feature.properties['text-size'];
+                createTextThumbnailMarker(map01, coords, txt, id, color, fontSize);
+                createTextThumbnailMarker(map02, coords, txt, id, color, fontSize);
                 txtCoordsList.push(coords);
             }
         });

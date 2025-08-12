@@ -1223,6 +1223,8 @@ export default function pyramid () {
                 const value = pointTextElm.value
                 const tgtProp = 'label'
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+                const el = document.querySelector(`#txt-marker-${id} .txt-marker-label`)
+                if (el) el.innerHTML = value
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1260,6 +1262,8 @@ export default function pyramid () {
                     value = colorNameToRgba(value, 0.6)
                 }
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+                const el = document.querySelector(`#txt-marker-${id} .txt-marker-label`)
+                if (el) el.style.color = value
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1272,6 +1276,8 @@ export default function pyramid () {
                 const geojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
                 store.state.clickCircleGeojsonText = geojsonText
                 store.state.currentTextSize = value
+                const el = document.querySelector(`#txt-marker-${id} .txt-marker-label`)
+                if (el) el.style.fontSize = `${value}px`
             }
         });
         // -------------------------------------------------------------------------------------------------------------
