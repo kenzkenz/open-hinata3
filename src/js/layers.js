@@ -801,17 +801,32 @@ export const clickCircleLabelLayer = {
     filter: ['==', ['get', 'labelType'], '0'],
     layout: {
         // isRadius が真（boolean true）なら label、偽なら label2 を表示
+        // 'text-field': [
+        //     'case',
+        //     [
+        //         'any',
+        //         // isRadius がない場合に true
+        //         ['!', ['has', 'isRadius']],
+        //         // isRadius が true の場合に true
+        //         ['==', ['get', 'isRadius'], true]
+        //     ],
+        //     ['concat', ['get', 'label2'], '\n' , ['get', 'label']],   // 上記 any が true のとき
+        //     ['get', 'label2']// それ以外（isRadius が存在かつ false）のとき
+        // ],
         'text-field': [
             'case',
             [
                 'any',
-                // isRadius がない場合に true
                 ['!', ['has', 'isRadius']],
-                // isRadius が true の場合に true
-                ['==', ['get', 'isRadius'], true]
+                ['==', ['get', 'isRadius'], false]
             ],
-            ['concat', ['get', 'label2'], '\n' , ['get', 'label']],   // 上記 any が true のとき
-            ['get', 'label2']// それ以外（isRadius が存在かつ false）のとき
+            [
+                'case',
+                ['has', 'isRadius'],
+                ['get', 'label2'],
+                ['get', 'label']
+            ],
+            ['concat', ['get', 'label2'], '\n' , ['get', 'label']],
         ],
         'text-size': ['get', 'text-size'],
         'text-offset': ['get', 'offsetValue'],
