@@ -388,7 +388,7 @@ export function popup(e,map,mapName,mapFlg) {
         // features.forEach(feature => {
         const layerId = feature.layer.id
         let props = feature.properties
-        console.log(layerId, feature, props)
+        // console.log(layerId, feature, props)
         switch (layerId) {
             case 'oh-zosei-line':
             case 'oh-zosei-label':

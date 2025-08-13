@@ -10041,7 +10041,7 @@ export async function featuresRestore(ids) {
  */
 export function markerAddAndRemove() {
 
-    kari()
+    // kari()
 
     const map01 = store.state.map01
     const map02 = store.state.map01
@@ -10308,6 +10308,38 @@ export function createThumbnailMarker(map, coords, photoURL, id) {
 }
 
 /**
+ * key(座標)でマーカーを削除する
+ * @param key
+ */
+function removeThumbnailMarkerByKey(key) {
+    if (!key) return;
+    const allMarkers = [markers, txtMarkers]
+    allMarkers.forEach(markers => {
+        for (let i = markers.length - 1; i >= 0; i--) {
+            const item = markers[i];
+            if (item && item.key === key) {
+                item.marker?.remove();
+                markers.splice(i, 1);
+            }
+        }
+    })
+    const map01 = store.state.map01
+    const map02 = store.state.map02
+    if (map01 && map01.__thumbnailMarkerKeys) {
+        map01.__thumbnailMarkerKeys.delete(key);
+    }
+    if (map02 && map02.__thumbnailMarkerKeys) {
+        map02.__thumbnailMarkerKeys.delete(key);
+    }
+    if (map01 && map01.__txtThumbnailMarkerKeys) {
+        map01.__txtThumbnailMarkerKeys.delete(key);
+    }
+    if (map02 && map02.__txtThumbnailMarkerKeys) {
+        map02.__txtThumbnailMarkerKeys.delete(key);
+    }
+}
+
+/**
  * 現在のデータにないマーカーを map から削除し、配列／キーセットからも除去する
  */
 export function cleanupThumbnailMarkers(map, currentCoordsArray) {
@@ -10381,8 +10413,15 @@ let isRefreshing = false;
 function upsertFeature(f) {
     const id = f.properties.id;
     const idx = featureCollection.features.findIndex(x => x.properties.id === id);
-    if (idx !== -1) featureCollection.features[idx] = f;
-    else featureCollection.features.push(f);
+    if (idx !== -1) {
+        featureCollection.features[idx] = f;
+        if (f.geometry?.type === 'Point') {
+            const key = f.geometry.coordinates.join()
+            removeThumbnailMarkerByKey(key)
+        }
+    } else {
+        featureCollection.features.push(f);
+    }
 }
 function removeFeature(id) {
     featureCollection.features = featureCollection.features.filter(x => x.properties.id !== id);
