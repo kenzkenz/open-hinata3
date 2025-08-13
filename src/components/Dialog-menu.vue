@@ -311,7 +311,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       </v-dialog>
 
       <p style="margin-top: 3px;margin-bottom: 10px;">
-        v1.315
+        v1.316
       </p>
 
       <div v-if="user1">
@@ -336,7 +336,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       <v-text-field label="住所、座標で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 
       <!--      <v-btn class="tiny-btn" @click="simaLoad">SIMA読み込</v-btn>-->
-      <v-btn class="tiny-btn" @click="upLoad">各種アップロード</v-btn>
+<!--      <v-btn class="tiny-btn" @click="upLoad">各種アップロード</v-btn>-->
       <v-btn style="margin-left: 5px;" class="tiny-btn" @click="pngDownload">PNGダウンロード</v-btn>
       <v-btn style="margin-left: 5px;" class="tiny-btn" @click="s_dialogForOffline = true">オフライン設定</v-btn>
 

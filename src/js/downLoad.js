@@ -10233,7 +10233,7 @@ export function createThumbnailMarker(map, coords, photoURL, id) {
     }
     map.__thumbnailMarkerKeys.add(key);
 
-    const size = 50;
+    const size = 100;// 50
     const arrowSize = 10; // 三角の高さ
 
     // コンテナ要素を作成
@@ -10294,7 +10294,7 @@ export function createThumbnailMarker(map, coords, photoURL, id) {
     });
 
     const offsetX = 0
-    const offsetY = -35;
+    const offsetY = -55; // -35
     const marker =
         new maplibregl.Marker({
         element: container,
