@@ -10631,7 +10631,9 @@ export function featureCollectionClear() {
         }
 }
 export function featureCollectionAdd() {
-    featureCollection = JSON.parse(store.state.clickCircleGeojsonText)
+    if (isJsonString(store.state.clickCircleGeojsonText)) {
+        featureCollection = JSON.parse(store.state.clickCircleGeojsonText)
+    }
 }
 
 function kari() {
