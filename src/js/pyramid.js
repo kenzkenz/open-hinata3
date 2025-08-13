@@ -1778,6 +1778,10 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
             saveDrowFeatures([feature])
         }
     }
+    if (!store.state.isUsingServerGeojson) {
+        featureCollectionAdd()
+    }
+    markerAddAndRemove()
     return feature;
 }
 
@@ -2143,6 +2147,10 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
             store.state.updatePermalinkFire = !store.state.updatePermalinkFire
             console.log(updateFeatures)
             saveDrowFeatures(updateFeatures)
+            if (!store.state.isUsingServerGeojson) {
+                featureCollectionAdd()
+                markerAddAndRemove()
+            }
             return escapeHTML(JSON.stringify(geojson))
         }
     }

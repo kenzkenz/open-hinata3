@@ -826,7 +826,7 @@ export const clickCircleLabelLayer = {
         'text-halo-width': 1.0,
     },
     'maxzoom': 24,
-    'minzoom': 12
+    'minzoom': 0
 }
 export const clickCircSymbolLayer = {
     id: 'click-circle-symbol-layer',
