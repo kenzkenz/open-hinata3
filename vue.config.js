@@ -22,7 +22,10 @@ module.exports = defineConfig({
         workboxOptions: {
             swSrc: "./src/service-worker.js", // カスタム Service Worker のソースファイル
             swDest: "service-worker.js", // ビルド後の出力先
-            exclude: [/_redirects/], // キャッシュから除外するファイル
+            exclude: [
+                /_redirects/,
+                /\.html$/            // ← これを追加（index.html / join.html を precache しない）
+            ],
         },
     },
     configureWebpack: {
