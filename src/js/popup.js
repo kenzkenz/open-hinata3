@@ -3647,6 +3647,8 @@ export function popup(e,map,mapName,mapFlg) {
                 const isKeiko = props.keiko || false
                 const isCalc = props.calc || false
                 const isFreeHand = props['free-hand'] || false
+                const offsetX = String(props.offsetValue).split(',')[0]
+                const offsetY = String(props.offsetValue).split(',')[1]
                 let display = 'block'
                 let display2 = 'none'
                 let lineType = 'ラインストリング'
@@ -3782,11 +3784,14 @@ export function popup(e,map,mapName,mapFlg) {
                                         '<div class="click-circle-layer" style="font-weight: normal; color: #333; line-height: 25px;">' +
                                         '<textarea id="' + props.id + '" rows="5" style="width: 100%; margin-bottom: 0px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
                                         '</select>' +
-                                        '<select id="' + props.id + '" style="margin-left: 0px;" class="oh-cool-select text-select">' +
+                                        '<select id="' + props.id + '" style="margin-left: 0px; width: 60px;" class="oh-cool-select text-select">' +
                                         '<option value="0" ' + labelSelected0 + '>通常</option>' +
                                         '<option value="1" ' + labelSelected1 + '>吹き出し</option>' +
                                         '</select>' +
-                                        '<br>' +
+
+                                        '　X　<input id="' + props.id + '" style="margin-bottom: 5px;" type="number" class="oh-cool-input-number offset-x-input" step="0.1" value="' + offsetX + '">' +
+                                        '　Y　<input id="' + props.id + '" style="margin-bottom: 5px;" type="number" class="oh-cool-input-number offset-y-input" step="0.1" value="' + offsetY + '">' +
+
                                         '<button id="' + props.id + '" style="margin-bottom: 10px; height: 30px; font-size: medium; width: 50%;" class="point-delete pyramid-btn">削　除</button>' +
                                         '<button id="' + props.id + '" pictureUrl="' + pictureUrl + '" style="margin-bottom: 10px; margin-left: 10px; height: 30px; font-size: medium; width: 45%;" class="picture-upload pyramid-btn">画像、動画</button>' +
                                         '<div style="display: flex; gap: 8px;">' +

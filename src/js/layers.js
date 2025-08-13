@@ -800,19 +800,6 @@ export const clickCircleLabelLayer = {
     // filter: ['==', '$type', 'Point'],
     filter: ['==', ['get', 'labelType'], '0'],
     layout: {
-        // isRadius が真（boolean true）なら label、偽なら label2 を表示
-        // 'text-field': [
-        //     'case',
-        //     [
-        //         'any',
-        //         // isRadius がない場合に true
-        //         ['!', ['has', 'isRadius']],
-        //         // isRadius が true の場合に true
-        //         ['==', ['get', 'isRadius'], true]
-        //     ],
-        //     ['concat', ['get', 'label2'], '\n' , ['get', 'label']],   // 上記 any が true のとき
-        //     ['get', 'label2']// それ以外（isRadius が存在かつ false）のとき
-        // ],
         'text-field': [
             'case',
             [
@@ -830,7 +817,6 @@ export const clickCircleLabelLayer = {
         ],
         'text-size': ['get', 'text-size'],
         'text-offset': ['get', 'offsetValue'],
-        // 'text-offset': [2,2],
         'text-anchor': ['get', 'textAnchor'],
         'text-justify': ['get', 'textJustify'], // 追加: 複数行のテキストを左寄せにする
         'text-max-width': 100 // 非常に大きな値に設定して改行を防ぐ
