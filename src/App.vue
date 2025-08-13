@@ -6653,7 +6653,7 @@ export default {
             color: this.$store.state.currentTextColor || 'black',
             'point-color': this.$store.state.currentPointColor || 'black',
             'text-size': this.$store.state.currentTextSize || 16,
-            offsetValue: [0.6, -0.7],
+            offsetValue: [0.6, 0.0],
             textAnchor: 'left',
             textJustify: 'left',
             labelType: this.$store.state.currentTextLabelType || '1',
