@@ -15,8 +15,31 @@
         {{ type }} <span style="font-size: 12px; margin-left: 20px;">{{ id }}</span>
         <div class="close-btn-div" style="margin-right:4px;margin-top: 0px; color:white!important; ;font-size: 30px!important;" @click="close"><i class="fa-solid fa-xmark hover"></i></div>
       </v-card-title>
-      <v-card-text style="margin-top: 15px;">
+      <div v-if="pictureUrl">
+        <img
+            width="100%"
+            v-if="isImageFile"
+            :src="pictureUrl"
+            alt="画像"
+            @click="imgClick"
+            style="cursor: pointer"
+        />
+        <video
+            v-else
+            width="100%"
+            :src="pictureUrl"
+            muted="true"
+            autoplay="true"
+            loop="true"
+            controls
+            @click="imgClick"
+            style="cursor: pointer"
+        ></video>
+      </div>
+      <v-card-text style="margin-top: 10px;">
+        <p v-if="!isEdit" class="comment-text" v-html="longTextForA"></p>
         <v-textarea
+            v-else
             v-model="longText"
             placeholder="長文を入力してください"
             outlined
@@ -24,7 +47,8 @@
             auto-grow
             hint=""
         ></v-textarea>
-        <v-btn style="margin-top: -10px;" @click="longTextSave">長文保存</v-btn>
+        <v-btn :disabled="!isEdit" style="margin-top: -10px;" @click="longTextSave">保存</v-btn>
+        <v-btn :disabled="isEdit" style="margin-top: -10px; margin-left: 10px;" @click="isEdit = !isEdit">編集</v-btn>
       </v-card-text>
     </v-card>
   </v-navigation-drawer>
@@ -35,7 +59,7 @@ import { mapState, mapMutations } from 'vuex';
 import store from "@/store";
 import {clickCircleSource} from "@/js/layers";
 import {geojsonUpdate} from "@/js/pyramid";
-import {getNextZIndex} from "@/js/downLoad";
+import {getNextZIndex, isImageFile, sanitizeLongText, toPlainText} from "@/js/downLoad";
 
 export default {
   name: 'drawDrawer',
@@ -44,7 +68,11 @@ export default {
     id: '',
     type: '',
     longText: '',
+    longTextForA: '',
     zIndex: '10',
+    pictureUrl: '',
+    isImageFile: true,
+    isEdit: false,
   }),
   computed: {
     ...mapState([
@@ -67,6 +95,9 @@ export default {
       'saveSelectedPointFeature',
       'setSelectedPointFeature',
     ]),
+    imgClick() {
+      window.open(this.pictureUrl, '_blank', 'noopener,noreferrer');
+    },
     setZindex() {
       this.zIndex = getNextZIndex()
     },
@@ -74,7 +105,10 @@ export default {
       const map01 = store.state.map01
       const id =  this.id
       const tgtProp = 'longText'
-      const value = this.longText
+      const value = sanitizeLongText(this.longText)
+      this.longTextForA = value
+      this.isEdit = false
+
       store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
     },
     close() {
@@ -84,12 +118,21 @@ export default {
   mounted() {
   },
   watch: {
-    showDrawDrawer() {
+    drawFeature() {
+      this.setZindex()
       const props = this.drawFeature.properties
       this.type = this.drawFeature.geometry.type
+      if (this.id === props.id) return
       this.id = props.id
-      this.longText = props.longText
-
+      this.longText = toPlainText(props.longText)
+      if (this.longText) {
+        this.isEdit = false
+      } else {
+        this.isEdit = true
+      }
+      this.longTextForA = props.longText
+      this.pictureUrl = props.pictureUrl
+      this.isImageFile = isImageFile(this.pictureUrl || '')
 
 
       const canterLng = props.canterLng
@@ -181,5 +224,21 @@ export default {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+.comment-text {
+  font-size: 16px;
+  padding: 16px;
+  background-color: ghostwhite;
+  margin-top: -10px;
+  margin-bottom: 20px;
+  white-space: pre-wrap; /* 改行を反映 */
+  word-wrap: break-word; /* 長い単語を折り返す */
+}
+.comment-text a {
+  color: #1e88e5; /* リンクの色 */
+  text-decoration: underline;
+}
+.comment-text a:hover {
+  color: #1565c0; /* ホバー時の色 */
 }
 </style>

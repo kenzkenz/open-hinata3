@@ -254,7 +254,6 @@ import { db, auth } from '../firebase';
 import firebase from 'firebase/app';
 import {extractFirstFeaturePropertiesAndCheckCRS, publicChk} from '@/js/downLoad';
 import sanitizeHtml from 'sanitize-html';
-import store from "@/store"; // sanitize-htmlをインポート
 
 export default {
   name: 'chibanzuDrawer',

@@ -320,7 +320,7 @@ export function popup(e,map,mapName,mapFlg) {
     if (store.state.editEnabled) return;
     let html = ref('')  // ← ここを ref 化
     watch(html, (newVal, oldVal) => {
-        console.log(`htmlが ${oldVal} → ${newVal} に変わりました`)
+        // console.log(`htmlが ${oldVal} → ${newVal} に変わりました`)
         createPopup(map, [e.lngLat.lng,e.lngLat.lat], html.value, mapName)
     })
 
@@ -3770,7 +3770,8 @@ export function popup(e,map,mapName,mapFlg) {
                             break
                         case 'Point':
                             // alert('到達')
-                            if (props.longText && window.innerWidth > 1000) store.commit('setDrawDrawer', true)
+                            if ((props.longText || props.pictureUrl) && window.innerWidth > 1000) store.commit('setDrawDrawer', true)
+                            // alert(888)
                             if (html.value.indexOf('click-circle-layer') === -1) {
                                 // alert('到達')
                                 const pictureUrl = props.pictureUrl || ''
@@ -3783,7 +3784,7 @@ export function popup(e,map,mapName,mapFlg) {
                                     html.value += '<div style="width: 250px;">';
                                     html.value +=
                                         '<div class="click-circle-layer" style="font-weight: normal; color: #333; line-height: 25px;">' +
-                                        '<textarea id="' + props.id + '" rows="4" style="width: 100%; margin-bottom: 0px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
+                                        '<textarea id="' + props.id + '" rows="4" style="width: 100%; margin-bottom: 0px;" type="text" class="oh-cool-input point-text" placeholder="ラベルに使用する短文を入力">' + props.label + '</textarea>' +
                                         '<button id="' + props.id + '" style="margin-bottom: 10px; height: 30px; font-size: medium; width: 50%;" class="long-text pyramid-btn">長　文</button>' +
                                         '<br>' +
                                         '</select>' +

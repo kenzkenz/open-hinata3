@@ -37,6 +37,7 @@ import {
 import { deserialize } from 'flatgeobuf/lib/mjs/geojson.js';
 import {closeAllPopups, popup} from "@/js/popup";
 import {isNumber} from "lodash";
+import sanitizeHtml from 'sanitize-html';
 
 
 // import publicChk from '@/components/Dialog-myroom'
@@ -10202,6 +10203,7 @@ export function createTextThumbnailMarker(map, coords, txt, id, color, fontSize,
         }
         onPointClick(dummyEvent)
     });
+
     const offsetX = 0
     const offsetY = -35
     const marker =
@@ -10290,7 +10292,15 @@ export function createThumbnailMarker(map, coords, photoURL, id) {
     // クリックで元画像を別タブで開く
     container.addEventListener('click', (e) => {
         e.stopPropagation(); // マップのクリックイベントを阻止
-        window.open(photoURL, '_blank', 'noopener,noreferrer');
+        // window.open(photoURL, '_blank', 'noopener,noreferrer');
+        store.state.id = id
+        const dummyEvent = {
+            lngLat: { lng: coords[0], lat: coords[1] },
+        };
+        function onPointClick(e) {
+            popup(e,map,'map01', store.state.map2Flg)
+        }
+        onPointClick(dummyEvent)
     });
 
     const offsetX = 0
@@ -10647,3 +10657,54 @@ export const isPointCoords = (coords) =>
     Array.isArray(coords) &&
     coords.length === 2 &&
     coords.every(n => typeof n === 'number' && Number.isFinite(n));
+
+/**
+ * サニタイズ
+ * @param input
+ * @returns {string|*}
+ */
+export function sanitizeLongText(text) {
+    // URLを検出する正規表現
+    const urlRegex = /(https?:\/\/[^\s<>"']+)/g;
+    // URLを<a>タグで囲む
+    const linkedText = text.replace(urlRegex, (url) => {
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    });
+    // XSS防止のため出力をサニタイズ
+    return sanitizeHtml(linkedText, {
+        allowedTags: ['a'],
+        allowedAttributes: {
+            a: ['href', 'target', 'rel'],
+        },
+    });
+    // return sanitizeHtml(String(input ?? '').slice(0, 10000), {
+    //     allowedTags: ['a'], // aタグだけ許可
+    //     allowedAttributes: {
+    //         a: ['href', 'target', 'rel']
+    //     },
+    //     transformTags: {
+    //         a: (tagName, attribs) => {
+    //             // target="_blank" と rel を強制付与
+    //             return {
+    //                 tagName: 'a',
+    //                 attribs: {
+    //                     href: attribs.href || '',
+    //                     target: '_blank',
+    //                     rel: 'noopener noreferrer'
+    //                 }
+    //             };
+    //         }
+    //     }
+    // });
+}
+
+export function toPlainText(text) {
+    const stripped = sanitizeHtml(String(text ?? ''), {
+        allowedTags: [],
+        allowedAttributes: {},
+        disallowedTagsMode: 'discard'
+    })
+    // HTMLエンティティをデコード
+    const doc = new DOMParser().parseFromString(stripped, 'text/html')
+    return doc.documentElement.textContent || ''
+}
