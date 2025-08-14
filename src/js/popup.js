@@ -3602,6 +3602,7 @@ export function popup(e,map,mapName,mapFlg) {
             case 'click-circle-label-layer':
             {
                 // alert('到達')
+                store.commit('setDrawDrawer', false)
                 html.value = ''
                 isBreak = true
                 coordinates = store.state.coordinates
@@ -3631,10 +3632,9 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 if (!feature) return;
                 // alert('到達')
+                store.state.drawFeature = feature
                 props = feature.properties
                 console.log(props)
-                const lng = props.lng
-                const lat = props.lat
                 const canterLng = props.canterLng
                 const canterLat = props.canterLat
                 const radius = Number(props.radius)
@@ -3770,10 +3770,11 @@ export function popup(e,map,mapName,mapFlg) {
                             break
                         case 'Point':
                             // alert('到達')
+                            if (props.longText && window.innerWidth > 1000) store.commit('setDrawDrawer', true)
                             if (html.value.indexOf('click-circle-layer') === -1) {
                                 // alert('到達')
                                 const pictureUrl = props.pictureUrl || ''
-                                if (store.state.isDraw || !pictureUrl) {
+                                // if (store.state.isDraw || !pictureUrl) {
                                     // alert('到達')
                                     const keywordList = ['道路', '水路', '畑', '宅地', '田', '雑種地', 'コン杭', 'プレート','プラ杭','鋲'];
                                     html.value += '<div class="layer-label-div">ポイント</div>';
@@ -3782,16 +3783,16 @@ export function popup(e,map,mapName,mapFlg) {
                                     html.value += '<div style="width: 250px;">';
                                     html.value +=
                                         '<div class="click-circle-layer" style="font-weight: normal; color: #333; line-height: 25px;">' +
-                                        '<textarea id="' + props.id + '" rows="5" style="width: 100%; margin-bottom: 0px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
+                                        '<textarea id="' + props.id + '" rows="4" style="width: 100%; margin-bottom: 0px;" type="text" class="oh-cool-input point-text" placeholder="ここに入力">' + props.label + '</textarea>' +
+                                        '<button id="' + props.id + '" style="margin-bottom: 10px; height: 30px; font-size: medium; width: 50%;" class="long-text pyramid-btn">長　文</button>' +
+                                        '<br>' +
                                         '</select>' +
                                         '<select id="' + props.id + '" style="margin-left: 0px; width: 60px;" class="oh-cool-select text-select">' +
                                         '<option value="0" ' + labelSelected0 + '>通常</option>' +
                                         '<option value="1" ' + labelSelected1 + '>吹き出し</option>' +
                                         '</select>' +
-
                                         '　X　<input id="' + props.id + '" style="margin-bottom: 5px;" type="number" class="oh-cool-input-number offset-x-input" step="0.1" value="' + offsetX + '">' +
                                         '　Y　<input id="' + props.id + '" style="margin-bottom: 5px;" type="number" class="oh-cool-input-number offset-y-input" step="0.1" value="' + offsetY + '">' +
-
                                         '<button id="' + props.id + '" style="margin-bottom: 10px; height: 30px; font-size: medium; width: 50%;" class="point-delete pyramid-btn">削　除</button>' +
                                         '<button id="' + props.id + '" pictureUrl="' + pictureUrl + '" style="margin-bottom: 10px; margin-left: 10px; height: 30px; font-size: medium; width: 45%;" class="picture-upload pyramid-btn">画像、動画</button>' +
                                         '<div style="display: flex; gap: 8px;">' +
@@ -3827,29 +3828,29 @@ export function popup(e,map,mapName,mapFlg) {
                                     });
                                     html.value += '</div>'; // 右パネル終わり
                                     html.value += '</div>'; // flex container end
-                                } else {
-                                    let imageOrVideoHtml = ''
-                                    if (!pictureUrl) {
-                                        imageOrVideoHtml = ''
-                                    } else {
-                                        if (isImageFile(pictureUrl)) {
-                                            imageOrVideoHtml = '<a href="' + pictureUrl + '" target="_blank"><img width="100%" src="' + pictureUrl + '"></a>'
-                                        } else {
-                                            imageOrVideoHtml =
-                                                '<video v-else controls style="max-width: 100%;">' +
-                                                '<source src="' + pictureUrl + '" type="video/mp4" />' +
-                                                'お使いのブラウザは video タグに対応していません。' +
-                                                '</video>'
-                                        }
-                                    }
-
-                                    html.value += '<div class="layer-label-div">ポイント</div>'
-                                    html.value +=
-                                        '<div style="width: 260px;" class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
-                                        imageOrVideoHtml +
-                                        '<p>編集するときはドロー状態にしてください</p>' +
-                                        '</div>'
-                                }
+                                // } else {
+                                //     let imageOrVideoHtml = ''
+                                //     if (!pictureUrl) {
+                                //         imageOrVideoHtml = ''
+                                //     } else {
+                                //         if (isImageFile(pictureUrl)) {
+                                //             imageOrVideoHtml = '<a href="' + pictureUrl + '" target="_blank"><img width="100%" src="' + pictureUrl + '"></a>'
+                                //         } else {
+                                //             imageOrVideoHtml =
+                                //                 '<video v-else controls style="max-width: 100%;">' +
+                                //                 '<source src="' + pictureUrl + '" type="video/mp4" />' +
+                                //                 'お使いのブラウザは video タグに対応していません。' +
+                                //                 '</video>'
+                                //         }
+                                //     }
+                                //
+                                //     html.value += '<div class="layer-label-div">ポイント</div>'
+                                //     html.value +=
+                                //         '<div style="width: 260px;" class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
+                                //         imageOrVideoHtml +
+                                //         '<p>編集するときはドロー状態にしてください</p>' +
+                                //         '</div>'
+                                // }
                             }
                             break
                         case 'LineString': {

@@ -129,6 +129,11 @@ import SakuraEffect from './components/SakuraEffect.vue';
           class="draw-indicator"
       ><div id="draw-indicato-text" style="margin-top: 20px;margin-left: 10px;"></div></div>
 
+      <DrawDrawer
+          :value="showDrawDrawer"
+          :feature="selectedPointFeature"
+      />
+
       <ChibanzuDrawer
           :value="showChibanzuDrawer"
       />
@@ -1446,6 +1451,7 @@ import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
 import { TerraDrawPointMode,TerraDrawLineStringMode,TerraDrawPolygonMode } from 'terra-draw'
 import PointInfoDrawer from '@/components/PointInfoDrawer.vue'
 import RightDrawer from '@/components/rightDrawer.vue'
+import DrawDrawer from '@/components/DrawDrawer.vue'
 import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
 import {
@@ -1844,7 +1850,6 @@ import DialogInfo from '@/components/Dialog-info'
 import Dialog2 from '@/components/Dialog2'
 import DialogShare from "@/components/Dialog-share"
 import DialogDrawConfig from "@/components/Dialog-draw-config"
-// import DialogChibanzuList from "@/components/Dialog-chibanzu-list"
 import pyramid, {
   autoCloseAllPolygons,
   colorNameToRgba, createSquarePolygonAtCenter,
@@ -1894,6 +1899,7 @@ export default {
     Dialog2,
     DialogShare,
     DialogDrawConfig,
+    DrawDrawer,
     PointInfoDrawer,
     RightDrawer,
     ChibanzuDrawer,
@@ -2052,6 +2058,7 @@ export default {
   }),
   computed: {
     ...mapState([
+      'showDrawDrawer',
       'showPointInfoDrawer',
       'showRightDrawer',
       'selectedPointFeature',
@@ -6657,6 +6664,7 @@ export default {
             textAnchor: 'left',
             textJustify: 'left',
             labelType: this.$store.state.currentTextLabelType || '1',
+            longText: '',
           }
           geojsonCreate(map, 'Point', coordinates, properties)
           // 地図がアイドル状態（描画が完了）になるのを待つ

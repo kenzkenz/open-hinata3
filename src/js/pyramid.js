@@ -1612,6 +1612,14 @@ export default function pyramid () {
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,'offsetValue',offsetValue)
             }
         });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', async (e) => {
+            if (e.target && (e.target.classList.contains("long-text"))) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
+                store.commit('setDrawDrawer', true)
+            }
+        });
     })
 }
 // ラインの最後のセグメントの方向（ベアリング）を計算する関数
