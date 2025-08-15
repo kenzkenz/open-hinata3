@@ -4894,7 +4894,7 @@ export default {
         this.s_isDrawPolygon = false
         this.s_isDrawFree = false
         this.s_isDrawLasso = false
-        this.snackbarText = '編集時はポップアップができません。'
+        this.snackbarText = '変形、移動時はポップアップができません。'
         this.snackbar = true
       }
       store.state.isCursorOnPanel = false

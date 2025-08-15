@@ -9,7 +9,6 @@ import * as turf from '@turf/turf'
 import {
     extractAndOpenUrls,
     getNextZIndex,
-    isImageFile,
     queryFGBWithPolygon,
     wsg84ToJgd
 } from "@/js/downLoad";

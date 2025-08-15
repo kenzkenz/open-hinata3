@@ -297,7 +297,7 @@ export default {
 
 .content {
   width: 101%;
-  height: 101%!important;
+  height: 102%!important;
   overflow: auto;
 }
 
