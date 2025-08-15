@@ -2877,13 +2877,13 @@ export default {
               featureCollectionAdd()
               markerAddAndRemove()
             }
-            alert("アップロード成功。ドローを解除して確認してください。");
+            alert("更新成功。");
           } else {
             this.s_pictureUrl = null
-            alert("アップロード失敗: " + result.message);
+            alert("更新失敗: " + result.message);
           }
         } catch (error) {
-          console.error("アップロードエラー:", error);
+          console.error("更新エラー:", error);
           this.s_pictureUrl = null
           alert("通信エラー");
         }
@@ -2913,7 +2913,6 @@ export default {
       });
       const result = await response.json();
       if (result.success) {
-        console.log(result)
         this.s_previewUrl = ''
         this.s_pictureUrl = ''
         const map01 = this.$store.state.map01
@@ -2921,10 +2920,9 @@ export default {
         const tgtProp = 'pictureUrl'
         const value = ''
         this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01,null,clickCircleSource.iD,id,tgtProp,value)
-        console.log(this.$store.state.clickCircleGeojsonText)
         closeAllPopups()
         this.s_selectedFile = null
-        alert("削除成功。ドローを解除して確認してください。");
+        alert("削除成功！");
       } else {
         alert("削除失敗！: " + result.message);
       }

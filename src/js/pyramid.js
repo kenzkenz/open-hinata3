@@ -1416,6 +1416,7 @@ export default function pyramid () {
                     store.state.isCursorOnPanel = false
                     closeAllPopups()
                     store.state.popupDialog = false
+                    store.commit('setDrawDrawer', false)
                 },100)
             }
         });
@@ -1441,6 +1442,7 @@ export default function pyramid () {
                     store.state.isCursorOnPanel = false
                     closeAllPopups()
                     store.state.popupDialog = false
+                    store.commit('setDrawDrawer', false)
                     if (!store.state.isUsingServerGeojson) {
                         featureCollectionAdd()
                         markerAddAndRemove()
@@ -1479,6 +1481,7 @@ export default function pyramid () {
                     closeAllPopups()
                     store.state.popupDialog = false
                     await featuresDelete([id,...pairIds])
+                    store.commit('setDrawDrawer', false)
                 },100)
             }
         });
@@ -1531,6 +1534,7 @@ export default function pyramid () {
                     store.state.isCursorOnPanel = false
                     closeAllPopups()
                     store.state.popupDialog = false
+                    store.commit('setDrawDrawer', false)
                 },100)
             }
         });
@@ -2367,6 +2371,7 @@ export async function deleteAll (noConfrim) {
         features: []
     })
     closeAllPopups()
+    store.commit('setDrawDrawer', false)
 
     store.state.printTitleText = ''
     store.state.textPx = 30
