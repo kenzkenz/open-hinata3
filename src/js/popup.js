@@ -3803,7 +3803,7 @@ export function popup(e,map,mapName,mapFlg) {
                                     html.value += '<div style="width: 250px;">';
                                     html.value +=
                                         '<div class="click-circle-layer" style="font-weight: normal; color: #333; line-height: 25px;">' +
-                                        '<textarea id="' + props.id + '" rows="4" style="width: 100%; margin-bottom: 0px;" type="text" class="oh-cool-input point-text" placeholder="ラベルに使用する短文を入力">' + props.label + '</textarea>' +
+                                        '<textarea id="' + props.id + '" rows="2" style="width: 100%; margin-bottom: 0px;" type="text" class="oh-cool-input point-text" placeholder="ラベルに使用する短文を入力">' + props.label + '</textarea>' +
                                         '<button id="' + props.id + '" style="margin-bottom: 10px; height: 30px; font-size: medium; width: 50%;" class="long-text pyramid-btn">長　文</button>' +
                                         '<br>' +
                                         '</select>' +
@@ -3839,15 +3839,15 @@ export function popup(e,map,mapName,mapFlg) {
                                         '</div>' +
                                         '</div>';
                                     html.value += '</div>';
-
-                                    // 右側：単語リスト
-                                    html.value += '<div style="flex: 1; margin-left: 10px; height: 290px; overflow: scroll">';
-
-                                    keywordList.forEach(word => {
-                                        html.value += '<div id="' + props.id + '"  class="keyword-item" ' +
-                                            'onclick="document.getElementById(\'' + props.id + '\').value = \'' + word + '\'">' + word + '</div>';
-                                    });
-                                    html.value += '</div>'; // 右パネル終わり
+                                    //
+                                    // // 右側：単語リスト
+                                    // html.value += '<div style="flex: 1; margin-left: 10px; height: 290px; overflow: scroll">';
+                                    //
+                                    // keywordList.forEach(word => {
+                                    //     html.value += '<div id="' + props.id + '"  class="keyword-item" ' +
+                                    //         'onclick="document.getElementById(\'' + props.id + '\').value = \'' + word + '\'">' + word + '</div>';
+                                    // });
+                                    // html.value += '</div>'; // 右パネル終わり
                                     html.value += '</div>'; // flex container end
                                 // } else {
                                 //     let imageOrVideoHtml = ''

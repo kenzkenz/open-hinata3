@@ -203,12 +203,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   show-size
                   @change="onFileSelected"
               ></v-file-input>
+              <div style="max-height: 300px; margin-top: -20px; overflow: auto">
               <div v-if="s_previewUrl" class="mt-4 text-center" style="margin-bottom: 10px;">
                 <img v-if="isImage" :src="s_previewUrl" alt="プレビュー" style="max-width: 100%;" />
                 <video v-if="isVideo" controls style="max-width: 100%;">
                   <source :src="s_previewUrl" type="video/mp4" />
                   お使いのブラウザは video タグに対応していません。
                 </video>
+              </div>
               </div>
               <v-row>
                 <v-col cols="6">
@@ -2004,6 +2006,7 @@ export default {
       { label: '丸の大', value: {borderRadius:'50%',containerSize:100} },
       { label: '丸の中', value: {borderRadius:'50%',containerSize:50} },
       { label: '丸の小', value: {borderRadius:'50%',containerSize:30} },
+      { label: '無し', value: {borderRadius:'0%',containerSize:1} },
     ],
     containerColor: 'white',
     containerColors: [
@@ -9646,10 +9649,10 @@ export default {
   },
   watch: {
     drawFeature() {
-      const borderRadius = this.drawFeature.properties.borderRadius || '10px'
-      const containerSize = this.drawFeature.properties.containerSize || 100
+      const borderRadius = this.drawFeature.properties.borderRadius ?? '10px'
+      const containerSize = this.drawFeature.properties.containerSize ?? 100
       this.thumbnailType = {borderRadius, containerSize}
-      this.containerColor = this.drawFeature.properties.containerColor || 'white'
+      this.containerColor = this.drawFeature.properties.containerColor ?? 'white'
     },
     s_isPrint (value) {
       const app = document.getElementById('app');

@@ -10048,7 +10048,9 @@ export function markerAddAndRemove() {
     if (!featureCollection) return
     featureCollection.features.forEach(feature => {
         const coords = feature.geometry?.coordinates;
-        const isPicture = !!feature?.properties?.pictureUrl;
+        const isPicture =
+            !!feature?.properties?.pictureUrl &&
+            (feature?.properties?.containerSize == null || feature.properties.containerSize > 1)
         const isLabel = !!(
             feature?.properties?.label &&
             !feature?.properties?.radius &&
@@ -10068,9 +10070,9 @@ export function markerAddAndRemove() {
             if (isPicture) {
                 const id = feature.properties.id;
                 const photoURL = feature.properties.pictureUrl;
-                const borderRadius = feature.properties.borderRadius || '10px'
-                const containerSize = feature.properties.containerSize || 100
-                const containerColor = feature.properties.containerColor || 'white'
+                const borderRadius = feature.properties.borderRadius ?? '10px'
+                const containerSize = feature.properties.containerSize ?? 100
+                const containerColor = feature.properties.containerColor ?? 'white'
                 createThumbnailMarker(map01, coords, photoURL, id, borderRadius, containerSize, containerColor);
                 createThumbnailMarker(map02, coords, photoURL, id, borderRadius, containerSize, containerColor);
                 coordsList.push(coords);
