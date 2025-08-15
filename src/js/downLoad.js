@@ -10070,8 +10070,9 @@ export function markerAddAndRemove() {
                 const photoURL = feature.properties.pictureUrl;
                 const borderRadius = feature.properties.borderRadius || '10px'
                 const containerSize = feature.properties.containerSize || 100
-                createThumbnailMarker(map01, coords, photoURL, id, borderRadius, containerSize);
-                createThumbnailMarker(map02, coords, photoURL, id, borderRadius, containerSize);
+                const containerColor = feature.properties.containerColor || 'white'
+                createThumbnailMarker(map01, coords, photoURL, id, borderRadius, containerSize, containerColor);
+                createThumbnailMarker(map02, coords, photoURL, id, borderRadius, containerSize, containerColor);
                 coordsList.push(coords);
             }
             if (isLabel) {
@@ -10217,13 +10218,13 @@ export function createTextThumbnailMarker(map, coords, txt, id, color, fontSize,
 }
 
 /**
- * 小さいサムネイル風のマーカーをつくる
+ * 小さいサムネイル風のマーカーをつくる。画像、動画
  * @param map
  * @param coords
  * @param photoURL
  */
 const markers = []
-export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, containerSize) {
+export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, containerSize, containerColor) {
     if (store.state.editEnabled) return
     const key = coords.join(',');
     if (!map.__thumbnailMarkerKeys) {
@@ -10249,7 +10250,7 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, c
         thumb.style.width             = `${containerSize}px`;
         thumb.style.height            = `${containerSize}px`;
         thumb.style.borderRadius      = borderRadius;
-        thumb.style.border            = '2px solid #ffffff';
+        thumb.style.border            = `4px solid ${containerColor}`;
         thumb.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
         thumb.src = photoURL;
         thumb.muted = true;
@@ -10266,7 +10267,7 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, c
         thumb.style.backgroundSize    = 'cover';
         thumb.style.backgroundPosition= 'center';
         thumb.style.borderRadius      = borderRadius;
-        thumb.style.border            = '2px solid #ffffff';
+        thumb.style.border            = `4px solid ${containerColor}`;
         thumb.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
         thumb.style.cursor            = 'pointer';
     }
@@ -10282,7 +10283,7 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, c
     arrow.style.height       = '0';
     arrow.style.borderLeft   = `10px solid transparent`;
     arrow.style.borderRight  = `10px solid transparent`;
-    arrow.style.borderTop    = `10px solid #ffffff`;
+    arrow.style.borderTop    = `10px solid ${containerColor}`;
     container.appendChild(arrow);
 
     container.addEventListener('click', (e) => {

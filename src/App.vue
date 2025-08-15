@@ -210,15 +210,31 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   お使いのブラウザは video タグに対応していません。
                 </video>
               </div>
-              <v-select v-model="thumbnailType"
-                        :items="thumbnailTypes"
-                        item-title="label"
-                        item-value="value"
-                        label="サムネイルを選択"
-                        outlined
-                        @update:modelValue="isDisabledChange"
-              ></v-select>
-              <v-btn :disabled="(!s_selectedFile || isDisabled) && isDisabled2" @click="savePicture">サーバー保存</v-btn>
+              <v-row>
+                <v-col cols="6">
+                  <v-select
+                      v-model="thumbnailType"
+                      :items="thumbnailTypes"
+                      item-title="label"
+                      item-value="value"
+                      label="サムネイルを選択"
+                      outlined
+                      @update:modelValue="isDisabledChange"
+                  ></v-select>
+                </v-col>
+                <v-col cols="6">
+                  <v-select
+                      v-model="containerColor"
+                      :items="containerColors"
+                      item-title="label"
+                      item-value="value"
+                      label="縁の色を選択"
+                      outlined
+                      @update:modelValue="isDisabledChange"
+                  ></v-select>
+                </v-col>
+              </v-row>
+              <v-btn :disabled="(!s_selectedFile || isDisabled) && isDisabled2" @click="savePicture">サーバー更新</v-btn>
               <v-btn :disabled="!s_pictureUrl" @click="deletePicture" style="margin-left: 10px;">サーバーから削除</v-btn>
             </div>
             <div v-else>
@@ -1989,6 +2005,14 @@ export default {
       { label: '丸の中', value: {borderRadius:'50%',containerSize:50} },
       { label: '丸の小', value: {borderRadius:'50%',containerSize:30} },
     ],
+    containerColor: 'white',
+    containerColors: [
+      { label: '白', value: 'white' },
+      { label: '黒', value: 'black' },
+      { label: '赤', value: 'red' },
+      { label: '青', value: 'blue' },
+      { label: '緑', value: 'green' },
+    ],
     resolutions: [13,14,15,16,17,18,19,20,21,22,23,24],
     dialogForGeotiffApp1file: false,
     dialogForPdfApp: false,
@@ -2797,9 +2821,9 @@ export default {
       const borderRadius = this.thumbnailType.borderRadius
       const pictureUrl = this.s_pictureUrl
       const containerSize = this.thumbnailType.containerSize
-      const value = {pictureUrl, borderRadius, containerSize}
+      const containerColor = this.containerColor
+      const value = {pictureUrl, borderRadius, containerSize, containerColor}
       this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01,null,clickCircleSource.iD,id,tgtProp,value)
-      // console.log(this.$store.state.clickCircleGeojsonText)
     },
     async savePicture() {
       store.state.loading2 = true
@@ -2867,13 +2891,7 @@ export default {
       } else {
         this.s_pictureUrl = null
         this.drawGeojsonAddPicture()
-        // const map01 = store.state.map01
-        // const id = this.$store.state.drawGeojsonId
-        // const tgtProp = 'borderRadius'
-        // const value = this.thumbnailType.borderRadius
-        // this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01,null,clickCircleSource.iD,id,tgtProp,value)
       }
-
       store.state.loading2 = false
       this.isDisabled = false
     },
@@ -9633,6 +9651,7 @@ export default {
       const borderRadius = this.drawFeature.properties.borderRadius || '10px'
       const containerSize = this.drawFeature.properties.containerSize || 100
       this.thumbnailType = {borderRadius, containerSize}
+      this.containerColor = this.drawFeature.properties.containerColor || 'white'
     },
     s_isPrint (value) {
       const app = document.getElementById('app');

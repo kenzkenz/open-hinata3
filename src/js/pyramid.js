@@ -2131,6 +2131,7 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
                     if (value.pictureUrl) feature.properties.pictureUrl = value.pictureUrl
                     feature.properties.borderRadius = value.borderRadius
                     feature.properties.containerSize = value.containerSize
+                    feature.properties.containerColor = value.containerColor
                 } else {
                     feature.properties[tgtProp] = value
                 }
