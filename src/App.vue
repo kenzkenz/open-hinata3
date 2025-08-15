@@ -2804,7 +2804,7 @@ export default {
       const containerSize = this.thumbnailType.containerSize
       const value = {pictureUrl, borderRadius, containerSize}
       this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01,null,clickCircleSource.iD,id,tgtProp,value)
-      console.log(this.$store.state.clickCircleGeojsonText)
+      // console.log(this.$store.state.clickCircleGeojsonText)
     },
     async savePicture() {
       store.state.loading2 = true

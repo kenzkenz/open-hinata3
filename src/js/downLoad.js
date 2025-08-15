@@ -10302,10 +10302,10 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, c
             offsetY = -55
             break
         case 50:
-            offsetY = -55
+            offsetY = -35
             break
         case 30:
-            offsetY = -55
+            offsetY = -20
             break
     }
     const offsetX = 0
