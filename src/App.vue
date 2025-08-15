@@ -10485,6 +10485,11 @@ select {
   line-height: 1.3;        /* 文字が複数行なら */
   cursor: pointer;
 }
+@media (max-width: 500px) {
+  .print-title{
+    top: 60px;
+  }
+}
 .print-buttons {
   position: absolute;
   left:5px;

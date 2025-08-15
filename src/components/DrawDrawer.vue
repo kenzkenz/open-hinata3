@@ -201,7 +201,7 @@ export default {
         const props = this.drawFeature.properties
         this.type = this.drawFeature.geometry.type
         this.label = props.label
-        if (this.id === props.id) return
+        // if (this.id === props.id) return
         this.id = props.id
         this.longText = toPlainText(props.longText)
         if (this.longText) {
