@@ -242,6 +242,9 @@ export default {
   user-select: none;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+  overflow: hidden;
+
 }
 
 .header {
@@ -293,7 +296,8 @@ export default {
 }
 
 .content {
-  width: 100%;
+  width: 101%;
+  height: 101%!important;
   overflow: auto;
 }
 
