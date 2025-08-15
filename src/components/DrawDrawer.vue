@@ -60,6 +60,30 @@
         <br>
         <span style="margin-left: 10px; font-size: 10.5px; margin: 0" v-if="!isDraw">編集するには右のペンアイコンをクリックしてドロー状態にしてください。</span>
       </v-card-text>
+      <!-- フルスクリーン・モーダル -->
+      <teleport to="body">
+        <div v-if="showMediaModal" class="media-modal" @click.self="closeMediaModal" :style="{ zIndex: modalZIndex }">
+          <button class="modal-close" @click="closeMediaModal" aria-label="閉じる">✕</button>
+          <img
+              v-if="isImageFile && pictureUrl"
+              :src="pictureUrl"
+              alt="画像（拡大表示）"
+              class="modal-media"
+              draggable="false"
+          />
+          <video
+              v-else-if="pictureUrl"
+              :src="pictureUrl"
+              class="modal-media video-full"
+              autoplay
+              muted
+              loop
+              controls
+              playsinline
+          ></video>
+        </div>
+      </teleport>
+
     </v-card>
   </v-navigation-drawer>
 </template>
@@ -84,9 +108,11 @@ export default {
     label: '',
     drawerWidth: 400,
     zIndex: '10',
+    modalZIndex: 0,
     pictureUrl: '',
     isImageFile: true,
     isEdit: false,
+    showMediaModal: false,
   }),
   computed: {
     ...mapState([
@@ -107,6 +133,23 @@ export default {
       'saveSelectedPointFeature',
       'setSelectedPointFeature',
     ]),
+    openMediaModal() {
+      if (!this.pictureUrl) return
+      this.showMediaModal = true
+      // スクロール固定
+      this._prevOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      // ESC で閉じる
+      window.addEventListener('keydown', this._onKeydown, { passive: true })
+    },
+    closeMediaModal() {
+      this.showMediaModal = false
+      document.body.style.overflow = this._prevOverflow || ''
+      window.removeEventListener('keydown', this._onKeydown)
+    },
+    _onKeydown(e) {
+      if (e.key === 'Escape') this.closeMediaModal()
+    },
     truncate(str, maxLength) {
       return str.length > maxLength
           ? str.slice(0, maxLength) + '...'
@@ -114,7 +157,8 @@ export default {
     },
     imgClick() {
       if (window.innerWidth > 500){
-        window.open(this.pictureUrl, '_blank', 'noopener,noreferrer');
+        this.openMediaModal()
+        // window.open(this.pictureUrl, '_blank', 'noopener,noreferrer');
       }
     },
     setZindex() {
@@ -140,6 +184,11 @@ export default {
     }
   },
   watch: {
+    showMediaModal(value) {
+      if (value) {
+        this.modalZIndex = getNextZIndex()
+      }
+    },
     isEdit(value) {
       if (!value) {
         this.longText = this.originalLongText
@@ -280,6 +329,47 @@ export default {
   overflow-x: hidden;
   max-height: calc(100vh - 110px);
 }
+/* 画面いっぱいの黒透過（背景） */
+.media-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999; /* 必要に応じて上げる */
+}
+/* 右上の閉じるボタン */
+.modal-close {
+  position: absolute;
+  top: 32px;
+  right: 52px;
+  font-size: 34px;
+  line-height: 1;
+  color: #fff;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+.modal-close:hover { opacity: 0.9; }
+/* メディアの最大化表示（余白は黒透過のまま） */
+.modal-media {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain; /* 画像/動画の比率を維持して収める */
+  background: #000; /* レターボックス部分を黒 */
+  border-radius: 8px;
+}
+/* 画面いっぱいに引き伸ばす（動画用） */
+/* これでは切れる。要検討 */
+.video-full {
+  width: 80vw;
+  max-height: 90vh;
+  object-fit: cover;
+}
+
 @media (max-width: 500px) {
 
 }
