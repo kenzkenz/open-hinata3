@@ -40,9 +40,14 @@
           ></video>
         </div>
         <v-card-text style="margin-top: 10px; padding-bottom: 0">
-          <p v-if="!isDraw || !isEdit" class="comment-text" v-html="longTextForA"></p>
+<!--          <p v-if="!isDraw || !isEdit" class="comment-text" v-html="longTextForA"></p>-->
+          <p
+              v-if="(!isDraw || !isEdit) && longTextForA && longTextForA.trim() !== ''"
+              class="comment-text"
+              v-html="longTextForA">
+          </p>
           <v-textarea
-              v-else
+              v-if="isDraw && isEdit"
               v-model="longText"
               placeholder="長文を入力してください。（最大約3000文字）"
               counter="3000"
@@ -56,7 +61,7 @@
       <v-card-text style="margin-top: 0px;">
         <v-btn :disabled="!isDraw || !isEdit" style="margin-top: -10px;" @click="longTextSave">保存</v-btn>
         <v-btn :disabled="!isDraw || isEdit" style="margin-top: -10px; margin-left: 10px;" @click="isEdit = !isEdit">書き込み</v-btn>
-        <v-btn v-if="isEdit" style="margin-top: -10px; margin-left: 10px;" @click="isEdit = false">書き込み解除</v-btn>
+        <v-btn v-if="isDraw && isEdit" style="margin-top: -10px; margin-left: 10px;" @click="isEdit = false">書き込み解除</v-btn>
         <br>
         <span style="margin-left: 10px; font-size: 10.5px; margin: 0" v-if="!isDraw">編集するには右のペンアイコンをクリックしてドロー状態にしてください。</span>
       </v-card-text>

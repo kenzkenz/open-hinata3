@@ -195,7 +195,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
             画像、動画アップロード
           </v-card-title>
           <v-card-text style="padding-bottom: 0">
-            <div v-if="user1">
+<!--            <div v-if="user1">-->
+            <div>
               <v-file-input
                   v-model="s_selectedFile"
                   label="画像、動画を選択"
@@ -203,7 +204,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   show-size
                   @change="onFileSelected"
               ></v-file-input>
-              <div style="max-height: 300px; margin-top: -20px; overflow: auto">
+              <div style="max-height: 300px; margin-top: -20px; margin-bottom: 20px; overflow: auto">
               <div v-if="s_previewUrl" class="mt-4 text-center" style="margin-bottom: 10px;">
                 <img v-if="isImage" :src="s_previewUrl" alt="プレビュー" style="max-width: 100%;" />
                 <video v-if="isVideo" controls style="max-width: 100%;">
@@ -236,13 +237,19 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   ></v-select>
                 </v-col>
               </v-row>
-              <v-btn :disabled="(!s_selectedFile || isDisabled) && isDisabled2" @click="savePicture">サーバー更新</v-btn>
-              <v-btn :disabled="!s_pictureUrl" @click="deletePicture" style="margin-left: 10px;">サーバーから削除</v-btn>
+              <v-row>
+                <v-col cols="6">
+                  <v-btn :disabled="(!s_selectedFile || isDisabled) && isDisabled2" style="width: 200px;" @click="savePicture">サーバー更新</v-btn>
+                </v-col>
+                <v-col cols="6">
+                  <v-btn :disabled="!s_pictureUrl" @click="deletePicture" style="margin-left: 10px;">サーバーから削除</v-btn>
+                </v-col>
+              </v-row>
             </div>
-            <div v-else>
-              <p style="margin-bottom: 10px;">ログインが必要です。</p>
-              <v-btn @click="s_dialogForLogin = true">ログイン</v-btn>
-            </div>
+<!--            <div v-else>-->
+<!--              <p style="margin-bottom: 10px;">ログインが必要です。</p>-->
+<!--              <v-btn @click="s_dialogForLogin = true">ログイン</v-btn>-->
+<!--            </div>-->
           </v-card-text>
           <v-card-actions>
             <v-btn color="blue-darken-1" text @click="s_dialogForPicture = false">Close</v-btn>
@@ -2098,6 +2105,7 @@ export default {
   }),
   computed: {
     ...mapState([
+      'isDraw',
       'showDrawDrawer',
       'showPointInfoDrawer',
       'showRightDrawer',
@@ -2825,7 +2833,8 @@ export default {
       const pictureUrl = this.s_pictureUrl
       const containerSize = this.thumbnailType.containerSize
       const containerColor = this.containerColor
-      const value = {pictureUrl, borderRadius, containerSize, containerColor}
+      const labelType = '0'
+      const value = {pictureUrl, borderRadius, containerSize, containerColor, labelType}
       this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01,null,clickCircleSource.iD,id,tgtProp,value)
     },
     async savePicture() {
@@ -2865,7 +2874,7 @@ export default {
 
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("dir", this.$store.state.userId);
+        formData.append("dir", this.$store.state.userId || '0000notLoggedIn');
         try {
           const response = await fetch("https://kenzkenz.net/myphp/upload_picture.php", {
             method: "POST",
@@ -10521,7 +10530,7 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
-  /*cursor: pointer;*/
+  pointer-events: none;
 }
 .print-title-bg {
   display: inline-block;
@@ -10530,6 +10539,7 @@ select {
   border-radius: 8px;      /* 角を丸く（任意） */
   line-height: 1.3;        /* 文字が複数行なら */
   cursor: pointer;
+  pointer-events: auto;
 }
 @media (max-width: 500px) {
   .print-title{
