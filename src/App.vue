@@ -1980,10 +1980,14 @@ export default {
       { label: '透過する。（処理遅い）', value: '1' },
       { label: '透過なし。（処理早い）', value: '0' }
     ],
-    thumbnailType: {borderRadius:'10px',size:50},
+    thumbnailType: {borderRadius:'10px',containerSize:100},
     thumbnailTypes: [
-      { label: '四角', value: {borderRadius:'10px',size:50} },
-      { label: '丸', value: {borderRadius:'50%',size:50}  }
+      { label: '四角の大', value: {borderRadius:'10px',containerSize:100} },
+      { label: '四角の中', value: {borderRadius:'10px',containerSize:50} },
+      { label: '四角の小', value: {borderRadius:'10px',containerSize:30} },
+      { label: '丸の大', value: {borderRadius:'50%',containerSize:100} },
+      { label: '丸の中', value: {borderRadius:'50%',containerSize:50} },
+      { label: '丸の小', value: {borderRadius:'50%',containerSize:30} },
     ],
     resolutions: [13,14,15,16,17,18,19,20,21,22,23,24],
     dialogForGeotiffApp1file: false,
@@ -2084,6 +2088,7 @@ export default {
       'titleDirection',
       'drawGeojsonId',
       'isUsingServerGeojson',
+      'drawFeature',
     ]),
     isImage() {
       if (this.s_selectedFile) {
@@ -2788,7 +2793,7 @@ export default {
     },
     drawGeojsonAddPicture() {
       const map01 = this.$store.state.map01
-      if (!this.s_pictureUrl || !this.$store.state.drawGeojsonId) {
+      if (!this.$store.state.drawGeojsonId) {
         alert('必要な引数がたりません')
         return
       }
@@ -2796,7 +2801,8 @@ export default {
       const tgtProp = 'pictureUrl'
       const borderRadius = this.thumbnailType.borderRadius
       const pictureUrl = this.s_pictureUrl
-      const value = {pictureUrl, borderRadius}
+      const containerSize = this.thumbnailType.containerSize
+      const value = {pictureUrl, borderRadius, containerSize}
       this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01,null,clickCircleSource.iD,id,tgtProp,value)
       console.log(this.$store.state.clickCircleGeojsonText)
     },
@@ -2845,7 +2851,6 @@ export default {
           });
           const result = await response.json();
           if (result.success) {
-            console.log(result)
             this.s_pictureUrl = result.webUrl
             this.drawGeojsonAddPicture()
             closeAllPopups()
@@ -2865,11 +2870,13 @@ export default {
         }
         this.s_dialogForPicture = false
       } else {
-        const map01 = store.state.map01
-        const id = this.$store.state.drawGeojsonId
-        const tgtProp = 'borderRadius'
-        const value = this.thumbnailType.borderRadius
-        this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01,null,clickCircleSource.iD,id,tgtProp,value)
+        this.s_pictureUrl = null
+        this.drawGeojsonAddPicture()
+        // const map01 = store.state.map01
+        // const id = this.$store.state.drawGeojsonId
+        // const tgtProp = 'borderRadius'
+        // const value = this.thumbnailType.borderRadius
+        // this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01,null,clickCircleSource.iD,id,tgtProp,value)
       }
 
       store.state.loading2 = false
@@ -4246,7 +4253,6 @@ export default {
         } else {
           mainSourceGeojson = JSON.parse(store.state.clickCircleGeojsonText)
         }
-        console.log(mainSourceGeojson)
         this.history.push(JSON.parse(JSON.stringify(mainSourceGeojson)));
         // Undo後の新編集はredo履歴クリア
         this.redoStack = [];
@@ -9628,6 +9634,11 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
+    drawFeature() {
+      const borderRadius = this.drawFeature.properties.borderRadius || '10px'
+      const containerSize = this.drawFeature.properties.containerSize || 100
+      this.thumbnailType = {borderRadius, containerSize}
+    },
     s_isPrint (value) {
       const app = document.getElementById('app');
       if (!value) {

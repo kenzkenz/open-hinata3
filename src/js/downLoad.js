@@ -9899,7 +9899,6 @@ export async function saveDrowFeatures(features) {
         body: formData
     });
     const result = await response.json();
-    console.log(result)
     if (result.success) {
         store.state.loading3 = true
         const map01 = store.state.map01
@@ -9907,7 +9906,6 @@ export async function saveDrowFeatures(features) {
             const target = map01.getSource(clickCircleSource.iD)?._data.features?.find(feature => {
                 return feature.properties.id === result.feature_id
             })
-            console.log(target)
             if (target) target.properties.updated_at = result.updated_at
             if (result.status === 'conflict') {
                 store.state.loading2 = false
@@ -9919,7 +9917,6 @@ export async function saveDrowFeatures(features) {
                 store.state.loadingMessage3 = '更新しました'
             }
         })
-        console.log(result.results)
     } else {
         console.error('保存失敗', result);
         store.state.loadingMessage3 = '失敗'
@@ -10072,8 +10069,9 @@ export function markerAddAndRemove() {
                 const id = feature.properties.id;
                 const photoURL = feature.properties.pictureUrl;
                 const borderRadius = feature.properties.borderRadius || '10px'
-                createThumbnailMarker(map01, coords, photoURL, id, borderRadius);
-                createThumbnailMarker(map02, coords, photoURL, id, borderRadius);
+                const containerSize = feature.properties.containerSize || 100
+                createThumbnailMarker(map01, coords, photoURL, id, borderRadius, containerSize);
+                createThumbnailMarker(map02, coords, photoURL, id, borderRadius, containerSize);
                 coordsList.push(coords);
             }
             if (isLabel) {
@@ -10225,7 +10223,7 @@ export function createTextThumbnailMarker(map, coords, txt, id, color, fontSize,
  * @param photoURL
  */
 const markers = []
-export function createThumbnailMarker(map, coords, photoURL, id, borderRadius) {
+export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, containerSize) {
     if (store.state.editEnabled) return
     const key = coords.join(',');
     if (!map.__thumbnailMarkerKeys) {
@@ -10236,14 +10234,11 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius) {
     }
     map.__thumbnailMarkerKeys.add(key);
 
-    const size = 100;// 50
-    const arrowSize = 10; // 三角の高さ
-
     // コンテナ要素を作成
     const container = document.createElement('div');
     container.id             = `pic-marker-${id}`;
-    container.style.width    = `${size}px`;
-    container.style.height   = `${size + 6}px`; // 縦幅に三角分を追加
+    container.style.width    = `${containerSize}px`;
+    container.style.height   = `${containerSize + 6}px`; // 縦幅に三角分を追加
     container.style.cursor   = 'pointer';
 
     let thumb
@@ -10251,8 +10246,8 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius) {
     if (isVideo) {
         thumb = document.createElement('video');
         thumb.className               = 'pic-marker-video';
-        thumb.style.width             = `${size}px`;
-        thumb.style.height            = `${size}px`;
+        thumb.style.width             = `${containerSize}px`;
+        thumb.style.height            = `${containerSize}px`;
         thumb.style.borderRadius      = borderRadius;
         thumb.style.border            = '2px solid #ffffff';
         thumb.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
@@ -10265,8 +10260,8 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius) {
     } else {
         thumb = document.createElement('div');
         thumb.className               = 'pic-marker-img';
-        thumb.style.width             = `${size}px`;
-        thumb.style.height            = `${size}px`;
+        thumb.style.width             = `${containerSize}px`;
+        thumb.style.height            = `${containerSize}px`;
         thumb.style.backgroundImage   = `url(${photoURL})`;
         thumb.style.backgroundSize    = 'cover';
         thumb.style.backgroundPosition= 'center';
@@ -10285,14 +10280,13 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius) {
     arrow.style.transform    = 'translateX(-50%) translateY(50%)';
     arrow.style.width        = '0';
     arrow.style.height       = '0';
-    arrow.style.borderLeft   = `${arrowSize}px solid transparent`;
-    arrow.style.borderRight  = `${arrowSize}px solid transparent`;
-    arrow.style.borderTop    = `${arrowSize}px solid #ffffff`;
+    arrow.style.borderLeft   = `10px solid transparent`;
+    arrow.style.borderRight  = `10px solid transparent`;
+    arrow.style.borderTop    = `10px solid #ffffff`;
     container.appendChild(arrow);
 
     container.addEventListener('click', (e) => {
         e.stopPropagation(); // マップのクリックイベントを阻止
-        // window.open(photoURL, '_blank', 'noopener,noreferrer');
         store.state.id = id
         const dummyEvent = {
             lngLat: { lng: coords[0], lat: coords[1] },
@@ -10302,9 +10296,20 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius) {
         }
         onPointClick(dummyEvent)
     });
-
+    let offsetY = -55
+    switch (containerSize) {
+        case 100:
+            offsetY = -55
+            break
+        case 50:
+            offsetY = -55
+            break
+        case 30:
+            offsetY = -55
+            break
+    }
     const offsetX = 0
-    const offsetY = -55; // -35
+    // const offsetY = -55; // -35
     const marker =
         new maplibregl.Marker({
         element: container,

@@ -2128,8 +2128,9 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
                 : String(feature.properties.id) === id;
             if (shouldUpdate) {
                 if (tgtProp === 'pictureUrl') {
-                    feature.properties.pictureUrl = value.pictureUrl
+                    if (value.pictureUrl) feature.properties.pictureUrl = value.pictureUrl
                     feature.properties.borderRadius = value.borderRadius
+                    feature.properties.containerSize = value.containerSize
                 } else {
                     feature.properties[tgtProp] = value
                 }
@@ -2180,7 +2181,6 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
             }
             if (drawFeatures.length === 1) {
                 store.state.drawFeature = drawFeatures[0]
-                console.log(drawFeatures[0])
             }
             return escapeHTML(JSON.stringify(geojson))
         }
