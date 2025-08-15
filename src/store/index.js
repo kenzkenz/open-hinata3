@@ -5,6 +5,9 @@ import firebase from 'firebase/app';
 
 export default createStore({
   state: {
+    isSmall: false,
+    isAndroid: false,
+    isIphone: false,
     drawFeature: null,
     configFeature: null,
     baseConfigFeature: {
@@ -267,7 +270,6 @@ export default createStore({
     dialogForGroup: false,
     dialogForLink: false,
     isMenu: false,
-    isAndroid: false,
     simaOpacity: 0,
     simaFire: false,
     tiffAndWorldFile: null,

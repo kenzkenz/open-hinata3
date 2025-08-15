@@ -18,7 +18,6 @@ import { ref, watch } from 'vue'
 import debounce from 'lodash/debounce'
 
 export const popups = []
-const isIphone = /iPhone/i.test(navigator.userAgent)
 const isSmall = window.innerWidth < 500
 
 // Turf.jsを使用して面積、周長、頂点数を計算する関数
@@ -3940,8 +3939,10 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 isGooglemap = false
                 if (isSmall) {
-                    store.state.popupHtml = html.value
-                    store.state.popupDialog = true
+                    if (store.state.isDraw) {
+                        store.state.popupHtml = html.value
+                        store.state.popupDialog = true
+                    }
                     html.value = ''
                 }
                 if (layerId === 'click-circle-label-layer') {

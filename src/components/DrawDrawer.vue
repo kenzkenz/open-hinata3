@@ -16,7 +16,7 @@
         {{ truncate(label, 17) }}
         <div class="close-btn-div" style="margin-right:4px;margin-top: 0px; color:white!important; ;font-size: 30px!important;" @click="close"><i class="fa-solid fa-xmark hover"></i></div>
       </v-card-title>
-      <div class="overflow-div">
+      <div class="overflow-div" :style="{maxHeight: `calc(100vh - ${isIphone ? 250 : 150}px)`}">
         <div v-if="pictureUrl">
           <img
               width="100%"
@@ -119,6 +119,7 @@ export default {
       'showDrawDrawer',
       'isDraw',
       'drawFeature',
+      'isIphone',
     ]),
     s_popupFeatureProperties () {
       return this.$store.state.popupFeatureProperties
@@ -327,7 +328,7 @@ export default {
 .overflow-div{
   overflow-y: auto;
   overflow-x: hidden;
-  max-height: calc(100vh - 110px);
+  /*max-height: calc(100vh - 200px);*/
 }
 /* 画面いっぱいの黒透過（背景） */
 .media-modal {
