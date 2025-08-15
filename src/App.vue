@@ -189,12 +189,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </template>
       </v-snackbar>
 
-      <v-dialog v-model="s_dialogForPicture" max-width="500px">
+      <v-dialog v-model="s_dialogForPicture" max-width="400px">
         <v-card>
           <v-card-title>
             画像、動画アップロード
           </v-card-title>
-          <v-card-text>
+          <v-card-text style="padding-bottom: 0">
             <div v-if="user1">
               <v-file-input
                   v-model="s_selectedFile"
@@ -210,7 +210,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   お使いのブラウザは video タグに対応していません。
                 </video>
               </div>
-              <v-btn :disabled="!s_selectedFile || isDisabled" @click="savePicture">サーバー保存</v-btn>
+              <v-select v-model="thumbnailType"
+                        :items="thumbnailTypes"
+                        item-title="label"
+                        item-value="value"
+                        label="サムネイルを選択"
+                        outlined
+                        @update:modelValue="isDisabledChange"
+              ></v-select>
+              <v-btn :disabled="(!s_selectedFile || isDisabled) && isDisabled2" @click="savePicture">サーバー保存</v-btn>
               <v-btn :disabled="!s_pictureUrl" @click="deletePicture" style="margin-left: 10px;">サーバーから削除</v-btn>
             </div>
             <div v-else>
@@ -219,7 +227,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
             </div>
           </v-card-text>
           <v-card-actions>
-            <v-spacer></v-spacer>
             <v-btn color="blue-darken-1" text @click="s_dialogForPicture = false">Close</v-btn>
           </v-card-actions>
         </v-card>
@@ -1973,6 +1980,11 @@ export default {
       { label: '透過する。（処理遅い）', value: '1' },
       { label: '透過なし。（処理早い）', value: '0' }
     ],
+    thumbnailType: {borderRadius:'10px',size:50},
+    thumbnailTypes: [
+      { label: '四角', value: {borderRadius:'10px',size:50} },
+      { label: '丸', value: {borderRadius:'50%',size:50}  }
+    ],
     resolutions: [13,14,15,16,17,18,19,20,21,22,23,24],
     dialogForGeotiffApp1file: false,
     dialogForPdfApp: false,
@@ -2055,6 +2067,8 @@ export default {
     paintSettings: {},
     dialogForLayerName: false,
     isDisabled: false,
+    isDisabled2: true,
+    isNewPicture: false,
   }),
   computed: {
     ...mapState([
@@ -2118,6 +2132,7 @@ export default {
     },
     s_dialogForPicture: {
       get() {
+        this.isNewPicture = false
         return this.$store.state.dialogForPicture
       },
       set(value) {
@@ -2768,6 +2783,9 @@ export default {
     },
   },
   methods: {
+    isDisabledChange() {
+      this.isDisabled2 = false
+    },
     drawGeojsonAddPicture() {
       const map01 = this.$store.state.map01
       if (!this.s_pictureUrl || !this.$store.state.drawGeojsonId) {
@@ -2776,73 +2794,84 @@ export default {
       }
       const id = this.$store.state.drawGeojsonId
       const tgtProp = 'pictureUrl'
-      const value = this.s_pictureUrl
+      const borderRadius = this.thumbnailType.borderRadius
+      const pictureUrl = this.s_pictureUrl
+      const value = {pictureUrl, borderRadius}
       this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01,null,clickCircleSource.iD,id,tgtProp,value)
       console.log(this.$store.state.clickCircleGeojsonText)
     },
     async savePicture() {
       store.state.loading2 = true
       store.state.loadingMessage = '保存中です。'
-      let file = this.s_selectedFile
-      if (!file) {
-        alert("写真を選択してください");
-        return;
-      }
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      if (file.size > maxSize) {
-        this.isDisabled = true
-        store.state.loadingMessage = '<span style="color: red;">10mbを超えています。</span><br>圧縮しますので時間がかかります。'
-      }
-
-      if (isImageFile(file.name)) {
-        // 画像サイズチェック
+      if (this.isNewPicture) {
+        let file = this.s_selectedFile
+        if (!file) {
+          alert("写真を選択してください");
+          return;
+        }
+        const maxSize = 10 * 1024 * 1024; // 10MB
         if (file.size > maxSize) {
-          // 10MB超え → 圧縮処理
-          try {
-            const blob = await compressImageToUnder10MB(file, file.type === 'image/png' ? 'image/png' : 'image/jpeg');
-            if (blob.size > 10 * 1024 * 1024) {
-              alert("10MB以下に圧縮できませんでした");
-              return;
+          this.isDisabled = true
+          store.state.loadingMessage = '<span style="color: red;">10mbを超えています。</span><br>圧縮しますので時間がかかります。'
+        }
+
+        if (isImageFile(file.name)) {
+          // 画像サイズチェック
+          if (file.size > maxSize) {
+            // 10MB超え → 圧縮処理
+            try {
+              const blob = await compressImageToUnder10MB(file, file.type === 'image/png' ? 'image/png' : 'image/jpeg');
+              if (blob.size > 10 * 1024 * 1024) {
+                alert("10MB以下に圧縮できませんでした");
+                return;
+              }
+              file = new File([blob], file.name, { type: blob.type });
+              console.log('圧縮成功')
+            } catch (err) {
+              console.error("圧縮失敗:", err);
+              alert("画像圧縮中にエラーが発生しました");
+              return
             }
-            file = new File([blob], file.name, { type: blob.type });
-            console.log('圧縮成功')
-          } catch (err) {
-            console.error("圧縮失敗:", err);
-            alert("画像圧縮中にエラーが発生しました");
-            return
           }
         }
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("dir", this.$store.state.userId);
+        try {
+          const response = await fetch("https://kenzkenz.net/myphp/upload_picture.php", {
+            method: "POST",
+            body: formData,
+          });
+          const result = await response.json();
+          if (result.success) {
+            console.log(result)
+            this.s_pictureUrl = result.webUrl
+            this.drawGeojsonAddPicture()
+            closeAllPopups()
+            if (!this.$store.state.isUsingServerGeojson) {
+              featureCollectionAdd()
+              markerAddAndRemove()
+            }
+            alert("アップロード成功。ドローを解除して確認してください。");
+          } else {
+            this.s_pictureUrl = null
+            alert("アップロード失敗: " + result.message);
+          }
+        } catch (error) {
+          console.error("アップロードエラー:", error);
+          this.s_pictureUrl = null
+          alert("通信エラー");
+        }
+        this.s_dialogForPicture = false
+      } else {
+        const map01 = store.state.map01
+        const id = this.$store.state.drawGeojsonId
+        const tgtProp = 'borderRadius'
+        const value = this.thumbnailType.borderRadius
+        this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01,null,clickCircleSource.iD,id,tgtProp,value)
       }
 
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("dir", this.$store.state.userId);
-      try {
-        const response = await fetch("https://kenzkenz.net/myphp/upload_picture.php", {
-          method: "POST",
-          body: formData,
-        });
-        const result = await response.json();
-        if (result.success) {
-          console.log(result)
-          this.s_pictureUrl = result.webUrl
-          this.drawGeojsonAddPicture()
-          closeAllPopups()
-          if (!this.$store.state.isUsingServerGeojson) {
-            featureCollectionAdd()
-            markerAddAndRemove()
-          }
-          alert("アップロード成功。ドローを解除して確認してください。");
-        } else {
-          this.s_pictureUrl = null
-          alert("アップロード失敗: " + result.message);
-        }
-      } catch (error) {
-        console.error("アップロードエラー:", error);
-        this.s_pictureUrl = null
-        alert("通信エラー");
-      }
-      this.s_dialogForPicture = false
       store.state.loading2 = false
       this.isDisabled = false
     },
@@ -2890,21 +2919,11 @@ export default {
         setTimeout(() => {
           this.s_previewUrl = URL.createObjectURL(this.s_selectedFile);
         },0)
+        this.isNewPicture = true
       } else {
-        this.s_previewUrl = null;
+        this.s_previewUrl = null
       }
     },
-    // onFileSelected() {
-    //   if (this.s_selectedFile) {
-    //     const reader = new FileReader();
-    //     reader.onload = (e) => {
-    //       this.s_previewUrl = e.target.result;
-    //     };
-    //     reader.readAsDataURL(this.s_selectedFile);
-    //   } else {
-    //     this.s_previewUrl = null;
-    //   }
-    // },
     async test () {
       const tileJson = await fetchGsiTileTest()
       console.log(tileJson)
@@ -6665,6 +6684,7 @@ export default {
             textJustify: 'left',
             labelType: this.$store.state.currentTextLabelType || '1',
             longText: '',
+            borderRadius: '10px',
           }
           geojsonCreate(map, 'Point', coordinates, properties)
           // 地図がアイドル状態（描画が完了）になるのを待つ

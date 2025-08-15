@@ -2127,7 +2127,12 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
                 ? feature.properties.lassoSelected === true
                 : String(feature.properties.id) === id;
             if (shouldUpdate) {
-                feature.properties[tgtProp] = value
+                if (tgtProp === 'pictureUrl') {
+                    feature.properties.pictureUrl = value.pictureUrl
+                    feature.properties.borderRadius = value.borderRadius
+                } else {
+                    feature.properties[tgtProp] = value
+                }
                 // ----------------------------------------------------------
                 if (geoType === 'Circle') {
                     const features = circleCreate(feature.properties.canterLng, feature.properties.canterLat, radius)

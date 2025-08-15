@@ -10071,8 +10071,9 @@ export function markerAddAndRemove() {
             if (isPicture) {
                 const id = feature.properties.id;
                 const photoURL = feature.properties.pictureUrl;
-                createThumbnailMarker(map01, coords, photoURL, id);
-                createThumbnailMarker(map02, coords, photoURL, id);
+                const borderRadius = feature.properties.borderRadius || '10px'
+                createThumbnailMarker(map01, coords, photoURL, id, borderRadius);
+                createThumbnailMarker(map02, coords, photoURL, id, borderRadius);
                 coordsList.push(coords);
             }
             if (isLabel) {
@@ -10224,7 +10225,7 @@ export function createTextThumbnailMarker(map, coords, txt, id, color, fontSize,
  * @param photoURL
  */
 const markers = []
-export function createThumbnailMarker(map, coords, photoURL, id) {
+export function createThumbnailMarker(map, coords, photoURL, id, borderRadius) {
     if (store.state.editEnabled) return
     const key = coords.join(',');
     if (!map.__thumbnailMarkerKeys) {
@@ -10252,7 +10253,7 @@ export function createThumbnailMarker(map, coords, photoURL, id) {
         thumb.className               = 'pic-marker-video';
         thumb.style.width             = `${size}px`;
         thumb.style.height            = `${size}px`;
-        thumb.style.borderRadius      = '10px';
+        thumb.style.borderRadius      = borderRadius;
         thumb.style.border            = '2px solid #ffffff';
         thumb.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
         thumb.src = photoURL;
@@ -10269,7 +10270,7 @@ export function createThumbnailMarker(map, coords, photoURL, id) {
         thumb.style.backgroundImage   = `url(${photoURL})`;
         thumb.style.backgroundSize    = 'cover';
         thumb.style.backgroundPosition= 'center';
-        thumb.style.borderRadius      = '10px';
+        thumb.style.borderRadius      = borderRadius;
         thumb.style.border            = '2px solid #ffffff';
         thumb.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
         thumb.style.cursor            = 'pointer';
