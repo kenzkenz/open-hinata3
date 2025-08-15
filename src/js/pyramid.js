@@ -1618,6 +1618,7 @@ export default function pyramid () {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
                 store.commit('setDrawDrawer', true)
+                store.state.popupDialog = false
             }
         });
     })

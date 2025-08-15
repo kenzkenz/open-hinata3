@@ -3779,7 +3779,7 @@ export function popup(e,map,mapName,mapFlg) {
                             break
                         case 'Point':
                             // alert('到達')
-                            if ((props.longText || props.pictureUrl) && window.innerWidth > 1000) {
+                            if ((props.longText || props.pictureUrl) && window.innerWidth > 0) {
                                 store.commit('setDrawDrawer', true)
                                 if (!store.state.isDraw) return;
                             }
@@ -3791,7 +3791,6 @@ export function popup(e,map,mapName,mapFlg) {
                                 },3000)
                                 return
                             }
-
                             // alert(888)
                             if (html.value.indexOf('click-circle-layer') === -1) {
                                 // alert('到達')
@@ -3813,8 +3812,9 @@ export function popup(e,map,mapName,mapFlg) {
                                         '<option value="0" ' + labelSelected0 + '>通常</option>' +
                                         '<option value="1" ' + labelSelected1 + '>吹き出し</option>' +
                                         '</select>' +
-                                        '　X　<input id="' + props.id + '" style="margin-bottom: 5px;" type="number" class="oh-cool-input-number offset-x-input" step="0.1" value="' + offsetX + '">' +
-                                        '　Y　<input id="' + props.id + '" style="margin-bottom: 5px;" type="number" class="oh-cool-input-number offset-y-input" step="0.1" value="' + offsetY + '">' +
+                                        '　X　<input id="' + props.id + '" style="margin-bottom: 5px; width: 50px;" type="number" class="oh-cool-input-number offset-x-input" step="0.1" value="' + offsetX + '">' +
+                                        '　Y　<input id="' + props.id + '" style="margin-bottom: 5px; width: 50px;" type="number" class="oh-cool-input-number offset-y-input" step="0.1" value="' + offsetY + '">' +
+                                        '<br>' +
                                         '<button id="' + props.id + '" style="margin-bottom: 10px; height: 30px; font-size: medium; width: 50%;" class="point-delete pyramid-btn">削　除</button>' +
                                         '<button id="' + props.id + '" pictureUrl="' + pictureUrl + '" style="margin-bottom: 10px; margin-left: 10px; height: 30px; font-size: medium; width: 45%;" class="picture-upload pyramid-btn">画像、動画</button>' +
                                         '<div style="display: flex; gap: 8px;">' +

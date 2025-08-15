@@ -1,6 +1,6 @@
 <template>
   <v-navigation-drawer
-      width=400
+      :width='drawerWidth'
       temporary
       :scrim="false"
       v-model="showDrawDrawer"
@@ -30,9 +30,10 @@
               v-else
               width="100%"
               :src="pictureUrl"
-              muted="true"
-              autoplay="true"
-              loop="true"
+              muted
+              autoplay
+              loop
+              playsinline
               controls
               @click="imgClick"
               style="cursor: pointer"
@@ -81,6 +82,7 @@ export default {
     longText: '',
     longTextForA: '',
     label: '',
+    drawerWidth: 400,
     zIndex: '10',
     pictureUrl: '',
     isImageFile: true,
@@ -98,9 +100,6 @@ export default {
     s_isAndroid () {
       return this.$store.state.isAndroid
     },
-    drawerWidth () {
-      return window.innerWidth
-    },
   },
   methods: {
     ...mapMutations([
@@ -114,7 +113,9 @@ export default {
           : str;
     },
     imgClick() {
-      window.open(this.pictureUrl, '_blank', 'noopener,noreferrer');
+      if (window.innerWidth > 500){
+        window.open(this.pictureUrl, '_blank', 'noopener,noreferrer');
+      }
     },
     setZindex() {
       this.zIndex = getNextZIndex()
@@ -134,6 +135,9 @@ export default {
     },
   },
   mounted() {
+    if (window.innerWidth < 500) {
+      this.drawerWidth = window.innerWidth
+    }
   },
   watch: {
     isEdit(value) {
@@ -141,80 +145,6 @@ export default {
         this.longText = this.originalLongText
       }
     },
-    // drawFeature() {
-    //   this.setZindex()
-    //   const props = this.drawFeature.properties
-    //   this.type = this.drawFeature.geometry.type
-    //   if (this.id === props.id) return
-    //   this.id = props.id
-    //   this.longText = toPlainText(props.longText)
-    //   if (this.longText) {
-    //     this.isEdit = false
-    //   } else {
-    //     this.isEdit = true
-    //   }
-    //   this.originalLongText = this.longText
-    //   this.label = props.label
-    //
-    //   this.longTextForA = props.longText
-    //   this.pictureUrl = props.pictureUrl
-    //   this.isImageFile = isImageFile(this.pictureUrl || '')
-    //
-    //
-    //   const canterLng = props.canterLng
-    //   const canterLat = props.canterLat
-    //   const radius = Number(props.radius)
-    //   const textSize = props['text-size'] || 16
-    //   const lineWidth = props['line-width'] || 5
-    //   const arrowType = props['arrow-type'] || 'end'
-    //   const labelType = props['labelType'] || 'start'
-    //   const isRadius = props.isRadius
-    //   const isArea = props.isArea || false
-    //   const isKeiko = props.keiko || false
-    //   const isCalc = props.calc || false
-    //   const isFreeHand = props['free-hand'] || false
-    //   const offsetX = String(props.offsetValue).split(',')[0]
-    //   const offsetY = String(props.offsetValue).split(',')[1]
-    //   let display = 'block'
-    //   let display2 = 'none'
-    //   let lineType = 'ラインストリング'
-    //   if (isFreeHand) {
-    //     display = 'none'
-    //     display2 = 'block'
-    //     lineType = 'フリーハンド'
-    //   }
-    //   let selectedEnd,selectedNone,selectedBoth
-    //   switch (arrowType) {
-    //     case 'end':
-    //       selectedEnd = 'selected'
-    //       break
-    //     case 'none':
-    //       selectedNone = 'selected'
-    //       break
-    //     case 'both':
-    //       selectedBoth = 'selected'
-    //       break
-    //   }
-    //   let labelSelectedStart,labelSelectedMid,labelSelectedNone,
-    //       labelSelected0, labelSelected1
-    //   switch (labelType) {
-    //     case 'start':
-    //       labelSelectedStart = 'selected'
-    //       break
-    //     case 'mid':
-    //       labelSelectedMid = 'selected'
-    //       break
-    //     case 'none':
-    //       labelSelectedNone = 'selected'
-    //       break
-    //     case '0':
-    //       labelSelected0 = 'selected'
-    //       break
-    //     case '1':
-    //       labelSelected1 = 'selected'
-    //       break
-    //   }
-    // },
     drawFeature: {
       handler: function () {
         if (this.drawFeature.properties.id === 'config') return
@@ -349,5 +279,8 @@ export default {
   overflow-y: auto;
   overflow-x: hidden;
   max-height: calc(100vh - 110px);
+}
+@media (max-width: 500px) {
+
 }
 </style>

@@ -10289,7 +10289,6 @@ export function createThumbnailMarker(map, coords, photoURL, id) {
     arrow.style.borderTop    = `${arrowSize}px solid #ffffff`;
     container.appendChild(arrow);
 
-    // クリックで元画像を別タブで開く
     container.addEventListener('click', (e) => {
         e.stopPropagation(); // マップのクリックイベントを阻止
         // window.open(photoURL, '_blank', 'noopener,noreferrer');
