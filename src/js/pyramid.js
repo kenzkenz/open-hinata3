@@ -2108,6 +2108,7 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
     const source = map.getSource(sourceId)
     if (!source) return;
     const geojson = source._data
+    const drawFeatures = []
     let changed = false;
     if (geojson && geojson.features) {
         // idが一致するfeatureを検索
@@ -2145,6 +2146,7 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
                 updateFeatures.push(feature)
                 changed = true;
                 found = true;
+                drawFeatures.push(feature)
             }
         });
         // 見つからなかったら新しく作成
@@ -2169,6 +2171,10 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
             if (!store.state.isUsingServerGeojson) {
                 featureCollectionAdd()
                 markerAddAndRemove()
+            }
+            if (drawFeatures.length === 1) {
+                store.state.drawFeature = drawFeatures[0]
+                console.log(drawFeatures[0])
             }
             return escapeHTML(JSON.stringify(geojson))
         }

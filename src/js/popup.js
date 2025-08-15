@@ -3586,7 +3586,7 @@ export function popup(e,map,mapName,mapFlg) {
                 if (html.value.indexOf('ninizahyo') === -1) {
                     html.value += '<div class="layer-label-div">任意座標追加</div>'
                     html0 += '<div style="width: 200px; class="ninizahyo" font-weight: normal; color: #333;line-height: 25px;">'
-                    html0 += '編集は右のペンのアイコンから'
+                    html0 += '編集するには右のペンアイコンをクリックしてドロー状態にしてください。'
                     html0 += zipBtnsHtml
                     html0 += '<button style="margin-bottom: 5px; height: 30px; font-size: medium; width: 100%;" class="ninnzahyo-zip-remove pyramid-btn">削　除</button>'
                     html0 += '<div>'
@@ -3696,6 +3696,15 @@ export function popup(e,map,mapName,mapFlg) {
                     switch (geoType) {
                         case 'MultiPolygon':
                         case 'Polygon':
+                            if (!store.state.isDraw) {
+                                store.state.loadingMessage3 = '編集するには右のペンアイコンをクリックしてドロー状態にしてください。'
+                                store.state.loading3 = true
+                                setTimeout(() => {
+                                    store.state.loading3 = false
+                                },3000)
+                                return
+                            }
+
                             if (radius) {
                                 if (html.value.indexOf('click-circle-layer') === -1) {
                                     let checked = ''
@@ -3770,7 +3779,19 @@ export function popup(e,map,mapName,mapFlg) {
                             break
                         case 'Point':
                             // alert('到達')
-                            if ((props.longText || props.pictureUrl) && window.innerWidth > 1000) store.commit('setDrawDrawer', true)
+                            if ((props.longText || props.pictureUrl) && window.innerWidth > 1000) {
+                                store.commit('setDrawDrawer', true)
+                                if (!store.state.isDraw) return;
+                            }
+                            if (!store.state.isDraw) {
+                                store.state.loadingMessage3 = '編集するには右のペンアイコンをクリックしてドロー状態にしてください。'
+                                store.state.loading3 = true
+                                setTimeout(() => {
+                                    store.state.loading3 = false
+                                },3000)
+                                return
+                            }
+
                             // alert(888)
                             if (html.value.indexOf('click-circle-layer') === -1) {
                                 // alert('到達')
@@ -3855,6 +3876,14 @@ export function popup(e,map,mapName,mapFlg) {
                             }
                             break
                         case 'LineString': {
+                            if (!store.state.isDraw) {
+                                store.state.loadingMessage3 = '編集するには右のペンアイコンをクリックしてドロー状態にしてください。'
+                                store.state.loading3 = true
+                                setTimeout(() => {
+                                    store.state.loading3 = false
+                                },3000)
+                                return
+                            }
                             // ラインストリングとフリーハンド
                             let checked,calcChecked
                             if (isKeiko) checked = 'checked'
@@ -4298,7 +4327,7 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
         const popupEl = popup.getElement();
         popupEl.style.zIndex = getNextZIndex()
         popupEl.addEventListener('click', (e) => {
-            console.log('popup clicked!', e.currentTarget);
+            // console.log('popup clicked!', e.currentTarget);
             e.currentTarget.style.zIndex = getNextZIndex()
         });
         // 次の描画タイミングで高さを取得して再配置

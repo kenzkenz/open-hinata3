@@ -10671,31 +10671,12 @@ export function sanitizeLongText(text) {
         return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
     });
     // XSS防止のため出力をサニタイズ
-    return sanitizeHtml(linkedText, {
+    return sanitizeHtml(linkedText.slice(0, 3000), {
         allowedTags: ['a'],
         allowedAttributes: {
             a: ['href', 'target', 'rel'],
         },
     });
-    // return sanitizeHtml(String(input ?? '').slice(0, 10000), {
-    //     allowedTags: ['a'], // aタグだけ許可
-    //     allowedAttributes: {
-    //         a: ['href', 'target', 'rel']
-    //     },
-    //     transformTags: {
-    //         a: (tagName, attribs) => {
-    //             // target="_blank" と rel を強制付与
-    //             return {
-    //                 tagName: 'a',
-    //                 attribs: {
-    //                     href: attribs.href || '',
-    //                     target: '_blank',
-    //                     rel: 'noopener noreferrer'
-    //                 }
-    //             };
-    //         }
-    //     }
-    // });
 }
 
 export function toPlainText(text) {
