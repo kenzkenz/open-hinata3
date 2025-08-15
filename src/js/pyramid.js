@@ -2341,6 +2341,10 @@ export function generateStartEndPointsFromGeoJSON(geojson) {
 }
 
 export async function deleteAll (noConfrim) {
+    if (store.state.isUsingServerGeojson && !store.state.isMine) {
+        alert('全削除はオーナーしかできません。')
+        return
+    }
     if (!noConfrim) {
         if (!confirm("全て削除しますか？")) {
             return
