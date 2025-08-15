@@ -387,6 +387,16 @@ export function popup(e,map,mapName,mapFlg) {
         const layerId = feature.layer.id
         let props = feature.properties
         // console.log(layerId, feature, props)
+
+        /**
+         * ドロー時はドローレイヤー以外のポップアップを無効化する。
+         */
+        if (store.state.isDraw) {
+            const drawLayerIds = ['arrows-endpoint-label-layer','click-circle-layer','click-circle-symbol-layer','click-circle-line-layer','click-circle-keiko-line-layer','click-circle-label-layer']
+            const result = drawLayerIds.includes(layerId)
+            if (!result) return
+        }
+
         switch (layerId) {
             case 'oh-zosei-line':
             case 'oh-zosei-label':
