@@ -10102,7 +10102,7 @@ font {
   height: 20px;
   line-height: 20px;
   width: 100%;
-  background-color: rgb(50,101,186);
+  background-color: var(--main-color);
   color: white;
   border-radius:8px;
 }
@@ -10144,7 +10144,7 @@ font {
 }
 .layer-label-div {
   color: white;
-  background-color: rgb(50,101,186);
+  background-color: var(--main-color);
   text-align: right;
   padding-left: 5px;
   padding-right: 5px;

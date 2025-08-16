@@ -10419,7 +10419,7 @@ let featureCollection = {
 let lastFetch = new Date(0).toISOString();
 const coordsList = []
 const txtCoordsList = []
-const SLEEP_GAP_MS = 60_000; // 60秒以上止まってたら「スリープ後」とみなす
+// const SLEEP_GAP_MS = 60_000; // 60秒以上止まってたら「スリープ後」とみなす
 let pollingTimer = null;
 let lastTick = Date.now();
 let isRefreshing = false;
@@ -10496,6 +10496,7 @@ export async function pollUpdates() {
         const gap = Date.now() - lastTick;
         if (gap >= SLEEP_GAP_MS) {
             console.log('長時間停止を検知 → フルリフレッシュ');
+            markaersRemove()
             await refreshFromServer();
             store.state.loadingMessage3 = '長時間停止を検知したためリフレッシュしました。'
             store.state.loading3 = true
@@ -10576,19 +10577,45 @@ export async function pollUpdates() {
 /**
  * ---- スリープ→復帰検知 ----
  */
+// 例: 15秒以上止まってたら「復帰」とみなす
+const SLEEP_GAP_MS = 15_000;
+// let lastTick = Date.now(); // ← ポーリングtick側で随時更新必須
+let _wakeInFlight = false;
+let _lastWakeHandledAt = 0;
+
 function maybeRefreshOnWake() {
     const gap = Date.now() - lastTick;
-    if (gap >= SLEEP_GAP_MS) {
-        // 長く止まっていた＝復帰直後とみなしてフルリフレッシュ
+    if (gap < SLEEP_GAP_MS) return;
+    markaersRemove()
+
+    // 多重実行ガード（短時間に連続発火するのを抑制）
+    if (_wakeInFlight) return;
+    if (Date.now() - _lastWakeHandledAt < 1500) return;
+    _wakeInFlight = true;
+    _lastWakeHandledAt = Date.now();
+
+    store.state.loadingMessage3 = '復帰したためフルリフレッシュしました。';
+    store.state.loading3 = true;
+
+    try {
         stopPolling();
-        refreshFromServer().then(startPolling);
-        store.state.loadingMessage3 = '復帰したためフルリフレッシュしました。'
-        store.state.loading3 = true
-        setTimeout(() => {
-            store.state.loading3 = false
-        },5000)
+        Promise.resolve()
+            .then(() => refreshFromServer())
+            .then(() => startPolling())
+            .catch((err) => {
+                console.error('refresh on wake failed:', err);
+            })
+            .finally(() => {
+                _wakeInFlight = false;
+                setTimeout(() => { store.state.loading3 = false; }, 5000);
+            });
+    } catch (e) {
+        _wakeInFlight = false;
+        console.error(e);
+        setTimeout(() => { store.state.loading3 = false; }, 5000);
     }
 }
+
 function onVisibilityChange() {
     if (document.visibilityState === 'visible') {
         maybeRefreshOnWake();
@@ -10598,11 +10625,37 @@ function onFocus() {
     maybeRefreshOnWake();
 }
 function onPageShow(e) {
-    // bfcache 復帰対策（Safariなど）
-    if (e.persisted) {
-        maybeRefreshOnWake();
-    }
+    // BFCache対策として e.persisted を見るが、いずれにせよガードがあるので常に呼んでも安全
+    // if (e.persisted) { maybeRefreshOnWake(); } でもOK
+    maybeRefreshOnWake();
 }
+// function maybeRefreshOnWake() {
+//     const gap = Date.now() - lastTick;
+//     if (gap >= SLEEP_GAP_MS) {
+//         // 長く止まっていた＝復帰直後とみなしてフルリフレッシュ
+//         stopPolling();
+//         refreshFromServer().then(startPolling);
+//         store.state.loadingMessage3 = '復帰したためフルリフレッシュしました。'
+//         store.state.loading3 = true
+//         setTimeout(() => {
+//             store.state.loading3 = false
+//         },5000)
+//     }
+// }
+// function onVisibilityChange() {
+//     if (document.visibilityState === 'visible') {
+//         maybeRefreshOnWake();
+//     }
+// }
+// function onFocus() {
+//     maybeRefreshOnWake();
+// }
+// function onPageShow(e) {
+//     // bfcache 復帰対策（Safariなど）
+//     if (e.persisted) {
+//         maybeRefreshOnWake();
+//     }
+// }
 
 /**
  * ---- 公開API ----
