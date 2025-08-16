@@ -60,7 +60,8 @@
       </div>
       <v-card-text style="margin-top: 0px;">
         <v-btn :disabled="!isDraw || !isEdit" style="margin-top: -10px;" @click="longTextSave">保存</v-btn>
-        <v-btn :disabled="!isDraw || isEdit" style="margin-top: -10px; margin-left: 10px;" @click="isEdit = !isEdit">書き込み</v-btn>
+        <v-btn :disabled="!isDraw || isEdit" style="margin-top: -10px; margin-left: 10px;" @click="toEdit">書き込み</v-btn>
+
         <v-btn v-if="isDraw && isEdit" style="margin-top: -10px; margin-left: 10px;" @click="isEdit = false">書き込み解除</v-btn>
         <br>
         <span style="margin-left: 10px; font-size: 10.5px; margin: 0" v-if="!isDraw">編集するには右のペンアイコンをクリックしてドロー状態にしてください。</span>
@@ -139,6 +140,20 @@ export default {
       'saveSelectedPointFeature',
       'setSelectedPointFeature',
     ]),
+    toEdit() {
+      this.isEdit = true;
+      if (this.isEdit) {
+        this.$nextTick(() => {
+          const el = document.querySelector('.overflow-div');
+          if (el) {
+            el.scrollTo({
+              top: el.scrollHeight,
+              behavior: 'smooth'
+            });
+          }
+        });
+      }
+    },
     openMediaModal() {
       if (!this.pictureUrl) return
       this.showMediaModal = true
