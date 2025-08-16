@@ -8770,31 +8770,6 @@ export default {
               map.getCanvas().classList.remove('force-pointer');
             }
           });
-          // map.on('mousemove', (e) => {
-          //   // if (this.showDrawUI) return
-          //   // console.log(e)
-          //   // クリック可能なすべてのレイヤーからフィーチャーを取得
-          //   const features = map.queryRenderedFeatures(e.point);
-          //   if (features.length) {
-          //     const feature = features[0]; // 最初のフィーチャーのみ取得
-          //     const layerId = feature.layer.id;
-          //     // console.log(layerId)
-          //     if (layerId.indexOf('vector') !== -1) {
-          //       if (map.getCanvas().style.cursor !== 'wait') {
-          //         map.getCanvas().style.cursor = '';
-          //       }
-          //     } else {
-          //       if (map.getCanvas().style.cursor !== 'wait') {
-          //         map.getCanvas().style.cursor = 'pointer';
-          //       }
-          //     }
-          //   } else {
-          //     map.getCanvas().style.cursor = 'default';
-          //     if (map.getCanvas().style.cursor !== 'wait') {
-          //       map.getCanvas().style.cursor = '';
-          //     }
-          //   }
-          // });
           //------------------------------------------------------------------------------------------------------------
           // ポップアップ
           map.on('click', (e) => {

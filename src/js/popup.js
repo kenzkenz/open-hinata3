@@ -15,6 +15,7 @@ import {
 import { Viewer, CameraControls, RenderMode, TransitionMode } from 'mapillary-js';
 import { ref, watch } from 'vue'
 import debounce from 'lodash/debounce'
+import {includes} from "lodash";
 
 export const popups = []
 const isSmall = window.innerWidth < 500
@@ -318,7 +319,10 @@ export function popup(e,map,mapName,mapFlg) {
     // if (store.state.editEnabled) return; //ん？これは要らない？
     let html = ref('')  // ← ここを ref 化
     watch(html, (newVal, oldVal) => {
-        // console.log(`htmlが ${oldVal} → ${newVal} に変わりました`)
+        if (store.state.isDraw && newVal.includes('click-circle-layer')) {
+            console.log(newVal.includes('click-circle-layer'))
+        }
+        console.log(`htmlが ${oldVal} → ${newVal} に変わりました`)
         createPopup(map, [e.lngLat.lng,e.lngLat.lat], html.value, mapName)
     })
 
@@ -4118,83 +4122,86 @@ export function popup(e,map,mapName,mapFlg) {
         // }
     });
     // ラスタレイヤのidからポップアップ表示に使用するURLを生成
-    rasterLayerIds.forEach(rasterLayerId => {
-        const RasterTileUrl = urlByLayerId(rasterLayerId)[0]
-        const legend = urlByLayerId(rasterLayerId)[1]
-        const z = urlByLayerId(rasterLayerId)[2]
-        const lng = e.lngLat.lng
-        const lat = e.lngLat.lat
-        // if (RasterTileUrl) {
-        getLegendItem(legend, RasterTileUrl, lat, lng,z).then(function (v) {
-            let res = (v ? v.title : '')
-            // if (res === '') return
-            if (res) {
-                html.value += '<div class="layer-label-div-red">' + getLabelByLayerId(rasterLayerId, store.state.selectedLayers) + '</div>'
-                switch (rasterLayerId) {
-                    case 'oh-rgb-kozui-keikaku-layer':
-                    case 'oh-rgb-kozui-saidai-layer':
-                        html.value +=
-                            '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                            '<span style="font-size: 12px;">洪水によって想定される浸水深</span><br>' +
-                            '<span style="font-size: 24px;">' + res + '</span>' +
-                            '</div>'
-                        break
-                    case 'oh-rgb-tsunami-layer':
-                        html.value +=
-                            '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                            '<span style="font-size: 12px;">津波によって想定される浸水深</span><br>' +
-                            '<span style="font-size: 24px;">' + res + '</span>' +
-                            '</div>'
-                        break
-                    case 'oh-rgb-shitchi-layer':
-                        html.value +=
-                            '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                            '<span style="font-size: 16px;">' + res[0] + '</span><hr>' +
-                            '<span style="font-size: 12px;">' + res[1] + '</span>' +
-                            '</div>'
-                        break
-                    default:
-                        html.value +=
-                            '<div font-weight: normal; color: #333;line-height: 25px;">' +
-                            '<span style="font-size: 16px;">' + res + '</span>' +
-                            '</div>'
+    if (!store.state.isDraw) {
+        rasterLayerIds.forEach(rasterLayerId => {
+            const RasterTileUrl = urlByLayerId(rasterLayerId)[0]
+            const legend = urlByLayerId(rasterLayerId)[1]
+            const z = urlByLayerId(rasterLayerId)[2]
+            const lng = e.lngLat.lng
+            const lat = e.lngLat.lat
+            // if (RasterTileUrl) {
+            getLegendItem(legend, RasterTileUrl, lat, lng,z).then(function (v) {
+                let res = (v ? v.title : '')
+                // if (res === '') return
+                if (res) {
+                    html.value += '<div class="layer-label-div-red">' + getLabelByLayerId(rasterLayerId, store.state.selectedLayers) + '</div>'
+                    switch (rasterLayerId) {
+                        case 'oh-rgb-kozui-keikaku-layer':
+                        case 'oh-rgb-kozui-saidai-layer':
+                            html.value +=
+                                '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                                '<span style="font-size: 12px;">洪水によって想定される浸水深</span><br>' +
+                                '<span style="font-size: 24px;">' + res + '</span>' +
+                                '</div>'
+                            break
+                        case 'oh-rgb-tsunami-layer':
+                            html.value +=
+                                '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                                '<span style="font-size: 12px;">津波によって想定される浸水深</span><br>' +
+                                '<span style="font-size: 24px;">' + res + '</span>' +
+                                '</div>'
+                            break
+                        case 'oh-rgb-shitchi-layer':
+                            html.value +=
+                                '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                                '<span style="font-size: 16px;">' + res[0] + '</span><hr>' +
+                                '<span style="font-size: 12px;">' + res[1] + '</span>' +
+                                '</div>'
+                            break
+                        default:
+                            html.value +=
+                                '<div font-weight: normal; color: #333;line-height: 25px;">' +
+                                '<span style="font-size: 16px;">' + res + '</span>' +
+                                '</div>'
+                    }
                 }
-            }
-            if (html.value) {
-                try {
-                    createPopup(map, [lng,lat], html.value, mapName)
-                } catch (e) {
-                    console.log(e)
-                }
-            }
-        })
-
-        const result = mapLayers.find(layer => {
-            return layer.id === 'oh-rgb-seamless-layer'
-        })
-        if (result) {
-            const point = lat + "," + lng;
-            const url = 'https://gbank.gsj.jp/seamless/v2/api/1.2/legend.json'
-            axios.get(url, {
-                params: {
-                    point:point
-                }
-            }) .then(function (response) {
-                if (response.data.symbol) {
-                    if (html.value.indexOf('seamless') === -1) {
-                        html.value += '<div class="layer-label-div">' + getLabelByLayerId('oh-rgb-seamless-layer', store.state.selectedLayers) + '</div>'
-                        html.value +=
-                            '<div class="seamless" font-weight: normal; color: #333;line-height: 25px;">' +
-                            '<span style="font-size:16px;">形成時代 = ' + response.data["formationAge_ja"] + '</span><hr>' +
-                            '<span style="font-size:16px;">グループ = ' + response.data["group_ja"] + '</span><hr>' +
-                            '<span style="font-size:16px;">岩相 = ' + response.data["lithology_ja"] + '</span>'
-                        // alert('888' + html)
+                if (html.value) {
+                    try {
                         createPopup(map, [lng,lat], html.value, mapName)
+                    } catch (e) {
+                        console.log(e)
                     }
                 }
             })
-        }
-    })
+
+            const result = mapLayers.find(layer => {
+                return layer.id === 'oh-rgb-seamless-layer'
+            })
+            if (result) {
+                const point = lat + "," + lng;
+                const url = 'https://gbank.gsj.jp/seamless/v2/api/1.2/legend.json'
+                axios.get(url, {
+                    params: {
+                        point:point
+                    }
+                }) .then(function (response) {
+                    if (response.data.symbol) {
+                        if (html.value.indexOf('seamless') === -1) {
+                            html.value += '<div class="layer-label-div">' + getLabelByLayerId('oh-rgb-seamless-layer', store.state.selectedLayers) + '</div>'
+                            html.value +=
+                                '<div class="seamless" font-weight: normal; color: #333;line-height: 25px;">' +
+                                '<span style="font-size:16px;">形成時代 = ' + response.data["formationAge_ja"] + '</span><hr>' +
+                                '<span style="font-size:16px;">グループ = ' + response.data["group_ja"] + '</span><hr>' +
+                                '<span style="font-size:16px;">岩相 = ' + response.data["lithology_ja"] + '</span>'
+                            // alert('888' + html)
+                            createPopup(map, [lng,lat], html.value, mapName)
+                        }
+                    }
+                })
+            }
+        })
+    }
+
 
     if (rasterLayerIds.length === 0) {
         let lng = e.lngLat.lng
@@ -4580,7 +4587,6 @@ export function mouseMoveForPopup (e,map) {
     rasterLayerIds.forEach(rasterLayerId => {
         const RasterTileUrl = urlByLayerId(rasterLayerId)[0]
         const legend = urlByLayerId(rasterLayerId)[1]
-        // console.log(legend)
         const z = urlByLayerId(rasterLayerId)[2]
         const lng = e.lngLat.lng;
         const lat = e.lngLat.lat;
@@ -4591,6 +4597,7 @@ export function mouseMoveForPopup (e,map) {
                     // map.getCanvas().style.cursor = ""
                     return
                 }
+                // 下矢印。効きがわるい。
                 map.getCanvas().style.cursor = "pointer"
             })
         }
