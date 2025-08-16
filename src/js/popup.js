@@ -4244,6 +4244,7 @@ export const createPopupDebounced = debounce(
 
 async function createPopup(map, coordinates, htmlContent, mapName) {
     if (isSmall && store.state.isDraw) return
+    console.log(htmlContent)
     // ストリートビューとGoogleマップへのリンクを追加
     const [lng, lat] = coordinates;
     console.log(lng)
