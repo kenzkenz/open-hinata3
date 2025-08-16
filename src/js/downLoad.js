@@ -10497,11 +10497,11 @@ export async function pollUpdates() {
         if (gap >= SLEEP_GAP_MS) {
             console.log('長時間停止を検知 → フルリフレッシュ');
             await refreshFromServer();
-            store.state.loadingMessage3 = '長時間停止を検知したためフルリフレッシュしました。'
+            store.state.loadingMessage3 = '長時間停止を検知したためリフレッシュしました。'
             store.state.loading3 = true
             setTimeout(() => {
                 store.state.loading3 = false
-            },5000)
+            },3000)
         }
 
         const formDataG = new FormData();

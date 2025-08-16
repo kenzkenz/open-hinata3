@@ -315,15 +315,19 @@ function urlByLayerId (layerId) {
 let isGooglemap = true
 
 export function popup(e,map,mapName,mapFlg) {
-    if (store.state.editEnabled) return;
+    // if (store.state.editEnabled) return; //ん？これは要らない？
     let html = ref('')  // ← ここを ref 化
     watch(html, (newVal, oldVal) => {
         // console.log(`htmlが ${oldVal} → ${newVal} に変わりました`)
         createPopup(map, [e.lngLat.lng,e.lngLat.lat], html.value, mapName)
     })
 
-    // enableMotionPermission()
-    let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
+    // console.log(e.point)
+    const lngLat = e.lngLat;
+    const point = map.project(lngLat);
+    let features = map.queryRenderedFeatures(point);
+    // let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
+
     console.log(features[0])
     console.log(map.getStyle().layers)
     if (features.length> 20) {
@@ -387,7 +391,6 @@ export function popup(e,map,mapName,mapFlg) {
         const layerId = feature.layer.id
         let props = feature.properties
         // console.log(layerId, feature, props)
-
         /**
          * ドロー時はドローレイヤー以外のポップアップを無効化する。
          */
@@ -396,7 +399,6 @@ export function popup(e,map,mapName,mapFlg) {
             const result = drawLayerIds.includes(layerId)
             if (!result) return
         }
-
         switch (layerId) {
             case 'oh-zosei-line':
             case 'oh-zosei-label':
@@ -4241,7 +4243,7 @@ export const createPopupDebounced = debounce(
 );
 
 async function createPopup(map, coordinates, htmlContent, mapName) {
-    if (isSmall) return
+    if (isSmall && store.state.isDraw) return
     // ストリートビューとGoogleマップへのリンクを追加
     const [lng, lat] = coordinates;
     console.log(lng)

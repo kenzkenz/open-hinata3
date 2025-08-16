@@ -1362,6 +1362,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   <div v-for="btn in buttons0" :key="btn.key" style="margin-bottom:10px;">
                     <MiniTooltip :text="btn.text" :offset-x="0" :offset-y="2">
                       <v-btn
+                          :disabled="btn.disabled"
                           class="right-btn"
                           :icon="true"
                           :color="btn.color"
@@ -2105,6 +2106,7 @@ export default {
   }),
   computed: {
     ...mapState([
+      'isSmall500',
       'isDraw',
       'showDrawDrawer',
       'showPointInfoDrawer',
@@ -2252,7 +2254,7 @@ export default {
     buttons0() {
       const btns =
           [
-            { key: 'print', text: '印刷', icon: 'mdi-printer', color: 'primary', click: this.handlePrint },
+            { key: 'print', text: '印刷', icon: 'mdi-printer', color: 'primary', disabled: this.isSmall500,  click: this.handlePrint },
             { key: 'currentPosition', text: '現在地取得', icon: 'mdi-crosshairs-gps', click: this.goToCurrentLocation },
             { key: 'watchPosition', text: '現在地連続取得', icon: 'mdi-map-marker-radius', color: this.isTracking ? 'green' : 'primary', click: this.toggleWatchPosition },
             { key: 'share', text: '共有', icon: 'mdi-share-variant', color: 'primary', click: this.share },
