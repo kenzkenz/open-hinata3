@@ -298,7 +298,10 @@ export default {
 .content {
   width: 101%;
   height: 102%!important;
-  overflow: auto;
+  /*overflow: auto;*/
+
+  overflow: hidden;
+
 }
 
 .resizer {

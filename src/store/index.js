@@ -5,7 +5,7 @@ import firebase from 'firebase/app';
 
 export default createStore({
   state: {
-    isSmall: false,
+    isSmall500: false,
     isAndroid: false,
     isIphone: false,
     drawFeature: null,

@@ -2,7 +2,7 @@ import store from '@/store'
 import axios from "axios"
 import * as turf from '@turf/turf'
 import {
-    addDraw, featureCollectionAdd, markerAddAndRemove,
+    addDraw, featureCollectionAdd, featuresDelete, markerAddAndRemove,
     recenterGeoJSON, removeNini, saveDrowFeatures,
     savePointSima,
     zahyokei
@@ -11,7 +11,7 @@ import {clickCircleSource, clickPointSource, endPointSouce, vertexSource} from "
 import {calculatePolygonMetrics, closeAllPopups} from "@/js/popup";
 import { fetchElevation } from '@/js/downLoad';
 import JSZip from "jszip";
-import {feature} from "@turf/turf";
+import {feature, featureCollection} from "@turf/turf";
 export let currentIndex = 0
 let kasen
 
@@ -1034,6 +1034,7 @@ export default function pyramid () {
                 store.state.popupDialog = false
 
                 await featuresDelete([id])
+                markerAddAndRemove()
 
             }
         });
@@ -2444,34 +2445,4 @@ export function watchGeojsonChange() {
     });
 }
 
-/**
- * 地物を複数削除する。idを配列で渡す
- * @param ids
- * @returns {Promise<void>}
- */
-export async function featuresDelete(ids) {
-    if (store.state.isUsingServerGeojson) {
-        store.state.loading3 = true
-        const formData = new FormData();
-        formData.append('geojson_id', store.state.geojsonId);
-        // 配列で複数回 append
-        ids.forEach(id => {
-            formData.append('feature_id[]', id)
-        });
-        const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_delete.php', {
-            method: 'POST',
-            body: formData
-        });
-        const result = await response.json();
-        console.log(result)
-        if (result.success) {
-            store.state.loadingMessage3 = '削除成功'
-            setTimeout(() => {
-                store.state.loading3 = false
-            },2000)
-        } else {
-            store.state.loading3 = false
-            alert('削除失敗')
-        }
-    }
-}
+

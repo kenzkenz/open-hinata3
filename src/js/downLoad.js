@@ -10697,3 +10697,41 @@ export function toPlainText(text) {
     const doc = new DOMParser().parseFromString(stripped, 'text/html')
     return doc.documentElement.textContent || ''
 }
+
+/**
+ * 地物を複数削除する。idを配列で渡す
+ * @param ids
+ * @returns {Promise<void>}
+ */
+export async function featuresDelete(ids) {
+    if (store.state.isUsingServerGeojson) {
+        store.state.loading3 = true
+        // なくてもいいが素早くマーカーを削除する。
+        featureCollection.features = featureCollection.features.filter(
+            f => !ids.includes(f.properties.id)
+        );
+        markerAddAndRemove()
+        // ここまで。
+        const formData = new FormData();
+        formData.append('geojson_id', store.state.geojsonId);
+        // 配列で複数回 append
+        ids.forEach(id => {
+            formData.append('feature_id[]', id)
+        });
+        const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_delete.php', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+        console.log(result)
+        if (result.success) {
+            store.state.loadingMessage3 = '削除成功'
+            setTimeout(() => {
+                store.state.loading3 = false
+            },2000)
+        } else {
+            store.state.loading3 = false
+            alert('削除失敗')
+        }
+    }
+}

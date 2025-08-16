@@ -2889,7 +2889,7 @@ export default {
               featureCollectionAdd()
               markerAddAndRemove()
             }
-            alert("更新成功。");
+            // alert("更新成功。");
           } else {
             this.s_pictureUrl = null
             alert("更新失敗: " + result.message);
@@ -6702,16 +6702,20 @@ export default {
         const id = String(Math.floor(10000 + Math.random() * 90000))
         this.$store.state.id = id
         if (this.s_isDrawPoint) {
+          const now = new Date()
+          const hours = now.getHours()
+          const minutes = now.getMinutes()
+          const seconds = now.getSeconds()
           const properties = {
             id: id,
-            label:'',
+            label: this.$store.state.isSmall500 ? `${hours}:${minutes}:${seconds}` : '',
             color: this.$store.state.currentTextColor || 'black',
             'point-color': this.$store.state.currentPointColor || 'black',
             'text-size': this.$store.state.currentTextSize || 16,
             offsetValue: [0.6, 0.0],
             textAnchor: 'left',
             textJustify: 'left',
-            labelType: this.$store.state.currentTextLabelType || '1',
+            labelType: this.$store.state.isSmall500 ? '1' : this.$store.state.currentTextLabelType || '1',
             longText: '',
             borderRadius: '10px',
           }
