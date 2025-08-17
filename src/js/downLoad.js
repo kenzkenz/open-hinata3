@@ -10059,13 +10059,14 @@ export function markerAddAndRemove() {
         )
         if (isPicture && isLabel) {
             const id = feature.properties.id;
-            const txt = feature.properties.label;
-            const color = feature.properties.color;
-            const fontSize = feature.properties['text-size'];
             const photoURL = feature.properties.pictureUrl;
-            createTextThumbnailMarker(map01, coords, txt, id, color, fontSize, photoURL);
-            createTextThumbnailMarker(map02, coords, txt, id, color, fontSize, photoURL);
-            txtCoordsList.push(coords);
+            const borderRadius = feature.properties.borderRadius ?? '10px'
+            const containerSize = feature.properties.containerSize ?? 100
+            const containerColor = feature.properties.containerColor ?? 'white'
+            const labelText = feature.properties.label ?? ''
+            createThumbnailMarker(map01, coords, photoURL, id, borderRadius, containerSize, containerColor, labelText);
+            createThumbnailMarker(map02, coords, photoURL, id, borderRadius, containerSize, containerColor, labelText);
+            coordsList.push(coords);
         } else {
             if (isPicture) {
                 const id = feature.properties.id;
@@ -10101,7 +10102,7 @@ export function markerAddAndRemove() {
  * @param photoURL
  */
 const txtMarkers = []
-export function createTextThumbnailMarker(map, coords, txt, id, color, fontSize, photoURL) {
+export function createTextThumbnailMarker(map, coords, txt, id, color, fontSize) {
     if (store.state.editEnabled) return
     const key = coords.join(',');
     if (!map.__txtThumbnailMarkerKeys) {
@@ -10126,36 +10127,36 @@ export function createTextThumbnailMarker(map, coords, txt, id, color, fontSize,
     container.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
     container.style.cursor            = 'pointer';
 
-    if (photoURL) {
-        let thumb
-        const isVideo = isVideoFile(photoURL)
-        if (isVideo) {
-            thumb = document.createElement('video');
-            thumb.style.width             = `50px`;
-            thumb.style.height            = `50px`;
-            thumb.style.borderRadius      = '10px';
-            thumb.style.border            = '2px solid #ffffff';
-            thumb.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
-            thumb.src = photoURL;
-            thumb.muted = true;
-            thumb.autoplay = true;
-            thumb.loop = true;
-            thumb.playsInline = true;
-            thumb.style.objectFit   = 'cover';
-        } else {
-            thumb = document.createElement('div');
-            thumb.style.width             = `50px`;
-            thumb.style.height            = `50px`;
-            thumb.style.backgroundImage   = `url(${photoURL})`;
-            thumb.style.backgroundSize    = 'cover';
-            thumb.style.backgroundPosition= 'center';
-            thumb.style.borderRadius      = '10px';
-            thumb.style.border            = '2px solid #ffffff';
-            thumb.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
-            thumb.style.cursor            = 'pointer';
-        }
-        container.appendChild(thumb);
-    }
+    // if (photoURL) {
+    //     let thumb
+    //     const isVideo = isVideoFile(photoURL)
+    //     if (isVideo) {
+    //         thumb = document.createElement('video');
+    //         thumb.style.width             = `50px`;
+    //         thumb.style.height            = `50px`;
+    //         thumb.style.borderRadius      = '10px';
+    //         thumb.style.border            = '2px solid #ffffff';
+    //         thumb.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
+    //         thumb.src = photoURL;
+    //         thumb.muted = true;
+    //         thumb.autoplay = true;
+    //         thumb.loop = true;
+    //         thumb.playsInline = true;
+    //         thumb.style.objectFit   = 'cover';
+    //     } else {
+    //         thumb = document.createElement('div');
+    //         thumb.style.width             = `50px`;
+    //         thumb.style.height            = `50px`;
+    //         thumb.style.backgroundImage   = `url(${photoURL})`;
+    //         thumb.style.backgroundSize    = 'cover';
+    //         thumb.style.backgroundPosition= 'center';
+    //         thumb.style.borderRadius      = '10px';
+    //         thumb.style.border            = '2px solid #ffffff';
+    //         thumb.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
+    //         thumb.style.cursor            = 'pointer';
+    //     }
+    //     container.appendChild(thumb);
+    // }
 
     const label = document.createElement('div');
     label.className = 'txt-marker-label'
@@ -10226,7 +10227,7 @@ export function createTextThumbnailMarker(map, coords, txt, id, color, fontSize,
  * @param photoURL
  */
 const markers = []
-export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, containerSize, containerColor) {
+export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, containerSize, containerColor, labelText) {
     if (store.state.editEnabled) return
     const key = coords.join(',');
     if (!map.__thumbnailMarkerKeys) {
@@ -10237,12 +10238,35 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, c
     }
     map.__thumbnailMarkerKeys.add(key);
 
+    labelText = truncate(labelText,6)
+
     // コンテナ要素を作成
     const container = document.createElement('div');
     container.id             = `pic-marker-${id}`;
     container.style.width    = `${containerSize}px`;
     container.style.height   = `${containerSize + 6}px`; // 縦幅に三角分を追加
     container.style.cursor   = 'pointer';
+
+    // ラベル（上の白い余白用）
+    if (labelText) {
+        const label = document.createElement('div');
+        label.innerText = labelText;
+        label.style.position   = 'absolute';
+        label.style.top        = '-18px';  // サムネイル上に出す
+        label.style.left       = '50%';
+        label.style.transform  = 'translateX(-50%)';
+        label.style.background = containerColor;
+        label.style.color      = containerColor === 'white' ? 'black' : 'white';
+        label.style.width      = '100%';
+        label.style.textAlign  = 'center';
+        label.style.padding    = '2px 6px';
+        label.style.borderTopLeftRadius = '6px';
+        label.style.borderTopRightRadius = '6px';
+        label.style.fontSize   = '12px';
+        label.style.whiteSpace = 'nowrap';
+        // label.style.boxShadow  = '0 2px 4px rgba(0,0,0,0.2)';
+        container.appendChild(label);
+    }
 
     let thumb
     const isVideo = isVideoFile(photoURL)
@@ -10287,6 +10311,7 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, c
     arrow.style.borderRight  = `10px solid transparent`;
     arrow.style.borderTop    = `10px solid ${containerColor}`;
     container.appendChild(arrow);
+
 
     container.addEventListener('click', (e) => {
         e.stopPropagation(); // マップのクリックイベントを阻止
@@ -10807,4 +10832,17 @@ export async function bakeRotationToBlob(file, angleDeg) {
     } finally {
         URL.revokeObjectURL(imgUrl)
     }
+}
+
+/**
+ * 文字を途中で切って'...'にする
+ * @param str
+ * @param maxLength
+ * @returns {string|*}
+ */
+export function truncate(str, maxLength) {
+    if (!str) return ''
+    return str.length > maxLength
+        ? str.slice(0, maxLength) + '...'
+        : str;
 }
