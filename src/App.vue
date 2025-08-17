@@ -195,7 +195,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
             画像、動画アップロード
           </v-card-title>
           <v-card-text style="padding-bottom: 0">
-<!--            <div v-if="user1">-->
             <div>
               <v-file-input
                   v-model="s_selectedFile"
@@ -205,16 +204,23 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   @change="onFileSelected"
               ></v-file-input>
               <div style="max-height: 300px; margin-top: -20px; margin-bottom: 20px; overflow: auto">
-              <div v-if="s_previewUrl" class="mt-4 text-center" style="margin-bottom: 10px;">
-                <img v-if="isImage" :src="s_previewUrl" alt="プレビュー" style="max-width: 100%;" />
-                <video v-if="isVideo" controls style="max-width: 100%;">
-                  <source :src="s_previewUrl" type="video/mp4" />
-                  お使いのブラウザは video タグに対応していません。
-                </video>
+                <div v-if="s_previewUrl" class="mt-4 text-center" style="margin-bottom: 10px;">
+                  <img
+                      v-if="isImage"
+                      :src="s_previewUrl"
+                      alt="プレビュー"
+                      style="max-width: 100%; transition: transform 0.3s;"
+                      :style="{ transform: 'rotate(' + imgRotation + 'deg)' }"
+                  />
+                  <video v-if="isVideo" controls style="max-width: 100%;">
+                    <source :src="s_previewUrl" type="video/mp4" />
+                    お使いのブラウザは video タグに対応していません。
+                  </video>
+                </div>
               </div>
-              </div>
-              <v-row>
-                <v-col cols="6">
+
+              <v-row v-if="isImage || isVideo">
+                <v-col cols="5">
                   <v-select
                       v-model="thumbnailType"
                       :items="thumbnailTypes"
@@ -225,7 +231,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                       @update:modelValue="isDisabledChange"
                   ></v-select>
                 </v-col>
-                <v-col cols="6">
+                <v-col cols="5">
                   <v-select
                       v-model="containerColor"
                       :items="containerColors"
@@ -235,6 +241,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
                       outlined
                       @update:modelValue="isDisabledChange"
                   ></v-select>
+                </v-col>
+                <v-col cols="2">
+                  <div
+                      @click="imgRotation += -90"
+                      class="rotate-btn"
+                  >
+                    <v-icon>mdi-rotate-left</v-icon>
+                  </div>
                 </v-col>
               </v-row>
               <v-row>
@@ -246,16 +260,82 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 </v-col>
               </v-row>
             </div>
-<!--            <div v-else>-->
-<!--              <p style="margin-bottom: 10px;">ログインが必要です。</p>-->
-<!--              <v-btn @click="s_dialogForLogin = true">ログイン</v-btn>-->
-<!--            </div>-->
           </v-card-text>
           <v-card-actions>
             <v-btn color="blue-darken-1" text @click="s_dialogForPicture = false">Close</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
+
+
+
+      <!--      <v-dialog v-model="s_dialogForPicture" max-width="400px">-->
+<!--        <v-card>-->
+<!--          <v-card-title>-->
+<!--            画像、動画アップロード-->
+<!--          </v-card-title>-->
+<!--          <v-card-text style="padding-bottom: 0">-->
+<!--&lt;!&ndash;            <div v-if="user1">&ndash;&gt;-->
+<!--            <div>-->
+<!--              <v-file-input-->
+<!--                  v-model="s_selectedFile"-->
+<!--                  label="画像、動画を選択"-->
+<!--                  accept="image/*,video/*"-->
+<!--                  show-size-->
+<!--                  @change="onFileSelected"-->
+<!--              ></v-file-input>-->
+<!--              <div style="max-height: 300px; margin-top: -20px; margin-bottom: 20px; overflow: auto">-->
+<!--              <div v-if="s_previewUrl" class="mt-4 text-center" style="margin-bottom: 10px;">-->
+<!--                <img v-if="isImage" :src="s_previewUrl" alt="プレビュー" style="max-width: 100%;" />-->
+<!--                <video v-if="isVideo" controls style="max-width: 100%;">-->
+<!--                  <source :src="s_previewUrl" type="video/mp4" />-->
+<!--                  お使いのブラウザは video タグに対応していません。-->
+<!--                </video>-->
+<!--              </div>-->
+<!--              </div>-->
+<!--              <v-row>-->
+<!--                <v-col cols="6">-->
+<!--                  <v-select-->
+<!--                      v-model="thumbnailType"-->
+<!--                      :items="thumbnailTypes"-->
+<!--                      item-title="label"-->
+<!--                      item-value="value"-->
+<!--                      label="サムネイルを選択"-->
+<!--                      outlined-->
+<!--                      @update:modelValue="isDisabledChange"-->
+<!--                  ></v-select>-->
+<!--                </v-col>-->
+<!--                <v-col cols="6">-->
+<!--                  <v-select-->
+<!--                      v-model="containerColor"-->
+<!--                      :items="containerColors"-->
+<!--                      item-title="label"-->
+<!--                      item-value="value"-->
+<!--                      label="縁の色を選択"-->
+<!--                      outlined-->
+<!--                      @update:modelValue="isDisabledChange"-->
+<!--                  ></v-select>-->
+<!--                </v-col>-->
+<!--              </v-row>-->
+<!--              <v-row>-->
+<!--                <v-col cols="6">-->
+<!--                  <v-btn :disabled="(!s_selectedFile || isDisabled) && isDisabled2" style="width: 200px;" @click="savePicture">サーバー更新</v-btn>-->
+<!--                </v-col>-->
+<!--                <v-col cols="6">-->
+<!--                  <v-btn :disabled="!s_pictureUrl" @click="deletePicture" style="margin-left: 10px;">サーバーから削除</v-btn>-->
+<!--                </v-col>-->
+<!--              </v-row>-->
+<!--            </div>-->
+<!--&lt;!&ndash;            <div v-else>&ndash;&gt;-->
+<!--&lt;!&ndash;              <p style="margin-bottom: 10px;">ログインが必要です。</p>&ndash;&gt;-->
+<!--&lt;!&ndash;              <v-btn @click="s_dialogForLogin = true">ログイン</v-btn>&ndash;&gt;-->
+<!--&lt;!&ndash;            </div>&ndash;&gt;-->
+<!--          </v-card-text>-->
+<!--          <v-card-actions>-->
+<!--            <v-btn color="blue-darken-1" text @click="s_dialogForPicture = false">Close</v-btn>-->
+<!--          </v-card-actions>-->
+<!--        </v-card>-->
+<!--      </v-dialog>-->
 
       <v-dialog v-model="s_dialogForOffline2" max-width="500px">
         <v-card>
@@ -2103,6 +2183,7 @@ export default {
     isDisabled: false,
     isDisabled2: true,
     isNewPicture: false,
+    imgRotation: 0,
   }),
   computed: {
     ...mapState([
@@ -10812,6 +10893,18 @@ select {
 /*注意。副作用があるかもしれない。*/
 .maplibregl-canvas.force-pointer {
   cursor: pointer !important;
+}
+.rotate-btn {
+  display: flex;
+  height: 60px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #444; /* 通常時 */
+}
+
+.rotate-btn:hover {
+  color: #1976d2; /* ホバー時に青く */
 }
 @media (max-width: 720px) {
   /*.fan-menu-rap {*/

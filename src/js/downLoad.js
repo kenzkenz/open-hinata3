@@ -10583,21 +10583,23 @@ const SLEEP_GAP_MS = 15_000;
 let _wakeInFlight = false;
 let _lastWakeHandledAt = 0;
 
-function maybeRefreshOnWake() {
+function maybeRefreshOnWake(isImmediate) {
     const gap = Date.now() - lastTick;
-    if (gap < SLEEP_GAP_MS) return;
-    markaersRemove()
-
+    if (!isImmediate) {
+        if (gap < SLEEP_GAP_MS) return;
+    }
     // 多重実行ガード（短時間に連続発火するのを抑制）
     if (_wakeInFlight) return;
     if (Date.now() - _lastWakeHandledAt < 1500) return;
     _wakeInFlight = true;
     _lastWakeHandledAt = Date.now();
 
-    store.state.loadingMessage3 = '復帰したためフルリフレッシュしました。';
-    store.state.loading3 = true;
-
     try {
+        if (!isImmediate) {
+            store.state.loadingMessage3 = '復帰したためリフレッシュしました。';
+            store.state.loading3 = true;
+        }
+        markaersRemove()
         stopPolling();
         Promise.resolve()
             .then(() => refreshFromServer())
@@ -10607,18 +10609,20 @@ function maybeRefreshOnWake() {
             })
             .finally(() => {
                 _wakeInFlight = false;
-                setTimeout(() => { store.state.loading3 = false; }, 5000);
+                console.log('リフレッシュしました。maybeRefreshOnWake')
+                setTimeout(() => { store.state.loading3 = false; }, 3000);
             });
     } catch (e) {
+        store.state.loading3 = false;
         _wakeInFlight = false;
         console.error(e);
-        setTimeout(() => { store.state.loading3 = false; }, 5000);
+        alert('リフレッシュ失敗')
     }
 }
 
 function onVisibilityChange() {
     if (document.visibilityState === 'visible') {
-        maybeRefreshOnWake();
+        maybeRefreshOnWake(true);
     }
 }
 function onFocus() {
@@ -10629,33 +10633,6 @@ function onPageShow(e) {
     // if (e.persisted) { maybeRefreshOnWake(); } でもOK
     maybeRefreshOnWake();
 }
-// function maybeRefreshOnWake() {
-//     const gap = Date.now() - lastTick;
-//     if (gap >= SLEEP_GAP_MS) {
-//         // 長く止まっていた＝復帰直後とみなしてフルリフレッシュ
-//         stopPolling();
-//         refreshFromServer().then(startPolling);
-//         store.state.loadingMessage3 = '復帰したためフルリフレッシュしました。'
-//         store.state.loading3 = true
-//         setTimeout(() => {
-//             store.state.loading3 = false
-//         },5000)
-//     }
-// }
-// function onVisibilityChange() {
-//     if (document.visibilityState === 'visible') {
-//         maybeRefreshOnWake();
-//     }
-// }
-// function onFocus() {
-//     maybeRefreshOnWake();
-// }
-// function onPageShow(e) {
-//     // bfcache 復帰対策（Safariなど）
-//     if (e.persisted) {
-//         maybeRefreshOnWake();
-//     }
-// }
 
 /**
  * ---- 公開API ----

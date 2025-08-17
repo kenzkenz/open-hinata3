@@ -97,7 +97,6 @@ const csLayers2 = csLayers.map((layer,i) => {
         attribution: '<a href="' + layer.page + '" target="_blank">' + name + '</a>',
     }
 })
-console.log(csLayers2)
 // --------------------------------------------------------------------------------------------------------------------
 
 export function zenkokuChibanzuAddLayer (map,zoom) {
@@ -228,7 +227,13 @@ const chibanzuColors = abc.colorMap
 const isNew = abc.isNew
 // console.log(chibanzuColors)
 // console.log(isNew)
-
+/**
+ *
+ * @param getter
+ * @param checkFn
+ * @param interval
+ * @returns {Promise<unknown>}
+ */
 function waitForStateValue(getter, checkFn = val => val !== undefined && val !== null, interval = 50) {
     return new Promise((resolve) => {
         const timer = setInterval(() => {
@@ -416,7 +421,7 @@ const publicLayers = publicPolygonLayers.map((layer,i) => {
         ext: {name:'ext-chibanzu'}
     }
 })
-console.log(publicLayers)
+// console.log(publicLayers)
 const publicLayers0 = [...publicPolygonLayers,...publicLineLayers,...publicLabelLayers,...publicPointLayers,...publicVertexLayers]
 
 export const cityPmtilesSource = {
@@ -2511,7 +2516,6 @@ const kirieLayers2 = kirieLayers.map((layer,i) => {
             '<br><br><a href="https://mapwarper.h-gis.jp/maps/' + layer.url + '" target="_blank">日本版Map Warper</a>'
     }
 })
-console.log(kirieLayers2)
 // 兵庫県以外遺跡立体図-----------------------------------------------------------------------------------------------------------
 const isekiurls2 =[
  {name:'横地城跡（静岡県菊川市）',url:'https://kenzkenz4.xsrv.jp/tile/isekirittaizu/yokochi-tile', position:[133.9494864960191,34.72801130848333],bounds:[34.725992296143794, 133.9529354877004, 34.73003032082288, 133.9460375043378]},
@@ -12388,7 +12392,7 @@ export const layers = reactive({
 });
 waitForStateValue(() => store.state.currentGroupName).then((val) => {
     nextTick(() => {
-        console.log(layers01)
+        // console.log(layers01)
         const currentGroupName = toRef(store.state, 'currentGroupName');
         document.querySelectorAll('.group-layer').forEach(groupLayer => {
             if (store.state.currentGroupName) {
