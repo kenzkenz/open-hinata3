@@ -244,7 +244,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 </v-col>
                 <v-col cols="2">
                   <div
-                      @click="imgRotation += -90"
+                      @click="imgRotation += -90; isDisabled2 = false"
                       class="rotate-btn"
                   >
                     <v-icon>mdi-rotate-left</v-icon>
@@ -1568,7 +1568,7 @@ import DrawDrawer from '@/components/DrawDrawer.vue'
 import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
 import {
-  addDraw,
+  addDraw, bakeRotationToBlob,
   capture,
   changePrintMap03, compressImageToUnder10MB,
   convertFromEPSG4326,
@@ -2953,8 +2953,12 @@ export default {
               return
             }
           }
+          if (this.imgRotation !== 0) {
+            const blob = await bakeRotationToBlob(file, this.imgRotation)
+            const name = file.name
+            file = new File([blob], name, { type: blob.type })
+          }
         }
-
         const formData = new FormData();
         formData.append("file", file);
         formData.append("dir", this.$store.state.userId || '0000notLoggedIn');
@@ -2984,9 +2988,52 @@ export default {
         }
         this.s_dialogForPicture = false
       } else {
-        this.s_pictureUrl = null
-        this.drawGeojsonAddPicture()
+        if (this.imgRotation !== 0) {
+          let file
+          const response = await fetch(this.s_pictureUrl);
+          let blob = await response.blob();
+          file = new File([blob], this.s_pictureUrl, {type: blob.type});
+          blob = await bakeRotationToBlob(file, this.imgRotation)
+          const name = file.name
+          file = new File([blob], name, {type: blob.type})
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("dir", this.$store.state.userId || '0000notLoggedIn');
+          try {
+            const response = await fetch("https://kenzkenz.net/myphp/upload_picture.php", {
+              method: "POST",
+              body: formData,
+            });
+            const result = await response.json();
+            if (result.success) {
+              this.s_pictureUrl = result.webUrl
+              this.drawGeojsonAddPicture()
+              closeAllPopups()
+              if (!this.$store.state.isUsingServerGeojson) {
+                featureCollectionAdd()
+                markerAddAndRemove()
+              }
+              this.s_previewUrl = result.webUrl
+              // alert("更新成功。");
+            } else {
+              this.s_pictureUrl = null
+              alert("更新失敗: " + result.message);
+            }
+          } catch (error) {
+            console.error("更新エラー:", error);
+            this.s_pictureUrl = null
+            alert("通信エラー");
+          }
+        } else {
+          this.s_pictureUrl = null
+          this.drawGeojsonAddPicture()
+        }
+        this.s_dialogForPicture = false
+        setTimeout(() => {
+          this.imgRotation = 0
+        },100)
       }
+      markerAddAndRemove()
       store.state.loading2 = false
       this.isDisabled = false
     },

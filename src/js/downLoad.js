@@ -10765,3 +10765,43 @@ export async function featuresDelete(ids) {
         }
     }
 }
+
+/**
+ * ファイル画像に回転を焼き込み、Blob を返す（EXIF未考慮。必要なら別途処理）
+ * @param {File|Blob} file - 元画像
+ * @param {number} angleDeg - 回転角（deg）
+ * @returns {Promise<Blob>} - エンコード済み画像（元が png なら png、jpeg なら jpeg）
+ */
+export async function bakeRotationToBlob(file, angleDeg) {
+    if (!file) throw new Error('file is required')
+    const type = file.type && file.type.startsWith('image/') ? file.type : 'image/png'
+    const imgUrl = URL.createObjectURL(file)
+    try {
+        const bmp = await createImageBitmap(await (await fetch(imgUrl)).blob())
+        const angle = (angleDeg % 360 + 360) % 360
+
+        // 回転後キャンバスのサイズ計算
+        const rad = angle * Math.PI / 180
+        const sin = Math.abs(Math.sin(rad))
+        const cos = Math.abs(Math.cos(rad))
+        const outW = Math.round(bmp.width * cos + bmp.height * sin)
+        const outH = Math.round(bmp.width * sin + bmp.height * cos)
+
+        const canvas = document.createElement('canvas')
+        canvas.width = outW
+        canvas.height = outH
+        const ctx = canvas.getContext('2d')
+
+        // 中心回りに回転
+        ctx.translate(outW / 2, outH / 2)
+        ctx.rotate(rad)
+        ctx.drawImage(bmp, -bmp.width / 2, -bmp.height / 2)
+
+        // タイプ維持して出力
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, type))
+        if (!blob) throw new Error('toBlob failed')
+        return blob
+    } finally {
+        URL.revokeObjectURL(imgUrl)
+    }
+}
