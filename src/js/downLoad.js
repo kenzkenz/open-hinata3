@@ -9865,7 +9865,7 @@ export function jgd2000ZoneToWgs84(zone, x, y) {
  * @returns {Promise<*>}
  */
 export async function saveDrowFeatures(features) {
-    alert(999)
+    // alert(999)
     if (!store.state.isUsingServerGeojson) return
     let flg = false
     const formData = new FormData();

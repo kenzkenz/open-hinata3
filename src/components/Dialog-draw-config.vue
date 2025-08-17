@@ -162,6 +162,7 @@ export default {
       { zoom: 13.2, label: '1/50000で固定'      },
       { zoom: 11.2, label: '1/200000で固定'     },
     ],
+    configFeatureFlg: false,
   }),
   computed: {
     ...mapState([
@@ -495,11 +496,12 @@ export default {
       map01.setPaintProperty('segment-label-layer', 'text-opacity', this.s_drawOpacity)
     },
     configChange (tgtProp,value) {
-      // console.log(tgtProp,value)
-      const map01 = this.$store.state.map01
-      this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01, null, clickCircleSource.iD, 'config', tgtProp, value)
-      if (tgtProp === 'direction') {
-        this.directionChange()
+      if (!this.configFeatureFlg) {
+        const map01 = this.$store.state.map01
+        this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01, null, clickCircleSource.iD, 'config', tgtProp, value)
+        if (tgtProp === 'direction') {
+          this.directionChange()
+        }
       }
     },
     setZoom () {
@@ -580,12 +582,16 @@ export default {
           // this.$store.state.drawVisible = true;
           // this.$store.state.drawOpacity = 1;
         } else {
+          this.configFeatureFlg = true
           this.$store.state.printTitleText = props['title-text'] ?? '';
           this.$store.state.textPx = props['font-size'] ?? 30;
           this.$store.state.titleColor = props['fill-color'] ?? 'black';
           this.$store.state.titleDirection = props['direction'] ?? 'vertical';
           this.$store.state.drawVisible = props['visible'] ?? true;
           this.$store.state.drawOpacity = props['opacity'] ?? 1;
+          setTimeout(() => {
+            this.configFeatureFlg = false
+          },200)
         }
       },
       deep: true,

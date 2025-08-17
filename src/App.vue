@@ -229,6 +229,11 @@ import SakuraEffect from './components/SakuraEffect.vue';
                       label="サムネイルを選択"
                       outlined
                       @update:modelValue="isDisabledChange"
+                      :menu-props="{
+                        maxHeight: '300px',
+                        overflow: 'scroll',
+                        contentClass: 'scrollable-menu'
+                      }"
                   ></v-select>
                 </v-col>
                 <v-col cols="5">
@@ -240,6 +245,11 @@ import SakuraEffect from './components/SakuraEffect.vue';
                       label="縁の色を選択"
                       outlined
                       @update:modelValue="isDisabledChange"
+                      :menu-props="{
+                        maxHeight: '300px',
+                        overflow: 'scroll',
+                        contentClass: 'scrollable-menu'
+                      }"
                   ></v-select>
                 </v-col>
                 <v-col cols="2">
@@ -2088,12 +2098,12 @@ export default {
     ],
     thumbnailType: {borderRadius:'10px',containerSize:100},
     thumbnailTypes: [
-      { label: '四角の大', value: {borderRadius:'10px',containerSize:100} },
-      { label: '四角の中', value: {borderRadius:'10px',containerSize:50} },
-      { label: '四角の小', value: {borderRadius:'10px',containerSize:30} },
-      { label: '丸の大', value: {borderRadius:'50%',containerSize:100} },
-      { label: '丸の中', value: {borderRadius:'50%',containerSize:50} },
-      { label: '丸の小', value: {borderRadius:'50%',containerSize:30} },
+      { label: '四角大', value: {borderRadius:'10px',containerSize:100} },
+      { label: '四角中', value: {borderRadius:'10px',containerSize:50} },
+      { label: '四角小', value: {borderRadius:'10px',containerSize:30} },
+      { label: '丸大', value: {borderRadius:'50%',containerSize:100} },
+      { label: '丸中', value: {borderRadius:'50%',containerSize:50} },
+      { label: '丸小', value: {borderRadius:'50%',containerSize:30} },
       { label: '無し', value: {borderRadius:'0%',containerSize:1} },
     ],
     containerColor: 'white',
@@ -10953,6 +10963,13 @@ select {
 .rotate-btn:hover {
   color: #1976d2; /* ホバー時に青く */
 }
+
+/* iOS でスムースにスクロールできるように */
+.scrollable-menu {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
 @media (max-width: 720px) {
   /*.fan-menu-rap {*/
   /*  top:174px;*/
