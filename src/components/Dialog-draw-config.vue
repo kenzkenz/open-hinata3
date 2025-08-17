@@ -350,6 +350,7 @@ export default {
       }
     },
     async rowCick(item) {
+      markaersRemove()
       this.$store.state.isUsingServerGeojson = true
       if (item) {
         this.s_geojsonId = item.geojson_id

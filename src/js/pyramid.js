@@ -2137,7 +2137,7 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
                     feature.properties.borderRadius = value.borderRadius
                     feature.properties.containerSize = value.containerSize
                     feature.properties.containerColor = value.containerColor
-                    feature.properties.labelType= value.labelType
+                    // feature.properties.labelType= value.labelType
                 } else {
                     feature.properties[tgtProp] = value
                 }

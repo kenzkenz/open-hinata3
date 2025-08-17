@@ -2916,8 +2916,8 @@ export default {
       const pictureUrl = this.s_pictureUrl
       const containerSize = this.thumbnailType.containerSize
       const containerColor = this.containerColor
-      const labelType = '0'
-      const value = {pictureUrl, borderRadius, containerSize, containerColor, labelType}
+      // const labelType = '0'
+      const value = {pictureUrl, borderRadius, containerSize, containerColor}
       this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01,null,clickCircleSource.iD,id,tgtProp,value)
     },
     async savePicture() {

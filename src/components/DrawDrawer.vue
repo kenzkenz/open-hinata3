@@ -218,7 +218,15 @@ export default {
     drawFeature: {
       handler: function () {
         if (this.drawFeature.properties.id === 'config') return
-        this.setZindex()
+        const activeEl = document.activeElement;
+        /**
+         * 様改修
+         */
+        if (activeEl.tagName === "TEXTAREA" && activeEl.selectionStart !== 0) {
+          console.log("アクティブなTEXTAREA:", activeEl.tagName)
+        } else {
+          this.setZindex()
+        }
         const props = this.drawFeature.properties
         this.type = this.drawFeature.geometry.type
         this.label = props.label
