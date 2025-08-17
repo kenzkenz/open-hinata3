@@ -15,7 +15,6 @@ import {
 import { Viewer, CameraControls, RenderMode, TransitionMode } from 'mapillary-js';
 import { ref, watch } from 'vue'
 import debounce from 'lodash/debounce'
-import {includes} from "lodash";
 
 export const popups = []
 const isSmall = window.innerWidth < 500
@@ -62,55 +61,6 @@ export function calculatePolygonMetrics(polygon) {
         };
     } catch (error) {
         console.error('面積・周長・頂点数の計算中にエラーが発生しました:', error);
-    }
-}
-
-/**
- * LineString の各区間の距離と、始点・終点の座標を返す
- * @param {GeoJSON} lineGeoJSON - LineString形式のGeoJSON
- * @returns {{
- *   segments: { index: number, from: number[], to: number[], distance: string }[],
- *   total: string
- * }}
- */
-export function calculateLineSegmentDetails(lineGeoJSON) {
-    try {
-        const coords = lineGeoJSON.geometry.coordinates;
-        if (!coords || coords.length < 2) throw new Error("2点以上の座標が必要です");
-
-        let totalLength = 0;
-        const segments = [];
-
-        for (let i = 0; i < coords.length - 1; i++) {
-            const from = coords[i];
-            const to = coords[i + 1];
-            const segment = turf.lineString([from, to]);
-            const dist = turf.length(segment, { units: 'kilometers' }); // km単位
-            totalLength += dist;
-
-            const distanceLabel = dist >= 1
-                ? `約${dist.toFixed(2)}km`
-                : `約${(dist * 1000).toFixed(0)}m`;
-
-            segments.push({
-                index: i + 1,
-                from: from,  // [lng, lat]
-                to: to,      // [lng, lat]
-                distance: distanceLabel
-            });
-        }
-
-        const totalFormatted = totalLength >= 1
-            ? `合計距離: 約${totalLength.toFixed(2)}km`
-            : `合計距離: 約${(totalLength * 1000).toFixed(0)}m`;
-
-        return {
-            segments,
-            total: totalFormatted
-        };
-    } catch (error) {
-        console.error('区間情報の計算中にエラーが発生しました:', error);
-        return null;
     }
 }
 
@@ -227,7 +177,7 @@ function getLegendItem(legend, url, lat, lng, z) {
             canvas.height = 1
             context.drawImage(img, i, j, 1, 1, 0, 0, 1, 1)
             d = context.getImageData(0, 0, 1, 1).data
-            console.log(d[0],d[1],d[2])
+            // console.log(d[0],d[1],d[2])
             if (legend[0].r + legend[0].g + legend[0].b === 0) {
                 if (d[3] === 255) {
                     v = 'dummy'
@@ -319,10 +269,7 @@ export function popup(e,map,mapName,mapFlg) {
     // if (store.state.editEnabled) return; //ん？これは要らない？
     let html = ref('')  // ← ここを ref 化
     watch(html, (newVal, oldVal) => {
-        if (store.state.isDraw && newVal.includes('click-circle-layer')) {
-            console.log(newVal.includes('click-circle-layer'))
-        }
-        console.log(`htmlが ${oldVal} → ${newVal} に変わりました`)
+        // console.log(`htmlが ${oldVal} → ${newVal} に変わりました`)
         createPopup(map, [e.lngLat.lng,e.lngLat.lat], html.value, mapName)
     })
 
@@ -4595,10 +4542,14 @@ export function mouseMoveForPopup (e,map) {
                 let res = (v ? v.title : '')
                 if (res === '') {
                     // map.getCanvas().style.cursor = ""
+                    map.getCanvas().classList.remove("force-pointer");
                     return
                 }
-                // 下矢印。効きがわるい。
+                // ↓。効かない。どこかで上書きされている。
                 map.getCanvas().style.cursor = "pointer"
+                // ↓。効く。上書きも関係ない。注意。副作用があるかもしれない。
+                map.getCanvas().classList.add("force-pointer");
+
             })
         }
     })

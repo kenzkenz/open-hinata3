@@ -10809,6 +10809,10 @@ select {
 .v-overlay {
   z-index: 999999999 !important;
 }
+/*注意。副作用があるかもしれない。*/
+.maplibregl-canvas.force-pointer {
+  cursor: pointer !important;
+}
 @media (max-width: 720px) {
   /*.fan-menu-rap {*/
   /*  top:174px;*/
