@@ -8854,7 +8854,7 @@ export default {
                 currentBounds.getWest() < previousBounds.getWest()
             ) {
               // マップの範囲が拡大または移動した場合のみ発火
-              console.log('Bounds expanded or moved:', currentBounds);
+              // console.log('Bounds expanded or moved:', currentBounds);
               this.$store.state.osmFire = !this.$store.state.osmFire;
             }
 

@@ -2109,7 +2109,7 @@ export function circleCreate (lng, lat, m) {
  * @param radius
  * @returns {*}
  */
-export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius) {
+export async function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius) {
     store.state.saveHistoryFire = !store.state.saveHistoryFire
     const source = map.getSource(sourceId)
     if (!source) return;
@@ -2180,8 +2180,7 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
         if (changed) {
             if (id !== "config") map.getSource(sourceId).setData(geojson);
             store.state.updatePermalinkFire = !store.state.updatePermalinkFire
-            console.log(updateFeatures)
-            saveDrowFeatures(updateFeatures)
+            await saveDrowFeatures(updateFeatures)
             if (!store.state.isUsingServerGeojson) {
                 featureCollectionAdd()
                 markerAddAndRemove()

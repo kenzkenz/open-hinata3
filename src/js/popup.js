@@ -335,11 +335,11 @@ export function popup(e,map,mapName,mapFlg) {
      */
     const drawLayerIds = [
         'arrows-endpoint-label-layer',
-        'click-circle-layer',
         'click-circle-symbol-layer',
         'click-circle-line-layer',
         'click-circle-keiko-line-layer',
-        'click-circle-label-layer'
+        'click-circle-label-layer',
+        'click-circle-layer',
     ];
     if (store.state.isDraw) {
         if (features[0]?.layer?.id === 'zones-layer') {
@@ -361,7 +361,6 @@ export function popup(e,map,mapName,mapFlg) {
          * ドロー時はドローレイヤー以外のポップアップを無効化する。
          */
         if (store.state.isDraw) {
-            const drawLayerIds = ['arrows-endpoint-label-layer','click-circle-layer','click-circle-symbol-layer','click-circle-line-layer','click-circle-keiko-line-layer','click-circle-label-layer']
             const result = drawLayerIds.includes(layerId)
             if (!result) return
         }

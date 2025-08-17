@@ -9887,7 +9887,7 @@ export async function saveDrowFeatures(features) {
         console.log('saveDrowFeaturesをキャンセル')
         return
     }
-    console.log(features)
+    // console.log(features)
     const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/features_save.php', {
         method: 'POST',
         body: formData
@@ -10805,4 +10805,35 @@ export function truncate(str, maxLength) {
     return str.length > maxLength
         ? str.slice(0, maxLength) + '...'
         : str;
+}
+
+// ---- 5) パン中は queryRenderedFeatures を禁止 -----------------------------
+// クリック時のみ実行するようにする
+function installSafePicking(map, pickLayers = []) {
+    let moving = false;
+    map.on('movestart', () => { moving = true; });
+    map.on('moveend', () => { moving = false; });
+
+    map.on('click', (e) => {
+        if (moving) return; // パン中の誤クリックは無視
+        const opts = pickLayers.length ? { layers: pickLayers } : undefined;
+        const feats = map.queryRenderedFeatures(e.point, opts);
+        // フィーチャを処理する
+    });
+}
+
+// ---- 6) ビューポート制約で不要タイル読み込みを防止 ------------------------
+function applyViewportConstraints(map, boundsLike, opts = {}) {
+    if (boundsLike) map.setMaxBounds(boundsLike);
+    if (opts.minZoom != null) map.setMinZoom(opts.minZoom);
+    if (opts.maxZoom != null) map.setMaxZoom(opts.maxZoom);
+}
+
+// ---- 7) iPhone用: タイルサイズを小さくして軽量化 ---------------------------
+function addLightRasterSource(map, id, tiles) {
+    map.addSource(id, {
+        type: 'raster',
+        tiles,
+        tileSize: 256, // iOSでのメモリ削減
+    });
 }
