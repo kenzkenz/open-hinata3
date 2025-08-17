@@ -1613,7 +1613,7 @@ import {
   handleFileUpload,
   highlightSpecificFeatures,
   highlightSpecificFeatures2025,
-  highlightSpecificFeaturesCity, isImageFile, isVideoFile,
+  highlightSpecificFeaturesCity, installSafePicking, isImageFile, isVideoFile,
   japanCoord,
   jpgLoad,
   kmlDownload,
@@ -7895,10 +7895,9 @@ export default {
         // console.log(params)
         map.on('load',async () => {
 
-          // const coords = [139.767, 35.681];
-          // const photoURL = 'https://kenzkenz.net/uploads/gg0oc5Mh7EhDIDbaui5zteawUy82/picture/6894b5fe1ba3e.png';
-          // createThumbnailMarker(map, coords, photoURL)
-
+          if (this.$store.state.isIphone) {
+            installSafePicking(map)
+          }
 
           // const params = await this.parseUrlParams()
           console.log(params)

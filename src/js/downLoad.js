@@ -10807,33 +10807,115 @@ export function truncate(str, maxLength) {
         : str;
 }
 
-// ---- 5) パン中は queryRenderedFeatures を禁止 -----------------------------
-// クリック時のみ実行するようにする
-function installSafePicking(map, pickLayers = []) {
-    let moving = false;
+// ---- パン中は queryRenderedFeatures を禁止 -----------------------------
+// クリック／ロングプレス時のみ安全にピッキングする
+// ・パン中（isMoving=true）や移動距離が閾値を超えた場合は無視
+// ・ダブルタップ（ダブルクリック）は無視（オプション）
+// ・タップ＆ホールド（ロングプレス）で拾う（オプション）
+// 使い方:
+// installSafePicking(map, ['layerA','layerB'], {
+//   moveTolerancePx: 6,         // ダウン→アップ間の移動許容px
+//   clickDelayMs: 180,          // クリックの最大全体時間
+//   dblClickGapMs: 300,         // ダブルクリック判定間隔
+//   includeDblclick: false,     // trueでダブルクリック時も拾う
+//   longPressMs: 450,           // ロングプレス閾値（タッチのみ）
+//   onPick: (features, e) => {} // ピック後のハンドラ（必須）
+// });
+export function installSafePicking(map, pickLayers = [], options = {}) {
+    const moveTolerancePx = options.moveTolerancePx ?? 6;
+    const clickDelayMs    = options.clickDelayMs    ?? 180;
+    const dblClickGapMs   = options.dblClickGapMs   ?? 300;
+    const includeDblclick = options.includeDblclick ?? false;
+    const longPressMs     = options.longPressMs     ?? 450;
+    const onPick          = options.onPick          ?? ((feats)=>console.log('picked', feats));
+
+    let moving = false;            // movestart〜moveend の間
+    let isPointerDown = false;     // mousedown/touchstart～up 間
+    let downPoint = null;          // {x,y}
+    let downTime = 0;              // Date.now()
+    let lastClickTime = 0;         // ダブルクリック判定用
+    let longPressTimer = null;     // タッチ長押し用
+
+    function distance(a, b){ if(!a||!b) return 9999; const dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx, dy); }
+    function guardLayers(){ return pickLayers.length ? { layers: pickLayers } : undefined; }
+
+    // パン状態フラグ
     map.on('movestart', () => { moving = true; });
-    map.on('moveend', () => { moving = false; });
+    map.on('moveend',   () => { moving = false; });
 
-    map.on('click', (e) => {
-        if (moving) return; // パン中の誤クリックは無視
-        const opts = pickLayers.length ? { layers: pickLayers } : undefined;
-        const feats = map.queryRenderedFeatures(e.point, opts);
-        // フィーチャを処理する
-    });
-}
+    // ---- ポインタダウン ----------------------------------------------------
+    function onPointerDown(e){
+        isPointerDown = true;
+        downPoint = e.point || (e.lngLat ? map.project(e.lngLat) : null);
+        downTime = Date.now();
 
-// ---- 6) ビューポート制約で不要タイル読み込みを防止 ------------------------
-function applyViewportConstraints(map, boundsLike, opts = {}) {
-    if (boundsLike) map.setMaxBounds(boundsLike);
-    if (opts.minZoom != null) map.setMinZoom(opts.minZoom);
-    if (opts.maxZoom != null) map.setMaxZoom(opts.maxZoom);
-}
+        // タッチ長押しでのピック（パンしていない & 移動が小さい）
+        if (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches.length === 1) {
+            clearTimeout(longPressTimer);
+            longPressTimer = setTimeout(() => {
+                if (!isPointerDown || moving) return;
+                const now = Date.now();
+                const elapsed = now - downTime;
+                if (elapsed >= longPressMs) {
+                    const feats = map.queryRenderedFeatures(downPoint, guardLayers());
+                    onPick(feats, e);
+                }
+            }, longPressMs);
+        }
+    }
 
-// ---- 7) iPhone用: タイルサイズを小さくして軽量化 ---------------------------
-function addLightRasterSource(map, id, tiles) {
-    map.addSource(id, {
-        type: 'raster',
-        tiles,
-        tileSize: 256, // iOSでのメモリ削減
-    });
+    // ---- ポインタアップ（クリック系確定） ----------------------------------
+    function onPointerUp(e){
+        clearTimeout(longPressTimer);
+        if (!isPointerDown) return;
+        isPointerDown = false;
+
+        // パン中は拾わない
+        if (moving) return;
+
+        const upPoint = e.point || (e.lngLat ? map.project(e.lngLat) : null);
+        const moved = distance(downPoint, upPoint);
+        const elapsed = Date.now() - downTime;
+
+        // 動きすぎ or 時間かかりすぎ はクリック扱いにしない
+        if (moved > moveTolerancePx || elapsed > clickDelayMs) return;
+
+        // ダブルクリック/ダブルタップ無視（オプション）
+        const now = Date.now();
+        const isDouble = (now - lastClickTime) < dblClickGapMs;
+        lastClickTime = now;
+        if (isDouble && !includeDblclick) return;
+
+        const feats = map.queryRenderedFeatures(upPoint, guardLayers());
+        onPick(feats, e);
+    }
+
+    // ---- 明示クリックイベント（マウス主体） --------------------------------
+    function onMapClick(e){
+        // movestart→click の揺れ対策（二重防御）
+        if (moving) return;
+        // すでに pointerup で処理済みのことが多いので軽量化
+        // 必要ならここでもピック
+        // const feats = map.queryRenderedFeatures(e.point, guardLayers());
+        // onPick(feats, e);
+    }
+
+    // イベント配線
+    map.on('mousedown', onPointerDown);
+    map.on('mouseup',   onPointerUp);
+    map.on('touchstart', onPointerDown);
+    map.on('touchend',   onPointerUp);
+    map.on('click',      onMapClick);
+
+    // 後片付け用の関数を返す（必要なら保持して呼ぶ）
+    return () => {
+        clearTimeout(longPressTimer);
+        map.off('movestart', () => { moving = true; });
+        map.off('moveend',   () => { moving = false; });
+        map.off('mousedown', onPointerDown);
+        map.off('mouseup',   onPointerUp);
+        map.off('touchstart', onPointerDown);
+        map.off('touchend',   onPointerUp);
+        map.off('click',      onMapClick);
+    };
 }
