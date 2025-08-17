@@ -10298,7 +10298,10 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, c
             popup(e,map,'map01', store.state.map2Flg)
         }
         onPointClick(dummyEvent)
+
+        console.log('⭐️発火成功🤩')
     });
+
     let offsetY = -55
     switch (containerSize) {
         case 100:

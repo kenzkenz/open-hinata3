@@ -218,7 +218,7 @@ export default {
     drawFeature: {
       handler: function () {
         if (this.drawFeature.properties.id === 'config') return
-        // this.setZindex()
+        this.setZindex()
         const props = this.drawFeature.properties
         this.type = this.drawFeature.geometry.type
         this.label = props.label

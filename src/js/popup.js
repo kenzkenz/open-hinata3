@@ -273,14 +273,14 @@ export function popup(e,map,mapName,mapFlg) {
         createPopup(map, [e.lngLat.lng,e.lngLat.lat], html.value, mapName)
     })
 
-    // console.log(e.point)
+    console.log(e.lngLat)
     const lngLat = e.lngLat;
     const point = map.project(lngLat);
     let features = map.queryRenderedFeatures(point);
     // let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
 
-    console.log(features[0])
-    console.log(map.getStyle().layers)
+    // console.log(features[0])
+    // console.log(map.getStyle().layers)
     if (features.length> 20) {
         features = features.slice(0, 20);
     }
@@ -333,15 +333,26 @@ export function popup(e,map,mapName,mapFlg) {
         store.state.clickedCoordinates = coordinates
         return
     }
-    // if (features.length > 0) {
     let regionType = ''
-    const f0 = [features[0]]
+    /**
+     * バグ回避
+     */
+    if (features[0]?.layer?.id === 'zones-layer') {
+        console.log('バグ回避 zones-layer')
+        store.state.selectedLayers.map01[0].visibility = !store.state.selectedLayers.map01[0].visibility
+        store.state.selectedLayers.map01[0].visibility = !store.state.selectedLayers.map01[0].visibility
+        // // もう一度ポップアップ
+        // setTimeout(() => {
+        //     popup(e,map,mapName,mapFlg)
+        // },100)
+    }
     let isBreak = false
     for (const feature of features) {
         // features.forEach(feature => {
         const layerId = feature.layer.id
         let props = feature.properties
         // console.log(layerId, feature, props)
+        console.log('⭐layerId️//' + layerId)
         /**
          * ドロー時はドローレイヤー以外のポップアップを無効化する。
          */
@@ -3562,6 +3573,7 @@ export function popup(e,map,mapName,mapFlg) {
             case 'click-circle-keiko-line-layer':
             case 'click-circle-label-layer':
             {
+                console.log('⭐⭐️⭐⭐️到達！️')
                 // alert('到達')
                 store.commit('setDrawDrawer', false)
                 html.value = ''
@@ -4290,7 +4302,10 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
         popups.push(popup);
         popup.on('close', closeAllPopups);
         const popupEl = popup.getElement();
-        popupEl.style.zIndex = getNextZIndex()
+        // ドロワーに負けるので後出し。
+        setTimeout(() => {
+            popupEl.style.zIndex = getNextZIndex()
+        },100)
         popupEl.addEventListener('click', (e) => {
             // console.log('popup clicked!', e.currentTarget);
             e.currentTarget.style.zIndex = getNextZIndex()
