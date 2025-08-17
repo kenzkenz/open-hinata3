@@ -2178,7 +2178,7 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
             changed = true;
         }
         if (changed) {
-            map.getSource(sourceId).setData(geojson);
+            if (id !== "config") map.getSource(sourceId).setData(geojson);
             store.state.updatePermalinkFire = !store.state.updatePermalinkFire
             console.log(updateFeatures)
             saveDrowFeatures(updateFeatures)

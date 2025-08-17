@@ -14,7 +14,6 @@ import {
 } from "@/js/downLoad";
 import { Viewer, CameraControls, RenderMode, TransitionMode } from 'mapillary-js';
 import { ref, watch } from 'vue'
-import debounce from 'lodash/debounce'
 
 export const popups = []
 const isSmall = window.innerWidth < 500
@@ -266,21 +265,18 @@ function urlByLayerId (layerId) {
 let isGooglemap = true
 
 export function popup(e,map,mapName,mapFlg) {
+    // console.error(e,map,mapName,mapFlg)
     // if (store.state.editEnabled) return; //ん？これは要らない？
     let html = ref('')  // ← ここを ref 化
     watch(html, (newVal, oldVal) => {
         // console.log(`htmlが ${oldVal} → ${newVal} に変わりました`)
         createPopup(map, [e.lngLat.lng,e.lngLat.lat], html.value, mapName)
     })
-
-    console.log(e.lngLat)
     const lngLat = e.lngLat;
     const point = map.project(lngLat);
     let features = map.queryRenderedFeatures(point);
     // let features = map.queryRenderedFeatures(e.point); // クリック位置のフィーチャーを全て取得
 
-    // console.log(features[0])
-    // console.log(map.getStyle().layers)
     if (features.length> 20) {
         features = features.slice(0, 20);
     }
@@ -337,14 +333,22 @@ export function popup(e,map,mapName,mapFlg) {
     /**
      * バグ回避
      */
-    if (features[0]?.layer?.id === 'zones-layer') {
-        console.log('バグ回避 zones-layer')
-        store.state.selectedLayers.map01[0].visibility = !store.state.selectedLayers.map01[0].visibility
-        store.state.selectedLayers.map01[0].visibility = !store.state.selectedLayers.map01[0].visibility
-        // // もう一度ポップアップ
-        // setTimeout(() => {
-        //     popup(e,map,mapName,mapFlg)
-        // },100)
+    const drawLayerIds = [
+        'arrows-endpoint-label-layer',
+        'click-circle-layer',
+        'click-circle-symbol-layer',
+        'click-circle-line-layer',
+        'click-circle-keiko-line-layer',
+        'click-circle-label-layer'
+    ];
+    if (store.state.isDraw) {
+        if (features[0]?.layer?.id === 'zones-layer') {
+            console.log('バグ回避 zones-layer')
+            drawLayerIds.forEach(drawLayerId => {
+                map.moveLayer(drawLayerId)
+            })
+            return
+        }
     }
     let isBreak = false
     for (const feature of features) {
@@ -4053,7 +4057,6 @@ export function popup(e,map,mapName,mapFlg) {
             store.state.snackbar = true
         }
     }
-
     if (mapFlg.map02) {
         const layer = store.state.map02.getStyle().layers.at(-1)
         if (layer.type === 'raster') {
@@ -4161,52 +4164,46 @@ export function popup(e,map,mapName,mapFlg) {
         })
     }
 
-
-    if (rasterLayerIds.length === 0) {
-        let lng = e.lngLat.lng
-        let lat = e.lngLat.lat
-        if (coordinates.length > 0) {
-            lng = coordinates[0]
-            lat = coordinates[1]
-        }
-        if (html.value || store.state.mapillaryFlg) {
-            createPopup(map, [lng, lat], html.value, mapName)
-        }
-    } else {
-        if (!html.value && store.state.mapillaryFlg) {
-            let lng = e.lngLat.lng
-            let lat = e.lngLat.lat
-            createPopup(map, [lng,lat], html.value, mapName)
-        }
-    }
+    // if (rasterLayerIds.length === 0) {
+    //     let lng = e.lngLat.lng
+    //     let lat = e.lngLat.lat
+    //     if (coordinates.length > 0) {
+    //         lng = coordinates[0]
+    //         lat = coordinates[1]
+    //     }
+    //     if (html.value || store.state.mapillaryFlg) {
+    //         createPopup(map, [lng, lat], html.value, mapName)
+    //     }
+    // } else {
+    //     if (!html.value && store.state.mapillaryFlg) {
+    //         let lng = e.lngLat.lng
+    //         let lat = e.lngLat.lat
+    //         createPopup(map, [lng,lat], html.value, mapName)
+    //     }
+    // }
 }
 
-export function enableMotionPermission() {
-    if (
-        typeof DeviceOrientationEvent !== 'undefined' &&
-        typeof DeviceOrientationEvent.requestPermission === 'function'
-    ) {
-        // iOS (Safariなど)
-        DeviceOrientationEvent.requestPermission()
-            .then(permissionState => {
-                if (permissionState === 'granted') {
-                    console.log('📱 モーションセンサーの使用が許可されました');
-                } else {
-                    alert('モーションセンサーが許可されていません');
-                }
-            })
-            .catch(console.error);
-    } else {
-        // Android / PC（多くは許可不要）
-        console.log('モーションセンサーの許可は不要です');
-    }
-}
+// export function enableMotionPermission() {
+//     if (
+//         typeof DeviceOrientationEvent !== 'undefined' &&
+//         typeof DeviceOrientationEvent.requestPermission === 'function'
+//     ) {
+//         // iOS (Safariなど)
+//         DeviceOrientationEvent.requestPermission()
+//             .then(permissionState => {
+//                 if (permissionState === 'granted') {
+//                     console.log('📱 モーションセンサーの使用が許可されました');
+//                 } else {
+//                     alert('モーションセンサーが許可されていません');
+//                 }
+//             })
+//             .catch(console.error);
+//     } else {
+//         // Android / PC（多くは許可不要）
+//         console.log('モーションセンサーの許可は不要です');
+//     }
+// }
 
-export const createPopupDebounced = debounce(
-    createPopup,
-    300, // ms
-    { leading: false, trailing: false }
-);
 
 async function createPopup(map, coordinates, htmlContent, mapName) {
     if (isSmall && store.state.isDraw) return
@@ -4354,34 +4351,6 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
                     const data = await response.json();
                     if (data.data && data.data.length > 0) {
                         const imageId = data.data[0].id;
-                        // Graph API で画像の sequence を取得
-                        // const url = `https://graph.mapillary.com/${imageId}?access_token=${MAPILLARY_CLIENT_ID}&fields=sequence`;
-                        // console.log(url)
-                        // try {
-                        //     const res = await fetch(url);
-                        //     const data = await res.json();
-                        //     console.log(data)
-                        //     if (data.sequence && data.id) {
-                        //         console.log('✅ つながっている画像です。Sequence ID:', data.sequence);
-                        //     } else {
-                        //         console.warn('⚠️ この画像は他とつながっていません（シーケンスなし）');
-                        //     }
-                        // } catch (err) {
-                        //     console.error('❌ 取得エラー:', err);
-                        // }
-                        // const viewerOptions = {
-                        //     accessToken: MAPILLARY_CLIENT_ID,
-                        //     cameraControls:CameraControls.Street,
-                        //     combinedPanning: false,
-                        //     component: {cover: false},
-                        //     container,
-                        //     imageId,
-                        //     imageTiling: false,
-                        //     renderMode: RenderMode.Letterbox,
-                        //     trackResize: false,
-                        //     transitionMode:TransitionMode.Instantaneous,
-                        // };
-                        // viewer = new Viewer(viewerOptions)
                         viewer = new Viewer({
                             accessToken: MAPILLARY_CLIENT_ID,
                             container: container,

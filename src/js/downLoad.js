@@ -2392,7 +2392,6 @@ export async function saveCima3(map,kei,jww) {
 // クリックされた地番を強調表示する関数
 let isFirstRun = true;
 export function highlightSpecificFeatures2025(map,layerId) {
-    console.log(store.state.highlightedChibans);
     let sec = 0
     if (isFirstRun) {
         sec = 0
@@ -9895,7 +9894,7 @@ export async function saveDrowFeatures(features) {
     });
     const result = await response.json();
     if (result.success) {
-        store.state.loading3 = true
+        if (features[0]?.properties?.id !== 'config') store.state.loading3 = true
         const map01 = store.state.map01
         result.results.forEach(result => {
             const target = map01.getSource(clickCircleSource.iD)?._data.features?.find(feature => {
@@ -10033,9 +10032,6 @@ export async function featuresRestore(ids) {
  *
  */
 export function markerAddAndRemove() {
-
-    // kari()
-
     const map01 = store.state.map01
     const map02 = store.state.map01
     coordsList.length = 0;
@@ -10121,37 +10117,6 @@ export function createTextThumbnailMarker(map, coords, txt, id, color, fontSize)
     container.style.border            = '2px solid white';
     container.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
     container.style.cursor            = 'pointer';
-
-    // if (photoURL) {
-    //     let thumb
-    //     const isVideo = isVideoFile(photoURL)
-    //     if (isVideo) {
-    //         thumb = document.createElement('video');
-    //         thumb.style.width             = `50px`;
-    //         thumb.style.height            = `50px`;
-    //         thumb.style.borderRadius      = '10px';
-    //         thumb.style.border            = '2px solid #ffffff';
-    //         thumb.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
-    //         thumb.src = photoURL;
-    //         thumb.muted = true;
-    //         thumb.autoplay = true;
-    //         thumb.loop = true;
-    //         thumb.playsInline = true;
-    //         thumb.style.objectFit   = 'cover';
-    //     } else {
-    //         thumb = document.createElement('div');
-    //         thumb.style.width             = `50px`;
-    //         thumb.style.height            = `50px`;
-    //         thumb.style.backgroundImage   = `url(${photoURL})`;
-    //         thumb.style.backgroundSize    = 'cover';
-    //         thumb.style.backgroundPosition= 'center';
-    //         thumb.style.borderRadius      = '10px';
-    //         thumb.style.border            = '2px solid #ffffff';
-    //         thumb.style.boxShadow         = '0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.5)';
-    //         thumb.style.cursor            = 'pointer';
-    //     }
-    //     container.appendChild(thumb);
-    // }
 
     const label = document.createElement('div');
     label.className = 'txt-marker-label'

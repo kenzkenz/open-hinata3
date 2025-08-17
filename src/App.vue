@@ -6686,10 +6686,10 @@ export default {
       //   this.updatePermalink()
       // });
 
-      document.querySelector('.maplibregl-terradraw-delete-button').addEventListener('click', () => {
-        this.$store.state.drawGeojsonText = ''
-        this.updatePermalink()
-      });
+      // document.querySelector('.maplibregl-terradraw-delete-button').addEventListener('click', () => {
+      //   this.$store.state.drawGeojsonText = ''
+      //   this.updatePermalink()
+      // });
 
       // document.addEventListener('keydown', (e) => {
       //   // MacのBackspaceに相当するキー

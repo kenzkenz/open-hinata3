@@ -591,7 +591,7 @@ export default {
           this.$store.state.drawOpacity = props['opacity'] ?? 1;
           setTimeout(() => {
             this.configFeatureFlg = false
-          },200)
+          },2000)
         }
       },
       deep: true,

@@ -10,7 +10,7 @@ $feature_ids = $_POST['feature_id'] ?? [];
 $editor_ids = $_POST['last_editor_user_id'] ?? [];
 $editor_names = $_POST['last_editor_nickname'] ?? [];
 $features = $_POST['feature'] ?? [];
-$prev_updated_ats = $_POST['prev_updated_at'] ?? [];  // Optional
+$prev_updated_ats = $_POST['prev_updated_at'] ?? [];
 
 // --- バリデーション ---
 if (empty($geojson_id)) {

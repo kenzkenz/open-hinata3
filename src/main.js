@@ -45,6 +45,9 @@ store.state.isIphone = /iPhone/i.test(navigator.userAgent)
 store.state.isAndroid = /Android/i.test(navigator.userAgent)
 store.state.isSmall500 = window.innerWidth < 500
 
+
+
+
 // // どこか起動時に一度だけ
 // store.watch(
 //     state => state.saveHistoryFire,
