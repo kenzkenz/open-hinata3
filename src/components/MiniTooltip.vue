@@ -14,6 +14,8 @@
 </template>
 
 <script>
+import {getNextZIndex} from "@/js/downLoad";
+
 export default {
   name: 'MiniTooltip',
   props: {
@@ -43,13 +45,11 @@ export default {
     show() {
       if (window.innerWidth < 1000) return
       if (this.tooltipEl) return
-
       const wrapper = this.$refs.wrapper
       const rect = wrapper.getBoundingClientRect()
       const tooltip = document.createElement('div')
       tooltip.className = 'mini-tooltip-text mini-tooltip-bottom'
       tooltip.innerText = this.text
-
       // 位置計算
       let left = rect.left + rect.width / 2 + this.offsetX
       let top
@@ -59,22 +59,21 @@ export default {
       } else {
         top = rect.bottom + this.offsetY
       }
-
       Object.assign(tooltip.style, {
         position: 'absolute',
         left: left + 'px',
         top: top + 'px',
         transform: 'translateX(-50%)',
-        zIndex: 9999,
+        zIndex: getNextZIndex(),
         pointerEvents: 'none'
       })
-
       // 矢印
       const arrow = document.createElement('div')
       arrow.className = 'mini-tooltip-arrow-up'
       tooltip.appendChild(arrow)
 
       document.body.appendChild(tooltip)
+      tooltip.style.zIndex = getNextZIndex()
       this.tooltipEl = tooltip
 
       window.addEventListener('scroll', this.update, true)
@@ -101,7 +100,7 @@ export default {
       }
       Object.assign(this.tooltipEl.style, {
         left: left + 'px',
-        top: top + 'px'
+        top: top + 'px',
       })
     }
   },

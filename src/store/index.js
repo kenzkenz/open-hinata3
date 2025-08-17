@@ -5,7 +5,8 @@ import firebase from 'firebase/app';
 
 export default createStore({
   state: {
-    clientVersion: 1.348,
+    clientVersion: 1.350,
+    dialogForVersion: false,
     isSmall500: false,
     isAndroid: false,
     isIphone: false,

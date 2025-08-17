@@ -45,6 +45,34 @@ store.state.isIphone = /iPhone/i.test(navigator.userAgent)
 store.state.isAndroid = /Android/i.test(navigator.userAgent)
 store.state.isSmall500 = window.innerWidth < 500
 
+async function checkVersion() {
+    try {
+        const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/appconfig_select.php", {
+            method: "POST"
+        });
+        const result = await response.json();
+        if (result.success) {
+            const appVersion = Number(result.row.version);
+            console.log(appVersion);
+            if (appVersion > store.state.clientVersion) {
+                const diff = appVersion - store.state.clientVersion;
+                console.log(`バージョンが${diff}古いです。`);
+                store.state.updatePermalinkFire = !store.state.updatePermalinkFire
+                store.state.dialogForVersion = true;
+            }
+        }
+    } catch (e) {
+        console.error("バージョンチェックに失敗:", e);
+    }
+}
+// 初回実行
+checkVersion();
+// 10分おきに実行
+setInterval(checkVersion, 10 * 60 * 1000);
+
+
+
+
 
 
 

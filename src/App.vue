@@ -189,7 +189,23 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </template>
       </v-snackbar>
 
-      <v-dialog v-model="s_dialogForPicture" max-width="400px">
+      <v-dialog v-model="s_dialogForVersion" max-width="500px">
+        <v-card>
+          <v-card-title>
+            バージョンが古くなっています。
+          </v-card-title>
+          <v-card-text>
+            <p style="margin-bottom: 20px;">アップデートしてください。現在のレイヤーを記憶したままアップデートします。</p>
+            <v-btn @click="appUpdate">アップデート実行</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="s_dialogForVersion = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <v-dialog class="exclude-overlay" v-model="s_dialogForPicture" max-width="400px" :style="{zIndex: dialogForPictureZindex}">
         <v-card>
           <v-card-title>
             画像、動画アップロード
@@ -221,6 +237,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
               <v-row v-if="isImage || isVideo">
                 <v-col cols="5">
+                  <MiniTooltip text="サムネイルの形を選択します" :offset-x="0" :offset-y="-18">
+
                   <v-select
                       v-model="thumbnailType"
                       :items="thumbnailTypes"
@@ -235,6 +253,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         contentClass: 'scrollable-menu'
                       }"
                   ></v-select>
+                  </MiniTooltip>
                 </v-col>
                 <v-col cols="5">
                   <v-select
@@ -253,12 +272,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   ></v-select>
                 </v-col>
                 <v-col cols="2">
-                  <div
-                      @click="imgRotation += -90; isDisabled2 = false"
-                      class="rotate-btn"
-                  >
-                    <v-icon>mdi-rotate-left</v-icon>
-                  </div>
+                  <MiniTooltip text="画像を回転します" :offset-x="0" :offset-y="2">
+                    <div
+                        @click="imgRotation += -90; isDisabled2 = false"
+                        class="rotate-btn"
+                    >
+                      <v-icon>mdi-rotate-left</v-icon>
+                    </div>
+                  </MiniTooltip>
                 </v-col>
               </v-row>
               <v-row>
@@ -1613,7 +1634,7 @@ import {
   handleFileUpload,
   highlightSpecificFeatures,
   highlightSpecificFeatures2025,
-  highlightSpecificFeaturesCity, installSafePicking, isImageFile, isVideoFile,
+  highlightSpecificFeaturesCity, installDrawerStabilizer, installSafePicking, isImageFile, isVideoFile,
   japanCoord,
   jpgLoad,
   kmlDownload,
@@ -1627,7 +1648,7 @@ import {
   printDirectionChange, saveDrowFeatures,
   scaleAndRotateLassoSelected,
   simaLoadForUser,
-  splitLineStringIntoPoints, startPolling,
+  splitLineStringIntoPoints, startPolling, stopDrawerAnimations,
   tileGenerateForUser,
   tileGenerateForUserPdf,
   transformGeoJSONToEPSG4326,
@@ -2194,6 +2215,7 @@ export default {
     isDisabled2: true,
     isNewPicture: false,
     imgRotation: 0,
+    dialogForPictureZindex: 0,
   }),
   computed: {
     ...mapState([
@@ -2213,6 +2235,14 @@ export default {
       'isUsingServerGeojson',
       'drawFeature',
     ]),
+    s_dialogForVersion: {
+      get() {
+        return this.$store.state.dialogForVersion
+      },
+      set(value) {
+        this.$store.state.dialogForVersion = value
+      }
+    },
     isImage() {
       if (this.s_selectedFile) {
         return this.s_selectedFile && this.s_selectedFile.type.startsWith("image/");
@@ -2911,6 +2941,10 @@ export default {
     },
   },
   methods: {
+    appUpdate() {
+      location.reload(true)
+      this.s_dialogForVersion = false
+    },
     isDisabledChange() {
       this.isDisabled2 = false
     },
@@ -7897,6 +7931,10 @@ export default {
 
           if (this.$store.state.isIphone) {
             installSafePicking(map)
+            installDrawerStabilizer(map, {
+              drawerSelector: '.point-info-drawer',  // ★必須
+            });
+            stopDrawerAnimations('.point-info-drawer')
           }
 
           // const params = await this.parseUrlParams()
@@ -9775,6 +9813,9 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
+    s_dialogForPicture() {
+      this.dialogForPictureZindex = getNextZIndex()
+    },
     drawFeature() {
       const borderRadius = this.drawFeature.properties.borderRadius ?? '10px'
       const containerSize = this.drawFeature.properties.containerSize ?? 100
@@ -10943,8 +10984,13 @@ select {
   padding: 0px!important;
   margin:  0px!important;
 }
-.v-overlay {
+.v-overlay:not(.exclude-overlay)  {
   z-index: 999999999 !important;
+}
+@media (max-width: 500px) {
+  .v-overlay {
+    z-index: 999999999 !important;
+  }
 }
 /*注意。副作用があるかもしれない。*/
 .maplibregl-canvas.force-pointer {
@@ -10956,7 +11002,8 @@ select {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #444; /* 通常時 */
+  color: #444;
+  font-size: 30px;
 }
 
 .rotate-btn:hover {
@@ -10969,6 +11016,17 @@ select {
   -webkit-overflow-scrolling: touch !important;
 }
 
+.v-navigation-drawer{
+  /* iOS での安定化: 不要な backdrop-filter は避ける */
+  backdrop-filter: none !important;
+}
+.v-navigation-drawer__content{
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+@media (prefers-reduced-motion: reduce) {
+  .point-info-drawer .v-navigation-drawer{ transition: none !important; }
+}
 @media (max-width: 720px) {
   /*.fan-menu-rap {*/
   /*  top:174px;*/

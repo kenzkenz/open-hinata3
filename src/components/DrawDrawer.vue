@@ -99,7 +99,7 @@ import { mapState, mapMutations } from 'vuex';
 import store from "@/store";
 import {clickCircleSource} from "@/js/layers";
 import {geojsonUpdate} from "@/js/pyramid";
-import {getNextZIndex, isImageFile, sanitizeLongText, toPlainText} from "@/js/downLoad";
+import {getNextZIndex, isImageFile, sanitizeLongText, stopDrawerAnimations, toPlainText} from "@/js/downLoad";
 import {history} from "@/App";
 
 export default {
@@ -200,9 +200,9 @@ export default {
     },
   },
   mounted() {
-    if (window.innerWidth < 500) {
-      this.drawerWidth = window.innerWidth
-    }
+    // stopDrawerAnimations('.point-info-drawer .v-navigation-drawer')
+    if (window.innerWidth < 500) this.drawerWidth = window.innerWidth
+
   },
   watch: {
     showMediaModal(value) {

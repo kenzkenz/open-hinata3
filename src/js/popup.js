@@ -3578,7 +3578,7 @@ export function popup(e,map,mapName,mapFlg) {
             {
                 console.log('⭐⭐️⭐⭐️到達！️')
                 // alert('到達')
-                store.commit('setDrawDrawer', false)
+                if (!store.state.isIphone) store.commit('setDrawDrawer', false)
                 html.value = ''
                 isBreak = true
                 coordinates = store.state.coordinates
@@ -3756,7 +3756,7 @@ export function popup(e,map,mapName,mapFlg) {
                         case 'Point':
                             // alert('到達')
                             if ((props.longText || props.pictureUrl) && window.innerWidth > 0) {
-                                store.commit('setDrawDrawer', true)
+                                if (!store.state.isIphone || (store.state.isIphone && !store.state.isDraw)) store.commit('setDrawDrawer', true)
                                 if (!store.state.isDraw) return;
                             }
                             if (!store.state.isDraw) {
@@ -3782,6 +3782,8 @@ export function popup(e,map,mapName,mapFlg) {
                                         '<div class="click-circle-layer" style="font-weight: normal; color: #333; line-height: 25px;">' +
                                         '<textarea id="' + props.id + '" rows="2" style="width: 100%; margin-bottom: 0px;" type="text" class="oh-cool-input point-text" placeholder="ラベルに使用する短文を入力">' + props.label + '</textarea>' +
                                         '<button id="' + props.id + '" style="margin-bottom: 10px; height: 30px; font-size: medium; width: 50%;" class="long-text pyramid-btn">長　文</button>' +
+                                        '<button id="' + props.id + '" pictureUrl="' + pictureUrl + '" style="margin-bottom: 10px; margin-left: 10px; height: 30px; font-size: medium; width: 45%;" class="picture-upload pyramid-btn">画像、動画</button>' +
+
                                         '<br>' +
                                         '</select>' +
                                         '<select id="' + props.id + '" style="margin-left: 0px; width: 60px;" class="oh-cool-select text-select">' +
@@ -3792,7 +3794,6 @@ export function popup(e,map,mapName,mapFlg) {
                                         '　Y　<input id="' + props.id + '" style="margin-bottom: 5px; width: 50px;" type="number" class="oh-cool-input-number offset-y-input" step="0.1" value="' + offsetY + '">' +
                                         '<br>' +
                                         '<button id="' + props.id + '" style="margin-bottom: 10px; height: 30px; font-size: medium; width: 50%;" class="point-delete pyramid-btn">削　除</button>' +
-                                        '<button id="' + props.id + '" pictureUrl="' + pictureUrl + '" style="margin-bottom: 10px; margin-left: 10px; height: 30px; font-size: medium; width: 45%;" class="picture-upload pyramid-btn">画像、動画</button>' +
                                         '<div style="display: flex; gap: 8px;">' +
                                         '<div class="circle-list">' +
                                         '<div id="' + props.id + '" data-color="red" class="text-color circle red" tabindex="0">T</div>' +

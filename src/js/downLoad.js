@@ -10272,7 +10272,6 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, c
     arrow.style.borderTop    = `10px solid ${containerColor}`;
     container.appendChild(arrow);
 
-
     container.addEventListener('click', (e) => {
         e.stopPropagation(); // マップのクリックイベントを阻止
         store.state.id = id
@@ -10505,7 +10504,6 @@ export async function pollUpdates() {
         store.state.isEditable = dataG.rows[0].is_editable === '1'
 
         const map01 = store.state.map01;
-        const map02 = store.state.map02;
         const formData = new FormData();
         formData.append('geojson_id', store.state.geojsonId);
         formData.append('since', lastFetch);
@@ -10807,27 +10805,26 @@ export function truncate(str, maxLength) {
         : str;
 }
 
-// ---- パン中は queryRenderedFeatures を禁止 -----------------------------
-// クリック／ロングプレス時のみ安全にピッキングする
-// ・パン中（isMoving=true）や移動距離が閾値を超えた場合は無視
-// ・ダブルタップ（ダブルクリック）は無視（オプション）
-// ・タップ＆ホールド（ロングプレス）で拾う（オプション）
-// 使い方:
-// installSafePicking(map, ['layerA','layerB'], {
-//   moveTolerancePx: 6,         // ダウン→アップ間の移動許容px
-//   clickDelayMs: 180,          // クリックの最大全体時間
-//   dblClickGapMs: 300,         // ダブルクリック判定間隔
-//   includeDblclick: false,     // trueでダブルクリック時も拾う
-//   longPressMs: 450,           // ロングプレス閾値（タッチのみ）
-//   onPick: (features, e) => {} // ピック後のハンドラ（必須）
-// });
+// ----  パン中・クリック時のクラッシュ対策付きピッキング ---------------------
+// iPhone Safari で queryRenderedFeatures が重すぎてクラッシュするのを防ぐ
+// 対策:
+// ・クリック時のフィーチャ取得は try/catch でガード
+// ・取得件数を制限（maxFeatures）
+// ・フィルタ条件で対象を絞る
+// ・パン中や移動量大きい場合は無視
+// ・必要に応じてレイヤーを限定
 export function installSafePicking(map, pickLayers = [], options = {}) {
-    const moveTolerancePx = options.moveTolerancePx ?? 6;
-    const clickDelayMs    = options.clickDelayMs    ?? 180;
-    const dblClickGapMs   = options.dblClickGapMs   ?? 300;
-    const includeDblclick = options.includeDblclick ?? false;
-    const longPressMs     = options.longPressMs     ?? 450;
-    const onPick          = options.onPick          ?? ((feats)=>console.log('picked', feats));
+    // ▼ 追加の最適化オプション
+    const moveTolerancePx     = options.moveTolerancePx     ?? 6;    // クリック判定：移動許容px
+    const clickDelayMs        = options.clickDelayMs        ?? 180;  // クリック判定：時間
+    const dblClickGapMs       = options.dblClickGapMs       ?? 300;  // ダブル判定間隔
+    const includeDblclick     = options.includeDblclick     ?? false;// ダブルクリックも拾うか
+    const longPressMs         = options.longPressMs         ?? 450;  // 長押し時間（タッチ）
+    const bboxPx              = options.bboxPx              ?? 4;    // クリックの当たり判定拡張（矩形）
+    const maxFeatures         = options.maxFeatures         ?? 1;    // 返す最大フィーチャ数（iPhoneでのメモリ対策）
+    const delayFrames         = options.delayFrames         ?? 1;    // クリック直後に rAF で数フレーム遅らせて実行
+    const temporarilyHide     = options.temporarilyHideLayers ?? []; // クリック瞬間だけ隠す重いレイヤー
+    const onPick              = options.onPick              ?? ((feats)=>console.log('picked', feats));
 
     let moving = false;            // movestart〜moveend の間
     let isPointerDown = false;     // mousedown/touchstart～up 間
@@ -10838,6 +10835,8 @@ export function installSafePicking(map, pickLayers = [], options = {}) {
 
     function distance(a, b){ if(!a||!b) return 9999; const dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx, dy); }
     function guardLayers(){ return pickLayers.length ? { layers: pickLayers } : undefined; }
+    function rafN(n, cb){ if(n<=0) return cb(); requestAnimationFrame(()=>rafN(n-1, cb)); }
+    function setVis(ids, v){ ids.forEach(id=>{ if(map.getLayer(id)) map.setLayoutProperty(id,'visibility',v); }); }
 
     // パン状態フラグ
     map.on('movestart', () => { moving = true; });
@@ -10853,13 +10852,9 @@ export function installSafePicking(map, pickLayers = [], options = {}) {
         if (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches.length === 1) {
             clearTimeout(longPressTimer);
             longPressTimer = setTimeout(() => {
-                if (!isPointerDown || moving) return;
-                const now = Date.now();
-                const elapsed = now - downTime;
-                if (elapsed >= longPressMs) {
-                    const feats = map.queryRenderedFeatures(downPoint, guardLayers());
-                    onPick(feats, e);
-                }
+                if (!isPointerDown || moving || map.isMoving()) return;
+                const feats = safeQuery(downPoint);
+                onPick(feats, e);
             }, longPressMs);
         }
     }
@@ -10871,7 +10866,7 @@ export function installSafePicking(map, pickLayers = [], options = {}) {
         isPointerDown = false;
 
         // パン中は拾わない
-        if (moving) return;
+        if (moving || map.isMoving()) return;
 
         const upPoint = e.point || (e.lngLat ? map.project(e.lngLat) : null);
         const moved = distance(downPoint, upPoint);
@@ -10886,18 +10881,47 @@ export function installSafePicking(map, pickLayers = [], options = {}) {
         lastClickTime = now;
         if (isDouble && !includeDblclick) return;
 
-        const feats = map.queryRenderedFeatures(upPoint, guardLayers());
-        onPick(feats, e);
+        // ▽ クリック直後は各種イベントが多重で走るため、フレームをずらして実行（iOS安定化）
+        const before = temporarilyHide.slice();
+        if (before.length) setVis(before,'none');
+        rafN(delayFrames, () => {
+            try {
+                if (moving || map.isMoving()) return; // rAF中に動き始めたら中止
+                const feats = safeQuery(upPoint);
+                onPick(feats, e);
+            } finally {
+                if (before.length) setVis(before,'visible');
+            }
+        });
     }
 
     // ---- 明示クリックイベント（マウス主体） --------------------------------
     function onMapClick(e){
         // movestart→click の揺れ対策（二重防御）
-        if (moving) return;
-        // すでに pointerup で処理済みのことが多いので軽量化
-        // 必要ならここでもピック
-        // const feats = map.queryRenderedFeatures(e.point, guardLayers());
-        // onPick(feats, e);
+        if (moving || map.isMoving()) return;
+        // 通常は pointerup 側で処理済み。必要ならここで onPick を呼ぶ。
+    }
+
+    // ---- 安全な queryRenderedFeatures ラッパ -------------------------------
+    function safeQuery(point){
+        // 小さな矩形で当たり判定を広げつつ、返す件数を制限
+        const bbox = [
+            [point.x - bboxPx, point.y - bboxPx],
+            [point.x + bboxPx, point.y + bboxPx]
+        ];
+        let feats = [];
+        try {
+            feats = map.queryRenderedFeatures(bbox, guardLayers()) || [];
+        } catch (err) {
+            // 稀に iOS Safari で同期例外が出る対策：空配列で返す
+            console.error('safeQuery failed:', err);
+            feats = [];
+        }
+        // メモリ対策：必要なぶんだけ渡す
+        if (typeof maxFeatures === 'number' && maxFeatures > 0 && feats.length > maxFeatures) {
+            feats = feats.slice(0, maxFeatures);
+        }
+        return feats;
     }
 
     // イベント配線
@@ -10918,4 +10942,143 @@ export function installSafePicking(map, pickLayers = [], options = {}) {
         map.off('touchend',   onPointerUp);
         map.off('click',      onMapClick);
     };
+}
+
+// ---- 9) v-navigation-drawer（Vuetify）周りで落ちる場合の対策 --------------
+// iPhone Safari は「Drawer の開閉アニメ＋WebGL（MapLibre）＋重いDOM」で落ちやすい。
+// 対策の柱：
+//  A) Drawer アニメ中は Map の再計算を抑え、終了後に一度だけ resize。
+//  B) Drawer 内の重い要素（画像/動画/ラベル大量）を開時に遅延・縮小。
+//  C) スクロールは -webkit-overflow-scrolling: touch を使い、過剰な will-change を避ける。
+//  D) 必要ならクリック瞬間だけ重いレイヤーを隠す（temporarilyHideLayers）。
+
+// 使い方：
+// installDrawerStabilizer(map, {
+//   drawerSelector: '.point-info-drawer .v-navigation-drawer',
+//   lazySelectors: ['.drawer img','video'], // 開時に遅延ロード/一時停止解除する対象
+//   pauseVideosOnClose: true,
+//   mapPaddingOnOpen: 0, // 例: 左側ドロワー幅分だけ left padding を与えるなら >0
+//   transitionSafetyMs: 280 // Vuetify の遷移時間に合わせる
+// });
+export function installDrawerStabilizer(map, {
+    drawerSelector,
+    lazySelectors = [],
+    pauseVideosOnClose = true,
+    mapPaddingOnOpen = 0,
+    transitionSafetyMs = 280,
+} = {}) {
+    if (!store.state.isIphone) return () => {};
+    const drawer = typeof drawerSelector === 'string' ? document.querySelector(drawerSelector) : drawerSelector;
+    if (!drawer) return () => {};
+
+    // iOS でのスクロール最適化
+    try {
+        const content = drawer.querySelector('.v-navigation-drawer__content') || drawer;
+        content.style.webkitOverflowScrolling = 'touch';
+        content.style.overscrollBehavior = 'contain';
+        // 過剰な will-change はメモリ圧を上げるので明示的に外す
+        content.style.willChange = 'auto';
+    } catch (_) {}
+
+    let animTimer = null;
+    let animating = false;
+
+    function afterTransitionOnce() {
+        clearTimeout(animTimer);
+        animTimer = null; animating = false;
+        // Drawer 開閉後に一度だけ map.resize()
+        try { map.resize(); } catch(_) {}
+    }
+
+    function onTransitionStart() {
+        if (animating) return;
+        animating = true;
+        clearTimeout(animTimer);
+        animTimer = setTimeout(afterTransitionOnce, transitionSafetyMs);
+    }
+
+    function onTransitionEnd() {
+        afterTransitionOnce();
+    }
+
+    drawer.addEventListener('transitionstart', onTransitionStart, { passive: true });
+    drawer.addEventListener('transitionend',   onTransitionEnd,   { passive: true });
+
+    // MutationObserver で開閉検知（class 変化や style 変化）
+    const mo = new MutationObserver(() => {
+        onTransitionStart();
+        // 開いた直後に重い要素の遅延ロード/再生制御
+        requestAnimationFrame(() => {
+            lazySelectors.forEach(sel => {
+                drawer.querySelectorAll(sel).forEach(el => {
+                    // 画像: loading="lazy" や src の復帰
+                    if (el.tagName === 'IMG') {
+                        if (!el.complete && 'loading' in el) el.loading = 'lazy';
+                    }
+                    // 動画: 再生/一時停止の切り替え
+                    if (el.tagName === 'VIDEO') {
+                        try { el.play && el.play(); } catch(_) {}
+                    }
+                });
+            });
+        });
+
+        // Map のパディング（任意）：ドロワー重なりを避ける
+        if (mapPaddingOnOpen > 0) {
+            try {
+                const isOpen = drawer.offsetWidth > 0 && getComputedStyle(drawer).transform !== 'none';
+                if (isOpen) {
+                    map.easeTo({ padding: { left: mapPaddingOnOpen, top: 0, right: 0, bottom: 0 }, duration: 0 });
+                } else {
+                    map.easeTo({ padding: { left: 0, top: 0, right: 0, bottom: 0 }, duration: 0 });
+                }
+            } catch(_) {}
+        }
+    });
+
+    mo.observe(drawer, { attributes: true, attributeFilter: ['class','style'] });
+
+    // ドロワーが閉じたら動画を止めてメモリ解放
+    function maybePauseMedia() {
+        if (!pauseVideosOnClose) return;
+        const style = getComputedStyle(drawer);
+        const isVisible = style.visibility !== 'hidden' && style.display !== 'none' && drawer.offsetWidth > 0;
+        if (!isVisible) {
+            drawer.querySelectorAll('video').forEach(v => { try { v.pause && v.pause(); } catch(_) {} });
+        }
+    }
+
+    const visibilityMo = new MutationObserver(maybePauseMedia);
+    visibilityMo.observe(drawer, { attributes: true, attributeFilter: ['class','style'] });
+
+    // クリーンアップ関数
+    return () => {
+        clearTimeout(animTimer);
+        try { drawer.removeEventListener('transitionstart', onTransitionStart); } catch(_) {}
+        try { drawer.removeEventListener('transitionend',   onTransitionEnd);   } catch(_) {}
+        try { mo.disconnect(); } catch(_) {}
+        try { visibilityMo.disconnect(); } catch(_) {}
+    };
+}
+// ---- Drawerアニメを完全停止する ----------------------------
+// iPhoneでの安定性を最優先する場合、v-navigation-drawer のトランジション/アニメを強制的に無効化。
+// Vuetifyの `:transition="false"` を併用し、CSSでも上書きして確実に止める。
+// 使い方:
+//  1) テンプレート側: <v-navigation-drawer :transition="false" ...>
+//  2) マウント時: stopDrawerAnimations('.point-info-drawer .v-navigation-drawer')
+//  3) iPhone限定で適用するなら isIphone でガード
+export function stopDrawerAnimations(selector = '.point-info-drawer .v-navigation-drawer') {
+    const css = `
+    ${selector} { transition: none !important; animation: none !important; }
+    ${selector} * { transition: none !important; animation: none !important; }
+  `;
+    const id = 'oh3-no-anim-drawer-style';
+    let style = document.getElementById(id);
+    if (!style) {
+        style = document.createElement('style');
+        style.id = id; style.type = 'text/css'; style.textContent = css;
+        document.head.appendChild(style);
+    } else {
+        style.textContent = css;
+    }
 }
