@@ -2947,11 +2947,11 @@ export default {
   },
   methods: {
     popupHtmlClose() {
-      const map01 = this.$store.state.map01
-      const id = store.state.drawFeatureId
-      const tgtProp = 'label'
-      const value = document.querySelector('.point-text').value
-      this.$store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+      // const map01 = this.$store.state.map01
+      // const id = store.state.drawFeatureId
+      // const tgtProp = 'label'
+      // const value = document.querySelector('.point-text').value
+      // this.$store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
       this.s_popupDialog = false;
     },
     appUpdate() {
@@ -10580,6 +10580,7 @@ select {
   display: flex;
   gap: 8px; /* 丸同士の間隔 */
   margin: 0px;
+  overflow: hidden;
 }
 /*.circle {*/
 /*  width: 25px;*/
@@ -11043,6 +11044,11 @@ select {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
 }
+
+.my-popup{
+  overflow: hidden;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .point-info-drawer .v-navigation-drawer{ transition: none !important; }
 }

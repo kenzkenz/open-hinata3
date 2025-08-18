@@ -3806,7 +3806,7 @@ export function popup(e,map,mapName,mapFlg) {
                                         '</div>' +
                                         '<input id="' + props.id + '" style="margin-bottom: 5px;" type="number" class="oh-cool-input-number font-size-input" min="10" max="100" step="1" value="' + textSize + '">' +
                                         '</div>' +
-                                        // '<hr>' +
+                                        // // '<hr>' +
                                         '<div class="circle-list">' +
                                         '<div id="' + props.id + '" data-color="red" class="point-color circle red" tabindex="0">P</div>' +
                                         '<div id="' + props.id + '" data-color="black" class="point-color circle black" tabindex="0">P</div>' +
@@ -4292,6 +4292,7 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
         const popup = new maplibregl.Popup({
             closeButton: true,
             maxWidth: "380px",
+            // className: "my-popup"
         })
             .setLngLat(position)
             .setHTML(popupHtml)

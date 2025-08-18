@@ -1216,6 +1216,18 @@ export default function pyramid () {
             }
         });
         // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('compositionend', (e) => {
+            if (e.target && (e.target.classList.contains("point-text"))) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
+                const pointTextElm = document.querySelector('.point-text')
+                const value = pointTextElm.value
+                const tgtProp = 'label'
+                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+                const el = document.querySelector(`#txt-marker-${id} .txt-marker-label`)
+                if (el) el.innerHTML = value
+            }
+        });
         mapElm.addEventListener('input', (e) => {
             if (e.target && (e.target.classList.contains("point-text"))) {
                 const map01 = store.state.map01
