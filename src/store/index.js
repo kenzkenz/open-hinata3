@@ -5,7 +5,8 @@ import firebase from 'firebase/app';
 
 export default createStore({
   state: {
-    clientVersion: 1.350,
+    drawFeatureId: '',
+    clientVersion: 1.351,
     dialogForVersion: false,
     isSmall500: false,
     isAndroid: false,
@@ -84,7 +85,7 @@ export default createStore({
 
     currentFreeHandWidth: '',
     currentFreeHandColor: 'black',
-    currentFreeHandKeikoColor: '#1C1C1C',
+    currentFreeHandKeikoColor: 'rgba( 28,  28,  28, 0.5)',
 
     tgtFeature: null,
     pointSima: false,

@@ -156,7 +156,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
       <v-snackbar v-model="loadingSnackbar"
                   :timeout="-1"
-                  color="primary">
+                  color="primary"
+                  location="top"
+      >
         <p v-if="s_loading">処理中です。</p>
         <p v-if="s_loading2"><span v-html="s_loadingMessage"></span></p>
         <p v-if="s_loading3"><span v-html="s_loadingMessage3"></span></p>
@@ -165,7 +167,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
       <v-snackbar :v-model="true"
                   :timeout="-1"
-                  color="primary">
+                  color="primary"
+      >
         <p v-if="s_loading3"><span v-html="s_loadingMessage3"></span></p>
       </v-snackbar>
 
@@ -572,7 +575,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn text @click="s_popupDialog = false">閉じる</v-btn>
+            <v-btn text @click="popupHtmlClose">閉じる</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -2219,6 +2222,7 @@ export default {
   }),
   computed: {
     ...mapState([
+      'drawFeatureId',
       'isIphone',
       'isSmall500',
       'isDraw',
@@ -2942,6 +2946,14 @@ export default {
     },
   },
   methods: {
+    popupHtmlClose() {
+      const map01 = this.$store.state.map01
+      const id = store.state.drawFeatureId
+      const tgtProp = 'label'
+      const value = document.querySelector('.point-text').value
+      this.$store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+      this.s_popupDialog = false;
+    },
     appUpdate() {
       location.reload(true)
       this.s_dialogForVersion = false
@@ -4936,7 +4948,14 @@ export default {
       this.isRightDiv = true
     },
     toggleLDraw ()  {
-      this.s_isDraw = !this.s_isDraw
+      const btn = document.getElementById("centerDrawBtn2");
+      const bgColor = window.getComputedStyle(btn).backgroundColor;
+      if (bgColor === 'rgb(46, 139, 87)' || bgColor === 'rgb(25, 118, 210)') {
+        this.s_isDraw = true
+      } else {
+        this.s_isDraw = false
+      }
+      // this.s_isDraw = !this.s_isDraw
       const map01 = this.$store.state.map01
       if (!this.s_isDraw) {
         this.s_isDrawPoint = false
@@ -4952,7 +4971,7 @@ export default {
       }
       const centerBtn = document.querySelectorAll('.center-wrapper')[1]
       const rightBtns = document.querySelectorAll('.right-btn')
-      if (window.innerWidth < 500) {
+      if (this.isSmall500) {
         if (this.s_isDraw) {
           centerBtn.style.opacity = '0'
           rightBtns.forEach(btn => {
@@ -7185,7 +7204,7 @@ export default {
             label: '',
             color: 'black',
             // 'keiko-color': '#FF8000',
-            'keiko-color': this.$store.state.currentFreeHandKeikoColor || '#008000',
+            'keiko-color': this.$store.state.currentFreeHandKeikoColor || 'rgba( 28,  28,  28, 0.5)',
             offsetValue: [0.6, 0],
             'line-width': this.$store.state.currentFreeHandWidth || 5,
             textAnchor: 'left',
@@ -9810,6 +9829,9 @@ export default {
     // -----------------------------------------------------------------------------------------------------------------
   },
   watch: {
+    isDraw(value) {
+      this.toggleLDraw()
+    },
     s_dialogForPicture() {
       this.dialogForPictureZindex = getNextZIndex()
     },

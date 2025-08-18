@@ -281,7 +281,7 @@ import {
   addImageLayerJpg,
   addImageLayerPng,
   addTileLayerForImage,
-  geojsonAddLayer, iko, publicChk,
+  geojsonAddLayer, iko, isJsonString, publicChk,
   simaToGeoJSON, userKmzSet, userPmtile0Set, userPmtileSet, userSimaSet, userTileSet, userXyztileSet, watchSParamOnce
 } from "@/js/downLoad"
 import muni from '@/js/muni'
@@ -1458,30 +1458,32 @@ export default {
         const clickCirclegeojsontext = match ? match[1] : null;
         if (clickCirclegeojsontext) {
           deleteAll(true)
-          vm.$store.state.clickCirclegeojsontext = clickCirclegeojsontext
-          vm.$store.state.clickCircleGeojsonTextMyroom = clickCirclegeojsontext
-          clickCircleSource.obj.data = JSON.parse(clickCirclegeojsontext)
-          const pointGeoJSON = generateStartEndPointsFromGeoJSON(JSON.parse(clickCirclegeojsontext))
-          endPointSouce.obj.data = pointGeoJSON
-          // map.getSource(clickCircleSource.iD).setData(JSON.parse(clickCirclegeojsontext))
-          console.log(clickCirclegeojsontext)
-          try {
-            const config = JSON.parse(clickCirclegeojsontext).features.find(f => f.properties.id === 'config').properties
-            if (config) {
-              vm.$store.state.printTitleText = config['title-text'] || ''
-              vm.$store.state.textPx = config['font-size'] || 30
-              vm.$store.state.titleColor = config['fill-color'] || 'black'
-              vm.$store.state.titleDirection = config['direction'] || 'vertical'
-              // alert(vm.$store.state.printTitleText)
-              // console.log(config['title-text'])
-            } else {
-              vm.$store.state.printTitleText = ''
-              vm.$store.state.textPx = 30
-              vm.$store.state.titleColor = 'black'
-              vm.$store.state.titleDirection = 'vertical'
+          if (isJsonString(clickCirclegeojsontext)) {
+            vm.$store.state.clickCirclegeojsontext = clickCirclegeojsontext
+            vm.$store.state.clickCircleGeojsonTextMyroom = clickCirclegeojsontext
+            clickCircleSource.obj.data = JSON.parse(clickCirclegeojsontext)
+            const pointGeoJSON = generateStartEndPointsFromGeoJSON(JSON.parse(clickCirclegeojsontext))
+            endPointSouce.obj.data = pointGeoJSON
+            // map.getSource(clickCircleSource.iD).setData(JSON.parse(clickCirclegeojsontext))
+            console.log(clickCirclegeojsontext)
+            try {
+              const config = JSON.parse(clickCirclegeojsontext).features.find(f => f.properties.id === 'config').properties
+              if (config) {
+                vm.$store.state.printTitleText = config['title-text'] || ''
+                vm.$store.state.textPx = config['font-size'] || 30
+                vm.$store.state.titleColor = config['fill-color'] || 'black'
+                vm.$store.state.titleDirection = config['direction'] || 'vertical'
+                // alert(vm.$store.state.printTitleText)
+                // console.log(config['title-text'])
+              } else {
+                vm.$store.state.printTitleText = ''
+                vm.$store.state.textPx = 30
+                vm.$store.state.titleColor = 'black'
+                vm.$store.state.titleDirection = 'vertical'
+              }
+            }catch (e) {
+              console.log(e)
             }
-          }catch (e) {
-            console.log(e)
           }
         }
 
@@ -1613,12 +1615,14 @@ export default {
                       v.layers = sourceAndLayers.layers;
                       v.label = name;
                       // alert(JSON.parse(vm.$store.state.simaTextForUser).opacity)
-                      vm.$store.state.simaTextForUser = JSON.stringify({
-                        text: simaText,
-                        opacity:JSON.parse(vm.$store.state.simaTextForUser).opacity
-                      })
-                      vm.s_simaOpacity = JSON.parse(vm.$store.state.simaTextForUser).opacity
-                      vm.$store.state.snackbar = true
+                      if (isJsonString(vm.$store.state.simaTextForUser)) {
+                        vm.$store.state.simaTextForUser = JSON.stringify({
+                          text: simaText,
+                          opacity:JSON.parse(vm.$store.state.simaTextForUser).opacity
+                        })
+                        vm.s_simaOpacity = JSON.parse(vm.$store.state.simaTextForUser).opacity
+                        vm.$store.state.snackbar = true
+                      }
                     }
                     await aaa()
                   }

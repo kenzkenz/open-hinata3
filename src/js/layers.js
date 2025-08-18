@@ -793,8 +793,8 @@ export const clickCircleKeikoLineLayer = {
     ],
     paint: {
         'line-color': ['get', 'keiko-color'],
-         'line-width': ['*', ['get', 'line-width'], 3],
-        'line-opacity': 0.3,
+        'line-width': ['*', ['get', 'line-width'], 3],
+        // 'line-opacity': 0.3, // なぜか効かない
         'line-blur': 2                     // にじみ（ぼかし）
     }
 }

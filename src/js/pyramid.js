@@ -2,7 +2,7 @@ import store from '@/store'
 import axios from "axios"
 import * as turf from '@turf/turf'
 import {
-    addDraw, featureCollectionAdd, featuresDelete, markerAddAndRemove,
+    addDraw, featureCollectionAdd, featuresDelete, isJsonString, markerAddAndRemove,
     recenterGeoJSON, removeNini, saveDrowFeatures,
     savePointSima,
     zahyokei
@@ -1346,13 +1346,6 @@ export default function pyramid () {
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
             if (e.target && (e.target.classList.contains("line-color"))) {
-                const neonColors = {
-                    orange: '#FF8000',   // Neon Orange
-                    green:  '#39FF14',   // Neon Green
-                    blue:   '#1F51FF',   // Neon Blue
-                    black:  '#1C1C1C',   // Deep Glow Black (substitute)
-                    red:    '#FF073A'    // Neon Red
-                };
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
                 const startId = id + '-start'
@@ -1365,13 +1358,15 @@ export default function pyramid () {
                 geojsonUpdate (map01,null,endPointSouce.id,startId,arrowTgtProp,arrowValue)
                 geojsonUpdate (map01,null,endPointSouce.id,endId,arrowTgtProp,arrowValue)
                 store.state.clickCircleGeojsonText = geojsonUpdate (map01,'LineString',clickCircleSource.iD,id,tgtProp,value)
-                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,'keiko-color',keikoValue)
+                // store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,'keiko-color',keikoValue)
                 // store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,arrowTgtProp,arrowValue)
 
                 store.state.currentFreeHandKeikoColor = keikoValue
                 store.state.currentLineColor = value
                 store.state.currentArrowColor = arrowValue
-                generateStartEndPointsFromGeoJSON(JSON.parse(store.state.clickCircleGeojsonText))
+                if (isJsonString(store.state.clickCircleGeojsonText)) {
+                    generateStartEndPointsFromGeoJSON(JSON.parse(store.state.clickCircleGeojsonText))
+                }
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -2109,6 +2104,21 @@ export function circleCreate (lng, lat, m) {
  * @param radius
  * @returns {*}
  */
+// const neonColors = {
+//     orange: '#FF8000',   // Neon Orange
+//     green:  '#39FF14',   // Neon Green
+//     blue:   '#1F51FF',   // Neon Blue
+//     black:  '#1C1C1C',   // Deep Glow Black (substitute)
+//     red:    '#FF073A'    // Neon Red
+// };
+const neonColors = {
+    orange: 'rgba(255, 128,   0, 0.5)',  // Neon Orange
+    green:  'rgba( 57, 255,  20, 0.5)',  // Neon Green
+    blue:   'rgba( 31,  81, 255, 0.5)',  // Neon Blue
+    black:  'rgba( 28,  28,  28, 0.5)',  // Deep Glow Black (substitute)
+    red:    'rgba(255,   7,  58, 0.5)'   // Neon Red
+};
+
 export async function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius) {
     store.state.saveHistoryFire = !store.state.saveHistoryFire
     const source = map.getSource(sourceId)
@@ -2154,6 +2164,8 @@ export async function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, 
                     centerFeature.properties.label2 = value
                     updateFeatures.push(centerFeature)
                 } else if (geoType === 'LineString') {
+                    const keikoValue = neonColors[value]
+                    feature.properties['keiko-color'] = keikoValue
                     feature.properties.arrow = 'arrow_' + value
                 }
                 // ---------------------------------------------------------
@@ -2167,7 +2179,6 @@ export async function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, 
         if (!found && id === "config") {
             const newFeature = {
                 "type": "Feature",
-                // geometryは入れない
                 "properties": {
                     "id": "config",
                 }
@@ -2354,7 +2365,7 @@ export async function deleteAll (noConfrim) {
     const map01 = store.state.map01
     let source = map01.getSource(clickCircleSource.iD);
     const geojson = source._data
-    await featuresDelete(geojson.features.filter(f => f.properties !== 'config').map(f => f.properties.id));
+    await featuresDelete(geojson.features.filter(f => f.properties.id !== 'config').map(f => f.properties.id));
     const configFeature = store.state.baseConfigFeature
     store.state.configFeature = configFeature
     source.setData(configFeature);

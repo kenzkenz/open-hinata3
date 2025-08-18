@@ -3599,6 +3599,7 @@ export function popup(e,map,mapName,mapFlg) {
                 }
                 console.log(features)
                 console.log(id)
+                store.state.drawFeatureId = id
                 const feature = features.find(feature => feature.properties.id === id)
                 if (id === 'offlineBbox') {
                     store.state.dialogForOffline2 = true

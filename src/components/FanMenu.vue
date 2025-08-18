@@ -53,7 +53,10 @@ export default {
     toggle() {
       this.open = !this.open
       if (this.open) {
+        this.$store.state.isDraw = true
         this.$nextTick(this.updateCenter)
+      } else {
+        this.$store.state.isDraw = false
       }
     },
     updateCenter() {

@@ -608,6 +608,7 @@ export default {
               } else if (layer0.type === 'background') {
                 map.setPaintProperty(layer0.id, 'background-opacity', opacity)
               }
+
               let visibility
               if (layer.visibility) {
                 visibility = 'visible'
@@ -1055,6 +1056,8 @@ export default {
       map.addLayer(clickCircSymbolLayer)
       map.addLayer(clickCircleLineLayer)
       map.addLayer(clickCircleKeikoLineLayer)
+      map.setPaintProperty(clickCircleKeikoLineLayer.id, 'line-opacity', 0.3)
+
       map.addLayer(clickCircleLabelLayer)
 
       map.addSource('guide-line-source', guideLineSource.obj)
@@ -1075,6 +1078,8 @@ export default {
       //↓なぜかこうしないとレイヤー順が正しくならない。
       map.moveLayer('click-circle-polygon-line-layer');
       map.moveLayer('click-circle-label-layer');
+      map.moveLayer('clickCircleKeikoLineLayer.id');
+
       this.$store.state.drawFire = !this.$store.state.drawFire
 
       if (this.$store.state.clickCircleGeojsonText) {

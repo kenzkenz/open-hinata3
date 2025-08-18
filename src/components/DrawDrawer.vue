@@ -178,9 +178,10 @@ export default {
           : str;
     },
     imgClick() {
-      if (window.innerWidth > 500){
+      if (window.innerWidth > 500) {
         this.openMediaModal()
-        // window.open(this.pictureUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        window.open(this.pictureUrl, '_blank', 'noopener,noreferrer');
       }
     },
     setZindex() {
