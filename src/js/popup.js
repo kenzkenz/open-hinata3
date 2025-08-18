@@ -265,6 +265,7 @@ function urlByLayerId (layerId) {
 let isGooglemap = true
 
 export function popup(e,map,mapName,mapFlg) {
+
     // console.error(e,map,mapName,mapFlg)
     // if (store.state.editEnabled) return; //ん？これは要らない？
     let html = ref('')  // ← ここを ref 化
@@ -280,7 +281,26 @@ export function popup(e,map,mapName,mapFlg) {
     if (features.length> 20) {
         features = features.slice(0, 20);
     }
-    // const coordinates = e.lngLat
+
+    /**
+     * バグ回避
+     */
+    const drawLayerIds = [
+        'arrows-endpoint-label-layer',
+        'click-circle-symbol-layer',
+        'click-circle-line-layer',
+        'click-circle-keiko-line-layer',
+        'click-circle-label-layer',
+        'click-circle-layer',
+    ];
+    if (store.state.isDraw) {
+        if (features[0]?.layer?.id === 'zones-layer') {
+            console.log('バグ回避 zones-layer')
+            drawLayerIds.forEach(drawLayerId => {
+                map.moveLayer(drawLayerId)
+            })
+        }
+    }
 
     // クリックした地物の中からレイヤーIDが"oh-amx-a-fude"かつポリゴンを探す
     let featureIndex
@@ -330,26 +350,6 @@ export function popup(e,map,mapName,mapFlg) {
         return
     }
     let regionType = ''
-    /**
-     * バグ回避
-     */
-    const drawLayerIds = [
-        'arrows-endpoint-label-layer',
-        'click-circle-symbol-layer',
-        'click-circle-line-layer',
-        'click-circle-keiko-line-layer',
-        'click-circle-label-layer',
-        'click-circle-layer',
-    ];
-    if (store.state.isDraw) {
-        if (features[0]?.layer?.id === 'zones-layer') {
-            console.log('バグ回避 zones-layer')
-            drawLayerIds.forEach(drawLayerId => {
-                map.moveLayer(drawLayerId)
-            })
-            return
-        }
-    }
     let isBreak = false
     for (const feature of features) {
         // features.forEach(feature => {

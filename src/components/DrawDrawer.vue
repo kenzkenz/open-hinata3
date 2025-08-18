@@ -167,6 +167,7 @@ export default {
       this.showMediaModal = false
       document.body.style.overflow = this._prevOverflow || ''
       window.removeEventListener('keydown', this._onKeydown)
+      this.pictureUrl = ''
     },
     _onKeydown(e) {
       if (e.key === 'Escape') this.closeMediaModal()

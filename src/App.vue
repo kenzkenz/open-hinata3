@@ -2219,6 +2219,7 @@ export default {
   }),
   computed: {
     ...mapState([
+      'isIphone',
       'isSmall500',
       'isDraw',
       'showDrawDrawer',
@@ -6529,7 +6530,9 @@ export default {
           pitch: pitch[mapName],
           bearing:bearing,
           maxPitch: 85, // 最大の傾き85、デフォルトは60
-          attributionControl: false,
+          attributionControl: false, // ズーム中の衝突フェードをカット（微小だが効く）
+          fadeDuration: 0,
+          renderWorldCopies: false, // 世界コピーを描かない＝タイル負荷減
           // style: 'https://raw.githubusercontent.com/gsi-cyberjapan/optimal_bvmap/52ba56f645334c979998b730477b2072c7418b94/style/std.json',
           // style:require('@/assets/json/std.json')
           // style:"https://kenzkenz.xsrv.jp/open-hinata3/json/std.json",
@@ -7669,8 +7672,8 @@ export default {
         // iphoneのtきmoveではフリーズする。moveendではフリーズしない。
         // その後フリーズしなくなったのでmoveに統一。
         let m = 'move'
-        if (window.innerWidth < 1000) {
-          m = 'move'
+        if (vm.isIphone) {
+          m = 'moveend'
         }
         mapA.on(m, () => {
           // throttle(() => {
@@ -8845,18 +8848,13 @@ export default {
           // ここを改善
           // map.on('moveend', this.updatePermalink)
           map.on('click', this.updatePermalink)
-          map.on('dragend', this.updatePermalink)
+          /**
+           * テスト的に下記のdragendをiphoneのときに無効化
+           */
+          if (!this.isIphone) map.on('dragend', this.updatePermalink)
+
           // map.on('zoomend', this.updatePermalink)
           // map.on('idle', this.updatePermalink)
-
-          // map.on('dragend', () => {
-          //   this.$store.state.osmFire = !this.$store.state.osmFire
-          // })
-          // map.on('zoomend', () => {
-          //   this.$store.state.osmFire = !this.$store.state.osmFire
-          // })
-
-          // let previousBounds = null;
 
           // デバウンス関数
           function debounce(func, delay) {
@@ -8904,9 +8902,10 @@ export default {
           const debouncedHandleBoundsChange = debounce(handleBoundsChange, 500);
 
           // イベントリスナーにデバウンス関数を適用
-          map.on('dragend', debouncedHandleBoundsChange);
-          map.on('zoomend', debouncedHandleBoundsChange);
-
+          if (!this.isIphone) {
+            map.on('dragend', debouncedHandleBoundsChange);
+            map.on('zoomend', debouncedHandleBoundsChange);
+          }
 
           // スマートフォンのとき
           if (this.s_isSmartPhone) {
@@ -8919,10 +8918,8 @@ export default {
             const lon = center.lng; // 経度
             const lat = center.lat; // 緯度
             // const zoom = Math.round(map.getZoom()); // 現在のズームレベル
-
             // 標高を取得
             const elevation = await fetchElevation(lon, lat);
-
             // 標高を画面に表示
             if (elevation !== null) {
               if (elevation <= 4000) {
