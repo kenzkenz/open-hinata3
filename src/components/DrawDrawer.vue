@@ -181,7 +181,10 @@ export default {
       if (window.innerWidth > 500) {
         this.openMediaModal()
       } else {
-        window.open(this.pictureUrl, '_blank', 'noopener,noreferrer');
+        /**
+         * とりあえずコメントアウト。暴発しがちだから。
+         */
+        // window.open(this.pictureUrl, '_blank', 'noopener,noreferrer');
       }
     },
     setZindex() {

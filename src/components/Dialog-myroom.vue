@@ -1,7 +1,7 @@
 <template>
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div class="myroom-div">
-        <v-card>
+        <div>
           <v-card-text :style="mayroomStyle">
             <v-tabs mobile-breakpoint="0" v-model="tab" class="custom-tabs">
               <v-tab value="0">SIMA</v-tab>
@@ -269,7 +269,7 @@
               </v-window-item>
             </v-window>
           </v-card-text>
-        </v-card>
+        </div>
     </div>
   </Dialog>
 </template>
@@ -2478,6 +2478,11 @@ export default {
 }
 </script>
 <style scoped>
+.myroom-div{
+  padding-bottom: 20px;
+}
+
+
 .menu-div {
   height: auto;
   margin: 10px;
@@ -2510,20 +2515,20 @@ export default {
 .gallery-image:hover {
   transform: scale(1.05);
 }
-.close-button {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  background: rgba(0, 0, 0, 0.5);
-  color: white;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
+/*.close-button {*/
+/*  position: absolute;*/
+/*  top: 5px;*/
+/*  right: 5px;*/
+/*  background: rgba(0, 0, 0, 0.5);*/
+/*  color: white;*/
+/*  border-radius: 50%;*/
+/*  width: 20px;*/
+/*  height: 20px;*/
+/*  display: flex;*/
+/*  align-items: center;*/
+/*  justify-content: center;*/
+/*  cursor: pointer;*/
+/*}*/
 .data-container {
   padding: 5px;
   border: 1px solid #ddd;
@@ -2531,6 +2536,7 @@ export default {
   position: relative;
   cursor: pointer;
   background-color: rgba(132,163,213,0.3);
+
 }
 .data-container:hover {
   background-color: #f0f8ff;
@@ -2547,7 +2553,7 @@ export default {
 }
 .close-btn {
   position: absolute;
-  top: -10px;
+  top: calc(50% - 15px);
   right: 10px;
   color: black;
   border: none;

@@ -218,7 +218,7 @@ export default {
 }
 .close-btn {
   position: absolute;
-  top: -10px;
+  top: calc(50% - 15px);
   right: 10px;
   color: black;
   border: none;
