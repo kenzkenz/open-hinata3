@@ -17,24 +17,6 @@
                   outlined
                   @input="configChange('title-text',s_printTitleText)"
               />
-<!--              <div v-if="isIphone">-->
-<!--                フォントサイズ-->
-<!--                <select class="oh-cool-select" v-model.number="s_textPx" style="font-size:16px; margin-bottom: 20px;"> &lt;!&ndash; 16pxでiOSズーム防止 &ndash;&gt;-->
-<!--                  <option v-for="n in 101" :key="n-1" :value="n-1">{{ n-1 }}</option>-->
-<!--                </select>-->
-<!--              </div>-->
-<!--              <select-->
-<!--                  v-model="s_textPx"-->
-<!--                  class="vlike__control"-->
-<!--                  :data-empty="qty === ''"-->
-<!--                  required-->
-<!--                  style="font-size:16px; margin-bottom: 20px;"-->
-<!--              >-->
-<!--                &lt;!&ndash; プレースホルダー &ndash;&gt;-->
-<!--                <option value="" disabled>選択してください</option>-->
-<!--                <option v-for="n in 101" :key="n-1" :value="n-1">{{ n-1 }}</option>-->
-<!--              </select>-->
-
               <label v-if="isIphone" class="vlike vlike--floating" :class="{ 'is-error': hasError }">
                 <span class="vlike__text">フォントサイズ</span>
                 <select
@@ -47,7 +29,6 @@
                   <option value="" disabled>選択してください</option>
                   <option v-for="n in 101" :key="n-1" :value="n-1">{{ n-1 }}</option>
                 </select>
-
 <!--                <div class="vlike__hint" v-if="!hasError">0〜100の範囲で選択してください</div>-->
 <!--                <div class="vlike__message vlike__message&#45;&#45;error" v-else>この項目は必須です</div>-->
               </label>

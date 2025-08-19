@@ -1484,6 +1484,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                           @click="btn.click"
                           :style="btn.style"
                           :size="isSmall ? 'small' : 'default'"
+                          :id="btn.key"
                       >
                         <template v-if="btn.icon">
                           <v-icon>{{ btn.icon }}</v-icon>
@@ -2386,6 +2387,7 @@ export default {
             { key: 'watchPosition', text: '現在地連続取得', icon: 'mdi-map-marker-radius', color: this.isTracking ? 'green' : 'primary', click: this.toggleWatchPosition },
             { key: 'share', text: '共有', icon: 'mdi-share-variant', color: 'primary', click: this.share },
             { key: 'help', text: 'ヘルプ', icon: 'mdi-help', color: 'primary', click: this.help },
+            { key: 'drawList', text: 'ドローリスト', icon: 'mdi-view-list', color: 'primary', click: this.help, style: 'margin-top: 100px;' },
           ]
       return btns
     },
@@ -9802,32 +9804,8 @@ export default {
       this.s_resolution = localStorage.getItem('resolution')
       if (this.s_resolution > 24) this.s_resolution = 24
     }
-
-    // if ('serviceWorker' in navigator) {
-    //   navigator.serviceWorker.addEventListener('message', event => {
-    //     console.log(999)
-    //     const data = event.data || {};
-    //     if (data.type === 'PMTILES_PROGRESS') {
-    //       // Vue のリアクティブ変数に当てはめる例
-    //       this.tileCount  = data.count;
-    //       this.tileUrl    = data.url;
-    //       this.progress   = Math.floor(data.count / data.total * 100);
-    //       // たとえばプログレスバーを更新…
-    //       vm.$store.state.loadingMessage = `${data.count}/${data.url}`
-    //     }
-    //   });
-    // }
-
-    // navigator.serviceWorker.addEventListener('message', event => {
-    //   if (event.data.type === 'cache-complete') {
-    //     alert('BBOXデータのキャッシュが完了しました。');
-    //   }
-    // });
-
-    // if (localStorage.getItem('transparent')) {
-    //   this.s_transparent = localStorage.getItem('transparent')
-    // }
-    // -----------------------------------------------------------------------------------------------------------------
+    
+    document.querySelector('#drawList').style.display = 'none'
   },
   watch: {
     isDraw(value) {
@@ -9853,6 +9831,15 @@ export default {
       }
     },
     clickCircleGeojsonText (value) {
+      try {
+        if (JSON.parse(value).features.length > 2) {
+          document.querySelector('#drawList').style.display = 'block'
+        } else {
+          document.querySelector('#drawList').style.display = 'none'
+        }
+      }catch (e) {
+        document.querySelector('#drawList').style.display = 'none'
+      }
       this.updatePermalink()
     },
     s_finishLineFire () {
