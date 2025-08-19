@@ -158,6 +158,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   :timeout="-1"
                   color="primary"
                   location="top"
+                  class="my-snackbar"
       >
         <p v-if="s_loading">処理中です。</p>
         <p v-if="s_loading2"><span v-html="s_loadingMessage"></span></p>
@@ -4950,12 +4951,12 @@ export default {
     toggleLDraw ()  {
       const btn = document.getElementById("centerDrawBtn2");
       const bgColor = window.getComputedStyle(btn).backgroundColor;
-      if (bgColor === 'rgb(46, 139, 87)' || bgColor === 'rgb(25, 118, 210)') {
-        this.s_isDraw = true
-      } else {
-        this.s_isDraw = false
-      }
-      // this.s_isDraw = !this.s_isDraw
+      // if (bgColor === 'rgb(46, 139, 87)' || bgColor === 'rgb(25, 118, 210)') {
+      //   this.s_isDraw = true
+      // } else {
+      //   this.s_isDraw = false
+      // }
+      // // this.s_isDraw = !this.s_isDraw
       const map01 = this.$store.state.map01
       if (!this.s_isDraw) {
         this.s_isDrawPoint = false
@@ -9851,7 +9852,7 @@ export default {
         app.style.overflow = 'auto'
       }
     },
-    clickCircleGeojsonText () {
+    clickCircleGeojsonText (value) {
       this.updatePermalink()
     },
     s_finishLineFire () {
@@ -11047,6 +11048,10 @@ select {
 
 .my-popup{
   overflow: hidden;
+}
+
+.my-snackbar .v-snackbar__wrapper {
+  background-color: color-mix(in srgb, var(--main-color) 70%, black)!important;
 }
 
 @media (prefers-reduced-motion: reduce) {

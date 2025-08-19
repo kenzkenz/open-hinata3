@@ -1457,15 +1457,17 @@ export default {
         match = response.data.match(/clickCirclegeojsontext=(.*?)&vector/s);
         const clickCirclegeojsontext = match ? match[1] : null;
         if (clickCirclegeojsontext) {
-          deleteAll(true)
+          /**
+           * deleteAll(true)があると表示されない。しかし・・・。
+           */
+          // deleteAll(true)
           if (isJsonString(clickCirclegeojsontext)) {
-            vm.$store.state.clickCirclegeojsontext = clickCirclegeojsontext
+            vm.$store.state.clickCircleGeojsonText = clickCirclegeojsontext
             vm.$store.state.clickCircleGeojsonTextMyroom = clickCirclegeojsontext
             clickCircleSource.obj.data = JSON.parse(clickCirclegeojsontext)
             const pointGeoJSON = generateStartEndPointsFromGeoJSON(JSON.parse(clickCirclegeojsontext))
             endPointSouce.obj.data = pointGeoJSON
-            // map.getSource(clickCircleSource.iD).setData(JSON.parse(clickCirclegeojsontext))
-            console.log(clickCirclegeojsontext)
+            map.getSource(clickCircleSource.iD).setData(JSON.parse(clickCirclegeojsontext))
             try {
               const config = JSON.parse(clickCirclegeojsontext).features.find(f => f.properties.id === 'config').properties
               if (config) {
@@ -1615,6 +1617,7 @@ export default {
                       v.layers = sourceAndLayers.layers;
                       v.label = name;
                       // alert(JSON.parse(vm.$store.state.simaTextForUser).opacity)
+
                       if (isJsonString(vm.$store.state.simaTextForUser)) {
                         vm.$store.state.simaTextForUser = JSON.stringify({
                           text: simaText,
@@ -1623,6 +1626,7 @@ export default {
                         vm.s_simaOpacity = JSON.parse(vm.$store.state.simaTextForUser).opacity
                         vm.$store.state.snackbar = true
                       }
+
                     }
                     await aaa()
                   }
@@ -1847,7 +1851,6 @@ export default {
           }
           if (!fetchFlg) vm.$store.state.selectedLayers = slj0
         });
-
       })
     },
     removeItem (id,event) {
@@ -2100,7 +2103,13 @@ export default {
             console.error('エラー:', response.data.error);
             alert(`エラー: ${response.data.error}`);
           } else {
+            console.log(response.data)
             vm.jsonData = response.data
+            /**
+             *
+             * @type {unknown[]}
+             */
+            // vm.jsonData = [vm.jsonData.find(j => j.name.includes('近景'))]
           }
         } catch (error) {
           console.error('通信エラー:', error);

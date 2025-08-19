@@ -4,6 +4,7 @@ import * as turf from '@turf/turf'
 import maplibregl from 'maplibre-gl'
 import proj4 from 'proj4'
 import axios from "axios";
+import { toRaw } from 'vue'
 import {
     geotiffSource,
     geotiffLayer,
@@ -9711,7 +9712,14 @@ export function convertGsiTileJson(categorizedData, lineLength = 30) {
 
             if (isWithinOneMonth) {
                 isNew = true
-                newHtml = '<span style="color: red;">new </span>'
+                newHtml = '<span style="color: red;">NEW </span>'
+                setTimeout(() => {
+                    store.state.loadingMessage3 ='地理院タイルに新レイヤーが追加されました。'
+                    store.state.loading3 = true
+                },1000)
+                setTimeout(() => {
+                    store.state.loading3 = false
+                },4000)
             } else {
                 newHtml = ''
             }
@@ -11081,4 +11089,30 @@ export function stopDrawerAnimations(selector = '.point-info-drawer .v-navigatio
     } else {
         style.textContent = css;
     }
+}
+
+/**
+ * プロミスを外す
+ */
+export async function toPlainGeoJSON(input) {
+    // Promiseなら解決
+    if (input && typeof input.then === 'function') input = await input;
+
+    // refなら中身に差し替え（Vue3）
+    // if (isRef && isRef(input)) input = input.value;
+
+    // Proxy(reactive)対策（Vue3なら toRaw で剥がす）
+    // if (toRaw) input = toRaw(input);
+
+    // if (typeof input === 'string') {
+    //     // JSON文字列ならオブジェクトへ
+    //     try { return JSON.parse(input); } catch { return input; } // 素の文字列だった場合はそのまま返す
+    // }
+    //
+    // // 既にオブジェクトなら深いコピーで純化（Proxy混入対策）
+    // if (input && typeof input === 'object') {
+    //     return JSON.parse(JSON.stringify(input));
+    // }
+
+    return input;
 }

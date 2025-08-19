@@ -9,7 +9,7 @@ import * as turf from '@turf/turf'
 import {
     extractAndOpenUrls,
     getNextZIndex,
-    queryFGBWithPolygon,
+    queryFGBWithPolygon, toPlainGeoJSON, toResolved,
     wsg84ToJgd
 } from "@/js/downLoad";
 import { Viewer, CameraControls, RenderMode, TransitionMode } from 'mapillary-js';
@@ -3592,6 +3592,7 @@ export function popup(e,map,mapName,mapFlg) {
                     id = store.state.id
                 }
                 if (store.state.clickCircleGeojsonText) {
+                    console.log(store.state.clickCircleGeojsonText)
                     features = JSON.parse(store.state.clickCircleGeojsonText).features
                 } else {
                     features = JSON.parse(store.state.clickCircleGeojsonTextMyroom).features

@@ -10787,7 +10787,7 @@ let layers01 = [
     },
     {
         id: 'gsi',
-        label: (isGsiNew ? '<span style="color: red;">new </span>' : '') + "⭐️地理院タイル全て（テスト中）",
+        label: (isGsiNew ? '<span style="color: red;">NEW </span>' : '') + "⭐️地理院タイル",
         nodes: convertTileJson
     },
     {

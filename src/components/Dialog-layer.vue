@@ -1078,7 +1078,7 @@ export default {
       //↓なぜかこうしないとレイヤー順が正しくならない。
       map.moveLayer('click-circle-polygon-line-layer');
       map.moveLayer('click-circle-label-layer');
-      map.moveLayer('clickCircleKeikoLineLayer.id');
+      // map.moveLayer('clickCircleKeikoLineLayer.id');
 
       this.$store.state.drawFire = !this.$store.state.drawFire
 

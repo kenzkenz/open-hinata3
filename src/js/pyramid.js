@@ -1,10 +1,11 @@
 import store from '@/store'
 import axios from "axios"
+import { toRaw } from 'vue'
 import * as turf from '@turf/turf'
 import {
     addDraw, featureCollectionAdd, featuresDelete, isJsonString, markerAddAndRemove,
     recenterGeoJSON, removeNini, saveDrowFeatures,
-    savePointSima,
+    savePointSima, toResolved,
     zahyokei
 } from "@/js/downLoad";
 import {clickCircleSource, clickPointSource, endPointSouce, vertexSource} from "@/js/layers";
@@ -1241,7 +1242,7 @@ export default function pyramid () {
             }
         });
         // -------------------------------------------------------------------------------------------------------------
-        mapElm.addEventListener('click', (e) => {
+        mapElm.addEventListener('click', async (e) => {
             if (e.target && (e.target.classList.contains("point-color"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
@@ -2131,7 +2132,7 @@ const neonColors = {
     red:    'rgba(255,   7,  58, 0.5)'   // Neon Red
 };
 
-export async function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius) {
+export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius) {
     store.state.saveHistoryFire = !store.state.saveHistoryFire
     const source = map.getSource(sourceId)
     if (!source) return;
@@ -2203,7 +2204,6 @@ export async function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, 
         if (changed) {
             if (id !== "config") map.getSource(sourceId).setData(geojson);
             store.state.updatePermalinkFire = !store.state.updatePermalinkFire
-            await saveDrowFeatures(updateFeatures)
             if (!store.state.isUsingServerGeojson) {
                 featureCollectionAdd()
                 markerAddAndRemove()
@@ -2211,7 +2211,8 @@ export async function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, 
             if (drawFeatures.length === 1) {
                 store.state.drawFeature = drawFeatures[0]
             }
-            return escapeHTML(JSON.stringify(geojson))
+            saveDrowFeatures(updateFeatures)
+            return escapeHTML(JSON.stringify(toRaw(geojson)))
         }
     }
 }
