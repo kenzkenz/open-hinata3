@@ -5051,6 +5051,7 @@ async function insertXyztileData(uid, name, url, url2, url3, bbox, size, maxzoom
 }
 
 export function addXyztileLayer(id,name,url,bbox) {
+    url = url.replace('https://kenzkenz.duckdns.org/','https://kenzkenz.net/')
     const map01 = store.state.map01
     const bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
     const source = {

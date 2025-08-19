@@ -168,6 +168,7 @@ export default {
   touch-action: auto; /* タッチイベントを有効化 */
   height: 600px;
   -webkit-overflow-scrolling: touch;
+  max-width: 400px;
 }
 .drag-handle{
   height: 30px;
@@ -205,6 +206,7 @@ export default {
     height: 100%;
     top: 0;
     left:0;
+    max-width: none; /* ← リセット */
   }
   .close-btn-div{
     font-size:4em;

@@ -1461,6 +1461,7 @@ export default {
            * deleteAll(true)があると表示されない。しかし・・・。
            */
           // deleteAll(true)
+          console.log(clickCirclegeojsontext)
           if (isJsonString(clickCirclegeojsontext)) {
             vm.$store.state.clickCircleGeojsonText = clickCirclegeojsontext
             vm.$store.state.clickCircleGeojsonTextMyroom = clickCirclegeojsontext
@@ -2109,7 +2110,9 @@ export default {
              *
              * @type {unknown[]}
              */
-            // vm.jsonData = [vm.jsonData.find(j => j.name.includes('近景'))]
+            if (vm.isAll) {
+              vm.jsonData = [vm.jsonData.find(j => j.name.includes('地図と図根'))]
+            }
           }
         } catch (error) {
           console.error('通信エラー:', error);

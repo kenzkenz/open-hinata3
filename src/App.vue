@@ -5389,6 +5389,8 @@ export default {
       this.s_dialogForGeotiffApp = false
     },
     geoTifLoad1file () {
+      this.dialogForGeotiffApp1file = false
+      this.s_dialogForGeotiff2App = false
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
       if (this.$store.state.userId) {
@@ -5398,8 +5400,6 @@ export default {
         geoTiffLoad2 (map01,'map01', true)
         geoTiffLoad2 (map02,'map02', false)
       }
-      this.dialogForGeotiffApp1file = false
-      this.s_dialogForGeotiff2App = false
     },
     simaOpacityInput () {
       const map1 = this.$store.state.map01
@@ -11053,6 +11053,96 @@ select {
 .my-snackbar .v-snackbar__wrapper {
   background-color: color-mix(in srgb, var(--main-color) 70%, black)!important;
 }
+
+/* ===== v-select風スタイル ===== */
+.vlike{
+  display:inline-flex;
+  flex-direction:column;
+  gap:4px;
+  font-size:14px;
+  min-width:220px;
+  width: 100%;
+  position:relative;
+  margin-bottom: 25px;
+}
+.vlike__text{color:var(--v-theme-on-surface,#1f1f1f);opacity:.7;padding-left:4px}
+.vlike__control{
+  -webkit-appearance:none;appearance:none;width:100%;height:55px;line-height:55px;
+  padding:0 40px 0 12px;border-radius:4px;border:1px solid rgba(0,0,0,.12);
+  background:var(--v-theme-surface,#fff);color:var(--v-theme-on-surface,#1f1f1f);
+  outline:none;box-shadow:none;transition:border-color .15s,box-shadow .15s,background .15s
+}
+.vlike__control:hover{border-color:rgba(0,0,0,.22)}
+.vlike__control:focus{
+  border-color:var(--v-theme-primary,#1976d2);
+  box-shadow:0 0 0 2px color-mix(in srgb, var(--v-theme-primary,#1976d2) 25%, transparent)
+}
+/* プレースホルダー時の薄色表示 */
+.vlike__control[data-empty="true"]{color:rgba(0,0,0,.38)}
+/* 無効時 */
+.vlike__control:disabled{
+  background:var(--v-theme-surface-variant,#f6f6f6);color:rgba(0,0,0,.38);border-color:rgba(0,0,0,.12);cursor:not-allowed
+}
+/* エラー枠 */
+.is-error .vlike__control{
+  border-color:var(--v-theme-error,#d32f2f);
+  box-shadow:0 0 0 2px color-mix(in srgb, var(--v-theme-error,#d32f2f) 20%, transparent)
+}
+/* 矢印（純CSS） */
+.vlike::after{
+  content:"";position:absolute;right:12px;top:28px;transform:translateY(-50%);
+  border-left:6px solid transparent;border-right:6px solid transparent;border-top:7px solid currentColor;
+  opacity:.54;pointer-events:none
+}
+/* ヘルパー / メッセージ */
+.vlike__hint{margin-top:4px;font-size:12px;line-height:1.2;color:rgba(0,0,0,.6)}
+.vlike__message{margin-top:4px;font-size:12px;line-height:1.2}
+.vlike__message--error{color:var(--v-theme-error,#d32f2f)}
+/* 密度を下げたい場合 */
+.vlike--dense .vlike__control{height:32px;line-height:32px}
+
+/* ===== 追加・上書き（フローティングラベル） ===== */
+.vlike--floating {
+  position: relative;
+  padding-top: 6px;
+}
+
+/* ラベルをボーダーに被せる */
+.vlike--floating .vlike__text{
+  position: absolute;
+  top: 8px;             /* ボーダーの上に少し出す */
+  left: 12px;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: white; /* 背景でボーダーを“マスク” */
+  color: rgba(0,0,0,.6);
+  pointer-events: none;  /* クリックを邪魔しない */
+  text-align: left;
+  z-index: 10000;
+}
+
+/* フォーカス時はプライマリ色で強調 */
+.vlike--floating:focus-within .vlike__text{
+  color: var(--v-theme-primary, #1976d2);
+}
+
+/* エラー時はエラー色 */
+.is-error.vlike--floating .vlike__text{
+  color: var(--v-theme-error, #d32f2f);
+}
+
+/* コントロールは少し下げて余白を作る */
+.vlike--floating .vlike__control{
+  margin-top: 6px;
+}
+
+/* ↓矢印位置の微調整（必要なら） */
+.vlike--floating::after{
+  top: 28px; /* コントロール中央に来るように調整 */
+}
+
 
 @media (prefers-reduced-motion: reduce) {
   .point-info-drawer .v-navigation-drawer{ transition: none !important; }

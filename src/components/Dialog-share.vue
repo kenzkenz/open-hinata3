@@ -1,10 +1,12 @@
 <template>
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div class="share-div">
-      <v-text-field label="" v-model="s_url" style="margin-top: 10px"></v-text-field>
-      <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="xPost">Xにポスト</v-btn>
-      <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="copy">URLをコピー</v-btn>
-      <v-btn style="margin-left: 5px;margin-top: -10px" class="tiny-btn" @click="qrcopy">QRコードをダウンロード</v-btn>
+<!--      <v-text-field label="" v-model="s_url" style="margin-top: 10px"></v-text-field>-->
+      <div>
+        <v-btn style="margin-left: 5px;" class="tiny-btn" @click="xPost">Xにポスト</v-btn>
+        <v-btn style="margin-left: 5px;" class="tiny-btn" @click="copy">URLをコピー</v-btn>
+        <v-btn style="margin-left: 5px;" class="tiny-btn" @click="qrcopy">QRコードをダウンロード</v-btn>
+      </div>
       <hr>
       <vue-qrcode style="cursor: pointer" @click="qrCodeClick" id="qr-code" :value="s_url" :options="{ width: 320 }"></vue-qrcode>
     </div>
@@ -17,7 +19,6 @@ export default {
   name: 'Dialog-share',
   props: ['mapName'],
   data: () => ({
-
   }),
   computed: {
     s_url () {
@@ -32,26 +33,33 @@ export default {
       this.$store.dispatch('showFloatingWindow', 'qrcode');
     },
     xPost () {
-      const intentUrl =
-          "https://twitter.com/intent/tweet?text=" +
-          encodeURIComponent('open-hinata3(OH3)です。\n\n#openhinata3 #OH3\n' + this.$store.state.url);
-      window.open(intentUrl, '_blank');
+      this.$store.state.updatePermalinkFire = ! this.$store.state.updatePermalinkFire
+      setTimeout(() => {
+        const intentUrl =
+            "https://twitter.com/intent/tweet?text=" + encodeURIComponent('open-hinata3(OH3)です。\n\n#openhinata3 #OH3\n' + this.$store.state.url);
+        window.open(intentUrl, '_blank');
+      },1000)
     },
     copy () {
-      navigator.clipboard.writeText(this.s_url);
+      this.$store.state.updatePermalinkFire = ! this.$store.state.updatePermalinkFire
       alert('URLをクリップボードにコピーしました!');
+      setTimeout(() => {
+        navigator.clipboard.writeText(this.s_url);
+      },1000)
     },
     qrcopy () {
-      const canvas = document.getElementById('qr-code');
-      const image = canvas.toDataURL('image/png'); // 画像データURLを取得
-
-      // 仮想のaタグを作成してダウンロード
-      const link = document.createElement('a');
-      link.href = image;
-      link.download = 'qrcode.png';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      this.$store.state.updatePermalinkFire = ! this.$store.state.updatePermalinkFire
+      setTimeout(() => {
+        const canvas = document.getElementById('qr-code');
+        const image = canvas.toDataURL('image/png'); // 画像データURLを取得
+        // 仮想のaタグを作成してダウンロード
+        const link = document.createElement('a');
+        link.href = image;
+        link.download = 'qrcode.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      },1000)
     },
   },
   mounted() {
