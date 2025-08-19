@@ -9804,7 +9804,7 @@ export default {
       this.s_resolution = localStorage.getItem('resolution')
       if (this.s_resolution > 24) this.s_resolution = 24
     }
-    
+
     document.querySelector('#drawList').style.display = 'none'
   },
   watch: {
@@ -9832,7 +9832,7 @@ export default {
     },
     clickCircleGeojsonText (value) {
       try {
-        if (JSON.parse(value).features.length > 2) {
+        if (JSON.parse(value).features.length > 0) {
           document.querySelector('#drawList').style.display = 'block'
         } else {
           document.querySelector('#drawList').style.display = 'none'
