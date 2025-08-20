@@ -3592,7 +3592,7 @@ export function popup(e,map,mapName,mapFlg) {
                     id = store.state.id
                 }
                 if (store.state.clickCircleGeojsonText) {
-                    console.log(store.state.clickCircleGeojsonText)
+                    // console.log(store.state.clickCircleGeojsonText)
                     features = JSON.parse(store.state.clickCircleGeojsonText).features
                 } else {
                     features = JSON.parse(store.state.clickCircleGeojsonTextMyroom).features
@@ -3925,13 +3925,17 @@ export function popup(e,map,mapName,mapFlg) {
                     }
                     html.value = ''
                 }
-                if (layerId === 'click-circle-label-layer') {
-                    try {
-                        extractAndOpenUrls(props.label)
-                    }catch (e) {
-                        console.log(e)
-                    }
-                }
+                /**
+                 * 長文でリンクはできるので
+                 * @type {string}
+                 */
+                // if (layerId === 'click-circle-label-layer') {
+                //     try {
+                //         extractAndOpenUrls(props.label)
+                //     }catch (e) {
+                //         console.log(e)
+                //     }
+                // }
                 // クリア
                 store.state.id = ''
                 if (props.lassoSelected) {

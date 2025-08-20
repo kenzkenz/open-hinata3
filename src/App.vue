@@ -2387,7 +2387,7 @@ export default {
             { key: 'watchPosition', text: '現在地連続取得', icon: 'mdi-map-marker-radius', color: this.isTracking ? 'green' : 'primary', click: this.toggleWatchPosition },
             { key: 'share', text: '共有', icon: 'mdi-share-variant', color: 'primary', click: this.share },
             { key: 'help', text: 'ヘルプ', icon: 'mdi-help', color: 'primary', click: this.help },
-            { key: 'drawList', text: 'ドローリスト', icon: 'mdi-view-list', color: 'primary', click: this.help, style: 'margin-top: 100px;' },
+            { key: 'drawList', text: 'ドローリスト', icon: 'mdi-view-list', color: 'primary', click: this.drawListOpen, style: 'margin-top: 100px;' },
           ]
       return btns
     },
@@ -2949,6 +2949,9 @@ export default {
     },
   },
   methods: {
+    drawListOpen() {
+      alert('作成中')
+    },
     popupHtmlClose() {
       // const map01 = this.$store.state.map01
       // const id = store.state.drawFeatureId
@@ -9832,7 +9835,7 @@ export default {
     },
     clickCircleGeojsonText (value) {
       try {
-        if (JSON.parse(value).features.length > 0) {
+        if (JSON.parse(value).features.length > 1) {
           document.querySelector('#drawList').style.display = 'block'
         } else {
           document.querySelector('#drawList').style.display = 'none'
@@ -11039,6 +11042,7 @@ select {
 
 .my-snackbar .v-snackbar__wrapper {
   background-color: color-mix(in srgb, var(--main-color) 70%, black)!important;
+  margin-top: 50px;
 }
 
 /* ===== v-select風スタイル ===== */

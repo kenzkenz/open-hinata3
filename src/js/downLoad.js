@@ -9714,13 +9714,13 @@ export function convertGsiTileJson(categorizedData, lineLength = 30) {
             if (isWithinOneMonth) {
                 isNew = true
                 newHtml = '<span style="color: red;">NEW </span>'
-                setTimeout(() => {
-                    store.state.loadingMessage3 ='地理院タイルに新レイヤーが追加されました。'
-                    store.state.loading3 = true
-                },1000)
-                setTimeout(() => {
-                    store.state.loading3 = false
-                },4000)
+                // setTimeout(() => {
+                //     store.state.loadingMessage3 ='地理院タイルに新レイヤーが追加されました。'
+                //     store.state.loading3 = true
+                // },1000)
+                // setTimeout(() => {
+                //     store.state.loading3 = false
+                // },4000)
             } else {
                 newHtml = ''
             }
