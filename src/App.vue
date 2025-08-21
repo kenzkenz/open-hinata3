@@ -6978,7 +6978,8 @@ export default {
           const seconds = now.getSeconds()
           const properties = {
             id: id,
-            label: this.$store.state.isSmall500 ? `${hours}:${minutes}:${seconds}` : '',
+            // label: this.$store.state.isSmall500 ? `${hours}:${minutes}:${seconds}` : '',
+            label: `${hours}:${minutes}:${seconds}`,
             color: this.$store.state.currentTextColor || 'black',
             'point-color': this.$store.state.currentPointColor || 'black',
             'text-size': this.$store.state.currentTextSize || 16,

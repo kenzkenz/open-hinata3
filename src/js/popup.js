@@ -3674,6 +3674,7 @@ export function popup(e,map,mapName,mapFlg) {
                     switch (geoType) {
                         case 'MultiPolygon':
                         case 'Polygon':
+
                             if (!store.state.isDraw) {
                                 store.state.loadingMessage3 = '編集するには右のペンアイコンをクリックしてドロー状態にしてください。'
                                 store.state.loading3 = true
@@ -3757,18 +3758,21 @@ export function popup(e,map,mapName,mapFlg) {
                             break
                         case 'Point':
                             // alert('到達')
-                            if ((props.longText || props.pictureUrl) && window.innerWidth > 0) {
+                            // if ((props.longText || props.pictureUrl) && window.innerWidth > 0) {
+                            if (window.innerWidth > 0) {
                                 if (!store.state.isIphone || (store.state.isIphone && !store.state.isDraw)) store.commit('setDrawDrawer', true)
                                 if (!store.state.isDraw) return;
                             }
-                            if (!store.state.isDraw) {
-                                store.state.loadingMessage3 = '編集するには右のペンアイコンをクリックしてドロー状態にしてください。'
-                                store.state.loading3 = true
-                                setTimeout(() => {
-                                    store.state.loading3 = false
-                                },3000)
-                                return
-                            }
+
+                            // if (!store.state.isDraw) {
+                            //     store.state.loadingMessage3 = '編集するには右のペンアイコンをクリックしてドロー状態にしてください。'
+                            //     store.state.loading3 = true
+                            //     setTimeout(() => {
+                            //         store.state.loading3 = false
+                            //     },3000)
+                            //     return
+                            // }
+
                             // alert(888)
                             if (html.value.indexOf('click-circle-layer') === -1) {
                                 // alert('到達')

@@ -59,10 +59,14 @@
         </v-card-text>
       </div>
       <v-card-text style="margin-top: 0px;">
-        <v-btn :disabled="!isDraw || !isEdit" style="margin-top: -10px;" @click="longTextSave">保存</v-btn>
-        <v-btn :disabled="!isDraw || isEdit" style="margin-top: -10px; margin-left: 10px;" @click="toEdit">書き込み</v-btn>
+        <div class="d-flex align-center" style="gap:10px;">
+          <v-btn :disabled="!isDraw || !isEdit" style="margin-top:-10px" @click="longTextSave">保存</v-btn>
+          <v-btn :disabled="!isDraw || isEdit" style="margin-top:-10px" @click="toEdit">書き込み</v-btn>
+          <v-btn v-if="isDraw && isEdit" style="margin-top:-10px" @click="isEdit = false">書き込み解除</v-btn>
+          <!-- ここだけ右端へ -->
+          <v-btn v-if="!isDraw" icon class="ms-auto" style="margin-top:-10px" @click="isDrawChange"><v-icon>mdi-pencil</v-icon></v-btn>
+        </div>
 
-        <v-btn v-if="isDraw && isEdit" style="margin-top: -10px; margin-left: 10px;" @click="isEdit = false">書き込み解除</v-btn>
         <br>
         <span style="margin-left: 10px; font-size: 10.5px; margin: 0" v-if="!isDraw">編集するには右のペンアイコンをクリックしてドロー状態にしてください。</span>
       </v-card-text>
@@ -127,6 +131,14 @@ export default {
       'drawFeature',
       'isIphone',
     ]),
+    s_isDraw: {
+      get() {
+        return this.$store.state.isDraw
+      },
+      set(value) {
+        this.$store.state.isDraw = value
+      }
+    },
     s_popupFeatureProperties () {
       return this.$store.state.popupFeatureProperties
     },
@@ -140,6 +152,11 @@ export default {
       'saveSelectedPointFeature',
       'setSelectedPointFeature',
     ]),
+    isDrawChange() {
+      this.s_isDraw = true
+      const btn = document.getElementById("centerDrawBtn2")
+      btn.click()
+    },
     toEdit() {
       this.isEdit = true;
       if (this.isEdit) {

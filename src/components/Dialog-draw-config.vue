@@ -25,6 +25,7 @@
                     :data-empty="s_textPx === ''"
                     required
                     style="font-size:16px"
+                    @change="configChange('font-size', s_textPx)"
                 >
                   <option value="" disabled>選択してください</option>
                   <option v-for="n in 101" :key="n-1" :value="n-1">{{ n-1 }}</option>
