@@ -215,15 +215,66 @@ import SakuraEffect from './components/SakuraEffect.vue';
             画像、動画アップロード
           </v-card-title>
           <v-card-text style="padding-bottom: 0">
-            <div>
-              <input type="file" accept="image/*" capture="camera">
-              <v-file-input
-                  v-model="s_selectedFile"
-                  label="画像、動画を選択"
-                  accept="image/*,video/*"
-                  show-size
-                  @change="onFileSelected"
-              ></v-file-input>
+
+              <div class="media-picker-row">
+                <!-- iPhone のとき：カメラ(アイコン) + ライブラリ選択 を横並び -->
+                <template v-if="isIphone">
+                  <!-- ネイティブ input は非表示。ボタンで click() を発火 -->
+                  <input
+                      id="iosCamInput"
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      class="sr-only"
+                      @change="onCameraPicked"
+                  />
+                  <v-btn
+                      icon
+                      class="camera-btn"
+                      @click="triggerCamera"
+                      :ripple="false"
+                      aria-label="カメラで撮影"
+                  >
+                    <v-icon>mdi-camera</v-icon>
+                  </v-btn>
+                  <v-file-input
+                      v-model="s_selectedFile"
+                      accept="image/*,video/*"
+                      :multiple="false"
+                      density="comfortable"
+                      variant="solo-filled"
+                      hide-details
+                      :show-size="true"
+                      prepend-inner-icon="mdi-image-multiple"
+                      label="フォトライブラリから選択"
+                      @update:model-value="onFileSelected"
+                      class="library-input"
+                  />
+                </template>
+                <!-- それ以外（iPhone以外）：通常の v-file-input のみ -->
+                <template v-else>
+                  <v-file-input
+                      v-model="s_selectedFile"
+                      label="画像・動画を選択"
+                      accept="image/*,video/*"
+                      :multiple="false"
+                      density="comfortable"
+                      variant="solo-filled"
+                      hide-details
+                      :show-size="true"
+                      prepend-inner-icon="mdi-file-image"
+                      @update:model-value="onFileSelected"
+                      class="w-full"
+                  />
+                </template>
+              </div>
+<!--              <v-file-input-->
+<!--                  v-model="s_selectedFile"-->
+<!--                  label="画像、動画を選択"-->
+<!--                  accept="image/*,video/*"-->
+<!--                  show-size-->
+<!--                  @change="onFileSelected"-->
+<!--              ></v-file-input>-->
               <div style="max-height: 300px; margin-top: -20px; margin-bottom: 20px; overflow: auto">
                 <div v-if="s_previewUrl" class="mt-4 text-center" style="margin-bottom: 10px;">
                   <img
@@ -295,7 +346,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   <v-btn :disabled="!s_pictureUrl" @click="deletePicture" style="margin-left: 10px;">サーバーから削除</v-btn>
                 </v-col>
               </v-row>
-            </div>
           </v-card-text>
           <v-card-actions>
             <v-btn color="blue-darken-1" text @click="s_dialogForPicture = false">Close</v-btn>
@@ -2984,6 +3034,19 @@ export default {
       const value = {pictureUrl, borderRadius, containerSize, containerColor}
       this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01,null,clickCircleSource.iD,id,tgtProp,value)
     },
+    triggerCamera() {
+      const el = document.getElementById('iosCamInput')
+      if (el) el.click()
+    },
+    onCameraPicked(e) {
+      const file = e.target?.files?.[0] || null
+      if (file) {
+        this.s_selectedFile = file
+        this.onFileSelected()
+      }
+      // 同じファイルを連続で選んでも change が発火するようにリセット
+      e.target.value = ''
+    },
     async savePicture() {
       store.state.loading2 = true
       store.state.loadingMessage = '保存中です。'
@@ -3124,10 +3187,14 @@ export default {
         const map01 = this.$store.state.map01
         const id = this.$store.state.drawGeojsonId
         const tgtProp = 'pictureUrl'
-        const value = ''
+        const value = {pictureUrl: 'delete'}
         this.$store.state.clickCircleGeojsonText = geojsonUpdate(map01,null,clickCircleSource.iD,id,tgtProp,value)
         closeAllPopups()
         this.s_selectedFile = null
+
+        // markaersRemove()
+        // this.savePicture()
+
         alert("削除成功！");
       } else {
         alert("削除失敗！: " + result.message);
@@ -11154,6 +11221,35 @@ select {
   top: 28px; /* コントロール中央に来るように調整 */
 }
 
+.media-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;       /* 一行に収める */
+  padding-bottom: 20px;
+}
+
+/* ネイティブ input は画面に出さない（「ファイルを選択」を見せない） */
+.sr-only {
+  position: absolute;
+  left: -9999px;
+}
+
+.camera-btn {
+  margin-top: 10px;
+  margin-right: 10px;
+}
+
+/* v-file-input は余白を食い過ぎないように */
+.library-input,
+.w-full {
+  flex: 1 1 auto;          /* 残り幅にフィット */
+  min-width: 0;            /* 折り返し防止 */
+}
+
+.exclude-overlay .v-input__prepend {
+  display: none;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .point-info-drawer .v-navigation-drawer{ transition: none !important; }

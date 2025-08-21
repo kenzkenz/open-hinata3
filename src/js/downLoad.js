@@ -10327,12 +10327,15 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, c
  */
 function removeThumbnailMarkerByKey(key) {
     if (!key) return;
+    console.log(key)
     const allMarkers = [markers, txtMarkers]
     allMarkers.forEach(markers => {
         for (let i = markers.length - 1; i >= 0; i--) {
             const item = markers[i];
             if (item && item.key === key) {
+                console.log(key)
                 item.marker?.remove();
+                console.log(item.marker)
                 markers.splice(i, 1);
             }
         }
@@ -10431,6 +10434,7 @@ function upsertFeature(f) {
         featureCollection.features[idx] = f;
         if (f.geometry?.type === 'Point') {
             const key = f.geometry.coordinates.join()
+             console.log(key)
             removeThumbnailMarkerByKey(key)
         }
     } else {

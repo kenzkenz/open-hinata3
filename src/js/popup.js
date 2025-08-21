@@ -3795,7 +3795,7 @@ export function popup(e,map,mapName,mapFlg) {
                                         '　X　<input id="' + props.id + '" style="margin-bottom: 5px; width: 50px;" type="number" class="oh-cool-input-number offset-x-input" step="0.1" value="' + offsetX + '">' +
                                         '　Y　<input id="' + props.id + '" style="margin-bottom: 5px; width: 50px;" type="number" class="oh-cool-input-number offset-y-input" step="0.1" value="' + offsetY + '">' +
                                         '<br>' +
-                                        '<button id="' + props.id + '" style="margin-bottom: 10px; height: 30px; font-size: medium; width: 50%;" class="point-delete pyramid-btn">削　除</button>' +
+                                        '<button id="' + props.id + '" style="margin-bottom: 10px; height: 30px; font-size: medium; width: 100%;" class="point-delete pyramid-btn">削　除</button>' +
                                         '<div style="display: flex; gap: 8px;">' +
                                         '<div class="circle-list">' +
                                         '<div id="' + props.id + '" data-color="red" class="text-color circle red" tabindex="0">T</div>' +

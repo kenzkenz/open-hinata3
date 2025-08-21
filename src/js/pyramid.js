@@ -2156,7 +2156,11 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
                 : String(feature.properties.id) === id;
             if (shouldUpdate) {
                 if (tgtProp === 'pictureUrl') {
-                    if (value.pictureUrl) feature.properties.pictureUrl = value.pictureUrl
+                    if (value.pictureUrl === 'delete') {
+                        delete feature.properties.pictureUrl
+                    } else {
+                        if (value.pictureUrl) feature.properties.pictureUrl = value.pictureUrl
+                    }
                     feature.properties.borderRadius = value.borderRadius
                     feature.properties.containerSize = value.containerSize
                     feature.properties.containerColor = value.containerColor
