@@ -1615,6 +1615,17 @@ export default function pyramid () {
             }
         });
         // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('change', async (e) => {
+            if (e.target && (e.target.classList.contains("offset-x-input") || e.target.classList.contains("offset-y-input"))) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
+                const x = Number(document.querySelector('.offset-x-input').value)
+                const y = Number(document.querySelector('.offset-y-input').value)
+                const offsetValue = [x,y]
+                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,'offsetValue',offsetValue)
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('input', async (e) => {
             if (e.target && (e.target.classList.contains("offset-x-input") || e.target.classList.contains("offset-y-input"))) {
                 const map01 = store.state.map01

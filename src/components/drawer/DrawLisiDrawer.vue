@@ -3,29 +3,57 @@
       :width='drawerWidth'
       temporary
       :scrim="false"
-      v-model="showDrawDrawer"
-      location="left"
-      class="point-info-drawer"
+      v-model="showDrawListDrawer"
+      location="right"
       touchless
       @mousedown="setZindex"
       :style="{ zIndex: zIndex }"
   >
     <v-card flat class="bg-white drawer" style="border-radius: 0; overflow: hidden">
       <v-card-title class="text-h6 text-white" style="background-color: var(--main-color); height: 40px; display: flex; align-items: center;">
-        <!--        {{ type }} <span style="font-size: 12px; margin-left: 20px;">{{ id }}</span>-->
-        {{ truncate(label, 17) }}
+        ドローリスト
+        <v-chip
+            v-if="featuresLength > 0"
+            class="file-count-badge"
+            size="small"
+            color="red"
+            text-color="white"
+        >
+          {{ featuresLength }}
+        </v-chip>
         <div class="close-btn-div" style="margin-right:4px;margin-top: 0px; color:white!important; ;font-size: 30px!important;" @click="close"><i class="fa-solid fa-xmark hover"></i></div>
       </v-card-title>
-      <div class="overflow-div" :style="{maxHeight: `calc(100vh - ${isIphone ? 250 : 150}px)`}">
 
-      </div>
-      <v-card-text style="margin-top: 0px;">
-        <v-btn :disabled="!isDraw || !isEdit" style="margin-top: -10px;" @click="longTextSave">保存</v-btn>
-        <v-btn :disabled="!isDraw || isEdit" style="margin-top: -10px; margin-left: 10px;" @click="toEdit">書き込み</v-btn>
-        <v-btn v-if="isDraw && isEdit" style="margin-top: -10px; margin-left: 10px;" @click="isEdit = false">書き込み解除</v-btn>
-        <br>
-      </v-card-text>
-      <!-- フルスクリーン・モーダル -->
+      <v-virtual-scroll
+          class="my-scroll"
+          :style="{ maxHeight: `calc(100vh - ${isIphone ? 200 : 100}px)` }"
+          :items="drawFeaturesTexts"
+          item-height="32"
+      >
+        <template #default="{ item }">
+          <v-list-item
+              :data-id="item.id"
+              :data-coordinates="item.coordinates"
+              density="compact"
+              style="min-height: 32px;"
+              :ripple="false"
+              @click="onItemClick($event)"
+          >
+            <v-list-item-title class="truncate">{{ item.label }}</v-list-item-title>
+          </v-list-item>
+        </template>
+      </v-virtual-scroll>
+
+
+
+
+<!--      <v-card-text style="margin-top: 0px;">-->
+<!--        <v-btn :disabled="!isDraw || !isEdit" style="margin-top: -10px;" @click="longTextSave">保存</v-btn>-->
+<!--        <v-btn :disabled="!isDraw || isEdit" style="margin-top: -10px; margin-left: 10px;" @click="toEdit">書き込み</v-btn>-->
+<!--        <v-btn v-if="isDraw && isEdit" style="margin-top: -10px; margin-left: 10px;" @click="isEdit = false">書き込み解除</v-btn>-->
+<!--        <br>-->
+<!--      </v-card-text>-->
+
 
     </v-card>
   </v-navigation-drawer>
@@ -34,22 +62,25 @@
 <script>
 import { mapState, mapMutations } from 'vuex';
 import store from "@/store";
-import {clickCircleSource} from "@/js/layers";
-import {geojsonUpdate} from "@/js/pyramid";
-import {getNextZIndex, isImageFile, sanitizeLongText, stopDrawerAnimations, toPlainText} from "@/js/downLoad";
-import {history} from "@/App";
+import {
+  getNextZIndex,
+  moveToMap,
+} from "@/js/downLoad";
+import {popup} from "@/js/popup";
 
 export default {
-  name: 'drawDrawer',
+  name: 'drawListDrawer',
   components: {},
   data: () => ({
+    featuresLength: 0,
+    drawFeaturesTexts: [],
     id: '',
     type: '',
     originalLongText: '',
     longText: '',
     longTextForA: '',
     label: '',
-    drawerWidth: 400,
+    drawerWidth: 250,
     zIndex: '10',
     modalZIndex: 0,
     pictureUrl: '',
@@ -59,189 +90,87 @@ export default {
   }),
   computed: {
     ...mapState([
-      'showDrawDrawer',
-      'isDraw',
-      'drawFeature',
+      'clickCircleGeojsonText',
+      'showDrawListDrawer',
       'isIphone',
     ]),
-    s_popupFeatureProperties () {
-      return this.$store.state.popupFeatureProperties
-    },
-    s_isAndroid () {
-      return this.$store.state.isAndroid
-    },
   },
   methods: {
     ...mapMutations([
-      'setDrawDrawer',
+      'setDrawListDrawer',
       'saveSelectedPointFeature',
       'setSelectedPointFeature',
     ]),
-    toEdit() {
-      this.isEdit = true;
-      if (this.isEdit) {
-        this.$nextTick(() => {
-          const el = document.querySelector('.overflow-div');
-          if (el) {
-            el.scrollTo({
-              top: el.scrollHeight,
-              behavior: 'smooth'
-            });
-          }
-        });
+    async onItemClick(event) {
+      const { id, coordinates } = event.currentTarget.dataset
+      console.log(coordinates.split(',')[0])
+      const map = this.$store.state.map01
+      this.$store.state.id = id
+      const dummyEvent = {
+        lngLat: { lng: coordinates.split(',')[0], lat: coordinates.split(',')[1] },
+      };
+      function onPointClick(e) {
+        popup(e,map,'map01', store.state.map2Flg, true)
       }
-    },
-    openMediaModal() {
-      if (!this.pictureUrl) return
-      this.showMediaModal = true
-      // スクロール固定
-      this._prevOverflow = document.body.style.overflow
-      document.body.style.overflow = 'hidden'
-      // ESC で閉じる
-      window.addEventListener('keydown', this._onKeydown, { passive: true })
-    },
-    closeMediaModal() {
-      this.showMediaModal = false
-      document.body.style.overflow = this._prevOverflow || ''
-      window.removeEventListener('keydown', this._onKeydown)
-      this.pictureUrl = ''
-    },
-    _onKeydown(e) {
-      if (e.key === 'Escape') this.closeMediaModal()
+      await moveToMap(Number(coordinates.split(',')[0]), Number(coordinates.split(',')[1]))
+      setTimeout(() => {
+        onPointClick(dummyEvent)
+      },200)
+      if (this.isIphone) {
+        this.close()
+      }
     },
     truncate(str, maxLength) {
       return str.length > maxLength
           ? str.slice(0, maxLength) + '...'
           : str;
     },
-    imgClick() {
-      if (window.innerWidth > 500) {
-        this.openMediaModal()
-      } else {
-        /**
-         * とりあえずコメントアウト。暴発しがちだから。
-         */
-        // window.open(this.pictureUrl, '_blank', 'noopener,noreferrer');
-      }
-    },
     setZindex() {
       this.zIndex = getNextZIndex()
     },
-    longTextSave() {
-      const map01 = store.state.map01
-      const id =  this.id
-      const tgtProp = 'longText'
-      const value = sanitizeLongText(this.longText)
-      this.longTextForA = value
-      this.isEdit = false
-
-      store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
-    },
     close() {
-      this.setDrawDrawer(false);
+      this.setDrawListDrawer(false);
+    },
+    getList() {
+      const features = JSON.parse(this.clickCircleGeojsonText).features.filter(f => f.properties.id !== 'config')
+      // console.log(features)
+      features.sort((a, b) => {
+        return new Date(b.properties.updated_at) - new Date(a.properties.updated_at);
+      });
+      this.featuresLength = features.length
+      this.drawFeaturesTexts = features.map(f => {
+        let label = ''
+        switch (f.geometry.type){
+          case 'Point':
+            label = f.properties.label
+            break
+          case 'LineString':
+            label = 'ライン'
+            break
+          case 'Polygon':
+            label = 'ポリゴン'
+            break
+        }
+        return {
+          label: label,
+          id: f.properties.id,
+          coordinates: f.geometry.coordinates,
+        }
+      })
     },
   },
   mounted() {
-    // stopDrawerAnimations('.point-info-drawer .v-navigation-drawer')
     if (window.innerWidth < 500) this.drawerWidth = window.innerWidth
-
   },
   watch: {
-    showMediaModal(value) {
+    showDrawListDrawer(value) {
       if (value) {
-        this.modalZIndex = getNextZIndex()
+        this.getList()
       }
     },
-    isEdit(value) {
-      if (!value) {
-        this.longText = this.originalLongText
-      }
-    },
-    drawFeature: {
-      handler: function () {
-        if (this.drawFeature.properties.id === 'config') return
-        const activeEl = document.activeElement;
-        /**
-         * 様改修
-         */
-        if (activeEl.tagName === "TEXTAREA" && activeEl.selectionStart !== 0) {
-          console.log("アクティブなTEXTAREA:", activeEl.tagName)
-        } else {
-          this.setZindex()
-        }
-        const props = this.drawFeature.properties
-        this.type = this.drawFeature.geometry.type
-        this.label = props.label
-        // if (this.id === props.id) return
-        this.id = props.id
-        this.longText = toPlainText(props.longText)
-        if (this.longText) {
-          this.isEdit = false
-        } else {
-          this.isEdit = true
-        }
-        this.originalLongText = this.longText
-
-        this.longTextForA = props.longText
-        this.pictureUrl = props.pictureUrl
-        this.isImageFile = isImageFile(this.pictureUrl || '')
-
-
-        const canterLng = props.canterLng
-        const canterLat = props.canterLat
-        const radius = Number(props.radius)
-        const textSize = props['text-size'] || 16
-        const lineWidth = props['line-width'] || 5
-        const arrowType = props['arrow-type'] || 'end'
-        const labelType = props['labelType'] || 'start'
-        const isRadius = props.isRadius
-        const isArea = props.isArea || false
-        const isKeiko = props.keiko || false
-        const isCalc = props.calc || false
-        const isFreeHand = props['free-hand'] || false
-        const offsetX = String(props.offsetValue).split(',')[0]
-        const offsetY = String(props.offsetValue).split(',')[1]
-        let display = 'block'
-        let display2 = 'none'
-        let lineType = 'ラインストリング'
-        if (isFreeHand) {
-          display = 'none'
-          display2 = 'block'
-          lineType = 'フリーハンド'
-        }
-        let selectedEnd,selectedNone,selectedBoth
-        switch (arrowType) {
-          case 'end':
-            selectedEnd = 'selected'
-            break
-          case 'none':
-            selectedNone = 'selected'
-            break
-          case 'both':
-            selectedBoth = 'selected'
-            break
-        }
-        let labelSelectedStart,labelSelectedMid,labelSelectedNone,
-            labelSelected0, labelSelected1
-        switch (labelType) {
-          case 'start':
-            labelSelectedStart = 'selected'
-            break
-          case 'mid':
-            labelSelectedMid = 'selected'
-            break
-          case 'none':
-            labelSelectedNone = 'selected'
-            break
-          case '0':
-            labelSelected0 = 'selected'
-            break
-          case '1':
-            labelSelected1 = 'selected'
-            break
-        }
-      },
-      deep: true
+    clickCircleGeojsonText(value) {
+      // alert(999)
+      this.getList()
     },
   },
 };
@@ -341,7 +270,24 @@ export default {
   object-fit: cover;
 }
 
+.my-scroll {
+  margin-top: 10px;
+}
+
+.file-count-badge {
+  margin-left: 4px;
+  font-size: 10px;
+  font-weight: bold;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+  padding: 0 4px;
+  background-color: ghostwhite;
+}
+
 @media (max-width: 500px) {
 
 }
 </style>
+
+

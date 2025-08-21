@@ -10327,15 +10327,12 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, c
  */
 function removeThumbnailMarkerByKey(key) {
     if (!key) return;
-    console.log(key)
     const allMarkers = [markers, txtMarkers]
     allMarkers.forEach(markers => {
         for (let i = markers.length - 1; i >= 0; i--) {
             const item = markers[i];
             if (item && item.key === key) {
-                console.log(key)
                 item.marker?.remove();
-                console.log(item.marker)
                 markers.splice(i, 1);
             }
         }
@@ -10434,7 +10431,6 @@ function upsertFeature(f) {
         featureCollection.features[idx] = f;
         if (f.geometry?.type === 'Point') {
             const key = f.geometry.coordinates.join()
-             console.log(key)
             removeThumbnailMarkerByKey(key)
         }
     } else {
@@ -11096,28 +11092,86 @@ export function stopDrawerAnimations(selector = '.point-info-drawer .v-navigatio
     }
 }
 
-/**
- * プロミスを外す
- */
-export async function toPlainGeoJSON(input) {
-    // Promiseなら解決
-    if (input && typeof input.then === 'function') input = await input;
+// 指定座標にアニメで移動（長距離=fly、近距離=ease）
+// 確実に await できる moveToMap
+export function moveToMap(lon, lat, opts = {}) {
+    const m = store.state.map01;
+    if (!m) return Promise.resolve();
 
-    // refなら中身に差し替え（Vue3）
-    // if (isRef && isRef(input)) input = input.value;
+    // Map が未ロードならロード後に処理
+    if (!m._loaded) {
+        return new Promise(resolve => {
+            const onLoad = () => {
+                m.off('load', onLoad);
+                moveToMap(lon, lat, opts).then(resolve);
+            };
+            m.on('load', onLoad);
+        });
+    }
 
-    // Proxy(reactive)対策（Vue3なら toRaw で剥がす）
-    // if (toRaw) input = toRaw(input);
+    // 直前のアニメを中断（これで cancel が飛ぶことがある）
+    m.stop();
 
-    // if (typeof input === 'string') {
-    //     // JSON文字列ならオブジェクトへ
-    //     try { return JSON.parse(input); } catch { return input; } // 素の文字列だった場合はそのまま返す
-    // }
-    //
-    // // 既にオブジェクトなら深いコピーで純化（Proxy混入対策）
-    // if (input && typeof input === 'object') {
-    //     return JSON.parse(JSON.stringify(input));
-    // }
+    const cur = m.getCenter();
+    const manhattan = Math.abs(lon - cur.lng) + Math.abs(lat - cur.lat); // 簡易距離
+    const targetZoom = Math.max(m.getZoom(), opts.zoom ?? 16);
 
-    return input;
+    const common = {
+        center: [lon, lat],
+        zoom: targetZoom,
+        bearing: m.getBearing(),
+        pitch: m.getPitch(),
+        padding: { top: 20, right: 20, bottom: 20, left: 0 },
+        essential: true,
+    };
+
+    // 変化がほぼ無い場合は即 resolve
+    const EPS = 1e-9;
+    if (manhattan < EPS && Math.abs(targetZoom - m.getZoom()) < EPS) {
+        return Promise.resolve();
+    }
+
+    return new Promise(resolve => {
+        let settled = false;
+        const finish = () => {
+            if (settled) return;
+            settled = true;
+            m.off('moveend', onMoveEnd);
+            clearTimeout(safetyTimer);
+            resolve();
+        };
+        const onMoveEnd = () => finish();
+
+        // 万一コールバックが来ない場合に備えた安全タイマ
+        const expected = (manhattan > 0.2)
+            ? (opts.maxDuration ?? 1500)
+            : (opts.duration ?? 600);
+        const safetyTimer = setTimeout(finish, expected + 400);
+
+        m.on('moveend', onMoveEnd);
+
+        const cbOpts = {
+            complete: finish,  // 正常完了
+            cancel: finish,    // 中断されても先へ進める
+        };
+
+        if (manhattan > 0.2) {
+            m.flyTo({
+                ...common,
+                speed: opts.speed ?? 0.9,
+                curve: opts.curve ?? 1.4,
+                maxDuration: opts.maxDuration ?? 1500,
+                ...cbOpts,
+            });
+        } else {
+            m.easeTo({
+                ...common,
+                duration: opts.duration ?? 600,
+                easing: t => t,
+                ...cbOpts,
+            });
+        }
+    });
 }
+
+

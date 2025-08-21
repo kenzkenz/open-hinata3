@@ -133,6 +133,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
           :value="showDrawDrawer"
           :feature="selectedPointFeature"
       />
+      <DrawListDrawer
+          :value="showDrawListDrawer"
+          :feature="selectedPointFeature"
+      />
 
       <ChibanzuDrawer
           :value="showChibanzuDrawer"
@@ -1652,6 +1656,7 @@ import { TerraDrawPointMode,TerraDrawLineStringMode,TerraDrawPolygonMode } from 
 import PointInfoDrawer from '@/components/PointInfoDrawer.vue'
 import RightDrawer from '@/components/rightDrawer.vue'
 import DrawDrawer from '@/components/drawer/DrawDrawer.vue'
+import DrawListDrawer from '@/components/drawer/DrawLisiDrawer'
 import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
 import {
@@ -2100,6 +2105,7 @@ export default {
     DialogShare,
     DialogDrawConfig,
     DrawDrawer,
+    DrawListDrawer,
     PointInfoDrawer,
     RightDrawer,
     ChibanzuDrawer,
@@ -2280,6 +2286,7 @@ export default {
       'isSmall500',
       'isDraw',
       'showDrawDrawer',
+      'showDrawListDrawer',
       'showPointInfoDrawer',
       'showRightDrawer',
       'selectedPointFeature',
@@ -3001,7 +3008,7 @@ export default {
   },
   methods: {
     drawListOpen() {
-      alert('作成中')
+      this.$store.commit('setDrawListDrawer', true)
     },
     popupHtmlClose() {
       // const map01 = this.$store.state.map01
@@ -5022,14 +5029,6 @@ export default {
       this.isRightDiv = true
     },
     toggleLDraw ()  {
-      const btn = document.getElementById("centerDrawBtn2");
-      const bgColor = window.getComputedStyle(btn).backgroundColor;
-      // if (bgColor === 'rgb(46, 139, 87)' || bgColor === 'rgb(25, 118, 210)') {
-      //   this.s_isDraw = true
-      // } else {
-      //   this.s_isDraw = false
-      // }
-      // // this.s_isDraw = !this.s_isDraw
       const map01 = this.$store.state.map01
       if (!this.s_isDraw) {
         this.s_isDrawPoint = false
@@ -5039,6 +5038,7 @@ export default {
         map01.dragPan.enable = this.originalEnable
         map01.dragPan.enable()
         this.s_isDrawFix = false
+        closeAllPopups()
       } else {
         this.snackbarText = 'ドロー時は各種クリックが制限されます。'
         this.snackbar = true
@@ -5059,7 +5059,6 @@ export default {
         }
       }
       this.finishLine()
-      closeAllPopups()
     },
     finishDrawing() {
 
@@ -11251,6 +11250,13 @@ select {
 .exclude-overlay .v-input__prepend {
   display: none;
 }
+
+/*.v-virtual-scroll__item:first-child {*/
+/*  height: 0 !important;*/
+/*  margin: 0 !important;*/
+/*  padding: 0 !important;*/
+/*  overflow: hidden;*/
+/*}*/
 
 @media (prefers-reduced-motion: reduce) {
   .point-info-drawer .v-navigation-drawer{ transition: none !important; }

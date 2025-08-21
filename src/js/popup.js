@@ -263,15 +263,16 @@ function urlByLayerId (layerId) {
     return [RasterTileUrl,legend,zoom]
 }
 let isGooglemap = true
+let isRePopup = true
 
-export function popup(e,map,mapName,mapFlg) {
-
-    // console.error(e,map,mapName,mapFlg)
+export function popup(e, map, mapName, mapFlg, isNoDrawer) {
+    console.error(e,map,mapName,mapFlg)
     // if (store.state.editEnabled) return; //ん？これは要らない？
     let html = ref('')  // ← ここを ref 化
     watch(html, (newVal, oldVal) => {
         // console.log(`htmlが ${oldVal} → ${newVal} に変わりました`)
         createPopup(map, [e.lngLat.lng,e.lngLat.lat], html.value, mapName)
+        // alert(999)
     })
     const lngLat = e.lngLat;
     const point = map.project(lngLat);
@@ -295,10 +296,14 @@ export function popup(e,map,mapName,mapFlg) {
     ];
     if (store.state.isDraw) {
         if (features[0]?.layer?.id === 'zones-layer') {
-            console.log('バグ回避 zones-layer')
-            drawLayerIds.forEach(drawLayerId => {
-                map.moveLayer(drawLayerId)
-            })
+            if (isRePopup === true) {
+                console.log('バグ回避 zones-layer')
+                drawLayerIds.forEach(drawLayerId => {
+                    map.moveLayer(drawLayerId)
+                })
+                isRePopup = false
+                popup(e, map, mapName, mapFlg)
+            }
         }
     }
 
@@ -349,8 +354,10 @@ export function popup(e,map,mapName,mapFlg) {
         store.state.clickedCoordinates = coordinates
         return
     }
+
     let regionType = ''
     let isBreak = false
+
     for (const feature of features) {
         // features.forEach(feature => {
         const layerId = feature.layer.id
@@ -3578,7 +3585,7 @@ export function popup(e,map,mapName,mapFlg) {
             {
                 console.log('⭐⭐️⭐⭐️到達！️')
                 // alert('到達')
-                if (!store.state.isIphone) store.commit('setDrawDrawer', false)
+                // if (!store.state.isIphone) store.commit('setDrawDrawer', false)
                 html.value = ''
                 isBreak = true
                 coordinates = store.state.coordinates
@@ -3625,8 +3632,8 @@ export function popup(e,map,mapName,mapFlg) {
                 const isKeiko = props.keiko || false
                 const isCalc = props.calc || false
                 const isFreeHand = props['free-hand'] || false
-                const offsetX = String(props.offsetValue).split(',')[0]
-                const offsetY = String(props.offsetValue).split(',')[1]
+                const offsetX = Number(String(props.offsetValue).split(',')[0])
+                const offsetY = Number(String(props.offsetValue).split(',')[1])
                 let display = 'block'
                 let display2 = 'none'
                 let lineType = 'ラインストリング'
@@ -3694,7 +3701,9 @@ export function popup(e,map,mapName,mapFlg) {
                                         '<span style="font-size:20px;" class="circle-label">半径' + radius + 'm</span>' +
                                         '<span style="margin-left: 10px;font-size: 16px;"><input ' + checked + ' type="checkbox" id="' + props.id + '-radius" class="circle-radius-check" value=""><label for="' + props.id + '-radius"> 半径表示</span>' +
                                         '<input id="' + props.id + '" style="width: 100%;" type="range" min="10" max="' + radius * 5 + '" step="10" value="' + radius + '" class="circle-range" lng="' + canterLng + '" lat="' + canterLat + '"/><br>' +
+
                                         '<input id="' + props.id + '" type="number" style="margin-bottom: 10px;width: 90px;" class="oh-cool-input-number circle-radius-input" min="1" max="100000" step="1" value="' + radius +'">' +
+
                                         '<span style="margin-left: 10px;font-size: 16px;"><input type="checkbox" id="' + props.id + '-200" class="circle200-check" value=""><label for="' + props.id + '-200"> 200m</span>' +
                                         '<input id="' + props.id + '" style="width: 100%;margin-bottom: 10px;" type="text" class="oh-cool-input circle-text" placeholder="ここに入力" value="' + props.label2 + '">' +
                                         '<button id="' + props.id + '" style="margin-bottom: 10px;height: 3wq230px;font-size: medium;" class="circle-delete pyramid-btn">削　除</button><br>' +
@@ -3734,7 +3743,9 @@ export function popup(e,map,mapName,mapFlg) {
                                         '<div style="width: 240px;"class="click-circle-layer" font-weight: normal; color: #333;line-height: 25px;">' +
                                         '<div style="position: relative">' +
                                         '<div style="margin-left: 10px;margin-bottom: 10px; font-size: 16px;"><input ' + checked + ' type="checkbox" id="' + props.id + '" class="polygon-area-check" value=""><label for="' + props.id + '"> 面積表示</label>' +
-                                        '<input id="' + props.id + '" type="number" class="oh-cool-input-number line-width-input" min="1" max="100" step="1" value="' + lineWidth +'" style="position: absolute;left:120px;top:0px;">' +
+
+                                        // '<input id="' + props.id + '" type="number" class="oh-cool-input-number line-width-input" min="1" max="100" step="1" value="' + lineWidth +'" style="position: absolute;left:120px;top:0px;">' +
+
                                         '</div>' +
                                         '<input id="' + props.id + '" style="width: 100%;margin-bottom: 5px;" type="text" class="oh-cool-input polygon-text" placeholder="ここに入力" value="' + props.label + '">' +
                                         '<button id="' + props.id + '" style="width: 45%;margin-bottom: 10px;height: 30px;font-size: medium;" class="circle-delete pyramid-btn">削　除</button>' +
@@ -3760,10 +3771,16 @@ export function popup(e,map,mapName,mapFlg) {
                             // alert('到達')
                             // if ((props.longText || props.pictureUrl) && window.innerWidth > 0) {
                             if (window.innerWidth > 0) {
-                                if (!store.state.isIphone || (store.state.isIphone && !store.state.isDraw)) store.commit('setDrawDrawer', true)
+                                if (
+                                    (!store.state.isIphone && !store.state.isAndroid) ||
+                                    (store.state.isIphone && !store.state.isDraw && !isNoDrawer) ||
+                                    (store.state.isAndroid && !store.state.isDraw && !isNoDrawer)
+                                ) {
+                                    store.commit('setDrawDrawer', true)
+                                }
                                 if (!store.state.isDraw) return;
                             }
-
+                            // alert('到達')
                             // if (!store.state.isDraw) {
                             //     store.state.loadingMessage3 = '編集するには右のペンアイコンをクリックしてドロー状態にしてください。'
                             //     store.state.loading3 = true
@@ -3775,15 +3792,50 @@ export function popup(e,map,mapName,mapFlg) {
 
                             // alert(888)
                             if (html.value.indexOf('click-circle-layer') === -1) {
-                                // alert('到達')
                                 const pictureUrl = props.pictureUrl || ''
                                 // if (store.state.isDraw || !pictureUrl) {
                                     // alert('到達')
                                     const keywordList = ['道路', '水路', '畑', '宅地', '田', '雑種地', 'コン杭', 'プレート','プラ杭','鋲'];
+
+                                    let inputNumber = ''
+                                    let inputNumberX = ''
+                                    let inputNumberY = ''
+                                    if (store.state.isSmall1000) {
+                                        inputNumber += '<select style="width: 50px;" id="' + props.id + '" class="oh-cool-select font-size-input">'
+                                        for (let n = 0; n <= 100; n++) {
+                                            const val = n.toFixed(1);
+                                            const selected = (val == textSize) ? " selected" : "";
+                                            inputNumber += `<option value="${val}"${selected}>${val}</option>`;
+                                        }
+                                        inputNumber += '</select>'
+                                        // -----------------------------------------------------------------------------
+                                        inputNumberX = '<select style="width: 50px;" id="' + props.id + '" class="oh-cool-select offset-x-input">';
+                                        for (let n = -20; n <= 20; n += 0.1) {
+                                            const val = n.toFixed(1);
+                                            const selected = (val == offsetX) ? " selected" : "";
+                                            inputNumberX += `<option value="${val}"${selected}>${val}</option>`;
+                                        }
+                                        inputNumberX += '</select>';
+                                        // -----------------------------------------------------------------------------
+                                        inputNumberY = '<select style="width: 50px;" id="' + props.id + '" class="oh-cool-select offset-y-input">';
+                                        for (let n = -20; n <= 20; n += 0.1) {
+                                            const val = n.toFixed(1);
+                                            // <option value="2" selected>2</option>
+                                            console.log(offsetY)
+                                            const selected = (val == offsetY) ? " selected" : "";
+                                            inputNumberY += `<option value="${val}"${selected}>${val}</option>`;
+                                        }
+                                        inputNumberY += '</select>';
+                                    } else {
+                                        inputNumber = '<input id="' + props.id + '" style="margin-bottom: 5px; width: 50px;" type="number" class="oh-cool-input-number font-size-input" min="10" max="100" step="1" value="' + textSize + '">'
+                                        inputNumberX = '<input id="' + props.id + '" style="margin-bottom: 5px; width: 50px;" type="number" class="oh-cool-input-number offset-x-input" step="0.1" value="' + offsetX + '">'
+                                        inputNumberY = '<input id="' + props.id + '" style="margin-bottom: 5px; width: 50px;" type="number" class="oh-cool-input-number offset-y-input" step="0.1" value="' + offsetY + '">'
+                                    }
+
                                     html.value += '<div class="layer-label-div">ポイント</div>';
                                     html.value += '<div style="display: flex; width: 100%;">';
                                     // 左側：250px固定
-                                    html.value += '<div style="width: 250px;">';
+                                    html.value += '<div style="width: 260px;">';
                                     html.value +=
                                         '<div class="click-circle-layer" style="font-weight: normal; color: #333; line-height: 25px;">' +
                                         '<textarea id="' + props.id + '" rows="2" style="width: 100%; margin-bottom: 0px;" type="text" class="oh-cool-input point-text" placeholder="ラベルに使用する短文を入力">' + props.label + '</textarea>' +
@@ -3792,12 +3844,12 @@ export function popup(e,map,mapName,mapFlg) {
 
                                         '<br>' +
                                         '</select>' +
-                                        '<select id="' + props.id + '" style="margin-left: 0px; width: 60px;" class="oh-cool-select text-select">' +
+                                        '<select id="' + props.id + '" style="margin-right: 10px; width: 60px;" class="oh-cool-select text-select">' +
                                         '<option value="0" ' + labelSelected0 + '>通常</option>' +
                                         '<option value="1" ' + labelSelected1 + '>吹き出し</option>' +
                                         '</select>' +
-                                        '　X　<input id="' + props.id + '" style="margin-bottom: 5px; width: 50px;" type="number" class="oh-cool-input-number offset-x-input" step="0.1" value="' + offsetX + '">' +
-                                        '　Y　<input id="' + props.id + '" style="margin-bottom: 5px; width: 50px;" type="number" class="oh-cool-input-number offset-y-input" step="0.1" value="' + offsetY + '">' +
+                                        'オフセット x ' + inputNumberX +
+                                        ' y ' + inputNumberY +
                                         '<br>' +
                                         '<button id="' + props.id + '" style="margin-bottom: 10px; height: 30px; font-size: medium; width: 100%;" class="point-delete pyramid-btn">削　除</button>' +
                                         '<div style="display: flex; gap: 8px;">' +
@@ -3809,7 +3861,7 @@ export function popup(e,map,mapName,mapFlg) {
                                         '<div id="' + props.id + '" data-color="orange" class="text-color circle orange" tabindex="0">T</div>' +
                                         '<div id="' + props.id + '" data-color="hotpink" class="text-color circle hotpink" tabindex="0">T</div>' +
                                         '</div>' +
-                                        '<input id="' + props.id + '" style="margin-bottom: 5px;" type="number" class="oh-cool-input-number font-size-input" min="10" max="100" step="1" value="' + textSize + '">' +
+                                        inputNumber +
                                         '</div>' +
                                         // // '<hr>' +
                                         '<div class="circle-list">' +
@@ -4215,7 +4267,7 @@ export function popup(e,map,mapName,mapFlg) {
 // }
 
 
-async function createPopup(map, coordinates, htmlContent, mapName) {
+async function createPopup(map, coordinates, htmlContent, mapName, isPan) {
     if (isSmall && store.state.isDraw) return
     // ストリートビューとGoogleマップへのリンクを追加
     const [lng, lat] = coordinates;
@@ -4488,6 +4540,8 @@ async function createPopup(map, coordinates, htmlContent, mapName) {
         carouselButtons.classList.add('hidden');
     }
     pyramid.currentIndex = 0
+
+
 }
 function fetchReverseGeocoding(lng, lat, mapName) {
     axios.get('https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress', {

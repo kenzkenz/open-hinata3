@@ -17,7 +17,7 @@
                   outlined
                   @input="configChange('title-text',s_printTitleText)"
               />
-              <label v-if="isIphone" class="vlike vlike--floating" :class="{ 'is-error': hasError }">
+              <label v-if="isSmall1000" class="vlike vlike--floating" :class="{ 'is-error': hasError }">
                 <span class="vlike__text">フォントサイズ</span>
                 <select
                     v-model="s_textPx"
@@ -184,6 +184,7 @@ export default {
   }),
   computed: {
     ...mapState([
+      'isSmall1000',
       'isIphone',
       'isUsingServerGeojson',
       'isEditable',

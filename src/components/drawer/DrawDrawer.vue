@@ -105,6 +105,7 @@ import {clickCircleSource} from "@/js/layers";
 import {geojsonUpdate} from "@/js/pyramid";
 import {getNextZIndex, isImageFile, sanitizeLongText, stopDrawerAnimations, toPlainText} from "@/js/downLoad";
 import {history} from "@/App";
+import {popup} from "@/js/popup";
 
 export default {
   name: 'drawDrawer',
@@ -156,6 +157,15 @@ export default {
       this.s_isDraw = true
       const btn = document.getElementById("centerDrawBtn2")
       btn.click()
+      const map = this.$store.state.map01
+      this.$store.state.id = this.drawFeature.properties.id
+      const dummyEvent = {
+        lngLat: { lng: this.drawFeature.geometry.coordinates[0], lat: this.drawFeature.geometry.coordinates[1] },
+      };
+      function onPointClick(e) {
+        popup(e,map,'map01', store.state.map2Flg)
+      }
+      onPointClick(dummyEvent)
     },
     toEdit() {
       this.isEdit = true;

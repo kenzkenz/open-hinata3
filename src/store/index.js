@@ -6,8 +6,9 @@ import firebase from 'firebase/app';
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.356,
+    clientVersion: 1.357,
     dialogForVersion: false,
+    isSmall1000: false,
     isSmall500: false,
     isAndroid: false,
     isIphone: false,
@@ -160,6 +161,7 @@ export default createStore({
     map2Flg: false,
     isUnder500: false,
     showDrawDrawer: false,
+    showDrawListDrawer: false,
     showPointInfoDrawer: false,
     showRightDrawer: false,
     showChibanzuDrawer: false,
@@ -604,6 +606,9 @@ export default createStore({
         // 新しいポイントを追加
         state.groupGeojson.features.push(JSON.parse(JSON.stringify(feature)))
       }
+    },
+    setDrawListDrawer (state, val) {
+      state.showDrawListDrawer = val
     },
     setDrawDrawer (state, val) {
       state.showDrawDrawer = val
