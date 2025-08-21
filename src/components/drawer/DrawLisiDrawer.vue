@@ -97,11 +97,13 @@ export default {
   },
   methods: {
     ...mapMutations([
+      'setDrawDrawer',
       'setDrawListDrawer',
       'saveSelectedPointFeature',
       'setSelectedPointFeature',
     ]),
     async onItemClick(event) {
+      this.setDrawDrawer(false);
       const { id, coordinates } = event.currentTarget.dataset
       console.log(coordinates.split(',')[0])
       const map = this.$store.state.map01
