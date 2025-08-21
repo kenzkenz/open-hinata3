@@ -216,6 +216,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </v-card-title>
           <v-card-text style="padding-bottom: 0">
             <div>
+              <input type="file" accept="image/*" capture="camera">
               <v-file-input
                   v-model="s_selectedFile"
                   label="画像、動画を選択"
@@ -1600,7 +1601,7 @@ import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
 import { TerraDrawPointMode,TerraDrawLineStringMode,TerraDrawPolygonMode } from 'terra-draw'
 import PointInfoDrawer from '@/components/PointInfoDrawer.vue'
 import RightDrawer from '@/components/rightDrawer.vue'
-import DrawDrawer from '@/components/DrawDrawer.vue'
+import DrawDrawer from '@/components/drawer/DrawDrawer.vue'
 import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
 import {
@@ -11056,28 +11057,47 @@ select {
   position:relative;
   margin-bottom: 25px;
 }
-.vlike__text{color:var(--v-theme-on-surface,#1f1f1f);opacity:.7;padding-left:4px}
-.vlike__control{
-  -webkit-appearance:none;appearance:none;width:100%;height:55px;line-height:55px;
-  padding:0 40px 0 12px;border-radius:4px;border:1px solid rgba(0,0,0,.12);
-  background:var(--v-theme-surface,#fff);color:var(--v-theme-on-surface,#1f1f1f);
-  outline:none;box-shadow:none;transition:border-color .15s,box-shadow .15s,background .15s
+.vlike__text{
+  color:var(--v-theme-on-surface, #1f1f1f);
+  opacity:.7;
+  padding-left:4px;
 }
-.vlike__control:hover{border-color:rgba(0,0,0,.22)}
+.vlike__control{
+  -webkit-appearance:none;
+  appearance:none;
+  width:100%;
+  height:55px;
+  line-height:55px;
+  padding:0 40px 0 12px;
+  border-radius:4px;border:1px solid rgba(0,0,0,.12);
+  background:var(--v-theme-surface,#fff);
+  color:var(--v-theme-on-surface,#1f1f1f);
+  outline:none;
+  box-shadow:none;
+  transition:border-color .15s,box-shadow .15s,background .15s;
+}
+.vlike__control:hover{
+  border-color:rgba(0,0,0,.22)
+}
 .vlike__control:focus{
   border-color:var(--v-theme-primary,#1976d2);
-  box-shadow:0 0 0 2px color-mix(in srgb, var(--v-theme-primary,#1976d2) 25%, transparent)
+  box-shadow:0 0 0 2px color-mix(in srgb, var(--v-theme-primary,#1976d2) 25%, transparent);
 }
 /* プレースホルダー時の薄色表示 */
-.vlike__control[data-empty="true"]{color:rgba(0,0,0,.38)}
+.vlike__control[data-empty="true"]{
+  color:rgba(0,0,0,.38)
+}
 /* 無効時 */
 .vlike__control:disabled{
-  background:var(--v-theme-surface-variant,#f6f6f6);color:rgba(0,0,0,.38);border-color:rgba(0,0,0,.12);cursor:not-allowed
+  background:var(--v-theme-surface-variant,#f6f6f6);
+  color:rgba(0,0,0,.38);
+  border-color:rgba(0,0,0,.12);
+  cursor:not-allowed
 }
 /* エラー枠 */
 .is-error .vlike__control{
   border-color:var(--v-theme-error,#d32f2f);
-  box-shadow:0 0 0 2px color-mix(in srgb, var(--v-theme-error,#d32f2f) 20%, transparent)
+  box-shadow:0 0 0 2px color-mix(in srgb, var(--v-theme-error,#d32f2f) 20%, transparent);
 }
 /* 矢印（純CSS） */
 .vlike::after{
