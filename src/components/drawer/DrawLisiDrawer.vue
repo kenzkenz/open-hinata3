@@ -166,6 +166,11 @@ export default {
     showDrawListDrawer(value) {
       if (value) {
         this.getList()
+        document.querySelector('#right-top-div').style.right = '260px'
+        document.querySelector('.sub-btns').style.right = '288px'
+      } else {
+        document.querySelector('#right-top-div').style.right = '20px'
+        document.querySelector('.sub-btns').style.right = '48px'
       }
     },
     clickCircleGeojsonText(value) {

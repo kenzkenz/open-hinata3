@@ -3008,7 +3008,11 @@ export default {
   },
   methods: {
     drawListOpen() {
-      this.$store.commit('setDrawListDrawer', true)
+      if (this.showDrawListDrawer) {
+        this.$store.commit('setDrawListDrawer', false)
+      } else {
+        this.$store.commit('setDrawListDrawer', true)
+      }
     },
     popupHtmlClose() {
       // const map01 = this.$store.state.map01
