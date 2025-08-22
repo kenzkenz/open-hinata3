@@ -8164,18 +8164,21 @@ export default {
             });
             const data = await response.json();
             if (data.success) {
+              console.log(data.rows)
               const configRow = data.rows.find(row => row.feature_id === 'config')
               this.$store.state.isMine = data.rows[0].creator_user_id === this.$store.state.userId
               this.$store.state.isEditable = data.rows[0].is_editable ===  '1'
               this.$store.state.isEditableForVSelect = this.$store.state.isEditable
-              this.$store.state.geojsonName = configRow.geojson_name
-              const config = JSON.parse(configRow.feature).properties
-              this.$store.state.printTitleText = config['title-text'] || ''
-              this.$store.state.textPx = config['font-size'] || 30
-              this.$store.state.titleColor = config['fill-color'] || 'black'
-              this.$store.state.titleDirection = config['direction'] || 'vertical'
-              this.$store.state.drawVisible = config['visible'] || true
-              this.$store.state.drawOpacity = config['opacity'] || 1
+              this.$store.state.geojsonName = data.rows[0].geojson_name || ''
+              if (configRow) {
+                const config = JSON.parse(configRow.feature).properties
+                this.$store.state.printTitleText = config['title-text'] || ''
+                this.$store.state.textPx = config['font-size'] || 30
+                this.$store.state.titleColor = config['fill-color'] || 'black'
+                this.$store.state.titleDirection = config['direction'] || 'vertical'
+                this.$store.state.drawVisible = config['visible'] || true
+                this.$store.state.drawOpacity = config['opacity'] || 1
+              }
               startPolling()
               if (!this.$store.state.isEditable && !this.$store.state.isMine) {
                 this.$store.state.loadingMessage = `<div style="text-align: center">${this.$store.state.geojsonName}に接続しました。<br>編集不可です。</div>`

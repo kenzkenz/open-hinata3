@@ -719,11 +719,16 @@ export const clickCirclePolygonLineLayer = {
         ],
     }
 }
+/**
+ * ミゾッターさんの指摘により改修。他機能との検証が必要。しばらく様子見
+ * @type {{filter: (string|string[])[], layout: {"text-justify": string[], "text-field": (string|(string|string[]|(string|(string|string[])[]|number)[])[]|string[])[], "text-offset": number[], "text-size": number, "text-anchor": string, "text-allow-overlap": boolean}, maxzoom: number, paint: {"text-halo-color": string, "text-color": string, "text-halo-width": number}, id: string, source: string, type: string, minzoom: number}}
+ */
 export const clickCircPolygonSymbolLayer = {
     id: 'click-circle-polygon-symbol-layer',
     type: 'symbol',
     source: 'click-circle-source',
-    filter: ['all', ['==', '$type', 'Polygon'], ['!has', 'bearing'], ['!has', 'radius']],
+    // filter: ['all', ['==', '$type', 'Polygon'], ['!has', 'bearing'], ['!has', 'radius']],
+    filter: ['all', ['!has', 'labelType'], ['!has', 'bearing'], ['!has', 'radius']],
     layout: {
         // 'text-field': ['get', 'label'],
         'text-field': [
@@ -738,7 +743,9 @@ export const clickCircPolygonSymbolLayer = {
         ],
         'text-size': 18,   // サイズ調整
         'text-anchor': 'center',
-        'text-allow-overlap': true
+        'text-allow-overlap': true,
+        'text-offset': [0,1],
+        'text-justify': ['get', 'textJustify'], // 追加: 複数行のテキストを左寄せにする
     },
     paint: {
         'text-color': 'black',
@@ -746,7 +753,7 @@ export const clickCircPolygonSymbolLayer = {
         'text-halo-width': 1
     },
     'maxzoom': 24,
-    'minzoom': 14
+    'minzoom': 0
 }
 export const clickCircPolygonSymbolAreaLayer = {
     id: 'click-circle-polygon-symbol-area-layer',

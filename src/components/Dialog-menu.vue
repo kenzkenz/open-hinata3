@@ -17,15 +17,15 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       <v-dialog v-model="dialogForUpload" max-width="500px">
         <v-card>
           <v-card-title>
-            アップロード選択!
+            アップロード
           </v-card-title>
 
           <v-card-text>
             <v-tabs mobile-breakpoint="0" v-model="tab">
               <v-tab value="0">SIMA</v-tab>
-              <v-tab value="1">geotif</v-tab>
-              <v-tab value="2">JPG</v-tab>
-              <v-tab value="3">PNG</v-tab>
+<!--              <v-tab value="1">geotif</v-tab>-->
+<!--              <v-tab value="2">JPG</v-tab>-->
+<!--              <v-tab value="3">PNG</v-tab>-->
             </v-tabs>
 
             <v-window v-model="tab">
@@ -336,7 +336,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       <v-text-field label="住所、座標で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
 
       <!--      <v-btn class="tiny-btn" @click="simaLoad">SIMA読み込</v-btn>-->
-<!--      <v-btn class="tiny-btn" @click="upLoad">各種アップロード</v-btn>-->
+      <v-btn class="tiny-btn" @click="upLoad">各種アップロード</v-btn>
       <v-btn style="margin-left: 5px;" class="tiny-btn" @click="pngDownload">PNGダウンロード</v-btn>
       <v-btn style="margin-left: 5px;" class="tiny-btn" @click="s_dialogForOffline = true">オフライン設定</v-btn>
 

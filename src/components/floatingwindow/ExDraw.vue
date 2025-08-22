@@ -15,7 +15,6 @@
         </v-card>
       </v-window-item>
 
-
       <v-window-item  value="line">
         <p style="color: deeppink; margin-top: 20px; margin-bottom: 100px;">ラインは未作成です。</p>
 

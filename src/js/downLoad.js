@@ -2084,7 +2084,7 @@ export function simaFileUpload(event) {
         const simaData = text;
         if (store.state.userId) {
             const map1 = store.state.map01
-            simaLoadForUser (map1,true, simaData)
+            simaLoadForUser (map1,true, simaData, store.state.zahyokei)
         } else {
             ddSimaUpload(simaData)
         }
@@ -8899,6 +8899,8 @@ export function addDraw (geojson,isFit,isNini) {
         if (!feature.properties.color) feature.properties['color'] = 'rgba(0,0,255,0.1)'
         feature.properties['line-width'] = 1
         feature.properties['arrow-type'] = 'none'
+        feature.properties['text-size'] = 16
+        feature.properties['labelType'] = '1'
         if (isNini) {
             feature.properties['isNini'] = true;
         }
@@ -8927,6 +8929,10 @@ export function addDraw (geojson,isFit,isNini) {
             linear: false
         });
     }
+    if (!store.state.isUsingServerGeojson) {
+        featureCollectionAdd()
+    }
+    markerAddAndRemove()
 }
 /**
  * GeoJSON 全体を指定座標に再センタリングする
@@ -10052,7 +10058,8 @@ export function markerAddAndRemove() {
         const isLabel = !!(
             feature?.properties?.label &&
             !feature?.properties?.radius &&
-            isPointCoords(coords) &&
+            // isPointCoords(coords) &&
+            feature?.geometry?.type === 'Point' &&
             feature?.properties?.labelType === '1'
         )
         if (isPicture && isLabel) {
@@ -10216,6 +10223,7 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, c
 
     // ラベル（上の白い余白用）
     if (labelText) {
+        console.log(labelText)
         const label = document.createElement('div');
         label.innerText = labelText;
         label.style.position   = 'absolute';
@@ -10252,11 +10260,13 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, c
         thumb.playsInline = true;
         thumb.style.objectFit   = 'cover';
     } else {
-        thumb = document.createElement('div');
+        thumb = document.createElement('img');
+        thumb.src = photoURL;
+        // thumb = document.createElement('div');
+        // thumb.style.backgroundImage   = `url(${photoURL})`;
         thumb.className               = 'pic-marker-img';
         thumb.style.width             = `${containerSize}px`;
         thumb.style.height            = `${containerSize}px`;
-        thumb.style.backgroundImage   = `url(${photoURL})`;
         thumb.style.backgroundSize    = 'cover';
         thumb.style.backgroundPosition= 'center';
         thumb.style.borderRadius      = borderRadius;
@@ -11270,8 +11280,6 @@ export function fitOrCenter(map, bbox, opts = {}) {
     }
     go();
 }
-
-// 使い方
 
 
 
