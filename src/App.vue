@@ -476,7 +476,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             ></v-select>
             <v-select v-model="csvLabelColumn"
                       :items="csvColumns"
-                      label="ラベルに表示する列を選択"
+                      label="ラベルに表示する列を選択（必須）"
                       outlined
             ></v-select>
             <v-select v-model="csvColorColumn"
@@ -3671,6 +3671,10 @@ export default {
       addDraw(this.geojsonForDraw,true)
     },
     async uploadDrawCsv () {
+      if (!this.csvLabelColumn) {
+        alert('必須項目が選択されていません。')
+        return
+      }
       if (this.csvLonLat) {
         this.dialogForDrawCsv = false
         const features = [];
