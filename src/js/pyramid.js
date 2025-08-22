@@ -1220,18 +1220,21 @@ export default function pyramid () {
         mapElm.addEventListener('keyup', (e) => {
             if (e.target && (e.target.classList.contains("point-text"))) {
                 store.state.isLabelUpdated = true
+                store.state.drawFeatureId = String(e.target.getAttribute("id"))
                 // lavelUpdate(e)
             }
         });
         mapElm.addEventListener('compositionend', (e) => {
             if (e.target && (e.target.classList.contains("point-text"))) {
                 store.state.isLabelUpdated = true
+                store.state.drawFeatureId = String(e.target.getAttribute("id"))
                 // lavelUpdate(e)
             }
         });
         mapElm.addEventListener('input', (e) => {
             if (e.target && (e.target.classList.contains("point-text"))) {
                 store.state.isLabelUpdated = true
+                store.state.drawFeatureId = String(e.target.getAttribute("id"))
                 // lavelUpdate(e)
             }
         });

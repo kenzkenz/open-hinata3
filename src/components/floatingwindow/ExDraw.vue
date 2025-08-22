@@ -9,7 +9,9 @@
     <v-window v-model="tab" style="margin-top: 20px;">
       <v-window-item value="kakudo">
         <v-card>
-          作成中
+          作成中<br>
+          ドローに関して要望があるときは
+          <a href="https://x.com/kenzkenz" target="_blank">https://x.com/kenzkenz</a>にDMを送ってください。
         </v-card>
       </v-window-item>
 
