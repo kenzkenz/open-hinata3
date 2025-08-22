@@ -1843,6 +1843,9 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
         featureCollectionAdd()
     }
     markerAddAndRemove()
+
+    store.commit('disableAllDraws')
+
     return feature;
 }
 
