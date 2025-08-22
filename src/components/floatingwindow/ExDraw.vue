@@ -3,14 +3,13 @@
 
     <v-tabs mobile-breakpoint="0" v-model="tab" class="custom-tabs">
       <v-tab value="kakudo">基準点角度</v-tab>
-      作成中
 <!--      <v-tab value="line">ライン</v-tab>-->
     </v-tabs>
 <!--    <hr>-->
     <v-window v-model="tab" style="margin-top: 20px;">
       <v-window-item value="kakudo">
         <v-card>
-
+          作成中
         </v-card>
       </v-window-item>
 

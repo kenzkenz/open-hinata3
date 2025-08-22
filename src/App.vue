@@ -2094,7 +2094,7 @@ import FanMenu from '@/components/FanMenu'
 import html2canvas from 'html2canvas'
 import debounce from 'lodash/debounce'
 import * as math from 'mathjs'
-import FloatingWindow from '@/components/FloatingWindow';
+import FloatingWindow from '@/components/floatingwindow/FloatingWindow';
 import PaintEditor from '@/components/floatingwindow/PaintEditor'
 import ExDraw from '@/components/floatingwindow/ExDraw'
 

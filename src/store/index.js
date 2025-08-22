@@ -7,6 +7,7 @@ export default createStore({
   state: {
     drawFeatureId: '',
     clientVersion: 1.358,
+    isLabelUpdated: false,
     dialogForVersion: false,
     isSmall1000: false,
     isSmall500: false,

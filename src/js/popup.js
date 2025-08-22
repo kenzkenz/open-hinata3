@@ -4,12 +4,11 @@ import codeShizenOriginal from "@/js/codeShizenOriginal"
 import maplibregl from "maplibre-gl"
 import axios from "axios";
 import muni from "@/js/muni";
-import pyramid from "@/js/pyramid";
+import pyramid, {lavelUpdate} from "@/js/pyramid";
 import * as turf from '@turf/turf'
 import {
-    extractAndOpenUrls,
     getNextZIndex,
-    queryFGBWithPolygon, toPlainGeoJSON, toResolved,
+    queryFGBWithPolygon,
     wsg84ToJgd
 } from "@/js/downLoad";
 import { Viewer, CameraControls, RenderMode, TransitionMode } from 'mapillary-js';
@@ -132,8 +131,7 @@ const legend_seamless = [
 ]
 export function closeAllPopups() {
     popups.forEach(popup => popup.remove())
-    // 配列をクリア
-    popups.length = 0
+    popups.length = 0// 配列をクリア
 }
 // IDから対応するlabelを取得する関数
 function getLabelByLayerId(layerId, data) {
@@ -4351,7 +4349,7 @@ async function createPopup(map, coordinates, htmlContent, mapName, isPan) {
     }
     if (htmlContent !== 'dumy') {
         const popup = new maplibregl.Popup({
-            closeButton: true,
+            // closeButton: true,
             maxWidth: "380px",
             // className: "my-popup"
         })
@@ -4359,7 +4357,36 @@ async function createPopup(map, coordinates, htmlContent, mapName, isPan) {
             .setHTML(popupHtml)
             .addTo(map);
         // ポップアップイベント設定
+        // 1) クローズボタン押下をフック（addTo前に登録）
+        const onBeforeClose = (e) => {
+            console.log('before close');
+            lavelUpdate(null, store.state.drawFeatureId);
+            store.state.isLabelUpdated = false
+        };
+        // open 時にクローズボタンへ一度だけバインド
+        popup.on('open', () => {
+            const btn = popup.getElement().querySelector('.maplibregl-popup-close-button');
+            if (btn) btn.addEventListener('click', onBeforeClose, { once: true });
+        });
+        // 2) クリック外や Esc で閉じるケースも拾うため remove() をラップ
+        const origRemove = popup.remove;
+        popup.remove = function () {
+            // まだ実行していなければ事前処理
+            onBeforeClose();
+            return origRemove.apply(this, arguments);
+        };
+        // 最後に addTo（ここで open が発火）
+        popup.addTo(map);
+        // 管理配列へ
         popups.push(popup);
+        // 既に開いた状態（環境によっては同期発火）に備えて保険
+        if (typeof popup.isOpen === 'function' && popup.isOpen()) {
+            const btn = popup.getElement().querySelector('.maplibregl-popup-close-button');
+            if (btn && !btn._oh_bound) {
+                btn.addEventListener('click', onBeforeClose, { once: true });
+                btn._oh_bound = true;
+            }
+        }
         popup.on('close', closeAllPopups);
         const popupEl = popup.getElement();
         // ドロワーに負けるので後出し。

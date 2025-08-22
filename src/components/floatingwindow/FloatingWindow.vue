@@ -157,7 +157,12 @@ export default {
       this.dragging = true;
       this.startX = e.clientX;
       this.startY = e.clientY;
-      this.startLeft = this.left;
+      // ここを改修
+      if (this.defaultRight > 0) {
+        this.startLeft = window.innerWidth - (this.right + this.width);
+      } else {
+        this.startLeft = this.left;
+      }
       this.startTop = this.top;
       document.addEventListener('mousemove', this.onDrag);
       document.addEventListener('mouseup', this.stopDrag);
@@ -166,7 +171,12 @@ export default {
       if (!this.dragging) return;
       const newLeft = this.startLeft + (e.clientX - this.startX);
       const newTop = this.startTop + (e.clientY - this.startY);
-      this.left = Math.max(0, newLeft);
+      // ここを改修
+      if (this.defaultRight > 0) {
+         this.right = window.innerWidth - Math.max(0, newLeft) - this.width
+      } else {
+        this.left = Math.max(0, newLeft);
+      }
       this.top = Math.max(0, newTop);
     },
     stopDrag() {
@@ -243,9 +253,16 @@ export default {
   position: absolute;
   background-color: white;
   box-sizing: border-box;
+  box-shadow:2px 2px 5px #787878;
+  border: 1px solid whitesmoke;
+  border-radius: 4px;
+  transition: opacity 1s;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
   user-select: none;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  touch-action: auto; /* タッチイベントを有効化 */
+  -webkit-overflow-scrolling: touch;
 
   overflow: hidden;
 
@@ -261,8 +278,8 @@ export default {
   color: white;
   height: 32px;
   line-height: 24px;
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
   overflow: hidden;
 }
 

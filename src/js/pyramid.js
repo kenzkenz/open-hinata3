@@ -1217,28 +1217,22 @@ export default function pyramid () {
             }
         });
         // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('keyup', (e) => {
+            if (e.target && (e.target.classList.contains("point-text"))) {
+                store.state.isLabelUpdated = true
+                // lavelUpdate(e)
+            }
+        });
         mapElm.addEventListener('compositionend', (e) => {
             if (e.target && (e.target.classList.contains("point-text"))) {
-                const map01 = store.state.map01
-                const id = String(e.target.getAttribute("id"))
-                const pointTextElm = document.querySelector('.point-text')
-                const value = pointTextElm.value
-                const tgtProp = 'label'
-                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
-                const el = document.querySelector(`#txt-marker-${id} .txt-marker-label`)
-                if (el) el.innerHTML = value
+                store.state.isLabelUpdated = true
+                // lavelUpdate(e)
             }
         });
         mapElm.addEventListener('input', (e) => {
             if (e.target && (e.target.classList.contains("point-text"))) {
-                const map01 = store.state.map01
-                const id = String(e.target.getAttribute("id"))
-                const pointTextElm = document.querySelector('.point-text')
-                const value = pointTextElm.value
-                const tgtProp = 'label'
-                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
-                const el = document.querySelector(`#txt-marker-${id} .txt-marker-label`)
-                if (el) el.innerHTML = value
+                store.state.isLabelUpdated = true
+                // lavelUpdate(e)
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1646,6 +1640,20 @@ export default function pyramid () {
             }
         });
     })
+}
+export function lavelUpdate(e, id) {
+    if (!store.state.isLabelUpdated) return;
+    const map01 = store.state.map01
+    if (e) {
+        id = String(e.target.getAttribute("id"))
+    }
+    const pointTextElm = document.querySelector('.point-text')
+    if (!id || !pointTextElm) return
+    const value = pointTextElm.value
+    const tgtProp = 'label'
+    store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+    const el = document.querySelector(`#txt-marker-${id} .txt-marker-label`)
+    if (el) el.innerHTML = value
 }
 // ラインの最後のセグメントの方向（ベアリング）を計算する関数
 function calculateBearing(coordPrev2, coordPrev, coordLast, endpoint) {
