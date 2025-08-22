@@ -11173,5 +11173,29 @@ export function moveToMap(lon, lat, opts = {}) {
         }
     });
 }
+// import { destination, polygon } from '@turf/turf'
+
+/**
+ * 基点を頂点とする等脚三角形を作成
+ * @param {[number,number]} origin [lon, lat]
+ * @param {number} bearingDeg 方位（度）※北=0°, 東=90°, 時計回り
+ * @param {number} apexAngleDeg 頂点角（度）
+ * @param {number} lengthMeters 左右2辺の長さ（m）
+ * @returns {GeoJSON.Polygon}
+ */
+export function triangleByApex(origin, bearingDeg, apexAngleDeg=60, lengthMeters=200) {
+    const half = apexAngleDeg / 2;
+    const left  = turf.destination(origin, lengthMeters, bearingDeg - half, { units: 'meters' });
+    const right = turf.destination(origin, lengthMeters, bearingDeg + half, { units: 'meters' });
+    return turf.polygon([[
+        origin,
+        left.geometry.coordinates,
+        right.geometry.coordinates,
+        origin
+    ]]);
+}
+
+// 例: [139.767, 35.681] を頂点、東向き(90°)、頂点角40°、辺長300m
+// const tri1 = triangleByApex([139.767,35.681], 90, 40, 300);
 
 

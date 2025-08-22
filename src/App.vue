@@ -1271,6 +1271,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
 
         <!-- FloatingWindow の配置 -->
+
+
+
+
+
+
         <FloatingWindow
             windowId="qrcode"
             type="simple"
@@ -2466,6 +2472,7 @@ export default {
         // { key: 'fix', text: '画面固定', label: '固定', color: this.s_isDrawFix ? 'green' : 'blue', click: this.toggleDrawFix },
         { key: 'config', text: '各種設定', label: '設定', color: 'blue', click: this.drawConfig },
         { key: 'dl', text: '各種ダウンロード', label: 'DL', style: 'background-color: navy!important;', click: this.dialogForDlOpen },
+        { key: 'ex', text: 'ex', label: 'ex', style: 'background-color: navy!important;', click: this.dialogForDlOpen },
         { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
         { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
       ]
@@ -11027,8 +11034,8 @@ select {
   background-color: black;
 }
 .sub-btn {
-  width: 44px !important;
-  height: 44px !important;
+  width: 40px !important;
+  height: 40px !important;
 }
 @media (max-width: 450px) {
   .maplibregl-popup {
