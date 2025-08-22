@@ -3769,13 +3769,14 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
                             // alert('到達')
                             // if ((props.longText || props.pictureUrl) && window.innerWidth > 0) {
                             if (window.innerWidth > 0) {
-                                if (
-                                    (!store.state.isIphone && !store.state.isAndroid) ||
-                                    (store.state.isIphone && !store.state.isDraw && !isNoDrawer) ||
-                                    (store.state.isAndroid && !store.state.isDraw && !isNoDrawer)
-                                ) {
-                                    store.commit('setDrawDrawer', true)
-                                }
+                                // if (
+                                //     (!store.state.isIphone && !store.state.isAndroid) ||
+                                //     (store.state.isIphone && !store.state.isDraw && !isNoDrawer) ||
+                                //     (store.state.isAndroid && !store.state.isDraw && !isNoDrawer)
+                                // ) {
+                                //     store.commit('setDrawDrawer', true)
+                                // }
+                                store.commit('setDrawDrawer', true)
                                 if (!store.state.isDraw) return;
                             }
                             // alert('到達')
