@@ -6788,9 +6788,8 @@ export function userPmtile0Set(name, url, id, bbox, length, label) {
             }
         );
     })
-    console.log(bbox)
     if (bbox) {
-        fitOrCenter(map, bbox, { padding: 20, animate: false, tinyThresholdMeters: 3, zoomForTiny: 16 });
+        fitOrCenter(map, bbox, { padding: 20, animate: false, tinyThresholdMeters: 3, zoomForTiny: 17 });
     }
 }
 
@@ -11197,8 +11196,14 @@ export function triangleByApex(origin, bearingDeg, apexAngleDeg=60, lengthMeters
 // 例: [139.767, 35.681] を頂点、東向き(90°)、頂点角40°、辺長300m
 // const tri1 = triangleByApex([139.767,35.681], 90, 40, 300);
 
-// 堅牢版 fitBounds
-// bbox が極小なら中心へ移動（zoom=16）、それ以外は fitBounds
+
+/**
+ * 堅牢版 fitBounds
+ * bbox が極小なら中心へ移動（zoom=16）、それ以外は fitBounds
+ * @param map
+ * @param bbox
+ * @param opts
+ */
 export function fitOrCenter(map, bbox, opts = {}) {
     if (!map || !Array.isArray(bbox) || bbox.length !== 4) return;
 

@@ -1272,7 +1272,19 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
         <!-- FloatingWindow の配置 -->
 
-
+        <FloatingWindow
+            windowId="exdraw"
+            :title="`EXドロー`"
+            type="normal"
+            :default-width=400
+            :default-height=600
+            :keepAspectRatio="false"
+        >
+          <ExDraw
+              :id="Number(s_pmtiles0Id)"
+              @update:paint="onPaintUpdate"
+          />
+        </FloatingWindow>
 
 
 
@@ -2095,7 +2107,8 @@ import html2canvas from 'html2canvas'
 import debounce from 'lodash/debounce'
 import * as math from 'mathjs'
 import FloatingWindow from '@/components/FloatingWindow';
-import PaintEditor from '@/components/PaintEditor.vue'
+import PaintEditor from '@/components/floatingwindow/PaintEditor'
+import ExDraw from '@/components/floatingwindow/ExDraw'
 
 import {delay, forEach} from "lodash";
 import {feature} from "@turf/turf";
@@ -2117,7 +2130,8 @@ export default {
     ChibanzuDrawer,
     MiniTooltip,
     FloatingWindow,
-    PaintEditor
+    PaintEditor,
+    ExDraw,
   },
   data: () => ({
     isRightDiv: true,
@@ -2472,7 +2486,7 @@ export default {
         // { key: 'fix', text: '画面固定', label: '固定', color: this.s_isDrawFix ? 'green' : 'blue', click: this.toggleDrawFix },
         { key: 'config', text: '各種設定', label: '設定', color: 'blue', click: this.drawConfig },
         { key: 'dl', text: '各種ダウンロード', label: 'DL', style: 'background-color: navy!important;', click: this.dialogForDlOpen },
-        { key: 'ex', text: 'ex', label: 'ex', style: 'background-color: navy!important;', click: this.dialogForDlOpen },
+        { key: 'ex', text: 'ex', label: 'ex', style: 'background-color: navy!important;', click: this.exDrawOpen },
         { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
         { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
       ]
@@ -3014,6 +3028,9 @@ export default {
     },
   },
   methods: {
+    exDrawOpen() {
+      this.$store.dispatch('showFloatingWindow', 'exdraw');
+    },
     drawListOpen() {
       if (this.showDrawListDrawer) {
         this.$store.commit('setDrawListDrawer', false)
