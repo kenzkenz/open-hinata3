@@ -106,6 +106,9 @@ export default createStore({
     id: '',
     coordinates: [],
     gazoName: '',
+    /**
+     * ドロー関係フラグ
+     */
     isDraw: false,
     isDrawLasso: false,
     isDrawFix: false,
@@ -524,6 +527,24 @@ export default createStore({
   getters: {
   },
   mutations: {
+    // 一気に false にする（固定リスト版）
+    disableAllDraws(state) {
+      state.isDrawLasso  = false;
+      state.isDrawFix    = false;
+      state.isDrawFree   = false;
+      state.isDrawPolygon= false;
+      state.isDrawLine   = false;
+      state.isDrawCircle = false;
+      state.isDrawPoint  = false;
+    },
+    // どれか1つだけ true にしたいとき用（要改修）
+    // 使用例: commit('SET_DRAW_MODE', 'isDrawPolygon')
+    SET_DRAW_MODE(state, key) {
+      Object.keys(state).forEach(k => {
+        if (k.startsWith('isDraw')) state[k] = false;
+      });
+      if (key && key in state) state[key] = true;
+    },
     setFloatingVisible(state, { id, visible }) {
       state.floatingWindows = {
         ...state.floatingWindows,
