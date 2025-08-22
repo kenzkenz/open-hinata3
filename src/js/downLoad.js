@@ -11278,5 +11278,83 @@ export function fitOrCenter(map, bbox, opts = {}) {
     go();
 }
 
+// 呼び出し例: onClick={() => shareToX({ map: store.state.map01, text: '現地メモ', url: shortUrl, hint: showToast })}
+async function shareToX({ map, text = '', url = '', hint = console.log }) {
+    // 0) 事前にスナップショットを用意できるなら、ここに blob を受け取る形にするとさらに成功率UP
+    let preBlob = null;
+
+    // 1) 先に投稿画面を“同期”で開く（ポップアップ対策）
+    const tweet = `${text}${text && url ? ' ' : ''}${url}`;
+    const intent = 'https://x.com/intent/tweet?text=' + encodeURIComponent(tweet);
+    const win = window.open(intent, '_blank');
+
+    // 2) テキストは即コピー（画像は後追いでもOK）
+    try {
+        await navigator.clipboard?.writeText?.(tweet);
+    } catch { /* 無視 */ }
+
+    // 3) 画像を作ってクリップボードへ（可能なら text+image を同時格納）
+    try {
+        const blob = preBlob || await exportShareImageFromMap(map, { title: text });
+        if (navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
+            const item = new ClipboardItem({
+                'image/png': blob,
+                'text/plain': new Blob([tweet], { type: 'text/plain' })
+            });
+            await navigator.clipboard.write([item]);
+        }
+    } catch (err) {
+        // 画像コピーが弾かれたときの静かなフォールバック（必要ならDL提示）
+        // console.debug('image copy failed', err);
+    }
+
+    // 4) 貼り付けのヒント
+    hint(`Xの投稿欄で ${/Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌘V' : 'Ctrl+V'} を押すと画像が貼り付きます`);
+}
+
+// 地図→1200x630 PNG（OG風）の最小実装。CORSに注意。
+async function exportShareImageFromMap(map, { title = '', width = 1200, height = 630 } = {}) {
+    const out = document.createElement('canvas');
+    out.width = width; out.height = height;
+    const ctx = out.getContext('2d');
+
+    // 背景
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, width, height);
+
+    // MapLibreのWebGLキャンバスを cover で貼る
+    const src = map.getCanvas();
+    const sw = src.width, sh = src.height;
+    const scale = Math.max(width / sw, height / sh);
+    const dw = Math.floor(sw * scale), dh = Math.floor(sh * scale);
+    const dx = Math.floor((width - dw) / 2), dy = Math.floor((height - dh) / 2);
+    ctx.drawImage(src, dx, dy, dw, dh);
+
+    // 下帯（半透明）
+    const bandH = 140;
+    ctx.globalAlpha = 0.6; ctx.fillStyle = '#000';
+    ctx.fillRect(0, height - bandH, width, bandH);
+    ctx.globalAlpha = 1;
+
+    // タイトル
+    ctx.fillStyle = '#fff';
+    ctx.font = '700 44px system-ui, -apple-system, "Noto Sans JP", sans-serif';
+    wrapFillText(ctx, title || 'Open-Hinata3', 40, height - bandH + 60, width - 80, 48);
+
+    return await new Promise(resolve => out.toBlob(b => resolve(b), 'image/png'));
+}
+
+function wrapFillText(ctx, text, x, y, maxWidth, lineHeight) {
+    let line = '';
+    for (const ch of String(text)) {
+        const test = line + ch;
+        if (ctx.measureText(test).width > maxWidth && line) {
+            ctx.fillText(line, x, y); line = ch; y += lineHeight;
+        } else {
+            line = test;
+        }
+    }
+    if (line) ctx.fillText(line, x, y);
+}
 
 
