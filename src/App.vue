@@ -489,6 +489,11 @@ import SakuraEffect from './components/SakuraEffect.vue';
                       label="長文の列を選択（あれば）"
                       outlined
             ></v-select>
+            <v-select v-model="csvPictureUrlColumn"
+                      :items="csvColumns"
+                      label="画像URLの列を選択（あれば）"
+                      outlined
+            ></v-select>
 
 
             <v-btn style="margin-left: 0px;" @click="uploadDrawCsv"><span v-if="!csvLonLat">ジオコーディング＆</span>ドロー追加</v-btn>
@@ -2266,6 +2271,7 @@ export default {
     csvLabelColumn: '',
     csvColorColumn: '',
     csvLongTextColumn: '',
+    csvPictureUrlColumn: '',
     csvRecords: [],
     geojsonForDraw: null,
     dialogForDraw: false,
@@ -3695,6 +3701,9 @@ export default {
           props.textAnchor = 'left'
           props.textJustify = 'left'
           props['point-color'] = pointColor
+          if (row[this.csvPictureUrlColumn]) {
+            props.pictureUrl = row[this.csvPictureUrlColumn]
+          }
           features.push({
             type: 'Feature',
             properties: props,
