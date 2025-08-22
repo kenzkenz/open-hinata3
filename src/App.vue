@@ -628,7 +628,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
       <v-dialog attach="#map01" v-model="s_popupDialog" max-width="500" persistent>
         <v-card>
-          <div class="popup-dialog-close" @click="popupDialogClose">×</div>
+          <div class="dialog-close" @click="popupDialogClose">×</div>
           <v-card-text>
             <!-- ここに既存のhtml文字列を表示 -->
             <div v-html="s_popupHtml"></div>
@@ -3688,7 +3688,8 @@ export default {
               this.csvColumns.map(col => [col, row[col]])
           );
           const pointColor = row[this.csvColorColumn] || 'black'
-          props.label = row[this.csvLabelColumn]
+          props.label = row[this.csvLabelColumn] || ''
+          props.longText = row[this.csvLongTextColumn] || ''
           props.color = 'black'
           props.offsetValue = [0.6, 0]
           props.textAnchor = 'left'
@@ -8602,8 +8603,8 @@ export default {
                     console.error('エラー:', response.data.error);
                     alert(`エラー: ${response.data.error}`);
                   } else {
-                    console.log('取得データ:', response.data);
-                    console.log(JSON.stringify(response.data, null, 2));
+                    // console.log('取得データ:', response.data);
+                    // console.log(JSON.stringify(response.data, null, 2));
 
                     const name = response.data[0].name
                     const id = response.data[0].id
@@ -11283,13 +11284,13 @@ select {
   display: none;
 }
 
-.popup-dialog-close {
+.dialog-close {
   position: absolute;
   right:5px;
   font-size: 40px;
   cursor: pointer;
 }
-.popup-dialog-close:hover {
+.dialog-close:hover {
   color: red;
 }
 /*.v-virtual-scroll__item:first-child {*/
