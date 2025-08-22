@@ -6788,11 +6788,9 @@ export function userPmtile0Set(name, url, id, bbox, length, label) {
             }
         );
     })
+    console.log(bbox)
     if (bbox) {
-        map.fitBounds([
-            [bbox[0], bbox[1]], // minX, minY
-            [bbox[2], bbox[3]]  // maxX, maxY
-        ], { padding: 20, animate: false  });
+        fitOrCenter(map, bbox, { padding: 20, animate: false, tinyThresholdMeters: 3, zoomForTiny: 16 });
     }
 }
 
@@ -7112,6 +7110,7 @@ export async function pmtilesGenerate(geojsonObj, layerName, label, file) {
             const webUrl = 'https://kenzkenz.net/' + result.pmtiles_file.replace('/var/www/html/public_html/', '');
 
             // PMTilesデータを DB に挿入し、ID を取得
+            console.log(result.bbox)
             const insertedId = await insertPmtilesData(
                 store.state.userId,
                 layerName,
@@ -11197,5 +11196,77 @@ export function triangleByApex(origin, bearingDeg, apexAngleDeg=60, lengthMeters
 
 // 例: [139.767, 35.681] を頂点、東向き(90°)、頂点角40°、辺長300m
 // const tri1 = triangleByApex([139.767,35.681], 90, 40, 300);
+
+// 堅牢版 fitBounds
+// bbox が極小なら中心へ移動（zoom=16）、それ以外は fitBounds
+export function fitOrCenter(map, bbox, opts = {}) {
+    if (!map || !Array.isArray(bbox) || bbox.length !== 4) return;
+
+    // 数値化 & 順序補正
+    let [minX, minY, maxX, maxY] = bbox.map(Number);
+    if (![minX, minY, maxX, maxY].every(Number.isFinite)) return;
+    if (minX > maxX) [minX, maxX] = [maxX, minX];
+    if (minY > maxY) [minY, maxY] = [maxY, minY];
+
+    // 中心
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+
+    // --- 極小判定（単純に度の差で判定）---
+    const tinyThreshold = opts.tinyThreshold ?? 0.0003;
+    // おおよそ0.0001度 ≒ 11m（緯度35度付近）
+    const isTiny = (Math.abs(maxX - minX) < tinyThreshold) &&
+        (Math.abs(maxY - minY) < tinyThreshold);
+
+    // padding 正規化
+    const padding = typeof opts.padding === 'number'
+        ? { top: opts.padding, right: opts.padding, bottom: opts.padding, left: opts.padding }
+        : (opts.padding || { top: 20, right: 20, bottom: 20, left: 20 });
+
+    const go = () => {
+        try {
+            if (isTiny) {
+                // 極小: 中心にズーム16で移動（animate オプション尊重）
+                const zoom = opts.zoomForTiny ?? 16;
+                const params = {
+                    center: [cx, cy],
+                    zoom,
+                    bearing: map.getBearing(),
+                    pitch: map.getPitch(),
+                    essential: true,
+                };
+                if (opts.animate) {
+                    map.easeTo({ ...params, duration: opts.duration ?? 800 }); // アニメ
+                } else {
+                    map.jumpTo(params); // 即時
+                }
+            } else {
+                // 通常: fitBounds
+                const bounds = new maplibregl.LngLatBounds([minX, minY], [maxX, maxY]);
+                map.fitBounds(bounds, { ...opts, padding });
+            }
+        } catch (e) {
+            console.error('fitOrCenter failed:', e, { bbox: [minX, minY, maxX, maxY], isTiny, opts });
+        }
+    };
+
+    // コンテナサイズ/スタイル準備待ち
+    const el = map.getContainer?.();
+    const w = el?.clientWidth ?? 0, h = el?.clientHeight ?? 0;
+
+    if (!w || !h) { // サイズ0 → resize 後
+        map.once('resize', go);
+        map.resize();
+        return;
+    }
+    if (map.isStyleLoaded && !map.isStyleLoaded()) { // style 未ロード → idle 待ち
+        map.once('idle', go);
+        return;
+    }
+    go();
+}
+
+// 使い方
+
 
 

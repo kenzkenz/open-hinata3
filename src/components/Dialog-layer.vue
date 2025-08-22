@@ -536,20 +536,22 @@ export default {
                           polygon['line-width']
                       )
                       // alert(polygon['circle-radius'])
-                      map.setPaintProperty(
-                          vertexLaiyrId,
-                          'circle-radius', [
-                            'interpolate',
-                            ['linear'],
-                            ['zoom'],
-                            15, 0,
-                            18, polygon['circle-radius']
-                          ]);
-                      map.setPaintProperty(
-                          vertexLaiyrId,
-                          'circle-color',
-                          polygon['circle-color']
-                      )
+                      // if (map.getLayer('vertexLaiyrId')) {
+                      //   map.setPaintProperty(
+                      //       vertexLaiyrId,
+                      //       'circle-radius', [
+                      //         'interpolate',
+                      //         ['linear'],
+                      //         ['zoom'],
+                      //         15, 0,
+                      //         18, polygon['circle-radius']
+                      //       ]);
+                      //   map.setPaintProperty(
+                      //       vertexLaiyrId,
+                      //       'circle-color',
+                      //       polygon['circle-color']
+                      //   )
+                      // }
                     }
                   }
                 })

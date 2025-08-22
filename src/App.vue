@@ -1297,7 +1297,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             :keepAspectRatio="false"
         >
           <PaintEditor
-              :id="s_pmtiles0Id"
+              :id="Number(s_pmtiles0Id)"
               :initialPaint="paintSettings"
               @update:paint="onPaintUpdate"
           />
