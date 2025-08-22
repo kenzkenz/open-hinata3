@@ -5,7 +5,9 @@
       :class="type"
       :style="{
       top: top + 'px',
-      left: left + 'px',
+      ...(left === 100 && right > 0
+      ? { right: right + 'px' }
+      : { left: left + 'px' }),
       width: width + 'px',
       height: height + 'px',
       cursor: fullDraggable ? 'move' : 'default',
@@ -55,6 +57,7 @@ export default {
     defaultHeight: { type: Number, default: 200 },
     defaultTop: { type: Number, default: 120 },
     defaultLeft: { type: Number, default: 100 },
+    defaultRight: { type: Number, default: 0 },
     keepAspectRatio: { type: Boolean, default: false },
     type: {
       type: String,
@@ -66,6 +69,7 @@ export default {
     return {
       top: this.defaultTop,
       left: this.defaultLeft,
+      right: this.defaultRight,
       width: this.defaultWidth,
       height: this.defaultHeight,
       zIndex: 0,

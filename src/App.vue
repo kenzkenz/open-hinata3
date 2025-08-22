@@ -1259,25 +1259,16 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
 <!--        <v-btn @click="test">test</v-btn>-->
 
-
-
-
-
-
-
-
-
-
-
-
         <!-- FloatingWindow の配置 -->
 
         <FloatingWindow
             windowId="exdraw"
             :title="`EXドロー`"
             type="normal"
-            :default-width=400
-            :default-height=600
+            :default-top="20"
+            :default-right="150"
+            :default-width="400"
+            :default-height="400"
             :keepAspectRatio="false"
         >
           <ExDraw
@@ -1285,9 +1276,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
               @update:paint="onPaintUpdate"
           />
         </FloatingWindow>
-
-
-
 
         <FloatingWindow
             windowId="qrcode"
