@@ -1644,6 +1644,12 @@ export default function pyramid () {
         });
     })
 }
+
+/**
+ *
+ * @param e
+ * @param id
+ */
 export function lavelUpdate(e, id) {
     if (!store.state.isLabelUpdated) return;
     const map01 = store.state.map01

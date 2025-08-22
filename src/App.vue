@@ -2069,7 +2069,7 @@ import pyramid, {
   colorNameToRgba, createSquarePolygonAtCenter,
   deleteAll, featuresDelete, generateSegmentLabelGeoJSON, generateStartEndPointsFromGeoJSON,
   geojsonCreate,
-  geojsonUpdate, getAllVertexPoints, setAllMidpoints,
+  geojsonUpdate, getAllVertexPoints, lavelUpdate, setAllMidpoints,
 } from '@/js/pyramid'
 import glouplayer from '@/js/glouplayer'
 import * as Layers from '@/js/layers'
@@ -3036,6 +3036,8 @@ export default {
       // const tgtProp = 'label'
       // const value = document.querySelector('.point-text').value
       // this.$store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+      const id = store.state.drawFeatureId
+      lavelUpdate(null, id)
       this.s_popupDialog = false;
     },
     appUpdate() {
@@ -9927,6 +9929,8 @@ export default {
       } else {
         app.style.overflow = 'auto'
       }
+      markaersRemove()
+      markerAddAndRemove()
     },
     clickCircleGeojsonText (value) {
       try {

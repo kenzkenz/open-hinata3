@@ -10260,10 +10260,13 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, c
         thumb.playsInline = true;
         thumb.style.objectFit   = 'cover';
     } else {
-        thumb = document.createElement('img');
-        thumb.src = photoURL;
-        // thumb = document.createElement('div');
-        // thumb.style.backgroundImage   = `url(${photoURL})`;
+        if (store.state.isPrint) {
+            thumb = document.createElement('img');
+            thumb.src = photoURL;
+        } else {
+            thumb = document.createElement('div');
+            thumb.style.backgroundImage   = `url(${photoURL})`;
+        }
         thumb.className               = 'pic-marker-img';
         thumb.style.width             = `${containerSize}px`;
         thumb.style.height            = `${containerSize}px`;
@@ -10686,12 +10689,6 @@ export function featureCollectionAdd() {
         featureCollection = JSON.parse(store.state.clickCircleGeojsonText)
     }
 }
-
-function kari() {
-    markaersRemove()
-    document.querySelectorAll('[id^="pic-marker-"], [id^="txt-marker-"]').forEach(el => el.remove());
-}
-
 
 // [lng, lat] の「ポイント配列」かどうか
 export const isPointCoords = (coords) =>
