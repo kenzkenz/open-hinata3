@@ -468,25 +468,28 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-card-text>
             <p v-if="!csvLonLat" style="margin-bottom: 20px;">ジオコーディングします。精度はあまり高くありません。</p>
 
-            <v-select class="scrollable-content"
-                      v-if="!csvLonLat"
+            <v-select v-if="!csvLonLat"
                       v-model="csvAddressColumn"
                       :items="csvColumns"
                       label="アドレスの列を選択"
                       outlined
             ></v-select>
-            <v-select class="scrollable-content"
-                      v-model="csvLabelColumn"
+            <v-select v-model="csvLabelColumn"
                       :items="csvColumns"
                       label="ラベルに表示する列を選択"
                       outlined
             ></v-select>
-            <v-select class="scrollable-content"
-                      v-model="csvColorColumn"
+            <v-select v-model="csvColorColumn"
                       :items="csvColumns"
-                      label="アイコンの色の列を選択"
+                      label="アイコンの色の列を選択（あれば）"
                       outlined
             ></v-select>
+            <v-select v-model="csvLongTextColumn"
+                      :items="csvColumns"
+                      label="長文の列を選択（あれば）"
+                      outlined
+            ></v-select>
+
 
             <v-btn style="margin-left: 0px;" @click="uploadDrawCsv"><span v-if="!csvLonLat">ジオコーディング＆</span>ドロー追加</v-btn>
           </v-card-text>
@@ -2261,6 +2264,7 @@ export default {
     csvAddressColumn: '',
     csvLabelColumn: '',
     csvColorColumn: '',
+    csvLongTextColumn: '',
     csvRecords: [],
     geojsonForDraw: null,
     dialogForDraw: false,
