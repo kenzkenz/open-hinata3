@@ -11142,16 +11142,9 @@ export function moveToMap(lon, lat, opts = {}) {
             if (settled) return;
             settled = true;
             m.off('moveend', onMoveEnd);
-            clearTimeout(safetyTimer);
             resolve();
         };
         const onMoveEnd = () => finish();
-
-        // 万一コールバックが来ない場合に備えた安全タイマ
-        const expected = (manhattan > 0.2)
-            ? (opts.maxDuration ?? 1500)
-            : (opts.duration ?? 600);
-        const safetyTimer = setTimeout(finish, expected + 400);
 
         m.on('moveend', onMoveEnd);
 
@@ -11163,9 +11156,9 @@ export function moveToMap(lon, lat, opts = {}) {
         if (manhattan > 0.2) {
             m.flyTo({
                 ...common,
-                speed: opts.speed ?? 0.9,
+                speed: opts.speed ?? 3.9,
                 curve: opts.curve ?? 1.4,
-                maxDuration: opts.maxDuration ?? 1500,
+                // maxDuration: opts.maxDuration ?? 1500, //これがあるとなぜかフライしない
                 ...cbOpts,
             });
         } else {
