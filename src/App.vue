@@ -628,13 +628,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
       <v-dialog attach="#map01" v-model="s_popupDialog" max-width="500" persistent>
         <v-card>
+          <div class="popup-dialog-close" @click="popupDialogClose">×</div>
           <v-card-text>
             <!-- ここに既存のhtml文字列を表示 -->
             <div v-html="s_popupHtml"></div>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn text @click="popupHtmlClose">閉じる</v-btn>
+            <v-btn text @click="popupDialogClose">閉じる</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -3030,7 +3031,7 @@ export default {
         this.$store.commit('setDrawListDrawer', true)
       }
     },
-    popupHtmlClose() {
+    popupDialogClose() {
       // const map01 = this.$store.state.map01
       // const id = store.state.drawFeatureId
       // const tgtProp = 'label'
@@ -11282,6 +11283,15 @@ select {
   display: none;
 }
 
+.popup-dialog-close {
+  position: absolute;
+  right:5px;
+  font-size: 40px;
+  cursor: pointer;
+}
+.popup-dialog-close:hover {
+  color: red;
+}
 /*.v-virtual-scroll__item:first-child {*/
 /*  height: 0 !important;*/
 /*  margin: 0 !important;*/
