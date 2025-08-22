@@ -77,7 +77,7 @@ export default {
     isEdit: false,
     showMediaModal: false,
     // ▼ 500px以下のときのボトムドロワーの高さ（必要に応じて調整）
-    bottomHeight: '45vh',
+    bottomHeight: '45dvh',
   }),
   computed: {
     ...mapState([
@@ -91,7 +91,7 @@ export default {
       if (this.isSmall500) {
         return { maxHeight: `calc(${this.bottomHeight} - 40px)` };
       }
-      return { maxHeight: `calc(100vh - ${this.isIphone ? 200 : 100}px)` };
+      return { maxHeight: `calc(100dvh - ${this.isIphone ? 200 : 100}px)` };
     },
   },
   methods: {
@@ -267,7 +267,7 @@ export default {
 /* メディアの最大化表示（余白は黒透過のまま） */
 .modal-media {
   max-width: 90vw;
-  max-height: 90vh;
+  max-height: 90dvh;
   object-fit: contain; /* 画像/動画の比率を維持して収める */
   background: #000; /* レターボックス部分を黒 */
   border-radius: 8px;
@@ -276,7 +276,7 @@ export default {
 /* これでは切れる。要検討 */
 .video-full {
   width: 80vw;
-  max-height: 90vh;
+  max-height: 90dvh;
   object-fit: cover;
 }
 
@@ -334,7 +334,7 @@ export default {
 
 <!--      <v-virtual-scroll-->
 <!--          class="my-scroll"-->
-<!--          :style="{ maxHeight: `calc(100vh - ${isIphone ? 200 : 100}px)` }"-->
+<!--          :style="{ maxHeight: `calc(100dvh - ${isIphone ? 200 : 100}px)` }"-->
 <!--          :items="drawFeaturesTexts"-->
 <!--          item-height="32"-->
 <!--      >-->
@@ -544,7 +544,7 @@ export default {
 <!--.overflow-div{-->
 <!--  overflow-y: auto;-->
 <!--  overflow-x: hidden;-->
-<!--  /*max-height: calc(100vh - 200px);*/-->
+<!--  /*max-height: calc(100dvh - 200px);*/-->
 <!--}-->
 <!--/* 画面いっぱいの黒透過（背景） */-->
 <!--.media-modal {-->
@@ -574,7 +574,7 @@ export default {
 <!--/* メディアの最大化表示（余白は黒透過のまま） */-->
 <!--.modal-media {-->
 <!--  max-width: 90vw;-->
-<!--  max-height: 90vh;-->
+<!--  max-height: 90dvh;-->
 <!--  object-fit: contain; /* 画像/動画の比率を維持して収める */-->
 <!--  background: #000; /* レターボックス部分を黒 */-->
 <!--  border-radius: 8px;-->
@@ -583,7 +583,7 @@ export default {
 <!--/* これでは切れる。要検討 */-->
 <!--.video-full {-->
 <!--  width: 80vw;-->
-<!--  max-height: 90vh;-->
+<!--  max-height: 90dvh;-->
 <!--  object-fit: cover;-->
 <!--}-->
 

@@ -13,6 +13,7 @@
     <v-card flat class="bg-white drawer" style="border-radius: 0; overflow: hidden">
       <v-card-title class="text-h6 text-white" style="background-color: var(--main-color); height: 40px; display: flex; align-items: center;">
         {{ truncate(label, 17) }}
+        <div v-if="isSmall500" class="maximize-dialog-div" @click="maximizeDialog">拡大</div>
         <div class="close-btn-div" style="margin-right:4px;margin-top: 0px; color:white!important; ;font-size: 30px!important;" @click="close"><i class="fa-solid fa-xmark hover"></i></div>
       </v-card-title>
 
@@ -123,7 +124,7 @@ export default {
     isEdit: false,
     showMediaModal: false,
     // ▼ 500px以下（bottom表示）の高さ
-    bottomHeight: '45vh',
+    bottomHeight: '45dvh',
   }),
   computed: {
     ...mapState([
@@ -151,7 +152,7 @@ export default {
       if (this.isSmall500) {
         return { maxHeight: `calc(${this.bottomHeight} - 150px)` };
       }
-      return { maxHeight: `calc(100vh - ${this.isIphone ? 260 : 150}px)` };
+      return { maxHeight: `calc(100dvh - ${this.isIphone ? 260 : 150}px)` };
     },
   },
   methods: {
@@ -160,6 +161,9 @@ export default {
       'saveSelectedPointFeature',
       'setSelectedPointFeature',
     ]),
+    maximizeDialog() {
+      this.bottomHeight = this.bottomHeight === '100dvh' ? '45dvh' : '100dvh'
+    },
     isDrawChange() {
       this.s_isDraw = true
       const btn = document.getElementById("centerDrawBtn2")
@@ -239,6 +243,21 @@ export default {
     if (window.innerWidth < 500) this.drawerWidth = window.innerWidth
   },
   watch: {
+    showDrawDrawer(value) {
+      if (!value) {
+        this.bottomHeight = '45dvh'
+      }
+    },
+    bottomHeight(value) {
+      if (this.isSmall500) {
+        if (value === '100dvh') {
+          document.querySelector('.maximize-dialog-div').innerText = '元'
+        } else {
+          document.querySelector('.maximize-dialog-div').innerText = '拡大'
+
+        }
+      }
+    },
     showMediaModal(value) {
       if (value) {
         this.modalZIndex = getNextZIndex()
@@ -380,12 +399,29 @@ export default {
 
 .modal-media {
   max-width: 90vw;
-  max-height: 90vh;
+  max-height: 90dvh;
   object-fit: contain;
   background: #000;
   border-radius: 8px;
 }
-.video-full { width: 80vw; max-height: 90vh; object-fit: cover; }
+.video-full {
+  width: 80vw;
+  max-height: 90dvh;
+  object-fit: cover;
+}
+
+.maximize-dialog-div {
+  position: absolute;
+  top: 5px;
+  right: 45px;
+  color: white;
+  font-size: 22px;
+}
+
+.maximize-dialog-div:hover {
+  color: red;
+}
+
 
 @media (max-width: 500px) {
   :deep(.v-navigation-drawer--bottom) {
@@ -415,7 +451,7 @@ export default {
 <!--        {{ truncate(label, 17) }}-->
 <!--        <div class="close-btn-div" style="margin-right:4px;margin-top: 0px; color:white!important; ;font-size: 30px!important;" @click="close"><i class="fa-solid fa-xmark hover"></i></div>-->
 <!--      </v-card-title>-->
-<!--      <div class="overflow-div" :style="{maxHeight: `calc(100vh - ${isIphone ? 250 : 150}px)`}">-->
+<!--      <div class="overflow-div" :style="{maxHeight: `calc(100dvh - ${isIphone ? 250 : 150}px)`}">-->
 <!--        <div v-if="pictureUrl">-->
 <!--          <img-->
 <!--              width="100%"-->
@@ -787,7 +823,7 @@ export default {
 <!--.overflow-div{-->
 <!--  overflow-y: auto;-->
 <!--  overflow-x: hidden;-->
-<!--  /*max-height: calc(100vh - 200px);*/-->
+<!--  /*max-height: calc(100dvh - 200px);*/-->
 <!--}-->
 <!--/* 画面いっぱいの黒透過（背景） */-->
 <!--.media-modal {-->
@@ -817,7 +853,7 @@ export default {
 <!--/* メディアの最大化表示（余白は黒透過のまま） */-->
 <!--.modal-media {-->
 <!--  max-width: 90vw;-->
-<!--  max-height: 90vh;-->
+<!--  max-height: 90dvh;-->
 <!--  object-fit: contain; /* 画像/動画の比率を維持して収める */-->
 <!--  background: #000; /* レターボックス部分を黒 */-->
 <!--  border-radius: 8px;-->
@@ -826,7 +862,7 @@ export default {
 <!--/* これでは切れる。要検討 */-->
 <!--.video-full {-->
 <!--  width: 80vw;-->
-<!--  max-height: 90vh;-->
+<!--  max-height: 90dvh;-->
 <!--  object-fit: cover;-->
 <!--}-->
 
