@@ -64,7 +64,9 @@
           <v-btn :disabled="!isDraw || !isEdit" style="margin-top:-10px" @click="longTextSave">保存</v-btn>
           <v-btn :disabled="!isDraw || isEdit" style="margin-top:-10px" @click="toEdit">書き込み</v-btn>
           <v-btn v-if="isDraw && isEdit" style="margin-top:-10px" @click="isEdit = false">書き込み解除</v-btn>
-          <v-btn v-if="!isDraw" icon class="ms-auto" style="margin-top:-10px" @click="isDrawChange"><v-icon>mdi-pencil</v-icon></v-btn>
+          <v-btn v-if="isSmall500" icon class="ms-auto" style="margin-top:-10px; margin-right: 0px;" @click="close"><v-icon>mdi-close</v-icon></v-btn>
+
+          <v-btn  icon class="ms-auto" style="margin-top:-10px;" @click="isDrawChange"><v-icon>mdi-pencil</v-icon></v-btn>
         </div>
         <br>
         <span style="margin-left: 10px; font-size: 10.5px; margin: 0" v-if="!isDraw">編集するには右のペンアイコンをクリックしてドロー状態にしてください。</span>
@@ -165,9 +167,18 @@ export default {
       this.bottomHeight = this.bottomHeight === '100dvh' ? '45dvh' : '100dvh'
     },
     isDrawChange() {
-      this.s_isDraw = true
-      const btn = document.getElementById("centerDrawBtn2")
-      if (btn) btn.click()
+      /**
+       * isSmall500のときの特殊な運用。少し違和感がある。
+       * 本来、if文の中の文だけで良い。
+       */
+      if (!this.s_isDraw || !this.isSmall500) {
+        this.s_isDraw = true
+        const btn = document.getElementById("centerDrawBtn2")
+        if (btn) btn.click()
+      }
+      // this.s_isDraw = true
+      // const btn = document.getElementById("centerDrawBtn2")
+      // if (btn) btn.click()
       const map = this.$store.state.map01
       this.$store.state.id = this.drawFeature.properties.id
       const dummyEvent = {
