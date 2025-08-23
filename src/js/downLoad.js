@@ -10201,7 +10201,7 @@ export function createTextThumbnailMarker(map, coords, txt, id, color, fontSize)
  * @param photoURL
  */
 const markers = []
-export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, containerSize, containerColor, labelText) {
+export async function createThumbnailMarker(map, coords, photoURL, id, borderRadius, containerSize, containerColor, labelText) {
     if (store.state.editEnabled) return
     const key = coords.join(',');
     if (!map.__thumbnailMarkerKeys) {
@@ -10214,15 +10214,42 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, c
 
     labelText = truncate(labelText,6)
 
+    let aspectRatio
+    try {
+        const {width, height} = await createImageBitmap(await (await fetch(photoURL)).blob());
+        aspectRatio = width / height
+        // console.log(aspectRatio)
+    }catch (e) {
+        console.log(e)
+    }
+    // 縦長画像は1対1に。横長画像はアスペクト比で調節
+    aspectRatio = (aspectRatio || 1) < 1 ? 1 : aspectRatio
+    if (aspectRatio > 2.5) {
+        containerSize = containerSize / 2.5
+    }
+
     // コンテナ要素を作成
     const container = document.createElement('div');
     container.id             = `pic-marker-${id}`;
-    container.style.width    = `${containerSize}px`;
+    container.style.width    = `${containerSize * aspectRatio}px`;
     container.style.height   = `${containerSize + 6}px`; // 縦幅に三角分を追加
     container.style.cursor   = 'pointer';
 
     // ラベル（上の白い余白用）
     if (labelText) {
+        let color = ''
+        switch (containerColor) {
+            case 'black':
+                color = 'white'
+                break
+            case 'white':
+            case 'yellow':
+            case 'pink':
+                color = 'black'
+                break
+            default:
+                color = 'white'
+        }
         const label = document.createElement('div');
         label.innerText = labelText;
         label.style.position   = 'absolute';
@@ -10230,7 +10257,8 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, c
         label.style.left       = '50%';
         label.style.transform  = 'translateX(-50%)';
         label.style.background = containerColor;
-        label.style.color      = containerColor === 'white' ? 'black' : 'white';
+        // label.style.color      = containerColor === 'white' ? 'black' : 'white';
+        label.style.color      = color;
         label.style.width      = '100%';
         label.style.textAlign  = 'center';
         label.style.padding    = '2px 6px';
@@ -10267,7 +10295,7 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, c
             thumb.style.backgroundImage   = `url(${photoURL})`;
         }
         thumb.className               = 'pic-marker-img';
-        thumb.style.width             = `${containerSize}px`;
+        thumb.style.width             = `${containerSize * aspectRatio}px`;
         thumb.style.height            = `${containerSize}px`;
         thumb.style.backgroundSize    = 'cover';
         thumb.style.backgroundPosition= 'center';
@@ -11154,13 +11182,20 @@ export function moveToMap(lon, lat, opts = {}) {
         };
 
         if (manhattan > 0.2) {
-            m.flyTo({
-                ...common,
-                speed: opts.speed ?? 3.9,
-                curve: opts.curve ?? 1.4,
-                // maxDuration: opts.maxDuration ?? 1500, //これがあるとなぜかフライしない
-                ...cbOpts,
-            });
+            if (store.state.isIphone) {
+                m.jumpTo({
+                    center: [lon, lat],
+                    zoom: targetZoom,
+                });
+            } else {
+                m.flyTo({
+                    ...common,
+                    speed: opts.speed ?? 3.9,
+                    curve: opts.curve ?? 1.4,
+                    // maxDuration: opts.maxDuration ?? 1500, //これがあるとなぜかフライしない
+                    ...cbOpts,
+                });
+            }
         } else {
             m.easeTo({
                 ...common,

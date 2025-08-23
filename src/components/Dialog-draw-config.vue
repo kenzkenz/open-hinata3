@@ -19,7 +19,7 @@
                   @change="configChange('title-text',s_printTitleText)"
               />
 <!--              <label v-if="isSmall1000" class="vlike vlike&#45;&#45;floating" :class="{ 'is-error': hasError }">-->
-              <label class="vlike vlike--floating" :class="{ 'is-error': hasError }">
+              <label class="vlike vlike--floating">
                 <span class="vlike__text">フォントサイズ</span>
                 <select
                     v-model="s_textPx"
@@ -32,8 +32,6 @@
                   <option value="" disabled>選択してください</option>
                   <option v-for="n in 101" :key="n-1" :value="n-1">{{ n-1 }}</option>
                 </select>
-<!--                <div class="vlike__hint" v-if="!hasError">0〜100の範囲で選択してください</div>-->
-<!--                <div class="vlike__message vlike__message&#45;&#45;error" v-else>この項目は必須です</div>-->
               </label>
 
 <!--              <v-text-field-->
