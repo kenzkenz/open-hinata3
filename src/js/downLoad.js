@@ -10223,7 +10223,6 @@ export function createThumbnailMarker(map, coords, photoURL, id, borderRadius, c
 
     // ラベル（上の白い余白用）
     if (labelText) {
-        console.log(labelText)
         const label = document.createElement('div');
         label.innerText = labelText;
         label.style.position   = 'absolute';
