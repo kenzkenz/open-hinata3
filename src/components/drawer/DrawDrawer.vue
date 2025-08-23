@@ -13,7 +13,7 @@
     <v-card flat class="bg-white drawer" style="border-radius: 0; overflow: hidden">
       <v-card-title class="text-h6 text-white" style="background-color: var(--main-color); height: 40px; display: flex; align-items: center;">
         {{ truncate(label, 17) }}
-        <div v-if="isSmall500" class="maximize-dialog-div" @click="maximizeDialog">拡大</div>
+<!--        <div v-if="isSmall500" class="maximize-dialog-div" @click="maximizeDialog">拡大</div>-->
         <div class="close-btn-div" style="margin-right:4px;margin-top: 0px; color:white!important; ;font-size: 30px!important;" @click="close"><i class="fa-solid fa-xmark hover"></i></div>
       </v-card-title>
 
@@ -124,7 +124,7 @@ export default {
     isEdit: false,
     showMediaModal: false,
     // ▼ 500px以下（bottom表示）の高さ
-    bottomHeight: '45dvh',
+    bottomHeight: '100dvh',
   }),
   computed: {
     ...mapState([
@@ -224,7 +224,8 @@ export default {
       // }
     },
     setZindex() {
-      this.zIndex = getNextZIndex()
+      // alert(888)
+      this.zIndex = getNextZIndex() + 1
     },
     longTextSave() {
       const map01 = store.state.map01
@@ -245,7 +246,7 @@ export default {
   watch: {
     showDrawDrawer(value) {
       if (!value) {
-        this.bottomHeight = '45dvh'
+        this.bottomHeight = '100dvh'
       }
     },
     bottomHeight(value) {

@@ -2302,9 +2302,11 @@ export default {
     isNewPicture: false,
     imgRotation: 0,
     dialogForPictureZindex: 0,
+    zIndex: 0,
   }),
   computed: {
     ...mapState([
+      'popupDialog',
       'drawFeatureId',
       'isIphone',
       'isSmall500',
@@ -9924,6 +9926,11 @@ export default {
     document.querySelector('#drawList').style.display = 'none'
   },
   watch: {
+    // popupDialog(value) {
+    //   if (value) {
+    //     this.zIndex = getNextZIndex() + 2
+    //   }
+    // },
     isDraw(value) {
       this.toggleLDraw()
     },

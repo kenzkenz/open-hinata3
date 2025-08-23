@@ -102,9 +102,9 @@ export default {
       'setSelectedPointFeature',
     ]),
     async onItemClick(event) {
-      if (this.isSmall500) {
-        this.close()
-      }
+      // if (this.isSmall500) {
+      //   this.close()
+      // }
       this.setDrawDrawer(false);
       const { id, coordinates } = event.currentTarget.dataset
       const map = this.$store.state.map01
@@ -148,9 +148,6 @@ export default {
             return new Date(b.properties.updated_at) - new Date(a.properties.updated_at);
           }
         });
-        // features.sort((a, b) => {
-        //   return a.properties._index - b.properties._index
-        // });
       } else {
         features.sort((a, b) => {
           return new Date(b.properties.updated_at) - new Date(a.properties.updated_at);

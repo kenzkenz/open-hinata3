@@ -9434,6 +9434,7 @@ export function getNextZIndex() {
             maxZ = zi;
         }
     });
+    // alert(maxZ + 1)
     return maxZ + 1;
 }
 // urlの変更を監視
@@ -11197,12 +11198,19 @@ export function moveToMap(lon, lat, opts = {}) {
                 });
             }
         } else {
-            m.easeTo({
-                ...common,
-                duration: opts.duration ?? 600,
-                easing: t => t,
-                ...cbOpts,
-            });
+            if (store.state.isIphone) {
+                m.jumpTo({
+                    center: [lon, lat],
+                    zoom: targetZoom,
+                });
+            } else {
+                m.easeTo({
+                    ...common,
+                    duration: opts.duration ?? 600,
+                    easing: t => t,
+                    ...cbOpts,
+                });
+            }
         }
     });
 }
