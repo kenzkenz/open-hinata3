@@ -16,8 +16,10 @@
                   rows="3"
                   outlined
                   @input="configChange('title-text',s_printTitleText)"
+                  @change="configChange('title-text',s_printTitleText)"
               />
-              <label v-if="isSmall1000" class="vlike vlike--floating" :class="{ 'is-error': hasError }">
+<!--              <label v-if="isSmall1000" class="vlike vlike&#45;&#45;floating" :class="{ 'is-error': hasError }">-->
+              <label class="vlike vlike--floating" :class="{ 'is-error': hasError }">
                 <span class="vlike__text">フォントサイズ</span>
                 <select
                     v-model="s_textPx"
@@ -34,16 +36,16 @@
 <!--                <div class="vlike__message vlike__message&#45;&#45;error" v-else>この項目は必須です</div>-->
               </label>
 
-              <v-text-field
-                  v-else
-                  v-model="s_textPx"
-                  label="フォントサイズ"
-                  type="number"
-                  variant="outlined"
-                  min="0"
-                  max="100"
-                  @input="configChange('font-size',s_textPx)"
-              />
+<!--              <v-text-field-->
+<!--                  v-else-->
+<!--                  v-model="s_textPx"-->
+<!--                  label="フォントサイズ"-->
+<!--                  type="number"-->
+<!--                  variant="outlined"-->
+<!--                  min="0"-->
+<!--                  max="100"-->
+<!--                  @input="configChange('font-size',s_textPx)"-->
+<!--              />-->
               <v-select
                   v-model="s_titleColor"
                   :items="titleColors"
@@ -588,6 +590,7 @@ export default {
     },
     configFeature: {
       handler(newVal, oldVal) {
+        this.configFeatureFlg = true
         console.log('configFeature が変わりました', { oldVal, newVal });
         console.log(newVal)
         if (!this.$store.state.isEditable && !this.$store.state.isMine) return
