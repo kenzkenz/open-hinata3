@@ -1674,6 +1674,7 @@ export function lavelUpdate(e, id) {
     store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
     const el = document.querySelector(`#txt-marker-${id} .txt-marker-label`)
     if (el) el.innerHTML = value
+    store.state.isLabelUpdated = false
 }
 // ラインの最後のセグメントの方向（ベアリング）を計算する関数
 function calculateBearing(coordPrev2, coordPrev, coordLast, endpoint) {
