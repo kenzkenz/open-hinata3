@@ -11350,4 +11350,24 @@ function wrapFillText(ctx, text, x, y, maxWidth, lineHeight) {
     if (line) ctx.fillText(line, x, y);
 }
 
-
+/**
+ * Date から "YYYY-MM-DD HH:mm:ss" を作る
+ * @param {Date} date - 変換したい日時（未指定なら現在時刻）
+ * @param {string} tz - タイムゾーン（既定: 'Asia/Tokyo'）
+ * @returns {string}
+ */
+export function formatYmdHms(date = new Date(), tz = 'Asia/Tokyo') {
+    if (store.state.isUsingServerGeojson) return
+    const fmt = new Intl.DateTimeFormat('en-CA', {
+        timeZone: tz,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+    });
+    const parts = fmt.formatToParts(date).reduce((o, p) => (o[p.type] = p.value, o), {});
+    return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second}`;
+}

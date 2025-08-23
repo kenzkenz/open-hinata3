@@ -2212,9 +2212,12 @@ export default {
       { label: '黒', value: 'black' },
       { label: '赤', value: 'red' },
       { label: '青', value: 'blue' },
+      { label: '黄', value: 'yellow' },
       { label: '緑', value: 'green' },
       { label: '橙', value: 'orange' },
       { label: '紫', value: 'violet' },
+      { label: 'ピンク', value: 'pink' },
+
     ],
     resolutions: [13,14,15,16,17,18,19,20,21,22,23,24],
     dialogForGeotiffApp1file: false,

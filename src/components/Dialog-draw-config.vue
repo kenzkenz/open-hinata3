@@ -472,7 +472,12 @@ export default {
       await this.selectGeojson()
       const configFeature = this.$store.state.baseConfigFeature
       if (isJsonString(this.$store.state.clickCircleGeojsonText)) {
-        const features = JSON.parse(this.$store.state.clickCircleGeojsonText).features
+        let features = JSON.parse(this.$store.state.clickCircleGeojsonText).features
+        console.log(features)
+        features = features.map((f, index) => {
+          f.properties._index = index
+          return f
+        })
         console.log(features)
         if (features && features.filter(f => f.properties.id !== 'config').length > 0) {
           if (confirm("現在のドローを引き継ぎますか？引き継ぎもとのドローとは完全に独立します。")) {

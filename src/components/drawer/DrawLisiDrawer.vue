@@ -135,9 +135,27 @@ export default {
     },
     getList() {
       const features = JSON.parse(this.clickCircleGeojsonText).features.filter(f => f.properties.id !== 'config')
-      features.sort((a, b) => {
-        return new Date(b.properties.updated_at) - new Date(a.properties.updated_at);
-      });
+      console.log(features)
+      if (!features || features.length === 0) return
+      if (features[0].properties._index) {
+        features.sort((a, b) => {
+          /**
+           * 差がプラスマイナス１０秒以内なら同じとみなして_indexでソートする。
+           */
+          if (Math.abs(new Date(b.properties.updated_at) - new Date(a.properties.updated_at)) <= 10000) {
+            return a.properties._index - b.properties._index;
+          } else {
+            return new Date(b.properties.updated_at) - new Date(a.properties.updated_at);
+          }
+        });
+        // features.sort((a, b) => {
+        //   return a.properties._index - b.properties._index
+        // });
+      } else {
+        features.sort((a, b) => {
+          return new Date(b.properties.updated_at) - new Date(a.properties.updated_at);
+        });
+      }
       this.featuresLength = features.length
       this.drawFeaturesTexts = features.map(f => {
         let label = ''

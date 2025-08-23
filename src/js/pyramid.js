@@ -3,7 +3,7 @@ import axios from "axios"
 import { toRaw } from 'vue'
 import * as turf from '@turf/turf'
 import {
-    addDraw, featureCollectionAdd, featuresDelete, isJsonString, markerAddAndRemove,
+    addDraw, featureCollectionAdd, featuresDelete, formatYmdHms, isJsonString, markerAddAndRemove,
     recenterGeoJSON, removeNini, saveDrowFeatures,
     savePointSima, toResolved,
     zahyokei
@@ -1819,16 +1819,20 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
     } else {
         // 既存FeatureCollectionに追加
         if (geoType === 'Circle') {
+            circleFeature.properties.updated_at = formatYmdHms()
+            centerFeature.properties.updated_at = formatYmdHms()
             geojsonData = {
                 ...geojsonData,
                 features: [...geojsonData.features, circleFeature,centerFeature]
             };
         } else if (geoType === 'LineString' || geoType === 'FreeHand') {
+            feature.properties.updated_at = formatYmdHms()
             geojsonData = {
                 ...geojsonData,
                 features: [...geojsonData.features, feature]
             };
         } else {
+            feature.properties.updated_at = formatYmdHms()
             geojsonData = {
                 ...geojsonData,
                 features: [...geojsonData.features, feature]
@@ -2207,9 +2211,11 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
                     feature.properties.borderRadius = value.borderRadius
                     feature.properties.containerSize = value.containerSize
                     feature.properties.containerColor = value.containerColor
+                    feature.properties.updated_at = formatYmdHms()
                     // feature.properties.labelType= value.labelType
                 } else {
                     feature.properties[tgtProp] = value
+                    feature.properties.updated_at = formatYmdHms()
                 }
                 // ----------------------------------------------------------
                 if (geoType === 'Circle') {
@@ -2219,9 +2225,12 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
                     feature.properties.label = radius
                     feature.properties.radius = radius
                     feature.properties.label2 = value
+                    feature.properties.updated_at = formatYmdHms()
                     centerFeature = geojson.features.find(f => f.properties.id === id + '-point')
                     centerFeature.properties.label = value + '\n半径' + radius + 'm'
                     centerFeature.properties.label2 = value
+                    centerFeature.properties.updated_at = formatYmdHms()
+
                     updateFeatures.push(centerFeature)
                 } else if (geoType === 'LineString') {
                     const keikoValue = neonColors[value]
@@ -2258,6 +2267,7 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
             if (drawFeatures.length === 1) {
                 store.state.drawFeature = drawFeatures[0]
             }
+
             saveDrowFeatures(updateFeatures)
             return escapeHTML(JSON.stringify(toRaw(geojson)))
         }
