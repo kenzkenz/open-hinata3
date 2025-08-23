@@ -418,9 +418,9 @@ export default {
   font-size: 22px;
 }
 
-.maximize-dialog-div:hover {
-  color: red;
-}
+/*.maximize-dialog-div:hover {*/
+/*  color: red;*/
+/*}*/
 
 
 @media (max-width: 500px) {

@@ -11142,6 +11142,7 @@ export function moveToMap(lon, lat, opts = {}) {
             if (settled) return;
             settled = true;
             m.off('moveend', onMoveEnd);
+            store.state.updatePermalinkFire = !store.state.updatePermalinkFire
             resolve();
         };
         const onMoveEnd = () => finish();
