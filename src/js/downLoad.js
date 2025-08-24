@@ -10225,8 +10225,10 @@ export async function createThumbnailMarker(map, coords, photoURL, id, borderRad
     }
     // 縦長画像は1対1に。横長画像はアスペクト比で調節
     aspectRatio = (aspectRatio || 1) < 1 ? 1 : aspectRatio
+    let offsetYoffset = 0
     if (aspectRatio > 2.5) {
         containerSize = containerSize / 2.5
+        offsetYoffset = containerSize - containerSize / 2.5
     }
 
     // コンテナ要素を作成
@@ -10346,6 +10348,7 @@ export async function createThumbnailMarker(map, coords, photoURL, id, borderRad
             offsetY = -20
             break
     }
+    offsetY = offsetY + offsetYoffset
     const offsetX = 0
     // const offsetY = -55; // -35
     const marker =

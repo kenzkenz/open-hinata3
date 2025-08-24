@@ -11164,7 +11164,7 @@ select {
 
 .my-snackbar .v-snackbar__wrapper {
   background-color: color-mix(in srgb, var(--main-color) 70%, black)!important;
-  margin-top: 50px;
+  margin-top: 60px;
 }
 
 /* ===== v-select風スタイル ===== */
