@@ -11215,8 +11215,10 @@ export async function mapillaryCreate(lng, lat) {
                     console.log('✔️ 画像読み込み完了:', image);
                 });
             } else {
-                container.innerHTML = '<div style="height:100%; width:100%; background:black; color:white;display:flex; justify-content:center; align-items:center; text-align:center;"><span style="font-size: small">' +
-                    'Mapillary画像が見つかりませんでした。<br>リサイズできます。</span></div>'
+                container.innerHTML = '<div style="height:100%; width:100%; background:color-mix(in srgb, var(--main-color) 60%, black); color:white;display:flex; justify-content:center; align-items:center; text-align:center;">' +
+                    '<div style="font-size: small; margin-top: -20px;">' +
+                    'Mapillary画像が見つかりませんでした。' +
+                    '</div></div>'
                 console.warn('Mapillary画像が見つかりませんでした');
                 store.state.loading3 = false
             }

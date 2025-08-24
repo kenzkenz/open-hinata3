@@ -1276,18 +1276,17 @@ import SakuraEffect from './components/SakuraEffect.vue';
         <!-- FloatingWindow の配置 -->
 
         <FloatingWindow
-            windowId="mapillary"
-            :title="`mapillary`"
+            windowId = "mapillary"
+            title = "mapillary"
             type="normal"
-            :default-top = '70'
-            :default-left = '10'
-            :default-width = '300'
-            :default-height = '300'
-            :keepAspectRatio="false"
-            @width-changed="onWidthChangedForMapillary"
+            :default-top = "70"
+            :default-left = "10"
+            :default-width = "isSmall500 ? 200 : 300"
+            :default-height = "isSmall500 ? 200 : 300"
+            :keepAspectRatio = "false"
+            @width-changed ="onWidthChangedForMapillary"
         >
-          <div class="mapillary-div" style="height:100%; width:100%; background:black; color:white;
-          padding-bottom: 100px">
+          <div class="mapillary-div" :style="{height:'calc(100% - 32px)',width:'100%',background:'color-mix(in srgb, var(--main-color) 60%, black)',color:'white'}">
           </div>
         </FloatingWindow>
 
@@ -9119,9 +9118,6 @@ export default {
             const lng = e.lngLat.lng;  // 経度
             const lat = e.lngLat.lat;  // 緯度
             mapillaryCreate(lng, lat)
-
-
-
           })
           map.on('mousemove', function (e) {
             mouseMoveForPopup(e,map)
@@ -9811,6 +9807,8 @@ export default {
     }
   },
   created() {
+    store.state.isSmall1000 = window.innerWidth < 1000
+    store.state.isSmall500 = window.innerWidth < 500
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
     // console.log(/android/i.test(userAgent))
     this.$store.state.isAndroid = /android/i.test(userAgent);
@@ -9823,6 +9821,7 @@ export default {
     window.removeEventListener("resize", this.onResize);
   },
   mounted() {
+
     const vm = this
 
     document.querySelector('.fan-menu-rap').style.display = 'none'

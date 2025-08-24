@@ -43,8 +43,6 @@ auth.onAuthStateChanged(async user => {
 
 store.state.isIphone = /iPhone/i.test(navigator.userAgent)
 store.state.isAndroid = /Android/i.test(navigator.userAgent)
-store.state.isSmall1000 = window.innerWidth < 1000
-store.state.isSmall500 = window.innerWidth < 500
 
 async function checkVersion() {
     try {
