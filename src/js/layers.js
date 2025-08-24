@@ -3,6 +3,60 @@ import store from '@/store'
 import * as turf from '@turf/turf'
 import { nextTick, toRef, reactive, ref, computed, watch } from 'vue';
 
+const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c';
+
+const mapillarySource = {
+    id: 'mapillary-source', obj: {
+        type: 'vector',
+        tiles: [`https://tiles.mapillary.com/maps/vtp/mly1_public/2/{z}/{x}/{y}?access_token=${MAPILLARY_CLIENT_ID}`],
+        minzoom: 0,
+        maxzoom: 14,
+    }
+}
+// シーケンス（走行軌跡）をラインで表示
+const mapillarySequences = {
+    id: 'oh-mapillary-sequences',
+    type: 'line',
+    source: 'mapillary-source',
+    'source-layer': 'sequence',
+    layout: {
+        'line-cap': 'round',
+        'line-join': 'round'
+    },
+    paint: {
+        'line-opacity': 0.6,
+        'line-width': [
+            'interpolate', ['linear'], ['zoom'],
+            8, 0.5,
+            12, 1.2,
+            16, 2.0
+        ],
+        'line-color': '#35AF6D'
+    }
+}
+// 画像位置（ポイント）を円で表示（ズーム 13+ で）
+const mapillaryImages = {
+    id: 'oh-mapillary-images',
+    type: 'circle',
+    source: 'mapillary-source',
+    'source-layer': 'image',
+    minzoom: 13,
+    paint: {
+        'circle-opacity': 0.7,
+        'circle-stroke-color': '#1b5e3a',
+        'circle-stroke-width': 1,
+        'circle-color': '#35AF6D',
+        'circle-radius': [
+            'interpolate', ['linear'], ['zoom'],
+            13, 2,
+            16, 4,
+            19, 6
+        ]
+    }
+}
+
+
+
 const checkUser = setInterval(() => {
     if (user.value && user.value.uid) {
         const uid = user.value.uid
@@ -10221,6 +10275,13 @@ const t23kuLayer = {
 }
 // ---------------------------------------------------------------------------------------------------------------------
 let layers01 = [
+    {
+        id: 'oh-mapillary',
+        label: "<span style='color: red'>NEW</span>⭐️mapillary",
+        sources: [mapillarySource],
+        layers: [mapillarySequences, mapillaryImages],
+        attribution: 'メニューからmapillaryをオンにしてください。<br>© Mapillary',
+    },
     {
         id: 'oh-homusyo-2025-layer',
         label: "2025登記所地図",

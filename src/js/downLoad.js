@@ -9814,23 +9814,21 @@ export async function createThumbnailMarker(map, coords, photoURL, id, borderRad
 
     let aspectRatio = 1
     let offsetYoffset = 0
-    // if (!store.state.isIphone) {
-        try {
-            // const {width, height} = await createImageBitmap(await (await fetch(photoURL)).blob());
-            const { width, height } = await getImageSize(photoURL);
+    try {
+        // const {width, height} = await createImageBitmap(await (await fetch(photoURL)).blob());
+        const { width, height } = await getImageSize(photoURL);
 
-            aspectRatio = width / height
-            // console.log(aspectRatio)
-        }catch (e) {
-            console.log(e)
-        }
-        // 縦長画像は1対1に。横長画像はアスペクト比で調節
-        aspectRatio = (aspectRatio || 1) < 1 ? 1 : aspectRatio
-        if (aspectRatio > 2.5) {
-            containerSize = containerSize / 2.5
-            offsetYoffset = containerSize - containerSize / 2.5
-        }
-    // }
+        aspectRatio = width / height
+        // console.log(aspectRatio)
+    }catch (e) {
+        console.log(e)
+    }
+    // 縦長画像は1対1に。横長画像はアスペクト比で調節
+    aspectRatio = (aspectRatio || 1) < 1 ? 1 : aspectRatio
+    if (aspectRatio > 2.5) {
+        containerSize = containerSize / 2.5
+        offsetYoffset = containerSize - containerSize / 2.5
+    }
 
     // コンテナ要素を作成
     const container = document.createElement('div');
@@ -11181,51 +11179,151 @@ function getSizeViaImage(url) {
  */
 export let mapillaryViewer = null
 export async function mapillaryCreate(lng, lat) {
-    if (store.state.mapillaryFlg) {
-        store.state.loadingMessage3 = 'mapillary問い合わせ中';
-        store.state.loading3 = true;
-        store.dispatch('showFloatingWindow', 'mapillary');
-        const container = document.querySelector('.mapillary-div')
-        container.innerHTML = ''
-        const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c';
-        async function mapillary(lng, lat) {
-            const deltaLat = 0.00009; // 約10m
-            const deltaLng = 0.00011; // 東京近辺での約10m
-            const response = await fetch(`https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${lng - deltaLng},${lat - deltaLat},${lng + deltaLng},${lat + deltaLat}&limit=1`);
-            const data = await response.json();
-            if (data.data && data.data.length > 0) {
-                const imageId = data.data[0].id;
-                mapillaryViewer = new Viewer({
-                    accessToken: MAPILLARY_CLIENT_ID,
-                    container: container,
-                    imageId: imageId,
-                    component: {cover: false}
-                })
-                mapillaryViewer.on('image', image => {
-                    setTimeout(() => {
-                        try {
-                            const link = document.querySelector('.mapillary-attribution-image-container').href;
-                            document.querySelector('.attribution-username').innerHTML = `<a href=${link} target=_'blank' >${document.querySelector('.mapillary-attribution-username').innerHTML}</a>`
-                            document.querySelector('.attribution-date').innerHTML = document.querySelector('.mapillary-attribution-date').innerHTML
-                        } catch (e) {
-                            console.log(e)
-                        }
-                    },0)
+    store.state.loadingMessage3 = 'mapillary問い合わせ中';
+    store.state.loading3 = true;
+    store.dispatch('showFloatingWindow', 'mapillary');
+    const container = document.querySelector('.mapillary-div')
+    container.innerHTML = ''
+    const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c';
+    async function mapillary(lng, lat) {
+        const deltaLat = 0.00009; // 約10m
+        const deltaLng = 0.00011; // 東京近辺での約10m
+        const response = await fetch(`https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${lng - deltaLng},${lat - deltaLat},${lng + deltaLng},${lat + deltaLat}&limit=1`);
+        const data = await response.json();
+        if (data.data && data.data.length > 0) {
+            const imageId = data.data[0].id;
+            mapillaryViewer = new Viewer({
+                accessToken: MAPILLARY_CLIENT_ID,
+                container: container,
+                imageId: imageId,
+                component: {cover: false}
+            })
+            mapillaryViewer.on('image', image => {
+                setTimeout(() => {
+                    try {
+                        const link = document.querySelector('.mapillary-attribution-image-container').href;
+                        document.querySelector('.attribution-username').innerHTML = `<a href=${link} target=_'blank' >${document.querySelector('.mapillary-attribution-username').innerHTML}</a>`
+                        document.querySelector('.attribution-date').innerHTML = document.querySelector('.mapillary-attribution-date').innerHTML
+                    } catch (e) {
+                        console.log(e)
+                        store.state.loading3 = false;
+                    }
                     store.state.loading3 = false;
+                    store.state.mapillaryZindex = getNextZIndex()
                     console.log('✔️ 画像読み込み完了:', image);
-                });
-            } else {
-                container.innerHTML = '<div style="height:100%; width:100%; background:color-mix(in srgb, var(--main-color) 60%, black); color:white;display:flex; justify-content:center; align-items:center; text-align:center;">' +
-                    '<div style="font-size: small; margin-top: -20px;">' +
-                    'Mapillary画像が見つかりませんでした。' +
-                    '</div></div>'
-                console.warn('Mapillary画像が見つかりませんでした');
-                store.state.loading3 = false
-            }
+                },0)
+            });
+        } else {
+            container.innerHTML = '<div style="height:100%; width:100%; background:color-mix(in srgb, var(--main-color) 60%, black); color:white;display:flex; justify-content:center; align-items:center; text-align:center;">' +
+                '<div style="font-size: small; margin-top: -20px;">' +
+                'Mapillary画像が見つかりませんでした。' +
+                '</div></div>'
+            console.warn('Mapillary画像が見つかりませんでした');
+            store.state.loading3 = false
+            store.state.mapillaryZindex = getNextZIndex()
         }
-        await mapillary(lng, lat)
     }
+    await mapillary(lng, lat)
 }
 
+// MapLibre 用: Mapillary のカバレッジ（シーケンス線＆画像点）をレイヤー表示
+// 使い方:
+// import { addMapillaryCoverage } from './addMapillaryCoverage'
+// map.on('load', () => addMapillaryCoverage(map, 'MLY|YOUR_TOKEN_HERE'))
+
+export function addMapillaryCoverage(map, mapillaryToken) {
+    if (!map || !mapillaryToken) return;
+
+    const sourceId = 'mapillary-coverage';
+
+    // 既存なら一旦削除（再実行に強く）
+    if (map.getLayer('oh-mapillary-images')) map.removeLayer('oh-mapillary-images');
+    if (map.getLayer('oh-mapillary-sequences')) map.removeLayer('oh-mapillary-sequences');
+    if (map.getSource(sourceId)) map.removeSource(sourceId);
+
+    // Mapillary Vector Tile ソース（mly1_public）
+    map.addSource(sourceId, {
+        type: 'vector',
+        tiles: [
+            `https://tiles.mapillary.com/maps/vtp/mly1_public/2/{z}/{x}/{y}?access_token=${mapillaryToken}`
+        ],
+        minzoom: 0,
+        maxzoom: 14,
+        attribution: '© Mapillary'
+    });
+
+    // シーケンス（走行軌跡）をラインで表示
+    map.addLayer({
+        id: 'oh-mapillary-sequences',
+        type: 'line',
+        source: sourceId,
+        'source-layer': 'sequence',
+        layout: {
+            'line-cap': 'round',
+            'line-join': 'round'
+        },
+        paint: {
+            'line-opacity': 0.6,
+            'line-width': [
+                'interpolate', ['linear'], ['zoom'],
+                8, 0.5,
+                12, 1.2,
+                16, 2.0
+            ],
+            'line-color': '#35AF6D'
+        }
+    });
+
+    // 画像位置（ポイント）を円で表示（ズーム 13+ で）
+    map.addLayer({
+        id: 'oh-mapillary-images',
+        type: 'circle',
+        source: sourceId,
+        'source-layer': 'image',
+        minzoom: 13,
+        paint: {
+            'circle-opacity': 0.7,
+            'circle-stroke-color': '#1b5e3a',
+            'circle-stroke-width': 1,
+            'circle-color': '#35AF6D',
+            'circle-radius': [
+                'interpolate', ['linear'], ['zoom'],
+                13, 2,
+                16, 4,
+                19, 6
+            ]
+        }
+    });
+
+    // クリックで Mapillary を開く（画像 ID を優先）
+    const openImage = (feat) => {
+        if (!feat) return;
+        // タイル属性から image の ID を取得（image レイヤは通常 id、sequence レイヤは代表 image_id を持つことがあります）
+        const props = feat.properties || {};
+        const imgId = props.id || props.image_id; // 両対応
+        if (imgId) {
+            const url = `https://www.mapillary.com/app/?image=${imgId}`;
+            window.open(url, '_blank');
+        }
+    };
+
+    map.on('click', 'oh-mapillary-images', (e) => {
+        const f = e.features && e.features[0];
+        openImage(f);
+    });
+
+    map.on('click', 'oh-mapillary-sequences', (e) => {
+        // シーケンス線をクリックした場合は、その線に紐づく代表画像 ID が属性に入っている場合がある
+        const f = e.features && e.features[0];
+        openImage(f);
+    });
+
+    // ホバーでカーソル変更
+    const hoverLayers = ['oh-mapillary-images', 'oh-mapillary-sequences'];
+    hoverLayers.forEach((layerId) => {
+        map.on('mouseenter', layerId, () => { map.getCanvas().style.cursor = 'pointer'; });
+        map.on('mouseleave', layerId, () => { map.getCanvas().style.cursor = ''; });
+    });
+}
 
 

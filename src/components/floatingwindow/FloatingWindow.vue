@@ -42,6 +42,7 @@
 
 <script>
 import { getNextZIndex } from "@/js/downLoad";
+import { mapState } from "vuex"
 export default {
   name: 'FloatingWindow',
   props: {
@@ -80,6 +81,9 @@ export default {
     };
   },
   computed: {
+    ...mapState([
+      'mapillaryZindex'
+    ]),
     // ==== Vuex マップから「自分の ID」の表示状態を取得／更新する visible ====
     visible: {
       get() {
@@ -223,6 +227,9 @@ export default {
     }
   },
   watch: {
+    mapillaryZindex(value) {
+      this.zIndex = value;
+    },
     visible() {
       this.zIndex = getNextZIndex();
       this.$nextTick(() => {

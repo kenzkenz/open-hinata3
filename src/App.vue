@@ -754,27 +754,27 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <!--        </v-card>-->
 <!--      </v-dialog>-->
 
-      <v-dialog v-model="s_mapillaryDialog" fullscreen>
-        <v-card>
-<!--          <v-card-title style="height: 0">-->
-<!--            <div class="close-btn-div" @click="s_mapillaryDialog = false" style="z-index: 101!important; color: #0d47a1; margin-top: -10px!important;"><i class="fa-solid fa-xmark hover close-btn"></i></div>-->
-<!--          </v-card-title>-->
-          <v-card-text style="padding: 0">
-            <div class="close-btn-div" @click="s_mapillaryDialog = false" style="z-index: 101!important; color: #0d47a1; position: absolute;top:10px;right:15px;"><i class="fa-solid fa-xmark hover close-btn"></i></div>
-            <div class="mapillary-container2" :width="mapillaryWidth" :style="`height: ${mapillarHeight}`"></div>
-            <div style="position: absolute;bottom: 10px;left: 10px;z-index: 100">
-              <span class="attribution-date" style="margin-left: 20px;"></span><span class="attribution-username" style="margin-left: 10px;"></span>
-            </div>
-          </v-card-text>
-<!--          <v-card-actions style="height: 20px!important;">-->
-<!--            <div style="margin-bottom: 10px;">-->
+<!--      <v-dialog v-model="s_mapillaryDialog" fullscreen>-->
+<!--        <v-card>-->
+<!--&lt;!&ndash;          <v-card-title style="height: 0">&ndash;&gt;-->
+<!--&lt;!&ndash;            <div class="close-btn-div" @click="s_mapillaryDialog = false" style="z-index: 101!important; color: #0d47a1; margin-top: -10px!important;"><i class="fa-solid fa-xmark hover close-btn"></i></div>&ndash;&gt;-->
+<!--&lt;!&ndash;          </v-card-title>&ndash;&gt;-->
+<!--          <v-card-text style="padding: 0">-->
+<!--            <div class="close-btn-div" @click="s_mapillaryDialog = false" style="z-index: 101!important; color: #0d47a1; position: absolute;top:10px;right:15px;"><i class="fa-solid fa-xmark hover close-btn"></i></div>-->
+<!--            <div class="mapillary-container2" :width="mapillaryWidth" :style="`height: ${mapillarHeight}`"></div>-->
+<!--            <div style="position: absolute;bottom: 10px;left: 10px;z-index: 100">-->
 <!--              <span class="attribution-date" style="margin-left: 20px;"></span><span class="attribution-username" style="margin-left: 10px;"></span>-->
 <!--            </div>-->
-<!--            <v-spacer></v-spacer>-->
-<!--            <v-btn color="blue-darken-1" text @click="s_mapillaryDialog = false">Close</v-btn>-->
-<!--          </v-card-actions>-->
-        </v-card>
-      </v-dialog>
+<!--          </v-card-text>-->
+<!--&lt;!&ndash;          <v-card-actions style="height: 20px!important;">&ndash;&gt;-->
+<!--&lt;!&ndash;            <div style="margin-bottom: 10px;">&ndash;&gt;-->
+<!--&lt;!&ndash;              <span class="attribution-date" style="margin-left: 20px;"></span><span class="attribution-username" style="margin-left: 10px;"></span>&ndash;&gt;-->
+<!--&lt;!&ndash;            </div>&ndash;&gt;-->
+<!--&lt;!&ndash;            <v-spacer></v-spacer>&ndash;&gt;-->
+<!--&lt;!&ndash;            <v-btn color="blue-darken-1" text @click="s_mapillaryDialog = false">Close</v-btn>&ndash;&gt;-->
+<!--&lt;!&ndash;          </v-card-actions>&ndash;&gt;-->
+<!--        </v-card>-->
+<!--      </v-dialog>-->
 
       <v-dialog v-model="dialogForImagePng" max-width="500px">
         <v-card>
@@ -9117,8 +9117,19 @@ export default {
             store.commit('setDrawDrawer', false)
             const lng = e.lngLat.lng;  // 経度
             const lat = e.lngLat.lat;  // 緯度
-            mapillaryCreate(lng, lat)
+            if (store.state.mapillaryFlg) {
+              mapillaryCreate(lng, lat)
+            }
           })
+          map.on('click', 'oh-mapillary-images', (e) => {
+            const f = e.features && e.features[0];
+            if(f) {
+              console.log('mapillary_properties',f.properties)
+              const lng = e.lngLat.lng;  // 経度
+              const lat = e.lngLat.lat;  // 緯度
+              mapillaryCreate(lng, lat)
+            }
+          });
           map.on('mousemove', function (e) {
             mouseMoveForPopup(e,map)
           })
