@@ -131,7 +131,7 @@
     <!-- 4行目 -->
     <div style="display: flex; justify-content: space-between; gap: 0px; padding-right: 0px;">
       <v-btn style="width: 70px;" class="tiny-btn" @click="saveGeojson"><span style="font-size: 8px;">geojson保存</span></v-btn>
-      <v-btn style="width: 145px;" @click="tutorial">使い方説明</v-btn>
+      <v-btn style="width: 145px;" @click="tutorial">OH3逆引き辞典</v-btn>
     </div>
 
     <hr>
@@ -406,8 +406,8 @@ export default {
       }
     },
     tutorial () {
-      window.open("https://hackmd.io/@kenz/H15Iq49D1g", "_blank");
-      history('チュートリアル',window.location.href)
+      window.open('https://sakura.3ku.jp/gis/oh3-reversedictionary/', '_blank');
+      history('逆引き辞典',window.location.href)
     },
     update () {
       this.$store.commit('updateSelectedLayers', {

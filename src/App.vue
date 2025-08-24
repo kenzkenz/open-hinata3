@@ -2485,14 +2485,14 @@ export default {
         { key: 'free', text: '自由に描く', label: '自由', color: this.s_isDrawFree ? 'green' : 'blue', click: this.toggleLDrawFree},
         { key: 'lasso', text: '投げ縄', label: '投げ縄', color: this.s_isDrawLasso ? 'green' : 'blue', click: this.toggleDrawLasso,style: 'font-size:12px;' },
         { key: 'finish', text: '編集が終わったクリック！', label: '確定', click: this.finishDrawing, style: 'background-color: orange!important;' },
-        { key: 'edit', text: '変形と移動', label: '変形', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
+        { key: 'edit', text: '変形と移動', label: '移動', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
         // { key: 'rotate', text: '回転', label: '回転',  click: this.drawRotate },
         { key: 'undo', text: '元に戻す', icon: 'mdi-undo', label: '元戻', click: this.undo },
         { key: 'redo', text: 'やり直す', icon: 'mdi-redo', label: 'やり直', click: this.redo },
         // { key: 'fix', text: '画面固定', label: '固定', color: this.s_isDrawFix ? 'green' : 'blue', click: this.toggleDrawFix },
         { key: 'config', text: '各種設定', label: '設定', color: 'blue', click: this.drawConfig },
         { key: 'dl', text: '各種ダウンロード', label: 'DL', style: 'background-color: navy!important;', click: this.dialogForDlOpen },
-        { key: 'ex', text: 'ex', label: 'ex', style: 'background-color: navy!important;', click: this.exDrawOpen },
+        // { key: 'ex', text: 'ex', label: 'ex', style: 'background-color: navy!important;', click: this.exDrawOpen },
         { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
 
         { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
@@ -3099,10 +3099,10 @@ export default {
           alert("写真を選択してください");
           return;
         }
-        const maxSize = 10 * 1024 * 1024; // 10MB
+        const maxSize = 1 * 1024 * 1024; // 10MB
         if (file.size > maxSize) {
           this.isDisabled = true
-          store.state.loadingMessage = '<span style="color: red;">10mbを超えています。</span><br>圧縮しますので時間がかかります。'
+          store.state.loadingMessage = '<span style="color: red;">1mbを超えています。</span><br>圧縮しますので時間がかかります。'
         }
 
         if (isImageFile(file.name)) {
@@ -3111,7 +3111,7 @@ export default {
             // 10MB超え → 圧縮処理
             try {
               const blob = await compressImageToUnder10MB(file, file.type === 'image/png' ? 'image/png' : 'image/jpeg');
-              if (blob.size > 10 * 1024 * 1024) {
+              if (blob.size > 1 * 1024 * 1024) {
                 alert("10MB以下に圧縮できませんでした");
                 return;
               }
@@ -9087,6 +9087,7 @@ export default {
           // ポップアップ
           map.on('click', (e) => {
             popup(e,map,mapName,this.s_map2Flg)
+            store.commit('setDrawDrawer', false)
           })
           map.on('mousemove', function (e) {
             mouseMoveForPopup(e,map)

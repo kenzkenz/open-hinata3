@@ -9389,7 +9389,7 @@ export function isVideoFile(fileName) {
  * @returns {Promise<unknown>}
  */
 export async function compressImageToUnder10MB(file, type = 'image/jpeg') {
-    const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+    const MAX_SIZE = 1 * 1024 * 1024; // 1MB
     const MAX_DIMENSION = 1920; // 幅・高さの最大値
     let quality = 0.9;
 
@@ -9811,20 +9811,22 @@ export async function createThumbnailMarker(map, coords, photoURL, id, borderRad
 
     labelText = truncate(labelText,6)
 
-    let aspectRatio
-    try {
-        const {width, height} = await createImageBitmap(await (await fetch(photoURL)).blob());
-        aspectRatio = width / height
-        // console.log(aspectRatio)
-    }catch (e) {
-        console.log(e)
-    }
-    // 縦長画像は1対1に。横長画像はアスペクト比で調節
-    aspectRatio = (aspectRatio || 1) < 1 ? 1 : aspectRatio
+    let aspectRatio = 1
     let offsetYoffset = 0
-    if (aspectRatio > 2.5) {
-        containerSize = containerSize / 2.5
-        offsetYoffset = containerSize - containerSize / 2.5
+    if (!store.state.isIphone) {
+        try {
+            const {width, height} = await createImageBitmap(await (await fetch(photoURL)).blob());
+            aspectRatio = width / height
+            // console.log(aspectRatio)
+        }catch (e) {
+            console.log(e)
+        }
+        // 縦長画像は1対1に。横長画像はアスペクト比で調節
+        aspectRatio = (aspectRatio || 1) < 1 ? 1 : aspectRatio
+        if (aspectRatio > 2.5) {
+            containerSize = containerSize / 2.5
+            offsetYoffset = containerSize - containerSize / 2.5
+        }
     }
 
     // コンテナ要素を作成
@@ -9928,7 +9930,12 @@ export async function createThumbnailMarker(map, coords, photoURL, id, borderRad
             popup(e,map,'map01', store.state.map2Flg)
         }
         onPointClick(dummyEvent)
-
+        if (map.getZoom() < 16) {
+            map.flyTo({
+                center: [coords[0], coords[1]],
+                zoom: 16
+            });
+        }
         console.log('⭐️発火成功🤩')
     });
 
@@ -10787,6 +10794,13 @@ export function moveToMap(lon, lat, opts = {}) {
                     center: [lon, lat],
                     zoom: targetZoom,
                 });
+                // アニメなしにしてもiphoneで落ちた。
+                // m.flyTo({
+                //     center: [lon, lat],
+                //     zoom: targetZoom,
+                //     animate: false,
+                //     duration: 0
+                // });
             } else {
                 m.flyTo({
                     ...common,
@@ -11013,3 +11027,97 @@ export function formatYmdHms(date = new Date(), tz = 'Asia/Tokyo') {
     const parts = fmt.formatToParts(date).reduce((o, p) => (o[p.type] = p.value, o), {});
     return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second}`;
 }
+
+/**
+ * MapLibre GL JS: map.flyTo 実用レシピ集
+ * すぐ貼って使える関数セット。
+ */
+
+// 1) 基本：中心とズームへフライト
+export function flyToBasic(map, lng, lat, zoom = 14) {
+    if (!map) return;
+    map.flyTo({ center: [lng, lat], zoom });
+}
+
+// 2) アニメなしで一気に移動（2パターン）
+export function moveInstant(map, lng, lat, zoom) {
+    // 完全にアニメ無し
+    map.jumpTo({ center: [lng, lat], zoom });
+}
+export function flyToNoAnim(map, lng, lat, zoom) {
+    // flyTo を使いながらアニメ無効
+    map.flyTo({ center: [lng, lat], zoom, animate: false, duration: 0 });
+}
+
+// 3) スピード・カーブ制御（速く/直線気味に）
+export function flyToFast(map, center, zoom) {
+    map.flyTo({
+        center,
+        zoom,
+        speed: 2.0,       // 既定: 1.2（大きいほど速い）
+        curve: 1.2,       // 既定: 1.42（小さいほど直線的）
+        maxDuration: 3000 // 上限（ms）
+    });
+}
+
+// 4) 方位と俯角も同時に変える
+export function flyToView(map, center, zoom, bearing = 0, pitch = 0) {
+    map.flyTo({ center, zoom, bearing, pitch });
+}
+
+// 5) 好きなイージング（減速しながら停止など）
+export function flyToEase(map, center, zoom) {
+    map.flyTo({
+        center,
+        zoom,
+        duration: 1000,
+        easing: (t) => 1 - Math.pow(1 - t, 3) // easeOutCubic
+    });
+}
+
+// 6) 終了を待って次の処理（Promise 版）
+export function flyToAsync(map, opts) {
+    return new Promise((resolve) => {
+        const onEnd = () => { map.off('moveend', onEnd); resolve(); };
+        map.once('moveend', onEnd);
+        map.flyTo(opts);
+    });
+}
+
+// 7) 途中で中断（別フライトへ切り替えたい時）
+export function cancelFlight(map) {
+    map.stop();
+}
+
+// 8) アクセシビリティ：重要な動きとして実行
+export function flyToEssential(map, center, zoom) {
+    map.flyTo({ center, zoom, essential: true });
+}
+
+// 9) サイドパネルに合わせて中心をズラす（offset/padding は easeTo が確実）
+export function panWithOffset(map, center, zoom, offsetX = 200, offsetY = 0, padding = { left: 300, right: 20, top: 20, bottom: 20 }) {
+    map.easeTo({ center, zoom, offset: [offsetX, offsetY], padding });
+}
+
+// 10) 「遠いときはフライ、近いときはジャンプ」ユーティリティ
+export function smartGo(map, lng, lat, zoom, pixelThreshold = 1000) {
+    const from = map.project(map.getCenter());
+    const to = map.project({ lng, lat });
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist > pixelThreshold) {
+        map.flyTo({ center: [lng, lat], zoom, speed: 1.6, curve: 1.3 });
+    } else {
+        map.jumpTo({ center: [lng, lat], zoom });
+    }
+}
+
+// --- 使用例 ---
+// flyToBasic(map, 139.767, 35.681, 14);
+// flyToNoAnim(map, 139.767, 35.681, 15);
+// flyToFast(map, [139.767, 35.681], 16);
+// flyToView(map, [139.767, 35.681], 15, 45, 60);
+// await flyToAsync(map, { center: [139.767, 35.681], zoom: 14 });
+// panWithOffset(map, [139.767, 35.681], 15, 240, 0, { left: 360, right: 20, top: 20, bottom: 20 });
+
