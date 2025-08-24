@@ -11198,12 +11198,19 @@ export async function mapillaryCreate(lng, lat, mapArg) {
     const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c'
 
     // MapLibre の map を取得（引数優先 → Vuex いくつかのキーを探索）
-    const map = mapArg || getMapInstanceFromStore()
+    // const map = mapArg || getMapInstanceFromStore()
+    const map = store.state.map01
+
+    // 軌跡をクリア
     const src = map.getSource('mly-trail-line'); // 既定の trail ソースID
     if (src && src.setData) {
         src.setData({
             type: 'FeatureCollection',
-            features: [{ type: 'Feature', geometry: { type: 'LineString', coordinates: [] }, properties: {} }]
+            features: [{
+                type: 'Feature',
+                geometry: { type: 'LineString', coordinates: [] },
+                properties: {}
+            }]
         });
     }
     // 10m 四方で最寄りの画像を1枚取得
@@ -11221,7 +11228,7 @@ export async function mapillaryCreate(lng, lat, mapArg) {
             // 既存 Viewer を破棄（必要なら）
             try { mapillaryViewer?.remove?.() } catch (_) {}
 
-            // Viewer 生成（あなたの既存コードを踏襲）
+            // Viewer 生成
             mapillaryViewer = new Viewer({
                 accessToken: MAPILLARY_CLIENT_ID,
                 container,
@@ -11348,116 +11355,6 @@ function getMapInstanceFromStore() {
 //     await mapillary(lng, lat)
 // }
 
-// MapLibre 用: Mapillary のカバレッジ（シーケンス線＆画像点）をレイヤー表示
-// 使い方:
-// import { addMapillaryCoverage } from './addMapillaryCoverage'
-// map.on('load', () => addMapillaryCoverage(map, 'MLY|YOUR_TOKEN_HERE'))
-
-export function addMapillaryCoverage(map, mapillaryToken) {
-    if (!map || !mapillaryToken) return;
-
-    const sourceId = 'mapillary-coverage';
-
-    // 既存なら一旦削除（再実行に強く）
-    if (map.getLayer('oh-mapillary-images')) map.removeLayer('oh-mapillary-images');
-    if (map.getLayer('oh-mapillary-sequences')) map.removeLayer('oh-mapillary-sequences');
-    if (map.getSource(sourceId)) map.removeSource(sourceId);
-
-    // Mapillary Vector Tile ソース（mly1_public）
-    map.addSource(sourceId, {
-        type: 'vector',
-        tiles: [
-            `https://tiles.mapillary.com/maps/vtp/mly1_public/2/{z}/{x}/{y}?access_token=${mapillaryToken}`
-        ],
-        minzoom: 0,
-        maxzoom: 14,
-        attribution: '© Mapillary'
-    });
-
-    // シーケンス（走行軌跡）をラインで表示
-    map.addLayer({
-        id: 'oh-mapillary-sequences',
-        type: 'line',
-        source: sourceId,
-        'source-layer': 'sequence',
-        layout: {
-            'line-cap': 'round',
-            'line-join': 'round'
-        },
-        paint: {
-            'line-opacity': 0.6,
-            'line-width': [
-                'interpolate', ['linear'], ['zoom'],
-                8, 0.5,
-                12, 1.2,
-                16, 2.0
-            ],
-            'line-color': '#35AF6D'
-        }
-    });
-
-    // 画像位置（ポイント）を円で表示（ズーム 13+ で）
-    map.addLayer({
-        id: 'oh-mapillary-images',
-        type: 'circle',
-        source: sourceId,
-        'source-layer': 'image',
-        minzoom: 13,
-        paint: {
-            'circle-opacity': 0.7,
-            'circle-stroke-color': '#1b5e3a',
-            'circle-stroke-width': 1,
-            'circle-color': '#35AF6D',
-            'circle-radius': [
-                'interpolate', ['linear'], ['zoom'],
-                13, 2,
-                16, 4,
-                19, 6
-            ]
-        }
-    });
-
-    // クリックで Mapillary を開く（画像 ID を優先）
-    const openImage = (feat) => {
-        if (!feat) return;
-        // タイル属性から image の ID を取得（image レイヤは通常 id、sequence レイヤは代表 image_id を持つことがあります）
-        const props = feat.properties || {};
-        const imgId = props.id || props.image_id; // 両対応
-        if (imgId) {
-            const url = `https://www.mapillary.com/app/?image=${imgId}`;
-            window.open(url, '_blank');
-        }
-    };
-
-    map.on('click', 'oh-mapillary-images', (e) => {
-        const f = e.features && e.features[0];
-        openImage(f);
-    });
-
-    map.on('click', 'oh-mapillary-sequences', (e) => {
-        // シーケンス線をクリックした場合は、その線に紐づく代表画像 ID が属性に入っている場合がある
-        const f = e.features && e.features[0];
-        openImage(f);
-    });
-
-    // ホバーでカーソル変更
-    const hoverLayers = ['oh-mapillary-images', 'oh-mapillary-sequences'];
-    hoverLayers.forEach((layerId) => {
-        map.on('mouseenter', layerId, () => { map.getCanvas().style.cursor = 'pointer'; });
-        map.on('mouseleave', layerId, () => { map.getCanvas().style.cursor = ''; });
-    });
-}
-
-// OH3 × Mapillary 再生シンク: 再生中の画像位置を地図上にマーカー表示＆トレイル描画
-// 使い方（どれかの方法を選択）:
-//  A) ビューアと自動連携：
-//     import { attachViewerSync } from '@/lib/oh3-mapillary-play-marker'
-//     attachViewerSync({ map, viewer: mly, token: MAPILLARY_TOKEN, options: { autoPan: true, track: true } })
-//  B) 自前の再生ループから毎回呼ぶ：
-//     import { updateMlyMarkerByImageId, ensureMlyMarkerLayers } from '@/lib/oh3-mapillary-play-marker'
-//     ensureMlyMarkerLayers(map)
-//     await updateMlyMarkerByImageId(map, imageId, MAPILLARY_TOKEN, { autoPan: true, track: true })
-
 // ---- 公開関数 ----
 /**
  * ここで軌跡のレイヤー、方向のレイヤーを設定
@@ -11526,6 +11423,8 @@ export function ensureMlyMarkerLayers(map, ids = {}) {
             }
         });
     }
+    store.state.updatePermalinkFire = !store.state.updatePermalinkFire
+
 }
 
 export async function updateMlyMarkerByImageId(map, imageId, token, options = {}) {
