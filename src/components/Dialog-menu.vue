@@ -1651,6 +1651,13 @@ export default {
     }
   },
   watch: {
+    s_mapillary(value) {
+      if (value) {
+        store.dispatch('showFloatingWindow', 'mapillary');
+      } else {
+        store.dispatch('hideFloatingWindow', 'mapillary');
+      }
+    },
     s_soloFlg() {
       this.aaa()
     },

@@ -1268,7 +1268,28 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
 <!--        <v-btn @click="test">test</v-btn>-->
 
+
+<!--        <div class="test" style="height: 100px; width: 100px;">-->
+<!--          aaaaaa-->
+<!--        </div>-->
+
         <!-- FloatingWindow の配置 -->
+
+        <FloatingWindow
+            windowId="mapillary"
+            :title="`mapillary`"
+            type="normal"
+            :default-top = '70'
+            :default-left = '10'
+            :default-width = '300'
+            :default-height = '300'
+            :keepAspectRatio="false"
+            @width-changed="onWidthChangedForMapillary"
+        >
+          <div class="mapillary-div" style="height:100%; width:100%; background:black; color:white;
+          padding-bottom: 100px">
+          </div>
+        </FloatingWindow>
 
         <FloatingWindow
             windowId="exdraw"
@@ -1715,7 +1736,7 @@ import {
   jpgLoad,
   kmlDownload,
   kmzLoadForUser,
-  LngLatToAddress, markaersRemove, markerAddAndRemove,
+  LngLatToAddress, mapillaryCreate, mapillaryViewer, markaersRemove, markerAddAndRemove,
   parseCSV,
   pmtilesGenerate,
   pmtilesGenerateForUser2,
@@ -3289,6 +3310,13 @@ export default {
       //     'text-color',
       //     symbol['text-color']
       // )
+    },
+    onWidthChangedForMapillary() {
+      try {
+        mapillaryViewer.resize()
+      }catch (e) {
+        console.log(e)
+      }
     },
     onWidthChanged(newWidth) {
       this.qrCodeWidth = newWidth
@@ -9088,6 +9116,12 @@ export default {
           map.on('click', (e) => {
             popup(e,map,mapName,this.s_map2Flg)
             store.commit('setDrawDrawer', false)
+            const lng = e.lngLat.lng;  // 経度
+            const lat = e.lngLat.lat;  // 緯度
+            mapillaryCreate(lng, lat)
+
+
+
           })
           map.on('mousemove', function (e) {
             mouseMoveForPopup(e,map)

@@ -39,6 +39,7 @@ import { deserialize } from 'flatgeobuf/lib/mjs/geojson.js';
 import {closeAllPopups, popup} from "@/js/popup";
 import {isNumber} from "lodash";
 import sanitizeHtml from 'sanitize-html';
+import {Viewer} from "mapillary-js";
 
 
 // import publicChk from '@/components/Dialog-myroom'
@@ -9813,9 +9814,11 @@ export async function createThumbnailMarker(map, coords, photoURL, id, borderRad
 
     let aspectRatio = 1
     let offsetYoffset = 0
-    if (!store.state.isIphone) {
+    // if (!store.state.isIphone) {
         try {
-            const {width, height} = await createImageBitmap(await (await fetch(photoURL)).blob());
+            // const {width, height} = await createImageBitmap(await (await fetch(photoURL)).blob());
+            const { width, height } = await getImageSize(photoURL);
+
             aspectRatio = width / height
             // console.log(aspectRatio)
         }catch (e) {
@@ -9827,7 +9830,7 @@ export async function createThumbnailMarker(map, coords, photoURL, id, borderRad
             containerSize = containerSize / 2.5
             offsetYoffset = containerSize - containerSize / 2.5
         }
-    }
+    // }
 
     // コンテナ要素を作成
     const container = document.createElement('div');
@@ -11120,4 +11123,107 @@ export function smartGo(map, lng, lat, zoom, pixelThreshold = 1000) {
 // flyToView(map, [139.767, 35.681], 15, 45, 60);
 // await flyToAsync(map, { center: [139.767, 35.681], zoom: 14 });
 // panWithOffset(map, [139.767, 35.681], 15, 240, 0, { left: 360, right: 20, top: 20, bottom: 20 });
+
+/**
+ * getImageSize – iPhone対応 & globalThis不使用
+ *  - iOSでは createImageBitmap を使わず <img> にフォールバック
+ *  - globalThis を参照しない実装（ESLint 警告回避）
+ * @param {string} photoURL
+ * @returns {Promise<{width:number,height:number}>}
+ */
+export async function getImageSize(photoURL) {
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+    const isIOS = /iP(?:hone|ad|od)/.test(ua) || (ua.includes('Mac') && typeof document !== 'undefined' && 'ontouchend' in document);
+
+    const hasCreateImageBitmap = (typeof window !== 'undefined' && typeof window.createImageBitmap === 'function');
+
+    if (hasCreateImageBitmap && !isIOS) {
+        try {
+            const resp = await fetch(photoURL, { cache: 'force-cache' });
+            const blob = await resp.blob();
+            const bmp = await window.createImageBitmap(blob);
+            const size = { width: bmp.width, height: bmp.height };
+            if (typeof bmp.close === 'function') bmp.close();
+            return size;
+        } catch (e) {
+            // 失敗したら <img> フォールバックへ
+        }
+    }
+
+    return await getSizeViaImage(photoURL);
+}
+
+function getSizeViaImage(url) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        // crossOrigin はサイズ取得だけなら不要（描画しないため）
+        img.decoding = 'async';
+
+        const done = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+        const fail = (ev) => reject(ev?.error || new Error('image load error'));
+
+        if (typeof img.decode === 'function') {
+            img.onload = done; // decode が失敗したときの保険
+            img.onerror = fail;
+            img.src = url;
+            img.decode().then(done).catch(() => {/* onload で拾う */});
+        } else {
+            img.onload = done;
+            img.onerror = fail;
+            img.src = url;
+        }
+    });
+}
+
+/**
+ * マピラリ
+ * @type {null}
+ */
+export let mapillaryViewer = null
+export async function mapillaryCreate(lng, lat) {
+    if (store.state.mapillaryFlg) {
+        store.state.loadingMessage3 = 'mapillary問い合わせ中';
+        store.state.loading3 = true;
+        store.dispatch('showFloatingWindow', 'mapillary');
+        const container = document.querySelector('.mapillary-div')
+        container.innerHTML = ''
+        const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c';
+        async function mapillary(lng, lat) {
+            const deltaLat = 0.00009; // 約10m
+            const deltaLng = 0.00011; // 東京近辺での約10m
+            const response = await fetch(`https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${lng - deltaLng},${lat - deltaLat},${lng + deltaLng},${lat + deltaLat}&limit=1`);
+            const data = await response.json();
+            if (data.data && data.data.length > 0) {
+                const imageId = data.data[0].id;
+                mapillaryViewer = new Viewer({
+                    accessToken: MAPILLARY_CLIENT_ID,
+                    container: container,
+                    imageId: imageId,
+                    component: {cover: false}
+                })
+                mapillaryViewer.on('image', image => {
+                    setTimeout(() => {
+                        try {
+                            const link = document.querySelector('.mapillary-attribution-image-container').href;
+                            document.querySelector('.attribution-username').innerHTML = `<a href=${link} target=_'blank' >${document.querySelector('.mapillary-attribution-username').innerHTML}</a>`
+                            document.querySelector('.attribution-date').innerHTML = document.querySelector('.mapillary-attribution-date').innerHTML
+                        } catch (e) {
+                            console.log(e)
+                        }
+                    },0)
+                    store.state.loading3 = false;
+                    console.log('✔️ 画像読み込み完了:', image);
+                });
+            } else {
+                container.innerHTML = '<div style="height:100%; width:100%; background:black; color:white;display:flex; justify-content:center; align-items:center; text-align:center;"><span style="font-size: small">' +
+                    'Mapillary画像が見つかりませんでした。<br>リサイズできます。</span></div>'
+                console.warn('Mapillary画像が見つかりませんでした');
+                store.state.loading3 = false
+            }
+        }
+        await mapillary(lng, lat)
+    }
+}
+
+
 
