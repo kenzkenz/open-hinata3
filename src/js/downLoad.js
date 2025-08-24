@@ -11177,54 +11177,170 @@ function getSizeViaImage(url) {
  * マピラリ
  * @type {null}
  */
+// あなたの既存関数に「地図上の再生マーカー同期」を統合した版
+// - 右のファイル oh3-mapillary-play-marker.js を `src/lib/oh3-mapillary-play-marker.js` に保存しておくこと
+// - ここでは attachViewerSync / detachViewerSync を使って Viewer の画像切替に同期
+
+// import store from '@/store'
+// import { attachViewerSync, detachViewerSync } from '@/lib/oh3-mapillary-play-marker'
+
 export let mapillaryViewer = null
-export async function mapillaryCreate(lng, lat) {
-    store.state.loadingMessage3 = 'mapillary問い合わせ中';
-    store.state.loading3 = true;
-    store.dispatch('showFloatingWindow', 'mapillary');
+let _detachSync = null // 前回の同期を外すため
+
+export async function mapillaryCreate(lng, lat, mapArg) {
+    store.state.loadingMessage3 = 'mapillary問い合わせ中'
+    store.state.loading3 = true
+    store.dispatch('showFloatingWindow', 'mapillary')
+
     const container = document.querySelector('.mapillary-div')
+    if (!container) {
+        console.warn('mapillary container not found')
+        store.state.loading3 = false
+        return
+    }
     container.innerHTML = ''
-    const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c';
-    async function mapillary(lng, lat) {
-        const deltaLat = 0.00009; // 約10m
-        const deltaLng = 0.00011; // 東京近辺での約10m
-        const response = await fetch(`https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${lng - deltaLng},${lat - deltaLat},${lng + deltaLng},${lat + deltaLat}&limit=1`);
-        const data = await response.json();
-        if (data.data && data.data.length > 0) {
-            const imageId = data.data[0].id;
+
+    const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c'
+
+    // MapLibre の map を取得（引数優先 → Vuex いくつかのキーを探索）
+    const map = mapArg || getMapInstanceFromStore()
+
+    // 10m 四方で最寄りの画像を1枚取得
+    const deltaLat = 0.00009 // ≒10m
+    const deltaLng = 0.00011 // ≒10m（東京近辺）
+    const url = `https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${lng - deltaLng},${lat - deltaLat},${lng + deltaLng},${lat + deltaLat}&limit=1`
+
+    try {
+        const response = await fetch(url)
+        const data = await response.json()
+
+        if (data?.data?.length) {
+            const imageId = data.data[0].id
+
+            // 既存 Viewer を破棄（必要なら）
+            try { mapillaryViewer?.remove?.() } catch (_) {}
+
+            // Viewer 生成（あなたの既存コードを踏襲）
             mapillaryViewer = new Viewer({
                 accessToken: MAPILLARY_CLIENT_ID,
-                container: container,
-                imageId: imageId,
-                component: {cover: false}
+                container,
+                imageId,
+                component: { cover: false }
             })
+
+            // ---- ここから追加：地図同期 ----
+            if (map) {
+                const attach = () => {
+                    // 前回の同期を解除
+                    try { detachViewerSync(map) } catch (_) {}
+                    if (_detachSync) { try { _detachSync() } catch (_) {} _detachSync = null }
+
+                    // 新たに同期を張る
+                    const { notifyImageChanged } = attachViewerSync({
+                        map,
+                        viewer: mapillaryViewer,
+                        token: MAPILLARY_CLIENT_ID,
+                        options: {
+                            autoPan: true,    // 追従パン
+                            panZoom: 17,      // 追従時ズーム
+                            track: true,      // トレイル描画
+                            maxTrail: 300,    // トレイル履歴数
+                            bearingLengthM: 25
+                        }
+                    })
+                    // 最初の画像で即座にマーカーを出す
+                    try { notifyImageChanged(imageId) } catch (_) {}
+
+                    // 後で明示的に外したい場合のために保持
+                    _detachSync = () => detachViewerSync(map)
+                }
+                map.isStyleLoaded() ? attach() : map.once('load', attach)
+            }
+            // ---- 地図同期 ここまで ----
+
+            // あなたの既存の attribution 更新処理
             mapillaryViewer.on('image', image => {
                 setTimeout(() => {
                     try {
-                        const link = document.querySelector('.mapillary-attribution-image-container').href;
-                        document.querySelector('.attribution-username').innerHTML = `<a href=${link} target=_'blank' >${document.querySelector('.mapillary-attribution-username').innerHTML}</a>`
+                        const link = document.querySelector('.mapillary-attribution-image-container').href
+                        document.querySelector('.attribution-username').innerHTML = `<a href=${link} target=_'blank'>${document.querySelector('.mapillary-attribution-username').innerHTML}</a>`
                         document.querySelector('.attribution-date').innerHTML = document.querySelector('.mapillary-attribution-date').innerHTML
                     } catch (e) {
                         console.log(e)
-                        store.state.loading3 = false;
+                        store.state.loading3 = false
                     }
-                    store.state.loading3 = false;
+                    store.state.loading3 = false
                     store.state.mapillaryZindex = getNextZIndex()
-                    console.log('✔️ 画像読み込み完了:', image);
-                },0)
-            });
+                    console.log('✔️ 画像読み込み完了:', image)
+                }, 0)
+            })
+
         } else {
-            container.innerHTML = '<div style="height:100%; width:100%; background:color-mix(in srgb, var(--main-color) 60%, black); color:white;display:flex; justify-content:center; align-items:center; text-align:center;">' +
-                '<div style="font-size: small; margin-top: -20px;">' +
-                'Mapillary画像が見つかりませんでした。' +
-                '</div></div>'
-            console.warn('Mapillary画像が見つかりませんでした');
+            // 画像が見つからない場合の表示
+            container.innerHTML = '<div style="height:100%; width:100%; background:color-mix(in srgb, var(--main-color) 60%, black); color:white;display:flex; justify-content:center; align-items:center; text-align:center;"><div style="font-size: small; margin-top: -20px;">Mapillary画像が見つかりませんでした。</div></div>'
+            console.warn('Mapillary画像が見つかりませんでした')
             store.state.loading3 = false
             store.state.mapillaryZindex = getNextZIndex()
         }
+    } catch (err) {
+        console.error('Mapillary request failed', err)
+        store.state.loading3 = false
     }
-    await mapillary(lng, lat)
 }
+
+function getMapInstanceFromStore() {
+    const s = store?.state || {}
+    return s.map || s.mapInstance || s.map01 || s['map01'] || s.maplibre || null
+}
+
+// export let mapillaryViewer = null
+// export async function mapillaryCreate(lng, lat) {
+//     store.state.loadingMessage3 = 'mapillary問い合わせ中';
+//     store.state.loading3 = true;
+//     store.dispatch('showFloatingWindow', 'mapillary');
+//     const container = document.querySelector('.mapillary-div')
+//     container.innerHTML = ''
+//     const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c';
+//     async function mapillary(lng, lat) {
+//         const deltaLat = 0.00009; // 約10m
+//         const deltaLng = 0.00011; // 東京近辺での約10m
+//         const response = await fetch(`https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${lng - deltaLng},${lat - deltaLat},${lng + deltaLng},${lat + deltaLat}&limit=1`);
+//         const data = await response.json();
+//         if (data.data && data.data.length > 0) {
+//             const imageId = data.data[0].id;
+//             mapillaryViewer = new Viewer({
+//                 accessToken: MAPILLARY_CLIENT_ID,
+//                 container: container,
+//                 imageId: imageId,
+//                 component: {cover: false}
+//             })
+//             mapillaryViewer.on('image', image => {
+//                 setTimeout(() => {
+//                     try {
+//                         const link = document.querySelector('.mapillary-attribution-image-container').href;
+//                         document.querySelector('.attribution-username').innerHTML = `<a href=${link} target=_'blank' >${document.querySelector('.mapillary-attribution-username').innerHTML}</a>`
+//                         document.querySelector('.attribution-date').innerHTML = document.querySelector('.mapillary-attribution-date').innerHTML
+//                     } catch (e) {
+//                         console.log(e)
+//                         store.state.loading3 = false;
+//                     }
+//                     store.state.loading3 = false;
+//                     store.state.mapillaryZindex = getNextZIndex()
+//                     console.log('✔️ 画像読み込み完了:', image);
+//                 },0)
+//             });
+//         } else {
+//             container.innerHTML = '<div style="height:100%; width:100%; background:color-mix(in srgb, var(--main-color) 60%, black); color:white;display:flex; justify-content:center; align-items:center; text-align:center;">' +
+//                 '<div style="font-size: small; margin-top: -20px;">' +
+//                 'Mapillary画像が見つかりませんでした。' +
+//                 '</div></div>'
+//             console.warn('Mapillary画像が見つかりませんでした');
+//             store.state.loading3 = false
+//             store.state.mapillaryZindex = getNextZIndex()
+//         }
+//     }
+//     await mapillary(lng, lat)
+// }
 
 // MapLibre 用: Mapillary のカバレッジ（シーケンス線＆画像点）をレイヤー表示
 // 使い方:
@@ -11325,5 +11441,226 @@ export function addMapillaryCoverage(map, mapillaryToken) {
         map.on('mouseleave', layerId, () => { map.getCanvas().style.cursor = ''; });
     });
 }
+
+// OH3 × Mapillary 再生シンク: 再生中の画像位置を地図上にマーカー表示＆トレイル描画
+// 使い方（どれかの方法を選択）:
+//  A) ビューアと自動連携：
+//     import { attachViewerSync } from '@/lib/oh3-mapillary-play-marker'
+//     attachViewerSync({ map, viewer: mly, token: MAPILLARY_TOKEN, options: { autoPan: true, track: true } })
+//  B) 自前の再生ループから毎回呼ぶ：
+//     import { updateMlyMarkerByImageId, ensureMlyMarkerLayers } from '@/lib/oh3-mapillary-play-marker'
+//     ensureMlyMarkerLayers(map)
+//     await updateMlyMarkerByImageId(map, imageId, MAPILLARY_TOKEN, { autoPan: true, track: true })
+
+// ---- 公開関数 ----
+export function ensureMlyMarkerLayers(map, ids = {}) {
+    if (!map) return;
+    const {
+        pointSource = 'mly-current-point',
+        trailSource = 'mly-trail-line',
+        bearingSource = 'mly-bearing-line',
+        pointLayer = 'oh-mly-current',
+        trailLayer = 'oh-mly-trail',
+        bearingLayer = 'oh-mly-bearing',
+    } = ids;
+
+    // sources
+    if (!map.getSource(pointSource)) {
+        map.addSource(pointSource, { type: 'geojson', data: emptyFC() });
+    }
+    if (!map.getSource(trailSource)) {
+        map.addSource(trailSource, { type: 'geojson', data: emptyLineFC() });
+    }
+    if (!map.getSource(bearingSource)) {
+        map.addSource(bearingSource, { type: 'geojson', data: emptyLineFC() });
+    }
+
+    // layers
+    if (!map.getLayer(trailLayer)) {
+        map.addLayer({
+            id: trailLayer,
+            type: 'line',
+            source: trailSource,
+            paint: {
+                'line-width': 2,
+                'line-opacity': 0.6,
+                'line-dasharray': [2, 2],
+                'line-color': '#1976d2'
+            }
+        });
+    }
+
+    if (!map.getLayer(bearingLayer)) {
+        map.addLayer({
+            id: bearingLayer,
+            type: 'line',
+            source: bearingSource,
+            paint: {
+                'line-width': 2,
+                'line-opacity': 0.9,
+                'line-color': '#ff9800'
+            }
+        });
+    }
+
+    if (!map.getLayer(pointLayer)) {
+        map.addLayer({
+            id: pointLayer,
+            type: 'circle',
+            source: pointSource,
+            paint: {
+                'circle-radius': 6,
+                'circle-color': '#ff1744',
+                'circle-stroke-color': '#ffffff',
+                'circle-stroke-width': 2
+            }
+        });
+    }
+}
+
+export async function updateMlyMarkerByImageId(map, imageId, token, options = {}) {
+    if (!map || !imageId || !token) return;
+    ensureMlyMarkerLayers(map, options.ids);
+    const pose = await fetchImagePose(imageId, token);
+    if (!pose) return;
+    const { lon, lat, bearing } = pose;
+
+    const {
+        pointSource = 'mly-current-point',
+        trailSource = 'mly-trail-line',
+        bearingSource = 'mly-bearing-line',
+        autoPan = false,
+        panZoom = null, // 例: 17
+        track = true,
+        maxTrail = 200,
+        bearingLengthM = 20,
+    } = options;
+
+    // update point
+    const point = featurePoint(lon, lat, { imageId, bearing });
+    setSourceData(map, pointSource, fc(point));
+
+    // update bearing line
+    const p2 = offsetByBearing(lon, lat, bearing ?? 0, bearingLengthM);
+    const bearingLine = featureLine([[lon, lat], [p2.lon, p2.lat]], { imageId, bearing });
+    setSourceData(map, bearingSource, fc(bearingLine));
+
+    // update trail
+    if (track) {
+        const data = getSourceData(map, trailSource, emptyLineFC());
+        const coords = (data.features[0]?.geometry?.coordinates || []).slice();
+        const last = coords[coords.length - 1];
+        if (!last || haversineMeters([last[0], last[1]], [lon, lat]) > 2) {
+            coords.push([lon, lat]);
+        }
+        const limited = coords.slice(-maxTrail);
+        setSourceData(map, trailSource, fc(featureLine(limited, {})));
+    }
+
+    // pan if needed
+    if (autoPan) {
+        const currentZoom = map.getZoom();
+        map.easeTo({ center: [lon, lat], zoom: panZoom ?? Math.max(currentZoom, 16) });
+    }
+}
+
+export function attachViewerSync({ map, viewer, token, options = {} }) {
+    if (!map || !viewer || !token) return;
+    ensureMlyMarkerLayers(map, options.ids);
+
+    const handler = async (ev) => {
+        // MapillaryJS v4 では ev.image?.id が多い。独自実装なら ev が文字列(ID)の想定も許容
+        const imageId = ev?.image?.id || ev?.node?.id || ev?.id || (typeof ev === 'string' ? ev : null);
+        if (!imageId) return;
+        try {
+            await updateMlyMarkerByImageId(map, imageId, token, options);
+        } catch (e) { /* noop */ }
+    };
+
+    // 代表的イベント名を順に試す
+    const eventNames = ['image', 'nodechanged', 'imagechange'];
+    let attached = false;
+    for (const name of eventNames) {
+        try {
+            if (typeof viewer.on === 'function') {
+                viewer.on(name, handler);
+                attached = true;
+            }
+        } catch (_) {}
+    }
+    map.__mlySync = { viewer, handler, eventNames, options, token };
+
+    // フォールバック: 自分の再生処理から手動で呼びたい場合に備え、関数を返す
+    return { notifyImageChanged: (id) => handler(id) };
+}
+
+export function detachViewerSync(map) {
+    const ref = map?.__mlySync;
+    if (!ref) return;
+    const { viewer, handler, eventNames } = ref;
+    for (const name of eventNames || []) {
+        try { if (typeof viewer.off === 'function') viewer.off(name, handler); } catch (_) {}
+    }
+    delete map.__mlySync;
+}
+
+// ---- 内部: Graph API から画像位置/方位を取得 ----
+async function fetchImagePose(imageId, token) {
+    const fields = 'id,computed_geometry,geometry,compass_angle,computed_compass_angle';
+    const url = `https://graph.mapillary.com/${imageId}?fields=${encodeURIComponent(fields)}&access_token=${encodeURIComponent(token)}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const j = await res.json();
+    const g = j.computed_geometry || j.geometry;
+    const coords = g?.coordinates; // [lon, lat]
+    if (!coords) return null;
+    const bearing = isFiniteNumber(j.compass_angle) ? j.compass_angle : (isFiniteNumber(j.computed_compass_angle) ? j.computed_compass_angle : null);
+    return { lon: coords[0], lat: coords[1], bearing };
+}
+
+// ---- 小物ユーティリティ ----
+function emptyFC() { return { type: 'FeatureCollection', features: [] }; }
+function emptyLineFC() { return fc(featureLine([], {})); }
+function fc(feature) { return { type: 'FeatureCollection', features: feature ? [feature] : [] }; }
+function featurePoint(lon, lat, properties = {}) {
+    return { type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] }, properties };
+}
+function featureLine(coords, properties = {}) {
+    return { type: 'Feature', geometry: { type: 'LineString', coordinates: coords }, properties };
+}
+function setSourceData(map, sourceId, data) {
+    const src = map.getSource(sourceId);
+    if (src) src.setData(data);
+}
+function getSourceData(map, sourceId, fallback) {
+    const src = map.getSource(sourceId);
+    return src?._data || fallback; // MapLibreは内部に _data を保持
+}
+function isFiniteNumber(v) { return typeof v === 'number' && Number.isFinite(v); }
+
+// 方位(bearing度)・距離(m)から近似オフセット
+function offsetByBearing(lon, lat, bearingDeg = 0, distM = 10) {
+    const rad = (d) => d * Math.PI / 180;
+    const deg = (r) => r * 180 / Math.PI;
+    const R = 6378137; // m
+    const br = rad(bearingDeg);
+    const lat1 = rad(lat);
+    const lon1 = rad(lon);
+    const ang = distM / R;
+    const lat2 = Math.asin(Math.sin(lat1) * Math.cos(ang) + Math.cos(lat1) * Math.sin(ang) * Math.cos(br));
+    const lon2 = lon1 + Math.atan2(Math.sin(br) * Math.sin(ang) * Math.cos(lat1), Math.cos(ang) - Math.sin(lat1) * Math.sin(lat2));
+    return { lon: deg(lon2), lat: deg(lat2) };
+}
+
+function haversineMeters(a, b) {
+    const [lon1, lat1] = a; const [lon2, lat2] = b;
+    const toRad = (d) => d * Math.PI / 180;
+    const R = 6371000;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const s = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(s));
+}
+
 
 
