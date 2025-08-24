@@ -11175,14 +11175,9 @@ function getSizeViaImage(url) {
 
 /**
  * マピラリ
+ * attachViewerSync / detachViewerSync を使って Viewer の画像切替に同期
  * @type {null}
  */
-// あなたの既存関数に「地図上の再生マーカー同期」を統合した版
-// - 右のファイル oh3-mapillary-play-marker.js を `src/lib/oh3-mapillary-play-marker.js` に保存しておくこと
-// - ここでは attachViewerSync / detachViewerSync を使って Viewer の画像切替に同期
-
-// import store from '@/store'
-// import { attachViewerSync, detachViewerSync } from '@/lib/oh3-mapillary-play-marker'
 
 export let mapillaryViewer = null
 let _detachSync = null // 前回の同期を外すため
@@ -11258,7 +11253,7 @@ export async function mapillaryCreate(lng, lat, mapArg) {
             }
             // ---- 地図同期 ここまで ----
 
-            // あなたの既存の attribution 更新処理
+            // 既存の attribution 更新処理
             mapillaryViewer.on('image', image => {
                 setTimeout(() => {
                     try {
@@ -11293,6 +11288,11 @@ function getMapInstanceFromStore() {
     return s.map || s.mapInstance || s.map01 || s['map01'] || s.maplibre || null
 }
 
+/**
+ * しばらく下のコメントアウトの関数を残しておく。
+ * @param map
+ * @param mapillaryToken
+ */
 // export let mapillaryViewer = null
 // export async function mapillaryCreate(lng, lat) {
 //     store.state.loadingMessage3 = 'mapillary問い合わせ中';
@@ -11482,9 +11482,9 @@ export function ensureMlyMarkerLayers(map, ids = {}) {
             type: 'line',
             source: trailSource,
             paint: {
-                'line-width': 2,
+                'line-width': 20,
                 'line-opacity': 0.6,
-                'line-dasharray': [2, 2],
+                // 'line-dasharray': [2, 2],
                 'line-color': '#1976d2'
             }
         });
@@ -11496,7 +11496,7 @@ export function ensureMlyMarkerLayers(map, ids = {}) {
             type: 'line',
             source: bearingSource,
             paint: {
-                'line-width': 2,
+                'line-width': 5,
                 'line-opacity': 0.9,
                 'line-color': '#ff9800'
             }
