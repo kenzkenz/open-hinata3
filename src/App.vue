@@ -2471,14 +2471,14 @@ export default {
             { key: 'watchPosition', text: '現在地連続取得', icon: 'mdi-map-marker-radius', color: this.isTracking ? 'green' : 'primary', click: this.toggleWatchPosition },
             { key: 'share', text: '共有', icon: 'mdi-share-variant', color: 'primary', click: this.share },
             { key: 'help', text: 'ヘルプ', icon: 'mdi-help', color: 'primary', click: this.help },
-            { key: 'drawList', text: 'ドローリスト', icon: 'mdi-view-list', color: 'primary', click: this.drawListOpen, style: 'margin-top: 100px;' },
+            { key: 'drawList', text: 'ドローリスト', icon: 'mdi-view-list', color: 'primary', click: this.drawListOpen, style: 'margin-top: 120px;' },
           ]
       return btns
     },
     buttons1() {
       let btns =
       [
-        { key: 'point', text: '文字貼りつけ', label: '文字', color: this.s_isDrawPoint ? 'green' : 'blue', click: this.toggleDrawPoint },
+        { key: 'point', text: '点、画像', label: '点', color: this.s_isDrawPoint ? 'green' : 'blue', click: this.toggleDrawPoint },
         { key: 'circle', text: '円', label: '円', color: this.s_isDrawCircle ? 'green' : 'blue', click: this.toggleDrawCircle },
         { key: 'line', text: '線', label: '線', color: this.s_isDrawLine ? 'green' : 'blue', click: this.toggleLDrawLine },
         { key: 'polygon', text: '多角形', label: '多角', color: this.s_isDrawPolygon ? 'green' : 'blue', click: this.toggleLDrawPolygon },
@@ -2494,14 +2494,14 @@ export default {
         { key: 'dl', text: '各種ダウンロード', label: 'DL', style: 'background-color: navy!important;', click: this.dialogForDlOpen },
         { key: 'ex', text: 'ex', label: 'ex', style: 'background-color: navy!important;', click: this.exDrawOpen },
         { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
+
         { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
       ]
-      if (window.innerWidth < 500) {
-        btns = btns.filter(btn => btn.key !== 'dxf')
-      } else if (window.innerWidth < 1000) {
-        btns = btns.filter(btn => btn.key !== 'dxf' )
-      } else {
-        btns = btns.filter(btn => btn.key !== 'close99')
+      if (this.isSmall500) {
+        btns = btns.filter(btn => btn.key !== 'free')
+        btns = btns.filter(btn => btn.key !== 'lasso')
+        btns = btns.filter(btn => btn.key !== 'dl')
+        btns = btns.filter(btn => btn.key !== 'ex')
       }
       return btns
     },
@@ -5457,7 +5457,7 @@ export default {
       this.s_showChibanzuDialog = false
     },
     imagePngLoad () {
-      csvGenerateForUserPng()
+      csvGenerateForUserPng(this.s_zahyokei)
       this.dialogForImagePng = false
     },
     pdfLoad () {
@@ -5532,6 +5532,7 @@ export default {
         maps.forEach(map => {
           map.getStyle().layers.forEach(layer => {
             if (layer.id.includes('-sima-') && layer.id.includes('polygon')) {
+              console.log(layer.id,this.s_simaOpacity)
               map1.setPaintProperty(layer.id, 'fill-opacity', this.s_simaOpacity)
             }
           })
@@ -9926,6 +9927,9 @@ export default {
     document.querySelector('#drawList').style.display = 'none'
   },
   watch: {
+    // s_zahyokei(value) {
+    //   alert(value)
+    // },
     // popupDialog(value) {
     //   if (value) {
     //     this.zIndex = getNextZIndex() + 2

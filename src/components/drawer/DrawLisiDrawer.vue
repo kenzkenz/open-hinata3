@@ -116,11 +116,13 @@ export default {
         popup(e,map,'map01', store.state.map2Flg, true)
       }
       await moveToMap(Number(coordinates.split(',')[0]), Number(coordinates.split(',')[1]))
-      const ov = document.querySelector('.overflow-div')
-      if (ov) ov.scrollTop = 0;
-      setTimeout(() => {
-        onPointClick(dummyEvent)
-      },200)
+      if (!this.isSmall500) {
+        const ov = document.querySelector('.overflow-div')
+        if (ov) ov.scrollTop = 0;
+        setTimeout(() => {
+          onPointClick(dummyEvent)
+        },200)
+      }
     },
     truncate(str, maxLength) {
       return str.length > maxLength

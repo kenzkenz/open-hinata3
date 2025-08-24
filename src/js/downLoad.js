@@ -1582,7 +1582,6 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto, isGeojson) {
                 source: 'sima-data',
                 layout: {
                     'text-field': ['get', 'chiban'],
-                    'text-font': ['NotoSansJP-Regular'],
                     'text-offset': [0, 1.3], // ラベルを下にずらす
                 },
                 paint: {
@@ -1627,7 +1626,6 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto, isGeojson) {
                 source: 'sima-data',
                 layout: {
                     'text-field': ['get', 'chiban'],
-                    'text-font': ['NotoSansJP-Regular'],
                 },
                 paint: {
                     'text-color': 'rgba(0, 0, 0, 1)',
@@ -1683,390 +1681,6 @@ export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto, isGeojson) {
     }
     return JSON.stringify(geoJSON, null, 2);
 }
-
-
-
-
-// export function simaToGeoJSON(simaData, map, simaZahyokei, isFlyto) {
-//     if (!simaData) return;
-//     console.log(simaData);
-//     const lines = simaData.split('\n');
-//     let coordinates = {}; // 座標データを格納
-//     let features = []; // GeoJSONのフィーチャーを格納
-//     let currentFeature = null;
-//     let firstCoordinateChecked = false;
-//     let detectedCRS;
-//     let code;
-//     let hasPolygonData = false; // 区画データの有無を判定
-//
-//     if (!simaZahyokei) {
-//         code = zahyokei.find(item => item.kei === store.state.zahyokei).code;
-//     } else {
-//         console.log(simaZahyokei);
-//         code = zahyokei.find(item => item.kei === simaZahyokei).code;
-//     }
-//
-//     lines.forEach(line => {
-//         const parts = line.split(',');
-//         const type = parts[0].trim();
-//
-//         // 座標データ (A01)
-//         if (type === 'A01') {
-//             const id = parts[1].trim();
-//             const x = parseFloat(parts[3]); // X座標 (東方向)
-//             const y = parseFloat(parts[4]); // Y座標 (北方向)
-//
-//             // 最初の座標で座標系を判定
-//             if (!firstCoordinateChecked) {
-//                 detectedCRS = determinePlaneRectangularZone(x, y);
-//                 console.log(detectedCRS);
-//                 firstCoordinateChecked = true;
-//             }
-//
-//             try {
-//                 // 座標系をEPSG:4326に変換 (x, yの順番で指定)
-//                 const [lon, lat] = proj4(code, 'EPSG:4326', [y, x]);
-//                 coordinates[id] = [lon, lat];
-//             } catch (error) {
-//                 console.error(`座標変換エラー: ${error.message}`);
-//                 coordinates[id] = [x, y]; // 変換失敗時は元の座標を使用
-//             }
-//         }
-//
-//         // 区画データ (D00, B01, D99)
-//         if (type === 'D00') {
-//             alert(99)
-//             hasPolygonData = true; // 区画データが存在
-//             currentFeature = {
-//                 type: 'Feature',
-//                 properties: {
-//                     id: parts[1].trim(),
-//                     chiban: parts[2].trim()
-//                 },
-//                 geometry: {
-//                     type: 'Polygon',
-//                     coordinates: [[]]
-//                 }
-//             };
-//         } else if (type === 'B01' && currentFeature) {
-//             const coordId = parts[1].trim();
-//             if (coordinates[coordId]) {
-//                 currentFeature.geometry.coordinates[0].push(coordinates[coordId]);
-//             }
-//         } else if (type === 'D99' && currentFeature) {
-//             // ポリゴンを閉じる（最初の座標を最後に追加）
-//             if (currentFeature.geometry.coordinates[0].length > 0) {
-//                 const firstCoord = currentFeature.geometry.coordinates[0][0];
-//                 currentFeature.geometry.coordinates[0].push(firstCoord);
-//             }
-//             // フィーチャー終了
-//             features.push(currentFeature);
-//             currentFeature = null;
-//         }
-//     });
-//
-//     // 区画データがない場合に座標データをポイントとして追加
-//     if (!hasPolygonData) {
-//         alert()
-//         Object.keys(coordinates).forEach(id => {
-//             features.push({
-//                 type: 'Feature',
-//                 properties: {
-//                     id: id,
-//                     chiban: lines.find(line => line.startsWith(`A01,${id},`))?.split(',')[2]?.trim() || null
-//                 },
-//                 geometry: {
-//                     type: 'Point',
-//                     coordinates: coordinates[id]
-//                 }
-//             });
-//         });
-//     }
-//
-//     // GeoJSONオブジェクトを生成
-//     const geoJSON = {
-//         type: 'FeatureCollection',
-//         features: features
-//     };
-//     console.log(JSON.stringify(geoJSON, null, 2));
-//
-//     if (map) {
-//         if (map.getSource('sima-data')) {
-//             map.getSource('sima-data').setData(geoJSON);
-//         } else {
-//             map.addSource('sima-data', {
-//                 type: 'geojson',
-//                 data: geoJSON
-//             });
-//         }
-//         if (!map.getLayer('sima-layer')) {
-//             map.addLayer({
-//                 id: 'sima-layer',
-//                 type: 'fill',
-//                 source: 'sima-data',
-//                 layout: {},
-//                 paint: {
-//                     'fill-color': '#088',
-//                     'fill-opacity': 0.7
-//                 }
-//             });
-//             map.addLayer({
-//                 id: 'sima-borders',
-//                 type: 'line',
-//                 source: 'sima-data',
-//                 layout: {},
-//                 paint: {
-//                     'line-color': '#000',
-//                     'line-width': 2
-//                 }
-//             });
-//
-//             // ポイント用ラベルレイヤー
-//             map.addLayer({
-//                 id: 'sima-label-point',
-//                 type: 'symbol',
-//                 source: 'sima-data',
-//                 layout: {
-//                     'text-field': ['get', 'chiban'],
-//                     'text-font': ['NotoSansJP-Regular'],
-//                     'text-offset': [0, 1.3], // ラベルを下にずらす
-//                 },
-//                 paint: {
-//                     'text-color': 'rgba(0, 0, 0, 1)',
-//                     'text-halo-color': 'rgba(255,255,255,0.7)',
-//                     'text-halo-width': 1.0
-//                 },
-//                 maxzoom: 24,
-//                 minzoom: 14,
-//                 filter: ['==', '$type', 'Point']
-//             });
-//             map.addLayer({
-//                 id: 'sima-points',
-//                 type: 'circle',
-//                 source: 'sima-data',
-//                 layout: {},
-//                 paint: {
-//                     'circle-radius': 8,
-//                     'circle-color': '#f00',
-//                     'circle-stroke-width': 1,
-//                     'circle-stroke-color': '#000'
-//                 },
-//                 filter: ['==', '$type', 'Point']
-//             });
-//             map.addLayer({
-//                 id: 'sima-label',
-//                 type: 'symbol',
-//                 source: 'sima-data',
-//                 layout: {
-//                     'text-field': ['get', 'chiban'],
-//                     'text-font': ['NotoSansJP-Regular'],
-//                 },
-//                 paint: {
-//                     'text-color': 'rgba(0, 0, 0, 1)',
-//                     'text-halo-color': 'rgba(255,255,255,0.7)',
-//                     'text-halo-width': 1.0
-//                 },
-//                 maxzoom: 24,
-//                 minzoom: 17,
-//                 filter: ['==', '$type', 'Polygon']
-//             });
-//             setTimeout(() => {
-//                 map.addLayer({
-//                     id: 'sima-polygon-points',
-//                     type: 'circle',
-//                     source: 'sima-data',
-//                     layout: {},
-//                     paint: {
-//                         'circle-radius': [
-//                             'interpolate', ['linear'], ['zoom'],
-//                             15, 0,
-//                             18, 4
-//                         ],
-//                         'circle-color': '#f00',
-//                         // 'circle-stroke-width': 1,
-//                         // 'circle-stroke-color': '#000'
-//                     },
-//                     filter: ['==', '$type', 'Polygon']
-//                 });
-//             },1000)
-//         }
-//     }
-//
-//     if (isFlyto) {
-//         // GeoJSONの範囲にフライ (地図を移動)
-//         const bounds = new maplibregl.LngLatBounds();
-//         geoJSON.features.forEach(feature => {
-//             if (feature.geometry.type === 'Point') {
-//                 bounds.extend(feature.geometry.coordinates);
-//             } else if (feature.geometry.type === 'Polygon') {
-//                 feature.geometry.coordinates[0].forEach(coord => {
-//                     bounds.extend(coord);
-//                 });
-//             }
-//         });
-//         map.fitBounds(bounds, { padding: 20 });
-//     }
-//
-//     // ファイル入力をリセット
-//     const uploadInput = document.querySelector('#simaFileInput');
-//     if (uploadInput) {
-//         uploadInput.value = '';
-//     }
-//
-//     return JSON.stringify(geoJSON, null, 2);
-// }
-
-
-
-
-// SIMAファイルをGeoJSONに変換する関数
-// export function simaToGeoJSON(simaData,map,simaZahyokei,isFlyto) {
-//     if (!simaData) return
-//     console.log(simaData)
-//     const lines = simaData.split('\n');
-//     let coordinates = {}; // 座標データを格納
-//     let features = []; // GeoJSONのフィーチャーを格納
-//     let currentFeature = null;
-//     let firstCoordinateChecked = false;
-//     let detectedCRS
-//     let code
-//     if (!simaZahyokei) {
-//         code = zahyokei.find(item => item.kei === store.state.zahyokei).code
-//     } else {
-//         console.log(simaZahyokei)
-//         code = zahyokei.find(item => item.kei === simaZahyokei).code
-//     }
-//     lines.forEach(line => {
-//         const parts = line.split(',');
-//         const type = parts[0].trim();
-//         // 座標データ (A01)
-//         if (type === 'A01') {
-//             const id = parts[1].trim();
-//             const x = parseFloat(parts[3]); // X座標 (東方向)
-//             const y = parseFloat(parts[4]); // Y座標 (北方向)
-//
-//             // 最初の座標で座標系を判定
-//             if (!firstCoordinateChecked) {
-//                 detectedCRS = determinePlaneRectangularZone(x, y);
-//                 console.log(detectedCRS)
-//                 firstCoordinateChecked = true;
-//             }
-//
-//             try {
-//                 // 座標系をEPSG:4326に変換 (x, yの順番で指定)
-//                 const [lon, lat] = proj4(code, 'EPSG:4326', [y, x]);
-//                 coordinates[id] = [lon, lat];
-//             } catch (error) {
-//                 console.error(`座標変換エラー: ${error.message}`);
-//                 coordinates[id] = [x, y]; // 変換失敗時は元の座標を使用
-//             }
-//         }
-//
-//         // 区画データ (D00, B01, D99)
-//         if (type === 'D00') {
-//             // 新しいフィーチャーの開始
-//             // alert(parts[2])
-//             currentFeature = {
-//                 type: 'Feature',
-//                 properties: {
-//                     id: parts[1].trim(),
-//                     chiban: parts[2].trim()
-//                 },
-//                 geometry: {
-//                     type: 'Polygon',
-//                     coordinates: [[]]
-//                 }
-//             };
-//         } else if (type === 'B01' && currentFeature) {
-//             const coordId = parts[1].trim();
-//             if (coordinates[coordId]) {
-//                 // alert(coordinates[coordId])
-//                 currentFeature.geometry.coordinates[0].push(coordinates[coordId]);
-//             }
-//         } else if (type === 'D99' && currentFeature) {
-//             // ポリゴンを閉じる（最初の座標を最後に追加）
-//             if (currentFeature.geometry.coordinates[0].length > 0) {
-//                 const firstCoord = currentFeature.geometry.coordinates[0][0];
-//                 currentFeature.geometry.coordinates[0].push(firstCoord);
-//             }
-//             // フィーチャー終了
-//             features.push(currentFeature);
-//             currentFeature = null;
-//         }
-//     });
-//
-//     // GeoJSONオブジェクトを生成
-//     const geoJSON = {
-//         type: 'FeatureCollection',
-//         features: features
-//     };
-//     console.log(JSON.stringify(geoJSON, null, 2));
-//
-//     if (map) {
-//         if (map.getSource('sima-data')) {
-//             map.getSource('sima-data').setData(geoJSON);
-//         } else {
-//             map.addSource('sima-data', {
-//                 type: 'geojson',
-//                 data: geoJSON
-//             });
-//         }
-//         if (!map.getLayer('sima-layer')) {
-//             map.addLayer({
-//                 id: 'sima-layer',
-//                 type: 'fill',
-//                 source: 'sima-data',
-//                 layout: {},
-//                 paint: {
-//                     'fill-color': '#088',
-//                     'fill-opacity': 0.7
-//                 }
-//             });
-//             map.addLayer({
-//                 id: 'sima-borders',
-//                 type: 'line',
-//                 source: 'sima-data',
-//                 layout: {},
-//                 paint: {
-//                     'line-color': '#000',
-//                     'line-width': 2
-//                 }
-//             });
-//             map.addLayer({
-//                 id: 'sima-label',
-//                 type: 'symbol',
-//                 source: 'sima-data',
-//                 'layout': {
-//                     'text-field': ['get', 'chiban'],
-//                     'text-font': ['NotoSansJP-Regular'],
-//                 },
-//                 'paint': {
-//                     'text-color': 'rgba(0, 0, 0, 1)',
-//                     'text-halo-color': 'rgba(255,255,255,0.7)',
-//                     'text-halo-width': 1.0,
-//                 },
-//                 'maxzoom': 24,
-//                 'minzoom': 17
-//             });
-//         }
-//     }
-//     if (isFlyto) {
-//         // GeoJSONの範囲にフライ (地図を移動)
-//         const bounds = new maplibregl.LngLatBounds();
-//         geoJSON.features.forEach(feature => {
-//             feature.geometry.coordinates[0].forEach(coord => {
-//                 bounds.extend(coord);
-//             });
-//         });
-//         map.fitBounds(bounds, { padding: 20 });
-//     }
-//     // ファイル入力をリセット
-//     const uploadInput = document.querySelector('#simaFileInput');
-//     if (uploadInput) {
-//         uploadInput.value = '';
-//     }
-//     return JSON.stringify(geoJSON, null, 2);
-// }
 
 export function simaFileUpload(event) {
     store.state.tiffAndWorldFile = event.target.files
@@ -2458,9 +2072,9 @@ export function highlightSpecificFeatures(map,layerId) {
 }
 
 export function highlightSpecificFeaturesSima(map,layerId) {
-    console.log(layerId)
+    // console.log(layerId)
     const isPoint = layerId.includes('-point-layer')
-    console.log(isPoint)
+    // console.log(isPoint)
     let sec = 0
     if (isFirstRun) {
         sec = 0
@@ -3213,7 +2827,7 @@ export function savePointSima (map,geojson,zahyokei0) {
     URL.revokeObjectURL(link.href);
 }
 
-export function saveSimaImage (chiban,data) {
+export function saveSimaImage (chiban, data, zahyokei) {
     // 配列からGeoJSONを作成する関数
     function createGeoJSON(dataArray) {
         const features = dataArray.map(([name, lon, lat]) => {
@@ -3256,33 +2870,11 @@ export function saveSimaImage (chiban,data) {
 
     store.state.simaText = JSON.stringify({
         text: simaData,
-        zahyokei: store.state.zahyokei,
+        zahyokei: zahyokei,
         opacity: 0.7
     })
-
-    simaToGeoJSON(simaData, store.state.map01, null, true)
+    simaToGeoJSON(simaData, store.state.map01, zahyokei, true)
     store.state.snackbar = true
-
-    // // UTF-8で文字列をコードポイントに変換
-    // const utf8Array = window.Encoding.stringToCode(simaData);
-    // // UTF-8からShift-JISに変換
-    // const shiftJISArray = window.Encoding.convert(utf8Array, 'SJIS');
-    // // Shift-JISエンコードされたデータをUint8Arrayに格納
-    // const uint8Array = new Uint8Array(shiftJISArray);
-    // // Blobを作成（MIMEタイプを変更）
-    // const blob = new Blob([uint8Array], { type: 'application/octet-stream' });
-    //
-    // // ダウンロード用リンクを作成
-    // const link = document.createElement('a');
-    // link.href = URL.createObjectURL(blob);
-    //
-    // const fileName = 'aaa.sim'
-    //
-    // link.download = fileName; // ファイル名を正確に指定
-    // // リンクをクリックしてダウンロード
-    // link.click();
-    // URL.revokeObjectURL(link.href);
-
 }
 
 export function saveSimaKijyunten (map,layerId) {
@@ -4604,7 +4196,7 @@ export function addTileLayer (map) {
     }
 }
 
-export async function csvGenerateForUserPng () {
+export async function csvGenerateForUserPng (zahyokei) {
     // -------------------------------------------------------------------------------------------------
     async function generateCsv(filePath, dir) {
         store.state.loading2 = true
@@ -4627,10 +4219,14 @@ export async function csvGenerateForUserPng () {
             console.log(result.test_data)
             // console.log(result.tables)
             // alert("データ生成完了！");
-            saveSimaImage(result.chiban_data,result.structured_data)
+            /**
+             * 地番を抽出するプログラムが必要。
+             * result.chiban_dataは存在しない。
+             * @type {*|string}
+             */
+            const chiban = result.chiban_data || ''
+            saveSimaImage(chiban, result.structured_data, zahyokei)
             store.state.loading2 = false
-
-
         } else {
             console.log(result)
             store.state.loading2 = false
