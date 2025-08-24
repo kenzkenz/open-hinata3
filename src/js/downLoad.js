@@ -11199,7 +11199,13 @@ export async function mapillaryCreate(lng, lat, mapArg) {
 
     // MapLibre の map を取得（引数優先 → Vuex いくつかのキーを探索）
     const map = mapArg || getMapInstanceFromStore()
-
+    const src = map.getSource('mly-trail-line'); // 既定の trail ソースID
+    if (src && src.setData) {
+        src.setData({
+            type: 'FeatureCollection',
+            features: [{ type: 'Feature', geometry: { type: 'LineString', coordinates: [] }, properties: {} }]
+        });
+    }
     // 10m 四方で最寄りの画像を1枚取得
     const deltaLat = 0.00009 // ≒10m
     const deltaLng = 0.00011 // ≒10m（東京近辺）
@@ -11453,6 +11459,11 @@ export function addMapillaryCoverage(map, mapillaryToken) {
 //     await updateMlyMarkerByImageId(map, imageId, MAPILLARY_TOKEN, { autoPan: true, track: true })
 
 // ---- 公開関数 ----
+/**
+ * ここで軌跡のレイヤー、方向のレイヤーを設定
+ * @param map
+ * @param ids
+ */
 export function ensureMlyMarkerLayers(map, ids = {}) {
     if (!map) return;
     const {
@@ -11474,7 +11485,6 @@ export function ensureMlyMarkerLayers(map, ids = {}) {
     if (!map.getSource(bearingSource)) {
         map.addSource(bearingSource, { type: 'geojson', data: emptyLineFC() });
     }
-
     // layers
     if (!map.getLayer(trailLayer)) {
         map.addLayer({
