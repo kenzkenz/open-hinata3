@@ -11794,35 +11794,3 @@ async function fetchSequenceId(imageId, token) {
     const j = await res.json();
     return j.sequence  // ← これが sequence_id 相当
 }
-
-// 1) Rendererの作成を最小メモリで
-const renderer = new THREE.WebGLRenderer({
-    canvas,                 // 既存canvasを再利用（新規<canvas>を量産しない）
-    antialias: false,
-    alpha: false,
-    preserveDrawingBuffer: false, // これがtrueだと落ちやすい
-    powerPreference: 'high-performance'
-});
-// モバイルでのVRAM節約（iOSは特に）
-const dpr = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? 1 : Math.min(window.devicePixelRatio, 2);
-renderer.setPixelRatio(dpr);
-
-// 2) リサイズ時は新規生成せず setSize だけ
-renderer.setSize(width, height, false);
-
-// 3) コンテキストロストのハンドラ
-const canvasEl = renderer.domElement;
-let rafId = null;
-
-canvasEl.addEventListener('webglcontextlost', (e) => {
-    e.preventDefault();              // これをしないと復帰できない
-    cancelAnimationFrame(rafId);     // ループ停止
-    console.warn('WebGL context lost. Wait for restore...');
-}, false);
-
-canvasEl.addEventListener('webglcontextrestored', () => {
-    // ここでGPUリソースを作り直す（テクスチャ/マテリアル/ジオメトリ/FBなど）
-    reinitGLResources();             // ←自分の初期化処理
-    startLoop();                     // ←renderループ再開
-    console.info('WebGL context restored.');
-}, false);
