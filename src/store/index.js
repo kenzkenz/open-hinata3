@@ -309,6 +309,7 @@ export default createStore({
     pmtilesName: '',
     pmtilesPropertieName: '',
     address: '',
+    addressMini: '',
     mapillaryFlg: false,
     cad: '',
     //------------------------

@@ -1277,7 +1277,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
         <FloatingWindow
             windowId = "mapillary"
-            :title = "s_address"
+            :title = "s_addressMini"
             type="normal"
             :default-top = "70"
             :default-left = "10"
@@ -1685,8 +1685,6 @@ import DxfParser from 'dxf-parser'
 import proj4 from 'proj4'
 import { gpx } from '@tmcw/togeojson'
 import { user } from "@/authState"; // グローバルの認証情報を取得
-import { MaplibreMeasureControl } from '@watergis/maplibre-gl-terradraw';
-import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
 import { TerraDrawPointMode,TerraDrawLineStringMode,TerraDrawPolygonMode } from 'terra-draw'
 import PointInfoDrawer from '@/components/PointInfoDrawer.vue'
 import RightDrawer from '@/components/rightDrawer.vue'
@@ -2760,6 +2758,14 @@ export default {
         return { prefCode: prefCode.padStart(2, '0'), prefName };
       });
       return result
+    },
+    s_addressMini: {
+      get() {
+        return this.$store.state.addressMini
+      },
+      set(value) {
+        this.$store.state.addressMini = value
+      }
     },
     s_address: {
       get() {
@@ -6196,15 +6202,18 @@ export default {
                 if (muni0) {
                   const splitMuni = muni0.split(',')
                   vm.s_address = splitMuni[1] + splitMuni[3] + response.data.results.lv01Nm
+                  vm.s_addressMini = splitMuni[3] + response.data.results.lv01Nm
                   console.log(vm.s_address)
                   vm.$store.state.prefId = splitMuni[0]
                 }
               } catch (e) {
                 console.log(e)
                 vm.s_address = ''
+                vm.s_addressMini = ''
               }
             } else {
               vm.s_address = ''
+              vm.s_addressMini = ''
             }
           })
       history('updatePermalink',window.location.href)
@@ -6749,90 +6758,10 @@ export default {
       const map = this.$store.state.map01
       // const vm = this
       //----------------------------------
-      this.drawControl = new MaplibreMeasureControl({
-        modes: [
-          // 'render',
-          'point',
-          'linestring',
-          'polygon',
-          'circle',
-          'freehand',
-          'select',
-          'delete-selection',
-          'delete',
-          'download'
-        ],
-        open: true,
-        modeOptions: {
-          point: new TerraDrawPointMode({
-            styles: {
-              pointColor: '#FF0000',
-              pointWidth: 3,
-              pointOutlineColor: '#FF0000',
-              pointOutlineWidth: 1
-            }
-          }),
-          linestring: new TerraDrawLineStringMode({
-            styles: {
-              lineStringColor: 'dodgerblue',
-              lineStringWidth: 2,
-              closingPointColor: '#FFFFFF',
-              closingPointWidth: 3,
-              closingPointOutlineColor: '#FF0000',
-              closingPointOutlineWidth: 1
-            }
-          }),
-          polygon: new TerraDrawPolygonMode({
-            styles: {
-              fillColor: '#F5AEAE',
-              fillOpacity: 0.7,
-              outlineColor: '#FF0000',
-              outlineWidth: 2,
-              closingPointColor: '#FAFAFA',
-              closingPointWidth: 3,
-              closingPointOutlineColor: '#FF0000',
-              closingPointOutlineWidth: 1
-            }
-          }),
-        }
-      });
-      map.addControl(this.drawControl, 'bottom-right');
-      const drawInstance = this.drawControl.getTerraDrawInstance()
-      this.drawInstance = drawInstance
-      function observeToolbar() {
-        const observer = new MutationObserver(() => {
-          const toolbarContainer = document.querySelector(".maplibregl-ctrl-bottom-right");
-          if (toolbarContainer) {
-            const toolbar = toolbarContainer.querySelector(".maplibregl-ctrl-group");
-            if (toolbar && !toolbar.querySelector(".custom-button")) {
-              observer.disconnect(); // 一度検出したら監視を停止
-              addCustomButton(toolbar);
-            }
-          }
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
-      }
 
-      function convertPolygonsToLineStrings(features) {
-        return features.flatMap(feature => {
-          if (feature.geometry?.type === 'Polygon' && feature.properties?.mode === 'freehand') {
-            const coords = feature.geometry.coordinates[0];
-            return {
-              type: 'Feature',
-              geometry: {
-                type: 'LineString',
-                coordinates: coords.slice(0, -1),
-              },
-              properties: {
-                ...feature.properties,
-                mode: 'linestring',
-              },
-            };
-          } else {
-            return feature;
-          }
-        });
-      }
+
+
+
 
       function featuresCreate (features) {
         features = features.filter(feature => feature.properties?.mode !== 'select')
@@ -6847,33 +6776,8 @@ export default {
         return features
       }
 
-      function addCustomButton(toolbar) {
-        const customButton = document.createElement("button");
-        // customButton.className = "custom-button maplibregl-terradraw-add-control hidden maplibregl-terradraw-download-button";
-        customButton.className = "custom-button maplibregl-terradraw-add-control maplibregl-terradraw-download-button";
-        customButton.title = 'KML-Download'
-        customButton.setAttribute("type", "button");
-        customButton.innerHTML = '<p style="margin-top: -18px;">KML</p>';
-        customButton.onclick = () => {
-          // const features = drawInstance.getSnapshot();
-          const features = featuresCreate (drawInstance.getSnapshot())
-          const geojson = {
-            "type": "FeatureCollection",
-            "features": features
-          }
-          downloadKML(null, null, geojson)
-        };
-        toolbar.appendChild(customButton);
-      }
-      const elm = document.querySelector('.maplibregl-ctrl-bottom-right')
-      elm.style.display = 'none'
-      elm.style.top = '220px'
-      elm.style.right ='60px'
-      // MapLibre のロード完了後に監視開始
-      map.on('load', () => {
-        observeToolbar()
-        // this.drawControl.distancePrecision = 100
-      })
+
+
 
       // drawInstance.on('finish', (e) => {
       //   // const features =featuresCreate (drawInstance.getSnapshot())

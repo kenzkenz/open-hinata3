@@ -11225,16 +11225,22 @@ export async function mapillaryCreate(lng, lat, mapArg) {
             const imageId = data.data[0].id
 
             // 既存 Viewer を破棄（必要なら）
-            try { mapillaryViewer?.remove?.() } catch (_) {}
+            // try { mapillaryViewer?.remove?.() } catch (_) {}
 
             // Viewer 生成
             mapillaryViewer = new Viewer({
                 accessToken: MAPILLARY_CLIENT_ID,
                 container,
                 imageId,
-                component: { cover: false }
+                // component: { cover: false }
+                component: {
+                    cover: false,
+                    sequence: {
+                        minWidth: store.state.isSmall500 ? 110 : 70,  // ←デフォ70
+                        maxWidth: store.state.isSmall500 ? 240 : 117,   // ←デフォ117
+                    }
+                }
             })
-
 
             mapillaryViewer.on('image', (ev) => {
                 currentImageId = ev?.image?.id || ev?.id || null;
@@ -11380,8 +11386,8 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
             filter: ['==', ['get', 'sequence_id'], targetSeq],
             paint: {
                 'circle-opacity': 1,
-                'circle-stroke-color': '#fff',
-                'circle-stroke-width': 1.5,
+                // 'circle-stroke-color': '#fff',
+                // 'circle-stroke-width': 1.5,
                 'circle-color': '#ff1744',
                 'circle-radius': 8
             },
@@ -11476,7 +11482,9 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
         });
     }
     // ここで角度を反映（レイヤが既にあっても確実に効く）
-    map.setLayoutProperty(pointLayer, 'icon-rotate', bearing);
+    if (!isNaN(bearing)) {
+        map.setLayoutProperty(pointLayer, 'icon-rotate', bearing);
+    }
 
     store.state.updatePermalinkFire = !store.state.updatePermalinkFire
 }
