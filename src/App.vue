@@ -1282,12 +1282,19 @@ import SakuraEffect from './components/SakuraEffect.vue';
             :default-top = "70"
             :default-left = "10"
             :default-width = "isSmall500 ? 200 : 300"
-            :default-height = "isSmall500 ? 200 : 300"
+            :default-height = "isSmall500 ? 300 : 300"
             :keepAspectRatio = "false"
             @width-changed ="onWidthChangedForMapillary"
         >
           <div class="mapillary-div" :style="{height:'calc(100% - 32px)',width:'100%',background:'color-mix(in srgb, var(--main-color) 60%, black)',color:'white'}">
           </div>
+<!--          <v-switch-->
+<!--              v-model="s_is360Pic"-->
+<!--              label="360画像"-->
+<!--              color="primary"-->
+<!--              inset-->
+<!--              @update:modelValue="onToggle"-->
+<!--          />-->
         </FloatingWindow>
 
         <FloatingWindow
@@ -2324,6 +2331,7 @@ export default {
   }),
   computed: {
     ...mapState([
+      'is360Pic',
       'popupDialog',
       'drawFeatureId',
       'isIphone',
@@ -2344,6 +2352,14 @@ export default {
       'isUsingServerGeojson',
       'drawFeature',
     ]),
+    s_is360Pic: {
+      get() {
+        return this.$store.state.is360Pic
+      },
+      set(value) {
+        this.$store.state.is360Pic = value
+      }
+    },
     s_dialogForVersion: {
       get() {
         return this.$store.state.dialogForVersion
@@ -9034,6 +9050,7 @@ export default {
               console.log('mapillary_properties',f.properties)
               const lng = e.lngLat.lng;  // 経度
               const lat = e.lngLat.lat;  // 緯度
+              store.state.mapillaryFeature = f
               mapillaryCreate(lng, lat)
             }
           });
@@ -9879,6 +9896,18 @@ export default {
     document.querySelector('#drawList').style.display = 'none'
   },
   watch: {
+    s_is360Pic(value) {
+      const map01 = this.$store.state.map01
+      if (value) {
+        map01.setFilter('oh-mapillary-images', [
+          "all",
+          ["==", ["get", "is_pano"], true],
+          ["==", ["get", "compass_angle"], 0]
+        ])
+      } else {
+        map01.setFilter('oh-mapillary-images',null)
+      }
+    },
     // s_zahyokei(value) {
     //   alert(value)
     // },

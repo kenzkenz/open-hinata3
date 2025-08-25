@@ -11184,6 +11184,12 @@ let _detachSync = null // 前回の同期を外すため
 let currentImageId = null;
 const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c'
 export async function mapillaryCreate(lng, lat, mapArg) {
+
+    // まず既存同期＆既存Viewerを完全に外す（多重GLや古い参照を防止）
+    try { if (_detachSync) { _detachSync(); _detachSync = null; } } catch {}
+    try { mapillaryViewer?.remove?.(); } catch {}
+    mapillaryViewer = null;
+
     store.state.loadingMessage3 = 'mapillary問い合わせ中'
     store.state.loading3 = true
     store.dispatch('showFloatingWindow', 'mapillary')
@@ -11232,6 +11238,7 @@ export async function mapillaryCreate(lng, lat, mapArg) {
                 accessToken: MAPILLARY_CLIENT_ID,
                 container,
                 imageId,
+                transitionMode: (window.mapillaryJs?.TransitionMode?.Instantaneous ?? 0),
                 // component: { cover: false }
                 component: {
                     cover: false,
@@ -11372,31 +11379,75 @@ function getMapInstanceFromStore() {
  * @param ids
  */
 export async function ensureMlyMarkerLayers(map, ids = {}) {
+    console.log(ids)
     if (!map) return;
     const seqId = await fetchSequenceId(currentImageId, MAPILLARY_CLIENT_ID);
     // const targetSeq = store.state.targetSeq
     const targetSeq = seqId
     // 画像点のハイライトを追加
-    if (!map.getLayer('oh-mapillary-images-highlight')) {
-        map.addLayer({
-            id: 'oh-mapillary-images-highlight',
-            type: 'circle',
-            source: 'mapillary-source',
-            'source-layer': 'image',
-            filter: ['==', ['get', 'sequence_id'], targetSeq],
-            paint: {
-                'circle-opacity': 1,
-                // 'circle-stroke-color': '#fff',
-                // 'circle-stroke-width': 1.5,
-                'circle-color': '#ff1744',
-                'circle-radius': 8
-            },
-        });
+    if (!store.state.is360Pic) {
+        if (!map.getLayer('oh-mapillary-images-highlight')) {
+            map.addLayer({
+                id: 'oh-mapillary-images-highlight',
+                type: 'circle',
+                source: 'mapillary-source',
+                'source-layer': 'image',
+                filter: ['==', ['get', 'sequence_id'], targetSeq],
+                paint: {
+                    'circle-opacity': 1,
+                    // 'circle-stroke-color': '#fff',
+                    // 'circle-stroke-width': 1.5,
+                    'circle-color': '#ff1744',
+                    'circle-radius': 8
+                },
+            });
+        } else {
+            // 既存なら filter だけ更新すれば対象シーケンスを切替できる
+            map.setFilter('oh-mapillary-images-highlight',
+                ['==', ['get', 'sequence_id'], targetSeq]
+            );
+        }
     } else {
-        // 既存なら filter だけ更新すれば対象シーケンスを切替できる
-        map.setFilter('oh-mapillary-images-highlight',
-            ['==', ['get', 'sequence_id'], targetSeq]
-        );
+        if (!map.getLayer('oh-mapillary-images-highlight')) {
+            map.addLayer({
+                id: 'oh-mapillary-images-highlight',
+                type: 'circle',
+                source: 'mapillary-source',
+                'source-layer': 'image',
+                // filter: ['==', ['get', 'sequence_id'], targetSeq],
+                filter: [
+                    "all",
+                    ["==", ["get", "is_pano"], true],
+                    ["==", ["get", "compass_angle"], 0]
+                ],
+                paint: {
+                    'circle-opacity': 1,
+                    // 'circle-stroke-color': '#fff',
+                    // 'circle-stroke-width': 1.5,
+                    'circle-color': 'blue',
+                    'circle-radius': 8
+                },
+            });
+            map.setFilter('oh-mapillary-images', [
+                "all",
+                ["==", ["get", "is_pano"], true],
+                ["==", ["get", "compass_angle"], 0]
+            ])
+        } else {
+            const id = store.state.mapillaryFeature.properties.id
+            if (id) {
+                map.setPaintProperty(
+                    'oh-mapillary-images-highlight',
+                    'circle-color',
+                    [
+                        "case",
+                        ["==", ["get", "id"], id],
+                        "rgba(0, 0, 255, 1)",   // 条件に合致したとき → 青
+                        "rgba(0, 0, 0, 0)"      // それ以外 → 透明
+                    ]
+                );
+            }
+        }
     }
 
     const {
@@ -11460,32 +11511,33 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
     //     });
     // }
 
-    const bearing = map.getSource(bearingSource)?.serialize().data.features[0].properties.bearing + 270
-    // レイヤが無ければ作る
-    if (!map.getLayer(pointLayer)) {
-        map.addLayer({
-            id: pointLayer,
-            type: 'symbol',
-            source: pointSource,
-            layout: {
-                'symbol-placement': 'point',
-                'icon-image': 'arrow_black',
-                'icon-size': 2.5,
-                'icon-rotate': 0, // まず0で作る
-                'icon-rotation-alignment': 'map',
-                'icon-allow-overlap': true,
-                'icon-ignore-placement': true,
-                'icon-offset': [0, 0],
-                'icon-anchor': 'center'
-            },
-            paint: { 'icon-opacity': 1 }
-        });
+    if (!store.state.is360Pic) {
+        const bearing = map.getSource(bearingSource)?.serialize().data.features[0].properties.bearing + 270
+        // レイヤが無ければ作る
+        if (!map.getLayer(pointLayer)) {
+            map.addLayer({
+                id: pointLayer,
+                type: 'symbol',
+                source: pointSource,
+                layout: {
+                    'symbol-placement': 'point',
+                    'icon-image': 'arrow_black',
+                    'icon-size': 2.5,
+                    'icon-rotate': 0, // まず0で作る
+                    'icon-rotation-alignment': 'map',
+                    'icon-allow-overlap': true,
+                    'icon-ignore-placement': true,
+                    'icon-offset': [0, 0],
+                    'icon-anchor': 'center'
+                },
+                paint: {'icon-opacity': 1}
+            });
+        }
+        // ここで角度を反映（レイヤが既にあっても確実に効く）
+        if (!isNaN(bearing)) {
+            map.setLayoutProperty(pointLayer, 'icon-rotate', bearing);
+        }
     }
-    // ここで角度を反映（レイヤが既にあっても確実に効く）
-    if (!isNaN(bearing)) {
-        map.setLayoutProperty(pointLayer, 'icon-rotate', bearing);
-    }
-
     store.state.updatePermalinkFire = !store.state.updatePermalinkFire
 }
 
@@ -11557,9 +11609,11 @@ export async function updateMlyMarkerByImageId(map, imageId, token, options = {}
     }
 
     // pan if needed
-    if (autoPan) {
-        const currentZoom = map.getZoom();
-        map.easeTo({ center: [lon, lat], zoom: panZoom ?? Math.max(currentZoom, 16) });
+    if (!store.state.is360Pic) {
+        if (autoPan) {
+            const currentZoom = map.getZoom();
+            map.easeTo({center: [lon, lat], zoom: panZoom ?? Math.max(currentZoom, 16)});
+        }
     }
 }
 

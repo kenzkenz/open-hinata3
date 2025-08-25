@@ -7,6 +7,8 @@ export default createStore({
   state: {
     drawFeatureId: '',
     clientVersion: 1.387,
+    mapillaryFeature: null,
+    is360Pic: false,
     targetSeq: '',
     mapillaryZindex: 0,
     isLabelUpdated: false,
