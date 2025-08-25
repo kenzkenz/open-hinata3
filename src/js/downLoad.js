@@ -11181,7 +11181,8 @@ function getSizeViaImage(url) {
 
 export let mapillaryViewer = null
 let _detachSync = null // 前回の同期を外すため
-
+let currentImageId = null;
+const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c'
 export async function mapillaryCreate(lng, lat, mapArg) {
     store.state.loadingMessage3 = 'mapillary問い合わせ中'
     store.state.loading3 = true
@@ -11194,8 +11195,6 @@ export async function mapillaryCreate(lng, lat, mapArg) {
         return
     }
     container.innerHTML = ''
-
-    const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c'
 
     // MapLibre の map を取得（引数優先 → Vuex いくつかのキーを探索）
     // const map = mapArg || getMapInstanceFromStore()
@@ -11236,6 +11235,11 @@ export async function mapillaryCreate(lng, lat, mapArg) {
                 component: { cover: false }
             })
 
+
+            mapillaryViewer.on('image', (ev) => {
+                currentImageId = ev?.image?.id || ev?.id || null;
+            });
+
             // ---- ここから追加：地図同期 ----
             if (map) {
                 const attach = () => {
@@ -11274,12 +11278,11 @@ export async function mapillaryCreate(lng, lat, mapArg) {
                         document.querySelector('.attribution-username').innerHTML = `<a href=${link} target=_'blank'>${document.querySelector('.mapillary-attribution-username').innerHTML}</a>`
                         document.querySelector('.attribution-date').innerHTML = document.querySelector('.mapillary-attribution-date').innerHTML
                     } catch (e) {
-                        console.log(e)
                         store.state.loading3 = false
                     }
                     store.state.loading3 = false
                     store.state.mapillaryZindex = getNextZIndex()
-                    console.log('✔️ 画像読み込み完了:', image)
+                    // console.log('✔️ 画像読み込み完了:', image)
                 }, 0)
             })
 
@@ -11358,11 +11361,38 @@ function getMapInstanceFromStore() {
 // ---- 公開関数 ----
 /**
  * ここで軌跡のレイヤー、方向のレイヤーを設定
+ * 矢印も設定
  * @param map
  * @param ids
  */
-export function ensureMlyMarkerLayers(map, ids = {}) {
+export async function ensureMlyMarkerLayers(map, ids = {}) {
     if (!map) return;
+    const seqId = await fetchSequenceId(currentImageId, MAPILLARY_CLIENT_ID);
+    // const targetSeq = store.state.targetSeq
+    const targetSeq = seqId
+    // 画像点のハイライトを追加
+    if (!map.getLayer('oh-mapillary-images-highlight')) {
+        map.addLayer({
+            id: 'oh-mapillary-images-highlight',
+            type: 'circle',
+            source: 'mapillary-source',
+            'source-layer': 'image',
+            filter: ['==', ['get', 'sequence_id'], targetSeq],
+            paint: {
+                'circle-opacity': 1,
+                'circle-stroke-color': '#fff',
+                'circle-stroke-width': 1.5,
+                'circle-color': '#ff1744',
+                'circle-radius': 8
+            },
+        });
+    } else {
+        // 既存なら filter だけ更新すれば対象シーケンスを切替できる
+        map.setFilter('oh-mapillary-images-highlight',
+            ['==', ['get', 'sequence_id'], targetSeq]
+        );
+    }
+
     const {
         pointSource = 'mly-current-point',
         trailSource = 'mly-trail-line',
@@ -11376,55 +11406,107 @@ export function ensureMlyMarkerLayers(map, ids = {}) {
     if (!map.getSource(pointSource)) {
         map.addSource(pointSource, { type: 'geojson', data: emptyFC() });
     }
-    if (!map.getSource(trailSource)) {
-        map.addSource(trailSource, { type: 'geojson', data: emptyLineFC() });
-    }
+    // if (!map.getSource(trailSource)) {
+    //     map.addSource(trailSource, { type: 'geojson', data: emptyLineFC() });
+    // }
     if (!map.getSource(bearingSource)) {
         map.addSource(bearingSource, { type: 'geojson', data: emptyLineFC() });
     }
     // layers
-    if (!map.getLayer(trailLayer)) {
-        map.addLayer({
-            id: trailLayer,
-            type: 'line',
-            source: trailSource,
-            paint: {
-                'line-width': 20,
-                'line-opacity': 0.6,
-                // 'line-dasharray': [2, 2],
-                'line-color': '#1976d2'
-            }
-        });
-    }
+    // if (!map.getLayer(trailLayer)) {
+    //     map.addLayer({
+    //         id: trailLayer,
+    //         type: 'line',
+    //         source: trailSource,
+    //         paint: {
+    //             'line-width': 20,
+    //             'line-opacity': 0.6,
+    //             // 'line-dasharray': [2, 2],
+    //             'line-color': '#1976d2'
+    //         }
+    //     });
+    // }
 
-    if (!map.getLayer(bearingLayer)) {
-        map.addLayer({
-            id: bearingLayer,
-            type: 'line',
-            source: bearingSource,
-            paint: {
-                'line-width': 5,
-                'line-opacity': 0.9,
-                'line-color': '#ff9800'
-            }
-        });
-    }
+    // if (!map.getLayer(bearingLayer)) {
+    //     map.addLayer({
+    //         id: bearingLayer,
+    //         type: 'line',
+    //         source: bearingSource,
+    //         paint: {
+    //             'line-width': 5,
+    //             'line-opacity': 0.9,
+    //             'line-color': '#ff9800'
+    //         }
+    //     });
+    // }
 
+    // if (!map.getLayer(pointLayer)) {
+    //     map.addLayer({
+    //         id: pointLayer,
+    //         type: 'circle',
+    //         source: pointSource,
+    //         paint: {
+    //             'circle-radius': 8,
+    //             'circle-color': 'blue',
+    //             'circle-stroke-color': '#ffffff',
+    //             'circle-stroke-width': 2
+    //         }
+    //     });
+    // }
+
+    const bearing = map.getSource(bearingSource)?.serialize().data.features[0].properties.bearing + 270
+    // レイヤが無ければ作る
     if (!map.getLayer(pointLayer)) {
         map.addLayer({
             id: pointLayer,
-            type: 'circle',
+            type: 'symbol',
             source: pointSource,
-            paint: {
-                'circle-radius': 6,
-                'circle-color': '#ff1744',
-                'circle-stroke-color': '#ffffff',
-                'circle-stroke-width': 2
-            }
+            layout: {
+                'symbol-placement': 'point',
+                'icon-image': 'arrow_black',
+                'icon-size': 2.5,
+                'icon-rotate': 0, // まず0で作る
+                'icon-rotation-alignment': 'map',
+                'icon-allow-overlap': true,
+                'icon-ignore-placement': true,
+                'icon-offset': [0, 0],
+                'icon-anchor': 'center'
+            },
+            paint: { 'icon-opacity': 1 }
         });
     }
-    store.state.updatePermalinkFire = !store.state.updatePermalinkFire
+    // ここで角度を反映（レイヤが既にあっても確実に効く）
+    map.setLayoutProperty(pointLayer, 'icon-rotate', bearing);
 
+    store.state.updatePermalinkFire = !store.state.updatePermalinkFire
+}
+
+function bearingDeg([lon1, lat1], [lon2, lat2]) {
+    const toRad = d => d * Math.PI / 180, toDeg = r => r * 180 / Math.PI;
+    const φ1 = toRad(lat1), φ2 = toRad(lat2), Δλ = toRad(lon2 - lon1);
+    const y = Math.sin(Δλ) * Math.cos(φ2);
+    const x = Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
+    return (toDeg(Math.atan2(y, x)) + 360) % 360; // 北=0°, 東=90°
+}
+
+function makeArrowPointsFromLines(lineFC) {
+    const features = [];
+    for (const f of lineFC.features) {
+        const g = f.geometry;
+        const lines = g.type === 'LineString' ? [g.coordinates]
+            : g.type === 'MultiLineString' ? g.coordinates : [];
+        for (const coords of lines) {
+            if (coords.length < 2) continue;
+            const a = coords[coords.length - 2];
+            const b = coords[coords.length - 1]; // 終点
+            features.push({
+                type: 'Feature',
+                properties: { ...f.properties, bearing: bearingDeg(a, b) },
+                geometry: { type: 'Point', coordinates: b }
+            });
+        }
+    }
+    return { type: 'FeatureCollection', features };
 }
 
 export async function updateMlyMarkerByImageId(map, imageId, token, options = {}) {
@@ -11572,4 +11654,175 @@ function haversineMeters(a, b) {
 }
 
 
+// Mapillary: sequence_id ごとに色分け & ハイライト
+// 使い方:
+// 1) addMapillaryCoverage(...) で Mapillary のレイヤを追加した後に、
+//    enableMapillarySequenceColoring(map)
+// 2) ハイライトしたい時: setHighlightedSequence(map, seqId)
+//    解除: setHighlightedSequence(map, null)
+// 3) 色分けをやめる時: disableMapillarySequenceColoring(map)
 
+export function enableMapillarySequenceColoring(map, opts = {}) {
+    if (!map) return;
+    const cfg = {
+        sourceId: opts.sourceId || 'mapillary-coverage',
+        seqSourceLayer: opts.seqSourceLayer || 'sequence',
+        imgSourceLayer: opts.imgSourceLayer || 'image',
+        sequencesLayer: opts.sequencesLayer || 'oh-mapillary-sequences',
+        imagesLayer: opts.imagesLayer || 'oh-mapillary-images',
+        saturation: opts.saturation ?? 70, // HSL S%
+        lightness: opts.lightness ?? 50,   // HSL L%
+        debounceMs: opts.debounceMs ?? 250,
+    };
+
+    // 既存のハンドラがいれば一旦解除
+    disableMapillarySequenceColoring(map);
+
+    const apply = () => {
+        const sids = collectSequenceIds(map, cfg.sourceId, cfg.seqSourceLayer);
+        if (!sids.length) return;
+
+        const matchPairs = [];
+        for (const sid of sids) {
+            matchPairs.push(sid, stringIdToHsl(sid, cfg.saturation, cfg.lightness));
+        }
+        const matchExpr = ['match', ['get', 'sequence_id'], ...matchPairs, '#35AF6D'];
+
+        if (map.getLayer(cfg.sequencesLayer)) {
+            map.setPaintProperty(cfg.sequencesLayer, 'line-color', matchExpr);
+        }
+        if (map.getLayer(cfg.imagesLayer)) {
+            // image フィーチャにも sequence_id があれば同じ色に、無ければ既定色
+            map.setPaintProperty(cfg.imagesLayer, 'circle-color', matchExpr);
+        }
+    };
+
+    const debounced = debounce(apply, cfg.debounceMs);
+    // 初回 & 以降は moveend/zoomend/data(load) で更新
+    const onMoveEnd = () => debounced();
+    const onData = (e) => { if (e.sourceId === cfg.sourceId && e.isSourceLoaded) debounced(); };
+
+    map.on('moveend', onMoveEnd);
+    map.on('zoomend', onMoveEnd);
+    map.on('data', onData);
+
+    // 保持して後で解除
+    map.__mlySeqColoring = { cfg, onMoveEnd, onData };
+
+    // すぐ一度適用
+    apply();
+}
+
+export function disableMapillarySequenceColoring(map) {
+    const ref = map?.__mlySeqColoring;
+    if (!ref) return;
+    const { cfg, onMoveEnd, onData } = ref;
+    try { map.off('moveend', onMoveEnd); } catch (_) {}
+    try { map.off('zoomend', onMoveEnd); } catch (_) {}
+    try { map.off('data', onData); } catch (_) {}
+    delete map.__mlySeqColoring;
+}
+
+export function setHighlightedSequence(map, sequenceId, opts = {}) {
+    if (!map) return;
+    const cfg = {
+        sourceId: opts.sourceId || 'mapillary-coverage',
+        seqSourceLayer: opts.seqSourceLayer || 'sequence',
+        highlightLayer: opts.highlightLayer || 'oh-mapillary-sequences-highlight',
+        color: opts.color || '#ffeb3b',
+        width: opts.width ?? 4,
+    };
+
+    // 既存を掃除
+    if (map.getLayer(cfg.highlightLayer)) map.removeLayer(cfg.highlightLayer);
+
+    if (!sequenceId) return; // 解除のみ
+
+    map.addLayer({
+        id: cfg.highlightLayer,
+        type: 'line',
+        source: cfg.sourceId,
+        'source-layer': cfg.seqSourceLayer,
+        filter: ['==', ['get', 'sequence_id'], sequenceId],
+        paint: {
+            'line-color': cfg.color,
+            'line-width': cfg.width,
+            'line-opacity': 1
+        }
+    });
+}
+
+// --- helpers ---
+function collectSequenceIds(map, sourceId, sourceLayer) {
+    try {
+        const feats = map.querySourceFeatures(sourceId, { sourceLayer });
+        const set = new Set();
+        for (const f of feats) {
+            const sid = f?.properties?.sequence_id;
+            if (sid) set.add(String(sid));
+        }
+        return Array.from(set);
+    } catch (e) {
+        return [];
+    }
+}
+
+function debounce(fn, ms) {
+    let t = null;
+    return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+// 文字列ID → 安定HSL色
+function stringIdToHsl(str, s = 70, l = 50) {
+    const h = (hashString(str) % 360 + 360) % 360;
+    return `hsl(${h}, ${s}%, ${l}%)`;
+}
+
+function hashString(str) {
+    // djb2 をベースにした簡易ハッシュ
+    let h = 5381;
+    for (let i = 0; i < str.length; i++) h = ((h << 5) + h) + str.charCodeAt(i);
+    return h;
+}
+
+async function fetchSequenceId(imageId, token) {
+    const url = `https://graph.mapillary.com/${imageId}` +
+        `?fields=${encodeURIComponent('sequence{id}')}` +
+        `&access_token=${encodeURIComponent(token)}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const j = await res.json();
+    return j.sequence  // ← これが sequence_id 相当
+}
+
+// 1) Rendererの作成を最小メモリで
+const renderer = new THREE.WebGLRenderer({
+    canvas,                 // 既存canvasを再利用（新規<canvas>を量産しない）
+    antialias: false,
+    alpha: false,
+    preserveDrawingBuffer: false, // これがtrueだと落ちやすい
+    powerPreference: 'high-performance'
+});
+// モバイルでのVRAM節約（iOSは特に）
+const dpr = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? 1 : Math.min(window.devicePixelRatio, 2);
+renderer.setPixelRatio(dpr);
+
+// 2) リサイズ時は新規生成せず setSize だけ
+renderer.setSize(width, height, false);
+
+// 3) コンテキストロストのハンドラ
+const canvasEl = renderer.domElement;
+let rafId = null;
+
+canvasEl.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();              // これをしないと復帰できない
+    cancelAnimationFrame(rafId);     // ループ停止
+    console.warn('WebGL context lost. Wait for restore...');
+}, false);
+
+canvasEl.addEventListener('webglcontextrestored', () => {
+    // ここでGPUリソースを作り直す（テクスチャ/マテリアル/ジオメトリ/FBなど）
+    reinitGLResources();             // ←自分の初期化処理
+    startLoop();                     // ←renderループ再開
+    console.info('WebGL context restored.');
+}, false);

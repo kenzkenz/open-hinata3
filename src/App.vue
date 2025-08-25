@@ -1277,7 +1277,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
         <FloatingWindow
             windowId = "mapillary"
-            title = "mapillary"
+            :title = "s_address"
             type="normal"
             :default-top = "70"
             :default-left = "10"
@@ -6199,9 +6199,12 @@ export default {
                   console.log(vm.s_address)
                   vm.$store.state.prefId = splitMuni[0]
                 }
-              }catch (e){
+              } catch (e) {
                 console.log(e)
+                vm.s_address = ''
               }
+            } else {
+              vm.s_address = ''
             }
           })
       history('updatePermalink',window.location.href)
