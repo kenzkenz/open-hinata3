@@ -1340,9 +1340,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
         <!--        <img class='loadingImg' src="https://kenzkenz.xsrv.jp/open-hinata3/img/icons/loading2.gif">-->
         <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="(mapName === 'map01'|| mapName === 'map02' && s_map2Flg)" @click="btnPosition">
-          <v-progress-linear  v-if="s_loading" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
-          <v-progress-linear  v-if="s_loading2" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
-          <v-progress-linear  v-if="s_loading3" style="z-index: 1" indeterminate color="primary"></v-progress-linear>
+          <v-progress-linear  v-if="s_loading && !noProgress" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
+          <v-progress-linear  v-if="s_loading2 && !noProgress" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
+          <v-progress-linear  v-if="s_loading3 && !noProgress" style="z-index: 1" indeterminate color="primary"></v-progress-linear>
           <!-- <SakuraEffect />-->
           <div>
             <div id="pointer1" class="pointer" v-if="mapName === 'map01'"></div>
@@ -1700,7 +1700,7 @@ import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
 import {
   addDraw,
-  bakeRotationToBlob,
+  bakeRotationToBlob, bindMoveendFor360,
   capture,
   changePrintMap03,
   compressImageToUnder10MB,
@@ -1722,7 +1722,7 @@ import {
   extractSimaById,
   featureCollectionAdd,
   featuresRestore,
-  fetchGsiTileTest,
+  fetchGsiTileTest, fetchMapillaryPanosInViewport,
   fncPngDl,
   geocode,
   geojsonAddLayer,
@@ -1761,7 +1761,7 @@ import {
   pngLoad,
   printDirectionChange, removeAllWhitespace,
   saveDrowFeatures,
-  scaleAndRotateLassoSelected,
+  scaleAndRotateLassoSelected, setFllter360,
   simaLoadForUser,
   splitLineStringIntoPoints,
   startPolling,
@@ -2347,6 +2347,9 @@ export default {
   }),
   computed: {
     ...mapState([
+      'noProgress',
+      'map01',
+      'map02',
       'is360Pic',
       'popupDialog',
       'drawFeatureId',
@@ -8037,12 +8040,24 @@ export default {
           console.log('mapillary_properties',f.properties)
           store.state.mapillaryFeature = f
         }
-        // debounce(function () {
-          const lng = e.lngLat.lng;  // 経度
-          const lat = e.lngLat.lat;  // 緯度
-          mapillaryCreate(lng, lat)
-        // },5000)()
+        const lng = e.lngLat.lng;  // 経度
+        const lat = e.lngLat.lat;  // 緯度
+        mapillaryCreate(lng, lat)
       });
+      this.map01.on('dragend', () => {
+        if (this.is360Pic) {
+          if (this.map01.getZoom() > 14) {
+            setFllter360(this.$store.state.map01)
+          }
+        }
+      })
+      this.map01.on('zoomend', () => {
+        if (this.is360Pic) {
+          if (this.map01.getZoom() > 14) {
+            setFllter360(this.$store.state.map01)
+          }
+        }
+      })
       // -----------------------------------------------------------------------------------------------------------------
       // on load オンロード
       this.mapNames.forEach(mapName => {
@@ -9935,16 +9950,15 @@ export default {
     document.querySelector('#drawList').style.display = 'none'
   },
   watch: {
-    s_is360Pic(value) {
+    async s_is360Pic(value) {
       const map01 = this.$store.state.map01
+      if (map01.getZoom() < 14) return
       if (value) {
+        // this.$store.state.filter360 = [
+        //   "all",
+        //   ["==", ["get", "is_pano"], true]
+        // ]
         // map01.setFilter('oh-mapillary-images', this.$store.state.filter360)
-        this.$store.state.filter360 = [
-          "all",
-          ["==", ["get", "is_pano"], true],
-          // ["==", ["get", "compass_angle"], 0]
-        ]
-        map01.setFilter('oh-mapillary-images', this.$store.state.filter360)
         this.$store.state.targetSeq = ''
         map01.setFilter('oh-mapillary-images-highlight',
             ['==', ['get', 'sequence_id'], this.$store.state.targetSeq]
@@ -9960,10 +9974,14 @@ export default {
             }]
           });
         }
+        //
+        setFllter360(map01)
       } else {
         this.$store.state.filter360 = null
         this.$store.state.targetSeq = null
         map01.setFilter('oh-mapillary-images', this.$store.state.filter360)
+        map01.setPaintProperty('oh-mapillary-images', 'circle-color', '#35AF6D');
+
       }
     },
     // s_zahyokei(value) {

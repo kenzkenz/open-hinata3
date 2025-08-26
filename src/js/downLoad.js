@@ -11182,6 +11182,7 @@ function getSizeViaImage(url) {
 export let mapillaryViewer = null
 let _detachSync = null // 前回の同期を外すため
 let currentImageId = null;
+let firstFlg = true
 export async function mapillaryCreate(lng, lat) {
 
     const map = store.state.map01
@@ -11217,7 +11218,7 @@ export async function mapillaryCreate(lng, lat) {
     container.innerHTML = ''
 
     // 10m 四方で最寄りの画像を1枚取得
-    const aaa = 2
+    const aaa = 1
     const deltaLat = 0.00009 / aaa // ≒10m
     const deltaLng = 0.00011 / aaa // ≒10m（東京近辺）
     const url = `https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${lng - deltaLng},${lat - deltaLat},${lng + deltaLng},${lat + deltaLat}&limit=1`
@@ -11226,9 +11227,10 @@ export async function mapillaryCreate(lng, lat) {
         const response = await fetch(url)
         const data = await response.json()
 
-        if (data?.data?.length) {
+        // if (data?.data?.length) {
             const imageId = data.data[0].id
-
+            // const imageId = store.state.mapillaryFeature.properties.id
+            console.log(imageId)
             // 既存 Viewer を破棄（必要なら）
             // try { mapillaryViewer?.remove?.() } catch (_) {}
 
@@ -11247,7 +11249,7 @@ export async function mapillaryCreate(lng, lat) {
                     }
                 }
             })
-
+        // store.state.loading3 = false
             mapillaryViewer.on('image', (ev) => {
                 currentImageId = ev?.image?.id || ev?.id || null;
             });
@@ -11279,16 +11281,16 @@ export async function mapillaryCreate(lng, lat) {
                     _detachSync = () => detachViewerSync(map)
                 }
                 map.isStyleLoaded() ? attach() : map.once('load', attach)
-            }
+            // }
             // ---- 地図同期 ここまで ----
 
             // 既存の attribution 更新処理
             mapillaryViewer.on('image', image => {
                 setTimeout(() => {
                     // try {
-                        const link = document.querySelector('.mapillary-attribution-image-container').href
-                        document.querySelector('.attribution-username').innerHTML = `<a href=${link} target=_'blank'>${document.querySelector('.mapillary-attribution-username').innerHTML}</a>`
-                        document.querySelector('.attribution-date').innerHTML = document.querySelector('.mapillary-attribution-date').innerHTML
+                    //     const link = document.querySelector('.mapillary-attribution-image-container').href
+                    //     document.querySelector('.attribution-username').innerHTML = `<a href=${link} target=_'blank'>${document.querySelector('.mapillary-attribution-username').innerHTML}</a>`
+                    //     document.querySelector('.attribution-date').innerHTML = document.querySelector('.mapillary-attribution-date').innerHTML
                     // } catch (e) {
                     // }
                     store.state.mapillaryZindex = getNextZIndex()
@@ -11440,6 +11442,7 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
     // }
 
     if (!store.state.is360Pic) {
+        console.log(map.getSource(bearingSource)?.serialize().data.features[0])
         const bearing = map.getSource(bearingSource)?.serialize().data.features[0].properties.bearing + 270
         // レイヤが無ければ作る
         if (!map.getLayer(pointLayer)) {
@@ -11513,7 +11516,7 @@ function makeArrowPointsFromLines(lineFC) {
     return { type: 'FeatureCollection', features };
 }
 
-export async function updateMlyMarkerByImageId(map, imageId, token, options = {}) {
+async function updateMlyMarkerByImageId(map, imageId, token, options = {}) {
     if (!map || !imageId || !token) return;
     ensureMlyMarkerLayers(map, options.ids);
     const pose = await fetchImagePose(imageId, token);
@@ -11570,8 +11573,12 @@ export function attachViewerSync({ map, viewer, token, options = {} }) {
     if (!map || !viewer || !token) return;
     /**
      * 下１行をあえてコメントあうとした。影響あるかもしれない。
+     * また戻した。
      */
-    // ensureMlyMarkerLayers(map, options.ids);
+    if (firstFlg) {
+        ensureMlyMarkerLayers(map, options.ids);
+        firstFlg = false
+    }
 
     const handler = async (ev) => {
         // MapillaryJS v4 では ev.image?.id が多い。独自実装なら ev が文字列(ID)の想定も許容
@@ -11847,4 +11854,125 @@ export function collapseWhitespace(str = "") {
     // 改行も含めて1個の半角スペースに畳み込み → 先頭末尾の空白も削除
     const re = /[\s\u00A0\u1680\u2000-\u200B\u2028\u2029\u202F\u205F\u2060\u3000\uFEFF]+/g;
     return String(str).replace(re, " ").trim();
+}
+
+
+
+/**
+ * Build a bbox string from a MapLibre map viewport.
+ * @param {import('maplibre-gl').Map} map
+ * @param {number} [precision=6]
+ * @returns {string} "west,south,east,north"
+ */
+export function getViewportBBox(map, precision = 6) {
+    const b = map.getBounds();
+    const west = b.getWest();
+    const south = b.getSouth();
+    const east = b.getEast();
+    const north = b.getNorth();
+    const fmt = (n) => Number(n).toFixed(precision);
+    return [fmt(west), fmt(south), fmt(east), fmt(north)].join(',');
+}
+
+/**
+ * Fetch pano images in the current viewport from Mapillary Graph API.
+ * @param {import('maplibre-gl').Map} map - MapLibre map instance
+ * @param {Object} [opts]
+ * @param {number} [opts.limit=200] - Max items to return (overall, not per page when autoPage=false)
+ * @param {string[]|string} [opts.fields=['id','is_pano','camera_type']] - Fields to request
+ * @param {boolean} [opts.autoPage=false] - Follow paging.next links until limit or maxPages is reached
+ * @param {number} [opts.maxPages=3] - Soft cap for number of pages when autoPage=true
+ * @param {AbortSignal} [opts.signal] - Optional AbortController signal
+ * @param {string} [opts.accessToken] - Mapillary API access token; falls back to global MAPILLARY_CLIENT_ID
+ * @returns {Promise<{ data: any[], paging?: any, url: string }>} JSON shape compatible with Graph API + original URL
+ */
+export async function fetchMapillaryPanosInViewport(map, opts = {}) {
+    const {
+        limit = 5000,
+        fields = ['id', 'is_pano', 'camera_type'],
+        autoPage = false,
+        maxPages = 3,
+        signal,
+        accessToken = MAPILLARY_CLIENT_ID
+    } = opts;
+
+    const bbox = getViewportBBox(map, 6);
+
+    const params = new URLSearchParams({
+        access_token: accessToken,
+        bbox,
+        is_pano: 'true',
+        fields: Array.isArray(fields) ? fields.join(',') : String(fields || ''),
+        // limit: String(limit),
+    });
+
+    const baseUrl = `https://graph.mapillary.com/images?${params.toString()}`;
+
+    if (!autoPage) {
+        let res;
+        try {
+            res = await fetch(baseUrl, { signal });          // ← ここは成功扱い（400でも）
+        } catch (e) {
+            if (e.name === 'AbortError') return;             // 中断は無視してOK
+            throw e;                                         // 回線エラー等
+        }
+        if (!res.ok) {
+            return                                       // ← ここで catch に入る
+        }
+        const json = await res.json();
+        return {...json, url: baseUrl};
+    }
+
+    // Auto-paging
+    let url = baseUrl;
+    let collected = [];
+    let lastPaging = null;
+    for (let page = 0; url && page < maxPages; page++) {
+        const res = await fetch(url, { signal });
+        if (!res.ok) throw new Error(`Mapillary API ${res.status}: ${await res.text()}`);
+        const json = await res.json();
+        const data = Array.isArray(json?.data) ? json.data : [];
+        collected = collected.concat(data);
+        lastPaging = json?.paging || null;
+
+        if (collected.length >= limit) break;
+        url = lastPaging?.next || null;
+        if (!url) break;
+    }
+
+    if (collected.length > limit) collected = collected.slice(0, limit);
+    return { data: collected, paging: lastPaging, url: baseUrl };
+}
+
+export async function setFllter360(map) {
+    store.state.noProgress = false
+    store.state.loadingMessage3 = '360画像問い合わせ中'
+    store.state.loading3 = true
+    const response = await fetchMapillaryPanosInViewport(map)
+    console.log(response)
+
+    if (!response) {
+        store.state.loadingMessage3 = '取得できませんでした。。もっとズームインしてください。'
+        store.state.noProgress = true
+        return
+    }
+
+    const rows = Array(response)[0]?.data
+    if ((rows && rows.length === 5000) || !rows) {
+        store.state.loadingMessage3 = '5000件を超えたため抽出できません。もっとズームインしてください。'
+        store.state.noProgress = true
+        return
+    }
+    const filteredRows = rows.filter(row => {
+        return row.camera_type === 'spherical'
+    })
+    const ids = filteredRows.map(row => Number(row.id))
+    map.setFilter('oh-mapillary-images', [
+        'in',
+        ['to-number', ['get', 'id']],
+        ['literal', ids],
+    ]);
+    map.setPaintProperty('oh-mapillary-images', 'circle-color', 'blue');
+
+    store.state.loading3 = false
 }

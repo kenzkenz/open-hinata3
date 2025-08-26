@@ -7,6 +7,7 @@ export default createStore({
   state: {
     drawFeatureId: '',
     clientVersion: 1.389,
+    noProgress: false,
     filter360: [
       "all",
       ["==", ["get", "is_pano"], true],
