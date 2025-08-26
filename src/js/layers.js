@@ -48,9 +48,9 @@ const mapillaryImages = {
         'circle-color': '#35AF6D',
         'circle-radius': [
             'interpolate', ['linear'], ['zoom'],
-            13, 2,
-            16, 4,
-            19, 6
+            13, 4,
+            16, 8,
+            19, 12
         ]
     }
 }

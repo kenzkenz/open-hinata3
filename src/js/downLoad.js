@@ -41,6 +41,7 @@ import {isNumber} from "lodash";
 import sanitizeHtml from 'sanitize-html';
 import {Viewer} from "mapillary-js";
 
+const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c'
 
 // import publicChk from '@/components/Dialog-myroom'
 // 複数のクリックされた地番を強調表示するためのセット
@@ -11178,12 +11179,31 @@ function getSizeViaImage(url) {
  * attachViewerSync / detachViewerSync を使って Viewer の画像切替に同期
  * @type {null}
  */
-
 export let mapillaryViewer = null
 let _detachSync = null // 前回の同期を外すため
 let currentImageId = null;
-const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c'
 export async function mapillaryCreate(lng, lat) {
+
+    const map = store.state.map01
+
+    // ハイライトや矢印を削除。なくてもいいが
+    store.state.targetSeq = null
+    map.setFilter('oh-mapillary-images-highlight',
+        ['==', ['get', 'sequence_id'], store.state.targetSeq]
+    );
+    const src = map.getSource('mly-current-point');
+    if (src && src.setData) {
+        src.setData({
+            type: 'FeatureCollection',
+            features: [{
+                type: 'Feature',
+                geometry: { type: 'LineString', coordinates: [] },
+                properties: {}
+            }]
+        });
+    }
+    // ここまで
+
     store.state.loadingMessage3 = 'mapillary問い合わせ中'
     store.state.loading3 = true
     store.dispatch('showFloatingWindow', 'mapillary')
@@ -11196,22 +11216,6 @@ export async function mapillaryCreate(lng, lat) {
     }
     container.innerHTML = ''
 
-    // MapLibre の map を取得（引数優先 → Vuex いくつかのキーを探索）
-    // const map = mapArg || getMapInstanceFromStore()
-    const map = store.state.map01
-
-    // 軌跡をクリア
-    const src = map.getSource('mly-trail-line'); // 既定の trail ソースID
-    if (src && src.setData) {
-        src.setData({
-            type: 'FeatureCollection',
-            features: [{
-                type: 'Feature',
-                geometry: { type: 'LineString', coordinates: [] },
-                properties: {}
-            }]
-        });
-    }
     // 10m 四方で最寄りの画像を1枚取得
     const aaa = 2
     const deltaLat = 0.00009 / aaa // ≒10m
@@ -11281,16 +11285,14 @@ export async function mapillaryCreate(lng, lat) {
             // 既存の attribution 更新処理
             mapillaryViewer.on('image', image => {
                 setTimeout(() => {
-                    try {
+                    // try {
                         const link = document.querySelector('.mapillary-attribution-image-container').href
                         document.querySelector('.attribution-username').innerHTML = `<a href=${link} target=_'blank'>${document.querySelector('.mapillary-attribution-username').innerHTML}</a>`
                         document.querySelector('.attribution-date').innerHTML = document.querySelector('.mapillary-attribution-date').innerHTML
-                    } catch (e) {
-                        store.state.loading3 = false
-                    }
-                    store.state.loading3 = false
+                    // } catch (e) {
+                    // }
                     store.state.mapillaryZindex = getNextZIndex()
-                    // console.log('✔️ 画像読み込み完了:', image)
+                    console.log('✔️ 画像読み込み完了:', image)
                 }, 0)
             })
 
@@ -11303,63 +11305,8 @@ export async function mapillaryCreate(lng, lat) {
         }
     } catch (err) {
         console.error('Mapillary request failed', err)
-        store.state.loading3 = false
     }
 }
-
-/**
- * しばらく下のコメントアウトの関数を残しておく。
- * @param map
- * @param mapillaryToken
- */
-// export let mapillaryViewer = null
-// export async function mapillaryCreate(lng, lat) {
-//     store.state.loadingMessage3 = 'mapillary問い合わせ中';
-//     store.state.loading3 = true;
-//     store.dispatch('showFloatingWindow', 'mapillary');
-//     const container = document.querySelector('.mapillary-div')
-//     container.innerHTML = ''
-//     const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c';
-//     async function mapillary(lng, lat) {
-//         const deltaLat = 0.00009; // 約10m
-//         const deltaLng = 0.00011; // 東京近辺での約10m
-//         const response = await fetch(`https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${lng - deltaLng},${lat - deltaLat},${lng + deltaLng},${lat + deltaLat}&limit=1`);
-//         const data = await response.json();
-//         if (data.data && data.data.length > 0) {
-//             const imageId = data.data[0].id;
-//             mapillaryViewer = new Viewer({
-//                 accessToken: MAPILLARY_CLIENT_ID,
-//                 container: container,
-//                 imageId: imageId,
-//                 component: {cover: false}
-//             })
-//             mapillaryViewer.on('image', image => {
-//                 setTimeout(() => {
-//                     try {
-//                         const link = document.querySelector('.mapillary-attribution-image-container').href;
-//                         document.querySelector('.attribution-username').innerHTML = `<a href=${link} target=_'blank' >${document.querySelector('.mapillary-attribution-username').innerHTML}</a>`
-//                         document.querySelector('.attribution-date').innerHTML = document.querySelector('.mapillary-attribution-date').innerHTML
-//                     } catch (e) {
-//                         console.log(e)
-//                         store.state.loading3 = false;
-//                     }
-//                     store.state.loading3 = false;
-//                     store.state.mapillaryZindex = getNextZIndex()
-//                     console.log('✔️ 画像読み込み完了:', image);
-//                 },0)
-//             });
-//         } else {
-//             container.innerHTML = '<div style="height:100%; width:100%; background:color-mix(in srgb, var(--main-color) 60%, black); color:white;display:flex; justify-content:center; align-items:center; text-align:center;">' +
-//                 '<div style="font-size: small; margin-top: -20px;">' +
-//                 'Mapillary画像が見つかりませんでした。' +
-//                 '</div></div>'
-//             console.warn('Mapillary画像が見つかりませんでした');
-//             store.state.loading3 = false
-//             store.state.mapillaryZindex = getNextZIndex()
-//         }
-//     }
-//     await mapillary(lng, lat)
-// }
 
 // ---- 公開関数 ----
 /**
@@ -11369,7 +11316,6 @@ export async function mapillaryCreate(lng, lat) {
  * @param ids
  */
 export async function ensureMlyMarkerLayers(map, ids = {}) {
-    if (!map) return;
     const seqId = await fetchSequenceId(currentImageId, MAPILLARY_CLIENT_ID);
     // const targetSeq = store.state.targetSeq
     store.state.targetSeq = seqId
@@ -11388,7 +11334,7 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
                     // 'circle-stroke-color': '#fff',
                     // 'circle-stroke-width': 1.5,
                     'circle-color': '#ff1744',
-                    'circle-radius': 8
+                    'circle-radius': 12
                 },
             });
         } else {
@@ -11535,6 +11481,7 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
             });
         }
     }
+    store.state.loading3 = false
     store.state.updatePermalinkFire = !store.state.updatePermalinkFire
 }
 
@@ -11611,14 +11558,20 @@ export async function updateMlyMarkerByImageId(map, imageId, token, options = {}
             const currentZoom = map.getZoom();
             map.easeTo({center: [lon, lat], zoom: panZoom ?? Math.max(currentZoom, 16)});
         } else {
-            map.setCenter([lon, lat])
+            /**
+             * コメントアウト
+             */
+            // map.setCenter([lon, lat])
         }
     }
 }
 
 export function attachViewerSync({ map, viewer, token, options = {} }) {
     if (!map || !viewer || !token) return;
-    ensureMlyMarkerLayers(map, options.ids);
+    /**
+     * 下１行をあえてコメントあうとした。影響あるかもしれない。
+     */
+    // ensureMlyMarkerLayers(map, options.ids);
 
     const handler = async (ev) => {
         // MapillaryJS v4 では ev.image?.id が多い。独自実装なら ev が文字列(ID)の想定も許容
@@ -11643,7 +11596,7 @@ export function attachViewerSync({ map, viewer, token, options = {} }) {
     map.__mlySync = { viewer, handler, eventNames, options, token };
 
     // フォールバック: 自分の再生処理から手動で呼びたい場合に備え、関数を返す
-    return { notifyImageChanged: (id) => handler(id) };
+    // return { notifyImageChanged: (id) => handler(id) };
 }
 
 export function detachViewerSync(map) {
@@ -11873,4 +11826,25 @@ export function hitExcludedLayers(map, point, buffer = 6) {
     ];
     const hits = map.queryRenderedFeatures(box, { layers: visible });
     return hits.length > 0;
+}
+
+// 1) 文字列中のあらゆる空白類(改行含む)を完全に除去
+export function removeAllWhitespace(str = "") {
+    // \s に加えて NBSP/全角/Thin/ゼロ幅/BOM なども明示列挙
+    const re = /[\s\u00A0\u1680\u2000-\u200B\u2028\u2029\u202F\u205F\u2060\u3000\uFEFF]/g;
+    return String(str).replace(re, "");
+}
+
+// 2) 改行は残しつつ、その他の空白(スペース/タブ/全角等)だけ除去
+export function removeSpacesKeepNewlines(str = "") {
+    // \n と \r を除外して、それ以外の空白を削除
+    const re = /[ \t\u00A0\u1680\u2000-\u200B\u202F\u205F\u2060\u3000\uFEFF\v\f]/g;
+    return String(str).replace(re, "");
+}
+
+// 3) 連続する空白類を半角スペース1個に正規化(整形用)
+export function collapseWhitespace(str = "") {
+    // 改行も含めて1個の半角スペースに畳み込み → 先頭末尾の空白も削除
+    const re = /[\s\u00A0\u1680\u2000-\u200B\u2028\u2029\u202F\u205F\u2060\u3000\uFEFF]+/g;
+    return String(str).replace(re, " ").trim();
 }

@@ -6,7 +6,7 @@ import firebase from 'firebase/app';
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.388,
+    clientVersion: 1.389,
     filter360: [
       "all",
       ["==", ["get", "is_pano"], true],

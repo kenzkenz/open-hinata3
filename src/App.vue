@@ -1759,7 +1759,7 @@ import {
   pmtilesGenerateForUser2,
   pngDownload,
   pngLoad,
-  printDirectionChange,
+  printDirectionChange, removeAllWhitespace,
   saveDrowFeatures,
   scaleAndRotateLassoSelected,
   simaLoadForUser,
@@ -6234,7 +6234,7 @@ export default {
                 if (muni0) {
                   const splitMuni = muni0.split(',')
                   vm.s_address = splitMuni[1] + splitMuni[3] + response.data.results.lv01Nm
-                  vm.s_addressMini = splitMuni[3] + response.data.results.lv01Nm
+                  vm.s_addressMini = removeAllWhitespace(splitMuni[3] + response.data.results.lv01Nm)
                   console.log(vm.s_address)
                   vm.$store.state.prefId = splitMuni[0]
                 }
@@ -8028,6 +8028,21 @@ export default {
       //   }
       // };
 
+      this.$store.state.map01.on('click', 'oh-mapillary-images', (e) => {
+        /**
+         * こっちがマピラリ本命
+         */
+        const f = e.features && e.features[0]
+        if(f) {
+          console.log('mapillary_properties',f.properties)
+          store.state.mapillaryFeature = f
+        }
+        // debounce(function () {
+          const lng = e.lngLat.lng;  // 経度
+          const lat = e.lngLat.lat;  // 緯度
+          mapillaryCreate(lng, lat)
+        // },5000)()
+      });
       // -----------------------------------------------------------------------------------------------------------------
       // on load オンロード
       this.mapNames.forEach(mapName => {
@@ -9065,19 +9080,19 @@ export default {
               mapillaryCreate(lng, lat)
             }
           })
-          map.on('click', 'oh-mapillary-images', (e) => {
-            /**
-             * こっちがマピラリ本命
-             */
-            const f = e.features && e.features[0]
-            if(f) {
-              console.log('mapillary_properties',f.properties)
-              store.state.mapillaryFeature = f
-            }
-            const lng = e.lngLat.lng;  // 経度
-            const lat = e.lngLat.lat;  // 緯度
-            mapillaryCreate(lng, lat)
-          });
+          // this.$store.state.map01.on('click', 'oh-mapillary-images', (e) => {
+          //   /**
+          //    * こっちがマピラリ本命
+          //    */
+          //   const f = e.features && e.features[0]
+          //   if(f) {
+          //     console.log('mapillary_properties',f.properties)
+          //     store.state.mapillaryFeature = f
+          //   }
+          //   const lng = e.lngLat.lng;  // 経度
+          //   const lat = e.lngLat.lat;  // 緯度
+          //   mapillaryCreate(lng, lat)
+          // });
           map.on('mousemove', function (e) {
             mouseMoveForPopup(e,map)
           })
@@ -9947,6 +9962,7 @@ export default {
         }
       } else {
         this.$store.state.filter360 = null
+        this.$store.state.targetSeq = null
         map01.setFilter('oh-mapillary-images', this.$store.state.filter360)
       }
     },
