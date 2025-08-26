@@ -11187,27 +11187,8 @@ export async function mapillaryCreate(lng, lat) {
 
     const map = store.state.map01
 
-    // ハイライトや矢印を削除。なくてもいいが
-    store.state.targetSeq = null
-    map.setFilter('oh-mapillary-images-highlight',
-        ['==', ['get', 'sequence_id'], store.state.targetSeq]
-    );
-    const src = map.getSource('mly-current-point');
-    if (src && src.setData) {
-        src.setData({
-            type: 'FeatureCollection',
-            features: [{
-                type: 'Feature',
-                geometry: { type: 'LineString', coordinates: [] },
-                properties: {}
-            }]
-        });
-    }
-    // ここまで
-
     store.state.loadingMessage3 = 'mapillary問い合わせ中'
     store.state.loading3 = true
-    store.dispatch('showFloatingWindow', 'mapillary')
 
     const container = document.querySelector('.mapillary-div')
     if (!container) {
@@ -11217,97 +11198,107 @@ export async function mapillaryCreate(lng, lat) {
     }
     container.innerHTML = ''
 
-    // 10m 四方で最寄りの画像を1枚取得
-    const aaa = 1
-    const deltaLat = 0.00009 / aaa // ≒10m
-    const deltaLng = 0.00011 / aaa // ≒10m（東京近辺）
-    const url = `https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${lng - deltaLng},${lat - deltaLat},${lng + deltaLng},${lat + deltaLat}&limit=1`
-
-    try {
+    const mapillaryFeatureId = store.state.mapillaryFeature?.properties.id
+    let data
+    if (!mapillaryFeatureId) {
+        // 10m 四方で最寄りの画像を1枚取得
+        const aaa = 1
+        const deltaLat = 0.00009 / aaa // ≒10m
+        const deltaLng = 0.00011 / aaa // ≒10m（東京近辺）
+        const url = `https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${lng - deltaLng},${lat - deltaLat},${lng + deltaLng},${lat + deltaLat}&limit=1`
         const response = await fetch(url)
-        const data = await response.json()
-
-        // if (data?.data?.length) {
-            const imageId = data.data[0].id
-            // const imageId = store.state.mapillaryFeature.properties.id
-            console.log(imageId)
-            // 既存 Viewer を破棄（必要なら）
-            // try { mapillaryViewer?.remove?.() } catch (_) {}
-
-            // Viewer 生成
-            mapillaryViewer = new Viewer({
-                accessToken: MAPILLARY_CLIENT_ID,
-                container,
-                imageId,
-                transitionMode: (window.mapillaryJs?.TransitionMode?.Instantaneous ?? 0),
-                // component: { cover: false }
-                component: {
-                    cover: false,
-                    sequence: {
-                        minWidth: store.state.isSmall500 ? 110 : 70,  // ←デフォ70
-                        maxWidth: store.state.isSmall500 ? 240 : 117,   // ←デフォ117
-                    }
-                }
-            })
-        // store.state.loading3 = false
-            mapillaryViewer.on('image', (ev) => {
-                currentImageId = ev?.image?.id || ev?.id || null;
-            });
-
-            // ---- ここから追加：地図同期 ----
-            if (map) {
-                const attach = () => {
-                    // 前回の同期を解除
-                    try { detachViewerSync(map) } catch (_) {}
-                    if (_detachSync) { try { _detachSync() } catch (_) {} _detachSync = null }
-
-                    // 新たに同期を張る
-                    const { notifyImageChanged } = attachViewerSync({
-                        map,
-                        viewer: mapillaryViewer,
-                        token: MAPILLARY_CLIENT_ID,
-                        options: {
-                            autoPan: false,    // 追従パン
-                            panZoom: 17,      // 追従時ズーム
-                            track: true,      // トレイル描画
-                            maxTrail: 300,    // トレイル履歴数
-                            bearingLengthM: 25
-                        }
-                    })
-                    // 最初の画像で即座にマーカーを出す
-                    try { notifyImageChanged(imageId) } catch (_) {}
-
-                    // 後で明示的に外したい場合のために保持
-                    _detachSync = () => detachViewerSync(map)
-                }
-                map.isStyleLoaded() ? attach() : map.once('load', attach)
-            // }
-            // ---- 地図同期 ここまで ----
-
-            // 既存の attribution 更新処理
-            mapillaryViewer.on('image', image => {
-                setTimeout(() => {
-                    // try {
-                    //     const link = document.querySelector('.mapillary-attribution-image-container').href
-                    //     document.querySelector('.attribution-username').innerHTML = `<a href=${link} target=_'blank'>${document.querySelector('.mapillary-attribution-username').innerHTML}</a>`
-                    //     document.querySelector('.attribution-date').innerHTML = document.querySelector('.mapillary-attribution-date').innerHTML
-                    // } catch (e) {
-                    // }
-                    store.state.mapillaryZindex = getNextZIndex()
-                    console.log('✔️ 画像読み込み完了:', image)
-                }, 0)
-            })
-
-        } else {
-            // 画像が見つからない場合の表示
-            container.innerHTML = '<div style="height:100%; width:100%; background:color-mix(in srgb, var(--main-color) 60%, black); color:white;display:flex; justify-content:center; align-items:center; text-align:center;"><div style="font-size: small; margin-top: -20px;">Mapillary画像が見つかりませんでした。</div></div>'
-            console.warn('Mapillary画像が見つかりませんでした')
-            store.state.loading3 = false
-            store.state.mapillaryZindex = getNextZIndex()
-        }
-    } catch (err) {
-        console.error('Mapillary request failed', err)
+        data = await response.json()
     }
+
+    // if (data?.data?.length) {
+    //     const imageId = data.data[0].id
+    const imageId = mapillaryFeatureId || data.data[0]?.id
+    console.log(imageId)
+    if (!imageId) {
+        store.state.loading3 = false
+        container.innerHTML = '<div style="height:100%; width:100%; background:color-mix(in srgb, var(--main-color) 60%, black); color:white;display:flex; justify-content:center; align-items:center; text-align:center;"><div style="font-size: small; margin-top: -20px;">Mapillary画像が見つかりませんでした。</div></div>'
+        console.warn('Mapillary画像が見つかりませんでした')
+        return
+    }
+    // Viewer 生成
+    mapillaryViewer = new Viewer({
+        accessToken: MAPILLARY_CLIENT_ID,
+        container,
+        imageId,
+        transitionMode: (window.mapillaryJs?.TransitionMode?.Instantaneous ?? 0),
+        component: {
+            cover: false,
+            sequence: {
+                minWidth: store.state.isSmall500 ? 110 : 70,  // ←デフォ70
+                maxWidth: store.state.isSmall500 ? 240 : 117,   // ←デフォ117
+            }
+        }
+    })
+    // store.state.loading3 = false
+    mapillaryViewer.on('image', (ev) => {
+        currentImageId = ev?.image?.id || ev?.id || null;
+    });
+    // /**
+    //  * とりあえずこれでスナックバーが閉じる。
+    //  * @type {boolean}
+    //  */
+    // store.state.loading3 = false
+
+    // ---- ここから追加：地図同期 ----
+    try {
+        const attach = () => {
+            // 前回の同期を解除
+            try { detachViewerSync(map) } catch (_) {}
+            if (_detachSync) { try { _detachSync() } catch (_) {} _detachSync = null }
+
+            // 新たに同期を張る
+            try {
+
+                const { notifyImageChanged } = attachViewerSync({
+                    map,
+                    viewer: mapillaryViewer,
+                    token: MAPILLARY_CLIENT_ID,
+                    options: {
+                        autoPan: false,    // 追従パン
+                        panZoom: 17,      // 追従時ズーム
+                        track: true,      // トレイル描画
+                        maxTrail: 300,    // トレイル履歴数
+                        bearingLengthM: 25
+                    }
+                })
+                // 最初の画像で即座にマーカーを出す
+                try { notifyImageChanged(imageId) } catch (_) {}
+            } catch (_) {}
+            // 後で明示的に外したい場合のために保持
+            _detachSync = () => detachViewerSync(map)
+        }
+        attach() // 初回に動かないことがあるので
+        map.isStyleLoaded() ? attach() : map.once('load', attach)
+        // }
+        // ---- 地図同期 ここまで ----
+
+        // 既存の attribution 更新処理
+        // mapillaryViewer.on('image', image => {
+        //     setTimeout(() => {
+        //         // try {
+        //         //     const link = document.querySelector('.mapillary-attribution-image-container').href
+        //         //     document.querySelector('.attribution-username').innerHTML = `<a href=${link} target=_'blank'>${document.querySelector('.mapillary-attribution-username').innerHTML}</a>`
+        //         //     document.querySelector('.attribution-date').innerHTML = document.querySelector('.mapillary-attribution-date').innerHTML
+        //         // } catch (e) {
+        //         // }
+        //         store.state.mapillaryZindex = getNextZIndex()
+        //         console.log('✔️ 画像読み込み完了:', image)
+        //     }, 0)
+        // })
+    }catch (e) {
+        console.log(e)
+        // 画像が見つからない場合の表示
+        container.innerHTML = '<div style="height:100%; width:100%; background:color-mix(in srgb, var(--main-color) 60%, black); color:white;display:flex; justify-content:center; align-items:center; text-align:center;"><div style="font-size: small; margin-top: -20px;">Mapillary画像が見つかりませんでした。</div></div>'
+        console.warn('Mapillary画像が見つかりませんでした')
+        store.state.loading3 = false
+        store.state.mapillaryZindex = getNextZIndex()
+    }
+
 }
 
 // ---- 公開関数 ----
@@ -11324,7 +11315,7 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
     // alert( store.state.targetSeq )
     // 画像点のハイライトを追加
     if (!store.state.is360Pic) {
-        if (!map.getLayer('oh-mapillary-images-highlight')) {
+        if (!map.getLayer('oh-mapillary-images-highlight') && store.state.targetSeq) {
             map.addLayer({
                 id: 'oh-mapillary-images-highlight',
                 type: 'circle',
@@ -11339,7 +11330,7 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
                     'circle-radius': 12
                 },
             });
-        } else {
+        } else if (store.state.targetSeq) {
             // 既存なら filter だけ更新すれば対象シーケンスを切替できる
             map.setFilter('oh-mapillary-images-highlight',
                 ['==', ['get', 'sequence_id'], store.state.targetSeq]
@@ -11442,7 +11433,6 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
     // }
 
     if (!store.state.is360Pic) {
-        console.log(map.getSource(bearingSource)?.serialize().data.features[0])
         const bearing = map.getSource(bearingSource)?.serialize().data.features[0].properties.bearing + 270
         // レイヤが無ければ作る
         if (!map.getLayer(pointLayer)) {
@@ -11484,6 +11474,7 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
             });
         }
     }
+    map.moveLayer(pointLayer)
     store.state.loading3 = false
     store.state.updatePermalinkFire = !store.state.updatePermalinkFire
 }
@@ -11517,7 +11508,8 @@ function makeArrowPointsFromLines(lineFC) {
 }
 
 async function updateMlyMarkerByImageId(map, imageId, token, options = {}) {
-    if (!map || !imageId || !token) return;
+    // if (!map || !imageId || !token) return;
+    // alert(888)
     ensureMlyMarkerLayers(map, options.ids);
     const pose = await fetchImagePose(imageId, token);
     if (!pose) return;
@@ -11583,8 +11575,9 @@ export function attachViewerSync({ map, viewer, token, options = {} }) {
     const handler = async (ev) => {
         // MapillaryJS v4 では ev.image?.id が多い。独自実装なら ev が文字列(ID)の想定も許容
         const imageId = ev?.image?.id || ev?.node?.id || ev?.id || (typeof ev === 'string' ? ev : null);
-        if (!imageId) return;
+        // if (!imageId) return;
         try {
+
             await updateMlyMarkerByImageId(map, imageId, token, options);
         } catch (e) { /* noop */ }
     };
@@ -11603,7 +11596,7 @@ export function attachViewerSync({ map, viewer, token, options = {} }) {
     map.__mlySync = { viewer, handler, eventNames, options, token };
 
     // フォールバック: 自分の再生処理から手動で呼びたい場合に備え、関数を返す
-    // return { notifyImageChanged: (id) => handler(id) };
+    return { notifyImageChanged: (id) => handler(id) };
 }
 
 export function detachViewerSync(map) {
@@ -11618,6 +11611,10 @@ export function detachViewerSync(map) {
 
 // ---- 内部: Graph API から画像位置/方位を取得 ----
 async function fetchImagePose(imageId, token) {
+    if (!imageId) return
+    if (imageId === 'null') return
+
+
     const fields = 'id,computed_geometry,geometry,compass_angle,computed_compass_angle';
     const url = `https://graph.mapillary.com/${imageId}?fields=${encodeURIComponent(fields)}&access_token=${encodeURIComponent(token)}`;
     const res = await fetch(url);
@@ -11674,131 +11671,6 @@ function haversineMeters(a, b) {
     return 2 * R * Math.asin(Math.sqrt(s));
 }
 
-
-// Mapillary: sequence_id ごとに色分け & ハイライト
-// 使い方:
-// 1) addMapillaryCoverage(...) で Mapillary のレイヤを追加した後に、
-//    enableMapillarySequenceColoring(map)
-// 2) ハイライトしたい時: setHighlightedSequence(map, seqId)
-//    解除: setHighlightedSequence(map, null)
-// 3) 色分けをやめる時: disableMapillarySequenceColoring(map)
-
-export function enableMapillarySequenceColoring(map, opts = {}) {
-    if (!map) return;
-    const cfg = {
-        sourceId: opts.sourceId || 'mapillary-coverage',
-        seqSourceLayer: opts.seqSourceLayer || 'sequence',
-        imgSourceLayer: opts.imgSourceLayer || 'image',
-        sequencesLayer: opts.sequencesLayer || 'oh-mapillary-sequences',
-        imagesLayer: opts.imagesLayer || 'oh-mapillary-images',
-        saturation: opts.saturation ?? 70, // HSL S%
-        lightness: opts.lightness ?? 50,   // HSL L%
-        debounceMs: opts.debounceMs ?? 250,
-    };
-
-    // 既存のハンドラがいれば一旦解除
-    disableMapillarySequenceColoring(map);
-
-    const apply = () => {
-        const sids = collectSequenceIds(map, cfg.sourceId, cfg.seqSourceLayer);
-        if (!sids.length) return;
-
-        const matchPairs = [];
-        for (const sid of sids) {
-            matchPairs.push(sid, stringIdToHsl(sid, cfg.saturation, cfg.lightness));
-        }
-        const matchExpr = ['match', ['get', 'sequence_id'], ...matchPairs, '#35AF6D'];
-
-        if (map.getLayer(cfg.sequencesLayer)) {
-            map.setPaintProperty(cfg.sequencesLayer, 'line-color', matchExpr);
-        }
-        if (map.getLayer(cfg.imagesLayer)) {
-            // image フィーチャにも sequence_id があれば同じ色に、無ければ既定色
-            map.setPaintProperty(cfg.imagesLayer, 'circle-color', matchExpr);
-        }
-    };
-
-    const debounced = debounce(apply, cfg.debounceMs);
-    // 初回 & 以降は moveend/zoomend/data(load) で更新
-    const onMoveEnd = () => debounced();
-    const onData = (e) => { if (e.sourceId === cfg.sourceId && e.isSourceLoaded) debounced(); };
-
-    map.on('moveend', onMoveEnd);
-    map.on('zoomend', onMoveEnd);
-    map.on('data', onData);
-
-    // 保持して後で解除
-    map.__mlySeqColoring = { cfg, onMoveEnd, onData };
-
-    // すぐ一度適用
-    apply();
-}
-
-export function disableMapillarySequenceColoring(map) {
-    const ref = map?.__mlySeqColoring;
-    if (!ref) return;
-    const { cfg, onMoveEnd, onData } = ref;
-    try { map.off('moveend', onMoveEnd); } catch (_) {}
-    try { map.off('zoomend', onMoveEnd); } catch (_) {}
-    try { map.off('data', onData); } catch (_) {}
-    delete map.__mlySeqColoring;
-}
-
-export function setHighlightedSequence(map, sequenceId, opts = {}) {
-    if (!map) return;
-    const cfg = {
-        sourceId: opts.sourceId || 'mapillary-coverage',
-        seqSourceLayer: opts.seqSourceLayer || 'sequence',
-        highlightLayer: opts.highlightLayer || 'oh-mapillary-sequences-highlight',
-        color: opts.color || '#ffeb3b',
-        width: opts.width ?? 4,
-    };
-
-    // 既存を掃除
-    if (map.getLayer(cfg.highlightLayer)) map.removeLayer(cfg.highlightLayer);
-
-    if (!sequenceId) return; // 解除のみ
-
-    map.addLayer({
-        id: cfg.highlightLayer,
-        type: 'line',
-        source: cfg.sourceId,
-        'source-layer': cfg.seqSourceLayer,
-        filter: ['==', ['get', 'sequence_id'], sequenceId],
-        paint: {
-            'line-color': cfg.color,
-            'line-width': cfg.width,
-            'line-opacity': 1
-        }
-    });
-}
-
-// --- helpers ---
-function collectSequenceIds(map, sourceId, sourceLayer) {
-    try {
-        const feats = map.querySourceFeatures(sourceId, { sourceLayer });
-        const set = new Set();
-        for (const f of feats) {
-            const sid = f?.properties?.sequence_id;
-            if (sid) set.add(String(sid));
-        }
-        return Array.from(set);
-    } catch (e) {
-        return [];
-    }
-}
-
-function debounce(fn, ms) {
-    let t = null;
-    return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
-}
-
-// 文字列ID → 安定HSL色
-function stringIdToHsl(str, s = 70, l = 50) {
-    const h = (hashString(str) % 360 + 360) % 360;
-    return `hsl(${h}, ${s}%, ${l}%)`;
-}
-
 function hashString(str) {
     // djb2 をベースにした簡易ハッシュ
     let h = 5381;
@@ -11807,6 +11679,10 @@ function hashString(str) {
 }
 
 async function fetchSequenceId(imageId, token) {
+    if (!imageId) return
+    if (imageId === 'null') return
+
+
     const url = `https://graph.mapillary.com/${imageId}` +
         `?fields=${encodeURIComponent('sequence{id}')}` +
         `&access_token=${encodeURIComponent(token)}`;
@@ -11903,7 +11779,7 @@ export async function fetchMapillaryPanosInViewport(map, opts = {}) {
         bbox,
         is_pano: 'true',
         fields: Array.isArray(fields) ? fields.join(',') : String(fields || ''),
-        // limit: String(limit),
+        limit: String(limit),
     });
 
     const baseUrl = `https://graph.mapillary.com/images?${params.toString()}`;

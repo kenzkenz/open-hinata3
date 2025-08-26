@@ -1277,7 +1277,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
         <FloatingWindow
             windowId = "mapillary"
-            :title = "s_addressMini"
+            title = "mapillary"
             type="normal"
             :default-top = "70"
             :default-left = "10"
@@ -8035,6 +8035,8 @@ export default {
         /**
          * こっちがマピラリ本命
          */
+        store.dispatch('showFloatingWindow', 'mapillary')
+
         const f = e.features && e.features[0]
         if(f) {
           console.log('mapillary_properties',f.properties)
@@ -8042,7 +8044,10 @@ export default {
         }
         const lng = e.lngLat.lng;  // 経度
         const lat = e.lngLat.lat;  // 緯度
-        mapillaryCreate(lng, lat)
+        this.$nextTick(() => {
+          mapillaryCreate(lng, lat)
+        })
+
       });
       this.map01.on('dragend', () => {
         if (this.is360Pic) {
@@ -9092,22 +9097,10 @@ export default {
                * ちょっとわかりにくいがマピラリオンのときなにもないとろこを
                * クリックしてもなにもないことを表示するために必要
                */
+              store.state.mapillaryFeature = null
               mapillaryCreate(lng, lat)
             }
           })
-          // this.$store.state.map01.on('click', 'oh-mapillary-images', (e) => {
-          //   /**
-          //    * こっちがマピラリ本命
-          //    */
-          //   const f = e.features && e.features[0]
-          //   if(f) {
-          //     console.log('mapillary_properties',f.properties)
-          //     store.state.mapillaryFeature = f
-          //   }
-          //   const lng = e.lngLat.lng;  // 経度
-          //   const lat = e.lngLat.lat;  // 緯度
-          //   mapillaryCreate(lng, lat)
-          // });
           map.on('mousemove', function (e) {
             mouseMoveForPopup(e,map)
           })

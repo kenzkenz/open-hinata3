@@ -27,9 +27,9 @@ const mapillarySequences = {
         'line-opacity': 0.6,
         'line-width': [
             'interpolate', ['linear'], ['zoom'],
-            8, 0.5,
-            12, 1.2,
-            16, 2.0
+            6, 1,
+            12, 2,
+            16, 4.0
         ],
         'line-color': '#35AF6D'
     }
