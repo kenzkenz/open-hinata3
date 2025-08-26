@@ -11852,3 +11852,24 @@ export async function setFllter360(map) {
 
     store.state.loading3 = false
 }
+
+// 1) username → creatorId
+async function getCreatorIdFromUsername(username, signal) {
+    const u = new URL('https://graph.mapillary.com/images');
+    u.searchParams.set('creator_username', username);
+    u.searchParams.set('fields', 'creator');
+    u.searchParams.set('limit', '1');
+    u.searchParams.set('access_token', MAPILLARY_CLIENT_ID);
+
+    const res = await fetch(u, { signal });
+    if (!res.ok) throw new Error(`Mapillary /images ${res.status}: ${await res.text()}`);
+    const json = await res.json();
+    const creator = json?.data?.[0]?.creator;
+    if (!creator?.id) throw new Error(`username "${username}" の creator.id が見つかりません`);
+    return creator.id;  // 例: "106409774929807"
+}
+
+// 2A) タイルが creator_id を持つならこれで一発
+function filterLayerByCreatorId(map, layerId, creatorId) {
+    map.setFilter(layerId, ['==', ['get', 'creator_id'], creatorId]);
+}
