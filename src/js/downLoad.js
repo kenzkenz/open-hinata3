@@ -11183,13 +11183,7 @@ export let mapillaryViewer = null
 let _detachSync = null // 前回の同期を外すため
 let currentImageId = null;
 const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c'
-export async function mapillaryCreate(lng, lat, mapArg) {
-
-    // まず既存同期＆既存Viewerを完全に外す（多重GLや古い参照を防止）
-    try { if (_detachSync) { _detachSync(); _detachSync = null; } } catch {}
-    try { mapillaryViewer?.remove?.(); } catch {}
-    mapillaryViewer = null;
-
+export async function mapillaryCreate(lng, lat) {
     store.state.loadingMessage3 = 'mapillary問い合わせ中'
     store.state.loading3 = true
     store.dispatch('showFloatingWindow', 'mapillary')
@@ -11219,8 +11213,9 @@ export async function mapillaryCreate(lng, lat, mapArg) {
         });
     }
     // 10m 四方で最寄りの画像を1枚取得
-    const deltaLat = 0.00009 // ≒10m
-    const deltaLng = 0.00011 // ≒10m（東京近辺）
+    const aaa = 2
+    const deltaLat = 0.00009 / aaa // ≒10m
+    const deltaLng = 0.00011 / aaa // ≒10m（東京近辺）
     const url = `https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${lng - deltaLng},${lat - deltaLat},${lng + deltaLng},${lat + deltaLat}&limit=1`
 
     try {
@@ -11266,7 +11261,7 @@ export async function mapillaryCreate(lng, lat, mapArg) {
                         viewer: mapillaryViewer,
                         token: MAPILLARY_CLIENT_ID,
                         options: {
-                            autoPan: true,    // 追従パン
+                            autoPan: false,    // 追従パン
                             panZoom: 17,      // 追従時ズーム
                             track: true,      // トレイル描画
                             maxTrail: 300,    // トレイル履歴数
@@ -11310,11 +11305,6 @@ export async function mapillaryCreate(lng, lat, mapArg) {
         console.error('Mapillary request failed', err)
         store.state.loading3 = false
     }
-}
-
-function getMapInstanceFromStore() {
-    const s = store?.state || {}
-    return s.map || s.mapInstance || s.map01 || s['map01'] || s.maplibre || null
 }
 
 /**
@@ -11379,11 +11369,11 @@ function getMapInstanceFromStore() {
  * @param ids
  */
 export async function ensureMlyMarkerLayers(map, ids = {}) {
-    console.log(ids)
     if (!map) return;
     const seqId = await fetchSequenceId(currentImageId, MAPILLARY_CLIENT_ID);
     // const targetSeq = store.state.targetSeq
-    const targetSeq = seqId
+    store.state.targetSeq = seqId
+    // alert( store.state.targetSeq )
     // 画像点のハイライトを追加
     if (!store.state.is360Pic) {
         if (!map.getLayer('oh-mapillary-images-highlight')) {
@@ -11392,7 +11382,7 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
                 type: 'circle',
                 source: 'mapillary-source',
                 'source-layer': 'image',
-                filter: ['==', ['get', 'sequence_id'], targetSeq],
+                filter: ['==', ['get', 'sequence_id'], store.state.targetSeq],
                 paint: {
                     'circle-opacity': 1,
                     // 'circle-stroke-color': '#fff',
@@ -11404,50 +11394,42 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
         } else {
             // 既存なら filter だけ更新すれば対象シーケンスを切替できる
             map.setFilter('oh-mapillary-images-highlight',
-                ['==', ['get', 'sequence_id'], targetSeq]
+                ['==', ['get', 'sequence_id'], store.state.targetSeq]
             );
         }
     } else {
-        if (!map.getLayer('oh-mapillary-images-highlight')) {
-            map.addLayer({
-                id: 'oh-mapillary-images-highlight',
-                type: 'circle',
-                source: 'mapillary-source',
-                'source-layer': 'image',
-                // filter: ['==', ['get', 'sequence_id'], targetSeq],
-                filter: [
-                    "all",
-                    ["==", ["get", "is_pano"], true],
-                    ["==", ["get", "compass_angle"], 0]
-                ],
-                paint: {
-                    'circle-opacity': 1,
-                    // 'circle-stroke-color': '#fff',
-                    // 'circle-stroke-width': 1.5,
-                    'circle-color': 'blue',
-                    'circle-radius': 8
-                },
-            });
-            map.setFilter('oh-mapillary-images', [
-                "all",
-                ["==", ["get", "is_pano"], true],
-                ["==", ["get", "compass_angle"], 0]
-            ])
-        } else {
-            const id = store.state.mapillaryFeature.properties.id
-            if (id) {
-                map.setPaintProperty(
-                    'oh-mapillary-images-highlight',
-                    'circle-color',
-                    [
-                        "case",
-                        ["==", ["get", "id"], id],
-                        "rgba(0, 0, 255, 1)",   // 条件に合致したとき → 青
-                        "rgba(0, 0, 0, 0)"      // それ以外 → 透明
-                    ]
-                );
-            }
-        }
+        // if (!map.getLayer('oh-mapillary-images-highlight')) {
+        //     map.addLayer({
+        //         id: 'oh-mapillary-images-highlight',
+        //         type: 'circle',
+        //         source: 'mapillary-source',
+        //         'source-layer': 'image',
+        //         // filter: ['==', ['get', 'sequence_id'], targetSeq],
+        //         filter: store.state.filter360,
+        //         paint: {
+        //             'circle-opacity': 1,
+        //             // 'circle-stroke-color': '#fff',
+        //             // 'circle-stroke-width': 1.5,
+        //             'circle-color': 'blue',
+        //             'circle-radius': 8
+        //         },
+        //     });
+        //     map.setFilter('oh-mapillary-images', store.state.filter360)
+        // } else {
+        //     const id = store.state.mapillaryFeature.properties.id
+        //     if (id) {
+        //         map.setPaintProperty(
+        //             'oh-mapillary-images-highlight',
+        //             'circle-color',
+        //             [
+        //                 "case",
+        //                 ["==", ["get", "id"], id],
+        //                 "rgba(0, 0, 255, 1)",   // 条件に合致したとき → 青
+        //                 "rgba(0, 0, 0, 0)"      // それ以外 → 透明
+        //             ]
+        //         );
+        //     }
+        // }
     }
 
     const {
@@ -11537,6 +11519,21 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
         if (!isNaN(bearing)) {
             map.setLayoutProperty(pointLayer, 'icon-rotate', bearing);
         }
+    } else {
+        if (map.getLayer(pointLayer)) {
+            map.removeLayer(pointLayer)
+        }
+        const src = map.getSource('mly-current-point'); // 既定の trail ソースID
+        if (src && src.setData) {
+            src.setData({
+                type: 'FeatureCollection',
+                features: [{
+                    type: 'Feature',
+                    geometry: { type: 'LineString', coordinates: [] },
+                    properties: {}
+                }]
+            });
+        }
     }
     store.state.updatePermalinkFire = !store.state.updatePermalinkFire
 }
@@ -11613,6 +11610,8 @@ export async function updateMlyMarkerByImageId(map, imageId, token, options = {}
         if (autoPan) {
             const currentZoom = map.getZoom();
             map.easeTo({center: [lon, lat], zoom: panZoom ?? Math.max(currentZoom, 16)});
+        } else {
+            map.setCenter([lon, lat])
         }
     }
 }
@@ -11855,4 +11854,23 @@ async function fetchSequenceId(imageId, token) {
     if (!res.ok) return null;
     const j = await res.json();
     return j.sequence  // ← これが sequence_id 相当
+}
+
+// 無視したいレイヤーIDを列挙
+const EXCLUDE_LAYERS = ['oh-mapillary-images'];
+
+// クリック許容の判定用（見えてないレイヤーは自動で除外）
+export function hitExcludedLayers(map, point, buffer = 6) {
+    const visible = EXCLUDE_LAYERS.filter(id =>
+        map.getLayer(id) && map.getLayoutProperty(id, 'visibility') !== 'none'
+    );
+    if (visible.length === 0) return false;
+
+    // 少し当たり判定に余裕（buffer px）を持たせる
+    const box = [
+        [point.x - buffer, point.y - buffer],
+        [point.x + buffer, point.y + buffer],
+    ];
+    const hits = map.queryRenderedFeatures(box, { layers: visible });
+    return hits.length > 0;
 }

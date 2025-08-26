@@ -1286,15 +1286,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
             :keepAspectRatio = "false"
             @width-changed ="onWidthChangedForMapillary"
         >
-          <div class="mapillary-div" :style="{height:'calc(100% - 32px)',width:'100%',background:'color-mix(in srgb, var(--main-color) 60%, black)',color:'white'}">
+          <div class="mapillary-div" :style="{height:'calc(100% - 92px)',width:'100%',background:'color-mix(in srgb, var(--main-color) 60%, black)',color:'white'}">
           </div>
-<!--          <v-switch-->
-<!--              v-model="s_is360Pic"-->
-<!--              label="360画像"-->
-<!--              color="primary"-->
-<!--              inset-->
-<!--              @update:modelValue="onToggle"-->
-<!--          />-->
+          <v-switch
+              v-model="s_is360Pic"
+              label="360画像"
+              color="primary"
+              inset
+          />
         </FloatingWindow>
 
         <FloatingWindow
@@ -1700,15 +1699,18 @@ import DrawListDrawer from '@/components/drawer/DrawLisiDrawer'
 import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
 import {
-  addDraw, bakeRotationToBlob,
+  addDraw,
+  bakeRotationToBlob,
   capture,
-  changePrintMap03, compressImageToUnder10MB,
+  changePrintMap03,
+  compressImageToUnder10MB,
   convertFromEPSG4326,
   convertGsiTileJson2,
   csvGenerateForUserPng,
   ddSimaUpload,
   delay0,
-  detectLatLonColumns, diffGeoJSON,
+  detectLatLonColumns,
+  diffGeoJSON,
   downloadGeoJSONAsCSV,
   downloadKML,
   downloadSimaText,
@@ -1717,7 +1719,9 @@ import {
   dxfToGeoJSON,
   enableDragHandles,
   extractFirstFeaturePropertiesAndCheckCRS,
-  extractSimaById, featureCollectionAdd, featuresRestore,
+  extractSimaById,
+  featureCollectionAdd,
+  featuresRestore,
   fetchGsiTileTest,
   fncPngDl,
   geocode,
@@ -1735,21 +1739,33 @@ import {
   handleFileUpload,
   highlightSpecificFeatures,
   highlightSpecificFeatures2025,
-  highlightSpecificFeaturesCity, installDrawerStabilizer, installSafePicking, isImageFile, isVideoFile,
+  highlightSpecificFeaturesCity,
+  hitExcludedLayers,
+  installDrawerStabilizer,
+  installSafePicking,
+  isImageFile,
+  isVideoFile,
   japanCoord,
   jpgLoad,
   kmlDownload,
   kmzLoadForUser,
-  LngLatToAddress, mapillaryCreate, mapillaryViewer, markaersRemove, markerAddAndRemove,
+  LngLatToAddress,
+  mapillaryCreate,
+  mapillaryViewer,
+  markaersRemove,
+  markerAddAndRemove,
   parseCSV,
   pmtilesGenerate,
   pmtilesGenerateForUser2,
   pngDownload,
   pngLoad,
-  printDirectionChange, saveDrowFeatures,
+  printDirectionChange,
+  saveDrowFeatures,
   scaleAndRotateLassoSelected,
   simaLoadForUser,
-  splitLineStringIntoPoints, startPolling, stopDrawerAnimations,
+  splitLineStringIntoPoints,
+  startPolling,
+  stopDrawerAnimations,
   tileGenerateForUser,
   tileGenerateForUserPdf,
   transformGeoJSONToEPSG4326,
@@ -9036,23 +9052,31 @@ export default {
           //------------------------------------------------------------------------------------------------------------
           // ポップアップ
           map.on('click', (e) => {
+            if (hitExcludedLayers(map, e.point)) return; // ← 除外レイヤーなら何もしない
             popup(e,map,mapName,this.s_map2Flg)
             store.commit('setDrawDrawer', false)
             const lng = e.lngLat.lng;  // 経度
             const lat = e.lngLat.lat;  // 緯度
             if (store.state.mapillaryFlg) {
+              /**
+               * ちょっとわかりにくいがマピラリオンのときなにもないとろこを
+               * クリックしてもなにもないことを表示するために必要
+               */
               mapillaryCreate(lng, lat)
             }
           })
           map.on('click', 'oh-mapillary-images', (e) => {
-            const f = e.features && e.features[0];
+            /**
+             * こっちがマピラリ本命
+             */
+            const f = e.features && e.features[0]
             if(f) {
               console.log('mapillary_properties',f.properties)
-              const lng = e.lngLat.lng;  // 経度
-              const lat = e.lngLat.lat;  // 緯度
               store.state.mapillaryFeature = f
-              mapillaryCreate(lng, lat)
             }
+            const lng = e.lngLat.lng;  // 経度
+            const lat = e.lngLat.lat;  // 緯度
+            mapillaryCreate(lng, lat)
           });
           map.on('mousemove', function (e) {
             mouseMoveForPopup(e,map)
@@ -9899,13 +9923,31 @@ export default {
     s_is360Pic(value) {
       const map01 = this.$store.state.map01
       if (value) {
-        map01.setFilter('oh-mapillary-images', [
+        // map01.setFilter('oh-mapillary-images', this.$store.state.filter360)
+        this.$store.state.filter360 = [
           "all",
           ["==", ["get", "is_pano"], true],
-          ["==", ["get", "compass_angle"], 0]
-        ])
+          // ["==", ["get", "compass_angle"], 0]
+        ]
+        map01.setFilter('oh-mapillary-images', this.$store.state.filter360)
+        this.$store.state.targetSeq = ''
+        map01.setFilter('oh-mapillary-images-highlight',
+            ['==', ['get', 'sequence_id'], this.$store.state.targetSeq]
+        );
+        const src = map01.getSource('mly-current-point'); // 既定の trail ソースID
+        if (src && src.setData) {
+          src.setData({
+            type: 'FeatureCollection',
+            features: [{
+              type: 'Feature',
+              geometry: { type: 'LineString', coordinates: [] },
+              properties: {}
+            }]
+          });
+        }
       } else {
-        map01.setFilter('oh-mapillary-images',null)
+        this.$store.state.filter360 = null
+        map01.setFilter('oh-mapillary-images', this.$store.state.filter360)
       }
     },
     // s_zahyokei(value) {
