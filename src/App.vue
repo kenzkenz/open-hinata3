@@ -1268,7 +1268,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
 <!--        <v-btn @click="test">test</v-btn>-->
 
-
 <!--        <div class="test" style="height: 100px; width: 100px;">-->
 <!--          aaaaaa-->
 <!--        </div>-->
@@ -1284,6 +1283,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             :default-width = "isSmall500 ? 200 : 348"
             :default-height = "isSmall500 ? 300 : 300"
             :keepAspectRatio = "false"
+            :showMaxRestore="true"
             @width-changed ="onWidthChangedForMapillary"
         >
           <div class="mapillary-div" :style="{height:'calc(100% - 102px)',width:'100%',background:'color-mix(in srgb, var(--main-color) 60%, black)',color:'white'}">
