@@ -10031,7 +10031,7 @@ export default {
       const map01 = this.$store.state.map01
       if (map01.getZoom() < 14) return
       if (value && map01.getLayer('oh-mapillary-images-highlight')) {
-        this.$store.state.targetSeq =
+        this.$store.state.targetSeq = ''
         map01.setFilter('oh-mapillary-images-highlight', ['==', ['get', 'sequence_id'], this.$store.state.targetSeq]);
         const src = map01.getSource('mly-current-point');
         if (src && src.setData) {

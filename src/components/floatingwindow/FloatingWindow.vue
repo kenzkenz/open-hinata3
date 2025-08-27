@@ -430,7 +430,7 @@ export default {
   padding: 0;
   transition: color 0.2s;
 }
-.header .window-controls button:hover { color: #cfe8ff; }
+.header .window-controls button:hover { color: blue!important; }
 
 .content {
   width: 101%;

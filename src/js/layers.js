@@ -5,6 +5,10 @@ import { nextTick, toRef, reactive, ref, computed, watch } from 'vue';
 
 const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c';
 
+/**
+ * マピラリメインレイヤー
+ * @type {{obj: {tiles: string[], maxzoom: number, type: string, minzoom: number}, id: string}}
+ */
 const mapillarySource = {
     id: 'mapillary-source', obj: {
         type: 'vector',
@@ -54,7 +58,100 @@ const mapillaryImages = {
         ]
     }
 }
+/**
+ * マピラリレイヤー2
+ */
+const mapillarySource2 = {
+    id: 'mapillary-source-2', obj: {
+        type: 'vector',
+        tiles: [
+            `https://tiles.mapillary.com/maps/vtp/mly_map_feature_point/2/{z}/{x}/{y}?access_token=${MAPILLARY_CLIENT_ID}`
+        ],
+        minzoom: 14,
+        maxzoom: 14   // これで z>14 はオーバーズーム表示
+    }
+}
 
+const mapillaryImages2 = {
+    id: 'oh-mapillary-images-2',
+    type: 'circle',
+    source: 'mapillary-source-2',
+    'source-layer': 'point',
+    minzoom: 14,
+    paint: {
+        'circle-radius': 4
+    }
+}
+
+// クラス → 色
+const DETECTION_COLORS = {
+    // Construction / Markings
+    'construction--barrier--temporary':               '#FF8A00',
+    'construction--flat--crosswalk-plain':            '#FFF176',
+    'construction--flat--driveway':                   '#FFD54F',
+
+    'marking--discrete--arrow--left':                 '#42A5F5',
+    'marking--discrete--arrow--right':                '#1E88E5',
+    'marking--discrete--arrow--split-left-or-straight':'#64B5F6',
+    'marking--discrete--arrow--split-right-or-straight':'#1976D2',
+    'marking--discrete--arrow--straight':             '#90CAF9',
+    'marking--discrete--crosswalk-zebra':             '#FFEE58',
+    'marking--discrete--give-way-row':                '#FBC02D',
+    'marking--discrete--give-way-single':             '#F9A825',
+    'marking--discrete--other-marking':               '#BDBDBD',
+    'marking--discrete--stop-line':                   '#FF7043',
+    'marking--discrete--symbol--bicycle':             '#26A69A',
+    'marking--discrete--text':                        '#8D6E63',
+
+    // Objects
+    'object--banner':                                  '#AB47BC',
+    'object--bench':                                   '#00BCD4',
+    'object--bike-rack':                               '#4DB6AC',
+    'object--catch-basin':                             '#6D4C41',
+    'object--cctv-camera':                             '#7E57C2',
+    'object--fire-hydrant':                            '#E53935',
+    'object--junction-box':                            '#795548',
+    'object--mailbox':                                 '#9C27B0',
+    'object--manhole':                                 '#5D4037',
+    'object--parking-meter':                           '#00838F',
+    'object--phone-booth':                             '#43A047',
+    'object--sign--advertisement':                     '#EC407A',
+    'object--sign--information':                       '#26C6DA',
+    'object--sign--store':                             '#FF8A65',
+    'object--street-light':                            '#FFD400',
+    'object--support--pole':                           '#9E9E9E',
+    'object--support--traffic-sign-frame':             '#757575',
+    'object--support--utility-pole':                   '#616161',
+    'object--traffic-cone':                            '#FF6D00',
+    'object--traffic-light--cyclists':                 '#2E7D32',
+    'object--traffic-light--general-horizontal':       '#EF5350',
+    'object--traffic-light--general-single':           '#D32F2F',
+    'object--traffic-light--general-upright':          '#C62828',
+    'object--traffic-light--other':                    '#B71C1C',
+    'object--traffic-light--pedestrians':              '#66BB6A',
+    'object--trash-can':                               '#4CAF50',
+    'object--water-valve':                             '#29B6F6',
+};
+// value で match 式を作る
+function makeMatchByValue(defaultColor = '#9E9E9E') {
+    const expr = ['match', ['get', 'value']];
+    Object.entries(DETECTION_COLORS).forEach(([klass, color]) => expr.push(klass, color));
+    expr.push(defaultColor);
+    return expr;
+}
+
+// 既存のレイヤー定義に色を追加（半透明の縁取りつき）
+mapillaryImages2.paint['circle-color'] = makeMatchByValue();
+mapillaryImages2.paint['circle-stroke-color'] = '#000000';
+mapillaryImages2.paint['circle-stroke-width'] = 0.5;
+mapillaryImages2.paint['circle-opacity'] = 0.9;
+
+// ついでにズームで半径を変えるなら
+mapillaryImages2.paint['circle-radius'] = [
+    'interpolate', ['linear'], ['zoom'],
+    14, 3,
+    18, 6
+];
 
 
 const checkUser = setInterval(() => {
@@ -10280,6 +10377,13 @@ let layers01 = [
         label: "<span style='color: red'>NEW</span>⭐️mapillary",
         sources: [mapillarySource],
         layers: [mapillarySequences, mapillaryImages],
+        attribution: 'メニューからmapillaryをオンにしてください。<br>© Mapillary',
+    },
+    {
+        id: 'oh-mapillary-2',
+        label: "<span style='color: red'>NEW</span>⭐️mapillary2",
+        sources: [mapillarySource2],
+        layers: [mapillaryImages2],
         attribution: 'メニューからmapillaryをオンにしてください。<br>© Mapillary',
     },
     {

@@ -264,7 +264,7 @@ let isGooglemap = true
 let isRePopup = true
 
 export function popup(e, map, mapName, mapFlg, isNoDrawer) {
-    console.error(e,map,mapName,mapFlg)
+    console.log(e,map,mapName,mapFlg)
     // if (store.state.editEnabled) return; //ん？これは要らない？
     let html = ref('')  // ← ここを ref 化
     watch(html, (newVal, oldVal) => {
@@ -360,7 +360,11 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
         // features.forEach(feature => {
         const layerId = feature.layer.id
         let props = feature.properties
-        // console.log(layerId, feature, props)
+        console.log(
+            '①レイヤーID', layerId,
+            '\n②feature', feature,
+            '\n③プロパティ', props
+        );
         console.log('⭐layerId️//' + layerId)
         /**
          * ドロー時はドローレイヤー以外のポップアップを無効化する。

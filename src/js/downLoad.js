@@ -11310,9 +11310,7 @@ export async function mapillaryCreate(lng, lat) {
  */
 export async function ensureMlyMarkerLayers(map, ids = {}) {
     const seqId = await fetchSequenceId(currentImageId, MAPILLARY_CLIENT_ID);
-    // const targetSeq = store.state.targetSeq
     store.state.targetSeq = seqId
-    // alert( store.state.targetSeq )
     // 画像点のハイライトを追加
     if (!store.state.is360Pic) {
         if (!map.getLayer('oh-mapillary-images-highlight') && store.state.targetSeq) {
@@ -11456,6 +11454,13 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
         }
         // ここで角度を反映（レイヤが既にあっても確実に効く）
         if (!isNaN(bearing)) {
+            /**
+             * 暫定的にここに設置。もっといい場所があったらそこに移動
+             */
+            console.log(bearing)
+            setTimeout(() => {
+                store.state.loading3 = false
+            },2000)
             map.setLayoutProperty(pointLayer, 'icon-rotate', bearing);
         }
     } else {
@@ -11475,8 +11480,14 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
         }
     }
     map.moveLayer(pointLayer)
-    store.state.loading3 = false
+    store.state.mapillaryZindex = getNextZIndex()
     store.state.updatePermalinkFire = !store.state.updatePermalinkFire
+    if (firstFlg) {
+        setTimeout(() => {
+            store.state.loading3 = false
+            firstFlg = false
+        },2000)
+    }
 }
 
 function bearingDeg([lon1, lat1], [lon2, lat2]) {
@@ -11569,7 +11580,7 @@ export function attachViewerSync({ map, viewer, token, options = {} }) {
      */
     if (firstFlg) {
         ensureMlyMarkerLayers(map, options.ids);
-        firstFlg = false
+        // firstFlg = false
     }
 
     const handler = async (ev) => {
@@ -11893,6 +11904,26 @@ export async function getCreatorIdFromUsernameAndSet(username, start, end, signa
 // クリエイターIDで MapLibre レイヤーをフィルタ＆強調表示。
 // さらにビューポートBBOXで画像一覧を取得（自動ページング可）。
 // =============================
+/**
+ *
+ * @param map
+ * @param username
+ * @param start
+ * @param end
+ * @param is360
+ * @param layerId
+ * @param highlightColor
+ * @param defaultColor
+ * @param r360Color
+ * @param limit
+ * @param autoPage
+ * @param maxPages
+ * @param fields
+ * @param showResultSelector
+ * @param accessToken
+ * @param signal
+ * @returns {Promise<{success: boolean, length: number}|{success: boolean}>}
+ */
 export async function queryMapillaryByUserDatesViewport (map, {
     username,
     start, // 'YYYY-MM-DD' | undefined
@@ -11914,6 +11945,19 @@ export async function queryMapillaryByUserDatesViewport (map, {
     // 最初にリセット
     map.setFilter(layerId, null)
     map.setPaintProperty(layerId, 'circle-color', defaultColor)
+    store.state.targetSeq = ''
+    map.setFilter('oh-mapillary-images-highlight', ['==', ['get', 'sequence_id'], store.state.targetSeq]);
+    const src = map.getSource('mly-current-point');
+    if (src && src.setData) {
+        src.setData({
+            type: 'FeatureCollection',
+            features: [{
+                type: 'Feature',
+                geometry: { type: 'LineString', coordinates: [] },
+                properties: {}
+            }]
+        });
+    }
 
     // const ids = []
 
