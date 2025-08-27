@@ -11820,6 +11820,11 @@ export async function fetchMapillaryPanosInViewport(map, opts = {}) {
     return { data: collected, paging: lastPaging, url: baseUrl };
 }
 
+/**
+ *
+ * @param map
+ * @returns {Promise<void>}
+ */
 export async function setFllter360(map) {
     store.state.noProgress = false
     store.state.loadingMessage3 = '360画像問い合わせ中'
@@ -11853,20 +11858,34 @@ export async function setFllter360(map) {
     store.state.loading3 = false
 }
 
-// 1) username → creatorId
-export async function getCreatorIdFromUsernameAndSet(username, signal) {
+/**
+ *
+ * @param username
+ * @param start
+ * @param end
+ * @param signal
+ * @returns {Promise<*|string>}
+ */
+export async function getCreatorIdFromUsernameAndSet(username, start, end, signal) {
     const map01 = store.state.map01
     const u = new URL('https://graph.mapillary.com/images');
+    u.searchParams.set('access_token', MAPILLARY_CLIENT_ID);
     u.searchParams.set('creator_username', username);
     u.searchParams.set('fields', 'creator');
     u.searchParams.set('limit', '1');
-    u.searchParams.set('access_token', MAPILLARY_CLIENT_ID);
+    if (start) u.searchParams.set('start_captured_at', `${start}T00:00:00Z`);
+    if (end) u.searchParams.set('end_captured_at', `${end}T23:59:59Z`);
 
     const res = await fetch(u, { signal });
     if (!res.ok) throw new Error(`Mapillary /images ${res.status}: ${await res.text()}`);
     const json = await res.json();
     const creator = json?.data?.[0]?.creator;
     // if (!creator?.id) throw new Error(`username "${username}" の creator.id が見つかりません`);
+    if (!creator?.id) {
+        document.querySelector('.mapillary-qry-result').innerHTML = '該当ありません。'
+    } else {
+        document.querySelector('.mapillary-qry-result').innerHTML = 'ヒット！'
+    }
     const creatorId = creator?.id ?? ''
     if (creatorId) {
         map01.setFilter('oh-mapillary-images', ['==', ['get', 'creator_id'], Number(creatorId)]);
@@ -11878,7 +11897,128 @@ export async function getCreatorIdFromUsernameAndSet(username, signal) {
     return creatorId
 }
 
-// 2A) タイルが creator_id を持つならこれで一発
-function filterLayerByCreatorId(map, layerId, creatorId) {
-    map.setFilter(layerId, ['==', ['get', 'creator_id'], creatorId]);
+// =============================
+// 統合関数: ユーザー名/日付/360トグルで /images を検索し、
+// クリエイターIDで MapLibre レイヤーをフィルタ＆強調表示。
+// さらにビューポートBBOXで画像一覧を取得（自動ページング可）。
+// =============================
+export async function queryMapillaryByUserDatesViewport (map, {
+    username,
+    start, // 'YYYY-MM-DD' | undefined
+    end, // 'YYYY-MM-DD' | undefined
+    is360 = false, // true のときだけ is_pano を付与
+    layerId = 'oh-mapillary-images',
+    highlightColor = 'rgba(255, 0, 0, 0.6)',
+    defaultColor = '#35AF6D',
+    limit = 5000,
+    autoPage = false,
+    maxPages = 3,
+    fields = ['id','is_pano','camera_type','creator_id'],
+    showResultSelector = '.mapillary-qry-result',
+    accessToken = MAPILLARY_CLIENT_ID,
+    signal
+} = {}) {
+    const startISO = start ? `${start}T00:00:00Z` : undefined
+    const endISO = end ? `${end}T23:59:59Z` : undefined
+
+    // ---- 1) username → creator.id を取得してレイヤーフィルタ反映（username未指定ならフィルタ解除）
+    let creatorId = ''
+
+    if (username && username.trim()) {
+
+        const u = new URL('https://graph.mapillary.com/images')
+        u.searchParams.set('access_token', accessToken)
+        u.searchParams.set('creator_username', username.trim())
+        u.searchParams.set('fields', 'creator')
+        u.searchParams.set('limit', '1')
+        if (startISO) u.searchParams.set('start_captured_at', startISO)
+        if (endISO) u.searchParams.set('end_captured_at', endISO)
+
+        let res
+        try {
+            res = await fetch(u, { signal })
+        } catch (e) {
+            if (e.name === 'AbortError') return
+            throw e
+        }
+        if (res.ok) {
+            const json = await res.json()
+            const creator = json?.data?.[0]?.creator
+            creatorId = creator?.id ?? ''
+        }
+
+
+        const el = typeof document !== 'undefined' ? document.querySelector(showResultSelector) : null
+        if (el) el.innerHTML = creatorId ? 'ヒット！' : '該当ありません。'
+
+        try {
+            if (creatorId) {
+                const num = Number(creatorId)
+                map.setFilter(layerId, ['==', ['get', 'creator_id'], num])
+                map.setPaintProperty(layerId, 'circle-color', highlightColor)
+            } else {
+                map.setFilter(layerId, null)
+                map.setPaintProperty(layerId, 'circle-color', defaultColor)
+            }
+        } catch (_) { /* レイヤー未登録でも無視 */ }
+    } else {
+        // ユーザー名が無い場合はフィルタ解除
+        try {
+            map.setFilter(layerId, null)
+            map.setPaintProperty(layerId, 'circle-color', defaultColor)
+        } catch (_) {}
+    }
+
+
+    // ---- 2) /images 検索（BBOXは map から）
+    const bbox = (typeof getViewportBBox === 'function')
+        ? getViewportBBox(map, 6)
+        : (() => { const b = map.getBounds(); return `${b.getWest()},${b.getSouth()},${b.getEast()},${b.getNorth()}` })()
+
+    const params = new URLSearchParams()
+    params.set('access_token', accessToken)
+    params.set('bbox', bbox)
+    params.set('fields', Array.isArray(fields) ? fields.join(',') : String(fields || ''))
+    params.set('limit', String(limit))
+    if (username && username.trim()) params.set('creator_username', username.trim())
+    if (startISO) params.set('start_captured_at', startISO)
+    if (endISO) params.set('end_captured_at', endISO)
+    if (is360) params.set('is_pano', 'true') // ★ is360=false のときは付けない
+
+    const baseUrl = `https://graph.mapillary.com/images?${params.toString()}`
+
+    if (!autoPage) {
+        let res
+        try {
+            res = await fetch(baseUrl, { signal })
+        } catch (e) {
+            if (e.name === 'AbortError') return
+            throw e
+        }
+        if (!res.ok) {
+            // 400 等は素通り（呼び出し側で undefined チェック）
+            return
+        }
+        const json = await res.json()
+        return { ...json, url: baseUrl, creatorId }
+    }
+
+    // 自動ページング
+    let url = baseUrl
+    let collected = []
+    let lastPaging = null
+    for (let page = 0; url && page < maxPages; page++) {
+        const res = await fetch(url, { signal })
+        if (!res.ok) throw new Error(`Mapillary API ${res.status}: ${await res.text()}`)
+        const json = await res.json()
+        const data = Array.isArray(json?.data) ? json.data : []
+        collected = collected.concat(data)
+        lastPaging = json?.paging || null
+
+        if (collected.length >= limit) break
+        url = lastPaging?.next || null
+        if (!url) break
+    }
+    if (collected.length > limit) collected = collected.slice(0, limit)
+    return { data: collected, paging: lastPaging, url: baseUrl, creatorId }
 }

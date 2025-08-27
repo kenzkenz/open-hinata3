@@ -1286,9 +1286,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
             :keepAspectRatio = "false"
             @width-changed ="onWidthChangedForMapillary"
         >
-          <div class="mapillary-div" :style="{height:'calc(100% - 92px)',width:'100%',background:'color-mix(in srgb, var(--main-color) 60%, black)',color:'white'}">
+          <div class="mapillary-div" :style="{height:'calc(100% - 102px)',width:'100%',background:'color-mix(in srgb, var(--main-color) 60%, black)',color:'white'}">
           </div>
-          <div class="d-flex align-center" style="gap:12px;margin:10px; position: relative; z-index:2;">
+          <div class="toolbar-row">
             <v-switch
                 v-model="s_is360Pic"
                 label="360画像"
@@ -1306,12 +1306,40 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 hide-details
                 density="compact"
                 variant="outlined"
-                style="max-width: 220px;"
+                style="width:150px;"
                 @mousedown.stop
                 @pointerdown.stop
                 @touchstart.stop
                 @input="mapillaryUserNameInput"
             />
+            <v-text-field
+                v-model="s_mapillaryStartDate"
+                label="始"
+                type="date"
+                hide-details
+                density="compact"
+                variant="outlined"
+                style="width:150px;"
+                @mousedown.stop
+                @pointerdown.stop
+                @touchstart.stop
+                @input="mapillaryUserNameInput"
+            />
+            <v-text-field
+                v-model="s_mapillaryEndDate"
+                label="終"
+                type="date"
+                hide-details
+                density="compact"
+                variant="outlined"
+                style="width:150px;"
+                @mousedown.stop
+                @pointerdown.stop
+                @touchstart.stop
+                @input="mapillaryUserNameInput"
+            />
+            <div class="mapillary-qry-result">
+            </div>
           </div>
         </FloatingWindow>
 
@@ -1778,7 +1806,7 @@ import {
   pmtilesGenerateForUser2,
   pngDownload,
   pngLoad,
-  printDirectionChange, removeAllWhitespace,
+  printDirectionChange, queryMapillaryByUserDatesViewport, removeAllWhitespace,
   saveDrowFeatures,
   scaleAndRotateLassoSelected, setFllter360,
   simaLoadForUser,
@@ -2390,6 +2418,22 @@ export default {
       'isUsingServerGeojson',
       'drawFeature',
     ]),
+    s_mapillaryEndDate: {
+      get() {
+        return this.$store.state.mapillaryEndDate
+      },
+      set(value) {
+        this.$store.state.mapillaryEndDate = value
+      }
+    },
+    s_mapillaryStartDate: {
+      get() {
+        return this.$store.state.mapillaryStartDate
+      },
+      set(value) {
+        this.$store.state.mapillaryStartDate = value
+      }
+    },
     s_mapillaryUserName: {
       get() {
         return this.$store.state.mapillaryUserName
@@ -3122,10 +3166,24 @@ export default {
     },
   },
   methods: {
-    async mapillaryUserNameInput(value) {
+    async mapillaryUserNameInput() {
+      if (!this.s_mapillaryUserName) {
+        alert('ユーザー名を記入してください。')
+        return
+      }
+      const map01 = this.$store.state.map01
+      this.$store.state.filter360 = null
+      this.$store.state.targetSeq = null
+      map01.setFilter('oh-mapillary-images', this.$store.state.filter360)
+      map01.setPaintProperty('oh-mapillary-images', 'circle-color', '#35AF6D');
       console.log(this.s_mapillaryUserName)
-      const creator_id = await getCreatorIdFromUsernameAndSet(this.s_mapillaryUserName)
-      console.log(creator_id)
+      // const creator_id = await getCreatorIdFromUsernameAndSet(this.s_mapillaryUserName, this.s_mapillaryStartDate, this.s_mapillaryEndDate)
+      // console.log(creator_id)
+      await queryMapillaryByUserDatesViewport(map01, {
+        username: this.s_mapillaryUserName,
+        start: this.s_mapillaryStartDate,
+        end: this.s_mapillaryEndDate
+      })
     },
     exDrawOpen() {
       this.$store.dispatch('showFloatingWindow', 'exdraw');
@@ -9979,16 +10037,9 @@ export default {
       const map01 = this.$store.state.map01
       if (map01.getZoom() < 14) return
       if (value) {
-        // this.$store.state.filter360 = [
-        //   "all",
-        //   ["==", ["get", "is_pano"], true]
-        // ]
-        // map01.setFilter('oh-mapillary-images', this.$store.state.filter360)
         this.$store.state.targetSeq = ''
-        map01.setFilter('oh-mapillary-images-highlight',
-            ['==', ['get', 'sequence_id'], this.$store.state.targetSeq]
-        );
-        const src = map01.getSource('mly-current-point'); // 既定の trail ソースID
+        map01.setFilter('oh-mapillary-images-highlight', ['==', ['get', 'sequence_id'], this.$store.state.targetSeq]);
+        const src = map01.getSource('mly-current-point');
         if (src && src.setData) {
           src.setData({
             type: 'FeatureCollection',
@@ -10006,7 +10057,6 @@ export default {
         this.$store.state.targetSeq = null
         map01.setFilter('oh-mapillary-images', this.$store.state.filter360)
         map01.setPaintProperty('oh-mapillary-images', 'circle-color', '#35AF6D');
-
       }
     },
     // s_zahyokei(value) {
@@ -10419,6 +10469,22 @@ export default {
   bottom: 70px;
   z-index: 3;
   animation: pulse 3s ease-in-out infinite;
+}
+/* 横一列固定・折り返さず、はみ出したら横スクロール */
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  position: relative;
+  z-index: 2;
+  flex-wrap: nowrap; /* 折り返さない */
+  overflow: hidden;
+  -webkit-overflow-scrolling: touch; /* iOSで慣性スクロール */
+}
+/* 子要素が縮まないようにする（等幅で並べる） */
+.toolbar-row :is(.v-switch, .v-text-field) {
+  flex: 0 0 auto;
 }
 </style>
 
