@@ -1281,7 +1281,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             type="normal"
             :default-top = "70"
             :default-left = "10"
-            :default-width = "isSmall500 ? 200 : 300"
+            :default-width = "isSmall500 ? 200 : 348"
             :default-height = "isSmall500 ? 300 : 300"
             :keepAspectRatio = "false"
             @width-changed ="onWidthChangedForMapillary"
@@ -1289,17 +1289,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <div class="mapillary-div" :style="{height:'calc(100% - 102px)',width:'100%',background:'color-mix(in srgb, var(--main-color) 60%, black)',color:'white'}">
           </div>
           <div class="toolbar-row">
-            <v-switch
-                v-model="s_is360Pic"
-                label="360画像"
-                color="primary"
-                inset
-                hide-details
-                density="compact"
-                @mousedown.stop
-                @pointerdown.stop
-                @touchstart.stop
-            />
             <v-text-field
                 v-model="s_mapillaryUserName"
                 label="ユーザー名"
@@ -1319,7 +1308,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 hide-details
                 density="compact"
                 variant="outlined"
-                style="width:150px;"
                 @mousedown.stop
                 @pointerdown.stop
                 @touchstart.stop
@@ -1332,13 +1320,23 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 hide-details
                 density="compact"
                 variant="outlined"
-                style="width:150px;"
                 @mousedown.stop
                 @pointerdown.stop
                 @touchstart.stop
                 @input="mapillaryUserNameInput"
             />
-            <div class="mapillary-qry-result">
+            <v-switch
+                v-model="s_is360Pic"
+                label="360画像"
+                color="primary"
+                inset
+                hide-details
+                density="compact"
+                @mousedown.stop
+                @pointerdown.stop
+                @touchstart.stop
+            />
+            <div class="mapillary-qry-result d-flex align-center">
             </div>
           </div>
         </FloatingWindow>
@@ -3176,9 +3174,6 @@ export default {
       this.$store.state.targetSeq = null
       map01.setFilter('oh-mapillary-images', this.$store.state.filter360)
       map01.setPaintProperty('oh-mapillary-images', 'circle-color', '#35AF6D');
-      console.log(this.s_mapillaryUserName)
-      // const creator_id = await getCreatorIdFromUsernameAndSet(this.s_mapillaryUserName, this.s_mapillaryStartDate, this.s_mapillaryEndDate)
-      // console.log(creator_id)
       await queryMapillaryByUserDatesViewport(map01, {
         username: this.s_mapillaryUserName,
         start: this.s_mapillaryStartDate,
@@ -10035,8 +10030,8 @@ export default {
     async s_is360Pic(value) {
       const map01 = this.$store.state.map01
       if (map01.getZoom() < 14) return
-      if (value) {
-        this.$store.state.targetSeq = ''
+      if (value && map01.getLayer('oh-mapillary-images-highlight')) {
+        this.$store.state.targetSeq =
         map01.setFilter('oh-mapillary-images-highlight', ['==', ['get', 'sequence_id'], this.$store.state.targetSeq]);
         const src = map01.getSource('mly-current-point');
         if (src && src.setData) {
@@ -10050,12 +10045,13 @@ export default {
           });
         }
         //
-        setFllter360(map01)
+        await setFllter360(map01)
       } else {
         this.$store.state.filter360 = null
         this.$store.state.targetSeq = null
         map01.setFilter('oh-mapillary-images', this.$store.state.filter360)
         map01.setPaintProperty('oh-mapillary-images', 'circle-color', '#35AF6D');
+        await setFllter360(map01)
       }
     },
     // s_zahyokei(value) {
@@ -10484,6 +10480,11 @@ export default {
 /* 子要素が縮まないようにする（等幅で並べる） */
 .toolbar-row :is(.v-switch, .v-text-field) {
   flex: 0 0 auto;
+}
+.mapillary-qry-result {
+  width: 150px;
+  height: 40px;
+  overflow: hidden;
 }
 </style>
 

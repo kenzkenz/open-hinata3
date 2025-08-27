@@ -11762,7 +11762,7 @@ export function getViewportBBox(map, precision = 6) {
  * @param {string} [opts.accessToken] - Mapillary API access token; falls back to global MAPILLARY_CLIENT_ID
  * @returns {Promise<{ data: any[], paging?: any, url: string }>} JSON shape compatible with Graph API + original URL
  */
-export async function fetchMapillaryPanosInViewport(map, opts = {}) {
+async function fetchMapillaryPanosInViewport(map, opts = {}) {
     const {
         limit = 5000,
         fields = ['id', 'is_pano', 'camera_type'],
@@ -11829,38 +11829,23 @@ export async function setFllter360(map) {
     store.state.noProgress = false
     store.state.loadingMessage3 = '360画像問い合わせ中'
     store.state.loading3 = true
-    // const response = await fetchMapillaryPanosInViewport(map)
-    const response = await queryMapillaryByUserDatesViewport(map)
-    await queryMapillaryByUserDatesViewport(map, {
+    const response = await queryMapillaryByUserDatesViewport(map, {
         username: store.state.mapillaryUserName,
         start: store.state.mapillaryStartDate,
-        end: store.state.mapillaryEndDate
+        end: store.state.mapillaryEndDate,
     })
     console.log(response)
-
-    if (!response) {
-        store.state.loadingMessage3 = '取得できませんでした。。もっとズームインしてください。'
+    if (!response.success) {
+        store.state.loadingMessage3 = '取得できませんでした。もっとズームインしてください。'
         store.state.noProgress = true
         return
     }
-
-    const rows = Array(response)[0]?.data
-    if ((rows && rows.length === 5000) || !rows) {
+    const length = response.length
+    if (length === 5000) {
         store.state.loadingMessage3 = '5000件を超えたため抽出できません。もっとズームインしてください。'
         store.state.noProgress = true
         return
     }
-    const filteredRows = rows.filter(row => {
-        return row.camera_type === 'spherical'
-    })
-    const ids = filteredRows.map(row => Number(row.id))
-    map.setFilter('oh-mapillary-images', [
-        'in',
-        ['to-number', ['get', 'id']],
-        ['literal', ids],
-    ]);
-    map.setPaintProperty('oh-mapillary-images', 'circle-color', 'blue');
-
     store.state.loading3 = false
 }
 
@@ -11916,6 +11901,7 @@ export async function queryMapillaryByUserDatesViewport (map, {
     layerId = 'oh-mapillary-images',
     highlightColor = 'rgba(255, 0, 0, 0.6)',
     defaultColor = '#35AF6D',
+    r360Color = 'blue',
     limit = 5000,
     autoPage = false,
     maxPages = 3,
@@ -11924,10 +11910,74 @@ export async function queryMapillaryByUserDatesViewport (map, {
     accessToken = MAPILLARY_CLIENT_ID,
     signal
 } = {}) {
+
+    console.log(end)
+
+    // 最初にリセット
+    map.setFilter(layerId, null)
+    map.setPaintProperty(layerId, 'circle-color', defaultColor)
+
+    // ---- 360画像 検索（BBOXは map から）
+    let r360Json = []
     const startISO = start ? `${start}T00:00:00Z` : undefined
     const endISO = end ? `${end}T23:59:59Z` : undefined
+    if (store.state.is360Pic) {
+        const bbox = (typeof getViewportBBox === 'function')
+            ? getViewportBBox(map, 6)
+            : (() => { const b = map.getBounds(); return `${b.getWest()},${b.getSouth()},${b.getEast()},${b.getNorth()}` })()
 
-    // ---- 1) username → creator.id を取得してレイヤーフィルタ反映（username未指定ならフィルタ解除）
+        const params = new URLSearchParams()
+        params.set('access_token', accessToken)
+        params.set('bbox', bbox)
+        params.set('fields', Array.isArray(fields) ? fields.join(',') : String(fields || ''))
+        params.set('limit', String(limit))
+        if (username && username.trim()) params.set('creator_username', username.trim())
+        if (startISO) params.set('start_captured_at', startISO)
+        if (endISO) params.set('end_captured_at', endISO)
+        if (is360) params.set('is_pano', 'true') // ★ is360=false のときは付けない
+
+        const baseUrl = `https://graph.mapillary.com/images?${params.toString()}`
+
+        if (!autoPage) {
+            let res
+            try {
+                res = await fetch(baseUrl, { signal })
+            } catch (e) {
+                return {success: false}
+            }
+            if (!res.ok) {
+                // 400 等は素通り（呼び出し側で undefined チェック）
+                return {success: false}
+            }
+            r360Json = await res.json()
+            r360Json = r360Json.data
+
+        }
+        /**
+         * 自動ページングは使わない。コードも不完全
+
+        // 自動ページング
+        let url = baseUrl
+        // let collected = []
+        let lastPaging = null
+        for (let page = 0; url && page < maxPages; page++) {
+            const res = await fetch(url, { signal })
+            if (!res.ok) throw new Error(`Mapillary API ${res.status}: ${await res.text()}`)
+            const json = await res.json()
+            const data = Array.isArray(json?.data) ? json.data : []
+            collected = collected.concat(data)
+            lastPaging = json?.paging || null
+
+            if (collected.length >= limit) break
+            url = lastPaging?.next || null
+            if (!url) break
+        }
+        if (collected.length > limit) collected = collected.slice(0, limit)
+        // return { data: collected, paging: lastPaging, url: baseUrl, creatorId }
+
+         */
+    }
+
     let creatorId = ''
     if (username && username.trim()) {
         const u = new URL('https://graph.mapillary.com/images')
@@ -11951,20 +12001,6 @@ export async function queryMapillaryByUserDatesViewport (map, {
             creatorId = creator?.id ?? ''
         }
 
-
-        const el = typeof document !== 'undefined' ? document.querySelector(showResultSelector) : null
-        if (el) el.innerHTML = creatorId ? 'ヒット！' : '該当ありません。'
-
-        try {
-            if (creatorId) {
-                const num = Number(creatorId)
-                map.setFilter(layerId, ['==', ['get', 'creator_id'], num])
-                map.setPaintProperty(layerId, 'circle-color', highlightColor)
-            } else {
-                map.setFilter(layerId, null)
-                map.setPaintProperty(layerId, 'circle-color', defaultColor)
-            }
-        } catch (_) { /* レイヤー未登録でも無視 */ }
     } else {
         // ユーザー名が無い場合はフィルタ解除
         try {
@@ -11973,54 +12009,44 @@ export async function queryMapillaryByUserDatesViewport (map, {
         } catch (_) {}
     }
 
-    // ---- 2) /images 検索（BBOXは map から）
-    const bbox = (typeof getViewportBBox === 'function')
-        ? getViewportBBox(map, 6)
-        : (() => { const b = map.getBounds(); return `${b.getWest()},${b.getSouth()},${b.getEast()},${b.getNorth()}` })()
-
-    const params = new URLSearchParams()
-    params.set('access_token', accessToken)
-    params.set('bbox', bbox)
-    params.set('fields', Array.isArray(fields) ? fields.join(',') : String(fields || ''))
-    params.set('limit', String(limit))
-    if (username && username.trim()) params.set('creator_username', username.trim())
-    if (startISO) params.set('start_captured_at', startISO)
-    if (endISO) params.set('end_captured_at', endISO)
-    if (is360) params.set('is_pano', 'true') // ★ is360=false のときは付けない
-
-    const baseUrl = `https://graph.mapillary.com/images?${params.toString()}`
-
-    if (!autoPage) {
-        let res
-        try {
-            res = await fetch(baseUrl, { signal })
-        } catch (e) {
-            if (e.name === 'AbortError') return
-            throw e
-        }
-        if (!res.ok) {
-            // 400 等は素通り（呼び出し側で undefined チェック）
-            return
-        }
-        const json = await res.json()
-        return { ...json, url: baseUrl, creatorId }
+    if (creatorId && r360Json.length === 0 && !store.state.is360Pic) {
+        // alert(0)
+        document.querySelector(showResultSelector).innerHTML = 'ヒット'
+        map.setFilter(layerId, ['==', ['get', 'creator_id'], Number(creatorId)])
+        map.setPaintProperty(layerId, 'circle-color', highlightColor)
+    } else if (creatorId && r360Json.length > 0) {
+        // alert(1)
+        document.querySelector(showResultSelector).innerHTML = 'ヒット'
+        const filteredRows = r360Json.filter(row => {
+            return row.camera_type === 'spherical'
+        })
+        const ids = filteredRows.map(row => Number(row.id))
+        map.setFilter(layerId, [
+            "all",
+            ["==", ["get", "creator_id"], Number(creatorId)],
+            ["in", ["to-number", ["get", "id"]], ["literal", ids]]
+        ]);
+        map.setPaintProperty(layerId, 'circle-color', r360Color);
+    } else if (!creatorId && r360Json.length > 0) {
+        // alert(2)
+        document.querySelector(showResultSelector).innerHTML = 'ヒット'
+        const filteredRows = r360Json.filter(row => {
+            return row.camera_type === 'spherical'
+        })
+        const ids = filteredRows.map(row => Number(row.id))
+        map.setFilter(layerId, [
+            "all",
+            ["in", ["to-number", ["get", "id"]], ["literal", ids]]
+        ]);
+        map.setPaintProperty(layerId, 'circle-color', r360Color);
+    } else {
+        // alert(3)
+        document.querySelector(showResultSelector).innerHTML = 'ノーヒット'
+        map.setFilter(layerId, null)
+        map.setPaintProperty(layerId, 'circle-color', defaultColor)
     }
-    // 自動ページング
-    let url = baseUrl
-    let collected = []
-    let lastPaging = null
-    for (let page = 0; url && page < maxPages; page++) {
-        const res = await fetch(url, { signal })
-        if (!res.ok) throw new Error(`Mapillary API ${res.status}: ${await res.text()}`)
-        const json = await res.json()
-        const data = Array.isArray(json?.data) ? json.data : []
-        collected = collected.concat(data)
-        lastPaging = json?.paging || null
-
-        if (collected.length >= limit) break
-        url = lastPaging?.next || null
-        if (!url) break
+    return {
+        success: true,
+        length: r360Json.length
     }
-    if (collected.length > limit) collected = collected.slice(0, limit)
-    return { data: collected, paging: lastPaging, url: baseUrl, creatorId }
 }
