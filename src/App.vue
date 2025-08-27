@@ -1288,12 +1288,31 @@ import SakuraEffect from './components/SakuraEffect.vue';
         >
           <div class="mapillary-div" :style="{height:'calc(100% - 92px)',width:'100%',background:'color-mix(in srgb, var(--main-color) 60%, black)',color:'white'}">
           </div>
-          <v-switch
-              v-model="s_is360Pic"
-              label="360画像"
-              color="primary"
-              inset
-          />
+          <div class="d-flex align-center" style="gap:12px;margin:10px; position: relative; z-index:2;">
+            <v-switch
+                v-model="s_is360Pic"
+                label="360画像"
+                color="primary"
+                inset
+                hide-details
+                density="compact"
+                @mousedown.stop
+                @pointerdown.stop
+                @touchstart.stop
+            />
+            <v-text-field
+                v-model="s_mapillaryUserName"
+                label="ユーザー名"
+                hide-details
+                density="compact"
+                variant="outlined"
+                style="max-width: 220px;"
+                @mousedown.stop
+                @pointerdown.stop
+                @touchstart.stop
+                @input="mapillaryUserNameInput"
+            />
+          </div>
         </FloatingWindow>
 
         <FloatingWindow
@@ -1730,7 +1749,7 @@ import {
   geoJSONToSIMA,
   geoTiffLoad,
   geoTiffLoad2,
-  getBBoxFromPolygon,
+  getBBoxFromPolygon, getCreatorIdFromUsernameAndSet,
   getCRS,
   getMaxZIndex,
   getNextZIndex,
@@ -2371,6 +2390,14 @@ export default {
       'isUsingServerGeojson',
       'drawFeature',
     ]),
+    s_mapillaryUserName: {
+      get() {
+        return this.$store.state.mapillaryUserName
+      },
+      set(value) {
+        this.$store.state.mapillaryUserName = value
+      }
+    },
     s_is360Pic: {
       get() {
         return this.$store.state.is360Pic
@@ -3095,6 +3122,11 @@ export default {
     },
   },
   methods: {
+    async mapillaryUserNameInput(value) {
+      console.log(this.s_mapillaryUserName)
+      const creator_id = await getCreatorIdFromUsernameAndSet(this.s_mapillaryUserName)
+      console.log(creator_id)
+    },
     exDrawOpen() {
       this.$store.dispatch('showFloatingWindow', 'exdraw');
     },

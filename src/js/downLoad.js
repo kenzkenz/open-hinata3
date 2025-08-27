@@ -11854,7 +11854,8 @@ export async function setFllter360(map) {
 }
 
 // 1) username → creatorId
-async function getCreatorIdFromUsername(username, signal) {
+export async function getCreatorIdFromUsernameAndSet(username, signal) {
+    const map01 = store.state.map01
     const u = new URL('https://graph.mapillary.com/images');
     u.searchParams.set('creator_username', username);
     u.searchParams.set('fields', 'creator');
@@ -11865,8 +11866,16 @@ async function getCreatorIdFromUsername(username, signal) {
     if (!res.ok) throw new Error(`Mapillary /images ${res.status}: ${await res.text()}`);
     const json = await res.json();
     const creator = json?.data?.[0]?.creator;
-    if (!creator?.id) throw new Error(`username "${username}" の creator.id が見つかりません`);
-    return creator.id;  // 例: "106409774929807"
+    // if (!creator?.id) throw new Error(`username "${username}" の creator.id が見つかりません`);
+    const creatorId = creator?.id ?? ''
+    if (creatorId) {
+        map01.setFilter('oh-mapillary-images', ['==', ['get', 'creator_id'], Number(creatorId)]);
+        map01.setPaintProperty('oh-mapillary-images', "circle-color", "rgba(255, 0, 0, 0.6)");
+    } else {
+        map01.setPaintProperty('oh-mapillary-images', 'circle-color', '#35AF6D');
+        map01.setFilter('oh-mapillary-images', null);
+    }
+    return creatorId
 }
 
 // 2A) タイルが creator_id を持つならこれで一発

@@ -6,13 +6,14 @@ import firebase from 'firebase/app';
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.391,
+    clientVersion: 1.392,
     noProgress: false,
     filter360: [
       "all",
       ["==", ["get", "is_pano"], true],
       // ["==", ["get", "compass_angle"], 0]
     ],
+    mapillaryUserName: '',
     mapillaryFeature: null,
     is360Pic: false,
     targetSeq: '',
