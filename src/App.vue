@@ -3167,10 +3167,10 @@ export default {
   },
   methods: {
     async mapillaryUserNameInput() {
-      if (!this.s_mapillaryUserName) {
-        alert('ユーザー名を記入してください。')
-        return
-      }
+      // if (!this.s_mapillaryUserName) {
+      //   alert('ユーザー名を記入してください。')
+      //   return
+      // }
       const map01 = this.$store.state.map01
       this.$store.state.filter360 = null
       this.$store.state.targetSeq = null

@@ -12005,7 +12005,6 @@ export async function queryMapillaryByUserDatesViewport (map, {
         const json = await res.json()
         return { ...json, url: baseUrl, creatorId }
     }
-
     // 自動ページング
     let url = baseUrl
     let collected = []
