@@ -11829,7 +11829,13 @@ export async function setFllter360(map) {
     store.state.noProgress = false
     store.state.loadingMessage3 = '360画像問い合わせ中'
     store.state.loading3 = true
-    const response = await fetchMapillaryPanosInViewport(map)
+    // const response = await fetchMapillaryPanosInViewport(map)
+    const response = await queryMapillaryByUserDatesViewport(map)
+    await queryMapillaryByUserDatesViewport(map, {
+        username: store.state.mapillaryUserName,
+        start: store.state.mapillaryStartDate,
+        end: store.state.mapillaryEndDate
+    })
     console.log(response)
 
     if (!response) {
@@ -11906,7 +11912,7 @@ export async function queryMapillaryByUserDatesViewport (map, {
     username,
     start, // 'YYYY-MM-DD' | undefined
     end, // 'YYYY-MM-DD' | undefined
-    is360 = false, // true のときだけ is_pano を付与
+    is360 = true, // true のときだけ is_pano を付与
     layerId = 'oh-mapillary-images',
     highlightColor = 'rgba(255, 0, 0, 0.6)',
     defaultColor = '#35AF6D',
@@ -11923,9 +11929,7 @@ export async function queryMapillaryByUserDatesViewport (map, {
 
     // ---- 1) username → creator.id を取得してレイヤーフィルタ反映（username未指定ならフィルタ解除）
     let creatorId = ''
-
     if (username && username.trim()) {
-
         const u = new URL('https://graph.mapillary.com/images')
         u.searchParams.set('access_token', accessToken)
         u.searchParams.set('creator_username', username.trim())
@@ -11968,7 +11972,6 @@ export async function queryMapillaryByUserDatesViewport (map, {
             map.setPaintProperty(layerId, 'circle-color', defaultColor)
         } catch (_) {}
     }
-
 
     // ---- 2) /images 検索（BBOXは map から）
     const bbox = (typeof getViewportBBox === 'function')

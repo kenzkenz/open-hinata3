@@ -8137,7 +8137,6 @@ export default {
         this.$nextTick(() => {
           mapillaryCreate(lng, lat)
         })
-
       });
       this.map01.on('dragend', () => {
         if (this.is360Pic) {
