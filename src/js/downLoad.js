@@ -12045,8 +12045,133 @@ export async function queryMapillaryByUserDatesViewport (map, {
         map.setFilter(layerId, null)
         map.setPaintProperty(layerId, 'circle-color', defaultColor)
     }
+
+
+
+
     return {
         success: true,
         length: r360Json.length
     }
 }
+
+// Mapillary の画像ID配列(ids)から座標(geometry)を取得して、
+// BBOX を計算し、最後にパン/ズーム（fitBounds/flyTo）する関数。
+// - まず Graph API の multi-id クエリ（/?ids=...）でまとめて取得を試み、
+//   ダメなら per-id でフェッチします（chunkSize ごと）。
+// - geometry は GeoJSON Point を想定。
+
+// ================== ヘルパ ==================
+function chunk(arr, size) {
+    const out = []
+    for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size))
+    return out
+}
+
+function computeBounds(coords) {
+    if (!coords || coords.length === 0) return null
+    let minX =  180, minY =  90, maxX = -180, maxY = -90
+    for (const [x,y] of coords) {
+        if (x < minX) minX = x; if (x > maxX) maxX = x
+        if (y < minY) minY = y; if (y > maxY) maxY = y
+    }
+    return [[minX, minY], [maxX, maxY]]
+}
+
+async function fetchJSON(url, { signal } = {}) {
+    const res = await fetch(url, { signal })
+    const text = await res.text()
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${text.slice(0,180)}`)
+    try { return JSON.parse(text) } catch (e) {
+        throw new Error(`JSON parse error: ${text.slice(0,180)}`)
+    }
+}
+
+// multi-id レスポンスの形に寛容に対応（object keyed / data配列の両対応）
+function extractGeometriesFromMulti(json) {
+    const out = []
+    if (!json) return out
+    if (Array.isArray(json.data)) {
+        for (const d of json.data) {
+            const g = d?.geometry
+            if (g?.type === 'Point' && Array.isArray(g.coordinates)) out.push({ id: d.id, coord: g.coordinates })
+        }
+        return out
+    }
+    if (typeof json === 'object') {
+        for (const k of Object.keys(json)) {
+            const d = json[k]
+            const g = d?.geometry
+            if (g?.type === 'Point' && Array.isArray(g.coordinates)) out.push({ id: d.id ?? k, coord: g.coordinates })
+        }
+    }
+    return out
+}
+
+// ================== 本体: 座標取得 ==================
+async function fetchImageCoordinatesByIds(ids, {
+    accessToken = typeof MAPILLARY_CLIENT_ID !== 'undefined' ? MAPILLARY_CLIENT_ID : 'MLY|YOUR_TOKEN',
+    chunkSize = 50,
+    signal
+} = {}) {
+    const uniqueIds = Array.from(new Set((ids || []).map(String))).filter(Boolean)
+    if (uniqueIds.length === 0) return []
+
+    const coords = []
+    for (const part of chunk(uniqueIds, chunkSize)) {
+        // 1) multi-id（/?ids=...）でまとめて取得トライ
+        const multiUrl = `https://graph.mapillary.com/?ids=${encodeURIComponent(part.join(','))}&fields=id,geometry&access_token=${encodeURIComponent(accessToken)}`
+        let ok = false
+        try {
+            const j = await fetchJSON(multiUrl, { signal })
+            const rows = extractGeometriesFromMulti(j)
+            if (rows.length) {
+                coords.push(...rows.map(r => r.coord))
+                ok = true
+            }
+        } catch (_) {
+            // 失敗時は per-id にフォールバック
+        }
+
+        if (!ok) {
+            // 2) per-id フォールバック
+            const perId = await Promise.all(part.map(async id => {
+                const url = `https://graph.mapillary.com/${encodeURIComponent(id)}?fields=id,geometry&access_token=${encodeURIComponent(accessToken)}`
+                try {
+                    const j = await fetchJSON(url, { signal })
+                    const g = j?.geometry
+                    if (g?.type === 'Point' && Array.isArray(g.coordinates)) return g.coordinates
+                } catch (_) { /* スキップ */ }
+                return null
+            }))
+            for (const c of perId) if (Array.isArray(c)) coords.push(c)
+        }
+    }
+    return coords
+}
+
+// ================== 公開関数: パン/ズーム ==================
+export async function panToIdsBBox(map, ids, {
+    accessToken = typeof MAPILLARY_CLIENT_ID !== 'undefined' ? MAPILLARY_CLIENT_ID : 'MLY|YOUR_TOKEN',
+    padding = 60,
+    maxZoom = 17,
+    chunkSize = 50,
+    signal
+} = {}) {
+    const coords = await fetchImageCoordinatesByIds(ids, { accessToken, chunkSize, signal })
+    if (!coords.length) return false
+
+    const bbox = computeBounds(coords)
+    if (!bbox) return false
+
+    if (coords.length === 1) {
+        map.flyTo({ center: coords[0], zoom: Math.min(maxZoom, Math.max(map.getZoom(), 16)) })
+    } else {
+        map.fitBounds(bbox, { padding, maxZoom })
+    }
+    return true
+}
+
+// ================== 使い方 ==================
+// const ok = await panToIdsBBox(map01, ids, { padding: 80 })
+// if (!ok) console.warn('座標が取得できませんでした')
