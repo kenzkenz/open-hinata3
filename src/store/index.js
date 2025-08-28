@@ -13,10 +13,12 @@ export default createStore({
       ["==", ["get", "is_pano"], true],
       // ["==", ["get", "compass_angle"], 0]
     ],
+    mapillaryIsNotArrow: false,
     mapillaryStartDate: '',
     mapillaryEndDate: '',
     mapillaryUserName: '',
     mapillaryFeature: null,
+    mapillaryImageId: null,
     is360Pic: false,
     targetSeq: '',
     mapillaryZindex: 0,

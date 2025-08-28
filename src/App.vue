@@ -1795,7 +1795,7 @@ import {
   jpgLoad,
   kmlDownload,
   kmzLoadForUser,
-  LngLatToAddress, mapFeatureToImageIds,
+  LngLatToAddress, mapFeatureToImageId,
   mapillaryCreate, mapillaryFilterRiset,
   mapillaryViewer, mapillaryWindowOpen,
   markaersRemove,
@@ -8121,12 +8121,10 @@ export default {
       // };
 
       this.$store.state.map01.on('click', 'oh-mapillary-images-2', async (e) => {
-        await mapFeatureToImageIds(e)
-        // await mapillaryWindowOpen(e)
+        await mapillaryWindowOpen(e, 2)
       })
       this.$store.state.map01.on('click', 'oh-mapillary-images-2-label', async (e) => {
-        await mapFeatureToImageIds(e)
-        // await mapillaryWindowOpen(e)
+        await mapillaryWindowOpen(e, 2)
       })
 
       this.$store.state.map01.on('click', 'oh-mapillary-images', (e) => {

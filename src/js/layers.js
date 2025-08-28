@@ -10422,10 +10422,10 @@ let layers01 = [
     },
     {
         id: 'oh-mapillary-2',
-        label: "<span style='color: red'>NEW</span>⭐️mapillary2",
+        label: "<span style='color: red'>NEW</span>⭐️mapillaryPoint",
         sources: [mapillarySource2],
         layers: [mapillaryImages2, mapillaryLabels2],
-        attribution: 'メニューからmapillaryをオンにしてください。<br>© Mapillary',
+        attribution: '© Mapillary',
     },
     {
         id: 'oh-homusyo-2025-layer',
