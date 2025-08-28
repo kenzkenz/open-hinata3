@@ -11176,6 +11176,26 @@ function getSizeViaImage(url) {
 }
 
 /**
+ *
+ * @param mapFeatureId
+ * @param token
+ * @returns {Promise<(string|*)[]>}
+ */
+export async function mapFeatureToImageIds(e) {
+    const mapFeatureId = e.features[0].properties.id
+
+
+    const url = `https://graph.mapillary.com/${mapFeatureId}?fields=id,object_value,images`;
+    const res = await fetch(url, { headers: { Authorization: `OAuth ${MAPILLARY_CLIENT_ID}` } });
+    const j = await res.json();
+    // 念のため配列/コネクション両対応
+    const features = Array.isArray(j.images) ? j.images : (j.images?.data || []);
+    console.log(features)
+    // return items.map(v => (typeof v === 'string' ? v : v.id)).filter(Boolean);
+    store.state.mapillaryFeature = features[0]
+    // alert(store.state.mapillaryFeature.id)
+}
+/**
  * マピラリ
  * attachViewerSync / detachViewerSync を使って Viewer の画像切替に同期
  * @type {null}
@@ -11200,6 +11220,7 @@ export async function mapillaryCreate(lng, lat) {
     container.innerHTML = ''
 
     const mapillaryFeatureId = store.state.mapillaryFeature?.properties.id
+    alert(mapillaryFeatureId)
     let data
     if (!mapillaryFeatureId) {
         // 10m 四方で最寄りの画像を1枚取得
@@ -12122,20 +12143,24 @@ export function mapillaryFilterRiset() {
     const map01 = store.state.map01
     const layerId = 'oh-mapillary-images'
     const defaultColor = '#35AF6D'
-    if (!map01?.getLayer(layerId)) return
-    map01.setFilter(layerId, null)
-    map01.setPaintProperty(layerId, 'circle-color', defaultColor)
-    store.state.targetSeq = ''
-    map01.setFilter('oh-mapillary-images-highlight', ['==', ['get', 'sequence_id'], store.state.targetSeq]);
-    const src = map01.getSource('mly-current-point');
-    if (src && src.setData) {
-        src.setData({
-            type: 'FeatureCollection',
-            features: [{
-                type: 'Feature',
-                geometry: { type: 'LineString', coordinates: [] },
-                properties: {}
-            }]
-        });
+    // if (!map01?.getLayer(layerId)) return
+    try {
+        map01.setFilter(layerId, null)
+        map01.setPaintProperty(layerId, 'circle-color', defaultColor)
+        store.state.targetSeq = ''
+        map01.setFilter('oh-mapillary-images-highlight', ['==', ['get', 'sequence_id'], store.state.targetSeq]);
+        const src = map01.getSource('mly-current-point');
+        if (src && src.setData) {
+            src.setData({
+                type: 'FeatureCollection',
+                features: [{
+                    type: 'Feature',
+                    geometry: { type: 'LineString', coordinates: [] },
+                    properties: {}
+                }]
+            });
+        }
+    }catch (e) {
+        console.log(e)
     }
 }
