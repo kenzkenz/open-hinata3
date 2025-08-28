@@ -369,7 +369,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 <script>
 
 import LayerManager from '@/components/LayerManager.vue';
-import {iko, jgd2000ZoneToWgs84, simaFileUpload} from "@/js/downLoad";
+import {iko, jgd2000ZoneToWgs84, mapillaryFilterRiset, simaFileUpload} from "@/js/downLoad";
 import { db, auth } from '@/firebase'
 import {user} from "@/authState";
 import axios from "axios"
@@ -1652,6 +1652,7 @@ export default {
   },
   watch: {
     s_mapillary(value) {
+      mapillaryFilterRiset()
       if (value) {
         store.dispatch('showFloatingWindow', 'mapillary');
       } else {

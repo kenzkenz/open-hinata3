@@ -5,6 +5,7 @@ import maplibregl from 'maplibre-gl'
 import proj4 from 'proj4'
 import axios from "axios";
 import { toRaw } from 'vue'
+import { nextTick } from 'vue';
 import {
     geotiffSource,
     geotiffLayer,
@@ -12095,5 +12096,46 @@ export async function queryMapillaryByUserDatesViewport (map, {
     return {
         success: true,
         length: r360Json.length
+    }
+}
+
+/**
+ * マピラリウインドーオープン
+ * @param e
+ */
+export async function mapillaryWindowOpen(e) {
+    store.dispatch('showFloatingWindow', 'mapillary')
+    const f = e.features && e.features[0]
+    if (f) {
+        console.log('mapillary_properties', f.properties)
+        store.state.mapillaryFeature = f
+    }
+    const lng = e.lngLat.lng;  // 経度
+    const lat = e.lngLat.lat;  // 緯度
+    await nextTick(async () => {
+        await mapillaryCreate(lng, lat)
+    })
+}
+
+export function mapillaryFilterRiset() {
+    // 最初にリセット
+    const map01 = store.state.map01
+    const layerId = 'oh-mapillary-images'
+    const defaultColor = '#35AF6D'
+    if (!map01?.getLayer(layerId)) return
+    map01.setFilter(layerId, null)
+    map01.setPaintProperty(layerId, 'circle-color', defaultColor)
+    store.state.targetSeq = ''
+    map01.setFilter('oh-mapillary-images-highlight', ['==', ['get', 'sequence_id'], store.state.targetSeq]);
+    const src = map01.getSource('mly-current-point');
+    if (src && src.setData) {
+        src.setData({
+            type: 'FeatureCollection',
+            features: [{
+                type: 'Feature',
+                geometry: { type: 'LineString', coordinates: [] },
+                properties: {}
+            }]
+        });
     }
 }

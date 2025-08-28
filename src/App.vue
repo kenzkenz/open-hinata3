@@ -1795,8 +1795,8 @@ import {
   kmlDownload,
   kmzLoadForUser,
   LngLatToAddress,
-  mapillaryCreate,
-  mapillaryViewer,
+  mapillaryCreate, mapillaryFilterRiset,
+  mapillaryViewer, mapillaryWindowOpen,
   markaersRemove,
   markerAddAndRemove,
   parseCSV,
@@ -8116,22 +8116,31 @@ export default {
       //   }
       // };
 
+      this.$store.state.map01.on('click', 'oh-mapillary-images-2', (e) => {
+        mapillaryWindowOpen(e)
+      })
+      this.$store.state.map01.on('click', 'oh-mapillary-images-2-label', (e) => {
+        mapillaryWindowOpen(e)
+      })
+
       this.$store.state.map01.on('click', 'oh-mapillary-images', (e) => {
         /**
          * こっちがマピラリ本命
          */
-        store.dispatch('showFloatingWindow', 'mapillary')
+        mapillaryWindowOpen(e)
 
-        const f = e.features && e.features[0]
-        if(f) {
-          console.log('mapillary_properties',f.properties)
-          store.state.mapillaryFeature = f
-        }
-        const lng = e.lngLat.lng;  // 経度
-        const lat = e.lngLat.lat;  // 緯度
-        this.$nextTick(() => {
-          mapillaryCreate(lng, lat)
-        })
+        // store.dispatch('showFloatingWindow', 'mapillary')
+        //
+        // const f = e.features && e.features[0]
+        // if(f) {
+        //   console.log('mapillary_properties',f.properties)
+        //   store.state.mapillaryFeature = f
+        // }
+        // const lng = e.lngLat.lng;  // 経度
+        // const lat = e.lngLat.lat;  // 緯度
+        // this.$nextTick(() => {
+        //   mapillaryCreate(lng, lat)
+        // })
       });
       this.map01.on('dragend', () => {
         if (this.is360Pic) {
