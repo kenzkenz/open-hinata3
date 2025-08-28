@@ -1285,6 +1285,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             :keepAspectRatio = "false"
             :showMaxRestore="true"
             @width-changed ="onWidthChangedForMapillary"
+            @close = "mapillaryClose"
         >
           <div class="mapillary-div" :style="{height:'calc(100% - 102px)',width:'100%',background:'color-mix(in srgb, var(--main-color) 60%, black)',color:'white'}">
           </div>
@@ -3164,6 +3165,9 @@ export default {
     },
   },
   methods: {
+    mapillaryClose() {
+      mapillaryFilterRiset()
+    },
     async mapillaryUserNameInput() {
       // if (!this.s_mapillaryUserName) {
       //   alert('ユーザー名を記入してください。')
