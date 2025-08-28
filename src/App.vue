@@ -1745,8 +1745,8 @@ import DrawListDrawer from '@/components/drawer/DrawLisiDrawer'
 import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
 import {
-  addDraw,
-  bakeRotationToBlob, bindMoveendFor360,
+  addDraw, addSvgAsImage,
+  bakeRotationToBlob, bindMoveendFor360, buildCandidates,
   capture,
   changePrintMap03,
   compressImageToUnder10MB,
@@ -1795,7 +1795,7 @@ import {
   jpgLoad,
   kmlDownload,
   kmzLoadForUser,
-  LngLatToAddress, mapFeatureToImageId,
+  LngLatToAddress, loadBitmap, loadImageRobust, mapFeatureToImageId,
   mapillaryCreate, mapillaryFilterRiset,
   mapillaryViewer, mapillaryWindowOpen, mapillaryWindowOpenDebounced,
   markaersRemove,
@@ -8070,82 +8070,31 @@ export default {
         return { cancel: () => {}, priority: 0 };
       });
 
-
-      // function updateScale() {
-      //   const scaleStr = getScaleRatio(map);
-      //   try {
-      //     document.querySelector('.scale-ratio').innerHTML = '縮尺： ' + scaleStr;
-      //   }catch (e) {
-      //     console.log(e)
-      //   }
-      //
-      // }
-      // map.on('zoom', updateScale);
-      // map.on('move', updateScale);
-      // map.once('load', updateScale);
-
-
       enableDragHandles(map)
 
-      // // rgb式を正規化するヘルパー関数（例）
-      // function normalizeRgbExpression(value) {
-      //   // インターポレーション式の例: ['interpolate', ['linear'], ['get', 'value'], 0, 'rgb(255,0,0)', 100, 'rgb(0,0,255)']
-      //   // if (Array.isArray(value) && value[0] === 'interpolate') {
-      //     // rgb文字列を配列に変換（例：'rgb(255,0,0)' -> [255, 0, 0]）
-      //     for (let i = 4; i < value.length; i += 2) {
-      //       if (typeof value[i] === 'string' && value[i].startsWith('rgb(')) {
-      //         const rgb = value[i].match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-      //         if (rgb) {
-      //           value[i] = [parseInt(rgb[1]), parseInt(rgb[2]), parseInt(rgb[3])];
-      //         }
-      //       }
-      //     }
-      //   // }
-      //   return value;
-      // }
-      // // 元のsetPaintPropertyを保存
-      // const originalSetPaintProperty = maplibregl.Map.prototype.setPaintProperty;
-      //
-      // // setPaintPropertyをオーバーライド
-      // maplibregl.Map.prototype.setPaintProperty = function (layerId, name, value, options) {
-      //   try {
-      //     if (layerId.includes('oh-vector-') && !layerId.includes('osm') ) return
-      //     return originalSetPaintProperty.call(this, layerId, name, value, options);
-      //   } catch (e) {
-      //     // エラーがrgb関連の場合に無視
-      //     if (e.message.includes("'get' on proxy: property 'rgb'")) {
-      //       console.warn('rgbプロパティエラーを無視:', e.message);
-      //       return; // エラーを無視して処理を続行
-      //     }
-      //     throw e; // 他のエラーは再スロー
-      //   }
-      // };
-
+      this.map01.on('styleimagemissing', async (e) => {
+        if (e.id.includes('--')) {
+          // console.log(e.id)
+          // store.state.loadingMessage3 = 'アイコン取得中'
+          // store.state.loading3 = true
+          await addSvgAsImage(this.map01, e.id, `/icon/mapillary/package_signs/${e.id}.svg`)
+          // store.state.loading3 = false
+        }
+      })
+      this.$store.state.map01.on('click', 'oh-mapillary-images-3-icon', async (e) => {
+        await mapillaryWindowOpenDebounced(e, 2)
+      })
       this.$store.state.map01.on('click', 'oh-mapillary-images-2', async (e) => {
         await mapillaryWindowOpenDebounced(e, 2)
       })
       this.$store.state.map01.on('click', 'oh-mapillary-images-2-label', async (e) => {
         await mapillaryWindowOpenDebounced(e, 2)
       })
-
       this.$store.state.map01.on('click', 'oh-mapillary-images', (e) => {
         /**
          * こっちがマピラリ本命
          */
         mapillaryWindowOpenDebounced(e)
-
-        // store.dispatch('showFloatingWindow', 'mapillary')
-        //
-        // const f = e.features && e.features[0]
-        // if(f) {
-        //   console.log('mapillary_properties',f.properties)
-        //   store.state.mapillaryFeature = f
-        // }
-        // const lng = e.lngLat.lng;  // 経度
-        // const lat = e.lngLat.lat;  // 緯度
-        // this.$nextTick(() => {
-        //   mapillaryCreate(lng, lat)
-        // })
       });
       this.map01.on('dragend', () => {
         if (this.is360Pic) {

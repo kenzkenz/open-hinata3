@@ -128,7 +128,7 @@ const mapillaryImages3 = {
     'source-layer': 'traffic_sign',
     minzoom: 14,
     paint: {
-        'circle-color': 'red',  // dummy
+        'circle-color': 'rgba(0,0,0,0)',  // dummy
     }
 }
 // --- ラベルレイヤー定義（レイヤーオブジェクトだけ用意） ---
@@ -156,7 +156,18 @@ const mapillaryLabels3 = {
         'text-color': '#111111'
     }
 };
-
+const mapillaryIcon3 = {
+    id: 'oh-mapillary-images-3-icon',
+    type: 'symbol',
+    source: 'mapillary-source-3',
+    'source-layer': 'traffic_sign', // ←差し替え（プロパティにクラス名があるレイヤ）
+    // filter: ['has', 'class'],     // プロパティ名は実データに合わせる
+    layout: {
+        'icon-image': ['get', 'value'],
+        'icon-size': ['interpolate', ['linear'], ['zoom'], 10, 0.6, 16, 1.1],
+        'icon-allow-overlap': true
+    }
+}
 
 
 export const DETECTION_COLORS = [
@@ -10578,23 +10589,23 @@ const t23kuLayer = {
 let layers01 = [
     {
         id: 'oh-mapillary',
-        label: "<span style='color: red'>NEW</span>⭐️mapillary",
+        label: "<span style='color: red'>NEW</span>⭐️mapillary① 基本",
         sources: [mapillarySource],
         layers: [mapillarySequences, mapillaryImages],
         attribution: 'メニューからmapillaryをオンにしてください。<br>© Mapillary',
     },
     {
         id: 'oh-mapillary-2',
-        label: "<span style='color: red'>NEW</span>⭐️mapillaryPoint",
+        label: "<span style='color: red'>NEW</span>⭐️mapillary② オブジェクト",
         sources: [mapillarySource2],
         layers: [mapillaryImages2, mapillaryLabels2],
         attribution: '© Mapillary',
     },
     {
         id: 'oh-mapillary-3',
-        label: "<span style='color: red'>NEW</span>⭐️mapillary交通標識",
+        label: "<span style='color: red'>NEW</span>⭐️mapillary③ 交通標識",
         sources: [mapillarySource3],
-        layers: [mapillaryImages3, mapillaryLabels3],
+        layers: [mapillaryImages3, mapillaryLabels3, mapillaryIcon3 ],
         attribution: '© Mapillary',
     },
     {

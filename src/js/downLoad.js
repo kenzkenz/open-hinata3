@@ -12153,3 +12153,75 @@ export function mapillaryFilterRiset() {
         console.log(e)
     }
 }
+
+// ==== Mapillaryアイコン動的ローダ（MapLibre GL JS）====
+
+/**
+ * SVG をフェッチ→キャンバスに描画→ImageData で addImage する
+ * @param {maplibregl.Map} map
+ * @param {string} name  addImage 名（レイヤの icon-image で使う値）
+ * @param {string} url   SVG の URL（同一オリジンを推奨）
+ * @param {object} opt   {scale?: number, targetPx?: number, sdf?: boolean}
+ */
+export async function addSvgAsImage(map, name, url, opt = {}) {
+    const { scale = 1, targetPx, sdf = false } = opt;
+
+    // 1) SVG テキスト取得（デコード失敗の根本原因を避ける）
+    // console.log(url)
+    let responce = null
+    try {
+        responce = await fetch(url, { cache: 'no-store' });
+        // if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+        if (!responce.ok) {
+            return
+        }
+    }catch (e) {
+        return
+    }
+
+    const svg = await responce.text();
+
+    // 2) 幅高さを SVG から推定（width/height or viewBox）
+    let w = 64, h = 64;
+    const mWH = svg.match(/width="([\d.]+)(px)?".*height="([\d.]+)(px)?"/s);
+    const mVB = svg.match(/viewBox="([\d.\s-]+)"/);
+    if (mWH) {
+        w = parseFloat(mWH[1]); h = parseFloat(mWH[3]);
+    } else if (mVB) {
+        const [ , vb ] = mVB;
+        const parts = vb.trim().split(/\s+/);
+        if (parts.length === 4) { w = parseFloat(parts[2]); h = parseFloat(parts[3]); }
+    }
+    if (targetPx) {
+        // 最大辺を targetPx にスケール
+        const s = targetPx / Math.max(w, h);
+        w = Math.max(1, Math.round(w * s));
+        h = Math.max(1, Math.round(h * s));
+    } else {
+        w = Math.max(1, Math.round(w * scale));
+        h = Math.max(1, Math.round(h * scale));
+    }
+
+    // 3) Blob URL → <img> で描画
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const blobUrl = URL.createObjectURL(blob);
+    try {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        const loaded = new Promise((ok, ng) => { img.onload = ok; img.onerror = ng; });
+        img.src = blobUrl;
+        await loaded;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const imageData = ctx.getImageData(0, 0, w, h);
+        if (map.hasImage(name)) map.removeImage(name);
+        map.addImage(name, imageData, { sdf });
+    } finally {
+        URL.revokeObjectURL(blobUrl);
+    }
+}
