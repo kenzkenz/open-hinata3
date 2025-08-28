@@ -108,54 +108,90 @@ const mapillaryLabels2 = {
     }
 };
 
-const DETECTION_COLORS =
-[
-    // Construction / Markings
-    { value: 'construction--barrier--temporary',                en: 'Temporary Barrier',                              ja: '仮設バリケード',                 color: '#FF8A00' },
-    { value: 'construction--flat--crosswalk-plain',             en: 'Crosswalk - Plain',                              ja: '横断歩道（通常）',               color: '#FFF176' },
-    { value: 'construction--flat--driveway',                    en: 'Driveway',                                       ja: '車道出入口',                     color: '#FFD54F' },
-    { value: 'marking--discrete--arrow--left',                  en: 'Lane Marking - Arrow (Left)',                    ja: '進行矢印（左）',                 color: '#42A5F5' },
-    { value: 'marking--discrete--arrow--right',                 en: 'Lane Marking - Arrow (Right)',                   ja: '進行矢印（右）',                 color: '#1E88E5' },
-    { value: 'marking--discrete--arrow--split-left-or-straight',en: 'Lane Marking - Arrow (Split Left or Straight)',  ja: '進行矢印（左または直進）',       color: '#64B5F6' },
-    { value: 'marking--discrete--arrow--split-right-or-straight',en:'Lane Marking - Arrow (Split Right or Straight)',  ja: '進行矢印（右または直進）',       color: '#1976D2' },
-    { value: 'marking--discrete--arrow--straight',              en: 'Lane Marking - Arrow (Straight)',                ja: '進行矢印（直進）',               color: '#90CAF9' },
-    { value: 'marking--discrete--crosswalk-zebra',              en: 'Lane Marking - Crosswalk',                       ja: '横断歩道（ゼブラ）',             color: '#FFEE58' },
-    { value: 'marking--discrete--give-way-row',                 en: 'Lane Marking - Give Way (Row)',                  ja: 'ゆずれマーク（列）',             color: '#FBC02D' },
-    { value: 'marking--discrete--give-way-single',              en: 'Lane Marking - Give Way (Single)',               ja: 'ゆずれマーク（単独）',           color: '#F9A825' },
-    { value: 'marking--discrete--other-marking',                en: 'Lane Marking - Other',                           ja: 'その他の路面標示',               color: '#BDBDBD' },
-    { value: 'marking--discrete--stop-line',                    en: 'Lane Marking - Stop Line',                       ja: '停止線',                         color: '#FF7043' },
-    { value: 'marking--discrete--symbol--bicycle',              en: 'Lane Marking - Symbol (Bicycle)',                ja: '自転車シンボル',                 color: '#26A69A' },
-    { value: 'marking--discrete--text',                         en: 'Lane Marking - Text',                            ja: '文字標示',                       color: '#8D6E63' },
 
-    // Objects
-    { value: 'object--banner',                                   en: 'Banner',                                         ja: 'バナー',                         color: '#AB47BC' },
-    { value: 'object--bench',                                    en: 'Bench',                                          ja: 'ベンチ',                         color: '#00BCD4' },
-    { value: 'object--bike-rack',                                en: 'Bike Rack',                                      ja: '駐輪ラック',                     color: '#4DB6AC' },
-    { value: 'object--catch-basin',                              en: 'Catch Basin',                                    ja: '集水桝（雨水ます）',             color: '#6D4C41' },
-    { value: 'object--cctv-camera',                              en: 'CCTV Camera',                                    ja: '防犯カメラ',                     color: '#7E57C2' },
-    { value: 'object--fire-hydrant',                             en: 'Fire Hydrant',                                   ja: '消火栓',                         color: '#E53935' },
-    { value: 'object--junction-box',                             en: 'Junction Box',                                   ja: '制御盤（ボックス）',             color: '#795548' },
-    { value: 'object--mailbox',                                  en: 'Mailbox',                                        ja: '郵便ポスト',                     color: '#9C27B0' },
-    { value: 'object--manhole',                                  en: 'Manhole',                                        ja: 'マンホール',                     color: '#5D4037' },
-    { value: 'object--parking-meter',                            en: 'Parking Meter',                                  ja: 'パーキングメーター',             color: '#00838F' },
-    { value: 'object--phone-booth',                              en: 'Phone Booth',                                    ja: '公衆電話ボックス',               color: '#43A047' },
-    { value: 'object--sign--advertisement',                      en: 'Signage - Advertisement',                        ja: '看板（広告）',                   color: '#EC407A' },
-    { value: 'object--sign--information',                        en: 'Signage - Information',                          ja: '看板（案内）',                   color: '#26C6DA' },
-    { value: 'object--sign--store',                              en: 'Signage - Store',                                ja: '看板（店舗）',                   color: '#FF8A65' },
-    { value: 'object--street-light',                             en: 'Street Light',                                   ja: '街路灯',                         color: '#FFD400' },
-    { value: 'object--support--pole',                            en: 'Pole',                                           ja: '支柱（ポール）',                 color: '#9E9E9E' },
-    { value: 'object--support--traffic-sign-frame',              en: 'Traffic Sign Frame',                             ja: '標識支柱フレーム',               color: '#757575' },
-    { value: 'object--support--utility-pole',                    en: 'Utility Pole',                                   ja: '電柱',                           color: '#616161' },
-    { value: 'object--traffic-cone',                             en: 'Traffic Cone',                                   ja: 'カラーコーン',                   color: '#FF6D00' },
-    { value: 'object--traffic-light--cyclists',                  en: 'Traffic Light - Cyclists',                       ja: '信号機（自転車）',               color: '#2E7D32' },
-    { value: 'object--traffic-light--general-horizontal',        en: 'Traffic Light - General (Horizontal)',           ja: '信号機（水平）',                 color: '#EF5350' },
-    { value: 'object--traffic-light--general-single',            en: 'Traffic Light - General (Single)',               ja: '信号機（単灯）',                 color: '#D32F2F' },
-    { value: 'object--traffic-light--general-upright',           en: 'Traffic Light - General (Upright)',              ja: '信号機（縦）',                   color: '#C62828' },
-    { value: 'object--traffic-light--other',                     en: 'Traffic Light - Other',                          ja: '信号機（その他）',               color: '#B71C1C' },
-    { value: 'object--traffic-light--pedestrians',               en: 'Traffic Light - Pedestrians',                    ja: '信号機（歩行者）',               color: '#66BB6A' },
-    { value: 'object--trash-can',                                en: 'Trash Can',                                      ja: 'ごみ箱',                         color: '#4CAF50' },
-    { value: 'object--water-valve',                              en: 'Water Valve',                                    ja: '水道バルブ',                     color: '#29B6F6' },
+
+export const DETECTION_COLORS = [
+        { value: 'marking--discrete--give-way-single', en: 'Lane Marking - Give Way (Single)', ja: 'ゆずれマーク（単独）', color: '#F9A825' },
+    { value: 'marking--discrete--other-marking', en: 'Lane Marking - Other', ja: 'その他の路面標示', color: '#BDBDBD' },
+    { value: 'marking--discrete--stop-line', en: 'Lane Marking - Stop Line', ja: '停止線', color: '#FF7043' },
+    { value: 'marking--discrete--symbol--bicycle', en: 'Lane Marking - Symbol (Bicycle)', ja: '自転車シンボル', color: '#26A69A' },
+    { value: 'marking--discrete--text', en: 'Lane Marking - Text', ja: '文字標示', color: '#8D6E63' },
+
+
+// Objects
+    { value: 'object--banner', en: 'Banner', ja: 'バナー', color: '#AB47BC' },
+    { value: 'object--bench', en: 'Bench', ja: 'ベンチ', color: '#00BCD4' },
+    { value: 'object--bike-rack', en: 'Bike Rack', ja: '駐輪ラック', color: '#4DB6AC' },
+    { value: 'object--catch-basin', en: 'Catch Basin', ja: '集水桝（雨水ます）', color: '#6D4C41' },
+    { value: 'object--cctv-camera', en: 'CCTV Camera', ja: '防犯カメラ', color: '#7E57C2' },
+    { value: 'object--fire-hydrant', en: 'Fire Hydrant', ja: '消火栓', color: '#E53935' },
+    { value: 'object--junction-box', en: 'Junction Box', ja: '制御盤（ボックス）', color: '#795548' },
+    { value: 'object--mailbox', en: 'Mailbox', ja: '郵便ポスト', color: '#9C27B0' },
+    { value: 'object--manhole', en: 'Manhole', ja: 'マンホール', color: '#5D4037' },
+    { value: 'object--parking-meter', en: 'Parking Meter', ja: 'パーキングメーター', color: '#00838F' },
+    { value: 'object--phone-booth', en: 'Phone Booth', ja: '公衆電話ボックス', color: '#43A047' },
+    { value: 'object--sign--advertisement', en: 'Signage - Advertisement', ja: '看板（広告）', color: '#EC407A' },
+    { value: 'object--sign--information', en: 'Signage - Information', ja: '看板（案内）', color: '#26C6DA' },
+    { value: 'object--sign--store', en: 'Signage - Store', ja: '看板（店舗）', color: '#FF8A65' },
+    { value: 'object--street-light', en: 'Street Light', ja: '街路灯', color: '#FFD400' },
+    { value: 'object--support--pole', en: 'Pole', ja: '支柱（ポール）', color: '#9E9E9E' },
+    { value: 'object--support--traffic-sign-frame', en: 'Traffic Sign Frame', ja: '標識支柱フレーム', color: '#757575' },
+    { value: 'object--support--utility-pole', en: 'Utility Pole', ja: '電柱', color: '#616161' },
+    { value: 'object--traffic-cone', en: 'Traffic Cone', ja: 'カラーコーン', color: '#FF6D00' },
+    { value: 'object--traffic-light--general-front', en: 'Traffic Light - General (Front)', ja: '信号機（一般／正面）', color: '#D32F2F' },
+    { value: 'object--traffic-light--general-back', en: 'Traffic Light - General (Back)', ja: '信号機（一般／背面）', color: '#D32F2F' },
+    { value: 'object--traffic-light--general-side', en: 'Traffic Light - General (Side)', ja: '信号機（一般／側面）', color: '#D32F2F' },
+    { value: 'object--traffic-light--pedestrians-front', en: 'Traffic Light - Pedestrians (Front)', ja: '信号機（歩行者／正面）', color: '#66BB6A' },
+    { value: 'object--traffic-light--pedestrians-back', en: 'Traffic Light - Pedestrians (Back)', ja: '信号機（歩行者／背面）', color: '#66BB6A' },
+    { value: 'object--traffic-light--pedestrians-side', en: 'Traffic Light - Pedestrians (Side)', ja: '信号機（歩行者／側面）', color: '#66BB6A' },
+    { value: 'object--traffic-light--cyclists-front', en: 'Traffic Light - Cyclists (Front)', ja: '信号機（自転車／正面）', color: '#2E7D32' },
+    { value: 'object--traffic-light--cyclists-back', en: 'Traffic Light - Cyclists (Back)', ja: '信号機（自転車／背面）', color: '#2E7D32' },
+    { value: 'object--traffic-light--cyclists-side', en: 'Traffic Light - Cyclists (Side)', ja: '信号機（自転車／側面）', color: '#2E7D32' },
+
+
+    { value: 'object--traffic-light--general-horizontal-front', en: 'Traffic Light - General (Horizontal / Front)', ja: '信号機（一般／水平／正面）', color: '#D32F2F' },
+    { value: 'object--traffic-light--general-horizontal-back', en: 'Traffic Light - General (Horizontal / Back)', ja: '信号機（一般／水平／背面）', color: '#D32F2F' },
+    { value: 'object--traffic-light--general-horizontal-side', en: 'Traffic Light - General (Horizontal / Side)', ja: '信号機（一般／水平／側面）', color: '#D32F2F' },
+    { value: 'object--traffic-light--general-upright-front', en: 'Traffic Light - General (Upright / Front)', ja: '信号機（一般／縦／正面）', color: '#D32F2F' },
+    { value: 'object--traffic-light--general-upright-back', en: 'Traffic Light - General (Upright / Back)', ja: '信号機（一般／縦／背面）', color: '#D32F2F' },
+    { value: 'object--traffic-light--general-upright-side', en: 'Traffic Light - General (Upright / Side)', ja: '信号機（一般／縦／側面）', color: '#D32F2F' },
+    { value: 'object--traffic-light--general-single-front', en: 'Traffic Light - General (Single / Front)', ja: '信号機（一般／単灯／正面）', color: '#D32F2F' },
+    { value: 'object--traffic-light--general-single-back', en: 'Traffic Light - General (Single / Back)', ja: '信号機（一般／単灯／背面）', color: '#D32F2F' },
+    { value: 'object--traffic-light--general-single-side', en: 'Traffic Light - General (Single / Side)', ja: '信号機（一般／単灯／側面）', color: '#D32F2F' },
+
+
+    { value: 'object--traffic-light--pedestrians-horizontal-front', en: 'Traffic Light - Pedestrians (Horizontal / Front)', ja: '信号機（歩行者／水平／正面）', color: '#66BB6A' },
+    { value: 'object--traffic-light--pedestrians-horizontal-back', en: 'Traffic Light - Pedestrians (Horizontal / Back)', ja: '信号機（歩行者／水平／背面）', color: '#66BB6A' },
+    { value: 'object--traffic-light--pedestrians-horizontal-side', en: 'Traffic Light - Pedestrians (Horizontal / Side)', ja: '信号機（歩行者／水平／側面）', color: '#66BB6A' },
+    { value: 'object--traffic-light--pedestrians-upright-front', en: 'Traffic Light - Pedestrians (Upright / Front)', ja: '信号機（歩行者／縦／正面）', color: '#66BB6A' },
+    { value: 'object--traffic-light--pedestrians-upright-back', en: 'Traffic Light - Pedestrians (Upright / Back)', ja: '信号機（歩行者／縦／背面）', color: '#66BB6A' },
+    { value: 'object--traffic-light--pedestrians-upright-side', en: 'Traffic Light - Pedestrians (Upright / Side)', ja: '信号機（歩行者／縦／側面）', color: '#66BB6A' },
+    { value: 'object--traffic-light--pedestrians-single-front', en: 'Traffic Light - Pedestrians (Single / Front)', ja: '信号機（歩行者／単灯／正面）', color: '#66BB6A' },
+    { value: 'object--traffic-light--pedestrians-single-back', en: 'Traffic Light - Pedestrians (Single / Back)', ja: '信号機（歩行者／単灯／背面）', color: '#66BB6A' },
+    { value: 'object--traffic-light--pedestrians-single-side', en: 'Traffic Light - Pedestrians (Single / Side)', ja: '信号機（歩行者／単灯／側面）', color: '#66BB6A' },
+
+
+    { value: 'object--traffic-light--cyclists-horizontal-front', en: 'Traffic Light - Cyclists (Horizontal / Front)', ja: '信号機（自転車／水平／正面）', color: '#2E7D32' },
+    { value: 'object--traffic-light--cyclists-horizontal-back', en: 'Traffic Light - Cyclists (Horizontal / Back)', ja: '信号機（自転車／水平／背面）', color: '#2E7D32' },
+    { value: 'object--traffic-light--cyclists-horizontal-side', en: 'Traffic Light - Cyclists (Horizontal / Side)', ja: '信号機（自転車／水平／側面）', color: '#2E7D32' },
+    { value: 'object--traffic-light--cyclists-upright-front', en: 'Traffic Light - Cyclists (Upright / Front)', ja: '信号機（自転車／縦／正面）', color: '#2E7D32' },
+    { value: 'object--traffic-light--cyclists-upright-back', en: 'Traffic Light - Cyclists (Upright / Back)', ja: '信号機（自転車／縦／背面）', color: '#2E7D32' },
+    { value: 'object--traffic-light--cyclists-upright-side', en: 'Traffic Light - Cyclists (Upright / Side)', ja: '信号機（自転車／縦／側面）', color: '#2E7D32' },
+    { value: 'object--traffic-light--cyclists-single-front', en: 'Traffic Light - Cyclists (Single / Front)', ja: '信号機（自転車／単灯／正面）', color: '#2E7D32' },
+    { value: 'object--traffic-light--cyclists-single-back', en: 'Traffic Light - Cyclists (Single / Back)', ja: '信号機（自転車／単灯／背面）', color: '#2E7D32' },
+    { value: 'object--traffic-light--cyclists-single-side', en: 'Traffic Light - Cyclists (Single / Side)', ja: '信号機（自転車／単灯／側面）', color: '#2E7D32' },
+
+
+    { value: 'object--traffic-light--other', en: 'Traffic Light - Other', ja: '信号機（その他）', color: '#B71C1C' },
+    { value: 'object--trash-can', en: 'Trash Can', ja: 'ごみ箱', color: '#4CAF50' },
+    { value: 'object--water-valve', en: 'Water Valve', ja: '水道バルブ', color: '#29B6F6' },
+
+    { value: 'marking--discrete--crosswalk-zebra', en: 'Crosswalk Zebra', ja: '横断歩道', color: '#29B6F6' },
+    { value: 'marking--discrete--text--other', en: 'Discrete Text Other', ja: '路面標示（文字・その他）', color: '#29B6F6' },
+
 ];
+
+
 
 // value で match 式を作る
 function makeMatchByValue(defaultColor = '#9E9E9E') {
@@ -165,6 +201,83 @@ function makeMatchByValue(defaultColor = '#9E9E9E') {
     return expr;
 }
 // ラベル用（日本語/英語切替 + traffic-sign 強制表示）
+// // "value" プロパティに Mapillary の検出クラス（例: "object--traffic-light--general-horizontal-front"）が入っている前提
+// function makeLabelMatch(lang = 'ja') {
+//     const key = lang === 'en' ? 'en' : 'ja';
+//     const val = ['get', 'value'];
+//     const afterObject = ['slice', val, 8]; // "object--" を削除した残り
+//
+//     // 1) まずは定義テーブルからの通常ラベル化
+//     const base = ['match', val];
+//     DETECTION_COLORS.forEach(f => base.push(f.value, f[key] || f.en || f.value));
+//     // 既定: "object--" を外した文字列をそのまま表示（なければ元の value）
+//     base.push(['coalesce', afterObject, val]);
+//
+//     // 2) 特例1: 交通標識（traffic-sign）を強制ラベル
+//     const signLabel = key === 'en' ? 'Traffic sign' : '交通標識';
+//
+//     // 3) 特例2: 交通信号（traffic-light）は成分を読み取って「信号機（一般／水平／正面）」のように表示
+//     const TL = key === 'en' ? 'Traffic light' : '信号機';
+//     const SEP = key === 'en' ? ' / ' : '／';
+//     const OPEN = key === 'en' ? ' (' : '（';
+//     const CLOSE = key === 'en' ? ')' : '）';
+//
+//     const typePart = [
+//         'case',
+//         ['>=', ['index-of', 'general', afterObject], 0], key === 'en' ? 'General' : '一般',
+//         ['>=', ['index-of', 'pedestrians', afterObject], 0], key === 'en' ? 'Pedestrians' : '歩行者用',
+//         ['>=', ['index-of', 'cyclists', afterObject], 0], key === 'en' ? 'Cyclists' : '自転車用',
+//         key === 'en' ? 'General' : '一般', // デフォルト
+//     ];
+//
+//     const orientPart = [
+//         'case',
+//         ['>=', ['index-of', 'horizontal', afterObject], 0], key === 'en' ? 'Horizontal' : '水平',
+//         ['>=', ['index-of', 'upright', afterObject], 0],   key === 'en' ? 'Upright'   : '縦',
+//         ['>=', ['index-of', 'single', afterObject], 0],    key === 'en' ? 'Single'    : '単灯',
+//         '' // 不明時は空
+//     ];
+//
+//     const viewPart = [
+//         'case',
+//         ['>=', ['index-of', 'front', afterObject], 0], key === 'en' ? 'Front' : '正面',
+//         ['>=', ['index-of', 'back',  afterObject], 0], key === 'en' ? 'Back'  : '背面',
+//         ['>=', ['index-of', 'side',  afterObject], 0], key === 'en' ? 'Side'  : '側面',
+//         '' // 不明時は空
+//     ];
+//
+//     const trafficLightLabel = [
+//         'concat', TL, OPEN, typePart, SEP, orientPart, SEP, viewPart, CLOSE
+//     ];
+//
+//     // 4) 評価順:
+//     //   a) "object--traffic-light..." なら trafficLightLabel を返す
+//     //   b) "object--traffic-sign..." なら 交通標識/Traffic sign を返す
+//     //   c) それ以外は base（DETECTION_COLORS ベース or フォールバック）
+//     return [
+//         'case',
+//         // "object--" を外した先頭14文字が "traffic-light" か？
+//         ['==', ['slice', afterObject, 0, 14], 'traffic-light'], trafficLightLabel,
+//         // 同様に "traffic-sign" か？
+//         ['==', ['slice', afterObject, 0, 13], 'traffic-sign'],   signLabel,
+//         base
+//     ];
+// }
+
+
+// --- Traffic light（信号機）系：具体 → 汎用の順 ---
+// { match: 'prefix', key: 'object--traffic-light--pedestrians-', ja: '歩行者用信号', en: 'Pedestrian signal', color: '#4CAF50' },
+// { match: 'prefix', key: 'object--traffic-light--cyclists-',   ja: '自転車用信号', en: 'Cyclist signal',    color: '#8BC34A' },
+//
+// { match: 'prefix', key: 'object--traffic-light--general-horizontal-', ja: '信号機（水平）', en: 'Traffic light (horizontal)', color: '#03A9F4' },
+// { match: 'prefix', key: 'object--traffic-light--general-vertical-',   ja: '信号機（垂直）', en: 'Traffic light (vertical)',   color: '#2196F3' },
+//
+// { match: 'prefix', key: 'object--traffic-light--general-', ja: '信号機（一般）', en: 'Traffic light (general)', color: '#00BCD4' },
+// { match: 'prefix', key: 'object--traffic-light--',         ja: '信号機',       en: 'Traffic light',           color: '#009688' },
+//
+// // --- Traffic sign（標識）系：なんでも拾う ---
+// { match: 'prefix', key: 'object--traffic-sign--', ja: '交通標識', en: 'Traffic sign', color: '#FF9800' },
+
 function makeLabelMatch(lang = 'ja') {
     const key = lang === 'en' ? 'en' : 'ja';
     // まず通常の value→ラベルの match 式を作る
@@ -179,6 +292,7 @@ function makeLabelMatch(lang = 'ja') {
         '交通標識',
         base
     ];
+    // return base
 }
 
 // 既存のレイヤー定義に色を追加（半透明の縁取りつき）

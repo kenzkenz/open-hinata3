@@ -11206,7 +11206,7 @@ export async function mapillaryCreate(lng, lat) {
 
     const map = store.state.map01
 
-    store.state.loadingMessage3 = 'mapillary問い合わせ中'
+    store.state.loadingMessage3 = `${store.state.mapillaryType} 問い合わせ中`
     store.state.loading3 = true
 
     mapillaryFilterRiset()
@@ -11255,11 +11255,17 @@ export async function mapillaryCreate(lng, lat) {
             }
         }
     })
-    // store.state.loading3 = false
-    mapillaryViewer.on('image', (ev) => {
-        currentImageId = ev?.image?.id || ev?.id || null;
-    });
 
+    /**
+     * ビューアが新しい画像に遷移したときに発火
+     * currentImageIdを更新
+     * スナックバーを閉じる
+     */
+    mapillaryViewer.on('image', (e) => {
+        store.state.loading3 = false
+        console.log('画像切替:', e.image.id);
+        currentImageId = e.image.id || null;
+    });
     // ---- ここから追加：地図同期 ----
     if (!store.state.mapillaryIsNotArrow) {
         try {
@@ -11316,8 +11322,6 @@ export async function mapillaryCreate(lng, lat) {
             store.state.mapillaryZindex = getNextZIndex()
 
         }
-    } else {
-        store.state.loading3 = false
     }
 }
 
@@ -11330,7 +11334,6 @@ export async function mapillaryCreate(lng, lat) {
  */
 export async function ensureMlyMarkerLayers(map, ids = {}) {
     const seqId = await fetchSequenceId(currentImageId, MAPILLARY_CLIENT_ID);
-    if (seqId) store.state.loading3 = false
     store.state.targetSeq = seqId
     // 画像点のハイライトを追加
     if (!store.state.is360Pic) {
@@ -11446,13 +11449,6 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
         }
         // ここで角度を反映（レイヤが既にあっても確実に効く）
         if (!isNaN(bearing)) {
-            /**
-             * 暫定的にここに設置。もっといい場所があったらそこに移動
-             */
-            // console.log(bearing)
-            // setTimeout(() => {
-            //     store.state.loading3 = false
-            // },2000)
             map.setLayoutProperty(pointLayer, 'icon-rotate', bearing);
         }
     } else {
@@ -11476,12 +11472,6 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
     }
     store.state.mapillaryZindex = getNextZIndex()
     store.state.updatePermalinkFire = !store.state.updatePermalinkFire
-    // if (firstFlg) {
-    //     setTimeout(() => {
-    //         store.state.loading3 = false
-    //         firstFlg = false
-    //     },2000)
-    // }
 }
 
 function bearingDeg([lon1, lat1], [lon2, lat2]) {
@@ -11574,7 +11564,7 @@ export async function attachViewerSync({ map, viewer, token, options = {} }) {
         await ensureMlyMarkerLayers(map, options.ids);
         firstFlg = false
     }
-    
+
     const handler = async (ev) => {
         // MapillaryJS v4 では ev.image?.id が多い。独自実装なら ev が文字列(ID)の想定も許容
         const imageId = ev?.image?.id || ev?.node?.id || ev?.id || (typeof ev === 'string' ? ev : null);
@@ -12106,14 +12096,17 @@ export async function mapillaryWindowOpen(e, type) {
         await mapFeatureToImageId(e)
         console.log(store.state.mapillaryImageId)
         store.state.mapillaryIsNotArrow = true
+        store.state.mapillaryType = 'mapillary point'
     } else {
         const f = e.features && e.features[0]
         if (f) {
             console.log('mapillary_properties', f.properties)
             store.state.mapillaryImageId = f.properties.id
             store.state.mapillaryIsNotArrow = false
+            store.state.mapillaryType = 'mapillary'
         } else {
             store.state.mapillaryIsNotArrow = false
+            store.state.mapillaryType = 'トラブルです。'
             return
         }
     }

@@ -13,6 +13,7 @@ export default createStore({
       ["==", ["get", "is_pano"], true],
       // ["==", ["get", "compass_angle"], 0]
     ],
+    mapillaryType: 'mapillary',
     mapillaryIsNotArrow: false,
     mapillaryStartDate: '',
     mapillaryEndDate: '',

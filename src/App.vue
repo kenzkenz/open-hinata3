@@ -1276,7 +1276,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
         <FloatingWindow
             windowId = "mapillary"
-            title = "mapillary"
+            :title = "mapillaryType"
             type="normal"
             :default-top = "70"
             :default-left = "10"
@@ -2393,6 +2393,7 @@ export default {
   }),
   computed: {
     ...mapState([
+      'mapillaryType',
       'noProgress',
       'map01',
       'map02',
