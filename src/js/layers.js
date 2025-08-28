@@ -79,65 +79,106 @@ const mapillaryImages2 = {
     'source-layer': 'point',
     minzoom: 14,
     paint: {
-        'circle-radius': 4
+        'circle-color': 'red',  // dummy
     }
 }
+// --- ラベルレイヤー定義（レイヤーオブジェクトだけ用意） ---
+const mapillaryLabels2 = {
+    id: 'oh-mapillary-images-2-label',
+    type: 'symbol',
+    source: 'mapillary-source-2',
+    'source-layer': 'point',
+    minzoom: 16,
+    layout: {
+        'text-field': 'dummy',
+        'text-size': [
+            'interpolate', ['linear'], ['zoom'],
+            16, 14,
+            18, 18
+        ],
+        'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+        'text-radial-offset': 0.6,
+        'text-allow-overlap': false,
+        'text-optional': true
+    },
+    paint: {
+        'text-halo-color': '#ffffff',
+        'text-halo-width': 1.0,
+        'text-color': '#111111'
+    }
+};
 
-// クラス → 色
-const DETECTION_COLORS = {
+const DETECTION_COLORS =
+[
     // Construction / Markings
-    'construction--barrier--temporary':               '#FF8A00',
-    'construction--flat--crosswalk-plain':            '#FFF176',
-    'construction--flat--driveway':                   '#FFD54F',
-
-    'marking--discrete--arrow--left':                 '#42A5F5',
-    'marking--discrete--arrow--right':                '#1E88E5',
-    'marking--discrete--arrow--split-left-or-straight':'#64B5F6',
-    'marking--discrete--arrow--split-right-or-straight':'#1976D2',
-    'marking--discrete--arrow--straight':             '#90CAF9',
-    'marking--discrete--crosswalk-zebra':             '#FFEE58',
-    'marking--discrete--give-way-row':                '#FBC02D',
-    'marking--discrete--give-way-single':             '#F9A825',
-    'marking--discrete--other-marking':               '#BDBDBD',
-    'marking--discrete--stop-line':                   '#FF7043',
-    'marking--discrete--symbol--bicycle':             '#26A69A',
-    'marking--discrete--text':                        '#8D6E63',
+    { value: 'construction--barrier--temporary',                en: 'Temporary Barrier',                              ja: '仮設バリケード',                 color: '#FF8A00' },
+    { value: 'construction--flat--crosswalk-plain',             en: 'Crosswalk - Plain',                              ja: '横断歩道（通常）',               color: '#FFF176' },
+    { value: 'construction--flat--driveway',                    en: 'Driveway',                                       ja: '車道出入口',                     color: '#FFD54F' },
+    { value: 'marking--discrete--arrow--left',                  en: 'Lane Marking - Arrow (Left)',                    ja: '進行矢印（左）',                 color: '#42A5F5' },
+    { value: 'marking--discrete--arrow--right',                 en: 'Lane Marking - Arrow (Right)',                   ja: '進行矢印（右）',                 color: '#1E88E5' },
+    { value: 'marking--discrete--arrow--split-left-or-straight',en: 'Lane Marking - Arrow (Split Left or Straight)',  ja: '進行矢印（左または直進）',       color: '#64B5F6' },
+    { value: 'marking--discrete--arrow--split-right-or-straight',en:'Lane Marking - Arrow (Split Right or Straight)',  ja: '進行矢印（右または直進）',       color: '#1976D2' },
+    { value: 'marking--discrete--arrow--straight',              en: 'Lane Marking - Arrow (Straight)',                ja: '進行矢印（直進）',               color: '#90CAF9' },
+    { value: 'marking--discrete--crosswalk-zebra',              en: 'Lane Marking - Crosswalk',                       ja: '横断歩道（ゼブラ）',             color: '#FFEE58' },
+    { value: 'marking--discrete--give-way-row',                 en: 'Lane Marking - Give Way (Row)',                  ja: 'ゆずれマーク（列）',             color: '#FBC02D' },
+    { value: 'marking--discrete--give-way-single',              en: 'Lane Marking - Give Way (Single)',               ja: 'ゆずれマーク（単独）',           color: '#F9A825' },
+    { value: 'marking--discrete--other-marking',                en: 'Lane Marking - Other',                           ja: 'その他の路面標示',               color: '#BDBDBD' },
+    { value: 'marking--discrete--stop-line',                    en: 'Lane Marking - Stop Line',                       ja: '停止線',                         color: '#FF7043' },
+    { value: 'marking--discrete--symbol--bicycle',              en: 'Lane Marking - Symbol (Bicycle)',                ja: '自転車シンボル',                 color: '#26A69A' },
+    { value: 'marking--discrete--text',                         en: 'Lane Marking - Text',                            ja: '文字標示',                       color: '#8D6E63' },
 
     // Objects
-    'object--banner':                                  '#AB47BC',
-    'object--bench':                                   '#00BCD4',
-    'object--bike-rack':                               '#4DB6AC',
-    'object--catch-basin':                             '#6D4C41',
-    'object--cctv-camera':                             '#7E57C2',
-    'object--fire-hydrant':                            '#E53935',
-    'object--junction-box':                            '#795548',
-    'object--mailbox':                                 '#9C27B0',
-    'object--manhole':                                 '#5D4037',
-    'object--parking-meter':                           '#00838F',
-    'object--phone-booth':                             '#43A047',
-    'object--sign--advertisement':                     '#EC407A',
-    'object--sign--information':                       '#26C6DA',
-    'object--sign--store':                             '#FF8A65',
-    'object--street-light':                            '#FFD400',
-    'object--support--pole':                           '#9E9E9E',
-    'object--support--traffic-sign-frame':             '#757575',
-    'object--support--utility-pole':                   '#616161',
-    'object--traffic-cone':                            '#FF6D00',
-    'object--traffic-light--cyclists':                 '#2E7D32',
-    'object--traffic-light--general-horizontal':       '#EF5350',
-    'object--traffic-light--general-single':           '#D32F2F',
-    'object--traffic-light--general-upright':          '#C62828',
-    'object--traffic-light--other':                    '#B71C1C',
-    'object--traffic-light--pedestrians':              '#66BB6A',
-    'object--trash-can':                               '#4CAF50',
-    'object--water-valve':                             '#29B6F6',
-};
+    { value: 'object--banner',                                   en: 'Banner',                                         ja: 'バナー',                         color: '#AB47BC' },
+    { value: 'object--bench',                                    en: 'Bench',                                          ja: 'ベンチ',                         color: '#00BCD4' },
+    { value: 'object--bike-rack',                                en: 'Bike Rack',                                      ja: '駐輪ラック',                     color: '#4DB6AC' },
+    { value: 'object--catch-basin',                              en: 'Catch Basin',                                    ja: '集水桝（雨水ます）',             color: '#6D4C41' },
+    { value: 'object--cctv-camera',                              en: 'CCTV Camera',                                    ja: '防犯カメラ',                     color: '#7E57C2' },
+    { value: 'object--fire-hydrant',                             en: 'Fire Hydrant',                                   ja: '消火栓',                         color: '#E53935' },
+    { value: 'object--junction-box',                             en: 'Junction Box',                                   ja: '制御盤（ボックス）',             color: '#795548' },
+    { value: 'object--mailbox',                                  en: 'Mailbox',                                        ja: '郵便ポスト',                     color: '#9C27B0' },
+    { value: 'object--manhole',                                  en: 'Manhole',                                        ja: 'マンホール',                     color: '#5D4037' },
+    { value: 'object--parking-meter',                            en: 'Parking Meter',                                  ja: 'パーキングメーター',             color: '#00838F' },
+    { value: 'object--phone-booth',                              en: 'Phone Booth',                                    ja: '公衆電話ボックス',               color: '#43A047' },
+    { value: 'object--sign--advertisement',                      en: 'Signage - Advertisement',                        ja: '看板（広告）',                   color: '#EC407A' },
+    { value: 'object--sign--information',                        en: 'Signage - Information',                          ja: '看板（案内）',                   color: '#26C6DA' },
+    { value: 'object--sign--store',                              en: 'Signage - Store',                                ja: '看板（店舗）',                   color: '#FF8A65' },
+    { value: 'object--street-light',                             en: 'Street Light',                                   ja: '街路灯',                         color: '#FFD400' },
+    { value: 'object--support--pole',                            en: 'Pole',                                           ja: '支柱（ポール）',                 color: '#9E9E9E' },
+    { value: 'object--support--traffic-sign-frame',              en: 'Traffic Sign Frame',                             ja: '標識支柱フレーム',               color: '#757575' },
+    { value: 'object--support--utility-pole',                    en: 'Utility Pole',                                   ja: '電柱',                           color: '#616161' },
+    { value: 'object--traffic-cone',                             en: 'Traffic Cone',                                   ja: 'カラーコーン',                   color: '#FF6D00' },
+    { value: 'object--traffic-light--cyclists',                  en: 'Traffic Light - Cyclists',                       ja: '信号機（自転車）',               color: '#2E7D32' },
+    { value: 'object--traffic-light--general-horizontal',        en: 'Traffic Light - General (Horizontal)',           ja: '信号機（水平）',                 color: '#EF5350' },
+    { value: 'object--traffic-light--general-single',            en: 'Traffic Light - General (Single)',               ja: '信号機（単灯）',                 color: '#D32F2F' },
+    { value: 'object--traffic-light--general-upright',           en: 'Traffic Light - General (Upright)',              ja: '信号機（縦）',                   color: '#C62828' },
+    { value: 'object--traffic-light--other',                     en: 'Traffic Light - Other',                          ja: '信号機（その他）',               color: '#B71C1C' },
+    { value: 'object--traffic-light--pedestrians',               en: 'Traffic Light - Pedestrians',                    ja: '信号機（歩行者）',               color: '#66BB6A' },
+    { value: 'object--trash-can',                                en: 'Trash Can',                                      ja: 'ごみ箱',                         color: '#4CAF50' },
+    { value: 'object--water-valve',                              en: 'Water Valve',                                    ja: '水道バルブ',                     color: '#29B6F6' },
+];
+
 // value で match 式を作る
 function makeMatchByValue(defaultColor = '#9E9E9E') {
     const expr = ['match', ['get', 'value']];
-    Object.entries(DETECTION_COLORS).forEach(([klass, color]) => expr.push(klass, color));
+    DETECTION_COLORS.forEach(({ value, color }) => expr.push(value, color));
     expr.push(defaultColor);
     return expr;
+}
+// ラベル用（日本語/英語切替 + traffic-sign 強制表示）
+function makeLabelMatch(lang = 'ja') {
+    const key = lang === 'en' ? 'en' : 'ja';
+    // まず通常の value→ラベルの match 式を作る
+    const base = ['match', ['get', 'value']];
+    DETECTION_COLORS.forEach(f => base.push(f.value, f[key] || f.en || f.value));
+    // デフォルトは value から "object--" を外して表示
+    base.push(['coalesce', ['slice', ['get', 'value'], 8], ['get', 'value']]);
+    // "object--traffic-sign" を含むときは強制的に「交通標識」
+    return [
+        'case',
+        ['>=', ['index-of', 'object--traffic-sign', ['get', 'value']], 0],
+        '交通標識',
+        base
+    ];
 }
 
 // 既存のレイヤー定義に色を追加（半透明の縁取りつき）
@@ -145,14 +186,14 @@ mapillaryImages2.paint['circle-color'] = makeMatchByValue();
 mapillaryImages2.paint['circle-stroke-color'] = '#000000';
 mapillaryImages2.paint['circle-stroke-width'] = 0.5;
 mapillaryImages2.paint['circle-opacity'] = 0.9;
-
+mapillaryLabels2.layout['text-field'] = makeLabelMatch('ja');
 // ついでにズームで半径を変えるなら
 mapillaryImages2.paint['circle-radius'] = [
     'interpolate', ['linear'], ['zoom'],
     14, 3,
     18, 6
 ];
-
+// マピラリここまで-------------------------------------------------------------------------------------------------------
 
 const checkUser = setInterval(() => {
     if (user.value && user.value.uid) {
@@ -10383,7 +10424,7 @@ let layers01 = [
         id: 'oh-mapillary-2',
         label: "<span style='color: red'>NEW</span>⭐️mapillary2",
         sources: [mapillarySource2],
-        layers: [mapillaryImages2],
+        layers: [mapillaryImages2, mapillaryLabels2],
         attribution: 'メニューからmapillaryをオンにしてください。<br>© Mapillary',
     },
     {
