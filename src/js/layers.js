@@ -107,6 +107,55 @@ const mapillaryLabels2 = {
         'text-color': '#111111'
     }
 };
+/**
+ * マピラリレイヤー3
+ */
+const mapillarySource3 = {
+    id: 'mapillary-source-3', obj: {
+        type: 'vector',
+        tiles: [
+            `https://tiles.mapillary.com/maps/vtp/mly_map_feature_traffic_sign/2/{z}/{x}/{y}?access_token=${MAPILLARY_CLIENT_ID}`
+        ],
+        minzoom: 0,
+        maxzoom: 14
+    }
+}
+
+const mapillaryImages3 = {
+    id: 'oh-mapillary-images-3',
+    type: 'circle',
+    source: 'mapillary-source-3',
+    'source-layer': 'traffic_sign',
+    minzoom: 14,
+    paint: {
+        'circle-color': 'red',  // dummy
+    }
+}
+// --- ラベルレイヤー定義（レイヤーオブジェクトだけ用意） ---
+const mapillaryLabels3 = {
+    id: 'oh-mapillary-images-3-label',
+    type: 'symbol',
+    source: 'mapillary-source-3',
+    'source-layer': 'traffic_sign',
+    minzoom: 16,
+    layout: {
+        'text-field': ['get', 'value'],
+        'text-size': [
+            'interpolate', ['linear'], ['zoom'],
+            16, 14,
+            18, 18
+        ],
+        'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+        'text-radial-offset': 0.6,
+        'text-allow-overlap': false,
+        'text-optional': true
+    },
+    paint: {
+        'text-halo-color': '#ffffff',
+        'text-halo-width': 1.0,
+        'text-color': '#111111'
+    }
+};
 
 
 
@@ -10539,6 +10588,13 @@ let layers01 = [
         label: "<span style='color: red'>NEW</span>⭐️mapillaryPoint",
         sources: [mapillarySource2],
         layers: [mapillaryImages2, mapillaryLabels2],
+        attribution: '© Mapillary',
+    },
+    {
+        id: 'oh-mapillary-3',
+        label: "<span style='color: red'>NEW</span>⭐️mapillary交通標識",
+        sources: [mapillarySource3],
+        layers: [mapillaryImages3, mapillaryLabels3],
         attribution: '© Mapillary',
     },
     {
