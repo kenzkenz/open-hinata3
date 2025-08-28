@@ -88,17 +88,18 @@ const mapillaryLabels2 = {
     type: 'symbol',
     source: 'mapillary-source-2',
     'source-layer': 'point',
-    minzoom: 16,
+    minzoom: 18,
     layout: {
         'text-field': 'dummy',
         'text-size': [
             'interpolate', ['linear'], ['zoom'],
-            16, 14,
-            18, 18
+            18, 10,
+            20, 18
         ],
         'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
-        'text-radial-offset': 0.6,
-        'text-allow-overlap': false,
+        // 'text-radial-offset': 0.6,
+        'text-offset': [0,1],
+        'text-allow-overlap': true,
         'text-optional': true
     },
     paint: {
@@ -107,6 +108,36 @@ const mapillaryLabels2 = {
         'text-color': '#111111'
     }
 };
+const mapillaryIcon2 = {
+    id: 'oh-mapillary-images-2-icon',
+    type: 'symbol',
+    source: 'mapillary-source-2',
+    'source-layer': 'point',
+    // filter: ['has', 'class'],     // プロパティ名は実データに合わせる
+    layout: {
+        // 'icon-image': ['get', 'value'],
+        'icon-image': [
+            'let', 'v', ['coalesce', ['to-string', ['get', 'value']], ''],
+            ['case',
+                // v に "object--traffic-light--general-horizontal" が含まれるか？
+                ['>=', ['index-of', 'object--traffic-light--general-horizontal', ['var', 'v']], 0],
+                'object--traffic-light--general-horizontal',   // ← 使うアイコン名
+                ['>=', ['index-of', 'object--traffic-light--general-upright', ['var', 'v']], 0],
+                'object--traffic-light--general-upright',   // ← 使うアイコン名
+                ['>=', ['index-of', 'object--traffic-light--pedestrians', ['var', 'v']], 0],
+                'object--traffic-light--pedestrians',
+                ['var', 'v']                                   // それ以外は元の value をそのまま
+            ]
+        ],
+        'icon-size': ['interpolate',
+            ['linear'],
+            ['zoom'],
+            14, 0.6,
+            16, 1.1
+        ],
+        'icon-allow-overlap': true
+    }
+}
 /**
  * マピラリレイヤー3
  */
@@ -131,7 +162,7 @@ const mapillaryImages3 = {
         'circle-color': 'rgba(0,0,0,0)',  // dummy
     }
 }
-// --- ラベルレイヤー定義（レイヤーオブジェクトだけ用意） ---
+
 const mapillaryLabels3 = {
     id: 'oh-mapillary-images-3-label',
     type: 'symbol',
@@ -160,11 +191,16 @@ const mapillaryIcon3 = {
     id: 'oh-mapillary-images-3-icon',
     type: 'symbol',
     source: 'mapillary-source-3',
-    'source-layer': 'traffic_sign', // ←差し替え（プロパティにクラス名があるレイヤ）
+    'source-layer': 'traffic_sign',
     // filter: ['has', 'class'],     // プロパティ名は実データに合わせる
     layout: {
         'icon-image': ['get', 'value'],
-        'icon-size': ['interpolate', ['linear'], ['zoom'], 10, 0.6, 16, 1.1],
+        'icon-size': ['interpolate',
+            ['linear'],
+            ['zoom'],
+            14, 0.6,
+            16, 1.1
+        ],
         'icon-allow-overlap': true
     }
 }
@@ -251,8 +287,6 @@ export const DETECTION_COLORS = [
 
 ];
 
-
-
 // value で match 式を作る
 function makeMatchByValue(defaultColor = '#9E9E9E') {
     const expr = ['match', ['get', 'value']];
@@ -260,96 +294,21 @@ function makeMatchByValue(defaultColor = '#9E9E9E') {
     expr.push(defaultColor);
     return expr;
 }
-// ラベル用（日本語/英語切替 + traffic-sign 強制表示）
-// // "value" プロパティに Mapillary の検出クラス（例: "object--traffic-light--general-horizontal-front"）が入っている前提
-// function makeLabelMatch(lang = 'ja') {
-//     const key = lang === 'en' ? 'en' : 'ja';
-//     const val = ['get', 'value'];
-//     const afterObject = ['slice', val, 8]; // "object--" を削除した残り
-//
-//     // 1) まずは定義テーブルからの通常ラベル化
-//     const base = ['match', val];
-//     DETECTION_COLORS.forEach(f => base.push(f.value, f[key] || f.en || f.value));
-//     // 既定: "object--" を外した文字列をそのまま表示（なければ元の value）
-//     base.push(['coalesce', afterObject, val]);
-//
-//     // 2) 特例1: 交通標識（traffic-sign）を強制ラベル
-//     const signLabel = key === 'en' ? 'Traffic sign' : '交通標識';
-//
-//     // 3) 特例2: 交通信号（traffic-light）は成分を読み取って「信号機（一般／水平／正面）」のように表示
-//     const TL = key === 'en' ? 'Traffic light' : '信号機';
-//     const SEP = key === 'en' ? ' / ' : '／';
-//     const OPEN = key === 'en' ? ' (' : '（';
-//     const CLOSE = key === 'en' ? ')' : '）';
-//
-//     const typePart = [
-//         'case',
-//         ['>=', ['index-of', 'general', afterObject], 0], key === 'en' ? 'General' : '一般',
-//         ['>=', ['index-of', 'pedestrians', afterObject], 0], key === 'en' ? 'Pedestrians' : '歩行者用',
-//         ['>=', ['index-of', 'cyclists', afterObject], 0], key === 'en' ? 'Cyclists' : '自転車用',
-//         key === 'en' ? 'General' : '一般', // デフォルト
-//     ];
-//
-//     const orientPart = [
-//         'case',
-//         ['>=', ['index-of', 'horizontal', afterObject], 0], key === 'en' ? 'Horizontal' : '水平',
-//         ['>=', ['index-of', 'upright', afterObject], 0],   key === 'en' ? 'Upright'   : '縦',
-//         ['>=', ['index-of', 'single', afterObject], 0],    key === 'en' ? 'Single'    : '単灯',
-//         '' // 不明時は空
-//     ];
-//
-//     const viewPart = [
-//         'case',
-//         ['>=', ['index-of', 'front', afterObject], 0], key === 'en' ? 'Front' : '正面',
-//         ['>=', ['index-of', 'back',  afterObject], 0], key === 'en' ? 'Back'  : '背面',
-//         ['>=', ['index-of', 'side',  afterObject], 0], key === 'en' ? 'Side'  : '側面',
-//         '' // 不明時は空
-//     ];
-//
-//     const trafficLightLabel = [
-//         'concat', TL, OPEN, typePart, SEP, orientPart, SEP, viewPart, CLOSE
-//     ];
-//
-//     // 4) 評価順:
-//     //   a) "object--traffic-light..." なら trafficLightLabel を返す
-//     //   b) "object--traffic-sign..." なら 交通標識/Traffic sign を返す
-//     //   c) それ以外は base（DETECTION_COLORS ベース or フォールバック）
-//     return [
-//         'case',
-//         // "object--" を外した先頭14文字が "traffic-light" か？
-//         ['==', ['slice', afterObject, 0, 14], 'traffic-light'], trafficLightLabel,
-//         // 同様に "traffic-sign" か？
-//         ['==', ['slice', afterObject, 0, 13], 'traffic-sign'],   signLabel,
-//         base
-//     ];
-// }
-
-
-// --- Traffic light（信号機）系：具体 → 汎用の順 ---
-// { match: 'prefix', key: 'object--traffic-light--pedestrians-', ja: '歩行者用信号', en: 'Pedestrian signal', color: '#4CAF50' },
-// { match: 'prefix', key: 'object--traffic-light--cyclists-',   ja: '自転車用信号', en: 'Cyclist signal',    color: '#8BC34A' },
-//
-// { match: 'prefix', key: 'object--traffic-light--general-horizontal-', ja: '信号機（水平）', en: 'Traffic light (horizontal)', color: '#03A9F4' },
-// { match: 'prefix', key: 'object--traffic-light--general-vertical-',   ja: '信号機（垂直）', en: 'Traffic light (vertical)',   color: '#2196F3' },
-//
-// { match: 'prefix', key: 'object--traffic-light--general-', ja: '信号機（一般）', en: 'Traffic light (general)', color: '#00BCD4' },
-// { match: 'prefix', key: 'object--traffic-light--',         ja: '信号機',       en: 'Traffic light',           color: '#009688' },
-//
-// // --- Traffic sign（標識）系：なんでも拾う ---
-// { match: 'prefix', key: 'object--traffic-sign--', ja: '交通標識', en: 'Traffic sign', color: '#FF9800' },
-
 function makeLabelMatch(lang = 'ja') {
     const key = lang === 'en' ? 'en' : 'ja';
     // まず通常の value→ラベルの match 式を作る
     const base = ['match', ['get', 'value']];
-    DETECTION_COLORS.forEach(f => base.push(f.value, f[key] || f.en || f.value));
+    DETECTION_COLORS.forEach(f => {
+        base.push(f.value, f[key] || f.en || f.value)
+    });
     // デフォルトは value から "object--" を外して表示
     base.push(['coalesce', ['slice', ['get', 'value'], 8], ['get', 'value']]);
-    // "object--traffic-sign" を含むときは強制的に「交通標識」
+
+    // "object--traffic-sign" を含むときは強制的に「」
     return [
         'case',
         ['>=', ['index-of', 'object--traffic-sign', ['get', 'value']], 0],
-        '交通標識',
+        '',
         base
     ];
     // return base
@@ -10598,14 +10557,14 @@ let layers01 = [
         id: 'oh-mapillary-2',
         label: "<span style='color: red'>NEW</span>⭐️mapillary② オブジェクト",
         sources: [mapillarySource2],
-        layers: [mapillaryImages2, mapillaryLabels2],
+        layers: [mapillaryLabels2, mapillaryIcon2],
         attribution: '© Mapillary',
     },
     {
         id: 'oh-mapillary-3',
         label: "<span style='color: red'>NEW</span>⭐️mapillary③ 交通標識",
         sources: [mapillarySource3],
-        layers: [mapillaryImages3, mapillaryLabels3, mapillaryIcon3 ],
+        layers: [mapillaryImages3, mapillaryIcon3 ],
         attribution: '© Mapillary',
     },
     {

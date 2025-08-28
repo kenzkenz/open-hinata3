@@ -8090,6 +8090,9 @@ export default {
       this.$store.state.map01.on('click', 'oh-mapillary-images-2-label', async (e) => {
         await mapillaryWindowOpenDebounced(e, 2)
       })
+      this.$store.state.map01.on('click', 'oh-mapillary-images-2-icon', async (e) => {
+        await mapillaryWindowOpenDebounced(e, 2)
+      })
       this.$store.state.map01.on('click', 'oh-mapillary-images', (e) => {
         /**
          * こっちがマピラリ本命
