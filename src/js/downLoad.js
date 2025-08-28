@@ -11330,6 +11330,7 @@ export async function mapillaryCreate(lng, lat) {
  */
 export async function ensureMlyMarkerLayers(map, ids = {}) {
     const seqId = await fetchSequenceId(currentImageId, MAPILLARY_CLIENT_ID);
+    if (seqId) store.state.loading3 = false
     store.state.targetSeq = seqId
     // 画像点のハイライトを追加
     if (!store.state.is360Pic) {
@@ -11356,39 +11357,6 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
                 );
             }
         }
-    } else {
-        // if (!map.getLayer('oh-mapillary-images-highlight')) {
-        //     map.addLayer({
-        //         id: 'oh-mapillary-images-highlight',
-        //         type: 'circle',
-        //         source: 'mapillary-source',
-        //         'source-layer': 'image',
-        //         // filter: ['==', ['get', 'sequence_id'], targetSeq],
-        //         filter: store.state.filter360,
-        //         paint: {
-        //             'circle-opacity': 1,
-        //             // 'circle-stroke-color': '#fff',
-        //             // 'circle-stroke-width': 1.5,
-        //             'circle-color': 'blue',
-        //             'circle-radius': 8
-        //         },
-        //     });
-        //     map.setFilter('oh-mapillary-images', store.state.filter360)
-        // } else {
-        //     const id = store.state.mapillaryFeature.properties.id
-        //     if (id) {
-        //         map.setPaintProperty(
-        //             'oh-mapillary-images-highlight',
-        //             'circle-color',
-        //             [
-        //                 "case",
-        //                 ["==", ["get", "id"], id],
-        //                 "rgba(0, 0, 255, 1)",   // 条件に合致したとき → 青
-        //                 "rgba(0, 0, 0, 0)"      // それ以外 → 透明
-        //             ]
-        //         );
-        //     }
-        // }
     }
 
     const {
@@ -11481,10 +11449,10 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
             /**
              * 暫定的にここに設置。もっといい場所があったらそこに移動
              */
-            console.log(bearing)
-            setTimeout(() => {
-                store.state.loading3 = false
-            },2000)
+            // console.log(bearing)
+            // setTimeout(() => {
+            //     store.state.loading3 = false
+            // },2000)
             map.setLayoutProperty(pointLayer, 'icon-rotate', bearing);
         }
     } else {
@@ -11508,12 +11476,12 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
     }
     store.state.mapillaryZindex = getNextZIndex()
     store.state.updatePermalinkFire = !store.state.updatePermalinkFire
-    if (firstFlg) {
-        setTimeout(() => {
-            store.state.loading3 = false
-            firstFlg = false
-        },2000)
-    }
+    // if (firstFlg) {
+    //     setTimeout(() => {
+    //         store.state.loading3 = false
+    //         firstFlg = false
+    //     },2000)
+    // }
 }
 
 function bearingDeg([lon1, lat1], [lon2, lat2]) {
@@ -11598,23 +11566,20 @@ async function updateMlyMarkerByImageId(map, imageId, token, options = {}) {
     }
 }
 
-export function attachViewerSync({ map, viewer, token, options = {} }) {
+export async function attachViewerSync({ map, viewer, token, options = {} }) {
     if (!map || !viewer || !token) return;
-    /**
-     * 下１行をあえてコメントあうとした。影響あるかもしれない。
-     * また戻した。
-     */
-    if (firstFlg) {
-        ensureMlyMarkerLayers(map, options.ids);
-        // firstFlg = false
-    }
 
+    // 初回だけ発火
+    if (firstFlg) {
+        await ensureMlyMarkerLayers(map, options.ids);
+        firstFlg = false
+    }
+    
     const handler = async (ev) => {
         // MapillaryJS v4 では ev.image?.id が多い。独自実装なら ev が文字列(ID)の想定も許容
         const imageId = ev?.image?.id || ev?.node?.id || ev?.id || (typeof ev === 'string' ? ev : null);
         // if (!imageId) return;
         try {
-
             await updateMlyMarkerByImageId(map, imageId, token, options);
         } catch (e) { /* noop */ }
     };
@@ -11633,7 +11598,8 @@ export function attachViewerSync({ map, viewer, token, options = {} }) {
     map.__mlySync = { viewer, handler, eventNames, options, token };
 
     // フォールバック: 自分の再生処理から手動で呼びたい場合に備え、関数を返す
-    return { notifyImageChanged: (id) => handler(id) };
+    // これいらない。２回発火してしまう。
+    // return { notifyImageChanged: (id) => handler(id) };
 }
 
 export function detachViewerSync(map) {
