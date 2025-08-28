@@ -1797,7 +1797,7 @@ import {
   kmzLoadForUser,
   LngLatToAddress, mapFeatureToImageId,
   mapillaryCreate, mapillaryFilterRiset,
-  mapillaryViewer, mapillaryWindowOpen,
+  mapillaryViewer, mapillaryWindowOpen, mapillaryWindowOpenDebounced,
   markaersRemove,
   markerAddAndRemove,
   parseCSV,
@@ -8121,17 +8121,17 @@ export default {
       // };
 
       this.$store.state.map01.on('click', 'oh-mapillary-images-2', async (e) => {
-        await mapillaryWindowOpen(e, 2)
+        await mapillaryWindowOpenDebounced(e, 2)
       })
       this.$store.state.map01.on('click', 'oh-mapillary-images-2-label', async (e) => {
-        await mapillaryWindowOpen(e, 2)
+        await mapillaryWindowOpenDebounced(e, 2)
       })
 
       this.$store.state.map01.on('click', 'oh-mapillary-images', (e) => {
         /**
          * こっちがマピラリ本命
          */
-        mapillaryWindowOpen(e)
+        mapillaryWindowOpenDebounced(e)
 
         // store.dispatch('showFloatingWindow', 'mapillary')
         //

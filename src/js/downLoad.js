@@ -6,6 +6,7 @@ import proj4 from 'proj4'
 import axios from "axios";
 import { toRaw } from 'vue'
 import { nextTick } from 'vue';
+import debounce from 'lodash/debounce'
 import {
     geotiffSource,
     geotiffLayer,
@@ -12125,8 +12126,14 @@ export async function queryMapillaryByUserDatesViewport (map, {
 
 /**
  * マピラリウインドーオープン
+ * デバウンス化
  * @param e
  */
+// 最初の1回だけ通す（trailing を false に）
+export const mapillaryWindowOpenDebounced = debounce(mapillaryWindowOpen, 1000, {
+    leading: true,
+    trailing: false,
+});
 export async function mapillaryWindowOpen(e, type) {
     store.dispatch('showFloatingWindow', 'mapillary')
     if (type === 2) {
@@ -12139,6 +12146,9 @@ export async function mapillaryWindowOpen(e, type) {
             console.log('mapillary_properties', f.properties)
             store.state.mapillaryImageId = f.properties.id
             store.state.mapillaryIsNotArrow = false
+        } else {
+            store.state.mapillaryIsNotArrow = false
+            return
         }
     }
     const lng = e.lngLat.lng;  // 経度
@@ -12158,13 +12168,14 @@ export function mapillaryFilterRiset() {
     const map01 = store.state.map01
     const layerId = 'oh-mapillary-images'
     const defaultColor = '#35AF6D'
+    store.state.targetSeq = ''
+
     // if (!map01?.getLayer(layerId)) return
     try {
         if (map01.getLayer(layerId)) {
             map01.setFilter(layerId, null)
             map01.setPaintProperty(layerId, 'circle-color', defaultColor)
         }
-        store.state.targetSeq = ''
         if (map01.getLayer('oh-mapillary-images-highlight')) {
             map01.setFilter('oh-mapillary-images-highlight', ['==', ['get', 'sequence_id'], store.state.targetSeq]);
         }
