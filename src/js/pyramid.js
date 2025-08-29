@@ -2285,6 +2285,11 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
 
 // ラインのラベル用に距離を計算したgeojsonを作る、
 export function generateSegmentLabelGeoJSON(geojson) {
+    function kmOrm(value) {
+        return value >= 1
+            ? `約${value.toFixed(2)}km`
+            : `約${(value * 1000).toFixed(0)}m`;
+    }
     const map01 = store.state.map01;
     const features = [];
     if (!geojson) return
@@ -2302,20 +2307,14 @@ export function generateSegmentLabelGeoJSON(geojson) {
             const center = turf.midpoint(turf.point(from), turf.point(to));
             const dist = turf.length(segment, { units: 'kilometers' });
             totalDistance += dist
-            const distance = dist >= 1
-                ? `約${dist.toFixed(2)}km`
-                : `約${(dist * 1000).toFixed(0)}m`;
-
+            const distance = kmOrm(dist)
             const isLast = i === coords.length - 2; // 最後のセグメント
             console.log(totalDistance)
             if (isLast) {
-                totalDistance = totalDistance >= 1
-                    ? `約${totalDistance.toFixed(2)}km`
-                    : `約${(totalDistance * 1000).toFixed(0)}m`;
-                console.log(totalDistance)
+                totalDistance = kmOrm(totalDistance)
             }
             const distanceLabel = isLast && i > 0 ? `${distance}\n(計${totalDistance})` : distance;
-            
+
             const bearingAtMid = calculateBearing(null, from, to, 'end')
 
             let textBearing
