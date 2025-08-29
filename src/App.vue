@@ -2610,7 +2610,7 @@ export default {
         { key: 'free', text: '自由に描く', label: '自由', color: this.s_isDrawFree ? 'green' : 'blue', click: this.toggleLDrawFree},
         { key: 'lasso', text: '投げ縄', label: '投げ縄', color: this.s_isDrawLasso ? 'green' : 'blue', click: this.toggleDrawLasso,style: 'font-size:12px;' },
         { key: 'finish', text: '編集が終わったクリック！', label: '確定', click: this.finishDrawing, style: 'background-color: orange!important;' },
-        { key: 'edit', text: '変形と移動', label: '移動', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
+        { key: 'edit', text: '変形と移動', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
         // { key: 'rotate', text: '回転', label: '回転',  click: this.drawRotate },
         { key: 'undo', text: '元に戻す', icon: 'mdi-undo', label: '元戻', click: this.undo },
         { key: 'redo', text: 'やり直す', icon: 'mdi-redo', label: 'やり直', click: this.redo },

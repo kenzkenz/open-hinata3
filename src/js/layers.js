@@ -1219,23 +1219,6 @@ export const clickCircSymbolLayer = {
         ],
     }
 }
-// 矢印シンボルレイヤー----------------------------------------------------------
-export const arrowsLayer = {
-    'id': 'arrows-layer',
-    'type': 'symbol',
-    'source': 'click-circle-source',
-    'layout': {
-        'symbol-placement': 'line',
-        'symbol-spacing': 50000, // 矢印の間隔（ピクセル）
-        'icon-image': 'arrow_black',
-        'icon-size': 1,
-        'icon-rotate': 0, // ラインの方向に合わせて回転
-        'icon-rotation-alignment': 'map',
-        'icon-allow-overlap': true,
-        'icon-ignore-placement': true
-    },
-    'paint': {},
-}
 // ----------------------------------------------------------------------------
 // 矢印ソース
 export const endPointSouce = {
@@ -1279,6 +1262,7 @@ export const arrowsEndpointLayer ={
 }
 // 矢印レイヤー（ラベル）
 export const arrowsEndpointLabelLayer ={
+    // ⭐️線のラベルを線の傾きに合わせる
     id: 'arrows-endpoint-label-layer',
     type: 'symbol',
     source: 'end-point-source',
@@ -1378,6 +1362,7 @@ export const segmentLabelSource = {
     }
 }
 export const segmentLabeleLayer = {
+    // ⭐️線の距離ラベルはこれ
     id: 'segment-label-layer',
     type: 'symbol',
     source: 'segment-label-source',
@@ -1386,7 +1371,8 @@ export const segmentLabeleLayer = {
         'text-field': ['get', 'distance'],
         'text-size': 18,
         'text-offset': [0, 0.6],
-        'text-anchor': 'top'
+        'text-anchor': 'top',
+        'text-rotate': ['get', 'textBearing'],
     },
     paint: {
         'text-color': '#000000',

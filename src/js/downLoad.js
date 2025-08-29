@@ -12262,7 +12262,7 @@ export function forseMoveLayer(map) {
         'click-circle-polygon-symbol-layer',
         'click-circle-polygon-symbol-area-layer',
         'click-circle-symbol-layer',
-
+        'drag-handles-layer',
     ];
     layerIds.forEach(drawLayerId => {
         map.moveLayer(drawLayerId)

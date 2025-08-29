@@ -266,7 +266,7 @@ let isRePopup = true
 
 export function popup(e, map, mapName, mapFlg, isNoDrawer) {
     console.log(e,map,mapName,mapFlg)
-    // if (store.state.editEnabled) return; //ん？これは要らない？
+    if (store.state.editEnabled) return;
     let html = ref('')  // ← ここを ref 化
     watch(html, (newVal, oldVal) => {
         // console.log(`htmlが ${oldVal} → ${newVal} に変わりました`)
@@ -291,6 +291,7 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
         'click-circle-layer',
         'click-circle-polygon-symbol-layer',
         'click-circle-polygon-symbol-area-layer',
+        'segment-label-layer'
     ];
     /**
      * バグ回避
@@ -3588,6 +3589,7 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
             case 'click-circle-label-layer':
             case 'click-circle-polygon-symbol-area-layer':
             case 'click-circle-polygon-symbol-layer':
+            case 'segment-label-layer':
             {
                 console.log('⭐⭐️⭐⭐️到達！️')
                 // alert('到達')

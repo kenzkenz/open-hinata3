@@ -1511,6 +1511,7 @@ export default function pyramid () {
                     const id = String(e.target.getAttribute("id"))
                     const startId = id + '-start'
                     const endId = id + '-end'
+                    const midId = id + '-mid'
                     const source = map01.getSource(clickCircleSource.iD)
                     const allowSource = map01.getSource(endPointSouce.id)
                     const geojson = source._data
@@ -1537,9 +1538,17 @@ export default function pyramid () {
                         const newFeatures = allowGeojson.features.filter(feature => {
                             if (lasso) {
                                 // ここを絶対に修正する必要あり。今は真偽ともに同じ動作をしている。
-                                return !(feature.properties && String(feature.properties.id) === startId) && !(feature.properties && String(feature.properties.id) === endId);
+                                return !(
+                                    feature.properties &&
+                                    String(feature.properties.id) === startId) &&
+                                    !(feature.properties && String(feature.properties.id) === endId) &&
+                                    !(feature.properties && String(feature.properties.id) === midId)
                             } else {
-                                return !(feature.properties && String(feature.properties.id) === startId) && !(feature.properties && String(feature.properties.id) === endId);
+                                return !(
+                                    feature.properties &&
+                                    String(feature.properties.id) === startId) &&
+                                    !(feature.properties && String(feature.properties.id) === endId) &&
+                                    !(feature.properties && String(feature.properties.id) === midId)
                             }
                         });
                         if (newFeatures.length !== allowGeojson.features.length) {
@@ -2297,13 +2306,22 @@ export function generateSegmentLabelGeoJSON(geojson) {
                 ? `約${dist.toFixed(2)}km`
                 : `約${(dist * 1000).toFixed(0)}m`;
 
+            const bearingAtMid = calculateBearing(null, from, to, 'end')
+
+            let textBearing
+            if (bearingAtMid < 450) {
+                textBearing = bearingAtMid
+            } else {
+                textBearing = bearingAtMid + 900
+            }
             features.push({
                 type: 'Feature',
                 geometry: center.geometry,
                 properties: {
                     calc: feature.properties.calc || 0,
                     distance: distance,
-                    index: i + 1
+                    index: i + 1,
+                    textBearing: textBearing,
                 }
             });
         }
