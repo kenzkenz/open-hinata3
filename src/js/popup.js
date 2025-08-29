@@ -3757,7 +3757,7 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
                                         '</div>' +
                                         '<input id="' + props.id + '" style="width: 100%;margin-bottom: 5px;" type="text" class="oh-cool-input polygon-text" placeholder="ここに入力" value="' + props.label + '">' +
                                         '<button id="' + props.id + '" style="width: 45%;margin-bottom: 10px;height: 30px;font-size: medium;" class="circle-delete pyramid-btn">削　除</button>' +
-                                        '<button id="' + props.id + '" style="width: 50%;margin-bottom: 10px;height: 30px;font-size: medium;margin-left: 10px;" class="remove-others pyramid-btn">自分意外削除</button><br>' +
+                                        '<button id="' + props.id + '" style="width: 50%;margin-bottom: 10px;height: 30px;font-size: medium;margin-left: 10px;" class="remove-others pyramid-btn">自分以外削除</button><br>' +
                                         '<div style="display: flex;gap: 8px;">' +
                                         '<div class="circle-list">' +
                                         '<div id="' + props.id + '" data-color="red" class="polygon-color circle red" tabindex="0"></div>' +
