@@ -62,8 +62,8 @@
       <v-card-text style="margin-top: 0px;">
         <div class="d-flex align-center" style="gap:10px;">
           <v-btn :disabled="!isDraw || !isEdit" style="margin-top:-10px" @click="longTextSave">保存</v-btn>
-          <v-btn :disabled="!isDraw || isEdit" style="margin-top:-10px" @click="toEdit">書き込み</v-btn>
-          <v-btn v-if="isDraw && isEdit" style="margin-top:-10px" @click="isEdit = false">書き込み解除</v-btn>
+          <v-btn :disabled="!isDraw || isEdit" style="margin-top:-10px" @click="toEdit">書込</v-btn>
+          <v-btn v-if="isDraw && isEdit" style="margin-top:-10px" @click="isEdit = false">書込解除</v-btn>
           <v-btn v-if="isSmall500" icon class="ms-auto" style="margin-top:-10px; margin-right: 0px;" @click="close"><v-icon>mdi-close</v-icon></v-btn>
 
           <v-btn  icon class="ms-auto" style="margin-top:-10px;" @click="isDrawChange"><v-icon>mdi-pencil</v-icon></v-btn>

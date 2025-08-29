@@ -1217,6 +1217,14 @@ export default {
       }
       highlightSpecificFeatures2025(map,'oh-homusyo-2025-polygon');
       // zenkokuChibanzuAddLayer(map,map.getZoom())
+      //
+      // map.setLayoutProperty('YOUR_LAYER_ID', 'icon-image', [
+      //   'coalesce',
+      //   ['image', 'atm_11'],
+      //   ['image', 'bank_11']
+      // ]);
+
+
       forseMoveLayer(map)
     },
 

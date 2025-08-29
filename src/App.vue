@@ -2596,7 +2596,7 @@ export default {
             { key: 'watchPosition', text: '現在地連続取得', icon: 'mdi-map-marker-radius', color: this.isTracking ? 'green' : 'primary', click: this.toggleWatchPosition },
             { key: 'share', text: '共有', icon: 'mdi-share-variant', color: 'primary', click: this.share },
             { key: 'help', text: 'ヘルプ', icon: 'mdi-help', color: 'primary', click: this.help },
-            { key: 'drawList', text: 'ドローリスト', icon: 'mdi-view-list', color: 'primary', click: this.drawListOpen, style: 'margin-top: 120px;' },
+            { key: 'drawList', text: 'ドローリスト', icon: 'mdi-view-list', color: 'primary', click: this.drawListOpen, style: 'margin-top: 200px;' },
           ]
       return btns
     },
@@ -5254,22 +5254,36 @@ export default {
         this.snackbarText = 'ドロー時は各種クリックが制限されます。'
         this.snackbar = true
       }
-      const centerBtn = document.querySelectorAll('.center-wrapper')[1]
+      const centerBtns = document.querySelectorAll('.center-wrapper')
       const rightBtns = document.querySelectorAll('.right-btn')
       if (this.isSmall500) {
         if (this.s_isDraw) {
-          centerBtn.style.opacity = '0'
+          centerBtns.forEach(btn => {
+            btn.style.opacity = '0'
+          })
           rightBtns.forEach(btn => {
             btn.style.display = 'none'
           })
         } else {
-          centerBtn.style.opacity = '1'
+          centerBtns.forEach(btn => {
+            btn.style.opacity = '1'
+          })
           rightBtns.forEach(btn => {
             btn.style.display = 'block'
           })
         }
       }
       this.finishLine()
+      if (JSON.parse(this.clickCircleGeojsonText).features.filter(f => f.properties.id !== 'config').length > 1 &&
+          !this.s_isDraw
+      ) {
+        document.querySelector('#drawList').style.display = 'block'
+      } else {
+        document.querySelector('#drawList').style.display = 'none'
+      }
+
+
+
     },
     finishDrawing() {
 
@@ -6878,7 +6892,8 @@ export default {
             "glyphs": "https://tile.openstreetmap.jp/fonts/{fontstack}/{range}.pbf",
             // "glyphs": "https://gsi-cyberjapan.github.io/optimal_bvmap/glyphs/{fontstack}/{range}.pbf",
             // "sprite": "https://gsi-cyberjapan.github.io/optimal_bvmap/sprite/std",
-            "sprite": "https://tile.openstreetmap.jp/styles/osm-bright-ja/sprite",
+            // "sprite": "https://tile.openstreetmap.jp/styles/osm-bright-ja/sprite",
+            "sprite": "https://maputnik.github.io/osm-liberty/sprites/osm-liberty",
             'sources': {
               terrain: gsiTerrainSource,
             },
@@ -10065,7 +10080,7 @@ export default {
     },
     clickCircleGeojsonText (value) {
       try {
-        if (JSON.parse(value).features.length > 1) {
+        if (JSON.parse(value).features.filter(f => f.properties.id !== 'config').length > 1) {
           document.querySelector('#drawList').style.display = 'block'
         } else {
           document.querySelector('#drawList').style.display = 'none'
