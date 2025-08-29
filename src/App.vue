@@ -7211,6 +7211,7 @@ export default {
             'line-width': this.$store.state.currentLineWidth,
             textAnchor: 'left',
             textJustify: 'left',
+            calc: this.$store.state.currentLineCalcCheck
           };
           geojsonCreate(map, 'LineString', this.tempLineCoords.slice(), properties);
           // 擬似クリックイベント発火（最初の点）

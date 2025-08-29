@@ -1067,6 +1067,7 @@ export default function pyramid () {
                 const gejsonText = geojsonUpdate(map01, null, clickCircleSource.iD, id, 'calc', value)
                 store.state.clickCircleGeojsonText = gejsonText
                 generateSegmentLabelGeoJSON(JSON.parse(gejsonText))
+                store.state.currentLineCalcCheck = value
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -2313,10 +2314,8 @@ export function generateSegmentLabelGeoJSON(geojson) {
                     : `約${(totalDistance * 1000).toFixed(0)}m`;
                 console.log(totalDistance)
             }
-            const distanceLabel = isLast && i > 0 ? `${distance}\n(${totalDistance})` : distance;
-
-
-
+            const distanceLabel = isLast && i > 0 ? `${distance}\n(計${totalDistance})` : distance;
+            
             const bearingAtMid = calculateBearing(null, from, to, 'end')
 
             let textBearing

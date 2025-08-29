@@ -6,7 +6,7 @@ import firebase from 'firebase/app';
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.404,
+    clientVersion: 1.405,
     noProgress: false,
     filter360: [
       "all",
@@ -100,6 +100,7 @@ export default createStore({
     currentLineColor: 'black',
     currentLineWidth: 5,
     currentLineLabelType: 'start',
+    currentLineCalcCheck: 0,
     currentArrowColor: 'arrow_black',
 
     currentFreeHandWidth: '',
