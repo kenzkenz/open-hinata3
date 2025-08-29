@@ -1160,7 +1160,7 @@ export const clickCircleLabelLayer = {
         'text-max-width': 100 // 非常に大きな値に設定して改行を防ぐ
     },
     'paint': {
-        'text-color': ['get', 'color'],
+        'text-color': 'rgba(0,0,0,1)',
         'text-halo-color': 'rgba(255,255,255,1)',
         'text-halo-width': 1.0,
     },

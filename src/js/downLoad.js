@@ -12255,13 +12255,14 @@ export async function addSvgAsImage(map, name, url, opt = {}) {
 export function forseMoveLayer(map) {
     const layerIds = [
         'arrows-endpoint-label-layer',
-        'click-circle-symbol-layer',
         'click-circle-line-layer',
         'click-circle-keiko-line-layer',
-        'click-circle-label-layer',
         'click-circle-layer',
+        'click-circle-label-layer',
         'click-circle-polygon-symbol-layer',
         'click-circle-polygon-symbol-area-layer',
+        'click-circle-symbol-layer',
+
     ];
     layerIds.forEach(drawLayerId => {
         map.moveLayer(drawLayerId)
