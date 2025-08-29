@@ -10,9 +10,7 @@ import {
 } from "@/js/downLoad";
 import {clickCircleSource, clickPointSource, endPointSouce, vertexSource} from "@/js/layers";
 import {calculatePolygonMetrics, closeAllPopups} from "@/js/popup";
-import { fetchElevation } from '@/js/downLoad';
 import JSZip from "jszip";
-import {feature, featureCollection} from "@turf/turf";
 export let currentIndex = 0
 let kasen
 
@@ -1764,6 +1762,7 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
             feature = turf.polygon(coordinates, properties);
             calc = calculatePolygonMetrics(feature)
             feature.properties['area'] = calc.area
+            feature.properties['perimeter'] = calc.perimeter
             break;
         case 'Circle':
             if (store.state.circle200Chk) {

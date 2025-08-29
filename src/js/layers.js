@@ -1049,7 +1049,7 @@ export const clickCirclePolygonLineLayer = {
  * @type {{filter: (string|string[])[], layout: {"text-justify": string[], "text-field": (string|(string|string[]|(string|(string|string[])[]|number)[])[]|string[])[], "text-offset": number[], "text-size": number, "text-anchor": string, "text-allow-overlap": boolean}, maxzoom: number, paint: {"text-halo-color": string, "text-color": string, "text-halo-width": number}, id: string, source: string, type: string, minzoom: number}}
  */
 export const clickCircPolygonSymbolLayer = {
-    // ポリゴンのラベルに使っている。
+    // ポリゴンのラベルに使っている。面積ではない
     id: 'click-circle-polygon-symbol-layer',
     type: 'symbol',
     source: 'click-circle-source',
@@ -1070,7 +1070,7 @@ export const clickCircPolygonSymbolLayer = {
         'text-size': 18,   // サイズ調整
         'text-anchor': 'center',
         'text-allow-overlap': true,
-        'text-offset': [0,1],
+        'text-offset': [0,-1],
         'text-justify': ['get', 'textJustify'], // 追加: 複数行のテキストを左寄せにする
     },
     paint: {
@@ -1082,16 +1082,22 @@ export const clickCircPolygonSymbolLayer = {
     'minzoom': 0
 }
 export const clickCircPolygonSymbolAreaLayer = {
+    // ポリゴンの面積、周長に使っている。
     id: 'click-circle-polygon-symbol-area-layer',
     type: 'symbol',
     source: 'click-circle-source',
     filter: ['all', ['has', 'isArea'], ['!=', ['get', 'isArea'], false]],
     layout: {
-        'text-field': ['get', 'area'],
-        'text-size': 20,   // サイズ調整
+        'text-field': [
+            'concat',
+            '面積:', ['to-string', ['get', 'area']],
+            '\n',
+            '周長:', ['to-string', ['get', 'perimeter']]
+        ],
+        'text-size': 16, // サイズ調整
         'text-anchor': 'center',
         'text-allow-overlap': true,
-        'text-offset': [0, 2.0],
+        'text-offset': [0, 1.2],
     },
     paint: {
         'text-color': 'black',

@@ -7724,6 +7724,7 @@ export default {
             if (tgtFeature) {
               const calc = calculatePolygonMetrics(tgtFeature);
               tgtFeature.properties.area = calc.area;
+              tgtFeature.properties.perimeter = calc.perimeter;
             }
 
             map.getSource('click-circle-source').setData(mainSourceGeojson);

@@ -8513,6 +8513,7 @@ export function addDraw (geojson,isFit,isNini) {
             const calc = calculatePolygonMetrics(feature);
             if (feature.geometry.type === 'Polygon' || feature.geometry.type === "MultiPolygon") {
                 feature.properties['area'] = calc.area;
+                feature.properties['perimeter'] = calc.perimeter;
             } else if (feature.geometry.type === 'LineString' || feature.geometry.type === "MultiLineString")  {
                 feature.properties['area'] = calc.perimeter;
             }
