@@ -1049,6 +1049,7 @@ export const clickCirclePolygonLineLayer = {
  * @type {{filter: (string|string[])[], layout: {"text-justify": string[], "text-field": (string|(string|string[]|(string|(string|string[])[]|number)[])[]|string[])[], "text-offset": number[], "text-size": number, "text-anchor": string, "text-allow-overlap": boolean}, maxzoom: number, paint: {"text-halo-color": string, "text-color": string, "text-halo-width": number}, id: string, source: string, type: string, minzoom: number}}
  */
 export const clickCircPolygonSymbolLayer = {
+    // ポリゴンのラベルに使っている。
     id: 'click-circle-polygon-symbol-layer',
     type: 'symbol',
     source: 'click-circle-source',
@@ -1090,7 +1091,7 @@ export const clickCircPolygonSymbolAreaLayer = {
         'text-size': 20,   // サイズ調整
         'text-anchor': 'center',
         'text-allow-overlap': true,
-        'text-offset': [0, 1.2],
+        'text-offset': [0, 2.0],
     },
     paint: {
         'text-color': 'black',
@@ -10548,21 +10549,21 @@ const t23kuLayer = {
 let layers01 = [
     {
         id: 'oh-mapillary',
-        label: "<span style='color: red'>NEW</span>⭐️mapillary① 基本",
+        label: "<span style='color: red'>NEW</span>⭐️mapillary①-基本",
         sources: [mapillarySource],
         layers: [mapillarySequences, mapillaryImages],
         attribution: 'メニューからmapillaryをオンにしてください。<br>© Mapillary',
     },
     {
         id: 'oh-mapillary-2',
-        label: "<span style='color: red'>NEW</span>⭐️mapillary② オブジェクト",
+        label: "<span style='color: red'>NEW</span>⭐️mapillary②-オブジェクト",
         sources: [mapillarySource2],
         layers: [mapillaryLabels2, mapillaryIcon2],
         attribution: '© Mapillary',
     },
     {
         id: 'oh-mapillary-3',
-        label: "<span style='color: red'>NEW</span>⭐️mapillary③ 交通標識",
+        label: "<span style='color: red'>NEW</span>⭐️mapillary③-交通標識",
         sources: [mapillarySource3],
         layers: [mapillaryImages3, mapillaryIcon3 ],
         attribution: '© Mapillary',

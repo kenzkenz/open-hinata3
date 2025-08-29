@@ -7,6 +7,7 @@ import muni from "@/js/muni";
 import pyramid, {lavelUpdate} from "@/js/pyramid";
 import * as turf from '@turf/turf'
 import {
+    forseMoveLayer,
     getNextZIndex,
     queryFGBWithPolygon,
     wsg84ToJgd
@@ -281,9 +282,6 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
         features = features.slice(0, 20);
     }
 
-    /**
-     * バグ回避
-     */
     const drawLayerIds = [
         'arrows-endpoint-label-layer',
         'click-circle-symbol-layer',
@@ -291,14 +289,18 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
         'click-circle-keiko-line-layer',
         'click-circle-label-layer',
         'click-circle-layer',
+        'click-circle-polygon-symbol-layer',
+        'click-circle-polygon-symbol-area-layer',
     ];
+    /**
+     * バグ回避
+     */
+
     if (store.state.isDraw) {
         if (features[0]?.layer?.id === 'zones-layer') {
             if (isRePopup === true) {
                 console.log('バグ回避 zones-layer')
-                drawLayerIds.forEach(drawLayerId => {
-                    map.moveLayer(drawLayerId)
-                })
+                forseMoveLayer(map)
                 isRePopup = false
                 popup(e, map, mapName, mapFlg)
             }
@@ -3584,6 +3586,8 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
             case 'click-circle-line-layer':
             case 'click-circle-keiko-line-layer':
             case 'click-circle-label-layer':
+            case 'click-circle-polygon-symbol-area-layer':
+            case 'click-circle-polygon-symbol-layer':
             {
                 console.log('⭐⭐️⭐⭐️到達！️')
                 // alert('到達')

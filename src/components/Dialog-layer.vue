@@ -70,11 +70,21 @@ const registeredLayers = new Set()
 
 import {
   addImageLayer,
-  addImageLayerJpg, addImageLayerPng, addTileLayer,
+  addImageLayerJpg,
+  addImageLayerPng,
+  addTileLayer,
   geojsonAddLayer,
-  highlightSpecificFeatures, highlightSpecificFeatures2025,
-  highlightSpecificFeaturesCity, LngLatToAddress,
-  simaToGeoJSON, updateMeasureUnit, dxfToGeoJSON, userPmtileSet, highlightSpecificFeaturesSima, getNextZIndex
+  highlightSpecificFeatures,
+  highlightSpecificFeatures2025,
+  highlightSpecificFeaturesCity,
+  LngLatToAddress,
+  simaToGeoJSON,
+  updateMeasureUnit,
+  dxfToGeoJSON,
+  userPmtileSet,
+  highlightSpecificFeaturesSima,
+  getNextZIndex,
+  forseMoveLayer
 } from "@/js/downLoad";
 import * as Layers from '@/js/layers'
 // import Tree from "vue3-tree"
@@ -1207,6 +1217,7 @@ export default {
       }
       highlightSpecificFeatures2025(map,'oh-homusyo-2025-polygon');
       // zenkokuChibanzuAddLayer(map,map.getZoom())
+      forseMoveLayer(map)
     },
 
     mw5AddLayers(map,mapName) {
@@ -1436,7 +1447,8 @@ export default {
   color:white;
   /*background-color: rgba(132,163,213,1);*/
   /*background-color:var(--main-color);*/
-  background-color: color-mix(in srgb, var(--main-color) 60%, white);
+  /*background-color: color-mix(in srgb, var(--main-color) 60%, white);*/
+  background-color: color-mix(in srgb, var(--main-color) 70%, black)!important;
   border-bottom: #fff 1px solid;
 
   /*color:gray;*/
