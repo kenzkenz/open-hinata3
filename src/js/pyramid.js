@@ -2292,7 +2292,7 @@ export function generateSegmentLabelGeoJSON(geojson) {
         if (!feature || feature.geometry.type !== 'LineString' || feature.properties['free-hand']) return;
 
         const coords = feature.geometry.coordinates;
-
+        let totalDistance = 0
         for (let i = 0; i < coords.length - 1; i++) {
             const from = coords[i];
             const to = coords[i + 1];
@@ -2300,10 +2300,22 @@ export function generateSegmentLabelGeoJSON(geojson) {
 
             const center = turf.midpoint(turf.point(from), turf.point(to));
             const dist = turf.length(segment, { units: 'kilometers' });
-
+            totalDistance += dist
             const distance = dist >= 1
                 ? `約${dist.toFixed(2)}km`
                 : `約${(dist * 1000).toFixed(0)}m`;
+
+            const isLast = i === coords.length - 2; // 最後のセグメント
+            console.log(totalDistance)
+            if (isLast) {
+                totalDistance = totalDistance >= 1
+                    ? `約${totalDistance.toFixed(2)}km`
+                    : `約${(totalDistance * 1000).toFixed(0)}m`;
+                console.log(totalDistance)
+            }
+            const distanceLabel = isLast && i > 0 ? `${distance}\n(${totalDistance})` : distance;
+
+
 
             const bearingAtMid = calculateBearing(null, from, to, 'end')
 
@@ -2318,12 +2330,13 @@ export function generateSegmentLabelGeoJSON(geojson) {
                 geometry: center.geometry,
                 properties: {
                     calc: feature.properties.calc || 0,
-                    distance: distance,
+                    distance: distanceLabel,
                     index: i + 1,
                     textBearing: textBearing,
                 }
             });
         }
+
     });
     const labelGeojson = {
         type: 'FeatureCollection',
