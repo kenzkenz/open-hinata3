@@ -1276,7 +1276,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
         <FloatingWindow
             windowId = "mapillary"
-            :title = "mapillaryType"
+            :title = "mapillaryTytle"
             type="normal"
             :default-top = "70"
             :default-left = "10"
@@ -1805,7 +1805,7 @@ import {
   pmtilesGenerateForUser2,
   pngDownload,
   pngLoad,
-  printDirectionChange, queryMapillaryByUserDatesViewport, removeAllWhitespace,
+  printDirectionChange, queryMapillaryByUserDatesViewport, removeAllWhitespace, removeThumbnailMarkerByKey,
   saveDrowFeatures,
   scaleAndRotateLassoSelected, setFllter360,
   simaLoadForUser,
@@ -2393,6 +2393,7 @@ export default {
   }),
   computed: {
     ...mapState([
+      'mapillaryTytle',
       'mapillaryType',
       'noProgress',
       'map01',
@@ -3280,6 +3281,7 @@ export default {
             file = new File([blob], name, { type: blob.type })
           }
         }
+
         const formData = new FormData();
         formData.append("file", file);
         formData.append("dir", this.$store.state.userId || '0000notLoggedIn');
@@ -3308,6 +3310,13 @@ export default {
           alert("通信エラー");
         }
         this.s_dialogForPicture = false
+        // 更新されたので該当のキーを削除する。
+        const geojson = this.map01.getSource(clickCircleSource.iD)._data
+        const targetFeature = geojson.features.find(f => {
+          return f.properties.id === this.$store.state.drawGeojsonId
+        })
+        const key = targetFeature.geometry.coordinates.join()
+        removeThumbnailMarkerByKey(key)
       } else {
         if (this.imgRotation !== 0) {
           let file

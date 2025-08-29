@@ -8659,16 +8659,7 @@ export function printDirectionChange (titleDirection) {
     map00Div.style.margin = '20px auto 0 auto';
     map00Div.style.display = 'block';
 }
-// export function getMaxZIndex () {
-//     const elements = document.querySelectorAll('.my-div, .maplibregl-popup');
-//     let maxZ = 0;
-//     elements.forEach(el => {
-//         const z = window.getComputedStyle(el).zIndex;
-//         const zi = parseInt(z, 10);
-//         if (!isNaN(zi) && zi > maxZ) maxZ = zi;
-//     });
-//     return maxZ + 1
-// }
+
 export function gpxDownload (geojson) {
     const gpxString = geojsonToGpx(geojson)
     const fileName =  getNowFileNameTimestamp() + '.gpx'
@@ -9652,6 +9643,7 @@ export function markerAddAndRemove() {
     txtCoordsList.length = 0;
     if (!featureCollection || !featureCollection.features) return
     featureCollection.features.forEach(feature => {
+        console.log(feature)
         const coords = feature.geometry?.coordinates;
         const isPicture =
             !!feature?.properties?.pictureUrl &&
@@ -9809,6 +9801,7 @@ export async function createThumbnailMarker(map, coords, photoURL, id, borderRad
         map.__thumbnailMarkerKeys = new Set();
     }
     if (map.__thumbnailMarkerKeys.has(key)) {
+        // map.__thumbnailMarkerKeys = new Set();
         return;
     }
     map.__thumbnailMarkerKeys.add(key);
@@ -9826,6 +9819,8 @@ export async function createThumbnailMarker(map, coords, photoURL, id, borderRad
     }catch (e) {
         console.log(e)
     }
+
+
     // 縦長画像は1対1に。横長画像はアスペクト比で調節
     aspectRatio = (aspectRatio || 1) < 1 ? 1 : aspectRatio
     if (aspectRatio > 2.5) {
@@ -9856,6 +9851,7 @@ export async function createThumbnailMarker(map, coords, photoURL, id, borderRad
                 color = 'white'
         }
         const label = document.createElement('div');
+        label.className = 'txt-marker-label'
         label.innerText = labelText;
         label.style.position   = 'absolute';
         label.style.top        = '-18px';  // サムネイル上に出す
@@ -9967,14 +9963,13 @@ export async function createThumbnailMarker(map, coords, photoURL, id, borderRad
         .addTo(map)
 
     markers.push({ key, marker });
-
 }
 
 /**
  * key(座標)でマーカーを削除する
  * @param key
  */
-function removeThumbnailMarkerByKey(key) {
+export function removeThumbnailMarkerByKey(key) {
     if (!key) return;
     const allMarkers = [markers, txtMarkers]
     allMarkers.forEach(markers => {
@@ -11226,7 +11221,20 @@ export async function mapillaryCreate(lng, lat) {
         const aaa = 1
         const deltaLat = 0.00009 / aaa // ≒10m
         const deltaLng = 0.00011 / aaa // ≒10m（東京近辺）
-        const url = `https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${lng - deltaLng},${lat - deltaLat},${lng + deltaLng},${lat + deltaLat}&limit=1`
+        // const url = `https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${lng - deltaLng},${lat - deltaLat},${lng + deltaLng},${lat + deltaLat}&limit=1`
+        const url = new URL('https://graph.mapillary.com/images');
+        url.searchParams.set('access_token', MAPILLARY_CLIENT_ID);
+        url.searchParams.set('fields', 'id,thumb_1024_url');   // ← thumb が要るなら追加
+        url.searchParams.set('limit', '1');
+        url.searchParams.set(
+            'bbox',
+            [
+                lng - deltaLng,   // west  (lon)
+                lat - deltaLat,   // south (lat)
+                lng + deltaLng,   // east  (lon)
+                lat + deltaLat    // north (lat)
+            ].join(',')
+        );
         const response = await fetch(url)
         data = await response.json()
     }
@@ -11261,10 +11269,28 @@ export async function mapillaryCreate(lng, lat) {
      * currentImageIdを更新
      * スナックバーを閉じる
      */
-    mapillaryViewer.on('image', (e) => {
+    mapillaryViewer.on('image', async (e) => {
+        store.state.mapillaryZindex = getNextZIndex()
         store.state.loading3 = false
         console.log('画像切替:', e.image.id);
         currentImageId = e.image.id || null;
+
+        const url = new URL(`https://graph.mapillary.com/${encodeURIComponent(currentImageId)}`)
+        url.searchParams.set('access_token', MAPILLARY_CLIENT_ID)
+        url.searchParams.set('fields', 'creator')
+        let res2
+        try {
+            res2 = await fetch(url)
+        } catch (e) {
+            if (e.name === 'AbortError') return
+            throw e
+        }
+        if (res2.ok) {
+            const json = await res2.json()
+            const username = json?.creator.username
+            console.log(username)
+            store.state.mapillaryTytle = username
+        }
     });
     // ---- ここから追加：地図同期 ----
     if (!store.state.mapillaryIsNotArrow) {
@@ -11423,7 +11449,7 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
     //     });
     // }
 
-    console.log(store.state.mapillaryIsNotArrow)
+    // console.log(store.state.mapillaryIsNotArrow)
 
     if (!store.state.is360Pic && !store.state.mapillaryIsNotArrow) {
         const bearing = map.getSource(bearingSource)?.serialize().data.features[0].properties.bearing + 270

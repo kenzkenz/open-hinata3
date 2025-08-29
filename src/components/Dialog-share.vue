@@ -2,7 +2,7 @@
   <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div class="share-div">
 <!--      <v-text-field label="" v-model="s_url" style="margin-top: 10px"></v-text-field>-->
-      <div>
+      <div class="btns">
         <v-btn style="margin-left: 5px;" class="tiny-btn" @click="xPost">Xにポスト</v-btn>
         <v-btn style="margin-left: 5px;" class="tiny-btn" @click="copy">URLをコピー</v-btn>
         <v-btn style="margin-left: 5px;" class="tiny-btn" @click="qrcopy">QRコードをダウンロード</v-btn>
@@ -30,7 +30,9 @@ export default {
   },
   methods: {
     qrCodeClick () {
-      this.$store.dispatch('showFloatingWindow', 'qrcode');
+      if (!this.$store.state.isSmall500) {
+        this.$store.dispatch('showFloatingWindow', 'qrcode');
+      }
     },
     xPost () {
       this.$store.state.updatePermalinkFire = ! this.$store.state.updatePermalinkFire
@@ -92,6 +94,9 @@ export default {
   .share-div {
     width: 100%;
     margin: 0;
+  }
+  .btns {
+    margin-top: 10px;
   }
 }
 </style>

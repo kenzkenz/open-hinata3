@@ -5,7 +5,7 @@ import * as turf from '@turf/turf'
 import {
     addDraw, featureCollectionAdd, featuresDelete, formatYmdHms, isJsonString, markerAddAndRemove,
     recenterGeoJSON, removeNini, saveDrowFeatures,
-    savePointSima, toResolved,
+    savePointSima, toResolved, truncate,
     zahyokei
 } from "@/js/downLoad";
 import {clickCircleSource, clickPointSource, endPointSouce, vertexSource} from "@/js/layers";
@@ -1672,8 +1672,8 @@ export function lavelUpdate(e, id) {
     const value = pointTextElm.value
     const tgtProp = 'label'
     store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
-    const el = document.querySelector(`#txt-marker-${id} .txt-marker-label`)
-    if (el) el.innerHTML = value
+    const el = document.querySelector(`#txt-marker-${id} .txt-marker-label`) || document.querySelector(`#pic-marker-${id} .txt-marker-label`)
+    el.innerText =  truncate(value,6)
     store.state.isLabelUpdated = false
 }
 // ラインの最後のセグメントの方向（ベアリング）を計算する関数
