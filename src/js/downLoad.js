@@ -7757,7 +7757,6 @@ export function  vertexAndMidpoint() {
                 if (ccc > 0.95 && ccc < 1.05) {
                     console.log('ほぼ同じ')
                     console.log(prevArea + '/' + newArea)
-                    ringCopy = ringCopy.concat([ringCopy[0]])
                     return
                 } else {
                     counter0 = counter++
@@ -7779,10 +7778,8 @@ export function  vertexAndMidpoint() {
         }
 
         map.getSource('click-circle-source').setData(mainSourceGeojson);
-        setTimeout(() => {
-            getAllVertexPoints(map, mainSourceGeojson);
-            setAllMidpoints(map, mainSourceGeojson);
-        },100)
+        getAllVertexPoints(map, mainSourceGeojson);
+        setAllMidpoints(map, mainSourceGeojson);
     });
 
 

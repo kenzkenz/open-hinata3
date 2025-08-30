@@ -1917,17 +1917,20 @@ export function getAllVertexPoints(map, geojson) {
                 pts = pts.slice(0, -1);
             }
             pts.forEach(([lng, lat], i) => {
-                features.push({
-                    type: 'Feature',
-                    id: `${featIdx}_${i}`,
-                    geometry: { type: 'Point', coordinates: [lng, lat] },
-                    properties: {
-                        vertexIndex: i,
-                        featureIndex: featIdx,
-                        parentId: id ?? null,
-                        ...(properties ? { parentProps: properties } : {})
-                    }
-                });
+                const isVertex = features.find(f => f.geometry.coordinates[0] === lng && f.geometry.coordinates[1] === lat)
+                if (!isVertex) {
+                    features.push({
+                        type: 'Feature',
+                        id: `${featIdx}_${i}`,
+                        geometry: { type: 'Point', coordinates: [lng, lat] },
+                        properties: {
+                            vertexIndex: i,
+                            featureIndex: featIdx,
+                            parentId: id ?? null,
+                            ...(properties ? { parentProps: properties } : {})
+                        }
+                    });
+                }
             });
         } else if (type === 'MultiPolygon') {
             coordinates.forEach((poly, polyIdx) => {
