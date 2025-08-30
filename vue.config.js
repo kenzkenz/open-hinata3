@@ -15,6 +15,19 @@ module.exports = defineConfig({
     },
     transpileDependencies: ['vuetify'],
     pwa: {
+        name: 'Open-Hinata3',
+        themeColor: '#f5f5f5',
+        manifestOptions: {
+            theme_color: '#f5f5f5',
+            background_color: '#f5f5f5',
+            display: 'standalone',
+            icons: [
+                { src: 'img/icons/oh192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+                { src: 'img/icons/oh512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+                { src: 'img/icons/oh192-maskable.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+                { src: 'img/icons/oh512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+            ]
+        },
         iconPaths: {
             favicon32: 'favicon.ico',
         },

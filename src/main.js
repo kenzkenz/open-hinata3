@@ -74,7 +74,6 @@ setInterval(checkVersion, 10 * 60 * 1000);
 
 
 
-
 // // どこか起動時に一度だけ
 // store.watch(
 //     state => state.saveHistoryFire,

@@ -1455,8 +1455,8 @@ export default {
   color:white;
   /*background-color: rgba(132,163,213,1);*/
   /*background-color:var(--main-color);*/
-  /*background-color: color-mix(in srgb, var(--main-color) 60%, white);*/
-  background-color: color-mix(in srgb, var(--main-color) 70%, black)!important;
+  background-color: color-mix(in srgb, var(--main-color) 60%, white);
+  /*background-color: color-mix(in srgb, var(--main-color) 70%, black)!important;*/
   border-bottom: #fff 1px solid;
 
   /*color:gray;*/

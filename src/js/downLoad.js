@@ -33,6 +33,7 @@ import html2canvas from 'html2canvas'
 import muni from "@/js/muni";
 import Papa from 'papaparse'
 import {
+    generateSegmentLabelGeoJSON,
     generateStartEndPointsFromGeoJSON,
     getAllVertexPoints,
     setAllMidpoints
@@ -7875,6 +7876,7 @@ export function enableDragHandles(map) {
         // console.log(geojson)
         if (geojson && store.state.editEnabled) {
             updateDragHandles(true)
+            generateSegmentLabelGeoJSON(geojson)
             getAllVertexPoints(map, geojson);
             setAllMidpoints(map, geojson);
             store.state.clickCircleGeojsonText = JSON.stringify(geojson)

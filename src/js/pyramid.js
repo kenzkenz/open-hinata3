@@ -2313,7 +2313,7 @@ export function generateSegmentLabelGeoJSON(geojson) {
             if (isLast) {
                 totalDistance = kmOrm(totalDistance)
             }
-            const distanceLabel = isLast && i > 0 ? `${distance}\n(計${totalDistance})` : distance;
+            const distanceLabel = isLast && i > 0 ? `${distance}\n(計:${totalDistance})` : distance;
 
             const bearingAtMid = calculateBearing(null, from, to, 'end')
 
