@@ -136,7 +136,7 @@ export default {
       this.setDrawListDrawer(false);
     },
     getList() {
-      const features = JSON.parse(this.clickCircleGeojsonText).features.filter(f => f.properties.id !== 'config')
+      const features = JSON.parse(this.clickCircleGeojsonText).features?.filter(f => f.properties.id !== 'config')
       console.log(features)
       if (!features || features.length === 0) return
       if (features[0].properties._index) {

@@ -7739,17 +7739,34 @@ export function  vertexAndMidpoint() {
         if (feature.geometry.type === 'LineString') {
             feature.geometry.coordinates.splice(insertIndex, 0, [lng, lat]);
         } else if (feature.geometry.type === 'Polygon') {
-            let ring = feature.geometry.coordinates[0];
             /**
-             * 下記をコメントアウトすると右端中点をクリックしたときのポリゴン崩れを防げる
-             * 副作用があるかもしれないので様子見
+             * 苦肉の策。面積がほぼ同じポリゴンができるまでループする。
+             * @type {string}
              */
-            // const closed = ring.length > 2 &&
-            //     ring[0][0] === ring[ring.length - 1][0] &&
-            //     ring[0][1] === ring[ring.length - 1][1];
-            // if (closed) ring = ring.slice(0, -1);
-            ring.splice(insertIndex, 0, [lng, lat]);
-            feature.geometry.coordinates[0] = ring.concat([ring[0]]);
+            const prevArea = calculatePolygonMetrics(feature).area
+            let ring = feature.geometry.coordinates[0];
+            let counter = 0
+            let ringCopy = null
+            function ringCopyCreate(counter0) {
+                ringCopy = JSON.parse(JSON.stringify(ring))
+                ringCopy.splice(insertIndex - counter0, 0, [lng, lat])
+                const polygon = turf.polygon([ringCopy.concat([ringCopy[0]])])
+                const newArea = calculatePolygonMetrics(polygon).area
+                const ccc = prevArea.replace('約', '').replace('m2', '') /
+                    newArea.replace('約', '').replace('m2', '')
+                if (ccc > 0.95 && ccc < 1.05) {
+                    console.log('ほぼ同じ')
+                    console.log(prevArea + '/' + newArea)
+                    ringCopy = ringCopy.concat([ringCopy[0]])
+                    return
+                } else {
+                    counter0 = counter++
+                    ringCopyCreate(counter0)
+                }
+            }
+            ringCopyCreate(counter)
+            feature.geometry.coordinates[0] = ringCopy
+
         } else if (feature.geometry.type === 'MultiPolygon') {
             let ring = feature.geometry.coordinates[polygonIndex][0];
             const closed = ring.length > 2 &&
@@ -7762,8 +7779,10 @@ export function  vertexAndMidpoint() {
         }
 
         map.getSource('click-circle-source').setData(mainSourceGeojson);
-        getAllVertexPoints(map, mainSourceGeojson);
-        setAllMidpoints(map, mainSourceGeojson);
+        setTimeout(() => {
+            getAllVertexPoints(map, mainSourceGeojson);
+            setAllMidpoints(map, mainSourceGeojson);
+        },100)
     });
 
 

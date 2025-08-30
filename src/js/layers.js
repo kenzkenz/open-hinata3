@@ -1016,7 +1016,7 @@ export const clickCircleLayer = {
     id: 'click-circle-layer',
     type: 'fill',
     source: 'click-circle-source',
-    filter: ['==', '$type', 'Polygon'],
+    // filter: ['==', '$type', 'Polygon'],
     paint: {
         'fill-color': ['get', 'color'],
     }

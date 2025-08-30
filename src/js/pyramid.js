@@ -2017,41 +2017,52 @@ function makeMidpointsFeatureCollection(coords, isPolygon = false, featureIndex 
         isClosed = true;
     }
 
+    const vertexGeojson = store.state.map01.getSource('vertex-source')._data;
+
     // 各辺ごと
     for (let i = 0; i < len - 1; i++) {
         const [lng1, lat1] = coords[i];
         const [lng2, lat2] = coords[i + 1];
-        midpoints.push({
-            type: 'Feature',
-            id: `mp_${featureIndex}_${polygonIndex}_${i}`,
-            geometry: {
-                type: 'Point',
-                coordinates: [ (lng1+lng2)/2, (lat1+lat2)/2 ]
-            },
-            properties: {
-                insertIndex: i+1,
-                featureIndex,
-                polygonIndex
-            }
-        });
+        const coordinates = [ (lng1+lng2)/2, (lat1+lat2)/2 ]
+        const isVertex = vertexGeojson.features.find(f => f.geometry.coordinates[0] === coordinates[0])
+        if (!isVertex) {
+            midpoints.push({
+                type: 'Feature',
+                id: `mp_${featureIndex}_${polygonIndex}_${i}`,
+                geometry: {
+                    type: 'Point',
+                    coordinates: coordinates
+                },
+                properties: {
+                    insertIndex: i + 1,
+                    featureIndex,
+                    polygonIndex
+                }
+            });
+        }
     }
     // 閉じたポリゴンのn-1→0の中点を追加
     if (isPolygon && isClosed && len > 2) {
         const [lng1, lat1] = coords[len - 1];
         const [lng2, lat2] = coords[0];
-        midpoints.push({
-            type: 'Feature',
-            id: `mp_${featureIndex}_${polygonIndex}_end`,
-            geometry: {
-                type: 'Point',
-                coordinates: [ (lng1+lng2)/2, (lat1+lat2)/2 ]
-            },
-            properties: {
-                insertIndex: len,
-                featureIndex,
-                polygonIndex
-            }
-        });
+        const coordinates = [ (lng1+lng2)/2, (lat1+lat2)/2 ]
+        const isVertex = vertexGeojson.features.find(f => f.geometry.coordinates[0] === coordinates[0])
+        if (!isVertex) {
+            console.log(isVertex)
+            midpoints.push({
+                type: 'Feature',
+                id: `mp_${featureIndex}_${polygonIndex}_end`,
+                geometry: {
+                    type: 'Point',
+                    coordinates: coordinates
+                },
+                properties: {
+                    insertIndex: len,
+                    featureIndex,
+                    polygonIndex
+                }
+            });
+        }
     }
     return midpoints;
 }
