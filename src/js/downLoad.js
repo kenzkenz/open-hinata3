@@ -7844,6 +7844,7 @@ export function setVertex() {
 
     // 🎯 頂点ドラッグ開始を試みる（頂点レイヤを矩形ヒット）
     function tryStartDragging(e, cssPoint = null) {
+        if (store.state._geometryRebuilding) return;
         const lngLat = getLngLatFromEvent(e);
         if (!lngLat) { isDragging = false; return; }
 
@@ -8082,10 +8083,12 @@ export function enableDragHandles(map) {
     let originalHandles = null;       // drag-handles-source のコピー
     let originalEndPoints = null;     // end-point-source のコピー
 
-    let geojson = null
+    let geojson = null;               // 現在の可動ジオメトリ（ドラッグ中はこれを描画）
+
+    let flg = true
 
     function getTouchOrMouseLngLat(e) {
-        if (store.state.isDrawLasso) return
+        if (store.state.isDrawLasso) return;
         if (e.lngLat) return e.lngLat;
         if (e.touches && e.touches.length > 0) {
             const touch = e.touches[0];
@@ -8097,18 +8100,20 @@ export function enableDragHandles(map) {
         return null;
     }
 
+    function clearVertexAndMidpointLayers() {
+        const v = map.getSource('vertex-source');
+        if (v) v.setData({ type: 'FeatureCollection', features: [] });
+        const m = map.getSource('midpoint-source'); // 中点ソースIDが違う場合は合わせてください
+        if (m) m.setData({ type: 'FeatureCollection', features: [] });
+    }
+
     function onDown(e) {
         const point = e.point || map.project(getTouchOrMouseLngLat(e));
-        const features = map.queryRenderedFeatures(point, {
-            layers: ['drag-handles-layer']
-        });
-
+        const features = map.queryRenderedFeatures(point, { layers: ['drag-handles-layer'] });
         if (!features.length) return;
 
-        // 頂点、中点を一度クリア
-        getAllVertexPoints(map);
-        setAllMidpoints(map);
-        // map.getSource('drag-handles-source').setData({ type: 'FeatureCollection', features: [] })
+        // 頂点/中点を一度クリア（誤ヒット防止）
+        clearVertexAndMidpointLayers();
 
         const handle = features[0];
         dragTargetId = handle.properties.targetId;
@@ -8116,26 +8121,30 @@ export function enableDragHandles(map) {
         isDragging = true;
 
         panWasInitiallyEnabled = map.dragPan.isEnabled();
-        if (panWasInitiallyEnabled) {
-            map.dragPan.disable();
-        }
+        if (panWasInitiallyEnabled) map.dragPan.disable();
 
         const circleSrc = map.getSource('click-circle-source');
         const handleSrc = map.getSource('drag-handles-source');
         const endPointSrc = map.getSource('end-point-source');
         if (!circleSrc || !handleSrc) return;
 
-        originalFeatures = JSON.parse(JSON.stringify(circleSrc._data || circleSrc._options.data));
-        originalHandles = JSON.parse(JSON.stringify(handleSrc._data || handleSrc._options.data));
-        if (endPointSrc) {
-            originalEndPoints = JSON.parse(JSON.stringify(endPointSrc._data || endPointSrc._options.data));
-        }
+        // 元データを固定コピー（ドラッグ中はこれ基準に dx,dy を足す）
+        originalFeatures = JSON.parse(JSON.stringify(circleSrc._data || circleSrc._options?.data));
+        originalHandles  = JSON.parse(JSON.stringify(handleSrc._data || handleSrc._options?.data));
+        if (endPointSrc) originalEndPoints = JSON.parse(JSON.stringify(endPointSrc._data || endPointSrc._options?.data));
+
+        // 🔒 外部同期を一時停止（バウンス防止）
+        store.state._geometryRebuilding = true;
+        store.state._isDraggingFeature  = true;
+        store.state._suspendExternalSync = true;   // → ウォッチャ/ポーリング側で見て早期 return する
+        store.state._lastLocalEditAt = Date.now(); // → リモート反映の新旧判定にも使える
 
         e.preventDefault?.();
     }
 
-    let lassoSelected = null
-    let movedFeatures = null
+    let lassoSelected = null;
+    let movedFeatures = null;
+
     function onMove(e) {
         if (!isDragging) return;
         const current = getTouchOrMouseLngLat(e);
@@ -8145,12 +8154,13 @@ export function enableDragHandles(map) {
         const dy = current.lat - dragOrigin.lat;
 
         // ① click-circle-source の該当 feature を移動
-        lassoSelected = originalFeatures.features.find(f => f.properties.id === dragTargetId && f.properties.lassoSelected === true)
+        lassoSelected = originalFeatures.features.find(
+            f => f.properties.id === dragTargetId && f.properties.lassoSelected === true
+        );
+
         movedFeatures = originalFeatures.features.map(f => {
             let idMatch = f.properties.id === dragTargetId || f.properties.pairId === dragTargetId;
-            if (lassoSelected) {
-                idMatch = f.properties.lassoSelected === true
-            }
+            if (lassoSelected) idMatch = f.properties.lassoSelected === true;
             if (!idMatch) return f;
 
             const moved = JSON.parse(JSON.stringify(f));
@@ -8159,77 +8169,52 @@ export function enableDragHandles(map) {
             if (geom.type === 'Point') {
                 geom.coordinates[0] += dx;
                 geom.coordinates[1] += dy;
-                // canterLng, canterLat プロパティがある場合は更新
                 if (typeof moved.properties.canterLng === 'number' && typeof moved.properties.canterLat === 'number') {
                     moved.properties.canterLng = geom.coordinates[0];
                     moved.properties.canterLat = geom.coordinates[1];
                 }
-
             } else {
-                // 座標移動用の関数
                 const moveCoord = coords => coords.map(([lng, lat]) => [lng + dx, lat + dy]);
 
                 if (geom.type === 'LineString') {
                     geom.coordinates = moveCoord(geom.coordinates);
-
                 } else if (geom.type === 'Polygon') {
                     geom.coordinates = geom.coordinates.map(ring => moveCoord(ring));
-
                 } else if (geom.type === 'MultiLineString') {
-                    // 各 LineString を移動
                     geom.coordinates = geom.coordinates.map(line => moveCoord(line));
-
                 } else if (geom.type === 'MultiPolygon') {
-                    // 各 Polygon の各リングを移動
-                    geom.coordinates = geom.coordinates.map(polygon =>
-                        polygon.map(ring => moveCoord(ring))
-                    );
-
+                    geom.coordinates = geom.coordinates.map(poly => poly.map(ring => moveCoord(ring)));
                 }
 
                 // 中心座標プロパティがある場合は重心を再計算して更新
                 if (typeof moved.properties.canterLng === 'number' && typeof moved.properties.canterLat === 'number') {
                     try {
-                        // 全座標を 1 次元配列にフラット化
                         let allCoords = [];
                         if (geom.type === 'LineString' || geom.type === 'MultiLineString') {
-                            // Multi の場合は配列をフラットに
-                            allCoords = Array.isArray(geom.coordinates[0][0])
-                                ? geom.coordinates.flat()
-                                : geom.coordinates;
+                            allCoords = Array.isArray(geom.coordinates[0][0]) ? geom.coordinates.flat() : geom.coordinates;
                         } else if (geom.type === 'Polygon' || geom.type === 'MultiPolygon') {
-                            // Polygon や MultiPolygon はさらにネストあり
                             allCoords = geom.coordinates.flat(2);
                         }
-                        // 重心計算
-                        const sum = allCoords.reduce(
-                            (acc, [lng, lat]) => [acc[0] + lng, acc[1] + lat],
-                            [0, 0]
-                        );
-                        const len = allCoords.length;
+                        const sum = allCoords.reduce((acc, [lng, lat]) => [acc[0] + lng, acc[1] + lat], [0, 0]);
+                        const len = allCoords.length || 1;
                         moved.properties.canterLng = sum[0] / len;
                         moved.properties.canterLat = sum[1] / len;
-                    }catch (e) {
-                        console.log(e)
-                    }
+                    } catch (err) { /* noop */ }
                 }
             }
-
             return moved;
         });
 
         // ② drag-handles-source の該当ポイントを移動
         const movedHandles = originalHandles.features.map(f => {
-            // if (f.properties.targetId !== dragTargetId) return f;
             if (!lassoSelected) {
                 if (f.properties.targetId !== dragTargetId) return f;
             } else {
-                const idMatch =  originalFeatures.features.find(originalF =>  {
-                    return originalF.properties.lassoSelected === true && originalF.properties.id === f.properties.targetId
-                })
+                const idMatch = originalFeatures.features.find(originalF =>
+                    originalF.properties.lassoSelected === true && originalF.properties.id === f.properties.targetId
+                );
                 if (!idMatch) return f;
             }
-
             const moved = JSON.parse(JSON.stringify(f));
             moved.geometry.coordinates[0] += dx;
             moved.geometry.coordinates[1] += dy;
@@ -8241,30 +8226,30 @@ export function enableDragHandles(map) {
         if (originalEndPoints) {
             movedEndPoints = originalEndPoints.features.map(f => {
                 if (f.properties.pairId !== dragTargetId) return f;
-
                 const moved = JSON.parse(JSON.stringify(f));
                 const geom = moved.geometry;
-
+                const moveCoord = coords => coords.map(([lng, lat]) => [lng + dx, lat + dy]);
                 if (geom.type === 'Point') {
                     geom.coordinates[0] += dx;
                     geom.coordinates[1] += dy;
-                } else if (geom.type === 'LineString' || geom.type === 'Polygon') {
-                    const moveCoord = coords => coords.map(([lng, lat]) => [lng + dx, lat + dy]);
-                    if (geom.type === 'LineString') {
-                        geom.coordinates = moveCoord(geom.coordinates);
-                    } else if (geom.type === 'Polygon') {
-                        geom.coordinates = geom.coordinates.map(ring => moveCoord(ring));
-                    }
+                } else if (geom.type === 'LineString') {
+                    geom.coordinates = moveCoord(geom.coordinates);
+                } else if (geom.type === 'Polygon') {
+                    geom.coordinates = geom.coordinates.map(ring => moveCoord(ring));
                 }
-
                 return moved;
             });
-
             map.getSource('end-point-source').setData({ type: 'FeatureCollection', features: movedEndPoints });
         }
 
-        // 更新反映
-        geojson = { type: 'FeatureCollection', features: movedFeatures }
+        // 反映
+        flg = true
+        geojson = { type: 'FeatureCollection', features: movedFeatures };
+
+        // ★ バウンス防止: 内部ステートも同時更新（外部ウォッチャが上書きしないように）
+        store.state.clickCircleGeojsonText = JSON.stringify(geojson);
+        store.state._lastLocalEditAt = Date.now();
+
         map.getSource('click-circle-source').setData(geojson);
         map.getSource('drag-handles-source').setData({ type: 'FeatureCollection', features: movedHandles });
 
@@ -8272,25 +8257,50 @@ export function enableDragHandles(map) {
     }
 
     function onUp() {
-        // 頂点・中点を再生成
-        // console.log(geojson)
+        if (!flg) return
         if (geojson && store.state.editEnabled) {
-            updateDragHandles(true)
-            generateSegmentLabelGeoJSON(geojson)
-            getAllVertexPoints(map, geojson);
-            setAllMidpoints(map, geojson);
-            store.state.clickCircleGeojsonText = JSON.stringify(geojson)
-            store.state.lassoGeojson = JSON.stringify(turf.featureCollection(geojson.features.filter(feature => feature.properties.lassoSelected === true)))
-            // 移動したフィーチャのみを保存
-            const featuresToSave = lassoSelected
-                ? movedFeatures.filter(f => f.properties.lassoSelected === true)
-                : movedFeatures.filter(f => f.properties.id === dragTargetId);
-            console.log(featuresToSave,dragTargetId)
-            saveDrowFeatures(featuresToSave);
+
+            // ★移動終了後に閉合補正→最終反映
+            autoCloseAllPolygons(geojson);
+
+            // ローカル最新を書き戻し（外部同期用）
+            store.state.clickCircleGeojsonText = JSON.stringify(geojson);
+            store.state._lastLocalEditAt = Date.now();
+
+            map.getSource('click-circle-source').setData(geojson);
+
+            // ラベル/頂点/中点/ハンドルを再生成（レンダ反映後に実施）
+            map.once('idle', () => {
+                if (!flg) return
+                updateDragHandles(true);
+                generateSegmentLabelGeoJSON(geojson);
+                getAllVertexPoints(map, geojson);
+                setAllMidpoints(map, geojson);
+
+                // 共有/履歴
+                store.state.clickCircleGeojsonText = JSON.stringify(geojson);
+                store.state.lassoGeojson = JSON.stringify(
+                    turf.featureCollection(geojson.features.filter(f => f.properties.lassoSelected === true))
+                );
+
+                const featuresToSave = (originalFeatures.features.find(f => f.properties.id === dragTargetId && f.properties.lassoSelected === true))
+                    ? movedFeatures.filter(f => f.properties.lassoSelected === true)
+                    : movedFeatures.filter(f => f.properties.id === dragTargetId);
+                saveDrowFeatures(featuresToSave);
+
+                // ✅ 再生成完了（この後の頂点ドラッグを許可）
+                store.state._geometryRebuilding = false;
+                store.state._isDraggingFeature = false;
+                store.state._suspendExternalSync = false;
+                flg = false
+            });
+        } else {
+            store.state._geometryRebuilding = false;
+            store.state._isDraggingFeature = false;
+            store.state._suspendExternalSync = false;
         }
-        if (panWasInitiallyEnabled) {
-            map.dragPan.enable();
-        }
+
+        if (panWasInitiallyEnabled) map.dragPan.enable();
         isDragging = false;
         dragOrigin = null;
         dragTargetId = null;
@@ -8306,6 +8316,17 @@ export function enableDragHandles(map) {
     map.getCanvas().addEventListener('touchmove', onMove, { passive: false });
     map.getCanvas().addEventListener('touchend', onUp, { passive: false });
 }
+
+// ---- setVertex 側への 1行パッチ（安全策） ----
+// tryStartDragging の冒頭 or 直前で:
+// if (store.state._geometryRebuilding || store.state._isDraggingFeature) return;
+
+// ---- ウォッチャ/ポーリング側のガード例 ----
+// if (store.state._suspendExternalSync) return;              // drag中は触らない
+// if (Date.now() - (store.state._lastLocalEditAt||0) < 200)  // 直近ローカル編集を尊重
+//   return;
+
+
 
 export function japanCoord (coordinates) {
     if (zahyokei.length > 0) {
