@@ -7765,14 +7765,12 @@ export function  vertexAndMidpoint() {
             }
             ringCopyCreate(counter)
             feature.geometry.coordinates[0] = ringCopy
-
         } else if (feature.geometry.type === 'MultiPolygon') {
             let ring = feature.geometry.coordinates[polygonIndex][0];
             const closed = ring.length > 2 &&
                 ring[0][0] === ring[ring.length - 1][0] &&
                 ring[0][1] === ring[ring.length - 1][1];
             if (closed) ring = ring.slice(0, -1);
-
             ring.splice(insertIndex, 0, [lng, lat]);
             feature.geometry.coordinates[polygonIndex][0] = ring.concat([ring[0]]);
         }
