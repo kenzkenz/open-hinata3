@@ -2309,7 +2309,7 @@ export function generateSegmentLabelGeoJSON(geojson) {
             totalDistance += dist
             const distance = kmOrm(dist)
             const isLast = i === coords.length - 2; // 最後のセグメント
-            console.log(totalDistance)
+            // console.log(totalDistance)
             if (isLast) {
                 totalDistance = kmOrm(totalDistance)
             }

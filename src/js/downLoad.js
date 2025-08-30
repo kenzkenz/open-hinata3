@@ -7669,6 +7669,143 @@ export function updateDragHandles(editEnabled) {
 }
 
 /**
+ * 頂点をダブルクリックで削除
+ * 中点をクリックで頂点追加
+ */
+export function  vertexAndMidpoint() {
+    const map = store.state.map01
+    // 頂点をダブルクリックで削除----------------------------------------------------------------------------------------------
+    map.on('dblclick', 'vertex-layer', function(e) {
+        e.preventDefault(); // ←これでズーム等のデフォルトイベントを止める！
+        if (!store.state.editEnabled) return;
+        if (!e.features?.length) return;
+        const { featureIndex, vertexIndex, polygonIndex } = e.features[0].properties;
+        const mainSourceGeojson = map.getSource('click-circle-source')._data;
+        const feature = mainSourceGeojson.features[featureIndex];
+        if (!feature) return;
+        let modified = false;
+
+        if (feature.geometry.type === 'LineString') {
+            if (feature.geometry.coordinates.length > 2) {
+                feature.geometry.coordinates.splice(vertexIndex, 1);
+                modified = true;
+            }
+        } else if (feature.geometry.type === 'Polygon') {
+            let ring = feature.geometry.coordinates[0];
+            const closed = ring.length > 2 &&
+                ring[0][0] === ring[ring.length - 1][0] &&
+                ring[0][1] === ring[ring.length - 1][1];
+            if (closed) ring = ring.slice(0, -1); // 一旦閉じ解除
+
+            // 最小4点（閉じたポリゴン）未満なら削除禁止
+            if (ring.length > 3) {
+                ring.splice(vertexIndex, 1);
+                modified = true;
+            }
+            // 必ず再閉じ
+            feature.geometry.coordinates[0] = ring.concat([ring[0]]);
+        } else if (feature.geometry.type === 'MultiPolygon') {
+            let ring = feature.geometry.coordinates[polygonIndex][0];
+            const closed = ring.length > 2 &&
+                ring[0][0] === ring[ring.length - 1][0] &&
+                ring[0][1] === ring[ring.length - 1][1];
+            if (closed) ring = ring.slice(0, -1);
+
+            if (ring.length > 3) {
+                ring.splice(vertexIndex, 1);
+                modified = true;
+            }
+            feature.geometry.coordinates[polygonIndex][0] = ring.concat([ring[0]]);
+        }
+
+        if (modified) {
+            autoCloseAllPolygons(mainSourceGeojson)
+            map.getSource('click-circle-source').setData(mainSourceGeojson);
+            getAllVertexPoints(map, mainSourceGeojson);
+            setAllMidpoints(map, mainSourceGeojson);
+        }
+    }, { passive: false });
+
+    map.on('click', 'midpoint-layer', function(e) {
+        if (!store.state.editEnabled) return;
+        if (!e.features?.length) return;
+        const f = e.features[0];
+        const { insertIndex, featureIndex, polygonIndex } = f.properties;
+        const [lng, lat] = f.geometry.coordinates;
+        const mainSourceGeojson = map.getSource('click-circle-source')._data;
+        const feature = mainSourceGeojson.features[featureIndex];
+        if (!feature) return;
+
+        if (feature.geometry.type === 'LineString') {
+            feature.geometry.coordinates.splice(insertIndex, 0, [lng, lat]);
+        } else if (feature.geometry.type === 'Polygon') {
+            let ring = feature.geometry.coordinates[0];
+            /**
+             * 下記をコメントアウトすると右端中点をクリックしたときのポリゴン崩れを防げる
+             * 副作用があるかもしれないので様子見
+             */
+            // const closed = ring.length > 2 &&
+            //     ring[0][0] === ring[ring.length - 1][0] &&
+            //     ring[0][1] === ring[ring.length - 1][1];
+            // if (closed) ring = ring.slice(0, -1);
+            ring.splice(insertIndex, 0, [lng, lat]);
+            feature.geometry.coordinates[0] = ring.concat([ring[0]]);
+        } else if (feature.geometry.type === 'MultiPolygon') {
+            let ring = feature.geometry.coordinates[polygonIndex][0];
+            const closed = ring.length > 2 &&
+                ring[0][0] === ring[ring.length - 1][0] &&
+                ring[0][1] === ring[ring.length - 1][1];
+            if (closed) ring = ring.slice(0, -1);
+
+            ring.splice(insertIndex, 0, [lng, lat]);
+            feature.geometry.coordinates[polygonIndex][0] = ring.concat([ring[0]]);
+        }
+
+        map.getSource('click-circle-source').setData(mainSourceGeojson);
+        getAllVertexPoints(map, mainSourceGeojson);
+        setAllMidpoints(map, mainSourceGeojson);
+    });
+
+
+    // map.on('click', 'midpoint-layer', function(e) {
+    //     if (!store.state.editEnabled) return;
+    //     if (!e.features?.length) return;
+    //     const f = e.features[0];
+    //     const { insertIndex, featureIndex, polygonIndex } = f.properties;
+    //     const [lng, lat] = f.geometry.coordinates;
+    //     const mainSourceGeojson = map.getSource('click-circle-source')._data;
+    //     const feature = mainSourceGeojson.features[featureIndex];
+    //     if (!feature) return;
+    //
+    //     if (feature.geometry.type === 'LineString') {
+    //         feature.geometry.coordinates.splice(insertIndex, 0, [lng, lat]);
+    //     } else if (feature.geometry.type === 'Polygon') {
+    //         let ring = feature.geometry.coordinates[0];
+    //         const closed = ring.length > 2 &&
+    //             ring[0][0] === ring[ring.length - 1][0] &&
+    //             ring[0][1] === ring[ring.length - 1][1];
+    //         if (closed) ring = ring.slice(0, -1);
+    //
+    //         ring.splice(insertIndex, 0, [lng, lat]);
+    //         feature.geometry.coordinates[0] = ring.concat([ring[0]]);
+    //     } else if (feature.geometry.type === 'MultiPolygon') {
+    //         let ring = feature.geometry.coordinates[polygonIndex][0];
+    //         const closed = ring.length > 2 &&
+    //             ring[0][0] === ring[ring.length - 1][0] &&
+    //             ring[0][1] === ring[ring.length - 1][1];
+    //         if (closed) ring = ring.slice(0, -1);
+    //
+    //         ring.splice(insertIndex, 0, [lng, lat]);
+    //         feature.geometry.coordinates[polygonIndex][0] = ring.concat([ring[0]]);
+    //     }
+    //
+    //     map.getSource('click-circle-source').setData(mainSourceGeojson);
+    //     getAllVertexPoints(map, mainSourceGeojson);
+    //     setAllMidpoints(map, mainSourceGeojson);
+    // });
+}
+
+/**
  * 頂点移動
  */
 export function setVertex() {
@@ -7811,7 +7948,7 @@ export function setVertex() {
 
             feature.geometry.coordinates = [lngLat.lng, lngLat.lat];
 
-            try {
+            // try {
                 map.getSource('vertex-source').setData(vertexSourceGeojson);
 
                 vertexSourceGeojson.features.forEach(f => {
@@ -7849,10 +7986,10 @@ export function setVertex() {
 
                 saveDrowFeatures([tgtFeature])
 
-            } catch (err) {
-                console.error('更新エラー:', err);
-            }
-        }, 15));
+            // } catch (err) {
+            //     console.error('更新エラー:', err);
+            // }
+        }, 100));
     });
 
     // 🛑 終了処理：mouseup / touchend / touchcancel
