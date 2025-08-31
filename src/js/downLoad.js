@@ -12706,6 +12706,50 @@ export async function addSvgAsImage(map, name, url, opt = {}) {
 }
 
 /**
+ * アニメで移動
+ * @param el
+ * @param left
+ * @param top
+ * @param duration
+ * @param easing
+ */
+export function animateRelocate(el, left, top, { duration = 200, easing = 'ease-out' } = {}) {
+    if (!el) return;
+
+    const mapEl = document.querySelector('#map01');
+    const baseRect = mapEl.getBoundingClientRect();
+    const fromRect = el.getBoundingClientRect();
+    const fromLeft = fromRect.left - baseRect.left;
+    const fromTop  = fromRect.top  - baseRect.top;
+
+    // 最終位置を確定
+    el.style.left = `${left}px`;
+    el.style.top  = `${top}px`;
+
+    // 新位置（最終）を計測
+    const toRect = el.getBoundingClientRect();
+    const toLeft = toRect.left - baseRect.left;
+    const toTop  = toRect.top  - baseRect.top;
+
+    const dx = fromLeft - toLeft;
+    const dy = fromTop  - toTop;
+
+    // 連打対策：前アニメがあればキャンセル
+    if (el.__moveAnim) el.__moveAnim.cancel();
+
+    // 過去位置に見せる → 0 に戻す
+    el.__moveAnim = el.animate(
+        [
+            { transform: `translate(${dx}px, ${dy}px)` },
+            { transform: 'translate(0, 0)' }
+        ],
+        { duration, easing }
+    );
+    el.__moveAnim.onfinish = el.__moveAnim.oncancel = () => { el.__moveAnim = null; };
+}
+
+
+/**
  *
  * @param map
  */

@@ -1753,7 +1753,7 @@ import DrawListDrawer from '@/components/drawer/DrawLisiDrawer'
 import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
 import {
-  addDraw, addSvgAsImage,
+  addDraw, addSvgAsImage, animateRelocate,
   bakeRotationToBlob, bindMoveendFor360, buildCandidates,
   capture,
   changePrintMap03,
@@ -3256,8 +3256,9 @@ export default {
           let left = (pixel.x <= map01Width / 2)
               ? pixel.x + M
               : pixel.x - panelW - M;
-          this.floatingGroup.style.left = `${left}px`;
-          this.floatingGroup.style.top = `${pixel.y + M}px`;
+          // this.floatingGroup.style.left = `${left}px`;
+          // this.floatingGroup.style.top = `${pixel.y + M}px`;
+          animateRelocate(this.floatingGroup, left, pixel.y + M, { duration: 200, easing: 'ease-out' });
           vm.$store.state.showDrawConfrim = true
         }
 
