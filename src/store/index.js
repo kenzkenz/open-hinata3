@@ -95,7 +95,7 @@ export default createStore({
     currentCircleLineColor: 'black',
     currentCircleLineWidth: 1,
 
-    currentPolygonColor: 'yellow',
+    currentPolygonColor: 'transparent',
 
     currentLineColor: 'black',
     currentLineWidth: 5,

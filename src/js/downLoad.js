@@ -12687,6 +12687,8 @@ export function forseMoveLayer(map) {
         'click-circle-polygon-symbol-area-layer',
         'click-circle-symbol-layer',
         'drag-handles-layer',
+        'vertex-layer',
+        'midpoint-layer',
     ];
     layerIds.forEach(drawLayerId => {
         map.moveLayer(drawLayerId)

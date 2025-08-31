@@ -5390,6 +5390,7 @@ export default {
       store.state.isCursorOnPanel = false
       this.finishLine()
       markaersRemove()
+      closeAllPopups()
     },
     toggleDrawLasso () {
       if (!this.$store.state.isEditable && !this.$store.state.isMine) {
