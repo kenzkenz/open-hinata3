@@ -8,10 +8,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
       <div id="floating-buttons" style="position: absolute; display: none; z-index: 999999">
-        <v-btn id="confirm-btn">確定</v-btn>
-        <button disabled>✔ 確定</button>
-        <button id="undo-btn">↶ Undo</button>
-        <button id="cancel-btn">✖ キャンセル</button>
+        <v-btn :color="confirmBtnColor" id="confirm-btn">✔ 確定</v-btn>
+<!--        <button disabled>✔ 確定</button>-->
+<!--        <button id="undo-btn">↶ Undo</button>-->
+        <v-btn style="margin-left: 10px;" color="error" id="cancel-btn">キャンセル</v-btn>
       </div>
 
 
@@ -2398,6 +2398,7 @@ export default {
     imgRotation: 0,
     dialogForPictureZindex: 0,
     zIndex: 0,
+    confirmBtnColor: 'info',
   }),
   computed: {
     ...mapState([
@@ -3199,7 +3200,7 @@ export default {
 
           // ボタンイベント
           this.confirmButton.addEventListener('click', this.handleConfirm.bind(this));
-          this.undoButton.addEventListener('click', this.handleUndo.bind(this));
+          // this.undoButton.addEventListener('click', this.handleUndo.bind(this));
           this.cancelButton.addEventListener('click', this.handleCancel.bind(this));
         }
 
@@ -3215,6 +3216,18 @@ export default {
           //   // this.confirmButton.disabled = false;
           //   this.confirmButton.classList.add('active'); // CSSで強調
           // }
+
+          vm.confirmBtnColor = 'info'
+          let minPoints
+          if (vm.s_isDrawPolygon) {
+            if (vm.tempLineCoordsGuide.length >= this.minPolygonPoints) {
+              vm.confirmBtnColor = 'success'
+            }
+          } else if (vm.s_isDrawLine) {
+            if (vm.tempLineCoordsGuide.length >= this.minLinePoints) {
+              vm.confirmBtnColor = 'success'
+            }
+          }
 
           // UI位置追従: 最後のポイントにボタンを移動
           if (vm.tempLineCoordsGuide.length >= 2) {
@@ -3250,18 +3263,6 @@ export default {
           this.floatingGroup.style.left = `${pixel.x + 10}px`; // オフセット
           this.floatingGroup.style.top = `${pixel.y + 10}px`;
           this.floatingGroup.style.display = 'block'
-
-          // 画面外クランプ（ビューポート内に収める）
-          const viewportWidth = window.innerWidth;
-          const viewportHeight = window.innerHeight;
-          const groupRect = this.floatingGroup.getBoundingClientRect();
-          // if (pixel.x + groupRect.width > viewportWidth) {
-          // console.log(viewportWidth,groupRect.width)
-            // this.floatingGroup.style.left = `${viewportWidth - groupRect.width - 10}px`;
-          // }
-          // if (pixel.y + groupRect.height > viewportHeight) {
-          //   this.floatingGroup.style.top = `${viewportHeight - groupRect.height - 10}px`;
-          // }
         }
 
         handleConfirm() {
@@ -3271,12 +3272,13 @@ export default {
           } else if (vm.s_isDrawLine) {
             minPoints = this.minLinePoints
           }
+
           if (vm.tempLineCoordsGuide.length < minPoints) {
-            store.state.loadingMessage3 = `ポイントが足りません。最低${minPoints/2}点必要です。`
+            store.state.loadingMessage3 = `ポイントが足りません。最低${minPoints / 2}点必要です。`
             store.state.loading3 = true
             setTimeout(() => {
               store.state.loading3 = false
-            },2000)
+            }, 2000)
             return
           }
           vm.finishDrawing()
@@ -3860,6 +3862,7 @@ export default {
       if (this.s_isDrawLine) {
         if (!this.tempLineCoords.length) return;
         const coords = this.tempLineCoords;
+        const guideCoords = this.tempLineCoordsGuide
         if (!coords.length) return;
         // 最後の頂点がカーソル位置と重なっている場合は2回削除
         if (this.lastMouseLngLat && coords.length >= 1) {
@@ -3867,6 +3870,7 @@ export default {
           if (lastLng === this.lastMouseLngLat.lng && lastLat === this.lastMouseLngLat.lat) {
             // カーソル重なり頂点を2回削除
             coords.pop();
+            // guideCoords.pop()
             if (coords.length) coords.pop();
             this.updateDynamicLinePreview();
             return;
@@ -3874,10 +3878,12 @@ export default {
         }
         // それ以外は1回だけ削除
         coords.pop();
+        // guideCoords.pop()
         this.updateDynamicLinePreview();
 
       } else if (this.s_isDrawPolygon) {
         const coords = this.tempPolygonCoords;
+        const guideCoords = this.tempLineCoordsGuide
         if (!coords.length) return;
         // 最後の頂点がカーソル位置と重なっている場合は2回削除
         if (this.lastMouseLngLat && coords.length >= 1) {
@@ -3885,13 +3891,16 @@ export default {
           if (lastLng === this.lastMouseLngLat.lng && lastLat === this.lastMouseLngLat.lat) {
             // カーソル重なり頂点を2回削除
             coords.pop();
+            // guideCoords.pop()
             if (coords.length) coords.pop();
             this.updateDynamicPolygonPreview();
             return;
           }
         }
         // それ以外は1回だけ削除
+        // alert(888)
         coords.pop();
+        // guideCoords.pop()
         this.updateDynamicPolygonPreview();
       }
     },
@@ -3918,6 +3927,10 @@ export default {
       if (coords.length && this.lastMouseLngLat) {
         coords.push([this.lastMouseLngLat.lng, this.lastMouseLngLat.lat]);
       }
+      map.getSource('guide-line-source').setData({
+        type: 'FeatureCollection',
+        features: []
+      });
       map.getSource('guide-line-source').setData({
         type: 'FeatureCollection',
         features: [{
@@ -5038,6 +5051,8 @@ export default {
       this.tempLineCoords = []
       this.tempLineCoordsGuide = []
       this.tempFreehandCoords = []
+      this.tempPolygonCoords = []
+      this.tempLineCoordsCoords = []
     },
     onPanelEnter() {
       // this.$store.state.panelHoverCount++;
@@ -5383,10 +5398,11 @@ export default {
     toggleLDraw ()  {
       const map01 = this.$store.state.map01
       if (!this.s_isDraw) {
-        this.s_isDrawPoint = false
-        this.s_isDrawCircle = false
-        this.s_isDrawLine = false
-        this.s_isDrawPolygon = false
+        this.$store.commit('disableAllDraws')
+        // this.s_isDrawPoint = false
+        // this.s_isDrawCircle = false
+        // this.s_isDrawLine = false
+        // this.s_isDrawPolygon = false
         map01.dragPan.enable = this.originalEnable
         map01.dragPan.enable()
         this.s_isDrawFix = false
@@ -7411,7 +7427,7 @@ export default {
         };
         map.getSource('guide-line-source')?.setData(vertexGeojson);
       });
-      // ポリゴン描画：シングルクリックで節点追加---------------------------------------------------------
+      // ポリゴン作成：シングルクリックで節点追加---------------------------------------------------------
       function onPolygonClick(e) {
         popup(e,map,'map01',vm.s_map2Flg)
       }
@@ -7686,14 +7702,19 @@ export default {
         map.dragPan.enable();
       });
 
-      // ガイドライン-----------------------------------------------------------------------------------------------------
+      // ガイドライン作成-----------------------------------------------------------------------------------------------------
       map.on('click', (e) => {
         if (!this.s_isDrawLine && !this.s_isDrawPolygon) return;
         const lng = e.lngLat.lng;
         const lat = e.lngLat.lat;
         this.tempLineCoordsGuide.push([lng, lat]);
         this.isDrawingLine = true;
-        // 2点以上になったら本採用など
+        console.log(this.tempLineCoordsGuide.length)
+        if (this.tempLineCoordsGuide.length === 1) {
+          const fc = turf.featureCollection([turf.point([lng, lat])])
+          console.log(fc)
+          map.getSource('guide-line-source').setData(fc)
+        }
       });
       map.on('mousemove', (e) => {
         if ((!this.isDrawingLine || this.tempLineCoordsGuide.length === 0)) return;
@@ -7710,7 +7731,10 @@ export default {
             properties: {}
           }]
         };
-        map.getSource('guide-line-source').setData(guideLineGeoJson);
+        /**
+         * コードが絡まっている。要改修
+         */
+        // map.getSource('guide-line-source').setData(guideLineGeoJson);
       });
 
       // ⭐️⭐️⭐️頂点移動
@@ -10346,6 +10370,7 @@ export default {
 }
 
 #floating-buttons {
+  width:220px;
   position: absolute;
   z-index: 10000000;
   background: white;

@@ -2292,7 +2292,14 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
             }
 
             saveDrowFeatures(updateFeatures)
+            if (store.state.isSmall500) {
+                // 謎の表示をするので強制的に消す。
+                setTimeout(() => {
+                    document.querySelector('#drawList').style.display = 'none'
+                }, 1000)
+            }
             return escapeHTML(JSON.stringify(toRaw(geojson)))
+
         }
     }
 }
