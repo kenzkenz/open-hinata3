@@ -1263,6 +1263,26 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
       <div id="map00">
 
+<!--        <div class="my-speed-dial">-->
+<!--        <v-speed-dial-->
+<!--            location="top center"-->
+<!--            transition="scale-transition"-->
+<!--        >-->
+<!--          <template v-slot:activator="{ props: activatorProps }">-->
+<!--            <v-fab-->
+<!--                v-bind="activatorProps"-->
+<!--                size="large"-->
+<!--                icon="$vuetify"-->
+<!--            ></v-fab>-->
+<!--          </template>-->
+
+<!--          <v-btn key="1" icon="$success"></v-btn>-->
+<!--          <v-btn key="2" icon="$info"></v-btn>-->
+<!--          <v-btn key="3" icon="$warning"></v-btn>-->
+<!--          <v-btn key="4" icon="$error"></v-btn>-->
+<!--        </v-speed-dial>-->
+<!--        </div>-->
+
         <v-icon
             v-if="isUsingServerGeojson && !s_isPrint"
             color="info"
@@ -10421,6 +10441,14 @@ export default {
 /*  color: white;*/
 /*  animation: pulse 1s infinite; !* 強調アニメ *!*/
 /*}*/
+
+.my-speed-dial {
+  position: absolute;
+  top: 100px;
+  left: 100px;
+  z-index: 99999999;
+}
+
 
 @keyframes pulse {
   0% { transform: scale(1); }
