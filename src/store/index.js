@@ -7,6 +7,7 @@ export default createStore({
   state: {
     drawFeatureId: '',
     clientVersion: 1.411,
+    showDrawConfrim: false,
     noProgress: false,
     filter360: [
       "all",
@@ -555,7 +556,8 @@ export default createStore({
       state.isDrawLine   = false;
       state.isDrawCircle = false;
       state.isDrawPoint  = false;
-      document.querySelector('#floating-buttons').style.display = 'none';
+      // document.querySelector('#floating-buttons').style.display = 'none';
+      state.showDrawConfrim = false
     },
     // どれか1つだけ true にしたいとき用（要改修）
     // 使用例: commit('SET_DRAW_MODE', 'isDrawPolygon')

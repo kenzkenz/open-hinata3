@@ -2403,6 +2403,7 @@ export default {
   }),
   computed: {
     ...mapState([
+      'showDrawConfrim2',
       'mapillaryTytle',
       'mapillaryType',
       'noProgress',
@@ -3215,7 +3216,6 @@ export default {
           // }
 
           vm.confirmBtnColor = 'info'
-          let minPoints
           if (vm.s_isDrawPolygon) {
             if (vm.tempLineCoordsGuide.length >= this.minPolygonPoints) {
               vm.confirmBtnColor = 'success'
@@ -7763,7 +7763,7 @@ export default {
         /**
          * コードが絡まっている。要改修
          */
-        // map.getSource('guide-line-source').setData(guideLineGeoJson);
+        map.getSource('guide-line-source').setData(guideLineGeoJson);
       });
 
       // ⭐️⭐️⭐️頂点移動
