@@ -7,7 +7,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <template>
   <v-app>
     <v-main>
-      <div id="floating-buttons" style="position: absolute; display: none; z-index: 999999">
+      <div v-show="showDrawConfrim" id="floating-buttons" style="position: absolute; z-index: 999999">
         <v-btn :color="confirmBtnColor" id="confirm-btn">✔ 確定</v-btn>
 <!--        <button disabled>✔ 確定</button>-->
 <!--        <button id="undo-btn">↶ Undo</button>-->
@@ -1768,7 +1768,7 @@ import {
   downloadGeoJSONAsCSV,
   downloadKML,
   downloadSimaText,
-  downloadTextFile, DrawTool,
+  downloadTextFile,
   DXFDownload,
   dxfToGeoJSON,
   enableDragHandles,
@@ -1784,7 +1784,7 @@ import {
   geoJSONToSIMA,
   geoTiffLoad,
   geoTiffLoad2,
-  getBBoxFromPolygon, getCreatorIdFromUsernameAndSet,
+  getBBoxFromPolygon,
   getCRS,
   getMaxZIndex,
   getNextZIndex,
@@ -2399,6 +2399,7 @@ export default {
     dialogForPictureZindex: 0,
     zIndex: 0,
     confirmBtnColor: 'info',
+    showDrawConfrim: false,
   }),
   computed: {
     ...mapState([
@@ -3183,10 +3184,6 @@ export default {
           this.map = map;
           this.minPolygonPoints = 6
           this.minLinePoints = 4
-          // this.tempLineCoordsGuide = []; // ポイント配列
-          // this.isDrawingLine = false;
-          // this.s_isDrawLine = false; // モードフラグ（外部でセット）
-          // this.s_isDrawPolygon = false;
 
           // フローティングボタン要素（HTMLで作成済みと仮定）
           this.floatingGroup = document.getElementById('floating-buttons');
@@ -3259,10 +3256,18 @@ export default {
 
         updateFloatingPosition(lngLat) {
           // マップ座標を画面ピクセルに変換
+          const map01Width = document.querySelector('#map01').clientWidth
+          console.log(map01Width)
           const pixel = this.map.project(lngLat);
-          this.floatingGroup.style.left = `${pixel.x + 10}px`; // オフセット
-          this.floatingGroup.style.top = `${pixel.y + 10}px`;
-          this.floatingGroup.style.display = 'block'
+          const panelW = this.floatingGroup.offsetWidth
+          const M = 10; // マージン
+          // 画面左半分: 右に余白 +M / 右半分: パネル幅ぶん左へ引く
+          let left = (pixel.x <= map01Width / 2)
+              ? pixel.x + M
+              : pixel.x - panelW - M;
+          this.floatingGroup.style.left = `${left}px`;
+          this.floatingGroup.style.top = `${pixel.y + M}px`;
+          vm.showDrawConfrim = true
         }
 
         handleConfirm() {
@@ -3304,7 +3309,8 @@ export default {
 
         resetDraw() {
           vm.finishLine()
-          this.floatingGroup.style.display = 'none'; // 非表示 or 元位置に戻す
+          // this.floatingGroup.style.display = 'none'; // 非表示 or 元位置に戻す
+          vm.showDrawConfrim = false
         }
       }
       // DrawToolインスタンス化
@@ -5499,6 +5505,29 @@ export default {
         this.tempLineCoords = []
       }
       this.finishLine()
+    },
+    drawFix (isFix) {
+      const map =this.$store.state.map01
+      if (isFix) {
+        map.dragPan.disable()
+        const originalEnable = map.dragPan.enable;
+        // -----------------------------------------
+        map.dragPan.enable = function (...args) {
+          console.trace('dragPan.enable() called');
+          setTimeout(() => {
+            map.dragPan.disable();
+            console.log('dragPan was force-disabled again');
+          }, 50);
+          return originalEnable.apply(this, args);
+        };
+        // -----------------------------------------
+      } else {
+        // フックを解除。this.originalEnableはオンロードの先頭に書いている。
+        console.log(this.originalEnable)
+        map.dragPan.enable = this.originalEnable
+        map.dragPan.enable()
+      }
+      store.state.isCursorOnPanel = false
     },
     toggleDrawFix () {
       const map =this.$store.state.map01
@@ -9909,6 +9938,13 @@ export default {
     document.querySelector('#drawList').style.display = 'none'
   },
   watch: {
+    showDrawConfrim(value) {
+      if (value && this.isSmall500) {
+        this.drawFix(true)
+      } else {
+        this.drawFix(false)
+      }
+    },
     async s_is360Pic(value) {
       const map01 = this.$store.state.map01
       if (map01.getZoom() < 14) return
