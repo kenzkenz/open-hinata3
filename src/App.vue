@@ -7,6 +7,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <template>
   <v-app>
     <v-main>
+      <div id="floating-buttons" style="position: absolute; display: none; z-index: 999999">
+        <v-btn id="confirm-btn">確定</v-btn>
+        <button disabled>✔ 確定</button>
+        <button id="undo-btn">↶ Undo</button>
+        <button id="cancel-btn">✖ キャンセル</button>
+      </div>
+
+
       <DialogDrawConfig
           :mapName="'map01'"
           @open-floating="openWindow"
@@ -1760,7 +1768,7 @@ import {
   downloadGeoJSONAsCSV,
   downloadKML,
   downloadSimaText,
-  downloadTextFile,
+  downloadTextFile, DrawTool,
   DXFDownload,
   dxfToGeoJSON,
   enableDragHandles,
@@ -3167,6 +3175,139 @@ export default {
     },
   },
   methods: {
+    drawToolSet() {
+      const vm = this
+      class DrawTool {
+        constructor(map) {
+          this.map = map;
+          this.minPolygonPoints = 6
+          this.minLinePoints = 4
+          // this.tempLineCoordsGuide = []; // ポイント配列
+          // this.isDrawingLine = false;
+          // this.s_isDrawLine = false; // モードフラグ（外部でセット）
+          // this.s_isDrawPolygon = false;
+
+          // フローティングボタン要素（HTMLで作成済みと仮定）
+          this.floatingGroup = document.getElementById('floating-buttons');
+          this.confirmButton = document.getElementById('confirm-btn');
+          this.undoButton = document.getElementById('undo-btn');
+          this.cancelButton = document.getElementById('cancel-btn');
+
+          // イベントバインド
+          this.map.on('click', this.handleClick.bind(this));
+          this.map.on('mousemove', this.handleMouseMove.bind(this));
+
+          // ボタンイベント
+          this.confirmButton.addEventListener('click', this.handleConfirm.bind(this));
+          this.undoButton.addEventListener('click', this.handleUndo.bind(this));
+          this.cancelButton.addEventListener('click', this.handleCancel.bind(this));
+        }
+
+        handleClick(e) {
+          if (!vm.s_isDrawLine && !vm.s_isDrawPolygon) return;
+          const lng = e.lngLat.lng;
+          const lat = e.lngLat.lat;
+          vm.tempLineCoordsGuide.push([lng, lat]);
+          vm.isDrawingLine = true;
+
+          // // 2点以上になったら確定ボタン有効化（状態追従）
+          // if (vm.tempLineCoordsGuide.length >= 8) { // ラインの場合2、ポリゴンなら3に調整
+          //   // this.confirmButton.disabled = false;
+          //   this.confirmButton.classList.add('active'); // CSSで強調
+          // }
+
+          // UI位置追従: 最後のポイントにボタンを移動
+          if (vm.tempLineCoordsGuide.length >= 2) {
+            this.updateFloatingPosition(e.lngLat);
+          }
+        }
+
+        handleMouseMove(e) {
+          // if (!vm.isDrawingLine || vm.tempLineCoordsGuide.length === 0) return;
+          //
+          // // 仮ライン更新
+          // const guideCoords = vm.tempLineCoordsGuide.concat([[e.lngLat.lng, e.lngLat.lat]]);
+          // const guideLineGeoJson = {
+          //   type: 'FeatureCollection',
+          //   features: [{
+          //     type: 'Feature',
+          //     geometry: {
+          //       type: 'LineString',
+          //       coordinates: guideCoords
+          //     },
+          //     properties: {}
+          //   }]
+          // };
+          // this.map.getSource('guide-line-source').setData(guideLineGeoJson);
+          //
+          // // UI位置追従: マウス位置にボタンを追従（スムーズに）
+          // this.updateFloatingPosition(e.lngLat);
+        }
+
+        updateFloatingPosition(lngLat) {
+          // マップ座標を画面ピクセルに変換
+          const pixel = this.map.project(lngLat);
+          this.floatingGroup.style.left = `${pixel.x + 10}px`; // オフセット
+          this.floatingGroup.style.top = `${pixel.y + 10}px`;
+          this.floatingGroup.style.display = 'block'
+
+          // 画面外クランプ（ビューポート内に収める）
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+          const groupRect = this.floatingGroup.getBoundingClientRect();
+          // if (pixel.x + groupRect.width > viewportWidth) {
+          // console.log(viewportWidth,groupRect.width)
+            // this.floatingGroup.style.left = `${viewportWidth - groupRect.width - 10}px`;
+          // }
+          // if (pixel.y + groupRect.height > viewportHeight) {
+          //   this.floatingGroup.style.top = `${viewportHeight - groupRect.height - 10}px`;
+          // }
+        }
+
+        handleConfirm() {
+          let minPoints
+          if (vm.s_isDrawPolygon) {
+            minPoints = this.minPolygonPoints
+          } else if (vm.s_isDrawLine) {
+            minPoints = this.minLinePoints
+          }
+          if (vm.tempLineCoordsGuide.length < minPoints) {
+            store.state.loadingMessage3 = `ポイントが足りません。最低${minPoints/2}点必要です。`
+            store.state.loading3 = true
+            setTimeout(() => {
+              store.state.loading3 = false
+            },2000)
+            return
+          }
+          vm.finishDrawing()
+          this.resetDraw();
+        }
+
+        handleUndo() {
+          if (vm.tempLineCoordsGuide.length > 0) {
+            vm.removeLastVertex()
+            // vm.tempLineCoordsGuide.pop(); // 最後ポイント削除
+            // // ガイドライン再描画（空ならクリア）
+            // this.map.getSource('guide-line-source').setData({ type: 'FeatureCollection', features: [] });
+            // if (vm.tempLineCoordsGuide.length < 2) {
+            //   // this.confirmButton.disabled = true;
+            //   this.confirmButton.classList.remove('active');
+            // }
+          }
+        }
+
+        handleCancel() {
+          this.resetDraw();
+        }
+
+        resetDraw() {
+          vm.finishLine()
+          this.floatingGroup.style.display = 'none'; // 非表示 or 元位置に戻す
+        }
+      }
+      // DrawToolインスタンス化
+      const drawTool = new DrawTool(this.map01);
+    },
     mapillaryClose() {
       mapillaryFilterRiset()
     },
@@ -3754,10 +3895,10 @@ export default {
         this.updateDynamicPolygonPreview();
       }
     },
-    // 動的ポリゴンプレビュー
+    // 動的ラインプレビュー
     updateDynamicLinePreview() {
       const map = this.$store.state.map01;
-      const coords = this.tempLineCoords.slice();
+      const coords = this.tempLineCoords
       if (coords.length && this.lastMouseLngLat) {
         coords.push([this.lastMouseLngLat.lng, this.lastMouseLngLat.lat]);
       }
@@ -3773,7 +3914,7 @@ export default {
     // 動的ポリゴンプレビュー
     updateDynamicPolygonPreview() {
       const map = this.$store.state.map01;
-      const coords = this.tempPolygonCoords.slice();
+      const coords = this.tempPolygonCoords
       if (coords.length && this.lastMouseLngLat) {
         coords.push([this.lastMouseLngLat.lng, this.lastMouseLngLat.lat]);
       }
@@ -5302,7 +5443,7 @@ export default {
           id: id,
           pairId: id,
           label: '',
-          color: colorNameToRgba('orange', 0.6),
+          color: colorNameToRgba(this.$store.state.currentPolygonColor || 'yellow', 0.6),
           'line-width': 1,
         };
         geojsonCreate(map01, 'Polygon', coords, properties);
@@ -7865,6 +8006,10 @@ export default {
         // console.log(params)
         map.on('load',async () => {
 
+
+          // DrawToolインスタンス化
+          // const drawTool = new DrawTool(map);
+
           if (this.$store.state.isIphone) {
             installSafePicking(map)
             installDrawerStabilizer(map, {
@@ -7891,6 +8036,9 @@ export default {
 
           // ドローを同期
           if (mapName === 'map01') {
+
+            this.drawToolSet()
+
             const map01 = this.$store.state.map01
             const map02 = this.$store.state.map02
             map01.on('sourcedata', (e) => {
@@ -10196,6 +10344,37 @@ export default {
   height: 40px;
   overflow: hidden;
 }
+
+#floating-buttons {
+  position: absolute;
+  z-index: 10000000;
+  background: white;
+  padding: 5px 5px 0 5px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  display: flex; /* 横並び */
+}
+
+/*#floating-buttons button {*/
+/*  margin: 5px;*/
+/*  padding: 10px;*/
+/*  border: none;*/
+/*  border-radius: 50%;*/
+/*  cursor: pointer;*/
+/*}*/
+
+/*#floating-buttons button.active {*/
+/*  background: green;*/
+/*  color: white;*/
+/*  animation: pulse 1s infinite; !* 強調アニメ *!*/
+/*}*/
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
 </style>
 
 
