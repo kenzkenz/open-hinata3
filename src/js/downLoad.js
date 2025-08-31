@@ -7889,13 +7889,43 @@ export function setVertex() {
         if (feature.geometry.type === 'LineString') {
             feature.geometry.coordinates.splice(insertIndex, 0, pt);
         } else if (feature.geometry.type === 'Polygon') {
+            // let ring = feature.geometry.coordinates[0];
+            // const closed = ring.length > 2 &&
+            //     ring[0][0] === ring[ring.length - 1][0] &&
+            //     ring[0][1] === ring[ring.length - 1][1];
+            // if (closed) ring = ring.slice(0, -1);
+            // ring.splice(insertIndex, 0, pt);
+            // feature.geometry.coordinates[0] = ring.concat([ring[0]]);
+            //
+
+            /**
+             * 苦肉の策。面積がほぼ同じポリゴンができるまでループする。
+             * @type {string}
+             */
+            const prevArea = calculatePolygonMetrics(feature).area
             let ring = feature.geometry.coordinates[0];
-            const closed = ring.length > 2 &&
-                ring[0][0] === ring[ring.length - 1][0] &&
-                ring[0][1] === ring[ring.length - 1][1];
-            if (closed) ring = ring.slice(0, -1);
-            ring.splice(insertIndex, 0, pt);
-            feature.geometry.coordinates[0] = ring.concat([ring[0]]);
+            let counter = 0
+            let ringCopy = null
+            function ringCopyCreate(counter0) {
+                ringCopy = JSON.parse(JSON.stringify(ring))
+                ringCopy.splice(insertIndex - counter0, 0, pt)
+                const polygon = turf.polygon([ringCopy.concat([ringCopy[0]])])
+                const newArea = calculatePolygonMetrics(polygon).area
+                const ccc = prevArea.replace('約', '').replace('m2', '') /
+                    newArea.replace('約', '').replace('m2', '')
+                if (ccc > 0.95 && ccc < 1.05) {
+                    console.log('ほぼ同じ')
+                    console.log(prevArea + '/' + newArea)
+                    return
+                } else {
+                    counter0 = counter++
+                    ringCopyCreate(counter0)
+                }
+            }
+            ringCopyCreate(counter)
+            feature.geometry.coordinates[0] = ringCopy
+
+
         } else if (feature.geometry.type === 'MultiPolygon') {
             let ring = feature.geometry.coordinates[polygonIndex][0];
             const closed = ring.length > 2 &&
@@ -8066,7 +8096,6 @@ export function setVertex() {
         });
     });
 }
-
 
 // 移動------------------------------------------------------------------------------------------------------------------
 /**
@@ -12675,125 +12704,6 @@ export async function addSvgAsImage(map, name, url, opt = {}) {
         URL.revokeObjectURL(blobUrl);
     }
 }
-
-/**
- *
- */
-// export class DrawTool {
-//     constructor(map) {
-//         this.map = map;
-//         this.tempLineCoordsGuide = []; // ポイント配列
-//         this.isDrawingLine = false;
-//         this.s_isDrawLine = false; // モードフラグ（外部でセット）
-//         this.s_isDrawPolygon = false;
-//
-//         // フローティングボタン要素（HTMLで作成済みと仮定）
-//         this.floatingGroup = document.getElementById('floating-buttons');
-//         this.confirmButton = document.getElementById('confirm-btn');
-//         this.undoButton = document.getElementById('undo-btn');
-//         this.cancelButton = document.getElementById('cancel-btn');
-//
-//         // イベントバインド
-//         this.map.on('click', this.handleClick.bind(this));
-//         this.map.on('mousemove', this.handleMouseMove.bind(this));
-//
-//         // ボタンイベント
-//         this.confirmButton.addEventListener('click', this.handleConfirm.bind(this));
-//         this.undoButton.addEventListener('click', this.handleUndo.bind(this));
-//         this.cancelButton.addEventListener('click', this.handleCancel.bind(this));
-//     }
-//
-//     handleClick(e) {
-//         if (!store.state.isDrawLine && !store.state.isDrawPolygon) return;
-//         alert(888)
-//
-//         const lng = e.lngLat.lng;
-//         const lat = e.lngLat.lat;
-//         this.tempLineCoordsGuide.push([lng, lat]);
-//         this.isDrawingLine = true;
-//
-//         // 2点以上になったら確定ボタン有効化（状態追従）
-//         if (this.tempLineCoordsGuide.length >= 2) { // ラインの場合2、ポリゴンなら3に調整
-//             this.confirmButton.disabled = false;
-//             this.confirmButton.classList.add('active'); // CSSで強調
-//         }
-//
-//         // UI位置追従: 最後のポイントにボタンを移動
-//         this.updateFloatingPosition(e.lngLat);
-//     }
-//
-//     handleMouseMove(e) {
-//         if (!this.isDrawingLine || this.tempLineCoordsGuide.length === 0) return;
-//
-//         // 仮ライン更新
-//         const guideCoords = this.tempLineCoordsGuide.concat([[e.lngLat.lng, e.lngLat.lat]]);
-//         const guideLineGeoJson = {
-//             type: 'FeatureCollection',
-//             features: [{
-//                 type: 'Feature',
-//                 geometry: {
-//                     type: 'LineString',
-//                     coordinates: guideCoords
-//                 },
-//                 properties: {}
-//             }]
-//         };
-//         this.map.getSource('guide-line-source').setData(guideLineGeoJson);
-//
-//         // UI位置追従: マウス位置にボタンを追従（スムーズに）
-//         this.updateFloatingPosition(e.lngLat);
-//     }
-//
-//     updateFloatingPosition(lngLat) {
-//         // マップ座標を画面ピクセルに変換
-//         const pixel = this.map.project(lngLat);
-//         this.floatingGroup.style.left = `${pixel.x + 20}px`; // オフセット
-//         this.floatingGroup.style.top = `${pixel.y + 20}px`;
-//
-//         // 画面外クランプ（ビューポート内に収める）
-//         const viewportWidth = window.innerWidth;
-//         const viewportHeight = window.innerHeight;
-//         const groupRect = this.floatingGroup.getBoundingClientRect();
-//         if (pixel.x + groupRect.width > viewportWidth) {
-//             this.floatingGroup.style.left = `${viewportWidth - groupRect.width - 10}px`;
-//         }
-//         if (pixel.y + groupRect.height > viewportHeight) {
-//             this.floatingGroup.style.top = `${viewportHeight - groupRect.height - 10}px`;
-//         }
-//     }
-//
-//     handleConfirm() {
-//         if (this.tempLineCoordsGuide.length < 2) return; // バリデーション
-//         // ガイドラインを本描画に変換（例: 新ソースにデータセット）
-//         const finalGeoJson = { /* ... guideLineGeoJson をコピー */ };
-//         this.map.getSource('final-line-source').setData(finalGeoJson);
-//         this.resetDraw();
-//     }
-//
-//     handleUndo() {
-//         if (this.tempLineCoordsGuide.length > 0) {
-//             this.tempLineCoordsGuide.pop(); // 最後ポイント削除
-//             // ガイドライン再描画（空ならクリア）
-//             this.map.getSource('guide-line-source').setData({ type: 'FeatureCollection', features: [] });
-//             if (this.tempLineCoordsGuide.length < 2) {
-//                 this.confirmButton.disabled = true;
-//                 this.confirmButton.classList.remove('active');
-//             }
-//         }
-//     }
-//
-//     handleCancel() {
-//         this.resetDraw();
-//     }
-//
-//     resetDraw() {
-//         this.tempLineCoordsGuide = [];
-//         this.isDrawingLine = false;
-//         this.map.getSource('guide-line-source').setData({ type: 'FeatureCollection', features: [] });
-//         this.floatingGroup.style.display = 'none'; // 非表示 or 元位置に戻す
-//         this.confirmButton.disabled = true;
-//     }
-// }
 
 /**
  *

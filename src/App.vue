@@ -2399,11 +2399,10 @@ export default {
     dialogForPictureZindex: 0,
     zIndex: 0,
     confirmBtnColor: 'info',
-    showDrawConfrim: false,
   }),
   computed: {
     ...mapState([
-      'showDrawConfrim2',
+      'showDrawConfrim',
       'mapillaryTytle',
       'mapillaryType',
       'noProgress',
@@ -3208,13 +3207,6 @@ export default {
           const lat = e.lngLat.lat;
           vm.tempLineCoordsGuide.push([lng, lat]);
           vm.isDrawingLine = true;
-
-          // // 2点以上になったら確定ボタン有効化（状態追従）
-          // if (vm.tempLineCoordsGuide.length >= 8) { // ラインの場合2、ポリゴンなら3に調整
-          //   // this.confirmButton.disabled = false;
-          //   this.confirmButton.classList.add('active'); // CSSで強調
-          // }
-
           vm.confirmBtnColor = 'info'
           if (vm.s_isDrawPolygon) {
             if (vm.tempLineCoordsGuide.length >= this.minPolygonPoints) {
@@ -3225,7 +3217,6 @@ export default {
               vm.confirmBtnColor = 'success'
             }
           }
-
           // UI位置追従: 最後のポイントにボタンを移動
           if (vm.tempLineCoordsGuide.length >= 2) {
             this.updateFloatingPosition(e.lngLat);
@@ -3267,7 +3258,7 @@ export default {
               : pixel.x - panelW - M;
           this.floatingGroup.style.left = `${left}px`;
           this.floatingGroup.style.top = `${pixel.y + M}px`;
-          vm.showDrawConfrim = true
+          vm.$store.state.showDrawConfrim = true
         }
 
         handleConfirm() {
@@ -3310,7 +3301,7 @@ export default {
         resetDraw() {
           vm.finishLine()
           // this.floatingGroup.style.display = 'none'; // 非表示 or 元位置に戻す
-          vm.showDrawConfrim = false
+          vm.$store.state.showDrawConfrim = false
         }
       }
       // DrawToolインスタンス化

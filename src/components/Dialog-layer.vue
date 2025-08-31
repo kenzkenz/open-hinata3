@@ -1204,17 +1204,17 @@ export default {
           }
         }
       })
-
-      if (map.getLayer('td-linestring')) {
-        map.moveLayer( 'td-linestring')
-        map.moveLayer( 'td-polygon')
-        map.moveLayer( 'td-polygon-outline')
-        map.moveLayer( 'td-point')
-        map.moveLayer( 'terradraw-measure-polygon-label')
-        map.moveLayer( 'terradraw-measure-line-label')
-        map.moveLayer( 'terradraw-measure-line-node')
-        updateMeasureUnit('m')
-      }
+      //
+      // if (map.getLayer('td-linestring')) {
+      //   map.moveLayer( 'td-linestring')
+      //   map.moveLayer( 'td-polygon')
+      //   map.moveLayer( 'td-polygon-outline')
+      //   map.moveLayer( 'td-point')
+      //   map.moveLayer( 'terradraw-measure-polygon-label')
+      //   map.moveLayer( 'terradraw-measure-line-label')
+      //   map.moveLayer( 'terradraw-measure-line-node')
+      //   updateMeasureUnit('m')
+      // }
       highlightSpecificFeatures2025(map,'oh-homusyo-2025-polygon');
       // zenkokuChibanzuAddLayer(map,map.getZoom())
       //
