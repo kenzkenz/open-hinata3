@@ -4,7 +4,7 @@ import { toRaw } from 'vue'
 import * as turf from '@turf/turf'
 import {
     addDraw, featureCollectionAdd, featuresDelete, formatYmdHms, isJsonString, markerAddAndRemove,
-    recenterGeoJSON, removeNini, saveDrowFeatures,
+    recenterGeoJSON, removeNini, removeThumbnailMarkerByKey, saveDrowFeatures,
     savePointSima, toResolved, truncate,
     zahyokei
 } from "@/js/downLoad";
@@ -1359,6 +1359,9 @@ export default function pyramid () {
                     if (!store.state.isUsingServerGeojson) {
                         featureCollectionAdd()
                     }
+                    const targetFeature = JSON.parse(store.state.clickCircleGeojsonText).features.find(f => f.properties.id === id)
+                    const key = targetFeature.geometry.coordinates.join()
+                    removeThumbnailMarkerByKey(key)
                     markerAddAndRemove()
                 }
             }
@@ -1681,7 +1684,7 @@ export function lavelUpdate(e, id) {
     const tgtProp = 'label'
     store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
     const el = document.querySelector(`#txt-marker-${id} .txt-marker-label`) || document.querySelector(`#pic-marker-${id} .txt-marker-label`)
-    el.innerText =  truncate(value,6)
+    if (el) el.innerText =  truncate(value,6)
     store.state.isLabelUpdated = false
 }
 // ラインの最後のセグメントの方向（ベアリング）を計算する関数
