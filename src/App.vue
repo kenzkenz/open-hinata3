@@ -7,13 +7,18 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <template>
   <v-app>
     <v-main>
-      <div v-show="showDrawConfrim" id="floating-buttons" style="position: absolute; z-index: 999999">
-        <v-btn :color="confirmBtnColor" id="confirm-btn">✔ 確定</v-btn>
-<!--        <button disabled>✔ 確定</button>-->
-<!--        <button id="undo-btn">↶ Undo</button>-->
-        <v-btn style="margin-left: 10px;" color="error" id="cancel-btn">キャンセル</v-btn>
-      </div>
 
+      <div v-show="showDrawConfrim" id="floating-buttons">
+        <MiniTooltip text="この状態で確定" :offset-x="0" :offset-y="2">
+          <v-btn :color="confirmBtnColor" id="confirm-btn">確定</v-btn>
+        </MiniTooltip>
+        <MiniTooltip text="直前のポイントを削除" :offset-x="0" :offset-y="2">
+          <v-btn style="margin-left: 10px;" id="undo-btn">戻</v-btn>
+        </MiniTooltip>
+        <MiniTooltip text="描きかけ中の全ポイントを削除" :offset-x="0" :offset-y="2">
+          <v-btn style="margin-left: 10px;" color="error" id="cancel-btn">キャンセル</v-btn>
+        </MiniTooltip>
+      </div>
 
       <DialogDrawConfig
           :mapName="'map01'"
@@ -1781,7 +1786,7 @@ import {
   convertFromEPSG4326,
   convertGsiTileJson2,
   csvGenerateForUserPng,
-  ddSimaUpload,
+  ddSimaUpload, dedupeCoords,
   delay0,
   detectLatLonColumns,
   diffGeoJSON,
@@ -2419,6 +2424,7 @@ export default {
     dialogForPictureZindex: 0,
     zIndex: 0,
     confirmBtnColor: 'info',
+    drawTool: null,
   }),
   computed: {
     ...mapState([
@@ -3202,8 +3208,8 @@ export default {
       class DrawTool {
         constructor(map) {
           this.map = map;
-          this.minPolygonPoints = 6
-          this.minLinePoints = 4
+          this.minPolygonPoints = 3
+          this.minLinePoints = 2
 
           // フローティングボタン要素（HTMLで作成済みと仮定）
           this.floatingGroup = document.getElementById('floating-buttons');
@@ -3217,7 +3223,7 @@ export default {
 
           // ボタンイベント
           this.confirmButton.addEventListener('click', this.handleConfirm.bind(this));
-          // this.undoButton.addEventListener('click', this.handleUndo.bind(this));
+          this.undoButton.addEventListener('click', this.handleUndo.bind(this));
           this.cancelButton.addEventListener('click', this.handleCancel.bind(this));
         }
 
@@ -3228,15 +3234,15 @@ export default {
           vm.tempLineCoordsGuide.push([lng, lat]);
           vm.isDrawingLine = true;
           vm.confirmBtnColor = 'info'
-          if (vm.s_isDrawPolygon) {
-            if (vm.tempLineCoordsGuide.length >= this.minPolygonPoints) {
-              vm.confirmBtnColor = 'success'
-            }
-          } else if (vm.s_isDrawLine) {
-            if (vm.tempLineCoordsGuide.length >= this.minLinePoints) {
-              vm.confirmBtnColor = 'success'
-            }
-          }
+          // if (vm.s_isDrawPolygon) {
+          //   if (vm.tempLineCoordsGuide.length >= this.minPolygonPoints) {
+          //     vm.confirmBtnColor = 'success'
+          //   }
+          // } else if (vm.s_isDrawLine) {
+          //   if (vm.tempLineCoordsGuide.length >= this.minLinePoints) {
+          //     vm.confirmBtnColor = 'success'
+          //   }
+          // }
           // UI位置追従: 最後のポイントにボタンを移動
           if (vm.tempLineCoordsGuide.length >= 2) {
             this.updateFloatingPosition(e.lngLat);
@@ -3289,9 +3295,9 @@ export default {
           } else if (vm.s_isDrawLine) {
             minPoints = this.minLinePoints
           }
-
+          vm.tempLineCoordsGuide = dedupeCoords(vm.tempLineCoordsGuide)
           if (vm.tempLineCoordsGuide.length < minPoints) {
-            store.state.loadingMessage3 = `ポイントが足りません。最低${minPoints / 2}点必要です。`
+            store.state.loadingMessage3 = `ポイントが足りません。最低${minPoints}点必要です。`
             store.state.loading3 = true
             setTimeout(() => {
               store.state.loading3 = false
@@ -3326,7 +3332,7 @@ export default {
         }
       }
       // DrawToolインスタンス化
-      const drawTool = new DrawTool(this.map01);
+      this.drawTool = new DrawTool(this.map01);
     },
     mapillaryClose() {
       mapillaryFilterRiset()
@@ -3880,7 +3886,6 @@ export default {
       if (this.s_isDrawLine) {
         if (!this.tempLineCoords.length) return;
         const coords = this.tempLineCoords;
-        const guideCoords = this.tempLineCoordsGuide
         if (!coords.length) return;
         // 最後の頂点がカーソル位置と重なっている場合は2回削除
         if (this.lastMouseLngLat && coords.length >= 1) {
@@ -3888,20 +3893,19 @@ export default {
           if (lastLng === this.lastMouseLngLat.lng && lastLat === this.lastMouseLngLat.lat) {
             // カーソル重なり頂点を2回削除
             coords.pop();
-            // guideCoords.pop()
             if (coords.length) coords.pop();
+            this.tempLineCoordsGuide = this.tempLineCoords
             this.updateDynamicLinePreview();
             return;
           }
         }
         // それ以外は1回だけ削除
         coords.pop();
-        // guideCoords.pop()
+        this.tempLineCoordsGuide = this.tempLineCoords
         this.updateDynamicLinePreview();
 
       } else if (this.s_isDrawPolygon) {
         const coords = this.tempPolygonCoords;
-        const guideCoords = this.tempLineCoordsGuide
         if (!coords.length) return;
         // 最後の頂点がカーソル位置と重なっている場合は2回削除
         if (this.lastMouseLngLat && coords.length >= 1) {
@@ -3911,14 +3915,15 @@ export default {
             coords.pop();
             // guideCoords.pop()
             if (coords.length) coords.pop();
+            this.tempLineCoordsGuide = this.tempPolygonCoords
             this.updateDynamicPolygonPreview();
             return;
           }
         }
         // それ以外は1回だけ削除
-        // alert(888)
+        console.log(this.tempPolygonCoords)
         coords.pop();
-        // guideCoords.pop()
+        this.tempLineCoordsGuide = this.tempPolygonCoords
         this.updateDynamicPolygonPreview();
       }
     },
@@ -3926,9 +3931,9 @@ export default {
     updateDynamicLinePreview() {
       const map = this.$store.state.map01;
       const coords = this.tempLineCoords
-      if (coords.length && this.lastMouseLngLat) {
-        coords.push([this.lastMouseLngLat.lng, this.lastMouseLngLat.lat]);
-      }
+      // if (coords.length && this.lastMouseLngLat) {
+      //   coords.push([this.lastMouseLngLat.lng, this.lastMouseLngLat.lat]);
+      // }
       map.getSource('guide-line-source').setData({
         type: 'FeatureCollection',
         features: [{
@@ -3942,13 +3947,11 @@ export default {
     updateDynamicPolygonPreview() {
       const map = this.$store.state.map01;
       const coords = this.tempPolygonCoords
-      if (coords.length && this.lastMouseLngLat) {
-        coords.push([this.lastMouseLngLat.lng, this.lastMouseLngLat.lat]);
-      }
-      map.getSource('guide-line-source').setData({
-        type: 'FeatureCollection',
-        features: []
-      });
+
+      // if (coords.length && this.lastMouseLngLat) {
+      //   coords.push([this.lastMouseLngLat.lng, this.lastMouseLngLat.lat]);
+      // }
+
       map.getSource('guide-line-source').setData({
         type: 'FeatureCollection',
         features: [{
@@ -3978,19 +3981,19 @@ export default {
 
     // マウス移動で動的プレビュー更新
     onPolygonMouseMove(e) {
-      if (!this.s_isDrawPolygon) return;
-      const map = this.$store.state.map01;
-      this.lastMouseLngLat = e.lngLat;
-      const coords = this.tempPolygonCoords.slice();
-      if (coords.length) coords.push([e.lngLat.lng, e.lngLat.lat]);
-      map.getSource('guide-line-source').setData({
-        type: 'FeatureCollection',
-        features: [{
-          type: 'Feature',
-          geometry: { type: 'LineString', coordinates: coords },
-          properties: {}
-        }]
-      });
+      // if (!this.s_isDrawPolygon) return;
+      // const map = this.$store.state.map01;
+      // this.lastMouseLngLat = e.lngLat;
+      // const coords = this.tempPolygonCoords.slice();
+      // if (coords.length) coords.push([e.lngLat.lng, e.lngLat.lat]);
+      // map.getSource('guide-line-source').setData({
+      //   type: 'FeatureCollection',
+      //   features: [{
+      //     type: 'Feature',
+      //     geometry: { type: 'LineString', coordinates: coords },
+      //     properties: {}
+      //   }]
+      // });
     },
 
     uploadChibanzu () {
@@ -7396,6 +7399,8 @@ export default {
         clickTimer = setTimeout(() => {
           // 節点追加
           this.tempLineCoords.push(coordinates);
+          this.tempLineCoords = dedupeCoords(this.tempLineCoords)
+
           console.log('シングルクリック！');
           clickTimer = null;
         }, CLICK_DELAY);
@@ -7474,26 +7479,36 @@ export default {
       }
       map.on('click', (e) => {
         if (!this.s_isDrawPolygon) return;
-        if (clickTimer !== null) return;
-        clickTimer = setTimeout(() => {
-          const lat = e.lngLat.lat;
-          const lng = e.lngLat.lng;
-          const coordinates = [lng, lat];
 
-          // とりあえずコメントアウト
-          // 既存点・ポリゴンのクリック判定
-          // const targetId = getPolygonFeatureIdAtClick(map, e); // ポリゴン用関数
-          // if (targetId) {
-          //   this.$store.state.id = targetId;
-          //   return;
-          // }
+        const lat = e.lngLat.lat;
+        const lng = e.lngLat.lng;
+        const coordinates = [lng, lat];
+        console.log(coordinates)
+        // 節点追加
+        this.tempPolygonCoords.push(coordinates);
+        console.log('シングルクリック！（ポリゴン）', this.tempPolygonCoords);
+        this.tempPolygonCoords = dedupeCoords(this.tempPolygonCoords)
 
-          console.log(coordinates)
-          // 節点追加
-          this.tempPolygonCoords.push(coordinates);
-          console.log('シングルクリック！（ポリゴン）', this.tempPolygonCoords);
-          clickTimer = null;
-        }, CLICK_DELAY);
+        // if (clickTimer !== null) return;
+        // clickTimer = setTimeout(() => {
+        //   const lat = e.lngLat.lat;
+        //   const lng = e.lngLat.lng;
+        //   const coordinates = [lng, lat];
+        //
+        //   // とりあえずコメントアウト
+        //   // 既存点・ポリゴンのクリック判定
+        //   // const targetId = getPolygonFeatureIdAtClick(map, e); // ポリゴン用関数
+        //   // if (targetId) {
+        //   //   this.$store.state.id = targetId;
+        //   //   return;
+        //   // }
+        //
+        //   console.log(coordinates)
+        //   // 節点追加
+        //   this.tempPolygonCoords.push(coordinates);
+        //   console.log('シングルクリック！（ポリゴン）', this.tempPolygonCoords);
+        //   clickTimer = null;
+        // }, CLICK_DELAY);
       });
       // ダブルクリックでポリゴン確定
       map.on('dblclick', (e) => {
@@ -9825,6 +9840,7 @@ export default {
     this.mapillarWidth = (window.innerWidth * 1) + 'px'
     this.mapillarHeight = (window.innerHeight * 1) + 'px'
 
+    window.addEventListener('keydown', this.onKeydown);
     const checkUser = setInterval(() => {
       if (user.value && user.value.uid) {
         const uid = user.value.uid
@@ -9834,7 +9850,6 @@ export default {
         const map01 = store.state.map01
         if (map01) {
           // キーボード監視
-          window.addEventListener('keydown', this.onKeydown);
           // document.addEventListener('keydown', this.onKeydown);
           // map が読込後にマウスムーブ監視
           map01.on('mousemove', this.onPolygonMouseMove);
@@ -9950,6 +9965,34 @@ export default {
     document.querySelector('#drawList').style.display = 'none'
   },
   watch: {
+    tempLineCoordsGuide: {
+      handler: function () {
+        const length = dedupeCoords(this.tempLineCoordsGuide).length
+        this.confirmBtnColor = 'info'
+        if (this.s_isDrawPolygon) {
+          if (length >= this.drawTool.minPolygonPoints) {
+            this.confirmBtnColor = 'success'
+          }
+        } else if (this.s_isDrawLine) {
+          if (length >= this.drawTool.minLinePoints) {
+            this.confirmBtnColor = 'success'
+          }
+        }
+      },
+      deep: true
+    },
+    // tempLineCoordsGuide() {
+    //   alert(888)
+    //   if (this.s_isDrawPolygon) {
+    //     if (this.tempLineCoordsGuide.length >= this.drawTool.minPolygonPoints) {
+    //       this.confirmBtnColor = 'success'
+    //     }
+    //   } else if (this.s_isDrawLine) {
+    //     if (this.tempLineCoordsGuide.length >= this.drawTool.minLinePoints) {
+    //       this.confirmBtnColor = 'success'
+    //     }
+    //   }
+    // },
     showDrawConfrim(value) {
       if (value && this.isSmall500) {
         this.drawFix(true)
@@ -10418,14 +10461,14 @@ export default {
 }
 
 #floating-buttons {
-  width:220px;
+  width:270px;
   position: absolute;
-  z-index: 10000000;
   background: white;
   padding: 5px 5px 0 5px;
   border-radius: 5px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   display: flex; /* 横並び */
+  z-index: 1;
 }
 
 /*#floating-buttons button {*/

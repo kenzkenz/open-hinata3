@@ -12748,6 +12748,22 @@ export function animateRelocate(el, left, top, { duration = 200, easing = 'ease-
     el.__moveAnim.onfinish = el.__moveAnim.oncancel = () => { el.__moveAnim = null; };
 }
 
+/**
+ * coordinatesの重複を削除する
+ * @param arr
+ * @returns {*[]}
+ */
+export function dedupeCoords(arr) {
+    const seen = new Set();
+    const out = [];
+    for (const [lng, lat] of arr) {
+        const key = `${lng},${lat}`;   // 完全一致で判定
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push([lng, lat]);
+    }
+    return out;
+}
 
 /**
  *
