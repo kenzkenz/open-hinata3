@@ -12,6 +12,7 @@ import {clickCircleSource, clickPointSource, endPointSouce, vertexSource} from "
 import {calculatePolygonMetrics, closeAllPopups} from "@/js/popup";
 import JSZip from "jszip";
 export let currentIndex = 0
+import { haptic } from '@/js/utils/haptics'
 let kasen
 
 export default function pyramid () {
@@ -1034,7 +1035,7 @@ export default function pyramid () {
 
                 await featuresDelete([id])
                 markerAddAndRemove()
-
+                haptic({ strength: 'success' })
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1049,6 +1050,7 @@ export default function pyramid () {
                 });
                 store.state.clickGeojsonText = ''
                 store.state.popupDialog = false
+                haptic({ strength: 'success' })
             }
         });
         // -------------------------------------------------------------------------------------------------------------
@@ -1447,6 +1449,7 @@ export default function pyramid () {
                     closeAllPopups()
                     store.state.popupDialog = false
                     store.commit('setDrawDrawer', false)
+                    haptic({ strength: 'success' })
                 },100)
             }
         });
@@ -1477,6 +1480,7 @@ export default function pyramid () {
                         featureCollectionAdd()
                         markerAddAndRemove()
                     }
+                    haptic({ strength: 'success' })
                 },100)
             }
         });
@@ -1512,6 +1516,7 @@ export default function pyramid () {
                     store.state.popupDialog = false
                     await featuresDelete([id,...pairIds])
                     store.commit('setDrawDrawer', false)
+                    haptic({ strength: 'success' })
                 },100)
             }
         });
@@ -1574,6 +1579,7 @@ export default function pyramid () {
                     closeAllPopups()
                     store.state.popupDialog = false
                     store.commit('setDrawDrawer', false)
+                    haptic({ strength: 'success' })
                 },100)
             }
         });
@@ -1884,6 +1890,8 @@ export function geojsonCreate(map, geoType, coordinates, properties = {}) {
     markerAddAndRemove()
 
     store.commit('disableAllDraws')
+
+    haptic({ strength: 'success' })
 
     return feature;
 }
@@ -2318,6 +2326,9 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
                     document.querySelector('#drawList').style.display = 'none'
                 }, 1000)
             }
+
+            haptic({ strength: 'success' })
+
             return escapeHTML(JSON.stringify(toRaw(geojson)))
 
         }
@@ -2539,6 +2550,8 @@ export async function deleteAll (noConfrim) {
         featureCollectionAdd()
         markerAddAndRemove()
     }
+
+    haptic({ strength: 'success' })
 }
 
 export function escapeHTML(str) {

@@ -1622,7 +1622,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                @mouseenter="onPanelEnter"
                @mouseleave="onPanelLeave">
             <span v-if="!s_isPrint">
-              <MiniTooltip text="メニュー">
+              <MiniTooltip v-haptic="'success'" text="メニュー">
                 <v-btn :size="isSmall ? 'small' : 'default'" icon @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-menu</v-icon></v-btn>
               </MiniTooltip>
               <MiniTooltip text="ログイン">
@@ -2248,6 +2248,7 @@ import ExDraw from '@/components/floatingwindow/ExDraw'
 import {delay, forEach} from "lodash";
 import {feature} from "@turf/turf";
 import drawMethods from "@/js/draw";
+import {haptic} from "@/js/utils/haptics";
 
 export default {
   name: 'App',
@@ -9101,6 +9102,7 @@ export default {
           map.on('mousemove', function (e) {
             mouseMoveForPopup(e,map)
           })
+
           //------------------------------------------------------------------------------------------------------------
           // // PLATEAU建物東京都23区
           // map.on('click', 'oh-plateau-tokyo23ku-layer', function (e) {

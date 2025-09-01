@@ -14,6 +14,7 @@ import {
 } from "@/js/downLoad";
 import { Viewer, CameraControls, RenderMode, TransitionMode } from 'mapillary-js';
 import { ref, watch } from 'vue'
+import {haptic} from "@/js/utils/haptics";
 
 export const popups = []
 const isSmall = window.innerWidth < 500
@@ -265,6 +266,7 @@ let isGooglemap = true
 let isRePopup = true
 
 export function popup(e, map, mapName, mapFlg, isNoDrawer) {
+
     console.log(e,map,mapName,mapFlg)
     if (store.state.editEnabled) return;
     let html = ref('')  // ← ここを ref 化
@@ -3683,6 +3685,8 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
                 }
 
                 if (store.state.isDraw || !props.description) {
+                    haptic({ strength: 'success' })
+
                     // alert('到達')
                     const geoType = feature.geometry.type
                     console.log(geoType)

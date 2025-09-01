@@ -8,11 +8,12 @@ import Dialog2 from '@/components/Dialog2'
 import VueQrcode from '@chenfengyuan/vue-qrcode'
 import { auth, db } from './firebase'
 import '@/registerServiceWorker';
-
+import Haptics from '@/js/utils/haptics'
 
 loadFonts()
 
 const app = createApp(App)
+app.use(Haptics)
 app.use(store)
 app.use(vuetify)
 app.component('Dialog', Dialog)

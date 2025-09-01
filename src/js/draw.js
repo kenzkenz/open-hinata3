@@ -2,6 +2,7 @@ import store from '@/store'
 import {colorNameToRgba, geojsonCreate} from "@/js/pyramid";
 import { popup } from "@/js/popup";
 import * as turf from "@turf/turf";
+import {haptic} from "@/js/utils/haptics";
 
 // =============================================================
 // フリーハンド自己交差(=ループ)検出（Turf.js）
@@ -219,6 +220,12 @@ export default function drawMethods(options = {}) {
         const preview = map01.getSource('freehand-preview-source');
         if (preview) preview.setData({ type: 'FeatureCollection', features: [] });
     }
+
+    map01.on('click', (e) => {
+        if (store.state.isDrawPolygon || store.state.isDrawLine || store.state.isDrawPoint) {
+            haptic({ strength: 'success' })
+        }
+    })
 }
 
 
