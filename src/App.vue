@@ -2247,6 +2247,7 @@ import ExDraw from '@/components/floatingwindow/ExDraw'
 
 import {delay, forEach} from "lodash";
 import {feature} from "@turf/turf";
+import drawMethods from "@/js/draw";
 
 export default {
   name: 'App',
@@ -2681,7 +2682,7 @@ export default {
         { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
       ]
       if (this.isSmall500) {
-        btns = btns.filter(btn => btn.key !== 'free')
+        // btns = btns.filter(btn => btn.key !== 'free')
         // btns = btns.filter(btn => btn.key !== 'lasso')
         btns = btns.filter(btn => btn.key !== 'dl')
         btns = btns.filter(btn => btn.key !== 'ex')
@@ -5069,34 +5070,7 @@ export default {
       this.tempPolygonCoords = []
       this.tempLineCoordsCoords = []
     },
-    onPanelEnter() {
-      // this.$store.state.panelHoverCount++;
-      // this.$store.state.isCursorOnPanel = true;
-    },
-    onPanelLeave() {
-      // this.$store.state.panelHoverCount = Math.max(this.$store.state.panelHoverCount - 1, 0);
-      // if (this.$store.state.panelHoverCount === 0) {
-      //   this.$store.state.isCursorOnPanel = false;
-      // }
-    },
-    onMouseMove(e) {
-      // if (this.isDrawing && !this.$store.state.isCursorOnPanel) {
-      //   const dot = this.$refs.indicator;
-      //   if (dot) {
-      //     dot.style.left = e.clientX + 'px';
-      //     dot.style.top  = e.clientY + 'px';
-      //   }
-      // }
-    },
-    // onMouseMove(e) {
-    //   if (!this.isDrawing) return
-    //   const dot = this.$refs.indicator
-    //   if (dot) {
-    //     console.log(e.clientX,e.clientY)
-    //     dot.style.left = e.clientX + 'px'
-    //     dot.style.top  = e.clientY + 'px'
-    //   }
-    // },
+
     startDraw() {
       this.isDrawing = true
       // すぐマウス座標反映
@@ -7558,97 +7532,99 @@ export default {
           this.tempPolygonCoords = [];
         }
       });
+
+      drawMethods()
+
       // フリーハンド-----------------------------------------------------------------------------------------------------
-      let isDrawing = false;
-      // pointerdown（開始）
-      map.getCanvas().addEventListener('pointerdown', (e) => {
-        if (!this.s_isDrawFree) return;
-
-        const point = map.unproject([e.clientX, e.clientY]);
-        isDrawing = true;
-        this.tempFreehandCoords = [];
-        this.tempFreehandCoords.push([point.lng, point.lat]);
-
-        map.getCanvas().style.cursor = 'crosshair';
-        map.dragPan.disable(); // パン無効化
-      });
-
-      // pointermove（描画中）
-      map.getCanvas().addEventListener('pointermove', (e) => {
-        if (!isDrawing) return;
-
-        const point = map.unproject([e.clientX, e.clientY]);
-        this.tempFreehandCoords.push([point.lng, point.lat]);
-
-        const tempLine = {
-          type: 'FeatureCollection',
-          features: [{
-            type: 'Feature',
-            geometry: {
-              type: 'LineString',
-              coordinates: this.tempFreehandCoords
-            },
-            properties: {
-              'keiko': 0,
-              'color': this.$store.state.currentFreeHandColor || 'black',
-              'keiko-color': this.$store.state.currentFreeHandKeikoColor || '#1C1C1C',
-              'line-width': this.$store.state.currentFreeHandWidth || 5,
-            }
-          }]
-        };
-        map.getSource('freehand-preview-source').setData(tempLine);
-      });
-
-      // pointerup（終了）
-      map.getCanvas().addEventListener('pointerup', (e) => {
-        if (!isDrawing) return;
-        isDrawing = false;
-        map.getCanvas().style.cursor = '';
-        // alert('pan')
-        map.dragPan.enable(); // パン再有効化
-
-        if (this.tempFreehandCoords.length >= 2) {
-          const id = String(Math.floor(10000 + Math.random() * 90000));
-          this.$store.state.id = id;
-
-          const properties = {
-            id: id,
-            'free-hand': 1,
-            keiko: 0,
-            label: '',
-            color: 'black',
-            // 'keiko-color': '#FF8000',
-            'keiko-color': this.$store.state.currentFreeHandKeikoColor || 'rgba( 28,  28,  28, 0.5)',
-            offsetValue: [0.6, 0],
-            'line-width': this.$store.state.currentFreeHandWidth || 5,
-            textAnchor: 'left',
-            textJustify: 'left'
-          };
-
-          geojsonCreate(map, 'FreeHand', this.tempFreehandCoords.slice(), properties);
-
-          // 擬似クリック
-          this.$store.state.coordinates = this.tempFreehandCoords[0];
-          const dummyEvent = { lngLat: { lng: this.tempFreehandCoords[0][0], lat: this.tempFreehandCoords[0][1] } };
-          setTimeout(() => {
-            onLineClick(dummyEvent);
-          }, 500);
-        }
-
-        this.finishLine();
-        this.tempFreehandCoords = [];
-      });
-
-      // pointerleave（指やカーソルが外れたとき）も描画終了しておく
-      map.getCanvas().addEventListener('pointerleave', () => {
-        if (isDrawing) {
-          isDrawing = false;
-          // alert('pan')
-          map.dragPan.enable();
-          map.getCanvas().style.cursor = '';
-          this.tempFreehandCoords = [];
-        }
-      });
+      // let isDrawing = false;
+      // map.getCanvas().addEventListener('pointerdown', (e) => {
+      //   if (!this.s_isDrawFree) return;
+      //
+      //   const point = map.unproject([e.clientX, e.clientY]);
+      //   isDrawing = true;
+      //   this.tempFreehandCoords = [];
+      //   this.tempFreehandCoords.push([point.lng, point.lat]);
+      //
+      //   map.getCanvas().style.cursor = 'crosshair';
+      //   map.dragPan.disable(); // パン無効化
+      // });
+      //
+      // // pointermove（描画中）
+      // map.getCanvas().addEventListener('pointermove', (e) => {
+      //   if (!isDrawing) return;
+      //
+      //   const point = map.unproject([e.clientX, e.clientY]);
+      //   this.tempFreehandCoords.push([point.lng, point.lat]);
+      //
+      //   const tempLine = {
+      //     type: 'FeatureCollection',
+      //     features: [{
+      //       type: 'Feature',
+      //       geometry: {
+      //         type: 'LineString',
+      //         coordinates: this.tempFreehandCoords
+      //       },
+      //       properties: {
+      //         'keiko': 0,
+      //         'color': this.$store.state.currentFreeHandColor || 'black',
+      //         'keiko-color': this.$store.state.currentFreeHandKeikoColor || '#1C1C1C',
+      //         'line-width': this.$store.state.currentFreeHandWidth || 5,
+      //       }
+      //     }]
+      //   };
+      //   map.getSource('freehand-preview-source').setData(tempLine);
+      // });
+      //
+      // // pointerup（終了）
+      // map.getCanvas().addEventListener('pointerup', (e) => {
+      //   if (!isDrawing) return;
+      //   isDrawing = false;
+      //   map.getCanvas().style.cursor = '';
+      //   // alert('pan')
+      //   map.dragPan.enable(); // パン再有効化
+      //
+      //   if (this.tempFreehandCoords.length >= 2) {
+      //     const id = String(Math.floor(10000 + Math.random() * 90000));
+      //     this.$store.state.id = id;
+      //
+      //     const properties = {
+      //       id: id,
+      //       'free-hand': 1,
+      //       keiko: 0,
+      //       label: '',
+      //       color: 'black',
+      //       // 'keiko-color': '#FF8000',
+      //       'keiko-color': this.$store.state.currentFreeHandKeikoColor || 'rgba( 28,  28,  28, 0.5)',
+      //       offsetValue: [0.6, 0],
+      //       'line-width': this.$store.state.currentFreeHandWidth || 5,
+      //       textAnchor: 'left',
+      //       textJustify: 'left'
+      //     };
+      //
+      //     geojsonCreate(map, 'FreeHand', this.tempFreehandCoords.slice(), properties);
+      //
+      //     // 擬似クリック
+      //     this.$store.state.coordinates = this.tempFreehandCoords[0];
+      //     const dummyEvent = { lngLat: { lng: this.tempFreehandCoords[0][0], lat: this.tempFreehandCoords[0][1] } };
+      //     setTimeout(() => {
+      //       onLineClick(dummyEvent);
+      //     }, 500);
+      //   }
+      //
+      //   this.finishLine();
+      //   this.tempFreehandCoords = [];
+      // });
+      //
+      // // pointerleave（指やカーソルが外れたとき）も描画終了しておく
+      // map.getCanvas().addEventListener('pointerleave', () => {
+      //   if (isDrawing) {
+      //     isDrawing = false;
+      //     // alert('pan')
+      //     map.dragPan.enable();
+      //     map.getCanvas().style.cursor = '';
+      //     this.tempFreehandCoords = [];
+      //   }
+      // });
 
       // 投げ縄-----------------------------------------------------------------------------------------------------
       // 1. グローバル変数
