@@ -117,7 +117,7 @@ export default {
       { key: 'waterway', value: 'canal', label: '運河' },
       { key: 'amenity', value: 'fast_food', label: 'ファストフード' },
     ],
-    menuContentSize: {'width':'330px','height': 'auto','margin': '10px', 'overflow': 'auto', 'user-select': 'text', 'font-size':'large'}
+    menuContentSize: {'width':'330px','height': 'auto','margin': '10px', 'overflow': 'hidden', 'user-select': 'text', 'font-size':'large'}
   }),
   computed: {
     s_extFire () {

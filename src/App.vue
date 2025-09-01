@@ -1778,15 +1778,20 @@ import DrawListDrawer from '@/components/drawer/DrawLisiDrawer'
 import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
 import {
-  addDraw, addSvgAsImage, animateRelocate,
-  bakeRotationToBlob, bindMoveendFor360, buildCandidates,
+  addDraw,
+  addSvgAsImage,
+  animateRelocate,
+  bakeRotationToBlob,
+  bindMoveendFor360,
+  buildCandidates,
   capture,
   changePrintMap03,
   compressImageToUnder10MB,
   convertFromEPSG4326,
   convertGsiTileJson2,
   csvGenerateForUserPng,
-  ddSimaUpload, dedupeCoords,
+  ddSimaUpload,
+  dedupeCoords,
   delay0,
   detectLatLonColumns,
   diffGeoJSON,
@@ -1801,7 +1806,8 @@ import {
   extractSimaById,
   featureCollectionAdd,
   featuresRestore,
-  fetchGsiTileTest, fetchMapillaryPanosInViewport,
+  fetchGsiTileTest,
+  fetchMapillaryPanosInViewport,
   fncPngDl,
   geocode,
   geojsonAddLayer,
@@ -1827,9 +1833,15 @@ import {
   jpgLoad,
   kmlDownload,
   kmzLoadForUser,
-  LngLatToAddress, loadBitmap, loadImageRobust, mapFeatureToImageId,
-  mapillaryCreate, mapillaryFilterRiset,
-  mapillaryViewer, mapillaryWindowOpen, mapillaryWindowOpenDebounced,
+  LngLatToAddress,
+  loadBitmap,
+  loadImageRobust,
+  mapFeatureToImageId,
+  mapillaryCreate,
+  mapillaryFilterRiset,
+  mapillaryViewer,
+  mapillaryWindowOpen,
+  mapillaryWindowOpenDebounced,
   markaersRemove,
   markerAddAndRemove,
   parseCSV,
@@ -1837,9 +1849,15 @@ import {
   pmtilesGenerateForUser2,
   pngDownload,
   pngLoad,
-  printDirectionChange, queryMapillaryByUserDatesViewport, removeAllWhitespace, removeThumbnailMarkerByKey,
+  printDirectionChange,
+  queryMapillaryByUserDatesViewport,
+  removeAllWhitespace,
+  removeThumbnailMarkerByKey,
+  sanitizeLongText,
   saveDrowFeatures,
-  scaleAndRotateLassoSelected, setFllter360, setVertex,
+  scaleAndRotateLassoSelected,
+  setFllter360,
+  setVertex,
   simaLoadForUser,
   splitLineStringIntoPoints,
   startPolling,
@@ -1849,7 +1867,8 @@ import {
   transformGeoJSONToEPSG4326,
   updateDragHandles,
   userKmzSet,
-  userSimaSet, vertexAndMidpoint,
+  userSimaSet,
+  vertexAndMidpoint,
   zahyokei,
   zipDownloadSimaText
 } from '@/js/downLoad'
@@ -2663,7 +2682,7 @@ export default {
       ]
       if (this.isSmall500) {
         btns = btns.filter(btn => btn.key !== 'free')
-        btns = btns.filter(btn => btn.key !== 'lasso')
+        // btns = btns.filter(btn => btn.key !== 'lasso')
         btns = btns.filter(btn => btn.key !== 'dl')
         btns = btns.filter(btn => btn.key !== 'ex')
       }
@@ -4019,7 +4038,7 @@ export default {
           );
           const pointColor = row[this.csvColorColumn] || 'black'
           props.label = row[this.csvLabelColumn] || ''
-          props.longText = row[this.csvLongTextColumn] || ''
+          props.longText = sanitizeLongText(row[this.csvLongTextColumn]) || ''
           props.color = 'black'
           props.offsetValue = [0.6, 0]
           props.textAnchor = 'left'
