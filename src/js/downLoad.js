@@ -10096,7 +10096,7 @@ export function markerAddAndRemove() {
     txtCoordsList.length = 0;
     if (!featureCollection || !featureCollection.features) return
     featureCollection.features.forEach(feature => {
-        console.log(feature)
+        // console.log(feature)
         const coords = feature.geometry?.coordinates;
         const isPicture =
             !!feature?.properties?.pictureUrl &&

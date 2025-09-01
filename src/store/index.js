@@ -6,7 +6,7 @@ import firebase from 'firebase/app';
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.416,
+    clientVersion: 1.419,
     selectedLngLat: null,
     showDrawConfrim: false,
     noProgress: false,

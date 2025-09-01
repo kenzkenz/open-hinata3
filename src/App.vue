@@ -12,10 +12,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
         <MiniTooltip text="この状態で確定" :offset-x="0" :offset-y="2">
           <v-btn :color="confirmBtnColor" id="confirm-btn">確定</v-btn>
         </MiniTooltip>
-        <MiniTooltip text="直前のポイントを削除" :offset-x="0" :offset-y="2">
-          <v-btn style="margin-left: 10px;" id="undo-btn">戻</v-btn>
+        <MiniTooltip :text="undoBtnMiniTooltip" :offset-x="0" :offset-y="2">
+          <v-btn :disabled="isUndoBtnDisabled" style="margin-left: 10px;" id="undo-btn">戻</v-btn>
         </MiniTooltip>
-        <MiniTooltip text="描きかけ中の全ポイントを削除" :offset-x="0" :offset-y="2">
+        <MiniTooltip :text="cancelBtnMiniTooltip" :offset-x="0" :offset-y="2">
           <v-btn style="margin-left: 10px;" color="error" id="cancel-btn">キャンセル</v-btn>
         </MiniTooltip>
       </div>
@@ -25,7 +25,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           @open-floating="openWindow"
       />
 
-      <div v-if="s_isLassoSelected" class="features-rotate-div my-div" @click="setMaxZIndex($event.currentTarget)">
+      <div v-if="s_isLassoSelected && isDraw" class="features-rotate-div my-div" @click="setMaxZIndex($event.currentTarget)">
         <div class="features-rotate-div-close" @click="s_isLassoSelected = false">
           ×
         </div>
@@ -1811,7 +1811,6 @@ import {
   geoTiffLoad2,
   getBBoxFromPolygon,
   getCRS,
-  getMaxZIndex,
   getNextZIndex,
   getNowFileNameTimestamp,
   gpxDownload,
@@ -2425,6 +2424,10 @@ export default {
     zIndex: 0,
     confirmBtnColor: 'info',
     drawTool: null,
+    prevGeojson: null,
+    isUndoBtnDisabled: false,
+    cancelBtnMiniTooltip: "描きかけ中の全ポイントを削除",
+    undoBtnMiniTooltip: "直前のポイントを削除",
   }),
   computed: {
     ...mapState([
@@ -2645,7 +2648,7 @@ export default {
         { key: 'polygon', text: '多角形', label: '多角', color: this.s_isDrawPolygon ? 'green' : 'blue', click: this.toggleLDrawPolygon },
         { key: 'free', text: '自由に描く', label: '自由', color: this.s_isDrawFree ? 'green' : 'blue', click: this.toggleLDrawFree},
         { key: 'lasso', text: '投げ縄', label: '投げ縄', color: this.s_isDrawLasso ? 'green' : 'blue', click: this.toggleDrawLasso,style: 'font-size:12px;' },
-        { key: 'finish', text: '編集が終わったクリック！', label: '確定', click: this.finishDrawing, style: 'background-color: orange!important;' },
+        // { key: 'finish', text: '編集が終わったクリック！', label: '確定', click: this.finishDrawing, style: 'background-color: orange!important;' },
         { key: 'edit', text: '変形と移動', label: '編集', color: this.s_editEnabled ? 'green' : undefined, click: this.toggleEditEnabled },
         // { key: 'rotate', text: '回転', label: '回転',  click: this.drawRotate },
         { key: 'undo', text: '元に戻す', icon: 'mdi-undo', label: '元戻', click: this.undo },
@@ -3228,21 +3231,15 @@ export default {
         }
 
         handleClick(e) {
+          vm.cancelBtnMiniTooltip = '描きかけ中の全ポイントを削除'
+          vm.undoBtnMiniTooltip = '直前のポイントを削除'
+          vm.isUndoBtnDisabled = false
           if (!vm.s_isDrawLine && !vm.s_isDrawPolygon) return;
           const lng = e.lngLat.lng;
           const lat = e.lngLat.lat;
           vm.tempLineCoordsGuide.push([lng, lat]);
           vm.isDrawingLine = true;
           vm.confirmBtnColor = 'info'
-          // if (vm.s_isDrawPolygon) {
-          //   if (vm.tempLineCoordsGuide.length >= this.minPolygonPoints) {
-          //     vm.confirmBtnColor = 'success'
-          //   }
-          // } else if (vm.s_isDrawLine) {
-          //   if (vm.tempLineCoordsGuide.length >= this.minLinePoints) {
-          //     vm.confirmBtnColor = 'success'
-          //   }
-          // }
           // UI位置追従: 最後のポイントにボタンを移動
           if (vm.tempLineCoordsGuide.length >= 2) {
             this.updateFloatingPosition(e.lngLat);
@@ -3250,31 +3247,11 @@ export default {
         }
 
         handleMouseMove(e) {
-          // if (!vm.isDrawingLine || vm.tempLineCoordsGuide.length === 0) return;
-          //
-          // // 仮ライン更新
-          // const guideCoords = vm.tempLineCoordsGuide.concat([[e.lngLat.lng, e.lngLat.lat]]);
-          // const guideLineGeoJson = {
-          //   type: 'FeatureCollection',
-          //   features: [{
-          //     type: 'Feature',
-          //     geometry: {
-          //       type: 'LineString',
-          //       coordinates: guideCoords
-          //     },
-          //     properties: {}
-          //   }]
-          // };
-          // this.map.getSource('guide-line-source').setData(guideLineGeoJson);
-          //
-          // // UI位置追従: マウス位置にボタンを追従（スムーズに）
-          // this.updateFloatingPosition(e.lngLat);
         }
 
         updateFloatingPosition(lngLat) {
           // マップ座標を画面ピクセルに変換
           const map01Width = document.querySelector('#map01').clientWidth
-          console.log(map01Width)
           const pixel = this.map.project(lngLat);
           const panelW = this.floatingGroup.offsetWidth
           const M = 10; // マージン
@@ -3311,23 +3288,21 @@ export default {
         handleUndo() {
           if (vm.tempLineCoordsGuide.length > 0) {
             vm.removeLastVertex()
-            // vm.tempLineCoordsGuide.pop(); // 最後ポイント削除
-            // // ガイドライン再描画（空ならクリア）
-            // this.map.getSource('guide-line-source').setData({ type: 'FeatureCollection', features: [] });
-            // if (vm.tempLineCoordsGuide.length < 2) {
-            //   // this.confirmButton.disabled = true;
-            //   this.confirmButton.classList.remove('active');
-            // }
           }
         }
 
         handleCancel() {
           this.resetDraw();
+          if (vm.s_editEnabled) {
+            vm.map01.getSource('click-circle-source').setData(vm.prevGeojson)
+            vm.finishDrawing()
+            vm.clickCircleGeojsonText = JSON.stringify(vm.prevGeojson)
+            vm.prevGeojson = null
+          }
         }
 
         resetDraw() {
           vm.finishLine()
-          // this.floatingGroup.style.display = 'none'; // 非表示 or 元位置に戻す
           vm.$store.state.showDrawConfrim = false
         }
       }
@@ -3800,7 +3775,7 @@ export default {
       });
     },
     setMaxZIndex (targetEl) {
-      targetEl.style.zIndex = getMaxZIndex()
+      targetEl.style.zIndex = getNextZIndex()
     },
     // ─── 連続拡大 ───
     startScaleUp() {
@@ -5420,17 +5395,16 @@ export default {
       const map01 = this.$store.state.map01
       if (!this.s_isDraw) {
         this.$store.commit('disableAllDraws')
-        // this.s_isDrawPoint = false
-        // this.s_isDrawCircle = false
-        // this.s_isDrawLine = false
-        // this.s_isDrawPolygon = false
         map01.dragPan.enable = this.originalEnable
         map01.dragPan.enable()
         this.s_isDrawFix = false
         closeAllPopups()
       } else {
-        this.snackbarText = 'ドロー時は各種クリックが制限されます。'
-        this.snackbar = true
+        const text = 'ドロー時は各種クリックが制限されます。'
+        if (this.snackbarText !== text) {
+          this.snackbarText = text
+          this.snackbar = true
+        }
       }
       const centerBtns = document.querySelectorAll('.center-wrapper')
       const rightBtns = document.querySelectorAll('.right-btn')
@@ -5587,12 +5561,24 @@ export default {
         this.s_isDrawLasso = false
         this.snackbarText = '変形、移動時はポップアップができません。'
         this.snackbar = true
+        this.$store.state.showDrawConfrim = true
+        this.$nextTick(() => {
+          this.cancelBtnMiniTooltip = '編集ボタンを押す前に戻ります'
+          this.undoBtnMiniTooltip = '使用不可'
+          this.isUndoBtnDisabled = true
+          this.prevGeojson = JSON.parse(JSON.stringify(this.map01.getSource('click-circle-source')._data))
+          const left = (document.querySelector('#map01').clientWidth / 2) - (this.drawTool.floatingGroup.offsetWidth / 2)
+          const top = 10
+          animateRelocate(this.drawTool.floatingGroup, left, top, { duration: 200, easing: 'ease-out' });
+        })
+    } else {
+        this.$store.state.showDrawConfrim = false
       }
-      store.state.isCursorOnPanel = false
       this.finishLine()
       markaersRemove()
       closeAllPopups()
     },
+
     toggleDrawLasso () {
       if (!this.$store.state.isEditable && !this.$store.state.isMine) {
         alert('編集不可です!')
@@ -5609,7 +5595,6 @@ export default {
         this.snackbar = true
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'LASSO'
-      store.state.isCursorOnPanel = false
       this.finishLine()
     },
     toggleLDrawFree () {
@@ -5625,7 +5610,6 @@ export default {
         this.snackbar = true
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'FREE'
-      store.state.isCursorOnPanel = false
       this.finishLine()
     },
     toggleLDrawPolygon () {
@@ -5639,7 +5623,6 @@ export default {
         this.s_isDrawLasso = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'POLYGON'
-      store.state.isCursorOnPanel = false
       this.finishLine()
     },
     toggleLDrawLine () {
@@ -5653,7 +5636,6 @@ export default {
         this.s_isDrawLasso = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'LINE'
-      store.state.isCursorOnPanel = false
       this.finishLine()
     },
     toggleDrawCircle () {
@@ -5667,7 +5649,6 @@ export default {
         this.s_isDrawLasso = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'CIRCLE'
-      store.state.isCursorOnPanel = false
       this.finishLine()
     },
     toggleDrawPoint () {
@@ -5681,7 +5662,6 @@ export default {
         this.s_isDrawLasso = false
       }
       document.querySelector('#draw-indicato-text').innerHTML = 'TXT'
-      store.state.isCursorOnPanel = false
       this.finishLine()
     },
     drawRotate () {
@@ -10037,6 +10017,16 @@ export default {
     // },
     isDraw(value) {
       this.toggleLDraw()
+      if (!value) {
+        const geojson = this.map01.getSource('click-circle-source')._data
+        geojson.features.forEach(f => {
+          delete f.properties.lassoSelected
+        })
+        this.s_isLassoSelected = false
+        this.map01.getSource('click-circle-source').setData(geojson)
+        this.$store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+        this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
+      }
     },
     s_dialogForPicture() {
       this.dialogForPictureZindex = getNextZIndex()
@@ -10468,7 +10458,7 @@ export default {
   border-radius: 5px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   display: flex; /* 横並び */
-  z-index: 1;
+  z-index: 10;
 }
 
 /*#floating-buttons button {*/

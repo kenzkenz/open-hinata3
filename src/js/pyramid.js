@@ -1250,6 +1250,17 @@ export default function pyramid () {
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', async (e) => {
+            if (e.target && (e.target.classList.contains("text-color"))) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
+                const value = e.target.getAttribute("data-color")
+                const tgtProp = 'color'
+                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
+                store.state.currentTextColor = value
+            }
+        });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', async (e) => {
             if (e.target && (e.target.classList.contains("point-color"))) {
                 const map01 = store.state.map01
                 const id = String(e.target.getAttribute("id"))
@@ -1261,7 +1272,7 @@ export default function pyramid () {
         });
         // -------------------------------------------------------------------------------------------------------------
         mapElm.addEventListener('click', (e) => {
-            if (e.target && (e.target.classList.contains("text-color")) ||
+            if (e.target &&
                 (e.target.classList.contains("circle-color")) ||
                 (e.target.classList.contains("circle-line-color")) ||
                 (e.target.classList.contains("polygon-color"))
@@ -2268,6 +2279,10 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
                 changed = true;
                 found = true;
                 drawFeatures.push(feature)
+                const key = feature.geometry?.coordinates.join()
+                if (key) {
+                    removeThumbnailMarkerByKey(key)
+                }
             }
         });
         // 見つからなかったら新しく作成
@@ -2287,8 +2302,10 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
             if (id !== "config") map.getSource(sourceId).setData(geojson);
             store.state.updatePermalinkFire = !store.state.updatePermalinkFire
             if (!store.state.isUsingServerGeojson) {
-                featureCollectionAdd()
-                markerAddAndRemove()
+                setTimeout(() => {
+                    featureCollectionAdd()
+                    markerAddAndRemove()
+                },1000)
             }
             if (drawFeatures.length === 1) {
                 store.state.drawFeature = drawFeatures[0]
