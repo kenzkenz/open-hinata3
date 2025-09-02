@@ -375,7 +375,7 @@ export default function drawMethods(options = {}) {
     /**
      * スナップ
      */
-// まずユーティリティ（どこか上で1回定義）
+    // まずユーティリティ（どこか上で1回定義）
     function normalizeLngLat(ll) {
         let lng = ll.lng;
         lng = ((lng + 180) % 360 + 360) % 360 - 180; // [-180,180)
@@ -383,7 +383,7 @@ export default function drawMethods(options = {}) {
     }
     function pxDist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
 
-// 画面空間 最近点（辺）
+    // 画面空間 最近点（辺）
     function nearestOnScreenLines(map, lines, pointPx) {
         let best = null;
         const nearestOnSegPx = (A, B, P) => {
@@ -558,24 +558,9 @@ export default function drawMethods(options = {}) {
 
     // ② 追加：スナップ対象レイヤと許容ピクセル半径（必要に応じて調整）
     setTimeout(() => {
-        // const snap = createSimpleSnapper(map01, {
-        //     layers: ['click-circle-layer'],                                // << ここが重要。画面の可視レイヤから自動抽出
-        //     pixel: 14,
-        //     snapTo: { vertices: true, edges: true },
-        //     self: { enable: true, getCoords: () => tempPolygonCoords },
-        //     exclude: ['oh-snap-point-lyr', 'lasso-layer']  // プレビュー等は除外
-        // });
-        // const snap = createRawGeojsonSnapper(map01, {
-        //     sourceIds: [clickCircleSource.iD],
-        //     pixel: 16,
-        //     snapTo: { vertices: true, edges: true },
-        //     self: { enable: true, getCoords: () => tempPolygonCoords },
-        //     // 必要なら除外追加:
-        //     excludeSources: ['snap-point-src','freehand-preview-source','guide-line-source','lasso-source']
-        // });
         // 強力スナッパ生成（使う Source ID を全部入れてください）
         const snap = createStrongRawSnapper(map01, {
-            sourceIds: [clickCircleSource.iD],
+            sourceIds: [clickCircleSource.iD, 'homusyo-2025-source'],
             radii: { vertexBase: 16, edgeBase: 12 }, // 頂点を盛る
             zoomRef: 14, zoomScale: 1.25,
             sticky: { enable: true, radiusFactor: 1.8 },
@@ -694,52 +679,40 @@ export default function drawMethods(options = {}) {
             map01.getSource('guide-line-source').setData(fc)
         }
     });
-    // 直前で保存した lastSnapHit を使ってガイドを描く
+
     map01.on('mousemove', (e) => {
-        if ((!isDrawingLine || tempLineCoordsGuide.length === 0)) return;
-        const cursor = lastSnapHit?.lngLat || e.lngLat;      // ← ここ
-        const guideCoords = tempLineCoordsGuide.concat([[cursor.lng, cursor.lat]]);
-        map01.getSource('guide-line-source')?.setData({
-            type: 'FeatureCollection',
-            features: [{ type: 'Feature', geometry: { type: 'LineString', coordinates: guideCoords }, properties: {} }]
-        });
+        // 他モード（フリーハンド/ラッソ等）中は動かさない
+        const polyOn = !!store.state.isDrawPolygon;
+        const lineOn = !!store.state.isDrawLine;
+        if (!polyOn && !lineOn) {
+            if (lastSnapHit) { lastSnapHit = null; }
+            return;
+        }
+        const cursor = lastSnapHit?.lngLat ? normalizeLngLat(lastSnapHit.lngLat) : e.lngLat;
+        if (polyOn) {
+            updateGuideLine(map01, tempPolygonCoords, cursor);
+        } else if (lineOn) {
+            updateGuideLine(map01, tempLineCoordsGuide, cursor);
+        }
     });
-    // map01.on('mousemove', (e) => {
-    //     if ((!isDrawingLine || tempLineCoordsGuide.length === 0)) return;
-    //     // 仮ライン：既存＋現在マウス座標
-    //     const guideCoords = tempLineCoordsGuide.concat([[e.lngLat.lng, e.lngLat.lat]]);
-    //     const guideLineGeoJson = {
-    //         type: 'FeatureCollection',
-    //         features: [{
-    //             type: 'Feature',
-    //             geometry: {
-    //                 type: 'LineString',
-    //                 coordinates: guideCoords
-    //             },
-    //             properties: {}
-    //         }]
-    //     };
-    //     map01.getSource('guide-line-source').setData(guideLineGeoJson);
-    // });
-    map01.on('mousemove',(e) => {
-        if (!store.state.isDrawLine) return;
-        this.lastMouseLngLat = e.lngLat;
-        const coords = tempLineCoords.slice();
-        if (coords.length) coords.push([e.lngLat.lng, e.lngLat.lat]);
-        map01.getSource('guide-line-source').setData({
-            type: 'FeatureCollection',
-            features: [{
-                type: 'Feature',
-                geometry: { type: 'LineString', coordinates: coords },
-                properties: {}
-            }]
-        });
-    })
 }
 
 /**
  * ---------------------------------------------------------------------------------------------------------------------
  */
+function updateGuideLine(map, baseCoords, cursorLL) {
+    const gsrc = map.getSource('guide-line-source');
+    if (!gsrc || !baseCoords?.length) return;
+    const guideCoords = baseCoords.concat([[cursorLL.lng, cursorLL.lat]]);
+    gsrc.setData({
+        type: 'FeatureCollection',
+        features: [{
+            type: 'Feature',
+            geometry: { type: 'LineString', coordinates: guideCoords },
+            properties: {}
+        }]
+    });
+}
 
 function onLineClick(e) {
     const map01 = store.state.map01
