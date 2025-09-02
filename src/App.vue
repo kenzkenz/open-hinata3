@@ -7627,112 +7627,112 @@ export default {
       //   }
       // });
 
-      // 投げ縄-----------------------------------------------------------------------------------------------------
-      // 1. グローバル変数
-      let isLassoDrawing = false;
-      let lassoCoords = [];
-      const lassoSourceId = 'lasso-source';
-      const lassoLayerId = 'lasso-layer';
-
-      // 1. pointerdown => 投げ縄開始
-      map.getCanvas().addEventListener('pointerdown', (e) => {
-        // 0. ソース & レイヤーの追加（初期化）
-        if (!map.getSource(lassoSourceId)) {
-          map.addSource(lassoSourceId, {
-            type: 'geojson',
-            data: {
-              type: 'FeatureCollection',
-              features: []
-            }
-          });
-          map.addLayer({
-            id: lassoLayerId,
-            type: 'line',
-            source: lassoSourceId,
-            paint: {
-              'line-color': 'rgba(0,0,255,0.6)',
-              'line-width': 10
-            }
-          });
-        }
-        if (!vm.s_isDrawLasso) return;
-        map.dragPan.disable(); // パン無効化
-        isLassoDrawing = true;
-        lassoCoords = [];
-        map.getCanvas().style.cursor = 'crosshair';
-      });
-
-      // 2. pointermove => ラインを更新
-      map.getCanvas().addEventListener('pointermove', (e) => {
-        if (!isLassoDrawing) return;
-        const point = map.unproject([e.clientX, e.clientY]);
-        lassoCoords.push([point.lng, point.lat]);
-        const lineGeojson = {
-          type: 'FeatureCollection',
-          features: [{
-            type: 'Feature',
-            geometry: { type: 'LineString', coordinates: lassoCoords }
-          }]
-        };
-        map.getSource(lassoSourceId).setData(lineGeojson);
-      });
-
-      // 3. pointerup => 投げ縄完了 & 選択処理
-      map.getCanvas().addEventListener('pointerup', (e) => {
-        if (!isLassoDrawing) return;
-        isLassoDrawing = false;
-        map.getCanvas().style.cursor = '';
-        if (lassoCoords.length >= 3) {
-          // ポリゴンを閉じる
-          lassoCoords.push(lassoCoords[0]);
-          const polygon = turf.polygon([lassoCoords]);
-          // 対象ソースの全フィーチャ取得
-          const source = map.getSource(clickCircleSource.iD);
-          const geojson = source._data; // or source.getData()
-          let isLassoSelected = false
-          // GeoJSON‐Rbush（空間インデックス）を使う方法もあるらしい。見調査
-          // ポリゴンの bbox を先に計算
-          const [pMinX, pMinY, pMaxX, pMaxY] = turf.bbox(polygon);
-
-          geojson.features.forEach(feature => {
-            feature.properties.lassoSelected = false;
-            // feature の bbox を計算（事前にキャッシュしておくとさらに速い）
-            if (feature.geometry) {
-              const [fMinX, fMinY, fMaxX, fMaxY] = turf.bbox(feature);
-              // bbox が重ならなければ交差チェック不要
-              if (fMaxX < pMinX || fMinX > pMaxX || fMaxY < pMinY || fMinY > pMaxY) {
-                return;
-              }
-              // 本命チェック
-              if (turf.booleanIntersects(feature, polygon)) {
-                feature.properties.lassoSelected = true;
-                isLassoSelected = true;
-              }
-            }
-          });
-          this.$store.state.lassoGeojson = JSON.stringify(turf.featureCollection(geojson.features.filter(feature => feature.properties.lassoSelected === true)))
-          this.scaleValue = 100
-          this.angleValue = 0
-          // console.log(this.$store.state.lassoGeojson)
-
-          if (isLassoSelected) {
-            this.s_isLassoSelected = true
-          } else {
-            this.s_isLassoSelected = false
-          }
-          console.log(geojson)
-          // 更新
-          source.setData(geojson);
-          this.$store.state.clickCircleGeojsonText = JSON.stringify(geojson)
-          clickCircleSource.obj.data = geojson
-          saveDrowFeatures(geojson.features);
-        }
-        // 投げ縄ラインをクリア
-        map.getSource(lassoSourceId).setData({ type: 'FeatureCollection', features: [] });
-        map.removeLayer(lassoLayerId)
-        map.removeSource(lassoSourceId)
-        map.dragPan.enable();
-      });
+      // // 投げ縄-----------------------------------------------------------------------------------------------------
+      // // 1. グローバル変数
+      // let isLassoDrawing = false;
+      // let lassoCoords = [];
+      // const lassoSourceId = 'lasso-source';
+      // const lassoLayerId = 'lasso-layer';
+      //
+      // // 1. pointerdown => 投げ縄開始
+      // map.getCanvas().addEventListener('pointerdown', (e) => {
+      //   // 0. ソース & レイヤーの追加（初期化）
+      //   if (!map.getSource(lassoSourceId)) {
+      //     map.addSource(lassoSourceId, {
+      //       type: 'geojson',
+      //       data: {
+      //         type: 'FeatureCollection',
+      //         features: []
+      //       }
+      //     });
+      //     map.addLayer({
+      //       id: lassoLayerId,
+      //       type: 'line',
+      //       source: lassoSourceId,
+      //       paint: {
+      //         'line-color': 'rgba(0,0,255,0.6)',
+      //         'line-width': 10
+      //       }
+      //     });
+      //   }
+      //   if (!vm.s_isDrawLasso) return;
+      //   map.dragPan.disable(); // パン無効化
+      //   isLassoDrawing = true;
+      //   lassoCoords = [];
+      //   map.getCanvas().style.cursor = 'crosshair';
+      // });
+      //
+      // // 2. pointermove => ラインを更新
+      // map.getCanvas().addEventListener('pointermove', (e) => {
+      //   if (!isLassoDrawing) return;
+      //   const point = map.unproject([e.clientX, e.clientY]);
+      //   lassoCoords.push([point.lng, point.lat]);
+      //   const lineGeojson = {
+      //     type: 'FeatureCollection',
+      //     features: [{
+      //       type: 'Feature',
+      //       geometry: { type: 'LineString', coordinates: lassoCoords }
+      //     }]
+      //   };
+      //   map.getSource(lassoSourceId).setData(lineGeojson);
+      // });
+      //
+      // // 3. pointerup => 投げ縄完了 & 選択処理
+      // map.getCanvas().addEventListener('pointerup', (e) => {
+      //   if (!isLassoDrawing) return;
+      //   isLassoDrawing = false;
+      //   map.getCanvas().style.cursor = '';
+      //   if (lassoCoords.length >= 3) {
+      //     // ポリゴンを閉じる
+      //     lassoCoords.push(lassoCoords[0]);
+      //     const polygon = turf.polygon([lassoCoords]);
+      //     // 対象ソースの全フィーチャ取得
+      //     const source = map.getSource(clickCircleSource.iD);
+      //     const geojson = source._data; // or source.getData()
+      //     let isLassoSelected = false
+      //     // GeoJSON‐Rbush（空間インデックス）を使う方法もあるらしい。見調査
+      //     // ポリゴンの bbox を先に計算
+      //     const [pMinX, pMinY, pMaxX, pMaxY] = turf.bbox(polygon);
+      //
+      //     geojson.features.forEach(feature => {
+      //       feature.properties.lassoSelected = false;
+      //       // feature の bbox を計算（事前にキャッシュしておくとさらに速い）
+      //       if (feature.geometry) {
+      //         const [fMinX, fMinY, fMaxX, fMaxY] = turf.bbox(feature);
+      //         // bbox が重ならなければ交差チェック不要
+      //         if (fMaxX < pMinX || fMinX > pMaxX || fMaxY < pMinY || fMinY > pMaxY) {
+      //           return;
+      //         }
+      //         // 本命チェック
+      //         if (turf.booleanIntersects(feature, polygon)) {
+      //           feature.properties.lassoSelected = true;
+      //           isLassoSelected = true;
+      //         }
+      //       }
+      //     });
+      //     this.$store.state.lassoGeojson = JSON.stringify(turf.featureCollection(geojson.features.filter(feature => feature.properties.lassoSelected === true)))
+      //     this.scaleValue = 100
+      //     this.angleValue = 0
+      //     // console.log(this.$store.state.lassoGeojson)
+      //
+      //     if (isLassoSelected) {
+      //       this.s_isLassoSelected = true
+      //     } else {
+      //       this.s_isLassoSelected = false
+      //     }
+      //     console.log(geojson)
+      //     // 更新
+      //     source.setData(geojson);
+      //     this.$store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+      //     clickCircleSource.obj.data = geojson
+      //     saveDrowFeatures(geojson.features);
+      //   }
+      //   // 投げ縄ラインをクリア
+      //   map.getSource(lassoSourceId).setData({ type: 'FeatureCollection', features: [] });
+      //   map.removeLayer(lassoLayerId)
+      //   map.removeSource(lassoSourceId)
+      //   map.dragPan.enable();
+      // });
 
       // ガイドライン作成-----------------------------------------------------------------------------------------------------
       map.on('click', (e) => {
@@ -7763,9 +7763,6 @@ export default {
             properties: {}
           }]
         };
-        /**
-         * コードが絡まっている。要改修
-         */
         map.getSource('guide-line-source').setData(guideLineGeoJson);
       });
 

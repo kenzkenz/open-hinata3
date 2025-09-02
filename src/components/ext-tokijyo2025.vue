@@ -142,8 +142,11 @@
       <v-btn style="height: 40px; line-height: 40px; margin-left: 0px;margin-top: 10px;" class="tiny-btn" @click="selectAll">
         全選択
       </v-btn>
+      <v-btn :color="isDrawLassoForTokizyo ? 'green' : 'primary'"  style="height: 40px; line-height: 40px; margin-left: 0px;margin-top: 10px;" class="tiny-btn" @click="selectLasso">
+        投げ縄
+      </v-btn>
       <v-btn style="height: 40px; line-height: 40px; margin-left: 0px;margin-top: 10px;" class="tiny-btn" @click="toDraw">
-        ドローへ
+        ドロー
       </v-btn>
     </div>
     <div class="color-container">
@@ -217,6 +220,7 @@ import {
 import {history} from "@/App";
 import {homusyo2025LayerDaihyou, homusyo2025LayerLine} from "@/js/layers";
 import store from "@/store";
+import {mapState} from "vuex";
 // 色名から RGB へのマッピング（指定された色のみ）
 const colorMap = {
   red: [255, 0, 0],
@@ -268,6 +272,9 @@ export default {
     menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'hidden', 'user-select': 'text', 'font-size':'large'}
   }),
   computed: {
+    ...mapState([
+      'isDrawLassoForTokizyo',
+    ]),
     s_isUnder500 () {
       return this.$store.state.isUnder500
     },
@@ -378,6 +385,9 @@ export default {
         result.opacity = 1
         map.setZoom(zoom)
       },500)
+    },
+    selectLasso() {
+      this.$store.state.isDrawLassoForTokizyo = !this.$store.state.isDrawLassoForTokizyo
     },
     selectAll() {
       const map = this.$store.state[this.mapName]

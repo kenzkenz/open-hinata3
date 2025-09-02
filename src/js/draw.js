@@ -3,6 +3,8 @@ import {colorNameToRgba, geojsonCreate} from "@/js/pyramid";
 import { popup } from "@/js/popup";
 import * as turf from "@turf/turf";
 import {haptic} from "@/js/utils/haptics";
+import {clickCircleSource} from "@/js/layers";
+import {highlightSpecificFeatures2025, saveDrowFeatures} from "@/js/downLoad";
 
 // =============================================================
 // フリーハンド自己交差(=ループ)検出（Turf.js）
@@ -226,7 +228,157 @@ export default function drawMethods(options = {}) {
             haptic({ strength: 'success' })
         }
     })
+    // 投げ縄-----------------------------------------------------------------------------------------------------
+    let isLassoDrawing = false;
+    let lassoCoords = [];
+    const lassoSourceId = 'lasso-source';
+    const lassoLayerId = 'lasso-layer';
+
+    map01.getCanvas().addEventListener('pointerdown', (e) => {
+        if (!store.state.isDrawLasso && !store.state.isDrawLassoForTokizyo) return;
+        if (!map01.getSource(lassoSourceId)) {
+            map01.addSource(lassoSourceId, {
+                type: 'geojson',
+                data: {
+                    type: 'FeatureCollection',
+                    features: []
+                }
+            });
+            map01.addLayer({
+                id: lassoLayerId,
+                type: 'line',
+                source: lassoSourceId,
+                paint: {
+                    'line-color': 'rgba(0,0,255,0.6)',
+                    'line-width': 10
+                }
+            });
+        }
+        map01.dragPan.disable(); // パン無効化
+        isLassoDrawing = true;
+        lassoCoords = [];
+        map01.getCanvas().style.cursor = 'crosshair';
+    });
+
+    // 2. pointermove => ラインを更新
+    map01.getCanvas().addEventListener('pointermove', (e) => {
+        if (!isLassoDrawing) return;
+        const point = map01.unproject([e.clientX, e.clientY]);
+        lassoCoords.push([point.lng, point.lat]);
+        const lineGeojson = {
+            type: 'FeatureCollection',
+            features: [{
+                type: 'Feature',
+                geometry: { type: 'LineString', coordinates: lassoCoords }
+            }]
+        };
+        map01.getSource(lassoSourceId).setData(lineGeojson);
+    });
+
+    // 3. pointerup => 投げ縄完了 & 選択処理
+    map01.getCanvas().addEventListener('pointerup', async (e) => {
+        if (!isLassoDrawing) return;
+        isLassoDrawing = false;
+        map01.getCanvas().style.cursor = '';
+        if (lassoCoords.length >= 3) {
+            // ポリゴンを閉じる
+            lassoCoords.push(lassoCoords[0]);
+            const polygon = turf.polygon([lassoCoords]);
+            if (store.state.isDraw) {
+                // 対象ソースの全フィーチャ取得
+                const source = map01.getSource(clickCircleSource.iD);
+                const geojson = source._data; // or source.getData()
+                let isLassoSelected = false
+                // GeoJSON‐Rbush（空間インデックス）を使う方法もあるらしい。見調査
+                // ポリゴンの bbox を先に計算
+                const [pMinX, pMinY, pMaxX, pMaxY] = turf.bbox(polygon);
+                geojson.features.forEach(feature => {
+                    feature.properties.lassoSelected = false;
+                    // feature の bbox を計算（事前にキャッシュしておくとさらに速い）
+                    if (feature.geometry) {
+                        const [fMinX, fMinY, fMaxX, fMaxY] = turf.bbox(feature);
+                        // bbox が重ならなければ交差チェック不要
+                        if (fMaxX < pMinX || fMinX > pMaxX || fMaxY < pMinY || fMinY > pMaxY) {
+                            return;
+                        }
+                        // 本命チェック
+                        if (turf.booleanIntersects(feature, polygon)) {
+                            feature.properties.lassoSelected = true;
+                            isLassoSelected = true;
+                        }
+                    }
+                });
+                store.state.lassoGeojson = JSON.stringify(turf.featureCollection(geojson.features.filter(feature => feature.properties.lassoSelected === true)))
+                if (isLassoSelected) {
+                    store.state.isLassoSelected = true
+                } else {
+                    store.state.isLassoSelected = false
+                }
+                console.log(geojson)
+                // 更新
+                source.setData(geojson);
+                store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+                clickCircleSource.obj.data = geojson
+                await saveDrowFeatures(geojson.features);
+            } else if (store.state.isDrawLassoForTokizyo) {
+                const layerId = 'oh-homusyo-2025-polygon';
+                const intersectsFeatures = await getIntersectsFeatures(map01, layerId, polygon)
+                console.log(intersectsFeatures)
+                store.state.highlightedChibans = new Set()
+                intersectsFeatures.forEach(f => {
+                    const targetId = `${f.properties['筆ID']}_${f.properties['地番']}`;
+                    store.state.highlightedChibans.add(targetId);
+                })
+                highlightSpecificFeatures2025(map01,layerId);
+            }
+        }
+        // 投げ縄ラインをクリア
+        map01.getSource(lassoSourceId).setData({ type: 'FeatureCollection', features: [] });
+        map01.removeLayer(lassoLayerId)
+        map01.removeSource(lassoSourceId)
+        map01.dragPan.enable();
+    });
 }
+
+async function getIntersectsFeatures(map, layerId, polygon) {
+    const features = map.queryRenderedFeatures({
+        layers: [layerId],
+    });
+        // GeoJSON形式に変換
+        const pmtilesFeatures = {
+            type: 'FeatureCollection',
+            features: features.map((f) => ({
+                type: 'Feature',
+                geometry: f.geometry,
+                properties: f.properties,
+            })),
+        };
+
+        console.log(pmtilesFeatures)
+
+    const intersectsFeatures = pmtilesFeatures.features.filter((feature) => {
+        if (turf.booleanIntersects(polygon, feature)) {
+            return feature
+        }
+    })
+    console.log('該当地物:', intersectsFeatures);
+    return intersectsFeatures
+}
+
+
+// ---------------------- 使い方（最小例） --------------------------------------
+// const layerId = 'oh-homusyo-2025-polygon';
+// const hits = await featuresInPolygonPMTilesFast({
+//   map,
+//   layerId,
+//   selection,           // Feature<Polygon|MultiPolygon>
+//   idProp: 'TXTCD',     // あなたの属性名に合わせる
+//   mergeExistingFilter: true,
+//   restoreFilter: true,
+//   fit: true,           // selection 全域を読み込ませたいとき
+// });
+// console.log('ヒット件数', hits.length, hits.map(f => f.properties.TXTCD));
+// // showRenderedFeatures(map, hits); // 目視確認したい場合
 
 
 

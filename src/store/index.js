@@ -7,7 +7,7 @@ import {haptic} from "@/js/utils/haptics";
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.422,
+    clientVersion: 1.423,
     selectedLngLat: null,
     showDrawConfrim: false,
     noProgress: false,
@@ -130,6 +130,7 @@ export default createStore({
     /**
      * ドロー関係フラグ
      */
+    isDrawLassoForTokizyo: false,
     isDraw: false,
     isDrawLasso: false,
     isDrawFix: false,
