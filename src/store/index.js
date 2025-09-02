@@ -2,6 +2,7 @@ import { createStore } from 'vuex'
 import { db } from '@/firebase'
 // import firebase from "firebase";
 import firebase from 'firebase/app';
+import {haptic} from "@/js/utils/haptics";
 
 export default createStore({
   state: {
@@ -665,10 +666,12 @@ export default createStore({
     setRightDrawer (state, val) {
       if (state.isDraw) return
       state.showRightDrawer = val
+      if (val) haptic({ strength: 'success' })
     },
     setChibanzuDrawer (state, val) {
       if (state.isDraw) return;
       state.showChibanzuDrawer = val
+      if (val) haptic({ strength: 'success' })
     },
     setSelectedPointFeature (state, feature) {
       state.selectedPointFeature = feature
