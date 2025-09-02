@@ -4282,6 +4282,7 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
 
 async function createPopup(map, coordinates, htmlContent, mapName, isPan) {
     if (isSmall && store.state.isDraw) return
+    haptic({ strength: 'success' })
     // ストリートビューとGoogleマップへのリンクを追加
     const [lng, lat] = coordinates;
     let streetView =
@@ -4306,39 +4307,6 @@ async function createPopup(map, coordinates, htmlContent, mapName, isPan) {
             popupHtml = `<div class="popup-html-div">${htmlContent}<div class="mapillary-container" style="width: ${popupWidth}px;height: ${height}px; margin-top: 20px;"></div>${streetView}</div>`
         }
     }
-
-    // // マピラリー---------------------------------------------------------------------------------------------------------
-    // if (store.state.mapillaryFlg) {
-    //     const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c';
-    //     async function mapillary() {
-    //         const deltaLat = 0.00009; // 約10m
-    //         const deltaLng = 0.00011; // 東京近辺での約10m
-    //         const response = await fetch(`https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id,thumb_1024_url&bbox=${lng - deltaLng},${lat - deltaLat},${lng + deltaLng},${lat + deltaLat}&limit=1`);
-    //         const data = await response.json();
-    //         if (data.data && data.data.length > 0) {
-    //             const imageUrl = data.data[0].thumb_1024_url;
-    //             const img = `mapillary<br><a href="${imageUrl}" target="_blank"><img width="300px" src="${imageUrl}" alt="Mapillary Image"></a>`;
-    //             return img;
-    //         } else {
-    //             return '近くにMapillary画像が見つかりませんでした。';
-    //         }
-    //     }
-    //     const img = await mapillary()
-    //     htmlContent = htmlContent.replace(/<div class="street-view"[^>]*>.*?<\/div>/gs, '');
-    //     popupHtml = `<div class="popup-html-div">${htmlContent}${img}${streetView}</div>`;
-    // }
-    // マピラリーここまで----------------------------------------------------------------------------------------------------
-//     if (store.state.mapillaryFlg) {
-//         const mlyHtml = `
-//             <div class="mapillary-viewer-container" style="width: 300px; height: 200px;">
-// <!--                <div id="mly" style="width: 100%; height: 100%;"></div>-->
-//                 <div id="mly" style="width: 300px; height: 200px; background: #ccc;"></div>
-//             </div>
-//         `;
-//         htmlContent = htmlContent.replace(/<div class="street-view"[^>]*>.*?<\/div>/gs, '');
-//         popupHtml = `<div class="popup-html-div">${htmlContent}${mlyHtml}${streetView}</div>`;
-//     }
-
     // 既存のポップアップを全て削除
     popups.forEach(popup => popup.remove());
     popups.length = 0;
@@ -4489,83 +4457,7 @@ async function createPopup(map, coordinates, htmlContent, mapName, isPan) {
             document.querySelector('.street-view').style.height = '0px'
             document.querySelector('.street-view').style.width = '0px'
         }
-        // setTimeout(() => {
-        //     if (container && !store.state.mapillaryFlg) {
-        //         async function setupStreetViewWithMotion() {
-        //             await enableMotionPermission(); // ← 先に許可をもらう
-        //             if (container) {
-        //                 new window.google.maps.StreetViewPanorama(container, {
-        //                     position: {lat: lat, lng: lng},
-        //                     pov: { heading: 34, pitch: 10 },
-        //                     zoom: 1,
-        //                     disableDefaultUI: true,
-        //                 });
-        //                 // スクロールリセット（ポップアップ内のスクロール位置をリセット）
-        //                 setTimeout(() => {
-        //                     document.querySelectorAll('.popup-html-div').forEach(element => {
-        //                         element.scrollTop = 0;
-        //                     });
-        //                 },200)
-        //             }
-        //         }
-        //         setupStreetViewWithMotion()
-        //     }
-        // },100)
     }
-
-
-
-
-
-
-
-    // if (store.state.mapillaryFlg) {
-    //     alert(888)
-    //     // popup.on('open', () => {
-    //     // 必ず mly の div がある前提！
-    //     const mlyContainer = document.getElementById('mly');
-    //     if (!mlyContainer) {
-    //         console.warn('#mly が存在しないので Mapillary Viewer を描画できません');
-    //         return;
-    //     }
-    //     // async 関数定義 & 実行
-    //     (async () => {
-    //         const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c';
-    //         const deltaLat = 0.00009;
-    //         const deltaLng = 0.00011;
-    //
-    //         try {
-    //             const response = await fetch(`https://graph.mapillary.com/images?access_token=${MAPILLARY_CLIENT_ID}&fields=id&bbox=${lng - deltaLng},${lat - deltaLat},${lng + deltaLng},${lat + deltaLat}&limit=1`);
-    //             const data = await response.json();
-    //
-    //             if (data.data && data.data.length > 0) {
-    //                 const imageId = data.data[0].id;
-    //                 // setTimeout(() => {
-    //                     alert(imageId)
-    //                     const mly = document.getElementById('mly');
-    //                     console.log('mly:', mly);
-    //                     console.log('mly size:', mly.offsetWidth, mly.offsetHeight);
-    //                     // Viewer を描画
-    //                     new Viewer({
-    //                         accessToken: MAPILLARY_CLIENT_ID,
-    //                         container: 'mly',
-    //                         imageId: imageId
-    //                         // imageId: '534813209971432' // ← これは動作確認済みの公開 imageId
-    //                         // imageId: '655287021358907' // ※動作確認済み（東京・公開）
-    //                         // imageId: '734238110657399' // 東京・都内・確認済
-    //                     });
-    //                 // },500)
-    //             } else {
-    //                 mlyContainer.innerHTML = '<p>近くにMapillary画像が見つかりませんでした。</p>';
-    //             }
-    //         } catch (err) {
-    //             console.error('Mapillary fetch error:', err);
-    //             mlyContainer.innerHTML = '<p>Mapillaryの画像取得に失敗しました。</p>';
-    //         }
-    //     })();
-    // }
-
-
 
     // スクロールリセット（ポップアップ内のスクロール位置をリセット）
     document.querySelectorAll('.popup-html-div').forEach(element => {
@@ -4582,7 +4474,6 @@ async function createPopup(map, coordinates, htmlContent, mapName, isPan) {
         carouselButtons.classList.add('hidden');
     }
     pyramid.currentIndex = 0
-
 
 }
 function fetchReverseGeocoding(lng, lat, mapName) {
