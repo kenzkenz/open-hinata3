@@ -8,6 +8,7 @@ export default createStore({
   state: {
     drawFeatureId: '',
     clientVersion: 1.424,
+    prevGeojson: null,
     selectedLngLat: null,
     showDrawConfrim: false,
     noProgress: false,

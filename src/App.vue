@@ -2247,7 +2247,7 @@ import ExDraw from '@/components/floatingwindow/ExDraw'
 
 import {delay, forEach} from "lodash";
 import {feature} from "@turf/turf";
-import drawMethods from "@/js/draw";
+import drawMethods, {drawCancel, drawConfirm, finishDrawing, removeLastVertex} from "@/js/draw";
 import {haptic} from "@/js/utils/haptics";
 
 export default {
@@ -2445,7 +2445,6 @@ export default {
     zIndex: 0,
     confirmBtnColor: 'info',
     drawTool: null,
-    prevGeojson: null,
     isUndoBtnDisabled: false,
     cancelBtnMiniTooltip: "描きかけ中の全ポイントを削除",
     undoBtnMiniTooltip: "直前のポイントを削除",
@@ -3287,39 +3286,42 @@ export default {
         }
 
         handleConfirm() {
-          let minPoints
-          if (vm.s_isDrawPolygon) {
-            minPoints = this.minPolygonPoints
-          } else if (vm.s_isDrawLine) {
-            minPoints = this.minLinePoints
-          }
-          vm.tempLineCoordsGuide = dedupeCoords(vm.tempLineCoordsGuide)
-          if (vm.tempLineCoordsGuide.length < minPoints) {
-            store.state.loadingMessage3 = `ポイントが足りません。最低${minPoints}点必要です。`
-            store.state.loading3 = true
-            setTimeout(() => {
-              store.state.loading3 = false
-            }, 2000)
-            return
-          }
-          vm.finishDrawing()
-          this.resetDraw();
+          drawConfirm()
+          // let minPoints
+          // if (vm.s_isDrawPolygon) {
+          //   minPoints = this.minPolygonPoints
+          // } else if (vm.s_isDrawLine) {
+          //   minPoints = this.minLinePoints
+          // }
+          // vm.tempLineCoordsGuide = dedupeCoords(vm.tempLineCoordsGuide)
+          // if (vm.tempLineCoordsGuide.length < minPoints) {
+          //   store.state.loadingMessage3 = `ポイントが足りません。最低${minPoints}点必要です。`
+          //   store.state.loading3 = true
+          //   setTimeout(() => {
+          //     store.state.loading3 = false
+          //   }, 2000)
+          //   return
+          // }
+          // vm.finishDrawing()
+          // this.resetDraw();
         }
 
         handleUndo() {
-          if (vm.tempLineCoordsGuide.length > 0) {
-            vm.removeLastVertex()
-          }
+          // if (vm.tempLineCoordsGuide.length > 0) {
+          //   vm.removeLastVertex()
+          // }
+          removeLastVertex()
         }
 
         handleCancel() {
-          this.resetDraw();
-          if (vm.s_editEnabled) {
-            vm.map01.getSource('click-circle-source').setData(vm.prevGeojson)
-            vm.finishDrawing()
-            vm.clickCircleGeojsonText = JSON.stringify(vm.prevGeojson)
-            vm.prevGeojson = null
-          }
+          drawCancel()
+          // this.resetDraw();
+          // if (vm.s_editEnabled) {
+          //   vm.map01.getSource('click-circle-source').setData(vm.prevGeojson)
+          //   vm.finishDrawing()
+          //   vm.clickCircleGeojsonText = JSON.stringify(vm.prevGeojson)
+          //   vm.prevGeojson = null
+          // }
         }
 
         resetDraw() {
@@ -3877,106 +3879,106 @@ export default {
         this.removeLastVertex();
       }
     },
-    // 最後の頂点を一つ削除してプレビューを更新
-    removeLastVertex() {
-      if (this.s_isDrawLine) {
-        if (!this.tempLineCoords.length) return;
-        const coords = this.tempLineCoords;
-        if (!coords.length) return;
-        // 最後の頂点がカーソル位置と重なっている場合は2回削除
-        if (this.lastMouseLngLat && coords.length >= 1) {
-          const [lastLng, lastLat] = coords[coords.length - 1];
-          if (lastLng === this.lastMouseLngLat.lng && lastLat === this.lastMouseLngLat.lat) {
-            // カーソル重なり頂点を2回削除
-            coords.pop();
-            if (coords.length) coords.pop();
-            this.tempLineCoordsGuide = this.tempLineCoords
-            this.updateDynamicLinePreview();
-            return;
-          }
-        }
-        // それ以外は1回だけ削除
-        coords.pop();
-        this.tempLineCoordsGuide = this.tempLineCoords
-        this.updateDynamicLinePreview();
-
-      } else if (this.s_isDrawPolygon) {
-        const coords = this.tempPolygonCoords;
-        if (!coords.length) return;
-        // 最後の頂点がカーソル位置と重なっている場合は2回削除
-        if (this.lastMouseLngLat && coords.length >= 1) {
-          const [lastLng, lastLat] = coords[coords.length - 1];
-          if (lastLng === this.lastMouseLngLat.lng && lastLat === this.lastMouseLngLat.lat) {
-            // カーソル重なり頂点を2回削除
-            coords.pop();
-            // guideCoords.pop()
-            if (coords.length) coords.pop();
-            this.tempLineCoordsGuide = this.tempPolygonCoords
-            this.updateDynamicPolygonPreview();
-            return;
-          }
-        }
-        // それ以外は1回だけ削除
-        console.log(this.tempPolygonCoords)
-        coords.pop();
-        this.tempLineCoordsGuide = this.tempPolygonCoords
-        this.updateDynamicPolygonPreview();
-      }
-    },
-    // 動的ラインプレビュー
-    updateDynamicLinePreview() {
-      const map = this.$store.state.map01;
-      const coords = this.tempLineCoords
-      // if (coords.length && this.lastMouseLngLat) {
-      //   coords.push([this.lastMouseLngLat.lng, this.lastMouseLngLat.lat]);
-      // }
-      map.getSource('guide-line-source').setData({
-        type: 'FeatureCollection',
-        features: [{
-          type: 'Feature',
-          geometry: { type: 'LineString', coordinates: coords },
-          properties: {}
-        }]
-      });
-    },
-    // 動的ポリゴンプレビュー
-    updateDynamicPolygonPreview() {
-      const map = this.$store.state.map01;
-      const coords = this.tempPolygonCoords
-
-      // if (coords.length && this.lastMouseLngLat) {
-      //   coords.push([this.lastMouseLngLat.lng, this.lastMouseLngLat.lat]);
-      // }
-
-      map.getSource('guide-line-source').setData({
-        type: 'FeatureCollection',
-        features: [{
-          type: 'Feature',
-          geometry: { type: 'LineString', coordinates: coords },
-          properties: {}
-        }]
-      });
-    },
-
-    // マウス移動で動的プレビュー更新
-    onLineMouseMove(e) {
-      if (!this.s_isDrawLine) return;
-      const map = this.$store.state.map01;
-      this.lastMouseLngLat = e.lngLat;
-      const coords = this.tempLineCoords.slice();
-      if (coords.length) coords.push([e.lngLat.lng, e.lngLat.lat]);
-      map.getSource('guide-line-source').setData({
-        type: 'FeatureCollection',
-        features: [{
-          type: 'Feature',
-          geometry: { type: 'LineString', coordinates: coords },
-          properties: {}
-        }]
-      });
-    },
+    // // 最後の頂点を一つ削除してプレビューを更新
+    // removeLastVertex() {
+    //   if (this.s_isDrawLine) {
+    //     if (!this.tempLineCoords.length) return;
+    //     const coords = this.tempLineCoords;
+    //     if (!coords.length) return;
+    //     // 最後の頂点がカーソル位置と重なっている場合は2回削除
+    //     if (this.lastMouseLngLat && coords.length >= 1) {
+    //       const [lastLng, lastLat] = coords[coords.length - 1];
+    //       if (lastLng === this.lastMouseLngLat.lng && lastLat === this.lastMouseLngLat.lat) {
+    //         // カーソル重なり頂点を2回削除
+    //         coords.pop();
+    //         if (coords.length) coords.pop();
+    //         this.tempLineCoordsGuide = this.tempLineCoords
+    //         this.updateDynamicLinePreview();
+    //         return;
+    //       }
+    //     }
+    //     // それ以外は1回だけ削除
+    //     coords.pop();
+    //     this.tempLineCoordsGuide = this.tempLineCoords
+    //     this.updateDynamicLinePreview();
+    //
+    //   } else if (this.s_isDrawPolygon) {
+    //     const coords = this.tempPolygonCoords;
+    //     if (!coords.length) return;
+    //     // 最後の頂点がカーソル位置と重なっている場合は2回削除
+    //     if (this.lastMouseLngLat && coords.length >= 1) {
+    //       const [lastLng, lastLat] = coords[coords.length - 1];
+    //       if (lastLng === this.lastMouseLngLat.lng && lastLat === this.lastMouseLngLat.lat) {
+    //         // カーソル重なり頂点を2回削除
+    //         coords.pop();
+    //         // guideCoords.pop()
+    //         if (coords.length) coords.pop();
+    //         this.tempLineCoordsGuide = this.tempPolygonCoords
+    //         this.updateDynamicPolygonPreview();
+    //         return;
+    //       }
+    //     }
+    //     // それ以外は1回だけ削除
+    //     console.log(this.tempPolygonCoords)
+    //     coords.pop();
+    //     this.tempLineCoordsGuide = this.tempPolygonCoords
+    //     this.updateDynamicPolygonPreview();
+    //   }
+    // },
+    // // 動的ラインプレビュー
+    // updateDynamicLinePreview() {
+    //   const map = this.$store.state.map01;
+    //   const coords = this.tempLineCoords
+    //   // if (coords.length && this.lastMouseLngLat) {
+    //   //   coords.push([this.lastMouseLngLat.lng, this.lastMouseLngLat.lat]);
+    //   // }
+    //   map.getSource('guide-line-source').setData({
+    //     type: 'FeatureCollection',
+    //     features: [{
+    //       type: 'Feature',
+    //       geometry: { type: 'LineString', coordinates: coords },
+    //       properties: {}
+    //     }]
+    //   });
+    // },
+    // // 動的ポリゴンプレビュー
+    // updateDynamicPolygonPreview() {
+    //   const map = this.$store.state.map01;
+    //   const coords = this.tempPolygonCoords
+    //
+    //   // if (coords.length && this.lastMouseLngLat) {
+    //   //   coords.push([this.lastMouseLngLat.lng, this.lastMouseLngLat.lat]);
+    //   // }
+    //
+    //   map.getSource('guide-line-source').setData({
+    //     type: 'FeatureCollection',
+    //     features: [{
+    //       type: 'Feature',
+    //       geometry: { type: 'LineString', coordinates: coords },
+    //       properties: {}
+    //     }]
+    //   });
+    // },
 
     // マウス移動で動的プレビュー更新
-    onPolygonMouseMove(e) {
+    // onLineMouseMove(e) {
+    //   if (!this.s_isDrawLine) return;
+    //   const map = this.$store.state.map01;
+    //   this.lastMouseLngLat = e.lngLat;
+    //   const coords = this.tempLineCoords.slice();
+    //   if (coords.length) coords.push([e.lngLat.lng, e.lngLat.lat]);
+    //   map.getSource('guide-line-source').setData({
+    //     type: 'FeatureCollection',
+    //     features: [{
+    //       type: 'Feature',
+    //       geometry: { type: 'LineString', coordinates: coords },
+    //       properties: {}
+    //     }]
+    //   });
+    // },
+    //
+    // // マウス移動で動的プレビュー更新
+    // onPolygonMouseMove(e) {
       // if (!this.s_isDrawPolygon) return;
       // const map = this.$store.state.map01;
       // this.lastMouseLngLat = e.lngLat;
@@ -3990,7 +3992,7 @@ export default {
       //     properties: {}
       //   }]
       // });
-    },
+    // },
 
     uploadChibanzu () {
       this.dialogForChibanzyOrDraw = false
@@ -5560,7 +5562,7 @@ export default {
           this.cancelBtnMiniTooltip = '編集ボタンを押す前に戻ります'
           this.undoBtnMiniTooltip = '使用不可'
           this.isUndoBtnDisabled = true
-          this.prevGeojson = JSON.parse(JSON.stringify(this.map01.getSource('click-circle-source')._data))
+          this.$store.state.prevGeojson = JSON.parse(JSON.stringify(this.map01.getSource('click-circle-source')._data))
           const left = (document.querySelector('#map01').clientWidth / 2) - (this.drawTool.floatingGroup.offsetWidth / 2)
           const top = 10
           animateRelocate(this.drawTool.floatingGroup, left, top, { duration: 200, easing: 'ease-out' });
@@ -7447,93 +7449,76 @@ export default {
         };
         map.getSource('guide-line-source')?.setData(vertexGeojson);
       });
-      // ポリゴン作成：シングルクリックで節点追加---------------------------------------------------------
-      function onPolygonClick(e) {
-        popup(e,map,'map01',vm.s_map2Flg)
-      }
-      map.on('click', (e) => {
-        if (!this.s_isDrawPolygon) return;
+      // // ポリゴン作成：シングルクリックで節点追加---------------------------------------------------------
+      // function onPolygonClick(e) {
+      //   popup(e,map,'map01',vm.s_map2Flg)
+      // }
+      // map.on('click', (e) => {
+      //   if (!this.s_isDrawPolygon) return;
+      //
+      //   const lat = e.lngLat.lat;
+      //   const lng = e.lngLat.lng;
+      //   const coordinates = [lng, lat];
+      //   console.log(coordinates)
+      //   // 節点追加
+      //   this.tempPolygonCoords.push(coordinates);
+      //   console.log('シングルクリック！（ポリゴン）', this.tempPolygonCoords);
+      //   this.tempPolygonCoords = dedupeCoords(this.tempPolygonCoords)
+      //
+      // });
+      // // ダブルクリックでポリゴン確定
+      // map.on('dblclick', (e) => {
+      //   if (!this.s_isDrawPolygon) return;
+      //   if (clickTimer !== null) {
+      //     clearTimeout(clickTimer);
+      //     clickTimer = null;
+      //   }
+      //   e.preventDefault();
+      //
+      //   if (this.tempPolygonCoords.length >= 3) {
+      //     // ポリゴンは必ず閉じる（最初の点を最後に追加）
+      //     if (
+      //         this.tempPolygonCoords.length < 4 ||
+      //         this.tempPolygonCoords[0][0] !== this.tempPolygonCoords[this.tempPolygonCoords.length - 1][0] ||
+      //         this.tempPolygonCoords[0][1] !== this.tempPolygonCoords[this.tempPolygonCoords.length - 1][1]
+      //     ) {
+      //       this.tempPolygonCoords.push([...this.tempPolygonCoords[0]]);
+      //     }
+      //
+      //     // GeoJSONのPolygonは2重配列
+      //     const coords = [this.tempPolygonCoords.slice()];
+      //
+      //     const id = String(Math.floor(10000 + Math.random() * 90000));
+      //     this.$store.state.id = id;
+      //     const properties = {
+      //       id: id,
+      //       pairId: id,
+      //       label: '',
+      //       color: colorNameToRgba(this.$store.state.currentPolygonColor || 'yellow', 0.6),
+      //       'line-width': 1,
+      //     };
+      //     geojsonCreate(map, 'Polygon', coords, properties);
+      //
+      //     // 擬似クリックイベント発火（最初の点）
+      //     const dummyEvent = {
+      //       lngLat: {
+      //         lng: this.tempPolygonCoords[0][0],
+      //         lat: this.tempPolygonCoords[0][1]
+      //       }
+      //     };
+      //     this.$store.state.coordinates = [this.tempPolygonCoords[0][0], this.tempPolygonCoords[0][1]];
+      //     setTimeout(() => {
+      //       onPolygonClick(dummyEvent);
+      //     }, 500);
+      //
+      //     this.finishLine();
+      //     this.tempPolygonCoords = [];
+      //   }
+      // });
 
-        const lat = e.lngLat.lat;
-        const lng = e.lngLat.lng;
-        const coordinates = [lng, lat];
-        console.log(coordinates)
-        // 節点追加
-        this.tempPolygonCoords.push(coordinates);
-        console.log('シングルクリック！（ポリゴン）', this.tempPolygonCoords);
-        this.tempPolygonCoords = dedupeCoords(this.tempPolygonCoords)
-
-        // if (clickTimer !== null) return;
-        // clickTimer = setTimeout(() => {
-        //   const lat = e.lngLat.lat;
-        //   const lng = e.lngLat.lng;
-        //   const coordinates = [lng, lat];
-        //
-        //   // とりあえずコメントアウト
-        //   // 既存点・ポリゴンのクリック判定
-        //   // const targetId = getPolygonFeatureIdAtClick(map, e); // ポリゴン用関数
-        //   // if (targetId) {
-        //   //   this.$store.state.id = targetId;
-        //   //   return;
-        //   // }
-        //
-        //   console.log(coordinates)
-        //   // 節点追加
-        //   this.tempPolygonCoords.push(coordinates);
-        //   console.log('シングルクリック！（ポリゴン）', this.tempPolygonCoords);
-        //   clickTimer = null;
-        // }, CLICK_DELAY);
-      });
-      // ダブルクリックでポリゴン確定
-      map.on('dblclick', (e) => {
-        if (!this.s_isDrawPolygon) return;
-        if (clickTimer !== null) {
-          clearTimeout(clickTimer);
-          clickTimer = null;
-        }
-        e.preventDefault();
-
-        if (this.tempPolygonCoords.length >= 3) {
-          // ポリゴンは必ず閉じる（最初の点を最後に追加）
-          if (
-              this.tempPolygonCoords.length < 4 ||
-              this.tempPolygonCoords[0][0] !== this.tempPolygonCoords[this.tempPolygonCoords.length - 1][0] ||
-              this.tempPolygonCoords[0][1] !== this.tempPolygonCoords[this.tempPolygonCoords.length - 1][1]
-          ) {
-            this.tempPolygonCoords.push([...this.tempPolygonCoords[0]]);
-          }
-
-          // GeoJSONのPolygonは2重配列
-          const coords = [this.tempPolygonCoords.slice()];
-
-          const id = String(Math.floor(10000 + Math.random() * 90000));
-          this.$store.state.id = id;
-          const properties = {
-            id: id,
-            pairId: id,
-            label: '',
-            color: colorNameToRgba(this.$store.state.currentPolygonColor || 'yellow', 0.6),
-            'line-width': 1,
-          };
-          geojsonCreate(map, 'Polygon', coords, properties);
-
-          // 擬似クリックイベント発火（最初の点）
-          const dummyEvent = {
-            lngLat: {
-              lng: this.tempPolygonCoords[0][0],
-              lat: this.tempPolygonCoords[0][1]
-            }
-          };
-          this.$store.state.coordinates = [this.tempPolygonCoords[0][0], this.tempPolygonCoords[0][1]];
-          setTimeout(() => {
-            onPolygonClick(dummyEvent);
-          }, 500);
-
-          this.finishLine();
-          this.tempPolygonCoords = [];
-        }
-      });
-
+      /**
+       *
+       */
       drawMethods()
 
       // フリーハンド-----------------------------------------------------------------------------------------------------
@@ -7734,37 +7719,37 @@ export default {
       //   map.dragPan.enable();
       // });
 
-      // ガイドライン作成-----------------------------------------------------------------------------------------------------
-      map.on('click', (e) => {
-        if (!this.s_isDrawLine && !this.s_isDrawPolygon) return;
-        const lng = e.lngLat.lng;
-        const lat = e.lngLat.lat;
-        this.tempLineCoordsGuide.push([lng, lat]);
-        this.isDrawingLine = true;
-        console.log(this.tempLineCoordsGuide.length)
-        if (this.tempLineCoordsGuide.length === 1) {
-          const fc = turf.featureCollection([turf.point([lng, lat])])
-          console.log(fc)
-          map.getSource('guide-line-source').setData(fc)
-        }
-      });
-      map.on('mousemove', (e) => {
-        if ((!this.isDrawingLine || this.tempLineCoordsGuide.length === 0)) return;
-        // 仮ライン：既存＋現在マウス座標
-        const guideCoords = this.tempLineCoordsGuide.concat([[e.lngLat.lng, e.lngLat.lat]]);
-        const guideLineGeoJson = {
-          type: 'FeatureCollection',
-          features: [{
-            type: 'Feature',
-            geometry: {
-              type: 'LineString',
-              coordinates: guideCoords
-            },
-            properties: {}
-          }]
-        };
-        map.getSource('guide-line-source').setData(guideLineGeoJson);
-      });
+      // // ガイドライン作成-----------------------------------------------------------------------------------------------------
+      // map.on('click', (e) => {
+      //   if (!this.s_isDrawLine && !this.s_isDrawPolygon) return;
+      //   const lng = e.lngLat.lng;
+      //   const lat = e.lngLat.lat;
+      //   this.tempLineCoordsGuide.push([lng, lat]);
+      //   this.isDrawingLine = true;
+      //   console.log(this.tempLineCoordsGuide.length)
+      //   if (this.tempLineCoordsGuide.length === 1) {
+      //     const fc = turf.featureCollection([turf.point([lng, lat])])
+      //     console.log(fc)
+      //     map.getSource('guide-line-source').setData(fc)
+      //   }
+      // });
+      // map.on('mousemove', (e) => {
+      //   if ((!this.isDrawingLine || this.tempLineCoordsGuide.length === 0)) return;
+      //   // 仮ライン：既存＋現在マウス座標
+      //   const guideCoords = this.tempLineCoordsGuide.concat([[e.lngLat.lng, e.lngLat.lat]]);
+      //   const guideLineGeoJson = {
+      //     type: 'FeatureCollection',
+      //     features: [{
+      //       type: 'Feature',
+      //       geometry: {
+      //         type: 'LineString',
+      //         coordinates: guideCoords
+      //       },
+      //       properties: {}
+      //     }]
+      //   };
+      //   map.getSource('guide-line-source').setData(guideLineGeoJson);
+      // });
 
       // ⭐️⭐️⭐️頂点移動
       setVertex()
@@ -9826,8 +9811,8 @@ export default {
           // キーボード監視
           // document.addEventListener('keydown', this.onKeydown);
           // map が読込後にマウスムーブ監視
-          map01.on('mousemove', this.onPolygonMouseMove);
-          map01.on('mousemove', this.onLineMouseMove);
+          // map01.on('mousemove', this.onPolygonMouseMove);
+          // map01.on('mousemove', this.onLineMouseMove);
 
           capture(uid.value)
         } else {
