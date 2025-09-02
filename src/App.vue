@@ -3876,7 +3876,7 @@ export default {
       if (!this.s_isDrawLine && !this.s_isDrawPolygon) return;
       if (e.key === 'Backspace' || e.key === 'Delete') {
         // e.preventDefault();
-        this.removeLastVertex();
+        removeLastVertex();
       }
     },
     // // 最後の頂点を一つ削除してプレビューを更新
@@ -7354,101 +7354,101 @@ export default {
         },500)
 
       })
-      // ライン作成-------------------------------------------------------------------------------------------------------
-      function onLineClick(e) {
-        popup(e,map,'map01',vm.s_map2Flg)
-      }
-      // ライン描画
-      map.on('click', (e) => {
-        const lat = e.lngLat.lat;
-        const lng = e.lngLat.lng;
-        const coordinates = [lng, lat];
-        this.$store.state.coordinates = coordinates
-        // クリック判定
-        const targetId = getLineFeatureIdAtClickByPixel(map, e);
-        if (targetId) {
-          this.$store.state.id = targetId;
-          return;
-        }
-        if (!this.s_isDrawLine) return;
-        if (clickTimer !== null) return; // 2回目のクリック時は無視
-        clickTimer = setTimeout(() => {
-          // 節点追加
-          this.tempLineCoords.push(coordinates);
-          this.tempLineCoords = dedupeCoords(this.tempLineCoords)
-
-          console.log('シングルクリック！');
-          clickTimer = null;
-        }, CLICK_DELAY);
-      });
-      // ダブルクリック時：ライン確定
-      map.on('dblclick', (e) => {
-        if (!this.s_isDrawLine) return;
-        if (clickTimer !== null) {
-          clearTimeout(clickTimer); // シングルの予定をキャンセル
-          clickTimer = null;
-        }
-        e.preventDefault(); // 地図ズーム防止
-        if (this.tempLineCoords.length >= 2) {
-          // ライン作成
-          const id = String(Math.floor(10000 + Math.random() * 90000));
-          this.$store.state.id = id;
-          const properties = {
-            id: id,
-            pairId: id,
-            label: '',
-            labelType: this.$store.state.currentLineLabelType,
-            offsetValue: [0.6, 0],
-            color: this.$store.state.currentLineColor,
-            arrow: this.$store.state.currentArrowColor,
-            'line-width': this.$store.state.currentLineWidth,
-            textAnchor: 'left',
-            textJustify: 'left',
-            calc: this.$store.state.currentLineCalcCheck
-          };
-          geojsonCreate(map, 'LineString', this.tempLineCoords.slice(), properties);
-          // 擬似クリックイベント発火（最初の点）
-          const dummyEvent = {
-            lngLat: {
-              lng: this.tempLineCoords[0][0],
-              lat: this.tempLineCoords[0][1]
-            }
-          };
-          this.$store.state.coordinates = [this.tempLineCoords[0][0], this.tempLineCoords[0][1]];
-          setTimeout(() => {
-            onLineClick(dummyEvent);
-          }, 500);
-          this.finishLine()
-          // 終了
-          this.tempLineCoords = [];
-        }
-      });
-      // let isFirstTouch = true;
-      map.on('touchstart', (e) => {
-        if (!this.s_isDrawLine && !this.s_isDrawPolygon) return;
-        // if (!isFirstTouch) return;
-        // isFirstTouch = false;
-        const touch = e.touches?.[0] || e.originalEvent?.touches?.[0];
-        if (!touch) return;
-        const rect = map.getCanvas().getBoundingClientRect();
-        const point = {
-          x: touch.clientX - rect.left,
-          y: touch.clientY - rect.top
-        };
-        const lngLat = map.unproject(point);
-        const vertexGeojson = {
-          type: 'FeatureCollection',
-          features: [{
-            type: 'Feature',
-            geometry: {
-              type: 'Point',
-              coordinates: [lngLat.lng, lngLat.lat]
-            },
-            properties: {}
-          }]
-        };
-        map.getSource('guide-line-source')?.setData(vertexGeojson);
-      });
+      // // ライン作成-------------------------------------------------------------------------------------------------------
+      // function onLineClick(e) {
+      //   popup(e,map,'map01',vm.s_map2Flg)
+      // }
+      // // ライン描画
+      // map.on('click', (e) => {
+      //   const lat = e.lngLat.lat;
+      //   const lng = e.lngLat.lng;
+      //   const coordinates = [lng, lat];
+      //   this.$store.state.coordinates = coordinates
+      //   // クリック判定
+      //   const targetId = getLineFeatureIdAtClickByPixel(map, e);
+      //   if (targetId) {
+      //     this.$store.state.id = targetId;
+      //     return;
+      //   }
+      //   if (!this.s_isDrawLine) return;
+      //   if (clickTimer !== null) return; // 2回目のクリック時は無視
+      //   clickTimer = setTimeout(() => {
+      //     // 節点追加
+      //     this.tempLineCoords.push(coordinates);
+      //     this.tempLineCoords = dedupeCoords(this.tempLineCoords)
+      //
+      //     console.log('シングルクリック！');
+      //     clickTimer = null;
+      //   }, CLICK_DELAY);
+      // });
+      // // ダブルクリック時：ライン確定
+      // map.on('dblclick', (e) => {
+      //   if (!this.s_isDrawLine) return;
+      //   if (clickTimer !== null) {
+      //     clearTimeout(clickTimer); // シングルの予定をキャンセル
+      //     clickTimer = null;
+      //   }
+      //   e.preventDefault(); // 地図ズーム防止
+      //   if (this.tempLineCoords.length >= 2) {
+      //     // ライン作成
+      //     const id = String(Math.floor(10000 + Math.random() * 90000));
+      //     this.$store.state.id = id;
+      //     const properties = {
+      //       id: id,
+      //       pairId: id,
+      //       label: '',
+      //       labelType: this.$store.state.currentLineLabelType,
+      //       offsetValue: [0.6, 0],
+      //       color: this.$store.state.currentLineColor,
+      //       arrow: this.$store.state.currentArrowColor,
+      //       'line-width': this.$store.state.currentLineWidth,
+      //       textAnchor: 'left',
+      //       textJustify: 'left',
+      //       calc: this.$store.state.currentLineCalcCheck
+      //     };
+      //     geojsonCreate(map, 'LineString', this.tempLineCoords.slice(), properties);
+      //     // 擬似クリックイベント発火（最初の点）
+      //     const dummyEvent = {
+      //       lngLat: {
+      //         lng: this.tempLineCoords[0][0],
+      //         lat: this.tempLineCoords[0][1]
+      //       }
+      //     };
+      //     this.$store.state.coordinates = [this.tempLineCoords[0][0], this.tempLineCoords[0][1]];
+      //     setTimeout(() => {
+      //       onLineClick(dummyEvent);
+      //     }, 500);
+      //     this.finishLine()
+      //     // 終了
+      //     this.tempLineCoords = [];
+      //   }
+      // });
+      // // let isFirstTouch = true;
+      // map.on('touchstart', (e) => {
+      //   if (!this.s_isDrawLine && !this.s_isDrawPolygon) return;
+      //   // if (!isFirstTouch) return;
+      //   // isFirstTouch = false;
+      //   const touch = e.touches?.[0] || e.originalEvent?.touches?.[0];
+      //   if (!touch) return;
+      //   const rect = map.getCanvas().getBoundingClientRect();
+      //   const point = {
+      //     x: touch.clientX - rect.left,
+      //     y: touch.clientY - rect.top
+      //   };
+      //   const lngLat = map.unproject(point);
+      //   const vertexGeojson = {
+      //     type: 'FeatureCollection',
+      //     features: [{
+      //       type: 'Feature',
+      //       geometry: {
+      //         type: 'Point',
+      //         coordinates: [lngLat.lng, lngLat.lat]
+      //       },
+      //       properties: {}
+      //     }]
+      //   };
+      //   map.getSource('guide-line-source')?.setData(vertexGeojson);
+      // });
       // // ポリゴン作成：シングルクリックで節点追加---------------------------------------------------------
       // function onPolygonClick(e) {
       //   popup(e,map,'map01',vm.s_map2Flg)

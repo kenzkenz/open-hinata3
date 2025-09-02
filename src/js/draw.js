@@ -18,7 +18,7 @@ import {
 const tempFreehandCoords = []
 const tempPolygonCoords  = []
 let   tempLineCoordsGuide = []
-const tempLineCoords     = []
+let tempLineCoords     = []
 let isDrawing = false;
 let loopTriggered = false; // 多重発火防止
 let clickTimer = null;
@@ -73,15 +73,35 @@ export default function drawMethods(options = {}) {
         });
     }
     function finishPreview() {
-        const guide = map01.getSource('guide-line-source');
-        if (guide) guide.setData({ type: 'FeatureCollection', features: [] });
+        const map01 = store.state.map01
+        const guide = map01.getSource('guide-line-source')
+        const preview = map01.getSource('freehand-preview-source')
+        const vertex = map01.getSource('vertex-source')
+        const midpoint = map01.getSource('midpoint-source')
+        const dragHandles = map01.getSource('drag-handles-source')
 
-        const preview = map01.getSource('freehand-preview-source');
-        if (preview) preview.setData({ type: 'FeatureCollection', features: [] });
+        if (guide) guide.setData({ type: 'FeatureCollection', features: [] })
+        if (preview) preview.setData({ type: 'FeatureCollection', features: [] })
+        if (vertex) vertex.setData({ type: 'FeatureCollection', features: [] })
+        if (midpoint) midpoint.setData({ type: 'FeatureCollection', features: [] })
+        if (dragHandles) dragHandles.setData({ type: 'FeatureCollection', features: [] })
 
-        // フラグ等の軽いリセットのみ。座標配列は状況により保持。
-        isDrawingLine = false;
+        isDrawingLine = false
+        tempFreehandCoords.length = 0
+        tempPolygonCoords.length = 0
+        tempLineCoordsGuide.length = 0
+
     }
+    // function finishPreview() {
+    //     const guide = map01.getSource('guide-line-source');
+    //     if (guide) guide.setData({ type: 'FeatureCollection', features: [] });
+    //
+    //     const preview = map01.getSource('freehand-preview-source');
+    //     if (preview) preview.setData({ type: 'FeatureCollection', features: [] });
+    //
+    //     // フラグ等の軽いリセットのみ。座標配列は状況により保持。
+    //     isDrawingLine = false;
+    // }
 
     // 画面空間 最近点（辺）
     function nearestOnScreenLines(map, lines, pointPx) {
@@ -594,8 +614,132 @@ export default function drawMethods(options = {}) {
         });
     }, 10);
 
-    // ---------------- ガイドライン（レガシー処理は廃止/統合済） ----------------
-    // 既存の guide-line 更新の mousemove は上の統合処理で行います
+    // ライン描画
+    map01.on('click', (e) => {
+        const lat = e.lngLat.lat;
+        const lng = e.lngLat.lng;
+        const coordinates = [lng, lat];
+        store.state.coordinates = coordinates
+        // クリック判定
+        const targetId = getLineFeatureIdAtClickByPixel(map01, e);
+        if (targetId) {
+            store.state.id = targetId;
+            return;
+        }
+        if (!store.state.isDrawLine) return;
+        if (clickTimer !== null) return; // 2回目のクリック時は無視
+        clickTimer = setTimeout(() => {
+            // 節点追加
+            tempLineCoords.push(coordinates);
+            tempLineCoords = dedupeCoords(tempLineCoords)
+            console.log('シングルクリック！');
+            clickTimer = null;
+        }, CLICK_DELAY);
+    });
+    // ダブルクリック時：ライン確定
+    map01.on('dblclick', (e) => {
+        if (!store.state.isDrawLine) return;
+        if (clickTimer !== null) {
+            clearTimeout(clickTimer); // シングルの予定をキャンセル
+            clickTimer = null;
+        }
+        e.preventDefault(); // 地図ズーム防止
+        if (tempLineCoords.length >= 2) {
+            // ライン作成
+            const id = String(Math.floor(10000 + Math.random() * 90000));
+            store.state.id = id;
+            const properties = {
+                id: id,
+                pairId: id,
+                label: '',
+                labelType: store.state.currentLineLabelType,
+                offsetValue: [0.6, 0],
+                color: store.state.currentLineColor,
+                arrow: store.state.currentArrowColor,
+                'line-width': store.state.currentLineWidth,
+                textAnchor: 'left',
+                textJustify: 'left',
+                calc: store.state.currentLineCalcCheck
+            };
+            geojsonCreate(map01, 'LineString', tempLineCoords.slice(), properties);
+            // 擬似クリックイベント発火（最初の点）
+            const dummyEvent = {
+                lngLat: {
+                    lng: tempLineCoords[0][0],
+                    lat: tempLineCoords[0][1]
+                }
+            };
+            store.state.coordinates = [tempLineCoords[0][0], tempLineCoords[0][1]];
+            setTimeout(() => {
+                onLineClick(dummyEvent);
+            }, 500);
+            finishPreview()
+            // 終了
+            tempLineCoords.length = 0
+        }
+    });
+    // let isFirstTouch = true;
+    map01.on('touchstart', (e) => {
+        if (!store.state.isDrawLine && !store.state.isDrawPolygon) return;
+        // if (!isFirstTouch) return;
+        // isFirstTouch = false;
+        const touch = e.touches?.[0] || e.originalEvent?.touches?.[0];
+        if (!touch) return;
+        const rect = map01.getCanvas().getBoundingClientRect();
+        const point = {
+            x: touch.clientX - rect.left,
+            y: touch.clientY - rect.top
+        };
+        const lngLat = map01.unproject(point);
+        const vertexGeojson = {
+            type: 'FeatureCollection',
+            features: [{
+                type: 'Feature',
+                geometry: {
+                    type: 'Point',
+                    coordinates: [lngLat.lng, lngLat.lat]
+                },
+                properties: {}
+            }]
+        };
+        map01.getSource('guide-line-source')?.setData(vertexGeojson);
+    });
+}
+
+function getLineFeatureIdAtClickByPixel(map, e, pixelTolerance = 20) {
+    if (!e || !e.lngLat) return null;
+    const clickPixel = map.project(e.lngLat);
+    const features = map.getSource(clickCircleSource.iD)._data.features || [];
+    const found = features.find(f => {
+        if (!f.geometry || f.geometry.type !== 'LineString') return false;
+        const coords = f.geometry.coordinates;
+        // 各線分ごとに最短ピクセル距離を調べる
+        for (let i = 0; i < coords.length - 1; i++) {
+            const p1 = map.project({ lng: coords[i][0], lat: coords[i][1] });
+            const p2 = map.project({ lng: coords[i + 1][0], lat: coords[i + 1][1] });
+            const d = pointToSegmentDistance(clickPixel, p1, p2);
+            if (d <= pixelTolerance) return true;
+        }
+        return false;
+    });
+    return found ? found.properties.id : null;
+}
+// 2点間の線分への最短距離（ピクセル空間で）
+function pointToSegmentDistance(pt, p1, p2) {
+    const x = pt.x, y = pt.y;
+    const x1 = p1.x, y1 = p1.y;
+    const x2 = p2.x, y2 = p2.y;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    if (dx === 0 && dy === 0) {
+        // 線分が点の場合
+        return Math.sqrt((x - x1) ** 2 + (y - y1) ** 2);
+    }
+    // t: 線分上の最近点パラメータ（0～1）
+    const t = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy)));
+    const projX = x1 + t * dx;
+    const projY = y1 + t * dy;
+    return Math.sqrt((x - projX) ** 2 + (y - projY) ** 2);
 }
 
 
