@@ -2161,10 +2161,6 @@ export function highlightSpecificFeaturesSima(map,layerId) {
 
 let isFirstRunCity1 = true;
 export function highlightSpecificFeaturesCity(map,layerId) {
-    // alert(999)
-    // console.log(store.state.highlightedChibans);
-    // console.log(Array.from(store.state.highlightedChibans))
-    // console.log(layerId)
     let sec = 0
     if (isFirstRunCity1) {
         sec = 1000
@@ -12763,6 +12759,135 @@ export function dedupeCoords(arr) {
         out.push([lng, lat]);
     }
     return out;
+}
+
+/**
+ * MapLibre GL JS v5.x
+ * 画面上（現在のビューポート）に実際に描画されているレイヤー、
+ * あるいは「表示状態」のレイヤーを取得するユーティリティ。
+ * JS（非TS）。Vue依存なし。OH3にコピペOK。
+ */
+
+// 使い方例：
+// import { layersOnScreen, layersIntersectingPolygon, groupLayersByType } from './layersOnScreen.js'
+// const onScreen = layersOnScreen(store.state.map01, { mode: 'rendered' })
+// console.table(onScreen)
+// const visible = layersOnScreen(store.state.map01, { mode: 'visible', prefix: /^oh-/ })
+// const groups = groupLayersByType(onScreen)
+
+/**
+ * layersOnScreen(map, opts)
+ * mode:
+ *   - 'rendered'（既定）: 現在の画面に実際に描画されているレイヤーのみ
+ *   - 'visible'          : visibility/zoom 条件を満たして「表示状態」のレイヤー
+ * options:
+ *   - prefix: string | RegExp  … レイヤーIDの前方一致フィルタ（例: /^oh-/ ）
+ *   - types:  string[]         … レイヤー種別フィルタ（'fill','line','symbol','circle','raster','heatmap','hillshade','background','sky','fill-extrusion','custom'）
+ *   - includeNonQueryable: boolean … 'rendered'時に queryRenderedFeatures に出ない種別を可視であれば含める（既定: true）
+ */
+export function layersOnScreen(map, opts = {}) {
+    const {
+        mode = 'rendered',
+        prefix = null,
+        types = null,
+        includeNonQueryable = true,
+    } = opts
+
+    const style = map.getStyle()
+    if (!style || !style.layers) return []
+
+    // 元の描画順を保持するために id→index を先に作る
+    const idToIndex = new Map(style.layers.map((l, idx) => [l.id, idx]))
+
+    let layers = style.layers.slice() // 描画順
+    if (prefix) {
+        const re = typeof prefix === 'string' ? new RegExp(`^${prefix}`) : prefix
+        layers = layers.filter(l => re.test(l.id))
+    }
+    if (types && types.length) {
+        const typeSet = new Set(types)
+        layers = layers.filter(l => typeSet.has(l.type))
+    }
+
+    const zoom = map.getZoom()
+    const isVisible = (l) => {
+        const vis = map.getLayoutProperty(l.id, 'visibility')
+        const visible = (vis === undefined || vis === 'visible')
+        const minz = l.minzoom ?? 0
+        const maxz = l.maxzoom ?? 24
+        return visible && zoom >= minz && zoom <= maxz
+    }
+
+    if (mode === 'visible') {
+        return layers
+            .filter(isVisible)
+            .map(l => ({
+                index: idToIndex.get(l.id),
+                id: l.id,
+                type: l.type,
+                source: l.source ?? null,
+                sourceLayer: l['source-layer'] ?? null,
+            }))
+    }
+
+    // mode === 'rendered'
+    // 画面に実際に描画された Feature を 1 回だけ取得して layer.id セット化
+    const rendered = new Set(map.queryRenderedFeatures().map(f => f.layer.id))
+
+    // queryRenderedFeatures に出ない代表的な種別
+    const nonQueryableTypes = new Set(['background', 'raster', 'hillshade', 'heatmap', 'sky', 'custom'])
+
+    return layers
+        .filter(l => {
+            if (!isVisible(l)) return false
+            if (rendered.has(l.id)) return true
+            if (includeNonQueryable && nonQueryableTypes.has(l.type)) return true
+            return false
+        })
+        .map(l => ({
+            index: idToIndex.get(l.id),
+            id: l.id,
+            type: l.type,
+            source: l.source ?? null,
+            sourceLayer: l['source-layer'] ?? null,
+        }))
+}
+
+/**
+ * layersIntersectingPolygon(map, polygonOrFeature)
+ * 与えたポリゴン（WGS84 lon/lat）と交差 or 内包する描画済みフィーチャが
+ * 少なくとも 1 つあるレイヤーID配列を返す（背景/ラスタ等は除外）。
+ */
+export function layersIntersectingPolygon(map, polygonOrFeature) {
+    const poly = polygonOrFeature.type === 'Feature'
+        ? polygonOrFeature
+        : { type: 'Feature', properties: {}, geometry: polygonOrFeature }
+
+    const feats = map.queryRenderedFeatures()
+    const ids = new Set()
+    for (const f of feats) {
+        // まずはバウンディングボックスで高速に足切り
+        const fb = turf.bbox(f)
+        const pb = turf.bbox(poly)
+        if (fb[2] < pb[0] || fb[0] > pb[2] || fb[3] < pb[1] || fb[1] > pb[3]) continue
+
+        if (turf.booleanIntersects(f, poly) || turf.booleanWithin(f, poly)) {
+            ids.add(f.layer.id)
+        }
+    }
+    return [...ids]
+}
+
+/**
+ * groupLayersByType(layers)
+ * 取得済みレイヤー配列を type ごとにグルーピング（描画順は維持）。
+ */
+export function groupLayersByType(layers) {
+    const out = {}
+    for (const l of layers) {
+        (out[l.type] ??= []).push(l)
+    }
+    return out
 }
 
 /**

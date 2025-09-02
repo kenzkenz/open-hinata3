@@ -3,8 +3,13 @@ import {colorNameToRgba, geojsonCreate} from "@/js/pyramid";
 import { popup } from "@/js/popup";
 import * as turf from "@turf/turf";
 import {haptic} from "@/js/utils/haptics";
-import {clickCircleSource} from "@/js/layers";
-import {highlightSpecificFeatures2025, saveDrowFeatures} from "@/js/downLoad";
+import {clickCircleSource, zenkokuChibanzuAddLayer} from "@/js/layers";
+import {
+    highlightSpecificFeatures2025,
+    highlightSpecificFeaturesCity,
+    layersOnScreen,
+    saveDrowFeatures
+} from "@/js/downLoad";
 
 // =============================================================
 // フリーハンド自己交差(=ループ)検出（Turf.js）
@@ -228,14 +233,18 @@ export default function drawMethods(options = {}) {
             haptic({ strength: 'success' })
         }
     })
-    // 投げ縄-----------------------------------------------------------------------------------------------------
+
+    /**
+     * 投げ縄
+     * @type {boolean}
+     */
     let isLassoDrawing = false;
     let lassoCoords = [];
     const lassoSourceId = 'lasso-source';
     const lassoLayerId = 'lasso-layer';
 
     map01.getCanvas().addEventListener('pointerdown', (e) => {
-        if (!store.state.isDrawLasso && !store.state.isDrawLassoForTokizyo) return;
+        if (!store.state.isDrawLasso && !store.state.isDrawLassoForTokizyo && !store.state.isDrawLassoForChibanzu) return;
         if (!map01.getSource(lassoSourceId)) {
             map01.addSource(lassoSourceId, {
                 type: 'geojson',
@@ -330,6 +339,22 @@ export default function drawMethods(options = {}) {
                     store.state.highlightedChibans.add(targetId);
                 })
                 highlightSpecificFeatures2025(map01,layerId);
+            } else if (store.state.isDrawLassoForChibanzu) {
+
+                const layers = layersOnScreen(map01)
+                console.log(layers.filter(layer => layer.id.includes('oh-chiban')))
+                const layerId = layers.filter(layer => layer.id.includes('oh-chiban'))[0]?.id
+                if (layerId) {
+                    const idString = layerId.includes('oh-chibanzu') ? 'id' : 'oh3id'
+                    const intersectsFeatures = await getIntersectsFeatures(map01, layerId, polygon)
+                    console.log(intersectsFeatures)
+                    store.state.highlightedChibans = new Set()
+                    intersectsFeatures.forEach(f => {
+                        const targetId = `${f.properties[idString]}`;
+                        store.state.highlightedChibans.add(targetId);
+                    })
+                    highlightSpecificFeaturesCity(map01,layerId);
+                }
             }
         }
         // 投げ縄ラインをクリア

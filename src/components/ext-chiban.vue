@@ -194,17 +194,12 @@
       <v-btn style="height: 40px; line-height: 40px; margin-left: 0px;margin-top: 10px;" class="tiny-btn" @click="resetFeatureColors">
         選択解除
       </v-btn>
-      <!--      <v-btn style="height: 40px; line-height: 40px; margin-right: 10px;margin-top: 10px;" class="tiny-btn" @click="dialog5 = true;isDraw = true;">-->
-
+      <v-btn :color="isDrawLassoForChibanzu ? 'green' : 'primary'"  style="height: 40px; line-height: 40px; margin-left: 0px;margin-top: 10px;" class="tiny-btn" @click="selectLasso">
+        投げ縄
+      </v-btn>
       <v-btn style="height: 40px; line-height: 40px; margin-right: 10px;margin-top: 10px;" class="tiny-btn" @click="saveSima(true)">
         ドローへ
       </v-btn>
-      <!--      <v-switch-->
-<!--          v-model="s_isRenzoku"-->
-<!--          label="連続選択"-->
-<!--          color="primary"-->
-<!--          style="height: 40px; margin-top: -15px;"-->
-<!--      />-->
     </div>
     <div v-if="item.id !== 'oh-chibanzu-all2'">
       <div class="color-container">
@@ -285,6 +280,7 @@ import {
   addDraw
 } from "@/js/downLoad";
 import {homusyo2025LayerLine} from "@/js/layers";
+import {mapState} from "vuex";
 
 export default {
   name: 'ext-chibanzu',
@@ -316,6 +312,9 @@ export default {
     menuContentSize: {'width':'220px','height': 'auto','margin': '10px', 'overflow': 'hidden', 'user-select': 'text', 'font-size':'large'}
   }),
   computed: {
+    ...mapState([
+      'isDrawLassoForChibanzu',
+    ]),
     s_isUnder500 () {
       return this.$store.state.isUnder500
     },
@@ -401,6 +400,10 @@ export default {
     },
   },
   methods: {
+    selectLasso() {
+      this.$store.state.isDrawLassoForChibanzu = !this.$store.state.isDrawLassoForChibanzu
+      this.$store.state.isDrawLassoForTokizyo = false
+    },
     toDraw (geojson) {
       alert('登記所地図を「不可視」にします。\n右のペンアイコンをクリックしてドローを開始してください。')
       this.$store.state.showPointInfoDrawer = false
@@ -523,15 +526,6 @@ export default {
         this.$store.commit('incrDialogMaxZindex')
         this.$store.state.dialogs.chibanzuListDialog.map01.style['z-index'] = this.$store.state.dialogMaxZindex
         this.$store.state.dialogs.chibanzuListDialog.map01.style.display = 'block'
-        // if (window.innerWidth < 450) {
-        //   this.$store.state.dialogs.chibanzuListDialog.map01.style.left = '0px'
-        // } else {
-        //   if (this.s_map2Flg) {
-        //     this.$store.state.dialogs.chibanzuListDialog.map01.style.left = (window.innerWidth / 2 - 360) + 'px'
-        //   } else {
-        //     this.$store.state.dialogs.chibanzuListDialog.map01.style.left = (window.innerWidth - 360) + 'px'
-        //   }
-        // }
       } else {
         this.$store.state.dialogs.chibanzuListDialog.map01.style.display = 'none'
       }

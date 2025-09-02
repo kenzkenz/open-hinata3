@@ -423,8 +423,13 @@ const csLayers2 = csLayers.map((layer,i) => {
     }
 })
 // --------------------------------------------------------------------------------------------------------------------
-
-export function zenkokuChibanzuAddLayer (map,zoom) {
+/**
+ * 全国地番図アッドレイヤー
+ * @param map
+ * @param zoom
+ */
+export function zenkokuChibanzuAddLayer(map) {
+    const zoom = map.getZoom()
     const targetLayer = findLayerById(map,'oh-chibanzu-all2')
     if (targetLayer) {
         // console.log('ターゲットレイヤー', targetLayer.layers)
@@ -476,10 +481,6 @@ export function zenkokuChibanzuAddLayer (map,zoom) {
                         Number(maplibreBbox[3]) > Number(dataBbox[1]) && // north > south
                         Number(maplibreBbox[1]) < Number(dataBbox[3]);   // south < north
                     if (isIntersecting) {
-                        // console.log('重なってる2:', v);
-                        // if (!v.url) {
-                        //     return
-                        // }
                         const layers = chibanzuLayersCreate(v)
                         const allLayers = map.getStyle().layers;
                         const result = allLayers.find(l => {
@@ -497,6 +498,7 @@ export function zenkokuChibanzuAddLayer (map,zoom) {
             })
         }
     }
+    // return targetLayer?.layers
 }
 
 export async function loadColorData() {

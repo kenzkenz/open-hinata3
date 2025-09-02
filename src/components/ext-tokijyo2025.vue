@@ -388,6 +388,7 @@ export default {
     },
     selectLasso() {
       this.$store.state.isDrawLassoForTokizyo = !this.$store.state.isDrawLassoForTokizyo
+      this.$store.state.isDrawLassoForChibanzu = false
     },
     selectAll() {
       const map = this.$store.state[this.mapName]
