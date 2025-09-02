@@ -72,36 +72,6 @@ export default function drawMethods(options = {}) {
             }]
         });
     }
-    function finishPreview() {
-        const map01 = store.state.map01
-        const guide = map01.getSource('guide-line-source')
-        const preview = map01.getSource('freehand-preview-source')
-        const vertex = map01.getSource('vertex-source')
-        const midpoint = map01.getSource('midpoint-source')
-        const dragHandles = map01.getSource('drag-handles-source')
-
-        if (guide) guide.setData({ type: 'FeatureCollection', features: [] })
-        if (preview) preview.setData({ type: 'FeatureCollection', features: [] })
-        if (vertex) vertex.setData({ type: 'FeatureCollection', features: [] })
-        if (midpoint) midpoint.setData({ type: 'FeatureCollection', features: [] })
-        if (dragHandles) dragHandles.setData({ type: 'FeatureCollection', features: [] })
-
-        isDrawingLine = false
-        tempFreehandCoords.length = 0
-        tempPolygonCoords.length = 0
-        tempLineCoordsGuide.length = 0
-
-    }
-    // function finishPreview() {
-    //     const guide = map01.getSource('guide-line-source');
-    //     if (guide) guide.setData({ type: 'FeatureCollection', features: [] });
-    //
-    //     const preview = map01.getSource('freehand-preview-source');
-    //     if (preview) preview.setData({ type: 'FeatureCollection', features: [] });
-    //
-    //     // フラグ等の軽いリセットのみ。座標配列は状況により保持。
-    //     isDrawingLine = false;
-    // }
 
     // 画面空間 最近点（辺）
     function nearestOnScreenLines(map, lines, pointPx) {
