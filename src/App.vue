@@ -1777,6 +1777,8 @@ import DrawDrawer from '@/components/drawer/DrawDrawer.vue'
 import DrawListDrawer from '@/components/drawer/DrawLisiDrawer'
 import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
+import { mdiMapMarker } from '@mdi/js'
+import { registerMdiIcon } from '@/js/utils/icon-registry'
 import {
   addDraw,
   addSvgAsImage,
@@ -1872,6 +1874,7 @@ import {
   zahyokei,
   zipDownloadSimaText
 } from '@/js/downLoad'
+
 
 function onLineClick(e,map,map2Flg) {
   popup(e,map,'map01',map2Flg)
@@ -2257,6 +2260,7 @@ import drawMethods, {
   removeLastVertex
 } from "@/js/draw";
 import {haptic} from "@/js/utils/haptics";
+import attachMapRightClickMenu, {buildGoogleMapsSearchUrl, buildStreetViewUrl} from "@/js/utils/context-menu";
 
 export default {
   name: 'App',
@@ -8063,6 +8067,53 @@ export default {
           }
         }
       })
+      await registerMdiIcon(this.map01, {
+        name: 'lot-pin',
+        path: mdiMapMarker,
+        size: 24,
+        color: '#1976D2',
+        strokeWidth: 1,
+        strokeColor: 'rgba(255,255,255,0.8)'
+      });
+
+
+      const detach = attachMapRightClickMenu({
+        map: store.state.map01,
+        items: [
+          {
+            label: 'Googleマップを開く',
+            onSelect: ({ map, lngLat }) => {
+              // 検索URLか、中心指定URLのどちらかお好みで
+              const url = buildGoogleMapsSearchUrl(lngLat);
+              // const url = buildGoogleMapsUrl(lngLat, { zoom: map.getZoom() });
+              window.open(url, '_blank', 'noopener');
+            }
+          },
+          {
+            label: 'ストリートビューを開く',
+            onSelect: ({ map, lngLat }) => {
+              const heading = map.getBearing?.() ?? 0; // 地図の方位を活用（任意）
+              const pitch = (map.getPitch?.() ?? 0) - 20; // 少し下向き
+              const url = buildStreetViewUrl(lngLat, { heading, pitch, fov: 90 });
+              window.open(url, '_blank', 'noopener');
+            }
+          },
+          // {
+          //   label: 'リンクをコピー（Maps / SV）',
+          //   onSelect: async ({ map, lngLat }) => {
+          //     const maps = buildGoogleMapsSearchUrl(lngLat);
+          //     const sv = buildStreetViewUrl(lngLat, { heading: map.getBearing?.() ?? 0, pitch: map.getPitch?.() ?? 0 });
+          //     const text = `Google Maps: ${maps}Street View: ${sv}`;
+          //     try { await navigator.clipboard.writeText(text); alert('リンクをコピーしました'); }
+          //     catch { prompt('以下をコピーしてください', text); }
+          //   }
+          // }
+        ]
+      });
+      // 補足：SVが無い場所では Google 側の「画像がありません」になる。
+      // 旧式の cbll パラメータ版（互換用）:
+      // `https://maps.google.com/maps?layer=c&cbll=${lat},${lng}`
+
       // -----------------------------------------------------------------------------------------------------------------
       // on load オンロード
       this.mapNames.forEach(mapName => {
@@ -9797,11 +9848,12 @@ export default {
     }
   },
   created() {
-    store.state.isSmall1000 = window.innerWidth < 1000
-    store.state.isSmall500 = window.innerWidth < 500
+    this.$store.state.isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-    // console.log(/android/i.test(userAgent))
     this.$store.state.isAndroid = /android/i.test(userAgent);
+    this.$store.state.isIOS = /iPad|iPhone|iPod/.test(userAgent);
+    this.$store.state.isSmall1000 = window.innerWidth < 1000
+    this.$store.state.isSmall500 = window.innerWidth < 500
     if (window.innerWidth < 500) this.$store.state.isUnder500 = true
     if (window.innerWidth < 500 ) this.fanMenuOffsetX = 0
     // this.updatePermalink をデフォルト 500ms のデバウンス版に差し替え

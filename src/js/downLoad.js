@@ -12908,7 +12908,7 @@ export function forseMoveLayer(map) {
         'vertex-layer',
         'midpoint-layer',
         'guide-line-layer',
-        'snap-point-lyr',
+        // 'snap-point-lyr',
     ];
     layerIds.forEach(drawLayerId => {
         map.moveLayer(drawLayerId)

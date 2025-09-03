@@ -12,6 +12,7 @@
     "@mapbox/mapbox-gl-draw": "^1.4.3",
     "@mapbox/shp-write": "^0.4.3",
     "@mdi/font": "^5.9.55",
+    "@mdi/js": "^7.4.47",
     "@sendgrid/mail": "^8.1.5",
     "@tensorflow/tfjs": "^4.22.0",
     "@tmcw/togeojson": "^6.0.0",

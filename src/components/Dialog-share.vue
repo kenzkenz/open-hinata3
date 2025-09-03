@@ -15,12 +15,18 @@
 
 <script>
 
+import {mapState} from "vuex";
+
 export default {
   name: 'Dialog-share',
   props: ['mapName'],
   data: () => ({
   }),
   computed: {
+    ...mapState([
+      'isIOS',
+      'isStandalone',
+    ]),
     s_url () {
       return this.$store.state.url
     },
@@ -29,26 +35,6 @@ export default {
     },
   },
   methods: {
-    qrCodeClick () {
-      if (!this.$store.state.isSmall500) {
-        this.$store.dispatch('showFloatingWindow', 'qrcode');
-      }
-    },
-    xPost () {
-      this.$store.state.updatePermalinkFire = ! this.$store.state.updatePermalinkFire
-      setTimeout(() => {
-        const intentUrl =
-            "https://twitter.com/intent/tweet?text=" + encodeURIComponent('open-hinata3(OH3)です。\n\n#openhinata3 #OH3\n' + this.$store.state.url);
-        window.open(intentUrl, '_blank');
-      },1000)
-    },
-    copy () {
-      this.$store.state.updatePermalinkFire = ! this.$store.state.updatePermalinkFire
-      alert('URLをクリップボードにコピーしました!');
-      setTimeout(() => {
-        navigator.clipboard.writeText(this.s_url);
-      },1000)
-    },
     qrcopy () {
       this.$store.state.updatePermalinkFire = ! this.$store.state.updatePermalinkFire
       setTimeout(() => {
@@ -63,6 +49,82 @@ export default {
         document.body.removeChild(link);
       },1000)
     },
+    qrCodeClick () {
+      if (!this.$store.state.isSmall500) {
+        this.$store.dispatch('showFloatingWindow', 'qrcode');
+      }
+    },
+    xPost () {
+      // まず今使うURLを確定（watcher待ちに依存しない）
+      const shareUrl = this.s_url
+      const text = `open-hinata3(OH3)です。\n\n#openhinata3 #OH3\n${shareUrl}`;
+      this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire;
+      const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+      const appUrl    = `twitter://post?message=${encodeURIComponent(text)}`;
+      const openWithAnchor = (url) => {
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      };
+      try {
+        if (this.isIOS) {
+          // 1) Twitterアプリ試行 → 2) すぐWeb Intentにフォールバック
+          // （最初のクリック内で a.click() を実行：ユーザー操作扱いを維持）
+          openWithAnchor(appUrl);
+          // 失敗してもユーザー操作中にもう一度開く（短い遅延は許容だが、念のため同イベント内で実行）
+          // iOSの挙動を安定させるため、setTimeoutは使わず「即時もう一度」呼ぶ
+          openWithAnchor(intentUrl);
+          return;
+        }
+        if (this.isStandalone) {
+          // ホーム画面PWAは window.open が塞がれがち：同タブ遷移
+          location.href = intentUrl;
+        } else {
+          openWithAnchor(intentUrl);
+        }
+      } catch (_) {
+        // 最終フォールバック
+        location.href = intentUrl;
+      }
+    },
+    async copy () {
+      // 使う文字列を先に決める
+      const text = this.s_url
+      this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire;
+      // まずコピーを“即時”実行（ユーザー操作扱いを保持）
+      const copyViaExecCommand = () => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.top = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        ta.setSelectionRange(0, ta.value.length);
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+      };
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text); // HTTPS + ユーザー操作内
+        } else {
+          const ok = copyViaExecCommand();
+          if (!ok) throw new Error('execCommand failed');
+        }
+        this.$store.state.loadingMessage3 = 'クリップボードにコピーしました。'
+        this.$store.state.loading3 = true
+        setTimeout(() => {
+          this.$store.state.loading3 = false
+        },2000)
+      } catch (e) {
+        alert('コピーできませんでした。手動でコピーしてください:');
+      }
+    }
   },
   mounted() {
 
