@@ -1,14 +1,19 @@
 import store from '@/store'
-import {colorNameToRgba, geojsonCreate} from "@/js/pyramid";
+import {
+    colorNameToRgba,
+    generateSegmentLabelGeoJSON,
+    generateStartEndPointsFromGeoJSON,
+    geojsonCreate
+} from "@/js/pyramid";
 import { popup } from "@/js/popup";
 import * as turf from "@turf/turf";
 import {haptic} from "@/js/utils/haptics";
 import {clickCircleSource, zenkokuChibanzuAddLayer} from "@/js/layers";
 import {
-    dedupeCoords,
+    dedupeCoords, featureCollectionAdd,
     highlightSpecificFeatures2025,
     highlightSpecificFeaturesCity,
-    layersOnScreen,
+    layersOnScreen, markaersRemove, markerAddAndRemove,
     saveDrowFeatures
 } from "@/js/downLoad";
 
@@ -1415,6 +1420,82 @@ function pointToSegmentDistance(pt, p1, p2) {
 /**
  * ---------------------------------------------------------------------------------------------------------------------
  */
+let targetDate = null
+export function drawUndo() {
+    if (!store.state.isEditable && !store.state.isMine) {
+        alert('編集不可です！！')
+        return
+    }
+    const map01 = store.state.map01
+    store.state.isDrawUndoRedo = true
+    let geojson = null
+    if (!targetDate) {
+        geojson = JSON.parse(store.state.prevGeojsons.at(-1).geojsonString)
+        targetDate = store.state.prevGeojsons.at(-1).date
+    } else {
+        const rows = store.state.prevGeojsons
+        const prevRow = rows.findLast?.(r => r.date < targetDate)    // ES2023+
+            ?? [...rows].reverse().find(r => r.date < targetDate); // 互換
+        if (prevRow) {
+            geojson = JSON.parse(prevRow.geojsonString)
+            targetDate = prevRow.date
+        } else {
+            setTimeout(() => {
+                store.state.isDrawUndoRedo = false
+            },1000)
+            return
+        }
+    }
+    map01.getSource(clickCircleSource.iD).setData(geojson)
+    store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+    generateStartEndPointsFromGeoJSON(geojson)
+    generateSegmentLabelGeoJSON(geojson)
+    if (!store.state.isUsingServerGeojson) {
+        featureCollectionAdd()
+    }
+    markerAddAndRemove()
+    store.state.updatePermalinkFire = !store.state.updatePermalinkFire
+    setTimeout(() => {
+        store.state.isDrawUndoRedo = false
+    },1000)
+}
+export function drawRedo() {
+    if (!store.state.isEditable && !store.state.isMine) {
+        alert('編集不可です！！')
+        return
+    }
+    const map01 = store.state.map01
+    store.state.isDrawUndoRedo = true
+    let geojson = null
+    if (!targetDate) {
+        return;
+    } else {
+        const rows = store.state.prevGeojsons
+        const nextRow = rows.find(r => r.date > targetDate);
+        if (nextRow) {
+            geojson = JSON.parse(nextRow.geojsonString)
+            targetDate = nextRow.date
+        } else {
+            setTimeout(() => {
+                store.state.isDrawUndoRedo = false
+            },1000)
+            return
+        }
+    }
+    map01.getSource(clickCircleSource.iD).setData(geojson)
+    store.state.clickCircleGeojsonText = JSON.stringify(geojson)
+    generateStartEndPointsFromGeoJSON(geojson)
+    generateSegmentLabelGeoJSON(geojson)
+    if (!store.state.isUsingServerGeojson) {
+        featureCollectionAdd()
+    }
+    markerAddAndRemove()
+    store.state.updatePermalinkFire = !store.state.updatePermalinkFire
+    setTimeout(() => {
+        store.state.isDrawUndoRedo = false
+    },1000)
+}
+
 function updateGuideLine(map, baseCoords, cursorLL) {
     const gsrc = map.getSource('guide-line-source');
     if (!gsrc || !baseCoords?.length) return;

@@ -2518,7 +2518,11 @@ export async function deleteAll (noConfrim) {
     await featuresDelete(geojson.features.filter(f => f.properties.id !== 'config').map(f => f.properties.id));
     const configFeature = store.state.baseConfigFeature
     store.state.configFeature = configFeature
-    source.setData(configFeature);
+    const fc = {
+        "type": "FeatureCollection",
+        "features": [configFeature]
+    }
+    source.setData(fc);
     await saveDrowFeatures([configFeature])
 
     source = map01.getSource(endPointSouce.id);
@@ -2528,8 +2532,8 @@ export async function deleteAll (noConfrim) {
         features: []
     });
 
-    store.state.clickCircleGeojsonText = JSON.stringify(configFeature)
-    store.state.clickCircleGeojsonTextMyroom = JSON.stringify(configFeature)
+    store.state.clickCircleGeojsonText = JSON.stringify(fc)
+    store.state.clickCircleGeojsonTextMyroom = JSON.stringify(fc)
     getAllVertexPoints(map01)
     setAllMidpoints(map01)
     generateSegmentLabelGeoJSON({
@@ -2550,7 +2554,7 @@ export async function deleteAll (noConfrim) {
         featureCollectionAdd()
         markerAddAndRemove()
     }
-
+    store.state.updatePermalinkFire = !store.state.updatePermalinkFire
     haptic({ strength: 'success' })
 }
 

@@ -2247,7 +2247,7 @@ import ExDraw from '@/components/floatingwindow/ExDraw'
 
 import {delay, forEach} from "lodash";
 import {feature} from "@turf/turf";
-import drawMethods, {drawCancel, drawConfirm, finishDrawing, removeLastVertex} from "@/js/draw";
+import drawMethods, {drawCancel, drawConfirm, drawRedo, drawUndo, finishDrawing, removeLastVertex} from "@/js/draw";
 import {haptic} from "@/js/utils/haptics";
 
 export default {
@@ -2448,6 +2448,7 @@ export default {
     isUndoBtnDisabled: false,
     cancelBtnMiniTooltip: "描きかけ中の全ポイントを削除",
     undoBtnMiniTooltip: "直前のポイントを削除",
+    pushPrevGeojsonDebounced: null,
   }),
   computed: {
     ...mapState([
@@ -2478,6 +2479,14 @@ export default {
       'isUsingServerGeojson',
       'drawFeature',
     ]),
+    s_prevGeojsons: {
+      get() {
+        return this.$store.prevGeojsons
+      },
+      set(value) {
+        this.$store.state.prevGeojsons = value
+      }
+    },
     s_mapillaryEndDate: {
       get() {
         return this.$store.state.mapillaryEndDate
@@ -4936,118 +4945,117 @@ export default {
       }
     },
     async undo() {
-      if (!this.$store.state.isEditable && !this.$store.state.isMine) {
-        alert('編集不可です！！')
-        return
-      }
-      const map = this.$store.state.map01
-      const mainSourceGeojson = map.getSource('click-circle-source')._data;
-      if (this.history.length > 0) {
-        this.redoStack.push(JSON.parse(JSON.stringify(mainSourceGeojson)));
-        this.mainGeojson = this.history.pop();
-
-        /**
-         *注意 不安定
-         */
-        const { added, removed, modified } = diffGeoJSON(this.mainGeojson, mainSourceGeojson)
-        console.log('新規:', added);
-        console.log('削除:', removed);
-        console.log('変更:', modified);
-        if (modified.length > 0) {
-          await saveDrowFeatures(modified)
-        }
-        // 新規の時は逆に削除
-        if (added.length > 0) {
-          const ids = added.map(f => f.properties.id)
-          await featuresDelete(ids)
-        }
-        // removedのときは復活
-        if (removed.length > 0) {
-          const ids = removed.map(f => f.properties.id)
-          console.log(ids)
-          await featuresRestore(ids)
-          // const configFeature = removed.find(f => f.properties.id === 'config')
-          // if (configFeature) {
-          //   this.mainGeojson.features = [...this.mainGeojson.features,configFeature]
-          // }
-        }
-        /**
-         * ここまで
-         */
-
-        // 反映
-        map.getSource('click-circle-source').setData(this.mainGeojson);
-        store.state.clickCircleGeojsonText = JSON.stringify(this.mainGeojson)
-        this.updatePermalink()
-        if (this.s_editEnabled) {
-          getAllVertexPoints(map, this.mainGeojson);
-          setAllMidpoints(map, this.mainGeojson);
-        }
-        generateSegmentLabelGeoJSON(this.mainGeojson)
-        generateStartEndPointsFromGeoJSON(this.mainGeojson)
-
-      }
-      markaersRemove()
-      this.updatePermalink()
-      // ↓これは正しいか。不具合が出たらすぐに削除すること。
-      // if (this.redoStack.length === 1) {
-      //   this.undo()
+      drawUndo()
+      // if (!this.$store.state.isEditable && !this.$store.state.isMine) {
+      //   alert('編集不可です！！')
+      //   return
       // }
+      // const map = this.$store.state.map01
+      // const mainSourceGeojson = map.getSource('click-circle-source')._data;
+      // if (this.history.length > 0) {
+      //   this.redoStack.push(JSON.parse(JSON.stringify(mainSourceGeojson)));
+      //   this.mainGeojson = this.history.pop();
+      //
+      //   /**
+      //    *注意 不安定
+      //    */
+      //   const { added, removed, modified } = diffGeoJSON(this.mainGeojson, mainSourceGeojson)
+      //   console.log('新規:', added);
+      //   console.log('削除:', removed);
+      //   console.log('変更:', modified);
+      //   if (modified.length > 0) {
+      //     await saveDrowFeatures(modified)
+      //   }
+      //   // 新規の時は逆に削除
+      //   if (added.length > 0) {
+      //     const ids = added.map(f => f.properties.id)
+      //     await featuresDelete(ids)
+      //   }
+      //   // removedのときは復活
+      //   if (removed.length > 0) {
+      //     const ids = removed.map(f => f.properties.id)
+      //     console.log(ids)
+      //     await featuresRestore(ids)
+      //     // const configFeature = removed.find(f => f.properties.id === 'config')
+      //     // if (configFeature) {
+      //     //   this.mainGeojson.features = [...this.mainGeojson.features,configFeature]
+      //     // }
+      //   }
+      //   /**
+      //    * ここまで
+      //    */
+      //
+      //   // 反映
+      //   map.getSource('click-circle-source').setData(this.mainGeojson);
+      //   store.state.clickCircleGeojsonText = JSON.stringify(this.mainGeojson)
+      //   this.updatePermalink()
+      //   if (this.s_editEnabled) {
+      //     getAllVertexPoints(map, this.mainGeojson);
+      //     setAllMidpoints(map, this.mainGeojson);
+      //   }
+      //   generateSegmentLabelGeoJSON(this.mainGeojson)
+      //   generateStartEndPointsFromGeoJSON(this.mainGeojson)
+      //
+      // }
+      // markaersRemove()
+      // this.updatePermalink()
+
     },
     async redo() {
-      if (!this.$store.state.isEditable && !this.$store.state.isMine) {
-        alert('編集不可です！！')
-        return
-      }
-      if (this.redoStack.length > 0) {
-        const map = this.$store.state.map01
-        const mainSourceGeojson = map.getSource('click-circle-source')._data;
-        this.history.push(JSON.parse(JSON.stringify(mainSourceGeojson)));
-        this.mainGeojson = this.redoStack.pop();
-
-        /**
-         *注意 不安定
-         */
-        const { added, removed, modified } = diffGeoJSON(mainSourceGeojson, this.mainGeojson);
-        console.log('新規:', added);
-        console.log('削除:', removed);
-        console.log('変更:', modified);
-        if (modified.length > 0) {
-          await saveDrowFeatures(modified)
-        }
-        // addedのときは復活
-        if (added.length > 0) {
-          const ids = added.map(f => f.properties.id)
-          console.log(ids)
-          await featuresRestore(ids)
-          // const configFeature = removed.find(f => f.properties.id === 'config')
-          // if (configFeature) {
-          //   this.mainGeojson.features = [...this.mainGeojson.features,configFeature]
-          // }
-        }
-        // removedのときは削除
-        if (removed.length > 0) {
-          const ids = removed.map(feature => feature.properties.id)
-          await featuresDelete(ids)
-        }
-        /**
-         * ここまで
-         */
-
-        // 反映
-        map.getSource('click-circle-source').setData(this.mainGeojson);
-
-        this.$store.state.clickCircleGeojsonText = JSON.stringify(this.mainGeojson)
-        if (this.s_editEnabled) {
-          getAllVertexPoints(map, this.mainGeojson);
-          setAllMidpoints(map, this.mainGeojson);
-        }
-        generateSegmentLabelGeoJSON(this.mainGeojson)
-        generateStartEndPointsFromGeoJSON(this.mainGeojson)
-        generateSegmentLabelGeoJSON(this.mainGeojson)
-        markaersRemove()
-        this.updatePermalink()
-      }
+      drawRedo()
+      // if (!this.$store.state.isEditable && !this.$store.state.isMine) {
+      //   alert('編集不可です！！')
+      //   return
+      // }
+      // if (this.redoStack.length > 0) {
+      //   const map = this.$store.state.map01
+      //   const mainSourceGeojson = map.getSource('click-circle-source')._data;
+      //   this.history.push(JSON.parse(JSON.stringify(mainSourceGeojson)));
+      //   this.mainGeojson = this.redoStack.pop();
+      //
+      //   /**
+      //    *注意 不安定
+      //    */
+      //   const { added, removed, modified } = diffGeoJSON(mainSourceGeojson, this.mainGeojson);
+      //   console.log('新規:', added);
+      //   console.log('削除:', removed);
+      //   console.log('変更:', modified);
+      //   if (modified.length > 0) {
+      //     await saveDrowFeatures(modified)
+      //   }
+      //   // addedのときは復活
+      //   if (added.length > 0) {
+      //     const ids = added.map(f => f.properties.id)
+      //     console.log(ids)
+      //     await featuresRestore(ids)
+      //     // const configFeature = removed.find(f => f.properties.id === 'config')
+      //     // if (configFeature) {
+      //     //   this.mainGeojson.features = [...this.mainGeojson.features,configFeature]
+      //     // }
+      //   }
+      //   // removedのときは削除
+      //   if (removed.length > 0) {
+      //     const ids = removed.map(feature => feature.properties.id)
+      //     await featuresDelete(ids)
+      //   }
+      //   /**
+      //    * ここまで
+      //    */
+      //
+      //   // 反映
+      //   map.getSource('click-circle-source').setData(this.mainGeojson);
+      //
+      //   this.$store.state.clickCircleGeojsonText = JSON.stringify(this.mainGeojson)
+      //   if (this.s_editEnabled) {
+      //     getAllVertexPoints(map, this.mainGeojson);
+      //     setAllMidpoints(map, this.mainGeojson);
+      //   }
+      //   generateSegmentLabelGeoJSON(this.mainGeojson)
+      //   generateStartEndPointsFromGeoJSON(this.mainGeojson)
+      //   generateSegmentLabelGeoJSON(this.mainGeojson)
+      //   markaersRemove()
+      //   this.updatePermalink()
+      // }
     },
     finishLine () {
       this.isDrawingLine = false;
@@ -5216,6 +5224,14 @@ export default {
       }
       this.saveHistory()
       deleteAll()
+      setTimeout(() => {
+        if (!this.$store.state.isUsingServerGeojson) {
+          featureCollectionAdd()
+        }
+        markerAddAndRemove()
+        markaersRemove()
+      },100)
+
     },
     pngDl0 () {
       fncPngDl(this.printMap)
@@ -5422,14 +5438,18 @@ export default {
         }
       }
       this.finishLine()
-      if (JSON.parse(this.clickCircleGeojsonText).features.filter(f => f.properties.id !== 'config').length > 1 &&
-          !this.s_isDraw
-      ) {
-        document.querySelector('#drawList').style.display = 'block'
-      } else {
+      // alert(this.clickCircleGeojsonText)
+      try {
+        if (JSON.parse(this.clickCircleGeojsonText).features.filter(f => f.properties.id !== 'config').length > 1 &&
+            !this.s_isDraw
+        ) {
+          document.querySelector('#drawList').style.display = 'block'
+        } else {
+          document.querySelector('#drawList').style.display = 'none'
+        }
+      }catch (e) {
         document.querySelector('#drawList').style.display = 'none'
       }
-
     },
     finishDrawing() {
 
@@ -9779,6 +9799,21 @@ export default {
     if (window.innerWidth < 500 ) this.fanMenuOffsetX = 0
     // this.updatePermalink をデフォルト 500ms のデバウンス版に差し替え
     this.updatePermalink = debounce(this.updatePermalink, 500)
+
+    this.pushPrevGeojsonDebounced = debounce(value => {
+      if (this.$store.state.isDrawUndoRedo) return
+      try {
+        this.$store.state.prevGeojsons.push({
+          date: Date.now(),
+          geojsonString: value
+        })
+        console.log(this.$store.state.prevGeojsons)
+      }catch (e) {
+        console.log(e)
+      }
+    }, 500)
+
+
   },
   beforeUnmount() {
     window.removeEventListener("resize", this.onResize);
@@ -10029,6 +10064,9 @@ export default {
       markerAddAndRemove()
     },
     clickCircleGeojsonText (value) {
+
+      this.pushPrevGeojsonDebounced(value)
+
       try {
         if (JSON.parse(value).features.filter(f => f.properties.id !== 'config').length > 1) {
           document.querySelector('#drawList').style.display = 'block'

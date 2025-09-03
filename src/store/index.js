@@ -1,13 +1,13 @@
 import { createStore } from 'vuex'
 import { db } from '@/firebase'
-// import firebase from "firebase";
 import firebase from 'firebase/app';
 import {haptic} from "@/js/utils/haptics";
 
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.425,
+    clientVersion: 1.426,
+    prevGeojsons: [],
     prevGeojson: null,
     selectedLngLat: null,
     showDrawConfrim: false,
@@ -46,7 +46,11 @@ export default createStore({
         'direction': 'vertical',
         'visible': true,
         'opacity': 1,
-      }
+      },
+      // "geometry": {
+      //   "type": "Point",
+      //   "coordinates": [139.767125, 35.681236]
+      // }
     },
     isMine: false,
     isEditableForVSelect: true,
@@ -131,6 +135,7 @@ export default createStore({
     /**
      * ドロー関係フラグ
      */
+    isDrawUndoRedo: false,
     isDrawLassoForChibanzu: false,
     isDrawLassoForTokizyo: false,
     isDraw: false,

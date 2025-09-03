@@ -52,7 +52,7 @@
 import { mapState, mapMutations } from 'vuex';
 import store from "@/store";
 import {
-  getNextZIndex,
+  getNextZIndex, isJsonString,
   moveToMap,
 } from "@/js/downLoad";
 import {popup} from "@/js/popup";
@@ -136,8 +136,10 @@ export default {
       this.setDrawListDrawer(false);
     },
     getList() {
+      if (!isJsonString(this.clickCircleGeojsonText)) return;
       const features = JSON.parse(this.clickCircleGeojsonText).features?.filter(f => f.properties.id !== 'config')
       // console.log(features)
+      // if (features === 'undefined') return;
       if (!features || features.length === 0) return
       if (features[0].properties._index) {
         features.sort((a, b) => {
