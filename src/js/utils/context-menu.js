@@ -269,3 +269,166 @@ Street View: ${sv}`;
  * // `https://maps.google.com/maps?layer=c&cbll=${lat},${lng}`
  */
 
+
+// ================================
+// 便利メニュー集（コピー／作図／外部リンク／タイル）
+// ================================
+
+// ---- 基本フォーマット系
+export function toFixedCoord(lngLat, n = 8) {
+    return `${lngLat.lng.toFixed(n)}, ${lngLat.lat.toFixed(n)}`;
+}
+export function toDMS(lngLat) {
+    const toD = (deg, pos, neg) => {
+        const s = deg >= 0 ? 1 : -1;
+        const a = Math.abs(deg);
+        const d = Math.floor(a);
+        const mFloat = (a - d) * 60;
+        const m = Math.floor(mFloat);
+        const sec = (mFloat - m) * 60;
+        const hemi = s >= 0 ? pos : neg;
+        return `${d}°${m}'${sec.toFixed(2)}"${hemi}`;
+    };
+    return `${toD(lngLat.lat, 'N', 'S')} ${toD(lngLat.lng, 'E', 'W')}`;
+}
+export function toGeoJSONPointString(lngLat) {
+    return JSON.stringify({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [lngLat.lng, lngLat.lat] } });
+}
+export function toWKTPoint(lngLat) {
+    return `POINT(${lngLat.lng} ${lngLat.lat})`;
+}
+
+// ---- BBOX（m 指定の簡易矩形）
+export function buildBBoxAround(lngLat, meters = 100) {
+    const latRad = lngLat.lat * Math.PI / 180;
+    const dLat = meters / 111_320; // 1度の緯度 ≒ 111.32km
+    const dLng = meters / (111_320 * Math.cos(latRad));
+    return [lngLat.lng - dLng, lngLat.lat - dLat, lngLat.lng + dLng, lngLat.lat + dLat];
+}
+
+// ---- 外部リンク（追加）
+export function buildOsmUrl(lngLat, zoom = 18) {
+    return `https://www.openstreetmap.org/#map=${Math.round(zoom)}/${lngLat.lat}/${lngLat.lng}`;
+}
+export function buildBingMapsUrl(lngLat, zoom = 18) {
+    return `https://www.bing.com/maps?cp=${lngLat.lat}~${lngLat.lng}&lvl=${Math.round(zoom)}`;
+}
+export function buildNominatimReverseUrl(lngLat) {
+    return `https://nominatim.openstreetmap.org/ui/reverse.html?lat=${lngLat.lat}&lon=${lngLat.lng}`;
+}
+export function buildMapillaryUrl(lngLat, zoom = 18, bearing = 0) {
+    const b = ((bearing % 360) + 360) % 360;
+    return `https://www.mapillary.com/app/?lat=${lngLat.lat}&lng=${lngLat.lng}&z=${Math.round(zoom)}&bearing=${Math.round(b)}`;
+}
+
+// ---- タイル座標（XYZ / Quadkey）
+export function lngLatToTile(lng, lat, z) {
+    const latRad = lat * Math.PI / 180;
+    const n = 2 ** z;
+    const x = Math.floor(((lng + 180) / 360) * n);
+    const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n);
+    return { x, y, z };
+}
+export function tileToQuadkey(x, y, z) {
+    let quad = '';
+    for (let i = z; i > 0; i--) {
+        let digit = 0;
+        const mask = 1 << (i - 1);
+        if ((x & mask) !== 0) digit += 1;
+        if ((y & mask) !== 0) digit += 2;
+        quad += String(digit);
+    }
+    return quad;
+}
+
+// ---- GeoJSON ソースに追加
+export function pushFeatureToGeoJsonSource(map, sourceId, feature) {
+    const src = map.getSource(sourceId);
+    if (!src || !src.setData) return alert(`GeoJSONソース '${sourceId}' が見つかりません`);
+    const data = (src._data && src._data.type === 'FeatureCollection') ? src._data : { type: 'FeatureCollection', features: [] };
+    const next = { type: 'FeatureCollection', features: [...(data.features || []), feature] };
+    src.setData(next);
+}
+export function pointFeature(lngLat, props = {}) {
+    return { type: 'Feature', properties: { id: String(Date.now()), ...props }, geometry: { type: 'Point', coordinates: [lngLat.lng, lngLat.lat] } };
+}
+export function circlePolygonFeature(lngLat, radiusMeters = 50, steps = 64, props = {}) {
+    const latRad = lngLat.lat * Math.PI / 180;
+    const dLat = radiusMeters / 111_320;
+    const dLngCoeff = 1 / (111_320 * Math.cos(latRad));
+    const coords = [];
+    for (let i = 0; i < steps; i++) {
+        const t = (i / steps) * Math.PI * 2;
+        const dx = Math.cos(t) * radiusMeters * dLngCoeff;
+        const dy = Math.sin(t) * dLat; // 緯度方向は一定係数で十分
+        coords.push([lngLat.lng + dx, lngLat.lat + dy]);
+    }
+    coords.push(coords[0]);
+    return { type: 'Feature', properties: { id: String(Date.now()), ...props }, geometry: { type: 'Polygon', coordinates: [coords] } };
+}
+
+// ---- 簡易距離計測（右クリ連携用）
+let __measureStart = null;
+export function toggleMeasureHere(lngLat) {
+    if (!__measureStart) { __measureStart = lngLat; return '計測開始: 次の点で距離を表示'; }
+    // Haversine 簡易距離（km）
+    const R = 6371_008.8; // m -> use km base
+    const toRad = (d) => d * Math.PI / 180;
+    const dLat = toRad(lngLat.lat - __measureStart.lat);
+    const dLng = toRad(lngLat.lng - __measureStart.lng);
+    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(__measureStart.lat))*Math.cos(toRad(lngLat.lat))*Math.sin(dLng/2)**2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const meters = R * 1000 * c;
+    __measureStart = null;
+    return meters >= 1000 ? `約${(meters/1000).toFixed(2)} km` : `約${meters.toFixed(1)} m`;
+}
+
+// ---- よく使う実用メニューを一括生成
+export function buildUtilityMenuItems({ map, geojsonSourceId = 'click-circle-source' } = {}) {
+    return [
+        // コピー系
+        { label: 'コピー: 緯度経度(10進)', onSelect: async ({ lngLat }) => { const s = toFixedCoord(lngLat, 8); try { await navigator.clipboard.writeText(s); } catch { alert(s); } } },
+        { label: 'コピー: 緯度経度(DMS)', onSelect: async ({ lngLat }) => { const s = toDMS(lngLat); try { await navigator.clipboard.writeText(s); } catch { alert(s); } } },
+        { label: 'コピー: GeoJSON(Point)', onSelect: async ({ lngLat }) => { const s = toGeoJSONPointString(lngLat); try { await navigator.clipboard.writeText(s); } catch { alert(s); } } },
+        { label: 'コピー: WKT(POINT)', onSelect: async ({ lngLat }) => { const s = toWKTPoint(lngLat); try { await navigator.clipboard.writeText(s); } catch { alert(s); } } },
+        { label: 'コピー: BBOX±100m', onSelect: async ({ lngLat }) => { const b = buildBBoxAround(lngLat, 100); const s = `[${b.map(n=>n.toFixed(8)).join(',')}]`; try { await navigator.clipboard.writeText(s); } catch { alert(s); } } },
+
+        // 作図系
+        { label: 'ここにピンを追加', onSelect: ({ lngLat }) => { pushFeatureToGeoJsonSource(map, geojsonSourceId, pointFeature(lngLat, { label: 'PIN', color: 'red', 'point-color': 'red', 'text-size': 14 })); } },
+        { label: '円を追加: 半径50m', onSelect: ({ lngLat }) => { pushFeatureToGeoJsonSource(map, geojsonSourceId, circlePolygonFeature(lngLat, 50, 64, { label: 'r=50m' })); } },
+        { label: '円を追加: 半径100m', onSelect: ({ lngLat }) => { pushFeatureToGeoJsonSource(map, geojsonSourceId, circlePolygonFeature(lngLat, 100, 64, { label: 'r=100m' })); } },
+
+        // ナビ／ビュー
+        { label: 'ここへセンター', onSelect: ({ lngLat }) => { map.easeTo({ center: lngLat }); } },
+        { label: 'ここへズーム(＋1)', onSelect: () => { map.easeTo({ zoom: map.getZoom() + 1 }); } },
+        { label: '北を上に(方位=0°)', onSelect: () => { map.easeTo({ bearing: 0 }); } },
+        { label: '俯瞰 60°/0° 切替', onSelect: () => { const p = map.getPitch(); map.easeTo({ pitch: p > 30 ? 0 : 60 }); } },
+
+        // 外部リンク
+        { label: 'OSMで開く', onSelect: ({ lngLat }) => window.open(buildOsmUrl(lngLat, map.getZoom?.() ?? 18), '_blank', 'noopener') },
+        { label: 'Bing Mapsで開く', onSelect: ({ lngLat }) => window.open(buildBingMapsUrl(lngLat, map.getZoom?.() ?? 18), '_blank', 'noopener') },
+        { label: '住所を調べる (Nominatim)', onSelect: ({ lngLat }) => window.open(buildNominatimReverseUrl(lngLat), '_blank', 'noopener') },
+        { label: 'Mapillaryで開く', onSelect: ({ lngLat }) => window.open(buildMapillaryUrl(lngLat, map.getZoom?.() ?? 18, map.getBearing?.() ?? 0), '_blank', 'noopener') },
+
+        // タイル情報
+        { label: 'コピー: XYZ/Quadkey', onSelect: async ({ lngLat }) => { const z = Math.round(map.getZoom?.() ?? 18); const {x,y} = lngLatToTile(lngLat.lng, lngLat.lat, z); const qk = tileToQuadkey(x,y,z); const s = `z=${z}, x=${x}, y=${y}, quadkey=${qk}`; try { await navigator.clipboard.writeText(s); } catch { alert(s); } } },
+
+        // 計測
+        { label: '距離計測: ここを起点/終点', onSelect: ({ lngLat }) => { const msg = toggleMeasureHere(lngLat); alert(msg); } },
+    ];
+}
+
+/*
+ * 使用例：
+ * const detach = attachMapRightClickMenu({
+ *   map: store.state.map01,
+ *   items: [
+ *     // 既存の Google 関連
+ *     { label: 'Googleマップで開く', onSelect: ({ map, lngLat }) => window.open(buildGoogleMapsSearchUrl(lngLat),'_blank','noopener') },
+ *     { label: 'ストリートビューで開く', onSelect: ({ map, lngLat }) => window.open(buildStreetViewUrl(lngLat, { heading: map.getBearing?.() ?? 0, pitch: (map.getPitch?.() ?? 0) - 20 }), '_blank', 'noopener') },
+ *     // 実用メニューをまとめて展開
+ *     ...buildUtilityMenuItems({ map, geojsonSourceId: 'click-circle-source' }),
+ *   ]
+ * });
+ */
+

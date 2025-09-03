@@ -2260,7 +2260,11 @@ import drawMethods, {
   removeLastVertex
 } from "@/js/draw";
 import {haptic} from "@/js/utils/haptics";
-import attachMapRightClickMenu, {buildGoogleMapsSearchUrl, buildStreetViewUrl} from "@/js/utils/context-menu";
+import attachMapRightClickMenu, {
+  buildGoogleMapsSearchUrl, buildMapillaryUrl,
+  buildStreetViewUrl,
+  buildUtilityMenuItems
+} from "@/js/utils/context-menu";
 
 export default {
   name: 'App',
@@ -8067,6 +8071,9 @@ export default {
           }
         }
       })
+      /**
+       * 現在全く動いていない。
+       */
       await registerMdiIcon(this.map01, {
         name: 'lot-pin',
         path: mdiMapMarker,
@@ -8076,7 +8083,10 @@ export default {
         strokeColor: 'rgba(255,255,255,0.8)'
       });
 
-
+      /**
+       * 右クリックメニュー
+       * @type {detach|*}
+       */
       const detach = attachMapRightClickMenu({
         map: store.state.map01,
         items: [
@@ -8098,16 +8108,12 @@ export default {
               window.open(url, '_blank', 'noopener');
             }
           },
-          // {
-          //   label: 'リンクをコピー（Maps / SV）',
-          //   onSelect: async ({ map, lngLat }) => {
-          //     const maps = buildGoogleMapsSearchUrl(lngLat);
-          //     const sv = buildStreetViewUrl(lngLat, { heading: map.getBearing?.() ?? 0, pitch: map.getPitch?.() ?? 0 });
-          //     const text = `Google Maps: ${maps}Street View: ${sv}`;
-          //     try { await navigator.clipboard.writeText(text); alert('リンクをコピーしました'); }
-          //     catch { prompt('以下をコピーしてください', text); }
-          //   }
-          // }
+          { label: 'Mapillaryを開く', onSelect: ({ lngLat }) => window.open(buildMapillaryUrl(lngLat, map.getZoom?.() ?? 18, map.getBearing?.() ?? 0), '_blank', 'noopener') },
+          { label: '俯瞰 60°/0° 切替', onSelect: () => { const p = map.getPitch(); map.easeTo({ pitch: p > 30 ? 0 : 60 }); } },
+
+
+          // 実用メニューをまとめて展開
+          // ...buildUtilityMenuItems({ map, geojsonSourceId: 'click-circle-source' }),
         ]
       });
       // 補足：SVが無い場所では Google 側の「画像がありません」になる。
