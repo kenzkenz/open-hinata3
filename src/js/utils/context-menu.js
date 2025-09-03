@@ -32,6 +32,8 @@
  *   });
  *   // 後で無効化: detach()
  */
+import store from '@/store'
+import {featureCollectionAdd, featuresDelete, markerAddAndRemove, removeThumbnailMarkerByKey} from "@/js/downLoad";
 
 export default function attachMapRightClickMenu({ map, items = [], longPressMs = 500 }) {
     if (!map) throw new Error('map が必要です');
@@ -343,14 +345,32 @@ export function tileToQuadkey(x, y, z) {
 
 // ---- GeoJSON ソースに追加
 export function pushFeatureToGeoJsonSource(map, sourceId, feature) {
+    const now = new Date()
+    const hours = now.getHours()
+    const minutes = now.getMinutes()
+    const seconds = now.getSeconds()
+    feature.properties.label = `${hours}:${minutes}:${seconds}`
     const src = map.getSource(sourceId);
     if (!src || !src.setData) return alert(`GeoJSONソース '${sourceId}' が見つかりません`);
     const data = (src._data && src._data.type === 'FeatureCollection') ? src._data : { type: 'FeatureCollection', features: [] };
     const next = { type: 'FeatureCollection', features: [...(data.features || []), feature] };
     src.setData(next);
+    store.state.clickCircleGeojsonText = JSON.stringify(next)
+    store.state.updatePermalinkFire = !store.state.updatePermalinkFire
+    if (!store.state.isUsingServerGeojson) {
+        featureCollectionAdd()
+    }
+    markerAddAndRemove()
 }
 export function pointFeature(lngLat, props = {}) {
-    return { type: 'Feature', properties: { id: String(Date.now()), ...props }, geometry: { type: 'Point', coordinates: [lngLat.lng, lngLat.lat] } };
+    return { type: 'Feature',
+        properties: {
+            id: String(Date.now()), ...props
+        },
+        geometry: {
+            type: 'Point',
+            coordinates: [lngLat.lng, lngLat.lat]
+        } };
 }
 export function circlePolygonFeature(lngLat, radiusMeters = 50, steps = 64, props = {}) {
     const latRad = lngLat.lat * Math.PI / 180;
@@ -428,6 +448,123 @@ export function buildUtilityMenuItems({ map, geojsonSourceId = 'click-circle-sou
  *     { label: 'ストリートビューで開く', onSelect: ({ map, lngLat }) => window.open(buildStreetViewUrl(lngLat, { heading: map.getBearing?.() ?? 0, pitch: (map.getPitch?.() ?? 0) - 20 }), '_blank', 'noopener') },
  *     // 実用メニューをまとめて展開
  *     ...buildUtilityMenuItems({ map, geojsonSourceId: 'click-circle-source' }),
+ *   ]
+ * });
+ */
+
+
+// ================================
+// ピン削除ユーティリティ（直下/近傍/半径内）
+// ================================
+
+function haversineMeters(a, b) {
+    const toRad = (d) => d * Math.PI / 180;
+    const R = 6371_008.8; // meters base
+    const dLat = toRad(b.lat - a.lat);
+    const dLng = toRad(b.lng - a.lng);
+    const lat1 = toRad(a.lat);
+    const lat2 = toRad(b.lat);
+    const h = Math.sin(dLat/2)**2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng/2)**2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+export async function removeFeatureByIdFromGeoJsonSource(map, sourceId, featureId, targetFeature) {
+    const src = map.getSource(sourceId);
+    if (!src || !src._data) return false;
+    const fc = src._data.type === 'FeatureCollection' ? src._data : { type: 'FeatureCollection', features: [] };
+    const before = fc.features.length;
+    const next = { type: 'FeatureCollection', features: fc.features.filter(f => f?.properties?.id !== featureId) };
+    src.setData(next);
+    store.state.clickCircleGeojsonText = JSON.stringify(next)
+    store.state.updatePermalinkFire = !store.state.updatePermalinkFire
+    const key = targetFeature.geometry.coordinates.join()
+    console.log(key)
+    removeThumbnailMarkerByKey(key)
+    featureCollectionAdd()
+    markerAddAndRemove()
+    return next.features.length < before;
+}
+
+export function removePointUnderCursor(map, point, sourceId) {
+    // 直下の描画フィーチャから、指定 GeoJSON ソース由来の Point を優先して削除
+    const feats = map.queryRenderedFeatures(point);
+    const target = feats.find(f => f?.layer?.source === sourceId && f?.geometry?.type === 'Point');
+    if (target) {
+        const fid = target.properties?.id ?? target.id ?? null;
+        if (fid != null) return removeFeatureByIdFromGeoJsonSource(map, sourceId, String(fid), target);
+    }
+    return false;
+}
+
+export function removeNearestPointFeature(map, sourceId, lngLat, maxMeters = 50) {
+    const src = map.getSource(sourceId);
+    if (!src || !src._data) return null;
+    const fc = src._data.type === 'FeatureCollection' ? src._data : { type: 'FeatureCollection', features: [] };
+    let best = { idx: -1, d: Infinity, id: null };
+    for (let i = 0; i < (fc.features?.length || 0); i++) {
+        const f = fc.features[i];
+        if (!f || f.geometry?.type !== 'Point') continue;
+        const [lng, lat] = f.geometry.coordinates || [];
+        if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
+        const d = haversineMeters(lngLat, { lng, lat });
+        if (d < best.d) best = { idx: i, d, id: f.properties?.id ?? null };
+    }
+    if (best.idx >= 0 && best.d <= maxMeters) {
+        const next = { type: 'FeatureCollection', features: fc.features.slice() };
+        next.features.splice(best.idx, 1);
+        src.setData(next);
+        return { removedId: best.id, distanceMeters: best.d };
+    }
+    return null;
+}
+
+export function removeAllPointsInRadius(map, sourceId, lngLat, radiusMeters = 50) {
+    const src = map.getSource(sourceId);
+    if (!src || !src._data) return 0;
+    const fc = src._data.type === 'FeatureCollection' ? src._data : { type: 'FeatureCollection', features: [] };
+    const kept = [];
+    let removed = 0;
+    for (const f of (fc.features || [])) {
+        if (f?.geometry?.type !== 'Point') { kept.push(f); continue; }
+        const [lng, lat] = f.geometry.coordinates || [];
+        const d = haversineMeters(lngLat, { lng, lat });
+        if (d <= radiusMeters) removed++; else kept.push(f);
+    }
+    src.setData({ type: 'FeatureCollection', features: kept });
+    return removed;
+}
+
+// ---- ピン削除メニュー（個別ファクトリに変更：ESLint no-func-assign 回避）
+// 以前は buildUtilityMenuItems を上書きしていましたが、関数再代入は
+// ESLint(no-func-assign)に抵触するため、別ファクトリとして提供します。
+export function buildPinDeleteMenuItems({ map, geojsonSourceId = 'click-circle-source', radiusMeters = 50 } = {}) {
+    return [
+        { label: 'ピン削除: 直下のピン', onSelect: ({ point }) => {
+                const ok = removePointUnderCursor(map, point, geojsonSourceId);
+                if (!ok) alert('直下に削除できる点が見つかりません');
+            }
+        },
+        { label: `ピン削除: 近傍${radiusMeters}mで最も近い1つ`, onSelect: ({ lngLat }) => {
+                const res = removeNearestPointFeature(map, geojsonSourceId, lngLat, radiusMeters);
+                if (!res) alert(`近傍${radiusMeters}mにピンが見つかりません`);
+            }
+        },
+        { label: `ピン削除: 半径${radiusMeters}mの全て`, onSelect: ({ lngLat }) => {
+                const n = removeAllPointsInRadius(map, geojsonSourceId, lngLat, radiusMeters);
+                alert(n > 0 ? `削除: ${n}件` : `半径${radiusMeters}m内にピンなし`);
+            }
+        }
+    ];
+}
+
+/* 使用例（spread で合成）
+ * const detach = attachMapRightClickMenu({
+ *   map: store.state.map01,
+ *   items: [
+ *     // 好きな基本メニュー
+ *     ...buildUtilityMenuItems({ map: store.state.map01, geojsonSourceId: 'click-circle-source' }),
+ *     // ピン削除系を追加
+ *     ...buildPinDeleteMenuItems({ map: store.state.map01, geojsonSourceId: 'click-circle-source', radiusMeters: 50 }),
  *   ]
  * });
  */
