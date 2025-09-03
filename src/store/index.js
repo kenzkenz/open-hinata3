@@ -6,7 +6,7 @@ import {haptic} from "@/js/utils/haptics";
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.426,
+    clientVersion: 1.427,
     prevGeojsons: [],
     prevGeojson: null,
     selectedLngLat: null,
@@ -135,6 +135,8 @@ export default createStore({
     /**
      * ドロー関係フラグ
      */
+    historyCursor: -1,
+    isApplyingHistory: false,
     isDrawUndoRedo: false,
     isDrawLassoForChibanzu: false,
     isDrawLassoForTokizyo: false,

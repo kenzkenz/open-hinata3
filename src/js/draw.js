@@ -9,6 +9,7 @@ import { popup } from "@/js/popup";
 import * as turf from "@turf/turf";
 import {haptic} from "@/js/utils/haptics";
 import {clickCircleSource, zenkokuChibanzuAddLayer} from "@/js/layers";
+import debounce from 'lodash/debounce'
 import {
     dedupeCoords, featureCollectionAdd,
     highlightSpecificFeatures2025,
@@ -1420,80 +1421,82 @@ function pointToSegmentDistance(pt, p1, p2) {
 /**
  * ---------------------------------------------------------------------------------------------------------------------
  */
-let targetDate = null
-export function drawUndo() {
-    if (!store.state.isEditable && !store.state.isMine) {
-        alert('編集不可です！！')
-        return
-    }
-    const map01 = store.state.map01
-    store.state.isDrawUndoRedo = true
-    let geojson = null
-    if (!targetDate) {
-        geojson = JSON.parse(store.state.prevGeojsons.at(-1).geojsonString)
-        targetDate = store.state.prevGeojsons.at(-1).date
-    } else {
-        const rows = store.state.prevGeojsons
-        const prevRow = rows.findLast?.(r => r.date < targetDate)    // ES2023+
-            ?? [...rows].reverse().find(r => r.date < targetDate); // 互換
-        if (prevRow) {
-            geojson = JSON.parse(prevRow.geojsonString)
-            targetDate = prevRow.date
-        } else {
-            setTimeout(() => {
-                store.state.isDrawUndoRedo = false
-            },1000)
-            return
-        }
-    }
-    map01.getSource(clickCircleSource.iD).setData(geojson)
-    store.state.clickCircleGeojsonText = JSON.stringify(geojson)
-    generateStartEndPointsFromGeoJSON(geojson)
-    generateSegmentLabelGeoJSON(geojson)
-    if (!store.state.isUsingServerGeojson) {
-        featureCollectionAdd()
-    }
-    markerAddAndRemove()
-    store.state.updatePermalinkFire = !store.state.updatePermalinkFire
-    setTimeout(() => {
-        store.state.isDrawUndoRedo = false
-    },1000)
+
+// ---- ユーティリティ ----
+/**
+ * prevGeojsonsの使い回しが不具合を起こすかもしれない。要注意
+ */
+function currentRow() {
+    return store.state.prevGeojsons[store.state.historyCursor] || null;
 }
+
+function applySnapshot(row) {
+    const map01 = store.state.map01;
+    store.state.isApplyingHistory = true;  // ①適用ガード ON
+    try {
+        const geojson = JSON.parse(row.geojsonString);
+        map01.getSource(clickCircleSource.iD).setData(geojson);
+        // ここでテキスト等の副作用がウォッチされても保存されないよう isApplyingHistory を見せる
+        store.state.clickCircleGeojsonText = row.geojsonString;
+        generateStartEndPointsFromGeoJSON(geojson);
+        generateSegmentLabelGeoJSON(geojson);
+        if (!store.state.isUsingServerGeojson) featureCollectionAdd();
+        markerAddAndRemove();
+        store.state.updatePermalinkFire = !store.state.updatePermalinkFire;
+    } finally {
+        store.state.isApplyingHistory = false; // ②適用ガード OFF（即時・確実）
+    }
+}
+
+function pushSnapshotFromGeoJSON(geojsonObj) {
+    if (store.state.isApplyingHistory) return; // Undo/Redo中は積まない
+    const s = (typeof geojsonObj === 'string') ? geojsonObj : JSON.stringify(geojsonObj);
+    const stack = store.state.prevGeojsons;
+    const cur = currentRow();
+    if (cur && cur.geojsonString === s) return; // 同一は積まない
+    // Undo後に編集があれば Redo枝を破棄
+    if (store.state.historyCursor < stack.length - 1) {
+        stack.splice(store.state.historyCursor + 1);
+    }
+    stack.push({ geojsonString: s, ts: Date.now() });
+    store.state.historyCursor = stack.length - 1;
+}
+
+// デバウンスで配列をつくる
+export const pushSnapshotDebounced = debounce((geojsonString) => {
+    if (store.state.isApplyingHistory) return;
+    pushSnapshotFromGeoJSON(geojsonString);
+}, 400); // 間隔はお好みで
+
+// ---- 初期保存の例（最初の状態を1発入れておくとUndoが効く） ----
+function seedInitialSnapshot(geojsonObj) {
+    store.state.prevGeojsons = [];
+    store.state.historyCursor = -1;
+    pushSnapshotFromGeoJSON(geojsonObj);
+}
+
+// ---- Undo / Redo ----
+export function drawUndo() {
+    // 権限チェックはそのままでもOK（ロジックはお好みで）
+    if (!store.state.isEditable && !store.state.isMine) {
+        alert('編集不可です！！');
+        return;
+    }
+    if (store.state.historyCursor <= 0) return; // もう戻れない
+    store.state.historyCursor -= 1;
+    const row = currentRow();
+    if (row) applySnapshot(row);
+}
+
 export function drawRedo() {
     if (!store.state.isEditable && !store.state.isMine) {
-        alert('編集不可です！！')
-        return
-    }
-    const map01 = store.state.map01
-    store.state.isDrawUndoRedo = true
-    let geojson = null
-    if (!targetDate) {
+        alert('編集不可です！！');
         return;
-    } else {
-        const rows = store.state.prevGeojsons
-        const nextRow = rows.find(r => r.date > targetDate);
-        if (nextRow) {
-            geojson = JSON.parse(nextRow.geojsonString)
-            targetDate = nextRow.date
-        } else {
-            setTimeout(() => {
-                store.state.isDrawUndoRedo = false
-            },1000)
-            return
-        }
     }
-    map01.getSource(clickCircleSource.iD).setData(geojson)
-    store.state.clickCircleGeojsonText = JSON.stringify(geojson)
-    generateStartEndPointsFromGeoJSON(geojson)
-    generateSegmentLabelGeoJSON(geojson)
-    if (!store.state.isUsingServerGeojson) {
-        featureCollectionAdd()
-    }
-    markerAddAndRemove()
-    store.state.updatePermalinkFire = !store.state.updatePermalinkFire
-    setTimeout(() => {
-        store.state.isDrawUndoRedo = false
-    },1000)
+    if (store.state.historyCursor >= store.state.prevGeojsons.length - 1) return; // 進めない
+    store.state.historyCursor += 1;
+    const row = currentRow();
+    if (row) applySnapshot(row);
 }
 
 function updateGuideLine(map, baseCoords, cursorLL) {

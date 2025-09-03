@@ -2247,7 +2247,15 @@ import ExDraw from '@/components/floatingwindow/ExDraw'
 
 import {delay, forEach} from "lodash";
 import {feature} from "@turf/turf";
-import drawMethods, {drawCancel, drawConfirm, drawRedo, drawUndo, finishDrawing, removeLastVertex} from "@/js/draw";
+import drawMethods, {
+  drawCancel,
+  drawConfirm,
+  drawRedo,
+  drawUndo,
+  finishDrawing,
+  pushSnapshotDebounced,
+  removeLastVertex
+} from "@/js/draw";
 import {haptic} from "@/js/utils/haptics";
 
 export default {
@@ -2448,7 +2456,6 @@ export default {
     isUndoBtnDisabled: false,
     cancelBtnMiniTooltip: "描きかけ中の全ポイントを削除",
     undoBtnMiniTooltip: "直前のポイントを削除",
-    pushPrevGeojsonDebounced: null,
   }),
   computed: {
     ...mapState([
@@ -9799,21 +9806,6 @@ export default {
     if (window.innerWidth < 500 ) this.fanMenuOffsetX = 0
     // this.updatePermalink をデフォルト 500ms のデバウンス版に差し替え
     this.updatePermalink = debounce(this.updatePermalink, 500)
-
-    this.pushPrevGeojsonDebounced = debounce(value => {
-      if (this.$store.state.isDrawUndoRedo) return
-      try {
-        this.$store.state.prevGeojsons.push({
-          date: Date.now(),
-          geojsonString: value
-        })
-        console.log(this.$store.state.prevGeojsons)
-      }catch (e) {
-        console.log(e)
-      }
-    }, 500)
-
-
   },
   beforeUnmount() {
     window.removeEventListener("resize", this.onResize);
@@ -10065,7 +10057,9 @@ export default {
     },
     clickCircleGeojsonText (value) {
 
-      this.pushPrevGeojsonDebounced(value)
+      if (!this.$store.state.isApplyingHistory) {
+        pushSnapshotDebounced(value);
+      }
 
       try {
         if (JSON.parse(value).features.filter(f => f.properties.id !== 'config').length > 1) {
