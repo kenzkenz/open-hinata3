@@ -1722,10 +1722,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
                @mouseleave="onPanelLeave">
             <div class="terrain-btn-container">
               <v-icon class="terrain-btn-close" @pointerdown="terrainBtnClos">mdi-close</v-icon>
-              <v-btn type="button" class="terrain-btn-up terrain-btn" @pointerdown="upMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-up fa-lg hover'></i></v-btn>
-              <v-btn type="button" class="terrain-btn-down terrain-btn" @pointerdown="downMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-down fa-lg'></i></v-btn>
-              <v-btn type="button" class="terrain-btn-left terrain-btn" @pointerdown="leftMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-left fa-lg'></i></v-btn>
-              <v-btn type="button" class="terrain-btn-right terrain-btn" @pointerdown="rightMousedown(mapName)" @pointerup="mouseup"><i class='fa fa-arrow-right fa-lg'></i></v-btn>
+              <v-btn type="button" class="terrain-btn-up terrain-btn" @pointerdown="pressPitchUp(mapName)" @pointerup="releaseOrientationButtons"><i class='fa fa-arrow-up fa-lg hover'></i></v-btn>
+              <v-btn type="button" class="terrain-btn-down terrain-btn" @pointerdown="pressPitchDown(mapName)" @pointerup="releaseOrientationButtons"><i class='fa fa-arrow-down fa-lg'></i></v-btn>
+              <v-btn type="button" class="terrain-btn-left terrain-btn" @pointerdown="pressRotateRight(mapName)" @pointerup="releaseOrientationButtons"><i class='fa fa-arrow-left fa-lg'></i></v-btn>
+              <v-btn type="button" class="terrain-btn-right terrain-btn" @pointerdown=" pressRotateLeft(mapName)" @pointerup="releaseOrientationButtons"><i class='fa fa-arrow-right fa-lg'></i></v-btn>
               <v-btn icon type="button" class="terrain-btn-center terrain-btn" @pointerdown="terrainReset(mapName)"><v-icon>mdi-undo</v-icon></v-btn>
             </div>
           </div>
@@ -1779,6 +1779,7 @@ import { mapState, mapMutations, mapActions} from 'vuex'
 import { mdiMapMarker } from '@mdi/js'
 import { registerMdiIcon } from '@/js/utils/icon-registry'
 import { attachViewOrientationPair } from '@/js/utils/view-orientation-tracker'
+import { startHoldRotate, startHoldPitch, resetOrientation } from '@/js/utils/view-orientation-anim'
 
 import {
   addDraw,
@@ -2467,6 +2468,8 @@ export default {
     undoBtnMiniTooltip: "直前のポイントを削除",
     map01Tracker: null,
     map02Tracker: null,
+    stopSpin: null,
+    stopPitch: null,
   }),
   computed: {
     ...mapState([
@@ -3253,6 +3256,53 @@ export default {
     },
   },
   methods: {
+    // --- 汎用ヘルパ ---
+    targets(mapName, syncBoth) {
+      const m1 = store.state.map01
+      const m2 = store.state.map02
+      const active = store.state[mapName]
+      return syncBoth ? [m1, m2] : [active]
+    },
+    // --- 回転（押している間）---
+    pressRotateRight(mapName, { speed = 150, syncBoth = false } = {}) {
+      const targets = this.targets(mapName, syncBoth)
+      this.stopSpin?.()
+      this.stopSpin = startHoldRotate(targets[0], { direction: +1, speed, targets })
+    },
+    pressRotateLeft(mapName, { speed = 150, syncBoth = false } = {}) {
+      const targets = this.targets(mapName, syncBoth)
+      this.stopSpin?.()
+      this.stopSpin = startHoldRotate(targets[0], { direction: -1, speed, targets })
+    },
+    // --- ピッチ（押している間）---
+    pressPitchUp(mapName, { speed = 100, syncBoth = false } = {}) {
+      const targets = this.targets(mapName, syncBoth)
+      this.stopPitch?.()
+      this.stopPitch = startHoldPitch(targets[0], { direction: +1, speed, targets })
+    },
+    pressPitchDown(mapName, { speed = 100, syncBoth = false } = {}) {
+      const targets = this.targets(mapName, syncBoth)
+      this.stopPitch?.()
+      this.stopPitch = startHoldPitch(targets[0], { direction: -1, speed, targets })
+    },
+    // --- 離したら停止（mouseup / touchend などで呼ぶ）---
+    releaseOrientationButtons() {
+      this.stopSpin?.(); this.stopSpin = null
+      this.stopPitch?.(); this.stopPitch = null
+    },
+    // --- リセット---
+    terrainReset (mapName) {
+      const map    = this.$store.state[mapName]
+      const other  = mapName === 'map01' ? this.$store.state.map02 : this.$store.state.map01
+      resetOrientation({
+        targetMap: map,
+        syncMaps: [other],      // もう片方も同時に
+        // syncPitch は既定で true（両方 pitch=0 & bearing=0）
+        duration: 600,
+        zeroTerrain: true,
+        afterMoveEnd: () => this.updatePermalink()
+      })
+    },
     drawToolSet() {
       const vm = this
       class DrawTool {
@@ -6221,130 +6271,6 @@ export default {
         elm.style.display = 'none'
       })
     },
-    terrainReset (mapName) {
-      const vm = this
-      const map = this.$store.state[mapName]
-      function pitch () {
-        vm.pitch[mapName] = map.getPitch()
-        if (vm.pitch[mapName] !==0) {
-          map.setPitch(map.getPitch() - 5)
-          requestAnimationFrame(pitch)
-        } else {
-          map.setPitch(0)
-          vm.pitch[mapName] = map.getPitch()
-          // console.log(vm.pitch)
-          vm.updatePermalink()
-          cancelAnimationFrame(pitch)
-        }
-      }
-      function bearing () {
-        vm.bearing = map.getBearing()
-        let step = -5
-        if(vm.bearing < 0) step = 5
-
-        if (step !== 5) {
-          if (vm.bearing >= 5) {
-            vm.$store.state.map01.setBearing(map.getBearing() + step)
-            vm.$store.state.map02.setBearing(map.getBearing() + step)
-            requestAnimationFrame(bearing)
-          } else {
-            vm.bearing = map.getBearing()
-            vm.updatePermalink()
-            cancelAnimationFrame(bearing)
-          }
-        } else {
-          if (vm.bearing <= -5) {
-            vm.$store.state.map01.setBearing(map.getBearing() + step)
-            vm.$store.state.map02.setBearing(map.getBearing() + step)
-            requestAnimationFrame(bearing)
-          } else {
-            vm.bearing = map.getBearing()
-            vm.updatePermalink()
-            cancelAnimationFrame(bearing)
-          }
-        }
-      }
-      if (window.innerWidth < 1000) {
-        map.setPitch(0)
-        this.$store.state.map01.setBearing(0)
-        this.$store.state.map02.setBearing(0)
-      } else {
-        pitch ()
-        bearing ()
-      }
-      this.$store.state[mapName].setTerrain(null)
-    },
-    mouseup () {
-      this.mouseDown = false
-    },
-    leftMousedown(mapName) {
-      const vm = this
-      const map = this.$store.state[mapName]
-      vm.mouseDown = true
-      function bearing () {
-        vm.bearing = map.getBearing()
-        if (vm.mouseDown) {
-          map.setBearing(map.getBearing() + 2)
-          // vm.$store.state.map01.setBearing(map.getBearing() + 2)
-          // vm.$store.state.map02.setBearing(map.getBearing() + 2)
-          requestAnimationFrame(bearing)
-        } else {
-          vm.bearing = map.getBearing()
-          cancelAnimationFrame(bearing)
-        }
-      }
-      bearing()
-    },
-    rightMousedown(mapName) {
-      const vm = this
-      const map = this.$store.state[mapName]
-      vm.mouseDown = true
-      function bearing () {
-        vm.bearing = map.getBearing()
-        if (vm.mouseDown) {
-          map.setBearing(map.getBearing() - 2)
-          // vm.$store.state.map01.setBearing(map.getBearing() - 2)
-          // vm.$store.state.map02.setBearing(map.getBearing() - 2)
-          requestAnimationFrame(bearing)
-        } else {
-          vm.bearing = map.getBearing()
-          cancelAnimationFrame(bearing)
-        }
-      }
-      bearing()
-    },
-    upMousedown(mapName) {
-      const vm = this
-      const map = this.$store.state[mapName]
-      vm.mouseDown = true
-      function pitch () {
-        vm.pitch[mapName] = map.getPitch()
-        if (vm.mouseDown) {
-          map.setPitch(map.getPitch() + 2)
-          requestAnimationFrame(pitch)
-        } else {
-          vm.pitch[mapName] = map.getPitch()
-          cancelAnimationFrame(pitch)
-        }
-      }
-      pitch()
-    },
-    downMousedown(mapName) {
-      const vm = this
-      const map = this.$store.state[mapName]
-      vm.mouseDown = true
-      function pitch () {
-        vm.pitch[mapName] = map.getPitch()
-        if (vm.mouseDown) {
-          map.setPitch(map.getPitch() - 2)
-          requestAnimationFrame(pitch)
-        } else {
-          vm.pitch[mapName] = map.getPitch()
-          cancelAnimationFrame(pitch)
-        }
-      }
-      pitch()
-    },
     btnClickMyroom (mapName) {
       // const groupId = db.collection('groups').doc().id
       // const groupId = this.s_currentGroupId; // 修正: ストアから取得
@@ -7026,34 +6952,12 @@ export default {
         // --------------------------------------------------------------
         let center = [139.84267451046338,38.36453863570733]
         let zoom = 5
-        let pitch= {map01:0,map02:0}
         let bearing = 0
         if (params.lng) {
           center = [params.lng,params.lat]
           zoom = params.zoom
-          if (zoom < 4.5 ) {
-            document.querySelector('#map00').style.backgroundColor = 'black'
-          }
-          pitch = {map01:params.pitch01,map02:params.pitch02}
           bearing = params.bearing
         }
-        // 以前のリンクをいかすため---------------------------------
-        if (params.pitch || params.pitch === 0) {
-          if (isNaN(params.pitch)) {
-            pitch = {map01:0,map02:0}
-          } else {
-            pitch = {map01:params.pitch,map02:params.pitch}
-          }
-        }
-        // 以前のリンクをいかすため---------------------------------
-        // const maptilerApiKey = 'CDedb3rcFcdaYuHkD9zR'
-
-        // const gsiTerrainSource = useGsiTerrainSource(maplibregl.addProtocol, {
-        //   tileUrl: 'https://mapdata.qchizu2.xyz/03_dem/51_int/all_9999/int_01/{z}/{x}/{y}.png',
-        //   // tileUrl: 'https://tiles.gsj.jp/tiles/elev/land/{z}/{y}/{x}.png',
-        //   maxzoom: 19,
-        // })
-
         const gsiTerrainSource = useGsiTerrainSource(maplibregl.addProtocol, {
           tileUrl: 'https://tiles.gsj.jp/tiles/elev/mixed/{z}/{y}/{x}.png',
           maxzoom: 17,
@@ -7066,7 +6970,7 @@ export default {
           center: center,
           zoom: zoom,
           maxZoom: 24.4,
-          pitch: pitch[mapName],
+          pitch: mapName === 'map01' ? params.pitch01 : params.pitch02,
           bearing:bearing,
           maxPitch: 85, // 最大の傾き85、デフォルトは60
           attributionControl: false, // ズーム中の衝突フェードをカット（微小だが効く）
@@ -8086,7 +7990,6 @@ export default {
         strokeWidth: 1,
         strokeColor: 'rgba(255,255,255,0.8)'
       });
-
       /**
        * 右クリックメニュー
        * @type {detach|*}
@@ -8132,9 +8035,19 @@ export default {
           // ...buildUtilityMenuItems({ map, geojsonSourceId: 'click-circle-source' }),
         ]
       });
-      // 補足：SVが無い場所では Google 側の「画像がありません」になる。
-      // 旧式の cbll パラメータ版（互換用）:
-      // `https://maps.google.com/maps?layer=c&cbll=${lat},${lng}`
+      /**
+       * ピッチとベアリングを監視
+       * store.state.map01Pitch等に収録
+       * @type {{map01Tracker: {readonly bearing: number, destroy: function(): void, readonly pitch: number|number}, map02Tracker: {readonly bearing: number, destroy: function(): void, readonly pitch: number|number}}}
+       */
+      const res = attachViewOrientationPair({
+        map01: this.$store.state.map01,
+        map02: this.$store.state.map02,
+        store,
+        bearingIn360: false,
+      })
+      this.map01Tracker = res.map01Tracker
+      this.map02Tracker = res.map02Tracker
 
       // -----------------------------------------------------------------------------------------------------------------
       // on load オンロード
@@ -9897,15 +9810,6 @@ export default {
   mounted() {
 
     const vm = this
-
-    // const res = attachViewOrientationPair({
-    //   map01: store.state.map01,
-    //   map02: store.state.map02,
-    //   store,
-    //   bearingIn360: false,
-    // })
-    // this.map01Tracker = res.map01Tracker
-    // this.map02Tracker = res.map02Tracker
 
     document.querySelector('.fan-menu-rap').style.display = 'none'
 
