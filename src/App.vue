@@ -2270,7 +2270,7 @@ import attachMapRightClickMenu, {
   buildStreetViewUrl, buildSVUrlSimple,
   buildUtilityMenuItems,
   openStreetViewPopup,
-  openTopRightWindow, openTopRightWindowSimple,
+  openTopRightWindow, openTopRightWindowFlushFullHeight, openTopRightWindowSimple,
   pointFeature,
   pushFeatureToGeoJsonSource,
   removePointUnderCursor
@@ -8053,11 +8053,11 @@ export default {
             })); } },
           { label: '点を削除', onSelect: ({ point }) => {const ok = removePointUnderCursor(map, point, 'click-circle-source');if (!ok) alert('直下に削除できるピンが見つかりません');}},
           {
-            label: 'ストリートビュー（右上）',
+            label: 'ストリートビュー（右上ビタ・全高）',
             onSelect: ({ map, lngLat }) => {
               const heading = ((map?.getBearing?.() ?? 0) + 360) % 360;
               const url = buildSVUrlSimple(lngLat, { heading, pitch: -15, fov: 90 });
-              openTopRightWindowSimple(url, { w: 1100, h: 700, margin: 16, name: 'GSV-TopRight' });
+              openTopRightWindowFlushFullHeight(url, { w: 1100, name: 'GSV-TopRight' });
             }
           }
 

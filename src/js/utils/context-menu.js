@@ -569,10 +569,11 @@ export function buildPinDeleteMenuItems({ map, geojsonSourceId = 'click-circle-s
  * });
  */
 
+
 // ===============================
-// 最小構成: 右上ポップアップで SV を開くだけ（無料URL版）
-// 依存なし・ESLint回避・名前衝突しないよう *Simple 名
+// 右上ビタ＆全高: 画面(モニタ)右上にピッタリ寄せて高さ=画面いっぱい
 // ===============================
+
 export function buildSVUrlSimple(lngLat, { heading = 0, pitch = -15, fov = 90 } = {}) {
     const norm = ((heading % 360) + 360) % 360;
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -586,25 +587,61 @@ export function buildSVUrlSimple(lngLat, { heading = 0, pitch = -15, fov = 90 } 
     return url.toString();
 }
 
-export function openTopRightWindowSimple(url, { w = 1100, h = 700, margin = 16, name = 'GSV-TopRight' } = {}) {
-    // 画面(モニタ)全体の右上に配置：screen.availLeft/Top + availWidth を使用
-    const baseLeft = (typeof screen.availLeft === 'number') ? screen.availLeft : 0; // 一部ブラウザは未実装
+export function openTopRightWindowFlushFullHeight(
+    url,
+    { w = 1100, name = 'GSV-TopRight' } = {}
+) {
+    // ワークエリア（タスクバー等を除く）を優先
+    const baseLeft = (typeof screen.availLeft === 'number') ? screen.availLeft : 0;
     const baseTop  = (typeof screen.availTop  === 'number') ? screen.availTop  : 0;
     const availW   = screen.availWidth  || screen.width;
-    const left = Math.max(0, Math.round(baseLeft + availW - w - margin));
-    const top  = Math.max(0, Math.round(baseTop + margin));
-    const features = `width=${Math.round(w)},height=${Math.round(h)},left=${left},top=${top},resizable=yes,scrollbars=yes,menubar=no,toolbar=no,location=no,status=no`;
-    const win = window.open(url, name, features); // クリック同期で呼ぶこと
-    if (win) { try { win.opener = null; win.focus(); } catch {} }
+    const availH   = screen.availHeight || screen.height;
+
+    // まずは概算位置/サイズで開く
+    const approxLeft = Math.max(baseLeft, Math.round(baseLeft + availW - w));
+    const approxTop  = baseTop; // 上端にビタ
+    const features = `width=${Math.round(w)},height=${Math.round(availH)},left=${approxLeft},top=${approxTop},resizable=yes,scrollbars=yes,menubar=no,toolbar=no,location=no,status=no`;
+
+    // クリック同期で呼ぶこと（タブ化/ブロック回避）
+    const win = window.open(url, name, features);
+    if (!win) return null;
+
+    try { win.opener = null; } catch {}
+
+    // 実サイズ（フレーム込み）を見て再アライン → 右上に“ビタ” & 高さ=全高
+    const align = () => {
+        try {
+            // いったん resizeTo で画面高に揃える（横幅は w かワークエリアの小さい方）
+            const targetW = Math.min(w, availW);
+            win.resizeTo(targetW, availH);
+            // outerWidth/Height を取得して右上ビタ位置を算出
+            const ow = win.outerWidth;
+            const oh = win.outerHeight; // 使わないが取得しておく（将来の調整用）
+            const left = baseLeft + availW - ow; // 右端に合わせる
+            const top  = baseTop;                // 上端に合わせる
+            win.moveTo(Math.max(baseLeft, Math.round(left)), Math.max(baseTop, Math.round(top)));
+        } catch (_) {}
+    };
+    // 反映遅延に備え数回実行
+    align();
+    setTimeout(align, 50);
+    setTimeout(align, 200);
+    try { win.focus(); } catch {}
     return win;
 }
 
-export const menuItemGsvTopRightSimple = {
-    label: 'ストリートビュー（右上）',
+export const menuItemGsvTopRightFull = {
+    label: 'ストリートビュー（右上ビタ・全高）',
     onSelect: ({ map, lngLat }) => {
         const heading = ((map?.getBearing?.() ?? 0) + 360) % 360;
         const url = buildSVUrlSimple(lngLat, { heading, pitch: -15, fov: 90 });
-        openTopRightWindowSimple(url, { w: 1100, h: 700, margin: 16, name: 'GSV-TopRight' });
+        openTopRightWindowFlushFullHeight(url, { w: 1100, name: 'GSV-TopRight' });
     }
 };
 
+/* 使い方（最小）
+attachMapRightClickMenu({
+  map: store.state.map01,
+  items: [ menuItemGsvTopRightFull ]
+});
+*/
