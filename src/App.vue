@@ -2263,9 +2263,17 @@ import drawMethods, {
 } from "@/js/draw";
 import {haptic} from "@/js/utils/haptics";
 import attachMapRightClickMenu, {
-  buildGoogleMapsSearchUrl, buildMapillaryUrl, buildPinDeleteMenuItems,
-  buildStreetViewUrl,
-  buildUtilityMenuItems, pointFeature, pushFeatureToGeoJsonSource, removePointUnderCursor
+  buildGoogleAndGsvMenuItems,
+  buildGoogleMapsSearchUrl,
+  buildMapillaryUrl,
+  buildPinDeleteMenuItems,
+  buildStreetViewUrl, buildSVUrlSimple,
+  buildUtilityMenuItems,
+  openStreetViewPopup,
+  openTopRightWindow, openTopRightWindowSimple,
+  pointFeature,
+  pushFeatureToGeoJsonSource,
+  removePointUnderCursor
 } from "@/js/utils/context-menu";
 
 export default {
@@ -8005,6 +8013,9 @@ export default {
        * 右クリックメニュー
        * @type {detach|*}
        */
+      const popupWidth = 600
+      const popupHeight = 400
+      const headingOffset = 0
       const detach = attachMapRightClickMenu({
         map: store.state.map01,
         items: [
@@ -8041,6 +8052,15 @@ export default {
               borderRadius: '10px',
             })); } },
           { label: '点を削除', onSelect: ({ point }) => {const ok = removePointUnderCursor(map, point, 'click-circle-source');if (!ok) alert('直下に削除できるピンが見つかりません');}},
+          {
+            label: 'ストリートビュー（右上）',
+            onSelect: ({ map, lngLat }) => {
+              const heading = ((map?.getBearing?.() ?? 0) + 360) % 360;
+              const url = buildSVUrlSimple(lngLat, { heading, pitch: -15, fov: 90 });
+              openTopRightWindowSimple(url, { w: 1100, h: 700, margin: 16, name: 'GSV-TopRight' });
+            }
+          }
+
 
           // 実用メニューをまとめて展開
           // ...buildUtilityMenuItems({ map, geojsonSourceId: 'click-circle-source' }),

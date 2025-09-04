@@ -569,3 +569,49 @@ export function buildPinDeleteMenuItems({ map, geojsonSourceId = 'click-circle-s
  * });
  */
 
+// ===============================
+// 最小構成: 右上ポップアップで SV を開くだけ（無料URL版）
+// 依存なし・ESLint回避・名前衝突しないよう *Simple 名
+// ===============================
+export function buildSVUrlSimple(lngLat, { heading = 0, pitch = -15, fov = 90 } = {}) {
+    const norm = ((heading % 360) + 360) % 360;
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const url = new URL('https://www.google.com/maps/@');
+    url.searchParams.set('api', '1');
+    url.searchParams.set('map_action', 'pano');
+    url.searchParams.set('viewpoint', `${lngLat.lat},${lngLat.lng}`);
+    url.searchParams.set('heading', String(Math.round(norm)));
+    url.searchParams.set('pitch', String(Math.round(clamp(pitch, -90, 90))));
+    url.searchParams.set('fov', String(Math.round(clamp(fov, 10, 120))));
+    return url.toString();
+}
+
+export function openTopRightWindowSimple(url, { w = 1100, h = 700, margin = 16, name = 'GSV-TopRight' } = {}) {
+    const dualLeft = (window.screenLeft ?? window.screenX ?? 0);
+    const dualTop  = (window.screenTop  ?? window.screenY ?? 0);
+    const vw = window.innerWidth || document.documentElement.clientWidth || screen.width;
+    const left = Math.max(0, Math.round(dualLeft + vw - w - margin));
+    const top  = Math.max(0, Math.round(dualTop + margin));
+    const features = `width=${Math.round(w)},height=${Math.round(h)},left=${left},top=${top},resizable=yes,scrollbars=yes,menubar=no,toolbar=no,location=no,status=no`;
+    const win = window.open(url, name, features); // URLを直接
+    if (win) { try { win.opener = null; win.focus(); } catch {} }
+    return win;
+}
+
+
+export const menuItemGsvTopRightSimple = {
+    label: 'ストリートビュー（右上）',
+    onSelect: ({ map, lngLat }) => {
+        const heading = ((map?.getBearing?.() ?? 0) + 360) % 360;
+        const url = buildSVUrlSimple(lngLat, { heading, pitch: -15, fov: 90 });
+        openTopRightWindowSimple(url, { w: 1100, h: 700, margin: 16, name: 'GSV-TopRight' });
+    }
+};
+
+/* 使い方（これだけでOK）
+attachMapRightClickMenu({
+  map: store.state.map01,
+  items: [ menuItemGsvTopRightSimple ]
+});
+*/
+
