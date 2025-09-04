@@ -587,17 +587,17 @@ export function buildSVUrlSimple(lngLat, { heading = 0, pitch = -15, fov = 90 } 
 }
 
 export function openTopRightWindowSimple(url, { w = 1100, h = 700, margin = 16, name = 'GSV-TopRight' } = {}) {
-    const dualLeft = (window.screenLeft ?? window.screenX ?? 0);
-    const dualTop  = (window.screenTop  ?? window.screenY ?? 0);
-    const vw = window.innerWidth || document.documentElement.clientWidth || screen.width;
-    const left = Math.max(0, Math.round(dualLeft + vw - w - margin));
-    const top  = Math.max(0, Math.round(dualTop + margin));
+    // 画面(モニタ)全体の右上に配置：screen.availLeft/Top + availWidth を使用
+    const baseLeft = (typeof screen.availLeft === 'number') ? screen.availLeft : 0; // 一部ブラウザは未実装
+    const baseTop  = (typeof screen.availTop  === 'number') ? screen.availTop  : 0;
+    const availW   = screen.availWidth  || screen.width;
+    const left = Math.max(0, Math.round(baseLeft + availW - w - margin));
+    const top  = Math.max(0, Math.round(baseTop + margin));
     const features = `width=${Math.round(w)},height=${Math.round(h)},left=${left},top=${top},resizable=yes,scrollbars=yes,menubar=no,toolbar=no,location=no,status=no`;
-    const win = window.open(url, name, features); // URLを直接
+    const win = window.open(url, name, features); // クリック同期で呼ぶこと
     if (win) { try { win.opener = null; win.focus(); } catch {} }
     return win;
 }
-
 
 export const menuItemGsvTopRightSimple = {
     label: 'ストリートビュー（右上）',
@@ -607,11 +607,4 @@ export const menuItemGsvTopRightSimple = {
         openTopRightWindowSimple(url, { w: 1100, h: 700, margin: 16, name: 'GSV-TopRight' });
     }
 };
-
-/* 使い方（これだけでOK）
-attachMapRightClickMenu({
-  map: store.state.map01,
-  items: [ menuItemGsvTopRightSimple ]
-});
-*/
 
