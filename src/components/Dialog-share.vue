@@ -16,6 +16,8 @@
 <script>
 
 import {mapState} from "vuex";
+import {dedupeCoords} from "@/js/downLoad";
+import store from "@/store";
 
 export default {
   name: 'Dialog-share',
@@ -136,6 +138,14 @@ export default {
       this.s_terrainLevel = 1
     }
     this.s_isPitch = JSON.parse(localStorage.getItem('isPitch'))
+  },
+  watch: {
+    s_dialogs: {
+      handler: function () {
+         this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
+      },
+      deep: true
+    },
   }
 }
 </script>

@@ -6,7 +6,11 @@ import {haptic} from "@/js/utils/haptics";
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.434,
+    clientVersion: 1.435,
+    map01Pitch: 0,
+    map01Bearing: 0,
+    map02Pitch: 0,
+    map02Bearing: 0,
     prevGeojsons: [],
     prevGeojson: null,
     selectedLngLat: null,

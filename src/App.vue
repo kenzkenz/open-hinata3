@@ -1761,7 +1761,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 import { db } from '@/firebase'
 import store from '@/store'
 import { toRaw } from 'vue'
-import {calculatePolygonMetrics, closeAllPopups, mouseMoveForPopup, popup} from "@/js/popup"
+import {closeAllPopups, mouseMoveForPopup, popup} from "@/js/popup"
 import { CompassControl } from 'maplibre-gl-compass'
 import shp from "shpjs"
 import JSZip from 'jszip'
@@ -1770,7 +1770,6 @@ import DxfParser from 'dxf-parser'
 import proj4 from 'proj4'
 import { gpx } from '@tmcw/togeojson'
 import { user } from "@/authState"; // グローバルの認証情報を取得
-import { TerraDrawPointMode,TerraDrawLineStringMode,TerraDrawPolygonMode } from 'terra-draw'
 import PointInfoDrawer from '@/components/PointInfoDrawer.vue'
 import RightDrawer from '@/components/rightDrawer.vue'
 import DrawDrawer from '@/components/drawer/DrawDrawer.vue'
@@ -1779,6 +1778,8 @@ import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
 import { mdiMapMarker } from '@mdi/js'
 import { registerMdiIcon } from '@/js/utils/icon-registry'
+import { attachViewOrientationPair } from '@/js/utils/view-orientation-tracker'
+
 import {
   addDraw,
   addSvgAsImage,
@@ -2464,6 +2465,8 @@ export default {
     isUndoBtnDisabled: false,
     cancelBtnMiniTooltip: "描きかけ中の全ポイントを削除",
     undoBtnMiniTooltip: "直前のポイントを削除",
+    map01Tracker: null,
+    map02Tracker: null,
   }),
   computed: {
     ...mapState([
@@ -6469,23 +6472,24 @@ export default {
       const zoom = map.getZoom()
       const { lng, lat } = center
       const split = this.s_map2Flg
-      const pitch01 = !isNaN(this.pitch.map01) ? this.pitch.map01: 0
-      const pitch02 = !isNaN(this.pitch.map02) ? this.pitch.map02: 0
+      const pitch01 = this.$store.state.map01Pitch
+      const pitch02 = this.$store.state.map02Pitch
+      const bearing = this.$store.state.map01Bearing
       let terrainLevel = this.s_terrainLevel
       if (isNaN(terrainLevel)) terrainLevel = 1
       // console.log(this.bearing)
-      let bearing = 0
-      if (isNaN(this.bearing)) {
-        bearing = 0
-      } else {
-        if (this.bearing > -5 && this.bearing < 5 ) {
-          // console.log('0に修正')
-          bearing = 0
-          this.bearing = 0
-        } else {
-          bearing = this.bearing
-        }
-      }
+      // let bearing = 0
+      // if (isNaN(this.bearing)) {
+      //   bearing = 0
+      // } else {
+      //   if (this.bearing > -5 && this.bearing < 5 ) {
+      //     // console.log('0に修正')
+      //     bearing = 0
+      //     this.bearing = 0
+      //   } else {
+      //     bearing = this.bearing
+      //   }
+      // }
       function removeKeys(obj, keysToRemove) {
         if (Array.isArray(obj)) {
           return obj.map(item => removeKeys(item, keysToRemove))
@@ -8222,6 +8226,16 @@ export default {
           // console.log(params)
 
 
+          if (params.map01Pitch) {
+            this.$store.state.map01Pitch = params.map01Pitch
+          }
+          if (params.map02Pitch) {
+            this.$store.state.map02Pitch = params.map02Pitch
+          }
+          if (params.bearing) {
+            this.$store.state.map01Bearing = params.bearing
+          }
+
           if (params.simaTextForUser) {
             this.$store.state.simaTextForUser = params.simaTextForUser
           }
@@ -9883,6 +9897,15 @@ export default {
   mounted() {
 
     const vm = this
+
+    // const res = attachViewOrientationPair({
+    //   map01: store.state.map01,
+    //   map02: store.state.map02,
+    //   store,
+    //   bearingIn360: false,
+    // })
+    // this.map01Tracker = res.map01Tracker
+    // this.map02Tracker = res.map02Tracker
 
     document.querySelector('.fan-menu-rap').style.display = 'none'
 
