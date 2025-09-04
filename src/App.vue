@@ -1758,7 +1758,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 </template>
 
 <script>
-import { db } from '@/firebase'
+import firebase, { db } from '@/firebase'
 import store from '@/store'
 import { toRaw } from 'vue'
 import {closeAllPopups, mouseMoveForPopup, popup} from "@/js/popup"
@@ -2280,6 +2280,7 @@ import attachMapRightClickMenu, {
   pushFeatureToGeoJsonSource, refocusOH3,
   removePointUnderCursor, setSvPin
 } from "@/js/utils/context-menu";
+import {setupEmbedMode} from "@/js/utils/embed";
 
 export default {
   name: 'App',
@@ -3269,6 +3270,23 @@ export default {
     },
   },
   methods: {
+    waitForMap(mapKey = 'map01', { loaded = true, interval = 50, timeout = 10000 } = {}) {
+      return new Promise((resolve, reject) => {
+        const t0 = Date.now();
+        const iv = setInterval(() => {
+          const map = this.$store.state[mapKey];
+          if (map) {
+            if (!loaded || map.loaded?.()) {
+              clearInterval(iv); resolve(map);
+            } else {
+              map.once('idle', () => { clearInterval(iv); resolve(map); });
+            }
+          } else if (Date.now() - t0 > timeout) {
+            clearInterval(iv); reject(new Error(`waitForMap('${mapKey}') timeout`));
+          }
+        }, interval);
+      });
+    },
     // --- 汎用ヘルパ ---
     targets(mapName, syncBoth) {
       const m1 = store.state.map01
@@ -9844,6 +9862,65 @@ export default {
   mounted() {
 
     const vm = this
+    
+    // --- iframe 判定（最小） ---
+    let inIframe = false;
+    try { inIframe = (window.self !== window.top); } catch (_) { inIframe = true; }
+    if (inIframe && window.opener) inIframe = false;
+
+    // --- フィット関数（click-circle-source 専用） ---
+    function fitClickCircleAll(map, { padding = 30, maxZoomForPoint = 16 } = {}) {
+      const src = map.getSource('click-circle-source');
+      const data = src && src._data
+      if (!data) return false;
+
+      const fc = (data.type === 'FeatureCollection')
+          ? data
+          : turf.featureCollection(data.features || []);
+
+      // 設定用の config 行などは除外
+      const features = (fc.features || []).filter(f => f?.geometry && f?.properties?.id !== 'config');
+      if (!features.length) return false;
+
+      const [minX, minY, maxX, maxY] = turf.bbox(turf.featureCollection(features));
+      const isPointish = (minX === maxX) && (minY === maxY);
+
+      if (isPointish) {
+        map.easeTo({ center: [minX, minY], zoom: Math.max(map.getZoom?.() ?? 0, maxZoomForPoint), duration: 0 });
+      } else {
+        map.fitBounds([[minX, minY], [maxX, maxY]], { padding, duration: 0 });
+      }
+      return true;
+    }
+
+    if (inIframe) {
+      this.waitForMap('map01', { loaded: true })
+          .then(map => {
+            // 非同期ロード対策で軽くリトライ
+            const tryFit = (n = 6) => fitClickCircleAll(map) || (n > 0 && setTimeout(() => tryFit(n - 1), 500));
+            tryFit();
+            document.querySelectorAll('#left-top-div, #right-top-div').forEach(el => {
+              el.style.display = 'none'
+            })
+          })
+          .catch(console.warn);
+    }
+
+
+
+
+      // if (map.loaded?.()) {
+      //   tryFit();
+      // } else {
+      //   map.once('idle', tryFit);
+      // }
+
+      // 追加で「地物が増えたときにも追従」させたいなら、これを足す（任意）
+      // map.on('sourcedata', (e) => {
+      //   if (e.sourceId === 'click-circle-source' && e.isSourceLoaded) tryFit(1);
+      // });
+    // }
+
 
     document.querySelector('.fan-menu-rap').style.display = 'none'
 
@@ -10217,6 +10294,25 @@ export default {
 
 /*地球状態になったとき白くなる現象を下記で回避*/
 #map01 .v-locale--is-ltr { background-color: transparent !important; }
+
+/* src/css/embed.css */
+html.oh3-embed { --oh3-bg: transparent; }
+html.oh3-embed body { background: var(--oh3-bg); }
+
+/* ヘッダー/フッター/浮遊パネル/デバッグUI 等を非表示（必要に応じてクラス名を調整）*/
+html.oh3-embed #global-header,
+html.oh3-embed #global-footer,
+html.oh3-embed .floating-window:not(.allow-embed),
+html.oh3-embed .right-click-menu,
+html.oh3-embed .debug-panels {
+  display: none !important;
+}
+
+/* マップを全面化 */
+html.oh3-embed #map01 {
+  position: fixed; inset: 0; width: 100vw !important; height: 100dvh !important;
+}
+
 
 #map02 {
   border: #000 1px solid;

@@ -9,6 +9,7 @@ import VueQrcode from '@chenfengyuan/vue-qrcode'
 import { auth, db } from './firebase'
 import '@/registerServiceWorker';
 import Haptics from '@/js/utils/haptics'
+import {setupEmbedMode} from "@/js/utils/embed";
 
 loadFonts()
 
@@ -21,6 +22,10 @@ app.component('Dialog2', Dialog2)
 app.component(VueQrcode.name, VueQrcode)
 
 app.mount('#app')
+
+store.state.oh3App = app
+
+
 
 // ✅ mount 後に実行
 auth.onAuthStateChanged(async user => {
