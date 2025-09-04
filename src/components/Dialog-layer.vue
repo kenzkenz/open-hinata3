@@ -1408,19 +1408,6 @@ export default {
         const ne = bounds.getNorthEast()
         this.$store.state.lngRange = [sw.lng,ne.lng]
         this.$store.state.latRange = [sw.lat,ne.lat]
-        // ------------------------------------------------------------------
-        // map01.on('load', () => {
-          // 矢印画像をロード
-          // map01.loadImage('https://maplibre.org/maplibre-gl-js/docs/assets/custom_marker.png', (error, image) => {
-          //   // if (error) throw error;
-          //   map01.addImage('arrow', image);
-          //   this.addLayers()
-          //   alert(9)
-          //
-          // })
-        // })
-        // console.log(this.$store.state.clickCircleGeojsonText)
-        // console.log(JSON.parse(this.$store.state.clickCircleGeojsonText))
 
         this.addLayers()
       },
