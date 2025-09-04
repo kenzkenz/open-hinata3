@@ -6964,13 +6964,24 @@ export default {
           attribution: '<a href="https://gbank.gsj.jp/seamless/elev/">産総研シームレス標高タイル</a>'
         });
 
+        let pitch = mapName === 'map01' ? params.pitch01 : params.pitch02 || 0
+        pitch = isNaN(pitch) ? 0 : pitch
+
+        // if (params.pitch || params.pitch === 0) {
+        //   if (isNaN(params.pitch)) {
+        //     pitch = {map01:0,map02:0}
+        //   } else {
+        //     pitch = {map01:params.pitch,map02:params.pitch}
+        //   }
+        // }
+
         const map = new maplibregl.Map({
           container: mapName,
           localIdeographFontFamily: ['sans-serif'], // 日本語を表示するための設定
           center: center,
           zoom: zoom,
           maxZoom: 24.4,
-          pitch: mapName === 'map01' ? params.pitch01 : params.pitch02,
+          pitch: pitch,
           bearing:bearing,
           maxPitch: 85, // 最大の傾き85、デフォルトは60
           attributionControl: false, // ズーム中の衝突フェードをカット（微小だが効く）
@@ -7982,14 +7993,14 @@ export default {
       /**
        * 現在全く動いていない。
        */
-      await registerMdiIcon(this.map01, {
-        name: 'lot-pin',
-        path: mdiMapMarker,
-        size: 24,
-        color: '#1976D2',
-        strokeWidth: 1,
-        strokeColor: 'rgba(255,255,255,0.8)'
-      });
+      // await registerMdiIcon(this.map01, {
+      //   name: 'lot-pin',
+      //   path: mdiMapMarker,
+      //   size: 24,
+      //   color: '#1976D2',
+      //   strokeWidth: 1,
+      //   strokeColor: 'rgba(255,255,255,0.8)'
+      // });
       /**
        * 右クリックメニュー
        * @type {detach|*}
@@ -9158,11 +9169,10 @@ export default {
           //   }
           // });
           // -----------------------------------------------------------------------------------------------------------
-          const pitch = !isNaN(this.pitch[mapName]) ? this.pitch[mapName]: 0
+          let pitch = mapName === 'map01' ? params.pitch01 : params.pitch02 || 0
+          pitch = isNaN(pitch) ? 0 : pitch
           if (pitch !== 0) {
-            // this.$store.state[mapName].setTerrain({ 'source': 'terrain', 'exaggeration': this.s_terrainLevel })
             if (!this.s_selectedLayers[mapName].find(layer => {
-                  // return layer.id === 'oh-bakumatsu-kokudaka-height'
                   return layer.id.indexOf('height') !== -1
                 }
             )) {
@@ -9171,7 +9181,6 @@ export default {
               map.setTerrain(null)
             }
           }
-
           // -----------------------------------------------------------------------------------------------------------
           // ドラッグ&ドロップ用の要素
           const dropzone = document.getElementById('map00');
@@ -10177,6 +10186,13 @@ export default {
   border: #000 1px solid;
   height: 100%;
 }
+#map01 .v-overlay {
+  background-color: transparent !important;
+}
+
+/*地球状態になったとき白くなる現象を下記で回避*/
+#map01 .v-locale--is-ltr { background-color: transparent !important; }
+
 #map02 {
   border: #000 1px solid;
   position:absolute;
