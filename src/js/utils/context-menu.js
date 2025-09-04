@@ -227,50 +227,6 @@ export function buildStreetViewUrl(lngLat, opts = {}) {
     return url.toString();
 }
 
-/*
- * ================================
- * 追加サンプル：右クリックメニューに Google マップ / ストリートビュー
- * ================================
- * const detach = attachMapRightClickMenu({
- *   map: store.state.map01,
- *   items: [
- *     {
- *       label: 'Googleマップで開く',
- *       onSelect: ({ map, lngLat }) => {
- *         // 検索URLか、中心指定URLのどちらかお好みで
- *         const url = buildGoogleMapsSearchUrl(lngLat);
- *         // const url = buildGoogleMapsUrl(lngLat, { zoom: map.getZoom() });
- *         window.open(url, '_blank', 'noopener');
- *       }
- *     },
- *     {
- *       label: 'ストリートビューで開く',
- *       onSelect: ({ map, lngLat }) => {
- *         const heading = map.getBearing?.() ?? 0; // 地図の方位を活用（任意）
- *         const pitch = (map.getPitch?.() ?? 0) - 20; // 少し下向き
- *         const url = buildStreetViewUrl(lngLat, { heading, pitch, fov: 90 });
- *         window.open(url, '_blank', 'noopener');
- *       }
- *     },
- *     {
- *       label: 'リンクをコピー（Maps / SV）',
- *       onSelect: async ({ map, lngLat }) => {
- *         const maps = buildGoogleMapsSearchUrl(lngLat);
- *         const sv = buildStreetViewUrl(lngLat, { heading: map.getBearing?.() ?? 0, pitch: map.getPitch?.() ?? 0 });
- *         const text = `Google Maps: ${maps}
-Street View: ${sv}`;
- *         try { await navigator.clipboard.writeText(text); alert('リンクをコピーしました'); }
- *         catch { prompt('以下をコピーしてください', text); }
- *       }
- *     }
- *   ]
- * });
- *
- * // 補足：SVが無い場所では Google 側の「画像がありません」になる。
- * // 旧式の cbll パラメータ版（互換用）:
- * // `https://maps.google.com/maps?layer=c&cbll=${lat},${lng}`
- */
-
 
 // ================================
 // 便利メニュー集（コピー／作図／外部リンク／タイル）
@@ -438,21 +394,6 @@ export function buildUtilityMenuItems({ map, geojsonSourceId = 'click-circle-sou
     ];
 }
 
-/*
- * 使用例：
- * const detach = attachMapRightClickMenu({
- *   map: store.state.map01,
- *   items: [
- *     // 既存の Google 関連
- *     { label: 'Googleマップで開く', onSelect: ({ map, lngLat }) => window.open(buildGoogleMapsSearchUrl(lngLat),'_blank','noopener') },
- *     { label: 'ストリートビューで開く', onSelect: ({ map, lngLat }) => window.open(buildStreetViewUrl(lngLat, { heading: map.getBearing?.() ?? 0, pitch: (map.getPitch?.() ?? 0) - 20 }), '_blank', 'noopener') },
- *     // 実用メニューをまとめて展開
- *     ...buildUtilityMenuItems({ map, geojsonSourceId: 'click-circle-source' }),
- *   ]
- * });
- */
-
-
 // ================================
 // ピン削除ユーティリティ（直下/近傍/半径内）
 // ================================
@@ -557,23 +498,9 @@ export function buildPinDeleteMenuItems({ map, geojsonSourceId = 'click-circle-s
     ];
 }
 
-/* 使用例（spread で合成）
- * const detach = attachMapRightClickMenu({
- *   map: store.state.map01,
- *   items: [
- *     // 好きな基本メニュー
- *     ...buildUtilityMenuItems({ map: store.state.map01, geojsonSourceId: 'click-circle-source' }),
- *     // ピン削除系を追加
- *     ...buildPinDeleteMenuItems({ map: store.state.map01, geojsonSourceId: 'click-circle-source', radiusMeters: 50 }),
- *   ]
- * });
- */
-
-
 // ===============================
-// 右上ビタ＆全高: 画面(モニタ)右上にピッタリ寄せて高さ=画面いっぱい
+// 右上ビタ・全高・半幅: 画面(モニタ)右上にピッタリ寄せて高さ=全高, 幅=ちょうど半分
 // ===============================
-
 export function buildSVUrlSimple(lngLat, { heading = 0, pitch = -15, fov = 90 } = {}) {
     const norm = ((heading % 360) + 360) % 360;
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -587,42 +514,34 @@ export function buildSVUrlSimple(lngLat, { heading = 0, pitch = -15, fov = 90 } 
     return url.toString();
 }
 
-export function openTopRightWindowFlushFullHeight(
+export function openTopRightWindowFlushHalfWidthFullHeight(
     url,
-    { w = 1100, name = 'GSV-TopRight' } = {}
+    { name = 'GSV-TopRight-Half' } = {}
 ) {
-    // ワークエリア（タスクバー等を除く）を優先
     const baseLeft = (typeof screen.availLeft === 'number') ? screen.availLeft : 0;
     const baseTop  = (typeof screen.availTop  === 'number') ? screen.availTop  : 0;
     const availW   = screen.availWidth  || screen.width;
     const availH   = screen.availHeight || screen.height;
 
-    // まずは概算位置/サイズで開く
-    const approxLeft = Math.max(baseLeft, Math.round(baseLeft + availW - w));
-    const approxTop  = baseTop; // 上端にビタ
-    const features = `width=${Math.round(w)},height=${Math.round(availH)},left=${approxLeft},top=${approxTop},resizable=yes,scrollbars=yes,menubar=no,toolbar=no,location=no,status=no`;
+    const targetW = Math.max(200, Math.floor(availW / 2)); // 最低幅の保険
+    const approxLeft = Math.max(baseLeft, Math.round(baseLeft + availW - targetW));
+    const approxTop  = baseTop;
+    const features = `width=${targetW},height=${availH},left=${approxLeft},top=${approxTop},resizable=yes,scrollbars=yes,menubar=no,toolbar=no,location=no,status=no`;
 
-    // クリック同期で呼ぶこと（タブ化/ブロック回避）
     const win = window.open(url, name, features);
     if (!win) return null;
-
     try { win.opener = null; } catch {}
 
-    // 実サイズ（フレーム込み）を見て再アライン → 右上に“ビタ” & 高さ=全高
     const align = () => {
         try {
-            // いったん resizeTo で画面高に揃える（横幅は w かワークエリアの小さい方）
-            const targetW = Math.min(w, availW);
+            // 高さ=全高、幅=半分に再アライン
             win.resizeTo(targetW, availH);
-            // outerWidth/Height を取得して右上ビタ位置を算出
             const ow = win.outerWidth;
-            const oh = win.outerHeight; // 使わないが取得しておく（将来の調整用）
             const left = baseLeft + availW - ow; // 右端に合わせる
             const top  = baseTop;                // 上端に合わせる
             win.moveTo(Math.max(baseLeft, Math.round(left)), Math.max(baseTop, Math.round(top)));
         } catch (_) {}
     };
-    // 反映遅延に備え数回実行
     align();
     setTimeout(align, 50);
     setTimeout(align, 200);
@@ -630,18 +549,107 @@ export function openTopRightWindowFlushFullHeight(
     return win;
 }
 
-export const menuItemGsvTopRightFull = {
-    label: 'ストリートビュー（右上ビタ・全高）',
+export const menuItemGsvTopRightHalfFull = {
+    label: 'ストリートビュー（右上ビタ・全高・半幅）',
     onSelect: ({ map, lngLat }) => {
         const heading = ((map?.getBearing?.() ?? 0) + 360) % 360;
         const url = buildSVUrlSimple(lngLat, { heading, pitch: -15, fov: 90 });
-        openTopRightWindowFlushFullHeight(url, { w: 1100, name: 'GSV-TopRight' });
+        openTopRightWindowFlushHalfWidthFullHeight(url, { name: 'GSV-TopRight-Half' });
     }
 };
 
-/* 使い方（最小）
-attachMapRightClickMenu({
-  map: store.state.map01,
-  items: [ menuItemGsvTopRightFull ]
-});
-*/
+// ===============================
+// Simple SV Pin (独立・簡易): SVを開いた座標にだけ1個ピンを出す
+// - 前のピンは自動で置き換え
+// - ピンをクリックすると削除
+// - 既存のドロー機能とは完全に独立
+// ===============================
+const SV_PIN_SOURCE_ID = 'sv-pin-source';
+const SV_PIN_LAYER_ID = 'sv-pin-circle';
+
+export function ensureSvPinLayers(map) {
+    // スタイル未ロードならロード後に再実行
+    if (!map.isStyleLoaded && !map.style) {
+    // 旧MapLibre互換: 念のため
+    }
+    if (!map.isStyleLoaded || !map.isStyleLoaded()) {
+        try { map.once('load', () => ensureSvPinLayers(map)); } catch {}
+        return;
+    }
+    // ソース
+    if (!map.getSource(SV_PIN_SOURCE_ID)) {
+        map.addSource(SV_PIN_SOURCE_ID, {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] }
+        });
+    }
+    // レイヤ（シンプルな丸）
+    if (!map.getLayer(SV_PIN_LAYER_ID)) {
+    // できるだけ前面になるよう最後に追加。必要なら beforeId を指定
+        map.addLayer({
+            id: SV_PIN_LAYER_ID,
+            type: 'circle',
+            source: SV_PIN_SOURCE_ID,
+            paint: {
+                'circle-radius': 8,
+                'circle-color': '#ff5722',
+                'circle-stroke-color': '#ffffff',
+                'circle-stroke-width': 2,
+                'circle-opacity': 1
+            }
+        });
+    }
+    map.moveLayer(SV_PIN_LAYER_ID)
+    // クリックで削除（1回だけバインド）
+    if (!map.__svPinClickBound) {
+        try {
+            map.on('click', SV_PIN_LAYER_ID, () => removeSvPin(map));
+            map.on('mouseenter', SV_PIN_LAYER_ID, () => map.getCanvas().style.cursor = 'pointer');
+            map.on('mouseleave', SV_PIN_LAYER_ID, () => map.getCanvas().style.cursor = '');
+        } catch {}
+        map.__svPinClickBound = true;
+    }
+}
+
+export function setSvPin(map, lngLat) {
+    const fc = {
+        type: 'FeatureCollection',
+        features: [{
+            type: 'Feature',
+            properties: { id: 'sv-pin' },
+            geometry: { type: 'Point', coordinates: [lngLat.lng, lngLat.lat] }
+        }]
+    };
+    // ソースがなければ用意してからセット
+    const setData = () => {
+        const src = map.getSource(SV_PIN_SOURCE_ID);
+        if (src && src.setData) src.setData(fc);
+    };
+    if (!map.getSource(SV_PIN_SOURCE_ID)) {
+        ensureSvPinLayers(map);
+        if (!map.getSource(SV_PIN_SOURCE_ID)) {
+            try { map.once('load', setData); } catch {}
+            return;
+        }
+    }
+    ensureSvPinLayers(map);
+    setData();
+}
+
+export function removeSvPin(map) {
+    const src = map.getSource(SV_PIN_SOURCE_ID);
+    if (src && src.setData) src.setData({ type: 'FeatureCollection', features: [] });
+}
+
+// ---- 右クリックメニュー差し替え項目（あなたのスニペット置換用）
+export const menuItemOpenSVWithPin = {
+    label: 'SVを別ウインドウで開く',
+    onSelect: ({ map, lngLat }) => {
+        // 1) ピンを置く（既存ピンは自動で置き換え）
+        setSvPin(map, lngLat);
+        // 2) SV を右上半幅・全高で開く
+        const heading = ((map?.getBearing?.() ?? 0) + 360) % 360;
+        const url = buildSVUrlSimple(lngLat, { heading, pitch: -15, fov: 90 });
+        openTopRightWindowFlushHalfWidthFullHeight(url, { name: 'GSV-TopRight-Half' });
+    }
+};

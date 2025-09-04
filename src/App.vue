@@ -2263,17 +2263,22 @@ import drawMethods, {
 } from "@/js/draw";
 import {haptic} from "@/js/utils/haptics";
 import attachMapRightClickMenu, {
+  applyRightClickRefocusPatch, applyRightClickRefocusPatchStrong,
   buildGoogleAndGsvMenuItems,
   buildGoogleMapsSearchUrl,
   buildMapillaryUrl,
   buildPinDeleteMenuItems,
-  buildStreetViewUrl, buildSVUrlSimple,
-  buildUtilityMenuItems,
+  buildStreetViewUrl,
+  buildSVUrlSimple,
+  buildUtilityMenuItems, menuItemOpenSVWithPinRefocusStrong,
   openStreetViewPopup,
-  openTopRightWindow, openTopRightWindowFlushFullHeight, openTopRightWindowSimple,
+  openTopRightWindow,
+  openTopRightWindowFlushFullHeight,
+  openTopRightWindowFlushHalfWidthFullHeight,
+  openTopRightWindowSimple,
   pointFeature,
-  pushFeatureToGeoJsonSource,
-  removePointUnderCursor
+  pushFeatureToGeoJsonSource, refocusOH3,
+  removePointUnderCursor, setSvPin
 } from "@/js/utils/context-menu";
 
 export default {
@@ -8037,6 +8042,15 @@ export default {
               window.open(url, '_blank', 'noopener');
             }
           },
+          {
+            label: 'SVを別ウインドウで開く',
+            onSelect: ({ map, lngLat }) => {
+              setSvPin(map, lngLat);
+              const heading = ((map?.getBearing?.() ?? 0) + 360) % 360;
+              const url = buildSVUrlSimple(lngLat, { heading, pitch: -15, fov: 90 });
+              openTopRightWindowFlushHalfWidthFullHeight(url, { name: 'GSV-TopRight-Half' });
+            }
+          },
           { label: 'Mapillaryを開く', onSelect: ({ lngLat }) => window.open(buildMapillaryUrl(lngLat, map.getZoom?.() ?? 18, map.getBearing?.() ?? 0), '_blank', 'noopener') },
           { label: '俯瞰 60°/0° 切替', onSelect: () => { const p = map.getPitch(); map.easeTo({ pitch: p > 30 ? 0 : 60 }); } },
           { label: '点を追加', onSelect: ({ lngLat }) => { pushFeatureToGeoJsonSource(map, 'click-circle-source', pointFeature(lngLat, {
@@ -8052,15 +8066,6 @@ export default {
               borderRadius: '10px',
             })); } },
           { label: '点を削除', onSelect: ({ point }) => {const ok = removePointUnderCursor(map, point, 'click-circle-source');if (!ok) alert('直下に削除できるピンが見つかりません');}},
-          {
-            label: 'ストリートビュー（右上ビタ・全高）',
-            onSelect: ({ map, lngLat }) => {
-              const heading = ((map?.getBearing?.() ?? 0) + 360) % 360;
-              const url = buildSVUrlSimple(lngLat, { heading, pitch: -15, fov: 90 });
-              openTopRightWindowFlushFullHeight(url, { w: 1100, name: 'GSV-TopRight' });
-            }
-          }
-
 
           // 実用メニューをまとめて展開
           // ...buildUtilityMenuItems({ map, geojsonSourceId: 'click-circle-source' }),
