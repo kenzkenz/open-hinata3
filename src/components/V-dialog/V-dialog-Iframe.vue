@@ -42,7 +42,7 @@
               :src="currentPermalink"
               title="OH3 embed preview"
               allow="fullscreen; clipboard-write"
-              style="width:100%; border:0;"
+              :style="{ width: width === 0 ? '100%' : `${width}px`, border: '0' }"
               :height="heightPx"
           ></iframe>
         </div>
@@ -79,6 +79,7 @@ export default {
   data () {
     return {
       widthPercent: 100,
+      width: 0,
       heightPx: 300,
       fitDraw: false,
       copied: false,
@@ -125,10 +126,6 @@ export default {
     onFitDrawToggle(v) {
       // alert(v)
     },
-    // currentPermalink () {
-    //   const s = this.$store.state.url
-    //   return (typeof s === 'string' && s) ? s : window.location.href
-    // },
     copy () {
       navigator.clipboard.writeText(this.iframeCode)
       this.copied = true
@@ -139,6 +136,9 @@ export default {
     }
   },
   watch: {
+    widthPercent(v) {
+      this.width = document.querySelector('.preview-frame').clientWidth * v / 100
+    },
     dlgModel(v) {
       this.currentPermalink = ''
       const map01 = this.$store.state.map01
@@ -153,13 +153,6 @@ export default {
       } else {
         this.s_isDrawFit = false
       }
-
-
-
-
-
-      // this.onFitDrawToggle(v)
-      // this.fitDraw = true
     },
   }
 }
