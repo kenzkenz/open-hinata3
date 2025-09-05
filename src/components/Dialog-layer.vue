@@ -1410,12 +1410,22 @@ export default {
         this.$store.state.latRange = [sw.lat,ne.lat]
 
         this.addLayers()
-        if (this.$store.state.isFromIframe) {
-          console.log(77777777)
+
+        const st = this.$store.state
+        const shouldFit = Object.prototype.hasOwnProperty.call(st, 'isDrawFit')
+            ? st.isDrawFit
+            : true   // ← プロパティが存在しないときは true
+        if (shouldFit) {
           fitClickCircleAll()
           // 削除
-          this.$store.state.isFromIframe = false
+          st.isDrawFit = false
         }
+
+        // if (this.$store.state.isDrawFit) {
+        //   fitClickCircleAll()
+        //   // 削除
+        //   this.$store.state.isDrawFit = false
+        // }
       },
       deep: true
     },

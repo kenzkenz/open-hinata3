@@ -1624,7 +1624,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </div>
           <div v-if="!s_isPrint" class="center-target"></div>
           <!--左上部メニュー-->
-          <div id="left-top-div">
+          <div v-if="!isIframe" id="left-top-div">
             <span v-if="!s_isPrint">
               <MiniTooltip text="メニュー">
                 <v-btn :size="isSmall ? 'small' : 'default'" icon @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-menu</v-icon></v-btn>
@@ -1647,7 +1647,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             </span>
           </div>
           <!--右メニュー-->
-          <div id="right-top-div" v-if="mapName === 'map01'">
+          <div id="right-top-div" v-show="mapName === 'map01' && !isIframe">
             <span v-if="!s_isPrint">
               <div v-if="isRightDiv">
 <!--                <div v-if="isRightDiv2">-->
@@ -6451,19 +6451,6 @@ export default {
       const bearing = this.$store.state.map01Bearing
       let terrainLevel = this.s_terrainLevel
       if (isNaN(terrainLevel)) terrainLevel = 1
-      // console.log(this.bearing)
-      // let bearing = 0
-      // if (isNaN(this.bearing)) {
-      //   bearing = 0
-      // } else {
-      //   if (this.bearing > -5 && this.bearing < 5 ) {
-      //     // console.log('0に修正')
-      //     bearing = 0
-      //     this.bearing = 0
-      //   } else {
-      //     bearing = this.bearing
-      //   }
-      // }
       function removeKeys(obj, keysToRemove) {
         if (Array.isArray(obj)) {
           return obj.map(item => removeKeys(item, keysToRemove))
@@ -6478,7 +6465,6 @@ export default {
         }
         return obj
       }
-
       // const keysToRemove = ['label', 'source', 'layers', 'sources', 'attribution','info']
       const keysToRemove = ['source', 'layers', 'sources', 'attribution','info']
       let copiedSelectedLayers = JSON.parse(JSON.stringify(this.$store.state.selectedLayers))
@@ -6514,6 +6500,8 @@ export default {
       const simaTextForUser = this.$store.state.simaTextForUser
       const geojsinId = this.$store.state.geojsonId
       const isFromIframe = this.$store.state.isFromIframe
+      const isDrawFit = this.$store.state.isDrawFit
+      // alert(isDrawFit)
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
       ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}
@@ -6521,7 +6509,8 @@ export default {
       &simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}
       &geojsontext=${geojsonText}&dxftext=${dxfText}&gpxtext=${gpxText}&drawgeojsontext=${drawGeojsonText}
       &clickgeojsontext=${clickGeojsonText}&clickCirclegeojsontext=${clickCircleGeojsonText}
-      &vector=${JSON.stringify(vector)}&iswindow=${JSON.stringify(isWindow)}&simatextforuser=${simaTextForUser}&geojsinid=${geojsinId}&isfromiframe=${JSON.stringify(isFromIframe)}`
+      &vector=${JSON.stringify(vector)}&iswindow=${JSON.stringify(isWindow)}&simatextforuser=${simaTextForUser}
+      &geojsinid=${geojsinId}&isfromiframe=${JSON.stringify(isFromIframe)}&isdrawfit=${JSON.stringify(isDrawFit)}`
       this.createShortUrl()
       this.zoom = zoom
       const vm = this
@@ -6641,6 +6630,7 @@ export default {
       const simaTextForUser = params.get('simatextforuser')
       const geojsonId = params.get('geojsinid')
       const isFromIframe = params.get('isfromiframe')
+      const isDrawFit = params.get('isdrawfit')
       this.pitch.map01 = pitch01
       this.pitch.map02 = pitch02
       this.bearing = bearing
@@ -6649,7 +6639,7 @@ export default {
         lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,
         chibans,simas,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText,
         drawGeojsonText,clickGeojsonText,clickCircleGeojsonText,vector,isWindow,
-        simaTextForUser,geojsonId,isFromIframe
+        simaTextForUser,geojsonId,isFromIframe,isDrawFit
       }// 以前のリンクをいかすためpitchを入れている。
     },
     async init() {
@@ -8225,6 +8215,10 @@ export default {
             this.$store.state.simaTextForUser = params.simaTextForUser
           }
 
+          if (params.isDrawFit) {
+            this.$store.state.isDrawFit = JSON.parse(params.isDrawFit)
+            // alert(this.$store.state.isDrawFit)
+          }
           if (params.isFromIframe) {
             this.$store.state.isFromIframe = JSON.parse(params.isFromIframe)
           }
@@ -9891,10 +9885,12 @@ export default {
 
     const vm = this
 
-    if (this.$store.state.isIframe) {
-      document.querySelectorAll('#left-top-div, #right-top-div').forEach(el => {
-        el.style.display = 'none'
-      })
+    // if (this.$store.state.isIframe) {
+    //   document.querySelectorAll('#left-top-div, #right-top-div').forEach(el => {
+    //     el.style.display = 'none'
+    //   })
+    // }
+    if (this.$store.state.isDrawFit) {
       this.waitForMap('map01', { loaded: true })
           .then(map => {
             // 非同期ロード対策で軽くリトライ

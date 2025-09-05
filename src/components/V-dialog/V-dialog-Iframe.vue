@@ -32,11 +32,14 @@
             />
           </v-col>
         </v-row>
+        <div class="d-flex ga-2 mt-2">
+          <v-btn color="primary" @click="tagCreate">iframeタグを作成</v-btn>
+        </div>
 
         <!-- 実際の <iframe> でプレビュー -->
         <div class="preview-frame mt-2">
           <iframe
-              :src="srcUrl"
+              :src="currentPermalink"
               title="OH3 embed preview"
               allow="fullscreen; clipboard-write"
               style="width:100%; border:0;"
@@ -78,7 +81,8 @@ export default {
       widthPercent: 100,
       heightPx: 300,
       fitDraw: false,
-      copied: false
+      copied: false,
+      currentPermalink: '',
     }
   },
   computed: {
@@ -90,26 +94,41 @@ export default {
       get () { return this.$store.state.iframeVDIalog },
       set (v) { this.$store.state.iframeVDIalog = v }
     },
-    srcUrl () {
-      // パーマリンクそのまま（embed=1 は付与しない運用）
-      return this.currentPermalink()
-    },
     iframeCode () {
       const widthAttr = `${this.widthPercent}%`
       const heightAttr = `${this.heightPx}`
-      return `<iframe src="${this.srcUrl}" width="${widthAttr}" height="${heightAttr}" loading="lazy" style="border:0;" allow="fullscreen; clipboard-write" referrerpolicy="strict-origin-when-cross-origin"></iframe>`
+      if (this.currentPermalink) {
+        return `<iframe src="${this.currentPermalink}" width="${widthAttr}" height="${heightAttr}" loading="lazy" style="border:0;" allow="fullscreen; clipboard-write" referrerpolicy="strict-origin-when-cross-origin"></iframe>`
+      } else {
+        return  ''
+      }
     }
   },
   mounted () {
   },
   methods: {
+    tagCreate() {
+      this.$store.state.loadingMessage3 = 'タグ作成中'
+      this.$store.state.loading3 = true
+      // alert(this.s_isDrawFit)
+      this.$nextTick(() => {
+        this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
+        setTimeout(() => {
+          const s = this.$store.state.url
+          // alert(s)
+          this.currentPermalink = (typeof s === 'string' && s) ? s : window.location.href
+          this.$store.state.loading3 = false
+        },3000) // たっぷり遅延
+      })
+
+    },
     onFitDrawToggle(v) {
-      alert(v)
+      // alert(v)
     },
-    currentPermalink () {
-      const s = this.$store && this.$store.state && this.$store.state.url
-      return (typeof s === 'string' && s) ? s : window.location.href
-    },
+    // currentPermalink () {
+    //   const s = this.$store.state.url
+    //   return (typeof s === 'string' && s) ? s : window.location.href
+    // },
     copy () {
       navigator.clipboard.writeText(this.iframeCode)
       this.copied = true
@@ -121,10 +140,12 @@ export default {
   },
   watch: {
     dlgModel(v) {
+      this.currentPermalink = ''
       const map01 = this.$store.state.map01
       if (v) {
         const length = map01.getSource('click-circle-source')._data.features.filter(f => f.properties.id !== 'config').length
-        if (length > 1) {
+        // alert(length)
+        if (length > 0) {
           this.s_isDrawFit = true
         } else {
           this.s_isDrawFit = false
@@ -132,7 +153,8 @@ export default {
       } else {
         this.s_isDrawFit = false
       }
-      this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
+
+
 
 
 
