@@ -1,3 +1,4 @@
+
 <template>
   <v-dialog v-model="dlgModel" max-width="800" persistent>
     <v-card>
@@ -44,7 +45,7 @@
         />
 
         <div class="d-flex ga-2 mt-2">
-          <v-btn color="primary" @click="copy">コピー</v-btn>
+          <v-btn color="primary" @click="copy">iframeタグをコピー</v-btn>
         </div>
 
         <v-expand-transition>
