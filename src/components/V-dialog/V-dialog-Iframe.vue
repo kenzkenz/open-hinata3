@@ -99,7 +99,7 @@ export default {
       const widthAttr = `${this.widthPercent}%`
       const heightAttr = `${this.heightPx}`
       if (this.currentPermalink) {
-        return `<iframe src="${this.currentPermalink}" width="${widthAttr}" height="${heightAttr}" loading="lazy" style="border:0;" allow="fullscreen; clipboard-write" referrerpolicy="strict-origin-when-cross-origin"></iframe>`
+        return `<iframe src="${this.currentPermalink}" width="${widthAttr}" height="${heightAttr}" loading="lazy" style="border:0;" allow="fullscreen; clipboard-write" referrerpolicy="strict-origin-when-cross-origin" sandbox="allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"></iframe>`
       } else {
         return  ''
       }
