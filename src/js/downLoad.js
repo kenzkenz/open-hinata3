@@ -2013,20 +2013,11 @@ export async function saveCima3(map,kei,jww) {
 // クリックされた地番を強調表示する関数
 let isFirstRun = true;
 export function highlightSpecificFeatures2025(map,layerId) {
-    let sec = 0
-    if (isFirstRun) {
-        sec = 0
-    } else {
-        sec = 0
-    }
-
     if (!map.getLayer(layerId)) return
-
     map.setPaintProperty(
         layerId,
         "fill-color", "rgba(0, 0, 0, 0)",
     );
-    setTimeout(() => {
         map.setPaintProperty(
             layerId,
             'fill-color',
@@ -2041,8 +2032,6 @@ export function highlightSpecificFeatures2025(map,layerId) {
                 'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
             ]
         );
-    }, sec)
-    isFirstRun = false
 }
 
 export function highlightSpecificFeatures(map,layerId) {

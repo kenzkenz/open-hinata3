@@ -8395,9 +8395,9 @@ export default {
             const mapNames = ['map01', 'map02']
             mapNames.forEach(mapName => {
               params.slj[mapName].forEach(slj => {
-                if (slj.id === 'oh-amx-a-fude') {
-                  store.dispatch('triggerSnackbarForGroup', {message: '2024登記所地図は終了しました。2025版をご覧ください。'});
-                }
+                // if (slj.id === 'oh-amx-a-fude') {
+                //   store.dispatch('triggerSnackbarForGroup', {message: '2024登記所地図は終了しました。2025版をご覧ください。'});
+                // }
                 const layerNames = []
                 let count = 0;
                 // レイヤーを探索して必要な情報を取得する関数
