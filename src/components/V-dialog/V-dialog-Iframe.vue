@@ -23,7 +23,7 @@
           </v-col>
           <v-col cols="4" class="d-flex align-center">
             <v-switch
-                v-model="fitDraw"
+                v-model="s_isDrawFit"
                 color="primary"
                 inset
                 hide-details
@@ -82,7 +82,10 @@ export default {
     }
   },
   computed: {
-    // ストアの state をそのまま v-model したい要求に対応
+    s_isDrawFit: {
+      get () { return this.$store.state.isDrawFit },
+      set (v) { this.$store.state.isDrawFit = v }
+    },
     dlgModel: {
       get () { return this.$store.state.iframeVDIalog },
       set (v) { this.$store.state.iframeVDIalog = v }
@@ -98,10 +101,6 @@ export default {
     }
   },
   mounted () {
-    // パーマリンクを最新化（OH3 既存のトグルに合わせる）
-    if (this.$store && this.$store.state && 'updatePermalinkFire' in this.$store.state) {
-      this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
-    }
   },
   methods: {
     onFitDrawToggle(v) {
@@ -122,8 +121,23 @@ export default {
   },
   watch: {
     dlgModel(v) {
-      this.onFitDrawToggle(v)
-      this.fitDraw = true
+      const map01 = this.$store.state.map01
+      if (v) {
+        const length = map01.getSource('click-circle-source')._data.features.filter(f => f.properties.id !== 'config').length
+        if (length > 1) {
+          this.s_isDrawFit = true
+        } else {
+          this.s_isDrawFit = false
+        }
+      } else {
+        this.s_isDrawFit = false
+      }
+      this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
+
+
+
+      // this.onFitDrawToggle(v)
+      // this.fitDraw = true
     },
   }
 }

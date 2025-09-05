@@ -8,6 +8,7 @@ export default createStore({
     drawFeatureId: '',
     clientVersion: 1.445,
     iframeVDIalog: false,
+    isDrawFit: false,
     isFromIframe: false,
     isIframe: false,
     oh3App: null,
