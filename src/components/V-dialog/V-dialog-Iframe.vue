@@ -5,7 +5,7 @@
 
       <v-card-text>
         <v-row dense>
-          <v-col cols="6">
+          <v-col cols="4">
             <v-text-field
                 v-model.number="widthPercent"
                 type="number"
@@ -13,12 +13,22 @@
                 min="1" max="100"
             />
           </v-col>
-          <v-col cols="6">
+          <v-col cols="4">
             <v-text-field
                 v-model.number="heightPx"
                 type="number"
                 label="高さ（px）"
                 min="100"
+            />
+          </v-col>
+          <v-col cols="4" class="d-flex align-center">
+            <v-switch
+                v-model="fitDraw"
+                color="primary"
+                inset
+                hide-details
+                label="ドローにフィット"
+                @update:modelValue="onFitDrawToggle"
             />
           </v-col>
         </v-row>
@@ -67,10 +77,12 @@ export default {
     return {
       widthPercent: 100,
       heightPx: 300,
+      fitDraw: false,
       copied: false
     }
   },
   computed: {
+    // ストアの state をそのまま v-model したい要求に対応
     dlgModel: {
       get () { return this.$store.state.iframeVDIalog },
       set (v) { this.$store.state.iframeVDIalog = v }
@@ -92,8 +104,11 @@ export default {
     }
   },
   methods: {
+    onFitDrawToggle(v) {
+      alert(v)
+    },
     currentPermalink () {
-      const s = this.$store.state.url
+      const s = this.$store && this.$store.state && this.$store.state.url
       return (typeof s === 'string' && s) ? s : window.location.href
     },
     copy () {
@@ -104,6 +119,12 @@ export default {
     close () {
       this.dlgModel = false
     }
+  },
+  watch: {
+    dlgModel(v) {
+      this.onFitDrawToggle(v)
+      this.fitDraw = true
+    },
   }
 }
 </script>
