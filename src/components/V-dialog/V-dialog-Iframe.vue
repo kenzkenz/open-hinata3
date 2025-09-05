@@ -1,4 +1,3 @@
-
 <template>
   <v-dialog v-model="dlgModel" max-width="800" persistent>
     <v-card>
@@ -36,7 +35,7 @@
         </div>
 
         <v-textarea
-            :value="iframeCode"
+            :model-value="iframeCode"
             rows="4"
             auto-grow
             readonly
