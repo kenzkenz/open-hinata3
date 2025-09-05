@@ -3,9 +3,10 @@
     <div class="share-div">
 <!--      <v-text-field label="" v-model="s_url" style="margin-top: 10px"></v-text-field>-->
       <div class="btns">
-        <v-btn style="margin-left: 5px;" class="tiny-btn" @click="xPost">Xにポスト</v-btn>
-        <v-btn style="margin-left: 5px;" class="tiny-btn" @click="copy">URLをコピー</v-btn>
-        <v-btn style="margin-left: 5px;" class="tiny-btn" @click="qrcopy">QRコードをダウンロード</v-btn>
+        <v-btn style="margin-left: 0px;" class="tiny-btn" @click="xPost">Xにポスト</v-btn>
+        <v-btn style="margin-left: 5px;" class="tiny-btn" @click="copy">URLコピー</v-btn>
+        <v-btn style="margin-left: 5px;" class="tiny-btn" @click="qrcopy">QRコードDL</v-btn>
+        <v-btn style="margin-left: 5px;" class="tiny-btn" @click="VDialogIframeOpen">iframe作成</v-btn>
       </div>
       <hr>
       <vue-qrcode style="cursor: pointer" @click="qrCodeClick" id="qr-code" :value="s_url" :options="{ width: 320 }"></vue-qrcode>
@@ -16,7 +17,6 @@
 <script>
 
 import {mapState} from "vuex";
-import {dedupeCoords} from "@/js/downLoad";
 import store from "@/store";
 
 export default {
@@ -37,6 +37,9 @@ export default {
     },
   },
   methods: {
+    VDialogIframeOpen() {
+      this.$store.state.iframeVDIalog = true
+    },
     qrcopy () {
       this.$store.state.updatePermalinkFire = ! this.$store.state.updatePermalinkFire
       setTimeout(() => {

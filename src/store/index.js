@@ -7,6 +7,7 @@ export default createStore({
   state: {
     drawFeatureId: '',
     clientVersion: 1.445,
+    iframeVDIalog: false,
     isFromIframe: false,
     isIframe: false,
     oh3App: null,

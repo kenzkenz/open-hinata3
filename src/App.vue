@@ -8,6 +8,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
+      <VDialogIframe></VDialogIframe>
+
       <div v-show="showDrawConfrim" id="floating-buttons">
         <MiniTooltip text="この状態で確定" :offset-x="0" :offset-y="2">
           <v-btn :color="confirmBtnColor" id="confirm-btn">確定</v-btn>
@@ -2242,16 +2244,13 @@ import muni from '@/js/muni'
 import { kml } from '@tmcw/togeojson';
 import MiniTooltip from '@/components/MiniTooltip'
 import FanMenu from '@/components/FanMenu'
-// import store from "@/store";
 import html2canvas from 'html2canvas'
 import debounce from 'lodash/debounce'
 import * as math from 'mathjs'
 import FloatingWindow from '@/components/floatingwindow/FloatingWindow';
 import PaintEditor from '@/components/floatingwindow/PaintEditor'
 import ExDraw from '@/components/floatingwindow/ExDraw'
-
-import {delay, forEach} from "lodash";
-import {feature} from "@turf/turf";
+import VDialogIframe from "@/components/V-dialog/V-dialog-Iframe";
 import drawMethods, {
   drawCancel,
   drawConfirm,
@@ -2301,6 +2300,7 @@ export default {
     FloatingWindow,
     PaintEditor,
     ExDraw,
+    VDialogIframe,
   },
   data: () => ({
     isRightDiv: true,
