@@ -655,7 +655,7 @@ export default {
 
 
               if (this.counter <= 1) {
-                if (this.$store.state.isWindow2) {
+                if (this.$store.state.isWindow2 && !this.$store.state.isIframe) {
                   this.infoOpen(layer, false, true)
                 } else {
                   this.infoOpen(layer, false, false)

@@ -9106,7 +9106,7 @@ export default {
            */
           if (!this.isIphone) map.on('dragend', this.updatePermalink)
 
-          // map.on('zoomend', this.updatePermalink)
+          map.on('zoomend', this.updatePermalink)
           // map.on('idle', this.updatePermalink)
 
           // デバウンス関数
@@ -10292,7 +10292,8 @@ export default {
 </script>
 <style scoped>
 #map00 {
-  background-color: rgb(194,210,251);
+  /*background-color: rgb(194,210,251);*/
+  background: black;
   height: 100%;
   position: relative;
 }

@@ -6,7 +6,7 @@ import {haptic} from "@/js/utils/haptics";
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.446,
+    clientVersion: 1.447,
     iframeVDIalog: false,
     isDrawFit: false,
     isFromIframe: false,
