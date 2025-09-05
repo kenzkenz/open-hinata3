@@ -1735,7 +1735,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             <v-btn icon type="button" @pointerdown="terrainBtnExpand"><v-icon>mdi-arrow-expand</v-icon></v-btn>
           </div>
 
-          <div class="zoom-div" v-if="!s_isPrint">
+          <div class="zoom-div" v-if="!s_isPrint && !isSmall500">
             zoom={{zoom.toFixed(2)}} {{elevation}}<br>
             {{s_address}}
             <br>
@@ -3273,20 +3273,54 @@ export default {
   },
   methods: {
     fullscreenForIframe() {
-      this.$store.state.isFromIframe = true
-      this.updatePermalink()
+      // 1) クリック直後に空タブを開く（ここが超重要：同期・即時）
+      const win = window.open('', '_blank'); // sandboxで許可が無いと null になる
+
+      // 2) 状態更新（これで gesture を壊さない）
+      this.$store.state.isFromIframe = true;
+      this.updatePermalink(); // ここでURLが確定する想定
+
+      // 3) 少し待って確定したURLを空タブに流し込む
       setTimeout(() => {
-        const oh3Url = location.href
-        const a = document.createElement('a');
-        a.href = oh3Url;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        // 一部ブラウザはDOM上にある必要がある
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      },1000)
+        const oh3Url = this.$store?.state?.url || location.href;
+        if (win && !win.closed) {
+          try {
+            win.location.href = oh3Url; // iOSでもOK
+            return;
+          } catch (_) { /* 無視してフォールバックへ */ }
+        }
+
+        // 4) フォールバック：トップへ遷移（iframeのsandbox許可が必要）
+        try {
+          const a = document.createElement('a');
+          a.href = oh3Url;
+          a.target = '_top'; // 親タブで開く
+          a.rel = 'noopener noreferrer';
+          document.body.appendChild(a);
+          a.click(); // ※ 同期クリックでないため、ここは通らない場合あり
+          a.remove();
+        } catch (_) {
+          // どうしてもダメな環境向け：最後の手段（多くの環境で無効）
+          try { window.top.location.href = oh3Url; } catch (_) {}
+        }
+      }, 60); // できるだけ短く
     },
+
+    // fullscreenForIframe() {
+    //   this.$store.state.isFromIframe = true
+    //   this.updatePermalink()
+    //   setTimeout(() => {
+    //     const oh3Url = location.href
+    //     const a = document.createElement('a');
+    //     a.href = oh3Url;
+    //     a.target = '_blank';
+    //     a.rel = 'noopener noreferrer';
+    //     // 一部ブラウザはDOM上にある必要がある
+    //     document.body.appendChild(a);
+    //     a.click();
+    //     a.remove();
+    //   },1000)
+    // },
     waitForMap(mapKey = 'map01', { loaded = true, interval = 50, timeout = 10000 } = {}) {
       return new Promise((resolve, reject) => {
         const t0 = Date.now();
