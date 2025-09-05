@@ -3583,7 +3583,7 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
                 }
                 break
             }
-            case 'arrows-endpoint-label-layer':
+            // case 'arrows-endpoint-label-layer':
             case 'click-circle-layer':
             case 'click-circle-symbol-layer':
             case 'click-circle-line-layer':
@@ -3700,11 +3700,11 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
                         case 'Polygon':
 
                             if (!store.state.isDraw) {
-                                store.state.loadingMessage3 = '編集するには右のペンアイコンをクリックしてドロー状態にしてください。'
-                                store.state.loading3 = true
-                                setTimeout(() => {
-                                    store.state.loading3 = false
-                                },3000)
+                                // store.state.loadingMessage3 = '編集するには右のペンアイコンをクリックしてドロー状態にしてください。'
+                                // store.state.loading3 = true
+                                // setTimeout(() => {
+                                //     store.state.loading3 = false
+                                // },3000)
                                 return
                             }
 
@@ -3795,7 +3795,10 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
                                 // ) {
                                 //     store.commit('setDrawDrawer', true)
                                 // }
+
+
                                 store.commit('setDrawDrawer', true)
+                                // alert('到達!')
                                 if (!store.state.isDraw) return;
                             }
                             // alert('到達')
@@ -3930,11 +3933,15 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
                             break
                         case 'LineString': {
                             if (!store.state.isDraw) {
-                                store.state.loadingMessage3 = '編集するには右のペンアイコンをクリックしてドロー状態にしてください。'
-                                store.state.loading3 = true
-                                setTimeout(() => {
-                                    store.state.loading3 = false
-                                },3000)
+                                // store.state.loadingMessage3 = '編集するには右のペンアイコンをクリックしてドロー状態にしてください。'
+                                // store.state.loading3 = true
+                                // setTimeout(() => {
+                                //     store.state.loading3 = false
+                                // },3000)
+                                /**
+                                 * とりあえずドロワーをクローズ。将来的にはドロワーを開く。
+                                 */
+                                store.commit('setDrawDrawer', false)
                                 return
                             }
                             // ラインストリングとフリーハンド

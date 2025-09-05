@@ -3287,30 +3287,6 @@ export default {
         a.remove();
       },1000)
     },
-    // --- フィット関数（click-circle-source 専用） ---
-    // fitClickCircleAll(map = this.map01, { padding = 30, maxZoomForPoint = 16 } = {}) {
-    //   const src = map.getSource('click-circle-source');
-    //   const data = src && src._data
-    //   if (!data) return false;
-    //
-    //   const fc = (data.type === 'FeatureCollection')
-    //       ? data
-    //       : turf.featureCollection(data.features || []);
-    //
-    //   // 設定用の config 行などは除外
-    //   const features = (fc.features || []).filter(f => f?.geometry && f?.properties?.id !== 'config');
-    //   if (!features.length) return false;
-    //
-    //   const [minX, minY, maxX, maxY] = turf.bbox(turf.featureCollection(features));
-    //   const isPointish = (minX === maxX) && (minY === maxY);
-    //
-    //   if (isPointish) {
-    //     map.easeTo({ center: [minX, minY], zoom: Math.max(map.getZoom?.() ?? 0, maxZoomForPoint), duration: 0 });
-    //   } else {
-    //     map.fitBounds([[minX, minY], [maxX, maxY]], { padding, duration: 0 });
-    //   }
-    //   return true;
-    // },
     waitForMap(mapKey = 'map01', { loaded = true, interval = 50, timeout = 10000 } = {}) {
       return new Promise((resolve, reject) => {
         const t0 = Date.now();
@@ -9196,7 +9172,7 @@ export default {
           map.on('click', (e) => {
             if (hitExcludedLayers(map, e.point)) return; // ← 除外レイヤーなら何もしない
             popup(e,map,mapName,this.s_map2Flg)
-            store.commit('setDrawDrawer', false)
+            // store.commit('setDrawDrawer', false)
             const lng = e.lngLat.lng;  // 経度
             const lat = e.lngLat.lat;  // 緯度
             if (store.state.mapillaryFlg) {

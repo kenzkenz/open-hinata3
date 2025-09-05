@@ -66,10 +66,10 @@
           <v-btn v-if="isDraw && isEdit" style="margin-top:-10px" @click="isEdit = false">書込解除</v-btn>
           <v-btn v-if="isSmall500" icon class="ms-auto" style="margin-top:-10px; margin-right: 0px;" @click="close"><v-icon>mdi-close</v-icon></v-btn>
 
-          <v-btn  icon class="ms-auto" style="margin-top:-10px;" @click="isDrawChange"><v-icon>mdi-pencil</v-icon></v-btn>
+          <v-btn :disabled="isIframe" icon class="ms-auto" style="margin-top:-10px;" @click="isDrawChange"><v-icon>mdi-pencil</v-icon></v-btn>
         </div>
         <br>
-        <span style="margin-left: 10px; font-size: 10.5px; margin: 0" v-if="!isDraw">編集するには右のペンアイコンをクリックしてドロー状態にしてください。</span>
+        <span style="margin-left: 10px; font-size: 10.5px; margin: 0" v-if="!isDraw && !isIframe">編集するには右のペンアイコンをクリックしてドロー状態にしてください。</span>
       </v-card-text>
 
       <!-- フルスクリーン・モーダル -->
@@ -130,6 +130,7 @@ export default {
   }),
   computed: {
     ...mapState([
+       'isIframe',
       'showDrawDrawer',
       'isDraw',
       'drawFeature',
@@ -256,6 +257,7 @@ export default {
   },
   watch: {
     showDrawDrawer(value) {
+      // alert('watch/' + value)
       if (!value) {
         this.bottomHeight = '100dvh'
       }

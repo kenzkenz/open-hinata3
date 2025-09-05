@@ -597,10 +597,14 @@ export default function drawMethods(options = {}) {
         const coordinates = [lng, lat];
         store.state.coordinates = coordinates
         // クリック判定
-        const targetId = getLineFeatureIdAtClickByPixel(map01, e);
-        if (targetId) {
-            store.state.id = targetId;
-            return;
+        const lineTargetId = getLineFeatureIdAtClickByPixel(map01, e);
+        const pointTargetId = getNearbyClickCirclePointId(map01, e)
+        if (lineTargetId && pointTargetId) {
+            store.state.id = pointTargetId
+            return
+        } else if (lineTargetId) {
+            store.state.id = lineTargetId
+            return
         }
         if (!store.state.isDrawLine) return;
         if (clickTimer !== null) return; // 2回目のクリック時は無視
@@ -681,13 +685,30 @@ export default function drawMethods(options = {}) {
         map01.getSource('guide-line-source')?.setData(vertexGeojson);
     });
 }
-
-function getLineFeatureIdAtClickByPixel(map, e, pixelTolerance = 20) {
+function getNearbyClickCirclePointId(map, e, pixelTolerance = 10) {
     if (!e || !e.lngLat) return null;
     const clickPixel = map.project(e.lngLat);
     const features = map.getSource(clickCircleSource.iD)._data.features || [];
+    for (const f of features) {
+        if (!f.geometry || f.geometry.type !== 'Point') continue;
+        const [lng2, lat2] = f.geometry.coordinates;
+        const featurePixel = map.project({ lng: lng2, lat: lat2 });
+        const dx = featurePixel.x - clickPixel.x;
+        const dy = featurePixel.y - clickPixel.y;
+        const pixelDist = Math.sqrt(dx * dx + dy * dy);
+        if (pixelDist < pixelTolerance) {
+            return f.properties?.id ?? null; // id プロパティを返す。なければ null
+        }
+    }
+    return null;
+}
+function getLineFeatureIdAtClickByPixel(map, e, pixelTolerance = 10) {
+    if (!e || !e.lngLat) return null;
+    const clickPixel = map.project(e.lngLat);
+    let features = map.getSource(clickCircleSource.iD)._data.features || [];
+    features = features.filter(f => f.properties.id !== 'config')
     const found = features.find(f => {
-        if (!f.geometry || f.geometry.type !== 'LineString') return false;
+        if (f.geometry.type !== 'LineString') return false;
         const coords = f.geometry.coordinates;
         // 各線分ごとに最短ピクセル距離を調べる
         for (let i = 0; i < coords.length - 1; i++) {

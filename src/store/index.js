@@ -6,7 +6,7 @@ import {haptic} from "@/js/utils/haptics";
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.443,
+    clientVersion: 1.445,
     isFromIframe: false,
     isIframe: false,
     oh3App: null,
@@ -676,6 +676,14 @@ export default createStore({
       state.showDrawListDrawer = val
     },
     setDrawDrawer (state, val) {
+      // alert('store!' + val)
+      if (process.env.NODE_ENV !== 'production') {
+        console.groupCollapsed('%c[TRACE] setDrawDrawer', 'font-weight:bold');
+        console.trace(); // ← これで呼び出し元スタックが出る
+        console.groupEnd();
+        // 必要なら:
+        // debugger; // デバッガでその場停止して call stack を見る
+      }
       state.showDrawDrawer = val
     },
     setPointInfoDrawer (state, val) {
