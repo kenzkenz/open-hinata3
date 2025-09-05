@@ -1616,7 +1616,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             </MiniTooltip>
           </div>
           <div v-if="isIframe" id="iframe-div">
-              <MiniTooltip v-haptic="'success'" text="全画面表示">
+              <MiniTooltip text="全画面表示" :offset-x="0" :offset-y="2">
                 <v-btn :size="isSmall ? 'small' : 'default'" icon @click="fullscreenForIframe" v-if="mapName === 'map01'"><v-icon>mdi-fullscreen</v-icon></v-btn>
               </MiniTooltip>
           </div>
@@ -1624,7 +1624,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <!--左上部メニュー-->
           <div id="left-top-div">
             <span v-if="!s_isPrint">
-              <MiniTooltip v-haptic="'success'" text="メニュー">
+              <MiniTooltip text="メニュー">
                 <v-btn :size="isSmall ? 'small' : 'default'" icon @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-menu</v-icon></v-btn>
               </MiniTooltip>
               <MiniTooltip text="ログイン">
@@ -1645,9 +1645,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             </span>
           </div>
           <!--右メニュー-->
-          <div id="right-top-div" v-if="mapName === 'map01'"
-               @mouseenter="onPanelEnter"
-               @mouseleave="onPanelLeave">
+          <div id="right-top-div" v-if="mapName === 'map01'">
             <span v-if="!s_isPrint">
               <div v-if="isRightDiv">
 <!--                <div v-if="isRightDiv2">-->
@@ -2489,6 +2487,7 @@ export default {
   }),
   computed: {
     ...mapState([
+      'isFromIframe',
       'isIframe',
       'showDrawConfrim',
       'mapillaryTytle',
@@ -3274,21 +3273,19 @@ export default {
   },
   methods: {
     fullscreenForIframe() {
-      const oh3Url = location.href
-      localStorage.setItem('oh3_url', oh3Url)
-      console.log(localStorage.getItem('oh3_url'))
-      const a = document.createElement('a');
-      a.href = oh3Url;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      // 一部ブラウザはDOM上にある必要がある
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      // 念の為遅延で削除
+      this.$store.state.isFromIframe = true
+      this.updatePermalink()
       setTimeout(() => {
-        localStorage.removeItem('oh3_url');
-      },3000)
+        const oh3Url = location.href
+        const a = document.createElement('a');
+        a.href = oh3Url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        // 一部ブラウザはDOM上にある必要がある
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      },1000)
     },
     // --- フィット関数（click-circle-source 専用） ---
     // fitClickCircleAll(map = this.map01, { padding = 30, maxZoomForPoint = 16 } = {}) {
@@ -6540,7 +6537,7 @@ export default {
       const isWindow = this.$store.state.isWindow
       const simaTextForUser = this.$store.state.simaTextForUser
       const geojsinId = this.$store.state.geojsonId
-      // console.log(geojsinId)
+      const isFromIframe = this.$store.state.isFromIframe
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
       ${pitch01}&pitch02=${pitch02}&bearing=${bearing}&terrainLevel=${terrainLevel}
@@ -6548,7 +6545,7 @@ export default {
       &simatext=${simaText}&image=${JSON.stringify(image)}&extlayer=${JSON.stringify(extLayer)}&kmltext=${kmlText}
       &geojsontext=${geojsonText}&dxftext=${dxfText}&gpxtext=${gpxText}&drawgeojsontext=${drawGeojsonText}
       &clickgeojsontext=${clickGeojsonText}&clickCirclegeojsontext=${clickCircleGeojsonText}
-      &vector=${JSON.stringify(vector)}&iswindow=${JSON.stringify(isWindow)}&simatextforuser=${simaTextForUser}&geojsinid=${geojsinId}`
+      &vector=${JSON.stringify(vector)}&iswindow=${JSON.stringify(isWindow)}&simatextforuser=${simaTextForUser}&geojsinid=${geojsinId}&isfromiframe=${JSON.stringify(isFromIframe)}`
       this.createShortUrl()
       this.zoom = zoom
       const vm = this
@@ -6667,6 +6664,7 @@ export default {
       const isWindow = params.get('iswindow')
       const simaTextForUser = params.get('simatextforuser')
       const geojsonId = params.get('geojsinid')
+      const isFromIframe = params.get('isfromiframe')
       this.pitch.map01 = pitch01
       this.pitch.map02 = pitch02
       this.bearing = bearing
@@ -6675,7 +6673,7 @@ export default {
         lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,
         chibans,simas,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText,
         drawGeojsonText,clickGeojsonText,clickCircleGeojsonText,vector,isWindow,
-        simaTextForUser,geojsonId
+        simaTextForUser,geojsonId,isFromIframe
       }// 以前のリンクをいかすためpitchを入れている。
     },
     async init() {
@@ -8251,6 +8249,9 @@ export default {
             this.$store.state.simaTextForUser = params.simaTextForUser
           }
 
+          if (params.isFromIframe) {
+            this.$store.state.isFromIframe = JSON.parse(params.isFromIframe)
+          }
           if (params.isWindow) {
             this.$store.state.isWindow2 = JSON.parse(params.isWindow)
           }
@@ -8283,8 +8284,9 @@ export default {
           }
 
           if (params.geojsonId) {
-            this.$store.state.geojsonId = params.geojsonId
+            this.$store.state.geojsonId = params.geojsonId || ''
             console.log(this.$store.state.geojsonId)
+            // if (!this.$store.state.geojsonId) return
             this.$store.state.isUsingServerGeojson = true
             const formData = new FormData();
             // alert(this.$store.state.geojsonId)
@@ -8296,6 +8298,10 @@ export default {
             const data = await response.json();
             if (data.success) {
               console.log(data.rows)
+              if (data.rows.length === 0) {
+                this.$store.state.geojsonId = ''
+                return
+              }
               const configRow = data.rows.find(row => row.feature_id === 'config')
               this.$store.state.isMine = data.rows[0].creator_user_id === this.$store.state.userId
               this.$store.state.isEditable = data.rows[0].is_editable ===  '1'
@@ -9920,7 +9926,6 @@ export default {
             tryFit();
           })
           .catch(console.warn);
-
     }
 
     document.querySelector('.fan-menu-rap').style.display = 'none'

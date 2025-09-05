@@ -7,6 +7,7 @@ export default createStore({
   state: {
     drawFeatureId: '',
     clientVersion: 1.443,
+    isFromIframe: false,
     isIframe: false,
     oh3App: null,
     map01Pitch: 0,

@@ -3602,12 +3602,17 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
                 // console.log(store.state.clickCircleGeojsonText)
                 // console.log(store.state.id)
                 // alert(layerId)
+                /**
+                 * 障害発生中につきコメントアウト
+                 * ポイントをクリックしたつもりがラインのIDになる。
+                 */
                 let id
-                if (!store.state.id && layerId === 'arrows-endpoint-label-layer') {
-                    id = props.id.split('-')[0]
-                } else {
-                    id = store.state.id
-                }
+                // if (!store.state.id && layerId === 'arrows-endpoint-label-layer') {
+                //     id = props.id.split('-')[0]
+                // } else {
+                //     id = store.state.id
+                // }
+                id = store.state.id
                 if (store.state.clickCircleGeojsonText) {
                     // console.log(store.state.clickCircleGeojsonText)
                     features = JSON.parse(store.state.clickCircleGeojsonText).features

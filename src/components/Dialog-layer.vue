@@ -1410,11 +1410,11 @@ export default {
         this.$store.state.latRange = [sw.lat,ne.lat]
 
         this.addLayers()
-        if (localStorage.getItem('oh3_url')) {
+        if (this.$store.state.isFromIframe) {
           console.log(77777777)
           fitClickCircleAll()
-          // 念の為こっちでも削除
-          localStorage.removeItem('oh3_url');
+          // 削除
+          this.$store.state.isFromIframe = false
         }
       },
       deep: true
