@@ -71,7 +71,6 @@ export default {
     }
   },
   computed: {
-    // ストアの state をそのまま v-model したい要求に対応
     dlgModel: {
       get () { return this.$store.state.iframeVDIalog },
       set (v) { this.$store.state.iframeVDIalog = v }
@@ -94,7 +93,7 @@ export default {
   },
   methods: {
     currentPermalink () {
-      const s = this.$store && this.$store.state && this.$store.state.url
+      const s = this.$store.state.url
       return (typeof s === 'string' && s) ? s : window.location.href
     },
     copy () {
