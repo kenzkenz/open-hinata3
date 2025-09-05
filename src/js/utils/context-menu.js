@@ -89,6 +89,7 @@ export default function attachMapRightClickMenu({ map, items = [], longPressMs =
     }
 
     function show(px, py, ctx) {
+        if (store.state.isIframe) return
         buildMenu(ctx);
         // いったん表示 → サイズ取得 → はみ出し補正
         menu.style.display = 'block';

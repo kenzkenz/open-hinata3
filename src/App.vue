@@ -1615,12 +1615,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <span v-else class="dot" @click="drawConfig"></span>
             </MiniTooltip>
           </div>
-
+          <div v-if="isIframe" id="iframe-div">
+              <MiniTooltip v-haptic="'success'" text="全画面表示">
+                <v-btn :size="isSmall ? 'small' : 'default'" icon @click="fullscreenForIframe" v-if="mapName === 'map01'"><v-icon>mdi-fullscreen</v-icon></v-btn>
+              </MiniTooltip>
+          </div>
           <div v-if="!s_isPrint" class="center-target"></div>
           <!--左上部メニュー-->
-          <div id="left-top-div"
-               @mouseenter="onPanelEnter"
-               @mouseleave="onPanelLeave">
+          <div id="left-top-div">
             <span v-if="!s_isPrint">
               <MiniTooltip v-haptic="'success'" text="メニュー">
                 <v-btn :size="isSmall ? 'small' : 'default'" icon @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-menu</v-icon></v-btn>
@@ -1811,7 +1813,7 @@ import {
   featureCollectionAdd,
   featuresRestore,
   fetchGsiTileTest,
-  fetchMapillaryPanosInViewport,
+  fetchMapillaryPanosInViewport, fitClickCircleAll,
   fncPngDl,
   geocode,
   geojsonAddLayer,
@@ -2487,6 +2489,7 @@ export default {
   }),
   computed: {
     ...mapState([
+      'isIframe',
       'showDrawConfrim',
       'mapillaryTytle',
       'mapillaryType',
@@ -3270,6 +3273,47 @@ export default {
     },
   },
   methods: {
+    fullscreenForIframe() {
+      const oh3Url = location.href
+      localStorage.setItem('oh3_url', oh3Url)
+      console.log(localStorage.getItem('oh3_url'))
+      const a = document.createElement('a');
+      a.href = oh3Url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      // 一部ブラウザはDOM上にある必要がある
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // 念の為遅延で削除
+      setTimeout(() => {
+        localStorage.removeItem('oh3_url');
+      },3000)
+    },
+    // --- フィット関数（click-circle-source 専用） ---
+    // fitClickCircleAll(map = this.map01, { padding = 30, maxZoomForPoint = 16 } = {}) {
+    //   const src = map.getSource('click-circle-source');
+    //   const data = src && src._data
+    //   if (!data) return false;
+    //
+    //   const fc = (data.type === 'FeatureCollection')
+    //       ? data
+    //       : turf.featureCollection(data.features || []);
+    //
+    //   // 設定用の config 行などは除外
+    //   const features = (fc.features || []).filter(f => f?.geometry && f?.properties?.id !== 'config');
+    //   if (!features.length) return false;
+    //
+    //   const [minX, minY, maxX, maxY] = turf.bbox(turf.featureCollection(features));
+    //   const isPointish = (minX === maxX) && (minY === maxY);
+    //
+    //   if (isPointish) {
+    //     map.easeTo({ center: [minX, minY], zoom: Math.max(map.getZoom?.() ?? 0, maxZoomForPoint), duration: 0 });
+    //   } else {
+    //     map.fitBounds([[minX, minY], [maxX, maxY]], { padding, duration: 0 });
+    //   }
+    //   return true;
+    // },
     waitForMap(mapKey = 'map01', { loaded = true, interval = 50, timeout = 10000 } = {}) {
       return new Promise((resolve, reject) => {
         const t0 = Date.now();
@@ -9845,6 +9889,8 @@ export default {
     }
   },
   created() {
+    try { this.$store.state.isIframe = (window.self !== window.top); } catch (_) { this.$store.state.isIframe = true; }
+    if (this.$store.state.isIframe && window.opener) this.$store.state.isIframe = false;
     this.$store.state.isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
     this.$store.state.isAndroid = /android/i.test(userAgent);
@@ -9862,65 +9908,20 @@ export default {
   mounted() {
 
     const vm = this
-    
-    // --- iframe 判定（最小） ---
-    let inIframe = false;
-    try { inIframe = (window.self !== window.top); } catch (_) { inIframe = true; }
-    if (inIframe && window.opener) inIframe = false;
 
-    // --- フィット関数（click-circle-source 専用） ---
-    function fitClickCircleAll(map, { padding = 30, maxZoomForPoint = 16 } = {}) {
-      const src = map.getSource('click-circle-source');
-      const data = src && src._data
-      if (!data) return false;
-
-      const fc = (data.type === 'FeatureCollection')
-          ? data
-          : turf.featureCollection(data.features || []);
-
-      // 設定用の config 行などは除外
-      const features = (fc.features || []).filter(f => f?.geometry && f?.properties?.id !== 'config');
-      if (!features.length) return false;
-
-      const [minX, minY, maxX, maxY] = turf.bbox(turf.featureCollection(features));
-      const isPointish = (minX === maxX) && (minY === maxY);
-
-      if (isPointish) {
-        map.easeTo({ center: [minX, minY], zoom: Math.max(map.getZoom?.() ?? 0, maxZoomForPoint), duration: 0 });
-      } else {
-        map.fitBounds([[minX, minY], [maxX, maxY]], { padding, duration: 0 });
-      }
-      return true;
-    }
-
-    if (inIframe) {
+    if (this.$store.state.isIframe) {
+      document.querySelectorAll('#left-top-div, #right-top-div').forEach(el => {
+        el.style.display = 'none'
+      })
       this.waitForMap('map01', { loaded: true })
           .then(map => {
             // 非同期ロード対策で軽くリトライ
-            const tryFit = (n = 6) => fitClickCircleAll(map) || (n > 0 && setTimeout(() => tryFit(n - 1), 500));
+            const tryFit = (n = 6) => fitClickCircleAll() || (n > 0 && setTimeout(() => tryFit(n - 1), 500));
             tryFit();
-            document.querySelectorAll('#left-top-div, #right-top-div').forEach(el => {
-              el.style.display = 'none'
-            })
           })
           .catch(console.warn);
+
     }
-
-
-
-
-      // if (map.loaded?.()) {
-      //   tryFit();
-      // } else {
-      //   map.once('idle', tryFit);
-      // }
-
-      // 追加で「地物が増えたときにも追従」させたいなら、これを足す（任意）
-      // map.on('sourcedata', (e) => {
-      //   if (e.sourceId === 'click-circle-source' && e.isSourceLoaded) tryFit(1);
-      // });
-    // }
-
 
     document.querySelector('.fan-menu-rap').style.display = 'none'
 
@@ -10328,6 +10329,12 @@ html.oh3-embed #map01 {
   pointer-events: none;
   z-index: 10;
   display: none;
+}
+#iframe-div{
+  position:absolute;
+  top:10px;
+  left:10px;
+  z-index:3;
 }
 .center-target{
   position: absolute;

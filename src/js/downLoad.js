@@ -12890,6 +12890,31 @@ export function groupLayersByType(layers) {
     return out
 }
 
+export function fitClickCircleAll(map = store.state.map01, { padding = 30, maxZoomForPoint = 16 } = {}) {
+    const src = map.getSource('click-circle-source');
+    const data = src && src._data
+    if (!data) return false;
+
+    const fc = (data.type === 'FeatureCollection')
+        ? data
+        : turf.featureCollection(data.features || []);
+
+    // 設定用の config 行などは除外
+    const features = (fc.features || []).filter(f => f?.geometry && f?.properties?.id !== 'config');
+    if (!features.length) return false;
+
+    const [minX, minY, maxX, maxY] = turf.bbox(turf.featureCollection(features));
+    const isPointish = (minX === maxX) && (minY === maxY);
+
+    if (isPointish) {
+        map.easeTo({ center: [minX, minY], zoom: Math.max(map.getZoom?.() ?? 0, maxZoomForPoint), duration: 0 });
+    } else {
+        map.fitBounds([[minX, minY], [maxX, maxY]], { padding, duration: 0 });
+    }
+    console.log(88888888)
+    return true;
+}
+
 /**
  *
  * @param map

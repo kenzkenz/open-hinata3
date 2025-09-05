@@ -84,7 +84,7 @@ import {
   userPmtileSet,
   highlightSpecificFeaturesSima,
   getNextZIndex,
-  forseMoveLayer
+  forseMoveLayer, fitClickCircleAll
 } from "@/js/downLoad";
 import * as Layers from '@/js/layers'
 // import Tree from "vue3-tree"
@@ -1410,6 +1410,12 @@ export default {
         this.$store.state.latRange = [sw.lat,ne.lat]
 
         this.addLayers()
+        if (localStorage.getItem('oh3_url')) {
+          console.log(77777777)
+          fitClickCircleAll()
+          // 念の為こっちでも削除
+          localStorage.removeItem('oh3_url');
+        }
       },
       deep: true
     },
