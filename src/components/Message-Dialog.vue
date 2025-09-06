@@ -17,9 +17,13 @@
           <span v-if="finalTitle">{{ finalTitle }}</span>
         </slot>
         <v-spacer />
-        <v-btn v-if="finalShowCloseIcon" icon @click="close">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
+        <span
+            v-if="finalShowCloseIcon"
+            class="close-x"
+            role="button"
+            aria-label="閉じる"
+            @click="close"
+        >×</span>
       </v-card-title>
 
       <v-divider v-if="showTitleDivider" />
@@ -184,6 +188,16 @@ export default {
 
 <style scoped>
 /* 必要なら細かい見た目をここに */
+.close-x {
+  cursor: pointer;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 4px 8px;
+  user-select: none;
+}
+.close-x:hover { opacity: .7; }
+.close-x:active { opacity: .5; }
 </style>
 
 /* =============================================================

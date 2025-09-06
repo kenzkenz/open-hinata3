@@ -8,6 +8,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
+      <div>
+        <!-- これが“描画ホスト”。id を 'help' に合わせる -->
+        <message-dialog
+            :use-store="true"
+            :store-module="'messageDialog'"
+            dialog-id="help"
+        />
+      </div>
+
       <VDialogIframe></VDialogIframe>
 
       <div v-show="showDrawConfrim" id="floating-buttons">
@@ -1712,6 +1721,7 @@ import { mdiMapMarker } from '@mdi/js'
 import { registerMdiIcon } from '@/js/utils/icon-registry'
 import { attachViewOrientationPair } from '@/js/utils/view-orientation-tracker'
 import { startHoldRotate, startHoldPitch, resetOrientation } from '@/js/utils/view-orientation-anim'
+import MessageDialog from '@/components/Message-Dialog'
 
 import {
   addDraw,
@@ -2231,6 +2241,7 @@ export default {
     PaintEditor,
     ExDraw,
     VDialogIframe,
+    MessageDialog,
   },
   data: () => ({
     isRightDiv: true,
@@ -6342,14 +6353,18 @@ export default {
       }
     },
     btnClickMenu (mapName) {
-      if (this.$store.state.dialogs.menuDialog[mapName].style.display === 'none') {
-        // this.$store.commit('incrDialogMaxZindex')
-        // this.$store.state.dialogs.menuDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
-        this.$store.state.dialogs.menuDialog[mapName].style['z-index'] = getNextZIndex()
-        this.$store.state.dialogs.menuDialog[mapName].style.display = 'block'
-      } else {
-        this.$store.state.dialogs.menuDialog[mapName].style.display = 'none'
-      }
+      this.$store.dispatch('messageDialog/open', {
+        id: 'help',
+        title: 'ヘルプ',
+        contentHtml: '<p>ショートカット一覧…</p>',
+        options: { maxWidth: 700, showCloseIcon: true }
+      })
+      // if (this.$store.state.dialogs.menuDialog[mapName].style.display === 'none') {
+      //   this.$store.state.dialogs.menuDialog[mapName].style['z-index'] = getNextZIndex()
+      //   this.$store.state.dialogs.menuDialog[mapName].style.display = 'block'
+      // } else {
+      //   this.$store.state.dialogs.menuDialog[mapName].style.display = 'none'
+      // }
     },
     btnClickLayer (mapName) {
       setTimeout(() => {
