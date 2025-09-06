@@ -34,8 +34,9 @@
  */
 import store from '@/store'
 import {featureCollectionAdd, featuresDelete, markerAddAndRemove, removeThumbnailMarkerByKey} from "@/js/downLoad";
+import {haptic} from "@/js/utils/haptics";
 
-export default function attachMapRightClickMenu({ map, items = [], longPressMs = 500 }) {
+export default function attachMapRightClickMenu({ map, items = [], longPressMs = 800 }) {
     if (!map) throw new Error('map が必要です');
     const container = map.getContainer();
     const canvas = map.getCanvas();
@@ -105,6 +106,7 @@ export default function attachMapRightClickMenu({ map, items = [], longPressMs =
         menu.style.top = top + 'px';
         window.addEventListener('keydown', onKeyDown, true);
         setTimeout(() => document.addEventListener('pointerdown', onOutsidePointer, true));
+        haptic({ strength: 'success' })
     }
 
     function hide() {
