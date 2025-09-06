@@ -8,14 +8,151 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
-<!--      <div>-->
-<!--        &lt;!&ndash; これが“描画ホスト”。id を 'help' に合わせる &ndash;&gt;-->
-<!--        <message-dialog-->
-<!--            :use-store="true"-->
-<!--            :store-module="'messageDialog'"-->
-<!--            dialog-id="help"-->
-<!--        />-->
-<!--      </div>-->
+      <FloatingWindow
+          windowId = "mapillaryFillter"
+          :title = "mapillaryTytle"
+          type="normal"
+          :default-top = "70"
+          :default-left = "210"
+          :default-width = "isSmall500 ? 200 : 630"
+          :default-height = "isSmall500 ? 300 : 440"
+          :keepAspectRatio = "false"
+          :showMaxRestore="false"
+          @close = "mapillaryClose"
+      >
+        <MapillaryFilter
+            :observe-width="true"
+            :show-close="true"
+            :close-on-esc="true"
+            @year-range-input="onYearInput"
+            @year-range-change="onYearChange"
+            @only360-change="onOnly360"
+            @categories-change="onCats"
+            @creators-input="onCreatorsInput"
+            @creators-change="onCreatorsChange"
+            @reset="onReset"
+            @filters-changed="onFiltersChanged"
+        />
+      </FloatingWindow>
+
+
+
+
+
+
+
+
+      <!-- FloatingWindow の配置 -->
+
+      <FloatingWindow
+          windowId = "mapillary"
+          :title = "mapillaryTytle"
+          type="normal"
+          :default-top = "70"
+          :default-left = "10"
+          :default-width = "isSmall500 ? 200 : 348"
+          :default-height = "isSmall500 ? 300 : 300"
+          :keepAspectRatio = "false"
+          :showMaxRestore="true"
+          @width-changed ="onWidthChangedForMapillary"
+          @close = "mapillaryClose"
+      >
+        <div class="mapillary-div" :style="{height:'calc(100% - 102px)',width:'100%',background:'color-mix(in srgb, var(--main-color) 60%, black)',color:'white'}">
+        </div>
+        <div class="toolbar-row">
+          <v-text-field
+              v-model="s_mapillaryUserName"
+              label="ユーザー名"
+              hide-details
+              density="compact"
+              variant="outlined"
+              style="width:150px;"
+              @mousedown.stop
+              @pointerdown.stop
+              @touchstart.stop
+              @input="mapillaryUserNameInput"
+          />
+          <v-text-field
+              v-model="s_mapillaryStartDate"
+              label="始"
+              type="date"
+              hide-details
+              density="compact"
+              variant="outlined"
+              @mousedown.stop
+              @pointerdown.stop
+              @touchstart.stop
+              @input="mapillaryUserNameInput"
+          />
+          <v-text-field
+              v-model="s_mapillaryEndDate"
+              label="終"
+              type="date"
+              hide-details
+              density="compact"
+              variant="outlined"
+              @mousedown.stop
+              @pointerdown.stop
+              @touchstart.stop
+              @input="mapillaryUserNameInput"
+          />
+          <v-switch
+              v-model="s_is360Pic"
+              label="360画像"
+              color="primary"
+              inset
+              hide-details
+              density="compact"
+              @mousedown.stop
+              @pointerdown.stop
+              @touchstart.stop
+          />
+          <div class="mapillary-qry-result d-flex align-center">
+          </div>
+        </div>
+      </FloatingWindow>
+
+      <FloatingWindow
+          windowId="exdraw"
+          :title="`EXドロー`"
+          type="normal"
+          :default-top="20"
+          :default-right="150"
+          :default-width="400"
+          :default-height="400"
+          :keepAspectRatio="false"
+      >
+        <ExDraw
+            :id="Number(s_pmtiles0Id)"
+            @update:paint="onPaintUpdate"
+        />
+      </FloatingWindow>
+
+      <FloatingWindow
+          windowId="qrcode"
+          type="simple"
+          :default-width=200
+          :default-height=200
+          :keepAspectRatio="true"
+          @width-changed="onWidthChanged"
+      >
+        <vue-qrcode :value="s_url" :options="{ width: qrCodeWidth }"></vue-qrcode>
+      </FloatingWindow>
+
+      <FloatingWindow
+          windowId="painteditor"
+          :title="`スタイル変更（id=${s_pmtiles0Id}-${s_pmtiles0Name}）`"
+          type="normal"
+          :default-width=400
+          :default-height=600
+          :keepAspectRatio="false"
+      >
+        <PaintEditor
+            :id="Number(s_pmtiles0Id)"
+            :initialPaint="paintSettings"
+            @update:paint="onPaintUpdate"
+        />
+      </FloatingWindow>
 
 
       <!-- registry にある id を全部ホスト -->
@@ -1257,117 +1394,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <!--          aaaaaa-->
 <!--        </div>-->
 
-        <!-- FloatingWindow の配置 -->
 
-        <FloatingWindow
-            windowId = "mapillary"
-            :title = "mapillaryTytle"
-            type="normal"
-            :default-top = "70"
-            :default-left = "10"
-            :default-width = "isSmall500 ? 200 : 348"
-            :default-height = "isSmall500 ? 300 : 300"
-            :keepAspectRatio = "false"
-            :showMaxRestore="true"
-            @width-changed ="onWidthChangedForMapillary"
-            @close = "mapillaryClose"
-        >
-          <div class="mapillary-div" :style="{height:'calc(100% - 102px)',width:'100%',background:'color-mix(in srgb, var(--main-color) 60%, black)',color:'white'}">
-          </div>
-          <div class="toolbar-row">
-            <v-text-field
-                v-model="s_mapillaryUserName"
-                label="ユーザー名"
-                hide-details
-                density="compact"
-                variant="outlined"
-                style="width:150px;"
-                @mousedown.stop
-                @pointerdown.stop
-                @touchstart.stop
-                @input="mapillaryUserNameInput"
-            />
-            <v-text-field
-                v-model="s_mapillaryStartDate"
-                label="始"
-                type="date"
-                hide-details
-                density="compact"
-                variant="outlined"
-                @mousedown.stop
-                @pointerdown.stop
-                @touchstart.stop
-                @input="mapillaryUserNameInput"
-            />
-            <v-text-field
-                v-model="s_mapillaryEndDate"
-                label="終"
-                type="date"
-                hide-details
-                density="compact"
-                variant="outlined"
-                @mousedown.stop
-                @pointerdown.stop
-                @touchstart.stop
-                @input="mapillaryUserNameInput"
-            />
-            <v-switch
-                v-model="s_is360Pic"
-                label="360画像"
-                color="primary"
-                inset
-                hide-details
-                density="compact"
-                @mousedown.stop
-                @pointerdown.stop
-                @touchstart.stop
-            />
-            <div class="mapillary-qry-result d-flex align-center">
-            </div>
-          </div>
-        </FloatingWindow>
-
-        <FloatingWindow
-            windowId="exdraw"
-            :title="`EXドロー`"
-            type="normal"
-            :default-top="20"
-            :default-right="150"
-            :default-width="400"
-            :default-height="400"
-            :keepAspectRatio="false"
-        >
-          <ExDraw
-              :id="Number(s_pmtiles0Id)"
-              @update:paint="onPaintUpdate"
-          />
-        </FloatingWindow>
-
-        <FloatingWindow
-            windowId="qrcode"
-            type="simple"
-            :default-width=200
-            :default-height=200
-            :keepAspectRatio="true"
-            @width-changed="onWidthChanged"
-        >
-          <vue-qrcode :value="s_url" :options="{ width: qrCodeWidth }"></vue-qrcode>
-        </FloatingWindow>
-
-        <FloatingWindow
-            windowId="painteditor"
-            :title="`スタイル変更（id=${s_pmtiles0Id}-${s_pmtiles0Name}）`"
-            type="normal"
-            :default-width=400
-            :default-height=600
-            :keepAspectRatio="false"
-        >
-          <PaintEditor
-              :id="Number(s_pmtiles0Id)"
-              :initialPaint="paintSettings"
-              @update:paint="onPaintUpdate"
-          />
-        </FloatingWindow>
 
         <!--        <img class='loadingImg' src="https://kenzkenz.xsrv.jp/open-hinata3/img/icons/loading2.gif">-->
         <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="(mapName === 'map01'|| mapName === 'map02' && s_map2Flg)" @click="btnPosition">
@@ -1733,6 +1760,7 @@ import { registerMdiIcon } from '@/js/utils/icon-registry'
 import { attachViewOrientationPair } from '@/js/utils/view-orientation-tracker'
 import { startHoldRotate, startHoldPitch, resetOrientation } from '@/js/utils/view-orientation-anim'
 import MessageDialog from '@/components/Message-Dialog'
+import MapillaryFilter from '@/components/floatingwindow/MapillaryFilter.vue'
 
 import {
   addDraw,
@@ -2253,6 +2281,7 @@ export default {
     ExDraw,
     VDialogIframe,
     MessageDialog,
+    MapillaryFilter,
   },
   data: () => ({
     isRightDiv: true,
@@ -3227,6 +3256,38 @@ export default {
     },
   },
   methods: {
+
+
+    // --- ここから全部“空”のハンドラ。必要に応じて中身を実装してください ---
+
+    // パネル幅の変化（number px）
+    // onWidthChangedForMapillary (/* width */) { },
+
+    // ×ボタン/ESCで閉じる
+    // mapillaryClose () { },
+
+    // 年レンジのスライダー操作（input:ドラッグ中 / change:確定）
+    onYearInput (/* [fromYear, toYear] */) { },
+    onYearChange (/* [fromYear, toYear] */) { },
+
+    // 360°スイッチ（true/false）
+    onOnly360 (/* isOn */) { },
+
+    // カテゴリ選択（配列）
+    onCats (/* categories */) { },
+
+    // クリエイター名（テキストの input/change）
+    onCreatorsInput (/* text */) { },
+    onCreatorsChange (/* text */) { },
+
+    // リセットボタン
+    onReset () { },
+
+    // まとめて受け取りたいとき（payload={ trigger, yearRange, only360, categories, creatorsText, creators }）
+    onFiltersChanged (/* payload */) { },
+
+
+
     fullscreenForIframe() {
       // 1) クリック直後に空タブを開く（ここが超重要：同期・即時）
       const win = window.open('', '_blank'); // sandboxで許可が無いと null になる
@@ -9870,6 +9931,9 @@ export default {
     window.removeEventListener("resize", this.onResize);
   },
   mounted() {
+
+    this.$store.dispatch('showFloatingWindow', 'mapillaryFillter')
+
 
     const vm = this
 
