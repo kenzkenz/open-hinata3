@@ -12961,6 +12961,67 @@ export async function startUrl() {
     }
 }
 
+// src/js/utils/touki-deeplink.js
+// クリック直下で呼ぶこと（iPhoneのclipboard制限回避）
+
+// 「25-1W2」などを「25番1W2」に整形（“の”は入れない：後述で変更可）
+function normalizeChiban(raw) {
+    if (!raw) return '';
+    let s = String(raw).trim().replace(/[—−ー–]/g, '-');
+    if (/番地|番|号/.test(s)) return s;
+    // 「の」は尊重、無ければ - で分割
+    if (s.includes('の')) return s;
+    const parts = s.split('-').filter(Boolean);
+    if (parts.length === 1) return parts[0] + '番';
+    if (parts.length >= 2) return `${parts[0]}番${parts.slice(1).join('')}`; // 25-1W2 → 25番1W2
+    return s;
+}
+
+// 47都道府県（muniCode先頭2桁→県名）
+const PREF_BY_CODE = {
+    '01':'北海道','02':'青森県','03':'岩手県','04':'宮城県','05':'秋田県','06':'山形県','07':'福島県',
+    '08':'茨城県','09':'栃木県','10':'群馬県','11':'埼玉県','12':'千葉県','13':'東京都','14':'神奈川県',
+    '15':'新潟県','16':'富山県','17':'石川県','18':'福井県','19':'山梨県','20':'長野県','21':'岐阜県',
+    '22':'静岡県','23':'愛知県','24':'三重県','25':'滋賀県','26':'京都府','27':'大阪府','28':'兵庫県',
+    '29':'奈良県','30':'和歌山県','31':'鳥取県','32':'島根県','33':'岡山県','34':'広島県','35':'山口県',
+    '36':'徳島県','37':'香川県','38':'愛媛県','39':'高知県','40':'福岡県','41':'佐賀県','42':'長崎県',
+    '43':'熊本県','44':'大分県','45':'宮崎県','46':'鹿児島県','47':'沖縄県'
+};
+
+// propsをそのまま使う版（あなたのプロパティ名に完全対応）
+export async function openToukiFromProps(props) {
+    // 入ってるものだけ拾う（例：市区町村名は props 優先）
+    const muniCode = String(props['市区町村コード'] ?? '').replace(/\D/g,'');
+    const prefCode = muniCode.slice(0,2).padStart(2,'0');
+    const prefName = PREF_BY_CODE[prefCode] || '';
+
+    const muniName = props['市区町村名'] ?? '';
+    const oaza     = props['大字名'] ?? '';
+    const chome    = props['丁目名'] ?? '';   // 例: "2丁目"
+    const aza      = props['字名'] ?? '';     // あれば
+    const chiban   = props['地番'] ?? props['TXTCD'] ?? '';
+
+    const town = `${oaza}${chome || aza}`; // 下柚木2丁目 など
+    const payload = `${prefName}${muniName} ${town} ${normalizeChiban(chiban)}`
+        .replace(/\s+/g,' ').trim();
+
+    try { localStorage.setItem('oh3-registry-deeplink-last', payload); } catch(_) {}
+
+    let copied = false;
+    try { await navigator.clipboard.writeText(payload); copied = true; } catch(_) {}
+
+    // 公式サイトを新規タブで（ユーザー操作直下で呼ぶこと）
+    window.open('https://www1.touki.or.jp/', '_blank', 'noopener,noreferrer');
+
+    if (copied) {
+        alert(`地番をコピーしました。\n\n${payload}\n\n開いたタブでログイン→『不動産請求 > 地番・家屋番号 > 地番検索サービス』で貼り付けてください。`);
+    } else {
+        prompt('以下をコピーして貼り付けてください', payload);
+    }
+}
+
+
+
 
 /**
  *
