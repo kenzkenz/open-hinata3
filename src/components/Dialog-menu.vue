@@ -348,6 +348,9 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
       <v-switch style="height: 40px;margin-bottom: 20px;" v-model="s_mapillary" label="mapillary" color="primary" />
 
+      起動時レイヤーを現在のレイヤーに設定します。
+      <v-btn style="margin-top: 10px;margin-bottom: 10px;" @click="setStartUrl">起動時レイヤー設定変更</v-btn>
+
       <div class="range-div">
         標高を強調します。{{s_terrainLevel}}倍<br>
         <input style="width: 200px;margin-top: 10px;" type="range" min="1" max="10" step="0.1" class="range" v-model.number="s_terrainLevel" @input="terrainLevelInput"/>
@@ -1737,22 +1740,6 @@ export default {
         }
       });
     }
-
-
-    // ページ読み込み時に currentUser がいれば displayName をセット
-    // const user = auth.currentUser
-    // if (user && user.displayName) {
-    //   this.newName = user.displayName
-    // }
-    // onAuthStateChanged でログイン状態が変わったときも対応したい場合はコメント解除
-    /*
-    auth.onAuthStateChanged(u => {
-      if (u) {
-        this.newName = u.displayName || ''
-      }
-    })
-    */
-
 
     // URLパラメータからグループIDとグループ名を取得
     const params = new URLSearchParams(window.location.search);

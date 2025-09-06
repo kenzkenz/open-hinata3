@@ -227,8 +227,8 @@
               </v-window-item>
               <v-window-item value="7">
                 <v-card>
-                  <h4 style="margin-bottom: 10px;">初期レイヤーを現在のレイヤーに設定します。</h4>
-                  <v-btn style="margin-top: 10px;margin-bottom: 10px;" @click="setStartUrl">スタートレイヤー設定変更</v-btn>
+                  <h4 style="margin-bottom: 10px;">起動時レイヤーを現在のレイヤーに設定します。</h4>
+                  <v-btn style="margin-top: 10px;margin-bottom: 10px;" @click="setStartUrl">起動時レイヤー設定変更</v-btn>
                   <hr>
                   <h4 style="margin-bottom: 10px;">各デバイスの最後に開いた画面に復帰します。</h4>
                   <v-btn class="tiny-btn" style="margin-bottom: 10px; width: 120px;" @click="device('Windows')">Windowsでの最後</v-btn>
@@ -644,7 +644,7 @@ export default {
           // alert('設定完了');
           vm.$store.dispatch('messageDialog/open', {
             id: 'starturl', // idはなんでも良い。
-            title: 'スタートレイヤー変更完了',
+            title: '起動時レイヤー変更完了',
             contentHtml: '<p>起動時に表示されるレイヤーを変更しました。<br>ブックマークされている方は「https://kenzkenz.xsrv.jp/open-hinata3」に変更してください。</p>',
             options: { maxWidth: 700, showCloseIcon: true }
           })
