@@ -2012,27 +2012,43 @@ export async function saveCima3(map,kei,jww) {
 
 // クリックされた地番を強調表示する関数
 let isFirstRun = true;
-export function highlightSpecificFeatures2025(map,layerId) {
-    if (!map.getLayer(layerId)) return
-    map.setPaintProperty(
-        layerId,
-        "fill-color", "rgba(0, 0, 0, 0)",
-    );
-        map.setPaintProperty(
-            layerId,
-            'fill-color',
-            [
-                'case',
-                [
-                    'in',
-                    ['concat', ['get', '筆ID'], '_', ['get', '地番']],
-                    ['literal', Array.from(store.state.highlightedChibans)]
-                ],
-                'rgba(140, 255, 0, 0.5)', // クリックされた地番が選択された場合
-                'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
-            ]
-        );
+
+export function highlightSpecificFeatures2025(map, layerId, opts = {}) {
+    if (!map.getLayer(layerId)) return;
+    // クリックで使っている一意キー: "筆ID_地番"
+    const keyExpr = ['concat', ['get', '筆ID'], '_', ['get', '地番']];
+    // 最後にクリックされたキー（なければ null）
+    const lastKey = opts.lastKey ?? store.state.lastHighlightedChiban ?? null;
+    const selectedList = Array.from(store.state.highlightedChibans || []);
+    // fill-color: 最後クリック > 複数選択 > 非選択
+    const fillColorExpr = [
+        'case',
+        ...(lastKey ? [
+            ['==', keyExpr, lastKey], 'rgba(0, 255, 0, 0.9)', // ←最後クリック色（例：濃い黄）
+        ] : []),
+        ['in', keyExpr, ['literal', selectedList]], 'rgba(140, 255, 0, 0.5)',   // 既存の複数選択色
+        'rgba(0, 0, 0, 0)'                                                     // 非選択は透明
+    ];
+    map.setPaintProperty(layerId, 'fill-color', fillColorExpr);
 }
+
+// export function highlightSpecificFeatures2025(map,layerId) {
+//     if (!map.getLayer(layerId)) return
+//     map.setPaintProperty(
+//         layerId,
+//         'fill-color',
+//         [
+//             'case',
+//             [
+//                 'in',
+//                 ['concat', ['get', '筆ID'], '_', ['get', '地番']],
+//                 ['literal', Array.from(store.state.highlightedChibans)]
+//             ],
+//             'rgba(140, 255, 0, 0.5)', // クリックされた地番が選択された場合
+//             'rgba(0, 0, 0, 0)' // クリックされていない場合は透明
+//         ]
+//     );
+// }
 
 export function highlightSpecificFeatures(map,layerId) {
     console.log(store.state.highlightedChibans);

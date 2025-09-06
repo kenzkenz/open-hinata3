@@ -6,7 +6,7 @@ import {haptic} from "@/js/utils/haptics";
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.447,
+    clientVersion: 1.448,
     iframeVDIalog: false,
     isDrawFit: false,
     isFromIframe: false,
@@ -299,6 +299,7 @@ export default createStore({
     ntripGeojson: '',
     mindenGeojson: '',
     isRenzoku: true,
+    lastHighlightedChiban: null,
     highlightedChibans: new Set(),
     highlightedSimas: new Set(),
     dialogForSima: false,

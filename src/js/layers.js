@@ -4608,7 +4608,7 @@ const homusyo2025DissolvedAllLayer = {
     // "source-layer": "dissolved",
     "source-layer": "fude",
     paint: {
-        "fill-color": "rgba(0, 0, 0, 0)"
+        "fill-color": "rgba(0, 0, 0, 0)",
     },
     maxzoom: 14.5
 }

@@ -9625,10 +9625,11 @@ export default {
               if (this.$store.state.highlightedChibans.has(targetId)) {
                 // すでに選択されている場合は解除
                 this.$store.state.highlightedChibans.delete(targetId);
+                this.$store.state.lastHighlightedChiban = null
               } else {
                 // 新しいIDを追加
                 this.$store.state.highlightedChibans.add(targetId);
-                // alert(targetId);
+                this.$store.state.lastHighlightedChiban = targetId;
               }
               highlightSpecificFeatures2025(map, 'oh-homusyo-2025-polygon');
             }

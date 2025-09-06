@@ -458,6 +458,7 @@ export default function drawMethods(options = {}) {
                 clickCircleSource.obj.data = geojson
                 await saveDrowFeatures(geojson.features);
             } else if (store.state.isDrawLassoForTokizyo) {
+                store.state.lastHighlightedChiban = null // ⭐️これを追加
                 const layerId = 'oh-homusyo-2025-polygon';
                 const intersectsFeatures = await getIntersectsFeatures(map01, layerId, polygon)
                 store.state.highlightedChibans = new Set()

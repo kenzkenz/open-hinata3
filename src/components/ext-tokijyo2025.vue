@@ -389,6 +389,7 @@ export default {
     selectLasso() {
       this.$store.state.isDrawLassoForTokizyo = !this.$store.state.isDrawLassoForTokizyo
       this.$store.state.isDrawLassoForChibanzu = false
+      this.$store.state.lastHighlightedChiban = null
     },
     selectAll() {
       const map = this.$store.state[this.mapName]
