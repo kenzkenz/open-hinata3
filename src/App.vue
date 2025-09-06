@@ -9,7 +9,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
     <v-main>
 
       <FloatingWindow
-          windowId = "mapillaryFillter"
+          windowId = "mapillary-filter"
           :title = "mapillaryTytle"
           type="normal"
           :default-top = "70"
@@ -24,6 +24,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
             :observe-width="true"
             :show-close="true"
             :close-on-esc="true"
+            :reset-key="resetKeyForMly"
+            @mousedown.stop
+            @pointerdown.stop
+            @touchstart.stop
             @year-range-input="onYearInput"
             @year-range-change="onYearChange"
             @only360-change="onOnly360"
@@ -34,15 +38,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
             @filters-changed="onFiltersChanged"
         />
       </FloatingWindow>
-
-
-
-
-
-
-
-
-      <!-- FloatingWindow の配置 -->
 
       <FloatingWindow
           windowId = "mapillary"
@@ -2465,6 +2460,7 @@ export default {
     map02Tracker: null,
     stopSpin: null,
     stopPitch: null,
+    resetKeyForMly: 0,   // ← これを増やすと子がリセット
   }),
   computed: {
     ...mapState([
@@ -3257,37 +3253,36 @@ export default {
   },
   methods: {
 
-
-    // --- ここから全部“空”のハンドラ。必要に応じて中身を実装してください ---
-
-    // パネル幅の変化（number px）
-    // onWidthChangedForMapillary (/* width */) { },
-
-    // ×ボタン/ESCで閉じる
-    // mapillaryClose () { },
-
     // 年レンジのスライダー操作（input:ドラッグ中 / change:確定）
-    onYearInput (/* [fromYear, toYear] */) { },
-    onYearChange (/* [fromYear, toYear] */) { },
+    onYearInput (/* [fromYear, toYear] */) {
 
+    },
+    onYearChange (/* [fromYear, toYear] */) {
+
+    },
     // 360°スイッチ（true/false）
-    onOnly360 (/* isOn */) { },
+    onOnly360 (/* isOn */) {
 
+    },
     // カテゴリ選択（配列）
-    onCats (/* categories */) { },
+    onCats (/* categories */) {
 
+    },
     // クリエイター名（テキストの input/change）
-    onCreatorsInput (/* text */) { },
-    onCreatorsChange (/* text */) { },
+    onCreatorsInput (/* text */) {
 
+    },
+    onCreatorsChange (/* text */) {
+
+    },
     // リセットボタン
-    onReset () { },
-
+    onReset () {
+      this.resetKeyForMly++
+    },
     // まとめて受け取りたいとき（payload={ trigger, yearRange, only360, categories, creatorsText, creators }）
-    onFiltersChanged (/* payload */) { },
+    onFiltersChanged (/* payload */) {
 
-
-
+    },
     fullscreenForIframe() {
       // 1) クリック直後に空タブを開く（ここが超重要：同期・即時）
       const win = window.open('', '_blank'); // sandboxで許可が無いと null になる
@@ -9932,7 +9927,7 @@ export default {
   },
   mounted() {
 
-    this.$store.dispatch('showFloatingWindow', 'mapillaryFillter')
+    this.$store.dispatch('showFloatingWindow', 'mapillary-filter')
 
 
     const vm = this

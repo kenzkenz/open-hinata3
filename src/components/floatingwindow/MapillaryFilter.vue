@@ -1,9 +1,9 @@
 <template>
-  <div class="p-3" elevation="4">
+  <div class="p-3">
     <div class="d-flex align-center mb-2">
-      <div class="text-subtitle-1">Mapillary フィルタ（360° × 検出カテゴリ × クリエイター名）</div>
+      <div class="text-subtitle-1">Mapillary フィルタ</div>
       <v-spacer/>
-      <!-- ×ボタン等は不要のため未実装 -->
+      <!-- ×ボタンなどは未実装 -->
     </div>
 
     <!-- 年度レンジ -->
@@ -25,19 +25,19 @@
       </v-range-slider>
     </div>
 
-    <!-- 360切替 / 検出カテゴリ / クリエイター名 -->
+    <!-- 360切替 -->
     <div class="mb-2 d-flex flex-wrap gap-2">
       <v-switch
           v-model="only360"
           color="primary"
           hide-details
-          :label="'360°のみ（Graph API）'"
+          :label="'360°のみ'"
           @change="onOnly360Change"
       />
-      <v-btn small text @click="onResetClick">リセット</v-btn>
     </div>
 
-    <div class="text-caption mb-1">検出カテゴリ（Map Features）</div>
+    <!-- 検出カテゴリ -->
+    <div class="text-caption mb-1">検出カテゴリ</div>
     <v-chip-group
         v-model="selectedCats"
         multiple
@@ -55,6 +55,7 @@
       </v-chip>
     </v-chip-group>
 
+    <!-- クリエイター -->
     <div class="mt-2">
       <v-text-field
           v-model="creatorNamesText"
@@ -67,10 +68,14 @@
     </div>
 
     <v-divider class="my-3" />
-    <div class="text-caption opacity-70">
-      * 子はUIとイベント通知のみ。実処理は子メソッド（TODO）に実装してください。<br>
-      * 親には各入力イベント＋集約イベント <code>filters-changed</code> をemitします。
+
+    <!-- フッター：全リセットを最下部に -->
+    <div class="d-flex align-center justify-end">
+      <v-btn small text @click="onResetClick" class="reset-btn">
+        リセット（全て初期化）
+      </v-btn>
     </div>
+
   </div>
 </template>
 
@@ -78,8 +83,12 @@
 export default {
   name: 'MapillaryFilter',
   props: {
-    // 幅の変化を親へ通知したい場合のみ true
+    // 親で使っている props（クローズ等は未使用）
     observeWidth: { type: Boolean, default: true },
+    showClose:    { type: Boolean, default: true },   // 受けるだけ・未使用
+    closeOnEsc:   { type: Boolean, default: true },   // 受けるだけ・未使用
+    // 親→子 リセットトリガ（インクリメントで子が全リセット）
+    resetKey: { type: [Number, String], default: 0 },
   },
   data () {
     const nowY = (new Date()).getFullYear()
@@ -100,13 +109,12 @@ export default {
         { id:'utility_pole',  label:'電柱' },
       ],
 
-      // --- 実装用（あなたが使う用。不要なら削除OK） ---
-      map: null,                // MapLibreのmapインスタンスをここに
-      imageLayerIds: [],        // 既存 画像レイヤID（複数OK）
-      detectionLayerIds: [],    // 既存 検出レイヤID（複数OK）
-      mapillaryToken: '',       // トークン等
+      // --- 実装用（必要なら使用） ---
+      map: null,
+      imageLayerIds: [],
+      detectionLayerIds: [],
+      mapillaryToken: '',
 
-      // オーバーレイ用ID（必要なら使用）
       panoSrcId: 'mly_pano_overlay_src',
       panoLyrId: 'mly_pano_overlay_lyr',
       featSrcId: 'mly_feat_overlay_src',
@@ -121,8 +129,17 @@ export default {
           .filter(Boolean)
     },
   },
+  watch: {
+    // 親からのリセット要求を受ける
+    resetKey () {
+      this.resetFilters()
+      // 必要なら親へ通知も可：
+      // this.$emit('reset')
+      // this.emitFilters('reset-from-parent')
+    },
+  },
   mounted () {
-    // 幅監視 → 親へ通知
+    // 幅監視 → 親へ通知（closeは実装しない）
     if (this.observeWidth && typeof ResizeObserver !== 'undefined') {
       this.__ro = new ResizeObserver(entries => {
         const cr = entries && entries[0] && entries[0].contentRect
@@ -138,16 +155,14 @@ export default {
     // 必要なら初期化（あなたの実装）
     this.init()
   },
-  // Vue3 / Vue2 両対応のクリーンアップ
-  beforeUnmount () { this.cleanup() },   // Vue3
+  // beforeDestroy は使わない。Vue3向けのみ最小クリーンアップ
+  beforeUnmount () { this.cleanup() },
   methods: {
-    // 共通クリーンアップ
     cleanup () {
       if (this.__ro) {
         try { this.__ro.disconnect() } catch (e) {}
         this.__ro = null
       }
-      // 他にリスナー等を追加したらここで外す
     },
 
     // ===== 親に渡すイベント・ハンドラ =====
@@ -223,4 +238,7 @@ export default {
 .opacity-70{ opacity: .7; }
 .flex-1{ flex: 1; }
 .gap-2{ gap: .5rem; }
+/* 任意：リセットを目立たせたい場合
+.reset-btn { color: #b00020; }  // error系のトーンに寄せる
+*/
 </style>
