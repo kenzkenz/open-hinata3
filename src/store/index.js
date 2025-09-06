@@ -3,6 +3,49 @@ import { db } from '@/firebase'
 import firebase from 'firebase/app';
 import {haptic} from "@/js/utils/haptics";
 
+// === Message Dialog 用 Vuex モジュール（このファイル内に内蔵） ===
+const messageDialogModule = {
+  namespaced: true,
+  state: () => ({
+    // 複数ダイアログを id ごとに保持
+    registry: {}
+  }),
+  getters: {
+    // 使用例: this.$store.getters['messageDialog/entry']('help')
+    entry: (state) => (id = 'default') => {
+      return state.registry[id] || { open: false, title: '', contentHtml: '', options: {} }
+    }
+  },
+  mutations: {
+    SET_ENTRY (state, { id = 'default', patch = {} }) {
+      const cur = state.registry[id] || {}
+      state.registry = { ...state.registry, [id]: { ...cur, ...patch } }
+    },
+    SET_OPEN (state, { id = 'default', open }) {
+      const cur = state.registry[id] || {}
+      state.registry = { ...state.registry, [id]: { ...cur, open: !!open } }
+    }
+  },
+  actions: {
+    // まとめて開く（タイトルや本文、見た目も同時に注入）
+    open ({ commit }, { id = 'default', title, contentHtml, options } = {}) {
+      commit('SET_ENTRY', { id, patch: { title, contentHtml, options, open: true } })
+    },
+    close ({ commit }, { id = 'default' } = {}) {
+      commit('SET_OPEN', { id, open: false })
+    },
+    setOpen ({ commit }, { id = 'default', open }) {
+      commit('SET_OPEN', { id, open })
+    },
+    // 表示中に内容だけ差し替えたいとき
+    update ({ commit }, { id = 'default', patch = {} } = {}) {
+      commit('SET_ENTRY', { id, patch })
+    }
+  }
+}
+
+
+
 export default createStore({
   state: {
     drawFeatureId: '',
@@ -1085,5 +1128,6 @@ export default createStore({
     },
   },
   modules: {
+    messageDialog: messageDialogModule
   }
 })
