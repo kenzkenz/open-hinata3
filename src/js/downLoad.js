@@ -12920,6 +12920,48 @@ export function fitClickCircleAll(map = store.state.map01, { padding = 30, maxZo
     return true;
 }
 
+export async function startUrl() {
+    store.state.loading3 = true;
+    store.state.loadingMessage3 = '設定中です。';
+    store.state.updatePermalinkFire = !store.state.updatePermalinkFire;
+    try {
+        const s = await watchSParamOnce();
+        console.log('s パラメータが変わった！新しい値:', s);
+        const params = new URLSearchParams();
+        params.append('uid', store.state.userId);
+        params.append('nickname', store.state.myNickname);
+        params.append('starturl', s);
+        const response = await axios.post(
+            'https://kenzkenz.xsrv.jp/open-hinata3/php/userConfigInsertUpdateStarturl.php',
+            params
+        );
+        if (response.data.error) {
+            console.error('エラー:', response.data.error);
+            store.state.loading3 = false;
+            alert(`エラー: ${response.data.error}`);
+            return null;
+        } else {
+            console.log('登録成功:', response.data);
+            store.state.loading3 = false;
+            // alert('設定完了');
+            store.dispatch('messageDialog/open', {
+                id: 'starturl', // idはなんでも良い。
+                title: '起動時レイヤー変更完了',
+                contentHtml: '<p>起動時に表示されるレイヤーを変更しました。<br>ブックマークされている方は' +
+                    '「<span style="color: red">https://kenzkenz.xsrv.jp/open-hinata3</span>」に変更してください。' +
+                    '<br>この初期レイヤーは全デバイスで共有されます。<br>リセットすると初期レイヤーに戻ります。</p>',
+                options: { maxWidth: 700, showCloseIcon: true }
+            })
+            return response.data.id;
+        }
+    } catch (err) {
+        console.error('watchSParamOnce中のエラー:', err);
+        store.state.loading3 = false;
+        return null;
+    }
+}
+
+
 /**
  *
  * @param map

@@ -349,7 +349,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       <v-switch style="height: 40px;margin-bottom: 20px;" v-model="s_mapillary" label="mapillary" color="primary" />
 
       起動時レイヤーを現在のレイヤーに設定します。
-      <v-btn style="margin-top: 10px;margin-bottom: 10px;" @click="setStartUrl">起動時レイヤー設定変更</v-btn>
+      <v-btn style="margin-top: 10px;margin-bottom: 10px; width: 100%" @click="setStartUrl">起動時レイヤー設定変更</v-btn>
 
       <div class="range-div">
         標高を強調します。{{s_terrainLevel}}倍<br>
@@ -372,7 +372,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 <script>
 
 import LayerManager from '@/components/LayerManager.vue';
-import {iko, jgd2000ZoneToWgs84, mapillaryFilterRiset, simaFileUpload} from "@/js/downLoad";
+import {iko, jgd2000ZoneToWgs84, mapillaryFilterRiset, simaFileUpload, startUrl} from "@/js/downLoad";
 import { db, auth } from '@/firebase'
 import {user} from "@/authState";
 import axios from "axios"
@@ -736,6 +736,9 @@ export default {
     },
   },
   methods: {
+    async setStartUrl() {
+      await startUrl()
+    },
     updateDisplayName() {
       const user = auth.currentUser
       if (!user) {

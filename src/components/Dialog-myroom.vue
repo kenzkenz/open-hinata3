@@ -275,8 +275,19 @@ import {
   addImageLayerJpg,
   addImageLayerPng,
   addTileLayerForImage,
-  geojsonAddLayer, iko, isJsonString, publicChk,
-  simaToGeoJSON, userKmzSet, userPmtile0Set, userPmtileSet, userSimaSet, userTileSet, userXyztileSet, watchSParamOnce
+  geojsonAddLayer,
+  iko,
+  isJsonString,
+  publicChk,
+  simaToGeoJSON,
+  startUrl,
+  userKmzSet,
+  userPmtile0Set,
+  userPmtileSet,
+  userSimaSet,
+  userTileSet,
+  userXyztileSet,
+  watchSParamOnce
 } from "@/js/downLoad"
 import muni from '@/js/muni'
 import LayerManager from '@/components/LayerManager.vue'
@@ -618,43 +629,7 @@ export default {
   },
   methods: {
     async setStartUrl() {
-      const vm = this;
-      store.state.loading2 = true;
-      store.state.loadingMessage = '設定中です。';
-      this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire;
-      try {
-        const s = await watchSParamOnce();
-        console.log('s パラメータが変わった！新しい値:', s);
-        const params = new URLSearchParams();
-        params.append('uid', vm.$store.state.userId);
-        params.append('nickname', vm.$store.state.myNickname);
-        params.append('starturl', s);
-        const response = await axios.post(
-            'https://kenzkenz.xsrv.jp/open-hinata3/php/userConfigInsertUpdateStarturl.php',
-            params
-        );
-        if (response.data.error) {
-          console.error('エラー:', response.data.error);
-          store.state.loading2 = false;
-          alert(`エラー: ${response.data.error}`);
-          return null;
-        } else {
-          console.log('登録成功:', response.data);
-          store.state.loading2 = false;
-          // alert('設定完了');
-          vm.$store.dispatch('messageDialog/open', {
-            id: 'starturl', // idはなんでも良い。
-            title: '起動時レイヤー変更完了',
-            contentHtml: '<p>起動時に表示されるレイヤーを変更しました。<br>ブックマークされている方は「https://kenzkenz.xsrv.jp/open-hinata3」に変更してください。</p>',
-            options: { maxWidth: 700, showCloseIcon: true }
-          })
-          return response.data.id;
-        }
-      } catch (err) {
-        console.error('watchSParamOnce中のエラー:', err);
-        store.state.loading2 = false;
-        return null;
-      }
+      await startUrl()
     },
     onSelectLayer({ name, id }) {
       console.log('onSelectLayer:', { name, id });
