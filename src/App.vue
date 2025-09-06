@@ -8,14 +8,25 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
-      <div>
-        <!-- これが“描画ホスト”。id を 'help' に合わせる -->
-        <message-dialog
-            :use-store="true"
-            :store-module="'messageDialog'"
-            dialog-id="help"
-        />
-      </div>
+<!--      <div>-->
+<!--        &lt;!&ndash; これが“描画ホスト”。id を 'help' に合わせる &ndash;&gt;-->
+<!--        <message-dialog-->
+<!--            :use-store="true"-->
+<!--            :store-module="'messageDialog'"-->
+<!--            dialog-id="help"-->
+<!--        />-->
+<!--      </div>-->
+
+
+      <!-- registry にある id を全部ホスト -->
+      <message-dialog
+          v-for="id in dialogIds"
+          :key="id"
+          :use-store="true"
+          :store-module="'messageDialog'"
+          :dialog-id="id"
+      />
+
 
       <VDialogIframe></VDialogIframe>
 
@@ -2457,6 +2468,9 @@ export default {
       'isUsingServerGeojson',
       'drawFeature',
     ]),
+    dialogIds () {
+      return Object.keys(this.$store.state.messageDialog.registry)
+    },
     s_prevGeojsons: {
       get() {
         return this.$store.prevGeojsons
@@ -6353,18 +6367,12 @@ export default {
       }
     },
     btnClickMenu (mapName) {
-      this.$store.dispatch('messageDialog/open', {
-        id: 'help',
-        title: 'ヘルプ',
-        contentHtml: '<p>ショートカット一覧…</p>',
-        options: { maxWidth: 700, showCloseIcon: true }
-      })
-      // if (this.$store.state.dialogs.menuDialog[mapName].style.display === 'none') {
-      //   this.$store.state.dialogs.menuDialog[mapName].style['z-index'] = getNextZIndex()
-      //   this.$store.state.dialogs.menuDialog[mapName].style.display = 'block'
-      // } else {
-      //   this.$store.state.dialogs.menuDialog[mapName].style.display = 'none'
-      // }
+      if (this.$store.state.dialogs.menuDialog[mapName].style.display === 'none') {
+        this.$store.state.dialogs.menuDialog[mapName].style['z-index'] = getNextZIndex()
+        this.$store.state.dialogs.menuDialog[mapName].style.display = 'block'
+      } else {
+        this.$store.state.dialogs.menuDialog[mapName].style.display = 'none'
+      }
     },
     btnClickLayer (mapName) {
       setTimeout(() => {

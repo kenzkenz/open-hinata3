@@ -23,7 +23,7 @@
             role="button"
             aria-label="閉じる"
             @click="close"
-        >×</span>
+        ><v-icon>mdi-close</v-icon></span>
       </v-card-title>
 
       <v-divider v-if="showTitleDivider" />

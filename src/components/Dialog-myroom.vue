@@ -109,9 +109,7 @@
                     ></v-select>
                   </v-row>
                   <v-btn v-if="!isAll" style="margin-top: 0px;margin-bottom: 10px" @click="pmtilesRenameBtn">変更</v-btn>
-<!--                  <div style="height: 20px">-->
-<!--                    <p v-if="!isAll && isOh3Team" style="position: absolute;right:30px;">公開</p>-->
-<!--                  </div>-->
+
                   <div
                       v-for="item in jsonDataPmtile"
                       :key="item.id"
@@ -230,15 +228,15 @@
               <v-window-item value="7">
                 <v-card>
                   <h4 style="margin-bottom: 10px;">初期レイヤーを現在のレイヤーに設定します。</h4>
-                  <v-btn style="margin-top: 10px;margin-bottom: 10px; width: 180px;" @click="setStartUrl">設定</v-btn>
+                  <v-btn style="margin-top: 10px;margin-bottom: 10px;" @click="setStartUrl">スタートレイヤー設定変更</v-btn>
                   <hr>
                   <h4 style="margin-bottom: 10px;">各デバイスの最後に開いた画面に復帰します。</h4>
-                  <v-btn style="margin-bottom: 10px; width: 180px;" @click="device('Windows')">Windowsでの最後</v-btn>
-                  <v-btn style="margin-left: 10px;margin-bottom: 10px; width: 180px" @click="device('Macintosh')">Macでの最後</v-btn><br>
+                  <v-btn class="tiny-btn" style="margin-bottom: 10px; width: 120px;" @click="device('Windows')">Windowsでの最後</v-btn>
+                  <v-btn class="tiny-btn" style="margin-left: 10px;margin-bottom: 10px; width: 120px" @click="device('Macintosh')">Macでの最後</v-btn><br>
 
-                  <v-btn style="margin-bottom: 10px; width: 180px" @click="device('Android')">Androidでの最後</v-btn>
-                  <v-btn style="margin-left: 10px;margin-bottom: 10px; width: 180px" @click="device('iPhone')">iPhoneでの最後</v-btn>
-                  <v-btn style="margin-left: 0px;margin-bottom: 10px; width: 180px" @click="device('iPad')">iPadでの最後</v-btn>
+                  <v-btn class="tiny-btn" style="margin-bottom: 10px; width: 120px" @click="device('Android')">Androidでの最後</v-btn>
+                  <v-btn class="tiny-btn" style="margin-left: 10px;margin-bottom: 10px; width: 120px" @click="device('iPhone')">iPhoneでの最後</v-btn>
+                  <v-btn class="tiny-btn" style="margin-left: 0px;margin-bottom: 10px; width: 120px" @click="device('iPad')">iPadでの最後</v-btn>
                   <hr>
                   <h4 style="margin-top:10px;margin-bottom: 10px;">全デバイスの履歴です。クリックすると復帰します。1000行までです。</h4>
                   <v-btn style="margin-left: 0px;margin-bottom: 10px;" class="tiny-btn" @click="reload">再読み込み</v-btn>
@@ -249,11 +247,7 @@
                       class="data-container"
                       @click="historyClick(item.name, item.url, item.id)"
                   >
-<!--                    <strong :style="item.event.includes('autosave-first') ? 'color: red;' : ''">-->
-<!--                      {{ item.date + ' / ' + detectDevice(item.ua) + ' / ' + item.event + item.thumbnail }}-->
-<!--                    </strong><br>-->
                     <strong v-html="formatItem(item)" :style="item.event.includes('autosave-first') ? 'color: red;' : ''"></strong><br>
-
                   </div>
 
                 </v-card>
@@ -262,8 +256,8 @@
                 <v-card>
                   <!-- <v-btn style="margin-bottom: 10px;" @click="isAllBtn">全表示</v-btn>-->
                   <v-switch style="height: 40px;" v-model="isAll" @change="isAllSwitch" label="全表示" color="primary" />
-                  <v-btn style="margin-top:20px;margin-bottom: 30px; width: 180px;" @click="openData">オープンデータ更新</v-btn>
-                  <v-btn style="margin-left:20px;margin-top:20px;margin-bottom: 30px; width: 180px;" @click="chibanzuMap">全国地番図マップ更新</v-btn>
+                  <v-btn style="margin-top:20px;margin-bottom: 30px; width: 120px;" @click="openData">オープンデータ更新</v-btn>
+                  <v-btn style="margin-left:20px;margin-top:20px;margin-bottom: 30px; width: 120px;" @click="chibanzuMap">全国地番図マップ更新</v-btn>
 
                 </v-card>
               </v-window-item>
@@ -629,7 +623,7 @@ export default {
       store.state.loadingMessage = '設定中です。';
       this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire;
       try {
-        const s = await watchSParamOnce(); // ← Promise を待てるようになった
+        const s = await watchSParamOnce();
         console.log('s パラメータが変わった！新しい値:', s);
         const params = new URLSearchParams();
         params.append('uid', vm.$store.state.userId);
@@ -647,7 +641,13 @@ export default {
         } else {
           console.log('登録成功:', response.data);
           store.state.loading2 = false;
-          alert('設定完了');
+          // alert('設定完了');
+          vm.$store.dispatch('messageDialog/open', {
+            id: 'starturl', // idはなんでも良い。
+            title: 'スタートレイヤー変更完了',
+            contentHtml: '<p>起動時に表示されるレイヤーを変更しました。<br>ブックマークされている方は「https://kenzkenz.xsrv.jp/open-hinata3」に変更してください。</p>',
+            options: { maxWidth: 700, showCloseIcon: true }
+          })
           return response.data.id;
         }
       } catch (err) {
@@ -878,6 +878,7 @@ export default {
     formatItem(item) {
       const device = this.detectDevice(item.ua);
       const text = `${item.date} / ${device} / ${item.event}`;
+      item.thumbnail = item.thumbnail.replace('https://kenzkenz.duckdns.org/','https://kenzkenz.net/')
       const thumbnailImg = item.thumbnail
           ? ` <img src="${item.thumbnail}" alt="thumbnail" style="vertical-align: middle;">`
           : '';
