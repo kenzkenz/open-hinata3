@@ -7980,7 +7980,7 @@ export default {
           // console.log(e.id)
           // store.state.loadingMessage3 = 'アイコン取得中'
           // store.state.loading3 = true
-          await addSvgAsImage(this.map01, e.id, `/icon/mapillary/package_signs/${e.id}.svg`)
+          await addSvgAsImage(this.map01, e.id, `https://kenzkenz.xsrv.jp/icon/mapillary/package_signs/${e.id}.svg`)
           // store.state.loading3 = false
         }
       })
