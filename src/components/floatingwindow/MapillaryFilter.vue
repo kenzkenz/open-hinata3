@@ -48,8 +48,8 @@
               @change="onOnly360Change"
           />
         </div>
-
-        <div class="d-flex align-center justify-end">
+        <div class="d-flex align-center justify-space-between">
+          <p class="ma-0" v-html="hitText"></p>
           <v-btn small text @click="onResetClick">リセット（全て初期化）</v-btn>
         </div>
       </v-window-item>
@@ -138,6 +138,7 @@ import {
 } from '@/js/downLoad'
 import { mapState } from 'vuex'
 import MiniTooltip from '@/components/MiniTooltip'
+import store from "@/store";
 
 export default {
   name: 'MapillaryFilter',
@@ -182,7 +183,10 @@ export default {
     }
   },
   computed: {
-    ...mapState(['map01']),
+    ...mapState([
+        'map01',
+        'hitText',
+    ]),
     s_is360Pic: {
       get() { return this.$store.state.is360Pic },
       set(v) { this.$store.state.is360Pic = v }
@@ -485,6 +489,7 @@ export default {
       mapillaryFilterRiset()
       this.teardownTsWatcher()
       this.teardownObjWatcher()
+      this.$store.state.hitText = ''
     },
 
     // ==== 親クローズ時に必ず呼ばれる経路 ====

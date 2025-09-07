@@ -11626,6 +11626,27 @@ function getSizeViaImage(url) {
 }
 
 /**
+ * 撮影日時を日本時間(Asia/Tokyo)で「YYYY-MM-DD HH:mm」に成形
+ * @param input
+ * @returns {string}
+ */
+function formatToJSTString(input) {
+    const toMs = (v) => {
+        if (typeof v === 'number') return v < 1e12 ? v * 1000 : v; // 秒ならmsへ
+        const t = Date.parse(v);
+        return Number.isFinite(t) ? t : NaN;
+    };
+    const ms = toMs(input);
+    if (!Number.isFinite(ms)) return '';
+    const dt = new Date(ms);
+    const y = dt.toLocaleString('ja-JP', { year: 'numeric', timeZone: 'Asia/Tokyo' });
+    const mo = dt.toLocaleString('ja-JP', { month: '2-digit', timeZone: 'Asia/Tokyo' });
+    const d = dt.toLocaleString('ja-JP', { day: '2-digit', timeZone: 'Asia/Tokyo' });
+    const h = dt.toLocaleString('ja-JP', { hour: '2-digit', hour12: false, timeZone: 'Asia/Tokyo' });
+    const mi = dt.toLocaleString('ja-JP', { minute:'2-digit', timeZone: 'Asia/Tokyo' });
+    return `${y}${mo}${d} ${h}:${mi}`;
+}
+/**
  *
  * @param mapFeatureId
  * @param token
@@ -11723,29 +11744,65 @@ export async function mapillaryCreate(lng, lat) {
      * currentImageIdを更新
      * スナックバーを閉じる
      */
+    // MapillaryJS ビューアの画像切替イベント
     mapillaryViewer.on('image', async (e) => {
-        store.state.mapillaryZindex = getNextZIndex()
-        store.state.loading3 = false
+        console.log(e);
+        store.state.mapillaryZindex = getNextZIndex();
+        store.state.loading3 = false;
         console.log('画像切替:', e.image.id);
         currentImageId = e.image.id || null;
-
-        const url = new URL(`https://graph.mapillary.com/${encodeURIComponent(currentImageId)}`)
-        url.searchParams.set('access_token', MAPILLARY_CLIENT_ID)
-        url.searchParams.set('fields', 'creator')
-        let res2
+        // Graph API: クリエイターと撮影日時を一度に取得
+        const url = new URL(`https://graph.mapillary.com/${encodeURIComponent(currentImageId)}`);
+        url.searchParams.set('access_token', MAPILLARY_CLIENT_ID);
+        url.searchParams.set('fields', 'creator,captured_at');
+        let res2;
         try {
-            res2 = await fetch(url)
-        } catch (e) {
-            if (e.name === 'AbortError') return
-            throw e
+            res2 = await fetch(url);
+        } catch (err) {
+            if (err?.name === 'AbortError') return; // 中断は無視
+            throw err;
         }
-        if (res2.ok) {
-            const json = await res2.json()
-            const username = json?.creator.username
-            console.log(username)
-            store.state.mapillaryTytle = username
+        let username = '';
+        let dateStr = '';
+        if (res2 && res2.ok) {
+            const json = await res2.json();
+            username = json?.creator?.username ?? '';
+            // APIの captured_at（ms）→ フォールバックで MapillaryJS 側の capturedAt も参照
+            const captured = json?.captured_at ?? e?.image?.capturedAt ?? e?.image?.captured_at;
+            dateStr = captured ? formatToJSTString(captured) : '';
+        } else {
+            // フォールバック（ネットワークエラー時など）
+            const captured = e?.image?.capturedAt ?? e?.image?.captured_at;
+            dateStr = captured ? formatToJSTString(captured) : '';
         }
+        // 表示用タイトルに「ユーザー名（YYYY-MM-DD HH:mm）」形式で入れる
+        const title = [username, dateStr ? `<span style="font-size: 12px;">${dateStr}</span>` : ''].filter(Boolean).join('');
+        store.state.mapillaryTytle = title;
     });
+    // mapillaryViewer.on('image', async (e) => {
+    //     console.log(e)
+    //     store.state.mapillaryZindex = getNextZIndex()
+    //     store.state.loading3 = false
+    //     console.log('画像切替:', e.image.id);
+    //     currentImageId = e.image.id || null;
+    //
+    //     const url = new URL(`https://graph.mapillary.com/${encodeURIComponent(currentImageId)}`)
+    //     url.searchParams.set('access_token', MAPILLARY_CLIENT_ID)
+    //     url.searchParams.set('fields', 'creator')
+    //     let res2
+    //     try {
+    //         res2 = await fetch(url)
+    //     } catch (e) {
+    //         if (e.name === 'AbortError') return
+    //         throw e
+    //     }
+    //     if (res2.ok) {
+    //         const json = await res2.json()
+    //         const username = json?.creator.username
+    //         console.log(username)
+    //         store.state.mapillaryTytle = username
+    //     }
+    // });
     // ---- ここから追加：地図同期 ----
     if (!store.state.mapillaryIsNotArrow) {
         try {
@@ -12517,12 +12574,12 @@ export async function queryMapillaryByUserDatesViewport (map, {
 
     if (creatorId && r360Json.length === 0 && !store.state.is360Pic) {
         // alert(0)
-        document.querySelector(showResultSelector).innerHTML = 'ヒット'
+        store.state.hitText = 'hit!'
         map.setFilter(layerId, ['==', ['get', 'creator_id'], Number(creatorId)])
         map.setPaintProperty(layerId, 'circle-color', highlightColor)
     } else if (creatorId && r360Json.length > 0) {
         // alert(1)
-        document.querySelector(showResultSelector).innerHTML = 'ヒット'
+        store.state.hitText = 'hit!'
         const filteredRows = r360Json.filter(row => {
             return row.camera_type === 'spherical'
         })
@@ -12535,7 +12592,7 @@ export async function queryMapillaryByUserDatesViewport (map, {
         map.setPaintProperty(layerId, 'circle-color', r360Color);
     } else if (!creatorId && r360Json.length > 0) {
         // alert(2)
-        document.querySelector(showResultSelector).innerHTML = 'ヒット'
+        store.state.hitText = 'hit!'
         const filteredRows = r360Json.filter(row => {
             return row.camera_type === 'spherical'
         })
@@ -12547,7 +12604,7 @@ export async function queryMapillaryByUserDatesViewport (map, {
         map.setPaintProperty(layerId, 'circle-color', r360Color);
     } else {
         // alert(3)
-        document.querySelector(showResultSelector).innerHTML = 'ノーヒット'
+        store.state.hitText = 'no hit'
         map.setFilter(layerId, null)
         map.setPaintProperty(layerId, 'circle-color', defaultColor)
     }

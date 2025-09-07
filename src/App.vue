@@ -8,12 +8,13 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
+      <!-- マピラリフィルター -->
       <FloatingWindow
           windowId = "mapillary-filter"
           title = "mapillaryフィルタ"
           type="normal"
-          :default-top = "70"
-          :default-left = "210"
+          :default-top = "10"
+          :default-left = "mlyDefaultLeft"
           :default-width = "isSmall500 ? 200 : 630"
           :default-height = "isSmall500 ? 300 : 440"
           :keepAspectRatio = "false"
@@ -38,14 +39,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
             @filters-changed="onFiltersChanged"
         />
       </FloatingWindow>
-
+      <!-- マピラリビューワー -->
       <FloatingWindow
           windowId = "mapillary"
+          :title-is-html="true"
           :title = "mapillaryTytle"
           type="normal"
           :default-top = "70"
           :default-left = "10"
-          :default-width = "isSmall500 ? 200 : 348"
+          :default-width = "isSmall500 ? 200 : 400"
           :default-height = "isSmall500 ? 300 : 300"
           :keepAspectRatio = "false"
           :showMaxRestore="true"
@@ -55,58 +57,58 @@ import SakuraEffect from './components/SakuraEffect.vue';
         <div class="mapillary-div" :style="{height:'calc(100% - 102px)',width:'100%',background:'color-mix(in srgb, var(--main-color) 60%, black)',color:'white'}">
         </div>
         <div class="toolbar-row">
-          <v-text-field
-              v-model="s_mapillaryUserName"
-              label="ユーザー名"
-              hide-details
-              density="compact"
-              variant="outlined"
-              style="width:150px;"
-              @mousedown.stop
-              @pointerdown.stop
-              @touchstart.stop
-              @input="mapillaryUserNameInput"
-          />
-          <v-text-field
-              v-model="s_mapillaryStartDate"
-              label="始"
-              type="date"
-              hide-details
-              density="compact"
-              variant="outlined"
-              @mousedown.stop
-              @pointerdown.stop
-              @touchstart.stop
-              @input="mapillaryUserNameInput"
-          />
-          <v-text-field
-              v-model="s_mapillaryEndDate"
-              label="終"
-              type="date"
-              hide-details
-              density="compact"
-              variant="outlined"
-              @mousedown.stop
-              @pointerdown.stop
-              @touchstart.stop
-              @input="mapillaryUserNameInput"
-          />
-          <v-switch
-              v-model="s_is360Pic"
-              label="360画像"
-              color="primary"
-              inset
-              hide-details
-              density="compact"
-              @mousedown.stop
-              @pointerdown.stop
-              @touchstart.stop
-          />
-          <div class="mapillary-qry-result d-flex align-center">
-          </div>
+          <v-btn @click="mapillaryFilterOpen">フィルター</v-btn>
+<!--          <v-text-field-->
+<!--              v-model="s_mapillaryUserName"-->
+<!--              label="ユーザー名"-->
+<!--              hide-details-->
+<!--              density="compact"-->
+<!--              variant="outlined"-->
+<!--              style="width:150px;"-->
+<!--              @mousedown.stop-->
+<!--              @pointerdown.stop-->
+<!--              @touchstart.stop-->
+<!--              @input="mapillaryUserNameInput"-->
+<!--          />-->
+<!--          <v-text-field-->
+<!--              v-model="s_mapillaryStartDate"-->
+<!--              label="始"-->
+<!--              type="date"-->
+<!--              hide-details-->
+<!--              density="compact"-->
+<!--              variant="outlined"-->
+<!--              @mousedown.stop-->
+<!--              @pointerdown.stop-->
+<!--              @touchstart.stop-->
+<!--              @input="mapillaryUserNameInput"-->
+<!--          />-->
+<!--          <v-text-field-->
+<!--              v-model="s_mapillaryEndDate"-->
+<!--              label="終"-->
+<!--              type="date"-->
+<!--              hide-details-->
+<!--              density="compact"-->
+<!--              variant="outlined"-->
+<!--              @mousedown.stop-->
+<!--              @pointerdown.stop-->
+<!--              @touchstart.stop-->
+<!--              @input="mapillaryUserNameInput"-->
+<!--          />-->
+<!--          <v-switch-->
+<!--              v-model="s_is360Pic"-->
+<!--              label="360画像"-->
+<!--              color="primary"-->
+<!--              inset-->
+<!--              hide-details-->
+<!--              density="compact"-->
+<!--              @mousedown.stop-->
+<!--              @pointerdown.stop-->
+<!--              @touchstart.stop-->
+<!--          />-->
+<!--          <div class="mapillary-qry-result d-flex align-center"></div>-->
         </div>
       </FloatingWindow>
-
+      <!-- EXドロー -->
       <FloatingWindow
           windowId="exdraw"
           :title="`EXドロー`"
@@ -122,7 +124,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             @update:paint="onPaintUpdate"
         />
       </FloatingWindow>
-
+      <!-- QRコード -->
       <FloatingWindow
           windowId="qrcode"
           type="simple"
@@ -133,7 +135,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       >
         <vue-qrcode :value="s_url" :options="{ width: qrCodeWidth }"></vue-qrcode>
       </FloatingWindow>
-
+      <!-- ペイントエディター -->
       <FloatingWindow
           windowId="painteditor"
           :title="`スタイル変更（id=${s_pmtiles0Id}-${s_pmtiles0Name}）`"
@@ -2493,6 +2495,11 @@ export default {
       'isUsingServerGeojson',
       'drawFeature',
     ]),
+    filterWidth(){ return this.isSmall500 ? 200 : 630 },
+    mlyDefaultLeft() {
+      const vw = (typeof window !== 'undefined' ? window.innerWidth : 1280)
+      return Math.max(10, vw - this.filterWidth - 10)  // 右10px
+    },
     dialogIds () {
       return Object.keys(this.$store.state.messageDialog.registry)
     },
@@ -3252,6 +3259,9 @@ export default {
     },
   },
   methods: {
+    mapillaryFilterOpen() {
+      this.$store.dispatch('showFloatingWindow', 'mapillary-filter')
+    },
 
     // 年レンジのスライダー操作（input:ドラッグ中 / change:確定）
     onYearInput (/* [fromYear, toYear] */) {
@@ -9927,7 +9937,7 @@ export default {
   },
   mounted() {
 
-    this.$store.dispatch('showFloatingWindow', 'mapillary-filter')
+    // this.$store.dispatch('showFloatingWindow', 'mapillary-filter')
 
 
     const vm = this
