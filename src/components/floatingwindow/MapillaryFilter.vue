@@ -64,28 +64,10 @@
 
       <!-- ③ 交通標識 -->
       <v-window-item value="3">
-        <!-- 検出カテゴリ（既存） -->
-        <div class="text-caption mb-1">検出カテゴリ</div>
-        <v-chip-group
-            v-model="selectedCats"
-            multiple
-            @change="onCategoriesChange"
-        >
-          <v-chip
-              v-for="c in CATEGORIES"
-              :key="c.id"
-              :value="c.id"
-              small
-              class="ma-1"
-              outlined
-          >
-            {{ c.label }}
-          </v-chip>
-        </v-chip-group>
 
         <!-- 可視アイコン（折り返し＋手動トグル） -->
         <div class="mt-3">
-          <div class="text-caption mb-1">画面内の標識（oh-mapillary-images-3-icon）</div>
+          <div class="text-caption mb-1">画面内の標識</div>
 
           <div class="chip-flow">
             <v-chip
@@ -132,7 +114,6 @@ import {
 } from '@/js/downLoad'
 import { mapState } from 'vuex'
 import MiniTooltip from '@/components/MiniTooltip'
-import store from "@/store";
 
 export default {
   name: 'MapillaryFilter',
@@ -151,7 +132,7 @@ export default {
       maxYear: nowY,
       yearRange: [2014, nowY],
       selectedCats: [],
-      selectedSignValues: [],      // ← 可視アイコンの選択
+      selectedSignValues: [],      // 可視アイコンの選択
       creatorNamesText: '',
       CATEGORIES: [
         { id:'traffic_sign', label:'標識' },
@@ -236,23 +217,49 @@ export default {
       else this.selectedSignValues.push(v)
       this.onSignValuesChange(this.selectedSignValues)
     },
+
+    // ← ここで「該当0なら全表示に戻す」を実装
     onSignValuesChange (vals) {
-      const map01 = this.map01
+      const map = this.map01
+      const layerId = this.iconLayerId
+      if (!map || !map.getLayer || !map.getLayer(layerId)) return
+
       const values = Array.isArray(vals) ? vals.slice(0) : this.selectedSignValues.slice(0)
       const filter = this.buildSignFilter(values)
-      console.log(filter)
-      if (map01.getLayer('oh-mapillary-images-3-icon')) {
-        map01.setFilter('oh-mapillary-images-3-icon', filter);
-      }
+
+      // まずは希望フィルタを適用（未選択なら解除）
+      try {
+        map.setFilter(layerId, filter || null)
+      } catch (_) {}
+
+      // 次フレームで描画後の該当数を確認して、0ならフィルタ解除
+      this.$nextTick(() => {
+        requestAnimationFrame(() => {
+          let count = 0
+          try {
+            const feats = map.queryRenderedFeatures({ layers: [layerId] }) || []
+            count = feats.length
+          } catch (_) {}
+          if (values.length > 0 && count === 0) {
+            // ヒット0 → 全表示（フィルタ解除）
+            try { map.setFilter(layerId, null) } catch (_) {}
+          }
+        })
+      })
+
+      // 既存/追加イベントの発火（必要なら親で利用）
+      const mode = values.length <= 1 ? 'single' : 'multi'
+      this.$emit('sign-values-change', values)
+      this.$emit('sign-filter-change', {
+        values, mode, filter, layerId, property: 'value'
+      })
     },
 
     // ===== 検出カテゴリ（単一/複数判定付きで通知） =====
     onCategoriesChange () {
       const values = this.selectedCats.slice(0)
       const mode = values.length <= 1 ? 'single' : 'multi'
-      // 既存互換
       this.$emit('categories-change', values)
-      // 追加情報
       this.$emit('categories-filter-change', { values, mode })
     },
 
