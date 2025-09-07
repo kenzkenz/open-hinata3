@@ -83,41 +83,38 @@
           </v-chip>
         </v-chip-group>
 
-        <!-- 可視アイコン（新）：v-chipをgroup直下に置き、MiniTooltipはチップ内に -->
+        <!-- 可視アイコン（新）：横幅内で折り返すフロー配置 -->
         <div class="mt-3">
           <div class="text-caption mb-1">画面内の標識（oh-mapillary-images-3-icon）</div>
 
-          <v-chip-group
-              v-model="selectedSignValues"
-              multiple
-              @change="onSignValuesChange"
-          >
+          <div class="chip-flow">
             <v-chip
                 v-for="v in visibleIconValues"
                 :key="v"
-                :value="v"
+                :input-value="isSelected(v)"
+                :color="isSelected(v) ? 'primary' : undefined"
+                :outlined="!isSelected(v)"
                 small
                 class="ma-1"
-                outlined
+                @click="toggleSign(v)"
             >
-              <!-- ← チップの中身だけをツールチップ化（チップ自体はgroupの子） -->
-              <MiniTooltip :text="v" :offset-x="0" :offset-y="0">
-                <img
-                    v-if="!failedIcon[v]"
-                    class="chip-img"
-                    :src="iconUrl(v)"
-                    alt=""
-                    decoding="async"
-                    loading="lazy"
-                    @error="onImgError(v)"
-                    @load="onImgLoad(v)"
-                />
-                <span v-else class="chip-fallback">🛈</span>
-              </MiniTooltip>
+            <MiniTooltip :text="v" :offset-x="0" :offset-y="0">
+              <img
+                  v-if="!failedIcon[v]"
+                  class="chip-img"
+                  :src="iconUrl(v)"
+                  alt=""
+                  decoding="async"
+                  loading="lazy"
+                  @error="onImgError(v)"
+                  @load="onImgLoad(v)"
+              />
+              <span v-else class="chip-fallback">🛈</span>
+            </MiniTooltip>
             </v-chip>
-          </v-chip-group>
 
-          <span v-if="!visibleIconValues.length" class="text-caption opacity-70">（該当なし）</span>
+            <span v-if="!visibleIconValues.length" class="text-caption opacity-70">（該当なし）</span>
+          </div>
         </div>
       </v-window-item>
     </v-window>
@@ -126,7 +123,13 @@
 </template>
 
 <script>
-import { mapillaryFilterRiset, queryMapillaryByUserDatesViewport, setFllter360, attachViewportIconValues, getVisibleIconValues } from '@/js/downLoad'
+import {
+  mapillaryFilterRiset,
+  queryMapillaryByUserDatesViewport,
+  setFllter360,
+  attachViewportIconValues,
+  getVisibleIconValues
+} from '@/js/downLoad'
 import { mapState } from 'vuex'
 import MiniTooltip from '@/components/MiniTooltip'
 
@@ -147,7 +150,7 @@ export default {
       maxYear: nowY,
       yearRange: [2014, nowY],
       selectedCats: [],
-      selectedSignValues: [],    // 可視アイコンの選択状態
+      selectedSignValues: [],      // ← 可視アイコンの選択
       creatorNamesText: '',
       CATEGORIES: [
         { id:'traffic_sign', label:'標識' },
@@ -195,6 +198,7 @@ export default {
       const next = this.selectedSignValues.filter(v => set.has(v))
       if (next.length !== this.selectedSignValues.length) {
         this.selectedSignValues = next
+        this.onSignValuesChange(next)   // 必要なら即時反映
       }
     }
   },
@@ -216,12 +220,21 @@ export default {
   },
   beforeUnmount () { this.cleanup() },
   methods: {
+    // ===== ユーティリティ：選択関連 =====
+    isSelected (v) { return this.selectedSignValues.includes(v) },
+    toggleSign (v) {
+      const i = this.selectedSignValues.indexOf(v)
+      if (i >= 0) this.selectedSignValues.splice(i, 1)
+      else this.selectedSignValues.push(v)
+      this.onSignValuesChange(this.selectedSignValues)
+    },
+
     // ===== SVG URL =====
     iconUrl (value) {
       return `https://kenzkenz.xsrv.jp/icon/mapillary/package_signs/${encodeURIComponent(value)}.svg`
     },
     onImgError (value) { if (!this.failedIcon[value]) this.$set(this.failedIcon, value, true) },
-    onImgLoad (value)  { if (this.failedIcon[value])  this.$delete(this.failedIcon, value) },
+    onImgLoad  (value) { if (this.failedIcon[value])  this.$delete(this.failedIcon, value) },
 
     cleanup () {
       if (this.ro) { try { this.ro.disconnect() } catch (_) {} this.ro = null }
@@ -302,7 +315,10 @@ export default {
           map01.setFilter('oh-mapillary-images-highlight', ['==', ['get', 'sequence_id'], this.$store.state.targetSeq])
           const src = map01.getSource && map01.getSource('mly-current-point')
           if (src?.setData) {
-            src.setData({ type:'FeatureCollection', features:[{ type:'Feature', geometry:{ type:'LineString', coordinates:[] }, properties:{} }] })
+            src.setData({
+              type:'FeatureCollection',
+              features:[{ type:'Feature', geometry:{ type:'LineString', coordinates:[] }, properties:{} }]
+            })
           }
         }
         await setFllter360(map01)
@@ -345,7 +361,7 @@ export default {
       }
 
       await queryMapillaryByUserDatesViewport(map01, {
-        username: this.creatorNamesText,
+        username: this.creatorNamesText, // 空でもOK（日時のみ抽出可能）
         start, end,
       })
     },
@@ -389,9 +405,20 @@ export default {
   vertical-align: middle;
 }
 .chip-fallback{ opacity: .6; }
+
+/* 可視アイコン用：横幅内で折り返す */
+.chip-flow{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.chip-flow .v-chip{
+  margin: 4px;
+}
 </style>
 
 <style>
+/* このコンポーネント内スクロールが切られる場合の補助（任意） */
 .content:has(> .p-3) {
   overflow: auto !important;
 }
