@@ -12632,8 +12632,8 @@ export function mapillaryFilterRiset() {
     }
 }
 
-// ==== Mapillaryアイコン動的ローダ（MapLibre GL JS）====
 
+// ==== Mapillaryアイコン動的ローダ（MapLibre GL JS）====
 /**
  * SVG をフェッチ→キャンバスに描画→ImageData で addImage する
  * @param {maplibregl.Map} map
@@ -12698,6 +12698,7 @@ export async function addSvgAsImage(map, name, url, opt = {}) {
 
         const imageData = ctx.getImageData(0, 0, w, h);
         if (map.hasImage(name)) map.removeImage(name);
+        // addImageWithCache(map, name, imageData)
         map.addImage(name, imageData, { sdf });
     } finally {
         URL.revokeObjectURL(blobUrl);
