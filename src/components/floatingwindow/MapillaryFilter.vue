@@ -165,7 +165,7 @@ export default {
       // 共通
       creatorNamesText: '',
 
-      // 監視解除ハンドラ
+      // 監視ハンドラ（タブ切替用）
       tsDetachListener: null,
       tsStyleHandler: null,
       objDetachListener: null,
@@ -173,10 +173,7 @@ export default {
     }
   },
   computed: {
-    ...mapState([
-      'map01',
-      'hitText',
-    ]),
+    ...mapState(['map01','hitText']),
     s_is360Pic: {
       get() { return this.$store.state.is360Pic },
       set(v) { this.$store.state.is360Pic = v }
@@ -189,7 +186,7 @@ export default {
       if (v === '3') this.setupTsWatcher();  else this.teardownTsWatcher()
     },
 
-    // 可視値の更新に合わせ選択をクリーンアップ
+    // 可視値に合わせて選択をクリーンアップ（発火点はガードしてあるのでそのまま）
     tsVisibleValues (vals) {
       const set = new Set(vals)
       const next = this.tsSelectedValues.filter(v => set.has(v))
@@ -208,10 +205,8 @@ export default {
     },
   },
   mounted () {
-    // 初期タブに応じて監視を開始
     if (this.tab === '2') this.setupObjWatcher()
     if (this.tab === '3') this.setupTsWatcher()
-
     this.init()
   },
   beforeUnmount () { this.cleanup() },
@@ -230,18 +225,25 @@ export default {
       const endMs   = Date.UTC(y1, 11, 31, 23, 59, 59, 999)
       return { startMs, endMs }
     },
+    _raf2 (fn) { requestAnimationFrame(() => requestAnimationFrame(fn)) },
 
     /* ========== 交通標識（3-icon） ========== */
     tsIconUrl (value) {
       return `https://kenzkenz.xsrv.jp/icon/mapillary/package_signs/${encodeURIComponent(value)}.svg`
     },
     tsChipClass (v) { return this.tsSelectedValues.includes(v) ? 'chip-selected' : 'chip-unselected' },
+
     toggleTs (v) {
       const i = this.tsSelectedValues.indexOf(v)
       if (i >= 0) this.tsSelectedValues.splice(i, 1)
       else this.tsSelectedValues.push(v)
+
       this.applyTsFilter(this.tsSelectedValues)
+
+      // 選択0 = 全表示。描画完了（idle）後に可視値を再取得
+      if (this.tsSelectedValues.length === 0) this._refreshTsVisibleAfterIdle()
     },
+
     applyTsFilter (vals) {
       const map = this.map01, layerId = this.tsLayerId
       if (!map || !map.getLayer || !map.getLayer(layerId)) return
@@ -250,15 +252,33 @@ export default {
       const filter = this.buildValueFilter(values)
       try { map.setFilter(layerId, filter || null) } catch (_) {}
 
-      // ヒット0なら解除
+      // ヒット0なら解除（選択あり時のみ）
       this.$nextTick(() => {
         requestAnimationFrame(() => {
+          if (values.length === 0) return
           let n = 0
           try { n = (map.queryRenderedFeatures({ layers: [layerId] }) || []).length } catch (_) {}
-          if (values.length > 0 && n === 0) { try { map.setFilter(layerId, null) } catch (_) {} }
+          if (n === 0) { try { map.setFilter(layerId, null) } catch (_) {} }
         })
       })
     },
+
+    _refreshTsVisibleAfterIdle () {
+      const map = this.map01, layerId = this.tsLayerId
+      const run = () => {
+        if (this.tsSelectedValues.length > 0) return
+        try {
+          if (map?.getLayer && map.getLayer(layerId)) {
+            this.tsVisibleValues = getVisibleIconValues(map, layerId)
+          }
+        } catch (_) {}
+      }
+      try {
+        if (map?.once) map.once('idle', run)
+        else this._raf2(run)
+      } catch (_) { this._raf2(run) }
+    },
+
     onTsImgError (value) {
       if (!this.tsFailedIcon[value]) this.tsFailedIcon = { ...this.tsFailedIcon, [value]: true }
     },
@@ -273,14 +293,24 @@ export default {
       const map = this.map01, layerId = this.tsLayerId
       if (!map) return
       if (this.tsDetachListener) {
-        try { this.tsVisibleValues = getVisibleIconValues(map, layerId) } catch (_) {}
+        try {
+          if (this.tsSelectedValues.length === 0) {
+            this.tsVisibleValues = getVisibleIconValues(map, layerId)
+          }
+        } catch (_) {}
         return
       }
       const attachNow = () => {
         if (map.getLayer && map.getLayer(layerId)) {
-          this.tsVisibleValues = getVisibleIconValues(map, layerId)
+          try {
+            if (this.tsSelectedValues.length === 0) {
+              this.tsVisibleValues = getVisibleIconValues(map, layerId)
+            }
+          } catch (_) {}
           this.tsDetachListener = attachViewportIconValues(
-              map, layerId, vals => { this.tsVisibleValues = vals },
+              map,
+              layerId,
+              (vals) => { if (this.tsSelectedValues.length === 0) this.tsVisibleValues = vals },
               { debounceMs: 120, immediate: false }
           )
           if (this.tsStyleHandler) { try { map.off('styledata', this.tsStyleHandler) } catch (_) {} this.tsStyleHandler = null }
@@ -288,9 +318,15 @@ export default {
           if (!this.tsStyleHandler) {
             this.tsStyleHandler = () => {
               if (map.getLayer && map.getLayer(layerId)) {
-                this.tsVisibleValues = getVisibleIconValues(map, layerId)
+                try {
+                  if (this.tsSelectedValues.length === 0) {
+                    this.tsVisibleValues = getVisibleIconValues(map, layerId)
+                  }
+                } catch (_) {}
                 this.tsDetachListener = attachViewportIconValues(
-                    map, layerId, vals => { this.tsVisibleValues = vals },
+                    map,
+                    layerId,
+                    (vals) => { if (this.tsSelectedValues.length === 0) this.tsVisibleValues = vals },
                     { debounceMs: 120, immediate: false }
                 )
                 try { map.off('styledata', this.tsStyleHandler) } catch (_) {}
@@ -304,6 +340,7 @@ export default {
       if (map.isStyleLoaded && map.isStyleLoaded()) attachNow()
       else { const onLoad = () => { try { map.off('load', onLoad) } catch (_) {} attachNow() }; map.on('load', onLoad) }
     },
+
     teardownTsWatcher () {
       const map = this.map01
       if (this.tsDetachListener) { try { this.tsDetachListener() } catch (_) {} this.tsDetachListener = null }
@@ -318,12 +355,18 @@ export default {
       return `https://kenzkenz.xsrv.jp/icon/mapillary/package_signs/${encodeURIComponent(value)}.svg`
     },
     objChipClass (v) { return this.objSelectedValues.includes(v) ? 'chip-selected' : 'chip-unselected' },
+
     toggleObj (v) {
       const i = this.objSelectedValues.indexOf(v)
       if (i >= 0) this.objSelectedValues.splice(i, 1)
       else this.objSelectedValues.push(v)
+
       this.applyObjFilter(this.objSelectedValues)
+
+      // 選択0 = 全表示。描画完了（idle）後に可視値を再取得
+      if (this.objSelectedValues.length === 0) this._refreshObjVisibleAfterIdle()
     },
+
     applyObjFilter (vals) {
       const map = this.map01, layerId = this.objLayerId
       if (!map || !map.getLayer || !map.getLayer(layerId)) return
@@ -332,15 +375,32 @@ export default {
       const filter = this.buildValueFilter(values)
       try { map.setFilter(layerId, filter || null) } catch (_) {}
 
-      // ヒット0なら解除
       this.$nextTick(() => {
         requestAnimationFrame(() => {
+          if (values.length === 0) return
           let n = 0
           try { n = (map.queryRenderedFeatures({ layers: [layerId] }) || []).length } catch (_) {}
-          if (values.length > 0 && n === 0) { try { map.setFilter(layerId, null) } catch (_) {} }
+          if (n === 0) { try { map.setFilter(layerId, null) } catch (_) {} }
         })
       })
     },
+
+    _refreshObjVisibleAfterIdle () {
+      const map = this.map01, layerId = this.objLayerId
+      const run = () => {
+        if (this.objSelectedValues.length > 0) return
+        try {
+          if (map?.getLayer && map.getLayer(layerId)) {
+            this.objVisibleValues = getVisibleIconValues(map, layerId)
+          }
+        } catch (_) {}
+      }
+      try {
+        if (map?.once) map.once('idle', run)
+        else this._raf2(run)
+      } catch (_) { this._raf2(run) }
+    },
+
     onObjImgError (value) {
       if (!this.objFailedIcon[value]) this.objFailedIcon = { ...this.objFailedIcon, [value]: true }
     },
@@ -355,14 +415,24 @@ export default {
       const map = this.map01, layerId = this.objLayerId
       if (!map) return
       if (this.objDetachListener) {
-        try { this.objVisibleValues = getVisibleIconValues(map, layerId) } catch (_) {}
+        try {
+          if (this.objSelectedValues.length === 0) {
+            this.objVisibleValues = getVisibleIconValues(map, layerId)
+          }
+        } catch (_) {}
         return
       }
       const attachNow = () => {
         if (map.getLayer && map.getLayer(layerId)) {
-          this.objVisibleValues = getVisibleIconValues(map, layerId)
+          try {
+            if (this.objSelectedValues.length === 0) {
+              this.objVisibleValues = getVisibleIconValues(map, layerId)
+            }
+          } catch (_) {}
           this.objDetachListener = attachViewportIconValues(
-              map, layerId, vals => { this.objVisibleValues = vals },
+              map,
+              layerId,
+              (vals) => { if (this.objSelectedValues.length === 0) this.objVisibleValues = vals },
               { debounceMs: 120, immediate: false }
           )
           if (this.objStyleHandler) { try { map.off('styledata', this.objStyleHandler) } catch (_) {} this.objStyleHandler = null }
@@ -370,9 +440,15 @@ export default {
           if (!this.objStyleHandler) {
             this.objStyleHandler = () => {
               if (map.getLayer && map.getLayer(layerId)) {
-                this.objVisibleValues = getVisibleIconValues(map, layerId)
+                try {
+                  if (this.objSelectedValues.length === 0) {
+                    this.objVisibleValues = getVisibleIconValues(map, layerId)
+                  }
+                } catch (_) {}
                 this.objDetachListener = attachViewportIconValues(
-                    map, layerId, vals => { this.objVisibleValues = vals },
+                    map,
+                    layerId,
+                    (vals) => { if (this.objSelectedValues.length === 0) this.objVisibleValues = vals },
                     { debounceMs: 120, immediate: false }
                 )
                 try { map.off('styledata', this.objStyleHandler) } catch (_) {}
@@ -386,6 +462,7 @@ export default {
       if (map.isStyleLoaded && map.isStyleLoaded()) attachNow()
       else { const onLoad = () => { try { map.off('load', onLoad) } catch (_) {} attachNow() }; map.on('load', onLoad) }
     },
+
     teardownObjWatcher () {
       const map = this.map01
       if (this.objDetachListener) { try { this.objDetachListener() } catch (_) {} this.objDetachListener = null }
@@ -461,14 +538,11 @@ export default {
       this.$store.state.hitText = ''
     },
 
-    // ==== クローズ時に必ず呼ばれる経路 ====
     cleanup () {
-      // 監視解除＋マップのフィルタを初期化＋UI初期化
       this.resetOnClose()
       if (this._yrChangeTimer) { clearTimeout(this._yrChangeTimer); this._yrChangeTimer = null }
     },
 
-    // 親クローズ時の総合リセット（親からの制御は廃止したが安全に呼べる）
     resetOnClose () {
       this.teardownTsWatcher()
       this.teardownObjWatcher()
@@ -477,7 +551,6 @@ export default {
       this.resetUIState()
     },
 
-    // UIの初期状態へ
     resetUIState () {
       this.yearRange = [this.minYear, this.maxYear]
       this.creatorNamesText = ''
@@ -490,33 +563,26 @@ export default {
       this.s_is360Pic = false
     },
 
-    // すべての関連レイヤーのフィルタ解除・色戻し
     clearAllMapFilters () {
       const map = this.map01
       if (!map || !map.getLayer) return
 
       const layerIds = [
-        // 基本ポイント（環境によりID差異あり：両対応）
         'oh-mapillary-images',
         'oh-mapillary-images-1',
-        // オブジェクト
         'oh-mapillary-images-2',
         'oh-mapillary-images-2-icon',
-        // 交通標識
         'oh-mapillary-images-3',
         'oh-mapillary-images-3-icon',
-        // ハイライト等
         'oh-mapillary-images-highlight',
       ]
       layerIds.forEach(id => {
         try { if (map.getLayer(id)) map.setFilter(id, null) } catch (_) {}
       })
 
-      // 色の初期化（存在すれば）
       try { if (map.getLayer('oh-mapillary-images')) map.setPaintProperty('oh-mapillary-images', 'circle-color', '#35AF6D') } catch (_) {}
       try { if (map.getLayer('oh-mapillary-images-1')) map.setPaintProperty('oh-mapillary-images-1', 'circle-color', '#35AF6D') } catch (_) {}
 
-      // 走行軌跡の一時ソースなどをクリア（存在すれば）
       try {
         const src = map.getSource && map.getSource('mly-current-point')
         if (src?.setData) {
