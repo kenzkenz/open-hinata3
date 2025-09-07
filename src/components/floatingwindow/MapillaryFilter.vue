@@ -64,18 +64,14 @@
 
       <!-- ③ 交通標識 -->
       <v-window-item value="3">
-
         <!-- 可視アイコン（折り返し＋手動トグル） -->
         <div class="mt-3">
           <div class="text-caption mb-1">画面内の標識</div>
-
           <div class="chip-flow">
             <v-chip
                 v-for="v in visibleIconValues"
                 :key="v"
-                :input-value="isSelected(v)"
-                :color="isSelected(v) ? 'primary' : undefined"
-                :outlined="!isSelected(v)"
+                :class="chipClass(v)"
                 small
                 class="ma-1"
                 @click="toggleSign(v)"
@@ -94,8 +90,8 @@
                 <span v-else class="chip-fallback">🛈</span>
               </MiniTooltip>
             </v-chip>
-
-            <span v-if="!visibleIconValues.length" class="text-caption opacity-70">（該当なし）</span>
+            <p v-if="visibleIconValues.length" style="margin-top: 20px" class="text-caption opacity-70">画面移動があった場合は標識の増減がある可能性がありますので、再抽出してください。</p>
+            <p v-else style="margin-top: 20px" class="text-caption opacity-70">（該当なし）</p>
           </div>
         </div>
       </v-window-item>
@@ -211,6 +207,7 @@ export default {
 
     // ===== 選択関連（可視アイコン） =====
     isSelected (v) { return this.selectedSignValues.includes(v) },
+    chipClass (v) { return this.isSelected(v) ? 'chip-selected' : 'chip-unselected' },
     toggleSign (v) {
       const i = this.selectedSignValues.indexOf(v)
       if (i >= 0) this.selectedSignValues.splice(i, 1)
@@ -218,7 +215,7 @@ export default {
       this.onSignValuesChange(this.selectedSignValues)
     },
 
-    // ← ここで「該当0なら全表示に戻す」を実装
+    // 該当0なら全表示に戻す
     onSignValuesChange (vals) {
       const map = this.map01
       const layerId = this.iconLayerId
@@ -227,12 +224,10 @@ export default {
       const values = Array.isArray(vals) ? vals.slice(0) : this.selectedSignValues.slice(0)
       const filter = this.buildSignFilter(values)
 
-      // まずは希望フィルタを適用（未選択なら解除）
       try {
         map.setFilter(layerId, filter || null)
       } catch (_) {}
 
-      // 次フレームで描画後の該当数を確認して、0ならフィルタ解除
       this.$nextTick(() => {
         requestAnimationFrame(() => {
           let count = 0
@@ -241,13 +236,11 @@ export default {
             count = feats.length
           } catch (_) {}
           if (values.length > 0 && count === 0) {
-            // ヒット0 → 全表示（フィルタ解除）
             try { map.setFilter(layerId, null) } catch (_) {}
           }
         })
       })
 
-      // 既存/追加イベントの発火（必要なら親で利用）
       const mode = values.length <= 1 ? 'single' : 'multi'
       this.$emit('sign-values-change', values)
       this.$emit('sign-filter-change', {
@@ -427,7 +420,7 @@ export default {
 }
 .chip-fallback{ opacity: .6; }
 
-/* 可視アイコン用：横幅内で折り返す */
+/* ===== 可視アイコン用：横幅内で折り返す ===== */
 .chip-flow{
   display: flex;
   flex-wrap: wrap;
@@ -436,9 +429,24 @@ export default {
 .chip-flow .v-chip{
   margin: 4px;
 }
+
+/* ===== 選択状態を強調（色・枠・影） ===== */
+.chip-selected{
+  background-color: #ff9800 !important;  /* 濃いめのオレンジ */
+  color: #ffffff !important;
+  /*border: 2px solid #ef6c00 !important;*/
+  /*box-shadow: 0 1px 4px rgba(0,0,0,.25) !important;*/
+  /*transform: translateY(-1px);*/
+}
+.chip-unselected{
+  background-color: #f3f3f3 !important;
+  color: #424242 !important;
+  border: 1px solid rgba(0,0,0,.15) !important;
+}
 </style>
 
 <style>
+/* このコンポーネント内スクロールが切られる場合の補助（任意） */
 .content:has(> .p-3) {
   overflow: auto !important;
 }
