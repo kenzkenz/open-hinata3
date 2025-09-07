@@ -11826,8 +11826,6 @@ export async function ensureMlyMarkerLayers(map, ids = {}) {
                 filter: ['==', ['get', 'sequence_id'], store.state.targetSeq],
                 paint: {
                     'circle-opacity': 1,
-                    // 'circle-stroke-color': '#fff',
-                    // 'circle-stroke-width': 1.5,
                     'circle-color': '#ff1744',
                     'circle-radius': 12
                 },
@@ -12422,8 +12420,6 @@ export async function queryMapillaryByUserDatesViewport (map, {
             }]
         });
     }
-
-    // const ids = []
 
     // ---- 360画像 検索（BBOXは map から）
     let r360Json = []
@@ -13037,6 +13033,58 @@ export async function openToukiFromProps(props) {
     }
 }
 
+// 画面内の oh-mapillary-images-3-icon の features から properties.value をユニーク抽出
+export function getVisibleIconValues(map, layerId = 'oh-mapillary-images-3-icon') {
+    try {
+        if (!map || !map.getLayer || !map.getLayer(layerId)) return []
+        const feats = map.queryRenderedFeatures({ layers: [layerId] }) || []
+        const s = new Set()
+        for (const f of feats) {
+            const v = f && f.properties && f.properties.value
+            if (v !== undefined && v !== null && String(v).trim() !== '') s.add(String(v))
+        }
+        return Array.from(s).sort()
+    } catch (_) {
+        return []
+    }
+}
+
+/**
+ * ビューポートの value 一覧をマップ移動のたびに取得して callback に渡す
+ * @param map MapLibre/Mapbox GL JS map
+ * @param layerId デフォルト 'oh-mapillary-images-3-icon'
+ * @param callback (values:string[]) => void
+ * @param options { debounceMs?:number, immediate?:boolean }
+ * @returns {() => void} detach 関数
+ */
+export function attachViewportIconValues(map, layerId = 'oh-mapillary-images-3-icon', callback = () => {}, options = {}) {
+    const debounceMs = typeof options.debounceMs === 'number' ? options.debounceMs : 120
+    const immediate = options.immediate !== false
+    let timer = null
+
+    const run = () => {
+        const vals = getVisibleIconValues(map, layerId)
+        callback(vals)
+    }
+
+    const schedule = () => {
+        if (timer) clearTimeout(timer)
+        timer = setTimeout(() => { timer = null; run() }, debounceMs)
+    }
+
+    // 画面操作後に更新（パン・ズーム・回転すべて moveend で拾える）
+    const handler = () => schedule()
+    map.on('moveend', handler)
+
+    // 初回
+    if (immediate) schedule()
+
+    // デタッチ
+    return () => {
+        try { map.off('moveend', handler) } catch (_) {}
+        if (timer) { clearTimeout(timer); timer = null }
+    }
+}
 
 
 

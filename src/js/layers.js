@@ -192,7 +192,6 @@ const mapillaryIcon3 = {
     type: 'symbol',
     source: 'mapillary-source-3',
     'source-layer': 'traffic_sign',
-    // filter: ['has', 'class'],     // プロパティ名は実データに合わせる
     layout: {
         'icon-image': ['get', 'value'],
         'icon-size': ['interpolate',
