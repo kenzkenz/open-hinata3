@@ -11631,6 +11631,7 @@ function getSizeViaImage(url) {
  * @returns {string}
  */
 function formatToJSTString(input) {
+    // 1) 入力（秒 or ms or パース可能な文字列）→ ms に正規化
     const toMs = (v) => {
         if (typeof v === 'number') return v < 1e12 ? v * 1000 : v; // 秒ならmsへ
         const t = Date.parse(v);
@@ -11639,12 +11640,18 @@ function formatToJSTString(input) {
     const ms = toMs(input);
     if (!Number.isFinite(ms)) return '';
     const dt = new Date(ms);
-    const y = dt.toLocaleString('ja-JP', { year: 'numeric', timeZone: 'Asia/Tokyo' });
-    const mo = dt.toLocaleString('ja-JP', { month: '2-digit', timeZone: 'Asia/Tokyo' });
-    const d = dt.toLocaleString('ja-JP', { day: '2-digit', timeZone: 'Asia/Tokyo' });
-    const h = dt.toLocaleString('ja-JP', { hour: '2-digit', hour12: false, timeZone: 'Asia/Tokyo' });
-    const mi = dt.toLocaleString('ja-JP', { minute:'2-digit', timeZone: 'Asia/Tokyo' });
-    return `${y}${mo}${d} ${h}:${mi}`;
+    // 2) Intl.DateTimeFormat の formatToParts で安全に各パーツ取得（2桁ゼロ埋めを保証）
+    const fmt = new Intl.DateTimeFormat('ja-JP', {
+        timeZone: 'Asia/Tokyo',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    });
+    const partsObj = Object.fromEntries(fmt.formatToParts(dt).map(p => [p.type, p.value]));
+    return `${partsObj.year}年${partsObj.month}月${partsObj.day}日 ${partsObj.hour}時${partsObj.minute}分`;
 }
 /**
  *
@@ -13143,8 +13150,6 @@ export function attachViewportIconValues(map, layerId = 'oh-mapillary-images-3-i
         if (timer) { clearTimeout(timer); timer = null }
     }
 }
-
-
 
 /**
  *
