@@ -110,9 +110,10 @@ export default {
     snapPx: { type: Number, default: 12 },
 
     /** スナップ選択（'off'|'x'|'y'|'xy'|'edges'） */
+    // ★ 既定を 'y' に変更（水平は吸着しない）
     snap: {
       type: String,
-      default: "xy",
+      default: "y",
       validator: (v) => ["off", "x", "y", "xy", "edges"].includes(v),
     },
 
@@ -269,6 +270,44 @@ export default {
       }
     },
 
+    /* -------------------- オフスクリーン対策 -------------------- */
+    ensureInitialIfOffscreen() {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      // 評価用サイズ（画面より大きければ収まる範囲で判定）
+      const w = Math.min(this.width, vw);
+      const h = Math.min(this.height, vh);
+
+      // 左上位置（rightアンカーはxを計算）
+      const x = this.anchor === "right" ? vw - (this.right + w) : this.left;
+      const y = this.top;
+
+      // 可視領域との交差（24px以上見えていればOK）
+      const interW = Math.min(x + w, vw) - Math.max(x, 0);
+      const interH = Math.min(y + h, vh) - Math.max(y, 0);
+      const visibleEnough = interW > 24 && interH > 24;
+
+      if (!visibleEnough) {
+        // 初期値へ戻す（クランプ込み）
+        this.top = this.defaultTop;
+        this.width = Math.min(this.defaultWidth, vw);
+        this.height = Math.min(this.defaultHeight, vh);
+        if (this.anchor === "right") {
+          this.right = this.defaultRight;
+        } else {
+          this.left = this.defaultLeft;
+        }
+        // 念のためクランプ
+        this.top = Math.min(this.top, Math.max(0, vh - this.height));
+        if (this.anchor === "right") {
+          this.right = Math.min(this.right, Math.max(0, vw - this.width));
+        } else {
+          this.left = Math.min(this.left, Math.max(0, vw - this.width));
+        }
+      }
+    },
+
     /* -------------------- 閉じる -------------------- */
     close(e) {
       this.$emit("close", {
@@ -339,7 +378,7 @@ export default {
       const newTop = this.startTop + (e.clientY - this.startY);
 
       if (this.anchor === "right") {
-        this.right = window.innerWidth - Math.max(0, newLeft) - this.width;
+        this.right = window.innerWidth - Math.max(0, newLeft) - this.width; // 右端は越境可（newLeft側は負値禁止）
       } else {
         this.left = Math.max(0, newLeft);
       }
@@ -390,15 +429,9 @@ export default {
         newW = newH * this.originalAspect;
       } else {
         if (this.resizeDir.includes("right")) newW = this.startWidth + dx;
-        if (this.resizeDir.includes("left")) {
-          newW = this.startWidth - dx;
-          this.left = this.startLeft + dx;
-        }
+        if (this.resizeDir.includes("left")) { newW = this.startWidth - dx; this.left = this.startLeft + dx; }
         if (this.resizeDir.includes("bottom")) newH = this.startHeight + dy;
-        if (this.resizeDir.includes("top")) {
-          newH = this.startHeight - dy;
-          this.top = Math.max(0, this.startTop + dy);
-        }
+        if (this.resizeDir.includes("top")) { newH = this.startHeight - dy; this.top = Math.max(0, this.startTop + dy); }
       }
 
       if (this.keepAspectRatio && this.resizeDir.includes("left")) {
@@ -430,23 +463,11 @@ export default {
     /* -------------------- 最大化/復元 -------------------- */
     maximize() {
       if (this.isMaximized) return;
-      this.preMaxState = {
-        top: this.top,
-        left: this.left,
-        right: this.right,
-        width: this.width,
-        height: this.height,
-      };
+      this.preMaxState = { top: this.top, left: this.left, right: this.right, width: this.width, height: this.height };
       this.isMaximized = true;
-      this.left = 0;
-      this.right = 0;
-      this.top = 0;
-      this.width = window.innerWidth;
-      this.height = window.innerHeight;
-      this.$nextTick(() => {
-        this.$emit("width-changed", this.width);
-        this.$emit("height-changed", this.height);
-      });
+      this.left = 0; this.right = 0; this.top = 0;
+      this.width = window.innerWidth; this.height = window.innerHeight;
+      this.$nextTick(() => { this.$emit("width-changed", this.width); this.$emit("height-changed", this.height); });
       this.$emit("maximize");
       window.addEventListener("resize", this.syncMaxSize, { passive: true });
       // ガード付きなので normal モードでは保存されない
@@ -456,65 +477,38 @@ export default {
       if (!this.isMaximized) return;
       window.removeEventListener("resize", this.syncMaxSize);
       if (this.preMaxState) {
-        this.top = this.preMaxState.top;
-        this.left = this.preMaxState.left;
-        this.right = this.preMaxState.right;
-        this.width = this.preMaxState.width;
-        this.height = this.preMaxState.height;
+        this.top = this.preMaxState.top; this.left = this.preMaxState.left; this.right = this.preMaxState.right;
+        this.width = this.preMaxState.width; this.height = this.preMaxState.height;
       }
       this.isMaximized = false;
-      this.$nextTick(() => {
-        this.$emit("width-changed", this.width);
-        this.$emit("height-changed", this.height);
-      });
+      this.$nextTick(() => { this.$emit("width-changed", this.width); this.$emit("height-changed", this.height); });
       this.$emit("restore");
       this.saveToStorage();
     },
     syncMaxSize() {
       if (!this.isMaximized) return;
-      this.width = window.innerWidth;
-      this.height = window.innerHeight;
-      this.$nextTick(() => {
-        this.$emit("width-changed", this.width);
-        this.$emit("height-changed", this.height);
-      });
+      this.width = window.innerWidth; this.height = window.innerHeight;
+      this.$nextTick(() => { this.$emit("width-changed", this.width); this.$emit("height-changed", this.height); });
     },
 
     /* -------------------- キーボード操作 -------------------- */
     onKeydown(e) {
       if (!this.visible || this.isMaximized) return;
       const step = e.shiftKey ? 10 : 1;
-      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key))
-        e.preventDefault();
+      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) e.preventDefault();
 
-      if (e.key === "ArrowUp") {
-        this.top = Math.max(0, this.top - step);
-        this.saveToStorage();
-      }
-      if (e.key === "ArrowDown") {
-        this.top = this.top + step;
-        this.saveToStorage();
-      }
+      if (e.key === "ArrowUp")   { this.top = Math.max(0, this.top - step); this.saveToStorage(); }
+      if (e.key === "ArrowDown") { this.top = this.top + step;               this.saveToStorage(); }
       if (e.key === "ArrowLeft") {
-        if (e.altKey) {
-          this.width = Math.max(100, this.width - 10);
-          this.$emit("width-changed", this.width);
-        } else if (this.anchor === "right") {
-          this.right = this.right + step;
-        } else {
-          this.left = Math.max(0, this.left - step);
-        }
+        if (e.altKey) { this.width = Math.max(100, this.width - 10); this.$emit("width-changed", this.width); }
+        else if (this.anchor === "right") this.right = this.right + step; // 右アンカー: 左へ移動
+        else this.left = Math.max(0, this.left - step);
         this.saveToStorage();
       }
       if (e.key === "ArrowRight") {
-        if (e.altKey) {
-          this.width = this.width + 10;
-          this.$emit("width-changed", this.width);
-        } else if (this.anchor === "right") {
-          this.right = Math.max(0, this.right - step);
-        } else {
-          this.left = this.left + step;
-        }
+        if (e.altKey) { this.width = this.width + 10; this.$emit("width-changed", this.width); }
+        else if (this.anchor === "right") this.right = this.right - step;   // ★ 越境許可: 0未満OK
+        else this.left = this.left + step;
         this.saveToStorage();
       }
     },
@@ -523,11 +517,11 @@ export default {
   mounted() {
     // 初期座標（右基準なら right を採用）
     this.top = this.defaultTop;
-    if (this.anchor === "right") this.right = this.defaultRight;
-    else this.left = this.defaultLeft;
+    if (this.anchor === "right") this.right = this.defaultRight; else this.left = this.defaultLeft;
 
-    // 保存値復元
+    // 保存値復元 → 画面外チェック
     this.restoreFromStorage();
+    this.ensureInitialIfOffscreen();
 
     // キー操作
     window.addEventListener("keydown", this.onKeydown, { passive: false });
@@ -537,14 +531,15 @@ export default {
     mapillaryZindex(value) {
       this.zIndex = value;
     },
-    visible() {
+    visible(val) {
       this.zIndex = getNextZIndex();
       this.$nextTick(() => {
         setTimeout(() => {
-          document.querySelectorAll(".v-overlay, .bottom-right").forEach((elm) => {
+          document.querySelectorAll('.v-overlay, .bottom-right').forEach((elm) => {
             elm.style.zIndex = getNextZIndex();
           });
         }, 30);
+        if (val) this.ensureInitialIfOffscreen(); // 表示になったら再チェック
       });
     },
   },
@@ -696,6 +691,8 @@ export default {
   height: 30px;
 }
 </style>
+
+
 
 <!--
 
