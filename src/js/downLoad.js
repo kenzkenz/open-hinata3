@@ -13065,7 +13065,9 @@ export async function openToukiFromProps(props) {
     const chiban   = props['地番'] ?? props['TXTCD'] ?? '';
 
     const town = `${oaza}${chome || aza}`; // 下柚木2丁目 など
-    const payload = `${prefName}${muniName} ${town} ${normalizeChiban(chiban)}`
+    // const payload = `${prefName}${muniName} ${town} ${normalizeChiban(chiban)}`
+    //     .replace(/\s+/g,' ').trim();
+    const payload = `${town}${normalizeChiban(chiban)}`
         .replace(/\s+/g,' ').trim();
 
     try { localStorage.setItem('oh3-registry-deeplink-last', payload); } catch(_) {}
