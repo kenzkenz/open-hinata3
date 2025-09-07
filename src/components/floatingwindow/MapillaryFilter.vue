@@ -10,7 +10,6 @@
     <v-window v-model="tab" style="margin-top: 20px;">
       <!-- ① 基本 -->
       <v-window-item value="1">
-        <!-- クリエイター -->
         <div class="mt-2">
           <v-text-field
               v-model="creatorNamesText"
@@ -22,7 +21,6 @@
           />
         </div>
 
-        <!-- 年度レンジ -->
         <div class="mb-2 d-flex align-center">
           <span class="mr-2">年範囲</span>
           <v-range-slider
@@ -41,7 +39,6 @@
           </v-range-slider>
         </div>
 
-        <!-- 360切替 -->
         <div style="margin-top: -20px;" class="mb-2 d-flex flex-wrap gap-2">
           <v-switch
               v-model="s_is360Pic"
@@ -57,42 +54,73 @@
         </div>
       </v-window-item>
 
-      <!-- ② オブジェクト（必要なら後で実装） -->
+      <!-- ② オブジェクト（oh-mapillary-images-2-icon） -->
       <v-window-item value="2">
-        <div class="text-caption opacity-70 mt-2">（未設定）</div>
-      </v-window-item>
-
-      <!-- ③ 交通標識 -->
-      <v-window-item value="3">
-        <!-- 可視アイコン（折り返し＋手動トグル） -->
         <div class="mt-3">
-          <div class="text-caption mb-1">画面内の標識</div>
+          <div class="text-caption mb-1">画面内のオブジェクト</div>
           <div class="chip-flow">
             <v-chip
-                v-for="v in visibleIconValues"
+                v-for="v in objVisibleValues"
                 :key="v"
-                :class="chipClass(v)"
+                :class="objChipClass(v)"
                 small
                 class="ma-1"
-                @click="toggleSign(v)"
+                @click="toggleObj(v)"
             >
               <MiniTooltip :text="v" :offset-x="0" :offset-y="0">
                 <img
-                    v-if="!failedIcon[v]"
+                    v-if="!objFailedIcon[v]"
                     class="chip-img"
-                    :src="iconUrl(v)"
+                    :src="objIconUrl(v)"
                     alt=""
                     decoding="async"
                     loading="lazy"
-                    @error="onImgError(v)"
-                    @load="onImgLoad(v)"
+                    @error="onObjImgError(v)"
+                    @load="onObjImgLoad(v)"
                 />
                 <span v-else class="chip-fallback">🛈</span>
               </MiniTooltip>
             </v-chip>
-            <p v-if="visibleIconValues.length" style="margin-top: 20px" class="text-caption opacity-70">画面移動があった場合は標識の増減がある可能性がありますので、再抽出してください。</p>
-            <p v-else style="margin-top: 20px" class="text-caption opacity-70">（該当なし）</p>
           </div>
+          <p v-if="objVisibleValues.length" class="text-caption opacity-70 mt-3">
+            画面移動で増減する可能性があります（必要なら再抽出）。
+          </p>
+          <p v-else class="text-caption opacity-70 mt-3">（該当なし）</p>
+        </div>
+      </v-window-item>
+
+      <!-- ③ 交通標識（oh-mapillary-images-3-icon） -->
+      <v-window-item value="3">
+        <div class="mt-3">
+          <div class="text-caption mb-1">画面内の標識</div>
+          <div class="chip-flow">
+            <v-chip
+                v-for="v in tsVisibleValues"
+                :key="v"
+                :class="tsChipClass(v)"
+                small
+                class="ma-1"
+                @click="toggleTs(v)"
+            >
+              <MiniTooltip :text="v" :offset-x="0" :offset-y="0">
+                <img
+                    v-if="!tsFailedIcon[v]"
+                    class="chip-img"
+                    :src="tsIconUrl(v)"
+                    alt=""
+                    decoding="async"
+                    loading="lazy"
+                    @error="onTsImgError(v)"
+                    @load="onTsImgLoad(v)"
+                />
+                <span v-else class="chip-fallback">🛈</span>
+              </MiniTooltip>
+            </v-chip>
+          </div>
+          <p v-if="tsVisibleValues.length" class="text-caption opacity-70 mt-3">
+            画面移動で増減する可能性があります（必要なら再抽出）。
+          </p>
+          <p v-else class="text-caption opacity-70 mt-3">（該当なし）</p>
         </div>
       </v-window-item>
     </v-window>
@@ -127,28 +155,30 @@ export default {
       minYear: 2014,
       maxYear: nowY,
       yearRange: [2014, nowY],
-      selectedCats: [],
-      selectedSignValues: [],      // 可視アイコンの選択
+
+      // 交通標識（3-icon）
+      tsLayerId: 'oh-mapillary-images-3-icon',
+      tsVisibleValues: [],
+      tsSelectedValues: [],
+      tsFailedIcon: {},
+
+      // オブジェクト（2-icon）
+      objLayerId: 'oh-mapillary-images-2-icon',
+      objVisibleValues: [],
+      objSelectedValues: [],
+      objFailedIcon: {},
+
+      // 共通
       creatorNamesText: '',
-      CATEGORIES: [
-        { id:'traffic_sign', label:'標識' },
-        { id:'crosswalk',    label:'横断歩道' },
-        { id:'guardrail',    label:'ガードレール' },
-        { id:'lane_marking', label:'レーンマーキング' },
-        { id:'speed_bump',   label:'ハンプ' },
-        { id:'utility_pole', label:'電柱' },
-      ],
-
-      iconLayerId: 'oh-mapillary-images-3-icon',
-      visibleIconValues: [],
-      failedIcon: {},
-
-      detachIconListener: null,
-      styleDataHandler: null,
-
       ro: null,
       yrChangeTimer: null,
       yrChangeDelayMs: 200,
+
+      // 監視解除ハンドラ
+      tsDetachListener: null,
+      tsStyleHandler: null,
+      objDetachListener: null,
+      objStyleHandler: null,
     }
   },
   computed: {
@@ -157,30 +187,36 @@ export default {
       get() { return this.$store.state.is360Pic },
       set(v) { this.$store.state.is360Pic = v }
     },
-    creatorNames () {
-      return (this.creatorNamesText || '')
-          .split(',')
-          .map(s => s.trim())
-          .filter(Boolean)
-    },
   },
   watch: {
     resetKey () { this.onResetClick() },
+
+    // タブ切替で attach / detach
     tab (v) {
-      if (v === '3') this.setupIconValueWatcher()
-      else this.teardownIconValueWatcher()
+      if (v === '2') this.setupObjWatcher(); else this.teardownObjWatcher()
+      if (v === '3') this.setupTsWatcher();  else this.teardownTsWatcher()
     },
-    // 可視値の更新に合わせ、選択から外れた値をクリーンアップ
-    visibleIconValues (vals) {
+
+    // 可視値の更新に合わせ選択をクリーンアップ
+    tsVisibleValues (vals) {
       const set = new Set(vals)
-      const next = this.selectedSignValues.filter(v => set.has(v))
-      if (next.length !== this.selectedSignValues.length) {
-        this.selectedSignValues = next
-        this.onSignValuesChange(next)   // 親へ最新状態を通知
+      const next = this.tsSelectedValues.filter(v => set.has(v))
+      if (next.length !== this.tsSelectedValues.length) {
+        this.tsSelectedValues = next
+        this.applyTsFilter(next)
       }
-    }
+    },
+    objVisibleValues (vals) {
+      const set = new Set(vals)
+      const next = this.objSelectedValues.filter(v => set.has(v))
+      if (next.length !== this.objSelectedValues.length) {
+        this.objSelectedValues = next
+        this.applyObjFilter(next)
+      }
+    },
   },
   mounted () {
+    // 幅通知
     if (this.observeWidth && typeof ResizeObserver !== 'undefined') {
       this.ro = new ResizeObserver(entries => {
         const cr = entries?.[0]?.contentRect
@@ -193,134 +229,200 @@ export default {
       })
     }
 
-    if (this.tab === '3') this.setupIconValueWatcher()
+    // 初期タブに応じて監視を開始
+    if (this.tab === '2') this.setupObjWatcher()
+    if (this.tab === '3') this.setupTsWatcher()
+
     this.init()
   },
   beforeUnmount () { this.cleanup() },
   methods: {
-    // ===== 単一/複数でモードとフィルタを作る（交通標識） =====
-    buildSignFilter (values) {
+    /* ========== 共通ユーティリティ ========== */
+    buildValueFilter (values) {
       if (!values || !values.length) return null
       if (values.length === 1) return ['==', ['get', 'value'], values[0]]
       return ['in', ['get', 'value'], ['literal', values]]
     },
-
-    // ===== 選択関連（可視アイコン） =====
-    isSelected (v) { return this.selectedSignValues.includes(v) },
-    chipClass (v) { return this.isSelected(v) ? 'chip-selected' : 'chip-unselected' },
-    toggleSign (v) {
-      const i = this.selectedSignValues.indexOf(v)
-      if (i >= 0) this.selectedSignValues.splice(i, 1)
-      else this.selectedSignValues.push(v)
-      this.onSignValuesChange(this.selectedSignValues)
+    msToYmdUTC (ms) { return new Date(ms).toISOString().slice(0, 10) },
+    getCapturedAtRangeMs () {
+      const y0 = Number(this.yearRange[0])
+      const y1 = Number(this.yearRange[1])
+      const startMs = Date.UTC(y0, 0, 1, 0, 0, 0, 0)
+      const endMs   = Date.UTC(y1, 11, 31, 23, 59, 59, 999)
+      return { startMs, endMs }
     },
 
-    // 該当0なら全表示に戻す
-    onSignValuesChange (vals) {
-      const map = this.map01
-      const layerId = this.iconLayerId
+    /* ========== 交通標識（3-icon） ========== */
+    tsIconUrl (value) {
+      return `https://kenzkenz.xsrv.jp/icon/mapillary/package_signs/${encodeURIComponent(value)}.svg`
+    },
+    tsChipClass (v) { return this.tsSelectedValues.includes(v) ? 'chip-selected' : 'chip-unselected' },
+    toggleTs (v) {
+      const i = this.tsSelectedValues.indexOf(v)
+      if (i >= 0) this.tsSelectedValues.splice(i, 1)
+      else this.tsSelectedValues.push(v)
+      this.applyTsFilter(this.tsSelectedValues)
+    },
+    applyTsFilter (vals) {
+      const map = this.map01, layerId = this.tsLayerId
       if (!map || !map.getLayer || !map.getLayer(layerId)) return
 
-      const values = Array.isArray(vals) ? vals.slice(0) : this.selectedSignValues.slice(0)
-      const filter = this.buildSignFilter(values)
+      const values = Array.isArray(vals) ? vals.slice(0) : this.tsSelectedValues.slice(0)
+      const filter = this.buildValueFilter(values)
+      try { map.setFilter(layerId, filter || null) } catch (_) {}
 
-      try {
-        map.setFilter(layerId, filter || null)
-      } catch (_) {}
-
+      // ヒット0なら解除
       this.$nextTick(() => {
         requestAnimationFrame(() => {
-          let count = 0
-          try {
-            const feats = map.queryRenderedFeatures({ layers: [layerId] }) || []
-            count = feats.length
-          } catch (_) {}
-          if (values.length > 0 && count === 0) {
-            try { map.setFilter(layerId, null) } catch (_) {}
-          }
+          let n = 0
+          try { n = (map.queryRenderedFeatures({ layers: [layerId] }) || []).length } catch (_) {}
+          if (values.length > 0 && n === 0) { try { map.setFilter(layerId, null) } catch (_) {} }
         })
       })
 
       const mode = values.length <= 1 ? 'single' : 'multi'
-      this.$emit('sign-values-change', values)
-      this.$emit('sign-filter-change', {
-        values, mode, filter, layerId, property: 'value'
-      })
+      this.$emit('ts-filter-change', { values, mode, layerId, property: 'value', filter })
+    },
+    onTsImgError (value) {
+      if (!this.tsFailedIcon[value]) this.tsFailedIcon = { ...this.tsFailedIcon, [value]: true }
+    },
+    onTsImgLoad (value) {
+      if (this.tsFailedIcon[value]) {
+        const { [value]: _drop, ...rest } = this.tsFailedIcon
+        this.tsFailedIcon = rest
+      }
     },
 
-    // ===== 検出カテゴリ（単一/複数判定付きで通知） =====
-    onCategoriesChange () {
-      const values = this.selectedCats.slice(0)
-      const mode = values.length <= 1 ? 'single' : 'multi'
-      this.$emit('categories-change', values)
-      this.$emit('categories-filter-change', { values, mode })
-    },
-
-    // ===== SVG URL =====
-    iconUrl (value) {
-      return `https://kenzkenz.xsrv.jp/icon/mapillary/package_signs/${encodeURIComponent(value)}.svg`
-    },
-    onImgError (value) { if (!this.failedIcon[value]) this.$set(this.failedIcon, value, true) },
-    onImgLoad  (value) { if (this.failedIcon[value])  this.$delete(this.failedIcon, value) },
-
-    cleanup () {
-      if (this.ro) { try { this.ro.disconnect() } catch (_) {} this.ro = null }
-      if (this.yrChangeTimer) { clearTimeout(this.yrChangeTimer); this.yrChangeTimer = null }
-      this.teardownIconValueWatcher()
-    },
-
-    // ===== 画面内 value 監視 =====
-    setupIconValueWatcher () {
-      const map = this.map01
-      const layerId = this.iconLayerId
+    setupTsWatcher () {
+      const map = this.map01, layerId = this.tsLayerId
       if (!map) return
-
-      if (this.detachIconListener) {
-        try { this.visibleIconValues = getVisibleIconValues(map, layerId) } catch (_) {}
+      if (this.tsDetachListener) {
+        try { this.tsVisibleValues = getVisibleIconValues(map, layerId) } catch (_) {}
         return
       }
-
       const attachNow = () => {
         if (map.getLayer && map.getLayer(layerId)) {
-          this.visibleIconValues = getVisibleIconValues(map, layerId)
-          this.detachIconListener = attachViewportIconValues(map, layerId, (vals) => {
-            this.visibleIconValues = vals
-          }, { debounceMs: 120, immediate: false })
-          if (this.styleDataHandler) { try { map.off('styledata', this.styleDataHandler) } catch (_) {} this.styleDataHandler = null }
+          this.tsVisibleValues = getVisibleIconValues(map, layerId)
+          this.tsDetachListener = attachViewportIconValues(
+              map, layerId, vals => { this.tsVisibleValues = vals },
+              { debounceMs: 120, immediate: false }
+          )
+          if (this.tsStyleHandler) { try { map.off('styledata', this.tsStyleHandler) } catch (_) {} this.tsStyleHandler = null }
         } else {
-          if (!this.styleDataHandler) {
-            this.styleDataHandler = () => {
+          if (!this.tsStyleHandler) {
+            this.tsStyleHandler = () => {
               if (map.getLayer && map.getLayer(layerId)) {
-                this.visibleIconValues = getVisibleIconValues(map, layerId)
-                this.detachIconListener = attachViewportIconValues(map, layerId, (vals) => {
-                  this.visibleIconValues = vals
-                }, { debounceMs: 120, immediate: false })
-                try { map.off('styledata', this.styleDataHandler) } catch (_) {}
-                this.styleDataHandler = null
+                this.tsVisibleValues = getVisibleIconValues(map, layerId)
+                this.tsDetachListener = attachViewportIconValues(
+                    map, layerId, vals => { this.tsVisibleValues = vals },
+                    { debounceMs: 120, immediate: false }
+                )
+                try { map.off('styledata', this.tsStyleHandler) } catch (_) {}
+                this.tsStyleHandler = null
               }
             }
-            map.on('styledata', this.styleDataHandler)
+            map.on('styledata', this.tsStyleHandler)
           }
         }
       }
+      if (map.isStyleLoaded && map.isStyleLoaded()) attachNow()
+      else { const onLoad = () => { try { map.off('load', onLoad) } catch (_) {} attachNow() }; map.on('load', onLoad) }
+    },
+    teardownTsWatcher () {
+      const map = this.map01
+      if (this.tsDetachListener) { try { this.tsDetachListener() } catch (_) {} this.tsDetachListener = null }
+      if (map && this.tsStyleHandler) { try { map.off('styledata', this.tsStyleHandler) } catch (_) {} this.tsStyleHandler = null }
+      this.tsVisibleValues = []
+      this.tsFailedIcon = {}
+      this.tsSelectedValues = []
+    },
 
-      if (map.isStyleLoaded && map.isStyleLoaded()) {
-        attachNow()
-      } else {
-        const onLoad = () => { try { map.off('load', onLoad) } catch (_) {} attachNow() }
-        map.on('load', onLoad)
+    /* ========== オブジェクト（2-icon） ========== */
+    objIconUrl (value) {
+      return `https://kenzkenz.xsrv.jp/icon/mapillary/package_signs/${encodeURIComponent(value)}.svg`
+    },
+    objChipClass (v) { return this.objSelectedValues.includes(v) ? 'chip-selected' : 'chip-unselected' },
+    toggleObj (v) {
+      const i = this.objSelectedValues.indexOf(v)
+      if (i >= 0) this.objSelectedValues.splice(i, 1)
+      else this.objSelectedValues.push(v)
+      this.applyObjFilter(this.objSelectedValues)
+    },
+    applyObjFilter (vals) {
+      const map = this.map01, layerId = this.objLayerId
+      if (!map || !map.getLayer || !map.getLayer(layerId)) return
+
+      const values = Array.isArray(vals) ? vals.slice(0) : this.objSelectedValues.slice(0)
+      const filter = this.buildValueFilter(values)
+      try { map.setFilter(layerId, filter || null) } catch (_) {}
+
+      // ヒット0なら解除
+      this.$nextTick(() => {
+        requestAnimationFrame(() => {
+          let n = 0
+          try { n = (map.queryRenderedFeatures({ layers: [layerId] }) || []).length } catch (_) {}
+          if (values.length > 0 && n === 0) { try { map.setFilter(layerId, null) } catch (_) {} }
+        })
+      })
+
+      const mode = values.length <= 1 ? 'single' : 'multi'
+      this.$emit('obj-filter-change', { values, mode, layerId, property: 'value', filter })
+    },
+    onObjImgError (value) {
+      if (!this.objFailedIcon[value]) this.objFailedIcon = { ...this.objFailedIcon, [value]: true }
+    },
+    onObjImgLoad (value) {
+      if (this.objFailedIcon[value]) {
+        const { [value]: _drop, ...rest } = this.objFailedIcon
+        this.objFailedIcon = rest
       }
     },
-    teardownIconValueWatcher () {
+
+    setupObjWatcher () {
+      const map = this.map01, layerId = this.objLayerId
+      if (!map) return
+      if (this.objDetachListener) {
+        try { this.objVisibleValues = getVisibleIconValues(map, layerId) } catch (_) {}
+        return
+      }
+      const attachNow = () => {
+        if (map.getLayer && map.getLayer(layerId)) {
+          this.objVisibleValues = getVisibleIconValues(map, layerId)
+          this.objDetachListener = attachViewportIconValues(
+              map, layerId, vals => { this.objVisibleValues = vals },
+              { debounceMs: 120, immediate: false }
+          )
+          if (this.objStyleHandler) { try { map.off('styledata', this.objStyleHandler) } catch (_) {} this.objStyleHandler = null }
+        } else {
+          if (!this.objStyleHandler) {
+            this.objStyleHandler = () => {
+              if (map.getLayer && map.getLayer(layerId)) {
+                this.objVisibleValues = getVisibleIconValues(map, layerId)
+                this.objDetachListener = attachViewportIconValues(
+                    map, layerId, vals => { this.objVisibleValues = vals },
+                    { debounceMs: 120, immediate: false }
+                )
+                try { map.off('styledata', this.objStyleHandler) } catch (_) {}
+                this.objStyleHandler = null
+              }
+            }
+            map.on('styledata', this.objStyleHandler)
+          }
+        }
+      }
+      if (map.isStyleLoaded && map.isStyleLoaded()) attachNow()
+      else { const onLoad = () => { try { map.off('load', onLoad) } catch (_) {} attachNow() }; map.on('load', onLoad) }
+    },
+    teardownObjWatcher () {
       const map = this.map01
-      if (this.detachIconListener) { try { this.detachIconListener() } catch (_) {} this.detachIconListener = null }
-      if (map && this.styleDataHandler) { try { map.off('styledata', this.styleDataHandler) } catch (_) {} this.styleDataHandler = null }
-      this.visibleIconValues = []
-      this.failedIcon = {}
-      this.selectedSignValues = []
+      if (this.objDetachListener) { try { this.objDetachListener() } catch (_) {} this.objDetachListener = null }
+      if (map && this.objStyleHandler) { try { map.off('styledata', this.objStyleHandler) } catch (_) {} this.objStyleHandler = null }
+      this.objVisibleValues = []
+      this.objFailedIcon = {}
+      this.objSelectedValues = []
     },
 
-    // ===== 年レンジ =====
+    /* ========== 基本系 ========== */
     onYearRangeInput () {
       if (!this.creatorNamesText?.trim()) return
       if (this.yrChangeTimer) clearTimeout(this.yrChangeTimer)
@@ -330,7 +432,6 @@ export default {
       }, this.yrChangeDelayMs)
     },
 
-    // ===== 360トグル =====
     async onOnly360Change () {
       const map01 = this.$store.state.map01
       if (!map01) return
@@ -342,10 +443,7 @@ export default {
           map01.setFilter('oh-mapillary-images-highlight', ['==', ['get', 'sequence_id'], this.$store.state.targetSeq])
           const src = map01.getSource && map01.getSource('mly-current-point')
           if (src?.setData) {
-            src.setData({
-              type:'FeatureCollection',
-              features:[{ type:'Feature', geometry:{ type:'LineString', coordinates:[] }, properties:{} }]
-            })
+            src.setData({ type:'FeatureCollection', features:[{ type:'Feature', geometry:{ type:'LineString', coordinates:[] }, properties:{} }] })
           }
         }
         await setFllter360(map01)
@@ -360,7 +458,6 @@ export default {
       }
     },
 
-    // === クリエイター入力：start/end を 'YYYY-MM-DD' で渡す ===
     async onCreatorsInput () {
       const { startMs, endMs } = this.getCapturedAtRangeMs()
       const start = this.msToYmdUTC(startMs)
@@ -375,7 +472,7 @@ export default {
       }
 
       await queryMapillaryByUserDatesViewport(map01, {
-        username: this.creatorNamesText,
+        username: this.creatorNamesText, // 空でもOK
         start, end,
       })
     },
@@ -384,25 +481,20 @@ export default {
 
     onResetClick () {
       this.yearRange = [this.minYear, this.maxYear]
-      this.selectedCats = []
-      this.selectedSignValues = []
       this.creatorNamesText = ''
+      this.teardownTsWatcher()
+      this.teardownObjWatcher()
       mapillaryFilterRiset()
-      if (this.tab === '3') this.teardownIconValueWatcher()
     },
 
-    // ===== 子でやるロジック（必要なら実装） =====
-    init () { /* TODO */ },
+    init () { /* 必要なら実装 */ },
 
-    // ===== 日付変換（UTC固定） =====
-    getCapturedAtRangeMs () {
-      const y0 = Number(this.yearRange[0])
-      const y1 = Number(this.yearRange[1])
-      const startMs = Date.UTC(y0, 0, 1, 0, 0, 0, 0)
-      const endMs   = Date.UTC(y1, 11, 31, 23, 59, 59, 999)
-      return { startMs, endMs }
+    cleanup () {
+      if (this.ro) { try { this.ro.disconnect() } catch (_) {} this.ro = null }
+      if (this.yrChangeTimer) { clearTimeout(this.yrChangeTimer); this.yrChangeTimer = null }
+      this.teardownTsWatcher()
+      this.teardownObjWatcher()
     },
-    msToYmdUTC (ms) { return new Date(ms).toISOString().slice(0, 10) },
   },
 }
 </script>
@@ -420,7 +512,7 @@ export default {
 }
 .chip-fallback{ opacity: .6; }
 
-/* ===== 可視アイコン用：横幅内で折り返す ===== */
+/* 折り返し */
 .chip-flow{
   display: flex;
   flex-wrap: wrap;
@@ -430,13 +522,10 @@ export default {
   margin: 4px;
 }
 
-/* ===== 選択状態を強調（色・枠・影） ===== */
+/* 選択強調 */
 .chip-selected{
-  background-color: #ff9800 !important;  /* 濃いめのオレンジ */
+  background-color: #ff9800 !important;
   color: #ffffff !important;
-  /*border: 2px solid #ef6c00 !important;*/
-  /*box-shadow: 0 1px 4px rgba(0,0,0,.25) !important;*/
-  /*transform: translateY(-1px);*/
 }
 .chip-unselected{
   background-color: #f3f3f3 !important;
@@ -446,7 +535,6 @@ export default {
 </style>
 
 <style>
-/* このコンポーネント内スクロールが切られる場合の補助（任意） */
 .content:has(> .p-3) {
   overflow: auto !important;
 }
