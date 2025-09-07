@@ -47,7 +47,7 @@ const messageDialogModule = {
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.451,
+    clientVersion: 1.452,
     hitText: '',
     iframeVDIalog: false,
     isDrawFit: false,

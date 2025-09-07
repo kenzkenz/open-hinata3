@@ -16,7 +16,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           :default-top = "10"
           :default-left = "mlyDefaultLeft"
           :default-width = "isSmall500 ? 350 : 500"
-          :default-height = "isSmall500 ? 350 : 370"
+          :default-height = "isSmall500 ? 400 : 400"
           :keepAspectRatio = "false"
           :showMaxRestore="false"
           @close = "mapillaryClose"
@@ -57,7 +57,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
         <div class="mapillary-div" :style="{height:'calc(100% - 102px)',width:'100%',background:'color-mix(in srgb, var(--main-color) 60%, black)',color:'white'}">
         </div>
         <div class="toolbar-row">
-          <v-btn @click="mapillaryFilterOpen">フィルター</v-btn>
+          <v-btn @click="mapillaryFilterOpen">フィルタ</v-btn>
 <!--          <v-text-field-->
 <!--              v-model="s_mapillaryUserName"-->
 <!--              label="ユーザー名"-->
@@ -10079,18 +10079,6 @@ export default {
       },
       deep: true
     },
-    // tempLineCoordsGuide() {
-    //   alert(888)
-    //   if (this.s_isDrawPolygon) {
-    //     if (this.tempLineCoordsGuide.length >= this.drawTool.minPolygonPoints) {
-    //       this.confirmBtnColor = 'success'
-    //     }
-    //   } else if (this.s_isDrawLine) {
-    //     if (this.tempLineCoordsGuide.length >= this.drawTool.minLinePoints) {
-    //       this.confirmBtnColor = 'success'
-    //     }
-    //   }
-    // },
     showDrawConfrim(value) {
       if (value && this.isSmall500) {
         this.drawFix(true)

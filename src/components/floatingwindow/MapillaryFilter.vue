@@ -50,13 +50,24 @@
         </div>
         <div class="d-flex align-center justify-space-between">
           <p class="ma-0" v-html="hitText"></p>
-          <v-btn small text @click="onResetClick">リセット（全て初期化）</v-btn>
+          <v-btn small text class="mt-2" @click="onResetClick">リセット</v-btn>
         </div>
       </v-window-item>
 
       <!-- ② オブジェクト（oh-mapillary-images-2-icon） -->
       <v-window-item value="2">
         <div class="mt-3">
+          <!-- 選択を全解除して全表示 -->
+          <div class="d-flex align-center justify-end mt-2">
+            <v-btn
+                small
+                text
+                :disabled="!objSelectedValues.length"
+                @click="clearObjSelectionAndRefresh"
+            >
+              選択解除
+            </v-btn>
+          </div>
           <div class="text-caption mb-1">画面内のオブジェクト</div>
           <div class="chip-flow">
             <v-chip
@@ -92,6 +103,17 @@
       <!-- ③ 交通標識（oh-mapillary-images-3-icon） -->
       <v-window-item value="3">
         <div class="mt-3">
+          <!-- 選択を全解除して全表示 -->
+          <div class="d-flex align-center justify-end mt-2">
+            <v-btn
+                small
+                text
+                :disabled="!tsSelectedValues.length"
+                @click="clearTsSelectionAndRefresh"
+            >
+              選択解除
+            </v-btn>
+          </div>
           <div class="text-caption mb-1">画面内の標識</div>
           <div class="chip-flow">
             <v-chip
@@ -170,6 +192,9 @@ export default {
       tsStyleHandler: null,
       objDetachListener: null,
       objStyleHandler: null,
+
+      // タイマー（先頭_禁止）
+      yrChangeTimer: null,
     }
   },
   computed: {
@@ -225,7 +250,7 @@ export default {
       const endMs   = Date.UTC(y1, 11, 31, 23, 59, 59, 999)
       return { startMs, endMs }
     },
-    _raf2 (fn) { requestAnimationFrame(() => requestAnimationFrame(fn)) },
+    raf2 (fn) { requestAnimationFrame(() => requestAnimationFrame(fn)) },
 
     /* ========== 交通標識（3-icon） ========== */
     tsIconUrl (value) {
@@ -241,7 +266,7 @@ export default {
       this.applyTsFilter(this.tsSelectedValues)
 
       // 選択0 = 全表示。描画完了（idle）後に可視値を再取得
-      if (this.tsSelectedValues.length === 0) this._refreshTsVisibleAfterIdle()
+      if (this.tsSelectedValues.length === 0) this.refreshTsVisibleAfterIdle()
     },
 
     applyTsFilter (vals) {
@@ -263,7 +288,8 @@ export default {
       })
     },
 
-    _refreshTsVisibleAfterIdle () {
+    // idle後に全表示の可視値を取り直す
+    refreshTsVisibleAfterIdle () {
       const map = this.map01, layerId = this.tsLayerId
       const run = () => {
         if (this.tsSelectedValues.length > 0) return
@@ -275,8 +301,8 @@ export default {
       }
       try {
         if (map?.once) map.once('idle', run)
-        else this._raf2(run)
-      } catch (_) { this._raf2(run) }
+        else this.raf2(run)
+      } catch (_) { this.raf2(run) }
     },
 
     onTsImgError (value) {
@@ -364,7 +390,7 @@ export default {
       this.applyObjFilter(this.objSelectedValues)
 
       // 選択0 = 全表示。描画完了（idle）後に可視値を再取得
-      if (this.objSelectedValues.length === 0) this._refreshObjVisibleAfterIdle()
+      if (this.objSelectedValues.length === 0) this.refreshObjVisibleAfterIdle()
     },
 
     applyObjFilter (vals) {
@@ -385,7 +411,8 @@ export default {
       })
     },
 
-    _refreshObjVisibleAfterIdle () {
+    // idle後に全表示の可視値を取り直す
+    refreshObjVisibleAfterIdle () {
       const map = this.map01, layerId = this.objLayerId
       const run = () => {
         if (this.objSelectedValues.length > 0) return
@@ -397,8 +424,8 @@ export default {
       }
       try {
         if (map?.once) map.once('idle', run)
-        else this._raf2(run)
-      } catch (_) { this._raf2(run) }
+        else this.raf2(run)
+      } catch (_) { this.raf2(run) }
     },
 
     onObjImgError (value) {
@@ -472,12 +499,24 @@ export default {
       this.objSelectedValues = []
     },
 
+    /* ========== 追加：全解除＋洗い替えボタン用 ========== */
+    clearObjSelectionAndRefresh () {
+      this.objSelectedValues = []
+      this.applyObjFilter([])            // filter(null)
+      this.refreshObjVisibleAfterIdle()  // idle後に全表示を反映
+    },
+    clearTsSelectionAndRefresh () {
+      this.tsSelectedValues = []
+      this.applyTsFilter([])             // filter(null)
+      this.refreshTsVisibleAfterIdle()   // idle後に全表示を反映
+    },
+
     /* ========== 基本系 ========== */
     onYearRangeInput () {
       if (!this.creatorNamesText?.trim()) return
-      if (this._yrChangeTimer) clearTimeout(this._yrChangeTimer)
-      this._yrChangeTimer = setTimeout(() => {
-        this._yrChangeTimer = null
+      if (this.yrChangeTimer) clearTimeout(this.yrChangeTimer)
+      this.yrChangeTimer = setTimeout(() => {
+        this.yrChangeTimer = null
         this.onCreatorsInput()
       }, 200)
     },
@@ -540,7 +579,7 @@ export default {
 
     cleanup () {
       this.resetOnClose()
-      if (this._yrChangeTimer) { clearTimeout(this._yrChangeTimer); this._yrChangeTimer = null }
+      if (this.yrChangeTimer) { clearTimeout(this.yrChangeTimer); this.yrChangeTimer = null }
     },
 
     resetOnClose () {
@@ -601,6 +640,7 @@ export default {
 .opacity-70{ opacity: .7; }
 .flex-1{ flex: 1; }
 .gap-2{ gap: .5rem; }
+.mt-2{ margin-right: 20px;}
 
 .chip-img{
   width: 18px; height: 18px;
