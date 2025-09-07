@@ -10,7 +10,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
       <FloatingWindow
           windowId = "mapillary-filter"
-          :title = "mapillaryTytle"
+          title = "mapillaryフィルタ"
           type="normal"
           :default-top = "70"
           :default-left = "210"

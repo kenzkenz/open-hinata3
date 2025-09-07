@@ -39,15 +39,10 @@
             総境界点数：{{ totalVertexCount }}
           </div>
         </div>
-      </v-card-text>
 
-<!--      <v-card-actions style="margin-top: 0px">-->
-<!--        <v-btn disabled=true style="background-color: var(--main-color); color: white!important;" @click="removeAllFeatures">全削除</v-btn>-->
-<!--        <v-spacer />-->
-<!--        <v-btn style="background-color: var(--main-color); color: white!important;" @click="remove">削除</v-btn>-->
-<!--        <v-btn style="background-color: var(--main-color); color: white!important;" @click="save">保存</v-btn>-->
-<!--        <v-btn style="background-color: var(--main-color); color: white!important;" @click="close">閉じる</v-btn>-->
-<!--      </v-card-actions>-->
+        <v-btn style="width: 100%; margin-top: 20px;" @click="openToki">地番を整形コピーして登記情報提供サービスを開く</v-btn>
+
+      </v-card-text>
 
     </v-card>
   </v-navigation-drawer>
@@ -55,7 +50,7 @@
 
 <script>
 import { mapState, mapMutations } from 'vuex';
-import {chibanzuCalculatePolygonMetrics, homusyoCalculatePolygonMetrics} from "@/js/downLoad";
+import {chibanzuCalculatePolygonMetrics, homusyoCalculatePolygonMetrics, openToukiFromProps} from "@/js/downLoad";
 import store from "@/store";
 
 export default {
@@ -108,6 +103,9 @@ export default {
       'saveSelectedPointFeature',
       'setSelectedPointFeature',
     ]),
+    openToki() {
+      openToukiFromProps(this.popupFeatureProperties)
+    },
     close() {
       this.setRightDrawer(false);
     },

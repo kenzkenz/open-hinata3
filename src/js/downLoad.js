@@ -12408,7 +12408,9 @@ export async function queryMapillaryByUserDatesViewport (map, {
     map.setFilter(layerId, null)
     map.setPaintProperty(layerId, 'circle-color', defaultColor)
     store.state.targetSeq = ''
-    map.setFilter('oh-mapillary-images-highlight', ['==', ['get', 'sequence_id'], store.state.targetSeq]);
+    if (map.getLayer('oh-mapillary-images-highlight')) {
+        map.setFilter('oh-mapillary-images-highlight', ['==', ['get', 'sequence_id'], store.state.targetSeq]);
+    }
     const src = map.getSource('mly-current-point');
     if (src && src.setData) {
         src.setData({
@@ -12507,8 +12509,8 @@ export async function queryMapillaryByUserDatesViewport (map, {
             const json = await res.json()
             const creator = json?.data?.[0]?.creator
             creatorId = creator?.id ?? ''
+            console.log(creatorId)
         }
-
     } else {
         // ユーザー名が無い場合はフィルタ解除
         try {
@@ -12973,7 +12975,7 @@ function normalizeChiban(raw) {
     if (s.includes('の')) return s;
     const parts = s.split('-').filter(Boolean);
     if (parts.length === 1) return parts[0] + '番';
-    if (parts.length >= 2) return `${parts[0]}番${parts.slice(1).join('')}`; // 25-1W2 → 25番1W2
+    if (parts.length >= 2) return `${parts[0]}番${parts.slice(1).join('')}`;
     return s;
 }
 
@@ -13011,12 +13013,27 @@ export async function openToukiFromProps(props) {
     try { await navigator.clipboard.writeText(payload); copied = true; } catch(_) {}
 
     // 公式サイトを新規タブで（ユーザー操作直下で呼ぶこと）
-    window.open('https://www1.touki.or.jp/', '_blank', 'noopener,noreferrer');
+    // window.open('https://www1.touki.or.jp/', '_blank', 'noopener,noreferrer');
 
+    // if (copied) {
+    //     alert(`地番をコピーしました。\n\n${payload}\n\n開いたタブでログイン→『不動産請求 > 地番・家屋番号 > 地番検索サービス』で貼り付けてください。`);
+    // } else {
+    //     prompt('以下をコピーして貼り付けてください', payload);
+    // }
     if (copied) {
-        alert(`地番をコピーしました。\n\n${payload}\n\n開いたタブでログイン→『不動産請求 > 地番・家屋番号 > 地番検索サービス』で貼り付けてください。`);
+        store.dispatch('messageDialog/open', {
+            id: 'toki', // idはなんでも良い。
+            title: '整形完了・クリップボードにコピー完了',
+            contentHtml: `地番を整形してクリップボードにコピーしました。<br>下のボタンを押して開いたタブでログイン→『不動産請求 > 地番・家屋番号 > 地番検索サービス』で貼り付けてください。
+                    <br><a class="pyramid-btn"
+                    href="https://www1.touki.or.jp/"
+                    target="_blank" rel="noopener noreferrer"
+                    style="height:40px; margin-top:30px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;">
+                    登記情報提供サービスへ（${payload}）</a>`,
+            options: {maxWidth: 700, showCloseIcon: true}
+        })
     } else {
-        prompt('以下をコピーして貼り付けてください', payload);
+        alert('クリップボードコピーに失敗しました。')
     }
 }
 
