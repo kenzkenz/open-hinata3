@@ -3262,37 +3262,6 @@ export default {
     mapillaryFilterOpen() {
       this.$store.dispatch('showFloatingWindow', 'mapillary-filter')
     },
-
-    // 年レンジのスライダー操作（input:ドラッグ中 / change:確定）
-    onYearInput (/* [fromYear, toYear] */) {
-
-    },
-    onYearChange (/* [fromYear, toYear] */) {
-
-    },
-    // 360°スイッチ（true/false）
-    onOnly360 (/* isOn */) {
-
-    },
-    // カテゴリ選択（配列）
-    onCats (/* categories */) {
-
-    },
-    // クリエイター名（テキストの input/change）
-    onCreatorsInput (/* text */) {
-
-    },
-    onCreatorsChange (/* text */) {
-
-    },
-    // リセットボタン
-    onReset () {
-      this.resetKeyForMly++
-    },
-    // まとめて受け取りたいとき（payload={ trigger, yearRange, only360, categories, creatorsText, creators }）
-    onFiltersChanged (/* payload */) {
-
-    },
     fullscreenForIframe() {
       // 1) クリック直後に空タブを開く（ここが超重要：同期・即時）
       const win = window.open('', '_blank'); // sandboxで許可が無いと null になる
