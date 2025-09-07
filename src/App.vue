@@ -15,8 +15,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
           type="normal"
           :default-top = "10"
           :default-left = "mlyDefaultLeft"
-          :default-width = "isSmall500 ? 200 : 630"
-          :default-height = "isSmall500 ? 300 : 440"
+          :default-width = "isSmall500 ? 350 : 500"
+          :default-height = "isSmall500 ? 350 : 370"
           :keepAspectRatio = "false"
           :showMaxRestore="false"
           @close = "mapillaryClose"
@@ -2495,7 +2495,7 @@ export default {
       'isUsingServerGeojson',
       'drawFeature',
     ]),
-    filterWidth(){ return this.isSmall500 ? 200 : 630 },
+    filterWidth(){ return this.isSmall500 ? 350 : 500 },
     mlyDefaultLeft() {
       const vw = (typeof window !== 'undefined' ? window.innerWidth : 1280)
       return Math.max(10, vw - this.filterWidth - 10)  // 右10px
