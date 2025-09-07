@@ -480,21 +480,79 @@ export default {
     onCreatorsChange () { /* noop */ },
 
     onResetClick () {
-      this.yearRange = [this.minYear, this.maxYear]
-      this.creatorNamesText = ''
+      this.resetUIState()
+      this.clearAllMapFilters()
+      mapillaryFilterRiset()
       this.teardownTsWatcher()
       this.teardownObjWatcher()
+    },
+
+    // ==== 親クローズ時に必ず呼ばれる経路 ====
+    cleanup () {
+      // 監視解除＋マップのフィルタを初期化＋UI初期化
+      this.resetOnClose()
+      if (this.ro) { try { this.ro.disconnect() } catch (_) {} this.ro = null }
+      if (this.yrChangeTimer) { clearTimeout(this.yrChangeTimer); this.yrChangeTimer = null }
+    },
+
+    // 親クローズ時の総合リセット
+    resetOnClose () {
+      this.teardownTsWatcher()
+      this.teardownObjWatcher()
+      this.clearAllMapFilters()
       mapillaryFilterRiset()
+      this.resetUIState()
+    },
+
+    // UIの初期状態へ
+    resetUIState () {
+      this.yearRange = [this.minYear, this.maxYear]
+      this.creatorNamesText = ''
+      this.tsSelectedValues = []
+      this.tsFailedIcon = {}
+      this.tsVisibleValues = []
+      this.objSelectedValues = []
+      this.objFailedIcon = {}
+      this.objVisibleValues = []
+      this.s_is360Pic = false
+    },
+
+    // すべての関連レイヤーのフィルタ解除・色戻し
+    clearAllMapFilters () {
+      const map = this.map01
+      if (!map || !map.getLayer) return
+
+      const layerIds = [
+        // 基本ポイント（環境によりID差異あり：両対応）
+        'oh-mapillary-images',
+        'oh-mapillary-images-1',
+        // オブジェクト
+        'oh-mapillary-images-2',
+        'oh-mapillary-images-2-icon',
+        // 交通標識
+        'oh-mapillary-images-3',
+        'oh-mapillary-images-3-icon',
+        // ハイライト等
+        'oh-mapillary-images-highlight',
+      ]
+      layerIds.forEach(id => {
+        try { if (map.getLayer(id)) map.setFilter(id, null) } catch (_) {}
+      })
+
+      // 色の初期化（存在すれば）
+      try { if (map.getLayer('oh-mapillary-images')) map.setPaintProperty('oh-mapillary-images', 'circle-color', '#35AF6D') } catch (_) {}
+      try { if (map.getLayer('oh-mapillary-images-1')) map.setPaintProperty('oh-mapillary-images-1', 'circle-color', '#35AF6D') } catch (_) {}
+
+      // 走行軌跡の一時ソースなどをクリア（存在すれば）
+      try {
+        const src = map.getSource && map.getSource('mly-current-point')
+        if (src?.setData) {
+          src.setData({ type:'FeatureCollection', features:[{ type:'Feature', geometry:{ type:'LineString', coordinates:[] }, properties:{} }] })
+        }
+      } catch (_) {}
     },
 
     init () { /* 必要なら実装 */ },
-
-    cleanup () {
-      if (this.ro) { try { this.ro.disconnect() } catch (_) {} this.ro = null }
-      if (this.yrChangeTimer) { clearTimeout(this.yrChangeTimer); this.yrChangeTimer = null }
-      this.teardownTsWatcher()
-      this.teardownObjWatcher()
-    },
   },
 }
 </script>
