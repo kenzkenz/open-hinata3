@@ -132,6 +132,7 @@ import {
 } from '@/js/downLoad'
 import { mapState } from 'vuex'
 import MiniTooltip from '@/components/MiniTooltip'
+import store from "@/store";
 
 export default {
   name: 'MapillaryFilter',
@@ -236,18 +237,13 @@ export default {
       this.onSignValuesChange(this.selectedSignValues)
     },
     onSignValuesChange (vals) {
+      const map01 = this.map01
       const values = Array.isArray(vals) ? vals.slice(0) : this.selectedSignValues.slice(0)
-      const mode = values.length <= 1 ? 'single' : 'multi'
       const filter = this.buildSignFilter(values)
-
-      // 互換: これまでのイベント（値のみ）
-      this.$emit('sign-values-change', values)
-      // 追加: 判定/フィルタ付きイベント
-      this.$emit('sign-filter-change', {
-        values, mode, filter,
-        layerId: this.iconLayerId,
-        property: 'value'
-      })
+      console.log(filter)
+      if (map01.getLayer('oh-mapillary-images-3-icon')) {
+        map01.setFilter('oh-mapillary-images-3-icon', filter);
+      }
     },
 
     // ===== 検出カテゴリ（単一/複数判定付きで通知） =====
