@@ -135,7 +135,14 @@ export default function attachMapRightClickMenu({ map, items = [], longPressMs =
 
                 // PC: hover / タッチ: click トグル
                 row.addEventListener('mouseenter', () => { if (!isTouchEnv) { cancelClose(depth); openSub(); } });
-                row.addEventListener('mouseleave', () => { if (!isTouchEnv) scheduleClose(depth); });
+                row.addEventListener('mouseleave', (e) => {
+                    if (isTouchEnv) return;
+                    // サブメニューへ移動中なら閉じない
+                    const next = stacks[depth + 1];
+                    const rt = e && (e.relatedTarget || null);
+                    if (next && rt && (next === rt || next.contains(rt))) return;
+                    scheduleClose(depth);
+                });
                 row.addEventListener('click', (e) => {
                     const last = stacks[stacks.length - 1];
                     const lastDepth = last ? Number(last.dataset.depth) : -1;
@@ -160,7 +167,7 @@ export default function attachMapRightClickMenu({ map, items = [], longPressMs =
         const rCont   = container.getBoundingClientRect();
 
         // 右側に出すのが基本
-        let left = rParent.right - rMenu.left + 2;
+        let left = rParent.right - rMenu.left - 2; // 2px 重ねてギャップを消す
         let top  = rParent.top   - rMenu.top  - 6;
 
         subEl.style.left = left + 'px';
@@ -350,57 +357,3 @@ function _combineById(features) { const groups = new Map(); for (const f of feat
 export function exportVisibleGeoJSON_fromMap01(opts = {}) { const includeExcluded = !!opts.includeExcluded; const map = store.state.map01; const targetLayerIds = map.getStyle().layers.filter(l => _isVectorType(l.type) && _isVisible(map, l.id) && !_isExcluded(l.id, includeExcluded)).map(l => l.id); if (!targetLayerIds.length) { alert('対象レイヤがありません。（除外設定により全て除外されている可能性があります）'); return; } const w = map.getContainer().clientWidth, h = map.getContainer().clientHeight; const feats = map.queryRenderedFeatures([[0,0],[w,h]], { layers: targetLayerIds }); if (!feats.length) { alert('画面内に出力対象の地物がありません。'); return; } const seen = new Set(); const features = []; for (const f of feats) { const key = _featKey(f); if (seen.has(key)) continue; seen.add(key); const props = f.properties ? { ...f.properties } : {}; props.__layer = f.layer?.id; props.__source = f.source; props.__sourceLayer = f.sourceLayer; features.push({ type: 'Feature', geometry: JSON.parse(JSON.stringify(f.geometry)), properties: props }); } const combinedFeatures = _combineById(features); const fc = { type: 'FeatureCollection', features: combinedFeatures }; const blob = new Blob([JSON.stringify(fc, null, 2)], { type: 'application/geo+json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `oh3_visible_${_nowStr()}.geojson`; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
 function visibleGeojsonMenuItem() { return { id: 'export-visible-geojson', label: '可視ベクター地物をGeoJSONで出力', onSelect: (ev) => { const includeExcluded = !!(ev && (ev.altKey || ev.metaKey)); exportVisibleGeoJSON_fromMap01({ includeExcluded }); }, }; }
 function visibleGeojsonMenuItemIncludeBase() { return { id: 'export-visible-geojson-all', label: 'ベースも含めてGeoJSON出力（可視ベクター）', onSelect: () => exportVisibleGeoJSON_fromMap01({ includeExcluded: true }), }; }
-
-export function buildOsmEditorUrl(lngLat, { zoom = 19, editor = 'id' } = {}) {
-    const z = Math.round(zoom);
-    const e = (editor === 'rapid') ? 'rapid' : 'id';
-    return `https://www.openstreetmap.org/edit?editor=${e}#map=${z}/${lngLat.lat}/${lngLat.lng}`;
-}
-export function buildJosmRemoteUrlByCenter(lngLat, radiusMeters = 200) {
-    const [minLng, minLat, maxLng, maxLat] = buildBBoxAround(lngLat, radiusMeters);
-    return `http://127.0.0.1:8111/load_and_zoom?left=${minLng}&right=${maxLng}&top=${maxLat}&bottom=${minLat}`;
-}
-
-export function buildRapidUrl(lngLat, { zoom = 19 } = {}) {
-    const z = Math.round(zoom);
-    // Rapid は #map=ズーム/緯度/経度 の順
-    return `https://rapideditor.org/rapid#map=${z}/${lngLat.lat}/${lngLat.lng}`;
-}
-
-// （オプション）Mapillary 特化ビルドを使いたい場合
-export function buildRapidMapillaryUrl(lngLat, { zoom = 19 } = {}) {
-    const z = Math.round(zoom);
-    return `https://rapideditor.org/rapid-mapillary-features#map=${z}/${lngLat.lat}/${lngLat.lng}`;
-}
-
-// Overpass Turbo を BBOX つきで開く
-export function buildOverpassTurboUrl(lngLat, { meters = 100, zoom = 19, feature = 'all' } = {}) {
-    const [minLng, minLat, maxLng, maxLat] = buildBBoxAround(lngLat, meters);
-    const bbox = [
-        minLat.toFixed(6), minLng.toFixed(6),
-        maxLat.toFixed(6), maxLng.toFixed(6)
-    ].join(',');
-
-    let query;
-    switch (feature) {
-        case 'highway':
-            query = `[out:json][timeout:25];
-way[highway](${bbox});
-out body; >; out skel qt;`;
-            break;
-        case 'amenity':
-            query = `[out:json][timeout:25];
-node[amenity](${bbox});
-out;`;
-            break;
-        default: // all (node/way/relation)
-            query = `[out:json][timeout:25];
-(node(${bbox});way(${bbox});relation(${bbox}););
-out body; >; out skel qt;`;
-    }
-
-    const base = new URL('https://overpass-turbo.eu/');
-    base.searchParams.set('Q', query); // クエリをプリセット
-    const hash = `map=${Math.round(zoom)}/${lngLat.lat.toFixed(6)}/${lngLat.lng.toFixed(6)}`;
-    return `${base.toString()}#${hash}`;
-}
