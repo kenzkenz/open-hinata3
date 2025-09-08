@@ -8115,9 +8115,12 @@ export default {
             })); } },
           { label: '点を削除', onSelect: ({ point }) => {const ok = removePointUnderCursor(map, point, 'click-circle-source');if (!ok) alert('直下に削除できるピンが見つかりません');}},
           {
-            id: 'export-visible-geojson',
-            label: '可視ベクター地物をGeoJSONで出力',
-            onSelect: () => exportVisibleGeoJSON_fromMap01(),
+            label: 'GeoJSON出力',
+            onSelect: () => exportVisibleGeoJSON_fromMap01({ includeExcluded: false }),
+          },
+          {
+            label: 'GeoJSON出力(ベース含む)',
+            onSelect: () => exportVisibleGeoJSON_fromMap01({ includeExcluded: true }),
           }
           // 実用メニューをまとめて展開
           // ...buildUtilityMenuItems({ map, geojsonSourceId: 'click-circle-source' }),

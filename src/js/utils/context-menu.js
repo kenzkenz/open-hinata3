@@ -655,41 +655,166 @@ export const menuItemOpenSVWithPin = {
         const url = buildSVUrlSimple(lngLat, { heading, pitch: -15, fov: 90 });
         openTopRightWindowFlushHalfWidthFullHeight(url, { name: 'GSV-TopRight-Half' });
     }
-};// ==== 可視ベクター地物 → GeoJSON（context-menu.js にそのまま追記）====
-// 前提: store.state.map01 は常に存在。ベース自動除外はせず、除外は LAYER_BLOCKLIST で調整。
+};
+
+// ==== 可視ベクター地物 → GeoJSON（context-menu.js にそのまま追記）====
+// 前提: store.state.map01 は常に存在。
+// 変更点: onSelect を使用。デフォルト除外パターンを復活。IDに「-vector-」を含むレイヤーは対象外。
+
+// 追加の手動除外（必要に応じて編集。空なら無し）
+// ==== 可視ベクター地物 → GeoJSON（context-menu.js にそのまま追記）====
+// 前提: store.state.map01 は常に存在。
+// 仕様: onSelect を使用／ベース系デフォ除外パターンあり／IDに「-vector-」を含むレイヤーは対象外
+//      地物が0件なら alert を出して終了。
+
+// ==== 可視ベクター地物 → GeoJSON（改修版：タイル跨ぎ対策＋任意強化あり）====
+// ・store.state.map01 は必ず存在
+// ・デフォルト除外パターン＋「-vector-」除外＋ LAYER_BLOCKLIST（'zones-layer'）
+// ・重複判定は geometry ベース（id は使わない）→ タイル境界の断片を捨てない
+// ・任意強化：同じ id の断片を Multi* に束ねる（軽量結合）
+
+// ==== 可視ベクター地物 → GeoJSON（Alt/Optionで除外OFF対応版）====
+// ・Alt/Option(⌥) または Cmd(⌘) を押しながら実行で「除外すべてOFF」（'-vector-' も含めて対象）
+// ・重複判定は geometry ベース／タイル跨ぎ対策＋任意強化（Multi* に束ねる）
 
 const LAYER_BLOCKLIST = [
-    // 'oh-mapillary-images-3-icon',
-    // 'gsi-road',
-    // 'osm-water',
+    'zones-layer',
 ];
 
-export function exportVisibleGeoJSON_fromMap01() {
-    const map = store.state.map01; // 固定
+// デフォルト除外パターン（ベース系など）
+const DEFAULT_EXCLUDE_PATTERNS = [
+    /^background$/i,
+    /basemap/i,
+    /osm/i,
+    /openmaptiles/i,
+    /openstreetmap/i,
+    /gsi/i,
+    /std/i,
+    /seamless/i,
+    /hillshade/i,
+    /terrain/i,
+    /contour/i,
+    /water/i,
+    /road/i,
+    /label/i,
+    /poi/i,
+    /transit/i,
+    /building/i,
+    /satellite/i,
+];
 
-    // 可視ベクターレイヤID一覧
-    const layers = map.getStyle().layers
-        .filter(l =>
-            (l.type === 'fill' || l.type === 'line' || l.type === 'circle' || l.type === 'symbol' || l.type === 'fill-extrusion') &&
-            (map.getLayoutProperty(l.id, 'visibility') !== 'none') &&
-            !LAYER_BLOCKLIST.includes(l.id)
-        )
+function _isVectorType(t) {
+    return t === 'fill' || t === 'line' || t === 'circle' || t === 'symbol' || t === 'fill-extrusion';
+}
+function _isVisible(map, id) {
+    const v = map.getLayoutProperty(id, 'visibility');
+    return v == null || v === 'visible';
+}
+// includeExcluded=true のときは一切除外しない（'-vector-' も含めて対象）
+function _isExcluded(id, includeExcluded) {
+    if (includeExcluded) return false;
+    if (!id) return false;
+    if (id.includes('-vector-')) return true;                 // 「-vector-」を含むものは除外
+    if (LAYER_BLOCKLIST.includes(id)) return true;            // 手動ブロック
+    return DEFAULT_EXCLUDE_PATTERNS.some(re => re.test(id));  // 既定パターン
+}
+
+// ★ 重複判定は geometry ベース（id は使わない：タイル跨ぎ断片を捨てない）
+function _featKey(f) {
+    const src = f.source || '';
+    const sl  = f.sourceLayer || '';
+    return `${src}|${sl}|${JSON.stringify(f.geometry)}`;
+}
+
+function _nowStr() {
+    const d = new Date(), p = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+}
+
+// ---- 任意強化：同じ id の断片を Multi* に束ねる（Unionはしない）----
+function _baseGeomType(t) {
+    if (!t) return null;
+    return t.startsWith('Multi') ? t.slice(5) : t; // MultiPolygon -> Polygon
+}
+function _combinedType(base) {
+    if (!base) return null;
+    return base === 'GeometryCollection' ? 'GeometryCollection' : ('Multi' + base);
+}
+function _combineById(features) {
+    const groups = new Map(); // gid -> features[]
+    for (const f of features) {
+        const gid = (f.properties?.id ?? f.properties?._id ?? f.id);
+        if (gid == null) continue; // id が無いものはそのまま
+        if (!groups.has(gid)) groups.set(gid, []);
+        groups.get(gid).push(f);
+    }
+    for (const [gid, arr] of groups) {
+        if (arr.length <= 1) continue;
+
+        // 基準タイプ（Multi* はベースに正規化）
+        const base = _baseGeomType(arr[0].geometry?.type);
+        if (!base) continue;
+
+        const combinedType = _combinedType(base);
+        const acc = [];
+
+        for (const f of arr) {
+            const g = f.geometry;
+            if (!g || !g.type) continue;
+            const t = _baseGeomType(g.type);
+            if (t !== base) {
+                // 異種はまとめない（必要なら拡張）
+                continue;
+            }
+            if (g.type.startsWith('Multi')) {
+                // Multi* はその座標配列を連結
+                // MultiPolygon: [poly, poly, ...]
+                // MultiLineString: [line, line, ...]
+                // MultiPoint: [pt, pt, ...]
+                for (const part of g.coordinates) acc.push(part);
+            } else {
+                // 単体はそのまま 1 要素として追加
+                acc.push(g.coordinates);
+            }
+        }
+
+        if (acc.length >= 2) {
+            // 先頭を代表にして Multi* に置換、残りはドロップ
+            arr[0].geometry = { type: combinedType, coordinates: acc };
+            for (let i = 1; i < arr.length; i++) arr[i]._drop = true;
+        }
+    }
+    return features.filter(f => !f._drop);
+}
+
+export function exportVisibleGeoJSON_fromMap01(opts = {}) {
+    const includeExcluded = !!opts.includeExcluded; // Alt/Option/Cmd で true
+    const map = store.state.map01;
+
+    // 対象レイヤを抽出（includeExcluded=true なら除外すべてOFF）
+    const targetLayerIds = map.getStyle().layers
+        .filter(l => _isVectorType(l.type) && _isVisible(map, l.id) && !_isExcluded(l.id, includeExcluded))
         .map(l => l.id);
 
-    if (!layers.length) return;
+    if (!targetLayerIds.length) {
+        alert('対象レイヤがありません。（除外設定により全て除外されている可能性があります）');
+        return;
+    }
 
-    // 画面内の描画地物
+    // 画面内の描画地物を取得
     const w = map.getContainer().clientWidth, h = map.getContainer().clientHeight;
-    const feats = map.queryRenderedFeatures([[0, 0], [w, h]], { layers });
+    const feats = map.queryRenderedFeatures([[0,0],[w,h]], { layers: targetLayerIds });
 
-    // ソース+sourceLayer+id（無ければ幾何ハッシュ）で重複除去
+    if (!feats.length) {
+        alert('画面内に出力対象の地物がありません。');
+        return;
+    }
+
+    // 重複除去（geometryベース）しつつ FeatureCollection 構築
     const seen = new Set();
     const features = [];
     for (const f of feats) {
-        const src = f.source || '';
-        const sl = f.sourceLayer || '';
-        const id = (f.id != null) ? f.id : (f.properties?.id ?? f.properties?._id);
-        const key = `${src}|${sl}|${id ?? JSON.stringify(f.geometry)}`;
+        const key = _featKey(f);
         if (seen.has(key)) continue;
         seen.add(key);
 
@@ -705,30 +830,40 @@ export function exportVisibleGeoJSON_fromMap01() {
         });
     }
 
-    const fc = { type: 'FeatureCollection', features };
-    const t = new Date(), p = n => String(n).padStart(2, '0');
-    const fname = `oh3_visible_${t.getFullYear()}${p(t.getMonth()+1)}${p(t.getDate())}_${p(t.getHours())}${p(t.getMinutes())}${p(t.getSeconds())}.geojson`;
+    // 任意強化：同じ id の断片を Multi* に束ねる（軽量結合）
+    const combinedFeatures = _combineById(features);
 
+    const fc = { type: 'FeatureCollection', features: combinedFeatures };
     const blob = new Blob([JSON.stringify(fc, null, 2)], { type: 'application/geo+json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = fname;
+    a.download = `oh3_visible_${_nowStr()}.geojson`;
     document.body.appendChild(a);
     a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
 
-// メニューに 1 行追加（items を作っている箇所で貼る）
+// メニュー項目（onSelect：Alt/Option(⌥) or Cmd(⌘) で除外OFF）
 function visibleGeojsonMenuItem() {
     return {
         id: 'export-visible-geojson',
         label: '可視ベクター地物をGeoJSONで出力',
-        onClick: () => exportVisibleGeoJSON_fromMap01(),
+        onSelect: (ev) => {
+            const includeExcluded = !!(ev && (ev.altKey || ev.metaKey));
+            exportVisibleGeoJSON_fromMap01({ includeExcluded });
+        },
     };
 }
 
-// ↓↓↓ メニュー配列を組んでいる場所にこの 1 行を追記 ↓↓↓
-// items.push(visibleGeojsonMenuItem());
+// —— 追加メニュー（除外OFF＝ベースも含めて出力。'-vector-' も含む）
+function visibleGeojsonMenuItemIncludeBase() {
+    return {
+        id: 'export-visible-geojson-all',
+        label: 'ベースも含めてGeoJSON出力（可視ベクター）',
+        onSelect: () => exportVisibleGeoJSON_fromMap01({ includeExcluded: true }),
+    };
+}
+
 
 
 
