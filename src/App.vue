@@ -2238,24 +2238,22 @@ import drawMethods, {
 } from "@/js/draw";
 import {haptic} from "@/js/utils/haptics";
 import attachMapRightClickMenu, {
-  applyRightClickRefocusPatch, applyRightClickRefocusPatchStrong, buildBBoxAround,
-  buildGoogleAndGsvMenuItems,
-  buildGoogleMapsSearchUrl, buildJosmRemoteUrlByCenter,
-  buildMapillaryUrl, buildOsmEditorUrl, buildOverpassTurboUrl,
-  buildPinDeleteMenuItems, buildRapidMapillaryUrl, buildRapidUrl,
+  buildGoogleMapsSearchUrl,
+  buildJosmRemoteUrlByCenter,
+  buildMapillaryUrl,
+  buildOsmEditorUrl,
+  buildRapidMapillaryUrl,
+  buildRapidUrl,
   buildStreetViewUrl,
   buildSVUrlSimple,
-  buildUtilityMenuItems, exportVisibleGeoJSON_fromMap01, menuItemOpenSVWithPinRefocusStrong,
-  openStreetViewPopup,
-  openTopRightWindow,
-  openTopRightWindowFlushFullHeight,
+  exportVisibleGeoJSON_fromMap01,
+  openOrCopyOverpass,
   openTopRightWindowFlushHalfWidthFullHeight,
-  openTopRightWindowSimple,
   pointFeature,
-  pushFeatureToGeoJsonSource, refocusOH3,
-  removePointUnderCursor, setSvPin
+  pushFeatureToGeoJsonSource,
+  removePointUnderCursor,
+  setSvPin,
 } from "@/js/utils/context-menu";
-import {setupEmbedMode} from "@/js/utils/embed";
 
 export default {
   name: 'App',
@@ -8094,7 +8092,7 @@ export default {
         map: store.state.map01,
         items: [
           {
-            label: 'OSM編集',
+            label: 'OSM色々',
             items: [
               {
                 label: 'iD Editorで開く',
@@ -8119,63 +8117,46 @@ export default {
                   window.open(url, '_blank', 'noopener');
                 }
               },
+              // ▼ ここから置換：Overpassターボ メニュー本体 -------------------------
               {
-                label: 'Overpassターボ',
+                label: 'Overpass Turbo',
                 items: [
+                  // 通常クリック=Overpassを開く / Alt or Cmd=QLをコピー
                   {
-                    label: '道路（highway=*)',
-                    items: [
-                      {
-                        label: '±100m',
-                        onSelect: ({ map, lngLat }) => {
-                          const url = buildOverpassTurboUrl(lngLat, { meters: 100, zoom: map.getZoom?.() ?? 19, feature: 'highway' });
-                          window.open(url, '_blank', 'noopener');
-                        }
-                      },
-                      {
-                        label: '±250m',
-                        onSelect: ({ map, lngLat }) => {
-                          const url = buildOverpassTurboUrl(lngLat, { meters: 250, zoom: map.getZoom?.() ?? 19, feature: 'highway' });
-                          window.open(url, '_blank', 'noopener');
-                        }
-                      }
-                    ]
+                    label: '周辺±100m（全要素）',
+                    onSelect: (args) => openOrCopyOverpass({ ...args, meters: 100, feature: 'all', originalEvent: args.originalEvent })
+                  },
+                  { type: 'separator' },
+
+                  // 道路
+                  {
+                    label: '道路 ±100m（highway=*)',
+                    onSelect: (args) => openOrCopyOverpass({ ...args, meters: 100, feature: 'highway', originalEvent: args.originalEvent })
                   },
                   {
-                    label: 'POI（amenity=*)',
-                    items: [
-                      {
-                        label: '±120m',
-                        onSelect: ({ map, lngLat }) => {
-                          const url = buildOverpassTurboUrl(lngLat, { meters: 120, zoom: map.getZoom?.() ?? 19, feature: 'amenity' });
-                          window.open(url, '_blank', 'noopener');
-                        }
-                      },
-                      { label: 'テンプレをコピー', items: [
-                          {
-                            label: 'nodeだけ',
-                            onSelect: async ({ lngLat }) => {
-                              const [minLng, minLat, maxLng, maxLat] = buildBBoxAround(lngLat, 120);
-                              const q = `[out:json][timeout:25]; node[amenity](${minLat},${minLng},${maxLat},${maxLng}); out;`;
-                              try { await navigator.clipboard.writeText(q); } catch { alert(q); }
-                            }
-                          },
-                          {
-                            label: 'node/way/relation全部',
-                            onSelect: async ({ lngLat }) => {
-                              const [minLng, minLat, maxLng, maxLat] = buildBBoxAround(lngLat, 120);
-                              const q = `[out:json][timeout:25];(node(${minLat},${minLng},${maxLat},${maxLng});way(${minLat},${minLng},${maxLat},${maxLng});relation(${minLat},${minLng},${maxLat},${maxLng}););out body;>;out skel qt;`;
-                              try { await navigator.clipboard.writeText(q); } catch { alert(q); }
-                            }
-                          }
-                        ]}
-                    ]
+                    label: '道路 ±250m（highway=*)',
+                    onSelect: (args) => openOrCopyOverpass({ ...args, meters: 250, feature: 'highway', originalEvent: args.originalEvent })
+                  },
+                  { type: 'separator' },
+
+                  // POI（amenity）
+                  {
+                    label: 'POI ±120m（amenity=*)',
+                    onSelect: (args) => openOrCopyOverpass({ ...args, meters: 120, feature: 'amenity', originalEvent: args.originalEvent })
+                  },
+                  {
+                    label: 'POI（半径入力…）',
+                    onSelect: async (args) => {
+                      const v = Number(prompt('半径(m)：', '120'));
+                      const meters = Number.isFinite(v) && v > 0 ? v : 120;
+                      await openOrCopyOverpass({ ...args, meters, feature: 'amenity', originalEvent: args.originalEvent });
+                    }
                   }
                 ]
               },
-
               {
-                label: 'JOSMへ送る（Remote Control）',
+                // label: 'JOSMへ送る（Remote Control）',
+                label: 'JOSMへ送る',
                 onSelect: ({lngLat}) =>
                     window.open(buildJosmRemoteUrlByCenter(lngLat, 200), '_blank', 'noopener')
               },
