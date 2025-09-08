@@ -1,68 +1,53 @@
 /*
- * MapLibre 右クリック / 長押し コンテキストメニュー（多層式・安定版）
- * - PC: 右クリック（contextmenu）
- * - スマホ/タブレット: 長押し（既定 800ms）
- * - ネイティブのコンテキストメニューは抑止
- * - 画面端ではみ出し補正 & サブメニューの左右フリップ
- * - 外側クリック/ESC/地図操作で自動クローズ
- * - 多段（3層、4層…）でもホバーで閉じないよう、子孫サブメニューまで認識
+ * MapLibre 右クリック / 長押し コンテキストメニュー（多層・強制ハイライト超安定版）
+ * - 右クリック / 長押し
+ * - 多段（何層でも）でも消えない
+ * - hover/active は「ハイライト専用オーバーレイ層 + inline !important + filter」で必ず可視化
+ * - Overpass: クリック=ブラウザで開く / Alt or Cmd=QLをコピー（中心Cと#mapを同期）
  *
- * 使い方：
- *   const detach = attachMapRightClickMenu({
- *     map: store.state.map01,
- *     items: [
- *       { label: 'Googleマップを開く', onSelect: ({ lngLat, map }) => {
- *           const url = buildGoogleMapsSearchUrl(lngLat);
- *           window.open(url, '_blank', 'noopener');
- *       }},
- *       { label: 'Overpassターボ', items: [
- *           { label: '±100m（全要素）', onSelect: ({ map, lngLat }) => {
- *               const url = buildOverpassTurboUrl(lngLat, { meters: 100, zoom: map.getZoom?.() ?? 19, feature: 'all' });
- *               window.open(url, '_blank', 'noopener');
- *           }},
- *           { label: '道路だけ', items: [
- *               { label: '±100m', onSelect: ({ map, lngLat }) => {
- *                   const url = buildOverpassTurboUrl(lngLat, { meters: 100, zoom: map.getZoom?.() ?? 19, feature: 'highway' });
- *                   window.open(url, '_blank', 'noopener');
- *               }},
- *               { label: '±250m', onSelect: ({ map, lngLat }) => {
- *                   const url = buildOverpassTurboUrl(lngLat, { meters: 250, zoom: map.getZoom?.() ?? 19, feature: 'highway' });
- *                   window.open(url, '_blank', 'noopener');
- *               }},
- *           ]}
- *       ]}
- *     ]
- *   });
- *   // 後で無効化: detach()
+ * 親の呼び出しはそのままでOK（itemsは既存のまま）。
  */
+
 import store from '@/store'
-import {featureCollectionAdd, featuresDelete, markerAddAndRemove, removeThumbnailMarkerByKey} from '@/js/downLoad'
+import {featureCollectionAdd, markerAddAndRemove, removeThumbnailMarkerByKey} from '@/js/downLoad'
 import {haptic} from '@/js/utils/haptics'
 
-export default function attachMapRightClickMenu({ map, items = [], longPressMs = 800, submenuDelay = 260 }) {
+export default function attachMapRightClickMenu({
+                                                    map,
+                                                    items = [],
+                                                    longPressMs = 800,
+                                                    submenuDelay = 260
+                                                }) {
     if (!map) throw new Error('map が必要です');
     const container = map.getContainer();
     const canvas = map.getCanvas();
 
-    // ネイティブ右クリックメニュー抑止（Safari含む）
+    // ネイティブコンテキストを止める
     const preventNative = (e) => e.preventDefault();
     canvas.addEventListener('contextmenu', preventNative);
 
-    // メニュー DOM（トップレベル）
+    // ルートメニュー
     const menu = document.createElement('div');
     menu.className = 'ml-contextmenu';
     Object.assign(menu.style, {
-        position: 'absolute', zIndex: '9999', minWidth: '180px', padding: '6px',
-        borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,.18)', background: 'white',
+        position: 'absolute',
+        zIndex: '2147483647',
+        minWidth: '180px',
+        padding: '6px',
+        borderRadius: '12px',
+        boxShadow: '0 8px 24px rgba(0,0,0,.18)',
+        background: 'white',
         font: '14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
         display: 'none'
     });
     container.style.position = container.style.position || 'relative';
     container.appendChild(menu);
 
-    // ===== マルチレベル制御 =====
-    const stacks = [];            // depth ごとの wrap DOM（0: ルート）
-    const hoverCloseTimers = [];  // depth ごとのクローズ遅延タイマー
+    injectMenuStyles(container); // ShadowRoot/iframe 対応
+
+    // ====== 多層管理 ======
+    const stacks = [];
+    const hoverCloseTimers = [];
     const isTouchEnv = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
     function clearStacksFrom(depth) {
@@ -75,6 +60,7 @@ export default function attachMapRightClickMenu({ map, items = [], longPressMs =
             if (hoverCloseTimers[d]) clearTimeout(hoverCloseTimers[d]);
             hoverCloseTimers[d] = null;
         }
+        deactivateDepth(depth - 1);
     }
     function scheduleClose(depth) {
         if (hoverCloseTimers[depth]) clearTimeout(hoverCloseTimers[depth]);
@@ -84,7 +70,6 @@ export default function attachMapRightClickMenu({ map, items = [], longPressMs =
         if (hoverCloseTimers[depth]) { clearTimeout(hoverCloseTimers[depth]); hoverCloseTimers[depth] = null; }
     }
     function cancelAncestors(depth) { for (let d = 0; d <= depth; d++) cancelClose(d); }
-    // depth より深いどれかのサブメニューに向かっているか？
     function isIntoAnyDeeper(depth, target) {
         if (!target) return false;
         for (let d = depth + 1; d < stacks.length; d++) {
@@ -93,7 +78,15 @@ export default function attachMapRightClickMenu({ map, items = [], longPressMs =
         }
         return false;
     }
+    function deactivateDepth(depth) {
+        if (depth < 0) return;
+        menu.querySelectorAll(`.ml-cm-row.is-active[data-depth="${depth}"]`).forEach(el => {
+            el.classList.remove('is-active');
+            clearHL(el); // ハイライト完全解除
+        });
+    }
 
+    // ====== UIユーティリティ ======
     function makeSeparator() {
         const hr = document.createElement('div');
         Object.assign(hr.style, { height: '1px', background: 'rgba(0,0,0,.08)', margin: '4px 0' });
@@ -101,8 +94,69 @@ export default function attachMapRightClickMenu({ map, items = [], longPressMs =
     }
     const isSeparator = (it) => it === '-' || it?.type === 'separator';
     const hasChildren = (it) => Array.isArray(it?.items) || Array.isArray(it?.children);
-    const childrenOf = (it) => (it?.items || it?.children || []).filter(Boolean);
+    const childrenOf  = (it) => (it?.items || it?.children || []).filter(Boolean);
 
+    // ====== ハイライト層（これで絶対見える） ======
+    function ensureHL(el) {
+        if (el.__hl) return el.__hl;
+        el.style.position = el.style.position || 'relative';
+        const hl = document.createElement('span');
+        hl.className = 'ml-cm-hl';
+        Object.assign(hl.style, {
+            position: 'absolute',
+            inset: '0',
+            borderRadius: 'inherit',
+            pointerEvents: 'none',
+            opacity: '0',
+            transition: 'opacity 80ms linear',
+            // デフォルト色は注入CSSの変数を使うが、無ければここで強い色
+            background: 'rgba(0,153,255,0.18)'
+        });
+        // 左側にアクセントライン（背景色が無効な環境でも見やすい）
+        const bar = document.createElement('span');
+        Object.assign(bar.style, {
+            position: 'absolute',
+            left: '0', top: '0', bottom: '0', width: '3px',
+            background: 'rgba(0,153,255,0.9)',
+            opacity: '0', transition: 'opacity 80ms linear', pointerEvents: 'none',
+            borderTopLeftRadius: 'inherit', borderBottomLeftRadius: 'inherit'
+        });
+        hl.appendChild(bar);
+
+        el.prepend(hl);
+        el.__hl = { hl, bar };
+        return el.__hl;
+    }
+    function applyHL(el, state) {
+        const {hl, bar} = ensureHL(el);
+        if (state === 'hover') {
+            hl.style.opacity = '1';
+            hl.style.background = getVar(menu, '--ml-hover', 'rgba(0,153,255,0.18)');
+            bar.style.opacity = '.75';
+            // 背景がどうしても無効化される環境向けの視覚変化
+            el.style.setProperty('filter', 'brightness(0.97)', 'important');
+        } else if (state === 'active') {
+            hl.style.opacity = '1';
+            hl.style.background = getVar(menu, '--ml-active', 'rgba(0,153,255,0.28)');
+            bar.style.opacity = '1';
+            el.style.setProperty('filter', 'brightness(0.94)', 'important');
+        }
+    }
+    function clearHL(el) {
+        if (!el.__hl) return;
+        el.__hl.hl.style.opacity = '0';
+        el.__hl.bar.style.opacity = '0';
+        el.style.removeProperty('filter');
+    }
+    function getVar(rootEl, name, fallback) {
+        try {
+            const cs = getComputedStyle(rootEl);
+            const v = cs.getPropertyValue(name).trim();
+            return v || fallback;
+        } catch { return fallback; }
+    }
+
+    // ====== 行/ボタン ======
     function createLeafButton(it, ctx) {
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -111,8 +165,15 @@ export default function attachMapRightClickMenu({ map, items = [], longPressMs =
             display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px',
             border: 'none', background: 'transparent', cursor: 'pointer', whiteSpace: 'nowrap'
         });
-        btn.onmouseenter = () => (btn.style.background = 'rgba(0,0,0,.06)');
-        btn.onmouseleave = () => (btn.style.background = 'transparent');
+        btn.className = 'ml-cm-btn';
+        ensureHL(btn);
+
+        btn.addEventListener('mouseenter', () => applyHL(btn, 'hover'));
+        btn.addEventListener('mouseleave', () => clearHL(btn));
+        btn.addEventListener('mousedown', () => applyHL(btn, 'active'));
+        btn.addEventListener('mouseup',   () => applyHL(btn, 'hover'));
+        btn.addEventListener('blur', () => clearHL(btn));
+
         btn.onclick = (e) => {
             hide();
             try { it.onSelect?.({ map, lngLat: ctx.lngLat, point: ctx.point, originalEvent: e }); } catch (err) { console.error(err); }
@@ -120,21 +181,34 @@ export default function attachMapRightClickMenu({ map, items = [], longPressMs =
         return btn;
     }
 
-    function createRowBase() {
+    function createRowBase(depth) {
         const row = document.createElement('div');
         Object.assign(row.style, {
             display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
-            padding: '10px 12px', border: 'none', background: 'transparent', cursor: 'pointer',
-            userSelect: 'none', whiteSpace: 'nowrap'
+            padding: '10px 12px', border: 'none', cursor: 'pointer',
+            userSelect: 'none', whiteSpace: 'nowrap', background: 'transparent'
         });
-        row.addEventListener('mouseenter', () => (row.style.background = 'rgba(0,0,0,.06)'));
+        row.className = 'ml-cm-row';
+        row.dataset.depth = String(depth);
+        ensureHL(row);
+
+        row.addEventListener('mouseenter', () => {
+            if (!isTouchEnv) {
+                applyHL(row, 'hover');
+                cancelClose(depth);
+            }
+        });
         row.addEventListener('mouseleave', (e) => {
             if (isTouchEnv) return;
             const rt = e?.relatedTarget || null;
-            // 直下〜さらに深いサブに向かうなら閉じない
-            if (isIntoAnyDeeper(Number(row.closest('[data-depth]')?.dataset.depth || 0), rt)) return;
-            scheduleClose(Number(row.closest('[data-depth]')?.dataset.depth || 0));
+            if (isIntoAnyDeeper(Number(row.dataset.depth || 0), rt)) return;
+            if (!row.classList.contains('is-active')) clearHL(row);
+            scheduleClose(Number(row.dataset.depth || 0));
         });
+        row.addEventListener('mousedown', () => applyHL(row, 'active'));
+        row.addEventListener('mouseup',   () => applyHL(row, 'hover'));
+        row.addEventListener('blur', () => { if (!row.classList.contains('is-active')) clearHL(row); });
+
         return row;
     }
 
@@ -154,24 +228,27 @@ export default function attachMapRightClickMenu({ map, items = [], longPressMs =
             if (isSeparator(it)) { wrap.appendChild(makeSeparator()); return; }
 
             if (hasChildren(it)) {
-                const row = createRowBase();
+                const row = createRowBase(depth);
                 const label = document.createElement('div');
                 label.textContent = it.label ?? `項目 ${i+1}`;
                 label.style.flex = '1';
                 const arrow = document.createElement('div');
-                arrow.textContent = '›';
-                arrow.style.opacity = '.5';
+                arrow.textContent = '›'; arrow.style.opacity = '.5';
                 row.appendChild(label); row.appendChild(arrow);
 
                 const openSub = () => {
                     cancelClose(depth);
                     clearStacksFrom(depth + 1);
+                    deactivateDepth(depth);
+                    row.classList.add('is-active');
+                    applyHL(row, 'active');
+
                     const sub = createMenuList(childrenOf(it), ctx, depth + 1);
                     sub.addEventListener('mouseenter', () => cancelAncestors(depth));
                     sub.addEventListener('mouseleave', (e) => {
                         if (isTouchEnv) return;
                         const rt = e?.relatedTarget || null;
-                        if (isIntoAnyDeeper(depth, rt)) return; // さらに深い子へ移動中
+                        if (isIntoAnyDeeper(depth, rt)) return;
                         scheduleClose(depth);
                     });
                     menu.appendChild(sub);
@@ -179,13 +256,18 @@ export default function attachMapRightClickMenu({ map, items = [], longPressMs =
                     stacks.push(sub);
                 };
 
-                // PC: hover / タッチ: click トグル
-                row.addEventListener('mouseenter', () => { if (!isTouchEnv) { cancelClose(depth); openSub(); } });
+                // PC: hoverで開く / タッチ: clickトグル
+                row.addEventListener('mouseenter', () => { if (!isTouchEnv) { openSub(); } });
                 row.addEventListener('click', (e) => {
                     const last = stacks[stacks.length - 1];
                     const lastDepth = last ? Number(last.dataset.depth) : -1;
-                    if (last && lastDepth === depth + 1) { clearStacksFrom(depth + 1); }
-                    else { openSub(); }
+                    if (last && lastDepth === depth + 1) {
+                        clearStacksFrom(depth + 1);
+                        row.classList.remove('is-active');
+                        clearHL(row);
+                    } else {
+                        openSub();
+                    }
                     e.stopPropagation();
                 });
 
@@ -199,12 +281,10 @@ export default function attachMapRightClickMenu({ map, items = [], longPressMs =
     }
 
     function positionSubmenu(parentRow, subEl) {
-        // subEl は menu（トップ）直下に absolute 配置される
         const rParent = parentRow.getBoundingClientRect();
         const rMenu   = menu.getBoundingClientRect();
         const rCont   = container.getBoundingClientRect();
 
-        // 右側に出す（2px 重ねてギャップを消す）
         let left = rParent.right - rMenu.left - 2;
         let top  = rParent.top   - rMenu.top  - 6;
 
@@ -212,12 +292,10 @@ export default function attachMapRightClickMenu({ map, items = [], longPressMs =
         subEl.style.top  = top  + 'px';
 
         const rSub = subEl.getBoundingClientRect();
-        // 右端に溢れたら左側へフリップ
         if (rSub.right > rCont.right - 8) {
-            left = rParent.left - rMenu.left - rSub.width + 2; // 左側も少し重ねる
+            left = rParent.left - rMenu.left - rSub.width + 2;
             subEl.style.left = left + 'px';
         }
-        // 下端に溢れたら上方向に持ち上げ
         if (rSub.bottom > rCont.bottom - 8) {
             top = Math.max(6, rCont.bottom - rMenu.top - rSub.height - 6);
             subEl.style.top = top + 'px';
@@ -235,7 +313,6 @@ export default function attachMapRightClickMenu({ map, items = [], longPressMs =
     function show(px, py, ctx) {
         if (store.state.isIframe) return;
         buildMenu(ctx);
-        // いったん表示 → サイズ取得 → はみ出し補正
         menu.style.display = 'block';
         menu.style.left = px + 8 + 'px';
         menu.style.top  = py + 8 + 'px';
@@ -258,23 +335,22 @@ export default function attachMapRightClickMenu({ map, items = [], longPressMs =
         document.removeEventListener('pointerdown', onOutsidePointer, true);
         window.removeEventListener('keydown', onKeyDown, true);
     }
-
     function onOutsidePointer(e) { if (!menu.contains(e.target)) hide(); }
     function onKeyDown(e) { if (e.key === 'Escape') hide(); }
 
-    // コンテキストメニュー（PC）
+    // PC: 右クリック
     function onContextMenu(e) {
         e.preventDefault();
-        const { x, y } = e.point; // MapLibreのピクセル（コンテナ基準）
+        const { x, y } = e.point;
         show(x, y, { lngLat: e.lngLat, point: e.point });
     }
     map.on('contextmenu', onContextMenu);
 
-    // 長押し（タッチ）
+    // タッチ: 長押し
     let pressTimer = null;
     let pressStartPoint = null;
     function onPointerDown(ev) {
-        if (ev.pointerType === 'mouse') return; // マウスは contextmenu に任せる
+        if (ev.pointerType === 'mouse') return;
         pressStartPoint = getPointFromEvent(ev);
         clearTimeout(pressTimer);
         pressTimer = setTimeout(() => {
@@ -314,45 +390,60 @@ export default function attachMapRightClickMenu({ map, items = [], longPressMs =
     }
 
     return detach;
+
+    // ====== スタイル注入（強い色の既定値） ======
+    function injectMenuStyles(rootEl) {
+        const root = (rootEl && rootEl.getRootNode) ? rootEl.getRootNode() : document;
+        const id = root === document ? 'ml-cm-style' : 'ml-cm-style-' + Math.random().toString(36).slice(2,8);
+        if ((root.getElementById && root.getElementById(id)) || (root.querySelector && root.querySelector('style[data-ml-cm-style]'))) return;
+
+        const style = document.createElement('style');
+        style.setAttribute('data-ml-cm-style', '1');
+        style.id = id;
+        style.textContent = `
+      .ml-contextmenu { --ml-hover: rgba(0,153,255,0.18); --ml-active: rgba(0,153,255,0.28); }
+      @media (prefers-color-scheme: dark) {
+        .ml-contextmenu { --ml-hover: rgba(0,153,255,0.22); --ml-active: rgba(0,153,255,0.36); }
+      }
+    `;
+        const headLike = (root.head ?? root);
+        (headLike.appendChild ? headLike : document.head).appendChild(style);
+    }
 }
 
-// ================================
-// Google Maps / Street View URL ヘルパー
-// ================================
+/* ======== Google / OSM / Rapid / Overpass / Mapillary / JOSM ======== */
+
 export function buildGoogleMapsUrl(lngLat, opts = {}) {
     const { zoom = 18 } = opts;
     const url = new URL('https://www.google.com/maps/@');
     url.searchParams.set('api', '1');
     url.searchParams.set('map_action', 'map');
-    url.searchParams.set('center', `${lngLat.lat},${lngLat.lng}`); // lat,lng 順
+    url.searchParams.set('center', `${lngLat.lat},${lngLat.lng}`);
     url.searchParams.set('zoom', String(Math.round(zoom)));
     return url.toString();
 }
 export function buildGoogleMapsSearchUrl(lngLat) {
     const url = new URL('https://www.google.com/maps/search/');
     url.searchParams.set('api', '1');
-    url.searchParams.set('query', `${lngLat.lat},${lngLat.lng}`); // lat,lng 順
+    url.searchParams.set('query', `${lngLat.lat},${lngLat.lng}`);
     return url.toString();
 }
 export function buildStreetViewUrl(lngLat, opts = {}) {
-    const heading = Number.isFinite(opts.heading) ? opts.heading : 0; // 0..360 (北=0, 東=90)
-    const pitch = Number.isFinite(opts.pitch) ? opts.pitch : 0; // -90..90（下..上）
-    const fov = Number.isFinite(opts.fov) ? opts.fov : 90; // 10..120（画角）
+    const heading = Number.isFinite(opts.heading) ? opts.heading : 0;
+    const pitch = Number.isFinite(opts.pitch) ? opts.pitch : 0;
+    const fov = Number.isFinite(opts.fov) ? opts.fov : 90;
     const normHeading = ((heading % 360) + 360) % 360;
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
     const url = new URL('https://www.google.com/maps/@');
     url.searchParams.set('api', '1');
     url.searchParams.set('map_action', 'pano');
-    url.searchParams.set('viewpoint', `${lngLat.lat},${lngLat.lng}`); // lat,lng 順
+    url.searchParams.set('viewpoint', `${lngLat.lat},${lngLat.lng}`);
     url.searchParams.set('heading', String(Math.round(normHeading)));
     url.searchParams.set('pitch', String(Math.round(clamp(pitch, -90, 90))));
     url.searchParams.set('fov', String(Math.round(clamp(fov, 10, 120))));
     return url.toString();
 }
 
-// ================================
-// 外部リンク追加（OSM 関連 / Overpass / Rapid / JOSM）
-// ================================
 export function buildOsmUrl(lngLat, zoom = 18) {
     return `https://www.openstreetmap.org/#map=${Math.round(zoom)}/${lngLat.lat}/${lngLat.lng}`;
 }
@@ -373,9 +464,10 @@ export function buildJosmRemoteUrlByCenter(lngLat, radiusMeters = 200) {
     const [minLng, minLat, maxLng, maxLat] = buildBBoxAround(lngLat, radiusMeters);
     return `http://127.0.0.1:8111/load_and_zoom?left=${minLng}&right=${maxLng}&top=${maxLat}&bottom=${minLat}`;
 }
+
 export function buildOverpassTurboUrl(lngLat, { meters = 100, zoom = 19, feature = 'all' } = {}) {
     const [minLng, minLat, maxLng, maxLat] = buildBBoxAround(lngLat, meters);
-    const swne = `${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)}`; // south,west,north,east
+    const swne = `${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)}`; // S,W,N,E
     const lat = lngLat.lat.toFixed(6);
     const lon = lngLat.lng.toFixed(6);
     const z   = Math.round(zoom);
@@ -392,22 +484,48 @@ out body; >; out skel qt;`;
 node[amenity](${swne});
 out;`;
             break;
-        default: // all
+        default:
             query = `[out:json][timeout:25];
 (node(${swne});way(${swne});relation(${swne}););
 out body; >; out skel qt;`;
     }
 
     const url = new URL('https://overpass-turbo.eu/');
-    url.searchParams.set('Q', query);           // クエリを事前投入
-    url.searchParams.set('C', `${lat};${lon};${z}`); // 中心・ズームをクエリ側にも明示
-    url.hash = `map=${z}/${lat}/${lon}`;        // ハッシュ側にも指定（念押し）
+    url.searchParams.set('Q', query);
+    url.searchParams.set('C', `${lat};${lon};${z}`);
+    url.hash = `map=${z}/${lat}/${lon}`;
     return url.toString();
 }
 
-// ================================
-// 便利メニュー集（コピー／作図／外部リンク／タイル）
-// ================================
+export async function openOrCopyOverpass({ map, lngLat, meters, feature = 'all', originalEvent }) {
+    const ev = originalEvent;
+    if (ev && (ev.altKey || ev.metaKey)) {
+        const [minLng, minLat, maxLng, maxLat] = buildBBoxAround(lngLat, meters);
+        let q;
+        if (feature === 'highway') {
+            q = `[out:json][timeout:25];
+way[highway](${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)});
+out body; >; out skel qt;`;
+        } else if (feature === 'amenity') {
+            q = `[out:json][timeout:25];
+node[amenity](${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)});
+out;`;
+        } else {
+            q = `[out:json][timeout:25];
+(node(${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)});
+ way(${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)});
+ relation(${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)}););
+out body; >; out skel qt;`;
+        }
+        await cmCopyToClipboard(q);
+    } else {
+        const url = buildOverpassTurboUrl(lngLat, { meters, zoom: map.getZoom?.() ?? 19, feature });
+        window.open(url, '_blank', 'noopener');
+    }
+}
+
+/* ======== 汎用ユーティリティ ======== */
+
 export function toFixedCoord(lngLat, n = 8) { return `${lngLat.lng.toFixed(n)}, ${lngLat.lat.toFixed(n)}`; }
 export function toDMS(lngLat) {
     const toD = (deg, pos, neg) => {
@@ -423,17 +541,15 @@ export function toGeoJSONPointString(lngLat) {
 }
 export function toWKTPoint(lngLat) { return `POINT(${lngLat.lng} ${lngLat.lat})`; }
 
-// ---- BBOX（m 指定の簡易矩形）
 export function buildBBoxAround(lngLat, meters = 100) {
     const latRad = lngLat.lat * Math.PI / 180;
-    const dLat = meters / 111_320; // 1度の緯度 ≒ 111.32km
-    const dLng = meters / (111_320 * Math.cos(latRad));
-    return [lngLat.lng - dLng, lngLat.lat - dLat, lngLat.lng + dLng, lngLat.lat + dLat];
+    const dLat = meters / 111_320;
+    const dLngCoeff = 1 / (111_320 * Math.cos(latRad));
+    return [lngLat.lng - dLngCoeff * meters, lngLat.lat - dLat, lngLat.lng + dLngCoeff * meters, lngLat.lat + dLat];
 }
 
-// ---- タイル座標（XYZ / Quadkey）
 export function lngLatToTile(lng, lat, z) {
-    const latRad = lat * Math.PI / 180; const n = 2 ** z;
+    const latRad = lat * Math.PI / 180, n = 2 ** z;
     const x = Math.floor(((lng + 180) / 360) * n);
     const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n);
     return { x, y, z };
@@ -442,15 +558,16 @@ export function tileToQuadkey(x, y, z) {
     let quad = '';
     for (let i = z; i > 0; i--) {
         let digit = 0; const mask = 1 << (i - 1);
-        if ((x & mask) !== 0) digit += 1; if ((y & mask) !== 0) digit += 2; quad += String(digit);
+        if ((x & mask) !== 0) digit += 1;
+        if ((y & mask) !== 0) digit += 2;
+        quad += String(digit);
     }
     return quad;
 }
 
-// ---- GeoJSON ソースに追加
 export function pushFeatureToGeoJsonSource(map, sourceId, feature) {
     const now = new Date();
-    const hours = now.getHours(); const minutes = now.getMinutes(); const seconds = now.getSeconds();
+    const hours = now.getHours(), minutes = now.getMinutes(), seconds = now.getSeconds();
     feature.properties.label = `${hours}:${minutes}:${seconds}`;
     const src = map.getSource(sourceId);
     if (!src || !src.setData) return alert(`GeoJSONソース '${sourceId}' が見つかりません`);
@@ -467,22 +584,24 @@ export function pointFeature(lngLat, props = {}) {
 }
 export function circlePolygonFeature(lngLat, radiusMeters = 50, steps = 64, props = {}) {
     const latRad = lngLat.lat * Math.PI / 180;
-    const dLat = radiusMeters / 111_320; const dLngCoeff = 1 / (111_320 * Math.cos(latRad));
+    const dLat = radiusMeters / 111_320;
+    const dLngCoeff = 1 / (111_320 * Math.cos(latRad));
     const coords = [];
     for (let i = 0; i < steps; i++) {
         const t = (i / steps) * Math.PI * 2;
-        const dx = Math.cos(t) * radiusMeters * dLngCoeff; const dy = Math.sin(t) * dLat;
+        const dx = Math.cos(t) * radiusMeters * dLngCoeff;
+        const dy = Math.sin(t) * dLat;
         coords.push([lngLat.lng + dx, lngLat.lat + dy]);
     }
     coords.push(coords[0]);
     return { type: 'Feature', properties: { id: String(Date.now()), ...props }, geometry: { type: 'Polygon', coordinates: [coords] } };
 }
 
-// ---- 簡易距離計測（右クリ連携用）
+// 計測
 let __measureStart = null;
 export function toggleMeasureHere(lngLat) {
     if (!__measureStart) { __measureStart = lngLat; return '計測開始: 次の点で距離を表示'; }
-    const R = 6371_008.8; // m -> use km base
+    const R = 6371_008.8;
     const toRad = (d) => d * Math.PI / 180;
     const dLat = toRad(lngLat.lat - __measureStart.lat);
     const dLng = toRad(lngLat.lng - __measureStart.lng);
@@ -493,38 +612,26 @@ export function toggleMeasureHere(lngLat) {
     return meters >= 1000 ? `約${(meters/1000).toFixed(2)} km` : `約${meters.toFixed(1)} m`;
 }
 
-export function buildUtilityMenuItems({ map, geojsonSourceId = 'click-circle-source' } = {}) {
-    return [
-        { label: 'コピー: 緯度経度(10進)', onSelect: async ({ lngLat }) => { const s = toFixedCoord(lngLat, 8); try { await navigator.clipboard.writeText(s); } catch { alert(s); } } },
-        { label: 'コピー: 緯度経度(DMS)',   onSelect: async ({ lngLat }) => { const s = toDMS(lngLat); try { await navigator.clipboard.writeText(s); } catch { alert(s); } } },
-        { label: 'コピー: GeoJSON(Point)',  onSelect: async ({ lngLat }) => { const s = toGeoJSONPointString(lngLat); try { await navigator.clipboard.writeText(s); } catch { alert(s); } } },
-        { label: 'コピー: WKT(POINT)',      onSelect: async ({ lngLat }) => { const s = toWKTPoint(lngLat); try { await navigator.clipboard.writeText(s); } catch { alert(s); } } },
-        { label: 'コピー: BBOX±100m',       onSelect: async ({ lngLat }) => { const b = buildBBoxAround(lngLat, 100); const s = `[${b.map(n=>n.toFixed(8)).join(',')}]`; try { await navigator.clipboard.writeText(s); } catch { alert(s); } } },
-
-        { label: 'ここにピンを追加', onSelect: ({ lngLat }) => { pushFeatureToGeoJsonSource(map, geojsonSourceId, pointFeature(lngLat, { label: 'PIN', color: 'red', 'point-color': 'red', 'text-size': 14 })); } },
-        { label: '円を追加: 半径50m', onSelect: ({ lngLat }) => { pushFeatureToGeoJsonSource(map, geojsonSourceId, circlePolygonFeature(lngLat, 50, 64, { label: 'r=50m' })); } },
-        { label: '円を追加: 半径100m', onSelect: ({ lngLat }) => { pushFeatureToGeoJsonSource(map, geojsonSourceId, circlePolygonFeature(lngLat, 100, 64, { label: 'r=100m' })); } },
-
-        { label: 'ここへセンター',   onSelect: ({ lngLat }) => { map.easeTo({ center: lngLat }); } },
-        { label: 'ここへズーム(＋1)', onSelect: () => { map.easeTo({ zoom: map.getZoom() + 1 }); } },
-        { label: '北を上に(方位=0°)', onSelect: () => { map.easeTo({ bearing: 0 }); } },
-        { label: '俯瞰 60°/0° 切替',  onSelect: () => { const p = map.getPitch(); map.easeTo({ pitch: p > 30 ? 0 : 60 }); } },
-
-        { label: 'OSMで開く',               onSelect: ({ lngLat }) => window.open(buildOsmUrl(lngLat, map.getZoom?.() ?? 18), '_blank', 'noopener') },
-        { label: 'iD Editorで開く',         onSelect: ({ lngLat }) => window.open(buildOsmEditorUrl(lngLat, { zoom: map.getZoom?.() ?? 19, editor: 'id' }), '_blank', 'noopener') },
-        { label: 'RapiDで開く',             onSelect: ({ lngLat }) => window.open(buildRapidUrl(lngLat, { zoom: map.getZoom?.() ?? 19 }), '_blank', 'noopener') },
-        { label: 'RapiD（Mapillary機能）',   onSelect: ({ lngLat }) => window.open(buildRapidMapillaryUrl(lngLat, { zoom: map.getZoom?.() ?? 19 }), '_blank', 'noopener') },
-        { label: 'JOSMへ送る（RC）',        onSelect: ({ lngLat }) => window.open(buildJosmRemoteUrlByCenter(lngLat, 200), '_blank', 'noopener') },
-        { label: 'Overpass Turbo（±100m）', onSelect: ({ map, lngLat }) => window.open(buildOverpassTurboUrl(lngLat, { meters: 100, zoom: map.getZoom?.() ?? 19 }), '_blank', 'noopener') },
-
-        { label: 'コピー: XYZ/Quadkey', onSelect: async ({ lngLat }) => { const z = Math.round(map.getZoom?.() ?? 18); const {x,y} = lngLatToTile(lngLat.lng, lngLat.lat, z); const qk = tileToQuadkey(x,y,z); const s = `z=${z}, x=${x}, y=${y}, quadkey=${qk}`; try { await navigator.clipboard.writeText(s); } catch { alert(s); } } },
-        { label: '距離計測: ここを起点/終点', onSelect: ({ lngLat }) => { const msg = toggleMeasureHere(lngLat); alert(msg); } },
-    ];
+// クリップボード
+export async function cmCopyToClipboard(text, { notify = true } = {}) {
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+        } else {
+            const ta = document.createElement('textarea');
+            ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; ta.setAttribute('readonly', '');
+            document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, ta.value.length);
+            const ok = document.execCommand && document.execCommand('copy');
+            document.body.removeChild(ta);
+            if (!ok) throw new Error('execCommand copy failed');
+        }
+        if (notify) alert('クリップボードにコピーしました。');
+    } catch {
+        alert(text);
+    }
 }
 
-// ================================
-// ピン削除ユーティリティ（直下/近傍/半径内）
-// ================================
+/* ======== ピン削除ユーティリティ ======== */
 function haversineMeters(a, b) {
     const toRad = (d) => d * Math.PI / 180; const R = 6371_008.8;
     const dLat = toRad(b.lat - a.lat); const dLng = toRad(b.lng - a.lng);
@@ -590,219 +697,4 @@ export function removeAllPointsInRadius(map, sourceId, lngLat, radiusMeters = 50
     }
     src.setData({ type: 'FeatureCollection', features: kept });
     return removed;
-}
-
-// ===============================
-// 右上ビタ・全高・半幅: 画面右上にぴったり寄せて高さ=全高, 幅=半分
-// ===============================
-export function buildSVUrlSimple(lngLat, { heading = 0, pitch = -15, fov = 90 } = {}) {
-    const norm = ((heading % 360) + 360) % 360;
-    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-    const url = new URL('https://www.google.com/maps/@');
-    url.searchParams.set('api', '1');
-    url.searchParams.set('map_action', 'pano');
-    url.searchParams.set('viewpoint', `${lngLat.lat},${lngLat.lng}`);
-    url.searchParams.set('heading', String(Math.round(norm)));
-    url.searchParams.set('pitch', String(Math.round(clamp(pitch, -90, 90))));
-    url.searchParams.set('fov', String(Math.round(clamp(fov, 10, 120))));
-    return url.toString();
-}
-export function openTopRightWindowFlushHalfWidthFullHeight(url, { name = 'GSV-TopRight-Half' } = {}) {
-    const baseLeft = (typeof screen.availLeft === 'number') ? screen.availLeft : 0;
-    const baseTop  = (typeof screen.availTop  === 'number') ? screen.availTop  : 0;
-    const availW   = screen.availWidth  || screen.width;
-    const availH   = screen.availHeight || screen.height;
-    const targetW = Math.max(200, Math.floor(availW / 2));
-    const approxLeft = Math.max(baseLeft, Math.round(baseLeft + availW - targetW));
-    const approxTop  = baseTop;
-    const features = `width=${targetW},height=${availH},left=${approxLeft},top=${approxTop},resizable=yes,scrollbars=yes,menubar=no,toolbar=no,location=no,status=no`;
-    const win = window.open(url, name, features);
-    if (!win) return null;
-    try { win.opener = null; } catch {}
-    const align = () => {
-        try {
-            win.resizeTo(targetW, availH);
-            const ow = win.outerWidth; const left = baseLeft + availW - ow; const top  = baseTop;
-            win.moveTo(Math.max(baseLeft, Math.round(left)), Math.max(baseTop, Math.round(top)));
-        } catch (_) {}
-    };
-    align(); setTimeout(align, 50); setTimeout(align, 200);
-    try { win.focus(); } catch {}
-    return win;
-}
-export const menuItemGsvTopRightHalfFull = {
-    label: 'ストリートビュー（右上ビタ・全高・半幅）',
-    onSelect: ({ map, lngLat }) => {
-        const heading = ((map?.getBearing?.() ?? 0) + 360) % 360;
-        const url = buildSVUrlSimple(lngLat, { heading, pitch: -15, fov: 90 });
-        openTopRightWindowFlushHalfWidthFullHeight(url, { name: 'GSV-TopRight-Half' });
-    }
-};
-
-// ===============================
-// Simple SV Pin
-// ===============================
-const SV_PIN_SOURCE_ID = 'sv-pin-source';
-const SV_PIN_LAYER_ID = 'sv-pin-circle';
-export function ensureSvPinLayers(map) {
-    if (!map.isStyleLoaded || !map.isStyleLoaded()) {
-        try { map.once('load', () => ensureSvPinLayers(map)); } catch {}
-        return;
-    }
-    if (!map.getSource(SV_PIN_SOURCE_ID)) {
-        map.addSource(SV_PIN_SOURCE_ID, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-    }
-    if (!map.getLayer(SV_PIN_LAYER_ID)) {
-        map.addLayer({ id: SV_PIN_LAYER_ID, type: 'circle', source: SV_PIN_SOURCE_ID, paint: {
-                'circle-radius': 8, 'circle-color': '#ff5722', 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2, 'circle-opacity': 1
-            }});
-    }
-    map.moveLayer(SV_PIN_LAYER_ID);
-    if (!map.__svPinClickBound) {
-        try {
-            map.on('click', SV_PIN_LAYER_ID, () => removeSvPin(map));
-            map.on('mouseenter', SV_PIN_LAYER_ID, () => map.getCanvas().style.cursor = 'pointer');
-            map.on('mouseleave', SV_PIN_LAYER_ID, () => map.getCanvas().style.cursor = '');
-        } catch {}
-        map.__svPinClickBound = true;
-    }
-}
-export function setSvPin(map, lngLat) {
-    const fc = { type: 'FeatureCollection', features: [{ type: 'Feature', properties: { id: 'sv-pin' }, geometry: { type: 'Point', coordinates: [lngLat.lng, lngLat.lat] } }] };
-    const setData = () => { const src = map.getSource(SV_PIN_SOURCE_ID); if (src && src.setData) src.setData(fc); };
-    if (!map.getSource(SV_PIN_SOURCE_ID)) {
-        ensureSvPinLayers(map);
-        if (!map.getSource(SV_PIN_SOURCE_ID)) { try { map.once('load', setData); } catch {} return; }
-    }
-    ensureSvPinLayers(map); setData();
-}
-export function removeSvPin(map) {
-    const src = map.getSource(SV_PIN_SOURCE_ID);
-    if (src && src.setData) src.setData({ type: 'FeatureCollection', features: [] });
-}
-
-// ===============================
-// 可視ベクター地物 → GeoJSON
-// ===============================
-const LAYER_BLOCKLIST = [ 'zones-layer' ];
-const DEFAULT_EXCLUDE_PATTERNS = [
-    /^background$/i, /basemap/i, /osm/i, /openmaptiles/i, /openstreetmap/i, /gsi/i, /std/i, /seamless/i,
-    /hillshade/i, /terrain/i, /contour/i, /water/i, /road/i, /label/i, /poi/i, /transit/i, /building/i, /satellite/i,
-];
-function _isVectorType(t) { return t === 'fill' || t === 'line' || t === 'circle' || t === 'symbol' || t === 'fill-extrusion'; }
-function _isVisible(map, id) { const v = map.getLayoutProperty(id, 'visibility'); return v == null || v === 'visible'; }
-function _isExcluded(id, includeExcluded) {
-    if (includeExcluded) return false; if (!id) return false;
-    if (id.includes('-vector-')) return true; if (LAYER_BLOCKLIST.includes(id)) return true;
-    return DEFAULT_EXCLUDE_PATTERNS.some(re => re.test(id));
-}
-function _featKey(f) { const src = f.source || ''; const sl  = f.sourceLayer || ''; return `${src}|${sl}|${JSON.stringify(f.geometry)}`; }
-function _nowStr() { const d = new Date(), p = n => String(n).padStart(2,'0'); return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`; }
-function _baseGeomType(t) { if (!t) return null; return t.startsWith('Multi') ? t.slice(5) : t; }
-function _combinedType(base) { if (!base) return null; return base === 'GeometryCollection' ? 'GeometryCollection' : ('Multi' + base); }
-function _combineById(features) {
-    const groups = new Map();
-    for (const f of features) {
-        const gid = (f.properties?.id ?? f.properties?._id ?? f.id);
-        if (gid == null) continue;
-        if (!groups.has(gid)) groups.set(gid, []);
-        groups.get(gid).push(f);
-    }
-    for (const [gid, arr] of groups) {
-        if (arr.length <= 1) continue;
-        const base = _baseGeomType(arr[0].geometry?.type); if (!base) continue;
-        const combinedType = _combinedType(base); const acc = [];
-        for (const f of arr) {
-            const g = f.geometry; if (!g || !g.type) continue; const t = _baseGeomType(g.type); if (t !== base) continue;
-            if (g.type.startsWith('Multi')) { for (const part of g.coordinates) acc.push(part); }
-            else { acc.push(g.coordinates); }
-        }
-        if (acc.length >= 2) { arr[0].geometry = { type: combinedType, coordinates: acc }; for (let i = 1; i < arr.length; i++) arr[i]._drop = true; }
-    }
-    return features.filter(f => !f._drop);
-}
-export function exportVisibleGeoJSON_fromMap01(opts = {}) {
-    const includeExcluded = !!opts.includeExcluded; const map = store.state.map01;
-    const targetLayerIds = map.getStyle().layers
-        .filter(l => _isVectorType(l.type) && _isVisible(map, l.id) && !_isExcluded(l.id, includeExcluded))
-        .map(l => l.id);
-    if (!targetLayerIds.length) { alert('対象レイヤがありません。（除外設定により全て除外されている可能性があります）'); return; }
-    const w = map.getContainer().clientWidth, h = map.getContainer().clientHeight;
-    const feats = map.queryRenderedFeatures([[0,0],[w,h]], { layers: targetLayerIds });
-    if (!feats.length) { alert('画面内に出力対象の地物がありません。'); return; }
-    const seen = new Set(); const features = [];
-    for (const f of feats) {
-        const key = _featKey(f); if (seen.has(key)) continue; seen.add(key);
-        const props = f.properties ? { ...f.properties } : {};
-        props.__layer = f.layer?.id; props.__source = f.source; props.__sourceLayer = f.sourceLayer;
-        features.push({ type: 'Feature', geometry: JSON.parse(JSON.stringify(f.geometry)), properties: props });
-    }
-    const combinedFeatures = _combineById(features);
-    const fc = { type: 'FeatureCollection', features: combinedFeatures };
-    const blob = new Blob([JSON.stringify(fc, null, 2)], { type: 'application/geo+json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = `oh3_visible_${_nowStr()}.geojson`;
-    document.body.appendChild(a); a.click();
-    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
-}
-
-// （必要ならメニュー項目化）
-function visibleGeojsonMenuItem() { return { id: 'export-visible-geojson', label: '可視ベクター地物をGeoJSONで出力', onSelect: (ev) => { const includeExcluded = !!(ev && (ev.altKey || ev.metaKey)); exportVisibleGeoJSON_fromMap01({ includeExcluded }); }, }; }
-function visibleGeojsonMenuItemIncludeBase() { return { id: 'export-visible-geojson-all', label: 'ベースも含めてGeoJSON出力（可視ベクター）', onSelect: () => exportVisibleGeoJSON_fromMap01({ includeExcluded: true }), }; }
-
-// どこか共通の場所に
-export async function copyToClipboard(text, { notify = true } = {}) {
-    try {
-        if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(text);
-        } else {
-            // 非httpsや一部Safari向けフォールバック
-            const ta = document.createElement('textarea');
-            ta.value = text;
-            ta.style.position = 'fixed';
-            ta.style.opacity = '0';
-            ta.setAttribute('readonly', '');
-            document.body.appendChild(ta);
-            ta.focus();
-            ta.select();
-            ta.setSelectionRange(0, ta.value.length);
-            const ok = document.execCommand && document.execCommand('copy');
-            document.body.removeChild(ta);
-            if (!ok) throw new Error('execCommand copy failed');
-        }
-        if (notify) alert('クリップボードにコピーしました。');
-    } catch (err) {
-        // 最後の手段：内容をダイアログに出して手動コピー
-        alert(text);
-    }
-}
-
-// ▼ 追加ヘルパー（外部関数群の近くに置いて） -------------------------
-export async function openOrCopyOverpass({ map, lngLat, meters, feature, originalEvent }) {
-    const ev = originalEvent;
-    if (ev && (ev.altKey || ev.metaKey)) {
-        const [minLng, minLat, maxLng, maxLat] = buildBBoxAround(lngLat, meters);
-        let q;
-        if (feature === 'highway') {
-            q = `[out:json][timeout:25];
-way[highway](${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)});
-out body; >; out skel qt;`;
-        } else if (feature === 'amenity') {
-            q = `[out:json][timeout:25];
-node[amenity](${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)});
-out;`;
-        } else { // all
-            q = `[out:json][timeout:25];
-(node(${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)});
- way(${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)});
- relation(${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)}););
-out body; >; out skel qt;`;
-        }
-        await copyToClipboard(q); // ← あなたのcopyToClipboardを利用
-    } else {
-        const url = buildOverpassTurboUrl(lngLat, {
-            meters, zoom: map.getZoom?.() ?? 19, feature
-        });
-        window.open(url, '_blank', 'noopener');
-    }
 }
