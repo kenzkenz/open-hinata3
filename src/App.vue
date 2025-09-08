@@ -8221,14 +8221,9 @@ export default {
             ]
           },
           {
-            label: 'ショートURL',
+            // 簡易でURL記憶
             // 自前で処理するなら onSelectUrl を渡す（window.open 等はしない）
             ...buildShortLinksMenu({
-              links: [
-                { label: '案件A', url: 'https://ex.example/s/{lat},{lng}?z={zoom}' },
-                { label: 'Overpass全要素±200m', url: 'https://overpass-turbo.eu/?Q=[out:json];(node({bbox});way({bbox});relation({bbox}););out body;>;out skel qt;#map={zoom}/{lat}/{lng}' },
-                { label: '社内ビューア', url: 'https://viewer.example/?center={lat},{lng}&z={zoom}' },
-              ],
               metersForBBox: 200,
               onSelectUrl: (url, ctx) => {
                 // ← ここで好きに処理（開かない）

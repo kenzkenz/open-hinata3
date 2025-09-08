@@ -732,6 +732,23 @@ export function saveShortLinks(arr) { localStorage.setItem(SHORTLINKS_KEY, JSON.
 export function addShortLink(link) { const arr = loadShortLinks(); arr.push({ label: link.label, url: link.url }); saveShortLinks(arr); }
 export function clearShortLinks() { localStorage.removeItem(SHORTLINKS_KEY); }
 
+export function removeShortLinkByIndex(idx) {
+    const arr = loadShortLinks();
+    if (!Array.isArray(arr)) return;
+    const i = Number(idx);
+    if (!Number.isFinite(i) || i < 0 || i >= arr.length) return;
+    arr.splice(i, 1);
+    saveShortLinks(arr);
+}
+export function removeShortLinkByLabel(label) {
+    const arr = loadShortLinks();
+    const i = arr.findIndex((x) => (x?.label || x?.url) === label);
+    if (i >= 0) {
+        arr.splice(i, 1);
+        saveShortLinks(arr);
+    }
+}
+
 export function buildShortLinksMenu({
                                         title = 'ショートURL',
                                         links = [],
@@ -760,11 +777,18 @@ export function buildShortLinksMenu({
             items.push({
                 label: 'プリセットを追加…',
                 keepOpen: true,
-                onSelect: async ({ map }) => {
-                    const label = prompt('表示名を入力してください', '新しいショートURL'); if (!label) return;
-                    const url = prompt('URLを入力（{lat},{lng},{zoom},{bbox} など可）', 'https://example.com/?lat={lat}&lng={lng}&z={zoom}'); if (!url) return;
-                    addShortLink({ label, url });
-                    try { map.getContainer().dispatchEvent(new CustomEvent('oh3:rcm:refresh')); } catch {}
+                onSelect: ({ map }) => {
+                    // OH3のパーマリンクを最新化 → 200ms 待ってから自動入力
+                    try { store.state.updatePermalinkFire = !store.state.updatePermalinkFire; } catch {}
+                    setTimeout(() => {
+                        const cur = (store?.state?.permalinkUrl || store?.state?.permalink || window?.location?.href || '');
+                        const label = prompt('表示名を入力してください', 'OH3リンク');
+                        if (!label) return;
+                        const url = prompt('OH3のURLを入力（自動入力済み。必要なら編集）', cur);
+                        if (!url) return;
+                        addShortLink({ label, url });
+                        try { map.getContainer().dispatchEvent(new CustomEvent('oh3:rcm:refresh')); } catch {}
+                    }, 200);
                 }
             });
             items.push({ label: 'エクスポート（JSONをコピー）', keepOpen: true, onSelect: async () => { const json = JSON.stringify(loadShortLinks(), null, 2); await cmCopyToClipboard(json); } });
@@ -773,7 +797,32 @@ export function buildShortLinksMenu({
                     try { const arr = JSON.parse(txt); saveShortLinks(arr); } catch { return alert('JSONの形式が不正です'); }
                     try { map.getContainer().dispatchEvent(new CustomEvent('oh3:rcm:refresh')); } catch {}
                 }});
-            items.push({ label: '全プリセットを削除', keepOpen: true, onSelect: ({ map }) => { if (confirm('本当にすべて削除しますか？')) { clearShortLinks(); try { map.getContainer().dispatchEvent(new CustomEvent('oh3:rcm:refresh')); } catch {} } } });
+            items.push({
+                label: '個別に削除…',
+                keepOpen: true,
+                items: () => {
+                    const saved = loadShortLinks();
+                    if (!saved.length) return [{ label: '（保存済みなし）', onSelect: () => {} }];
+                    return saved.map((meta, idx) => ({
+                        label: (meta.label || meta.url) + ' を削除',
+                        keepOpen: true,
+                        onSelect: ({ map }) => {
+                            if (!confirm(`「${meta.label || meta.url}」を削除しますか？`)) return;
+                            removeShortLinkByIndex(idx);
+                            try { map.getContainer().dispatchEvent(new CustomEvent('oh3:rcm:refresh')); } catch {}
+                        }
+                    }));
+                }
+            });
+            items.push({
+                label: '全プリセットを削除',
+                keepOpen: true,
+                onSelect: ({ map }) => {
+                    if (!confirm('保存済みのショートURLをすべて削除しますか？')) return;
+                    clearShortLinks();
+                    try { map.getContainer().dispatchEvent(new CustomEvent('oh3:rcm:refresh')); } catch {}
+                }
+            });
         }
 
         return items;
