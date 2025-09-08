@@ -8125,29 +8125,30 @@ export default {
           },
           { label: 'Mapillaryを開く', onSelect: ({ lngLat }) => window.open(buildMapillaryUrl(lngLat, map.getZoom?.() ?? 18, map.getBearing?.() ?? 0), '_blank', 'noopener') },
           { label: '俯瞰 60°/0° 切替', onSelect: () => { const p = map.getPitch(); map.easeTo({ pitch: p > 30 ? 0 : 60 }); } },
-          { label: '点を追加', onSelect: ({ lngLat }) => { pushFeatureToGeoJsonSource(map, 'click-circle-source', pointFeature(lngLat, {
-              label: 'PIN',
-              color: 'red',
-              'point-color': 'red',
-              'text-size': 14,
-              offsetValue: [0.6, 0.0],
-              textAnchor: 'left',
-              textJustify: 'left',
-              labelType: '1',
-              longText: '',
-              borderRadius: '10px',
-            })); } },
-          { label: '点を削除', onSelect: ({ point }) => {const ok = removePointUnderCursor(map, point, 'click-circle-source');if (!ok) alert('直下に削除できるピンが見つかりません');}},
           {
+            label: '点追加＆削除',
+            children: [
+              { label: '点を追加', onSelect: ({ lngLat }) => { pushFeatureToGeoJsonSource(map, 'click-circle-source', pointFeature(lngLat, {
+                  label: 'PIN',
+                  color: 'red',
+                  'point-color': 'red',
+                  'text-size': 14,
+                  offsetValue: [0.6, 0.0],
+                  textAnchor: 'left',
+                  textJustify: 'left',
+                  labelType: '1',
+                  longText: '',
+                  borderRadius: '10px',
+                })); } },
+              { label: '点を削除', onSelect: ({ point }) => {const ok = removePointUnderCursor(map, point, 'click-circle-source');if (!ok) alert('直下に削除できるピンが見つかりません');}},
+            ]},
+              {
             label: 'GeoJSON出力',
-            onSelect: () => exportVisibleGeoJSON_fromMap01({ includeExcluded: false }),
+            children: [
+              {label: 'ベース含まず', onSelect: () => exportVisibleGeoJSON_fromMap01({ includeExcluded: false }),},
+              {label: 'ベース含む', onSelect: () => exportVisibleGeoJSON_fromMap01({ includeExcluded: true }),},
+            ]
           },
-          {
-            label: 'GeoJSON出力(ベース含む)',
-            onSelect: () => exportVisibleGeoJSON_fromMap01({ includeExcluded: true }),
-          }
-          // 実用メニューをまとめて展開
-          // ...buildUtilityMenuItems({ map, geojsonSourceId: 'click-circle-source' }),
         ]
       });
       /**
