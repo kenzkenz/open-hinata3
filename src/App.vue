@@ -2243,7 +2243,7 @@ import attachMapRightClickMenu, {
   buildMapillaryUrl,
   buildOsmEditorUrl,
   buildRapidMapillaryUrl,
-  buildRapidUrl,
+  buildRapidUrl, buildShortLinksMenu,
   buildStreetViewUrl,
   buildSVUrlSimple,
   exportVisibleGeoJSON_fromMap01,
@@ -8219,6 +8219,24 @@ export default {
               {label: 'ベース含まず', onSelect: () => exportVisibleGeoJSON_fromMap01({ includeExcluded: false }),},
               {label: 'ベース含む', onSelect: () => exportVisibleGeoJSON_fromMap01({ includeExcluded: true }),},
             ]
+          },
+          {
+            label: 'ショートURL',
+            // 自前で処理するなら onSelectUrl を渡す（window.open 等はしない）
+            ...buildShortLinksMenu({
+              links: [
+                { label: '案件A', url: 'https://ex.example/s/{lat},{lng}?z={zoom}' },
+                { label: 'Overpass全要素±200m', url: 'https://overpass-turbo.eu/?Q=[out:json];(node({bbox});way({bbox});relation({bbox}););out body;>;out skel qt;#map={zoom}/{lat}/{lng}' },
+                { label: '社内ビューア', url: 'https://viewer.example/?center={lat},{lng}&z={zoom}' },
+              ],
+              metersForBBox: 200,
+              onSelectUrl: (url, ctx) => {
+                // ← ここで好きに処理（開かない）
+                // 例) ストアに積む / モーダル表示 / postMessage / ルーター遷移など
+                console.log('shortURL', url, ctx);
+                // window.open(url, '_blank', 'noopener') したいなら今ここで
+              }
+            })
           },
         ]
       });

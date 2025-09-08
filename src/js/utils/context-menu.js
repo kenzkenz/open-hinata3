@@ -1,11 +1,34 @@
 /*
- * MapLibre 右クリック / 長押し コンテキストメニュー（多層・強制ハイライト超安定版）
+ * MapLibre 右クリック / 長押し コンテキストメニュー（多層・ハイライト・プリセット対応 完全版）
  * - 右クリック / 長押し
- * - 多段（何層でも）でも消えない
- * - hover/active は「ハイライト専用オーバーレイ層 + inline !important + filter」で必ず可視化
- * - Overpass: クリック=ブラウザで開く / Alt or Cmd=QLをコピー（中心Cと#mapを同期）
+ * - 多段サブメニューでも消えない（ホバー遷移でも安定）
+ * - hover/active 可視化は「ハイライト専用オーバーレイ + filter」で強制表示
+ * - Overpass / Rapid / iD / JOSM / Mapillary / Google / OSM ヘルパー
+ * - ショートURLプリセット（トークン置換・Alt/Cmdでコピー・管理UIあり）
+ * - プリセット追加後は oh3:rcm:refresh でメニューを開いたまま即反映
  *
- * 親の呼び出しはそのままでOK（itemsは既存のまま）。
+ * 親の呼び出し例：
+ *   const detach = attachMapRightClickMenu({
+ *     map: store.state.map01,
+ *     items: [
+ *       {
+ *         label: 'ショートURL',
+ *         ...buildShortLinksMenu({
+ *           links: [
+ *             { label: '案件A', url: 'https://ex.example/s/{lat},{lng}?z={zoom}' },
+ *             { label: 'Overpass±200m', url: 'https://overpass-turbo.eu/?Q=[out:json];(node({bbox});way({bbox});relation({bbox}););out body;>;out skel qt;#map={zoom}/{lat}/{lng}' }
+ *           ],
+ *           metersForBBox: 200,
+ *           onSelectUrl: (url, ctx) => {
+ *             // ここで自由に処理（window.open など）。メニュー側は何もしない
+ *             // window.open(url, '_blank', 'noopener');
+ *           }
+ *         })
+ *       },
+ *       // 既存の項目…
+ *     ]
+ *   });
+ *
  */
 
 import store from '@/store'
@@ -16,7 +39,7 @@ export default function attachMapRightClickMenu({
                                                     map,
                                                     items = [],
                                                     longPressMs = 800,
-                                                    submenuDelay = 260
+                                                    submenuDelay = 260,
                                                 }) {
     if (!map) throw new Error('map が必要です');
     const container = map.getContainer();
@@ -43,7 +66,7 @@ export default function attachMapRightClickMenu({
     container.style.position = container.style.position || 'relative';
     container.appendChild(menu);
 
-    injectMenuStyles(container); // ShadowRoot/iframe 対応
+    injectMenuStyles(container); // 強制色のCSS変数を注入
 
     // ====== 多層管理 ======
     const stacks = [];
@@ -82,47 +105,27 @@ export default function attachMapRightClickMenu({
         if (depth < 0) return;
         menu.querySelectorAll(`.ml-cm-row.is-active[data-depth="${depth}"]`).forEach(el => {
             el.classList.remove('is-active');
-            clearHL(el); // ハイライト完全解除
+            clearHL(el);
         });
     }
 
-    // ====== UIユーティリティ ======
-    function makeSeparator() {
-        const hr = document.createElement('div');
-        Object.assign(hr.style, { height: '1px', background: 'rgba(0,0,0,.08)', margin: '4px 0' });
-        return hr;
-    }
-    const isSeparator = (it) => it === '-' || it?.type === 'separator';
-    const hasChildren = (it) => Array.isArray(it?.items) || Array.isArray(it?.children);
-    const childrenOf  = (it) => (it?.items || it?.children || []).filter(Boolean);
-
-    // ====== ハイライト層（これで絶対見える） ======
+    // ====== ハイライト層 ======
     function ensureHL(el) {
         if (el.__hl) return el.__hl;
         el.style.position = el.style.position || 'relative';
         const hl = document.createElement('span');
         hl.className = 'ml-cm-hl';
         Object.assign(hl.style, {
-            position: 'absolute',
-            inset: '0',
-            borderRadius: 'inherit',
-            pointerEvents: 'none',
-            opacity: '0',
-            transition: 'opacity 80ms linear',
-            // デフォルト色は注入CSSの変数を使うが、無ければここで強い色
-            background: 'rgba(0,153,255,0.18)'
+            position: 'absolute', inset: '0', borderRadius: 'inherit', pointerEvents: 'none',
+            opacity: '0', transition: 'opacity 80ms linear', background: 'rgba(0,153,255,0.18)'
         });
-        // 左側にアクセントライン（背景色が無効な環境でも見やすい）
         const bar = document.createElement('span');
         Object.assign(bar.style, {
-            position: 'absolute',
-            left: '0', top: '0', bottom: '0', width: '3px',
-            background: 'rgba(0,153,255,0.9)',
-            opacity: '0', transition: 'opacity 80ms linear', pointerEvents: 'none',
+            position: 'absolute', left: '0', top: '0', bottom: '0', width: '3px',
+            background: 'rgba(0,153,255,0.9)', opacity: '0', transition: 'opacity 80ms linear', pointerEvents: 'none',
             borderTopLeftRadius: 'inherit', borderBottomLeftRadius: 'inherit'
         });
         hl.appendChild(bar);
-
         el.prepend(hl);
         el.__hl = { hl, bar };
         return el.__hl;
@@ -133,7 +136,6 @@ export default function attachMapRightClickMenu({
             hl.style.opacity = '1';
             hl.style.background = getVar(menu, '--ml-hover', 'rgba(0,153,255,0.18)');
             bar.style.opacity = '.75';
-            // 背景がどうしても無効化される環境向けの視覚変化
             el.style.setProperty('filter', 'brightness(0.97)', 'important');
         } else if (state === 'active') {
             hl.style.opacity = '1';
@@ -149,14 +151,24 @@ export default function attachMapRightClickMenu({
         el.style.removeProperty('filter');
     }
     function getVar(rootEl, name, fallback) {
-        try {
-            const cs = getComputedStyle(rootEl);
-            const v = cs.getPropertyValue(name).trim();
-            return v || fallback;
-        } catch { return fallback; }
+        try { const cs = getComputedStyle(rootEl); const v = cs.getPropertyValue(name).trim(); return v || fallback; } catch { return fallback; }
     }
 
     // ====== 行/ボタン ======
+    function makeSeparator() {
+        const hr = document.createElement('div');
+        Object.assign(hr.style, { height: '1px', background: 'rgba(0,0,0,.08)', margin: '4px 0' });
+        return hr;
+    }
+
+    // 動的アイテム対応
+    const isSeparator = (it) => it === '-' || it?.type === 'separator';
+    const hasChildren = (it) => typeof it?.items === 'function' || Array.isArray(it?.items) || Array.isArray(it?.children);
+    const childrenOf  = (it, ctx) => {
+        if (typeof it?.items === 'function') { try { return (it.items(ctx) || []).filter(Boolean); } catch { return []; } }
+        return (it?.items || it?.children || []).filter(Boolean);
+    };
+
     function createLeafButton(it, ctx) {
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -175,7 +187,7 @@ export default function attachMapRightClickMenu({
         btn.addEventListener('blur', () => clearHL(btn));
 
         btn.onclick = (e) => {
-            hide();
+            if (!it.keepOpen) hide(); // 管理UIは閉じない
             try { it.onSelect?.({ map, lngLat: ctx.lngLat, point: ctx.point, originalEvent: e }); } catch (err) { console.error(err); }
         };
         return btn;
@@ -185,19 +197,14 @@ export default function attachMapRightClickMenu({
         const row = document.createElement('div');
         Object.assign(row.style, {
             display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
-            padding: '10px 12px', border: 'none', cursor: 'pointer',
-            userSelect: 'none', whiteSpace: 'nowrap', background: 'transparent'
+            padding: '10px 12px', border: 'none', cursor: 'pointer', userSelect: 'none',
+            whiteSpace: 'nowrap', background: 'transparent'
         });
         row.className = 'ml-cm-row';
         row.dataset.depth = String(depth);
         ensureHL(row);
 
-        row.addEventListener('mouseenter', () => {
-            if (!isTouchEnv) {
-                applyHL(row, 'hover');
-                cancelClose(depth);
-            }
-        });
+        row.addEventListener('mouseenter', () => { if (!isTouchEnv) { applyHL(row, 'hover'); cancelClose(depth); } });
         row.addEventListener('mouseleave', (e) => {
             if (isTouchEnv) return;
             const rt = e?.relatedTarget || null;
@@ -243,7 +250,7 @@ export default function attachMapRightClickMenu({
                     row.classList.add('is-active');
                     applyHL(row, 'active');
 
-                    const sub = createMenuList(childrenOf(it), ctx, depth + 1);
+                    const sub = createMenuList(childrenOf(it, ctx), ctx, depth + 1);
                     sub.addEventListener('mouseenter', () => cancelAncestors(depth));
                     sub.addEventListener('mouseleave', (e) => {
                         if (isTouchEnv) return;
@@ -302,6 +309,9 @@ export default function attachMapRightClickMenu({
         }
     }
 
+    // ==== 動的リフレッシュ対応 ====
+    let __last = { px: null, py: null, ctx: null };
+
     function buildMenu(ctx) {
         menu.innerHTML = '';
         clearStacksFrom(0);
@@ -310,16 +320,23 @@ export default function attachMapRightClickMenu({
         stacks.push(root);
     }
 
+    function refreshMenuNow() {
+        if (menu.style.display !== 'none' && __last.ctx) {
+            buildMenu(__last.ctx);
+        }
+    }
+    container.addEventListener('oh3:rcm:refresh', () => refreshMenuNow());
+
     function show(px, py, ctx) {
         if (store.state.isIframe) return;
+        __last = { px, py, ctx };
         buildMenu(ctx);
         menu.style.display = 'block';
         menu.style.left = px + 8 + 'px';
         menu.style.top  = py + 8 + 'px';
         const rect  = menu.getBoundingClientRect();
         const cRect = container.getBoundingClientRect();
-        let left = px + 8;
-        let top  = py + 8;
+        let left = px + 8; let top = py + 8;
         if (left + rect.width  > cRect.width)  left = Math.max(8, px - rect.width - 8);
         if (top  + rect.height > cRect.height) top  = Math.max(8, py - rect.height - 8);
         menu.style.left = left + 'px';
@@ -347,8 +364,7 @@ export default function attachMapRightClickMenu({
     map.on('contextmenu', onContextMenu);
 
     // タッチ: 長押し
-    let pressTimer = null;
-    let pressStartPoint = null;
+    let pressTimer = null; let pressStartPoint = null;
     function onPointerDown(ev) {
         if (ev.pointerType === 'mouse') return;
         pressStartPoint = getPointFromEvent(ev);
@@ -391,7 +407,7 @@ export default function attachMapRightClickMenu({
 
     return detach;
 
-    // ====== スタイル注入（強い色の既定値） ======
+    // ====== スタイル注入 ======
     function injectMenuStyles(rootEl) {
         const root = (rootEl && rootEl.getRootNode) ? rootEl.getRootNode() : document;
         const id = root === document ? 'ml-cm-style' : 'ml-cm-style-' + Math.random().toString(36).slice(2,8);
@@ -411,7 +427,9 @@ export default function attachMapRightClickMenu({
     }
 }
 
-/* ======== Google / OSM / Rapid / Overpass / Mapillary / JOSM ======== */
+/* ============================== */
+/* Google / OSM / Rapid / Overpass / JOSM / Mapillary ヘルパー */
+/* ============================== */
 
 export function buildGoogleMapsUrl(lngLat, opts = {}) {
     const { zoom = 18 } = opts;
@@ -475,19 +493,13 @@ export function buildOverpassTurboUrl(lngLat, { meters = 100, zoom = 19, feature
     let query;
     switch (feature) {
         case 'highway':
-            query = `[out:json][timeout:25];
-way[highway](${swne});
-out body; >; out skel qt;`;
+            query = `[out:json][timeout:25];\nway[highway](${swne});\nout body; >; out skel qt;`;
             break;
         case 'amenity':
-            query = `[out:json][timeout:25];
-node[amenity](${swne});
-out;`;
+            query = `[out:json][timeout:25];\nnode[amenity](${swne});\nout;`;
             break;
         default:
-            query = `[out:json][timeout:25];
-(node(${swne});way(${swne});relation(${swne}););
-out body; >; out skel qt;`;
+            query = `[out:json][timeout:25];\n(node(${swne});way(${swne});relation(${swne}););\nout body; >; out skel qt;`;
     }
 
     const url = new URL('https://overpass-turbo.eu/');
@@ -503,19 +515,11 @@ export async function openOrCopyOverpass({ map, lngLat, meters, feature = 'all',
         const [minLng, minLat, maxLng, maxLat] = buildBBoxAround(lngLat, meters);
         let q;
         if (feature === 'highway') {
-            q = `[out:json][timeout:25];
-way[highway](${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)});
-out body; >; out skel qt;`;
+            q = `[out:json][timeout:25];\nway[highway](${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)});\nout body; >; out skel qt;`;
         } else if (feature === 'amenity') {
-            q = `[out:json][timeout:25];
-node[amenity](${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)});
-out;`;
+            q = `[out:json][timeout:25];\nnode[amenity](${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)});\nout;`;
         } else {
-            q = `[out:json][timeout:25];
-(node(${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)});
- way(${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)});
- relation(${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)}););
-out body; >; out skel qt;`;
+            q = `[out:json][timeout:25];\n(node(${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)});\n way(${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)});\n relation(${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)}););\nout body; >; out skel qt;`;
         }
         await cmCopyToClipboard(q);
     } else {
@@ -524,7 +528,9 @@ out body; >; out skel qt;`;
     }
 }
 
-/* ======== 汎用ユーティリティ ======== */
+/* ============================== */
+/* 汎用ユーティリティ */
+/* ============================== */
 
 export function toFixedCoord(lngLat, n = 8) { return `${lngLat.lng.toFixed(n)}, ${lngLat.lat.toFixed(n)}`; }
 export function toDMS(lngLat) {
@@ -543,9 +549,9 @@ export function toWKTPoint(lngLat) { return `POINT(${lngLat.lng} ${lngLat.lat})`
 
 export function buildBBoxAround(lngLat, meters = 100) {
     const latRad = lngLat.lat * Math.PI / 180;
-    const dLat = meters / 111_320;
-    const dLngCoeff = 1 / (111_320 * Math.cos(latRad));
-    return [lngLat.lng - dLngCoeff * meters, lngLat.lat - dLat, lngLat.lng + dLngCoeff * meters, lngLat.lat + dLat];
+    const dLat = meters / 111_320; // lat 度換算
+    const dLng = meters / (111_320 * Math.cos(latRad));
+    return [lngLat.lng - dLng, lngLat.lat - dLat, lngLat.lng + dLng, lngLat.lat + dLat];
 }
 
 export function lngLatToTile(lng, lat, z) {
@@ -631,7 +637,9 @@ export async function cmCopyToClipboard(text, { notify = true } = {}) {
     }
 }
 
-/* ======== ピン削除ユーティリティ ======== */
+/* ============================== */
+/* ピン削除ユーティリティ */
+/* ============================== */
 function haversineMeters(a, b) {
     const toRad = (d) => d * Math.PI / 180; const R = 6371_008.8;
     const dLat = toRad(b.lat - a.lat); const dLng = toRad(b.lng - a.lng);
@@ -697,4 +705,79 @@ export function removeAllPointsInRadius(map, sourceId, lngLat, radiusMeters = 50
     }
     src.setData({ type: 'FeatureCollection', features: kept });
     return removed;
+}
+
+/* ============================== */
+/* ショートURL プリセット（動的・即時反映） */
+/* ============================== */
+const SHORTLINKS_KEY = 'oh3.shortlinks.v1';
+
+export function resolveShortLink(template, { lngLat, map, meters = 120 } = {}) {
+    const z = Math.round(map?.getZoom?.() ?? 19);
+    const [minLng, minLat, maxLng, maxLat] = buildBBoxAround(lngLat, meters);
+    return String(template)
+        .replaceAll('{lat}', lngLat.lat.toFixed(6))
+        .replaceAll('{lng}', lngLat.lng.toFixed(6))
+        .replaceAll('{zoom}', String(z))
+        .replaceAll('{bbox}', `${minLat.toFixed(6)},${minLng.toFixed(6)},${maxLat.toFixed(6)},${maxLng.toFixed(6)}`)
+        .replaceAll('{minLat}', minLat.toFixed(6))
+        .replaceAll('{minLng}', minLng.toFixed(6))
+        .replaceAll('{maxLat}', maxLat.toFixed(6))
+        .replaceAll('{maxLng}', maxLng.toFixed(6));
+}
+export function loadShortLinks() {
+    try { return JSON.parse(localStorage.getItem(SHORTLINKS_KEY) || '[]'); } catch { return []; }
+}
+export function saveShortLinks(arr) { localStorage.setItem(SHORTLINKS_KEY, JSON.stringify(arr || [])); }
+export function addShortLink(link) { const arr = loadShortLinks(); arr.push({ label: link.label, url: link.url }); saveShortLinks(arr); }
+export function clearShortLinks() { localStorage.removeItem(SHORTLINKS_KEY); }
+
+export function buildShortLinksMenu({
+                                        title = 'ショートURL',
+                                        links = [],
+                                        metersForBBox = 120,
+                                        onSelectUrl = null,
+                                        allowManage = true,
+                                    } = {}) {
+    const clickHandler = (meta) => (ctx) => {
+        const { map, lngLat, point, originalEvent } = ctx;
+        const url = resolveShortLink(meta.url, { lngLat, map, meters: metersForBBox });
+
+        if (originalEvent && (originalEvent.altKey || originalEvent.metaKey)) { cmCopyToClipboard(url); return; }
+        if (typeof onSelectUrl === 'function') { onSelectUrl(url, { map, lngLat, point, meta, originalEvent }); return; }
+        try { map.getContainer().dispatchEvent(new CustomEvent('oh3:shorturl', { detail: { url, meta, map, lngLat, point, originalEvent } })); }
+        catch (e) { console.warn('shorturl event dispatch failed', e); }
+    };
+
+    const dynamicItems = (ctx) => {
+        const saved = loadShortLinks();
+        const merged = [ ...links.filter(Boolean), ...saved.filter(Boolean) ];
+
+        const items = merged.map((meta) => ({ label: meta.label || meta.url, onSelect: clickHandler(meta) }));
+
+        if (allowManage) {
+            items.push({ type: 'separator' });
+            items.push({
+                label: 'プリセットを追加…',
+                keepOpen: true,
+                onSelect: async ({ map }) => {
+                    const label = prompt('表示名を入力してください', '新しいショートURL'); if (!label) return;
+                    const url = prompt('URLを入力（{lat},{lng},{zoom},{bbox} など可）', 'https://example.com/?lat={lat}&lng={lng}&z={zoom}'); if (!url) return;
+                    addShortLink({ label, url });
+                    try { map.getContainer().dispatchEvent(new CustomEvent('oh3:rcm:refresh')); } catch {}
+                }
+            });
+            items.push({ label: 'エクスポート（JSONをコピー）', keepOpen: true, onSelect: async () => { const json = JSON.stringify(loadShortLinks(), null, 2); await cmCopyToClipboard(json); } });
+            items.push({ label: 'インポート（JSON貼り付け）', keepOpen: true, onSelect: async ({ map }) => {
+                    const txt = prompt('保存したJSONを貼り付けてください'); if (!txt) return;
+                    try { const arr = JSON.parse(txt); saveShortLinks(arr); } catch { return alert('JSONの形式が不正です'); }
+                    try { map.getContainer().dispatchEvent(new CustomEvent('oh3:rcm:refresh')); } catch {}
+                }});
+            items.push({ label: '全プリセットを削除', keepOpen: true, onSelect: ({ map }) => { if (confirm('本当にすべて削除しますか？')) { clearShortLinks(); try { map.getContainer().dispatchEvent(new CustomEvent('oh3:rcm:refresh')); } catch {} } } });
+        }
+
+        return items;
+    };
+
+    return { label: title, items: dynamicItems };
 }
