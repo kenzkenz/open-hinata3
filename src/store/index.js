@@ -47,7 +47,21 @@ const messageDialogModule = {
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.459,
+    clientVersion: 1.460,
+    // 独自コンファーム
+    showConfirm: false,
+    confirmMessage: '',
+    confirmProps: {
+      title: '確認',
+      okText: 'OK',
+      cancelText: 'キャンセル',
+      persistent: true,
+      width: 420,
+      color: 'primary',
+      icon: null,
+    },
+    confirmResolve: null,
+    // ここまで
     hitText: '',
     iframeVDIalog: false,
     isDrawFit: false,

@@ -5,7 +5,7 @@ import * as turf from '@turf/turf'
 import {
     addDraw, featureCollectionAdd, featuresDelete, formatYmdHms, isJsonString, markerAddAndRemove,
     recenterGeoJSON, removeNini, removeThumbnailMarkerByKey, saveDrowFeatures,
-    savePointSima, toResolved, truncate,
+    savePointSima, toResolved, truncate, vConfirm,
     zahyokei
 } from "@/js/downLoad";
 import {clickCircleSource, clickPointSource, endPointSouce, vertexSource} from "@/js/layers";
@@ -2508,9 +2508,14 @@ export async function deleteAll (noConfrim) {
         return
     }
     if (!noConfrim) {
-        if (!confirm("全て削除しますか？")) {
-            return
-        }
+        const ok = await vConfirm(
+            '全て削除しますか？',
+            {
+                title: '',
+                okText:'全て削除',
+                icon: null,
+            })
+        if (!ok) return
     }
     const map01 = store.state.map01
     let source = map01.getSource(clickCircleSource.iD);

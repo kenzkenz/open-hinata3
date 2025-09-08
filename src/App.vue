@@ -8,6 +8,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
+      <VDialogConfirm
+          v-model="s_showConfirm"
+          v-bind="confirmProps"
+          :message="confirmMessage"
+          @ok="onConfirmOk"
+          @cancel="onConfirmCancel"
+      />
+
       <!-- マピラリフィルター -->
       <FloatingWindow
           windowId = "mapillary-filter"
@@ -25,18 +33,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
             :observe-width="true"
             :show-close="true"
             :close-on-esc="true"
-            :reset-key="resetKeyForMly"
             @mousedown.stop
             @pointerdown.stop
             @touchstart.stop
-            @year-range-input="onYearInput"
-            @year-range-change="onYearChange"
-            @only360-change="onOnly360"
-            @categories-change="onCats"
-            @creators-input="onCreatorsInput"
-            @creators-change="onCreatorsChange"
-            @reset="onReset"
-            @filters-changed="onFiltersChanged"
         />
       </FloatingWindow>
       <!-- マピラリビューワー -->
@@ -1758,6 +1757,7 @@ import { attachViewOrientationPair } from '@/js/utils/view-orientation-tracker'
 import { startHoldRotate, startHoldPitch, resetOrientation } from '@/js/utils/view-orientation-anim'
 import MessageDialog from '@/components/Message-Dialog'
 import MapillaryFilter from '@/components/floatingwindow/MapillaryFilter.vue'
+import VDialogConfirm from "@/components/V-dialog/V-dialog-confirm"
 
 import {
   addDraw,
@@ -1849,7 +1849,7 @@ import {
   transformGeoJSONToEPSG4326,
   updateDragHandles,
   userKmzSet,
-  userSimaSet,
+  userSimaSet, vConfirm,
   vertexAndMidpoint,
   zahyokei,
   zipDownloadSimaText
@@ -2279,6 +2279,7 @@ export default {
     VDialogIframe,
     MessageDialog,
     MapillaryFilter,
+    VDialogConfirm,
   },
   data: () => ({
     isRightDiv: true,
@@ -2462,10 +2463,13 @@ export default {
     map02Tracker: null,
     stopSpin: null,
     stopPitch: null,
-    resetKeyForMly: 0,   // ← これを増やすと子がリセット
+
   }),
   computed: {
     ...mapState([
+      'confirmMessage',
+      'confirmProps',
+      'showConfirm',
       'isFromIframe',
       'isIframe',
       'showDrawConfrim',
@@ -2495,6 +2499,14 @@ export default {
       'isUsingServerGeojson',
       'drawFeature',
     ]),
+    s_showConfirm: {
+      get() {
+        return this.$store.state.showConfirm
+      },
+      set(value) {
+        this.$store.state.showConfirm = value
+      }
+    },
     filterWidth(){ return this.isSmall500 ? 350 : 500 },
     mlyDefaultLeft() {
       const vw = (typeof window !== 'undefined' ? window.innerWidth : 1280)
@@ -3259,6 +3271,18 @@ export default {
     },
   },
   methods: {
+    onConfirmOk () {
+      const s = this.$store.state
+      const r = s.confirmResolve;
+      s.confirmResolve = null
+      r && r(true)
+    },
+    onConfirmCancel () {
+      const s = this.$store.state
+      const r = s.confirmResolve;
+      s.confirmResolve = null
+      r && r(false)
+    },
     mapillaryFilterOpen() {
       this.$store.dispatch('showFloatingWindow', 'mapillary-filter')
     },
@@ -6401,7 +6425,7 @@ export default {
         });
       }
     },
-    btnClickMenu (mapName) {
+    async btnClickMenu (mapName) {
       if (this.$store.state.dialogs.menuDialog[mapName].style.display === 'none') {
         this.$store.state.dialogs.menuDialog[mapName].style['z-index'] = getNextZIndex()
         this.$store.state.dialogs.menuDialog[mapName].style.display = 'block'

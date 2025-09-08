@@ -13156,59 +13156,6 @@ export async function openToukiFromProps(propsOrArray) {
     return text;
 }
 
-
-
-
-// export async function openToukiFromProps(propsOrArray) {
-//     const arr = Array.isArray(propsOrArray) ? propsOrArray : [propsOrArray];
-//     const items = [];
-//     let syozai = ''
-//     for (const props of arr) {
-//         if (!props || typeof props !== 'object') continue;
-//
-//         const muniName = props['市区町村名'] ?? '';
-//         const oaza     = props['大字名'] ?? '';
-//         const chome    = props['丁目名'] ?? '';
-//         const aza      = props['字名'] ?? '';
-//         const town     = `${oaza}${chome || aza}`.replace(/\s+/g, ' ').trim();
-//
-//         syozai = `${muniName}${oaza}${chome}`
-//
-//         const rawChiban = props['地番'] ?? '';
-//         const chiban    = normalizeChiban(String(rawChiban)).replace(/\s+/g, ' ').trim();
-//
-//         // const full = `${muniName}${town}${chiban}`.replace(/\s+/g, ' ').trim();
-//         const full = `${chiban}`.replace(/\s+/g, ' ').trim();
-//         if (full) items.push(full);
-//     }
-//
-//     const text = items.join(','); // カンマ区切り 1 行
-//
-//     try { localStorage.setItem('oh3-registry-deeplink-last', text); } catch (_) {}
-//
-//     let copied = false;
-//     try { await navigator.clipboard.writeText(text); copied = true; } catch (_) {}
-//
-//     if (copied) {
-//         const preview = items.slice(0, 50).join(',');
-//         store.dispatch('messageDialog/open', {
-//             id: 'toki',
-//             title: '地番をクリップボードにコピー完了',
-//             contentHtml:
-//                 `所在
-//                 <div style="margin:12px 0;font-family:monospace;white-space:pre-wrap;">${syozai}</div>
-//                  地番をカンマ区切りでコピーしました。` +
-//                 (preview ? `<div style="margin-top:12px;font-family:monospace;white-space:pre-wrap;">${preview}${items.length > 50 ? ',…' : ''}</div>` : '') +
-//                 `<br><a class="pyramid-btn" href="https://www1.touki.or.jp/" target="_blank" rel="noopener noreferrer" style="height:40px; margin-top:20px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;">登記情報提供サービスへ</a>`,
-//             options: { maxWidth: 700, showCloseIcon: true },
-//         });
-//     } else {
-//         alert('クリップボードコピーに失敗しました。');
-//     }
-//
-//     return text;
-// }
-
 // 画面内の oh-mapillary-images-3-icon の features から properties.value をユニーク抽出
 export function getVisibleIconValues(map, layerId = 'oh-mapillary-images-3-icon') {
     try {
@@ -13319,6 +13266,19 @@ function getHighlightedSetFromStore() {
     return new Set();
 }
 
+/**
+ * 独自コンファーム
+ * @param message
+ * @param opts
+ * @returns {Promise<unknown>}
+ */
+export async function vConfirm (message, opts = {}) {
+    const s = store.state
+    s.confirmMessage = message
+    Object.assign(s.confirmProps, opts)
+    s.showConfirm = true
+    return new Promise(resolve => { s.confirmResolve = resolve })
+}
 
 /**
  *
