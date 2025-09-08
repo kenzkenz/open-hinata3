@@ -2238,11 +2238,11 @@ import drawMethods, {
 } from "@/js/draw";
 import {haptic} from "@/js/utils/haptics";
 import attachMapRightClickMenu, {
-  applyRightClickRefocusPatch, applyRightClickRefocusPatchStrong,
+  applyRightClickRefocusPatch, applyRightClickRefocusPatchStrong, buildBBoxAround,
   buildGoogleAndGsvMenuItems,
-  buildGoogleMapsSearchUrl,
-  buildMapillaryUrl,
-  buildPinDeleteMenuItems,
+  buildGoogleMapsSearchUrl, buildJosmRemoteUrlByCenter,
+  buildMapillaryUrl, buildOsmEditorUrl, buildOverpassTurboUrl,
+  buildPinDeleteMenuItems, buildRapidMapillaryUrl, buildRapidUrl,
   buildStreetViewUrl,
   buildSVUrlSimple,
   buildUtilityMenuItems, exportVisibleGeoJSON_fromMap01, menuItemOpenSVWithPinRefocusStrong,
@@ -8090,38 +8090,128 @@ export default {
        * 右クリックメニュー
        * @type {detach|*}
        */
-      const popupWidth = 600
-      const popupHeight = 400
-      const headingOffset = 0
       const detach = attachMapRightClickMenu({
         map: store.state.map01,
         items: [
           {
-            label: 'Googleマップを開く',
-            onSelect: ({ map, lngLat }) => {
-              // 検索URLか、中心指定URLのどちらかお好みで
-              const url = buildGoogleMapsSearchUrl(lngLat);
-              // const url = buildGoogleMapsUrl(lngLat, { zoom: map.getZoom() });
-              window.open(url, '_blank', 'noopener');
-            }
+            label: 'OSM編集',
+            items: [
+              {
+                label: 'iD Editorで開く',
+                onSelect: ({lngLat, map}) =>
+                    window.open(
+                        buildOsmEditorUrl(lngLat, {zoom: map.getZoom?.() ?? 19, editor: 'id'}),
+                        '_blank', 'noopener'
+                    )
+              },
+              {
+                label: 'RapiDで開く',
+                onSelect: ({ map, lngLat }) => {
+                  const url = buildRapidUrl(lngLat, { zoom: map.getZoom?.() ?? 19 });
+                  window.open(url, '_blank', 'noopener');
+                }
+              },
+              // （必要なら）
+              {
+                label: 'RapiD（Mapillary）',
+                onSelect: ({ map, lngLat }) => {
+                  const url = buildRapidMapillaryUrl(lngLat, { zoom: map.getZoom?.() ?? 19 });
+                  window.open(url, '_blank', 'noopener');
+                }
+              },
+              {
+                label: 'Overpassターボ',
+                items: [
+                  {
+                    label: '道路（highway=*)',
+                    items: [
+                      {
+                        label: '±100m',
+                        onSelect: ({ map, lngLat }) => {
+                          const url = buildOverpassTurboUrl(lngLat, { meters: 100, zoom: map.getZoom?.() ?? 19, feature: 'highway' });
+                          window.open(url, '_blank', 'noopener');
+                        }
+                      },
+                      {
+                        label: '±250m',
+                        onSelect: ({ map, lngLat }) => {
+                          const url = buildOverpassTurboUrl(lngLat, { meters: 250, zoom: map.getZoom?.() ?? 19, feature: 'highway' });
+                          window.open(url, '_blank', 'noopener');
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    label: 'POI（amenity=*)',
+                    items: [
+                      {
+                        label: '±120m',
+                        onSelect: ({ map, lngLat }) => {
+                          const url = buildOverpassTurboUrl(lngLat, { meters: 120, zoom: map.getZoom?.() ?? 19, feature: 'amenity' });
+                          window.open(url, '_blank', 'noopener');
+                        }
+                      },
+                      { label: 'テンプレをコピー', items: [
+                          {
+                            label: 'nodeだけ',
+                            onSelect: async ({ lngLat }) => {
+                              const [minLng, minLat, maxLng, maxLat] = buildBBoxAround(lngLat, 120);
+                              const q = `[out:json][timeout:25]; node[amenity](${minLat},${minLng},${maxLat},${maxLng}); out;`;
+                              try { await navigator.clipboard.writeText(q); } catch { alert(q); }
+                            }
+                          },
+                          {
+                            label: 'node/way/relation全部',
+                            onSelect: async ({ lngLat }) => {
+                              const [minLng, minLat, maxLng, maxLat] = buildBBoxAround(lngLat, 120);
+                              const q = `[out:json][timeout:25];(node(${minLat},${minLng},${maxLat},${maxLng});way(${minLat},${minLng},${maxLat},${maxLng});relation(${minLat},${minLng},${maxLat},${maxLng}););out body;>;out skel qt;`;
+                              try { await navigator.clipboard.writeText(q); } catch { alert(q); }
+                            }
+                          }
+                        ]}
+                    ]
+                  }
+                ]
+              },
+
+              {
+                label: 'JOSMへ送る（Remote Control）',
+                onSelect: ({lngLat}) =>
+                    window.open(buildJosmRemoteUrlByCenter(lngLat, 200), '_blank', 'noopener')
+              },
+            ]
           },
           {
-            label: 'ストリートビューを開く',
-            onSelect: ({ map, lngLat }) => {
-              const heading = map.getBearing?.() ?? 0; // 地図の方位を活用（任意）
-              const pitch = (map.getPitch?.() ?? 0) - 20; // 少し下向き
-              const url = buildStreetViewUrl(lngLat, { heading, pitch, fov: 90 });
-              window.open(url, '_blank', 'noopener');
-            }
-          },
-          {
-            label: 'SVを別ウインドウで開く',
-            onSelect: ({ map, lngLat }) => {
-              setSvPin(map, lngLat);
-              const heading = ((map?.getBearing?.() ?? 0) + 360) % 360;
-              const url = buildSVUrlSimple(lngLat, { heading, pitch: -15, fov: 90 });
-              openTopRightWindowFlushHalfWidthFullHeight(url, { name: 'GSV-TopRight-Half' });
-            }
+            label: 'Googleサービス',
+            items: [
+              {
+                label: 'Googleマップ',
+                onSelect: ({map, lngLat}) => {
+                  // 検索URLか、中心指定URLのどちらかお好みで
+                  const url = buildGoogleMapsSearchUrl(lngLat);
+                  // const url = buildGoogleMapsUrl(lngLat, { zoom: map.getZoom() });
+                  window.open(url, '_blank', 'noopener');
+                }
+              },
+              {
+                label: 'ストリートビュー',
+                onSelect: ({map, lngLat}) => {
+                  const heading = map.getBearing?.() ?? 0; // 地図の方位を活用（任意）
+                  const pitch = (map.getPitch?.() ?? 0) - 20; // 少し下向き
+                  const url = buildStreetViewUrl(lngLat, {heading, pitch, fov: 90});
+                  window.open(url, '_blank', 'noopener');
+                }
+              },
+              {
+                label: 'SVを別ウインドウ',
+                onSelect: ({map, lngLat}) => {
+                  setSvPin(map, lngLat);
+                  const heading = ((map?.getBearing?.() ?? 0) + 360) % 360;
+                  const url = buildSVUrlSimple(lngLat, {heading, pitch: -15, fov: 90});
+                  openTopRightWindowFlushHalfWidthFullHeight(url, {name: 'GSV-TopRight-Half'});
+                }
+              }
+            ]
           },
           { label: 'Mapillaryを開く', onSelect: ({ lngLat }) => window.open(buildMapillaryUrl(lngLat, map.getZoom?.() ?? 18, map.getBearing?.() ?? 0), '_blank', 'noopener') },
           { label: '俯瞰 60°/0° 切替', onSelect: () => { const p = map.getPitch(); map.easeTo({ pitch: p > 30 ? 0 : 60 }); } },
