@@ -2245,7 +2245,7 @@ import attachMapRightClickMenu, {
   buildPinDeleteMenuItems,
   buildStreetViewUrl,
   buildSVUrlSimple,
-  buildUtilityMenuItems, menuItemOpenSVWithPinRefocusStrong,
+  buildUtilityMenuItems, exportVisibleGeoJSON_fromMap01, menuItemOpenSVWithPinRefocusStrong,
   openStreetViewPopup,
   openTopRightWindow,
   openTopRightWindowFlushFullHeight,
@@ -8114,7 +8114,11 @@ export default {
               borderRadius: '10px',
             })); } },
           { label: '点を削除', onSelect: ({ point }) => {const ok = removePointUnderCursor(map, point, 'click-circle-source');if (!ok) alert('直下に削除できるピンが見つかりません');}},
-
+          {
+            id: 'export-visible-geojson',
+            label: '可視ベクター地物をGeoJSONで出力',
+            onSelect: () => exportVisibleGeoJSON_fromMap01(),
+          }
           // 実用メニューをまとめて展開
           // ...buildUtilityMenuItems({ map, geojsonSourceId: 'click-circle-source' }),
         ]

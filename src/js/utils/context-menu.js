@@ -655,4 +655,80 @@ export const menuItemOpenSVWithPin = {
         const url = buildSVUrlSimple(lngLat, { heading, pitch: -15, fov: 90 });
         openTopRightWindowFlushHalfWidthFullHeight(url, { name: 'GSV-TopRight-Half' });
     }
-};
+};// ==== 可視ベクター地物 → GeoJSON（context-menu.js にそのまま追記）====
+// 前提: store.state.map01 は常に存在。ベース自動除外はせず、除外は LAYER_BLOCKLIST で調整。
+
+const LAYER_BLOCKLIST = [
+    // 'oh-mapillary-images-3-icon',
+    // 'gsi-road',
+    // 'osm-water',
+];
+
+export function exportVisibleGeoJSON_fromMap01() {
+    const map = store.state.map01; // 固定
+
+    // 可視ベクターレイヤID一覧
+    const layers = map.getStyle().layers
+        .filter(l =>
+            (l.type === 'fill' || l.type === 'line' || l.type === 'circle' || l.type === 'symbol' || l.type === 'fill-extrusion') &&
+            (map.getLayoutProperty(l.id, 'visibility') !== 'none') &&
+            !LAYER_BLOCKLIST.includes(l.id)
+        )
+        .map(l => l.id);
+
+    if (!layers.length) return;
+
+    // 画面内の描画地物
+    const w = map.getContainer().clientWidth, h = map.getContainer().clientHeight;
+    const feats = map.queryRenderedFeatures([[0, 0], [w, h]], { layers });
+
+    // ソース+sourceLayer+id（無ければ幾何ハッシュ）で重複除去
+    const seen = new Set();
+    const features = [];
+    for (const f of feats) {
+        const src = f.source || '';
+        const sl = f.sourceLayer || '';
+        const id = (f.id != null) ? f.id : (f.properties?.id ?? f.properties?._id);
+        const key = `${src}|${sl}|${id ?? JSON.stringify(f.geometry)}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+
+        const props = f.properties ? { ...f.properties } : {};
+        props.__layer = f.layer?.id;
+        props.__source = f.source;
+        props.__sourceLayer = f.sourceLayer;
+
+        features.push({
+            type: 'Feature',
+            geometry: JSON.parse(JSON.stringify(f.geometry)),
+            properties: props,
+        });
+    }
+
+    const fc = { type: 'FeatureCollection', features };
+    const t = new Date(), p = n => String(n).padStart(2, '0');
+    const fname = `oh3_visible_${t.getFullYear()}${p(t.getMonth()+1)}${p(t.getDate())}_${p(t.getHours())}${p(t.getMinutes())}${p(t.getSeconds())}.geojson`;
+
+    const blob = new Blob([JSON.stringify(fc, null, 2)], { type: 'application/geo+json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fname;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+
+// メニューに 1 行追加（items を作っている箇所で貼る）
+function visibleGeojsonMenuItem() {
+    return {
+        id: 'export-visible-geojson',
+        label: '可視ベクター地物をGeoJSONで出力',
+        onClick: () => exportVisibleGeoJSON_fromMap01(),
+    };
+}
+
+// ↓↓↓ メニュー配列を組んでいる場所にこの 1 行を追記 ↓↓↓
+// items.push(visibleGeojsonMenuItem());
+
+
+
