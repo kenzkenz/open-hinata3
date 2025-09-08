@@ -47,7 +47,7 @@ const messageDialogModule = {
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.463,
+    clientVersion: 1.464,
     // 独自コンファーム
     showConfirm: false,
     confirmMessage: '',

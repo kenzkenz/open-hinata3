@@ -821,7 +821,7 @@ export function buildShortLinksMenu({
                 }
             });
             items.push({
-                label: 'URLを全削除',
+                label: 'URL全削除',
                 keepOpen: true,
                 onSelect: ({ map }) => {
                     if (!confirm('保存済みのショートURLをすべて削除しますか？')) return;
@@ -836,3 +836,146 @@ export function buildShortLinksMenu({
 
     return { label: title, items: dynamicItems };
 }
+
+/* =============================== */
+/* 可視ベクター地物 → GeoJSON（復活・互換API） */
+/* =============================== */
+// 以前の exportVisibleGeoJSON_fromMap01 と同じ関数名・引数で提供します。
+// 内部のユーティリティ名は重複回避のため _geo_* に変更しています。
+
+const GEOEXPORT_LAYER_BLOCKLIST = [
+    'zones-layer',
+];
+
+const GEOEXPORT_DEFAULT_EXCLUDE_PATTERNS = [
+    /^background$/i,
+    /basemap/i,
+    /osm/i,
+    /openmaptiles/i,
+    /openstreetmap/i,
+    /gsi/i,
+    /std/i,
+    /seamless/i,
+    /hillshade/i,
+    /terrain/i,
+    /contour/i,
+    /water/i,
+    /road/i,
+    /label/i,
+    /poi/i,
+    /transit/i,
+    /building/i,
+    /satellite/i,
+];
+
+function _geo_isVectorType(t) {
+    return t === 'fill' || t === 'line' || t === 'circle' || t === 'symbol' || t === 'fill-extrusion';
+}
+function _geo_isVisible(map, id) {
+    const v = map.getLayoutProperty(id, 'visibility');
+    return v == null || v === 'visible';
+}
+function _geo_isExcluded(id, includeExcluded) {
+    if (includeExcluded) return false;
+    if (!id) return false;
+    if (id.includes('-vector-')) return true;           // 「-vector-」系は既定で除外
+    if (GEOEXPORT_LAYER_BLOCKLIST.includes(id)) return true;
+    return GEOEXPORT_DEFAULT_EXCLUDE_PATTERNS.some(re => re.test(id));
+}
+function _geo_featKey(f) {
+    const src = f.source || '';
+    const sl  = f.sourceLayer || '';
+    return `${src}|${sl}|${JSON.stringify(f.geometry)}`;
+}
+function _geo_nowStr() {
+    const d = new Date(), p = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+}
+function _geo_baseGeomType(t) {
+    if (!t) return null;
+    return t.startsWith('Multi') ? t.slice(5) : t;
+}
+function _geo_combinedType(base) {
+    if (!base) return null;
+    return base === 'GeometryCollection' ? 'GeometryCollection' : ('Multi' + base);
+}
+function _geo_combineById(features) {
+    const groups = new Map();
+    for (const f of features) {
+        const gid = (f.properties?.id ?? f.properties?._id ?? f.id);
+        if (gid == null) continue;
+        if (!groups.has(gid)) groups.set(gid, []);
+        groups.get(gid).push(f);
+    }
+    for (const [, arr] of groups) {
+        if (arr.length <= 1) continue;
+        const base = _geo_baseGeomType(arr[0].geometry?.type);
+        if (!base) continue;
+        const combinedType = _geo_combinedType(base);
+        const acc = [];
+        for (const f of arr) {
+            const g = f.geometry;
+            if (!g || !g.type) continue;
+            const t = _geo_baseGeomType(g.type);
+            if (t !== base) continue;
+            if (g.type.startsWith('Multi')) {
+                for (const part of g.coordinates) acc.push(part);
+            } else {
+                acc.push(g.coordinates);
+            }
+        }
+        if (acc.length >= 2) {
+            arr[0].geometry = { type: combinedType, coordinates: acc };
+            for (let i = 1; i < arr.length; i++) arr[i]._drop = true;
+        }
+    }
+    return features.filter(f => !f._drop);
+}
+
+export function exportVisibleGeoJSON_fromMap01(opts = {}) {
+    const includeExcluded = !!opts.includeExcluded; // true で除外OFF（ベースも含めて出力）
+    const map = store.state.map01;
+    if (!map) { alert('store.state.map01 が見つかりません'); return; }
+    const style = map.getStyle?.();
+    if (!style || !Array.isArray(style.layers)) { alert('スタイルが未ロードです'); return; }
+
+    const targetLayerIds = style.layers
+        .filter(l => _geo_isVectorType(l.type) && _geo_isVisible(map, l.id) && !_geo_isExcluded(l.id, includeExcluded))
+        .map(l => l.id);
+
+    if (!targetLayerIds.length) { alert('対象レイヤがありません。（除外設定により全て除外されている可能性があります）'); return; }
+
+    const w = map.getContainer().clientWidth, h = map.getContainer().clientHeight;
+    const feats = map.queryRenderedFeatures([[0,0],[w,h]], { layers: targetLayerIds });
+    if (!feats.length) { alert('画面内に出力対象の地物がありません。'); return; }
+
+    const seen = new Set();
+    const features = [];
+    for (const f of feats) {
+        const key = _geo_featKey(f);
+        if (seen.has(key)) continue;
+        seen.add(key);
+
+        const props = f.properties ? { ...f.properties } : {};
+        props.__layer = f.layer?.id;
+        props.__source = f.source;
+        props.__sourceLayer = f.sourceLayer;
+
+        features.push({
+            type: 'Feature',
+            geometry: JSON.parse(JSON.stringify(f.geometry)),
+            properties: props,
+        });
+    }
+
+    const combinedFeatures = _geo_combineById(features);
+    const fc = { type: 'FeatureCollection', features: combinedFeatures };
+    const blob = new Blob([JSON.stringify(fc, null, 2)], { type: 'application/geo+json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `oh3_visible_${_geo_nowStr()}.geojson`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+
