@@ -8224,13 +8224,13 @@ export default {
             // 簡易でURL記憶
             // 自前で処理するなら onSelectUrl を渡す（window.open 等はしない）
             ...buildShortLinksMenu({
-              metersForBBox: 200,
-              onSelectUrl: (url, ctx) => {
-                // ← ここで好きに処理（開かない）
-                // 例) ストアに積む / モーダル表示 / postMessage / ルーター遷移など
-                console.log('shortURL', url, ctx);
-                // window.open(url, '_blank', 'noopener') したいなら今ここで
-              }
+              // metersForBBox: 200,
+              // onSelectUrl: (url, ctx) => {
+              //   // ← ここで好きに処理（開かない）
+              //   // 例) ストアに積む / モーダル表示 / postMessage / ルーター遷移など
+              //   console.log('shortURL', url, ctx);
+              //   // window.open(url, '_blank', 'noopener') したいなら今ここで
+              // }
             })
           },
         ]

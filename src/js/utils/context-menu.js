@@ -750,7 +750,7 @@ export function removeShortLinkByLabel(label) {
 }
 
 export function buildShortLinksMenu({
-                                        title = 'ショートURL',
+                                        title = '簡易でURL記憶',
                                         links = [],
                                         metersForBBox = 120,
                                         onSelectUrl = null,
@@ -760,10 +760,15 @@ export function buildShortLinksMenu({
         const { map, lngLat, point, originalEvent } = ctx;
         const url = resolveShortLink(meta.url, { lngLat, map, meters: metersForBBox });
 
+        // Alt/Cmd でコピー
         if (originalEvent && (originalEvent.altKey || originalEvent.metaKey)) { cmCopyToClipboard(url); return; }
+
+        // 呼び出し側で挙動を差し替えたい場合
         if (typeof onSelectUrl === 'function') { onSelectUrl(url, { map, lngLat, point, meta, originalEvent }); return; }
-        try { map.getContainer().dispatchEvent(new CustomEvent('oh3:shorturl', { detail: { url, meta, map, lngLat, point, originalEvent } })); }
-        catch (e) { console.warn('shorturl event dispatch failed', e); }
+
+        // 既定: 新しいタブで開く
+        try { window.open(url, '_blank', 'noopener'); }
+        catch (e) { console.warn('shorturl open failed', e); }
     };
 
     const dynamicItems = (ctx) => {
@@ -775,7 +780,7 @@ export function buildShortLinksMenu({
         if (allowManage) {
             items.push({ type: 'separator' });
             items.push({
-                label: 'プリセットを追加…',
+                label: '簡易でURL記憶',
                 keepOpen: true,
                 onSelect: ({ map }) => {
                     // OH3のパーマリンクを最新化 → 200ms 待ってから自動入力
@@ -784,21 +789,22 @@ export function buildShortLinksMenu({
                         const cur = (store?.state?.permalinkUrl || store?.state?.permalink || window?.location?.href || '');
                         const label = prompt('表示名を入力してください', 'OH3リンク');
                         if (!label) return;
-                        const url = prompt('OH3のURLを入力（自動入力済み。必要なら編集）', cur);
-                        if (!url) return;
-                        addShortLink({ label, url });
+                        // const url = prompt('OH3のURLを入力（自動入力済み。必要なら編集）', cur);
+                        // if (!url) return;
+                        // addShortLink({ label, url });
+                        addShortLink({ label, url: cur });
                         try { map.getContainer().dispatchEvent(new CustomEvent('oh3:rcm:refresh')); } catch {}
                     }, 200);
                 }
             });
-            items.push({ label: 'エクスポート（JSONをコピー）', keepOpen: true, onSelect: async () => { const json = JSON.stringify(loadShortLinks(), null, 2); await cmCopyToClipboard(json); } });
-            items.push({ label: 'インポート（JSON貼り付け）', keepOpen: true, onSelect: async ({ map }) => {
-                    const txt = prompt('保存したJSONを貼り付けてください'); if (!txt) return;
-                    try { const arr = JSON.parse(txt); saveShortLinks(arr); } catch { return alert('JSONの形式が不正です'); }
-                    try { map.getContainer().dispatchEvent(new CustomEvent('oh3:rcm:refresh')); } catch {}
-                }});
+            // items.push({ label: 'エクスポート（JSONをコピー）', keepOpen: true, onSelect: async () => { const json = JSON.stringify(loadShortLinks(), null, 2); await cmCopyToClipboard(json); } });
+            // items.push({ label: 'インポート（JSON貼り付け）', keepOpen: true, onSelect: async ({ map }) => {
+            //         const txt = prompt('保存したJSONを貼り付けてください'); if (!txt) return;
+            //         try { const arr = JSON.parse(txt); saveShortLinks(arr); } catch { return alert('JSONの形式が不正です'); }
+            //         try { map.getContainer().dispatchEvent(new CustomEvent('oh3:rcm:refresh')); } catch {}
+            //     }});
             items.push({
-                label: '個別に削除…',
+                label: 'URLを個別に削除',
                 keepOpen: true,
                 items: () => {
                     const saved = loadShortLinks();
@@ -815,7 +821,7 @@ export function buildShortLinksMenu({
                 }
             });
             items.push({
-                label: '全プリセットを削除',
+                label: 'URLを全削除',
                 keepOpen: true,
                 onSelect: ({ map }) => {
                     if (!confirm('保存済みのショートURLをすべて削除しますか？')) return;
