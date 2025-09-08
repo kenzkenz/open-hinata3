@@ -13060,54 +13060,154 @@ const PREF_BY_CODE = {
  * @returns {Promise<string>}
  */
 export async function openToukiFromProps(propsOrArray) {
+    const esc = (s) => String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+
     const arr = Array.isArray(propsOrArray) ? propsOrArray : [propsOrArray];
-    const items = [];
-    let syozai = ''
+
+    // 平坦な地番（コピー用）と、所在ごとのグループの両方を作る
+    const flatChibanItems = []; // コピー用：地番だけの配列
+    const groups = new Map();    // key: 所在, value: 地番配列
+
     for (const props of arr) {
         if (!props || typeof props !== 'object') continue;
 
         const muniName = props['市区町村名'] ?? '';
-        const oaza     = props['大字名'] ?? '';
-        const chome    = props['丁目名'] ?? '';
-        const aza      = props['字名'] ?? '';
-        const town     = `${oaza}${chome || aza}`.replace(/\s+/g, ' ').trim();
+        const oaza     = props['大字名']     ?? '';
+        const chome    = props['丁目名']     ?? '';
 
-        syozai = `${muniName}${oaza}${chome}`
+        // 所在（市区町村 + 大字 + 丁目）
+        const syozai = `${muniName}${oaza}${chome}`.replace(/\s+/g, ' ').trim() || '（所在未設定）';
 
         const rawChiban = props['地番'] ?? '';
-        const chiban    = normalizeChiban(String(rawChiban)).replace(/\s+/g, ' ').trim();
+        const chiban = normalizeChiban(String(rawChiban)).replace(/\s+/g, ' ').trim();
+        if (!chiban) continue;
 
-        // const full = `${muniName}${town}${chiban}`.replace(/\s+/g, ' ').trim();
-        const full = `${chiban}`.replace(/\s+/g, ' ').trim();
-        if (full) items.push(full);
+        // コピー用に地番を平坦に追加
+        flatChibanItems.push(chiban);
+
+        // グループに所属させる
+        if (!groups.has(syozai)) groups.set(syozai, []);
+        groups.get(syozai).push(chiban);
     }
 
-    const text = items.join(','); // カンマ区切り 1 行
+    if (flatChibanItems.length === 0) {
+        alert('対象地番がありません。');
+        return '';
+    }
 
+    // クリップボードへは「地番カンマ区切り」をコピー（※ただし所在グループが複数ならコピーしない）
+    const text = flatChibanItems.join(',');
     try { localStorage.setItem('oh3-registry-deeplink-last', text); } catch (_) {}
 
+    const multipleGroups = groups.size >= 2;
     let copied = false;
-    try { await navigator.clipboard.writeText(text); copied = true; } catch (_) {}
+    let copySkipped = false;
 
-    if (copied) {
-        const preview = items.slice(0, 50).join(',');
-        store.dispatch('messageDialog/open', {
-            id: 'toki',
-            title: '地番をクリップボードにコピー完了',
-            contentHtml:
-                `所在
-                <div style="margin:12px 0;font-family:monospace;white-space:pre-wrap;">${syozai}</div>
-                 地番をカンマ区切りでコピーしました。` +
-                (preview ? `<div style="margin-top:12px;font-family:monospace;white-space:pre-wrap;">${preview}${items.length > 50 ? ',…' : ''}</div>` : '') +
-                `<br><a class="pyramid-btn" href="https://www1.touki.or.jp/" target="_blank" rel="noopener noreferrer" style="height:40px; margin-top:20px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;">登記情報提供サービスへ</a>`,
-            options: { maxWidth: 700, showCloseIcon: true },
-        });
+    if (multipleGroups) {
+        // グループが2つ以上 → コピーは行わない
+        copySkipped = true;
     } else {
-        alert('クリップボードコピーに失敗しました。');
+        try { await navigator.clipboard.writeText(text); copied = true; } catch (_) {}
     }
+
+    // 所在ごとのHTMLブロックを作成
+    let groupsHtml = '';
+    for (const [syozai, chibanList] of groups.entries()) {
+        const chibanLine = chibanList.join(',');
+        groupsHtml += `
+      <div style="margin-top:10px;padding:10px;border:1px solid #ddd;border-radius:8px;background:#fafafa;">
+        <div style="font-weight:600;">${esc(syozai)} <span style="opacity:.7;font-weight:400;">（${chibanList.length}件）</span></div>
+        <div style="margin-top:6px;font-family:monospace;white-space:pre-wrap;">${esc(chibanLine)}</div>
+      </div>`;
+    }
+
+    // ヘッダー（結果メッセージ）
+    let headerHtml = '';
+    if (copySkipped) {
+        headerHtml = `<div style="margin:12px 0;color:#d32f2f;font-weight:700;">所在のグループが複数（${groups.size}件）あるため、クリップボードへのコピーは行いませんでした。</div>`;
+    } else if (copied) {
+        headerHtml = `<div style="margin:12px 0;">地番をカンマ区切りでクリップボードにコピーしました。</div>`;
+    } else {
+        headerHtml = `<div style="margin:12px 0;color:#d32f2f;font-weight:700;">クリップボードへのコピーに失敗しました。</div>`;
+    }
+
+    const preview = flatChibanItems.slice(0, 50).join(',');
+    const previewHtml = preview
+        ? `<div style="margin-top:12px;font-family:monospace;white-space:pre-wrap;">${esc(preview)}${flatChibanItems.length > 50 ? ',…' : ''}</div>`
+        : '';
+
+    // ダイアログ表示
+    store.dispatch('messageDialog/open', {
+        id: 'toki',
+        title: '地番一覧（所在別）',
+        contentHtml:
+            headerHtml +
+            groupsHtml +
+            // previewHtml +
+            `<br><a class="pyramid-btn" href="https://www1.touki.or.jp/" target="_blank" rel="noopener noreferrer" style="height:40px; margin-top:20px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;">登記情報提供サービスへ</a>`,
+        options: { maxWidth: 700, showCloseIcon: true },
+    });
 
     return text;
 }
+
+
+
+
+// export async function openToukiFromProps(propsOrArray) {
+//     const arr = Array.isArray(propsOrArray) ? propsOrArray : [propsOrArray];
+//     const items = [];
+//     let syozai = ''
+//     for (const props of arr) {
+//         if (!props || typeof props !== 'object') continue;
+//
+//         const muniName = props['市区町村名'] ?? '';
+//         const oaza     = props['大字名'] ?? '';
+//         const chome    = props['丁目名'] ?? '';
+//         const aza      = props['字名'] ?? '';
+//         const town     = `${oaza}${chome || aza}`.replace(/\s+/g, ' ').trim();
+//
+//         syozai = `${muniName}${oaza}${chome}`
+//
+//         const rawChiban = props['地番'] ?? '';
+//         const chiban    = normalizeChiban(String(rawChiban)).replace(/\s+/g, ' ').trim();
+//
+//         // const full = `${muniName}${town}${chiban}`.replace(/\s+/g, ' ').trim();
+//         const full = `${chiban}`.replace(/\s+/g, ' ').trim();
+//         if (full) items.push(full);
+//     }
+//
+//     const text = items.join(','); // カンマ区切り 1 行
+//
+//     try { localStorage.setItem('oh3-registry-deeplink-last', text); } catch (_) {}
+//
+//     let copied = false;
+//     try { await navigator.clipboard.writeText(text); copied = true; } catch (_) {}
+//
+//     if (copied) {
+//         const preview = items.slice(0, 50).join(',');
+//         store.dispatch('messageDialog/open', {
+//             id: 'toki',
+//             title: '地番をクリップボードにコピー完了',
+//             contentHtml:
+//                 `所在
+//                 <div style="margin:12px 0;font-family:monospace;white-space:pre-wrap;">${syozai}</div>
+//                  地番をカンマ区切りでコピーしました。` +
+//                 (preview ? `<div style="margin-top:12px;font-family:monospace;white-space:pre-wrap;">${preview}${items.length > 50 ? ',…' : ''}</div>` : '') +
+//                 `<br><a class="pyramid-btn" href="https://www1.touki.or.jp/" target="_blank" rel="noopener noreferrer" style="height:40px; margin-top:20px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;">登記情報提供サービスへ</a>`,
+//             options: { maxWidth: 700, showCloseIcon: true },
+//         });
+//     } else {
+//         alert('クリップボードコピーに失敗しました。');
+//     }
+//
+//     return text;
+// }
 
 // 画面内の oh-mapillary-images-3-icon の features から properties.value をユニーク抽出
 export function getVisibleIconValues(map, layerId = 'oh-mapillary-images-3-icon') {
