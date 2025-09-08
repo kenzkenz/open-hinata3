@@ -40,7 +40,7 @@
           </div>
         </div>
 
-        <v-btn style="width: 100%; margin-top: 20px;" @click="openToki">地番を整形コピーして登記情報提供サービスを開く</v-btn>
+        <v-btn v-if="s_rightDrawerTitle === '2025登記所地図'" style="width: 100%; margin-top: 20px;" @click="openToki">地番を整形コピーして登記情報提供サービスを開く</v-btn>
 
       </v-card-text>
 
@@ -50,7 +50,12 @@
 
 <script>
 import { mapState, mapMutations } from 'vuex';
-import {chibanzuCalculatePolygonMetrics, homusyoCalculatePolygonMetrics, openToukiFromProps} from "@/js/downLoad";
+import {
+  chibanzuCalculatePolygonMetrics,
+  getHighlightedChibanFeaturesOnScreen,
+  homusyoCalculatePolygonMetrics,
+  openToukiFromProps
+} from "@/js/downLoad";
 import store from "@/store";
 
 export default {
@@ -70,6 +75,7 @@ export default {
   },
   computed: {
     ...mapState([
+      'map01',
       'showRightDrawer',
       'selectedPointFeature',
       'popupFeatureProperties',
@@ -104,7 +110,9 @@ export default {
       'setSelectedPointFeature',
     ]),
     openToki() {
-      openToukiFromProps(this.popupFeatureProperties)
+      const propsArray = getHighlightedChibanFeaturesOnScreen(this.map01).map(f => f.properties)
+      console.log(propsArray)
+      openToukiFromProps(propsArray)
     },
     close() {
       this.setRightDrawer(false);

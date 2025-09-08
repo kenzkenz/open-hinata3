@@ -2014,6 +2014,7 @@ export async function saveCima3(map,kei,jww) {
 let isFirstRun = true;
 
 export function highlightSpecificFeatures2025(map, layerId, opts = {}) {
+    console.log(store.state.highlightedChibans)
     if (!map.getLayer(layerId)) return;
     // クリックで使っている一意キー: "筆ID_地番"
     const keyExpr = ['concat', ['get', '筆ID'], '_', ['get', '地番']];
@@ -13051,54 +13052,100 @@ const PREF_BY_CODE = {
     '43':'熊本県','44':'大分県','45':'宮崎県','46':'鹿児島県','47':'沖縄県'
 };
 
-// propsをそのまま使う版（あなたのプロパティ名に完全対応）
-export async function openToukiFromProps(props) {
-    // 入ってるものだけ拾う（例：市区町村名は props 優先）
-    const muniCode = String(props['市区町村コード'] ?? '').replace(/\D/g,'');
-    const prefCode = muniCode.slice(0,2).padStart(2,'0');
-    const prefName = PREF_BY_CODE[prefCode] || '';
+// 配列で複数 props を受け入れ、
+// 出力を「フル住所（市区町村名＋町丁目＋整形地番）」のカンマ区切り 1 行にする版
+/**
+ * @param {Object|Object[]} propsOrArray - 地物のプロパティ or その配列
+ * @returns {Promise<string>}
+ */
+export async function openToukiFromProps(propsOrArray) {
+    const arr = Array.isArray(propsOrArray) ? propsOrArray : [propsOrArray];
 
-    const muniName = props['市区町村名'] ?? '';
-    const oaza     = props['大字名'] ?? '';
-    const chome    = props['丁目名'] ?? '';   // 例: "2丁目"
-    const aza      = props['字名'] ?? '';     // あれば
-    const chiban   = props['地番'] ?? props['TXTCD'] ?? '';
+    const items = [];
+    for (const props of arr) {
+        if (!props || typeof props !== 'object') continue;
 
-    const town = `${oaza}${chome || aza}`; // 下柚木2丁目 など
-    // const payload = `${prefName}${muniName} ${town} ${normalizeChiban(chiban)}`
-    //     .replace(/\s+/g,' ').trim();
-    const payload = `${town}${normalizeChiban(chiban)}`
-        .replace(/\s+/g,' ').trim();
+        const muniName = props['市区町村名'] ?? '';
+        const oaza     = props['大字名'] ?? '';
+        const chome    = props['丁目名'] ?? '';
+        const aza      = props['字名'] ?? '';
+        const town     = `${oaza}${chome || aza}`.replace(/\s+/g, ' ').trim();
 
-    try { localStorage.setItem('oh3-registry-deeplink-last', payload); } catch(_) {}
+        const rawChiban = props['地番'] ?? props['TXTCD'] ?? '';
+        const chiban    = normalizeChiban(String(rawChiban)).replace(/\s+/g, ' ').trim();
+
+        const full = `${muniName}${town}${chiban}`.replace(/\s+/g, ' ').trim();
+        if (full) items.push(full);
+    }
+
+    const text = items.join(','); // カンマ区切り 1 行
+
+    try { localStorage.setItem('oh3-registry-deeplink-last', text); } catch (_) {}
 
     let copied = false;
-    try { await navigator.clipboard.writeText(payload); copied = true; } catch(_) {}
+    try { await navigator.clipboard.writeText(text); copied = true; } catch (_) {}
 
-    // 公式サイトを新規タブで（ユーザー操作直下で呼ぶこと）
-    // window.open('https://www1.touki.or.jp/', '_blank', 'noopener,noreferrer');
-
-    // if (copied) {
-    //     alert(`地番をコピーしました。\n\n${payload}\n\n開いたタブでログイン→『不動産請求 > 地番・家屋番号 > 地番検索サービス』で貼り付けてください。`);
-    // } else {
-    //     prompt('以下をコピーして貼り付けてください', payload);
-    // }
     if (copied) {
+        const preview = items.slice(0, 3).join(',');
         store.dispatch('messageDialog/open', {
-            id: 'toki', // idはなんでも良い。
+            id: 'toki',
             title: '整形完了・クリップボードにコピー完了',
-            contentHtml: `地番を整形してクリップボードにコピーしました。<br>下のボタンを押して開いたタブでログイン→『不動産請求 > 地番・家屋番号 > 地番検索サービス』で貼り付けてください。
-                    <br><a class="pyramid-btn"
-                    href="https://www1.touki.or.jp/"
-                    target="_blank" rel="noopener noreferrer"
-                    style="height:40px; margin-top:30px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;">
-                    登記情報提供サービスへ（${payload}）</a>`,
-            options: {maxWidth: 700, showCloseIcon: true}
-        })
+            contentHtml:
+                `住所（市区町村名＋町丁目＋地番）をカンマ区切りでコピーしました。` +
+                (preview ? `<div style="margin-top:12px;font-family:monospace;white-space:pre-wrap;">${preview}${items.length > 3 ? ',…' : ''}</div>` : '') +
+                `<br><a class="pyramid-btn" href="https://www1.touki.or.jp/" target="_blank" rel="noopener noreferrer" style="height:40px; margin-top:20px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;">登記情報提供サービスへ</a>`,
+            options: { maxWidth: 700, showCloseIcon: true },
+        });
     } else {
-        alert('クリップボードコピーに失敗しました。')
+        alert('クリップボードコピーに失敗しました。');
     }
+
+    return text;
 }
+
+// 備考:
+// - 数字の全角/半角は props/normalizeChiban に依存します（この関数では変換しません）。
+// - 市区町村名が未設定の場合は町丁目+地番のみになります。
+
+// export async function openToukiFromProps(props) {
+//     // 入ってるものだけ拾う（例：市区町村名は props 優先）
+//     const muniCode = String(props['市区町村コード'] ?? '').replace(/\D/g,'');
+//     const prefCode = muniCode.slice(0,2).padStart(2,'0');
+//     const prefName = PREF_BY_CODE[prefCode] || '';
+//
+//     const muniName = props['市区町村名'] ?? '';
+//     const oaza     = props['大字名'] ?? '';
+//     const chome    = props['丁目名'] ?? '';   // 例: "2丁目"
+//     const aza      = props['字名'] ?? '';     // あれば
+//     const chiban   = props['地番'] ?? props['TXTCD'] ?? '';
+//
+//     const town = `${oaza}${chome || aza}`; // 下柚木2丁目 など
+//     // const payload = `${prefName}${muniName} ${town} ${normalizeChiban(chiban)}`
+//     //     .replace(/\s+/g,' ').trim();
+//     const payload = `${town}${normalizeChiban(chiban)}`
+//         .replace(/\s+/g,' ').trim();
+//
+//     try { localStorage.setItem('oh3-registry-deeplink-last', payload); } catch(_) {}
+//
+//     let copied = false;
+//     try { await navigator.clipboard.writeText(payload); copied = true; } catch(_) {}
+//
+//     if (copied) {
+//         store.dispatch('messageDialog/open', {
+//             id: 'toki', // idはなんでも良い。
+//             title: '整形完了・クリップボードにコピー完了',
+//             contentHtml: `地番を整形してクリップボードにコピーしました。<br>下のボタンを押して開いたタブでログイン→『不動産請求 > 地番・家屋番号 > 地番検索サービス』で貼り付けてください。
+//                     <br><a class="pyramid-btn"
+//                     href="https://www1.touki.or.jp/"
+//                     target="_blank" rel="noopener noreferrer"
+//                     style="height:40px; margin-top:30px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;">
+//                     登記情報提供サービスへ（${payload}）</a>`,
+//             options: {maxWidth: 700, showCloseIcon: true}
+//         })
+//     } else {
+//         alert('クリップボードコピーに失敗しました。')
+//     }
+// }
 
 // 画面内の oh-mapillary-images-3-icon の features から properties.value をユニーク抽出
 export function getVisibleIconValues(map, layerId = 'oh-mapillary-images-3-icon') {
@@ -13152,6 +13199,64 @@ export function attachViewportIconValues(map, layerId = 'oh-mapillary-images-3-i
         if (timer) { clearTimeout(timer); timer = null }
     }
 }
+
+
+// 固定キー版（筆ID / 地番）。highlightedChibans は引数では受けず、
+// store.state.highlightedChibans を内部で参照する。
+// highlightedChibans は Set 推奨だが、配列/オブジェクト/文字列でも受容。
+
+/**
+ * 画面上（現在ビューポート）の oh-homusyo-2025-polygon から、
+ * store.state.highlightedChibans に含まれる `${筆ID}_${地番}` と一致する地物のみを返す。
+ *
+ * @param {import('maplibre-gl').Map} map
+ * @param {string} [layerId='oh-homusyo-2025-polygon']
+ * @returns {Array<Object>} QueryRenderedFeature の配列
+ */
+export function getHighlightedChibanFeaturesOnScreen(map, layerId = 'oh-homusyo-2025-polygon') {
+    if (!map || typeof map.queryRenderedFeatures !== 'function') return [];
+    if (!map.getLayer(layerId)) return [];
+
+    const highlighted = getHighlightedSetFromStore();
+    if (highlighted.size === 0) return [];
+
+    const rendered = map.queryRenderedFeatures({ layers: [layerId] }) || [];
+    const seen = new Set();
+    const out = [];
+
+    for (const f of rendered) {
+        const p = (f && f.properties) || {};
+        const pid = p['筆ID'];
+        const chiban = p['地番'];
+        if (pid == null || chiban == null) continue;
+
+        const key = `${String(pid)}_${String(chiban)}`;
+        if (highlighted.has(key) && !seen.has(key)) {
+            seen.add(key);
+            out.push(f);
+        }
+    }
+    return out;
+}
+
+/** FeatureCollection が欲しい場合 */
+export function getHighlightedChibanFeatureCollectionOnScreen(map, layerId = 'oh-homusyo-2025-polygon') {
+    const features = getHighlightedChibanFeaturesOnScreen(map, layerId);
+    const plain = features.map(f => (typeof f.toJSON === 'function' ? f.toJSON() : JSON.parse(JSON.stringify(f))));
+    return { type: 'FeatureCollection', features: plain };
+}
+
+/** store.state.highlightedChibans を Set に正規化して取得 */
+function getHighlightedSetFromStore() {
+    const s = store && store.state && store.state.highlightedChibans;
+    if (!s) return new Set();
+    if (s instanceof Set) return s;
+    if (Array.isArray(s)) return new Set(s);
+    if (typeof s === 'object') return new Set(Object.keys(s));
+    if (typeof s === 'string') return new Set(s.split(/[\s,]+/).filter(Boolean));
+    return new Set();
+}
+
 
 /**
  *
