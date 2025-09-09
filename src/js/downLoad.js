@@ -8971,6 +8971,7 @@ export function addDraw (geojson,isFit,isNini) {
         if (feature.geometry && feature.geometry.type !== 'Point') {
             const calc = calculatePolygonMetrics(feature);
             if (feature.geometry.type === 'Polygon' || feature.geometry.type === "MultiPolygon") {
+                console.log(calc.area)
                 feature.properties['area'] = calc.area;
                 feature.properties['perimeter'] = calc.perimeter;
             } else if (feature.geometry.type === 'LineString' || feature.geometry.type === "MultiLineString")  {

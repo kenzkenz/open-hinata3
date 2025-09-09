@@ -2291,6 +2291,19 @@ export function geojsonUpdate(map, geoType, sourceId, id, tgtProp, value, radius
                 if (key) {
                     removeThumbnailMarkerByKey(key)
                 }
+                if (feature.geometry) {
+                    /**
+                     * 面積と周長が吹っ飛ぶ謎の現象があったため再度計算、付与
+                     */
+                    const calc = calculatePolygonMetrics(feature);
+                    if (feature.geometry.type === 'Polygon' || feature.geometry.type === "MultiPolygon") {
+                        console.log(calc.area)
+                        feature.properties['area'] = calc.area;
+                        feature.properties['perimeter'] = calc.perimeter;
+                    } else if (feature.geometry.type === 'LineString' || feature.geometry.type === "MultiLineString")  {
+                        feature.properties['area'] = calc.perimeter;
+                    }
+                }
             }
         });
         // 見つからなかったら新しく作成

@@ -12,6 +12,9 @@
  */
 
 import * as turf from '@turf/turf'
+import {addDraw} from "@/js/downLoad";
+import store from "@/store";
+import {colorNameToRgba} from "@/js/pyramid";
 
 // ==== triangle50内で lonlat を自前取得（グローバルポインタ捕捉・フォールバック用）====
 let __OH_TRI50_LAST_POINTER = { x: null, y: null }
@@ -77,6 +80,14 @@ function removeIfExists (map, ids) {
     const rmS = (id) => { if (map.getSource(id)) map.removeSource(id) }
     rmL(ids.fillLeft); rmL(ids.fillRight); rmL(ids.outlineLeft); rmL(ids.outlineRight); rmL(ids.baseLine); rmL(ids.points)
     rmS(ids.source)
+
+    const src = map.getSource('click-circle-source');
+    const fc = src._data.type === 'FeatureCollection' ? src._data : { type: 'FeatureCollection', features: [] };
+    const next = { type: 'FeatureCollection', features: fc.features.filter(f => f?.properties?.is50 === null) };
+    src.setData(next);
+    store.state.clickCircleGeojsonText = JSON.stringify(next)
+    store.state.updatePermalinkFire = !store.state.updatePermalinkFire
+
 }
 
 function addLayers (map, ids, geojson, opts = {}) {
@@ -223,7 +234,18 @@ export function queuePoint (map, arg, opts = {}) {
     const ids = idset(opts.idPrefix || DEF.idPrefix)
     removeIfExists(map, ids)
     const geojson = buildGeoJSON(A, B, apexL, apexR)
-    addLayers(map, ids, geojson, opts)
+
+    geojson.features.forEach(f => {
+        f.properties.is50 = true
+        if (f.properties.side === 'left') {
+            f.properties.color = colorNameToRgba('hotpink', 0.6)
+        } else {
+            f.properties.color = colorNameToRgba('green', 0.6)
+        }
+    })
+    addDraw(geojson)
+
+    // addLayers(map, ids, geojson, opts)
     state.ids = ids
     state.first = null
     refreshMenu(map) // → 「削除」有効化
