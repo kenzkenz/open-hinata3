@@ -8258,24 +8258,28 @@ export default {
         // console.log(params)
         map.on('load',async () => {
 
-
           // クリック位置に円 → 内部にある layerA, layerB の地物を拾い、idProperty でハイライト
+          const refreshRadiusHighlightObj = {
+            queryLayers: ['oh-homusyo-2025-kijyunten'],
+            idProperty: '名称',
+            radiusMeters: 200,                  // 任意半径
+            highlight: {
+              fillColor: 'rgba(255,160,0,0.35)',
+              lineColor: 'rgba(255,120,0,1.0)',
+              lineWidth: 3,
+              circleColor: 'rgba(255,120,0,1.0)',
+              circleRadius: 6
+            }
+          }
+
+          let lngLat = null
           map.on('click', (e) => {
-            refreshRadiusHighlight(map, e.lngLat, {
-              queryLayers: ['oh-homusyo-2025-kijyunten'],
-              idProperty: '名称',
-              radiusMeters: 200,                  // 任意半径
-              highlight: {
-                fillColor: 'rgba(255,160,0,0.35)',
-                lineColor: 'rgba(255,120,0,1.0)',
-                lineWidth: 3,
-                circleColor: 'rgba(255,120,0,1.0)',
-                circleRadius: 6
-              }
-            })
+            lngLat = e.lngLat
+            refreshRadiusHighlight(map, lngLat, refreshRadiusHighlightObj)
           })
-
-
+          map.on('zoomend', (e) => {
+            if (lngLat) refreshRadiusHighlight(map, lngLat, refreshRadiusHighlightObj)
+          })
 
           // DrawToolインスタンス化
           // const drawTool = new DrawTool(map);

@@ -2895,7 +2895,7 @@ export function saveSimaKijyunten (map,layerId) {
         layers: [layerId] // 対象のレイヤー名を指定
     });
     // GeoJSON形式に変換
-    const geojson = {
+    let geojson = {
         type: 'FeatureCollection',
         features: features.map(feature => ({
             type: 'Feature',
@@ -2903,6 +2903,11 @@ export function saveSimaKijyunten (map,layerId) {
             properties: feature.properties
         }))
     };
+
+    if (layerId === 'oh-homusyo-2025-kijyunten' && store.state.oh200mIds.length > 0) {
+        geojson = turf.featureCollection(geojson.features.filter(f => store.state.oh200mIds.includes(f.properties.名称)))
+    }
+
     console.log(geojson)
     console.log(store.state.zahyokei)
     const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
