@@ -9474,14 +9474,16 @@ export function getNextZIndex() {
     Array.from(divs).forEach(div => {
         // .v-overlay を除外
         if (div.classList.contains('v-overlay')) return;
-
         const z = window.getComputedStyle(div).zIndex;
+        // 異常なz-indexを除外
+        if (Number(z) > 1000000000) return;
         const zi = parseInt(z, 10);
         if (!isNaN(zi) && zi > maxZ) {
             maxZ = zi;
         }
     });
     // alert(maxZ + 1)
+    console.log(maxZ + 1)
     return maxZ + 1;
 }
 // urlの変更を監視

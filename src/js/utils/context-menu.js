@@ -876,11 +876,15 @@ function _geo_isVisible(map, id) {
     return v == null || v === 'visible';
 }
 function _geo_isExcluded(id, includeExcluded) {
-    if (includeExcluded) return false;
     if (!id) return false;
-    if (id.includes('-vector-')) return true;           // 「-vector-」系は既定で除外
-    if (GEOEXPORT_LAYER_BLOCKLIST.includes(id)) return true;
-    return GEOEXPORT_DEFAULT_EXCLUDE_PATTERNS.some(re => re.test(id));
+    // zones-layer は常に除外（includeExcluded に関係なく）
+    if (id === 'zones-layer' || GEOEXPORT_LAYER_BLOCKLIST.includes(id)) return true;
+    // 以降は includeExcluded=false のときだけ既定の除外を適用
+    if (!includeExcluded) {
+        if (id.includes('-vector-')) return true;  // 「-vector-」系は既定で除外
+        return GEOEXPORT_DEFAULT_EXCLUDE_PATTERNS.some(re => re.test(id));
+    }
+    return false;
 }
 function _geo_featKey(f) {
     const src = f.source || '';
