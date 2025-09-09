@@ -8219,7 +8219,8 @@ export default {
           {
             label: 'その他',
             children: [
-              buildTri50Submenu({ map: map }, { addAboveLayerId: 'oh-some-layer-below-tri' }),
+              buildTri50Submenu({ map: map }, '基準点測量50°三角形', { addAboveLayerId: 'oh-some-layer-below-tri' }),
+              buildTri50Submenu({ map }, '基準点測量40°三角形', { addAboveLayerId: 'oh-some-layer-below-tri', baseAngleDeg: 40 })
             ]
           },
 

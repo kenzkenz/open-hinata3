@@ -297,10 +297,10 @@ export function addTri50MenuItems (items, ctx, opts = {}) {
 }
 
 // サブメニュー1項目（context-menu 向け）
-export function buildTri50Submenu (ctx, opts = {}) {
+export function buildTri50Submenu (ctx, label, opts = {}) {
     return {
         // label: '50°三角形',
-        label: '基準点測量50°三角形',
+        label: label,
         items: () => buildTri50Items(ctx, opts)
     }
 }
