@@ -80,14 +80,6 @@ function removeIfExists (map, ids) {
     const rmS = (id) => { if (map.getSource(id)) map.removeSource(id) }
     rmL(ids.fillLeft); rmL(ids.fillRight); rmL(ids.outlineLeft); rmL(ids.outlineRight); rmL(ids.baseLine); rmL(ids.points)
     rmS(ids.source)
-
-    const src = map.getSource('click-circle-source');
-    const fc = src._data.type === 'FeatureCollection' ? src._data : { type: 'FeatureCollection', features: [] };
-    const next = { type: 'FeatureCollection', features: fc.features.filter(f => f?.properties?.is50 === null) };
-    src.setData(next);
-    store.state.clickCircleGeojsonText = JSON.stringify(next)
-    store.state.updatePermalinkFire = !store.state.updatePermalinkFire
-
 }
 
 function addLayers (map, ids, geojson, opts = {}) {
@@ -163,6 +155,13 @@ export function clearTriangle50 (map, opts = {}) {
     state.first = null
     // lastLngLat は維持
     refreshMenu(map)
+
+    const src = map.getSource('click-circle-source');
+    const fc = src._data.type === 'FeatureCollection' ? src._data : { type: 'FeatureCollection', features: [] };
+    const next = { type: 'FeatureCollection', features: fc.features.filter(f => f?.properties?.is50 === null) };
+    src.setData(next);
+    store.state.clickCircleGeojsonText = JSON.stringify(next)
+    store.state.updatePermalinkFire = !store.state.updatePermalinkFire
 }
 
 // ---- lnglat 解決 & 記憶 ----
@@ -211,7 +210,7 @@ export function queuePoint (map, arg, opts = {}) {
         const ids = idset(opts.idPrefix || DEF.idPrefix)
         removeIfExists(map, ids)
         const fc = { type: 'FeatureCollection', features: [ { type: 'Feature', properties: { kind: 'endpoint' }, geometry: { type: 'Point', coordinates: state.first } } ] }
-        map.addSource(ids.source, { type: 'geojson', data: fc })
+        if (!map.getSource(ids.source)) map.addSource(ids.source, { type: 'geojson', data: fc })
         const add = (layer) => {
             if (opts.addAboveLayerId && map.getLayer(opts.addAboveLayerId)) map.addLayer(layer, opts.addAboveLayerId); else map.addLayer(layer)
         }
