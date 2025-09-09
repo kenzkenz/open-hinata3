@@ -2254,6 +2254,7 @@ import attachMapRightClickMenu, {
   removePointUnderCursor,
   setSvPin,
 } from "@/js/utils/context-menu";
+import {refreshRadiusHighlight} from "@/js/utils/radius-highlight";
 
 export default {
   name: 'App',
@@ -8256,6 +8257,24 @@ export default {
         // const params = this.parseUrlParams()
         // console.log(params)
         map.on('load',async () => {
+
+
+          // クリック位置に円 → 内部にある layerA, layerB の地物を拾い、idProperty でハイライト
+          map.on('click', (e) => {
+            refreshRadiusHighlight(map, e.lngLat, {
+              queryLayers: ['oh-homusyo-2025-kijyunten'],
+              idProperty: '名称',
+              radiusMeters: 200,                  // 任意半径
+              highlight: {
+                fillColor: 'rgba(255,160,0,0.35)',
+                lineColor: 'rgba(255,120,0,1.0)',
+                lineWidth: 3,
+                circleColor: 'rgba(255,120,0,1.0)',
+                circleRadius: 6
+              }
+            })
+          })
+
 
 
           // DrawToolインスタンス化

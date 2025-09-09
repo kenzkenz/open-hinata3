@@ -48,7 +48,7 @@ export default createStore({
   state: {
     drawFeatureId: '',
     clientVersion: 1.466,
-    isRadius200: false,
+    isRadius200: true,
     oh200mIds: [],
     // 独自コンファーム
     showConfirm: false,

@@ -10,7 +10,7 @@
  *    - ソースID:   'homusyo-2025-kijyunten-source'
  *    - レイヤーID: 'oh-homusyo-2025-kijyunten'
  * - ID属性の既定: '名称'
- * - Turf.js 前提（window.turf に存在）
+ * - Turf.js 前提（ESM: `import * as turf from '@turf/turf'`）
  *
  * 使い方例：
  *   import { refreshRadiusHighlight } from '/src/js/utils/radius-highlight.js'
@@ -41,12 +41,8 @@
  *   })
  */
 
-// Vuex store 参照（import・手渡し・window の順で解決）
-// 環境により '@/store' の解決が不要/不可な場合は opts.store または window.store を利用します。
-/* eslint-disable import/no-unresolved */
-// @ts-ignore
 import store from '@/store'
-/* eslint-enable import/no-unresolved */
+import * as turf from '@turf/turf'
 
 function resolveStore(opts) {
     if (opts && opts.store && opts.store.state) return opts.store;
@@ -183,8 +179,8 @@ export async function refreshRadiusHighlight(map, centerLngLat, opts) {
 // ========================= 内部関数群 =========================
 
 function ensureTurf() {
-    if (!(window && window.turf)) {
-        throw new Error('Turf.js が見つかりません。window.turf を用意してください');
+    if (!turf || typeof turf.circle !== 'function') {
+        throw new Error("Turf.js の import が見つかりません。`import * as turf from '@turf/turf'` を確認してください");
     }
 }
 
@@ -328,11 +324,12 @@ function featureIntersectsCircle(feature, circlePolygon) {
             case 'Polygon':
             case 'MultiPolygon':
                 return turf.booleanIntersects(g, circlePolygon);
-            default:
+            default: {
                 // 未対応タイプは bbox 判定だけにフォールバック（ゆるい）
                 const b1 = turf.bbox(turf.feature(g));
                 const b2 = turf.bbox(circlePolygon);
                 return bboxOverlaps(b1, b2);
+            }
         }
     } catch (e) {
         // ジオメトリ欠損などは安全側に false
