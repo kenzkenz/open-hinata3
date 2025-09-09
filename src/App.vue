@@ -11533,11 +11533,11 @@ select {
   margin:  0px!important;
 }
 .v-overlay:not(.exclude-overlay)  {
-  z-index: 100000 !important;
+  z-index: 2147483647 !important;
 }
 @media (max-width: 500px) {
   .v-overlay {
-    z-index: 100000 !important;
+    z-index: 2147483647 !important;
   }
 }
 /*注意。副作用があるかもしれない。*/
