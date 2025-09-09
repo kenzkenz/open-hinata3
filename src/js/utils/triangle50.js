@@ -1,11 +1,14 @@
 /*
  * /src/js/utils/triangle50.js
  * 50°-50°-80° の等角三角形ユーティリティ（context-menu方式に最適化版）
- * - MapLibreの右クリメニューと自然に統合（items: () => [...] の動的メニュー）
- * - 1点目/2点目のクリック待機は map.once('click', ...)（古環境は on/off フォールバック）
+ * - MapLibreの右クリメニューと自然に統合（items: () => … の動的メニュー）
+ * - 1点目/2点目のクリック待機は map.once('click', …)（古環境は on/off フォールバック）
  * - 状態変更のたびに container.dispatchEvent('oh3:rcm:refresh') → メニューを開いたまま即反映
  * - add → remove の徹底。idPrefixで複数インスタンスも可能
  * - Turf.js（ESM）前提: import * as turf from '@turf/turf'
+ *
+ * 【今回の変更】
+ * 1点目が確定した直後に、**自動で2点目のクリック待機に入る** ようにしました。
  */
 
 import * as turf from '@turf/turf'
@@ -192,7 +195,7 @@ export function queuePoint (map, arg, opts = {}) {
     if (!A) {
         // 1点目セット
         state.first = [picked.lng, picked.lat]
-        // 前回の残骸があれば消す（点のみ再作成）
+        // 前回の待機があれば解除
         const prevOff = state._armedOff; if (prevOff) { try { prevOff() } catch(_){} state._armedOff = null }
         const ids = idset(opts.idPrefix || DEF.idPrefix)
         removeIfExists(map, ids)
@@ -204,6 +207,11 @@ export function queuePoint (map, arg, opts = {}) {
         add({ id: ids.points, type: 'circle', source: ids.source, filter: ['==', ['get','kind'], 'endpoint'], paint: { 'circle-radius': 4, 'circle-color': DEF.baseLine } })
         state.ids = ids
         refreshMenu(map) // → ラベルが「2点目→作成」に変わる
+
+        // ★ 変更点：1点目確定直後に **自動で2点目クリック待機** に入る
+        // イベント中に再登録するため、次tickで once('click') を仕込む（安全）
+        setTimeout(() => { try { armQueuePoint(map, opts) } catch (_) {} }, 0)
+
         return 'FIRST_SET'
     }
 
@@ -226,20 +234,20 @@ export function queuePoint (map, arg, opts = {}) {
 export function armQueuePoint (map, opts = {}) {
     const state = ensureLocalState(map)
     // 既存の待機があれば解除
-    if (state._armedOff) { try { state._armedOff() } catch(_){} }
+    if (state._armedOff) { try { state._armedOff() } catch(_) {} }
 
     const handler = (e) => {
         try { queuePoint(map, e, opts) } finally {
-            if (state._armedOff) { try { state._armedOff() } catch(_){} state._armedOff = null }
+            if (state._armedOff) { try { state._armedOff() } catch(_) {} state._armedOff = null }
         }
     }
     if (typeof map.once === 'function') {
         map.once('click', handler)
-        state._armedOff = () => { try { map.off('click', handler) } catch(_){} }
+        state._armedOff = () => { try { map.off('click', handler) } catch(_) {} }
     } else {
-        const wrapped = (e) => { handler(e); try { map.off('click', wrapped) } catch(_){} }
+        const wrapped = (e) => { handler(e); try { map.off('click', wrapped) } catch(_) {} }
         map.on('click', wrapped)
-        state._armedOff = () => { try { map.off('click', wrapped) } catch(_){} }
+        state._armedOff = () => { try { map.off('click', wrapped) } catch(_) {} }
     }
     return 'ARMED'
 }
@@ -269,7 +277,8 @@ export function addTri50MenuItems (items, ctx, opts = {}) {
 // サブメニュー1項目（context-menu 向け）
 export function buildTri50Submenu (ctx, opts = {}) {
     return {
-        label: '50°三角形',
+        // label: '50°三角形',
+        label: '基準点測量50°三角形',
         items: () => buildTri50Items(ctx, opts)
     }
 }
@@ -284,7 +293,8 @@ export function buildTri50Items (ctx, opts = {}) {
 
     return [
         {
-            label: hasFirst ? '2点目→作成(クリック待機)' : '1点目をセット(クリック待機)',
+            // label: hasFirst ? '2点目→作成(クリック待機)' : '1点目をセット(クリック待機)',
+            label: '基準点を2点クリックします',
             onSelect: () => armQueuePoint(map, opts)
         },
         {

@@ -1758,7 +1758,7 @@ import { startHoldRotate, startHoldPitch, resetOrientation } from '@/js/utils/vi
 import MessageDialog from '@/components/Message-Dialog'
 import MapillaryFilter from '@/components/floatingwindow/MapillaryFilter.vue'
 import VDialogConfirm from "@/components/V-dialog/V-dialog-confirm"
-import {queuePoint, clearTriangle50, buildTri50Submenu} from '@/js/utils/triangle50'
+import {buildTri50Submenu} from '@/js/utils/triangle50'
 
 
 import {
@@ -1766,8 +1766,6 @@ import {
   addSvgAsImage,
   animateRelocate,
   bakeRotationToBlob,
-  bindMoveendFor360,
-  buildCandidates,
   capture,
   changePrintMap03,
   compressImageToUnder10MB,
@@ -1789,7 +1787,6 @@ import {
   extractFirstFeaturePropertiesAndCheckCRS,
   extractSimaById,
   featureCollectionAdd,
-  featuresRestore,
   fetchGsiTileTest,
   fetchMapillaryPanosInViewport, fitClickCircleAll,
   fncPngDl,
@@ -1818,13 +1815,9 @@ import {
   kmlDownload,
   kmzLoadForUser,
   LngLatToAddress,
-  loadBitmap,
-  loadImageRobust,
-  mapFeatureToImageId,
   mapillaryCreate,
   mapillaryFilterRiset,
   mapillaryViewer,
-  mapillaryWindowOpen,
   mapillaryWindowOpenDebounced,
   markaersRemove,
   markerAddAndRemove,
@@ -1838,7 +1831,6 @@ import {
   removeAllWhitespace,
   removeThumbnailMarkerByKey,
   sanitizeLongText,
-  saveDrowFeatures,
   scaleAndRotateLassoSelected,
   setFllter360,
   setVertex,
@@ -1851,7 +1843,7 @@ import {
   transformGeoJSONToEPSG4326,
   updateDragHandles,
   userKmzSet,
-  userSimaSet, vConfirm,
+  userSimaSet,
   vertexAndMidpoint,
   zahyokei,
   zipDownloadSimaText
@@ -8227,10 +8219,9 @@ export default {
           {
             label: 'その他',
             children: [
-              buildTri50Submenu({ map: this.$store.state.map01 }, { addAboveLayerId: 'oh-some-layer-below-tri' }),
+              buildTri50Submenu({ map: map }, { addAboveLayerId: 'oh-some-layer-below-tri' }),
             ]
           },
-
 
           // 簡易でURL記憶
             // 自前で処理するなら onSelectUrl を渡す（window.open 等はしない）
